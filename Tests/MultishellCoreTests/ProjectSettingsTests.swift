@@ -34,6 +34,21 @@ struct WorktreeSettingsTests {
       WorktreeSettings().worktreeContainer(for: ghost).path == "/nowhere/at/all/repo-worktrees")
   }
 
+  @Test func aBlankContainerMeansTheDefaultNotTheRepository() {
+    // An override cleared to nothing, or the global field emptied, would
+    // otherwise put worktrees inside the main checkout as untracked files.
+    for text in ["", " ", "\t"] {
+      let settings = WorktreeSettings(worktreeDirectory: text)
+      #expect(
+        settings.worktreeContainer(for: project).path == "/Users/dev/Work/multishell-worktrees",
+        "\(text.debugDescription)")
+    }
+    let overridden = ProjectSettings(worktreeDirectory: " ").effective(
+      defaults: WorktreeSettings(worktreeDirectory: "/global/trees"))
+    #expect(
+      overridden.worktreeContainer(for: project).path == "/Users/dev/Work/multishell-worktrees")
+  }
+
   @Test func slashesInBranchNamesBecomeOneDirectory() {
     let path = WorktreeSettings().worktreePath(forBranch: "feat/tabs", in: project)
     #expect(path.path == "/Users/dev/Work/multishell-worktrees/feat-tabs")

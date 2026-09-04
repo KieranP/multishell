@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 
 @testable import MultishellCore
@@ -40,5 +41,51 @@ struct HexColorTests {
       #expect(HexColor.parse(theme.cursor) != nil)
       #expect(HexColor.parse(theme.selectionBackground) != nil)
     }
+  }
+}
+
+@Suite
+struct HexColorAlphaTests {
+  @Test func aTrailingAlphaIsReadAndIgnored() {
+    #expect(HexColor.parse("#5aa9f8ff") == RGB(red: 0x5a, green: 0xa9, blue: 0xf8))
+    #expect(HexColor.parse("5aa9f800") == RGB(red: 0x5a, green: 0xa9, blue: 0xf8))
+    #expect(HexColor.parse("#f0f8") == RGB(red: 0xff, green: 0x00, blue: 0xff))
+  }
+
+  @Test func otherLengthsAndBadAlphaDigitsAreStillRefused() {
+    for text in ["#5aa9f8f", "#5aa9f8fff", "#5aa9f8zz", "#f0fz", "#ab", "#abcde"] {
+      #expect(HexColor.parse(text) == nil, "\(text)")
+    }
+  }
+}
+
+@Suite
+struct ShellQuotingTests {
+  @Test func plainArgumentsPassThroughAndOthersAreSingleQuoted() {
+    #expect(ShellQuoting.commandLine(["/usr/bin/top", "-o", "cpu"]) == "/usr/bin/top -o cpu")
+    #expect(ShellQuoting.quote("My Projects") == "'My Projects'")
+    #expect(ShellQuoting.quote("it's") == #"'it'\''s'"#)
+    #expect(ShellQuoting.quote("$HOME") == "'$HOME'")
+    #expect(ShellQuoting.quote("") == "''")
+  }
+
+  /// The shell that receives the line must give back exactly the arguments.
+  @Test func theShellUnquotesToTheOriginalArguments() async throws {
+    let arguments = ["My Projects/app", "it's", "$HOME", "", "a\"b", "back\\slash", "tab\there"]
+    let script =
+      "for a in " + ShellQuoting.commandLine(arguments) + "; do printf '%s\\n' \"$a\"; done"
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/bin/sh")
+    process.arguments = ["-c", script]
+    let pipe = Pipe()
+    process.standardOutput = pipe
+    try process.run()
+    let data = pipe.fileHandleForReading.readDataToEndOfFile()
+    process.waitUntilExit()
+
+    let lines = String(decoding: data, as: UTF8.self).split(
+      separator: "\n", omittingEmptySubsequences: false
+    ).dropLast().map(String.init)
+    #expect(lines == arguments)
   }
 }

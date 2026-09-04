@@ -6,7 +6,7 @@ import Testing
 
 /// A watcher that records what it was asked to watch and can be poked.
 @MainActor
-private final class FakeWatcher: DirectoryWatcher {
+final class FakeWatcher: DirectoryWatcher {
   var onChange: (@MainActor () -> Void)?
   var watched: [URL] = []
   var stopped = false
@@ -16,7 +16,7 @@ private final class FakeWatcher: DirectoryWatcher {
 
 /// An engine that opens everything and remembers focus and closes.
 @MainActor
-private final class FakeEngine: TerminalSurfaceHost {
+final class FakeEngine: TerminalSurfaceHost {
   var openSessionIDs: Set<TerminalSession.ID> = []
   var focused: [TerminalSession.ID] = []
   var closed: [TerminalSession.ID] = []
@@ -374,5 +374,236 @@ struct AppModelInvariantTests {
       #expect(tab.root.contains(tab.focusedSessionID), "\(context): focus outside its tree")
       #expect(tab.sessionIDs.allSatisfy(sessionIDs.contains), "\(context): pane without a session")
     }
+  }
+}
+
+/// The autosave is what makes a relaunch look like the last session. It is
+/// observation-driven and debounced, so both halves are checked: a change
+/// reaches disk unprompted, and so does the change after that.
+@Suite(.serialized) @MainActor
+struct AutosaveTests {
+  private func stateFile() -> URL {
+    URL(fileURLWithPath: NSTemporaryDirectory())
+      .appendingPathComponent("multishell-autosave-\(UUID().uuidString)", isDirectory: true)
+      .appendingPathComponent("state.json")
+  }
+
+  @Test func aChangeReachesDiskWithoutAnyoneAskingAndSoDoesTheNext() async throws {
+    let file = stateFile()
+    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+    let h = Harness(stateFile: file)
+
+    h.model.select(h.main)
+    // The debounce is 300 ms; the margin is for a busy CI runner's timers.
+    try await Task.sleep(for: .seconds(1))
+    let first = try WorkspaceSnapshot(fileURL: file).load()
+    #expect(first.selectedWorktreeID == h.main.id)
+    #expect(first.tabs.count == 1)
+
+    // The observation has to be re-armed after it fires, or only the first
+    // change of a session would ever be saved.
+    h.model.newTab()
+    try await Task.sleep(for: .seconds(1))
+    let second = try WorkspaceSnapshot(fileURL: file).load()
+    #expect(second.tabs.count == 2)
+  }
+
+  @Test func aBurstOfChangesIsOneWriteAndTheLastStateWins() async throws {
+    let file = stateFile()
+    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+    let h = Harness(stateFile: file)
+
+    h.model.select(h.main)
+    for _ in 0..<5 { h.model.newTab() }
+    h.model.closeActiveTab()
+    #expect(!FileManager.default.fileExists(atPath: file.path), "nothing written mid-burst")
+
+    try await Task.sleep(for: .seconds(1))
+    #expect(try WorkspaceSnapshot(fileURL: file).load().tabs.count == 5)
+  }
+
+  @Test func saveNowFlushesWhatTheDebounceStillHolds() throws {
+    let file = stateFile()
+    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+    let h = Harness(stateFile: file)
+
+    h.model.select(h.main)
+    h.model.saveNow()
+
+    #expect(try WorkspaceSnapshot(fileURL: file).load().selectedWorktreeID == h.main.id)
+    #expect(h.model.pendingSave == nil)
+  }
+
+  @Test func shellTitlesAndStatusesNeverTriggerASave() async throws {
+    let file = stateFile()
+    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+    let h = Harness(stateFile: file)
+    h.model.select(h.main)
+    try await Task.sleep(for: .seconds(1))
+    let written = try FileManager.default.attributesOfItem(atPath: file.path)[.modificationDate]
+    // A finished task stays in place, so clear it: anything below that
+    // schedules a save would put a new one here.
+    h.model.pendingSave = nil
+
+    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    for i in 0..<10 {
+      h.engine.delegate?.terminalHost(h.engine, didRetitle: tab.focusedSessionID, to: "t\(i)")
+      h.engine.delegate?.terminalHost(h.engine, didSeeActivityIn: tab.focusedSessionID)
+    }
+    h.model.statuses[h.main.id] = WorktreeStatus()
+    try await Task.sleep(for: .seconds(1))
+
+    #expect(h.model.pendingSave == nil)
+    let after = try FileManager.default.attributesOfItem(atPath: file.path)[.modificationDate]
+    #expect(written as? Date == after as? Date, "a prompt rewrote the state file")
+  }
+}
+
+@Suite @MainActor
+struct AttentionDotTests {
+  /// The dot means "something happened here since you looked". When the
+  /// shown tab's shell exits, the neighbour becomes the shown tab and is
+  /// being looked at, so its dot must go the way a click would clear it.
+  @Test func aTabRevealedByAnExitLosesItsDot() {
+    let h = Harness()
+    h.model.select(h.main)
+    let first = h.model.workspace.activeTab(in: h.main.id)!
+    h.model.newTab()
+    let second = h.model.workspace.activeTab(in: h.main.id)!
+    h.engine.delegate?.terminalHost(h.engine, didSeeActivityIn: first.focusedSessionID)
+    #expect(h.model.hasUnseenActivity(first))
+
+    h.engine.delegate?.terminalHost(h.engine, didExit: second.focusedSessionID, code: 0)
+
+    #expect(h.model.workspace.activeTab(in: h.main.id)?.id == first.id)
+    #expect(!h.model.hasUnseenActivity(first))
+    #expect(h.model.unseenActivityCount(in: h.main.id) == 0)
+  }
+}
+
+@Suite @MainActor
+struct MissingDirectoryTests {
+  /// Selection was refused when the directory was gone, but a worktree that
+  /// was selected while it existed could still get new shells after it was
+  /// deleted by hand, each landing silently in $HOME.
+  @Test func aNewTabOrSplitInAWorktreeWhoseDirectoryVanishedIsRefused() throws {
+    let h = Harness()
+    h.model.select(h.feature)
+    #expect(h.model.liveTerminalCount == 1)
+    try FileManager.default.removeItem(at: h.feature.path)
+    h.model.presentedError = nil
+
+    h.model.newTab()
+    #expect(h.model.workspace.tabs(in: h.feature.id).count == 1)
+    #expect(h.model.presentedError?.title == "Worktree directory is missing")
+
+    h.model.presentedError = nil
+    h.model.splitActivePane(.horizontal)
+    #expect(h.model.workspace.activeTab(in: h.feature.id)?.isSplit == false)
+    #expect(h.model.presentedError?.title == "Worktree directory is missing")
+    #expect(h.model.liveTerminalCount == 1, "the shell that already existed is left alone")
+  }
+}
+
+/// What the New Worktree sheet opens with, from each way of asking for it.
+@Suite @MainActor
+struct NewWorktreeRequestTests {
+  @Test func theMenuWithOneProjectAndNothingSelectedPicksThatProject() {
+    let h = Harness()
+    h.model.requestNewWorktree()
+    #expect(h.model.newWorktreeRequest?.projectID == h.project.id)
+  }
+
+  @Test func theMenuWithSeveralProjectsAndNothingSelectedOpensWithNoProject() {
+    let h = Harness()
+    h.store.addProject(at: URL(fileURLWithPath: "/other"))
+
+    h.model.requestNewWorktree()
+
+    #expect(h.model.newWorktreeRequest != nil, "used to do nothing, silently")
+    #expect(h.model.newWorktreeRequest?.projectID == nil, "the picker starts blank")
+  }
+
+  @Test func theMenuFollowsTheSelectedWorktreesProject() {
+    let h = Harness()
+    let other = h.store.addProject(at: URL(fileURLWithPath: "/other"))
+    h.model.select(h.feature)
+
+    h.model.requestNewWorktree()
+
+    #expect(h.model.newWorktreeRequest?.projectID == h.project.id)
+    #expect(h.model.newWorktreeRequest?.projectID != other.id)
+  }
+
+  @Test func theSidebarNamesItsProjectWhateverIsSelected() {
+    let h = Harness()
+    let other = h.store.addProject(at: URL(fileURLWithPath: "/other"))
+    h.model.select(h.main)
+
+    h.model.requestNewWorktree(in: other)
+
+    #expect(h.model.newWorktreeRequest?.projectID == other.id)
+  }
+
+  @Test func eachRequestIsANewPresentation() {
+    let h = Harness()
+    h.model.requestNewWorktree()
+    let first = h.model.newWorktreeRequest?.id
+    h.model.newWorktreeRequest = nil
+    h.model.requestNewWorktree()
+    #expect(h.model.newWorktreeRequest?.id != first, "the sheet must reopen after a cancel")
+  }
+}
+
+/// The whole promise of saving: quit, relaunch, and what was there is there.
+/// Tabs, splits, weights and names come back; nothing is live until a
+/// worktree is visited; the first visit brings every saved shell up.
+@Suite(.serialized) @MainActor
+struct RelaunchTests {
+  @Test func aSavedWorkspaceComesBackAndWarmsOnTheFirstVisit() throws {
+    let file = URL(fileURLWithPath: NSTemporaryDirectory())
+      .appendingPathComponent("multishell-relaunch-\(UUID().uuidString)", isDirectory: true)
+      .appendingPathComponent("state.json")
+    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+
+    let before = Harness(stateFile: file)
+    before.model.select(before.main)
+    before.model.splitActivePane(.horizontal)
+    let splitTab = before.model.workspace.activeTab(in: before.main.id)!
+    before.model.setSplitWeights([3, 1], at: [], ofTab: splitTab.id)
+    before.model.newTab()
+    before.model.renameTab(before.model.workspace.activeTab(in: before.main.id)!.id, to: "build")
+    before.model.select(before.feature)
+    before.model.newTab()
+    #expect(before.model.liveTerminalCount == 5, "two in the split, one more, then two in feature")
+    before.model.saveNow()
+    var expected = before.model.workspace
+    expected.selectedWorktreeID = nil
+
+    let (store, error) = WorkspaceStore.restored(from: WorkspaceSnapshot(fileURL: file))
+    #expect(error == nil)
+    let engine = FakeEngine()
+    let after = AppModel(
+      store: store, host: MultiEngineHost(engine: .ghostty) { _ in engine },
+      worktrees: nil, watcher: FakeWatcher())
+
+    #expect(after.workspace == expected, "everything but the selection, which a launch clears")
+    #expect(after.liveTerminalCount == 0, "nothing starts until a worktree is visited")
+
+    after.select(before.main)
+    #expect(after.liveTerminalCount == 3, "both tabs of main, one of them split")
+    let tabs = after.workspace.tabs(in: before.main.id)
+    #expect(tabs.map(\.isSplit) == [true, false])
+    #expect(after.title(of: tabs[1]) == "build")
+    guard case .split(.horizontal, _, let weights) = tabs[0].root else {
+      Issue.record("the split did not come back")
+      return
+    }
+    #expect(weights == [3, 1])
+    #expect(after.workspace.activeTab(in: before.main.id)?.id == tabs[1].id)
+    #expect(engine.openSessionIDs == Set(after.workspace.sessions(in: before.main.id).map(\.id)))
+
+    after.select(before.feature)
+    #expect(after.liveTerminalCount == 5)
   }
 }

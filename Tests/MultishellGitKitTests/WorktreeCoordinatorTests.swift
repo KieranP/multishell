@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import MultishellProcess
 import Testing
 
 @testable import MultishellGitKit
@@ -202,5 +203,101 @@ struct GitIntegrationTests {
 
     let branches = try await WorktreeService(git: git).remoteBranches(Project(path: clone))
     #expect(branches.sorted() == ["origin/feature", "origin/main"])
+  }
+}
+
+@Suite
+struct WorktreeServiceGuardTests {
+  /// At the descriptor limit a child's output used to vanish and the list
+  /// came back empty; taken as a result it emptied the project of its tabs.
+  @Test func anEmptyWorktreeListIsAnErrorNotAResult() async throws {
+    let fake = try FakeGit.make("exit 0")
+    defer { fake.tearDown() }
+    let project = Project(path: fake.directory)
+
+    await #expect(throws: ProcessFailure.self) {
+      try await WorktreeService(git: fake.runner).list(project)
+    }
+  }
+
+  @Test func aListWithTheMainWorktreeIsFine() async throws {
+    let fake = try FakeGit.make(
+      "printf 'worktree /repos/demo\\nHEAD 1111111\\nbranch refs/heads/main\\n'")
+    defer { fake.tearDown() }
+
+    let listed = try await WorktreeService(git: fake.runner).list(Project(path: fake.directory))
+
+    #expect(listed.map(\.branch) == ["main"])
+  }
+}
+
+@Suite
+struct StatusConcurrencyTests {
+  /// Thirty `git status` at once thrash the disk; the coordinator promises at
+  /// most eight. Each fake run notes how many others are running when it
+  /// starts, then holds its slot for a moment.
+  @Test func statusesRunAtMostEightAtATimeAndStillOverlap() async throws {
+    let fake = try FakeGit.make(
+      """
+      mkdir -p "$SCRATCH/running" "$SCRATCH/peaks"
+      : > "$SCRATCH/running/$$"
+      ls "$SCRATCH/running" | wc -l > "$SCRATCH/peaks/$$"
+      sleep 0.3
+      rm "$SCRATCH/running/$$"
+      printf '## main\\n'
+      """)
+    defer { fake.tearDown() }
+    let worktrees = (0..<20).map {
+      Worktree(path: fake.directory, projectID: "/p", head: "h\($0)", branch: "b\($0)")
+    }
+    // Same directory, so ids collide; the count comes from the script.
+    let coordinator = WorktreeCoordinator(service: WorktreeService(git: fake.runner))
+
+    let started = ContinuousClock.now
+    let statuses = await coordinator.statuses(of: worktrees)
+    let elapsed = ContinuousClock.now - started
+
+    #expect(statuses.values.allSatisfy { $0.branch == "main" })
+    let peaks = try FileManager.default.contentsOfDirectory(
+      atPath: fake.directory.appendingPathComponent("peaks").path
+    ).compactMap { name in
+      try? String(
+        contentsOf: fake.directory.appendingPathComponent("peaks/\(name)"), encoding: .utf8
+      ).trimmingCharacters(in: .whitespacesAndNewlines)
+    }.compactMap(Int.init)
+    #expect(peaks.count == 20, "every run recorded a peak")
+    #expect(peaks.max() ?? 0 <= WorktreeCoordinator.maxConcurrentStatuses, "\(peaks)")
+    #expect(peaks.max() ?? 0 >= 4, "runs did not overlap: \(peaks)")
+    // Twenty runs of 0.3 s: six seconds serially, under a second in threes.
+    #expect(elapsed < .seconds(4), "took \(elapsed)")
+  }
+}
+
+@Suite(.serialized)
+struct StatusLockTests {
+  /// A stale index makes a plain `git status` rewrite it under `index.lock`,
+  /// which a commit typed in a terminal at that moment trips over. The
+  /// background poll must read without ever writing.
+  @Test func aStatusPollNeverWritesTheIndex() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    let index = repo.project.path.appendingPathComponent(".git/index")
+    func indexModified() throws -> Date {
+      try #require(
+        FileManager.default.attributesOfItem(atPath: index.path)[.modificationDate] as? Date)
+    }
+    let before = try indexModified()
+    try await Task.sleep(for: .milliseconds(50))
+    try "changed\n".write(
+      to: repo.project.path.appendingPathComponent("README.md"), atomically: true, encoding: .utf8)
+    let main = try await repo.coordinator.refresh(repo.project)[0]
+
+    let status = try await WorktreeService(git: repo.git).status(of: main)
+
+    #expect(status.unstaged == 1, "the change was seen")
+    #expect(try indexModified() == before, "the index was rewritten")
+    #expect(
+      !FileManager.default.fileExists(
+        atPath: repo.project.path.appendingPathComponent(".git/index.lock").path))
   }
 }

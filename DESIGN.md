@@ -73,7 +73,9 @@ per project only.
 
 The branch prefix applies to branches the app creates. An existing branch
 chosen in the sheet keeps its name; prefixing it asked git for a branch that
-did not exist. The worktree path is always strictly inside the container:
+did not exist. A blank worktree directory, global or override, means the
+default: the empty path resolved to the repository itself, and worktrees
+inside the main checkout are untracked files in it. The worktree path is always strictly inside the container:
 `.`, `..` and an empty slug become `_`, because the path is shown, and its
 parent created, before git gets to refuse the name.
 
@@ -89,6 +91,15 @@ operation is not rolled back.
 Why: nothing to quote, and the worktree exists whether or not the hook liked
 it. Cost: hook errors are a second alert after a successful create.
 
+The shell is the user's, as an interactive login shell, with `/bin/sh` when
+`$SHELL` is unset or missing. An app launched from the Finder has PATH set to
+the system directories only, so `npm install`, the example in the settings
+window, failed for anyone whose Node came from Homebrew or a version manager.
+The terminals in this app are interactive login shells, and a hook should see
+what they see; `-l` alone misses `.zshrc`, where many people set PATH. Cost:
+a hook pays for the user's shell startup, and rc-file output lands in the
+hook's stderr if it fails.
+
 ## Watch where git records worktrees, poll for everything else
 
 The kqueue watcher covers `.git/worktrees/` and its entries (a linked
@@ -103,6 +114,13 @@ worktrees at a time, plus once for a worktree whose terminal showed activity,
 finished, title after), and each used to spawn its own `git status`. The main
 worktree's branch switches, which the watcher cannot see, are caught when the
 status header's branch disagrees with the sidebar.
+
+The poll runs `git --no-optional-locks status`. A plain `git status` refreshes
+a stale index and takes `index.lock` to write it back; with up to eight of
+those every five seconds, a `git commit` typed in a terminal at the wrong
+moment fails with "index.lock exists". The flag is what git added for
+background tools, and it also means the poll never makes the index write the
+records check exists to ignore.
 
 ## The dot means "something happened here since you looked"
 
@@ -138,6 +156,15 @@ until the disk is writable again.
 
 Why: the alternative, silently starting empty and then saving, deletes the
 user's sidebar to fix a bug of ours.
+
+Within a file, worktrees, sessions and tabs decode element by element and a
+broken one is dropped (`LossyArray`); the repair pass then removes whatever
+pointed at it. Projects stay strict. A tab from a newer build with a pane
+kind this one does not know used to fail the whole file and so cost every
+project; now it costs that tab, which was going to get a fresh shell anyway,
+and worktrees are re-read from git on the first refresh. A project is the one
+thing the user cannot get back from git, so a broken one still moves the
+file aside and says so.
 
 ## The sidebar and the splits are drawn by hand
 
@@ -298,6 +325,13 @@ the children blocked on full pipes, and the waits never returned. The test
 suite hung. Cost: the exit and the two EOFs are three events that must all
 arrive; a `DispatchGroup` counts them.
 
+The EOFs are given one second after the exit, then counted as arrived. A
+hook such as `npm run dev &` exits at once but its server inherits the pipes
+and holds them open for as long as it runs, so the sheet waited on the
+server. Whatever the child itself wrote is in the pipe when it exits and is
+read within milliseconds; only a descendant can add more, and that is not the
+hook's output.
+
 ## A closed tab ends its shell, next turn
 
 `GhosttyTerminalHost.close` detaches the view's controller, which tears the
@@ -324,3 +358,33 @@ Why: example tests pin the cases someone thought of; the selection of a
 worktree a refresh had just removed was found by a seed, not by reading.
 Cost: a failing seed has to be replayed to understand, and the tests run a
 few hundred milliseconds rather than a few.
+
+## Running out of descriptors is an error, never an empty answer
+
+`ProcessRunner` makes its pipes with the `pipe` syscall and throws when that
+fails. `WorktreeService.list` refuses an empty list. The app raises its soft
+descriptor limit to the kernel's ceiling at launch.
+
+Why: launchd gives a GUI app 256 descriptors. Each watched worktree directory
+holds one, each live shell a pty and its engine's pipes, each concurrent
+`git status` six. At the limit `Pipe()` cannot fail and returned two handles
+on descriptor 0, so the child wrote to the app's stdin, the reader saw
+stdin's EOF at once, and `git worktree list` seemed to say the project had no
+worktrees. The store took that as truth and dropped every tab and shell of
+the project, then saved. Cost: a project with a genuinely empty list, which
+git never produces, would show an error instead.
+
+## New Worktree always opens
+
+The sheet has a project picker. From the sidebar it is preset to that row's
+project; from the menu it is preset to the selected worktree's project, or
+the only project, and otherwise starts blank. With no projects at all the
+sheet says so.
+
+Why: the menu item with several projects and nothing selected did nothing,
+silently, because the sheet needed a project to exist. Cost: one more row in
+the sheet, and the sheet's decisions moved out of the view into
+`NewWorktreeDraft` so that a project switch mid-load could be tested; the
+first version let a cancelled load re-enable Create against the wrong
+project's branches.
+

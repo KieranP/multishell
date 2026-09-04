@@ -15,7 +15,7 @@ final class AppModel {
   let host: MultiEngineHost
 
   var presentedError: PresentedError?
-  var newWorktreeProject: Project?
+  var newWorktreeRequest: NewWorktreeRequest?
   /// A removal waiting on the confirmation dialog.
   var pendingRemoval: Worktree?
   /// Which project the settings window shows.
@@ -126,6 +126,9 @@ final class AppModel {
       if live != liveSessions { liveSessions = live }
       sessionTitles = sessionTitles.filter { live.contains($0.key) }
       unseenActivity.formIntersection(live)
+      // A shell exiting can bring another tab into view; it is being looked
+      // at now, whatever happened in it before.
+      markShownTabSeen()
     }
     watcher.onChange = { [weak self] in Task { await self?.refreshWorktreesIfRecordsChanged() } }
     observeForAutosave()
@@ -169,7 +172,7 @@ final class AppModel {
     for project in workspace.projects {
       if let common = await commonGitDirectory(of: project),
         let known = worktreeRecords[project.id],
-        WorktreeRecords.read(commonDirectory: common) == known
+        await Self.offMain({ WorktreeRecords.read(commonDirectory: common) }) == known
       {
         continue
       }
@@ -184,7 +187,7 @@ final class AppModel {
     var directories: [URL] = []
     for project in workspace.projects {
       guard let common = await commonGitDirectory(of: project) else { continue }
-      directories += WorktreeCoordinator.directoriesToWatch(in: common)
+      directories += await Self.offMain { WorktreeCoordinator.directoriesToWatch(in: common) }
     }
     watcher.watch(directories)
   }

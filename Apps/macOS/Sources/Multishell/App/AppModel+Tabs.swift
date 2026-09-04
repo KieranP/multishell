@@ -16,8 +16,8 @@ extension AppModel {
   }
 
   func newTab() {
-    guard let worktree = workspace.selectedWorktreeID else { return }
-    store.openTab(in: worktree)
+    guard let worktree = workspace.selectedWorktree, directoryExists(of: worktree) else { return }
+    store.openTab(in: worktree.id)
     sync()
   }
 
@@ -46,8 +46,9 @@ extension AppModel {
 
   func splitActivePane(_ axis: SplitAxis) {
     guard
-      let worktree = workspace.selectedWorktreeID,
-      let tab = workspace.activeTab(in: worktree)
+      let worktree = workspace.selectedWorktree,
+      let tab = workspace.activeTab(in: worktree.id),
+      directoryExists(of: worktree)
     else { return }
     store.splitFocusedPane(of: tab.id, axis: axis)
     sync()

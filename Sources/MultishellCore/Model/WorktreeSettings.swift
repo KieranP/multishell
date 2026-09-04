@@ -43,10 +43,13 @@ extension WorktreeSettings {
     return branchPrefix + trimmed
   }
 
-  /// The directory new worktrees are created in.
+  /// The directory new worktrees are created in. Blank means the default:
+  /// an empty path would resolve to the repository itself, and a worktree
+  /// inside the main checkout is never what anyone meant.
   public func worktreeContainer(for project: Project) -> URL {
+    let text = worktreeDirectory.trimmingCharacters(in: .whitespaces)
     let expanded =
-      worktreeDirectory
+      (text.isEmpty ? Self.defaultWorktreeDirectory : text)
       .replacingOccurrences(of: "{project}", with: project.name)
     return URL(
       fileURLWithPath: Self.expandingTilde(expanded), isDirectory: true, relativeTo: project.path

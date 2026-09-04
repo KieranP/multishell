@@ -6,11 +6,13 @@ import Foundation
 /// directory twice is the same project, and a persisted project still
 /// resolves after the app forgets its in-memory state.
 public struct Project: Identifiable, Codable, Hashable, Sendable {
-  public var path: URL
+  /// Always the normalised form from `directory`, so `id` can read it
+  /// directly rather than standardise again on every comparison.
+  public private(set) var path: URL
   public var isExpanded: Bool
   public var settings: ProjectSettings
 
-  public var id: String { path.standardizedFileURL.path }
+  public var id: String { path.path }
   public var name: String { path.lastPathComponent }
 
   public init(path: URL, isExpanded: Bool = true, settings: ProjectSettings = ProjectSettings()) {

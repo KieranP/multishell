@@ -30,7 +30,10 @@ public struct RGB: Hashable, Sendable {
 /// Lives in the core rather than in a GUI so both frontends, and both terminal
 /// backends, share one interpretation of a theme file.
 public enum HexColor {
-  /// Accepts `#rgb`, `#rrggbb`, and either without the leading `#`.
+  /// Accepts `#rgb`, `#rrggbb`, and either without the leading `#`. A
+  /// trailing alpha (`#rgba`, `#rrggbbaa`), which themes exported from other
+  /// tools often carry, is read and ignored: a terminal cell has no alpha,
+  /// and grey for the slot would be the wrong colour rather than a warning.
   public static func parse(_ text: String) -> RGB? {
     // Hand-edited theme files pick up stray spaces; grey for the whole
     // palette would be a harsh price for one.
@@ -38,14 +41,19 @@ public enum HexColor {
     if digits.hasPrefix("#") { digits = digits.dropFirst() }
 
     switch digits.count {
-    case 3:
-      let expanded = digits.flatMap { [$0, $0] }
-      return parseSixDigits(String(expanded))
-    case 6:
-      return parseSixDigits(String(digits))
+    case 3, 4:
+      let expanded = digits.prefix(3).flatMap { [$0, $0] }
+      return parseSixDigits(String(expanded), alpha: digits.dropFirst(3))
+    case 6, 8:
+      return parseSixDigits(String(digits.prefix(6)), alpha: digits.dropFirst(6))
     default:
       return nil
     }
+  }
+
+  private static func parseSixDigits(_ digits: String, alpha: Substring) -> RGB? {
+    guard alpha.allSatisfy(\.isHexDigit) else { return nil }
+    return parseSixDigits(digits)
   }
 
   private static func parseSixDigits(_ digits: String) -> RGB? {

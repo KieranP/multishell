@@ -6,6 +6,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   var openTerminalCount: @MainActor () -> Int = { 0 }
   var willTerminate: @MainActor () -> Void = {}
 
+  func applicationWillFinishLaunching(_ notification: Notification) {
+    DescriptorLimit.raise()
+  }
+
   func applicationWillTerminate(_ notification: Notification) {
     MainActor.assumeIsolated { willTerminate() }
   }

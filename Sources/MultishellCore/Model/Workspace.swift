@@ -22,12 +22,18 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// Every field has a default, so a state file written before a field
   /// existed still loads. Without this, adding a property here would make
   /// the app forget every project on the next launch.
+  ///
+  /// Worktrees, sessions and tabs drop a broken element rather than failing
+  /// the file: worktrees are re-read from git on the first refresh and a tab
+  /// is a fresh shell either way. Projects stay strict, because dropping one
+  /// silently is what the `.broken.json` backup exists to prevent.
+  /// `repairReferences` then removes what pointed at a dropped element.
   public init(from decoder: any Decoder) throws {
     let c = try decoder.container(keyedBy: CodingKeys.self)
     projects = try c.decodeIfPresent([Project].self, forKey: .projects) ?? []
-    worktrees = try c.decodeIfPresent([Worktree].self, forKey: .worktrees) ?? []
-    sessions = try c.decodeIfPresent([TerminalSession].self, forKey: .sessions) ?? []
-    tabs = try c.decodeIfPresent([TerminalTab].self, forKey: .tabs) ?? []
+    worktrees = c.decodeLossy(Worktree.self, forKey: .worktrees)
+    sessions = c.decodeLossy(TerminalSession.self, forKey: .sessions)
+    tabs = c.decodeLossy(TerminalTab.self, forKey: .tabs)
     selectedWorktreeID = try c.decodeIfPresent(Worktree.ID.self, forKey: .selectedWorktreeID)
     activeTabByWorktree =
       try c.decodeIfPresent([Worktree.ID: TerminalTab.ID].self, forKey: .activeTabByWorktree) ?? [:]

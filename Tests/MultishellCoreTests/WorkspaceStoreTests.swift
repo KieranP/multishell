@@ -39,7 +39,25 @@ struct WorkspaceStoreTests {
     let store = WorkspaceStore()
     store.addProject(at: URL(fileURLWithPath: "/repos/demo"))
     store.addProject(at: URL(fileURLWithPath: "/repos/demo/"))
+    store.addProject(at: URL(fileURLWithPath: "/repos/other/../demo"))
+    store.addProject(at: URL(fileURLWithPath: "/repos/./demo/"))
     #expect(store.workspace.projects.count == 1)
+    #expect(store.workspace.projects[0].id == "/repos/demo")
+  }
+
+  /// Identity reads the stored path, so every way in must normalise it.
+  @Test func everySpellingOfADirectoryGivesTheSameIdentity() throws {
+    let spellings = ["/repos/demo", "/repos/demo/", "/repos/x/../demo", "/repos/./demo//"]
+    let projects = spellings.map { Project(path: URL(fileURLWithPath: $0)) }
+    #expect(Set(projects.map(\.id)) == ["/repos/demo"])
+    let worktrees = spellings.map {
+      Worktree(path: URL(fileURLWithPath: $0), projectID: "/p", head: "h")
+    }
+    #expect(Set(worktrees.map(\.id)) == ["/repos/demo"])
+
+    let decoded = try JSONDecoder().decode(
+      Project.self, from: Data(#"{ "path": "file:///repos/x/../demo" }"#.utf8))
+    #expect(decoded.id == "/repos/demo")
   }
 
   @Test func removingAProjectDropsItsWorktreesTabsAndSessions() {

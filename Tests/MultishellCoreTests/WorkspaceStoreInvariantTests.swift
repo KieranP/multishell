@@ -9,7 +9,7 @@ import Testing
 @Suite @MainActor
 struct WorkspaceStoreInvariantTests {
   @Test(arguments: [1, 2, 3, 5, 8, 13, 21, 34, 55, 89] as [UInt64])
-  func anyOperationSequenceKeepsTheWorkspaceConsistent(seed: UInt64) {
+  func anyOperationSequenceKeepsTheWorkspaceConsistent(seed: UInt64) throws {
     var rng = SeededGenerator(seed: seed)
     let store = WorkspaceStore()
     let projects = ["/repos/a", "/repos/b"].map { store.addProject(at: URL(fileURLWithPath: $0)) }
@@ -62,5 +62,16 @@ struct WorkspaceStoreInvariantTests {
       }
       WorkspaceInvariants.check(store.workspace, "seed \(seed) step \(step)")
     }
+
+    // Whatever shape the operations reached, a relaunch must reproduce it:
+    // the encoder and the lossy decoder agree on every element, and repair
+    // finds nothing to do in a workspace the store built.
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = [.sortedKeys]
+    let data = try encoder.encode(store.workspace)
+    var restored = try JSONDecoder().decode(Workspace.self, from: data)
+    #expect(restored == store.workspace, "seed \(seed): the file does not say what the store did")
+    restored.repairReferences()
+    #expect(restored == store.workspace, "seed \(seed): repair changed a sound workspace")
   }
 }

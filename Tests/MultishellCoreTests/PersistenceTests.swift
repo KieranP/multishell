@@ -287,3 +287,47 @@ struct ThemeCatalogTests {
       examples == ["example.multishell.dark.json", "multishell.dark.json", "multishell.light.json"])
   }
 }
+
+@Suite @MainActor
+struct PartialStateTests {
+  /// A tab whose pane kind this build does not know, next to a sound one:
+  /// the store must come up with the project, the sound tab and no error,
+  /// and the session the dropped tab owned must go with it.
+  @Test func aStateFileWithOneUnreadableTabRestoresEverythingElse() throws {
+    let file = URL(fileURLWithPath: NSTemporaryDirectory())
+      .appendingPathComponent("multishell-\(UUID().uuidString)", isDirectory: true)
+      .appendingPathComponent("state.json")
+    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+    try FileManager.default.createDirectory(
+      at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+
+    let kept = UUID()
+    let orphaned = UUID()
+    let keptTab = UUID()
+    try Data(
+      #"""
+      { "projects": [ { "path": "file:///repos/demo/" } ],
+        "worktrees": [ { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "a" } ],
+        "sessions": [
+          { "id": "\#(kept)", "worktreeID": "/repos/demo", "workingDirectory": "file:///repos/demo/", "title": "sh" },
+          { "id": "\#(orphaned)", "worktreeID": "/repos/demo", "workingDirectory": "file:///repos/demo/", "title": "sh" } ],
+        "tabs": [
+          { "id": "\#(keptTab)", "worktreeID": "/repos/demo", "focusedSessionID": "\#(kept)",
+            "root": { "terminal": { "_0": "\#(kept)" } } },
+          { "id": "\#(UUID())", "worktreeID": "/repos/demo", "focusedSessionID": "\#(orphaned)",
+            "root": { "stack": { "pages": [ { "terminal": { "_0": "\#(orphaned)" } } ] } } } ],
+        "activeTabByWorktree": { "/repos/demo": "\#(keptTab)" } }
+      """#.utf8
+    ).write(to: file)
+
+    let (store, error) = WorkspaceStore.restored(from: WorkspaceSnapshot(fileURL: file))
+
+    #expect(error == nil, "\(String(describing: error))")
+    #expect(store.workspace.projects.map(\.name) == ["demo"])
+    #expect(store.workspace.tabs.map(\.id) == [keptTab])
+    #expect(store.workspace.sessions.map(\.id) == [kept])
+    #expect(store.workspace.activeTabByWorktree["/repos/demo"] == keptTab)
+    WorkspaceInvariants.check(store.workspace, "restored")
+    #expect(FileManager.default.fileExists(atPath: file.path), "nothing was moved aside")
+  }
+}

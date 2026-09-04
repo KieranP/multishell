@@ -15,6 +15,10 @@ extension AppModel {
       store.closeSession(failure.sessionID)
     }
     registry.focusActiveSession()
+    markShownTabSeen()
+  }
+
+  func markShownTabSeen() {
     if let worktree = workspace.selectedWorktreeID, let tab = workspace.activeTab(in: worktree) {
       unseenActivity.subtract(tab.sessionIDs)
     }
@@ -22,6 +26,19 @@ extension AppModel {
 
   func report(_ error: any Error) {
     presentedError = PresentedError(error)
+  }
+}
+
+// MARK: - Filesystem
+
+extension AppModel {
+  /// For the reads the polling paths make: whether a project directory is
+  /// there, the record files under `.git`, the directories to watch. On a
+  /// local disk each is microseconds; on a network volume that has gone
+  /// away each blocks until the mount times out, which must not be on the
+  /// main thread every five seconds.
+  nonisolated static func offMain<T: Sendable>(_ work: @Sendable @escaping () -> T) async -> T {
+    await Task.detached(priority: .utility) { work() }.value
   }
 }
 
@@ -43,10 +60,15 @@ extension AppModel {
     }
   }
 
+  /// A worktree whose read failed this round keeps its last badge rather
+  /// than blinking off for five seconds; one whose worktree is gone loses it.
   func refreshStatuses() async {
     guard let worktrees else { return }
+    let known = Set(workspace.worktrees.map(\.id))
     let fresh = await worktrees.statuses(of: workspace.worktrees)
-    if fresh != statuses { statuses = fresh }
+    var merged = statuses.filter { known.contains($0.key) }
+    merged.merge(fresh) { _, new in new }
+    if merged != statuses { statuses = merged }
     await refreshProjectsWhoseBranchMoved(fresh)
   }
 

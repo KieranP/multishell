@@ -85,15 +85,26 @@ extension PaneNode {
   /// Drops a terminal from the tree, collapsing any split left with a single
   /// child. Returns `nil` when nothing is left.
   public func removing(_ id: TerminalSession.ID) -> PaneNode? {
+    pruning { $0 == id }
+  }
+
+  /// Drops every terminal `shouldDrop` says to, visiting leaves in display
+  /// order, and tidies what remains: a split left with one child becomes
+  /// that child, one left with none disappears, and weights that do not line
+  /// up with the children become equal shares rather than dropping a pane.
+  /// Returns `nil` when nothing is left.
+  public func pruning(_ shouldDrop: (TerminalSession.ID) -> Bool) -> PaneNode? {
     switch self {
-    case .terminal(let existing):
-      return existing == id ? nil : self
+    case .terminal(let id):
+      return shouldDrop(id) ? nil : self
 
     case .split(let axis, let children, let weights):
+      let aligned =
+        weights.count == children.count ? weights : Array(repeating: 1, count: children.count)
       var survivors: [PaneNode] = []
       var survivingWeights: [Double] = []
-      for (child, weight) in zip(children, weights) {
-        guard let kept = child.removing(id) else { continue }
+      for (child, weight) in zip(children, aligned) {
+        guard let kept = child.pruning(shouldDrop) else { continue }
         survivors.append(kept)
         survivingWeights.append(weight)
       }
@@ -123,7 +134,10 @@ extension PaneNode {
     case .split(let axis0, let children, let weights):
       if axis0 == axis, let index = children.firstIndex(of: .terminal(id)) {
         var newChildren = children
-        var newWeights = weights
+        // Indexed by child, so weights that do not line up become equal
+        // shares here rather than a trap; `pruning` makes the same choice.
+        var newWeights =
+          weights.count == children.count ? weights : Array(repeating: 1, count: children.count)
         newChildren.insert(.terminal(newSession), at: index + 1)
         newWeights[index] /= 2
         newWeights.insert(newWeights[index], at: index + 1)

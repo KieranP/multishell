@@ -28,7 +28,7 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
     view.configuration = TerminalSurfaceOptions(
       backend: .exec,
       workingDirectory: session.workingDirectory.path,
-      command: session.command?.joined(separator: " ")
+      command: session.command.map(ShellQuoting.commandLine)
     )
 
     let observer = SurfaceObserver(sessionID: session.id, host: self)

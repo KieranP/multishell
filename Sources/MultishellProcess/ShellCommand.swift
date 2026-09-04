@@ -22,15 +22,35 @@ public struct ShellCommand: Sendable {
       shell.executable, shell.arguments + [commandLine], in: directory, environment: environment)
   }
 
-  private static var shell: (executable: URL, arguments: [String])? {
+  /// The user's shell as an interactive login shell, so a hook sees the
+  /// PATH a terminal in this app sees. An app launched from the Finder has
+  /// only the system directories, and `npm` or `mise` live elsewhere; the
+  /// additions are in `.zprofile` for some people and `.zshrc` for others,
+  /// so both `-l` and `-i` are needed. `/bin/sh` when `$SHELL` is unset or
+  /// missing, as in a sandbox.
+  static var shell: (executable: URL, arguments: [String])? {
     #if os(Windows)
       guard let cmd = ExecutableLookup.find("cmd") else { return nil }
       return (cmd, ["/c"])
     #else
-      // $SHELL is the user's interactive shell, which may not exist in a
-      // sandboxed environment; /bin/sh is guaranteed by POSIX.
-      return (URL(fileURLWithPath: "/bin/sh"), ["-c"])
+      return shell(named: ProcessInfo.processInfo.environment["SHELL"])
     #endif
+  }
+
+  /// Shells known to take `-l -i -c`. Another one (nu, xonsh, elvish) would
+  /// fail on the flags, so it gets `/bin/sh` instead.
+  static let interactiveLoginShells: Set<String> = [
+    "sh", "bash", "zsh", "fish", "dash", "ksh", "mksh", "tcsh", "csh",
+  ]
+
+  static func shell(named path: String?) -> (executable: URL, arguments: [String]) {
+    if let path, !path.isEmpty,
+      interactiveLoginShells.contains(URL(fileURLWithPath: path).lastPathComponent),
+      FileManager.default.isExecutableFile(atPath: path)
+    {
+      return (URL(fileURLWithPath: path), ["-l", "-i", "-c"])
+    }
+    return (URL(fileURLWithPath: "/bin/sh"), ["-c"])
   }
 }
 

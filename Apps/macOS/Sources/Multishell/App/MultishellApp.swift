@@ -87,7 +87,9 @@ struct RootView: View {
           model.removalWarning(for: worktree),
         ].compactMap { $0 }.joined(separator: "\n\n"))
     }
-    .sheet(item: Bindable(model).newWorktreeProject) { NewWorktreeSheet(model: model, project: $0) }
+    .sheet(item: Bindable(model).newWorktreeRequest) {
+      NewWorktreeSheet(model: model, initialProjectID: $0.projectID)
+    }
     .alert(item: Bindable(model).presentedError) { error in
       if let label = error.retryLabel, let retry = error.retry {
         Alert(

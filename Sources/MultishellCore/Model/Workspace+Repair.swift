@@ -14,16 +14,22 @@ extension Workspace {
     let worktreeIDs = Set(worktrees.map(\.id))
     tabs.removeAll { !worktreeIDs.contains($0.worktreeID) }
 
+    // One pass over every pane in display order drops panes whose session is
+    // missing and second appearances of a session, in this tab or an earlier
+    // one, and collapses the splits that leaves too small. A session shown
+    // twice would be given one shell and two views fighting over it.
     let sessionIDs = Set(sessions.map(\.id))
+    var shown: Set<TerminalSession.ID> = []
     tabs = tabs.compactMap { tab in
+      guard
+        let root = tab.root.pruning({ id in
+          !sessionIDs.contains(id) || !shown.insert(id).inserted
+        })
+      else { return nil }
       var repaired = tab
-      for missing in tab.sessionIDs where !sessionIDs.contains(missing) {
-        guard let remaining = repaired.root.removing(missing) else { return nil }
-        repaired.root = remaining
-      }
-      guard let first = repaired.root.sessionIDs.first else { return nil }
-      if !repaired.root.contains(repaired.focusedSessionID) {
-        repaired.focusedSessionID = first
+      repaired.root = root
+      if !root.contains(repaired.focusedSessionID) {
+        repaired.focusedSessionID = root.sessionIDs[0]
       }
       return repaired
     }

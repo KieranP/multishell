@@ -171,3 +171,142 @@ struct WorkspaceRepairTests {
     #expect(ws.activeTabByWorktree[worktree.id] == nil)
   }
 }
+
+/// Shapes the store never writes but a hand edit or a half-written save can:
+/// one session shown in two places, and splits with too few children nested
+/// where the top-level checks do not look. Each must come out satisfying
+/// every invariant, since `SessionRegistry` would otherwise open a shell for
+/// a pane that another pane already shows, or a view would divide by zero
+/// laying out an empty split.
+@Suite
+struct WorkspaceRepairShapeTests {
+  private let project = Project(path: URL(fileURLWithPath: "/repos/demo"))
+  private var worktree: Worktree {
+    Worktree(path: project.path, projectID: project.id, head: "a", branch: "main", isPrimary: true)
+  }
+
+  private func workspace(tabs: [TerminalTab], sessions: [TerminalSession]) -> Workspace {
+    var ws = Workspace()
+    ws.projects = [project]
+    ws.worktrees = [worktree]
+    ws.sessions = sessions
+    ws.tabs = tabs
+    if let last = tabs.last { ws.activeTabByWorktree[worktree.id] = last.id }
+    return ws
+  }
+
+  private func session() -> TerminalSession {
+    TerminalSession(worktreeID: worktree.id, workingDirectory: worktree.path, title: "sh")
+  }
+
+  @Test func aSessionInTwoTabsStaysInTheFirstOnly() {
+    let shared = session()
+    let own = session()
+    let first = TerminalTab(worktreeID: worktree.id, session: shared.id)
+    let second = TerminalTab(
+      worktreeID: worktree.id,
+      root: .split(axis: .horizontal, children: [.terminal(own.id), .terminal(shared.id)]),
+      focusedSessionID: shared.id)
+    var ws = workspace(tabs: [first, second], sessions: [shared, own])
+
+    ws.repairReferences()
+
+    WorkspaceInvariants.check(ws, "shared session")
+    #expect(ws.tabs.map(\.root) == [.terminal(shared.id), .terminal(own.id)])
+    #expect(ws.tabs[1].focusedSessionID == own.id)
+  }
+
+  @Test func aSessionTwiceInOneTreeKeepsItsFirstPane() {
+    let twice = session()
+    let other = session()
+    let tab = TerminalTab(
+      worktreeID: worktree.id,
+      root: .split(
+        axis: .vertical, children: [.terminal(twice.id), .terminal(other.id), .terminal(twice.id)]),
+      focusedSessionID: twice.id)
+    var ws = workspace(tabs: [tab], sessions: [twice, other])
+
+    ws.repairReferences()
+
+    WorkspaceInvariants.check(ws, "duplicate pane")
+    #expect(ws.tabs[0].root.sessionIDs == [twice.id, other.id])
+    #expect(ws.sessions.count == 2)
+  }
+
+  @Test func aNestedSplitWithNoChildrenIsRemovedAndTheTabKept() {
+    let s = session()
+    let tab = TerminalTab(
+      worktreeID: worktree.id,
+      root: .split(
+        axis: .horizontal, children: [.terminal(s.id), .split(axis: .vertical, children: [])]),
+      focusedSessionID: s.id)
+    var ws = workspace(tabs: [tab], sessions: [s])
+
+    ws.repairReferences()
+
+    WorkspaceInvariants.check(ws, "empty nested split")
+    #expect(ws.tabs[0].root == .terminal(s.id))
+  }
+
+  @Test func aNestedSplitWithOneChildCollapsesIntoIt() {
+    let a = session()
+    let b = session()
+    let tab = TerminalTab(
+      worktreeID: worktree.id,
+      root: .split(
+        axis: .horizontal,
+        children: [.terminal(a.id), .split(axis: .vertical, children: [.terminal(b.id)])],
+        weights: [3, 1]),
+      focusedSessionID: b.id)
+    var ws = workspace(tabs: [tab], sessions: [a, b])
+
+    ws.repairReferences()
+
+    WorkspaceInvariants.check(ws, "single-child nested split")
+    #expect(
+      ws.tabs[0].root
+        == .split(
+          axis: .horizontal, children: [.terminal(a.id), .terminal(b.id)], weights: [3, 1]))
+  }
+
+  /// Random trees mixing every kind of damage at every depth. Whatever the
+  /// input, repair must end with the invariants true and change nothing on a
+  /// second pass.
+  @Test(arguments: [41, 43, 47, 53, 59, 61, 67, 71] as [UInt64])
+  func randomTreesRepairCompletelyAndIdempotently(seed: UInt64) {
+    var rng = SeededGenerator(seed: seed)
+    let pool = (0..<6).map { _ in session() }
+    let ghost = UUID()
+
+    func tree(depth: Int) -> PaneNode {
+      if depth == 0 || Int.random(in: 0..<3, using: &rng) == 0 {
+        return .terminal(Bool.random(using: &rng) ? ghost : pool.randomElement(using: &rng)!.id)
+      }
+      let count = Int.random(in: 0...3, using: &rng)
+      let children = (0..<count).map { _ in tree(depth: depth - 1) }
+      let weights =
+        Bool.random(using: &rng)
+        ? Array(repeating: 1.0, count: count) : [Double](repeating: 2, count: max(count - 1, 0))
+      return .split(
+        axis: Bool.random(using: &rng) ? .horizontal : .vertical, children: children,
+        weights: weights)
+    }
+
+    var tabs: [TerminalTab] = []
+    for _ in 0..<Int.random(in: 1...4, using: &rng) {
+      let root = tree(depth: 3)
+      tabs.append(
+        TerminalTab(
+          worktreeID: worktree.id, root: root,
+          focusedSessionID: root.sessionIDs.randomElement(using: &rng) ?? ghost))
+    }
+    var ws = workspace(tabs: tabs, sessions: pool)
+
+    ws.repairReferences()
+
+    WorkspaceInvariants.check(ws, "seed \(seed)")
+    var again = ws
+    again.repairReferences()
+    #expect(again == ws, "seed \(seed): repair is not idempotent")
+  }
+}

@@ -25,9 +25,18 @@ public struct WorktreeService: Sendable {
     await git.succeeds(["rev-parse", "--verify", "--quiet", "HEAD"], in: project.path)
   }
 
+  /// Every repository has at least its main worktree, so an empty list is
+  /// git failing quietly, not a result; taken as one it would drop every tab
+  /// of the project.
   public func list(_ project: Project) async throws -> [Worktree] {
     let output = try await git.run(["worktree", "list", "--porcelain"], in: project.path)
-    return WorktreeListParser.parse(output, projectID: project.id)
+    let worktrees = WorktreeListParser.parse(output, projectID: project.id)
+    guard !worktrees.isEmpty else {
+      throw ProcessFailure(
+        executable: "git", arguments: ["worktree", "list"], status: 0,
+        message: "git listed no worktrees for \(project.path.path)")
+    }
+    return worktrees
   }
 
   /// The main worktree of the repository `url` is in, whether `url` is that
@@ -43,8 +52,14 @@ public struct WorktreeService: Sendable {
     return main.path
   }
 
+  /// `--no-optional-locks`: a plain `git status` refreshes the index and
+  /// takes `index.lock` to write it back. This runs in the background every
+  /// few seconds, so without the flag a `git commit` typed in a terminal at
+  /// the wrong moment fails with "index.lock exists". It also means a poll
+  /// never rewrites the index the watcher's directories contain.
   public func status(of worktree: Worktree) async throws -> WorktreeStatus {
-    let output = try await git.run(["status", "--porcelain=v1", "--branch"], in: worktree.path)
+    let output = try await git.run(
+      ["--no-optional-locks", "status", "--porcelain=v1", "--branch"], in: worktree.path)
     return WorktreeStatusParser.parse(output)
   }
 

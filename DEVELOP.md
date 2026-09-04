@@ -96,7 +96,9 @@ named as sentences about behaviour.
   value this build does not know falls back rather than failing the file.
   State from an older or a newer build must load. `PersistenceTests` and
   `DecodingDefaultsTests` cover the shapes so far; add a case there when you
-  add a field.
+  add a field. A broken element in `worktrees`, `sessions` or `tabs` is
+  dropped and repaired around, never the file (`LossyDecodingTests`);
+  projects stay strict.
 - References between collections are repaired after a load by
   `Workspace.repairReferences`, and every store operation must keep
   `WorkspaceInvariants` true. `WorkspaceRepairTests` and
@@ -105,6 +107,10 @@ named as sentences about behaviour.
 - Nothing in the core blocks a thread. `ProcessRunnerTests` runs 96 children
   at once with a wall-clock bound and counts open descriptors after failed
   launches; `DispatchDirectoryWatcherTests` counts them across 200 re-arms.
+  A run at the descriptor limit must throw, never read the app's stdin as
+  the child's output; `DescriptorExhaustionTests` checks that but lowers the
+  process-wide limit, so it runs only with `MULTISHELL_EXHAUST_DESCRIPTORS=1`
+  and `--filter DescriptorExhaustionTests`.
 - Runtime state that changes without the user (shell titles, activity,
   statuses, live sessions) is `AppModel`'s, not the workspace's.
   `AppModelInvariantTests` checks it agrees with the engine after random
@@ -176,8 +182,13 @@ the `ProcessRunner`, `WorktreeRecords` and repair code has only been audited
 for Linux, not built there. `swift-format` output may differ slightly between
 the local 6.3 toolchain and the runner's.
 
+The directory check before a click starts a shell (select, new tab, split)
+runs on the main thread. On a local disk it is microseconds; on an SMB or NFS
+volume that has gone away it blocks for as long as the mount takes to time
+out. The checks the polling paths make run off the main thread
+(`AppModel.offMain`), so a dead mount slows a tick rather than the app.
+
 Open decisions, not defects: a post-create hook that never exits keeps the
-sheet waiting, with no timeout; New Worktree from the menu with several
-projects and nothing selected does nothing, silently; the existing-branch
-picker lists local branches only, so a remote-only branch is created as a new
-one based on its remote.
+sheet waiting, with no timeout; the existing-branch picker lists local
+branches only, so a remote-only branch is created as a new one based on its
+remote.

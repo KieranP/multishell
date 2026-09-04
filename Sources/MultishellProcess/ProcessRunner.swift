@@ -69,8 +69,9 @@ public struct ProcessRunner: Sendable {
 }
 
 /// Starts the child and calls `completion` once it has exited and both pipes
-/// have hit EOF. Nothing blocks: the pipes are drained by readability
-/// handlers and the exit by the termination handler.
+/// have hit EOF, or a moment after the exit if EOF never comes. Nothing
+/// blocks: the pipes are drained by readability handlers and the exit by the
+/// termination handler.
 ///
 /// The blocking form deadlocked under load. A wait inside a `Task` holds a
 /// cooperative-pool thread, one per core, and the pipe readers it waited on
@@ -92,20 +93,34 @@ private func launch(
     process.environment = ProcessInfo.processInfo.environment.merging(environment) { _, new in new }
   }
 
-  let outPipe = Pipe()
-  let errPipe = Pipe()
-  process.standardOutput = outPipe
-  process.standardError = errPipe
+  let outPipe = try makePipe()
+  let errPipe = try makePipe()
+  process.standardOutput = outPipe.writing
+  process.standardError = errPipe.writing
+  // A child that reads stdin would otherwise wait on the app's, forever.
+  process.standardInput = FileHandle.nullDevice
 
   // Both pipes drain concurrently: whichever is read second could otherwise
   // fill its 64 KiB buffer and block the child forever. Each buffer is
   // written only from its own handle's serial handler queue, and the group
   // orders those writes before the read in `notify`.
   let group = DispatchGroup()
-  let out = PipeBuffer(outPipe, group: group)
-  let err = PipeBuffer(errPipe, group: group)
+  let out = PipeBuffer(outPipe.reading, group: group)
+  let err = PipeBuffer(errPipe.reading, group: group)
   group.enter()
-  process.terminationHandler = { _ in group.leave() }
+  process.terminationHandler = { [weak out, weak err] _ in
+    // A descendant that inherited the pipes (`server &` in a hook) holds them
+    // open after the child is gone, so EOF would arrive when the server
+    // stops. Everything the child wrote is in the kernel's buffer by now and
+    // the readers take it within milliseconds; after that, stop waiting.
+    // Weak, so on the usual path the pipes close with the completion rather
+    // than a second later.
+    DispatchQueue.global().asyncAfter(deadline: .now() + eofGraceAfterExit) {
+      out?.finish()
+      err?.finish()
+    }
+    group.leave()
+  }
 
   do {
     try process.run()
@@ -116,10 +131,14 @@ private func launch(
     // open waiting for an EOF no child will send.
     out.cancel()
     err.cancel()
-    try? outPipe.fileHandleForWriting.close()
-    try? errPipe.fileHandleForWriting.close()
+    try? outPipe.writing.close()
+    try? errPipe.writing.close()
     throw error
   }
+  // The child has its copies; the parent's must go or EOF never comes.
+  // `Process` does this itself for a `Pipe`, not for handles it was given.
+  try? outPipe.writing.close()
+  try? errPipe.writing.close()
 
   group.notify(queue: .global()) {
     completion(
@@ -131,28 +150,87 @@ private func launch(
   }
 }
 
+/// A pipe's 64 KiB buffer is all a child can leave unread when it exits, and
+/// one readability callback takes it. The margin is for a loaded machine.
+private let eofGraceAfterExit: TimeInterval = 1
+
+/// The process is out of file descriptors. Each watched worktree holds one
+/// and each live shell several; a Finder-launched app starts with 256.
+public struct PipeUnavailable: Error, CustomStringConvertible {
+  public let code: Int32
+  public var description: String {
+    "could not create a pipe: \(String(cString: strerror(code))) (\(code))"
+  }
+}
+
+/// Both ends of a new pipe, or `PipeUnavailable`.
+///
+/// Not `Pipe()`: it cannot fail, so at the descriptor limit it returns two
+/// handles on descriptor 0. The child then writes to the app's stdin, the
+/// reader sees stdin's EOF at once, and `git worktree list` seems to say the
+/// project has no worktrees, which would drop every one of its tabs.
+private func makePipe() throws -> (reading: FileHandle, writing: FileHandle) {
+  #if os(Windows)
+    let pipe = Pipe()
+    return (pipe.fileHandleForReading, pipe.fileHandleForWriting)
+  #else
+    var descriptors: [Int32] = [-1, -1]
+    guard pipe(&descriptors) == 0 else { throw PipeUnavailable(code: errno) }
+    return (
+      FileHandle(fileDescriptor: descriptors[0], closeOnDealloc: true),
+      FileHandle(fileDescriptor: descriptors[1], closeOnDealloc: true)
+    )
+  #endif
+}
+
 /// Collects one pipe to EOF without blocking a thread.
 private final class PipeBuffer: @unchecked Sendable {
-  private(set) var data = Data()
+  private var buffer = Data()
+  private var finished = false
+  private let lock = NSLock()
   private let handle: FileHandle
+  private let group: DispatchGroup
 
-  init(_ pipe: Pipe, group: DispatchGroup) {
-    handle = pipe.fileHandleForReading
+  init(_ reading: FileHandle, group: DispatchGroup) {
+    handle = reading
+    self.group = group
     group.enter()
     handle.readabilityHandler = { [self] handle in
       let chunk = handle.availableData
-      guard !chunk.isEmpty else {
-        handle.readabilityHandler = nil
-        group.leave()
-        return
+      if chunk.isEmpty {
+        finish()
+      } else {
+        append(chunk)
       }
-      data.append(chunk)
     }
+  }
+
+  var data: Data {
+    lock.withLock { buffer }
+  }
+
+  private func append(_ chunk: Data) {
+    lock.withLock {
+      if !finished { buffer.append(chunk) }
+    }
+  }
+
+  /// Stops reading and counts the pipe as drained. Reached at EOF, when the
+  /// child has exited and something else still holds the pipe, or when the
+  /// child never started; only the first call does anything.
+  func finish() {
+    let first = lock.withLock {
+      defer { finished = true }
+      return !finished
+    }
+    guard first else { return }
+    handle.readabilityHandler = nil
+    group.leave()
   }
 
   /// For a child that never started: stop waiting and release the pipe.
   func cancel() {
-    handle.readabilityHandler = nil
+    finish()
     try? handle.close()
   }
 }

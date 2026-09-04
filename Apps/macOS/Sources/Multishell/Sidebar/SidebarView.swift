@@ -154,7 +154,7 @@ struct SidebarView: View {
         theme: theme,
         metrics: metrics,
         toggle: { model.setExpanded(!project.isExpanded, for: project) },
-        newWorktree: { model.newWorktreeProject = project }
+        newWorktree: { model.requestNewWorktree(in: project) }
       )
       .contextMenu { projectMenu(project) }
       .onDrag {
@@ -204,8 +204,8 @@ struct SidebarView: View {
 
   @ViewBuilder
   private func projectMenu(_ project: Project) -> some View {
-    Button("New Worktree…") { model.newWorktreeProject = project }
-    Button("Refresh") { Task { await model.refresh(project) } }
+    Button("New Worktree…") { model.requestNewWorktree(in: project) }
+    Button("Refresh") { Task { await model.refreshRequested(project) } }
     Divider()
     Button("Project Settings…") {
       model.settingsProjectID = project.id

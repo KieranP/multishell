@@ -71,7 +71,7 @@ private struct GeneralTab: View {
         LabeledContent("Worktrees:") {
           HStack {
             Text("\(worktrees.count) discovered")
-            Button("Refresh") { Task { await model.refresh(project) } }
+            Button("Refresh") { Task { await model.refreshRequested(project) } }
               .controlSize(.small)
           }
         }

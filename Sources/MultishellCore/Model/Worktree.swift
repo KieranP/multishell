@@ -6,7 +6,8 @@ import Foundation
 /// `git worktree list` on every refresh, so any id we minted ourselves would
 /// change out from under persisted selection state.
 public struct Worktree: Identifiable, Codable, Hashable, Sendable {
-  public var path: URL
+  /// Normalised by `Project.directory` in both initialisers; see `Project`.
+  public private(set) var path: URL
   public var projectID: Project.ID
   public var head: String
   public var branch: String?
@@ -25,7 +26,7 @@ public struct Worktree: Identifiable, Codable, Hashable, Sendable {
     self.isLocked = try c.decodeIfPresent(Bool.self, forKey: .isLocked) ?? false
   }
 
-  public var id: String { path.standardizedFileURL.path }
+  public var id: String { path.path }
   public var name: String { branch ?? String(head.prefix(7)) }
   public var isDetached: Bool { branch == nil }
 

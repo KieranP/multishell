@@ -62,22 +62,42 @@ extension AppModel {
     store.updateSettings(settings, forProject: project.id)
   }
 
+  /// Refresh chosen by the user. A failure already shown for this project is
+  /// shown again: the click asked for an answer.
+  func refreshRequested(_ project: Project) async {
+    missingProjects.remove(project.id)
+    await refresh(project)
+  }
+
   func refresh(_ project: Project) async {
     guard let worktrees else { return }
-    guard FileManager.default.fileExists(atPath: project.path.path) else {
+    let path = project.path.path
+    guard await Self.offMain({ FileManager.default.fileExists(atPath: path) }) else {
       missingProjects.insert(project.id)
       return
     }
     // Read before the list so a change landing in between is caught by the
     // next tick rather than lost.
-    let records = await commonGitDirectory(of: project).map(WorktreeRecords.read)
+    var records: WorktreeRecords?
+    if let common = await commonGitDirectory(of: project) {
+      records = await Self.offMain { WorktreeRecords.read(commonDirectory: common) }
+    }
     do {
       let discovered = try await worktrees.refresh(project)
+      // Removed while git ran: the store ignores the list, and the records
+      // and directory cached above must not come back for it either.
+      guard workspace.project(project.id) != nil else {
+        commonGitDirectories[project.id] = nil
+        return
+      }
       store.replaceWorktrees(discovered, forProject: project.id)
       worktreeRecords[project.id] = records
       missingProjects.remove(project.id)
     } catch {
-      report(error)
+      // Every watcher tick and every return to the foreground refreshes a
+      // project git cannot read, so the alert goes up on the first failure
+      // only; the row stays dimmed until a refresh succeeds.
+      if missingProjects.insert(project.id).inserted { report(error) }
     }
   }
 }
@@ -86,22 +106,33 @@ extension AppModel {
 
 extension AppModel {
   func select(_ worktree: Worktree) {
-    // A shell spawned in a missing directory silently lands in $HOME, which
-    // is worse than an honest refusal.
-    guard FileManager.default.fileExists(atPath: worktree.path.path) else {
-      presentedError = PresentedError(
-        title: "Worktree directory is missing",
-        message:
-          "\(worktree.path.path) does not exist. If it was deleted by hand, remove the worktree to let git prune it."
-      )
-      return
-    }
+    guard directoryExists(of: worktree) else { return }
     store.selectWorktree(worktree.id)
     warmWorktrees.insert(worktree.id)
     if workspace.tabs(in: worktree.id).isEmpty {
       store.openTab(in: worktree.id)
     }
     sync()
+  }
+
+  /// A shell spawned in a missing directory silently lands in $HOME, which
+  /// is worse than an honest refusal. Checked before anything that starts a
+  /// shell: selecting, a new tab, a split.
+  func directoryExists(of worktree: Worktree) -> Bool {
+    if FileManager.default.fileExists(atPath: worktree.path.path) { return true }
+    presentedError = PresentedError(
+      title: "Worktree directory is missing",
+      message:
+        "\(worktree.path.path) does not exist. If it was deleted by hand, remove the worktree to let git prune it."
+    )
+    return false
+  }
+
+  /// Opens the sheet for `project`, or for the project the workspace is
+  /// working in when none is given: the selected worktree's, or the only one.
+  /// With several projects and nothing selected the picker starts blank.
+  func requestNewWorktree(in project: Project? = nil) {
+    newWorktreeRequest = NewWorktreeRequest(projectID: (project ?? activeProject)?.id)
   }
 
   func plannedPath(forBranch branch: String, createBranch: Bool, in project: Project) -> URL? {
