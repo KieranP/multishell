@@ -1,0 +1,9 @@
+*.xcuserdatad
+.build/
+.claude/settings.local.json
+.DS_Store
+.swiftpm/
+.worktrees/
+build/
+Vendor/libghostty/build/
+xcuserdata/

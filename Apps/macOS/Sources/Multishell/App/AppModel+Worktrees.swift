@@ -1,0 +1,203 @@
+import AppKit
+import MultishellCore
+import MultishellGitKit
+import SwiftUI
+
+// MARK: - Projects
+
+extension AppModel {
+  func chooseProject() async {
+    let panel = NSOpenPanel()
+    panel.canChooseDirectories = true
+    panel.canChooseFiles = false
+    panel.allowsMultipleSelection = false
+    panel.prompt = "Add Project"
+
+    guard panel.runModal() == .OK, let url = panel.url else { return }
+    await addProject(at: url)
+  }
+
+  func addProject(at url: URL) async {
+    guard let worktrees else { return }
+    guard await worktrees.isRepository(url) else {
+      presentedError = PresentedError(
+        title: "Not a git repository",
+        message: "\(url.lastPathComponent) has no .git directory, or git could not read it."
+      )
+      return
+    }
+    let project = store.addProject(at: url)
+    await refresh(project)
+    await rearmWatcher()
+  }
+
+  func removeProject(_ project: Project) {
+    store.removeProject(project.id)
+    sync()
+    Task { await rearmWatcher() }
+  }
+
+  /// Moves `id` to sit just above or just below `target`.
+  func moveProject(_ id: Project.ID, _ edge: VerticalEdge, _ target: Project.ID) {
+    let projects = workspace.projects
+    guard
+      let from = projects.firstIndex(where: { $0.id == id }),
+      let anchor = projects.firstIndex(where: { $0.id == target }),
+      from != anchor
+    else { return }
+    let destination = edge == .top ? anchor : anchor + 1
+    store.moveProjects(from: IndexSet(integer: from), to: destination)
+  }
+
+  func setExpanded(_ expanded: Bool, for project: Project) {
+    store.setExpanded(expanded, forProject: project.id)
+  }
+
+  func updateSettings(_ settings: ProjectSettings, for project: Project) {
+    store.updateSettings(settings, forProject: project.id)
+  }
+
+  func refresh(_ project: Project) async {
+    guard let worktrees else { return }
+    guard FileManager.default.fileExists(atPath: project.path.path) else {
+      missingProjects.insert(project.id)
+      return
+    }
+    do {
+      let discovered = try await worktrees.refresh(project)
+      store.replaceWorktrees(discovered, forProject: project.id)
+      missingProjects.remove(project.id)
+    } catch {
+      report(error)
+    }
+  }
+}
+
+// MARK: - Worktrees
+
+extension AppModel {
+  func select(_ worktree: Worktree) {
+    // A shell spawned in a missing directory silently lands in $HOME, which
+    // is worse than an honest refusal.
+    guard FileManager.default.fileExists(atPath: worktree.path.path) else {
+      presentedError = PresentedError(
+        title: "Worktree directory is missing",
+        message:
+          "\(worktree.path.path) does not exist. If it was deleted by hand, remove the worktree to let git prune it."
+      )
+      return
+    }
+    store.selectWorktree(worktree.id)
+    warmWorktrees.insert(worktree.id)
+    if workspace.tabs(in: worktree.id).isEmpty {
+      store.openTab(in: worktree.id)
+    }
+    sync()
+  }
+
+  func plannedPath(forBranch branch: String, in project: Project) -> URL? {
+    worktrees?.plannedPath(
+      forBranch: branch, in: project, settings: workspace.worktreeSettings(for: project))
+  }
+
+  func hasCommits(_ project: Project) async -> Bool {
+    await worktrees?.hasCommits(project) ?? false
+  }
+
+  func branches(of project: Project) async -> (local: [String], remote: [String]) {
+    (
+      (try? await worktrees?.localBranches(project)) ?? [],
+      (try? await worktrees?.remoteBranches(project)) ?? []
+    )
+  }
+
+  func currentBranch(of project: Project) async -> String {
+    (try? await worktrees?.currentBranch(project)) ?? "HEAD"
+  }
+
+  func createWorktree(
+    branch: String,
+    basedOn startPoint: String?,
+    createBranch: Bool,
+    in project: Project
+  ) async {
+    guard let worktrees else { return }
+    let path: URL
+    do {
+      path = try await worktrees.create(
+        branch: branch,
+        basedOn: startPoint,
+        createBranch: createBranch,
+        in: project,
+        settings: workspace.worktreeSettings(for: project)
+      )
+    } catch let failure as HookFailure {
+      // The worktree exists; only the hook went wrong. Refresh anyway so
+      // it appears in the sidebar, then say what happened.
+      report(failure)
+      path = worktrees.plannedPath(
+        forBranch: branch, in: project, settings: workspace.worktreeSettings(for: project))
+    } catch {
+      report(error)
+      return
+    }
+    await refresh(project)
+    await rearmWatcher()
+    // git reports resolved paths, so on a symlinked volume the directory we
+    // asked for and the one it lists can differ. Fall back to the branch.
+    let qualified = workspace.worktreeSettings(for: project).qualifiedBranch(branch)
+    let created =
+      workspace.worktree(path.standardizedFileURL.path)
+      ?? workspace.worktrees(of: project.id).first { $0.branch == qualified }
+    if let created {
+      select(created)
+    }
+  }
+
+  /// Entry point from the UI. Asks first unless the project opted out.
+  func requestRemoval(of worktree: Worktree) {
+    let confirms = workspace.project(worktree.projectID)?.settings.confirmsWorktreeRemoval ?? true
+    if confirms {
+      pendingRemoval = worktree
+    } else {
+      Task { await removeWorktree(worktree) }
+    }
+  }
+
+  /// What the confirmation should warn about, beyond the removal itself.
+  func removalWarning(for worktree: Worktree) -> String? {
+    var notes: [String] = []
+    if let status = statuses[worktree.id], status.isDirty {
+      notes.append(
+        "It has \(status.changedFiles) changed file\(status.changedFiles == 1 ? "" : "s") that will be lost."
+      )
+    }
+    let terminals = liveTerminalCount(in: worktree.id)
+    if terminals > 0 {
+      notes.append("\(terminals) open terminal\(terminals == 1 ? "" : "s") will be closed.")
+    }
+    return notes.isEmpty ? nil : notes.joined(separator: " ")
+  }
+
+  func removeWorktree(_ worktree: Worktree, force: Bool = false) async {
+    guard let worktrees, let project = workspace.project(worktree.projectID) else { return }
+    do {
+      try await worktrees.remove(worktree, force: force, in: project)
+    } catch let failure as HookFailure {
+      report(failure)
+    } catch {
+      // git refuses dirty or locked worktrees. Offer the force form
+      // rather than leaving the user to find a terminal.
+      var presented = PresentedError(error)
+      if !force {
+        presented.retryLabel = "Remove Anyway"
+        presented.retry = { [weak self] in await self?.removeWorktree(worktree, force: true) }
+      }
+      presentedError = presented
+      return
+    }
+    await refresh(project)
+    await rearmWatcher()
+    sync()
+  }
+}

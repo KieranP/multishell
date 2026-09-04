@@ -1,0 +1,206 @@
+import MultishellCore
+import SwiftUI
+
+/// Renders a tab's `PaneNode`. A leaf is a surface; a split is a
+/// `WeightedSplit` that lays children out by the model's weights and writes
+/// divider drags back, so proportions are exact and persist.
+struct PaneTreeView: View {
+  let model: AppModel
+  let tabID: TerminalTab.ID
+  let node: PaneNode
+  var path: [Int] = []
+  let focusedSessionID: TerminalSession.ID
+  let isSplit: Bool
+  let theme: Theme
+
+  var body: some View {
+    switch node {
+    case .terminal(let id):
+      SurfaceView(
+        host: model.host,
+        sessionID: id,
+        isFocused: id == focusedSessionID,
+        isLive: model.liveSessions.contains(id)
+      )
+      .overlay {
+        if isSplit, id == focusedSessionID {
+          Rectangle().strokeBorder(theme.selectionRGB.color, lineWidth: 1)
+        }
+      }
+
+    case .split(let axis, let children, let weights):
+      WeightedSplit(
+        axis: axis,
+        weights: weights,
+        divider: theme.hairline,
+        background: theme.chromeColor,
+        onWeightsChange: { model.setSplitWeights($0, at: path, ofTab: tabID) },
+        content: {
+          ForEach(children.indices, id: \.self) { index in
+            PaneTreeView(
+              model: model,
+              tabID: tabID,
+              node: children[index],
+              path: path + [index],
+              focusedSessionID: focusedSessionID,
+              isSplit: isSplit,
+              theme: theme
+            )
+          }
+        }
+      )
+    }
+  }
+}
+
+/// Children sized by weight along one axis, with draggable dividers.
+///
+/// `HSplitView` and `VSplitView` decide sizes themselves and expose nothing,
+/// which is how a second split ended up 90/5/5. This one takes the weights as
+/// truth and reports the new ones when a divider moves.
+struct WeightedSplit<Content: View>: View {
+  let axis: SplitAxis
+  let weights: [Double]
+  let divider: Color
+  let background: Color
+  let onWeightsChange: ([Double]) -> Void
+  @ViewBuilder let content: () -> Content
+
+  // Constants live outside the generic type: static stored properties are
+  // not allowed inside one.
+  private var dividerThickness: CGFloat { SplitMetrics.dividerThickness }
+  private var minimumPane: CGFloat { SplitMetrics.minimumPane }
+
+  @State private var dragStartWeights: [Double]?
+
+  var body: some View {
+    GeometryReader { geometry in
+      let length = axis == .horizontal ? geometry.size.width : geometry.size.height
+      let available = max(length - CGFloat(weights.count - 1) * dividerThickness, 0)
+      let total = weights.reduce(0, +)
+      let sizes = weights.map {
+        total > 0 ? available * CGFloat($0 / total) : available / CGFloat(weights.count)
+      }
+
+      layout(sizes: sizes, available: available, total: total)
+    }
+  }
+
+  @ViewBuilder
+  private func layout(sizes: [CGFloat], available: CGFloat, total: Double) -> some View {
+    let stack = _VariadicView.Tree(
+      SplitRoot(
+        axis: axis, sizes: sizes, divider: divider, background: background,
+        thickness: dividerThickness
+      ) { index, translation in
+        resize(dividerAfter: index, by: translation, available: available)
+      } onDragEnded: {
+        dragStartWeights = nil
+      }
+    ) {
+      content()
+    }
+    stack
+  }
+
+  /// Converts a pointer delta into a transfer of weight between the two
+  /// panes either side of the divider, keeping both above the minimum.
+  private func resize(dividerAfter index: Int, by translation: CGFloat, available: CGFloat) {
+    let start = dragStartWeights ?? weights
+    if dragStartWeights == nil { dragStartWeights = start }
+    guard index + 1 < start.count, available > 0 else { return }
+
+    let total = start.reduce(0, +)
+    let perPoint = total / Double(available)
+    let minimum = Double(minimumPane) * perPoint
+    let pair = start[index] + start[index + 1]
+
+    var first = start[index] + Double(translation) * perPoint
+    first = min(max(first, minimum), pair - minimum)
+
+    var updated = start
+    updated[index] = first
+    updated[index + 1] = pair - first
+    onWeightsChange(updated)
+  }
+}
+
+private enum SplitMetrics {
+  /// Layout space the divider occupies. Wider than the visible line because
+  /// the panes are NSViews, which take mouse events before any SwiftUI
+  /// overlay that spills onto them; the grab area has to be its own strip.
+  static let dividerThickness: CGFloat = 6
+  static let lineThickness: CGFloat = 1
+  static let minimumPane: CGFloat = 80
+}
+
+/// Places the split's children with explicit sizes and a divider between
+/// each pair. Variadic so `WeightedSplit` can take a `ForEach` as content.
+private struct SplitRoot: _VariadicView_MultiViewRoot {
+  let axis: SplitAxis
+  let sizes: [CGFloat]
+  let divider: Color
+  let background: Color
+  let thickness: CGFloat
+  let onDrag: (Int, CGFloat) -> Void
+  let onDragEnded: () -> Void
+
+  @ViewBuilder
+  func body(children: _VariadicView.Children) -> some View {
+    let items = Array(children.enumerated())
+    if axis == .horizontal {
+      HStack(spacing: 0) { panes(items) }
+    } else {
+      VStack(spacing: 0) { panes(items) }
+    }
+  }
+
+  @ViewBuilder
+  private func panes(_ items: [(offset: Int, element: _VariadicView.Children.Element)]) -> some View
+  {
+    ForEach(items, id: \.element.id) { index, child in
+      sized(child, index)
+      if index < items.count - 1 {
+        handle(after: index)
+      }
+    }
+  }
+
+  @ViewBuilder
+  private func sized(_ child: _VariadicView.Children.Element, _ index: Int) -> some View {
+    let size = sizes.indices.contains(index) ? sizes[index] : 0
+    if axis == .horizontal {
+      child.frame(width: size)
+    } else {
+      child.frame(height: size)
+    }
+  }
+
+  private func handle(after index: Int) -> some View {
+    background
+      .frame(
+        width: axis == .horizontal ? thickness : nil, height: axis == .vertical ? thickness : nil
+      )
+      .overlay {
+        divider.frame(
+          width: axis == .horizontal ? SplitMetrics.lineThickness : nil,
+          height: axis == .vertical ? SplitMetrics.lineThickness : nil
+        )
+      }
+      .contentShape(.rect)
+      .onHover { inside in
+        if inside {
+          (axis == .horizontal ? NSCursor.resizeLeftRight : NSCursor.resizeUpDown).push()
+        } else {
+          NSCursor.pop()
+        }
+      }
+      .gesture(
+        DragGesture(minimumDistance: 1, coordinateSpace: .global)
+          .onChanged { value in
+            onDrag(index, axis == .horizontal ? value.translation.width : value.translation.height)
+          }
+          .onEnded { _ in onDragEnded() }
+      )
+  }
+}
