@@ -19,6 +19,18 @@ struct HexColorTests {
     #expect(HexColor.parse("#gggggg") == nil)
   }
 
+  @Test func surroundingWhitespaceIsForgiven() {
+    #expect(HexColor.parse(" #5aa9f8 ") == RGB(red: 0x5a, green: 0xa9, blue: 0xf8))
+    #expect(HexColor.parse("#5a a9f8") == nil, "but not a space inside")
+  }
+
+  @Test func aLeadingSignIsNotAColour() {
+    // `UInt32(_:radix:)` accepts "+abcde" as 0xabcde; a theme file must not.
+    #expect(HexColor.parse("#+abcde") == nil)
+    #expect(HexColor.parse("+abcde") == nil)
+    #expect(HexColor.parse("-abcde") == nil)
+  }
+
   @Test func everyBuiltinThemeParsesCompletely() {
     for theme in Theme.builtins {
       #expect(

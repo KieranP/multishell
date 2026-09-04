@@ -58,7 +58,7 @@ struct TabBar: View {
       if editingTabID == tab.id {
         titleField(tab)
       } else {
-        Text(model.workspace.title(of: tab))
+        Text(model.title(of: tab))
           .font(.system(size: model.metrics.secondary, weight: isActive ? .medium : .regular))
           .foregroundStyle(text)
           .lineLimit(1)
@@ -113,7 +113,7 @@ struct TabBar: View {
   }
 
   private func beginEditing(_ tab: TerminalTab) {
-    draftTitle = tab.customTitle ?? model.workspace.title(of: tab)
+    draftTitle = tab.customTitle ?? model.title(of: tab)
     editingTabID = tab.id
     titleFieldFocused = true
   }

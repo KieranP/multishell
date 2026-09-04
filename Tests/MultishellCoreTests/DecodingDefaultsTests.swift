@@ -51,6 +51,81 @@ struct DecodingDefaultsTests {
     #expect(worktree.path.hasDirectoryPath)
   }
 
+  @Test func aSplitWithoutWeightsGetsEqualShares() throws {
+    let a = UUID()
+    let b = UUID()
+    let node = try decode(
+      PaneNode.self,
+      #"""
+      { "split": { "axis": "horizontal", "children": [
+        { "terminal": { "_0": "\#(a.uuidString)" } },
+        { "terminal": { "_0": "\#(b.uuidString)" } } ] } }
+      """#)
+    #expect(node == .split(axis: .horizontal, children: [.terminal(a), .terminal(b)]))
+  }
+
+  @Test func weightsThatDoNotMatchTheChildrenAreReplacedNotTrusted() throws {
+    // `removing` zips children with weights; a short list would drop a pane.
+    let a = UUID()
+    let b = UUID()
+    for weights in ["[1]", "[1, 2, 3]", "[1, -1]"] {
+      let node = try decode(
+        PaneNode.self,
+        #"""
+        { "split": { "axis": "vertical", "weights": \#(weights), "children": [
+          { "terminal": { "_0": "\#(a.uuidString)" } },
+          { "terminal": { "_0": "\#(b.uuidString)" } } ] } }
+        """#)
+      #expect(
+        node == .split(axis: .vertical, children: [.terminal(a), .terminal(b)]), "\(weights)")
+    }
+  }
+
+  @Test func paneTreesRoundTripThroughTheSynthesizedEncoder() throws {
+    let tree = PaneNode.split(
+      axis: .vertical,
+      children: [
+        .terminal(UUID()),
+        .split(
+          axis: .horizontal, children: [.terminal(UUID()), .terminal(UUID())], weights: [3, 1]),
+      ],
+      weights: [0.25, 0.75])
+    let json = try JSONEncoder().encode(tree)
+    #expect(try JSONDecoder().decode(PaneNode.self, from: json) == tree)
+  }
+
+  @Test func aThemeWithTheWrongNumberOfColoursIsRefused() throws {
+    var fifteen = Theme.multishellDark
+    fifteen.ansi.removeLast()
+    let json = try JSONEncoder().encode(fifteen)
+    #expect(throws: DecodingError.self) { try JSONDecoder().decode(Theme.self, from: json) }
+    let full = try JSONEncoder().encode(Theme.multishellDark)
+    #expect(try JSONDecoder().decode(Theme.self, from: full) == Theme.multishellDark)
+  }
+
+  @Test func anEngineThisBuildDoesNotKnowFallsBackRatherThanFailingTheFile() throws {
+    // Written by a newer build with a third engine. Losing the engine choice
+    // is fine; losing every project is not.
+    let workspace = try decode(
+      Workspace.self,
+      #"{ "terminalEngine": "wezterm", "projects": [ { "path": "file:///repos/demo/" } ] }"#)
+    #expect(workspace.terminalEngine == .ghostty)
+    #expect(workspace.projects.map(\.name) == ["demo"])
+  }
+
+  @Test func anUnknownSplitAxisFallsBackToHorizontal() throws {
+    let a = UUID()
+    let b = UUID()
+    let node = try decode(
+      PaneNode.self,
+      #"""
+      { "split": { "axis": "diagonal", "children": [
+        { "terminal": { "_0": "\#(a.uuidString)" } },
+        { "terminal": { "_0": "\#(b.uuidString)" } } ] } }
+      """#)
+    #expect(node == .split(axis: .horizontal, children: [.terminal(a), .terminal(b)]))
+  }
+
   @Test func workspaceFromTheVeryFirstBuildAndFromToday() throws {
     let today = Workspace()
     let roundTripped = try decode(

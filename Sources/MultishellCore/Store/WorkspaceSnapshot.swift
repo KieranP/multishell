@@ -20,8 +20,11 @@ public struct WorkspaceSnapshot: Sendable {
     do {
       return try JSONDecoder().decode(Workspace.self, from: data)
     } catch {
-      try? FileManager.default.moveItem(at: fileURL, to: backupURL)
-      throw UnreadableState(backup: backupURL, underlying: error)
+      // Computed once: the name carries a timestamp, and the error must name
+      // the file that was actually written.
+      let backup = backupURL
+      try? FileManager.default.moveItem(at: fileURL, to: backup)
+      throw UnreadableState(backup: backup, underlying: error)
     }
   }
 

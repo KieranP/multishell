@@ -56,11 +56,16 @@ extension WorktreeSettings {
 
   /// Where a branch's worktree goes: the container, plus a slug of the
   /// branch name so `feat/tabs` cannot try to nest a directory.
+  ///
+  /// The result is always strictly inside the container. git refuses `.`
+  /// and `..` as branch names, but this path is shown, and its parent
+  /// created, before git is asked.
   public func worktreePath(forBranch branch: String, in project: Project) -> URL {
-    let slug =
+    var slug =
       branch
       .replacingOccurrences(of: "/", with: "-")
       .replacingOccurrences(of: " ", with: "-")
+    if slug.isEmpty || slug == "." || slug == ".." { slug = "_" }
     return worktreeContainer(for: project).appendingPathComponent(slug, isDirectory: true)
   }
 

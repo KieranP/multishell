@@ -13,6 +13,10 @@ final class SwiftTermTerminalHost: NSObject, TerminalHost {
   private var views: [TerminalSession.ID: LocalProcessTerminalView] = [:]
   private var clickMonitor: Any?
   private var sessionIDs: [ObjectIdentifier: TerminalSession.ID] = [:]
+  /// Sessions whose child has already exited. SwiftTerm keeps the pid after
+  /// reaping it, so `terminate` would signal a number the kernel may have
+  /// handed to some other process by now.
+  private var exited: Set<TerminalSession.ID> = []
   private var theme: Theme = .multishellDark
   private var appearance = Appearance()
 
@@ -44,7 +48,9 @@ final class SwiftTermTerminalHost: NSObject, TerminalHost {
     sessionIDs[ObjectIdentifier(view)] = nil
     // Removing the view does not end the child; SwiftTerm keeps the pty
     // until told otherwise.
-    view.terminate()
+    if exited.remove(id) == nil {
+      view.terminate()
+    }
     view.removeFromSuperview()
   }
 
@@ -144,6 +150,7 @@ extension SwiftTermTerminalHost: LocalProcessTerminalViewDelegate {
   nonisolated func processTerminated(source: TerminalView, exitCode: Int32?) {
     MainActor.assumeIsolated {
       guard let id = sessionIDs[ObjectIdentifier(source)] else { return }
+      exited.insert(id)
       delegate?.terminalHost(self, didExit: id, code: exitCode ?? 0)
     }
   }

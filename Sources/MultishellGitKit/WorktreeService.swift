@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import MultishellProcess
 
 /// The git side of worktree management. Knows nothing about hooks or settings.
 public struct WorktreeService: Sendable {
@@ -27,6 +28,19 @@ public struct WorktreeService: Sendable {
   public func list(_ project: Project) async throws -> [Worktree] {
     let output = try await git.run(["worktree", "list", "--porcelain"], in: project.path)
     return WorktreeListParser.parse(output, projectID: project.id)
+  }
+
+  /// The main worktree of the repository `url` is in, whether `url` is that
+  /// worktree, a subdirectory of it, or a linked worktree. `git worktree
+  /// list` puts the main worktree first from wherever it runs.
+  public func mainWorktree(containing url: URL) async throws -> URL {
+    let output = try await git.run(["worktree", "list", "--porcelain"], in: url)
+    guard let main = WorktreeListParser.parse(output, projectID: "").first else {
+      throw ProcessFailure(
+        executable: "git", arguments: ["worktree", "list"], status: 0,
+        message: "no worktree listed for \(url.path)")
+    }
+    return main.path
   }
 
   public func status(of worktree: Worktree) async throws -> WorktreeStatus {

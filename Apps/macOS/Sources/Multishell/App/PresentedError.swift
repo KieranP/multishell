@@ -48,6 +48,6 @@ struct PresentedError: Identifiable {
 
   private static func describe(_ error: any Error) -> String {
     if let failure = error as? ProcessFailure, !failure.message.isEmpty { return failure.message }
-    return (error as? CustomStringConvertible)?.description ?? error.localizedDescription
+    return String(describing: error)
   }
 }

@@ -25,7 +25,9 @@ public final class WorkspaceStore {
     from snapshot: WorkspaceSnapshot = WorkspaceSnapshot()
   ) -> (store: WorkspaceStore, loadError: (any Error)?) {
     do {
-      return (WorkspaceStore(workspace: try snapshot.load(), snapshot: snapshot), nil)
+      var workspace = try snapshot.load()
+      workspace.repairReferences()
+      return (WorkspaceStore(workspace: workspace, snapshot: snapshot), nil)
     } catch {
       return (WorkspaceStore(workspace: Workspace(), snapshot: snapshot), error)
     }
@@ -57,6 +59,10 @@ extension WorkspaceStore {
   /// Same contract as SwiftUI's `move(fromOffsets:toOffset:)`, which lives in
   /// SwiftUI rather than the standard library and so is not available here.
   public func moveProjects(from source: IndexSet, to destination: Int) {
+    guard
+      (0...workspace.projects.count).contains(destination),
+      source.allSatisfy(workspace.projects.indices.contains)
+    else { return }
     let moving = source.map { workspace.projects[$0] }
     let shift = source.filter { $0 < destination }.count
     for index in source.sorted(by: >) {
@@ -84,7 +90,12 @@ extension WorkspaceStore {
 extension WorkspaceStore {
   /// Replaces a project's worktrees with what git just reported, dropping
   /// tabs whose worktree no longer exists.
+  ///
+  /// Refreshes are asynchronous, so one can land after its project was
+  /// removed; that must not resurrect the worktrees. An unchanged list is
+  /// left alone so a watcher tick does not trigger a save and a re-render.
   public func replaceWorktrees(_ discovered: [Worktree], forProject id: Project.ID) {
+    guard workspace.project(id) != nil, workspace.worktrees(of: id) != discovered else { return }
     let survivors = Set(discovered.map(\.id))
     for worktree in workspace.worktrees(of: id) where !survivors.contains(worktree.id) {
       discardWorktree(worktree.id)
@@ -93,7 +104,11 @@ extension WorkspaceStore {
     workspace.worktrees.append(contentsOf: discovered)
   }
 
+  /// A row's worktree can be stale by the time the click lands, if a refresh
+  /// dropped it in between; selecting nothing beats selecting a ghost.
   public func selectWorktree(_ id: Worktree.ID?) {
+    guard let id else { return workspace.selectedWorktreeID = nil }
+    guard workspace.worktree(id) != nil else { return }
     workspace.selectedWorktreeID = id
   }
 
@@ -201,11 +216,6 @@ extension WorkspaceStore {
     guard let index = workspace.tabs.firstIndex(where: { $0.root.contains(id) }) else { return }
     workspace.tabs[index].focusedSessionID = id
     workspace.activeTabByWorktree[workspace.tabs[index].worktreeID] = workspace.tabs[index].id
-  }
-
-  public func renameSession(_ id: TerminalSession.ID, to title: String) {
-    guard let index = workspace.sessions.firstIndex(where: { $0.id == id }) else { return }
-    workspace.sessions[index].title = title
   }
 
   /// Splits the focused pane of a tab. Not reachable from the MVP UI; the

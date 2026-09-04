@@ -26,12 +26,17 @@ extension AppModel {
       )
       return
     }
-    let project = store.addProject(at: url)
+    // A subdirectory or a linked worktree is the same repository; adding it
+    // as its own project would list the same worktrees twice.
+    let root = (try? await worktrees.repositoryRoot(containing: url)) ?? url
+    let project = store.addProject(at: root)
     await refresh(project)
     await rearmWatcher()
   }
 
   func removeProject(_ project: Project) {
+    commonGitDirectories[project.id] = nil
+    worktreeRecords[project.id] = nil
     store.removeProject(project.id)
     sync()
     Task { await rearmWatcher() }
@@ -63,9 +68,13 @@ extension AppModel {
       missingProjects.insert(project.id)
       return
     }
+    // Read before the list so a change landing in between is caught by the
+    // next tick rather than lost.
+    let records = await commonGitDirectory(of: project).map(WorktreeRecords.read)
     do {
       let discovered = try await worktrees.refresh(project)
       store.replaceWorktrees(discovered, forProject: project.id)
+      worktreeRecords[project.id] = records
       missingProjects.remove(project.id)
     } catch {
       report(error)
@@ -95,9 +104,10 @@ extension AppModel {
     sync()
   }
 
-  func plannedPath(forBranch branch: String, in project: Project) -> URL? {
+  func plannedPath(forBranch branch: String, createBranch: Bool, in project: Project) -> URL? {
     worktrees?.plannedPath(
-      forBranch: branch, in: project, settings: workspace.worktreeSettings(for: project))
+      forBranch: branch, createBranch: createBranch, in: project,
+      settings: workspace.worktreeSettings(for: project))
   }
 
   func hasCommits(_ project: Project) async -> Bool {
@@ -136,7 +146,8 @@ extension AppModel {
       // it appears in the sidebar, then say what happened.
       report(failure)
       path = worktrees.plannedPath(
-        forBranch: branch, in: project, settings: workspace.worktreeSettings(for: project))
+        forBranch: branch, createBranch: createBranch, in: project,
+        settings: workspace.worktreeSettings(for: project))
     } catch {
       report(error)
       return
@@ -145,10 +156,11 @@ extension AppModel {
     await rearmWatcher()
     // git reports resolved paths, so on a symlinked volume the directory we
     // asked for and the one it lists can differ. Fall back to the branch.
-    let qualified = workspace.worktreeSettings(for: project).qualifiedBranch(branch)
+    let name = WorktreeCoordinator.branchName(
+      branch, createBranch: createBranch, settings: workspace.worktreeSettings(for: project))
     let created =
       workspace.worktree(path.standardizedFileURL.path)
-      ?? workspace.worktrees(of: project.id).first { $0.branch == qualified }
+      ?? workspace.worktrees(of: project.id).first { $0.branch == name }
     if let created {
       select(created)
     }

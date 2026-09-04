@@ -43,7 +43,14 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
   func close(_ id: TerminalSession.ID) {
     observers[id] = nil
     containers.removeValue(forKey: id)?.removeFromSuperview()
-    surfaces[id] = nil
+    // Detaching the controller tears the surface down, which closes the pty
+    // and ends the shell. The view's deallocation would do the same, but only
+    // once every SwiftUI frame that adopted it has let go, and a shell is not
+    // something to leave running on a layout detail. Next turn, not now: on
+    // a process exit this runs inside libghostty's own close callback, and
+    // freeing the surface there would free the object mid-call.
+    guard let view = surfaces.removeValue(forKey: id) else { return }
+    DispatchQueue.main.async { view.controller = nil }
   }
 
   func view(for id: TerminalSession.ID) -> NSView? {

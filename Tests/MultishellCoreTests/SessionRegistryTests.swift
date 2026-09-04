@@ -69,13 +69,17 @@ struct SessionRegistryTests {
     #expect(host.log == ["close", "focus \(first.focusedSessionID.uuidString.prefix(4))"])
   }
 
-  @Test func retitleReachesTheStore() {
+  @Test func retitleReachesTheCallbackAndLeavesTheWorkspaceAlone() {
     let tab = store.openTab(in: worktree.id)!
     registry.reconcile()
+    let before = store.workspace
+    var titles: [(TerminalSession.ID, String)] = []
+    registry.onRetitle = { titles.append(($0, $1)) }
 
     host.delegate?.terminalHost(host, didRetitle: tab.focusedSessionID, to: "vim")
 
-    #expect(store.workspace.session(tab.focusedSessionID)?.title == "vim")
+    #expect(titles.count == 1 && titles[0].0 == tab.focusedSessionID && titles[0].1 == "vim")
+    #expect(store.workspace == before, "a prompt must not schedule a save or re-render the world")
   }
 }
 

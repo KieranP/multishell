@@ -99,6 +99,43 @@ struct WorktreeListParserEdgeTests {
     #expect(worktrees[1].branch == "main")
   }
 
+  @Test func pathsWithSpacesSurviveTheKeyValueSplit() {
+    let output = """
+      worktree /Users/dev/My Projects/demo app
+      HEAD 6666666666666666666666666666666666666666
+      branch refs/heads/main
+      """
+    let worktrees = WorktreeListParser.parse(output, projectID: "/p")
+    #expect(worktrees.map(\.path.path) == ["/Users/dev/My Projects/demo app"])
+    #expect(worktrees[0].branch == "main")
+  }
+
+  @Test func anUnbornRepositoryListsItsBranchWithAZeroHead() {
+    // What `git worktree list` prints before the first commit.
+    let output = """
+      worktree /Users/dev/fresh
+      HEAD 0000000000000000000000000000000000000000
+      branch refs/heads/main
+      """
+    let worktrees = WorktreeListParser.parse(output, projectID: "/p")
+    #expect(worktrees[0].branch == "main")
+    #expect(worktrees[0].name == "main")
+  }
+
+  @Test func oddOutputNeverCrashesTheParser() {
+    let awkward = [
+      "worktree", "worktree ", "HEAD", "branch", "\n\n\n", "locked\nworktree /x", "bare",
+      "worktree /a\nworktree /b", "\u{1F600}", "worktree /a\nHEAD\nbranch refs/heads/",
+    ]
+    for output in awkward {
+      let worktrees = WorktreeListParser.parse(output, projectID: "/p")
+      #expect(worktrees.allSatisfy { !$0.path.path.isEmpty }, "\(output)")
+    }
+    #expect(
+      WorktreeListParser.parse("worktree \n", projectID: "/p").isEmpty,
+      "an empty path would resolve to the current directory")
+  }
+
   @Test func missingTrailingBlankLineIsFine() {
     let output = "worktree /a\nHEAD 5555555\nbranch refs/heads/x"
     #expect(WorktreeListParser.parse(output, projectID: "/p").map(\.branch) == ["x"])

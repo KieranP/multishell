@@ -32,7 +32,9 @@ public struct RGB: Hashable, Sendable {
 public enum HexColor {
   /// Accepts `#rgb`, `#rrggbb`, and either without the leading `#`.
   public static func parse(_ text: String) -> RGB? {
-    var digits = Substring(text)
+    // Hand-edited theme files pick up stray spaces; grey for the whole
+    // palette would be a harsh price for one.
+    var digits = Substring(text.trimmingCharacters(in: .whitespaces))
     if digits.hasPrefix("#") { digits = digits.dropFirst() }
 
     switch digits.count {
@@ -47,7 +49,10 @@ public enum HexColor {
   }
 
   private static func parseSixDigits(_ digits: String) -> RGB? {
-    guard let value = UInt32(digits, radix: 16) else { return nil }
+    // `UInt32(_:radix:)` accepts a leading sign, which is not a colour.
+    guard digits.allSatisfy(\.isHexDigit), let value = UInt32(digits, radix: 16) else {
+      return nil
+    }
     return RGB(
       red: UInt8((value >> 16) & 0xFF),
       green: UInt8((value >> 8) & 0xFF),

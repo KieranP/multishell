@@ -18,6 +18,21 @@ private func demoStore() -> (store: WorkspaceStore, project: Project, worktree: 
   return (store, project, worktree)
 }
 
+/// Counts how often the workspace changes, the way autosave and the views
+/// see it. The callback fires synchronously on the mutating actor.
+@MainActor
+private final class ChangeCounter {
+  private(set) var changes = 0
+
+  init(_ store: WorkspaceStore) {
+    withObservationTracking {
+      _ = store.workspace
+    } onChange: {
+      MainActor.assumeIsolated { self.changes += 1 }
+    }
+  }
+}
+
 @Suite @MainActor
 struct WorkspaceStoreTests {
   @Test func addingTheSameProjectTwiceIsIdempotent() {
@@ -109,24 +124,59 @@ struct WorkspaceStoreTests {
 
 @Suite @MainActor
 struct TabTitleTests {
-  @Test func aCustomTitleWinsOverTheShellUntilCleared() {
+  @Test func aCustomTitleWinsOverTheStartingTitleUntilCleared() {
     let (store, _, worktree) = demoStore()
     let tab = store.openTab(in: worktree.id)!
-    store.renameSession(tab.focusedSessionID, to: "~/Work/demo")
-    #expect(store.workspace.title(of: store.workspace.tab(tab.id)!) == "~/Work/demo")
+    #expect(store.workspace.title(of: store.workspace.tab(tab.id)!) == "Shell")
 
     store.setCustomTitle("  build  ", forTab: tab.id)
-    store.renameSession(tab.focusedSessionID, to: "vim")
     #expect(store.workspace.title(of: store.workspace.tab(tab.id)!) == "build")
 
     store.setCustomTitle("", forTab: tab.id)
     #expect(store.workspace.tab(tab.id)?.customTitle == nil)
-    #expect(store.workspace.title(of: store.workspace.tab(tab.id)!) == "vim")
+    #expect(store.workspace.title(of: store.workspace.tab(tab.id)!) == "Shell")
+  }
+
+  @Test func aCommandTabStartsWithTheCommandsName() {
+    let (store, _, worktree) = demoStore()
+    let tab = store.openTab(in: worktree.id, command: ["/usr/bin/top", "-o", "cpu"])!
+    #expect(store.workspace.title(of: tab) == "top")
   }
 }
 
 @Suite @MainActor
 struct WorkspaceStoreEdgeTests {
+  @Test func aRefreshThatLandsAfterItsProjectWasRemovedIsDropped() {
+    let (store, project, worktree) = demoStore()
+    store.removeProject(project.id)
+
+    store.replaceWorktrees([worktree], forProject: project.id)
+
+    #expect(store.workspace.worktrees.isEmpty, "would otherwise be polled for status forever")
+  }
+
+  @Test func anUnchangedRefreshDoesNotTouchTheWorkspace() {
+    let (store, project, worktree) = demoStore()
+    let counter = ChangeCounter(store)
+
+    store.replaceWorktrees([worktree], forProject: project.id)
+    #expect(counter.changes == 0, "a watcher tick with nothing new must not save or re-render")
+
+    var moved = worktree
+    moved.head = "moved"
+    store.replaceWorktrees([moved], forProject: project.id)
+    #expect(counter.changes == 1)
+  }
+
+  @Test func selectingAWorktreeThatIsGoneIsIgnored() {
+    let (store, _, worktree) = demoStore()
+    store.selectWorktree(worktree.id)
+    store.selectWorktree("/repos/vanished")
+    #expect(store.workspace.selectedWorktreeID == worktree.id)
+    store.selectWorktree(nil)
+    #expect(store.workspace.selectedWorktreeID == nil)
+  }
+
   @Test func refreshKeepsTabsOfWorktreesThatSurvive() {
     let (store, project, worktree) = demoStore()
     let tab = store.openTab(in: worktree.id)!
@@ -171,7 +221,6 @@ struct WorkspaceStoreEdgeTests {
     store.closeSession(UUID())
     store.closeTab(UUID())
     store.activateTab(UUID())
-    store.renameSession(UUID(), to: "x")
     store.setCustomTitle("x", forTab: UUID())
     store.setSplitWeights([1], at: [0], ofTab: UUID())
 

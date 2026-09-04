@@ -71,6 +71,24 @@ struct WorktreeCreationTests {
     #expect(try await repo.branches() == ["k/one", "k/two", "main"])
   }
 
+  @Test func thePrefixIsNotAppliedToAnExistingBranch() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    _ = try await repo.git.run(["branch", "release"], in: repo.project.path)
+    let settings = WorktreeSettings(worktreeDirectory: "../trees", branchPrefix: "k/")
+
+    let planned = repo.coordinator.plannedPath(
+      forBranch: "release", createBranch: false, in: repo.project, settings: settings)
+    let path = try await repo.coordinator.create(
+      branch: "release", createBranch: false, in: repo.project, settings: settings)
+
+    #expect(path == planned)
+    #expect(path.lastPathComponent == "release", "no k- in the directory either")
+    let onBranch = try await repo.git.run(["rev-parse", "--abbrev-ref", "HEAD"], in: path)
+    #expect(onBranch.trimmingCharacters(in: .whitespacesAndNewlines) == "release")
+    #expect(try await repo.branches() == ["main", "release"], "nothing was created")
+  }
+
   @Test func nestedContainersAreCreatedOnDemand() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }

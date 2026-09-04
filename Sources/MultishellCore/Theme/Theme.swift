@@ -38,6 +38,30 @@ public struct Theme: Identifiable, Codable, Hashable, Sendable {
     self.selectionBackground = selectionBackground
     self.ansi = ansi
   }
+
+  /// Synthesized decoding would skip the precondition above, and the GUI
+  /// indexes `ansi` directly, so a user theme file with the wrong number of
+  /// colours is refused here and reported by `ThemeCatalog` rather than
+  /// crashing the first view that draws with it.
+  public init(from decoder: any Decoder) throws {
+    let c = try decoder.container(keyedBy: CodingKeys.self)
+    let ansi = try c.decode([String].self, forKey: .ansi)
+    guard ansi.count == 16 else {
+      throw DecodingError.dataCorruptedError(
+        forKey: .ansi, in: c,
+        debugDescription: "a theme needs exactly 16 ANSI colours, found \(ansi.count)")
+    }
+    self.init(
+      id: try c.decode(String.self, forKey: .id),
+      name: try c.decode(String.self, forKey: .name),
+      isDark: try c.decode(Bool.self, forKey: .isDark),
+      background: try c.decode(String.self, forKey: .background),
+      foreground: try c.decode(String.self, forKey: .foreground),
+      cursor: try c.decode(String.self, forKey: .cursor),
+      selectionBackground: try c.decode(String.self, forKey: .selectionBackground),
+      ansi: ansi
+    )
+  }
 }
 
 extension Theme {

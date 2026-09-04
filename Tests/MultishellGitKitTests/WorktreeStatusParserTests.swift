@@ -47,6 +47,33 @@ struct WorktreeStatusParserTests {
     #expect(WorktreeStatusParser.parse("## No commits yet on main\n").isClean)
   }
 
+  @Test func aDeletedUpstreamIsNotACount() {
+    // `[gone]` is what git prints once the remote branch was deleted.
+    let status = WorktreeStatusParser.parse("## feat...origin/feat [gone]\n M a.txt\n")
+    #expect(status.branch == "feat")
+    #expect(status.ahead == 0 && status.behind == 0)
+    #expect(status.changedFiles == 1)
+  }
+
+  @Test func aDetachedHeadStillCountsChanges() {
+    let status = WorktreeStatusParser.parse("## HEAD (no branch)\nA  new.txt\n?? x\n")
+    #expect(status.branch == nil)
+    #expect(status.staged == 1 && status.untracked == 1 && status.changedFiles == 2)
+  }
+
+  @Test func oddLinesNeverCrashTheParser() {
+    let awkward = [
+      "## ", "##", "#", "M", " ", "", "## [", "## ]", "## a...b [ahead x]", "## a [ahead]",
+      "?? 名前.txt", "\u{1F600}\u{1F600} smile", "R  a -> b -> c", "## HEAD (",
+    ]
+    for line in awkward {
+      let status = WorktreeStatusParser.parse(line + "\n")
+      #expect(status.ahead >= 0 && status.behind >= 0, "\(line)")
+    }
+    let all = WorktreeStatusParser.parse(awkward.joined(separator: "\n"))
+    #expect(all.changedFiles >= 0)
+  }
+
   @Test func theBranchNameIsExtractedFromEveryHeaderShape() {
     #expect(WorktreeStatusParser.parse("## main...origin/main [ahead 2]\n").branch == "main")
     #expect(WorktreeStatusParser.parse("## feat/tabs\n").branch == "feat/tabs")

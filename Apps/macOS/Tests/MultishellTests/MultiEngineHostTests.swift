@@ -145,6 +145,67 @@ struct MultiEngineHostTests {
   }
 }
 
+/// Random opens, closes, focuses and engine switches. Whatever the order,
+/// the composite must report exactly the union of its engines, know the
+/// owner of every open session and of none that is closed, and never hand a
+/// view for a session it does not have.
+@Suite @MainActor
+struct MultiEngineHostInvariantTests {
+  private struct Generator: RandomNumberGenerator {
+    var state: UInt64
+    mutating func next() -> UInt64 {
+      state ^= state << 13
+      state ^= state >> 7
+      state ^= state << 17
+      return state
+    }
+  }
+
+  @Test(arguments: [2, 5, 11, 23, 47] as [UInt64])
+  func routingStaysConsistent(seed: UInt64) throws {
+    var rng = Generator(state: seed)
+    let store = EngineStore()
+    let host = MultiEngineHost(engine: .ghostty) { store.engine(for: $0) }
+    var sessions: [TerminalSession] = []
+
+    for step in 0..<200 {
+      switch Int.random(in: 0..<6, using: &rng) {
+      case 0, 1:
+        let session = TerminalSession(
+          worktreeID: "/w", workingDirectory: URL(fileURLWithPath: "/tmp"), title: "t")
+        if Bool.random(using: &rng) { store.engine(for: host.engine).failNextOpen = true }
+        sessions.append(session)
+        try? host.open(session)
+      case 2:
+        if let session = sessions.randomElement(using: &rng) { host.close(session.id) }
+      case 3:
+        if let session = sessions.randomElement(using: &rng) { host.focus(session.id) }
+      case 4:
+        host.engine = host.engine == .ghostty ? .swiftTerm : .ghostty
+      default:
+        host.apply(
+          Bool.random(using: &rng) ? .multishellDark : .multishellLight, appearance: Appearance())
+      }
+
+      let engines = TerminalEngine.allCases.compactMap {
+        store.created.contains($0) ? store.engine(for: $0) : nil
+      }
+      let union = engines.reduce(into: Set<TerminalSession.ID>()) {
+        $0.formUnion($1.openSessionIDs)
+      }
+      #expect(host.openSessionIDs == union, "seed \(seed) step \(step): not the union")
+      for session in sessions {
+        let open = union.contains(session.id)
+        #expect(
+          (host.view(for: session.id) != nil) == open,
+          "seed \(seed) step \(step): view for a closed session")
+      }
+      let overlap = engines.map(\.openSessionIDs).reduce(0) { $0 + $1.count }
+      #expect(overlap == union.count, "seed \(seed) step \(step): a session in two engines")
+    }
+  }
+}
+
 /// Hands out one recording engine per kind and remembers creation order.
 @MainActor
 private final class EngineStore {

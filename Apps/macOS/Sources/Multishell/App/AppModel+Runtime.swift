@@ -37,7 +37,7 @@ extension AppModel {
       while !Task.isCancelled {
         try? await Task.sleep(for: .seconds(5))
         guard let self else { return }
-        guard NSApp.isActive else { continue }
+        guard NSApp?.isActive ?? true else { continue }
         await refreshStatuses()
       }
     }
@@ -81,9 +81,9 @@ extension AppModel {
   /// remembered until that tab is shown.
   func noteActivity(in id: TerminalSession.ID) {
     // A prompt or a finished command in this worktree likely changed its
-    // status, so look now rather than waiting for the next poll.
+    // status, so look soon rather than waiting for the next poll.
     if let session = workspace.session(id) {
-      Task { await refreshStatus(of: session.worktreeID) }
+      scheduleStatusRefresh(of: session.worktreeID)
     }
     if let worktree = workspace.selectedWorktreeID,
       let active = workspace.activeTab(in: worktree),
@@ -92,6 +92,29 @@ extension AppModel {
       return
     }
     unseenActivity.insert(id)
+  }
+
+  /// One command at a prompt raises several events in a row (title before,
+  /// command finished, title after), and each would otherwise spawn its own
+  /// `git status`. The burst becomes one run, shortly after the last event.
+  func scheduleStatusRefresh(of worktreeID: Worktree.ID) {
+    pendingStatusRefreshes[worktreeID]?.cancel()
+    pendingStatusRefreshes[worktreeID] = Task { @MainActor [weak self] in
+      try? await Task.sleep(for: .milliseconds(250))
+      guard !Task.isCancelled, let self else { return }
+      pendingStatusRefreshes[worktreeID] = nil
+      await refreshStatus(of: worktreeID)
+    }
+  }
+
+  func noteTitle(_ title: String, of id: TerminalSession.ID) {
+    if sessionTitles[id] != title { sessionTitles[id] = title }
+  }
+
+  /// What the tab strip shows: the user's name, else what the shell last
+  /// reported, else the tab's starting title.
+  func title(of tab: TerminalTab) -> String {
+    tab.customTitle ?? sessionTitles[tab.focusedSessionID] ?? workspace.title(of: tab)
   }
 
   func hasUnseenActivity(_ tab: TerminalTab) -> Bool {

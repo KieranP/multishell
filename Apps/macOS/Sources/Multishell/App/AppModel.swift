@@ -41,6 +41,9 @@ final class AppModel {
   /// Sessions with a running shell, mirrored from the host after each
   /// reconcile so views can observe it; the host itself is not observable.
   var liveSessions: Set<TerminalSession.ID> = []
+  /// What each running shell last said its title was. Kept apart from the
+  /// workspace so a prompt does not re-render the sidebar or schedule a save.
+  var sessionTitles: [TerminalSession.ID: String] = [:]
   /// Projects whose directory has gone. Kept in the sidebar, dimmed, rather
   /// than dropped: an unmounted drive should not delete someone's setup.
   var missingProjects: Set<Project.ID> = []
@@ -53,8 +56,19 @@ final class AppModel {
   @ObservationIgnored let registry: SessionRegistry
   @ObservationIgnored let worktrees: WorktreeCoordinator?
   @ObservationIgnored var pendingSave: Task<Void, Never>?
+  /// Set while saves are failing, so the alert is raised once rather than
+  /// again after every change until the disk is writable.
+  @ObservationIgnored var saveFailureReported = false
   @ObservationIgnored let watcher: any DirectoryWatcher
   @ObservationIgnored var statusPolling: Task<Void, Never>?
+  /// One coalesced status refresh per worktree; see `noteActivity`.
+  @ObservationIgnored var pendingStatusRefreshes: [Worktree.ID: Task<Void, Never>] = [:]
+  /// `git rev-parse --git-common-dir` per project, asked once. The watcher
+  /// and the records check below run from it without spawning git.
+  @ObservationIgnored var commonGitDirectories: [Project.ID: URL] = [:]
+  /// What the last refresh of each project was computed from; see
+  /// `refreshWorktreesIfRecordsChanged`.
+  @ObservationIgnored var worktreeRecords: [Project.ID: WorktreeRecords] = [:]
 
   var workspace: Workspace { store.workspace }
 
@@ -105,12 +119,15 @@ final class AppModel {
     }
 
     registry.onActivity = { [weak self] id in self?.noteActivity(in: id) }
+    registry.onRetitle = { [weak self] id, title in self?.noteTitle(title, of: id) }
     registry.onLiveSessionsChanged = { [weak self] in
       guard let self else { return }
       let live = registry.liveSessionIDs
       if live != liveSessions { liveSessions = live }
+      sessionTitles = sessionTitles.filter { live.contains($0.key) }
+      unseenActivity.formIntersection(live)
     }
-    watcher.onChange = { [weak self] in Task { await self?.refreshWorktrees() } }
+    watcher.onChange = { [weak self] in Task { await self?.refreshWorktreesIfRecordsChanged() } }
     observeForAutosave()
   }
 
@@ -138,12 +155,24 @@ final class AppModel {
   }
 
   func refreshAll() async {
-    await refreshWorktrees()
+    await refreshWorktreesIfRecordsChanged()
     await refreshStatuses()
   }
 
-  func refreshWorktrees() async {
+  /// What a watcher tick and a return to the foreground run. The watched
+  /// directories also hold each linked worktree's `index`, which `git status`
+  /// rewrites, so most ticks mean nothing; comparing the files `git worktree
+  /// list` is derived from tells those apart from a real change without
+  /// spawning git. A project with no records yet, or none git can find, is
+  /// refreshed in full; that path also notices a repository that has gone.
+  func refreshWorktreesIfRecordsChanged() async {
     for project in workspace.projects {
+      if let common = await commonGitDirectory(of: project),
+        let known = worktreeRecords[project.id],
+        WorktreeRecords.read(commonDirectory: common) == known
+      {
+        continue
+      }
       await refresh(project)
     }
     await rearmWatcher()
@@ -152,11 +181,20 @@ final class AppModel {
   /// Re-read after every refresh: a new worktree adds a directory that must
   /// itself be watched for branch changes.
   func rearmWatcher() async {
-    guard let worktrees else { return }
     var directories: [URL] = []
     for project in workspace.projects {
-      directories += await worktrees.directoriesToWatch(for: project)
+      guard let common = await commonGitDirectory(of: project) else { continue }
+      directories += WorktreeCoordinator.directoriesToWatch(in: common)
     }
     watcher.watch(directories)
+  }
+
+  func commonGitDirectory(of project: Project) async -> URL? {
+    if let cached = commonGitDirectories[project.id] { return cached }
+    guard let worktrees, let common = try? await worktrees.commonGitDirectory(project) else {
+      return nil
+    }
+    commonGitDirectories[project.id] = common
+    return common
   }
 }

@@ -16,10 +16,24 @@ Working rules:
 - Run `make format` on anything you touched, then `make lint`, `make test`
   (both packages) and `make build`. All must pass before you say something
   works.
-- Every persisted field decodes with a default. Add a case to
-  `DecodingDefaultsTests` when you add one.
+- Every persisted field decodes with a default, including an enum value this
+  build does not know. Add a case to `DecodingDefaultsTests` when you add one.
+  References between collections are restored by `Workspace.repairReferences`
+  after a load; extend it, and `WorkspaceInvariants`, when you add a
+  collection or a reference.
+- Every store operation must leave `WorkspaceInvariants` true. The seeded
+  random tests (`WorkspaceStoreInvariantTests`, `AppModelInvariantTests`) will
+  find it if not; a failure prints its seed and step so it can be replayed.
+- Runtime state (shell titles, activity, statuses, live sessions) lives in
+  `AppModel`, never in the workspace, so a prompt does not save or re-render.
+- Nothing in the core blocks a thread. `ProcessRunner` is handler-driven; a
+  test runs 96 children at once and another counts descriptors after failed
+  launches. Do not add a `wait` inside a `Task`.
 - Test git behaviour against a real repository with `RepositoryFixture`, not
-  with mocks. Test parsers on fixture text.
+  with mocks. Test parsers on fixture text, including the odd lines in the
+  robustness tests.
+- Timing bounds in tests are sized for a two-core CI runner, several times a
+  laptop's figure. Keep that headroom when you add one.
 - Small single-purpose files. Comments only for why, non-local consequences,
   or facts the code cannot show. No restatements.
 - Nothing is committed unless the user asks.

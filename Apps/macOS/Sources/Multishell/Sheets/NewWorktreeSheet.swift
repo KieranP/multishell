@@ -66,7 +66,7 @@ struct NewWorktreeSheet: View {
           }
         } else {
           Picker("Branch:", selection: $branch) {
-            ForEach(branches, id: \.self, content: Text.init)
+            ForEach(availableBranches, id: \.self, content: Text.init)
           }
         }
 
@@ -87,8 +87,7 @@ struct NewWorktreeSheet: View {
         Button("Cancel", role: .cancel) { dismiss() }
         Button("Create Worktree", action: create)
           .keyboardShortcut(.defaultAction)
-          .disabled(
-            branch.trimmingCharacters(in: .whitespaces).isEmpty || isCreating || !hasCommits)
+          .disabled(!canCreate)
       }
       .padding(.top, 8)
     }
@@ -98,8 +97,33 @@ struct NewWorktreeSheet: View {
       hasCommits = await model.hasCommits(project)
       (branches, remoteBranches) = await model.branches(of: project)
       baseBranch = await model.currentBranch(of: project)
-      if !createBranch { branch = branches.first ?? "" }
+      if !createBranch { branch = availableBranches.first ?? "" }
     }
+    // The field and the picker share `branch`. Switching modes must not
+    // carry a typed name into the picker, where it is not a choice, or an
+    // existing branch's name back into the field, where it would be a
+    // duplicate.
+    .onChange(of: createBranch) { _, creating in
+      if creating {
+        if availableBranches.contains(branch) { branch = "" }
+      } else if !availableBranches.contains(branch) {
+        branch = availableBranches.first ?? ""
+      }
+    }
+  }
+
+  /// Local branches not already checked out somewhere: git refuses to check
+  /// a branch out twice, so offering those would only produce an error.
+  private var availableBranches: [String] {
+    let checkedOut = Set(model.workspace.worktrees(of: project.id).compactMap(\.branch))
+    return branches.filter { !checkedOut.contains($0) }
+  }
+
+  private var canCreate: Bool {
+    guard hasCommits, !isCreating else { return false }
+    return createBranch
+      ? !branch.trimmingCharacters(in: .whitespaces).isEmpty
+      : availableBranches.contains(branch)
   }
 
   /// The project's effective prefix, shown as fixed text so the user types
@@ -110,7 +134,9 @@ struct NewWorktreeSheet: View {
 
   private var plannedPath: String {
     let name = branch.trimmingCharacters(in: .whitespaces)
-    guard !name.isEmpty, let url = model.plannedPath(forBranch: name, in: project) else {
+    guard !name.isEmpty,
+      let url = model.plannedPath(forBranch: name, createBranch: createBranch, in: project)
+    else {
       return "—"
     }
     return url.path

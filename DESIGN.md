@@ -71,6 +71,12 @@ overrides. Nothing computes a path from `ProjectSettings` directly. `nil`
 means follow the global; an empty string is an override of "none". Hooks are
 per project only.
 
+The branch prefix applies to branches the app creates. An existing branch
+chosen in the sheet keeps its name; prefixing it asked git for a branch that
+did not exist. The worktree path is always strictly inside the container:
+`.`, `..` and an empty slug become `_`, because the path is shown, and its
+parent created, before git gets to refuse the name.
+
 Why: a team convention set once, with per-repository exceptions. Cost: the
 nil/empty distinction has to be made visible; the sheet uses toggles for it.
 
@@ -91,10 +97,12 @@ exists. It never watches the `.git` root once it has that folder.
 
 Why: `git status` rewrites `.git/index`, so watching the root turned every
 status poll into a refresh. Working-tree edits touch nothing under `.git`, so
-`git status` runs every five seconds while the app is frontmost, plus once for
-a worktree whose terminal just showed activity. The main worktree's branch
-switches, which the watcher cannot see, are caught when the status header's
-branch disagrees with the sidebar.
+`git status` runs every five seconds while the app is frontmost, at most eight
+worktrees at a time, plus once for a worktree whose terminal showed activity,
+250 ms after the last event: one prompt raises several (title before, command
+finished, title after), and each used to spawn its own `git status`. The main
+worktree's branch switches, which the watcher cannot see, are caught when the
+status header's branch disagrees with the sidebar.
 
 ## The dot means "something happened here since you looked"
 
@@ -121,9 +129,12 @@ renderers in one window, which the theme conversion has to keep identical.
 
 ## Persisted state never loses data to a decode error
 
-Every persisted type decodes each field with a default. A file that will not
-decode at all is renamed `state.<timestamp>.broken.json`, the app starts empty
-and says where the file went.
+Every persisted type decodes each field with a default, and an enum value
+this build does not know (an engine or a split axis from a newer build) falls
+back rather than failing the file. A file that will not decode at all is
+renamed `state.<timestamp>.broken.json`, the app starts empty and says where
+the file went. A save that fails is reported once, not after every change
+until the disk is writable again.
 
 Why: the alternative, silently starting empty and then saving, deletes the
 user's sidebar to fix a bug of ours.
@@ -221,3 +232,95 @@ it back without that history.
 `MultiEngineHost` takes a factory for its engines, defaulting to the real
 ones, so its routing is tested with recording fakes. The same shape,
 protocol plus recording fake, is how the registry and the watcher are tested.
+
+## State is repaired on load, not trusted
+
+After a decode, `Workspace.repairReferences` drops worktrees whose project is
+gone, tabs whose worktree is gone, panes whose session is missing, and
+sessions no tab owns; it fixes an active-tab entry that points at a missing
+tab and a focused pane outside its tree. `PaneNode` decodes weights that are
+absent or misaligned as equal shares, and `Theme` refuses a file without
+exactly sixteen ANSI colours.
+
+Why: a session no tab shows would be given a shell that nothing displays and
+nothing can close, and a missing active tab hid the whole tab strip. Each
+persisted type decoding its own fields with defaults does not cover the
+references between them. Cost: a hand edit that breaks a reference is quietly
+tidied rather than reported.
+
+## A project is the main worktree, whatever was picked
+
+Adding a subdirectory or a linked worktree resolves, through `git worktree
+list`, to the repository's main worktree before it becomes a project.
+
+Why: identity is the path, and a linked worktree lists the same worktrees as
+its repository, so both rows would select together and share tabs. Cost: the
+sidebar shows the repository's name, not the folder the user chose.
+
+## A watcher tick checks the records before it runs git
+
+The watched directories hold each linked worktree's `index`, which `git
+status` rewrites after any edit. A tick first reads the files `git worktree
+list` is derived from (`HEAD`, `worktrees/*/HEAD`, `gitdir`, `locked`) and
+refreshes only the projects where they differ from the last refresh. Coming
+back to the foreground takes the same path. The common `.git` path is asked
+of git once per project and cached; a project without it, or without records
+yet, is refreshed in full.
+
+Why: a status poll after an edit otherwise cost one `git worktree list` per
+project, and so did every return to the app. Cost: a change git makes
+elsewhere goes unnoticed until the next tick or the status poll, which is
+already the contract for the main worktree's `HEAD`.
+
+## Shell titles are runtime state
+
+What a shell reports through OSC lives in `AppModel.sessionTitles`, not in
+the workspace. `TerminalSession.title` is the starting title only ("Shell",
+or the command's name) and `TerminalTab.customTitle` the user's.
+
+Why: the workspace is one observed value, so a title change re-evaluated
+every view and scheduled a save, several times per prompt, for a string a
+relaunched tab's fresh shell replaces within a second anyway. After this the
+workspace changes only when the user does something. Cost: a saved tab shows
+its starting title until its shell speaks.
+
+## Nothing in the core blocks a thread
+
+`ProcessRunner` drains a child's pipes with readability handlers and learns
+of its exit from the termination handler; the caller awaits a continuation.
+Both pipes are read at once, because whichever is read second can fill its
+64 KiB buffer and block the child. A launch that fails releases its pipes.
+
+Why: the first version waited inside a `Task`. Each wait held a
+cooperative-pool thread, one per core, and the readers were GCD blocks; with
+enough concurrent `git status` calls GCD ran out of threads for the readers,
+the children blocked on full pipes, and the waits never returned. The test
+suite hung. Cost: the exit and the two EOFs are three events that must all
+arrive; a `DispatchGroup` counts them.
+
+## A closed tab ends its shell, next turn
+
+`GhosttyTerminalHost.close` detaches the view's controller, which tears the
+surface down, closes the pty and ends the shell. It does so on the next
+main-loop turn, not inline. `SwiftTermTerminalHost.close` sends SIGTERM,
+except to a child that already exited.
+
+Why: libghostty no longer frees a surface in the view's `deinit`, and the
+view lives as long as any SwiftUI frame that adopted it, so a closed tab's
+shell ran on. On a process exit, `close` runs inside libghostty's own close
+callback, and freeing the surface there would free the object mid-call.
+SwiftTerm keeps the reaped pid, and a signal to it could reach whatever the
+kernel reissued the number to. Cost: a one-turn delay nobody can see.
+
+## Invariants are tested at random, with seeds
+
+`WorkspaceInvariants` states what must hold between the workspace's
+collections. Seeded tests run hundreds of random store operations, random
+model actions and engine events, random damage through the repair pass, and
+random routing through the engine composite, checking the invariants after
+every step. A failure prints its seed and step.
+
+Why: example tests pin the cases someone thought of; the selection of a
+worktree a refresh had just removed was found by a seed, not by reading.
+Cost: a failing seed has to be replayed to understand, and the tests run a
+few hundred milliseconds rather than a few.

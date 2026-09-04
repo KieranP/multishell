@@ -39,6 +39,18 @@ struct WorktreeSettingsTests {
     #expect(path.path == "/Users/dev/Work/multishell-worktrees/feat-tabs")
   }
 
+  @Test func noBranchNameCanPutAWorktreeOutsideTheContainer() {
+    // git rejects most of these as branch names, but the path is computed
+    // and shown, and its parent created, before git is asked.
+    let container = WorktreeSettings().worktreeContainer(for: project).path
+    for name in ["..", ".", "", " ", "../..", "/", "//", "a/../../b", "...", "./x", "-"] {
+      let path = WorktreeSettings().worktreePath(forBranch: name, in: project).standardizedFileURL
+        .path
+      #expect(path.hasPrefix(container + "/"), "\(name) -> \(path)")
+      #expect(path.count > container.count + 1, "\(name) must name something")
+    }
+  }
+
   @Test func theBranchPrefixIsAppliedOnce() {
     let settings = WorktreeSettings(branchPrefix: "kieran/")
     #expect(settings.qualifiedBranch("tabs") == "kieran/tabs")

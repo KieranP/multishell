@@ -86,7 +86,12 @@ extension AppModel {
   func save() {
     do {
       try store.save()
+      saveFailureReported = false
     } catch {
+      // Every change schedules a save, so a full disk or a bad permission
+      // would otherwise put the same alert up after each keystroke.
+      guard !saveFailureReported else { return }
+      saveFailureReported = true
       report(error)
     }
   }

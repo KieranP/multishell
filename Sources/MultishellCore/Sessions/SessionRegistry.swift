@@ -16,6 +16,12 @@ public final class SessionRegistry {
   /// the workspace because it is about what the user has seen, not state.
   public var onActivity: (@MainActor (TerminalSession.ID) -> Void)?
 
+  /// The title the shell reports through OSC. Runtime, like activity: shells
+  /// change it on every prompt, and a relaunched tab gets a fresh shell that
+  /// reports its own, so writing it into the workspace would only churn
+  /// observers and the autosave with state that is stale on arrival.
+  public var onRetitle: (@MainActor (TerminalSession.ID, String) -> Void)?
+
   /// Fired whenever the set of live sessions may have changed: after a
   /// reconcile and after a process exit. The host is not observable, so the
   /// GUI mirrors `liveSessionIDs` from here.
@@ -70,7 +76,7 @@ extension SessionRegistry: TerminalHostDelegate {
   public func terminalHost(
     _ host: any TerminalHost, didRetitle id: TerminalSession.ID, to title: String
   ) {
-    store.renameSession(id, to: title)
+    onRetitle?(id, title)
     onActivity?(id)
   }
 

@@ -103,25 +103,15 @@ struct WeightedSplit<Content: View>: View {
     stack
   }
 
-  /// Converts a pointer delta into a transfer of weight between the two
-  /// panes either side of the divider, keeping both above the minimum.
+  /// The drag is measured from where it began, so the weights it started
+  /// from are remembered until it ends.
   private func resize(dividerAfter index: Int, by translation: CGFloat, available: CGFloat) {
     let start = dragStartWeights ?? weights
     if dragStartWeights == nil { dragStartWeights = start }
-    guard index + 1 < start.count, available > 0 else { return }
-
-    let total = start.reduce(0, +)
-    let perPoint = total / Double(available)
-    let minimum = Double(minimumPane) * perPoint
-    let pair = start[index] + start[index + 1]
-
-    var first = start[index] + Double(translation) * perPoint
-    first = min(max(first, minimum), pair - minimum)
-
-    var updated = start
-    updated[index] = first
-    updated[index + 1] = pair - first
-    onWeightsChange(updated)
+    let updated = SplitMath.transferring(
+      Double(translation), acrossDividerAfter: index, in: start,
+      available: Double(available), minimumPane: Double(minimumPane))
+    if updated != start { onWeightsChange(updated) }
   }
 }
 

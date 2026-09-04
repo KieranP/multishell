@@ -55,7 +55,7 @@ struct DetailView: View {
           copyButton(worktree.name, help: "Copy branch name", theme: theme)
         }
         HStack(spacing: 5) {
-          Text(abbreviated(worktree.path))
+          Text(worktree.path.path.abbreviatingHomeDirectory())
             .font(.system(size: model.metrics.caption, design: .monospaced))
             .foregroundStyle(theme.textTertiary)
             .lineLimit(1)
@@ -102,11 +102,5 @@ struct DetailView: View {
     }
     .buttonStyle(.plain)
     .help(help)
-  }
-
-  private func abbreviated(_ url: URL) -> String {
-    let home = FileManager.default.homeDirectoryForCurrentUser.path
-    let path = url.path
-    return path.hasPrefix(home) ? "~" + path.dropFirst(home.count) : path
   }
 }

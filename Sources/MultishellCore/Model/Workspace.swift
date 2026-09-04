@@ -32,7 +32,10 @@ public struct Workspace: Codable, Hashable, Sendable {
     activeTabByWorktree =
       try c.decodeIfPresent([Worktree.ID: TerminalTab.ID].self, forKey: .activeTabByWorktree) ?? [:]
     appearance = try c.decodeIfPresent(Appearance.self, forKey: .appearance) ?? Appearance()
-    terminalEngine = try c.decodeIfPresent(TerminalEngine.self, forKey: .terminalEngine) ?? .ghostty
+    // `try?`, not `try`: a state file from a newer build may name an engine
+    // this build does not have, and that must not cost the sidebar.
+    terminalEngine =
+      (try? c.decodeIfPresent(TerminalEngine.self, forKey: .terminalEngine)) ?? .ghostty
     worktreeDefaults =
       try c.decodeIfPresent(WorktreeSettings.self, forKey: .worktreeDefaults) ?? WorktreeSettings()
   }
@@ -86,8 +89,9 @@ extension Workspace {
     sessions.filter { $0.worktreeID == worktree }
   }
 
-  /// What the tab strip shows: the user's name if they gave one, else the
-  /// focused pane's shell-reported title.
+  /// The user's name for a tab if they gave one, else the focused pane's
+  /// starting title ("Shell", or the command's name). The title a running
+  /// shell reports is runtime state the GUI layers on top.
   public func title(of tab: TerminalTab) -> String {
     if let custom = tab.customTitle { return custom }
     return session(tab.focusedSessionID)?.title ?? "Shell"

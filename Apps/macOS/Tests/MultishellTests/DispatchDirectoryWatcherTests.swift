@@ -85,6 +85,43 @@ struct DispatchDirectoryWatcherTests {
     #expect(await firedForB)
   }
 
+  /// Every refresh re-arms the watcher with the current directory set. Each
+  /// source holds a descriptor until its cancel handler runs; a mistake there
+  /// would exhaust the process after a day of ticks.
+  @Test func rearmingRepeatedlyDoesNotLeakDescriptors() async throws {
+    let dirs = try (0..<4).map { _ in try scratch() }
+    defer {
+      for dir in dirs { try? FileManager.default.removeItem(at: dir) }
+    }
+    func lowestDescriptorCount(over samples: Int) async throws -> Int {
+      var lowest = Int.max
+      for _ in 0..<samples {
+        lowest = min(lowest, try FileManager.default.contentsOfDirectory(atPath: "/dev/fd").count)
+        try await Task.sleep(for: .milliseconds(30))
+      }
+      return lowest
+    }
+    let watcher = DispatchDirectoryWatcher()
+    watcher.watch(dirs)
+    let before = try await lowestDescriptorCount(over: 4)
+
+    for round in 0..<200 {
+      // Alternate between the full set, a subset, and a set with a missing
+      // directory, so sources are created, kept, cancelled and skipped.
+      switch round % 3 {
+      case 0: watcher.watch(dirs)
+      case 1: watcher.watch(Array(dirs.prefix(2)))
+      default: watcher.watch([dirs[3], URL(fileURLWithPath: "/definitely/not/here")])
+      }
+    }
+    watcher.watch(dirs)
+
+    let after = try await lowestDescriptorCount(over: 8)
+    #expect(
+      after - before < 20, "before \(before), after \(after); each round moved 2 to 4 sources")
+    watcher.stop()
+  }
+
   @Test func stopSilencesTheWatcher() async throws {
     let dir = try scratch()
     defer { try? FileManager.default.removeItem(at: dir) }

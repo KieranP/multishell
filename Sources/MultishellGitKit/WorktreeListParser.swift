@@ -15,7 +15,8 @@ public enum WorktreeListParser {
 
     func flush() {
       defer { fields = [:] }
-      guard let path = fields["worktree"] else { return }
+      // `URL(fileURLWithPath: "")` is the current directory, not nothing.
+      guard let path = fields["worktree"], !path.isEmpty else { return }
       worktrees.append(
         Worktree(
           path: URL(fileURLWithPath: path),

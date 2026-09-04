@@ -55,3 +55,13 @@ struct SidebarFilterTests {
     #expect(SidebarFilter("zzz").apply(to: workspace).isEmpty)
   }
 }
+
+@Suite
+struct HomeAbbreviationTests {
+  @Test func onlyAWholeComponentIsTheHomeDirectory() {
+    #expect("/Users/me/Work/x".abbreviatingHomeDirectory(home: "/Users/me") == "~/Work/x")
+    #expect("/Users/me".abbreviatingHomeDirectory(home: "/Users/me") == "~")
+    #expect("/Users/meg/Work".abbreviatingHomeDirectory(home: "/Users/me") == "/Users/meg/Work")
+    #expect("/tmp/x".abbreviatingHomeDirectory(home: "/Users/me") == "/tmp/x")
+  }
+}
