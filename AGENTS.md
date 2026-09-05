@@ -14,8 +14,8 @@ Working rules:
   core file allowed `#if os(...)`. Platform code goes behind `Ports/`.
 - Views call `AppModel`; they never touch the store, a host, or git.
 - Run `make format` on anything you touched, then `make lint`, `make test`
-  (both packages) and `make build`. All must pass before you say something
-  works.
+  (both packages), `make build` and `make release`. All must pass, and both
+  builds must compile with no warnings, before you say something works.
 - Every persisted field decodes with a default, including an enum value this
   build does not know. Add a case to `DecodingDefaultsTests` when you add one.
   Worktrees, sessions and tabs decode element by element and drop a broken

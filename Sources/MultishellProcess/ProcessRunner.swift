@@ -116,6 +116,7 @@ private func launch(
     // Weak, so on the usual path the pipes close with the completion rather
     // than a second later.
     DispatchQueue.global().asyncAfter(deadline: .now() + eofGraceAfterExit) {
+      [weak out, weak err] in
       out?.finish()
       err?.finish()
     }
