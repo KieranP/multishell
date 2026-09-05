@@ -110,7 +110,7 @@ extension AppModel {
     store.selectWorktree(worktree.id)
     warmWorktrees.insert(worktree.id)
     if workspace.tabs(in: worktree.id).isEmpty {
-      store.openTab(in: worktree.id)
+      openFirstOrNewTab(in: worktree)
     }
     sync()
   }

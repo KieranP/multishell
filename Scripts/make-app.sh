@@ -12,10 +12,14 @@ build="$package/.build/$config"
 app="$root/build/Multishell.app"
 
 swift build --package-path "$package" -c "$config"
+# The helper is a product of the root package, which the app depends on but
+# cannot list as a dependency (an executable product is not linkable).
+swift build --package-path "$root" -c "$config" --product multishell
 
 rm -rf "$app"
-mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
+mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$app/Contents/Helpers"
 cp "$build/Multishell" "$app/Contents/MacOS/Multishell"
+cp "$root/.build/$config/multishell" "$app/Contents/Helpers/multishell"
 
 # GhosttyTerminal ships terminfo and config as SPM resource bundles; without
 # them libghostty starts with no terminfo and every child process misbehaves.
@@ -45,6 +49,7 @@ cat > "$app/Contents/Info.plist" <<PLIST
 PLIST
 
 # Ad-hoc signing: unsigned bundles are killed on launch on Apple silicon.
+codesign --force --sign - "$app/Contents/Helpers/multishell" >/dev/null 2>&1 || true
 codesign --force --sign - "$app" >/dev/null 2>&1 || true
 
 echo "built $app"

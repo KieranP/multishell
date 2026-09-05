@@ -28,7 +28,8 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
     view.configuration = TerminalSurfaceOptions(
       backend: .exec,
       workingDirectory: session.workingDirectory.path,
-      command: session.command.map(ShellQuoting.commandLine)
+      envVars: SessionEnvironment.variables(for: session, socket: Paths.socketFile),
+      command: Self.command(for: session)
     )
 
     let observer = SurfaceObserver(sessionID: session.id, host: self)
@@ -38,6 +39,15 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
     let container = SurfaceContainerView(surface: view)
     surfaces[session.id] = view
     containers[session.id] = container
+  }
+
+  /// A tab's command, or an override that injects the hooks into an
+  /// otherwise-default shell. zsh needs none: its hooks ride in on `ZDOTDIR`
+  /// from the environment, so its command stays the engine default (`nil`).
+  private static func command(for session: TerminalSession) -> String? {
+    if let command = session.command { return ShellQuoting.commandLine(command) }
+    let shell = ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh"
+    return ShellLaunch.overrideCommand(forShell: shell).map(ShellQuoting.commandLine)
   }
 
   func close(_ id: TerminalSession.ID) {
@@ -106,7 +116,8 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
 
   private static let appShortcuts: [String] =
     [
-      "super+t", "super+w", "super+shift+w", "super+n", "super+shift+n",
+      "super+t", "super+shift+t", "super+alt+t", "super+w", "super+shift+w", "super+n",
+      "super+shift+n",
       "super+o", "super+d", "super+shift+d", "super+comma", "super+q",
       "ctrl+tab", "ctrl+shift+tab",
       "super+ctrl+f", "super+enter",
@@ -122,6 +133,11 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
 
   fileprivate func activity(in id: TerminalSession.ID) {
     delegate?.terminalHost(self, didSeeActivityIn: id)
+  }
+
+  fileprivate func commandFinished(in id: TerminalSession.ID, exitCode: Int?) {
+    delegate?.terminalHost(
+      self, didFinishCommandIn: id, exitCode: exitCode.flatMap { Int32(exactly: $0) })
   }
 
   fileprivate func focused(_ id: TerminalSession.ID) {
@@ -162,7 +178,7 @@ private final class SurfaceObserver:
   /// Needs shell integration in the child shell; Ghostty's resources
   /// include it for zsh, bash and fish.
   func terminalDidFinishCommand(exitCode: Int?, durationNanos: UInt64) {
-    host?.activity(in: sessionID)
+    host?.commandFinished(in: sessionID, exitCode: exitCode)
   }
 
   func terminalDidChangeFocus(_ focused: Bool) {

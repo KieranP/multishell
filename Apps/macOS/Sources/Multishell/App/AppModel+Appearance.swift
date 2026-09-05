@@ -48,6 +48,10 @@ extension AppModel {
   func setWorktreeDefaults(_ defaults: WorktreeSettings) {
     store.setWorktreeDefaults(defaults)
   }
+
+  func setNotifications(_ preference: NotificationPreference) {
+    store.setNotifications(preference)
+  }
 }
 
 // MARK: - Persistence

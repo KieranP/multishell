@@ -43,27 +43,28 @@ day. Three tiers; ship after the first two.
   goes in `GhosttyTerminalHost.appShortcuts`.
 - Tab overflow. Twelve tabs in one worktree shrink to icons; scroll the
   strip or collapse the inactive ones.
-- Two instances share one state file. A debug build from `make run` and the
-  installed release both use the same bundle identifier and the same
-  `state.json`, and each autosaves, so the last writer wins and the other's
-  changes are lost. Detect a second instance (the socket bind failing is the
-  natural signal) and either activate the first or refuse to start, and give
-  debug builds their own state directory through an environment variable so
-  developing the app does not clobber the copy in use.
+- Two release instances share one state file. Debug builds now keep their
+  own `state.debug.json`, socket and integration files, so `make run` beside
+  the installed copy is safe; two copies of the same build still both
+  autosave and the last writer wins. The second one already learns of the
+  first when its socket bind is refused; make it activate the first or
+  refuse to start rather than only saying so.
 - A README for people who install it, not people who build it: download,
   first launch past Gatekeeper, add a project, the hooks setup, where state
   lives. The current one starts at `xcode-select`.
 
 ### 2. The reason to use it instead of a terminal and a script
 
-- Session state from hooks, with the amber and blue dots and a notification
-  for a background tab.
-- Preferred agent, global and per project, and auto-start.
+- Session state, the preferred agent, New Agent Tab and auto-start are done.
 - Terminals view with the next-waiting shortcut.
-- Verify before building on it: whether libghostty's shell integration is
-  active in this embedding. Ghostty's command-finished callback needs it,
-  and if the resource bundle does not inject it, plain shells never report
-  Done and the state feature rests on hooks alone.
+- Verify whether libghostty's shell integration is active in this
+  embedding. Ghostty's command-finished callback needs it; it is what clears
+  a Working dot when the agent exits at the prompt, and if the resource
+  bundle does not inject it, plain shells never report Done and stale
+  Working rests on the pid check alone.
+- The pid a hook reports is the first non-shell ancestor of the helper.
+  Confirm against a real Claude Code session that this is Claude and not a
+  wrapper of its own that outlives the hook.
 
 ### 3. After shipping
 
@@ -72,81 +73,6 @@ multi-line editors, accessibility labels, a Linux GUI, and the rest of the
 Gaps section.
 
 ## Features
-
-### Session state from what runs inside a terminal
-
-The dot today is one bit per session, "activity you have not seen", raised by
-a bell, a title change or Ghostty's command-finished callback, and cleared
-when the tab is shown. Nothing distinguishes running from finished from
-waiting for input, and nothing outside the engine can raise it. The first
-customer is Claude Code's hooks: PreToolUse for running, Stop for finished,
-Notification for needs input. The same channel serves a test runner, a long
-build, or `npm run dev` reporting ready.
-
-Missing pieces:
-
-- An inbound channel. A small `multishell` command-line helper talking over a
-  Unix socket in the state directory, or a URL scheme the hook opens. The
-  socket does not activate the app, so prefer it.
-- Session identity in the terminal's environment. Both hosts start the shell
-  with no extra environment: SwiftTerm passes `environment: nil` and the
-  Ghostty options carry only directory and command. Export a session id and
-  the worktree path so a hook can name its tab. Claude's hook payload carries
-  `cwd`, so worktree-level dots work without this; tab-level dots need it.
-- A state per session, not a flag. `unseenActivity` becomes an enum such as
-  idle, running, attention, kept in `AppModel` as runtime state, fed through
-  a new port beside `TerminalHost`. Tab bar and sidebar rows draw amber for
-  running and blue for attention. The same state can post a macOS
-  notification for a background tab.
-- Who clears what. Done is about the user and clears when the tab is shown,
-  as the dot does today. Attention is about the agent and clears when the
-  source reports running again, not when the user looks: a question the
-  user has seen but not answered is still waiting. Running clears on the
-  next report or on process exit. Extend `AppModelInvariantTests` so the
-  state keys stay a subset of the live sessions.
-- Colour clash. The sidebar's dirty-files dot is already the theme's yellow
-  (slot 3), so an amber running dot beside it would read as two of the same
-  thing. Either pick the running colour from another slot, give the state
-  dot a different shape or position, or move the dirty count off a dot.
-  Decide before drawing.
-- Installing the hooks. Claude reads hooks from `~/.claude/settings.json` or
-  a project's `.claude/settings.json`. The app should not edit those files
-  silently. Offer a "Set up Claude Code hooks" button in settings that shows
-  the JSON to add and can write it to the user file on request, and a
-  matching subcommand on the helper. The hook lines must find the helper: it
-  ships inside the bundle, and an absolute path there breaks when the app
-  moves, so keep a symlink at a stable path under the state directory,
-  refreshed at launch, and reference that. For people writing their own
-  hooks for other tools, an "Install command line tool" action that links
-  it into `/usr/local/bin` with an admin prompt, the way editors do.
-- Trust. The socket is a file the user owns, mode 0600, and the messages it
-  accepts change a dot and nothing else: no opening tabs, no running
-  commands. Keep it that way until there is a reason not to. A message with
-  a session id the app does not know is dropped; one with only a `cwd` that
-  matches a worktree updates the worktree, so a hook fired from Terminal.app
-  in that directory shows up too.
-- Notifications need `UNUserNotificationCenter` authorisation, asked for on
-  first use, and a setting to turn them off, with the option of only
-  Waiting rather than Waiting and Done.
-- SwiftTerm has no shell integration and swallows the bell, so under that
-  engine hooks are the only source of any state. Say so in the settings
-  caption for the engine.
-- Stale Running. An agent that crashes, or is killed with Ctrl+C, sends no
-  Stop hook, so its tab stays amber. The app cannot see the agent exit: it
-  is the shell's child, not the session's process. Mitigations, in order:
-  Ghostty's command-finished callback clears Running where shell integration
-  is active; the helper reports the agent's pid on Running and the app polls
-  it with `kill(pid, 0)` while any session is amber; and clicking the dot
-  clears it by hand. Do not add a timeout: a long task is not a stale one.
-- Protocol. JSON lines over the socket with a version field, so a helper left
-  behind by an older install keeps working against a newer app. Unlink a
-  stale socket file from a crashed instance at launch before binding.
-- Closing a Working tab. Cmd+W on a session whose agent is running should
-  ask first, the way worktree removal does, and the quit guard's message
-  should count working agents separately from plain shells.
-- Tests. An end-to-end test that spawns the real helper binary against a
-  temporary socket and checks the session's state changes, alongside the
-  fake-engine tests for the clearing rules.
 
 ### Custom project icons
 
@@ -174,78 +100,6 @@ header shows the name with no icon.
 - Deriving an icon from project files (`package.json`, `Package.swift`) is
   tempting but adds a filesystem read per project and a taxonomy. Explicit
   choice, folder by default.
-
-### One login-shell environment, shared
-
-Hooks already run through the user's interactive login shell to get a
-terminal's `PATH`. Agent detection, editor detection, agent tabs and
-terminal-editor tabs all need the same environment, so resolve it once: at
-launch, off the main thread, run the login shell and capture its environment
-(`env -0`, not only `PATH`, so `NVM_DIR` and friends come too), cache it in
-`AppModel`, and expose a Refresh that the two dropdowns share. Every consumer
-in this file reads from that one value rather than shelling out again. A
-shell that fails to start or takes more than a few seconds falls back to the
-process environment with a note in the log.
-
-### Preferred agent, global and per project
-
-- Detection. `ExecutableLookup` walks the process's `PATH`, which from the
-  Finder is the system directories only. Every agent people install
-  (`claude`, `codex`, `gemini`, `aider`, `opencode`, `cursor-agent`) lives
-  under Homebrew, npm or a version manager, so that lookup finds nothing.
-  Ask the user's interactive login shell for its `PATH` once at launch, off
-  the main thread, cache it, and look agents up there. Hand the same `PATH`
-  to the agent tab.
-- Where it lives. Global value on the workspace, optional override on
-  `ProjectSettings`, `nil` meaning follow the global, the pattern
-  `worktreeDirectory` and `branchPrefix` already use. Not in
-  `WorktreeSettings`, which is about paths. Store the agent id as a string so
-  a newer build's agent loads harmlessly on an older one.
-- Catalogue. A static table in the core: id, display name, executable name,
-  launch arguments, resume arguments where the agent has them. Plus a custom
-  entry where the user types a command.
-- Dropdown. Lists detected agents, "None", and a Refresh. The stored value
-  can name an agent no longer installed; a SwiftUI picker whose selection is
-  not in its list shows blank, so include it marked "not installed".
-- Actions. New Agent Tab with a shortcut, a button in the detail header, and
-  the auto-start toggle below. Tie-in: the preferred agent tells the session
-  state feature which hook format to install.
-- Tests. Detection against a temporary directory of fake executables on a
-  fake `PATH`, the way `FakeGit` stands in for git. Global versus override in
-  `ProjectSettingsTests`. A decoding case for an unknown agent id.
-
-### Auto-start preferred agent
-
-Triggers: selecting a worktree with no tabs (which is what follows a create)
-and New Tab. Both end in the store's open-tab call, which already takes a
-command.
-
-- Record the agent id on the session, not the command line. Build the
-  command when the tab opens, from the setting in force and the resolved
-  `PATH`. A changed preference or a newly installed agent applies to the next
-  tab without touching saved state.
-- Relaunch. Saved tabs come back as fresh shells on first visit. With a raw
-  command, four saved agent tabs would start four agent sessions at once.
-  With the id, resume where the catalogue knows how (Claude's `--continue`),
-  otherwise a plain shell with the tab title kept. Make it a setting if
-  anyone objects.
-- A plain shell must stay reachable. Splits stay plain shells. New Tab gets a
-  sibling: Cmd+T for the agent, Cmd+Shift+T for a shell, or a modifier.
-- When the agent quits the tab would close with its scrollback. Launch as
-  `agent; exec $SHELL` through the login shell so a shell remains.
-- Title. The default title is the command's name, which after the wrapper
-  reads `zsh`. A session with an agent id takes the agent's display name
-  until the shell reports one.
-- Ordering with hooks. The post-create hook finishes before the worktree
-  appears, so the agent starts after `npm install`. A failing hook still
-  selects, so the agent starts with the hook's alert on top.
-- A preferred agent no longer on `PATH` falls back to a plain shell and
-  reports once, like an unreachable project.
-- Tests with the fake engine: New Tab carries the agent id when auto-start
-  is on, the first tab after select does too, a split does not, the project
-  override beats the global, a missing agent yields a plain shell plus one
-  alert. Extend the relaunch test with the resume case. A decoding case for
-  the field.
 
 ### Project hooks: pre-create, pre-delete, multi-line editors
 
@@ -290,9 +144,9 @@ person running agents in several worktrees can see which one wants them
 without visiting each. Depends on the session state feature above; without
 it the list has nothing to group by.
 
-- State mapping. The runtime enum has idle, running and attention. Working
-  is running, Waiting is attention (needs input), Done is finished since the
-  tab was last shown. Decide whether a plain idle shell that has never
+- State mapping. The runtime enum has running, attention, done and error.
+  Working is running, Waiting is attention (needs input), Done is done or
+  error since the tab was last shown, with Failed marked in the row. Decide whether a plain idle shell that has never
   reported anything appears at all; leaving it out keeps the list to what
   matters, showing it under Done makes the list complete. Start with leaving
   it out and a "show all" toggle if that is wrong.
@@ -353,6 +207,15 @@ Open in Editor needs a preferred editor setting:
 
 ### Everyday
 
+- A default shell, global and per project. Every tab runs `$SHELL`, and
+  there is no way to pick another, so a bash project on a zsh Mac gets zsh.
+  Detect the shells present (`/etc/shells` plus the login shell's PATH for
+  zsh, bash, fish, nu), a global choice on the workspace with a `nil`
+  override on `ProjectSettings` like the agent, and a dropdown in both
+  settings windows marking a stored shell that is no longer installed. The
+  hooks follow: `ShellLaunch` and `SessionEnvironment` already branch on the
+  shell's name, so a chosen shell gets the same per-session integration as
+  `$SHELL` does today, and a shell without one launches plainly.
 - Three different `plus` icons. The sidebar header's Add Project, each
   project row's New Worktree, and the tab strip's New Tab all draw the same
   `plus` symbol, so the header button reads as "add something" until the
@@ -388,10 +251,10 @@ Open in Editor needs a preferred editor setting:
   no "delete the branch too" on removal, no view of merged branches that
   could go.
 - Nothing per project shapes the terminal: no startup commands, environment
-  variables or default shell. The store can open a tab running a command but
-  no UI reaches it (the agent features above are the first to).
-- Terminal: no find, no notifications, font chosen by typed name, SwiftTerm
-  sessions never raise activity because the view swallows the bell.
+  variables or default shell. The store can open a tab running a command;
+  only the agent tab reaches it.
+- Terminal: no find, font chosen by typed name, SwiftTerm sessions never
+  raise activity because the view swallows the bell.
 - Project settings live on one machine. Hooks, the worktree path template
   and the agent choice are things a team would share. A `.multishell.json`
   in the repository, read as defaults under the user's own project settings,

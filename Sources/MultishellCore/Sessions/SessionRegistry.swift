@@ -16,6 +16,10 @@ public final class SessionRegistry {
   /// the workspace because it is about what the user has seen, not state.
   public var onActivity: (@MainActor (TerminalSession.ID) -> Void)?
 
+  /// The foreground command of a shell returned. Distinct from activity so
+  /// the GUI can clear a Working state the engine has evidence against.
+  public var onCommandFinished: (@MainActor (TerminalSession.ID, Int32?) -> Void)?
+
   /// The title the shell reports through OSC. Runtime, like activity: shells
   /// change it on every prompt, and a relaunched tab gets a fresh shell that
   /// reports its own, so writing it into the workspace would only churn
@@ -41,8 +45,16 @@ public final class SessionRegistry {
   /// workspace with thirty tabs should not spawn thirty shells at launch.
   /// Returns the sessions that failed to open; they stay in the store so the
   /// caller can decide whether to retry or drop them.
+  ///
+  /// `prepare` is the last word on what a shell runs: the store records an
+  /// agent by id, and the caller turns that into a command line at the
+  /// moment the shell starts, when it knows the PATH and whether this is a
+  /// relaunch.
   @discardableResult
-  public func reconcile(shouldBeLive: (TerminalSession) -> Bool = { _ in true }) -> [Failure] {
+  public func reconcile(
+    shouldBeLive: (TerminalSession) -> Bool = { _ in true },
+    prepare: (TerminalSession) -> TerminalSession = { $0 }
+  ) -> [Failure] {
     let wanted = store.workspace.sessions.filter(shouldBeLive)
     let wantedIDs = Set(wanted.map(\.id))
     let open = host.openSessionIDs
@@ -54,7 +66,7 @@ public final class SessionRegistry {
     var failures: [Failure] = []
     for session in wanted where !open.contains(session.id) {
       do {
-        try host.open(session)
+        try host.open(prepare(session))
       } catch {
         failures.append(Failure(sessionID: session.id, error: error))
       }
@@ -82,6 +94,12 @@ extension SessionRegistry: TerminalHostDelegate {
 
   public func terminalHost(_ host: any TerminalHost, didSeeActivityIn id: TerminalSession.ID) {
     onActivity?(id)
+  }
+
+  public func terminalHost(
+    _ host: any TerminalHost, didFinishCommandIn id: TerminalSession.ID, exitCode: Int32?
+  ) {
+    onCommandFinished?(id, exitCode)
   }
 
   public func terminalHost(_ host: any TerminalHost, didFocus id: TerminalSession.ID) {

@@ -36,6 +36,13 @@ struct PresentedError: Identifiable {
     case is GitUnavailable:
       title = "git not found"
       message = "Multishell runs git from your PATH and could not find it."
+    case let failure as SocketFailure where failure.kind == .inUse:
+      title = "Another Multishell is running"
+      message =
+        "It holds \(failure.path), so agent state reports go to it and this window's dots will not change. Quit one of them."
+    case let failure as SocketFailure:
+      title = "Session state reports are unavailable"
+      message = "Could not listen on the socket: \(failure)"
     case let state as UnreadableState:
       title = "Saved state could not be read"
       message =

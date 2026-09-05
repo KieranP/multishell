@@ -117,6 +117,31 @@ struct SwiftTermHostTests {
     #expect(try await ProcessState.of(pid) == "gone")
   }
 
+  @Test func theShellSeesItsSessionIdentityInTheEnvironment() async throws {
+    let host = SwiftTermTerminalHost()
+    let recorder = HostRecorder()
+    host.delegate = recorder
+    let marker = directory.appendingPathComponent("multishell-env-\(UUID().uuidString)")
+    defer { try? FileManager.default.removeItem(at: marker) }
+    let session = TerminalSession(
+      worktreeID: "/w", workingDirectory: directory, title: "t",
+      command: [
+        "/bin/sh", "-c",
+        "printf '%s|%s|%s|%s' \"$MULTISHELL_SESSION\" \"$MULTISHELL_WORKTREE\" \"$MULTISHELL_SOCKET\" \"$HOME\" > '\(marker.path)'",
+      ])
+    try host.open(session)
+    try await waitUntil { !recorder.exits.isEmpty }
+
+    let fields = try String(contentsOf: marker, encoding: .utf8).split(
+      separator: "|", omittingEmptySubsequences: false)
+    #expect(fields.count == 4)
+    #expect(fields[0] == session.id.uuidString)
+    #expect(fields[1] == session.workingDirectory.path)
+    #expect(fields[2] == Paths.socketFile.path)
+    #expect(!fields[3].isEmpty, "SwiftTerm's own defaults are kept alongside")
+    host.close(session.id)
+  }
+
   @Test func rawWaitStatusesAreReducedToExitCodesAndRealCodesPassThrough() {
     #expect(SwiftTermTerminalHost.exitStatus(768) == 3)
     #expect(SwiftTermTerminalHost.exitStatus(0) == 0)

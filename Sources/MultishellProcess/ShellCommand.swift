@@ -28,7 +28,7 @@ public struct ShellCommand: Sendable {
   /// additions are in `.zprofile` for some people and `.zshrc` for others,
   /// so both `-l` and `-i` are needed. `/bin/sh` when `$SHELL` is unset or
   /// missing, as in a sandbox.
-  static var shell: (executable: URL, arguments: [String])? {
+  public static var shell: (executable: URL, arguments: [String])? {
     #if os(Windows)
       guard let cmd = ExecutableLookup.find("cmd") else { return nil }
       return (cmd, ["/c"])

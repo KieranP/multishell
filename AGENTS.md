@@ -25,8 +25,24 @@ Working rules:
 - Every store operation must leave `WorkspaceInvariants` true. The seeded
   random tests (`WorkspaceStoreInvariantTests`, `AppModelInvariantTests`) will
   find it if not; a failure prints its seed and step so it can be replayed.
-- Runtime state (shell titles, activity, statuses, live sessions) lives in
-  `AppModel`, never in the workspace, so a prompt does not save or re-render.
+- Runtime state (shell titles, session states, statuses, live sessions)
+  lives in `AppModel`, never in the workspace, so a prompt does not save or
+  re-render. `SessionStates` owns who clears what; change it there and in
+  `SessionStatesTests`, not in a view.
+- The socket accepts reports that change a dot and nothing else: no opening
+  tabs, no running commands. Its protocol only ever adds fields, so an old
+  helper keeps working against a new app. A report naming a session the app
+  does not know is dropped, not matched by its directory.
+- Shell integration is generated per session under the state directory and
+  injected through `ZDOTDIR` (zsh) or `--init-file` (bash). Never write to a
+  user's rc file. Claude Code's hooks are the one exception, and only on the
+  user's click, with a copy kept beside the file.
+- A new keyboard shortcut also goes in `GhosttyTerminalHost.appShortcuts`, or
+  the surface eats it before the menu sees it.
+- Debug builds use `state.debug.json`, `multishell.debug.sock` and
+  `integration.debug/`, decided by `#if DEBUG` in `Paths`; keep new
+  per-build files on that pattern so `make run` never touches the installed
+  app's state.
 - Nothing in the core blocks a thread. `ProcessRunner` is handler-driven; a
   test runs 96 children at once and another counts descriptors after failed
   launches. Do not add a `wait` inside a `Task`. Pipes come from the `pipe`

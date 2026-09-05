@@ -18,18 +18,28 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   /// else.
   public var confirmsWorktreeRemoval: Bool
 
+  /// Agent override by catalogue id. `nil` follows the global choice;
+  /// `AgentCatalogue.noneID` opts this project out of it.
+  public var preferredAgentID: String?
+  /// Whether new tabs here start the agent. `nil` follows the global.
+  public var autoStartAgent: Bool?
+
   public init(
     worktreeDirectory: String? = nil,
     branchPrefix: String? = nil,
     postCreateHook: String = "",
     postDeleteHook: String = "",
-    confirmsWorktreeRemoval: Bool = true
+    confirmsWorktreeRemoval: Bool = true,
+    preferredAgentID: String? = nil,
+    autoStartAgent: Bool? = nil
   ) {
     self.worktreeDirectory = worktreeDirectory
     self.branchPrefix = branchPrefix
     self.postCreateHook = postCreateHook
     self.postDeleteHook = postDeleteHook
     self.confirmsWorktreeRemoval = confirmsWorktreeRemoval
+    self.preferredAgentID = preferredAgentID
+    self.autoStartAgent = autoStartAgent
   }
 
   /// An empty string on disk reads as "no override". State from before
@@ -45,6 +55,8 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     postDeleteHook = try c.decodeIfPresent(String.self, forKey: .postDeleteHook) ?? ""
     confirmsWorktreeRemoval =
       try c.decodeIfPresent(Bool.self, forKey: .confirmsWorktreeRemoval) ?? true
+    preferredAgentID = Self.override(try c.decodeIfPresent(String.self, forKey: .preferredAgentID))
+    autoStartAgent = try c.decodeIfPresent(Bool.self, forKey: .autoStartAgent)
   }
 
   private static func override(_ value: String?) -> String? {

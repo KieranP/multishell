@@ -97,4 +97,12 @@ extension MultiEngineHost: TerminalHostDelegate {
   func terminalHost(_ host: any TerminalHost, didFocus id: TerminalSession.ID) {
     delegate?.terminalHost(self, didFocus: id)
   }
+
+  /// Forwarded as itself, or the protocol's default would turn it back
+  /// into plain activity here.
+  func terminalHost(
+    _ host: any TerminalHost, didFinishCommandIn id: TerminalSession.ID, exitCode: Int32?
+  ) {
+    delegate?.terminalHost(self, didFinishCommandIn: id, exitCode: exitCode)
+  }
 }

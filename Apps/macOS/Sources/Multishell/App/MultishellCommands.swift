@@ -12,6 +12,10 @@ struct MultishellCommands: Commands {
     CommandGroup(replacing: .newItem) {
       Button("New Tab") { model.newTab() }
         .keyboardShortcut("t")
+      Button("New Shell Tab") { model.newShellTab() }
+        .keyboardShortcut("t", modifiers: [.command, .shift])
+      Button("New Agent Tab") { model.newAgentTab() }
+        .keyboardShortcut("t", modifiers: [.command, .option])
       Button("New Worktree…") { model.requestNewWorktree() }
         .keyboardShortcut("n")
       Button("Add Project…") { Task { await model.chooseProject() } }

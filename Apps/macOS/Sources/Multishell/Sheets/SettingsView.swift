@@ -14,8 +14,10 @@ struct SettingsView: View {
         .tabItem { Label("Appearance", systemImage: "paintpalette") }
       WorktreeSettingsTab(model: model)
         .tabItem { Label("Worktrees", systemImage: "arrow.trianglehead.branch") }
+      AgentSettingsTab(model: model)
+        .tabItem { Label("Agent", systemImage: "sparkles") }
     }
-    .frame(width: 540, height: 360)
+    .frame(width: 560, height: 440)
   }
 }
 
@@ -29,7 +31,18 @@ private struct GeneralSettingsTab: View {
           ForEach(TerminalEngine.allCases, id: \.self) { Text($0.displayName).tag($0) }
         }
         SettingsCaption(
-          "Used for every terminal opened from now on. Terminals already running keep the engine that started them."
+          model.workspace.terminalEngine == .swiftTerm
+            ? "Used for every terminal opened from now on. Terminals already running keep the engine that started them. SwiftTerm has no shell integration and swallows the bell, so under it the state dots come from agent hooks alone."
+            : "Used for every terminal opened from now on. Terminals already running keep the engine that started them."
+        )
+      }
+
+      Section {
+        Picker("Notifications:", selection: notifications) {
+          ForEach(NotificationPreference.allCases, id: \.self) { Text($0.displayName).tag($0) }
+        }
+        SettingsCaption(
+          "A system notification when an agent in a tab you are not looking at needs input or finishes. Off by default; macOS asks for permission the first time one is posted."
         )
       }
 
@@ -55,6 +68,10 @@ private struct GeneralSettingsTab: View {
 
   private var engine: Binding<TerminalEngine> {
     Binding(get: { model.workspace.terminalEngine }, set: { model.setTerminalEngine($0) })
+  }
+
+  private var notifications: Binding<NotificationPreference> {
+    Binding(get: { model.workspace.notifications }, set: { model.setNotifications($0) })
   }
 }
 

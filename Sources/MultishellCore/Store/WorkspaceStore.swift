@@ -132,11 +132,12 @@ extension WorkspaceStore {
   public func openTab(
     in worktreeID: Worktree.ID,
     title: String? = nil,
-    command: [String]? = nil
+    command: [String]? = nil,
+    agentID: String? = nil
   ) -> TerminalTab? {
-    guard let session = makeSession(in: worktreeID, title: title, command: command) else {
-      return nil
-    }
+    guard
+      let session = makeSession(in: worktreeID, title: title, command: command, agentID: agentID)
+    else { return nil }
     workspace.sessions.append(session)
     let tab = TerminalTab(worktreeID: worktreeID, session: session.id)
     workspace.tabs.append(tab)
@@ -246,14 +247,16 @@ extension WorkspaceStore {
   private func makeSession(
     in worktreeID: Worktree.ID,
     title: String?,
-    command: [String]?
+    command: [String]?,
+    agentID: String? = nil
   ) -> TerminalSession? {
     guard let worktree = workspace.worktree(worktreeID) else { return nil }
     return TerminalSession(
       worktreeID: worktreeID,
       workingDirectory: worktree.path,
       title: title ?? defaultTitle(for: command),
-      command: command
+      command: command,
+      agentID: agentID
     )
   }
 
@@ -285,5 +288,25 @@ extension WorkspaceStore {
 
   public func setWorktreeDefaults(_ defaults: WorktreeSettings) {
     workspace.worktreeDefaults = defaults
+  }
+
+  public func setNotifications(_ preference: NotificationPreference) {
+    workspace.notifications = preference
+  }
+}
+
+// MARK: - Agents
+
+extension WorkspaceStore {
+  public func setPreferredAgent(_ id: String?) {
+    workspace.preferredAgentID = id
+  }
+
+  public func setCustomAgentCommand(_ command: String) {
+    workspace.customAgentCommand = command
+  }
+
+  public func setAutoStartAgent(_ enabled: Bool) {
+    workspace.autoStartAgent = enabled
   }
 }

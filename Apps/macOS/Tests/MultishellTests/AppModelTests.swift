@@ -20,8 +20,13 @@ final class FakeEngine: TerminalSurfaceHost {
   var openSessionIDs: Set<TerminalSession.ID> = []
   var focused: [TerminalSession.ID] = []
   var closed: [TerminalSession.ID] = []
+  /// What the registry asked for, command line included.
+  var opened: [TerminalSession] = []
   weak var delegate: (any TerminalHostDelegate)?
-  func open(_ session: TerminalSession) throws { openSessionIDs.insert(session.id) }
+  func open(_ session: TerminalSession) throws {
+    openSessionIDs.insert(session.id)
+    opened.append(session)
+  }
   func close(_ id: TerminalSession.ID) {
     openSessionIDs.remove(id)
     closed.append(id)
@@ -31,12 +36,33 @@ final class FakeEngine: TerminalSurfaceHost {
   func apply(_ theme: Theme, appearance: Appearance) {}
 }
 
+/// A channel the test drives by hand.
 @MainActor
-private struct Harness {
+final class FakeStateSource: SessionStateSource {
+  var onReport: (@MainActor (SessionStateReport) -> Void)?
+  var started = false
+  func start() throws { started = true }
+  func stop() { started = false }
+  func send(_ report: SessionStateReport) { onReport?(report) }
+}
+
+@MainActor
+final class FakeNotifier: SessionNotifier {
+  var onActivate: (@MainActor (SessionStates.Key) -> Void)?
+  var posted: [(title: String, body: String, key: SessionStates.Key)] = []
+  func notify(title: String, body: String, about key: SessionStates.Key) {
+    posted.append((title, body, key))
+  }
+}
+
+@MainActor
+struct Harness {
   let model: AppModel
   let store: WorkspaceStore
   let engine = FakeEngine()
   let watcher = FakeWatcher()
+  let source = FakeStateSource()
+  let notifier = FakeNotifier()
   let project: Project
   let main: Worktree
   let feature: Worktree
@@ -59,7 +85,9 @@ private struct Harness {
 
     let engine = self.engine
     let host = MultiEngineHost(engine: .ghostty) { _ in engine }
-    model = AppModel(store: store, host: host, worktrees: nil, watcher: watcher)
+    model = AppModel(
+      store: store, host: host, worktrees: nil, watcher: watcher, stateSource: source,
+      notifier: notifier)
   }
 }
 
@@ -165,12 +193,12 @@ struct AppModelTests {
     h.engine.delegate?.terminalHost(h.engine, didSeeActivityIn: first.focusedSessionID)
     h.engine.delegate?.terminalHost(h.engine, didSeeActivityIn: second.focusedSessionID)
 
-    #expect(h.model.hasUnseenActivity(first))
-    #expect(!h.model.hasUnseenActivity(second), "the focused tab is being watched")
-    #expect(h.model.unseenActivityCount(in: h.main.id) == 1)
+    #expect(h.model.state(of: first) == .done)
+    #expect(h.model.state(of: second) == nil, "the focused tab is being watched")
+    #expect(h.model.state(ofWorktree: h.main.id) == .done)
 
     h.model.activate(first)
-    #expect(!h.model.hasUnseenActivity(first))
+    #expect(h.model.state(of: first) == nil)
   }
 
   @Test func aBurstOfActivityCoalescesIntoOneStatusRefresh() async {
@@ -199,11 +227,11 @@ struct AppModelTests {
     let first = h.model.workspace.activeTab(in: h.main.id)!
     h.model.newTab()
     h.engine.delegate?.terminalHost(h.engine, didSeeActivityIn: first.focusedSessionID)
-    #expect(h.model.unseenActivityCount(in: h.main.id) == 1)
+    #expect(h.model.state(ofWorktree: h.main.id) == .done)
 
     h.engine.delegate?.terminalHost(h.engine, didExit: first.focusedSessionID, code: 0)
 
-    #expect(h.model.unseenActivity.isEmpty, "nothing left to look at")
+    #expect(h.model.sessionStates.isEmpty, "nothing left to look at")
   }
 
   @Test func aProcessExitDropsTheTabAndTheLiveCount() {
@@ -311,7 +339,7 @@ struct AppModelInvariantTests {
     for step in 0..<300 {
       let ws = h.model.workspace
       let live = Array(h.engine.openSessionIDs)
-      switch Int.random(in: 0..<12, using: &rng) {
+      switch Int.random(in: 0..<16, using: &rng) {
       case 0, 1: h.model.select(worktrees.randomElement(using: &rng)!)
       case 2: h.model.newTab()
       case 3: h.model.closeActivePane()
@@ -337,6 +365,34 @@ struct AppModelInvariantTests {
           h.engine.focused.append(id)
           h.engine.delegate?.terminalHost(h.engine, didFocus: id)
         }
+      case 11, 12:
+        // A report over the socket: about a live shell, a dead one, an
+        // unknown one, or a directory only.
+        let state = SessionState.allCases.randomElement(using: &rng)!
+        let subject = Int.random(in: 0..<4, using: &rng)
+        let session: TerminalSession.ID? =
+          switch subject {
+          case 0: live.randomElement(using: &rng)
+          case 1: ws.sessions.randomElement(using: &rng)?.id
+          case 2: UUID()
+          default: nil
+          }
+        let cwd = Bool.random(using: &rng) ? worktrees.randomElement(using: &rng)!.path.path : "/x"
+        h.source.send(
+          SessionStateReport(
+            state: state, sessionID: session, cwd: cwd,
+            pid: Bool.random(using: &rng) ? Int32.random(in: 1...99999, using: &rng) : nil))
+      case 13:
+        if let id = live.randomElement(using: &rng) {
+          h.engine.delegate?.terminalHost(
+            h.engine, didFinishCommandIn: id, exitCode: Int32.random(in: 0...2, using: &rng))
+        }
+      case 14:
+        if Bool.random(using: &rng), let tab = ws.tabs.randomElement(using: &rng) {
+          h.model.clearState(of: tab)
+        } else {
+          h.model.clearState(ofWorktree: worktrees.randomElement(using: &rng)!.id)
+        }
       default:
         // A refresh that lost or found a worktree, then the sync every
         // model action ends with.
@@ -356,7 +412,26 @@ struct AppModelInvariantTests {
     #expect(h.model.liveSessions == live, "\(context): views see a different live set")
     #expect(live.isSubset(of: sessionIDs), "\(context): a shell with no session")
     #expect(Set(h.model.sessionTitles.keys).isSubset(of: live), "\(context): title of a dead shell")
-    #expect(h.model.unseenActivity.isSubset(of: live), "\(context): dot for a dead shell")
+    for key in h.model.sessionStates.states.keys {
+      switch key {
+      case .session(let id): #expect(live.contains(id), "\(context): dot for a dead shell")
+      case .worktree(let id):
+        #expect(ws.worktree(id) != nil, "\(context): state for a missing worktree")
+      }
+    }
+    #expect(
+      Set(h.model.sessionStates.pids.keys).isSubset(of: Set(h.model.sessionStates.states.keys)),
+      "\(context): a pid with no state")
+    if let selected = ws.selectedWorktreeID {
+      #expect(
+        h.model.sessionStates[.worktree(selected)]?.isFinished != true,
+        "\(context): unseen Done or Failed shown")
+      for id in ws.activeTab(in: selected)?.sessionIDs ?? [] {
+        #expect(
+          h.model.sessionStates[.session(id)]?.isFinished != true,
+          "\(context): unseen Done or Failed shown")
+      }
+    }
     #expect(h.model.liveTerminalCount == live.count, "\(context): quit guard count")
 
     // Every session of a visited worktree has a shell; unvisited ones none.
@@ -471,13 +546,13 @@ struct AttentionDotTests {
     h.model.newTab()
     let second = h.model.workspace.activeTab(in: h.main.id)!
     h.engine.delegate?.terminalHost(h.engine, didSeeActivityIn: first.focusedSessionID)
-    #expect(h.model.hasUnseenActivity(first))
+    #expect(h.model.state(of: first) == .done)
 
     h.engine.delegate?.terminalHost(h.engine, didExit: second.focusedSessionID, code: 0)
 
     #expect(h.model.workspace.activeTab(in: h.main.id)?.id == first.id)
-    #expect(!h.model.hasUnseenActivity(first))
-    #expect(h.model.unseenActivityCount(in: h.main.id) == 0)
+    #expect(h.model.state(of: first) == nil)
+    #expect(h.model.state(ofWorktree: h.main.id) == nil)
   }
 }
 

@@ -138,6 +138,9 @@ activity you have not seen, cleared when the tab is shown, which is also what
 Terminal.app's dot means. A shell exiting can bring another tab into view;
 that clears its dot too.
 
+This is now the Done state of the richer scheme below; engine activity still
+raises it, and it still clears when shown.
+
 ## Sessions warm up when visited
 
 Terminals stay alive across worktree switches, so a saved workspace could
@@ -422,3 +425,206 @@ the list was empty with nothing to say why; it now says every local branch
 is checked out already and points at New branch, where a remote branch can
 be named as the base.
 
+
+## A terminal's state comes from what runs in it
+
+The engine can say a bell rang or a command finished; only the program in the
+terminal can say it is waiting for an answer. So each live session has a
+state, `SessionState`: Working, Waiting for input, Done, Failed, or nothing.
+The engine's bell and title changes raise Done, as the dot always did, and
+Ghostty's command-finished raises Done or Failed by the exit code (a code
+above 128 is a signal, usually the user's own Ctrl+C, and is not a failure).
+libghostty reports a command finishing but not one starting, and inferring
+the start from the title flipped a tab to Working the moment it opened, so
+that heuristic was removed: Working comes from a report, not the engine.
+Reports from outside the engine set the rest: Claude Code's hooks first
+(`UserPromptSubmit`, `PreToolUse`, `PostToolUse` are Working, `Notification`
+is Waiting, `Stop` is Done, `StopFailure` is Failed, `SessionStart` and
+`SessionEnd` clear), the user's shell through the command-status hooks below,
+and any script through the helper's `state` command. The state lives in
+`AppModel` (`SessionStates`), never in the workspace.
+
+An agent needs no special case: launching it is a command, so the shell hook
+flashes Working, then the agent's own SessionStart reports idle and the dot
+returns to grey until a prompt drives its states. A new shell is grey, a
+plain command turns it amber, and an agent sitting at its prompt is grey.
+
+Who clears what. Done and Failed are about the user: showing the tab clears
+them, and a report of either about the shown tab is already seen; a Failed
+is never hidden behind an unseen Done. Working and Waiting are about the
+process: they stay while the user looks, because a question the user has
+seen but not answered is still waiting. They clear when the source reports
+again, when Ghostty's command-finished says the foreground command returned
+(the one engine signal that outranks a report), when the process the report
+named is gone, or when the user clicks the dot. Engine activity never
+downgrades a reported state: an agent retitles its tab on every step.
+
+An agent killed with Ctrl+C sends no Stop hook. The helper reports the pid of
+the program that ran it, found by walking past any `sh -c` layers to the
+first ancestor that is not a shell, and while any state names a pid the app
+checks it every two seconds and drops Working and Waiting once it is gone.
+No timeout: a long task is not a stale one.
+
+Colour and place. Working is the theme's yellow (slot 3), Waiting its blue
+(slot 4), Done its green (slot 2), Failed its red (slot 1), and a worktree
+with nothing running a grey. The sidebar's dirty-files dot is already that
+yellow on the right of the row, so the state dot takes the icon's place on
+the left rather than sitting beside it as a second dot of the same colour.
+A worktree row always shows the dot, so one glance down the sidebar answers
+"is anything happening"; a tab keeps its icon until it has a state. A project
+row keeps its folder while its worktrees are showing, and takes the most
+urgent of their dots only once collapsed, so a state is drawn once and never
+both above and below. Urgency, for a tab or worktree with several: Waiting,
+then Failed, then Working, then Done.
+
+Cost: two more things to reason about when a tab is closed. Cmd+W on a pane
+whose agent reported Working asks first, the way worktree removal does, and
+the quit guard counts working agents apart from plain shells.
+
+## The inbound channel is a Unix socket and a small helper
+
+Reports arrive on `multishell.sock` in the state directory, one JSON object
+per line with a version field, so a helper left behind by an older install
+keeps working against a newer app: fields are only added, and a state this
+build does not know costs that line only. The socket is the user's, mode
+0600, and what it accepts changes a dot and nothing else: no opening tabs,
+no running commands. A report naming a session the app does not know is
+dropped, not matched by its directory; one with only a directory that is a
+worktree marks the worktree, so a hook fired from Terminal.app in that
+directory shows up too.
+
+The shell command-status hooks are the accurate, engine-independent source
+of Working and the exit-code Done/Failed. A `preexec`/`precmd` pair calls the
+helper's `command-started` and `command-finished --exit $?`; the helper maps
+the code. They work under both engines, where the Ghostty finish signal is
+absent (SwiftTerm) or the start is not reported at all, and they carry the
+real exit code. Both reports run inline: backgrounding them let a fast
+command's finished overtake its started, let a fast close skip one, and
+printed job notices at the prompt. zsh writes the JSON line to the socket
+itself through `zsocket`, so a command line costs two socket writes and no
+process, under 2 ms for both here; the helper is its fallback for a zsh built
+without `zsh/net/socket`. bash has no such builtin and spawns the helper
+twice, about 12 ms each here.
+A shell that exits mid-command, `exit` being the usual case, runs preexec but
+never the next precmd, so the started report carries the shell's pid for the
+watch to clear, and zsh clears at once from a `zshexit` hook.
+
+They are injected per session, silently, with no setting: the app writes
+generated startup files under the state directory at every launch. A zsh
+session gets `ZDOTDIR` pointed at them, and each generated file chains to the
+user's own file first, so their config loads unchanged, then `.zshrc` adds
+the hooks and hands `ZDOTDIR` back so a nested shell is untouched. bash has
+no `ZDOTDIR`, so a bash tab is launched with `--init-file` naming a generated
+init that reproduces the login startup (`/etc/profile`, the first of
+`.bash_profile`, `.bash_login`, `.profile`, then `.bashrc`) before adding the
+hooks; `ShellLaunch` decides the arguments, and for Ghostty the command
+override. The hooks therefore exist only inside these terminals and nothing
+is written to the user's rc files; any other shell is launched plainly with
+no hooks.
+
+Under Ghostty the bash override goes through `/bin/sh -c 'exec bash …'` on
+purpose. Ghostty keys its own bash injection on the command's first word;
+handed `bash --init-file X` it swallows the init into `GHOSTTY_BASH_RCFILE`,
+adds `--posix` and points `ENV` at its bootstrap, and macOS's bash 3.2 in
+that mode reads neither the bootstrap nor, therefore, our init, so nothing
+attaches at all. Reproduced on a pty with the bundled bootstrap. `sh` draws
+no injection and hands bash our init intact; Ghostty's OSC 133 marks are lost
+for bash, which the hooks more than replace. zsh keeps Ghostty's bootstrap,
+which chains to our `ZDOTDIR` as it would to a user's.
+
+Why a socket rather than a URL scheme: a URL activates the app, and a hook
+fires dozens of times a minute. Why a helper rather than `nc`: quoting, a
+stable protocol, and one place to put the Claude mapping. The helper ships
+in `Contents/Helpers` and is reached through a symlink at `bin/multishell`
+under the state directory, refreshed at launch, so a moved bundle does not
+break a hook line. An optional link in `/usr/local/bin`, behind an
+administrator prompt, is for people writing their own hooks.
+
+A stale socket file from a crashed instance is unlinked at launch, but only
+after a connect to it is refused: one that answers belongs to a running
+instance, and stealing its path would leave that instance deaf. The second
+instance is told so, once. Every shell the app starts gets
+`MULTISHELL_SESSION`, `MULTISHELL_WORKTREE` and `MULTISHELL_SOCKET` in its
+environment, which is how a hook names its tab.
+
+## Claude Code's hooks are added, never edited silently
+
+Claude reads hooks from `~/.claude/settings.json`. Settings > Agent shows the
+JSON, copies it, and adds it on request, and the helper has the same
+subcommand. The merge appends one entry of ours per event and leaves every
+other entry, and every other key, as it is; the first write keeps a copy of
+the file beside it, since re-serialising changes its formatting. Remove
+takes only ours. The section appears only when Claude Code is on the login
+shell's PATH; without it, an Install button opens the setup guide and copies
+the installer line rather than running anything.
+
+## One login-shell environment, captured once
+
+An app launched from the Finder has PATH set to the system directories, and
+every agent people install lives under Homebrew, npm or a version manager.
+At launch, off the main thread, the app runs the user's interactive login
+shell with `env -0` and keeps the whole environment, so agent detection, the
+agent tab and the Claude Code check all read one value; Refresh in the agent
+dropdown runs it again. A shell that fails, prints no PATH or takes more than
+eight seconds yields the process's own environment, with a line in the log
+and the reason in the settings caption. Hooks keep running through the login
+shell themselves: the shell's own PATH is the contract there.
+
+## Agents are ids in the store, command lines at launch
+
+The preferred agent is a catalogue id on the workspace, with an optional
+override per project where `none` opts a project out and `nil` follows the
+global, the pattern the worktree settings use. Ids are strings so a newer
+build's agent loads harmlessly on an older one, and a stored id that is no
+longer installed is listed in the dropdown marked as such rather than making
+the picker go blank.
+
+New Agent Tab (Cmd+Option+T, and a button in the header when an agent is in
+force) records the agent id on the session; the command line is built when
+the shell starts (`SessionRegistry.reconcile(prepare:)`). It runs through the
+user's interactive login shell, `agent; exec $SHELL -l`, so the agent is
+found on a terminal's PATH and a shell remains when it quits, keeping the
+scrollback; the `exec` comes from `ShellLaunch.execCommandLine`, so that
+shell gets the command-status hooks a fresh tab would. A session that came off disk resumes where the catalogue knows
+how (`claude --continue`) and is otherwise a plain shell that keeps the
+agent's title: four saved agent tabs must not start four agents. An agent
+the login shell's PATH does not have opens a plain shell and is reported
+once per run, like an unreachable project.
+
+## Notifications are for reports, not for bells
+
+A system notification is posted for a Waiting, Done or Failed report about a
+tab the user is not looking at, or any tab while the app is in the
+background. Never for Working, and never for engine activity: a bell in a
+background tab is a dot. A finished report that carries a duration, which
+the shell hooks do, posts nothing under ten seconds: `ls` in a background tab
+is not news, a build is. Agent reports carry no duration and always qualify.
+Off by default; turning it on in Settings > General is where macOS asks for
+permission. A click on the banner selects the worktree and activates the tab.
+
+## Auto-start opens the agent where a shell would have opened
+
+With auto-start on, New Tab (Cmd+T) and the first tab a worktree gets when
+selected, which is what follows a create, start the preferred agent instead
+of a shell. It is a global toggle with a per-project override, like the agent
+itself, and does nothing where no agent is in force. New Shell Tab
+(Cmd+Shift+T) always opens a shell so one stays reachable, New Agent Tab
+moved to Cmd+Option+T, and splits stay plain shells. The post-create hook
+finishes before the worktree appears, so the agent starts after
+`npm install`; a failing hook still selects, so it starts with the hook's
+alert on top. Nothing else changed: the tab records the agent id and builds
+its command line at launch, so a saved agent tab resumes where it can.
+
+## Debug builds keep their own state, socket and integration
+
+A debug build reads and writes `state.debug.json`, listens on
+`multishell.debug.sock` and generates `integration.debug/`, decided by
+`#if DEBUG` in `Paths`. A `make run` beside the installed app then neither
+overwrites its state with the last autosave nor is refused the socket. Themes
+are shared, and so is the helper link at `bin/multishell`: Claude's hook
+lines reference that one path, and whichever build launched last points it at
+its own bundle. The two helpers speak the same protocol and each tab's
+`MULTISHELL_SOCKET` names the right socket, so it does not matter which
+answers. Cost: `make clean` after a debug run leaves the installed app's
+hooks pointing at a bundle that is gone until it relaunches and rewrites the
+link.

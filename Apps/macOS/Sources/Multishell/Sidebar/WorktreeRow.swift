@@ -4,61 +4,74 @@ import SwiftUI
 struct WorktreeRow: View {
   let worktree: Worktree
   let terminalCount: Int
-  let unseenActivity: Bool
+  let state: SessionState?
   let isSelected: Bool
   let status: WorktreeStatus?
   let theme: Theme
   let metrics: UIMetrics
 
+  private var kind: String {
+    if worktree.isDetached { return "Detached at \(worktree.head.prefix(7))" }
+    return worktree.isPrimary ? "Main worktree" : "Linked worktree"
+  }
+
   var body: some View {
     HStack(spacing: 7) {
-      Image(
-        systemName: worktree.isDetached
-          ? "point.topleft.down.to.point.bottomright.curvepath" : "arrow.trianglehead.branch"
-      )
-      .font(.system(size: metrics.icon))
-      .foregroundStyle(isSelected ? .white.opacity(0.9) : theme.textSecondary)
-      .help(
-        worktree.isDetached
-          ? "Detached at \(worktree.head.prefix(7))"
-          : worktree.isPrimary ? "Main worktree" : "Linked worktree")
+      // Always a dot, grey when nothing is running: the row's one glance
+      // answers "is anything happening here". It keeps its real colour when
+      // the row is selected, which is why selection is an outline rather
+      // than a fill that would tint the dot.
+      Circle()
+        .fill(theme.color(for: state ?? .idle))
+        .frame(width: 7, height: 7)
+        .frame(width: metrics.icon + 2)
+        .help("\(kind) · \((state ?? .idle).displayName)")
 
       Text(worktree.name)
         .font(.system(size: metrics.mono, design: .monospaced))
-        .foregroundStyle(isSelected ? .white : theme.textPrimary.opacity(0.8))
+        .foregroundStyle(theme.textPrimary.opacity(isSelected ? 1 : 0.8))
         .lineLimit(1)
         .truncationMode(.middle)
 
       Spacer(minLength: 4)
 
-      if unseenActivity {
-        Circle().fill(isSelected ? .white : Color.accentColor).frame(width: 6, height: 6)
-          .help("Activity in a background terminal")
-      }
       if worktree.isLocked {
         Image(systemName: "lock.fill")
           .font(.system(size: metrics.badge - 1))
-          .foregroundStyle(isSelected ? .white.opacity(0.7) : theme.textTertiary)
+          .foregroundStyle(theme.textTertiary)
           .help("Locked worktree")
+      }
+      // Git changes sit left of the terminal count, so the count stays at
+      // the row's right edge and lines up with rows that have no changes.
+      if let status, !status.isClean {
+        changes(status)
       }
       if terminalCount > 0 {
         Text("\(terminalCount)")
           .font(.system(size: metrics.badge, weight: .semibold))
           .monospacedDigit()
-          .foregroundStyle(isSelected ? .white : theme.textSecondary)
+          .foregroundStyle(theme.textSecondary)
           .padding(.horizontal, 6)
           .padding(.vertical, 1)
-          .background(isSelected ? .white.opacity(0.24) : theme.rowHover, in: Capsule())
+          .background(theme.rowHover, in: Capsule())
           .help("\(terminalCount) terminal\(terminalCount == 1 ? "" : "s")")
-      }
-      if let status, !status.isClean {
-        changes(status)
       }
     }
     .padding(.leading, metrics.indent)
     .padding(.trailing, 8)
     .frame(height: metrics.rowHeight)
-    .background(isSelected ? Color.accentColor : .clear, in: RoundedRectangle(cornerRadius: 6))
+    // Selected is a blue outline, not a fill: a filled row tinted the state
+    // dot and hid its colour. A faint wash keeps it legible without that.
+    .background(
+      isSelected ? Color.accentColor.opacity(0.12) : .clear,
+      in: RoundedRectangle(cornerRadius: 6)
+    )
+    .overlay {
+      if isSelected {
+        RoundedRectangle(cornerRadius: 6)
+          .strokeBorder(Color.accentColor, lineWidth: 1.5)
+      }
+    }
     .contentShape(.rect)
   }
 
@@ -68,7 +81,7 @@ struct WorktreeRow: View {
     HStack(spacing: 3) {
       if status.isDirty {
         Circle()
-          .fill(isSelected ? .white : theme.ansiRGB[3].color)
+          .fill(theme.ansiRGB[3].color)
           .frame(width: 6, height: 6)
         Text("\(status.changedFiles)")
       }
@@ -77,7 +90,7 @@ struct WorktreeRow: View {
     }
     .font(.system(size: metrics.badge, weight: .medium))
     .monospacedDigit()
-    .foregroundStyle(isSelected ? .white.opacity(0.9) : theme.textSecondary)
+    .foregroundStyle(theme.textSecondary)
     .help(status.summary)
   }
 }

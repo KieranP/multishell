@@ -32,4 +32,22 @@ public protocol TerminalHostDelegate: AnyObject {
   /// The user clicked into a surface. With splits, this is how the core
   /// learns which pane a split or close should act on.
   func terminalHost(_ host: any TerminalHost, didFocus id: TerminalSession.ID)
+  /// A foreground command started in the shell. Needs shell integration
+  /// that marks command boundaries, which only Ghostty has here; it is the
+  /// running signal for a plain command that reports nothing itself.
+  /// The shell's foreground command returned, with its exit code when the
+  /// engine knows it. Needs shell integration in the child, which only
+  /// Ghostty has; the one engine signal that can say an agent reported as
+  /// working is no longer running.
+  func terminalHost(
+    _ host: any TerminalHost, didFinishCommandIn id: TerminalSession.ID, exitCode: Int32?)
+}
+
+extension TerminalHostDelegate {
+  /// A host without the distinction reports a finished command as activity.
+  public func terminalHost(
+    _ host: any TerminalHost, didFinishCommandIn id: TerminalSession.ID, exitCode: Int32?
+  ) {
+    terminalHost(host, didSeeActivityIn: id)
+  }
 }

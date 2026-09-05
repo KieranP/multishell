@@ -40,7 +40,7 @@ final class SwiftTermTerminalHost: NSObject, TerminalHost {
     view.startProcess(
       executable: executable,
       args: arguments,
-      environment: nil,
+      environment: Self.environment(for: session),
       execName: nil,
       currentDirectory: session.workingDirectory.path
     )
@@ -124,13 +124,22 @@ final class SwiftTermTerminalHost: NSObject, TerminalHost {
     view.font = Self.font(appearance)
   }
 
-  /// `nil` command means the user's login shell, which is what a new tab is.
+  /// SwiftTerm's own defaults (TERM, LANG, HOME and friends) plus the
+  /// session's identity, so a hook inside can name its tab.
+  private static func environment(for session: TerminalSession) -> [String] {
+    Terminal.getEnvironmentVariables()
+      + SessionEnvironment.variables(for: session, socket: Paths.socketFile)
+      .map { "\($0.key)=\($0.value)" }
+  }
+
+  /// `nil` command means the user's login shell, which is what a new tab is,
+  /// launched so the command-status hooks are injected for this session.
   private static func launch(_ session: TerminalSession) -> (String, [String]) {
     if let command = session.command, let executable = command.first {
       return (executable, Array(command.dropFirst()))
     }
     let shell = ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh"
-    return (shell, ["-l"])
+    return (shell, ShellLaunch.arguments(forShell: shell))
   }
 
   private static func font(_ appearance: Appearance) -> NSFont {

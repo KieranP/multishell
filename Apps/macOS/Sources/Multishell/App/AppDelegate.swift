@@ -4,6 +4,7 @@ import AppKit
 /// live pty, and quitting kills whatever is running in it.
 final class AppDelegate: NSObject, NSApplicationDelegate {
   var openTerminalCount: @MainActor () -> Int = { 0 }
+  var workingAgentCount: @MainActor () -> Int = { 0 }
   var willTerminate: @MainActor () -> Void = {}
 
   func applicationWillFinishLaunching(_ notification: Notification) {
@@ -19,18 +20,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-    let count = MainActor.assumeIsolated { openTerminalCount() }
+    let (count, working) = MainActor.assumeIsolated { (openTerminalCount(), workingAgentCount()) }
     guard count > 0 else { return .terminateNow }
 
     let alert = NSAlert()
     alert.messageText = "Quit Multishell?"
-    alert.informativeText =
-      count == 1
-      ? "One terminal is still open and will be closed."
-      : "\(count) terminals are still open and will be closed."
+    alert.informativeText = Self.quitMessage(terminals: count, working: working)
     alert.alertStyle = .warning
     alert.addButton(withTitle: "Quit")
     alert.addButton(withTitle: "Cancel")
     return alert.runModal() == .alertFirstButtonReturn ? .terminateNow : .terminateCancel
+  }
+
+  /// Working agents are counted apart from plain shells: a shell at a prompt
+  /// loses nothing, an agent mid-task loses the task.
+  static func quitMessage(terminals: Int, working: Int) -> String {
+    let shells =
+      terminals == 1
+      ? "One terminal is still open and will be closed."
+      : "\(terminals) terminals are still open and will be closed."
+    switch working {
+    case 0: return shells
+    case 1: return shells + " One of them has an agent that is still working."
+    default: return shells + " \(working) of them have agents that are still working."
+    }
   }
 }

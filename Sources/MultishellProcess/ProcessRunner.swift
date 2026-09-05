@@ -35,9 +35,11 @@ public struct ProcessRunner: Sendable {
     _ executable: URL,
     _ arguments: [String],
     in directory: URL,
-    environment: [String: String] = [:]
+    environment: [String: String] = [:],
+    timeout: Duration? = nil
   ) async throws -> String {
-    let output = try await capture(executable, arguments, in: directory, environment: environment)
+    let output = try await capture(
+      executable, arguments, in: directory, environment: environment, timeout: timeout)
     guard output.succeeded else {
       throw ProcessFailure(
         executable: executable.lastPathComponent,
@@ -49,16 +51,19 @@ public struct ProcessRunner: Sendable {
     return output.standardOutput
   }
 
-  /// Returns the exit status instead of throwing.
+  /// Returns the exit status instead of throwing. A child still running at
+  /// `timeout` is sent SIGTERM and reported with whatever status that gives.
   public func capture(
     _ executable: URL,
     _ arguments: [String],
     in directory: URL,
-    environment: [String: String] = [:]
+    environment: [String: String] = [:],
+    timeout: Duration? = nil
   ) async throws -> ProcessOutput {
     try await withCheckedThrowingContinuation { continuation in
       do {
-        try launch(executable, arguments, in: directory, environment: environment) { output in
+        try launch(executable, arguments, in: directory, environment: environment, timeout: timeout)
+        { output in
           continuation.resume(returning: output)
         }
       } catch {
@@ -83,6 +88,7 @@ private func launch(
   _ arguments: [String],
   in directory: URL,
   environment: [String: String],
+  timeout: Duration?,
   completion: @escaping @Sendable (ProcessOutput) -> Void
 ) throws {
   let process = Process()
@@ -140,6 +146,15 @@ private func launch(
   // `Process` does this itself for a `Pipe`, not for handles it was given.
   try? outPipe.writing.close()
   try? errPipe.writing.close()
+
+  if let timeout {
+    let seconds =
+      Double(timeout.components.seconds)
+      + Double(timeout.components.attoseconds) / 1e18
+    DispatchQueue.global().asyncAfter(deadline: .now() + seconds) {
+      if process.isRunning { process.terminate() }
+    }
+  }
 
   group.notify(queue: .global()) {
     completion(

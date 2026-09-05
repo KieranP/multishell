@@ -19,6 +19,16 @@ macOS now. The core is portable and CI builds it on Linux.
 Add a repository with the `+` in the sidebar. Right-click a project for its
 settings; Cmd+, for app settings.
 
+Running coding agents in tabs is the point. Settings > Agent picks the
+preferred agent, per project too, so Cmd+Option+T opens a tab running it, or
+every new tab does with auto-start on. When Claude Code is installed the same
+tab can add its hooks to `~/.claude/settings.json`. After that the tab and
+sidebar dots say what each terminal is doing: grey nothing running, yellow
+working, blue waiting for input, green done, red failed, with an optional
+system notification for a tab you are not looking at. Plain commands in zsh
+and bash report the same with no setup, and any other tool can through the
+bundled `multishell state` command.
+
 ## Read next
 
 - [DEVELOP.md](DEVELOP.md): building, testing, where things live, how to add

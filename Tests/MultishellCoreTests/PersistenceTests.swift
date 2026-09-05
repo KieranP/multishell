@@ -4,6 +4,21 @@ import Testing
 @testable import MultishellCore
 
 @Suite
+struct DebugPathsTests {
+  /// Tests are debug builds, so they see the debug variant; a release build
+  /// drops the suffix. Either way the three move together.
+  @Test func debugBuildsKeepTheirOwnStateSocketAndIntegration() {
+    #expect(Paths.stateFile.lastPathComponent == "state\(Paths.variant).json")
+    #expect(Paths.socketFile.lastPathComponent == "multishell\(Paths.variant).sock")
+    #expect(Paths.integrationDirectory.lastPathComponent == "integration\(Paths.variant)")
+    #expect(Paths.helperLink.lastPathComponent == "multishell", "shared: hooks reference it")
+    #if DEBUG
+      #expect(Paths.variant == ".debug")
+    #endif
+  }
+}
+
+@Suite
 struct PersistenceTests {
   private func scratchFile() -> URL {
     URL(fileURLWithPath: NSTemporaryDirectory())

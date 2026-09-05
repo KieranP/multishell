@@ -50,6 +50,11 @@ private final class RecordingDelegate: TerminalHostDelegate {
   func terminalHost(_ host: any TerminalHost, didFocus id: TerminalSession.ID) {
     events.append("focus")
   }
+  func terminalHost(
+    _ host: any TerminalHost, didFinishCommandIn id: TerminalSession.ID, exitCode: Int32?
+  ) {
+    events.append("finished \(exitCode ?? -1)")
+  }
 }
 
 @Suite @MainActor
@@ -130,8 +135,9 @@ struct MultiEngineHostTests {
     child.delegate?.terminalHost(child, didRetitle: s.id, to: "vim")
     child.delegate?.terminalHost(child, didSeeActivityIn: s.id)
     child.delegate?.terminalHost(child, didFocus: s.id)
+    child.delegate?.terminalHost(child, didFinishCommandIn: s.id, exitCode: 3)
 
-    #expect(delegate.events == ["retitle vim", "activity", "focus"])
+    #expect(delegate.events == ["retitle vim", "activity", "focus", "finished 3"])
   }
 
   @Test func aFailedOpenLeavesNoOwnership() {

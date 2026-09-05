@@ -111,7 +111,10 @@ struct SidebarView: View {
       Button {
         Task { await model.chooseProject() }
       } label: {
-        Image(systemName: "plus").font(.system(size: 13, weight: .medium))
+        Image(systemName: "plus")
+          .font(.system(size: 13, weight: .medium))
+          .frame(width: 28, height: 28)
+          .contentShape(.rect)
       }
       .buttonStyle(.plain)
       .foregroundStyle(theme.textSecondary)
@@ -151,6 +154,9 @@ struct SidebarView: View {
       ProjectRow(
         project: project,
         isMissing: model.missingProjects.contains(project.id),
+        // The worktree rows carry the dots while they are visible; the folder
+        // stands in for them only once they are folded away.
+        state: expanded ? nil : model.state(ofProject: project.id),
         theme: theme,
         metrics: metrics,
         toggle: { model.setExpanded(!project.isExpanded, for: project) },
@@ -167,7 +173,7 @@ struct SidebarView: View {
           WorktreeRow(
             worktree: worktree,
             terminalCount: model.workspace.sessions(in: worktree.id).count,
-            unseenActivity: model.unseenActivityCount(in: worktree.id) > 0,
+            state: model.state(ofWorktree: worktree.id),
             isSelected: model.workspace.selectedWorktreeID == worktree.id,
             status: model.statuses[worktree.id],
             theme: theme,
@@ -223,6 +229,9 @@ struct SidebarView: View {
       NSPasteboard.general.clearContents()
       NSPasteboard.general.setString(worktree.path.path, forType: .string)
     }
+    if model.state(ofWorktree: worktree.id) != nil {
+      Button("Clear Status") { model.clearState(ofWorktree: worktree.id) }
+    }
     if !worktree.isPrimary {
       Divider()
       Button("Remove Worktree", role: .destructive) { model.requestRemoval(of: worktree) }
@@ -233,6 +242,7 @@ struct SidebarView: View {
 struct ProjectRow: View {
   let project: Project
   let isMissing: Bool
+  let state: SessionState?
   let theme: Theme
   let metrics: UIMetrics
   let toggle: () -> Void
@@ -252,10 +262,18 @@ struct ProjectRow: View {
           .frame(width: 10)
           .help(project.isExpanded ? "Collapse" : "Expand")
 
-        Image(systemName: isMissing ? "folder.badge.questionmark" : "folder")
-          .font(.system(size: metrics.icon))
-          .foregroundStyle(theme.textSecondary)
-          .help(project.path.path)
+        if let state {
+          Circle()
+            .fill(theme.color(for: state))
+            .frame(width: 7, height: 7)
+            .frame(width: metrics.icon + 2)
+            .help("\(state.displayName) in a terminal of a collapsed worktree")
+        } else {
+          Image(systemName: isMissing ? "folder.badge.questionmark" : "folder")
+            .font(.system(size: metrics.icon))
+            .foregroundStyle(theme.textSecondary)
+            .help(project.path.path)
+        }
 
         Text(project.name)
           .font(.system(size: metrics.body, weight: .medium))
@@ -283,7 +301,8 @@ struct ProjectRow: View {
       Image(systemName: symbol)
         .font(.system(size: metrics.icon))
         .foregroundStyle(isHovered ? theme.textSecondary : theme.textTertiary)
-        .frame(width: 18, height: 20)
+        .frame(width: 24, height: 24)
+        .contentShape(.rect)
     }
     .buttonStyle(.plain)
     .help(help)

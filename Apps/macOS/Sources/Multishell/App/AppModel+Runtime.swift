@@ -10,18 +10,23 @@ extension AppModel {
   /// focused. Every action that changes which terminals exist ends here.
   func sync() {
     let warm = warmWorktrees
-    for failure in registry.reconcile(shouldBeLive: { warm.contains($0.worktreeID) }) {
+    let failures = registry.reconcile(
+      shouldBeLive: { warm.contains($0.worktreeID) }, prepare: { prepared($0) })
+    for failure in failures {
       report(failure.error)
       store.closeSession(failure.sessionID)
     }
     registry.focusActiveSession()
+    pruneStates()
     markShownTabSeen()
   }
 
+  /// Done clears for what is on screen: the active tab's panes, and the
+  /// selected worktree's own entry.
   func markShownTabSeen() {
-    if let worktree = workspace.selectedWorktreeID, let tab = workspace.activeTab(in: worktree) {
-      unseenActivity.subtract(tab.sessionIDs)
-    }
+    guard let worktree = workspace.selectedWorktreeID else { return }
+    let shown = workspace.activeTab(in: worktree)?.sessionIDs ?? []
+    mutateStates { $0.markSeen(sessions: shown, worktree: worktree) }
   }
 
   func report(_ error: any Error) {
@@ -107,13 +112,7 @@ extension AppModel {
     if let session = workspace.session(id) {
       scheduleStatusRefresh(of: session.worktreeID)
     }
-    if let worktree = workspace.selectedWorktreeID,
-      let active = workspace.activeTab(in: worktree),
-      active.root.contains(id)
-    {
-      return
-    }
-    unseenActivity.insert(id)
+    mutateStates { $0.noteActivity(in: id, isShown: isShown(id)) }
   }
 
   /// One command at a prompt raises several events in a row (title before,
@@ -139,11 +138,4 @@ extension AppModel {
     tab.customTitle ?? sessionTitles[tab.focusedSessionID] ?? workspace.title(of: tab)
   }
 
-  func hasUnseenActivity(_ tab: TerminalTab) -> Bool {
-    !unseenActivity.isDisjoint(with: tab.sessionIDs)
-  }
-
-  func unseenActivityCount(in worktree: Worktree.ID) -> Int {
-    workspace.sessions(in: worktree).filter { unseenActivity.contains($0.id) }.count
-  }
 }

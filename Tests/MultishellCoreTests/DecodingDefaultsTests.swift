@@ -126,6 +126,44 @@ struct DecodingDefaultsTests {
     #expect(node == .split(axis: .horizontal, children: [.terminal(a), .terminal(b)]))
   }
 
+  @Test func aSessionWithoutAnAgentIDIsAPlainShell() throws {
+    let session = try decode(
+      TerminalSession.self,
+      #"{ "id": "\#(UUID().uuidString)", "worktreeID": "/w", "workingDirectory": "file:///w/", "title": "Shell" }"#
+    )
+    #expect(session.agentID == nil)
+    #expect(session.command == nil)
+  }
+
+  @Test func aWorkspaceWithoutAgentOrNotificationFieldsGetsTheDefaults() throws {
+    let workspace = try decode(Workspace.self, #"{ "projects": [] }"#)
+    #expect(workspace.notifications == .off)
+    #expect(workspace.preferredAgentID == nil)
+    #expect(workspace.customAgentCommand == "")
+    #expect(!workspace.autoStartAgent, "off until asked for")
+  }
+
+  @Test func aNotificationPreferenceThisBuildDoesNotKnowFallsBack() throws {
+    let workspace = try decode(
+      Workspace.self,
+      #"{ "notifications": "whisper", "preferredAgentID": "future-agent", "projects": [ { "path": "file:///repos/demo/" } ] }"#
+    )
+    #expect(workspace.notifications == .off)
+    #expect(workspace.preferredAgentID == "future-agent", "an unknown agent id is kept as text")
+    #expect(workspace.projects.count == 1)
+  }
+
+  @Test func projectSettingsKeepAnUnknownAgentIdAndReadEmptyAsNoOverride() throws {
+    let unknown = try decode(ProjectSettings.self, #"{ "preferredAgentID": "future-agent" }"#)
+    #expect(unknown.preferredAgentID == "future-agent")
+    let empty = try decode(ProjectSettings.self, #"{ "preferredAgentID": "" }"#)
+    #expect(empty.preferredAgentID == nil)
+    #expect(try decode(ProjectSettings.self, "{}").preferredAgentID == nil)
+    #expect(try decode(ProjectSettings.self, "{}").autoStartAgent == nil, "follows the global")
+    #expect(
+      try decode(ProjectSettings.self, #"{ "autoStartAgent": false }"#).autoStartAgent == false)
+  }
+
   @Test func workspaceFromTheVeryFirstBuildAndFromToday() throws {
     let today = Workspace()
     let roundTripped = try decode(

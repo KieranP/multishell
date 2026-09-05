@@ -16,6 +16,15 @@ public struct Workspace: Codable, Hashable, Sendable {
   public var appearance = Appearance()
   public var terminalEngine: TerminalEngine = .ghostty
   public var worktreeDefaults = WorktreeSettings()
+  public var notifications = NotificationPreference.default
+  /// Catalogue id of the agent New Agent Tab starts, or `nil` for none.
+  /// Projects may override it in `ProjectSettings`.
+  public var preferredAgentID: String?
+  /// What `AgentCatalogue.customID` runs, as the user typed it.
+  public var customAgentCommand = ""
+  /// New Tab, and the first tab of a worktree, start the preferred agent
+  /// rather than a plain shell. Projects may override it.
+  public var autoStartAgent = false
 
   public init() {}
 
@@ -44,6 +53,11 @@ public struct Workspace: Codable, Hashable, Sendable {
       (try? c.decodeIfPresent(TerminalEngine.self, forKey: .terminalEngine)) ?? .ghostty
     worktreeDefaults =
       try c.decodeIfPresent(WorktreeSettings.self, forKey: .worktreeDefaults) ?? WorktreeSettings()
+    notifications =
+      (try? c.decodeIfPresent(NotificationPreference.self, forKey: .notifications)) ?? .default
+    preferredAgentID = try c.decodeIfPresent(String.self, forKey: .preferredAgentID)
+    customAgentCommand = try c.decodeIfPresent(String.self, forKey: .customAgentCommand) ?? ""
+    autoStartAgent = try c.decodeIfPresent(Bool.self, forKey: .autoStartAgent) ?? false
   }
 }
 
@@ -121,5 +135,17 @@ extension Workspace {
 
   public func worktreeSettings(for project: Project) -> WorktreeSettings {
     project.settings.effective(defaults: worktreeDefaults)
+  }
+
+  /// The agent New Agent Tab starts in this project, or `nil` for none.
+  public func preferredAgentID(for project: Project) -> String? {
+    AgentCatalogue.effectiveID(
+      global: preferredAgentID, override: project.settings.preferredAgentID)
+  }
+
+  /// Whether a new tab in this project starts its agent: the project's say
+  /// when it has one, else the global, and only when an agent is in force.
+  public func autoStartsAgent(for project: Project) -> Bool {
+    (project.settings.autoStartAgent ?? autoStartAgent) && preferredAgentID(for: project) != nil
   }
 }

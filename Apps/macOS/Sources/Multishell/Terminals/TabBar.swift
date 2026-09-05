@@ -31,7 +31,8 @@ struct TabBar: View {
         Image(systemName: "plus")
           .font(.system(size: model.metrics.icon, weight: .medium))
           .foregroundStyle(theme.textSecondary)
-          .frame(width: 28, height: model.metrics.tabHeight)
+          .frame(width: 34, height: model.metrics.tabHeight)
+          .contentShape(.rect)
       }
       .buttonStyle(.plain)
       .help("New Tab (⌘T)")
@@ -46,9 +47,20 @@ struct TabBar: View {
   private func tabButton(_ tab: TerminalTab) -> some View {
     let isActive = tab.id == activeID
     let text = isActive ? theme.textPrimary : theme.textSecondary
+    let state = model.state(of: tab)
     return HStack(spacing: 7) {
-      if model.hasUnseenActivity(tab) {
-        Circle().fill(Color.accentColor).frame(width: 6, height: 6)
+      if let state {
+        // A button, so a click on the dot clears a Working state whose agent
+        // is long gone without activating the tab first.
+        Button {
+          model.clearState(of: tab)
+        } label: {
+          Circle().fill(theme.color(for: state)).frame(width: 7, height: 7)
+            .frame(width: 14, height: 14)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .help("\(state.displayName). Click to clear.")
       } else {
         Image(systemName: tab.isSplit ? "rectangle.split.2x1" : "apple.terminal")
           .font(.system(size: model.metrics.icon))
@@ -71,7 +83,10 @@ struct TabBar: View {
         Button {
           model.closeActiveTab()
         } label: {
-          Image(systemName: "xmark").font(.system(size: 9, weight: .semibold))
+          Image(systemName: "xmark")
+            .font(.system(size: 9, weight: .semibold))
+            .frame(width: 20, height: 20)
+            .contentShape(.rect)
         }
         .buttonStyle(.plain)
         .foregroundStyle(theme.textSecondary)
@@ -93,6 +108,10 @@ struct TabBar: View {
       Button("Rename…") { beginEditing(tab) }
       if tab.customTitle != nil {
         Button("Use Shell Title") { model.renameTab(tab.id, to: nil) }
+      }
+      if state != nil {
+        Divider()
+        Button("Clear Status") { model.clearState(of: tab) }
       }
     }
   }

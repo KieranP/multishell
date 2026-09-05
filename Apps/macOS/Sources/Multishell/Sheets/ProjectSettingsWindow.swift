@@ -20,6 +20,7 @@ struct ProjectSettingsWindow: View {
           WorktreesTab(model: model, project: project)
         },
         .init("Hooks", symbol: "terminal") { HooksTab(model: model, project: project) },
+        .init("Agent", symbol: "sparkles") { AgentTab(model: model, project: project) },
       ])
       .frame(width: 560, height: 400)
       .navigationTitle("\(project.name) Settings")
@@ -173,6 +174,86 @@ private struct WorktreesTab: View {
     return Binding(
       get: { source.wrappedValue ?? fallback },
       set: { source.wrappedValue = $0 }
+    )
+  }
+}
+
+/// The project's agent override, following the global choice by default.
+private struct AgentTab: View {
+  let model: AppModel
+  let project: Project
+
+  var body: some View {
+    let settings = model.workspace.project(project.id)?.settings ?? project.settings
+    let global = model.workspace.preferredAgentID
+    Form {
+      Section {
+        Toggle("Override preferred agent", isOn: overrides(default: global))
+        AgentPicker(
+          label: "Agent:",
+          selection: Binding(
+            get: { settings.preferredAgentID ?? global ?? AgentCatalogue.noneID },
+            set: { model.updateSettings(with(settings, agent: $0), for: project) }),
+          detection: model.agentDetection,
+          refresh: { Task { await model.refreshLoginEnvironment() } }
+        )
+        .disabled(settings.preferredAgentID == nil)
+      } footer: {
+        SettingsCaption(
+          settings.preferredAgentID == nil
+            ? "Using the global value, \(model.agentDisplayName(global ?? AgentCatalogue.noneID))."
+            : "New Agent Tab (⌥⌘T) in this project's worktrees starts \(model.agentDisplayName(settings.preferredAgentID ?? "")). The custom command is the global one."
+        )
+      }
+
+      Section {
+        Toggle("Override auto-start", isOn: overridesAutoStart)
+        Toggle(
+          "Start the agent in new tabs",
+          isOn: Binding(
+            get: { settings.autoStartAgent ?? model.workspace.autoStartAgent },
+            set: { model.updateSettings(with(settings, autoStart: $0), for: project) })
+        )
+        .disabled(settings.autoStartAgent == nil)
+      } footer: {
+        SettingsCaption(
+          settings.autoStartAgent == nil
+            ? "Using the global value: \(model.workspace.autoStartAgent ? "on" : "off")."
+            : "New Tab and a worktree's first tab here \(settings.autoStartAgent == true ? "start the agent" : "open a shell") whatever the global says."
+        )
+      }
+    }
+    .formStyle(.grouped)
+  }
+
+  private func with(_ settings: ProjectSettings, autoStart: Bool) -> ProjectSettings {
+    var updated = settings
+    updated.autoStartAgent = autoStart
+    return updated
+  }
+
+  /// Turning the override on seeds it with the global value.
+  private var overridesAutoStart: Binding<Bool> {
+    let source = setting(\.autoStartAgent, of: project, in: model)
+    let global = model.workspace.autoStartAgent
+    return Binding(
+      get: { source.wrappedValue != nil },
+      set: { on in source.wrappedValue = on ? global : nil }
+    )
+  }
+
+  private func with(_ settings: ProjectSettings, agent: String) -> ProjectSettings {
+    var updated = settings
+    updated.preferredAgentID = agent
+    return updated
+  }
+
+  /// Turning the override on seeds it with the global value, or None.
+  private func overrides(default global: String?) -> Binding<Bool> {
+    let source = setting(\.preferredAgentID, of: project, in: model)
+    return Binding(
+      get: { source.wrappedValue != nil },
+      set: { on in source.wrappedValue = on ? (global ?? AgentCatalogue.noneID) : nil }
     )
   }
 }

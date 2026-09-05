@@ -64,6 +64,9 @@ struct DetailView: View {
         }
       }
       Spacer()
+      if model.preferredAgentID(for: worktree) != nil {
+        toolbarButton("sparkles", help: "New Agent Tab (⌥⌘T)") { model.newAgentTab() }
+      }
       if model.workspace.activeTab(in: worktree.id) == nil {
         toolbarButton("plus", help: "New Tab (⌘T)") { model.newTab() }
       }
@@ -83,7 +86,8 @@ struct DetailView: View {
     Button(action: action) {
       Image(systemName: symbol)
         .font(.system(size: 13, weight: .medium))
-        .frame(width: 28, height: 24)
+        .frame(width: 30, height: 26)
+        .contentShape(.rect)
     }
     .buttonStyle(.plain)
     .foregroundStyle(model.currentTheme.textSecondary)
@@ -98,7 +102,8 @@ struct DetailView: View {
       Image(systemName: "doc.on.doc")
         .font(.system(size: 9.5))
         .foregroundStyle(theme.textTertiary)
-        .frame(width: 16, height: 16)
+        .frame(width: 20, height: 20)
+        .contentShape(.rect)
     }
     .buttonStyle(.plain)
     .help(help)

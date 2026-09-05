@@ -14,7 +14,8 @@ struct MultishellApp: App {
         .frame(minWidth: 720, minHeight: 420)
         .task {
           appDelegate.openTerminalCount = { model.liveTerminalCount }
-          appDelegate.willTerminate = { model.saveNow() }
+          appDelegate.workingAgentCount = { model.workingAgentCount }
+          appDelegate.willTerminate = { model.shutDown() }
           await model.start()
         }
     }
@@ -86,6 +87,18 @@ struct RootView: View {
           "Runs git worktree remove on \(worktree.path.path). The branch is kept.",
           model.removalWarning(for: worktree),
         ].compactMap { $0 }.joined(separator: "\n\n"))
+    }
+    .confirmationDialog(
+      model.pendingClose?.title ?? "",
+      isPresented: Binding(
+        get: { model.pendingClose != nil }, set: { if !$0 { model.pendingClose = nil } }),
+      titleVisibility: .visible,
+      presenting: model.pendingClose
+    ) { pending in
+      Button(pending.buttonLabel, role: .destructive) { model.confirmPendingClose() }
+      Button("Cancel", role: .cancel) { model.pendingClose = nil }
+    } message: { _ in
+      Text("An agent here reported that it is still working. Closing ends it.")
     }
     .sheet(item: Bindable(model).newWorktreeRequest) {
       NewWorktreeSheet(model: model, initialProjectID: $0.projectID)

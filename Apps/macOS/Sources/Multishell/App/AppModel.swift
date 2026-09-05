@@ -1,6 +1,7 @@
 import AppKit
 import MultishellCore
 import MultishellGitKit
+import MultishellProcess
 import Observation
 import SwiftUI
 
@@ -18,6 +19,8 @@ final class AppModel {
   var newWorktreeRequest: NewWorktreeRequest?
   /// A removal waiting on the confirmation dialog.
   var pendingRemoval: Worktree?
+  /// A pane or tab close waiting on it, because an agent there is working.
+  var pendingClose: PendingClose?
   /// Which project the settings window shows.
   var settingsProjectID: Project.ID?
   /// The workspace window, so window-scoped commands can tell whether they
@@ -33,8 +36,16 @@ final class AppModel {
     guard let key = NSApp?.keyWindow else { return true }
     return key === mainWindow
   }
-  /// Sessions that did something while not focused. Cleared on focus.
-  var unseenActivity: Set<TerminalSession.ID> = []
+  /// What each live terminal is doing, from the engine and from reports over
+  /// the socket; see `SessionStates` for who clears what.
+  var sessionStates = SessionStates()
+  /// The environment of the user's interactive login shell, once captured.
+  /// `nil` until the shell has answered.
+  var loginEnvironment: LoginShellEnvironment?
+  /// Which catalogue agents that environment's PATH has.
+  var agentDetection = AgentDetection.empty
+  var claudeHooksInstalled = false
+  var commandLineToolInstalled = false
   var themes: [Theme] = Theme.builtins
   /// `git status` per worktree. Runtime only; see `WorktreeStatus`.
   var statuses: [Worktree.ID: WorktreeStatus] = [:]
@@ -54,6 +65,16 @@ final class AppModel {
 
   @ObservationIgnored let store: WorkspaceStore
   @ObservationIgnored let registry: SessionRegistry
+  @ObservationIgnored let stateSource: any SessionStateSource
+  @ObservationIgnored let notifier: any SessionNotifier
+  /// Sessions that came off disk this run. Their agent tabs resume rather
+  /// than start afresh; see `prepared`.
+  @ObservationIgnored let restoredSessionIDs: Set<TerminalSession.ID>
+  @ObservationIgnored var pidWatch: Task<Void, Never>?
+  /// How often a Working state's pid is checked. Settable so a test does
+  /// not wait the full interval.
+  @ObservationIgnored var pidPollInterval: Duration = .seconds(2)
+  @ObservationIgnored var reportedMissingAgents: Set<String> = []
   @ObservationIgnored let worktrees: WorktreeCoordinator?
   @ObservationIgnored var pendingSave: Task<Void, Never>?
   /// Set while saves are failing, so the alert is raised once rather than
@@ -79,17 +100,21 @@ final class AppModel {
       host: MultiEngineHost(engine: store.workspace.terminalEngine),
       worktrees: try? WorktreeCoordinator(),
       watcher: DispatchDirectoryWatcher(),
+      stateSource: SocketStateSource(),
+      notifier: UserNotificationNotifier(),
       loadError: loadError
     )
   }
 
   /// Dependencies are passed in so tests can run the whole model against
-  /// recording engines, a fake watcher and no git.
+  /// recording engines, a fake watcher, a fake channel and no git.
   init(
     store: WorkspaceStore,
     host: MultiEngineHost,
     worktrees: WorktreeCoordinator?,
     watcher: any DirectoryWatcher,
+    stateSource: any SessionStateSource = NullStateSource(),
+    notifier: any SessionNotifier = NullNotifier(),
     loadError: (any Error)? = nil
   ) {
     self.store = store
@@ -97,6 +122,9 @@ final class AppModel {
     self.registry = SessionRegistry(store: store, host: host)
     self.worktrees = worktrees
     self.watcher = watcher
+    self.stateSource = stateSource
+    self.notifier = notifier
+    self.restoredSessionIDs = Set(store.workspace.sessions.map(\.id))
 
     reloadThemes()
     host.apply(currentTheme, appearance: store.workspace.appearance)
@@ -119,17 +147,22 @@ final class AppModel {
     }
 
     registry.onActivity = { [weak self] id in self?.noteActivity(in: id) }
+    registry.onCommandFinished = { [weak self] id, code in
+      self?.noteCommandFinished(in: id, exitCode: code)
+    }
     registry.onRetitle = { [weak self] id, title in self?.noteTitle(title, of: id) }
     registry.onLiveSessionsChanged = { [weak self] in
       guard let self else { return }
       let live = registry.liveSessionIDs
       if live != liveSessions { liveSessions = live }
       sessionTitles = sessionTitles.filter { live.contains($0.key) }
-      unseenActivity.formIntersection(live)
+      pruneStates()
       // A shell exiting can bring another tab into view; it is being looked
       // at now, whatever happened in it before.
       markShownTabSeen()
     }
+    stateSource.onReport = { [weak self] report in self?.apply(report) }
+    notifier.onActivate = { [weak self] key in self?.reveal(key) }
     watcher.onChange = { [weak self] in Task { await self?.refreshWorktreesIfRecordsChanged() } }
     observeForAutosave()
   }
@@ -152,9 +185,17 @@ final class AppModel {
   /// Restores the sidebar from disk, then asks git what each project
   /// actually has. Terminals are not restored; only the tree is.
   func start() async {
+    startStateSource()
+    do {
+      try HelperInstaller.refreshLink()
+      try ShellIntegration.refresh()
+    } catch {
+      report(error)
+    }
     await refreshAll()
     sync()
     startStatusPolling()
+    await refreshLoginEnvironment()
   }
 
   func refreshAll() async {
