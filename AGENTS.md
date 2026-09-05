@@ -18,9 +18,10 @@ Working rules:
   works.
 - Every persisted field decodes with a default, including an enum value this
   build does not know. Add a case to `DecodingDefaultsTests` when you add one.
-  References between collections are restored by `Workspace.repairReferences`
-  after a load; extend it, and `WorkspaceInvariants`, when you add a
-  collection or a reference.
+  Worktrees, sessions and tabs decode element by element and drop a broken
+  one (`LossyArray`); projects stay strict. References between collections
+  are restored by `Workspace.repairReferences` after a load; extend it, and
+  `WorkspaceInvariants`, when you add a collection or a reference.
 - Every store operation must leave `WorkspaceInvariants` true. The seeded
   random tests (`WorkspaceStoreInvariantTests`, `AppModelInvariantTests`) will
   find it if not; a failure prints its seed and step so it can be replayed.
@@ -28,7 +29,16 @@ Working rules:
   `AppModel`, never in the workspace, so a prompt does not save or re-render.
 - Nothing in the core blocks a thread. `ProcessRunner` is handler-driven; a
   test runs 96 children at once and another counts descriptors after failed
-  launches. Do not add a `wait` inside a `Task`.
+  launches. Do not add a `wait` inside a `Task`. Pipes come from the `pipe`
+  syscall, never `Pipe()`, which cannot fail and hands back stdin at the
+  descriptor limit.
+- A closed tab's shell ends and is collected. `SwiftTermHostTests` spawns
+  real shells to check it; keep it passing when you touch a host.
+- Git that runs on a timer reads only: `git status` polls carry
+  `--no-optional-locks`. A background call that takes `index.lock` breaks the
+  user's own commits.
+- Decisions a view makes live in a plain value beside it (`NewWorktreeDraft`,
+  `SplitMath`, `SidebarFilter`) and are tested there. Views are not tested.
 - Test git behaviour against a real repository with `RepositoryFixture`, not
   with mocks. Test parsers on fixture text, including the odd lines in the
   robustness tests.

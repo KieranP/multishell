@@ -152,6 +152,24 @@ struct NewWorktreeDraftTests {
     #expect(!draft.canCreate(checkedOut: []))
   }
 
+  @Test func aRepositoryWithOnlyItsCheckedOutBranchHasNothingToPick() {
+    var draft = NewWorktreeDraft(projectID: a)
+    draft.createBranch = false
+    draft.beginLoading()
+    draft.finishLoading(
+      a, hasCommits: true, branches: ["main"], remoteBranches: ["origin/main", "origin/feature"],
+      currentBranch: "main", checkedOut: ["main"])
+
+    #expect(
+      draft.availableBranches(checkedOut: ["main"]).isEmpty, "remote branches are not offered")
+    #expect(draft.branch == "")
+    #expect(!draft.canCreate(checkedOut: ["main"]))
+    draft.createBranch = true
+    draft.modeChanged(checkedOut: ["main"])
+    draft.branch = "feature"
+    #expect(draft.canCreate(checkedOut: ["main"]), "a new branch is the way")
+  }
+
   @Test func pickerLabelsUseThePathOnlyWhenNamesCollide() {
     let home = FileManager.default.homeDirectoryForCurrentUser.path
     let projects = [
@@ -165,6 +183,12 @@ struct NewWorktreeDraftTests {
     #expect(labels[projects[0].id] == "api  (~/Work/api)")
     #expect(labels[projects[1].id] == "api  (/srv/clients/acme/api)")
     #expect(labels[projects[2].id] == "web")
+  }
+
+  @Test func aRepeatedProjectDoesNotTrapTheLabels() {
+    let project = Project(path: URL(fileURLWithPath: "/repos/demo"))
+    let labels = NewWorktreeDraft.labels(for: [project, project])
+    #expect(labels == [project.id: "demo  (/repos/demo)"])
   }
 
   @Test func creatingLocksTheDraft() {

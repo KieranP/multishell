@@ -10,6 +10,9 @@ enum WorkspaceInvariants {
     let projectIDs = Set(ws.projects.map(\.id))
     let worktreeIDs = Set(ws.worktrees.map(\.id))
     let sessionIDs = Set(ws.sessions.map(\.id))
+    #expect(projectIDs.count == ws.projects.count, "\(context): a project listed twice")
+    #expect(worktreeIDs.count == ws.worktrees.count, "\(context): a worktree listed twice")
+    #expect(sessionIDs.count == ws.sessions.count, "\(context): a session listed twice")
 
     #expect(
       ws.worktrees.allSatisfy { projectIDs.contains($0.projectID) }, "\(context): orphan worktree")

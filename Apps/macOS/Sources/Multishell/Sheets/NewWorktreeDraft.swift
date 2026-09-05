@@ -105,13 +105,15 @@ struct NewWorktreeDraft: Equatable {
   static func labels(for projects: [Project]) -> [Project.ID: String] {
     var count: [String: Int] = [:]
     for project in projects { count[project.name, default: 0] += 1 }
+    // Repair keeps identities unique; a repeat here must still not trap.
     return Dictionary(
-      uniqueKeysWithValues: projects.map { project in
+      projects.map { project in
         let label =
           count[project.name] == 1
           ? project.name
           : "\(project.name)  (\(project.path.path.abbreviatingHomeDirectory()))"
         return (project.id, label)
-      })
+      },
+      uniquingKeysWith: { first, _ in first })
   }
 }

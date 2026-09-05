@@ -145,6 +145,9 @@ struct WorkspaceRepairTests {
             worktreeID: $0.worktrees[0].id, root: .split(axis: .horizontal, children: []),
             focusedSessionID: ghost))
       },
+      { $0.projects.append($0.projects[0]) },
+      { $0.worktrees.append($0.worktrees[0]) },
+      { ws in ws.sessions.append(ws.sessions[0]) },
     ]
     for _ in 0..<Int.random(in: 1...6, using: &rng) {
       damage.randomElement(using: &rng)!(&ws)
@@ -308,5 +311,34 @@ struct WorkspaceRepairShapeTests {
     var again = ws
     again.repairReferences()
     #expect(again == ws, "seed \(seed): repair is not idempotent")
+  }
+}
+
+/// The store never adds the same project or worktree twice, but a state
+/// file can hold one twice: a hand edit, or two spellings of one path that
+/// normalise to the same identity. Every view keys on identity, and the
+/// New Worktree picker's labels are a dictionary that traps on a repeat.
+@Suite
+struct WorkspaceRepairDuplicateTests {
+  @Test func aProjectListedTwiceKeepsItsFirstEntryAndItsWorktrees() throws {
+    var ws = try JSONDecoder().decode(
+      Workspace.self,
+      from: Data(
+        #"""
+        { "projects": [
+            { "path": "file:///repos/demo/", "settings": { "branchPrefix": "k/" } },
+            { "path": "file:///repos/x/../demo", "isExpanded": false } ],
+          "worktrees": [
+            { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "a", "branch": "main" },
+            { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "a", "branch": "main" } ] }
+        """#.utf8))
+    #expect(ws.projects.count == 2, "decoding keeps both; repair is where they meet")
+
+    ws.repairReferences()
+
+    WorkspaceInvariants.check(ws, "duplicate project")
+    #expect(ws.projects.map(\.id) == ["/repos/demo"])
+    #expect(ws.projects[0].settings.branchPrefix == "k/", "the first entry is the one kept")
+    #expect(ws.worktrees.map(\.id) == ["/repos/demo"])
   }
 }

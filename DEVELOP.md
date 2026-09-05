@@ -36,7 +36,8 @@ portability rule below.
       MultishellCore/           model, store, theme, ports. Foundation only.
         Model/                  Project, Worktree, TerminalTab, TerminalSession,
                                 PaneNode, settings, WorktreeStatus,
-                                Workspace+Repair (load-time reference repair)
+                                Workspace+Repair (load-time reference repair),
+                                LossyArray (element-wise decoding), ShellQuoting
         Store/                  WorkspaceStore (all mutation), WorkspaceSnapshot
                                 (JSON on disk), Paths
         Sessions/               SessionRegistry: store <-> TerminalHost
@@ -47,26 +48,30 @@ portability rule below.
       MultishellGitKit/         git worktree ops, porcelain parsers, hooks,
                                 WorktreeRecords (what a watcher tick compares)
     Tests/                      one test target per library; RepositoryFixture
-                                builds real temp repositories for the git tests;
+                                builds real temp repositories for the git tests
+                                and FakeGit stands a shell script in for git;
                                 WorkspaceInvariants and a seeded generator drive
                                 the randomised store and repair tests
     Apps/macOS/                 SwiftUI app; its own Package.swift
       Sources/Multishell/
         App/                    AppModel and its extension files (the only
                                 thing views talk to), commands, delegate,
-                                PresentedError
+                                PresentedError, NewWorktreeRequest
         Sidebar/                project tree, drawn by hand
         Terminals/              hosts (Ghostty, SwiftTerm, MultiEngine),
                                 SurfaceView, PaneTreeView + WeightedSplit,
                                 SplitMath (divider arithmetic), TabBar
-        Sheets/                 new-worktree sheet, project settings window,
-                                app settings
+        Sheets/                 new-worktree sheet and its NewWorktreeDraft (the
+                                sheet's decisions, testable), project settings
+                                window, app settings
         Support/                theme -> Color, UIMetrics, kqueue watcher,
                                 ToolbarTabs, title-bar behaviour, WindowAccessor,
-                                home-directory abbreviation
-      Tests/MultishellTests/    the app's pure parts: AppModel against fake
-                                engines and watcher (examples and a seeded
-                                random sequence), error mapping, metrics,
+                                home-directory abbreviation, DescriptorLimit
+      Tests/MultishellTests/    AppModel against fake engines and watcher
+                                (examples and a seeded random sequence) and
+                                against real git (AppModelGitTests); the
+                                SwiftTerm host against real shells; the
+                                new-worktree draft; error mapping, metrics,
                                 SplitMath, MultiEngineHost routing, the watcher
       Resources/Multishell.icns
     Scripts/make-app.sh
@@ -111,6 +116,12 @@ named as sentences about behaviour.
   the child's output; `DescriptorExhaustionTests` checks that but lowers the
   process-wide limit, so it runs only with `MULTISHELL_EXHAUST_DESCRIPTORS=1`
   and `--filter DescriptorExhaustionTests`.
+- A closed tab's shell ends and is collected. `SwiftTermHostTests` spawns
+  real shells through the SwiftTerm engine and checks the title and exit
+  code reach the core, that a closed session's shell leaves the process
+  table rather than staying a zombie, and that one ignoring SIGTERM is
+  killed after the grace. Ghostty's engine needs a window and Metal, so its
+  path is not covered.
 - Runtime state that changes without the user (shell titles, activity,
   statuses, live sessions) is `AppModel`'s, not the workspace's.
   `AppModelInvariantTests` checks it agrees with the engine after random
@@ -126,7 +137,13 @@ named as sentences about behaviour.
   an unborn repository, a deleted upstream, and a set of malformed lines that
   must not crash them.
 - Git behaviour is tested against real repositories (`RepositoryFixture`), not
-  mocks: creation, removal, hooks, status, remotes, watcher paths.
+  mocks: creation, removal, hooks, status, remotes, watcher paths. `FakeGit`,
+  a shell script, is for what real git cannot be made to do on demand:
+  print nothing, fail once, or run slowly enough to count concurrency.
+- Git on a timer reads only. `StatusLockTests` checks a status poll leaves
+  the index untouched (`--no-optional-locks`).
+- Hooks run in the user's interactive login shell. `HookShellTests` checks
+  a hook sees the rc files under a substitute home, for zsh, bash and sh.
 
 ## Adding things
 
@@ -175,8 +192,10 @@ workspace.
 ## Known gaps
 
 Sidebar keyboard navigation. Tab strip overflow. A shortcut to focus the
-sidebar filter. No automated view tests; the app test target covers only
-model-facing code. Linux and Windows have never been compiled locally, and
+sidebar filter. No automated view tests; the app test target covers
+model-facing code, the SwiftTerm engine and the sheet's draft, not layout.
+The Ghostty engine's path is untested: its surface needs a window and Metal.
+Linux and Windows have never been compiled locally, and
 Docker is not available on the development machine; CI is the first run, and
 the `ProcessRunner`, `WorktreeRecords` and repair code has only been audited
 for Linux, not built there. `swift-format` output may differ slightly between

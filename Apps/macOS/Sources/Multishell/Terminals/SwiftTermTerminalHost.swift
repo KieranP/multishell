@@ -17,6 +17,9 @@ final class SwiftTermTerminalHost: NSObject, TerminalHost {
   /// reaping it, so `terminate` would signal a number the kernel may have
   /// handed to some other process by now.
   private var exited: Set<TerminalSession.ID> = []
+  /// How long a shell gets to act on SIGTERM before SIGKILL. Settable so a
+  /// test does not wait the full time.
+  var terminationGrace: Duration = .seconds(5)
   private var theme: Theme = .multishellDark
   private var appearance = Appearance()
 
@@ -49,9 +52,27 @@ final class SwiftTermTerminalHost: NSObject, TerminalHost {
     // Removing the view does not end the child; SwiftTerm keeps the pty
     // until told otherwise.
     if exited.remove(id) == nil {
+      let pid = view.process.shellPid
       view.terminate()
+      Self.reap(pid, killAfter: terminationGrace)
     }
     view.removeFromSuperview()
+  }
+
+  /// SwiftTerm's `terminate` sends SIGTERM and then cancels the exit monitor
+  /// that would have called `waitpid`, so every closed tab left a zombie
+  /// until the app quit. Collect the child here, and kill it if it has not
+  /// gone by the deadline; the pid stays the shell's until it is collected.
+  nonisolated private static func reap(_ pid: pid_t, killAfter grace: Duration) {
+    guard pid > 0 else { return }
+    Task.detached(priority: .utility) {
+      let deadline = ContinuousClock.now + grace
+      var status: Int32 = 0
+      while waitpid(pid, &status, WNOHANG) == 0 {
+        if ContinuousClock.now > deadline { kill(pid, SIGKILL) }
+        try? await Task.sleep(for: .milliseconds(50))
+      }
+    }
   }
 
   func view(for id: TerminalSession.ID) -> NSView? {
@@ -151,8 +172,16 @@ extension SwiftTermTerminalHost: LocalProcessTerminalViewDelegate {
     MainActor.assumeIsolated {
       guard let id = sessionIDs[ObjectIdentifier(source)] else { return }
       exited.insert(id)
-      delegate?.terminalHost(self, didExit: id, code: exitCode ?? 0)
+      delegate?.terminalHost(self, didExit: id, code: Self.exitStatus(exitCode))
     }
+  }
+
+  /// SwiftTerm passes `waitpid`'s raw status on one of its paths, so an exit
+  /// of 3 arrives as 768. A real exit code fits in a byte; a multiple of 256
+  /// above that is the shifted form.
+  static func exitStatus(_ reported: Int32?) -> Int32 {
+    guard let reported else { return 0 }
+    return reported > 255 && reported & 0xFF == 0 ? reported >> 8 : reported
   }
 
   nonisolated func sizeChanged(source: LocalProcessTerminalView, newCols: Int, newRows: Int) {}

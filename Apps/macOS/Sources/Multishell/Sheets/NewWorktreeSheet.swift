@@ -139,8 +139,21 @@ struct NewWorktreeSheet: View {
         }
       }
     } else {
-      Picker("Branch:", selection: $draft.branch) {
-        ForEach(draft.availableBranches(checkedOut: checkedOut), id: \.self, content: Text.init)
+      // Local branches only. A large repository has hundreds of remote ones,
+      // and a fresh clone with nothing local to pick is told so instead.
+      let available = draft.availableBranches(checkedOut: checkedOut)
+      if available.isEmpty, project != nil, draft.loadedProjectID == draft.projectID {
+        Label {
+          Text("Every local branch is already checked out. Switch to New branch to create one.")
+            .font(.system(size: 12))
+            .foregroundStyle(.secondary)
+        } icon: {
+          Image(systemName: "info.circle").foregroundStyle(.secondary)
+        }
+      } else {
+        Picker("Branch:", selection: $draft.branch) {
+          ForEach(available, id: \.self, content: Text.init)
+        }
       }
     }
 

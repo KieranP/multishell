@@ -34,6 +34,10 @@ Why: worktrees are rediscovered from git on every refresh, and a minted id
 would change under persisted selection state. Adding the same directory twice
 is the same project. Cost: moving a repository on disk is a new project.
 
+Paths are normalised once, in `init` and in decoding, and are read-only after
+that, so identity reads the stored path rather than standardising it on every
+comparison.
+
 ## Shell out to git
 
 `git` from `PATH`, porcelain formats, parsed by pure functions.
@@ -61,7 +65,8 @@ the theme, not the system.
 
 Why: portability and user theme files for free. Cost: no per-platform colour
 semantics; a light terminal gets a light sidebar whether or not the OS is in
-dark mode.
+dark mode. A trailing alpha byte, which exported themes often carry, is read
+and ignored rather than turning the slot grey.
 
 ## Settings resolve project over global
 
@@ -75,9 +80,10 @@ The branch prefix applies to branches the app creates. An existing branch
 chosen in the sheet keeps its name; prefixing it asked git for a branch that
 did not exist. A blank worktree directory, global or override, means the
 default: the empty path resolved to the repository itself, and worktrees
-inside the main checkout are untracked files in it. The worktree path is always strictly inside the container:
-`.`, `..` and an empty slug become `_`, because the path is shown, and its
-parent created, before git gets to refuse the name.
+inside the main checkout are untracked files in it. The worktree path is
+always strictly inside the container: `.`, `..` and an empty slug become
+`_`, because the path is shown, and its parent created, before git gets to
+refuse the name.
 
 Why: a team convention set once, with per-repository exceptions. Cost: the
 nil/empty distinction has to be made visible; the sheet uses toggles for it.
@@ -120,7 +126,8 @@ a stale index and takes `index.lock` to write it back; with up to eight of
 those every five seconds, a `git commit` typed in a terminal at the wrong
 moment fails with "index.lock exists". The flag is what git added for
 background tools, and it also means the poll never makes the index write the
-records check exists to ignore.
+records check exists to ignore. A worktree whose read fails one round keeps
+its last badge rather than blinking off; one that is gone loses it.
 
 ## The dot means "something happened here since you looked"
 
@@ -128,7 +135,8 @@ Neither engine can say "a command is running". Ghostty reports command
 finished and progress; SwiftTerm's local view swallows even the bell. Both
 report title changes. So the indicator on a background tab or worktree is
 activity you have not seen, cleared when the tab is shown, which is also what
-Terminal.app's dot means.
+Terminal.app's dot means. A shell exiting can bring another tab into view;
+that clears its dot too.
 
 ## Sessions warm up when visited
 
@@ -144,6 +152,9 @@ opened it for life; changing the engine in Settings affects the next tab.
 
 Why: switching used to mean "next launch", which is a poor answer. Cost: two
 renderers in one window, which the theme conversion has to keep identical.
+A session's command reaches libghostty as one line it hands to a shell, so
+the arguments are shell-quoted first (`ShellQuoting`); SwiftTerm takes them
+as an array.
 
 ## Persisted state never loses data to a decode error
 
@@ -221,9 +232,16 @@ Why: the alert is the only place a user learns why something failed.
 ## A missing directory is refused, not worked around
 
 Selecting a worktree whose directory is gone shows an error instead of opening
-a tab; a shell spawned in a missing directory silently lands in `$HOME`.
-Removing such a worktree runs `git worktree prune`, since `git worktree remove`
-refuses it, and the post-delete hook still runs.
+a tab, and so do New Tab and Split in one that was selected while it existed;
+a shell spawned in a missing directory silently lands in `$HOME`. Removing
+such a worktree runs `git worktree prune`, since `git worktree remove` refuses
+it, and the post-delete hook still runs.
+
+A project whose directory is gone, or whose repository git cannot read, stays
+in the sidebar dimmed rather than being dropped: an unmounted drive must not
+delete someone's setup. The failure is reported once, not on every watcher
+tick and every return to the foreground; a Refresh the user asks for reports
+it again.
 
 ## Worktree removal asks first, per project
 
@@ -265,9 +283,12 @@ protocol plus recording fake, is how the registry and the watcher are tested.
 After a decode, `Workspace.repairReferences` drops worktrees whose project is
 gone, tabs whose worktree is gone, panes whose session is missing, and
 sessions no tab owns; it fixes an active-tab entry that points at a missing
-tab and a focused pane outside its tree. `PaneNode` decodes weights that are
-absent or misaligned as equal shares, and `Theme` refuses a file without
-exactly sixteen ANSI colours.
+tab and a focused pane outside its tree. A project, worktree or session
+listed twice keeps its first entry; a session shown in two panes keeps its
+first; a nested split left with one child collapses into it and one with
+none disappears. `PaneNode` decodes weights that are absent or misaligned as
+equal shares, and `Theme` refuses a file without exactly sixteen ANSI
+colours.
 
 Why: a session no tab shows would be given a shell that nothing displays and
 nothing can close, and a missing active tab hid the whole tab strip. Each
@@ -346,6 +367,12 @@ callback, and freeing the surface there would free the object mid-call.
 SwiftTerm keeps the reaped pid, and a signal to it could reach whatever the
 kernel reissued the number to. Cost: a one-turn delay nobody can see.
 
+After SwiftTerm's `terminate`, the host collects the child itself with
+`waitpid`, off the main thread, and sends SIGKILL to one still there five
+seconds later. SwiftTerm sends SIGTERM and then cancels the monitor that
+would have reaped the child, so every closed tab left a zombie until the app
+quit, and a shell that trapped TERM without exiting ran on.
+
 ## Invariants are tested at random, with seeds
 
 `WorkspaceInvariants` states what must hold between the workspace's
@@ -387,4 +414,11 @@ the sheet, and the sheet's decisions moved out of the view into
 `NewWorktreeDraft` so that a project switch mid-load could be tested; the
 first version let a cancelled load re-enable Create against the wrong
 project's branches.
+
+The existing-branch picker offers local branches not checked out, and only
+those: a large repository has hundreds of remote branches, and a picker is
+the wrong control for that many. A fresh clone has only `main` locally, so
+the list was empty with nothing to say why; it now says every local branch
+is checked out already and points at New branch, where a remote branch can
+be named as the base.
 
