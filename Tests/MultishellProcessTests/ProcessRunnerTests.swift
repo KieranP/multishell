@@ -298,6 +298,43 @@ struct HookShellTests {
     #expect(out == "done")
   }
 
+  @Test func aScriptStopsAtItsFirstFailingLineWhereTheShellCanBeTold() async throws {
+    let scratch = URL(fileURLWithPath: NSTemporaryDirectory())
+      .appendingPathComponent("multishell-script-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: scratch) }
+
+    let shell = ShellCommand.shell!.executable.lastPathComponent
+    guard ShellCommand.errexitShells.contains(shell) else { return }
+    await #expect(throws: ProcessFailure.self) {
+      try await ShellCommand().runScript(
+        "echo one > first.txt\nfalse\necho two > second.txt", in: scratch)
+    }
+    #expect(
+      FileManager.default.fileExists(atPath: scratch.appendingPathComponent("first.txt").path))
+    #expect(
+      !FileManager.default.fileExists(atPath: scratch.appendingPathComponent("second.txt").path),
+      "the line after the failure ran")
+
+    let out = try await ShellCommand().runScript("printf a\nprintf b", in: scratch)
+    #expect(out == "ab", "a sound script runs every line")
+  }
+
+  @Test func errexitIsPrependedForThePosixFamilyOnly() {
+    #expect(
+      ShellCommand.stoppingAtFirstFailure("a\nb", shell: URL(fileURLWithPath: "/bin/zsh"))
+        == "set -e\na\nb")
+    #expect(
+      ShellCommand.stoppingAtFirstFailure("a\nb", shell: URL(fileURLWithPath: "/bin/sh"))
+        == "set -e\na\nb")
+    #expect(
+      ShellCommand.stoppingAtFirstFailure(
+        "a\nb", shell: URL(fileURLWithPath: "/opt/homebrew/bin/fish"))
+        == "a\nb", "fish's set -e erases a variable")
+    #expect(
+      ShellCommand.stoppingAtFirstFailure("a", shell: URL(fileURLWithPath: "/bin/tcsh")) == "a")
+  }
+
   @Test func onlyKnownShellsGetTheInteractiveLoginFormOthersFallBackToSh() {
     #expect(ShellCommand.shell(named: "/bin/zsh").arguments == ["-l", "-i", "-c"])
     #expect(ShellCommand.shell(named: "/bin/zsh").executable.path == "/bin/zsh")

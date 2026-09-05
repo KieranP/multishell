@@ -50,7 +50,8 @@ struct NewWorktreeSheet: View {
               Text("Choose a project").tag(Project.ID?.none)
             }
             ForEach(model.workspace.projects) { candidate in
-              Text(labels[candidate.id] ?? candidate.name).tag(Project.ID?.some(candidate.id))
+              pickerLabel(candidate, text: labels[candidate.id] ?? candidate.name)
+                .tag(Project.ID?.some(candidate.id))
             }
           }
           fields
@@ -163,6 +164,18 @@ struct NewWorktreeSheet: View {
         .foregroundStyle(.secondary)
         .lineLimit(1)
         .truncationMode(.head)
+    }
+  }
+
+  /// The project's icon beside its name, so same-named projects are told
+  /// apart by more than their path. A menu item draws text and a symbol
+  /// image; an emoji rides along as text.
+  @ViewBuilder
+  private func pickerLabel(_ project: Project, text: String) -> some View {
+    switch ProjectIcon.kind(of: project.settings.iconGlyph) {
+    case .emoji(let emoji): Text("\(emoji)  \(text)")
+    case .symbol(let name): Label(text, systemImage: name)
+    case .folder: Label(text, systemImage: "folder")
     }
   }
 

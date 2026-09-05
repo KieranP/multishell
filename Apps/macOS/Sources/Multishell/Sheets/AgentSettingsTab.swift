@@ -1,7 +1,7 @@
 import MultishellCore
 import SwiftUI
 
-/// Settings > Agent: the preferred agent, and the Claude Code hooks that
+/// Settings > Agents: the preferred agent, and the Claude Code hooks that
 /// feed the state dots, shown only when Claude Code is on the login shell's
 /// PATH. Without it, the way to get it.
 struct AgentSettingsTab: View {
@@ -22,56 +22,61 @@ struct AgentSettingsTab: View {
           info: environmentCaption
         )
         if model.workspace.preferredAgentID == AgentCatalogue.customID {
-          TextField(
+          InfoRow(
             "Command:",
-            text: Binding(
-              get: { model.workspace.customAgentCommand },
-              set: { model.setCustomAgentCommand($0) }),
-            prompt: Text("my-agent --flag"))
+            info: "Run as typed through your login shell when an agent tab opens."
+          ) {
+            TextField(
+              "Command:",
+              text: Binding(
+                get: { model.workspace.customAgentCommand },
+                set: { model.setCustomAgentCommand($0) }),
+              prompt: Text("my-agent --flag"))
+          }
         }
-        Toggle(
+        InfoToggle(
           "Start it in new tabs",
+          info:
+            "New Tab (⌘T) and a worktree's first tab run the agent instead of a shell. New Shell Tab (⇧⌘T), New Tab in the worktree menu and splits stay shells. A saved agent tab resumes its conversation on relaunch where the agent can.",
           isOn: Binding(
             get: { model.workspace.autoStartAgent }, set: { model.setAutoStartAgent($0) })
         )
         .disabled(model.workspace.preferredAgentID == nil)
-        SettingsCaption(
-          "New Tab (⌘T) and a worktree's first tab run the agent instead of a shell; New Shell Tab (⇧⌘T) still opens a shell, and splits stay shells. A saved agent tab resumes its conversation on relaunch where the agent can."
-        )
       }
 
       if model.agentDetection.isClaudeCodeInstalled {
         claudeCodeSection
       } else {
         Section("Claude Code") {
-          LabeledContent("Claude Code:") {
+          InfoRow(
+            "Claude Code:",
+            info:
+              "Opens the setup guide. The native installer is \(AppModel.claudeCodeInstallCommand); run Refresh above once it is done."
+          ) {
             Text("Not found on the login shell's PATH.").foregroundStyle(.secondary)
-          }
-          HStack {
             Button("Install…") { NSWorkspace.shared.open(AppModel.claudeCodeSetupURL) }
-            Button("Copy Install Command") { copy(AppModel.claudeCodeInstallCommand) }
+              .controlSize(.small)
+            Button("Copy Install Command") {
+              model.copyToPasteboard(AppModel.claudeCodeInstallCommand)
+            }
+            .controlSize(.small)
           }
-          .controlSize(.small)
-          SettingsCaption(
-            "Opens the setup guide. The native installer is \(AppModel.claudeCodeInstallCommand); run Refresh above once it is done."
-          )
         }
       }
 
       Section("Command line tool") {
-        LabeledContent("multishell:") {
-          HStack {
-            Text(model.commandLineToolInstalled ? "Installed in /usr/local/bin" : "Not installed")
-              .foregroundStyle(.secondary)
-            if !model.commandLineToolInstalled {
-              Button("Install Command Line Tool…") { model.installCommandLineTool() }
-                .controlSize(.small)
-            }
+        InfoRow(
+          "multishell:",
+          info:
+            "For your own hooks: `multishell state running|attention|done|error|idle` from any terminal in this app marks its tab. Asks for an administrator password."
+        ) {
+          Text(model.commandLineToolInstalled ? "Installed in /usr/local/bin" : "Not installed")
+            .foregroundStyle(.secondary)
+          if !model.commandLineToolInstalled {
+            Button("Install Command Line Tool…") { model.installCommandLineTool() }
+              .controlSize(.small)
           }
         }
-        SettingsCaption(
-          "For your own hooks: `multishell state running|attention|done|error|idle` from any terminal in this app marks its tab. Asks for an administrator password."
-        )
       }
     }
     .formStyle(.grouped)
@@ -87,19 +92,21 @@ struct AgentSettingsTab: View {
           .lineLimit(1)
           .truncationMode(.head)
       }
-      LabeledContent("Hooks:") {
-        HStack {
-          Text(model.claudeHooksInstalled ? "Installed" : "Not installed")
-            .foregroundStyle(.secondary)
-          if model.claudeHooksInstalled {
-            Button("Remove") { model.removeClaudeHooks() }
-          } else {
-            Button("Add to ~/.claude/settings.json") { model.installClaudeHooks() }
-          }
-          Button(showsSnippet ? "Hide JSON" : "Show JSON") { showsSnippet.toggle() }
+      InfoRow(
+        "Hooks:",
+        info:
+          "Claude reports Working, Waiting for input and Done through its hooks, and the tab bar and sidebar colour the dot. Other hooks in the file are left as they are; the first write keeps a copy beside it."
+      ) {
+        Text(model.claudeHooksInstalled ? "Installed" : "Not installed")
+          .foregroundStyle(.secondary)
+        if model.claudeHooksInstalled {
+          Button("Remove") { model.removeClaudeHooks() }
+        } else {
+          Button("Add to ~/.claude/settings.json") { model.installClaudeHooks() }
         }
-        .controlSize(.small)
+        Button(showsSnippet ? "Hide JSON" : "Show JSON") { showsSnippet.toggle() }
       }
+      .controlSize(.small)
       if showsSnippet {
         VStack(alignment: .leading, spacing: 6) {
           ScrollView(.vertical) {
@@ -109,12 +116,9 @@ struct AgentSettingsTab: View {
               .frame(maxWidth: .infinity, alignment: .leading)
           }
           .frame(height: 140)
-          Button("Copy") { copy(model.claudeHooksSnippet) }.controlSize(.small)
+          Button("Copy") { model.copyToPasteboard(model.claudeHooksSnippet) }.controlSize(.small)
         }
       }
-      SettingsCaption(
-        "Claude reports Working, Waiting for input and Done through its hooks, and the tab bar and sidebar colour the dot. Other hooks in the file are left as they are; the first write keeps a copy beside it."
-      )
     }
   }
 
@@ -130,11 +134,6 @@ struct AgentSettingsTab: View {
         "Your login shell did not answer (\(reason)), so agents are looked up on the app's own PATH. Refresh to try again."
     }
   }
-
-  private func copy(_ text: String) {
-    NSPasteboard.general.clearContents()
-    NSPasteboard.general.setString(text, forType: .string)
-  }
 }
 
 /// The dropdown both settings windows use: None, installed agents, the
@@ -144,43 +143,19 @@ struct AgentPicker: View {
   @Binding var selection: String
   let detection: AgentDetection
   let refresh: () -> Void
-  /// Where the lookup happened, behind an (i) rather than a caption under
-  /// the row. A click opens a popover; a tooltip alone is easy to miss and
-  /// answers no click.
-  var info: String? = nil
-
-  @State private var showsInfo = false
+  let info: String
+  /// Greys the control while an override is off; the (i) stays readable.
+  var isEnabled = true
 
   var body: some View {
-    LabeledContent(label) {
-      HStack {
-        Picker(label, selection: $selection) {
-          ForEach(detection.options(selected: selection)) { option in
-            Text(option.label).tag(option.id)
-          }
-        }
-        .labelsHidden()
-        Button("Refresh", action: refresh).controlSize(.small)
-        if let info {
-          Button {
-            showsInfo.toggle()
-          } label: {
-            Image(systemName: "info.circle")
-              .foregroundStyle(.secondary)
-              .frame(width: 20, height: 20)
-              .contentShape(.rect)
-          }
-          .buttonStyle(.plain)
-          .help(info)
-          .popover(isPresented: $showsInfo, arrowEdge: .bottom) {
-            Text(info)
-              .font(.system(size: 12))
-              .fixedSize(horizontal: false, vertical: true)
-              .frame(width: 320, alignment: .leading)
-              .padding()
-          }
+    InfoRow(label, info: info) {
+      Picker(label, selection: $selection) {
+        ForEach(detection.options(selected: selection)) { option in
+          Text(option.label).tag(option.id)
         }
       }
+      .disabled(!isEnabled)
+      Button("Refresh", action: refresh).controlSize(.small).disabled(!isEnabled)
     }
   }
 }

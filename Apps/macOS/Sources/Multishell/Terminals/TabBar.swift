@@ -24,7 +24,7 @@ struct TabBar: View {
           }
       }
       // New tab sits with the tabs. With no tabs there is no strip, and the
-      // header's + takes over.
+      // header's actions menu or Cmd+T takes over.
       Button {
         model.newTab()
       } label: {

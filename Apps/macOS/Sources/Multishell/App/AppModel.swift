@@ -19,6 +19,8 @@ final class AppModel {
   var newWorktreeRequest: NewWorktreeRequest?
   /// A removal waiting on the confirmation dialog.
   var pendingRemoval: Worktree?
+  /// A project removal waiting on its dialog, in whichever window asked.
+  var pendingProjectRemoval: PendingProjectRemoval?
   /// A pane or tab close waiting on it, because an agent there is working.
   var pendingClose: PendingClose?
   /// Which project the settings window shows.
@@ -44,6 +46,10 @@ final class AppModel {
   var loginEnvironment: LoginShellEnvironment?
   /// Which catalogue agents that environment's PATH has.
   var agentDetection = AgentDetection.empty
+  /// Which shells the machine has, from `/etc/shells` and that PATH.
+  var shellDetection = ShellDetection.empty
+  /// Which catalogue editors are installed, by bundle id or shim.
+  var editorDetection = EditorDetection.empty
   var claudeHooksInstalled = false
   var commandLineToolInstalled = false
   var themes: [Theme] = Theme.builtins

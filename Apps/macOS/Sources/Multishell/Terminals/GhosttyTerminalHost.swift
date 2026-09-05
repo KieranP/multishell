@@ -41,13 +41,13 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
     containers[session.id] = container
   }
 
-  /// A tab's command, or an override that injects the hooks into an
-  /// otherwise-default shell. zsh needs none: its hooks ride in on `ZDOTDIR`
-  /// from the environment, so its command stays the engine default (`nil`).
+  /// A tab's command, or an override that names a chosen shell or injects
+  /// the hooks into an otherwise-default one. zsh as `$SHELL` needs none: its
+  /// hooks ride in on `ZDOTDIR` from the environment, so its command stays
+  /// the engine default (`nil`).
   private static func command(for session: TerminalSession) -> String? {
     if let command = session.command { return ShellQuoting.commandLine(command) }
-    let shell = ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh"
-    return ShellLaunch.overrideCommand(forShell: shell).map(ShellQuoting.commandLine)
+    return ShellLaunch.overrideCommand(forShell: session.shellPath).map(ShellQuoting.commandLine)
   }
 
   func close(_ id: TerminalSession.ID) {
@@ -118,7 +118,7 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
     [
       "super+t", "super+shift+t", "super+alt+t", "super+w", "super+shift+w", "super+n",
       "super+shift+n",
-      "super+o", "super+d", "super+shift+d", "super+comma", "super+q",
+      "super+o", "super+shift+o", "super+d", "super+shift+d", "super+comma", "super+q",
       "ctrl+tab", "ctrl+shift+tab",
       "super+ctrl+f", "super+enter",
     ]

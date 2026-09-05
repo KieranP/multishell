@@ -113,6 +113,103 @@ struct ProjectSettingsTests {
 }
 
 @Suite
+struct ShellCatalogueTests {
+  @Test func theProjectOverrideWinsAndLoginMeansTheLoginShell() {
+    #expect(ShellCatalogue.effectivePath(global: nil, override: nil) == nil)
+    #expect(ShellCatalogue.effectivePath(global: "/bin/bash", override: nil) == "/bin/bash")
+    #expect(
+      ShellCatalogue.effectivePath(global: "/bin/bash", override: "/opt/homebrew/bin/fish")
+        == "/opt/homebrew/bin/fish")
+    #expect(
+      ShellCatalogue.effectivePath(global: "/bin/bash", override: ShellCatalogue.loginShellID)
+        == nil, "a project can step back to $SHELL")
+    #expect(ShellCatalogue.effectivePath(global: "", override: nil) == nil)
+  }
+
+  @Test func theLoginShellFallsBackToZshWhenTheEnvironmentHasNone() {
+    #expect(ShellCatalogue.loginShellPath(environment: ["SHELL": "/bin/bash"]) == "/bin/bash")
+    #expect(ShellCatalogue.loginShellPath(environment: [:]) == "/bin/zsh")
+    #expect(ShellCatalogue.loginShellPath(environment: ["SHELL": ""]) == "/bin/zsh")
+  }
+
+  @Test func aWorkspaceResolvesAProjectsShellThroughItsOverride() {
+    var workspace = Workspace()
+    workspace.defaultShell = "/bin/bash"
+    let plain = Project(path: URL(fileURLWithPath: "/repos/a"))
+    let fish = Project(
+      path: URL(fileURLWithPath: "/repos/b"),
+      settings: ProjectSettings(defaultShell: "/usr/local/bin/fish"))
+    let login = Project(
+      path: URL(fileURLWithPath: "/repos/c"),
+      settings: ProjectSettings(defaultShell: ShellCatalogue.loginShellID))
+    #expect(workspace.defaultShell(for: plain) == "/bin/bash")
+    #expect(workspace.defaultShell(for: fish) == "/usr/local/bin/fish")
+    #expect(workspace.defaultShell(for: login) == nil)
+  }
+}
+
+@Suite
+struct EditorCatalogueTests {
+  @Test func noneAndEmptyMeanNoEditor() {
+    #expect(EditorCatalogue.effectiveID(nil) == nil)
+    #expect(EditorCatalogue.effectiveID("") == nil)
+    #expect(EditorCatalogue.effectiveID(EditorCatalogue.noneID) == nil)
+    #expect(EditorCatalogue.effectiveID("vscode") == "vscode")
+    #expect(EditorCatalogue.editor("vscode")?.bundleIdentifier == "com.microsoft.VSCode")
+    #expect(EditorCatalogue.editor("nvim")?.kind == .terminal)
+  }
+
+  @Test func idsAreUnique() {
+    let ids = EditorCatalogue.editors.map(\.id)
+    #expect(Set(ids).count == ids.count)
+    #expect(!ids.contains(EditorCatalogue.noneID) && !ids.contains(EditorCatalogue.customID))
+  }
+
+  @Test func theCustomTemplateGetsTheQuotedPathWhereThePlaceholderIs() {
+    let path = URL(fileURLWithPath: "/Users/me/My Work/repo")
+    #expect(
+      EditorCatalogue.customCommandLine("code-insiders {path}", path: path)
+        == "code-insiders '/Users/me/My Work/repo'")
+    #expect(
+      EditorCatalogue.customCommandLine("  micro  ", path: path)
+        == "micro '/Users/me/My Work/repo'",
+      "no placeholder: the path is appended")
+    #expect(EditorCatalogue.customCommandLine("  ", path: path) == nil)
+    #expect(
+      EditorCatalogue.customCommandLine("open -a X {path} && echo {path}", path: path)
+        == "open -a X '/Users/me/My Work/repo' && echo '/Users/me/My Work/repo'")
+  }
+}
+
+@Suite
+struct ProjectIconTests {
+  @Test func aGlyphIsAnEmojiASymbolNameOrNothing() {
+    #expect(ProjectIcon.kind(of: nil) == .folder)
+    #expect(ProjectIcon.kind(of: "") == .folder)
+    #expect(ProjectIcon.kind(of: "  ") == .folder)
+    #expect(ProjectIcon.kind(of: "🚀") == .emoji("🚀"))
+    #expect(ProjectIcon.kind(of: " 🚀🔥 ") == .emoji("🚀"), "one grapheme, whatever was pasted")
+    #expect(ProjectIcon.kind(of: "👩‍💻") == .emoji("👩‍💻"), "a joined sequence is one grapheme")
+    #expect(ProjectIcon.kind(of: "hammer") == .symbol("hammer"))
+    #expect(ProjectIcon.kind(of: "not.a.symbol") == .folder, "only the curated list is drawn")
+  }
+
+  @Test func tintsOutsideTheThemeAreNone() {
+    #expect(ProjectIcon.validTint(nil) == nil)
+    #expect(ProjectIcon.validTint(-1) == nil)
+    #expect(ProjectIcon.validTint(16) == nil)
+    #expect(ProjectIcon.validTint(0) == 0)
+    #expect(ProjectIcon.validTint(15) == 15)
+    #expect(ProjectSettings(iconTint: 40).iconTint == nil)
+  }
+
+  @Test func theCuratedSymbolsAreDistinctAndPlain() {
+    #expect(Set(ProjectIcon.symbols).count == ProjectIcon.symbols.count)
+    #expect(ProjectIcon.symbols.allSatisfy { $0.unicodeScalars.allSatisfy(\.isASCII) })
+  }
+}
+
+@Suite
 struct WorktreeSettingsExpansionTests {
   private let project = Project(path: URL(fileURLWithPath: "/w/repo"))
 

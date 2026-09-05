@@ -22,9 +22,15 @@ struct PresentedError: Identifiable {
   init(_ error: any Error) {
     switch error {
     case let failure as HookFailure:
+      // A pre hook's failure stopped the operation; a post hook's came after
+      // it succeeded. The title has to say which.
       title =
-        failure.stage == .postCreate
-        ? "Worktree created, but its hook failed" : "Worktree removed, but its hook failed"
+        switch failure.stage {
+        case .preCreate: "Worktree not created: its pre-create hook failed"
+        case .postCreate: "Worktree created, but its hook failed"
+        case .preDelete: "Worktree not removed: its pre-delete hook failed"
+        case .postDelete: "Worktree removed, but its hook failed"
+        }
       message = Self.describe(failure.underlying)
     case let failure as ProcessFailure where failure.message.contains("invalid reference: HEAD"):
       // An unborn HEAD: the repository has never been committed to.

@@ -125,19 +125,25 @@ public struct WorktreeCoordinator: Sendable {
       ? settings.qualifiedBranch(raw) : raw.trimmingCharacters(in: .whitespaces)
   }
 
-  /// Creates the worktree, then runs the post-create hook. A `HookFailure`
-  /// means the worktree exists and only the hook went wrong.
+  /// Runs the pre-create hook, creates the worktree, then runs the
+  /// post-create hook. A `HookFailure` from the pre stage means nothing was
+  /// created; from the post stage, that the worktree exists and only the
+  /// hook went wrong. `shellPath` is the project's shell for its hooks, or
+  /// `nil` for `$SHELL`.
   @discardableResult
   public func create(
     branch rawBranch: String,
     basedOn startPoint: String? = nil,
     createBranch: Bool = true,
     in project: Project,
-    settings: WorktreeSettings
+    settings: WorktreeSettings,
+    shellPath: String? = nil
   ) async throws -> URL {
     let branch = Self.branchName(rawBranch, createBranch: createBranch, settings: settings)
     let path = settings.worktreePath(forBranch: branch, in: project)
 
+    try await hooks.runPreCreate(
+      for: project, worktreePath: path, branch: branch, shellPath: shellPath)
     try FileManager.default.createDirectory(
       at: path.deletingLastPathComponent(),
       withIntermediateDirectories: true
@@ -149,23 +155,32 @@ public struct WorktreeCoordinator: Sendable {
       createBranch: createBranch,
       in: project
     )
-    try await hooks.runPostCreate(for: project, worktreePath: path, branch: branch)
+    try await hooks.runPostCreate(
+      for: project, worktreePath: path, branch: branch, shellPath: shellPath)
     return path
   }
 
-  /// Removes the worktree, then runs the post-delete hook.
+  /// Runs the pre-delete hook, removes the worktree, then runs the
+  /// post-delete hook. The pre hook runs before every attempt, so a forced
+  /// retry after git refused asks it again; its veto stands over the
+  /// user's answer to git's refusal, which was about something else.
   ///
   /// A worktree whose directory is already gone cannot be removed, only
   /// pruned: `git worktree remove` refuses with "does not exist". Prune is
-  /// what the user meant in that case, and the hook still runs.
-  public func remove(_ worktree: Worktree, force: Bool = false, in project: Project) async throws {
+  /// what the user meant in that case, and the hooks still run.
+  public func remove(
+    _ worktree: Worktree, force: Bool = false, in project: Project, shellPath: String? = nil
+  ) async throws {
     let path = worktree.path
     let branch = worktree.branch ?? worktree.head
+    try await hooks.runPreDelete(
+      for: project, worktreePath: path, branch: branch, shellPath: shellPath)
     if FileManager.default.fileExists(atPath: path.path) {
       try await service.remove(worktree, force: force, in: project)
     } else {
       try await service.prune(project)
     }
-    try await hooks.runPostDelete(for: project, worktreePath: path, branch: branch)
+    try await hooks.runPostDelete(
+      for: project, worktreePath: path, branch: branch, shellPath: shellPath)
   }
 }

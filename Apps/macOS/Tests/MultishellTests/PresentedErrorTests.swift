@@ -45,6 +45,20 @@ struct PresentedErrorTests {
     #expect(presented.message == "npm ERR!")
   }
 
+  @Test func preHookFailuresSayTheOperationDidNotHappen() {
+    let refused = ProcessFailure(
+      executable: "zsh", arguments: ["-l", "-i", "-c", "exit 1"], status: 1,
+      message: "no ticket number")
+    let create = PresentedError(HookFailure(stage: .preCreate, underlying: refused))
+    #expect(create.title == "Worktree not created: its pre-create hook failed")
+    #expect(create.message == "no ticket number")
+    let delete = PresentedError(HookFailure(stage: .preDelete, underlying: refused))
+    #expect(delete.title == "Worktree not removed: its pre-delete hook failed")
+    #expect(
+      PresentedError(HookFailure(stage: .postDelete, underlying: refused)).title
+        == "Worktree removed, but its hook failed")
+  }
+
   @Test func unreadableStateNamesTheBackupFile() {
     let backup = URL(fileURLWithPath: "/tmp/state.2026.broken.json")
     let presented = PresentedError(

@@ -48,7 +48,8 @@ public enum ShellLaunch {
   /// A full command line to run in place of the engine's default shell, for a
   /// host that takes one command string (Ghostty). `nil` means "leave the
   /// default", which is right for zsh (its hooks ride in on `ZDOTDIR`) and
-  /// for a shell with no integration.
+  /// for a shell with no integration, when that shell is `$SHELL`. A chosen
+  /// shell that is not `$SHELL` is named outright as a login shell.
   ///
   /// bash goes through `/bin/sh -c 'exec bash …'`. Ghostty keys its own bash
   /// injection on the command's first word: given `bash --init-file X` it
@@ -58,7 +59,9 @@ public enum ShellLaunch {
   /// init intact; Ghostty's OSC 133 marks are lost for bash, which the hooks
   /// more than replace.
   public static func overrideCommand(
-    forShell shellPath: String, bashInit: URL = Paths.bashInitFile
+    forShell shellPath: String,
+    loginShell: String = ShellCatalogue.loginShellPath(),
+    bashInit: URL = Paths.bashInitFile
   ) -> [String]? {
     switch URL(fileURLWithPath: shellPath).lastPathComponent {
     case "bash" where FileManager.default.fileExists(atPath: bashInit.path):
@@ -66,6 +69,8 @@ public enum ShellLaunch {
         "/bin/sh", "-c",
         "exec \(ShellQuoting.quote(shellPath)) --init-file \(ShellQuoting.quote(bashInit.path)) -i",
       ]
+    case _ where shellPath != loginShell:
+      return [shellPath, "-l"]
     default:
       return nil
     }

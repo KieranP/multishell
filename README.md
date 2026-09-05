@@ -16,10 +16,17 @@ macOS now. The core is portable and CI builds it on Linux.
     sudo xcode-select -s /Applications/Xcode.app   # once, if only CLT is active
     make run          # or: make install, then open it from /Applications
 
-Add a repository with the `+` in the sidebar. Right-click a project for its
-settings; Cmd+, for app settings.
+Add a repository with the folder button at the top of the sidebar (Cmd+O).
+Right-click a project for its settings; Cmd+, for app settings. The menu at
+the right of the header acts on the selected worktree: open it in your
+editor, reveal it, copy its path or branch, open a tab, remove it.
 
-Running coding agents in tabs is the point. Settings > Agent picks the
+Each project can pick its icon, its shell, where its worktrees go and how
+their branches are named, and run scripts before and after a worktree is
+created or removed, in that shell; a pre hook that exits non-zero stops the
+operation.
+
+Running coding agents in tabs is the point. Settings > Agents picks the
 preferred agent, per project too, so Cmd+Option+T opens a tab running it, or
 every new tab does with auto-start on. When Claude Code is installed the same
 tab can add its hooks to `~/.claude/settings.json`. After that the tab and

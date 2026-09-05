@@ -132,14 +132,13 @@ final class SwiftTermTerminalHost: NSObject, TerminalHost {
       .map { "\($0.key)=\($0.value)" }
   }
 
-  /// `nil` command means the user's login shell, which is what a new tab is,
-  /// launched so the command-status hooks are injected for this session.
+  /// `nil` command means the shell in force for the tab, launched so the
+  /// command-status hooks are injected for this session.
   private static func launch(_ session: TerminalSession) -> (String, [String]) {
     if let command = session.command, let executable = command.first {
       return (executable, Array(command.dropFirst()))
     }
-    let shell = ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh"
-    return (shell, ShellLaunch.arguments(forShell: shell))
+    return (session.shellPath, ShellLaunch.arguments(forShell: session.shellPath))
   }
 
   private static func font(_ appearance: Appearance) -> NSFont {

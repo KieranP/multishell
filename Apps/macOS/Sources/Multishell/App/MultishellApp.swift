@@ -88,6 +88,7 @@ struct RootView: View {
           model.removalWarning(for: worktree),
         ].compactMap { $0 }.joined(separator: "\n\n"))
     }
+    .projectRemovalDialog(model: model, source: .workspace)
     .confirmationDialog(
       model.pendingClose?.title ?? "",
       isPresented: Binding(

@@ -20,6 +20,10 @@ extension AppModel {
     }
     loginEnvironment = environment
     agentDetection = AgentDetection(path: environment.path)
+    shellDetection = ShellDetection(path: environment.path)
+    editorDetection = EditorDetection(path: environment.path) {
+      NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0)
+    }
     refreshAgentStatus()
   }
 
@@ -66,28 +70,32 @@ extension AppModel {
     guard let agentID = preferredAgentID(for: worktree) else {
       presentedError = PresentedError(
         title: "No agent chosen",
-        message: "Pick a preferred agent in Settings > Agent, or in this project's settings.")
+        message: "Pick a preferred agent in Settings > Agents, or in this project's settings.")
       return
     }
     store.openTab(in: worktree.id, title: agentDisplayName(agentID), agentID: agentID)
     sync()
   }
 
-  /// What the registry opens for a session: a plain shell, or the agent's
-  /// command line. A session that was saved by an earlier run resumes where
-  /// the catalogue knows how, and is otherwise a plain shell with the
-  /// agent's title; four saved agent tabs must not start four agents.
+  /// What the registry opens for a session: the shell in force for its
+  /// project, or the agent's command line with that shell taking over after
+  /// it. A session that was saved by an earlier run resumes where the
+  /// catalogue knows how, and is otherwise a plain shell with the agent's
+  /// title; four saved agent tabs must not start four agents.
   func prepared(_ session: TerminalSession) -> TerminalSession {
-    guard let agentID = session.agentID else { return session }
     var prepared = session
-    prepared.command = agentCommand(agentID, resume: restoredSessionIDs.contains(session.id))
+    prepared.shell = shellPath(forWorktree: session.worktreeID)
+    guard let agentID = session.agentID else { return prepared }
+    prepared.command = agentCommand(
+      agentID, resume: restoredSessionIDs.contains(session.id), shell: prepared.shellPath)
     return prepared
   }
 
-  func agentCommand(_ id: String, resume: Bool) -> [String]? {
+  /// `shell` is the tab's shell, the one that takes over when the agent
+  /// quits; the agent itself runs through the login shell for its PATH.
+  func agentCommand(_ id: String, resume: Bool, shell tabShell: String) -> [String]? {
     guard let shell = ShellCommand.shell else { return nil }
-    let loginShell = ProcessInfo.processInfo.environment["SHELL"] ?? shell.executable.path
-    let exec = ShellLaunch.execCommandLine(forShell: loginShell)
+    let exec = ShellLaunch.execCommandLine(forShell: tabShell)
     if id == AgentCatalogue.customID {
       return AgentLaunch.command(customLine: workspace.customAgentCommand, shell: shell, exec: exec)
     }
@@ -112,7 +120,7 @@ extension AppModel {
     presentedError = PresentedError(
       title: "\(name) is not installed",
       message:
-        "The tab opened as a plain shell. Install \(name), or choose another agent in Settings > Agent, then use Refresh."
+        "The tab opened as a plain shell. Install \(name), or choose another agent in Settings > Agents, then use Refresh."
     )
   }
 }

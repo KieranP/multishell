@@ -82,6 +82,122 @@ struct WorktreeCoordinatorTests {
     #expect(try await coordinator.refresh(project).contains { $0.branch == "doomed" })
   }
 
+  @Test func aFailingPreCreateHookLeavesNoWorktreeAndNoBranch() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    var project = repo.project
+    project.settings = ProjectSettings(preCreateHook: "echo refused >&2\nexit 7")
+
+    await #expect(throws: HookFailure.self) {
+      try await repo.coordinator.create(branch: "refused", in: project, settings: repo.trees)
+    }
+
+    #expect(try await repo.coordinator.refresh(project).count == 1)
+    #expect(try await repo.branches() == ["main"], "git was never asked")
+    #expect(
+      !FileManager.default.fileExists(
+        atPath: repo.trees.worktreePath(forBranch: "refused", in: project).path))
+  }
+
+  @Test func aPreCreateHookRunsInTheRepositoryWithThePlannedPath() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    var project = repo.project
+    project.settings = ProjectSettings(
+      preCreateHook: "pwd > pre.txt\nprintf '%s' \"$MULTISHELL_WORKTREE_PATH\" > planned.txt")
+
+    let path = try await repo.coordinator.create(
+      branch: "planned", in: project, settings: repo.trees)
+
+    let ran = try String(
+      contentsOf: project.path.appendingPathComponent("pre.txt"), encoding: .utf8)
+    #expect(
+      ran.trimmingCharacters(in: .whitespacesAndNewlines).hasSuffix("/demo"),
+      "ran in the repository, not the planned worktree: \(ran)")
+    let planned = try String(
+      contentsOf: project.path.appendingPathComponent("planned.txt"), encoding: .utf8)
+    #expect(planned == path.path, "the path the worktree is about to get")
+  }
+
+  @Test func aFailingPreDeleteHookLeavesTheWorktree() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    var project = repo.project
+    project.settings = ProjectSettings(preDeleteHook: "exit 1")
+    let path = try await repo.coordinator.create(branch: "kept", in: project, settings: repo.trees)
+    let worktree = try #require(
+      try await repo.coordinator.refresh(project).first { $0.branch == "kept" })
+
+    await #expect(throws: HookFailure.self) {
+      try await repo.coordinator.remove(worktree, in: project)
+    }
+
+    #expect(FileManager.default.fileExists(atPath: path.path))
+    #expect(try await repo.coordinator.refresh(project).count == 2)
+  }
+
+  @Test func aPreDeleteHookRunsInTheWorktreeBeforeItGoes() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    var project = repo.project
+    project.settings = ProjectSettings(
+      preDeleteHook: "pwd > \"$MULTISHELL_PROJECT_PATH/where.txt\"")
+    let path = try await repo.coordinator.create(
+      branch: "leaving", in: project, settings: repo.trees)
+    let worktree = try #require(
+      try await repo.coordinator.refresh(project).first { $0.branch == "leaving" })
+
+    try await repo.coordinator.remove(worktree, in: project)
+
+    let ran = try String(
+      contentsOf: project.path.appendingPathComponent("where.txt"), encoding: .utf8)
+    // The shell may print the physical `/private/var` form of the temp
+    // directory; Foundation leaves that prefix alone.
+    func plain(_ text: String) -> String {
+      let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+      return trimmed.hasPrefix("/private/") ? String(trimmed.dropFirst("/private".count)) : trimmed
+    }
+    #expect(plain(ran) == plain(path.path))
+    #expect(!FileManager.default.fileExists(atPath: path.path))
+  }
+
+  @Test func aMultiLineHookRunsItsLinesInOrderAndStopsAtAFailure() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    var project = repo.project
+    project.settings = ProjectSettings(
+      postCreateHook: "echo one >> order.txt\necho two >> order.txt\nfalse\necho three >> order.txt"
+    )
+
+    await #expect(throws: HookFailure.self) {
+      try await repo.coordinator.create(branch: "lines", in: project, settings: repo.trees)
+    }
+
+    let path = repo.trees.worktreePath(forBranch: "lines", in: project)
+    let order = try String(contentsOf: path.appendingPathComponent("order.txt"), encoding: .utf8)
+    #expect(order == "one\ntwo\n", "in order, in the worktree, and nothing after the failure")
+  }
+
+  @Test func hooksRunThroughTheShellTheProjectChose() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    var project = repo.project
+    project.settings = ProjectSettings(
+      postCreateHook: "printf '%s|%s' \"$ZSH_VERSION\" \"$BASH_VERSION\" > shell.txt")
+
+    let zsh = try await repo.coordinator.create(
+      branch: "zsh", in: project, settings: repo.trees, shellPath: "/bin/zsh")
+    let underZsh = try String(contentsOf: zsh.appendingPathComponent("shell.txt"), encoding: .utf8)
+    #expect(underZsh.hasPrefix("|") == false && underZsh.hasSuffix("|"), "zsh set, bash not")
+
+    let bash = try await repo.coordinator.create(
+      branch: "bash", in: project, settings: repo.trees, shellPath: "/bin/bash")
+    let underBash = try String(
+      contentsOf: bash.appendingPathComponent("shell.txt"), encoding: .utf8)
+    #expect(underBash.hasPrefix("|"), "zsh not set under bash")
+    #expect(underBash.count > 1, "bash set")
+  }
+
   @Test func recognisesADirectoryThatIsNotARepository() async throws {
     let coordinator = WorktreeCoordinator(service: WorktreeService(git: git))
     let empty = URL(fileURLWithPath: NSTemporaryDirectory())

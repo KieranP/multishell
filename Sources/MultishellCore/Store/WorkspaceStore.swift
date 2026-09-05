@@ -310,3 +310,23 @@ extension WorkspaceStore {
     workspace.autoStartAgent = enabled
   }
 }
+
+// MARK: - Shell, editor and selection
+
+extension WorkspaceStore {
+  public func setDefaultShell(_ path: String?) {
+    workspace.defaultShell = path
+  }
+
+  public func setPreferredEditor(_ id: String?) {
+    workspace.preferredEditorID = id
+  }
+
+  public func setCustomEditorCommand(_ command: String) {
+    workspace.customEditorCommand = command
+  }
+
+  public func setOpensTerminalOnSelect(_ enabled: Bool) {
+    workspace.opensTerminalOnSelect = enabled
+  }
+}

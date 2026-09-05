@@ -104,14 +104,16 @@ struct SidebarView: View {
     .padding(.bottom, 10)
   }
 
-  /// Leaves room for the traffic lights; the title bar is hidden.
+  /// Leaves room for the traffic lights; the title bar is hidden. The
+  /// folder-plus, not a bare plus: the project row's + is New Worktree and
+  /// the tab strip's is New Tab, and three identical glyphs read as one.
   private func header(_ theme: Theme) -> some View {
     HStack {
       Spacer()
       Button {
         Task { await model.chooseProject() }
       } label: {
-        Image(systemName: "plus")
+        Image(systemName: "folder.badge.plus")
           .font(.system(size: 13, weight: .medium))
           .frame(width: 28, height: 28)
           .contentShape(.rect)
@@ -121,7 +123,7 @@ struct SidebarView: View {
       .help("Add Project (⌘O)")
     }
     .padding(.horizontal, 14)
-    .frame(height: 52)
+    .frame(height: UIMetrics.headerHeight)
     .titleBarDoubleClick()
   }
 
@@ -217,25 +219,16 @@ struct SidebarView: View {
       model.settingsProjectID = project.id
       openWindow(id: ProjectSettingsWindow.windowID)
     }
-    Button("Reveal in Finder") { NSWorkspace.shared.activateFileViewerSelecting([project.path]) }
+    Button("Reveal in Finder") { model.revealInFinder(project.path) }
     Divider()
-    Button("Remove Project", role: .destructive) { model.removeProject(project) }
+    Button("Remove Project…", role: .destructive) {
+      model.requestProjectRemoval(project, from: .workspace)
+    }
   }
 
   @ViewBuilder
   private func worktreeMenu(_ worktree: Worktree) -> some View {
-    Button("Reveal in Finder") { NSWorkspace.shared.activateFileViewerSelecting([worktree.path]) }
-    Button("Copy Path") {
-      NSPasteboard.general.clearContents()
-      NSPasteboard.general.setString(worktree.path.path, forType: .string)
-    }
-    if model.state(ofWorktree: worktree.id) != nil {
-      Button("Clear Status") { model.clearState(ofWorktree: worktree.id) }
-    }
-    if !worktree.isPrimary {
-      Divider()
-      Button("Remove Worktree", role: .destructive) { model.requestRemoval(of: worktree) }
-    }
+    WorktreeActions(model: model, worktree: worktree)
   }
 }
 
@@ -266,13 +259,13 @@ struct ProjectRow: View {
           Circle()
             .fill(theme.color(for: state))
             .frame(width: 7, height: 7)
-            .frame(width: metrics.icon + 2)
+            .frame(width: metrics.icon + 6)
             .help("\(state.displayName) in a terminal of a collapsed worktree")
         } else {
-          Image(systemName: isMissing ? "folder.badge.questionmark" : "folder")
-            .font(.system(size: metrics.icon))
-            .foregroundStyle(theme.textSecondary)
-            .help(project.path.path)
+          ProjectIconView(
+            settings: project.settings, isMissing: isMissing, theme: theme, size: metrics.icon
+          )
+          .help(project.path.path)
         }
 
         Text(project.name)

@@ -34,6 +34,18 @@ extension AppModel {
     await rearmWatcher()
   }
 
+  /// Entry point from the UI. Always asks: removal closes every live
+  /// terminal in the project's worktrees, with no undo.
+  func requestProjectRemoval(_ project: Project, from source: PendingProjectRemoval.Source) {
+    pendingProjectRemoval = PendingProjectRemoval(project: project, source: source)
+  }
+
+  /// What the confirmation says, with the live terminal count.
+  func projectRemovalMessage(for project: Project) -> String {
+    let live = workspace.worktrees(of: project.id).map { liveTerminalCount(in: $0.id) }
+    return PendingProjectRemoval.message(liveTerminals: live.reduce(0, +))
+  }
+
   func removeProject(_ project: Project) {
     commonGitDirectories[project.id] = nil
     worktreeRecords[project.id] = nil
@@ -105,14 +117,21 @@ extension AppModel {
 // MARK: - Worktrees
 
 extension AppModel {
-  func select(_ worktree: Worktree) {
-    guard directoryExists(of: worktree) else { return }
+  /// A worktree with no tabs gets one, unless the setting says selecting
+  /// should only show the worktree and leave the first shell to Cmd+T or
+  /// the actions menu. `openingFirstTab: false` is for a caller about to
+  /// open its own tab. Returns false when the directory is gone and nothing
+  /// was selected, so that caller does not act on whatever was selected.
+  @discardableResult
+  func select(_ worktree: Worktree, openingFirstTab: Bool = true) -> Bool {
+    guard directoryExists(of: worktree) else { return false }
     store.selectWorktree(worktree.id)
     warmWorktrees.insert(worktree.id)
-    if workspace.tabs(in: worktree.id).isEmpty {
+    if openingFirstTab, workspace.tabs(in: worktree.id).isEmpty, workspace.opensTerminalOnSelect {
       openFirstOrNewTab(in: worktree)
     }
     sync()
+    return true
   }
 
   /// A shell spawned in a missing directory silently lands in $HOME, which
@@ -170,9 +189,10 @@ extension AppModel {
         basedOn: startPoint,
         createBranch: createBranch,
         in: project,
-        settings: workspace.worktreeSettings(for: project)
+        settings: workspace.worktreeSettings(for: project),
+        shellPath: workspace.defaultShell(for: project)
       )
-    } catch let failure as HookFailure {
+    } catch let failure as HookFailure where failure.stage.operationHappened {
       // The worktree exists; only the hook went wrong. Refresh anyway so
       // it appears in the sidebar, then say what happened.
       report(failure)
@@ -225,9 +245,15 @@ extension AppModel {
   func removeWorktree(_ worktree: Worktree, force: Bool = false) async {
     guard let worktrees, let project = workspace.project(worktree.projectID) else { return }
     do {
-      try await worktrees.remove(worktree, force: force, in: project)
-    } catch let failure as HookFailure {
+      try await worktrees.remove(
+        worktree, force: force, in: project, shellPath: workspace.defaultShell(for: project))
+    } catch let failure as HookFailure where failure.stage.operationHappened {
       report(failure)
+    } catch let failure as HookFailure {
+      // The pre-delete hook refused, so nothing was removed and there is
+      // nothing to refresh.
+      report(failure)
+      return
     } catch {
       // git refuses dirty or locked worktrees. Offer the force form
       // rather than leaving the user to find a terminal.

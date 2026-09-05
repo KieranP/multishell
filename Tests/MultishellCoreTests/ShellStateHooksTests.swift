@@ -34,24 +34,31 @@ struct ZshIntegrationTests {
     defer { try? FileManager.default.removeItem(at: dir) }
 
     let zsh = SessionEnvironment.zshIntegration(
-      environment: ["SHELL": "/bin/zsh", "ZDOTDIR": "/home/me/.zsh"], integrationDirectory: dir)
+      shellPath: "/bin/zsh", environment: ["ZDOTDIR": "/home/me/.zsh"], integrationDirectory: dir)
     #expect(zsh["ZDOTDIR"] == dir.path)
     #expect(zsh["MULTISHELL_USER_ZDOTDIR"] == "/home/me/.zsh")
 
     let noUserZdotdir = SessionEnvironment.zshIntegration(
-      environment: ["SHELL": "/bin/zsh"], integrationDirectory: dir)
+      shellPath: "/bin/zsh", environment: [:], integrationDirectory: dir)
     #expect(noUserZdotdir["ZDOTDIR"] == dir.path)
     #expect(noUserZdotdir["MULTISHELL_USER_ZDOTDIR"] == nil, "our files fall back to $HOME")
 
     #expect(
       SessionEnvironment.zshIntegration(
-        environment: ["SHELL": "/bin/bash"], integrationDirectory: dir
+        shellPath: "/bin/bash", environment: [:], integrationDirectory: dir
       ).isEmpty,
       "bash is not injected this way")
+    let chosen = TerminalSession(
+      worktreeID: "/w", workingDirectory: URL(fileURLWithPath: "/w"), title: "Shell",
+      shell: "/bin/bash")
+    #expect(
+      SessionEnvironment.variables(for: chosen, socket: URL(fileURLWithPath: "/s"))["ZDOTDIR"]
+        == nil,
+      "a tab whose chosen shell is bash gets no zsh integration whatever $SHELL is")
     let missing = dir.appendingPathComponent("gone", isDirectory: true)
     #expect(
       SessionEnvironment.zshIntegration(
-        environment: ["SHELL": "/bin/zsh"], integrationDirectory: missing
+        shellPath: "/bin/zsh", environment: [:], integrationDirectory: missing
       ).isEmpty,
       "nothing when the setting has not generated the directory")
   }
@@ -81,7 +88,26 @@ struct ShellLaunchTests {
     let bashInit = try bashInitThatExists()
     defer { try? FileManager.default.removeItem(at: bashInit) }
     #expect(ShellLaunch.arguments(forShell: "/bin/zsh", bashInit: bashInit) == ["-l"])
-    #expect(ShellLaunch.overrideCommand(forShell: "/bin/zsh", bashInit: bashInit) == nil)
+    #expect(
+      ShellLaunch.overrideCommand(forShell: "/bin/zsh", loginShell: "/bin/zsh", bashInit: bashInit)
+        == nil)
+  }
+
+  @Test func aChosenShellThatIsNotTheLoginShellIsNamedOutright() throws {
+    let bashInit = try bashInitThatExists()
+    defer { try? FileManager.default.removeItem(at: bashInit) }
+    #expect(
+      ShellLaunch.overrideCommand(
+        forShell: "/opt/homebrew/bin/fish", loginShell: "/bin/zsh", bashInit: bashInit)
+        == ["/opt/homebrew/bin/fish", "-l"])
+    #expect(
+      ShellLaunch.overrideCommand(forShell: "/bin/zsh", loginShell: "/bin/bash", bashInit: bashInit)
+        == ["/bin/zsh", "-l"])
+    #expect(
+      ShellLaunch.overrideCommand(
+        forShell: "/bin/bash", loginShell: "/bin/zsh", bashInit: bashInit)?
+        .first == "/bin/sh",
+      "bash keeps its init file route whichever shell is the login one")
   }
 
   @Test func bashLaunchesWithTheGeneratedInitFile() throws {
@@ -99,14 +125,19 @@ struct ShellLaunchTests {
   @Test func bashWithoutAGeneratedInitFallsBackToAPlainLogin() {
     let missing = URL(fileURLWithPath: "/no/such/init.bash")
     #expect(ShellLaunch.arguments(forShell: "/bin/bash", bashInit: missing) == ["-l"])
-    #expect(ShellLaunch.overrideCommand(forShell: "/bin/bash", bashInit: missing) == nil)
+    #expect(
+      ShellLaunch.overrideCommand(forShell: "/bin/bash", loginShell: "/bin/bash", bashInit: missing)
+        == nil)
   }
 
   @Test func anUnknownShellIsLaunchedPlainly() throws {
     let bashInit = try bashInitThatExists()
     defer { try? FileManager.default.removeItem(at: bashInit) }
     #expect(ShellLaunch.arguments(forShell: "/usr/local/bin/fish", bashInit: bashInit) == ["-l"])
-    #expect(ShellLaunch.overrideCommand(forShell: "/usr/local/bin/fish", bashInit: bashInit) == nil)
+    #expect(
+      ShellLaunch.overrideCommand(
+        forShell: "/usr/local/bin/fish", loginShell: "/usr/local/bin/fish", bashInit: bashInit)
+        == nil)
   }
 
   @Test func theExecAfterAnAgentCarriesTheIntegrationBackIn() throws {

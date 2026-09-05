@@ -164,6 +164,55 @@ struct DecodingDefaultsTests {
       try decode(ProjectSettings.self, #"{ "autoStartAgent": false }"#).autoStartAgent == false)
   }
 
+  @Test func projectSettingsWithoutTheNewerFieldsGetTheirDefaults() throws {
+    let settings = try decode(ProjectSettings.self, #"{ "postCreateHook": "npm install" }"#)
+    #expect(settings.preCreateHook == "" && settings.preDeleteHook == "")
+    #expect(settings.postCreateHook == "npm install")
+    #expect(settings.defaultShell == nil, "follows the global shell")
+    #expect(settings.iconGlyph == nil && settings.iconTint == nil, "the folder, untinted")
+
+    let shell = try decode(ProjectSettings.self, #"{ "defaultShell": "" }"#)
+    #expect(shell.defaultShell == nil, "empty reads as no override, like the other strings")
+    let login = try decode(ProjectSettings.self, #"{ "defaultShell": "login" }"#)
+    #expect(login.defaultShell == ShellCatalogue.loginShellID)
+  }
+
+  @Test func anIconTintOutsideTheThemeOrOfTheWrongTypeIsDropped() throws {
+    #expect(try decode(ProjectSettings.self, #"{ "iconTint": 16 }"#).iconTint == nil)
+    #expect(try decode(ProjectSettings.self, #"{ "iconTint": -1 }"#).iconTint == nil)
+    #expect(try decode(ProjectSettings.self, #"{ "iconTint": "red" }"#).iconTint == nil)
+    #expect(try decode(ProjectSettings.self, #"{ "iconTint": 3 }"#).iconTint == 3)
+    #expect(
+      try decode(ProjectSettings.self, #"{ "iconGlyph": "🚀", "iconTint": 3 }"#).iconGlyph == "🚀")
+  }
+
+  @Test func aWorkspaceWithoutShellEditorOrSelectionFieldsGetsTheDefaults() throws {
+    let workspace = try decode(Workspace.self, #"{ "projects": [] }"#)
+    #expect(workspace.defaultShell == nil, "$SHELL")
+    #expect(workspace.preferredEditorID == nil)
+    #expect(workspace.customEditorCommand == "")
+    #expect(workspace.opensTerminalOnSelect, "on until turned off")
+
+    let chosen = try decode(
+      Workspace.self,
+      #"{ "defaultShell": "/opt/homebrew/bin/fish", "preferredEditorID": "future-editor", "opensTerminalOnSelect": false }"#
+    )
+    #expect(chosen.defaultShell == "/opt/homebrew/bin/fish")
+    #expect(chosen.preferredEditorID == "future-editor", "an unknown editor id is kept as text")
+    #expect(!chosen.opensTerminalOnSelect)
+  }
+
+  @Test func aSessionsShellIsRuntimeOnlyAndNeverSaved() throws {
+    let session = TerminalSession(
+      worktreeID: "/w", workingDirectory: URL(fileURLWithPath: "/w"), title: "Shell",
+      shell: "/bin/bash")
+    let json = String(decoding: try JSONEncoder().encode(session), as: UTF8.self)
+    #expect(!json.contains("/bin/bash"))
+    let restored = try JSONDecoder().decode(TerminalSession.self, from: Data(json.utf8))
+    #expect(restored.shell == nil, "a relaunched tab reads the setting again")
+    #expect(restored.shellPath == ShellCatalogue.loginShellPath())
+  }
+
   @Test func workspaceFromTheVeryFirstBuildAndFromToday() throws {
     let today = Workspace()
     let roundTripped = try decode(

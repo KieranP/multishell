@@ -19,8 +19,8 @@ day. Three tiers; ship after the first two.
   An update check, Sparkle or a plain "a newer version exists" link, so the
   first bug fix reaches people.
 - Bare repositories (Gaps, below).
-- Remove Project confirmation (Gaps, below).
-- A hook timeout. A hook that never exits blocks the sheet forever; a
+- A hook timeout. A hook that never exits blocks the sheet forever, and a
+  pre hook that never exits blocks the create or remove itself; a
   configurable limit, a minute by default, with the hook killed and reported.
 - "Remove Anyway" deletes uncommitted work for good. The forced removal is
   `git worktree remove --force`, which unlinks the directory. When the status
@@ -68,74 +68,9 @@ day. Three tiers; ship after the first two.
 
 ### 3. After shipping
 
-Custom icons, the actions menu and preferred editor, pre hooks and the
-multi-line editors, accessibility labels, a Linux GUI, and the rest of the
-Gaps section.
+Accessibility labels, a Linux GUI, and the rest of the Gaps section.
 
 ## Features
-
-### Custom project icons
-
-The sidebar row draws a fixed `folder` symbol, swapped for
-`folder.badge.questionmark` when the project is unreachable. The detail
-header shows the name with no icon.
-
-- A field on `ProjectSettings`: a string for the glyph and an optional tint.
-  The core is Foundation-only, so it stores a description, not an image.
-  Decodes with a default; add a case to `DecodingDefaultsTests`.
-- Glyph source: emoji first (one string, every platform, the character
-  palette is the picker), SF Symbol name second (Mac-only, needs a curated
-  list since SwiftUI has no public symbol picker). Image files mean an
-  `icons/` folder beside `state.json`, resizing and cleanup on removal; leave
-  them out of the first version.
-- Tint as an index into the theme's sixteen ANSI colours, not a hex, so a
-  later theme change does not clash. The branch name already uses slot 6 and
-  the dirty dot slot 3.
-- Draw it in the sidebar row, the detail header and the New Worktree project
-  picker, where same-named projects are told apart by path today.
-- Missing state becomes a dimmed icon plus a small badge, so the user's
-  choice survives an unmounted drive.
-- Settings UI in Project Settings > General through the existing `setting`
-  binding helper.
-- Deriving an icon from project files (`package.json`, `Package.swift`) is
-  tempting but adds a filesystem read per project and a taxonomy. Explicit
-  choice, folder by default.
-
-### Project hooks: pre-create, pre-delete, multi-line editors
-
-Today there are two hooks, post-create and post-delete, each a one-line
-`TextField` with a vertical axis. Return submits the field rather than
-adding a line, so a multi-step hook has to be chained with `&&`.
-
-- Two more stages. Pre-create runs in the repository before
-  `git worktree add`, with `MULTISHELL_WORKTREE_PATH` set to the planned
-  path. Pre-delete runs in the worktree before `git worktree remove`, after
-  the confirmation dialog. The contract, by exit code: a pre hook that exits
-  non-zero stops the operation, and git is never asked; a post hook that
-  exits non-zero, or cannot be started at all, raises an alert with its
-  stderr, and the git operation stands. That is what a pre hook is for
-  (refuse a create without a ticket number, refuse a delete with unpushed
-  commits, stop a dev server first). `HookFailure.Stage` gains the two
-  cases and `PresentedError` gets titles that say the operation did not
-  happen, distinct from the post-hook titles that say it did.
-- Multi-line. Each hook becomes a `TextEditor` in a monospaced font, a few
-  lines tall, run as one script through the login shell. Decide what a
-  failing line does: the shell runs on past it by default, so either prepend
-  `set -e` so the first failure stops the script and is the one reported, or
-  say in the caption that it does not. Stopping is the less surprising.
-- Layout. Four editors plus the environment table outgrow the fixed
-  560 by 400 window. Group as Create (pre, post) and Delete (pre, post) with
-  a caption under each naming its working directory and whether a failure
-  aborts, and let the form scroll or the window grow.
-- Persistence. Two new strings on `ProjectSettings`, default empty, with
-  cases in `DecodingDefaultsTests`.
-- Timeout. The open decision that a hook which never exits blocks the sheet
-  gets worse with pre hooks, which now block the operation itself. Worth
-  settling at the same time.
-- Tests on `RepositoryFixture`: a failing pre-create leaves no worktree and
-  no branch; a failing pre-delete leaves the worktree; a multi-line hook runs
-  its lines in order in the right directory; a failing middle line stops the
-  rest.
 
 ### Terminals view
 
@@ -162,76 +97,18 @@ it the list has nothing to group by.
   then Working, then Done, most recent change first within each.
 - Actions. Clicking a row selects its worktree, activates its tab and focuses
   its pane, which is what a click in the sidebar plus a click on the tab
-  does today, in one step. A "next waiting terminal" command with a shortcut
-  is worth more than the view itself for keyboard users. Optionally the Dock
-  badge shows the Waiting count.
+  does today, in one step. The row's context menu is `WorktreeActions`. A
+  "next waiting terminal" command with a shortcut is worth more than the view
+  itself for keyboard users. Optionally the Dock badge shows the Waiting
+  count.
 - Testable value. Grouping, ordering and the elapsed-time text live in a
   plain value beside the view, the way `SidebarFilter` does, and are tested
   there. The view is not.
-
-### Actions menu in the detail header, and a preferred editor
-
-The detail header's right side holds only a `+` when the worktree has no
-tabs. An actions menu there acts on the selected worktree: Open in Editor,
-Reveal in Finder, Copy Path, Copy Branch, New Agent Tab, Remove Worktree.
-Reveal and Copy Path exist in the worktree's context menu already; the menu
-makes them discoverable. The same items belong in the sidebar context menu
-and on a Terminals view row.
-
-Open in Editor needs a preferred editor setting:
-
-- Global, with the agent's dropdown behaviour: detected editors, "None", a
-  Refresh, and a stored value that is no longer installed shown as such. The
-  per-project override pattern is there if a project ever needs a different
-  editor; start global.
-- Detection differs from agents. Editors are mostly apps, not `PATH`
-  binaries: VS Code, Cursor, Zed, Sublime Text, Xcode, Nova, BBEdit, the
-  JetBrains IDEs. Find them by bundle identifier through `NSWorkspace`, plus
-  the terminal editors (`nvim`, `emacs`) and CLI shims (`code`, `cursor`,
-  `zed`, `subl`) on the login-shell `PATH`. The catalogue (id, name, bundle
-  id, CLI name) lives in the core; the lookup by bundle id is Mac-only and
-  goes in the app layer behind a port, since a Linux GUI would use
-  `.desktop` entries.
-- Opening. An app takes the worktree directory through `NSWorkspace`. A
-  terminal editor opens as a new tab running it in the worktree, which is
-  the agent-tab path with a different command. A custom entry takes a
-  command template with `{path}`.
-- Shortcut. Cmd+O is Add Project, so Open in Editor needs another, and any
-  new app shortcut must also be added to `GhosttyTerminalHost.appShortcuts`
-  or the surface consumes the keystroke before the menu sees it. That list is
-  the non-obvious step for every shortcut in this file.
-- Tests. Catalogue and command construction as plain values; detection
-  against a fake lookup the way the agent detection is tested.
 
 ## Gaps
 
 ### Everyday
 
-- A default shell, global and per project. Every tab runs `$SHELL`, and
-  there is no way to pick another, so a bash project on a zsh Mac gets zsh.
-  Detect the shells present (`/etc/shells` plus the login shell's PATH for
-  zsh, bash, fish, nu), a global choice on the workspace with a `nil`
-  override on `ProjectSettings` like the agent, and a dropdown in both
-  settings windows marking a stored shell that is no longer installed. The
-  hooks follow: `ShellLaunch` and `SessionEnvironment` already branch on the
-  shell's name, so a chosen shell gets the same per-session integration as
-  `$SHELL` does today, and a shell without one launches plainly.
-- Three different `plus` icons. The sidebar header's Add Project, each
-  project row's New Worktree, and the tab strip's New Tab all draw the same
-  `plus` symbol, so the header button reads as "add something" until the
-  tooltip appears. Give Add Project `folder.badge.plus`, which the New
-  Worktree sheet already uses for its no-projects state, and keep the bare
-  `plus` on the project row where the row itself is the context. The tab
-  strip's `plus` sits among the tabs and is fine as it is.
-- Remove Project asks nothing. The button in Project Settings > General and
-  the sidebar context menu item both remove the project at once, closing
-  every live terminal in its worktrees, with no undo. Worktree removal has
-  the pattern already: a pending value on the model and a confirmation
-  dialog that names what will be lost. Do the same for projects, with the
-  live terminal count in the message and a note that nothing on disk is
-  touched. The settings window is its own `Window`, so the dialog has to be
-  presented there when the request comes from it, not only on the main
-  window.
 - Bare repositories are refused. `isRepository` runs
   `git rev-parse --is-inside-work-tree`, which prints `false` for a bare
   clone, and the error says there is no `.git` directory. The bare-clone-
@@ -246,13 +123,13 @@ Open in Editor needs a preferred editor setting:
   between split panes, focus the filter.
 - Tabs and panes: no tab overflow, no swap or zoom of a pane, no moving a tab
   to another worktree, no close from a non-active tab.
-- Worktree operations stop at create and remove: no open in editor, no fetch
-  to refresh the remote list, no tracking checkout of a remote-only branch,
+- Worktree operations stop at create and remove: no fetch to refresh the
+  remote list, no tracking checkout of a remote-only branch,
   no "delete the branch too" on removal, no view of merged branches that
   could go.
-- Nothing per project shapes the terminal: no startup commands, environment
-  variables or default shell. The store can open a tab running a command;
-  only the agent tab reaches it.
+- Nothing per project shapes the terminal beyond its shell: no startup
+  commands or environment variables. The store can open a tab running a
+  command; the agent tab and Open in Editor reach it.
 - Terminal: no find, font chosen by typed name, SwiftTerm sessions never
   raise activity because the view swallows the bell.
 - Project settings live on one machine. Hooks, the worktree path template

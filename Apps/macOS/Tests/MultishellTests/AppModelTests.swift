@@ -112,6 +112,134 @@ struct AppModelTests {
     #expect(h.model.liveSessions == h.engine.openSessionIDs)
   }
 
+  @Test func selectingOpensNoTerminalWhenTheSettingIsOff() {
+    let h = Harness()
+    h.model.setOpensTerminalOnSelect(false)
+
+    h.model.select(h.main)
+
+    #expect(h.model.workspace.selectedWorktreeID == h.main.id, "shown, but empty")
+    #expect(h.model.workspace.tabs(in: h.main.id).isEmpty)
+    #expect(h.model.liveTerminalCount == 0)
+
+    h.model.newTab()
+    #expect(h.model.liveTerminalCount == 1, "the + and Cmd+T still start one")
+
+    h.store.openTab(in: h.feature.id)
+    h.model.select(h.feature)
+    #expect(h.model.liveTerminalCount == 2, "saved tabs still warm up on a visit")
+  }
+
+  @Test func theActionsMenuOpensOneTabInTheWorktreeItWasAskedFor() {
+    // What the menu does: select without the first tab, then its own tab.
+    let h = Harness()
+    h.model.select(h.main)
+    #expect(h.model.select(h.feature, openingFirstTab: false))
+    h.model.newShellTab()
+
+    #expect(h.model.workspace.selectedWorktreeID == h.feature.id)
+    #expect(h.model.workspace.tabs(in: h.feature.id).count == 1, "not a first tab and then another")
+    #expect(h.model.workspace.tabs(in: h.main.id).count == 1)
+  }
+
+  @Test func selectingAMissingWorktreeSaysSoInsteadOfActingOnTheSelectedOne() throws {
+    let h = Harness()
+    h.model.select(h.main)
+    let ghost = Worktree(
+      path: URL(fileURLWithPath: "/nowhere/\(UUID().uuidString)"), projectID: h.project.id,
+      head: "c", branch: "ghost")
+    h.store.replaceWorktrees([h.main, h.feature, ghost], forProject: h.project.id)
+
+    #expect(!h.model.select(ghost, openingFirstTab: false), "the menu must not open a tab in main")
+    #expect(h.model.workspace.selectedWorktreeID == h.main.id)
+    #expect(h.model.workspace.tabs(in: h.main.id).count == 1)
+  }
+
+  @Test func removingAProjectAsksFirstInTheWindowThatAsked() throws {
+    let h = Harness()
+    h.model.select(h.main)
+    #expect(h.model.liveTerminalCount == 1)
+
+    h.model.requestProjectRemoval(h.project, from: .settings)
+
+    let pending = try #require(h.model.pendingProjectRemoval)
+    #expect(pending.project.id == h.project.id)
+    #expect(pending.source == .settings)
+    #expect(h.model.workspace.projects.count == 1, "nothing removed until confirmed")
+    #expect(
+      h.model.projectRemovalMessage(for: h.project).contains("1 open terminal will be closed"))
+
+    h.model.pendingProjectRemoval = nil
+    h.model.removeProject(h.project)
+    #expect(h.model.workspace.projects.isEmpty)
+    #expect(h.model.liveTerminalCount == 0)
+  }
+
+  @Test func eachTabRunsTheShellInForceForItsProject() {
+    let h = Harness()
+    let session = TerminalSession(
+      worktreeID: h.main.id, workingDirectory: h.main.path, title: "Shell")
+    #expect(h.model.prepared(session).shellPath == ShellCatalogue.loginShellPath())
+
+    h.model.setDefaultShell("/bin/bash")
+    #expect(h.model.prepared(session).shell == "/bin/bash")
+
+    h.model.updateSettings(ProjectSettings(defaultShell: "/bin/sh"), for: h.project)
+    #expect(h.model.prepared(session).shell == "/bin/sh", "the project's override wins")
+
+    h.model.updateSettings(
+      ProjectSettings(defaultShell: ShellCatalogue.loginShellID), for: h.project)
+    #expect(
+      h.model.prepared(session).shell == ShellCatalogue.loginShellPath(),
+      "a project can step back to $SHELL under a global choice")
+
+    h.model.select(h.main)
+    #expect(h.engine.opened.last?.shell == ShellCatalogue.loginShellPath(), "reaches the engine")
+    #expect(h.model.workspace.sessions.allSatisfy { $0.shell == nil }, "never in the workspace")
+  }
+
+  @Test func anAgentTabsFollowingShellIsTheChosenOne() {
+    let h = Harness()
+    h.model.setDefaultShell("/bin/sh")
+    h.model.setPreferredAgent(AgentCatalogue.customID)
+    h.model.setCustomAgentCommand("my-agent")
+    let session = TerminalSession(
+      worktreeID: h.main.id, workingDirectory: h.main.path, title: "Agent",
+      agentID: AgentCatalogue.customID)
+
+    let prepared = h.model.prepared(session)
+
+    #expect(prepared.command?.last == "my-agent; exec /bin/sh -l")
+  }
+
+  @Test func openInEditorNeedsAnEditorAndACustomOneBecomesATab() throws {
+    let h = Harness()
+    h.model.presentedError = nil
+    h.model.openInEditor(h.main)
+    #expect(h.model.presentedError?.title == "No editor chosen")
+    #expect(h.model.workspace.tabs.isEmpty)
+
+    h.model.presentedError = nil
+    h.model.setPreferredEditor(EditorCatalogue.customID)
+    h.model.openInEditor(h.main)
+    #expect(h.model.presentedError?.title == "No editor command", "nothing typed yet")
+
+    h.model.presentedError = nil
+    h.model.setCustomEditorCommand("my-editor {path}")
+    h.model.openInEditor(h.main)
+    #expect(h.model.presentedError == nil)
+    let tab = try #require(h.model.workspace.activeTab(in: h.main.id))
+    #expect(h.model.workspace.title(of: tab) == "my-editor")
+    #expect(h.model.workspace.selectedWorktreeID == h.main.id, "the tab is brought on screen")
+    #expect(h.model.liveTerminalCount == 1)
+    #expect(h.engine.opened.last?.command?.last?.hasPrefix("my-editor ") == true)
+    #expect(h.engine.opened.last?.command?.last?.contains(h.main.path.lastPathComponent) == true)
+
+    h.model.setPreferredEditor("vscode")
+    h.model.openInEditor(h.main)
+    #expect(h.model.presentedError?.title == "Visual Studio Code is not installed")
+  }
+
   @Test func savedTabsInAnUnvisitedWorktreeStayCold() {
     let h = Harness()
     h.store.openTab(in: h.feature.id)

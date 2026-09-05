@@ -20,6 +20,8 @@ struct MultishellCommands: Commands {
         .keyboardShortcut("n")
       Button("Add Project…") { Task { await model.chooseProject() } }
         .keyboardShortcut("o")
+      Button("Open in Editor") { model.openSelectedWorktreeInEditor() }
+        .keyboardShortcut("o", modifiers: [.command, .shift])
     }
 
     // SwiftUI's stock Edit items decide their own enablement on its update

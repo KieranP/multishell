@@ -25,6 +25,16 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// New Tab, and the first tab of a worktree, start the preferred agent
   /// rather than a plain shell. Projects may override it.
   public var autoStartAgent = false
+  /// Path of the shell new tabs run, or `nil` for `$SHELL`. Projects may
+  /// override it in `ProjectSettings`.
+  public var defaultShell: String?
+  /// Catalogue id of the editor Open in Editor uses, or `nil` for none.
+  public var preferredEditorID: String?
+  /// What `EditorCatalogue.customID` runs, with `{path}` for the worktree.
+  public var customEditorCommand = ""
+  /// Selecting a worktree with no tabs opens one. Off, Cmd+T or the
+  /// actions menu does.
+  public var opensTerminalOnSelect = true
 
   public init() {}
 
@@ -58,6 +68,11 @@ public struct Workspace: Codable, Hashable, Sendable {
     preferredAgentID = try c.decodeIfPresent(String.self, forKey: .preferredAgentID)
     customAgentCommand = try c.decodeIfPresent(String.self, forKey: .customAgentCommand) ?? ""
     autoStartAgent = try c.decodeIfPresent(Bool.self, forKey: .autoStartAgent) ?? false
+    defaultShell = try c.decodeIfPresent(String.self, forKey: .defaultShell)
+    preferredEditorID = try c.decodeIfPresent(String.self, forKey: .preferredEditorID)
+    customEditorCommand = try c.decodeIfPresent(String.self, forKey: .customEditorCommand) ?? ""
+    opensTerminalOnSelect =
+      try c.decodeIfPresent(Bool.self, forKey: .opensTerminalOnSelect) ?? true
   }
 }
 
@@ -147,5 +162,15 @@ extension Workspace {
   /// when it has one, else the global, and only when an agent is in force.
   public func autoStartsAgent(for project: Project) -> Bool {
     (project.settings.autoStartAgent ?? autoStartAgent) && preferredAgentID(for: project) != nil
+  }
+
+  /// The shell a new tab in this project runs, or `nil` for `$SHELL`.
+  public func defaultShell(for project: Project) -> String? {
+    ShellCatalogue.effectivePath(global: defaultShell, override: project.settings.defaultShell)
+  }
+
+  /// The editor Open in Editor uses, or `nil` for none.
+  public var effectiveEditorID: String? {
+    EditorCatalogue.effectiveID(preferredEditorID)
   }
 }

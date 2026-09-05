@@ -17,6 +17,10 @@ public struct TerminalSession: Identifiable, Codable, Hashable, Sendable {
   /// shell's PATH, so a saved tab resumes rather than starting afresh and a
   /// newly installed agent applies without touching saved state.
   public var agentID: String?
+  /// The shell to run when `command` is nil, resolved from the settings in
+  /// force when the shell starts. Runtime only, never saved: a relaunched
+  /// tab reads the setting again.
+  public var shell: String?
 
   public init(
     id: UUID = UUID(),
@@ -24,7 +28,8 @@ public struct TerminalSession: Identifiable, Codable, Hashable, Sendable {
     workingDirectory: URL,
     title: String,
     command: [String]? = nil,
-    agentID: String? = nil
+    agentID: String? = nil,
+    shell: String? = nil
   ) {
     self.id = id
     self.worktreeID = worktreeID
@@ -32,5 +37,16 @@ public struct TerminalSession: Identifiable, Codable, Hashable, Sendable {
     self.title = title
     self.command = command
     self.agentID = agentID
+    self.shell = shell
+  }
+
+  /// `shell` is left out on purpose; see its doc comment.
+  enum CodingKeys: String, CodingKey {
+    case id, worktreeID, workingDirectory, title, command, agentID
+  }
+
+  /// What the session runs as: the chosen shell, else `$SHELL`.
+  public var shellPath: String {
+    shell ?? ShellCatalogue.loginShellPath()
   }
 }

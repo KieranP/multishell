@@ -95,12 +95,15 @@ shell with `MULTISHELL_*` variables set. A failing hook is reported and the git
 operation is not rolled back.
 
 Why: nothing to quote, and the worktree exists whether or not the hook liked
-it. Cost: hook errors are a second alert after a successful create.
+it. Cost: hook errors are a second alert after a successful create. Pre
+hooks, which can refuse, and multi-line scripts came later; see "Pre hooks
+veto" below.
 
-The shell is the user's, as an interactive login shell, with `/bin/sh` when
-`$SHELL` is unset or missing. An app launched from the Finder has PATH set to
-the system directories only, so `npm install`, the example in the settings
-window, failed for anyone whose Node came from Homebrew or a version manager.
+The shell is the project's chosen one, else the user's, as an interactive
+login shell, with `/bin/sh` when that is unset or missing. An app launched
+from the Finder has PATH set to the system directories only, so
+`npm install`, the example in the settings window, failed for anyone whose
+Node came from Homebrew or a version manager.
 The terminals in this app are interactive login shells, and a hook should see
 what they see; `-l` alone misses `.zshrc`, where many people set PATH. Cost:
 a hook pays for the user's shell startup, and rc-file output lands in the
@@ -225,10 +228,11 @@ repository existed, and failed on a path that did not. Cost: none, once seen.
 ## Errors are mapped, not stringified
 
 `PresentedError` turns each error type into a title that names the situation
-and a message in git's own words: stderr for a git failure, "the worktree
-exists" for a hook failure, the backup filename for unreadable state, and
-plain words for an unborn `HEAD`. A failure that has a stronger form of the
-same action (a dirty worktree, `--force`) carries that as a retry button.
+and a message in git's own words: stderr for a git failure, "created, but
+its hook failed" for a post hook and "not created" for a pre hook, the backup
+filename for unreadable state, and plain words for an unborn `HEAD`. A
+failure that has a stronger form of the same action (a dirty worktree,
+`--force`) carries that as a retry button.
 
 Why: the alert is the only place a user learns why something failed.
 
@@ -238,7 +242,7 @@ Selecting a worktree whose directory is gone shows an error instead of opening
 a tab, and so do New Tab and Split in one that was selected while it existed;
 a shell spawned in a missing directory silently lands in `$HOME`. Removing
 such a worktree runs `git worktree prune`, since `git worktree remove` refuses
-it, and the post-delete hook still runs.
+it, and the delete hooks still run, the pre one in the repository.
 
 A project whose directory is gone, or whose repository git cannot read, stays
 in the sidebar dimmed rather than being dropped: an unmounted drive must not
@@ -267,6 +271,14 @@ small AppKit bridge.
 The title bar is hidden; the sidebar and detail headers occupy its place. A
 double-click on either follows the system's "double-click a window's title
 bar to" setting (zoom, minimise, nothing), not a hard-coded zoom.
+
+Both are `UIMetrics.headerHeight`, 40 pt, and the detail header is one line:
+project › branch, the path, and an actions menu. Not shorter: a window with
+a hidden title bar and a unified-compact toolbar keeps a 40 pt title-bar
+band (`NSWindow.contentLayoutRect`). A header alone under that band draws
+fine, but a 28 pt header put the tab strip's top inside it, and AppKit then
+painted the band's backdrop over the header, a smear of the tab strip's top
+row.
 
 ## Nothing collapses the sidebar
 
@@ -425,7 +437,6 @@ the list was empty with nothing to say why; it now says every local branch
 is checked out already and points at New branch, where a remote branch can
 be named as the base.
 
-
 ## A terminal's state comes from what runs in it
 
 The engine can say a bell rang or a command finished; only the program in the
@@ -549,7 +560,7 @@ environment, which is how a hook names its tab.
 
 ## Claude Code's hooks are added, never edited silently
 
-Claude reads hooks from `~/.claude/settings.json`. Settings > Agent shows the
+Claude reads hooks from `~/.claude/settings.json`. Settings > Agents shows the
 JSON, copies it, and adds it on request, and the helper has the same
 subcommand. The merge appends one entry of ours per event and leaves every
 other entry, and every other key, as it is; the first write keeps a copy of
@@ -563,12 +574,13 @@ the installer line rather than running anything.
 An app launched from the Finder has PATH set to the system directories, and
 every agent people install lives under Homebrew, npm or a version manager.
 At launch, off the main thread, the app runs the user's interactive login
-shell with `env -0` and keeps the whole environment, so agent detection, the
-agent tab and the Claude Code check all read one value; Refresh in the agent
-dropdown runs it again. A shell that fails, prints no PATH or takes more than
-eight seconds yields the process's own environment, with a line in the log
-and the reason in the settings caption. Hooks keep running through the login
-shell themselves: the shell's own PATH is the contract there.
+shell with `env -0` and keeps the whole environment, so agent, shell and
+editor detection, the agent tab and the Claude Code check all read one value;
+Refresh in any of those dropdowns runs it again. A shell that fails, prints
+no PATH or takes more than eight seconds yields the process's own
+environment, with a line in the log and the reason in the settings caption.
+Hooks keep running through a shell themselves: that shell's own PATH is the
+contract there.
 
 ## Agents are ids in the store, command lines at launch
 
@@ -579,17 +591,19 @@ build's agent loads harmlessly on an older one, and a stored id that is no
 longer installed is listed in the dropdown marked as such rather than making
 the picker go blank.
 
-New Agent Tab (Cmd+Option+T, and a button in the header when an agent is in
-force) records the agent id on the session; the command line is built when
-the shell starts (`SessionRegistry.reconcile(prepare:)`). It runs through the
-user's interactive login shell, `agent; exec $SHELL -l`, so the agent is
-found on a terminal's PATH and a shell remains when it quits, keeping the
-scrollback; the `exec` comes from `ShellLaunch.execCommandLine`, so that
-shell gets the command-status hooks a fresh tab would. A session that came off disk resumes where the catalogue knows
-how (`claude --continue`) and is otherwise a plain shell that keeps the
-agent's title: four saved agent tabs must not start four agents. An agent
-the login shell's PATH does not have opens a plain shell and is reported
-once per run, like an unreachable project.
+New Agent Tab (Cmd+Option+T, and an item in the header's actions menu when
+an agent is in force) records the agent id on the session; the command line
+is built when the shell starts (`SessionRegistry.reconcile(prepare:)`). It
+runs through the user's interactive login shell, `agent; exec <shell> -l`,
+so the agent is found on a terminal's PATH and a shell remains when it
+quits, keeping the scrollback. That shell is the tab's, the project's chosen
+one or `$SHELL`, and the `exec` comes from `ShellLaunch.execCommandLine`, so
+it gets the command-status hooks a fresh tab would. A session that came off
+disk resumes where the catalogue knows how (`claude --continue`) and is
+otherwise a plain shell that keeps the agent's title: four saved agent tabs
+must not start four agents. An agent the login shell's PATH does not have
+opens a plain shell and is reported once per run, like an unreachable
+project.
 
 ## Notifications are for reports, not for bells
 
@@ -608,12 +622,14 @@ With auto-start on, New Tab (Cmd+T) and the first tab a worktree gets when
 selected, which is what follows a create, start the preferred agent instead
 of a shell. It is a global toggle with a per-project override, like the agent
 itself, and does nothing where no agent is in force. New Shell Tab
-(Cmd+Shift+T) always opens a shell so one stays reachable, New Agent Tab
-moved to Cmd+Option+T, and splits stay plain shells. The post-create hook
-finishes before the worktree appears, so the agent starts after
-`npm install`; a failing hook still selects, so it starts with the hook's
-alert on top. Nothing else changed: the tab records the agent id and builds
-its command line at launch, so a saved agent tab resumes where it can.
+(Cmd+Shift+T) and New Tab in the worktree menu always open a shell so one
+stays reachable, New Agent Tab moved to Cmd+Option+T, and splits stay plain
+shells. Whether selecting opens a first tab at all is its own toggle; see
+"Selecting a worktree opens a terminal, unless told not to". The
+post-create hook finishes before the worktree appears, so the agent starts
+after `npm install`; a failing hook still selects, so it starts with the
+hook's alert on top. Nothing else changed: the tab records the agent id and
+builds its command line at launch, so a saved agent tab resumes where it can.
 
 ## Debug builds keep their own state, socket and integration
 
@@ -628,3 +644,127 @@ its own bundle. The two helpers speak the same protocol and each tab's
 answers. Cost: `make clean` after a debug run leaves the installed app's
 hooks pointing at a bundle that is gone until it relaunches and rewrites the
 link.
+
+## Pre hooks veto, post hooks report, and a hook is a script
+
+Each project has four hooks: pre-create, post-create, pre-delete and
+post-delete. A pre hook that exits non-zero stops the operation and git is
+never asked; the alert says the worktree was not created or not removed. A
+post hook that fails, or cannot start, is reported and the git operation
+stands, as before. Pre-create runs in the repository with
+`MULTISHELL_WORKTREE_PATH` set to the planned path; pre-delete runs in the
+worktree, after the confirmation dialog and before every attempt, so a
+forced retry after git refused a dirty tree asks the hook again: its veto is
+about something else than git's was.
+
+A hook is a multi-line script, run as one `-c` argument through the
+interactive login shell. For sh, bash, zsh, dash and ksh the script gets
+`set -e` prepended, inside the script and after the rc files have run, so
+the first failing line ends it and is the one reported. fish and the csh
+family have no such switch and run the whole script; the (i) says so.
+
+Why: refusing a create without a ticket number, or a delete with unpushed
+commits, is what a hook is for, and a post hook cannot refuse. Stopping at
+the first failure is what people expect of a script they typed line by line.
+Cost: a pre hook that never exits blocks the operation, not just the sheet;
+the timeout is still an open item.
+
+## Removing a project asks, in the window that asked
+
+Remove Project, from the sidebar's context menu or the project's settings,
+sets a pending value the way worktree removal does and a confirmation dialog
+names what goes: the sidebar entry, its worktrees' tabs and the live terminal
+count, and that nothing on disk is touched. The pending value records which
+window asked, and only that window presents the dialog: project settings is
+its own `Window`, and a dialog on the workspace window would be behind it.
+
+## A shell is a path in the store, `$SHELL` at launch
+
+The default shell is a path on the workspace, `nil` for `$SHELL`, with a
+`nil` override per project and a `login` sentinel that steps a project back
+to `$SHELL` under a global choice, the shape the agent setting has. The
+dropdown lists `/etc/shells` plus zsh, bash, fish and nu found on the login
+shell's PATH, and a stored path that is gone marked as such. Nothing is
+resolved until a shell starts: `AppModel.prepared` stamps the path onto the
+session, and `TerminalSession.shell` is left out of its coding keys so a
+saved tab reads the setting again on relaunch.
+
+`ShellLaunch` and `SessionEnvironment` already branched on the shell's name,
+so a chosen zsh gets `ZDOTDIR`, a chosen bash its init file, and anything
+else launches plainly. Under Ghostty a chosen shell that is not `$SHELL` is
+named outright as the surface's command, `fish -l`; `$SHELL` itself keeps the
+engine default, which is the path that has been seen to work.
+
+Hooks run through the same shell, so a fish project's hooks are fish
+scripts and its PATH is fish's; a project with no choice keeps `$SHELL`.
+Cost: a shell without the `-l -i -c` flags (nu, xonsh) still falls back to
+`/bin/sh` for hooks, as `$SHELL` always did.
+
+## Open in Editor, and one menu for what acts on a worktree
+
+The detail header's right side is one actions menu: Open in Editor, Reveal
+in Finder, Copy Path, Copy Branch, New Tab, New Agent Tab, Clear Status and
+Remove Worktree. The sidebar's worktree context menu is the same view
+(`WorktreeActions`), so an action added once appears in both. The copy
+icons beside the branch and path, and the header's own New Tab and New Agent
+Tab buttons, went into the menu rather than sitting beside it twice.
+
+Open in Editor is Cmd+Shift+O, unbound in the Ghostty config like every app
+shortcut. The editor is a catalogue id on the workspace. Applications are
+found by bundle identifier through `NSWorkspace`, or through their command
+line shim on the login shell's PATH when the application lookup has nothing
+(VS Code Insiders answers to `code`); a found application takes the
+directory directly, a shim runs in the background through the login shell.
+Terminal editors (nvim, vim, emacs, hx) and the custom template open as a
+new tab in the worktree running the editor with a shell taking over after
+it, the agent tab's shape with a different command. The custom entry is a
+tab rather than a background run because a terminal editor typed there would
+otherwise fail silently with no tty; a GUI shim in a tab costs one extra
+shell.
+
+Why in the core: the catalogue (id, name, bundle id, shim) is Foundation
+only; the bundle lookup is Mac-specific and stays in the app, injected so
+detection is tested against a table. Cost: the tab's command line is saved
+with the session, so a relaunch reopens the editor, unlike an agent tab,
+which resumes by id.
+
+## Project icons are descriptions, tinted from the theme
+
+A project may have a glyph and a tint. The glyph is a string: an emoji, one
+grapheme, on every platform, or an SF Symbol name from a curated list the
+Mac GUI knows how to draw; anything else falls back to the folder. The tint
+is a slot in the theme's sixteen ANSI colours, not a hex, so a theme change
+keeps the icon in step with the terminal; emoji keep their own colours. Both
+decode with defaults, an out-of-range or non-numeric tint costing the tint
+only. A missing project keeps its glyph, dimmed with a small badge, so an
+unmounted drive does not erase the choice. Image files were left out: they
+mean a folder beside `state.json`, resizing and cleanup on removal.
+
+The icon is drawn in the sidebar row, the detail header and the New Worktree
+project picker, where same-named projects were told apart by path alone.
+
+## Terminal settings have their own tab
+
+Settings > Terminal holds the engine, the default shell and whether selecting
+a worktree opens a tab; the terminal font stays under Appearance with the
+rest of the look. Project settings have a Terminal tab for the shell
+override. General is left with what is about the app or the project itself:
+editor, notifications, the state file; repository, icon, removal.
+
+## Help lives behind the (i); captions show live values
+
+Every explanatory caption in both settings windows moved behind an
+`InfoButton`: hover shows it as a tooltip, a click opens the same text as a
+popover, since a tooltip alone is easy to miss and answers no click. What
+stays as a caption is computed from the settings as they are typed: the
+resolved worktree path, the example branch name, which global value a
+project is following. Why: the captions doubled the height of every form and
+were read once. Cost: help is one hover away rather than on screen.
+
+## Selecting a worktree opens a terminal, unless told not to
+
+A global toggle, on by default. Off, clicking a worktree with no tabs shows
+it empty, and Cmd+T or the actions menu starts the first shell; saved tabs
+still warm up on a visit, and a create follows the same rule since it ends
+in a select. Why: a person triaging many worktrees wanted to look without
+starting a shell in each. Cost: one more thing the first tab depends on.

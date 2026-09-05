@@ -149,6 +149,55 @@ struct AppModelGitTests {
     #expect(h.model.liveTerminalCount == 1)
   }
 
+  @Test func aFailingPreCreateHookCreatesNothingAndSelectsNothing() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    h.model.updateSettings(ProjectSettings(preCreateHook: "echo no >&2\nexit 3"), for: h.project)
+
+    await h.model.createWorktree(branch: "refused", basedOn: nil, createBranch: true, in: h.project)
+
+    #expect(h.worktree(onBranch: "refused") == nil)
+    #expect(h.model.presentedError?.title == "Worktree not created: its pre-create hook failed")
+    // The login shell's rc files may write to stderr first; the hook's
+    // line is what has to be there.
+    #expect(h.model.presentedError?.message.hasSuffix("no") == true)
+    #expect(h.model.workspace.selectedWorktreeID == nil)
+    #expect(h.model.liveTerminalCount == 0)
+  }
+
+  @Test func aFailingPreDeleteHookLeavesTheWorktreeAndItsShells() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    await h.model.createWorktree(branch: "kept", basedOn: nil, createBranch: true, in: h.project)
+    let worktree = try #require(h.worktree(onBranch: "kept"))
+    h.model.updateSettings(ProjectSettings(preDeleteHook: "exit 1"), for: h.project)
+
+    await h.model.removeWorktree(worktree)
+
+    #expect(h.model.presentedError?.title == "Worktree not removed: its pre-delete hook failed")
+    #expect(h.model.presentedError?.retryLabel == nil, "the hook's veto has no Remove Anyway")
+    #expect(h.worktree(onBranch: "kept") != nil)
+    #expect(h.model.liveTerminalCount == 1)
+    #expect(FileManager.default.fileExists(atPath: worktree.path.path))
+  }
+
+  @Test func hooksRunThroughTheProjectsShellOverride() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    h.model.setDefaultShell("/bin/zsh")
+    h.model.updateSettings(
+      ProjectSettings(
+        postCreateHook: "printf '%s' \"$BASH_VERSION\" > shell.txt", defaultShell: "/bin/bash"),
+      for: h.project)
+
+    await h.model.createWorktree(branch: "bashed", basedOn: nil, createBranch: true, in: h.project)
+
+    let created = try #require(h.worktree(onBranch: "bashed"))
+    let version = try String(
+      contentsOf: created.path.appendingPathComponent("shell.txt"), encoding: .utf8)
+    #expect(!version.isEmpty, "the project's bash, not the global zsh")
+  }
+
   @Test func aHookThatLeavesABackgroundProcessDoesNotHangTheCreate() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }

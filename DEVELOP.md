@@ -36,8 +36,9 @@ portability rule below.
     Sources/
       MultishellCore/           model, store, theme, ports. Foundation only.
         Model/                  Project, Worktree, TerminalTab, TerminalSession,
-                                PaneNode, settings, WorktreeStatus, SessionState,
-                                NotificationPreference,
+                                PaneNode, settings, ProjectIcon (glyph kinds
+                                and the curated symbols), WorktreeStatus,
+                                SessionState, NotificationPreference,
                                 Workspace+Repair (load-time reference repair),
                                 LossyArray (element-wise decoding), ShellQuoting
         Store/                  WorkspaceStore (all mutation), WorkspaceSnapshot
@@ -45,8 +46,11 @@ portability rule below.
         Sessions/               SessionRegistry: store <-> TerminalHost;
                                 SessionStateReport (the socket protocol),
                                 SessionEnvironment (MULTISHELL_* variables)
-        Agents/                 AgentCatalogue, ClaudeHookPayload (hook event ->
-                                state), ClaudeCodeHooks (settings.json merge),
+        Agents/                 AgentCatalogue, ShellCatalogue (the chosen
+                                shell's id and resolution), EditorCatalogue
+                                (editors by bundle id and shim),
+                                ClaudeHookPayload (hook event -> state),
+                                ClaudeCodeHooks (settings.json merge),
                                 ShellStateHooks (the preexec/precmd hooks and
                                 the generated zsh and bash startup files),
                                 ShellLaunch (how a tab's shell is started)
@@ -75,24 +79,34 @@ portability rule below.
                                 thing views talk to), commands, delegate,
                                 PresentedError, NewWorktreeRequest,
                                 SessionStates (who clears what), PendingClose,
-                                NotificationPolicy, AgentLaunch, AgentDetection
-        Sidebar/                project tree, drawn by hand
+                                PendingProjectRemoval, NotificationPolicy,
+                                AgentLaunch, AgentDetection, ShellDetection,
+                                EditorDetection, EditorLaunch (what Open in
+                                Editor does)
+        Sidebar/                project tree, drawn by hand; WorktreeActions,
+                                the menu items shared with the detail header
         Terminals/              hosts (Ghostty, SwiftTerm, MultiEngine),
                                 SurfaceView, PaneTreeView + WeightedSplit,
                                 SplitMath (divider arithmetic), TabBar
         Sheets/                 new-worktree sheet and its NewWorktreeDraft (the
                                 sheet's decisions, testable), project settings
-                                window, app settings, AgentSettingsTab
+                                window, app settings, AgentSettingsTab, the
+                                project-removal dialog
         Support/                theme -> Color, UIMetrics, kqueue watcher,
-                                ToolbarTabs, title-bar behaviour, WindowAccessor,
-                                home-directory abbreviation, DescriptorLimit,
-                                SocketStateSource, UserNotifier, HelperInstaller
+                                ToolbarTabs, InfoButton (settings help), the
+                                project icon view, title-bar behaviour,
+                                WindowAccessor, home-directory abbreviation,
+                                DescriptorLimit, SocketStateSource,
+                                UserNotifier, HelperInstaller
       Tests/MultishellTests/    AppModel against fake engines and watcher
                                 (examples and a seeded random sequence) and
                                 against real git (AppModelGitTests); the
                                 SwiftTerm host against real shells; the
-                                new-worktree draft; error mapping, metrics,
-                                SplitMath, MultiEngineHost routing, the watcher
+                                new-worktree draft; shell and editor detection
+                                on fake PATHs and a fake application lookup,
+                                the editor launch decision, the removal
+                                message; error mapping, metrics, SplitMath,
+                                MultiEngineHost routing, the watcher
       Resources/Multishell.icns
     Scripts/make-app.sh
     Makefile, .swift-format, .github/workflows/ci.yml
@@ -160,10 +174,13 @@ named as sentences about behaviour.
   the user owns. `ShellLaunch` and `SessionEnvironment` are the only places
   that decide how a tab's shell starts; a new shell is a case in each plus a
   generated file, not an rc edit.
-- Agents are catalogue ids in the store; the command line is built when the
-  shell starts (`AgentLaunch`, tested) from the login shell's environment
-  (`LoginShellEnvironment`, captured once). `AgentDetectionTests` runs
-  detection against a temp directory of fake executables on a fake PATH.
+- Agents and editors are catalogue ids in the store, the shell a path; the
+  command line is built when the shell starts (`AgentLaunch`, `EditorLaunch`,
+  `AppModel.prepared`, all tested) from the login shell's environment
+  (`LoginShellEnvironment`, captured once). `AgentDetectionTests`,
+  `ShellDetectionTests` and `EditorDetectionTests` run detection against a
+  temp directory of fake executables on a fake PATH, a fake `/etc/shells`,
+  and a table standing in for the bundle lookup.
 - Timing bounds in tests are sized for a two-core CI runner. Locally each is
   several times under its bound.
 - Project and worktree paths are directory URLs, normalised in `init` and in
@@ -180,8 +197,13 @@ named as sentences about behaviour.
   print nothing, fail once, or run slowly enough to count concurrency.
 - Git on a timer reads only. `StatusLockTests` checks a status poll leaves
   the index untouched (`--no-optional-locks`).
-- Hooks run in the user's interactive login shell. `HookShellTests` checks
-  a hook sees the rc files under a substitute home, for zsh, bash and sh.
+- Hooks run in the project's shell, `$SHELL` unless one is chosen, as an
+  interactive login shell and as one script that stops at its first failing
+  line where the shell has `set -e`. `HookShellTests`
+  checks a hook sees the rc files under a substitute home, for zsh, bash and
+  sh, and that a failing middle line stops the rest. A pre hook's failure
+  leaves no worktree and no branch; `WorktreeCoordinatorTests` checks both
+  stages against a real repository.
 
 ## Adding things
 
@@ -200,13 +222,24 @@ foreground command through `didFinishCommandIn` if the engine can tell.
 executable, launch arguments, and resume arguments if the agent has them.
 Detection and the dropdowns follow.
 
+**An editor.** Add a row to `EditorCatalogue.editors`: id, display name,
+whether it is an application or runs in a terminal, its bundle identifier,
+and the command line shim that opens a directory. `EditorDetection` finds
+it by either and `EditorLaunch` decides what Open in Editor does.
+
+**A hook stage.** Add a case to `HookFailure.Stage`, run it from
+`WorktreeCoordinator` in the right order, give `PresentedError` a title that
+says whether the operation happened, and an editor in `HooksTab`.
+
 **A keyboard shortcut.** Also add it to `GhosttyTerminalHost.appShortcuts`,
 or the surface consumes the keystroke before the menu bar sees it.
 
-**A shell.** Add its startup file to `ShellStateHooks`, write it from
+**A shell.** Any shell can already be chosen; this is for giving one the
+command-status hooks. Add its startup file to `ShellStateHooks`, write it from
 `ShellIntegration.refresh`, and teach `ShellLaunch` (and `SessionEnvironment`
 if it is carried by an environment variable, as zsh's `ZDOTDIR` is) how a
-tab's shell picks it up. The hooks call `multishell command-started --pid $$`
+tab's shell picks it up. Add its name to `ShellCatalogue.searched` if
+Homebrew installs it without registering it in `/etc/shells`. The hooks call `multishell command-started --pid $$`
 before a command and `command-finished --exit $? --duration S` at the next
 prompt, and must do nothing when `MULTISHELL_SESSION` is unset.
 
@@ -221,12 +254,14 @@ most of it is a template for the next platform's equivalent.
 macOS: `~/Library/Application Support/Multishell/`. Linux:
 `$XDG_CONFIG_HOME/multishell/`. Windows: `%APPDATA%\Multishell\`.
 
-- `state.json`: projects, worktrees, tabs, pane trees, appearance, engine,
-  worktree defaults. A debug build reads and writes `state.debug.json`
-  instead, and likewise `multishell.debug.sock` and `integration.debug/`, so
-  `make run` does not touch the installed app's state or its socket. Not processes, and not the titles shells report; each
-  saved tab gets a fresh shell and shows its starting title until that shell
-  speaks.
+- `state.json`: projects with their settings (hooks, icon, overrides),
+  worktrees, tabs, pane trees, appearance, engine, worktree defaults, the
+  default shell, the editor, the agent. A debug build reads and writes
+  `state.debug.json` instead, and likewise `multishell.debug.sock` and
+  `integration.debug/`, so `make run` does not touch the installed app's
+  state or its socket. Not processes, not the titles shells report, and not
+  the shell a tab resolved to; each saved tab gets a fresh shell and shows
+  its starting title until that shell speaks.
 - `state.<timestamp>.broken.json`: a state file that failed to decode, moved
   aside rather than overwritten.
 - `themes/*.json`, `themes/examples/`.
@@ -260,7 +295,8 @@ workspace.
 
 Sidebar keyboard navigation. Tab strip overflow. A shortcut to focus the
 sidebar filter. No automated view tests; the app test target covers
-model-facing code, the SwiftTerm engine and the sheet's draft, not layout.
+model-facing code, the SwiftTerm engine and the plain values beside the
+views, not layout.
 The Ghostty engine's path is untested: its surface needs a window and Metal.
 Its shell integration has been seen active by hand (command-finished fires
 and the injected zsh hooks run under it), not by a test. The bash init has
@@ -279,7 +315,8 @@ volume that has gone away it blocks for as long as the mount takes to time
 out. The checks the polling paths make run off the main thread
 (`AppModel.offMain`), so a dead mount slows a tick rather than the app.
 
-Open decisions, not defects: a post-create hook that never exits keeps the
-sheet waiting, with no timeout; the existing-branch picker lists local
+Open decisions, not defects: a hook that never exits keeps the sheet
+waiting, and a pre hook that never exits blocks the create or remove, with
+no timeout; the existing-branch picker lists local
 branches only, so a remote-only branch is created as a new one based on its
 remote.

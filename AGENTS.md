@@ -39,6 +39,9 @@ Working rules:
   user's click, with a copy kept beside the file.
 - A new keyboard shortcut also goes in `GhosttyTerminalHost.appShortcuts`, or
   the surface eats it before the menu sees it.
+- The sidebar and detail headers are `UIMetrics.headerHeight` tall, the
+  height of the hidden title bar's band. Nothing but a header may reach into
+  that band, or AppKit paints over it.
 - Debug builds use `state.debug.json`, `multishell.debug.sock` and
   `integration.debug/`, decided by `#if DEBUG` in `Paths`; keep new
   per-build files on that pattern so `make run` never touches the installed
@@ -54,7 +57,12 @@ Working rules:
   `--no-optional-locks`. A background call that takes `index.lock` breaks the
   user's own commits.
 - Decisions a view makes live in a plain value beside it (`NewWorktreeDraft`,
-  `SplitMath`, `SidebarFilter`) and are tested there. Views are not tested.
+  `SplitMath`, `SidebarFilter`, `EditorLaunch`) and are tested there. Views
+  are not tested.
+- Settings help text goes behind an `InfoButton`, not a caption under the
+  row. A `SettingsCaption` is for a value computed live from the settings.
+- Anything that acts on a worktree goes in `WorktreeActions`, which the
+  detail header's menu and the sidebar's context menu both show.
 - Test git behaviour against a real repository with `RepositoryFixture`, not
   with mocks. Test parsers on fixture text, including the odd lines in the
   robustness tests.
