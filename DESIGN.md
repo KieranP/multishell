@@ -294,9 +294,10 @@ it back without that history.
 
 ## Engines are injectable
 
-`MultiEngineHost` takes a factory for its engines, defaulting to the real
-ones, so its routing is tested with recording fakes. The same shape,
-protocol plus recording fake, is how the registry and the watcher are tested.
+`MultiEngineHost` takes a factory for its engines; the Mac passes the real
+ones and the tests pass recording fakes, so its routing is tested without a
+terminal. The same shape, protocol plus recording fake, is how the registry,
+the watcher and the platform are tested.
 
 ## State is repaired on load, not trusted
 
@@ -842,3 +843,72 @@ show a pane for, and the refusal carries "Remove Anyway".
 Cost: the terminals of a worktree being removed are hidden a moment before
 they close, and a failed hook holds its worktree, New Tab and Remove
 included, until someone clicks Dismiss.
+
+## The app layer is a library, and the Mac app is views
+
+Everything that is not a view or an AppKit call moved out of `Apps/macOS`
+into a fourth root library, `MultishellAppCore`, above the core, the process
+layer and the git layer: `AppModel` itself, the detections and the rows a
+dropdown shows for them, the command line an agent or editor tab runs, the
+session-state clearing rules, when a report earns a notification, what the
+removal, close and quit dialogs say, the stage a pane shows for a hook and
+what a failed stage shows, the New Worktree sheet's rules, the error-to-alert
+mapping and the alerts the model raises itself, the sidebar filter, the
+divider arithmetic, the engine-routing host, the Unix socket that receives
+reports, the helper link, and the kqueue watcher under `#if canImport(Darwin)`.
+The Mac keeps the views, the two engine hosts, `UIMetrics` (its header height
+is the hidden title bar's band), the notification centre, and `MacPlatform`.
+
+Two seams make the model portable. `AppModel<Surface>` is generic over the
+platform's view type, the one thing about a frontend it has to name; the Mac
+fixes it once (`typealias AppModel = MultishellAppCore.AppModel<NSView>`) and
+views call `model.surface(for:)` rather than reaching into the host. Every
+other desktop need goes through the `Platform` port: the directory picker,
+the file browser, the clipboard, whether the app is frontmost and which
+window is key, the application lookup by identifier, the bundled helper, a
+log line. `NullPlatform` is a bare desktop for tests and headless runs;
+`FakePlatform` in the tests records what the model asked for.
+
+Why: the Linux frontend the core was written for would otherwise start by
+copying the model and nineteen files out of the Mac app, and a rule enforced
+by a comment ("plain values beside the view") had no test. The Linux CI job
+now compiles the model and 470-odd tests run against it with no GUI framework
+in sight, so a `Color`, an `NSView` or an `NSWorkspace` call in the model
+fails the build. Windows was dropped at the same time: its branches were
+never built and would have needed a port implementation nobody is writing.
+
+The three dropdowns shared one `Option` shape three times over; they now
+share `DetectionOption`, and the agent and editor lists one function. The
+worktree removal's four-way catch chain became `RemovalFailure`, a value
+that says whether the pane or an alert speaks and which retry to offer, and
+the removal warning became `PendingWorktreeRemoval.warning`; both are tested
+without a model. The display names and the "not installed" alerts left
+`AppModel` for the catalogues and `PresentedError`.
+
+Cost: `public` on every moved type, one more `import` in most app files, a
+`Platform` conformance of a dozen methods per frontend, and a generic
+parameter on the model that Linux will fix to its own widget type.
+
+## Shell scripts are files, and an operation's owner is a value
+
+The zsh and bash hook scripts were Swift string literals, with quadruple
+backslashes where the zsh JSON builder escapes a quote. They are now
+`Resources/hooks.zsh` and `Resources/init.bash` in the core, plain shell
+with `__MULTISHELL_HELPER__` where the helper's path goes; `ShellStateHooks`
+reads them from the resource bundle and fills the path in. SwiftPM's
+generated `Bundle.module` looks beside the executable and in the build
+directory, not in an app's `Contents/Resources` where `make-app.sh` puts
+resource bundles, so the core looks there first and falls back to the
+accessor for `swift test`, the helper and Linux.
+
+Why: a script one can read and lint as shell is a script one can fix. Cost:
+a resource bundle in the app, and one more place a shell's file has to be
+listed.
+
+The create-or-remove entry per worktree is `WorktreeOperations`, a value
+with the ownership rules that used to be comments in `AppModel`: a stage
+begins and takes the entry, advances only while running, fails only while
+it is still the stage running, finishes only if it still owns the entry, and
+a failed entry waits for Dismiss. The case that motivated it, a removal
+asked for while a post-create hook is still running, is a test rather than a
+sentence.

@@ -1,3 +1,4 @@
+import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
@@ -204,7 +205,7 @@ struct SidebarView: View {
         target: $dropTarget,
         perform: { edge in
           if let moving = draggingProject {
-            model.moveProject(moving, edge, project.id)
+            model.moveProject(moving, edge == .top ? .above : .below, project.id)
           }
           endDrag()
         }
@@ -220,7 +221,7 @@ struct SidebarView: View {
       model.settingsProjectID = project.id
       openWindow(id: ProjectSettingsWindow.windowID)
     }
-    Button("Reveal in Finder") { model.revealInFinder(project.path) }
+    Button("Reveal in Finder") { model.revealInFileBrowser(project.path) }
     Divider()
     Button("Remove Project…", role: .destructive) {
       model.requestProjectRemoval(project, from: .workspace)

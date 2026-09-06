@@ -1,3 +1,4 @@
+import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
@@ -12,12 +13,12 @@ struct AgentSettingsTab: View {
   var body: some View {
     Form {
       Section {
-        AgentPicker(
+        DetectionPicker(
           label: "Preferred agent:",
           selection: Binding(
             get: { model.workspace.preferredAgentID ?? AgentCatalogue.noneID },
             set: { model.setPreferredAgent($0) }),
-          detection: model.agentDetection,
+          options: model.agentDetection.options(selected:),
           refresh: { Task { await model.refreshLoginEnvironment() } },
           info: environmentCaption
         )
@@ -51,13 +52,13 @@ struct AgentSettingsTab: View {
           InfoRow(
             "Claude Code:",
             info:
-              "Opens the setup guide. The native installer is \(AppModel.claudeCodeInstallCommand); run Refresh above once it is done."
+              "Opens the setup guide. The native installer is \(ClaudeCodeInstall.installerCommand); run Refresh above once it is done."
           ) {
             Text("Not found on the login shell's PATH.").foregroundStyle(.secondary)
-            Button("Install…") { NSWorkspace.shared.open(AppModel.claudeCodeSetupURL) }
+            Button("Install…") { NSWorkspace.shared.open(ClaudeCodeInstall.setupGuideURL) }
               .controlSize(.small)
             Button("Copy Install Command") {
-              model.copyToPasteboard(AppModel.claudeCodeInstallCommand)
+              model.copyToClipboard(ClaudeCodeInstall.installerCommand)
             }
             .controlSize(.small)
           }
@@ -116,7 +117,7 @@ struct AgentSettingsTab: View {
               .frame(maxWidth: .infinity, alignment: .leading)
           }
           .frame(height: 140)
-          Button("Copy") { model.copyToPasteboard(model.claudeHooksSnippet) }.controlSize(.small)
+          Button("Copy") { model.copyToClipboard(model.claudeHooksSnippet) }.controlSize(.small)
         }
       }
     }
@@ -132,30 +133,6 @@ struct AgentSettingsTab: View {
     case .processFallback(let reason):
       return
         "Your login shell did not answer (\(reason)), so agents are looked up on the app's own PATH. Refresh to try again."
-    }
-  }
-}
-
-/// The dropdown both settings windows use: None, installed agents, the
-/// stored value marked when it is not installed, Custom, and a Refresh.
-struct AgentPicker: View {
-  let label: String
-  @Binding var selection: String
-  let detection: AgentDetection
-  let refresh: () -> Void
-  let info: String
-  /// Greys the control while an override is off; the (i) stays readable.
-  var isEnabled = true
-
-  var body: some View {
-    InfoRow(label, info: info) {
-      Picker(label, selection: $selection) {
-        ForEach(detection.options(selected: selection)) { option in
-          Text(option.label).tag(option.id)
-        }
-      }
-      .disabled(!isEnabled)
-      IconButton.refresh(action: refresh).controlSize(.small).disabled(!isEnabled)
     }
   }
 }

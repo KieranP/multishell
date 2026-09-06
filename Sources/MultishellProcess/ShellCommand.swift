@@ -108,12 +108,7 @@ public struct ShellCommand: Sendable {
   /// A chosen shell in place of `$SHELL`, with the same fallback to
   /// `/bin/sh` for one that does not take `-l -i -c`.
   public static func shell(preferring path: String?) -> (executable: URL, arguments: [String])? {
-    #if os(Windows)
-      guard let cmd = ExecutableLookup.find("cmd") else { return nil }
-      return (cmd, ["/c"])
-    #else
-      return shell(named: path ?? ProcessInfo.processInfo.environment["SHELL"])
-    #endif
+    shell(named: path ?? ProcessInfo.processInfo.environment["SHELL"])
   }
 
   /// Shells known to take `-l -i -c`. Another one (nu, xonsh, elvish) would

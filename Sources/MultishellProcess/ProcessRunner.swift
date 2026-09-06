@@ -186,17 +186,12 @@ public struct PipeUnavailable: Error, CustomStringConvertible {
 /// reader sees stdin's EOF at once, and `git worktree list` seems to say the
 /// project has no worktrees, which would drop every one of its tabs.
 private func makePipe() throws -> (reading: FileHandle, writing: FileHandle) {
-  #if os(Windows)
-    let pipe = Pipe()
-    return (pipe.fileHandleForReading, pipe.fileHandleForWriting)
-  #else
-    var descriptors: [Int32] = [-1, -1]
-    guard pipe(&descriptors) == 0 else { throw PipeUnavailable(code: errno) }
-    return (
-      FileHandle(fileDescriptor: descriptors[0], closeOnDealloc: true),
-      FileHandle(fileDescriptor: descriptors[1], closeOnDealloc: true)
-    )
-  #endif
+  var descriptors: [Int32] = [-1, -1]
+  guard pipe(&descriptors) == 0 else { throw PipeUnavailable(code: errno) }
+  return (
+    FileHandle(fileDescriptor: descriptors[0], closeOnDealloc: true),
+    FileHandle(fileDescriptor: descriptors[1], closeOnDealloc: true)
+  )
 }
 
 /// Collects one pipe to EOF without blocking a thread.

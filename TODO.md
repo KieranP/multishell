@@ -10,6 +10,12 @@ day. Three tiers; ship after the first two.
 
 ### 1. It installs and does not lose work
 
+- The bundle only works where it was built. libghostty locates its
+  terminfo through SwiftPM's `Bundle.module`, which never looks in
+  `Contents/Resources`; on another machine the first terminal traps. See
+  Known gaps in DEVELOP.md. Building with Xcode, or a patched libghostty-spm
+  that checks the main bundle's resources, fixes it; either has to land
+  before anyone else installs this.
 - Signed and notarised build. Without a Developer ID and notarisation,
   Gatekeeper refuses the download on every machine but the author's.
   Notarisation needs the hardened runtime; check whether libghostty needs
@@ -155,8 +161,9 @@ it the list has nothing to group by.
 - No logging anywhere, so a hung hook or a refused repository cannot be
   traced after the fact.
 - No accessibility labels on the hand-drawn sidebar and tab bar.
-- The Ghostty engine, the default, has no automated test. Linux and Windows
-  have a core but no GUI and have not been built locally.
+- The Ghostty engine, the default, has no automated test. Linux has the
+  core, the model and the socket channel but no GUI, no inotify
+  `DirectoryWatcher`, and has not been built locally.
 - Documented open decisions: a hook that never exits cannot be stopped from
   the app; the directory check before a click runs on the main thread.
 - Unverified: whether this embedding loads the user's own Ghostty config

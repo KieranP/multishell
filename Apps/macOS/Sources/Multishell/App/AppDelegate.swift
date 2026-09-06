@@ -1,4 +1,6 @@
 import AppKit
+import MultishellAppCore
+import MultishellProcess
 
 /// Asks before quitting while terminals are open. Every open session is a
 /// live pty, and quitting kills whatever is running in it.
@@ -25,24 +27,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let alert = NSAlert()
     alert.messageText = "Quit Multishell?"
-    alert.informativeText = Self.quitMessage(terminals: count, working: working)
+    alert.informativeText = QuitGuard.message(terminals: count, working: working)
     alert.alertStyle = .warning
     alert.addButton(withTitle: "Quit")
     alert.addButton(withTitle: "Cancel")
     return alert.runModal() == .alertFirstButtonReturn ? .terminateNow : .terminateCancel
-  }
-
-  /// Working agents are counted apart from plain shells: a shell at a prompt
-  /// loses nothing, an agent mid-task loses the task.
-  static func quitMessage(terminals: Int, working: Int) -> String {
-    let shells =
-      terminals == 1
-      ? "One terminal is still open and will be closed."
-      : "\(terminals) terminals are still open and will be closed."
-    switch working {
-    case 0: return shells
-    case 1: return shells + " One of them has an agent that is still working."
-    default: return shells + " \(working) of them have agents that are still working."
-    }
   }
 }

@@ -10,7 +10,7 @@ Xcode 26 with Swift 6. Select it if only the command line tools are active:
 
 ## Build, test, run
 
-    make test        # libraries, then the app's pure parts (two swift test runs)
+    make test        # libraries and the model, then the Mac hosts (two swift test runs)
     make test-app    # compile the macOS app without bundling
     make build       # -> build/Multishell.app (debug); CONFIG=release for optimised
     make run         # build and open it
@@ -32,7 +32,7 @@ portability rule below.
 
 ## Layout
 
-    Package.swift               root package: the three portable libraries
+    Package.swift               root package: the four portable libraries
     Sources/
       MultishellCore/           model, store, theme, ports. Foundation only.
         Model/                  Project, Worktree, TerminalTab, TerminalSession,
@@ -51,11 +51,13 @@ portability rule below.
                                 (editors by bundle id and shim),
                                 ClaudeHookPayload (hook event -> state),
                                 ClaudeCodeHooks (settings.json merge),
-                                ShellStateHooks (the preexec/precmd hooks and
-                                the generated zsh and bash startup files),
+                                ShellStateHooks (the generated zsh and bash
+                                startup files; the hook scripts themselves are
+                                Resources/hooks.zsh and Resources/init.bash),
+                                ShellIntegration (writes them at launch),
                                 ShellLaunch (how a tab's shell is started)
         Ports/                  TerminalHost, DirectoryWatcher, SessionStateSource
-                                (GUI implements)
+                                (GUI implements), NullStateSource
         Theme/                  Theme, Appearance, ThemeCatalog, hex parsing
       MultishellProcess/        ProcessRunner (handler-driven, never blocks),
                                 ShellCommand, ExecutableLookup, UnixSocketServer
@@ -63,6 +65,37 @@ portability rule below.
                                 ProcessAncestry (the pid behind a hook)
       MultishellGitKit/         git worktree ops, porcelain parsers, hooks,
                                 WorktreeRecords (what a watcher tick compares)
+      MultishellAppCore/        the app layer: everything a GUI needs that is
+                                not a view or a platform API
+        Model/                  AppModel<Surface> and its extension files (the
+                                only thing views talk to), ProjectPlacement
+        Ports/                  Platform (what the model needs from the
+                                desktop: picker, clipboard, file browser,
+                                frontmost, key window, application lookup,
+                                the bundled helper, a log line), NullPlatform,
+                                DispatchDirectoryWatcher (kqueue, Darwin only)
+        Terminals/              TerminalSurfaceHost<Surface> (a TerminalHost
+                                with a view per session), MultiEngineHost
+                                (routes each session to the engine that opened
+                                it)
+        Detection/              AgentDetection, ShellDetection, EditorDetection,
+                                the DetectionOption rows their dropdowns show,
+                                the catalogues' display names, ClaudeCodeInstall
+        Launch/                 AgentLaunch, EditorLaunch (the command lines)
+        States/                 SessionStates (who clears what),
+                                NotificationPolicy, the SessionNotifier port
+        Dialogs/                PendingClose, PendingProjectRemoval,
+                                PendingWorktreeRemoval (what a dialog asks
+                                and warns), NewWorktreeRequest, QuitGuard
+        Worktrees/              WorktreeOperation (the stage a pane shows),
+                                WorktreeOperations (who owns a worktree's
+                                entry), RemovalFailure (what a failed stage
+                                shows),
+                                NewWorktreeDraft (the sheet's decisions)
+        PresentedError (error -> title and message, and the alerts the
+        model raises itself), SidebarFilter, SplitMath (divider arithmetic),
+        HomeAbbreviation, HelperLink (the stable link to the helper),
+        SocketStateSource (SessionStateSource over the Unix socket)
       MultishellCLI/            the `multishell` helper: state, command-started,
                                 command-finished, claude-hook, install-claude-hooks.
                                 Ships in Contents/Helpers.
@@ -72,46 +105,42 @@ portability rule below.
                                 WorkspaceInvariants and a seeded generator drive
                                 the randomised store and repair tests;
                                 MultishellCLITests runs the built helper against
-                                a real socket
-    Apps/macOS/                 SwiftUI app; its own Package.swift
+                                a real socket; MultishellAppCoreTests runs
+                                AppModel against fake engines, watcher, channel
+                                and desktop (examples and a seeded random
+                                sequence) and against real git
+                                (AppModelGitTests), and covers detection on
+                                fake PATHs, the launch and editor decisions,
+                                the session-state clearing rules, the dialog
+                                texts, error mapping, the new-worktree draft,
+                                the sidebar filter, SplitMath, MultiEngineHost
+                                routing, the kqueue watcher (Darwin only) and
+                                the socket source driven by a real client
+    Apps/macOS/                 SwiftUI app, views and AppKit only; its own
+                                Package.swift
       Sources/Multishell/
-        App/                    AppModel and its extension files (the only
-                                thing views talk to), commands, delegate,
-                                PresentedError, NewWorktreeRequest,
-                                SessionStates (who clears what), PendingClose,
-                                PendingProjectRemoval, PendingWorktreeRemoval
-                                (what the removal dialog asks),
-                                WorktreeOperation (the create or remove stage
-                                the pane shows), NotificationPolicy,
-                                AgentLaunch, AgentDetection, ShellDetection,
-                                EditorDetection, EditorLaunch (what Open in
-                                Editor does)
+        App/                    MacPlatform (the Platform port on AppKit),
+                                AppModel+Mac (the typealias fixing Surface to
+                                NSView, the real dependencies, UIMetrics),
+                                commands, delegate
         Sidebar/                project tree, drawn by hand; WorktreeActions,
                                 the menu items shared with the detail header
-        Terminals/              hosts (Ghostty, SwiftTerm, MultiEngine),
-                                SurfaceView, PaneTreeView + WeightedSplit,
-                                SplitMath (divider arithmetic), TabBar,
-                                WorktreeOperationView (a hook in progress)
-        Sheets/                 new-worktree sheet and its NewWorktreeDraft (the
-                                sheet's decisions, testable), project settings
-                                window, app settings, AgentSettingsTab, the
-                                project-removal dialog
-        Support/                theme -> Color, UIMetrics, kqueue watcher,
-                                ToolbarTabs, InfoButton (settings help),
-                                IconButton (refresh and reveal), the
-                                project icon view, title-bar behaviour,
-                                WindowAccessor, home-directory abbreviation,
-                                DescriptorLimit, SocketStateSource,
-                                UserNotifier, HelperInstaller
-      Tests/MultishellTests/    AppModel against fake engines and watcher
-                                (examples and a seeded random sequence) and
-                                against real git (AppModelGitTests); the
-                                SwiftTerm host against real shells; the
-                                new-worktree draft; shell and editor detection
-                                on fake PATHs and a fake application lookup,
-                                the editor launch decision, the removal
-                                message; error mapping, metrics, SplitMath,
-                                MultiEngineHost routing, the watcher
+        Terminals/              hosts (Ghostty, SwiftTerm) and the engine
+                                factory, SurfaceView, PaneTreeView +
+                                WeightedSplit, TabBar, WorktreeOperationView
+                                (a hook in progress)
+        Sheets/                 new-worktree sheet, app settings,
+                                AgentSettingsTab, the project-removal dialog,
+                                ProjectSettings/ (the window and one file per
+                                tab)
+        Support/                theme -> Color, UIMetrics, ToolbarTabs,
+                                InfoButton (settings help), IconButton
+                                (refresh and reveal), the project icon view,
+                                title-bar behaviour, WindowAccessor,
+                                UserNotifier (the SessionNotifier port on
+                                UNUserNotificationCenter)
+      Tests/MultishellTests/    the SwiftTerm host against real shells;
+                                metrics and colour derivation
       Resources/Multishell.icns
     Scripts/make-app.sh
     Makefile, .swift-format, .github/workflows/ci.yml
@@ -130,9 +159,19 @@ named as sentences about behaviour.
 
 ## Rules that CI or tests enforce
 
-- `MultishellCore`, `MultishellProcess` and `MultishellGitKit` import
-  Foundation only. No AppKit, SwiftUI, GTK, or terminal library. The Linux CI
-  job fails if this slips.
+- `MultishellCore`, `MultishellProcess`, `MultishellGitKit` and
+  `MultishellAppCore` import Foundation only. No AppKit, SwiftUI, GTK, or
+  terminal library. The Linux CI job fails if this slips.
+- `Apps/macOS` holds views and AppKit only. The model, every decision a
+  view makes and the runtime state live in `MultishellAppCore`; a new plain
+  value beside a Mac view goes there unless it names AppKit or a Mac
+  measurement. What the model needs from the desktop goes through the
+  `Platform` port, and `AppModelPlatformTests` checks the model reaches for
+  the port rather than the desktop.
+- Mac and Linux only. Where the two differ at the API level the branch is
+  `#if os(Linux)` (Glibc's rlimit and socket types, `/proc`) or
+  `#if canImport(Darwin)` (kqueue, `OPEN_MAX`, `sysctl`); there is no
+  Windows branch anywhere.
 - `Paths.swift` is the one file in the core allowed an `#if os(...)`.
   Anything else platform-specific goes behind a protocol in `Ports/` and is
   implemented in the app.
@@ -243,7 +282,9 @@ the sheet waits on gets a `WorktreeCreationStep` and its text in
 or the surface consumes the keystroke before the menu bar sees it.
 
 **A shell.** Any shell can already be chosen; this is for giving one the
-command-status hooks. Add its startup file to `ShellStateHooks`, write it from
+command-status hooks. Add its script under `Sources/MultishellCore/Resources`
+with `__MULTISHELL_HELPER__` for the helper's path, list it in `Package.swift`,
+have `ShellStateHooks` load it, write it from
 `ShellIntegration.refresh`, and teach `ShellLaunch` (and `SessionEnvironment`
 if it is carried by an environment variable, as zsh's `ZDOTDIR` is) how a
 tab's shell picks it up. Add its name to `ShellCatalogue.searched` if
@@ -251,16 +292,20 @@ Homebrew installs it without registering it in `/etc/shells`. The hooks call `mu
 before a command and `command-finished --exit $? --duration S` at the next
 prompt, and must do nothing when `MULTISHELL_SESSION` is unset.
 
-**A platform GUI.** Depend on the three root libraries. Implement
-`TerminalSurfaceHost` for that platform's terminal, `DirectoryWatcher` for its
-file events (inotify, ReadDirectoryChangesW), and the views. `AppModel` is
-Mac-specific only where it touches NSOpenPanel, NSWorkspace and NSCursor;
-most of it is a template for the next platform's equivalent.
+**A platform GUI.** Depend on the four root libraries. Fix the model's
+surface type once (`typealias AppModel = MultishellAppCore.AppModel<GtkWidget>`
+or the like) and implement four ports: `Platform` for the desktop (picker,
+clipboard, file browser, frontmost and key-window checks, application lookup,
+the bundled helper, a log line), `TerminalSurfaceHost` for that platform's
+terminal, `DirectoryWatcher` for its file events (inotify on Linux; the kqueue
+one ships for Darwin), and `SessionNotifier` for its notifications. Then write
+the views against `AppModel`. `SocketStateSource`, the model, the states, the
+dialogs and the error mapping come ready-made and are tested without a GUI.
 
 ## State on disk
 
 macOS: `~/Library/Application Support/Multishell/`. Linux:
-`$XDG_CONFIG_HOME/multishell/`. Windows: `%APPDATA%\Multishell\`.
+`$XDG_CONFIG_HOME/multishell/`.
 
 - `state.json`: projects with their settings (hooks, icon, overrides),
   worktrees, tabs, pane trees, appearance, engine, worktree defaults, the
@@ -301,6 +346,19 @@ workspace.
 
 ## Known gaps
 
+The release bundle runs only on the machine that built it. libghostty finds
+its terminfo and shell integration through SwiftPM's generated
+`Bundle.module`, which looks for `GhosttyKit_GhosttyTerminal.bundle` at the
+root of `Multishell.app` and then at an absolute path inside `Apps/macOS/.build`;
+`make-app.sh` puts the bundle in `Contents/Resources`, the only place a
+signable app can hold it, where that accessor never looks. On this machine the
+build-directory fallback answers; on any other, `TerminalController()` traps
+when the first terminal opens. The core's own resources sidestep this by
+checking `Contents/Resources` first (`ShellStateHooks.resourceBundle`), but the
+Ghostty lookup is the package's. The fix is either building the app with
+Xcode, whose accessor looks in the main bundle's resources, or a patched
+libghostty-spm that does the same.
+
 Sidebar keyboard navigation. Tab strip overflow. A shortcut to focus the
 sidebar filter. No automated view tests; the app test target covers
 model-facing code, the SwiftTerm engine and the plain values beside the
@@ -311,10 +369,10 @@ and the injected zsh hooks run under it), not by a test. The bash init has
 been driven on a pty by itself and under Ghostty's bundled bootstrap; the
 latter showed the system bash never reads that bootstrap, which is why bash
 is launched through `sh` there (see DESIGN.md).
-Linux and Windows have never been compiled locally, and
-Docker is not available on the development machine; CI is the first run, and
-the `ProcessRunner`, `WorktreeRecords` and repair code has only been audited
-for Linux, not built there. `swift-format` output may differ slightly between
+Linux has never been compiled locally, and Docker is not available on the
+development machine; CI is the first run, and the `ProcessRunner`,
+`WorktreeRecords`, `DescriptorLimit`, `AppModel` and repair code has only
+been audited for Linux, not built there. `swift-format` output may differ slightly between
 the local 6.3 toolchain and the runner's.
 
 The directory check before a click starts a shell (select, new tab, split)

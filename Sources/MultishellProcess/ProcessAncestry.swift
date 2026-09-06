@@ -22,6 +22,13 @@ public enum ProcessAncestry {
     return current
   }
 
+  /// Whether the process has left the table. Only ESRCH means gone; EPERM
+  /// is another user's live process.
+  public static func isGone(_ pid: Int32) -> Bool {
+    guard pid > 0 else { return true }
+    return kill(pid, 0) != 0 && errno == ESRCH
+  }
+
   public static func parent(of pid: Int32) -> Int32? {
     #if os(Linux)
       guard let stat = procStat(pid) else { return nil }
@@ -29,8 +36,6 @@ public enum ProcessAncestry {
       guard let close = stat.lastIndex(of: ")") else { return nil }
       let fields = stat[stat.index(after: close)...].split(separator: " ")
       return fields.count > 1 ? Int32(fields[1]) : nil
-    #elseif os(Windows)
-      return nil
     #else
       guard let info = kinfo(pid) else { return nil }
       return info.kp_eproc.e_ppid
@@ -44,8 +49,6 @@ public enum ProcessAncestry {
       let path = "/proc/\(pid)/comm"
       return try? String(contentsOfFile: path, encoding: .utf8)
         .trimmingCharacters(in: .whitespacesAndNewlines)
-    #elseif os(Windows)
-      return nil
     #else
       guard var info = kinfo(pid) else { return nil }
       return withUnsafePointer(to: &info.kp_proc.p_comm) { pointer in
@@ -60,7 +63,7 @@ public enum ProcessAncestry {
     private static func procStat(_ pid: Int32) -> String? {
       try? String(contentsOfFile: "/proc/\(pid)/stat", encoding: .utf8)
     }
-  #elseif !os(Windows)
+  #else
     private static func kinfo(_ pid: Int32) -> kinfo_proc? {
       var name: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, pid]
       var info = kinfo_proc()

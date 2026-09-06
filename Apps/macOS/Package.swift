@@ -17,6 +17,7 @@ let package = Package(
       dependencies: [
         .product(name: "MultishellCore", package: "multishell"),
         .product(name: "MultishellGitKit", package: "multishell"),
+        .product(name: "MultishellAppCore", package: "multishell"),
         .product(name: "GhosttyTerminal", package: "libghostty-spm"),
         .product(name: "SwiftTerm", package: "SwiftTerm"),
       ]

@@ -8,7 +8,7 @@ import SwiftUI
 /// representable down and a later one adopts the same NSView, so the process
 /// and scrollback survive.
 struct SurfaceView: NSViewRepresentable {
-  let host: any TerminalSurfaceHost
+  let model: AppModel
   let sessionID: TerminalSession.ID
   let isFocused: Bool
   /// Read so that a session opened after this view first drew, which
@@ -18,8 +18,8 @@ struct SurfaceView: NSViewRepresentable {
   func makeNSView(context: Context) -> SurfaceFrame { SurfaceFrame() }
 
   func updateNSView(_ frame: SurfaceFrame, context: Context) {
-    frame.adopt(host.view(for: sessionID))
-    frame.requestFocus = { [host] in host.focus(sessionID) }
+    frame.adopt(model.surface(for: sessionID))
+    frame.requestFocus = { [model] in model.focusSurface(sessionID) }
     frame.wantsFocus = isFocused
   }
 }

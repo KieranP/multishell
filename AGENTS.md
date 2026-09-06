@@ -10,9 +10,18 @@ Read these before changing anything:
 
 Working rules:
 
-- The three root libraries import Foundation only. `Paths.swift` is the only
+- The four root libraries import Foundation only. `Paths.swift` is the only
   core file allowed `#if os(...)`. Platform code goes behind `Ports/`.
-- Views call `AppModel`; they never touch the store, a host, or git.
+- `Apps/macOS` is views and AppKit only. `AppModel`, the runtime state, the
+  detections, the dialog text, the error presentation and the socket channel
+  live in `MultishellAppCore`; a plain value beside a view goes there too
+  unless it names AppKit or a Mac measurement. What the model needs from the
+  desktop goes through the `Platform` port, never a direct AppKit call.
+- Mac and Linux only: no Windows branches. An OS difference is
+  `#if os(Linux)` or `#if canImport(Darwin)`, in the process layer or a
+  port implementation, never in a model or a view.
+- Views call `AppModel`; they never touch the store, a host, or git. A view
+  gets a terminal's view through `model.surface(for:)`.
 - Run `make format` on anything you touched, then `make lint`, `make test`
   (both packages), `make build` and `make release`. All must pass, and both
   builds must compile with no warnings, before you say something works.
@@ -56,9 +65,9 @@ Working rules:
 - Git that runs on a timer reads only: `git status` polls carry
   `--no-optional-locks`. A background call that takes `index.lock` breaks the
   user's own commits.
-- Decisions a view makes live in a plain value beside it (`NewWorktreeDraft`,
-  `SplitMath`, `SidebarFilter`, `EditorLaunch`) and are tested there. Views
-  are not tested.
+- Decisions a view makes live in a plain value in `MultishellAppCore`
+  (`NewWorktreeDraft`, `SplitMath`, `SidebarFilter`, `EditorLaunch`) and are
+  tested there. Views are not tested.
 - Settings help text goes behind an `InfoButton`, not a caption under the
   row. A `SettingsCaption` is for a value computed live from the settings.
 - Anything that acts on a worktree goes in `WorktreeActions`, which the

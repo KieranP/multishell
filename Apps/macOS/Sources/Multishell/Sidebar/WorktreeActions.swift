@@ -10,9 +10,9 @@ struct WorktreeActions: View {
 
   var body: some View {
     Button("Open in Editor") { model.openInEditor(worktree) }
-    Button("Reveal in Finder") { model.revealInFinder(worktree.path) }
-    Button("Copy Path") { model.copyToPasteboard(worktree.path.path) }
-    Button("Copy Branch") { model.copyToPasteboard(worktree.name) }
+    Button("Reveal in Finder") { model.revealInFileBrowser(worktree.path) }
+    Button("Copy Path") { model.copyToClipboard(worktree.path.path) }
+    Button("Copy Branch") { model.copyToClipboard(worktree.name) }
     Divider()
     // Selected first, so the menu opens the tab where it was asked for
     // whichever worktree the detail view is showing, and without the first

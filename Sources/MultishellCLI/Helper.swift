@@ -40,53 +40,51 @@ enum Helper {
   )
     -> Int32
   {
-    switch arguments.first {
-    case "state":
-      return state(Array(arguments.dropFirst()), environment: environment)
-    case "command-started":
-      return report(
-        SessionState.running, environment: environment,
-        pid: value(of: "--pid", in: arguments).flatMap { Int32($0) })
-    case "command-finished":
-      let code = value(of: "--exit", in: arguments).flatMap { Int32($0) }
-      return report(
-        SessionState.finished(exitCode: code), environment: environment,
-        duration: value(of: "--duration", in: arguments).flatMap { Double($0) })
-    case "claude-hook":
-      claudeHook(environment: environment, input: standardInput)
-      return 0
-    case "install-claude-hooks":
-      return installClaudeHooks(print: arguments.contains("--print"))
-    case "remove-claude-hooks":
-      return removeClaudeHooks()
-    case "--version", "version":
-      print("multishell helper, protocol version \(SessionStateReport.protocolVersion)")
-      return 0
-    case nil, "help", "--help", "-h":
-      FileHandle.standardError.write(Data(usage.utf8))
-      return arguments.isEmpty ? 2 : 0
-    default:
-      fail("unknown command \(arguments[0])\n\n\(usage)")
+    do {
+      switch arguments.first {
+      case "state":
+        return try state(Array(arguments.dropFirst()), environment: environment)
+      case "command-started":
+        let options = try Options(arguments.dropFirst())
+        return report(SessionState.running, environment: environment, pid: options.int32("pid"))
+      case "command-finished":
+        let options = try Options(arguments.dropFirst())
+        return report(
+          SessionState.finished(exitCode: options.int32("exit")), environment: environment,
+          duration: options.double("duration"))
+      case "claude-hook":
+        claudeHook(environment: environment, input: standardInput)
+        return 0
+      case "install-claude-hooks":
+        return installClaudeHooks(print: arguments.contains("--print"))
+      case "remove-claude-hooks":
+        return removeClaudeHooks()
+      case "--version", "version":
+        print("multishell helper, protocol version \(SessionStateReport.protocolVersion)")
+        return 0
+      case nil, "help", "--help", "-h":
+        FileHandle.standardError.write(Data(usage.utf8))
+        return arguments.isEmpty ? 2 : 0
+      default:
+        throw UsageError("unknown command \(arguments[0])")
+      }
+    } catch let error as UsageError {
+      fail("\(error.message)\n\n\(usage)")
       return 2
+    } catch {
+      fail("\(error)")
+      return 1
     }
   }
 
   // MARK: - state
 
-  private static func state(_ arguments: [String], environment: [String: String]) -> Int32 {
+  private static func state(_ arguments: [String], environment: [String: String]) throws -> Int32 {
     guard let name = arguments.first, let state = SessionState(rawValue: name) else {
-      fail("state needs one of: \(SessionState.allCases.map(\.rawValue).joined(separator: ", "))")
-      return 2
+      throw UsageError(
+        "state needs one of: \(SessionState.allCases.map(\.rawValue).joined(separator: ", "))")
     }
-    var options: [String: String] = [:]
-    var rest = arguments.dropFirst().makeIterator()
-    while let flag = rest.next() {
-      guard flag.hasPrefix("--"), let value = rest.next() else {
-        fail("unexpected argument \(flag)\n\n\(usage)")
-        return 2
-      }
-      options[String(flag.dropFirst(2))] = value
-    }
+    let options = try Options(arguments.dropFirst())
     let report = SessionStateReport(
       state: state,
       sessionID: (options["session"] ?? environment[SessionEnvironment.sessionKey]).flatMap {
@@ -94,7 +92,7 @@ enum Helper {
       },
       cwd: options["cwd"] ?? environment[SessionEnvironment.worktreeKey]
         ?? FileManager.default.currentDirectoryPath,
-      pid: options["pid"].flatMap { Int32($0) } ?? ProcessAncestry.reportingProcess(),
+      pid: options.int32("pid") ?? ProcessAncestry.reportingProcess(),
       message: options["message"])
     do {
       try send(report, environment: environment)
@@ -143,13 +141,6 @@ enum Helper {
     }
   }
 
-  private static func value(of flag: String, in arguments: [String]) -> String? {
-    guard let index = arguments.firstIndex(of: flag), index + 1 < arguments.count else {
-      return nil
-    }
-    return arguments[index + 1]
-  }
-
   private static func send(_ report: SessionStateReport, environment: [String: String]) throws {
     let socket =
       environment[SessionEnvironment.socketKey].map { URL(fileURLWithPath: $0) }
@@ -188,4 +179,33 @@ enum Helper {
   private static func fail(_ message: String) {
     FileHandle.standardError.write(Data("multishell: \(message)\n".utf8))
   }
+}
+
+/// `--name value` pairs after the subcommand. Anything else is a usage
+/// error, so a typo in a hook line is caught rather than ignored.
+struct Options {
+  private let values: [String: String]
+
+  init(_ arguments: ArraySlice<String>) throws {
+    var values: [String: String] = [:]
+    var rest = arguments
+    while let flag = rest.popFirst() {
+      guard flag.hasPrefix("--"), let value = rest.popFirst() else {
+        throw UsageError("unexpected argument \(flag)")
+      }
+      values[String(flag.dropFirst(2))] = value
+    }
+    self.values = values
+  }
+
+  subscript(name: String) -> String? { values[name] }
+
+  func int32(_ name: String) -> Int32? { values[name].flatMap { Int32($0) } }
+
+  func double(_ name: String) -> Double? { values[name].flatMap { Double($0) } }
+}
+
+struct UsageError: Error {
+  let message: String
+  init(_ message: String) { self.message = message }
 }

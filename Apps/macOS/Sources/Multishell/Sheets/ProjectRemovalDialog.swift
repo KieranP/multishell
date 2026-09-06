@@ -1,3 +1,4 @@
+import MultishellAppCore
 import SwiftUI
 
 extension View {

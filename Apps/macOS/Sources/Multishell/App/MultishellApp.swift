@@ -1,16 +1,24 @@
+import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
 @main
 struct MultishellApp: App {
-  @State private var model = AppModel()
+  @State private var platform: MacPlatform
+  @State private var model: AppModel
   @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+
+  init() {
+    let platform = MacPlatform()
+    _platform = State(initialValue: platform)
+    _model = State(initialValue: AppModel(platform: platform))
+  }
 
   var body: some Scene {
     // One window, not a group: every surface is one NSView, and a second
     // window adopting the same views would steal them from the first.
     Window("Multishell", id: "main") {
-      RootView(model: model)
+      RootView(model: model, platform: platform)
         .frame(minWidth: 720, minHeight: 420)
         .task {
           appDelegate.openTerminalCount = { model.liveTerminalCount }
@@ -51,6 +59,7 @@ struct MultishellApp: App {
 
 struct RootView: View {
   let model: AppModel
+  let platform: MacPlatform
 
   /// Remembered per machine, not in the workspace: it is about this screen.
   @AppStorage("sidebarWidth") private var sidebarWidth = 248.0
@@ -66,7 +75,7 @@ struct RootView: View {
       resizeHandle(theme)
       DetailView(model: model)
     }
-    .background(WindowAccessor { model.mainWindow = $0 })
+    .background(WindowAccessor { platform.mainWindow = $0 })
     .ignoresSafeArea()
     .preferredColorScheme(theme.colorScheme)
     .confirmationDialog(

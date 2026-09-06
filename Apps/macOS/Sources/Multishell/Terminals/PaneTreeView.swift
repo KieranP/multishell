@@ -1,3 +1,4 @@
+import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
@@ -17,7 +18,7 @@ struct PaneTreeView: View {
     switch node {
     case .terminal(let id):
       SurfaceView(
-        host: model.host,
+        model: model,
         sessionID: id,
         isFocused: id == focusedSessionID,
         isLive: model.liveSessions.contains(id)

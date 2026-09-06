@@ -2,9 +2,9 @@ import Foundation
 
 /// Tells the core when a set of directories changes.
 ///
-/// File watching has no portable API (FSEvents and kqueue on Darwin, inotify
-/// on Linux, ReadDirectoryChangesW on Windows), so each GUI supplies one.
-/// Implementations coalesce bursts; the core only wants "look again".
+/// File watching has no portable API (kqueue on Darwin, inotify on Linux),
+/// so each platform supplies one. Implementations coalesce bursts; the core
+/// only wants "look again".
 @MainActor
 public protocol DirectoryWatcher: AnyObject {
   var onChange: (@MainActor () -> Void)? { get set }

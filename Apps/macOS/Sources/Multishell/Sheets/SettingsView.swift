@@ -1,3 +1,4 @@
+import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
@@ -30,12 +31,12 @@ private struct GeneralSettingsTab: View {
   var body: some View {
     Form {
       Section {
-        EditorPicker(
+        DetectionPicker(
           label: "Editor:",
           selection: Binding(
             get: { model.workspace.preferredEditorID ?? EditorCatalogue.noneID },
             set: { model.setPreferredEditor($0) }),
-          detection: model.editorDetection,
+          options: model.editorDetection.options(selected:),
           refresh: { Task { await model.refreshLoginEnvironment() } },
           info:
             "What Open in Editor (⇧⌘O) in the worktree menu uses. Applications are found by bundle identifier, or by their command line shim on the login shell's PATH; a terminal editor opens as a new tab in the worktree."
@@ -79,7 +80,7 @@ private struct GeneralSettingsTab: View {
             .foregroundStyle(.secondary)
             .lineLimit(1)
             .truncationMode(.head)
-          IconButton.reveal { NSWorkspace.shared.activateFileViewerSelecting([Paths.stateFile]) }
+          IconButton.reveal { model.revealInFileBrowser(Paths.stateFile) }
             .controlSize(.small)
         }
       }
@@ -105,12 +106,12 @@ private struct TerminalSettingsTab: View {
             ForEach(TerminalEngine.allCases, id: \.self) { Text($0.displayName).tag($0) }
           }
         }
-        ShellPicker(
+        DetectionPicker(
           label: "Default shell:",
           selection: Binding(
             get: { model.workspace.defaultShell ?? ShellCatalogue.loginShellID },
             set: { model.setDefaultShell($0) }),
-          detection: model.shellDetection,
+          options: model.shellDetection.options(selected:),
           refresh: { Task { await model.refreshLoginEnvironment() } },
           info:
             "What new tabs run, and what project hooks run through. Terminals already running keep their shell. zsh and bash get the command-status hooks; another shell is launched plainly. Any project can override this. Refresh after installing one, or pick Custom path for one the list does not find."
@@ -309,54 +310,5 @@ struct SettingsCaption: View {
       .font(.system(size: 11))
       .foregroundStyle(.tertiary)
       .fixedSize(horizontal: false, vertical: true)
-  }
-}
-
-/// The dropdown both settings windows use for the shell: the login shell,
-/// the installed ones, the stored value marked when it is not installed,
-/// Custom path, and a Refresh.
-struct ShellPicker: View {
-  let label: String
-  @Binding var selection: String
-  let detection: ShellDetection
-  let refresh: () -> Void
-  let info: String
-  /// Greys the control while an override is off; the (i) stays readable.
-  var isEnabled = true
-
-  var body: some View {
-    InfoRow(label, info: info) {
-      Picker(label, selection: $selection) {
-        ForEach(detection.options(selected: selection)) { option in
-          Text(option.label).tag(option.id)
-        }
-      }
-      .disabled(!isEnabled)
-      IconButton.refresh(action: refresh).controlSize(.small).disabled(!isEnabled)
-    }
-  }
-}
-
-/// The editor dropdown: None, installed editors, the stored value marked
-/// when it is not installed, Custom, and a Refresh.
-struct EditorPicker: View {
-  let label: String
-  @Binding var selection: String
-  let detection: EditorDetection
-  let refresh: () -> Void
-  let info: String
-  /// Greys the control while an override is off; the (i) stays readable.
-  var isEnabled = true
-
-  var body: some View {
-    InfoRow(label, info: info) {
-      Picker(label, selection: $selection) {
-        ForEach(detection.options(selected: selection)) { option in
-          Text(option.label).tag(option.id)
-        }
-      }
-      .disabled(!isEnabled)
-      IconButton.refresh(action: refresh).controlSize(.small).disabled(!isEnabled)
-    }
   }
 }

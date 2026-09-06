@@ -15,7 +15,7 @@ build:
 release:
 	Scripts/make-app.sh release
 
-## Test everything: the portable libraries, then the app's pure parts.
+## Test everything: the portable libraries and the model, then the Mac hosts.
 test:
 	swift test
 	swift test --package-path Apps/macOS

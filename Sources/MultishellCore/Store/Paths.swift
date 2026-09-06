@@ -2,10 +2,10 @@ import Foundation
 
 /// Where Multishell keeps its state on each platform.
 ///
-/// The only OS branch in the core. Linux follows the XDG spec; macOS and
-/// Windows both have an application-support directory Foundation already
-/// resolves correctly (`~/Library/Application Support` and `%APPDATA%`).
-/// Anything else that must differ per platform belongs behind a port.
+/// The only OS branch in the core. Linux follows the XDG spec; macOS has an
+/// application-support directory Foundation already resolves
+/// (`~/Library/Application Support`). Anything else that must differ per
+/// platform belongs behind a port.
 public enum Paths {
   public static var configDirectory: URL {
     #if os(Linux)

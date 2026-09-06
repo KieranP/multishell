@@ -1,17 +1,12 @@
 import AppKit
+import MultishellAppCore
 import MultishellCore
 @preconcurrency import UserNotifications
 
-/// Posts a system notification about a session, and reports a click on it.
-@MainActor
-protocol SessionNotifier: AnyObject {
-  var onActivate: (@MainActor (SessionStates.Key) -> Void)? { get set }
-  func notify(title: String, body: String, about key: SessionStates.Key)
-}
-
-/// `UNUserNotificationCenter`, which needs a bundle: a bare binary from
-/// `swift run` has none, and asking the center there crashes, so this does
-/// nothing outside an app bundle. Authorization is requested on first use.
+/// `SessionNotifier` on `UNUserNotificationCenter`, which needs a bundle: a
+/// bare binary from `swift run` has none, and asking the center there
+/// crashes, so this does nothing outside an app bundle. Authorization is
+/// requested on first use.
 @MainActor
 final class UserNotificationNotifier: NSObject, SessionNotifier {
   var onActivate: (@MainActor (SessionStates.Key) -> Void)?
@@ -84,11 +79,4 @@ extension UserNotificationNotifier: UNUserNotificationCenterDelegate {
       onActivate?(key)
     }
   }
-}
-
-/// For tests, and for the model before a real notifier exists.
-@MainActor
-final class NullNotifier: SessionNotifier {
-  var onActivate: (@MainActor (SessionStates.Key) -> Void)?
-  func notify(title: String, body: String, about key: SessionStates.Key) {}
 }
