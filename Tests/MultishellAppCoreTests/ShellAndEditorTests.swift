@@ -220,20 +220,21 @@ struct PendingWorktreeRemovalTests {
     #expect(PendingWorktreeRemoval.warning(changedFiles: 0, liveTerminals: 0) == nil)
     #expect(
       PendingWorktreeRemoval.warning(changedFiles: 1, liveTerminals: 0)
-        == "It has 1 changed file that will be lost.")
+        == "It has 1 changed file, kept in the Trash with the directory.")
     #expect(
       PendingWorktreeRemoval.warning(changedFiles: 0, liveTerminals: 2)
         == "2 open terminals will be closed.")
     #expect(
       PendingWorktreeRemoval.warning(changedFiles: 3, liveTerminals: 1)
-        == "It has 3 changed files that will be lost. 1 open terminal will be closed.")
+        == "It has 3 changed files, kept in the Trash with the directory. 1 open terminal will be closed."
+    )
   }
 
   @Test func theMessageNamesThePathTheBranchsFateAndTheWarning() {
     let asks = PendingWorktreeRemoval(worktree: branched, branch: .asks)
     #expect(
       asks.message(warning: "2 open terminals will be closed.")
-        == "Runs git worktree remove on /trees/feat.\n\nThe branch feat is kept unless you remove it too.\n\n2 open terminals will be closed."
+        == "Moves /trees/feat to the Trash and prunes it from git.\n\nThe branch feat is kept unless you remove it too.\n\n2 open terminals will be closed."
     )
     let deletes = PendingWorktreeRemoval(worktree: branched, branch: .decided(deletes: true))
     #expect(deletes.message(warning: nil).hasSuffix("The branch feat is deleted with it."))

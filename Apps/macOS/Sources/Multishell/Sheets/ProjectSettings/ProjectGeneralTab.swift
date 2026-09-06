@@ -1,3 +1,4 @@
+import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
@@ -35,6 +36,11 @@ struct ProjectGeneralTab: View {
 
       Section {
         HStack(spacing: 8) {
+          Button("Export") { model.exportSharedSettings(for: project) }
+          InfoButton(
+            "Writes this project's worktree path, branch prefix, hooks and icon, as they are in effect, to \(SharedProjectSettings.fileName) at the repository root, for the team to commit, replacing one already there. Anyone who adds the repository gets them as defaults under their own; they are asked once before its hooks run."
+          )
+          Spacer()
           Button("Remove Project…", role: .destructive) {
             model.requestProjectRemoval(project, from: .settings)
           }
@@ -50,7 +56,9 @@ struct ProjectGeneralTab: View {
 
 /// The glyph and tint the sidebar draws for the project. Two controls set
 /// one glyph: a symbol from the curated list, or an emoji typed or pasted
-/// from the character palette; whichever was set last wins.
+/// from the character palette; whichever was set last wins. The controls
+/// show what is drawn, the repository's icon included, and a change writes
+/// the user's own settings over it.
 private struct ProjectIconSection: View {
   let model: AppModel
   let project: Project
@@ -59,15 +67,21 @@ private struct ProjectIconSection: View {
   private static let folderTag = "folder"
 
   var body: some View {
-    let settings = model.workspace.project(project.id)?.settings ?? project.settings
+    let current = model.workspace.project(project.id) ?? project
+    let own = current.settings
+    let settings = model.effectiveSettings(for: current)
     let kind = ProjectIcon.kind(of: settings.iconGlyph)
+    let shared = model.sharedSettings[project.id]
+    let fromFile =
+      (own.iconGlyph == nil && shared?.iconGlyph != nil)
+      || (own.iconTint == nil && ProjectIcon.validTint(shared?.iconTint) != nil)
     Section("Icon") {
       InfoRow(
         "Symbol:",
         info:
           "Drawn in the sidebar, the header and the project picker in place of the folder. Whichever was set last wins: picking a symbol replaces an emoji, typing an emoji replaces the symbol."
       ) {
-        Picker("Symbol:", selection: symbol(settings, kind: kind)) {
+        Picker("Symbol:", selection: symbol(own, kind: kind)) {
           Label("Folder", systemImage: "folder").tag(Self.folderTag)
           if case .emoji(let emoji) = kind {
             Text("\(emoji)  Emoji").tag(Self.emojiTag)
@@ -83,7 +97,7 @@ private struct ProjectIconSection: View {
         info:
           "One character; ⌃⌘Space opens the palette. Emoji keep their own colours, so the tint does not apply."
       ) {
-        TextField("Emoji:", text: emoji(settings, kind: kind), prompt: Text("Optional"))
+        TextField("Emoji:", text: emoji(own, kind: kind), prompt: Text("Optional"))
           .frame(width: 60)
       }
       InfoRow(
@@ -92,11 +106,14 @@ private struct ProjectIconSection: View {
           "One of the theme's sixteen colours, so a later theme change keeps the icon in step with the terminal. Applies to symbols and the folder."
       ) {
         HStack(spacing: 5) {
-          swatch(nil, settings: settings, color: model.currentTheme.textSecondary)
+          swatch(nil, own: own, shown: settings, color: model.currentTheme.textSecondary)
           ForEach(0..<16, id: \.self) { slot in
-            swatch(slot, settings: settings, color: model.currentTheme.ansiRGB[slot].color)
+            swatch(slot, own: own, shown: settings, color: model.currentTheme.ansiRGB[slot].color)
           }
         }
+      }
+      if fromFile {
+        SettingsCaption("From \(SharedProjectSettings.fileName). A choice here replaces it.")
       }
     }
   }
@@ -133,10 +150,14 @@ private struct ProjectIconSection: View {
       })
   }
 
-  private func swatch(_ slot: Int?, settings: ProjectSettings, color: Color) -> some View {
-    let selected = settings.iconTint == slot
+  private func swatch(
+    _ slot: Int?, own: ProjectSettings, shown: ProjectSettings, color: Color
+  )
+    -> some View
+  {
+    let selected = shown.iconTint == slot
     return Button {
-      update(settings) { $0.iconTint = slot }
+      update(own) { $0.iconTint = slot }
     } label: {
       ZStack {
         Circle().fill(color).frame(width: 14, height: 14)

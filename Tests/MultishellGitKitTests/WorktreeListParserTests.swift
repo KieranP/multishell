@@ -96,7 +96,9 @@ struct WorktreeListParserEdgeTests {
       """
     let worktrees = WorktreeListParser.parse(output, projectID: "/p")
     #expect(worktrees[0].isPrimary && worktrees[0].branch == nil)
-    #expect(worktrees[1].branch == "main")
+    #expect(worktrees[0].isBare && !worktrees[0].isDetached)
+    #expect(worktrees[0].name == "repo.git")
+    #expect(worktrees[1].branch == "main" && !worktrees[1].isBare)
   }
 
   @Test func pathsWithSpacesSurviveTheKeyValueSplit() {

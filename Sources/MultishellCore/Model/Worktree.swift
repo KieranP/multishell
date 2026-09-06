@@ -13,6 +13,9 @@ public struct Worktree: Identifiable, Codable, Hashable, Sendable {
   public var branch: String?
   public var isPrimary: Bool
   public var isLocked: Bool
+  /// The repository itself in a bare layout: listed first by git, with no
+  /// checkout to show a status for.
+  public var isBare: Bool
 
   /// Synthesized decoding would keep whatever URL was written, so the
   /// directory normalisation from `init` is applied here too.
@@ -24,11 +27,17 @@ public struct Worktree: Identifiable, Codable, Hashable, Sendable {
     self.branch = try c.decodeIfPresent(String.self, forKey: .branch)
     self.isPrimary = try c.decodeIfPresent(Bool.self, forKey: .isPrimary) ?? false
     self.isLocked = try c.decodeIfPresent(Bool.self, forKey: .isLocked) ?? false
+    self.isBare = try c.decodeIfPresent(Bool.self, forKey: .isBare) ?? false
   }
 
   public var id: String { path.path }
-  public var name: String { branch ?? String(head.prefix(7)) }
-  public var isDetached: Bool { branch == nil }
+  /// The branch, the short SHA when detached, or the folder for a bare
+  /// repository, which has neither.
+  public var name: String {
+    if isBare { return path.lastPathComponent }
+    return branch ?? String(head.prefix(7))
+  }
+  public var isDetached: Bool { branch == nil && !isBare }
 
   public init(
     path: URL,
@@ -36,7 +45,8 @@ public struct Worktree: Identifiable, Codable, Hashable, Sendable {
     head: String,
     branch: String? = nil,
     isPrimary: Bool = false,
-    isLocked: Bool = false
+    isLocked: Bool = false,
+    isBare: Bool = false
   ) {
     self.path = Project.directory(path)
     self.projectID = projectID
@@ -44,5 +54,6 @@ public struct Worktree: Identifiable, Codable, Hashable, Sendable {
     self.branch = branch
     self.isPrimary = isPrimary
     self.isLocked = isLocked
+    self.isBare = isBare
   }
 }

@@ -1,26 +1,40 @@
+import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
 /// Four scripts, grouped by the operation they surround. Each is a small
 /// monospaced editor, since a hook of any substance has more than one line.
+/// Where the repository's `.multishell.json` has a hook and the user's is
+/// blank, the editor shows the repository's as its placeholder, and a
+/// section above says whether those hooks are trusted.
 struct ProjectHooksTab: View {
   let model: AppModel
   let project: Project
 
   var body: some View {
+    let current = model.workspace.project(project.id) ?? project
+    let shared = model.sharedSettings[project.id]
     Form {
+      if let shared, shared.hasHooks {
+        sharedHooksSection(shared, project: current)
+      } else if let problem = model.sharedSettingsProblems[project.id] {
+        Section { SettingsCaption(problem) }
+      }
+
       Section("Create") {
         HookEditor(
           title: "Pre-create",
           info:
             "Runs in the repository before git worktree add, with MULTISHELL_WORKTREE_PATH set to the planned path. A non-zero exit stops the create; git is never asked.",
-          placeholder: "test -n \"$TICKET\" || { echo 'set TICKET first' >&2; exit 1; }",
+          placeholder: shared?.preCreateHook
+            ?? "test -n \"$TICKET\" || { echo 'set TICKET first' >&2; exit 1; }",
           text: projectSetting(\.preCreateHook, of: project, in: model))
         HookEditor(
           title: "Post-create",
           info:
             "Runs in the new worktree after git worktree add. A failure is reported; the worktree stays.",
-          placeholder: "npm install\ncp \"$MULTISHELL_PROJECT_PATH/.env\" .",
+          placeholder: shared?.postCreateHook
+            ?? "npm install\ncp \"$MULTISHELL_PROJECT_PATH/.env\" .",
           text: projectSetting(\.postCreateHook, of: project, in: model))
       }
 
@@ -29,12 +43,13 @@ struct ProjectHooksTab: View {
           title: "Pre-delete",
           info:
             "Runs in the worktree before git worktree remove, after the confirmation. A non-zero exit stops the removal; the worktree stays.",
-          placeholder: "test -z \"$(git log @{upstream}.. 2>/dev/null)\" || exit 1",
+          placeholder: shared?.preDeleteHook
+            ?? "test -z \"$(git log @{upstream}.. 2>/dev/null)\" || exit 1",
           text: projectSetting(\.preDeleteHook, of: project, in: model))
         HookEditor(
           title: "Post-delete",
           info: "Runs in the repository after git worktree remove, once the directory is gone.",
-          placeholder: "Optional shell script",
+          placeholder: shared?.postDeleteHook ?? "Optional shell script",
           text: projectSetting(\.postDeleteHook, of: project, in: model))
       }
 
@@ -50,12 +65,38 @@ struct ProjectHooksTab: View {
         HStack(spacing: 6) {
           Text("Environment")
           InfoButton(
-            "Each script runs through this project's shell (the Terminal tab; $SHELL unless chosen) as an interactive login shell, with these variables set, so nothing needs quoting. In sh, bash and zsh the first failing line stops the script and is the one reported; fish runs the whole script."
+            "Each script runs through this project's shell (the Terminal tab; $SHELL unless chosen) as an interactive login shell, with these variables set, so nothing needs quoting. In sh, bash and zsh the first failing line stops the script and is the one reported; fish runs the whole script. A hook still running at the timeout in Settings > Worktrees is stopped."
           )
         }
       }
     }
     .formStyle(.grouped)
+  }
+
+  /// The repository's hooks run only once trusted, and a change to them
+  /// asks again; the placeholders above show what they are.
+  private func sharedHooksSection(_ shared: SharedProjectSettings, project: Project) -> some View {
+    let trusted = model.trustsSharedHooks(of: project)
+    return Section {
+      HStack(spacing: 8) {
+        Text(
+          trusted
+            ? "Its hooks run where yours are blank."
+            : "Its hooks are shown as placeholders and do not run.")
+        Spacer()
+        Button(trusted ? "Stop Trusting" : "Trust Hooks") {
+          model.setTrustsSharedHooks(!trusted, for: project)
+        }
+        .controlSize(.small)
+      }
+    } header: {
+      HStack(spacing: 6) {
+        Text("From \(SharedProjectSettings.fileName)")
+        InfoButton(
+          "The repository ships hooks in \(SharedProjectSettings.fileName) at its root. They run code through your shell, so they are off until you trust them, and a change to their text asks again. A whitespace-only hook of your own turns the repository's off for that stage."
+        )
+      }
+    }
   }
 
   private static let hookVariables: [(name: String, meaning: String)] = [

@@ -103,6 +103,21 @@ struct RootView: View {
     }
     .projectRemovalDialog(model: model, source: .workspace)
     .confirmationDialog(
+      model.pendingSharedHooksTrust?.title ?? "",
+      isPresented: Binding(
+        get: { model.pendingSharedHooksTrust != nil },
+        set: { if !$0 { model.pendingSharedHooksTrust = nil } }),
+      titleVisibility: .visible,
+      presenting: model.pendingSharedHooksTrust
+    ) { pending in
+      Button(pending.trustLabel) { model.decideSharedHooks(pending, trusted: true) }
+      Button(pending.declineLabel) { model.decideSharedHooks(pending, trusted: false) }
+      // Escape: asked again next time, since nothing was decided.
+      Button("Decide Later", role: .cancel) { model.pendingSharedHooksTrust = nil }
+    } message: { pending in
+      Text(pending.message)
+    }
+    .confirmationDialog(
       model.pendingClose?.title ?? "",
       isPresented: Binding(
         get: { model.pendingClose != nil }, set: { if !$0 { model.pendingClose = nil } }),

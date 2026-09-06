@@ -55,6 +55,8 @@ final class FakeNotifier: SessionNotifier {
   }
 }
 
+struct TrashRefused: Error {}
+
 /// Stands in for the platform's view type; the model never looks inside.
 final class FakeSurface {}
 
@@ -73,11 +75,23 @@ final class FakePlatform: Platform {
   var bundledHelper: URL?
   var installedCommandLineTool = false
   var logged: [String] = []
+  /// Where `moveToTrash` puts things, standing in for the Trash; `nil`
+  /// makes it refuse.
+  var trash: URL? = URL(fileURLWithPath: NSTemporaryDirectory())
+    .appendingPathComponent("multishell-trash-\(UUID().uuidString)", isDirectory: true)
+  var trashed: [URL] = []
 
   func closeKeyWindow() { closedKeyWindows += 1 }
   func chooseDirectory(prompt: String) async -> URL? { directoryToChoose }
   func revealInFileBrowser(_ url: URL) { revealed.append(url) }
   func copyToClipboard(_ text: String) { clipboard.append(text) }
+  func moveToTrash(_ url: URL) throws {
+    guard let trash else { throw TrashRefused() }
+    try FileManager.default.createDirectory(at: trash, withIntermediateDirectories: true)
+    try FileManager.default.moveItem(
+      at: url, to: trash.appendingPathComponent(url.lastPathComponent))
+    trashed.append(url)
+  }
   func applicationURL(forIdentifier identifier: String) -> URL? { applications[identifier] }
   func open(_ directory: URL, withApplication application: URL) async throws {
     opened.append((directory, application))
@@ -931,5 +945,19 @@ struct RelaunchTests {
 
     after.select(before.feature)
     #expect(after.liveTerminalCount == 5)
+  }
+}
+
+@Suite @MainActor
+struct NullPlatformTests {
+  @Test func withoutATrashARemovedDirectoryIsDeleted() throws {
+    let directory = URL(fileURLWithPath: NSTemporaryDirectory())
+      .appendingPathComponent("multishell-null-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    try "x".write(to: directory.appendingPathComponent("f"), atomically: true, encoding: .utf8)
+
+    try NullPlatform().moveToTrash(directory)
+
+    #expect(!FileManager.default.fileExists(atPath: directory.path))
   }
 }

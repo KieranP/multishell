@@ -2,10 +2,11 @@
 
 Read these before changing anything:
 
-- `DEVELOP.md`: how to build and test, where things live, the rules CI
-  enforces, how to add an engine, theme or platform.
-- `DESIGN.md`: the decisions behind the architecture and behaviour, with the
-  reasons and costs. Do not undo one without knowing what it cost to make; a
+- `DEVELOP.md`: how to build and test, which package holds what, the rules
+  CI enforces, how to add an engine, theme, shell or platform, where state
+  lives, the known gaps.
+- `DESIGN.md`: why each decision was made and what it cost, and nothing the
+  code already says. Do not undo one without knowing what it cost to make; a
   few record features that were removed on purpose.
 
 Working rules:
@@ -72,6 +73,16 @@ Working rules:
   row. A `SettingsCaption` is for a value computed live from the settings.
 - Anything that acts on a worktree goes in `WorktreeActions`, which the
   detail header's menu and the sidebar's context menu both show.
+- A project's settings are read through `model.effectiveSettings(for:)` and
+  `model.worktreeSettings(for:)`, never `project.settings` directly: the
+  repository's `.multishell.json` fills the gaps the user left, and its
+  hooks apply only once trusted. The user's own value always wins.
+- A hook is ended through `ProcessStopper`, SIGHUP to the child's process
+  group then SIGKILL, never `Process.terminate()`: interactive shells ignore
+  SIGTERM, and a shell with no terminal does not pass SIGHUP to its job.
+- A worktree is removed by moving its directory to the Trash through the
+  `Platform` port and running `git worktree prune`; `git worktree remove` is
+  not used. A Trash that refuses falls back to deletion.
 - Test git behaviour against a real repository with `RepositoryFixture`, not
   with mocks. Test parsers on fixture text, including the odd lines in the
   robustness tests.

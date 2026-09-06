@@ -34,6 +34,11 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   /// own colours.
   public var iconTint: Int?
 
+  /// What the user said about the hooks in the repository's
+  /// `.multishell.json`, and which text they said it about. `nil` until
+  /// asked; a file whose hooks have since changed asks again.
+  public var sharedHooks: SharedHooksDecision?
+
   public init(
     worktreeDirectory: String? = nil,
     branchPrefix: String? = nil,
@@ -45,7 +50,8 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     autoStartAgent: Bool? = nil,
     defaultShell: String? = nil,
     iconGlyph: String? = nil,
-    iconTint: Int? = nil
+    iconTint: Int? = nil,
+    sharedHooks: SharedHooksDecision? = nil
   ) {
     self.worktreeDirectory = worktreeDirectory
     self.branchPrefix = branchPrefix
@@ -58,6 +64,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     self.defaultShell = defaultShell
     self.iconGlyph = iconGlyph
     self.iconTint = ProjectIcon.validTint(iconTint)
+    self.sharedHooks = sharedHooks
   }
 
   /// An empty string on disk reads as "no override". State from before
@@ -79,11 +86,45 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     iconGlyph = Self.override(try c.decodeIfPresent(String.self, forKey: .iconGlyph))
     // `try?`: a tint that is not a number costs the tint, not the file.
     iconTint = ProjectIcon.validTint(try? c.decodeIfPresent(Int.self, forKey: .iconTint))
+    sharedHooks = (try? c.decodeIfPresent(SharedHooksDecision.self, forKey: .sharedHooks)) ?? nil
   }
 
   private static func override(_ value: String?) -> String? {
     guard let value, !value.isEmpty else { return nil }
     return value
+  }
+
+  /// Whether the hooks in `shared` are the ones the user trusted. A file
+  /// whose hooks have changed since is not trusted until asked again.
+  public func trustsHooks(of shared: SharedProjectSettings) -> Bool {
+    guard let text = shared.hooksText, let decision = sharedHooks else { return false }
+    return decision.trusted && decision.hooks == text
+  }
+
+  /// Whether `shared` has hooks the user has not yet been asked about.
+  public func needsHookDecision(for shared: SharedProjectSettings) -> Bool {
+    guard let text = shared.hooksText else { return false }
+    return sharedHooks?.hooks != text
+  }
+
+  /// These settings with the repository's own filling the gaps: a path or
+  /// prefix the user left following the global, an icon they did not set,
+  /// and a hook they left blank, the last only once its text is trusted. A
+  /// whitespace-only hook is the user's "none" and stays.
+  public func layered(over shared: SharedProjectSettings?) -> ProjectSettings {
+    guard let shared else { return self }
+    var result = self
+    result.worktreeDirectory = worktreeDirectory ?? shared.worktreeDirectory
+    result.branchPrefix = branchPrefix ?? shared.branchPrefix
+    result.iconGlyph = iconGlyph ?? shared.iconGlyph
+    result.iconTint = iconTint ?? ProjectIcon.validTint(shared.iconTint)
+    if trustsHooks(of: shared) {
+      result.preCreateHook = preCreateHook.isEmpty ? shared.preCreateHook ?? "" : preCreateHook
+      result.postCreateHook = postCreateHook.isEmpty ? shared.postCreateHook ?? "" : postCreateHook
+      result.preDeleteHook = preDeleteHook.isEmpty ? shared.preDeleteHook ?? "" : preDeleteHook
+      result.postDeleteHook = postDeleteHook.isEmpty ? shared.postDeleteHook ?? "" : postDeleteHook
+    }
+    return result
   }
 
   /// The project's value where it has one, the default otherwise.

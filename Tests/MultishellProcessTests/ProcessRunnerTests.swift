@@ -406,3 +406,112 @@ struct HookShellTests {
     #expect(ShellCommand.shell != nil)
   }
 }
+
+/// Ending a child from this side: the timeout and the user's stop. Both go
+/// through `ProcessStopper`, so both must end an interactive shell, which
+/// ignores SIGTERM, and the command it is running.
+@Suite
+struct ProcessStopTests {
+  private let runner = ProcessRunner()
+  private let cwd = URL(fileURLWithPath: NSTemporaryDirectory())
+
+  /// The pid of the `sleep` the shell runs, so the test can check it went
+  /// with the shell rather than living on as an orphan.
+  private func sleepPID(in output: String) -> pid_t? {
+    output.split(whereSeparator: \.isNewline).first.flatMap { Int32($0) }
+  }
+
+  /// Gone or a zombie waiting for a parent that is itself gone. `kill(pid,
+  /// 0)` alone says a zombie is alive, and launchd reaps orphans at its own
+  /// pace, so the check waits a little.
+  private func hasEnded(_ pid: pid_t) async -> Bool {
+    for _ in 0..<30 {
+      if kill(pid, 0) != 0 || isZombie(pid) { return true }
+      try? await Task.sleep(for: .milliseconds(100))
+    }
+    return false
+  }
+
+  private func isZombie(_ pid: pid_t) -> Bool {
+    #if os(Linux)
+      guard let stat = try? String(contentsOfFile: "/proc/\(pid)/stat", encoding: .utf8),
+        let close = stat.lastIndex(of: ")")
+      else { return false }
+      return stat[stat.index(after: close)...].trimmingCharacters(in: .whitespaces).hasPrefix("Z")
+    #else
+      var name: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, pid]
+      var info = kinfo_proc()
+      var size = MemoryLayout<kinfo_proc>.size
+      guard sysctl(&name, UInt32(name.count), &info, &size, nil, 0) == 0, size > 0 else {
+        return false
+      }
+      return Int32(info.kp_proc.p_stat) == SZOMB
+    #endif
+  }
+
+  @Test func aTimeoutEndsAnInteractiveShellAndTheCommandItRuns() async throws {
+    for shell in ["/bin/zsh", "/bin/bash"]
+    where FileManager.default.isExecutableFile(atPath: shell) {
+      let started = ContinuousClock.now
+      let output = try await runner.capture(
+        URL(fileURLWithPath: shell), ["-i", "-c", "sleep 30 & echo $!; wait"], in: cwd,
+        environment: ["HOME": cwd.path], timeout: .milliseconds(500))
+      let elapsed = ContinuousClock.now - started
+      #expect(output.stop == .timedOut(after: .milliseconds(500)), "\(shell)")
+      #expect(!output.succeeded, "\(shell)")
+      #expect(elapsed < .seconds(8), "\(shell) took \(elapsed) to be ended")
+      let child = try #require(sleepPID(in: output.standardOutput), "\(shell)")
+      #expect(await hasEnded(child), "\(shell) left its sleep running as pid \(child)")
+    }
+  }
+
+  @Test func theStopperEndsTheChildAndSaysTheUserAsked() async throws {
+    let stopper = ProcessStopper()
+    Task {
+      try await Task.sleep(for: .milliseconds(300))
+      stopper.stop()
+    }
+    let started = ContinuousClock.now
+    let output = try await runner.capture(
+      URL(fileURLWithPath: "/bin/sh"), ["-c", "sleep 30"], in: cwd, stopper: stopper)
+    #expect(output.stop == .stopped)
+    #expect(ContinuousClock.now - started < .seconds(8))
+  }
+
+  @Test func aStopAskedBeforeTheChildStartsAppliesToIt() async throws {
+    let stopper = ProcessStopper()
+    stopper.stop()
+    let output = try await runner.capture(
+      URL(fileURLWithPath: "/bin/sh"), ["-c", "sleep 30"], in: cwd, stopper: stopper)
+    #expect(output.stop == .stopped)
+  }
+
+  @Test func aChildThatIgnoresSIGHUPIsKilledAfterTheGrace() async throws {
+    let started = ContinuousClock.now
+    let output = try await runner.capture(
+      URL(fileURLWithPath: "/bin/sh"), ["-c", "trap '' HUP; sleep 30"], in: cwd,
+      timeout: .milliseconds(200))
+    let elapsed = ContinuousClock.now - started
+    #expect(output.stop == .timedOut(after: .milliseconds(200)))
+    #expect(elapsed > .seconds(2), "the grace was skipped: \(elapsed)")
+    #expect(elapsed < .seconds(12), "the kill never came: \(elapsed)")
+  }
+
+  @Test func aChildThatFinishesInTimeHasNoStop() async throws {
+    let stopper = ProcessStopper()
+    let output = try await runner.capture(
+      URL(fileURLWithPath: "/bin/sh"), ["-c", "printf ok"], in: cwd, timeout: .seconds(5),
+      stopper: stopper)
+    #expect(output.stop == nil && output.succeeded)
+    #expect(stopper.reason == nil)
+  }
+
+  @Test func aStoppedScriptIsAFailureThatSaysSo() async throws {
+    do {
+      _ = try await ShellCommand().runScript("sleep 30", in: cwd, timeout: .milliseconds(300))
+      Issue.record("the script did not fail")
+    } catch let failure as ProcessFailure {
+      #expect(failure.stop == .timedOut(after: .milliseconds(300)))
+    }
+  }
+}

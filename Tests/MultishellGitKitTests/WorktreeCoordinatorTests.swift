@@ -344,7 +344,7 @@ private final class StepLog: @unchecked Sendable {
   func clear() { lock.withLock { collected = [] } }
 }
 
-private final class RemovalStepLog: @unchecked Sendable {
+final class RemovalStepLog: @unchecked Sendable {
   private let lock = NSLock()
   private var collected: [WorktreeRemovalStep] = []
 

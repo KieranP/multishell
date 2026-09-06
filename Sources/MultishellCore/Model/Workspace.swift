@@ -45,6 +45,11 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// Delete a worktree's branch along with it every time. Off, the removal
   /// asks whether the branch goes too.
   public var deletesBranchWithWorktree = false
+  /// How long a project hook may run before it is stopped and reported.
+  /// Zero is no limit.
+  public var hookTimeoutSeconds = Self.defaultHookTimeoutSeconds
+
+  public static let defaultHookTimeoutSeconds = 60
 
   public init() {}
 
@@ -88,6 +93,8 @@ public struct Workspace: Codable, Hashable, Sendable {
       try c.decodeIfPresent(Bool.self, forKey: .confirmsWorktreeRemoval) ?? true
     deletesBranchWithWorktree =
       try c.decodeIfPresent(Bool.self, forKey: .deletesBranchWithWorktree) ?? false
+    hookTimeoutSeconds =
+      try c.decodeIfPresent(Int.self, forKey: .hookTimeoutSeconds) ?? Self.defaultHookTimeoutSeconds
   }
 }
 
@@ -188,5 +195,10 @@ extension Workspace {
   /// The editor Open in Editor uses, or `nil` for none.
   public var effectiveEditorID: String? {
     EditorCatalogue.effectiveID(preferredEditorID)
+  }
+
+  /// `hookTimeoutSeconds` as the runner takes it; `nil` for no limit.
+  public var hookTimeout: Duration? {
+    hookTimeoutSeconds > 0 ? .seconds(hookTimeoutSeconds) : nil
   }
 }

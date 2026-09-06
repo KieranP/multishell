@@ -14,9 +14,11 @@ public struct WorktreeService: Sendable {
     self.git = try GitRunner()
   }
 
+  /// `--git-dir`, not `--is-inside-work-tree`: the latter prints `false`
+  /// for a bare repository, and a bare clone with its worktrees beside it
+  /// is a common layout for people who live in worktrees.
   public func isRepository(_ url: URL) async -> Bool {
-    let output = try? await git.run(["rev-parse", "--is-inside-work-tree"], in: url)
-    return output?.trimmingCharacters(in: .whitespacesAndNewlines) == "true"
+    await git.succeeds(["rev-parse", "--git-dir"], in: url)
   }
 
   /// False for a freshly initialised repository. `HEAD` is unborn there, so
@@ -119,13 +121,13 @@ public struct WorktreeService: Sendable {
     _ = try await git.run(arguments, in: project.path)
   }
 
-  public func remove(_ worktree: Worktree, force: Bool = false, in project: Project) async throws {
-    var arguments = ["worktree", "remove"]
-    if force { arguments.append("--force") }
-    arguments.append(worktree.path.path)
-    _ = try await git.run(arguments, in: project.path)
+  /// `git worktree prune` leaves a locked record alone, so a locked worktree
+  /// is unlocked before its directory goes.
+  public func unlock(_ worktree: Worktree, in project: Project) async throws {
+    _ = try await git.run(["worktree", "unlock", worktree.path.path], in: project.path)
   }
 
+  /// Forgets every record whose directory is gone.
   public func prune(_ project: Project) async throws {
     _ = try await git.run(["worktree", "prune"], in: project.path)
   }

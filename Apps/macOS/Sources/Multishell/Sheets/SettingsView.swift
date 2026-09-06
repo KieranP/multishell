@@ -160,6 +160,8 @@ private struct TerminalSettingsTab: View {
 private struct AppearanceSettingsTab: View {
   let model: AppModel
 
+  @State private var fonts = InstalledFonts.detect()
+
   var body: some View {
     Form {
       Section {
@@ -178,12 +180,14 @@ private struct AppearanceSettingsTab: View {
       }
 
       Section {
-        InfoRow(
-          "Terminal font:",
-          info: "A font family name, as Font Book shows it. Blank uses the system monospace face."
-        ) {
-          TextField("Terminal font:", text: fontName, prompt: Text("System monospace"))
-        }
+        DetectionPicker(
+          label: "Terminal font:",
+          selection: fontName,
+          options: fonts.options(selected:),
+          refresh: { fonts = InstalledFonts.detect() },
+          info:
+            "Monospaced families first, then every other installed family, since some programming fonts are not marked fixed-pitch. Refresh after installing one. Applies to every open terminal."
+        )
         sizeRow(
           "Terminal size:", value: fontSize, current: model.workspace.appearance.fontSize,
           range: 9...24, info: "Terminal text. Applies to every open terminal.")
@@ -204,11 +208,12 @@ private struct AppearanceSettingsTab: View {
 
   private var fontName: Binding<String> {
     Binding(
-      get: { model.workspace.appearance.fontName ?? "" },
+      get: { model.workspace.appearance.fontName ?? FontDetection.systemID },
       set: { name in
-        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        guard name != FontDetection.dividerID else { return }
         model.setFont(
-          name: trimmed.isEmpty ? nil : trimmed, size: model.workspace.appearance.fontSize)
+          name: name == FontDetection.systemID ? nil : name,
+          size: model.workspace.appearance.fontSize)
       }
     )
   }
@@ -267,10 +272,23 @@ private struct WorktreeSettingsTab: View {
       }
 
       Section {
+        InfoRow(
+          "Hook timeout:",
+          info:
+            "How long a project hook may run before it is stopped and reported, in seconds. A hook that hangs would otherwise hold its worktree until relaunch. Stop Hook on the pane ends one sooner; 0 is no limit."
+        ) {
+          TextField("Hook timeout:", value: hookTimeout, format: .number)
+            .frame(width: 60)
+            .multilineTextAlignment(.trailing)
+          Text("seconds")
+        }
+      }
+
+      Section {
         InfoToggle(
           "Ask before removing a worktree",
           info:
-            "The confirmation also warns about uncommitted changes and open terminals in that worktree. Off is for people who remove worktrees all day; a removal then still asks about the branch unless the toggle below settles it.",
+            "The directory goes to the Trash and git prunes it. The confirmation also counts uncommitted changes and open terminals in that worktree. Off is for people who remove worktrees all day; a removal then still asks about the branch unless the toggle below settles it.",
           isOn: Binding(
             get: { model.workspace.confirmsWorktreeRemoval },
             set: { model.setConfirmsWorktreeRemoval($0) }))
@@ -284,6 +302,12 @@ private struct WorktreeSettingsTab: View {
       }
     }
     .formStyle(.grouped)
+  }
+
+  private var hookTimeout: Binding<Int> {
+    Binding(
+      get: { model.workspace.hookTimeoutSeconds },
+      set: { model.setHookTimeoutSeconds($0) })
   }
 
   private func field(_ keyPath: WritableKeyPath<WorktreeSettings, String>) -> Binding<String> {

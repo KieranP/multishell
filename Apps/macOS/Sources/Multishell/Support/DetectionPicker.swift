@@ -19,7 +19,11 @@ struct DetectionPicker: View {
     InfoRow(label, info: info) {
       Picker(label, selection: $selection) {
         ForEach(options(selection)) { option in
-          Text(option.label).tag(option.id)
+          if option.id == FontDetection.dividerID {
+            Divider()
+          } else {
+            Text(option.label).tag(option.id)
+          }
         }
       }
       .disabled(!isEnabled)

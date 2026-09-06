@@ -96,6 +96,7 @@ struct SidebarView: View {
             .foregroundStyle(theme.textTertiary)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Clear filter")
       }
     }
     .padding(.horizontal, 8)
@@ -156,10 +157,12 @@ struct SidebarView: View {
     return VStack(spacing: Self.rowSpacing) {
       ProjectRow(
         project: project,
+        settings: model.effectiveSettings(for: project),
         isMissing: model.missingProjects.contains(project.id),
         // The worktree rows carry the dots while they are visible; the folder
         // stands in for them only once they are folded away.
         state: expanded ? nil : model.state(ofProject: project.id),
+        worktreeCount: worktrees.count,
         theme: theme,
         metrics: metrics,
         toggle: { model.setExpanded(!project.isExpanded, for: project) },
@@ -236,8 +239,12 @@ struct SidebarView: View {
 
 struct ProjectRow: View {
   let project: Project
+  /// The project's settings with its repository's own filled in, for the
+  /// icon.
+  let settings: ProjectSettings
   let isMissing: Bool
   let state: SessionState?
+  let worktreeCount: Int
   let theme: Theme
   let metrics: UIMetrics
   let toggle: () -> Void
@@ -265,7 +272,7 @@ struct ProjectRow: View {
             .help("\(state.displayName) in a terminal of a collapsed worktree")
         } else {
           ProjectIconView(
-            settings: project.settings, isMissing: isMissing, theme: theme, size: metrics.icon
+            settings: settings, isMissing: isMissing, theme: theme, size: metrics.icon
           )
           .help(project.path.path)
         }
@@ -280,6 +287,14 @@ struct ProjectRow: View {
       .frame(height: metrics.rowHeight)
       .contentShape(.rect)
       .onTapGesture(perform: toggle)
+      .accessibilityElement(children: .ignore)
+      .accessibilityLabel(
+        AccessibilityText.project(
+          name: project.name, isExpanded: project.isExpanded, isMissing: isMissing, state: state,
+          worktreeCount: worktreeCount)
+      )
+      .accessibilityAddTraits(.isButton)
+      .accessibilityAction(named: project.isExpanded ? "Collapse" : "Expand", toggle)
 
       Spacer(minLength: 4)
 
@@ -301,6 +316,7 @@ struct ProjectRow: View {
     }
     .buttonStyle(.plain)
     .help(help)
+    .accessibilityLabel(help)
   }
 }
 

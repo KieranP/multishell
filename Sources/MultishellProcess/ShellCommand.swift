@@ -34,24 +34,31 @@ public struct ShellCommand: Sendable {
   /// stderr under `-i` with no terminal (`can't change option: zle`), so the
   /// script's first line writes a marker there and its stderr is taken from
   /// after it.
+  ///
+  /// A script still running at `timeout`, or when `stopper.stop()` is
+  /// called, is ended and reported as a failure whose `stop` says which.
   public func runScript(
     _ script: String,
     in directory: URL,
     environment: [String: String] = [:],
-    shellPath: String? = nil
+    shellPath: String? = nil,
+    timeout: Duration? = nil,
+    stopper: ProcessStopper? = nil
   ) async throws -> String {
     guard let shell = Self.shell(preferring: shellPath) else { throw ShellUnavailable() }
     let prepared = Self.markingOutput(
       Self.stoppingAtFirstFailure(script, shell: shell.executable), shell: shell.executable)
     let arguments = shell.arguments + [prepared]
     let output = try await runner.capture(
-      shell.executable, arguments, in: directory, environment: environment)
-    guard output.succeeded else {
+      shell.executable, arguments, in: directory, environment: environment, timeout: timeout,
+      stopper: stopper)
+    guard output.succeeded, output.stop == nil else {
       throw ProcessFailure(
         executable: shell.executable.lastPathComponent, arguments: arguments,
         status: output.status,
         message: Self.failureMessage(
-          standardOutput: output.standardOutput, standardError: output.standardError))
+          standardOutput: output.standardOutput, standardError: output.standardError),
+        stop: output.stop)
     }
     return output.standardOutput
   }

@@ -1,4 +1,5 @@
 import MultishellGitKit
+import MultishellProcess
 
 /// A create or remove running on a worktree, and the stage it is in. Shown
 /// in the detail pane in place of the terminals and as a spinner on the
@@ -29,16 +30,27 @@ public struct WorktreeOperation: Equatable, Sendable {
       case .deletingBranch: self = .deletingBranch
       }
     }
+
+    /// A stage the user can stop from the pane. Git's own stages are quick
+    /// and are left to finish.
+    public var isHook: Bool {
+      self == .postCreateHook || self == .preDeleteHook || self == .postDeleteHook
+    }
   }
 
   public let step: Step
   /// What the hook or git said, once the stage has failed. `nil` while it
   /// runs.
   public var failure: String?
+  /// The stage failed because the hook ran past the timeout and was
+  /// stopped, so the title says it did not finish rather than that it
+  /// refused.
+  public var timedOut = false
 
-  public init(_ step: Step, failure: String? = nil) {
+  public init(_ step: Step, failure: String? = nil, timedOut: Bool = false) {
     self.step = step
     self.failure = failure
+    self.timedOut = timedOut
   }
 
   public init(_ step: WorktreeRemovalStep) {
@@ -52,9 +64,12 @@ public struct WorktreeOperation: Equatable, Sendable {
   public var title: String {
     if failure != nil {
       switch step {
-      case .postCreateHook: return "The post-create hook failed"
-      case .preDeleteHook: return "The pre-delete hook refused the removal"
-      case .removingWorktree: return "git worktree remove failed"
+      case .postCreateHook:
+        return timedOut ? "The post-create hook did not finish" : "The post-create hook failed"
+      case .preDeleteHook:
+        return timedOut
+          ? "The pre-delete hook did not finish" : "The pre-delete hook refused the removal"
+      case .removingWorktree: return "The worktree could not be removed"
       case .postDeleteHook: return "The post-delete hook failed"
       case .deletingBranch: return "The branch was not deleted"
       }
@@ -62,7 +77,7 @@ public struct WorktreeOperation: Equatable, Sendable {
     switch step {
     case .postCreateHook: return "Running the post-create hook…"
     case .preDeleteHook: return "Running the pre-delete hook…"
-    case .removingWorktree: return "Running git worktree remove…"
+    case .removingWorktree: return "Moving the worktree to the Trash…"
     case .postDeleteHook: return "Running the post-delete hook…"
     case .deletingBranch: return "Deleting the branch…"
     }
@@ -85,7 +100,7 @@ public struct WorktreeOperation: Equatable, Sendable {
     case .postCreateHook: return "The first terminal opens here when it finishes."
     case .preDeleteHook: return "The worktree stays if the hook refuses."
     case .removingWorktree, .postDeleteHook, .deletingBranch:
-      return "Its terminals close when it is gone."
+      return "Its terminals close when it is gone; the directory is in the Trash."
     }
   }
 }

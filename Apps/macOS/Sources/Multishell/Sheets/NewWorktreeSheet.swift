@@ -72,8 +72,14 @@ struct NewWorktreeSheet: View {
             .lineLimit(1)
         }
         Spacer()
-        Button("Cancel", role: .cancel) { dismiss() }
-          .keyboardShortcut(.cancelAction)
+        // While a create runs, Cancel stops its pre-create hook and the
+        // sheet closes when the create returns; nothing is created. Once
+        // git itself is running there is nothing to stop, so no button.
+        Button("Cancel", role: .cancel) {
+          if draft.isCreating { model.cancelWorktreeCreation() } else { dismiss() }
+        }
+        .keyboardShortcut(.cancelAction)
+        .disabled(draft.isCreating && model.worktreeCreationStep != .preCreateHook)
         Button("Create Worktree", action: create)
           .keyboardShortcut(.defaultAction)
           .disabled(!draft.canCreate(checkedOut: checkedOut))
@@ -180,7 +186,7 @@ struct NewWorktreeSheet: View {
   /// image; an emoji rides along as text.
   @ViewBuilder
   private func pickerLabel(_ project: Project, text: String) -> some View {
-    switch ProjectIcon.kind(of: project.settings.iconGlyph) {
+    switch ProjectIcon.kind(of: model.effectiveSettings(for: project).iconGlyph) {
     case .emoji(let emoji): Text("\(emoji)  \(text)")
     case .symbol(let name): Label(text, systemImage: name)
     case .folder: Label(text, systemImage: "folder")
@@ -190,7 +196,7 @@ struct NewWorktreeSheet: View {
   /// The project's effective prefix, shown as fixed text so the user types
   /// only the part that varies and sees the full name they will get.
   private var prefix: String {
-    project.map { model.workspace.worktreeSettings(for: $0).branchPrefix } ?? ""
+    project.map { model.worktreeSettings(for: $0).branchPrefix } ?? ""
   }
 
   private var plannedPath: String {

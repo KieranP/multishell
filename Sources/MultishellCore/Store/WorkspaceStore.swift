@@ -345,4 +345,9 @@ extension WorkspaceStore {
   public func setDeletesBranchWithWorktree(_ enabled: Bool) {
     workspace.deletesBranchWithWorktree = enabled
   }
+
+  /// Negative reads as no limit, like zero.
+  public func setHookTimeoutSeconds(_ seconds: Int) {
+    workspace.hookTimeoutSeconds = max(0, seconds)
+  }
 }

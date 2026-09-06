@@ -1,35 +1,43 @@
 import MultishellGitKit
+import MultishellProcess
 
 /// How a failed stage of a worktree removal is shown, decided apart from the
-/// model so the four cases are tested.
+/// model so the cases are tested.
 ///
 /// A pre-delete veto leaves the worktree and its terminals in place, so the
-/// pane says why until dismissed. Everything else is an alert: git's own
-/// refusal keeps the worktree and offers the forced form; a post-delete
-/// hook or a branch that would not go leaves the worktree gone and, when the
-/// branch was to be deleted, says it was kept.
+/// pane says why until dismissed; so does a pre-delete hook that ran past
+/// the timeout. A pre-delete hook the user stopped is not a failure at all:
+/// the worktree stays and nothing is said. Everything else is an alert: a
+/// directory that could be neither trashed nor deleted, or git failing to
+/// unlock or prune, keeps the worktree; a post-delete hook that failed, timed out or was stopped, or a
+/// branch that would not go, leaves the worktree gone and, when the branch
+/// was to be deleted, says it was kept.
 public enum RemovalFailure: Equatable, Sendable {
   public enum Retry: Equatable, Sendable {
-    case removeAnyway
     case deleteBranchAnyway(String)
   }
 
   /// The worktree stays; the pane shows this until the user dismisses it.
-  case vetoed(String)
+  case vetoed(message: String, timedOut: Bool)
+  /// The user stopped the pre-delete hook. The worktree stays, quietly.
+  case stopped
   /// An alert. `worktreeRemoved` says whether the sidebar still has the
   /// worktree, which decides whether the model refreshes or restores it.
   case alert(title: String, message: String, retry: Retry?, worktreeRemoved: Bool)
 
   /// `branch` is the worktree's branch when the removal was to delete it,
-  /// `nil` otherwise. `force` is whether git was already asked forcibly.
+  /// `nil` otherwise.
   public static func describe(
-    _ error: any Error, deletingBranch branch: String?, force: Bool
+    _ error: any Error, deletingBranch branch: String?
   )
     -> RemovalFailure
   {
     switch error {
+    case let failure as HookFailure
+    where !failure.stage.operationHappened && failure.stop == .stopped:
+      return .stopped
     case let failure as HookFailure where !failure.stage.operationHappened:
-      return .vetoed(PresentedError(failure).message)
+      return .vetoed(message: PresentedError(failure).message, timedOut: failure.stop != nil)
     case let failure as HookFailure:
       // The branch is deleted after the post hook, so a hook that failed
       // kept it; the alert has to say so, or the user believes it went.
@@ -46,12 +54,11 @@ public enum RemovalFailure: Equatable, Sendable {
         title: presented.title, message: presented.message,
         retry: .deleteBranchAnyway(failure.branch), worktreeRemoved: true)
     default:
-      // git refuses dirty or locked worktrees. Offer the force form rather
-      // than leaving the user to find a terminal.
+      // The Trash refused, or git could not unlock or prune. Nothing moved
+      // or was pruned, so the worktree and its terminals come back.
       let presented = PresentedError(error)
       return .alert(
-        title: presented.title, message: presented.message,
-        retry: force ? nil : .removeAnyway, worktreeRemoved: false)
+        title: presented.title, message: presented.message, retry: nil, worktreeRemoved: false)
     }
   }
 }

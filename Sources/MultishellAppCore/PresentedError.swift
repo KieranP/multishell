@@ -23,18 +23,28 @@ public struct PresentedError: Identifiable {
     switch error {
     case let failure as HookFailure:
       // A pre hook's failure stopped the operation; a post hook's came after
-      // it succeeded. The title has to say which.
+      // it succeeded. The title has to say which, and whether the hook
+      // failed on its own or was ended from here.
+      let ending =
+        switch failure.stop {
+        case .none: "failed"
+        case .timedOut: "did not finish"
+        case .stopped: "was stopped"
+        }
       title =
         switch failure.stage {
-        case .preCreate: "Worktree not created: its pre-create hook failed"
-        case .postCreate: "Worktree created, but its hook failed"
-        case .preDelete: "Worktree not removed: its pre-delete hook failed"
-        case .postDelete: "Worktree removed, but its hook failed"
+        case .preCreate: "Worktree not created: its pre-create hook \(ending)"
+        case .postCreate: "Worktree created, but its hook \(ending)"
+        case .preDelete: "Worktree not removed: its pre-delete hook \(ending)"
+        case .postDelete: "Worktree removed, but its hook \(ending)"
         }
       message = Self.describe(failure.underlying)
     case let failure as BranchDeletionFailure:
       title = "Worktree removed, but branch \(failure.branch) was not deleted"
       message = Self.describe(failure.underlying)
+    case let failure as TrashFailure:
+      title = "Worktree not removed: the directory could not be moved to the Trash or deleted"
+      message = "\(failure.path.path)\n\n\(Self.describe(failure.underlying))"
     case let failure as ProcessFailure where failure.message.contains("invalid reference: HEAD"):
       // An unborn HEAD: the repository has never been committed to.
       title = "This repository has no commits yet"
@@ -65,13 +75,24 @@ public struct PresentedError: Identifiable {
   /// A hook's own words where it had any, its stdout and stderr with the
   /// shell's startup noise cut away, then the exit status on its own line:
   /// a hook that only echoes before it fails has nothing else to say about
-  /// why. Never the command line it ran as.
+  /// why. Never the command line it ran as. A hook ended from here gets the
+  /// reason in place of the status, which is only the signal's.
   private static func describe(_ error: any Error) -> String {
     if let failure = error as? ProcessFailure {
+      let ending =
+        switch failure.stop {
+        case .none: "Exited with status \(failure.status)"
+        case .timedOut(let after): "Stopped after \(Self.seconds(after)), the hook timeout"
+        case .stopped: "Stopped by you"
+        }
       return failure.message.isEmpty
-        ? "Exited with status \(failure.status) and printed nothing."
-        : "\(failure.message)\n\nExited with status \(failure.status)."
+        ? "\(ending) and printed nothing." : "\(failure.message)\n\n\(ending)."
     }
     return String(describing: error)
+  }
+
+  private static func seconds(_ duration: Duration) -> String {
+    let whole = duration.components.seconds
+    return whole == 1 ? "1 second" : "\(whole) seconds"
   }
 }

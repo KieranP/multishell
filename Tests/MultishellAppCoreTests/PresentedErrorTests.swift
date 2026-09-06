@@ -85,7 +85,7 @@ struct PresentedErrorTests {
   @Test func retryIsAbsentUnlessAdded() {
     var presented = PresentedError(GitUnavailable())
     #expect(presented.retryLabel == nil && presented.retry == nil)
-    presented.retryLabel = "Remove Anyway"
-    #expect(presented.retryLabel == "Remove Anyway")
+    presented.retryLabel = "Delete Branch Anyway"
+    #expect(presented.retryLabel == "Delete Branch Anyway")
   }
 }

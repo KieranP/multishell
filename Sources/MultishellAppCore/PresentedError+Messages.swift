@@ -7,7 +7,9 @@ extension PresentedError {
   public static func notARepository(_ url: URL) -> PresentedError {
     PresentedError(
       title: "Not a git repository",
-      message: "\(url.lastPathComponent) has no .git directory, or git could not read it.")
+      message:
+        "\(url.lastPathComponent) is not inside a repository and is not a bare one, or git could not read it."
+    )
   }
 
   /// A shell spawned in a missing directory silently lands in $HOME, which

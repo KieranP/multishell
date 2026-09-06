@@ -1,54 +1,79 @@
-# Multishell
+<p align="center">
+  <img src="Apps/macOS/Resources/icon-256.png" width="128" alt="Multishell icon">
+</p>
 
-<img src="Apps/macOS/Resources/icon-256.png" width="128" alt="Multishell icon" align="right">
+<h1 align="center">Multishell</h1>
 
-A native terminal workspace for people who work in many git worktrees at
-once. Projects on the left, their worktrees under them, and terminal tabs
-(with splits) for whichever worktree is selected. Terminals keep running while
-you look at other worktrees.
+<p align="center">
+  A native macOS terminal workspace for people who work in many git worktrees at once,<br>
+  built for running coding agents side by side.
+</p>
 
-macOS now. The core is portable and CI builds it on Linux.
+<p align="center">
+  Projects on the left, their worktrees under them, terminal tabs and splits for the one you have selected.<br>
+  Every terminal keeps running while you look at another worktree, and a dot on each tab and row says what it is doing.
+</p>
 
-![Multishell with a project sidebar, a selected worktree, and split terminals](docs/screenshot.png)
+<p align="center">
+  <img src="docs/screenshot-light.png" width="49%" alt="Multishell in light mode: a project sidebar, a selected worktree, and a Claude Code tab split above a shell">
+  <img src="docs/screenshot-dark.png" width="49%" alt="The same workspace in dark mode">
+</p>
 
-## Quick start
+## Install
 
-    sudo xcode-select -s /Applications/Xcode.app   # once, if only CLT is active
-    make run          # or: make install, then open it from /Applications
+Requires macOS with Xcode 26 and `git` on your `PATH`.
 
-Add a repository with the folder button at the top of the sidebar (Cmd+O).
-Right-click a project for its settings; Cmd+, for app settings. The menu at
-the right of the header acts on the selected worktree: open it in your
-editor, reveal it, copy its path or branch, open a tab, remove it.
+    git clone https://github.com/KieranP/multishell.git
+    cd multishell
+    sudo xcode-select -s /Applications/Xcode.app   # once, if only the command line tools are active
+    make install                                    # release build into /Applications
 
-Each project can pick its icon, its shell, where its worktrees go and how
-their branches are named, and run scripts before and after a worktree is
-created or removed, in that shell; a pre hook that exits non-zero stops the
-operation.
+`make run` builds and opens a debug copy that keeps its own state, so it
+sits beside an installed one. The first build downloads libghostty, about
+80 MB. Then add a repository with the folder button at the top of the
+sidebar, or Cmd+O.
 
-Running coding agents in tabs is the point. Settings > Agents picks the
-preferred agent, per project too, so Cmd+Option+T opens a tab running it, or
-every new tab does with auto-start on. When Claude Code is installed the same
-tab can add its hooks to `~/.claude/settings.json`. After that the tab and
-sidebar dots say what each terminal is doing: grey nothing running, yellow
-working, blue waiting for input, green done, red failed, with an optional
-system notification for a tab you are not looking at. Plain commands in zsh
-and bash report the same with no setup, and any other tool can through the
-bundled `multishell state` command.
+**Claude Code hooks.** For the state dots to follow Claude Code, it has to
+report through its hooks. Open Settings > Agents and click "Add to
+~/.claude/settings.json"; Multishell appends one entry of its own per event,
+leaves the rest of the file as it is, and keeps a copy beside it the first
+time. Remove takes only its own entries out again. Plain shell commands
+report without this step.
 
-## Read next
+To work on it, start with [DEVELOP.md](DEVELOP.md) for the build, the tests
+and the rules CI enforces, and [DESIGN.md](DESIGN.md) for why things are the
+way they are.
 
-- [DEVELOP.md](DEVELOP.md): building, testing, where things live, how to add
-  a platform or an engine.
-- [DESIGN.md](DESIGN.md): the decisions behind the shape of the code and the
-  behaviour of the app, and why.
+## Features
+
+- Projects in a sidebar, every git worktree under them, terminal tabs and
+  splits per worktree. Terminals keep running while you look elsewhere.
+- Create a worktree and its branch in one step, where the project says.
+  Removing one moves it to the Trash, so a wrong click is recoverable.
+- A state dot on every tab and worktree: working, waiting for input, done,
+  failed. Claude Code reports through its hooks; zsh and bash report plain
+  commands with no setup; any tool can through `multishell state`.
+- Pick a preferred agent and open it in a tab with one shortcut, or have
+  every new tab start it.
+- Optional notifications when a tab you are not looking at needs you.
+- Dirty-file badges and ahead/behind counts, from a `git status` that never
+  takes the index lock.
+- Pre- and post-create and delete hooks per project, run through your own
+  shell, with a timeout and a Stop button.
+- A `.multishell.json` a repository can commit with its path, prefix, hooks
+  and icon. Hooks from someone else's run only after you have said yes.
+- Bare clones with worktrees beside them work as projects.
+- Ghostty or SwiftTerm as the terminal, themes as plain JSON that colour the
+  whole window, a font picker, Open in Editor.
+- Nothing written to your shell's rc files, and state that survives an
+  older or newer build.
 
 ## Status
 
-Early and unshipped. Nothing is signed or notarised, and only macOS has a
-GUI.
-
-## How it was written
+Early and unshipped. Nothing is signed or notarised, and the release bundle
+runs only on the machine that built it until the libghostty resource lookup
+is fixed (see Known gaps in DEVELOP.md). Only macOS has a GUI; the core
+builds and tests on Linux in CI.
 
 Every line of code in this repository was written by an AI (Claude), under
 direction from a human who set the requirements, reviewed the results in the

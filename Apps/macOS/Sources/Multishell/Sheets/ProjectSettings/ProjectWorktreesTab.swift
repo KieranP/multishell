@@ -8,7 +8,8 @@ struct ProjectWorktreesTab: View {
   var body: some View {
     let defaults = model.workspace.worktreeDefaults
     let settings = model.workspace.project(project.id)?.settings ?? project.settings
-    let effective = settings.effective(defaults: defaults)
+    let effective = model.worktreeSettings(for: model.workspace.project(project.id) ?? project)
+    let shared = model.sharedSettings[project.id]
 
     Form {
       Section {
@@ -17,9 +18,16 @@ struct ProjectWorktreesTab: View {
           info:
             "Where this project's worktrees are created. {project} is the repository folder name, ~ is home. Relative paths start at the repository.",
           isOn: overrides(\.worktreeDirectory, default: defaults.worktreeDirectory))
-        TextField("Path:", text: text(\.worktreeDirectory, fallback: defaults.worktreeDirectory))
-          .disabled(settings.worktreeDirectory == nil)
-        SettingsCaption("Resolves to \(effective.worktreeContainer(for: project).path)")
+        TextField(
+          "Path:",
+          text: text(
+            \.worktreeDirectory, fallback: shared?.worktreeDirectory ?? defaults.worktreeDirectory)
+        )
+        .disabled(settings.worktreeDirectory == nil)
+        SettingsCaption(
+          "Resolves to \(effective.worktreeContainer(for: project).path)"
+            + (settings.worktreeDirectory == nil && shared?.worktreeDirectory != nil
+              ? ", from \(SharedProjectSettings.fileName)." : "."))
       }
 
       Section {
@@ -29,13 +37,15 @@ struct ProjectWorktreesTab: View {
             "Prepended to branch names typed in the new-worktree sheet for this project. Turn the override on and leave it blank to use no prefix while the global has one.",
           isOn: overrides(\.branchPrefix, default: defaults.branchPrefix))
         TextField(
-          "Prefix:", text: text(\.branchPrefix, fallback: defaults.branchPrefix),
+          "Prefix:",
+          text: text(\.branchPrefix, fallback: shared?.branchPrefix ?? defaults.branchPrefix),
           prompt: Text("none")
         )
         .disabled(settings.branchPrefix == nil)
         SettingsCaption(
           "Typing tabs creates \(effective.qualifiedBranch("tabs")) at \(effective.worktreePath(forBranch: effective.qualifiedBranch("tabs"), in: project).path)"
-        )
+            + (settings.branchPrefix == nil && shared?.branchPrefix != nil
+              ? " The prefix comes from \(SharedProjectSettings.fileName)." : ""))
       }
     }
     .formStyle(.grouped)

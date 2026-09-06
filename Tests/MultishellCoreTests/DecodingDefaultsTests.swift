@@ -322,3 +322,43 @@ struct LossyDecodingTests {
     #expect(try JSONDecoder().decode(Workspace.self, from: json) == workspace)
   }
 }
+
+/// The fields added for bare repositories, the hook timeout and the shared
+/// settings file.
+@Suite
+struct NewerFieldDefaultsTests {
+  private func decode<T: Decodable>(_ type: T.Type, _ json: String) throws -> T {
+    try JSONDecoder().decode(type, from: Data(json.utf8))
+  }
+
+  @Test func aWorktreeWithoutTheBareFlagIsNotBare() throws {
+    let worktree = try decode(
+      Worktree.self, #"{ "path": "file:///repos/demo/", "projectID": "/repos/demo" }"#)
+    #expect(!worktree.isBare)
+    let bare = try decode(
+      Worktree.self,
+      #"{ "path": "file:///repos/demo.git/", "projectID": "/repos/demo.git", "isBare": true }"#)
+    #expect(bare.isBare && !bare.isDetached)
+    #expect(bare.name == "demo.git", "a bare entry has no branch and no HEAD to name it by")
+  }
+
+  @Test func aWorkspaceWithoutAHookTimeoutGetsAMinute() throws {
+    let workspace = try decode(Workspace.self, #"{ "projects": [] }"#)
+    #expect(workspace.hookTimeoutSeconds == 60)
+    #expect(workspace.hookTimeout == .seconds(60))
+    let unlimited = try decode(Workspace.self, #"{ "hookTimeoutSeconds": 0 }"#)
+    #expect(unlimited.hookTimeout == nil)
+  }
+
+  @Test func projectSettingsWithoutADecisionHaveNoneAndABrokenOneCostsOnlyItself() throws {
+    #expect(try decode(ProjectSettings.self, "{}").sharedHooks == nil)
+    let decided = try decode(
+      ProjectSettings.self,
+      #"{ "sharedHooks": { "hooks": "post-create:\nnpm ci", "trusted": true } }"#)
+    #expect(
+      decided.sharedHooks == SharedHooksDecision(hooks: "post-create:\nnpm ci", trusted: true))
+    let broken = try decode(
+      ProjectSettings.self, #"{ "sharedHooks": "yes", "branchPrefix": "k/" }"#)
+    #expect(broken.sharedHooks == nil && broken.branchPrefix == "k/")
+  }
+}

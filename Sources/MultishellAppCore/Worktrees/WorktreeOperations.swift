@@ -43,12 +43,12 @@ public struct WorktreeOperations: Equatable, Sendable {
   /// one running; returns whether it was.
   @discardableResult
   public mutating func fail(
-    _ step: WorktreeOperation.Step, on id: Worktree.ID, message: String
+    _ step: WorktreeOperation.Step, on id: Worktree.ID, message: String, timedOut: Bool = false
   )
     -> Bool
   {
     guard owns(step, id) else { return false }
-    operations[id] = WorktreeOperation(step, failure: message)
+    operations[id] = WorktreeOperation(step, failure: message, timedOut: timedOut)
     return true
   }
 

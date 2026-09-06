@@ -4,6 +4,18 @@ public struct ProcessOutput: Sendable {
   public let standardOutput: String
   public let standardError: String
   public let status: Int32
+  /// Set when this side ended the child: the timeout ran out, or the
+  /// caller's `ProcessStopper` was used. `status` is then the signal's.
+  public let stop: ProcessStop?
+
+  public init(
+    standardOutput: String, standardError: String, status: Int32, stop: ProcessStop? = nil
+  ) {
+    self.standardOutput = standardOutput
+    self.standardError = standardError
+    self.status = status
+    self.stop = stop
+  }
 
   public var succeeded: Bool { status == 0 }
 }
@@ -13,12 +25,18 @@ public struct ProcessFailure: Error, CustomStringConvertible {
   public let arguments: [String]
   public let status: Int32
   public let message: String
+  /// Why the child did not finish on its own, when it did not.
+  public let stop: ProcessStop?
 
-  public init(executable: String, arguments: [String], status: Int32, message: String) {
+  public init(
+    executable: String, arguments: [String], status: Int32, message: String,
+    stop: ProcessStop? = nil
+  ) {
     self.executable = executable
     self.arguments = arguments
     self.status = status
     self.message = message
+    self.stop = stop
   }
 
   public var description: String {
@@ -36,34 +54,41 @@ public struct ProcessRunner: Sendable {
     _ arguments: [String],
     in directory: URL,
     environment: [String: String] = [:],
-    timeout: Duration? = nil
+    timeout: Duration? = nil,
+    stopper: ProcessStopper? = nil
   ) async throws -> String {
     let output = try await capture(
-      executable, arguments, in: directory, environment: environment, timeout: timeout)
+      executable, arguments, in: directory, environment: environment, timeout: timeout,
+      stopper: stopper)
     guard output.succeeded else {
       throw ProcessFailure(
         executable: executable.lastPathComponent,
         arguments: arguments,
         status: output.status,
-        message: output.standardError.trimmingCharacters(in: .whitespacesAndNewlines)
+        message: output.standardError.trimmingCharacters(in: .whitespacesAndNewlines),
+        stop: output.stop
       )
     }
     return output.standardOutput
   }
 
   /// Returns the exit status instead of throwing. A child still running at
-  /// `timeout` is sent SIGTERM and reported with whatever status that gives.
+  /// `timeout`, or when `stopper.stop()` is called, is ended the way
+  /// `ProcessStopper` does it and reported with `stop` set.
   public func capture(
     _ executable: URL,
     _ arguments: [String],
     in directory: URL,
     environment: [String: String] = [:],
-    timeout: Duration? = nil
+    timeout: Duration? = nil,
+    stopper: ProcessStopper? = nil
   ) async throws -> ProcessOutput {
     try await withCheckedThrowingContinuation { continuation in
       do {
-        try launch(executable, arguments, in: directory, environment: environment, timeout: timeout)
-        { output in
+        try launch(
+          executable, arguments, in: directory, environment: environment, timeout: timeout,
+          stopper: stopper ?? ProcessStopper()
+        ) { output in
           continuation.resume(returning: output)
         }
       } catch {
@@ -89,6 +114,7 @@ private func launch(
   in directory: URL,
   environment: [String: String],
   timeout: Duration?,
+  stopper: ProcessStopper,
   completion: @escaping @Sendable (ProcessOutput) -> Void
 ) throws {
   let process = Process()
@@ -147,12 +173,13 @@ private func launch(
   try? outPipe.writing.close()
   try? errPipe.writing.close()
 
+  stopper.attach(process)
   if let timeout {
     let seconds =
       Double(timeout.components.seconds)
       + Double(timeout.components.attoseconds) / 1e18
     DispatchQueue.global().asyncAfter(deadline: .now() + seconds) {
-      if process.isRunning { process.terminate() }
+      if process.isRunning { stopper.stop(.timedOut(after: timeout)) }
     }
   }
 
@@ -161,7 +188,8 @@ private func launch(
       ProcessOutput(
         standardOutput: String(decoding: out.data, as: UTF8.self),
         standardError: String(decoding: err.data, as: UTF8.self),
-        status: process.terminationStatus
+        status: process.terminationStatus,
+        stop: stopper.reason
       ))
   }
 }

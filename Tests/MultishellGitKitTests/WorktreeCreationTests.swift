@@ -152,7 +152,7 @@ struct WorktreeCreationTests {
     #expect(!FileManager.default.fileExists(atPath: worktree.path.path))
   }
 
-  @Test func aDirtyWorktreeNeedsForceToBeRemoved() async throws {
+  @Test func aDirtyWorktreeIsHandedToTheTrashNotRefused() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
     let path = try await repo.coordinator.create(
@@ -161,14 +161,19 @@ struct WorktreeCreationTests {
       to: path.appendingPathComponent("work.txt"), atomically: true, encoding: .utf8)
     let worktree = try #require(
       try await repo.coordinator.refresh(repo.project).first { $0.branch == "dirty" })
+    let bin = repo.root.appendingPathComponent("bin", isDirectory: true)
 
-    await #expect(throws: ProcessFailure.self) {
-      try await repo.coordinator.remove(worktree, in: repo.project)
-    }
-    #expect(FileManager.default.fileExists(atPath: path.path), "refused, so still there")
+    try await repo.coordinator.remove(
+      worktree, in: repo.project,
+      trash: { url in
+        try FileManager.default.createDirectory(at: bin, withIntermediateDirectories: true)
+        try FileManager.default.moveItem(at: url, to: bin.appendingPathComponent("dirty"))
+      })
 
-    try await repo.coordinator.remove(worktree, force: true, in: repo.project)
     #expect(!FileManager.default.fileExists(atPath: path.path))
+    #expect(
+      FileManager.default.fileExists(atPath: bin.appendingPathComponent("dirty/work.txt").path))
+    #expect(try await repo.coordinator.refresh(repo.project).count == 1)
   }
 
   @Test func theListReflectsCreateAndRemove() async throws {

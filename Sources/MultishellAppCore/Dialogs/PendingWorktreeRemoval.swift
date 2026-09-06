@@ -61,10 +61,10 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
         worktree: worktree, branch: branchIsOpen ? .asks : .decided(deletes: deletes)))
   }
 
-  /// Names the path, says what happens to the branch, then whatever the
-  /// status badge and live-shell count know.
+  /// Names the path and where it goes, says what happens to the branch,
+  /// then whatever the status badge and live-shell count know.
   public func message(warning: String?) -> String {
-    var notes = ["Runs git worktree remove on \(worktree.path.path)."]
+    var notes = ["Moves \(worktree.path.path) to the Trash and prunes it from git."]
     if let name = worktree.branch {
       switch branch {
       case .asks: notes.append("The branch \(name) is kept unless you remove it too.")
@@ -77,12 +77,14 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
   }
 
   /// What the confirmation warns about beyond the removal itself: the
-  /// uncommitted files the status badge counted and the shells still
-  /// running there. `nil` when there is nothing to add.
+  /// uncommitted files the status badge counted, which go to the Trash with
+  /// the directory, and the shells still running there. `nil` when there is
+  /// nothing to add.
   public static func warning(changedFiles: Int, liveTerminals: Int) -> String? {
     var notes: [String] = []
     if changedFiles > 0 {
-      notes.append("It has \(Wording.count(changedFiles, "changed file")) that will be lost.")
+      let files = Wording.count(changedFiles, "changed file")
+      notes.append("It has \(files), kept in the Trash with the directory.")
     }
     if liveTerminals > 0 {
       notes.append("\(Wording.count(liveTerminals, "open terminal")) will be closed.")

@@ -13,9 +13,10 @@ struct DetailView: View {
         if let operation = model.worktreeOperations[worktree.id] {
           // In place of the terminals: a create has none yet, and a
           // remove is about to close them.
-          WorktreeOperationView(operation: operation, theme: theme) {
-            model.dismissOperationFailure(of: worktree)
-          }
+          WorktreeOperationView(
+            operation: operation, theme: theme,
+            stopHook: { model.stopHook(of: worktree) },
+            dismiss: { model.dismissOperationFailure(of: worktree) })
         } else if let tab = model.workspace.activeTab(in: worktree.id) {
           TabBar(
             model: model,
@@ -54,7 +55,8 @@ struct DetailView: View {
     return HStack(spacing: 6) {
       if let project {
         ProjectIconView(
-          settings: project.settings, isMissing: model.missingProjects.contains(project.id),
+          settings: model.effectiveSettings(for: project),
+          isMissing: model.missingProjects.contains(project.id),
           theme: theme, size: model.metrics.icon)
       }
       Text(project?.name ?? "")
@@ -101,5 +103,6 @@ struct DetailView: View {
     .fixedSize()
     .foregroundStyle(theme.textSecondary)
     .help("Worktree actions")
+    .accessibilityLabel("Worktree actions")
   }
 }

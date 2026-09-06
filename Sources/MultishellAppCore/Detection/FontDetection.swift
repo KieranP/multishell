@@ -1,0 +1,44 @@
+import Foundation
+
+/// The font families the terminal picker offers, from the list the platform
+/// hands over: the system monospace face first, then the monospaced
+/// families, then every other family after a divider, since some
+/// programming fonts are not marked fixed-pitch and would otherwise be
+/// missing. A stored name the machine no longer has is listed marked as
+/// such, so the picker never shows blank; see `DetectionOption`.
+public struct FontDetection: Equatable, Sendable {
+  /// The id of the "System monospace" entry, the `nil` font name.
+  public static let systemID = ""
+  /// A row in the options that is not a font: the picker draws a divider.
+  public static let dividerID = "\u{0}divider"
+
+  public let monospaced: [String]
+  public let others: [String]
+
+  public static let empty = FontDetection(monospaced: [], others: [])
+
+  public init(monospaced: [String], others: [String]) {
+    self.monospaced = monospaced.sorted {
+      $0.localizedCaseInsensitiveCompare($1) == .orderedAscending
+    }
+    self.others = others.sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+  }
+
+  public func isInstalled(_ family: String) -> Bool {
+    family == Self.systemID || monospaced.contains(family) || others.contains(family)
+  }
+
+  public func options(selected: String?) -> [DetectionOption] {
+    var options = [DetectionOption(id: Self.systemID, label: "System monospace", isInstalled: true)]
+    options += monospaced.map { DetectionOption(id: $0, label: $0, isInstalled: true) }
+    if let selected, !selected.isEmpty, !isInstalled(selected) {
+      options.append(
+        DetectionOption(id: selected, label: "\(selected) (not installed)", isInstalled: false))
+    }
+    if !others.isEmpty {
+      options.append(DetectionOption(id: Self.dividerID, label: "", isInstalled: true))
+      options += others.map { DetectionOption(id: $0, label: $0, isInstalled: true) }
+    }
+    return options
+  }
+}

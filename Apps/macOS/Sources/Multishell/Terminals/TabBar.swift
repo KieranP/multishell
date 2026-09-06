@@ -1,3 +1,4 @@
+import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
@@ -36,6 +37,7 @@ struct TabBar: View {
       }
       .buttonStyle(.plain)
       .help("New Tab (⌘T)")
+      .accessibilityLabel("New Tab")
 
       Spacer(minLength: 0)
     }
@@ -61,6 +63,7 @@ struct TabBar: View {
         }
         .buttonStyle(.plain)
         .help("\(state.displayName). Click to clear.")
+        .accessibilityLabel("\(state.displayName). Clear status")
       } else {
         Image(systemName: tab.isSplit ? "rectangle.split.2x1" : "apple.terminal")
           .font(.system(size: model.metrics.icon))
@@ -90,6 +93,7 @@ struct TabBar: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(theme.textSecondary)
+        .accessibilityLabel("Close Tab")
       }
     }
     .padding(.horizontal, 10)
@@ -104,6 +108,16 @@ struct TabBar: View {
     // and tab switching should not lag by that timeout.
     .onTapGesture { model.activate(tab) }
     .simultaneousGesture(TapGesture(count: 2).onEnded { beginEditing(tab) })
+    // The buttons inside keep their own labels; the row's label describes
+    // the tab. `.contain` rather than `.combine`, which would read the
+    // close button's label into the tab's.
+    .accessibilityElement(children: .contain)
+    .accessibilityLabel(
+      AccessibilityText.tab(
+        title: model.title(of: tab), isActive: isActive, isSplit: tab.isSplit, state: state)
+    )
+    .accessibilityAddTraits(isActive ? [.isButton, .isSelected] : .isButton)
+    .accessibilityAction(named: "Rename") { beginEditing(tab) }
     .contextMenu {
       Button("Rename…") { beginEditing(tab) }
       if tab.customTitle != nil {

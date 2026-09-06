@@ -24,7 +24,8 @@ public enum WorktreeListParser {
           head: fields["HEAD"] ?? "",
           branch: fields["branch"].map(shortBranchName),
           isPrimary: worktrees.isEmpty,
-          isLocked: fields["locked"] != nil
+          isLocked: fields["locked"] != nil,
+          isBare: fields["bare"] != nil
         )
       )
     }

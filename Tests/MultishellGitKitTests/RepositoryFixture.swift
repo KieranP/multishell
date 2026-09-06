@@ -23,6 +23,21 @@ struct RepositoryFixture {
     return fixture
   }
 
+  /// The layout this app's audience favours: a bare clone with its worktrees
+  /// beside it. `project` is the bare repository, as `git worktree list`
+  /// puts it first; `checkout` is a linked worktree of `main`.
+  static func makeBare() async throws -> (fixture: RepositoryFixture, checkout: URL) {
+    let source = try await make()
+    let bare = source.root.appendingPathComponent("repo.git", isDirectory: true)
+    _ = try await source.git.run(
+      ["clone", "-q", "--bare", source.project.path.path, bare.path], in: source.root)
+    let checkout = source.root.appendingPathComponent("main", isDirectory: true)
+    _ = try await source.git.run(["worktree", "add", "-q", checkout.path, "main"], in: bare)
+    return (
+      RepositoryFixture(git: source.git, root: source.root, project: Project(path: bare)), checkout
+    )
+  }
+
   func commit(_ message: String, file: String, content: String) async throws {
     try content.write(
       to: project.path.appendingPathComponent(file), atomically: true, encoding: .utf8)
@@ -47,5 +62,18 @@ struct RepositoryFixture {
 
   func tearDown() {
     try? FileManager.default.removeItem(at: root)
+  }
+}
+
+extension WorktreeCoordinator {
+  /// The removal with the directory unlinked in place of a Trash, for tests
+  /// about the git side of it.
+  func remove(
+    _ worktree: Worktree, deletingBranch: Bool = false, in project: Project,
+    shellPath: String? = nil, onStep: (@Sendable (WorktreeRemovalStep) -> Void)? = nil
+  ) async throws {
+    try await remove(
+      worktree, deletingBranch: deletingBranch, in: project, shellPath: shellPath,
+      trash: { try FileManager.default.removeItem(at: $0) }, onStep: onStep)
   }
 }

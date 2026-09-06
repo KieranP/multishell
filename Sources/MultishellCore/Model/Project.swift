@@ -13,7 +13,19 @@ public struct Project: Identifiable, Codable, Hashable, Sendable {
   public var settings: ProjectSettings
 
   public var id: String { path.path }
-  public var name: String { path.lastPathComponent }
+
+  /// The folder name, less a bare repository's `.git` suffix. A bare
+  /// repository kept hidden beside its worktrees (`proj/.bare`, `proj/.git`)
+  /// takes the name of the folder holding it, which is what that layout is
+  /// known by.
+  public var name: String {
+    let folder = path.lastPathComponent
+    let base = folder.hasSuffix(".git") ? String(folder.dropLast(4)) : folder
+    if base.isEmpty || base.hasPrefix(".") {
+      return path.deletingLastPathComponent().lastPathComponent
+    }
+    return base
+  }
 
   public init(path: URL, isExpanded: Bool = true, settings: ProjectSettings = ProjectSettings()) {
     self.path = Self.directory(path)

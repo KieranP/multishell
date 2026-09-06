@@ -13,10 +13,7 @@ struct WorktreeRow: View {
   let theme: Theme
   let metrics: UIMetrics
 
-  private var kind: String {
-    if worktree.isDetached { return "Detached at \(worktree.head.prefix(7))" }
-    return worktree.isPrimary ? "Main worktree" : "Linked worktree"
-  }
+  private var kind: String { AccessibilityText.kind(of: worktree) }
 
   var body: some View {
     HStack(spacing: 7) {
@@ -88,6 +85,13 @@ struct WorktreeRow: View {
       }
     }
     .contentShape(.rect)
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel(
+      AccessibilityText.worktree(
+        worktree, state: state, status: status, operation: operation, terminalCount: terminalCount,
+        isSelected: isSelected)
+    )
+    .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
   }
 
   /// A dot in the theme's yellow while files are changed, with the count;

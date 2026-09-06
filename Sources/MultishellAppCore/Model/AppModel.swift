@@ -30,6 +30,19 @@ public final class AppModel<Surface> {
   public var worktreeOperations = WorktreeOperations()
   /// The post-create hooks still running, so a test can await one.
   @ObservationIgnored public var postCreateHooks: [Worktree.ID: Task<Void, Never>] = [:]
+  /// The stop handle for the hook running on each worktree, behind the
+  /// pane's Stop Hook.
+  @ObservationIgnored var hookStoppers: [Worktree.ID: ProcessStopper] = [:]
+  /// The stop handle for the pre-create hook under the sheet.
+  @ObservationIgnored var creationStopper: ProcessStopper?
+  /// What each project's `.multishell.json` says, re-read on every refresh.
+  /// Absent for a project without one.
+  public var sharedSettings: [Project.ID: SharedProjectSettings] = [:]
+  /// Why a project's `.multishell.json` could not be read, for its Hooks tab.
+  public var sharedSettingsProblems: [Project.ID: String] = [:]
+  /// The trust question about one project's shared hooks, waiting on its
+  /// dialog.
+  public var pendingSharedHooksTrust: PendingSharedHooksTrust?
   /// A project removal waiting on its dialog, in whichever window asked.
   public var pendingProjectRemoval: PendingProjectRemoval?
   /// A pane or tab close waiting on it, because an agent there is working.
