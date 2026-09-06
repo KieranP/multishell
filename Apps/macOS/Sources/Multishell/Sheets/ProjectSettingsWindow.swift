@@ -68,28 +68,22 @@ private struct GeneralTab: View {
               .foregroundStyle(.secondary)
               .lineLimit(1)
               .truncationMode(.head)
-            Button("Reveal") { model.revealInFinder(project.path) }
+            IconButton.reveal { model.revealInFinder(project.path) }
               .controlSize(.small)
           }
         }
         LabeledContent("Worktrees:") {
           HStack {
             Text("\(worktrees.count) discovered")
-            Button("Refresh") { Task { await model.refreshRequested(project) } }
-              .controlSize(.small)
+            IconButton.refresh(help: "Refresh from git") {
+              Task { await model.refreshRequested(project) }
+            }
+            .controlSize(.small)
           }
         }
       }
 
       ProjectIconSection(model: model, project: project)
-
-      Section {
-        InfoToggle(
-          "Ask before removing a worktree",
-          info:
-            "The confirmation also warns about uncommitted changes and open terminals in that worktree. Off is for people who remove worktrees all day.",
-          isOn: setting(\.confirmsWorktreeRemoval, of: project, in: model))
-      }
 
       Section {
         HStack(spacing: 8) {
@@ -130,7 +124,7 @@ private struct TerminalTab: View {
           detection: model.shellDetection,
           refresh: { Task { await model.refreshLoginEnvironment() } },
           info:
-            "The shells in /etc/shells and on the login shell's PATH. Refresh after installing one.",
+            "The shells in /etc/shells and on the login shell's PATH. Refresh after installing one. Custom path is the one typed in Settings > Terminal.",
           isEnabled: settings.defaultShell != nil
         )
       } footer: {
@@ -186,11 +180,10 @@ private struct ProjectIconSection: View {
             Text("\(emoji)  Emoji").tag(Self.emojiTag)
           }
           Divider()
-          ForEach(ProjectIcon.symbols.filter { $0 != "folder" }, id: \.self) { name in
+          ForEach(ProjectIcon.symbols.filter { $0 != "folder" }.sorted(), id: \.self) { name in
             Label(name, systemImage: name).tag(name)
           }
         }
-        ProjectIconView(settings: settings, isMissing: false, theme: model.currentTheme, size: 14)
       }
       InfoRow(
         "Emoji:",

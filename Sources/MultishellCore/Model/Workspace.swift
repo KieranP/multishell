@@ -25,9 +25,12 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// New Tab, and the first tab of a worktree, start the preferred agent
   /// rather than a plain shell. Projects may override it.
   public var autoStartAgent = false
-  /// Path of the shell new tabs run, or `nil` for `$SHELL`. Projects may
+  /// Path of the shell new tabs run, `ShellCatalogue.customID` for the path
+  /// typed in `customShellPath`, or `nil` for `$SHELL`. Projects may
   /// override it in `ProjectSettings`.
   public var defaultShell: String?
+  /// What `ShellCatalogue.customID` runs, as the user typed it.
+  public var customShellPath = ""
   /// Catalogue id of the editor Open in Editor uses, or `nil` for none.
   public var preferredEditorID: String?
   /// What `EditorCatalogue.customID` runs, with `{path}` for the worktree.
@@ -35,6 +38,13 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// Selecting a worktree with no tabs opens one. Off, Cmd+T or the
   /// actions menu does.
   public var opensTerminalOnSelect = true
+  /// Ask before `git worktree remove`. Off is for people who remove
+  /// worktrees all day and trust themselves; the default protects everyone
+  /// else.
+  public var confirmsWorktreeRemoval = true
+  /// Delete a worktree's branch along with it every time. Off, the removal
+  /// asks whether the branch goes too.
+  public var deletesBranchWithWorktree = false
 
   public init() {}
 
@@ -69,10 +79,15 @@ public struct Workspace: Codable, Hashable, Sendable {
     customAgentCommand = try c.decodeIfPresent(String.self, forKey: .customAgentCommand) ?? ""
     autoStartAgent = try c.decodeIfPresent(Bool.self, forKey: .autoStartAgent) ?? false
     defaultShell = try c.decodeIfPresent(String.self, forKey: .defaultShell)
+    customShellPath = try c.decodeIfPresent(String.self, forKey: .customShellPath) ?? ""
     preferredEditorID = try c.decodeIfPresent(String.self, forKey: .preferredEditorID)
     customEditorCommand = try c.decodeIfPresent(String.self, forKey: .customEditorCommand) ?? ""
     opensTerminalOnSelect =
       try c.decodeIfPresent(Bool.self, forKey: .opensTerminalOnSelect) ?? true
+    confirmsWorktreeRemoval =
+      try c.decodeIfPresent(Bool.self, forKey: .confirmsWorktreeRemoval) ?? true
+    deletesBranchWithWorktree =
+      try c.decodeIfPresent(Bool.self, forKey: .deletesBranchWithWorktree) ?? false
   }
 }
 
@@ -166,7 +181,8 @@ extension Workspace {
 
   /// The shell a new tab in this project runs, or `nil` for `$SHELL`.
   public func defaultShell(for project: Project) -> String? {
-    ShellCatalogue.effectivePath(global: defaultShell, override: project.settings.defaultShell)
+    ShellCatalogue.effectivePath(
+      global: defaultShell, override: project.settings.defaultShell, customPath: customShellPath)
   }
 
   /// The editor Open in Editor uses, or `nil` for none.

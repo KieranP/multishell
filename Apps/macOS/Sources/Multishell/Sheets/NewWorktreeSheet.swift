@@ -62,7 +62,14 @@ struct NewWorktreeSheet: View {
       .padding(.horizontal, -20)
       .padding(.top, 12)
 
-      HStack {
+      HStack(spacing: 8) {
+        if draft.isCreating {
+          ProgressView().controlSize(.small)
+          Text(NewWorktreeDraft.progressText(for: model.worktreeCreationStep))
+            .font(.system(size: 12))
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+        }
         Spacer()
         Button("Cancel", role: .cancel) { dismiss() }
           .keyboardShortcut(.cancelAction)

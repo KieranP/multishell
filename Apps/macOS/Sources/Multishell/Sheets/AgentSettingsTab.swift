@@ -37,7 +37,7 @@ struct AgentSettingsTab: View {
         InfoToggle(
           "Start it in new tabs",
           info:
-            "New Tab (⌘T) and a worktree's first tab run the agent instead of a shell. New Shell Tab (⇧⌘T), New Tab in the worktree menu and splits stay shells. A saved agent tab resumes its conversation on relaunch where the agent can.",
+            "New Tab (⌘T) and a worktree's first tab run the agent instead of a shell. New Shell Tab, in the File menu (⇧⌘T) and the worktree menu, and splits stay shells. A saved agent tab resumes its conversation on relaunch where the agent can.",
           isOn: Binding(
             get: { model.workspace.autoStartAgent }, set: { model.setAutoStartAgent($0) })
         )
@@ -155,7 +155,7 @@ struct AgentPicker: View {
         }
       }
       .disabled(!isEnabled)
-      Button("Refresh", action: refresh).controlSize(.small).disabled(!isEnabled)
+      IconButton.refresh(action: refresh).controlSize(.small).disabled(!isEnabled)
     }
   }
 }

@@ -16,11 +16,6 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   public var preDeleteHook: String
   public var postDeleteHook: String
 
-  /// Ask before `git worktree remove`. Off is for people who remove
-  /// worktrees all day and trust themselves; the default protects everyone
-  /// else.
-  public var confirmsWorktreeRemoval: Bool
-
   /// Agent override by catalogue id. `nil` follows the global choice;
   /// `AgentCatalogue.noneID` opts this project out of it.
   public var preferredAgentID: String?
@@ -46,7 +41,6 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     postCreateHook: String = "",
     preDeleteHook: String = "",
     postDeleteHook: String = "",
-    confirmsWorktreeRemoval: Bool = true,
     preferredAgentID: String? = nil,
     autoStartAgent: Bool? = nil,
     defaultShell: String? = nil,
@@ -59,7 +53,6 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     self.postCreateHook = postCreateHook
     self.preDeleteHook = preDeleteHook
     self.postDeleteHook = postDeleteHook
-    self.confirmsWorktreeRemoval = confirmsWorktreeRemoval
     self.preferredAgentID = preferredAgentID
     self.autoStartAgent = autoStartAgent
     self.defaultShell = defaultShell
@@ -80,8 +73,6 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     postCreateHook = try c.decodeIfPresent(String.self, forKey: .postCreateHook) ?? ""
     preDeleteHook = try c.decodeIfPresent(String.self, forKey: .preDeleteHook) ?? ""
     postDeleteHook = try c.decodeIfPresent(String.self, forKey: .postDeleteHook) ?? ""
-    confirmsWorktreeRemoval =
-      try c.decodeIfPresent(Bool.self, forKey: .confirmsWorktreeRemoval) ?? true
     preferredAgentID = Self.override(try c.decodeIfPresent(String.self, forKey: .preferredAgentID))
     autoStartAgent = try c.decodeIfPresent(Bool.self, forKey: .autoStartAgent)
     defaultShell = Self.override(try c.decodeIfPresent(String.self, forKey: .defaultShell))

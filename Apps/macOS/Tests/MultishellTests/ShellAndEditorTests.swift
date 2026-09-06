@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import MultishellGitKit
 import Testing
 
 @testable import Multishell
@@ -48,22 +49,26 @@ struct ShellDetectionTests {
     let detection = ShellDetection(installed: ["/bin/bash", "/bin/zsh"], loginShell: "/bin/zsh")
 
     let plain = detection.options(selected: nil)
-    #expect(plain.map(\.id) == ["login", "/bin/bash", "/bin/zsh"])
+    #expect(plain.map(\.id) == ["login", "/bin/bash", "/bin/zsh", "custom"])
     #expect(plain[0].label == "Login shell (/bin/zsh)")
     #expect(plain[1].label == "bash  /bin/bash")
+    #expect(plain.last?.label == "Custom path…")
 
     let stale = detection.options(selected: "/opt/homebrew/bin/fish")
-    #expect(stale.last?.id == "/opt/homebrew/bin/fish")
-    #expect(stale.last?.label == "fish  /opt/homebrew/bin/fish (not installed)")
-    #expect(stale.last?.isInstalled == false)
-    #expect(detection.options(selected: "/bin/bash").count == 3, "an installed choice adds nothing")
+    #expect(
+      stale.map(\.id) == ["login", "/bin/bash", "/bin/zsh", "/opt/homebrew/bin/fish", "custom"])
+    #expect(stale[3].label == "fish  /opt/homebrew/bin/fish (not installed)")
+    #expect(stale[3].isInstalled == false)
+    #expect(detection.options(selected: "/bin/bash").count == 4, "an installed choice adds nothing")
+    #expect(detection.options(selected: "custom").count == 4, "and neither does the custom path")
+    #expect(detection.isInstalled(ShellCatalogue.customID))
   }
 
   @Test func aMissingSystemListIsNotAnError() {
     let detection = ShellDetection(
       path: "/nowhere", systemList: URL(fileURLWithPath: "/no/such/shells"), loginShell: "/bin/sh")
     #expect(detection.installed.isEmpty)
-    #expect(detection.options(selected: nil).map(\.id) == ["login"])
+    #expect(detection.options(selected: nil).map(\.id) == ["login", "custom"])
   }
 }
 
@@ -154,6 +159,105 @@ extension EditorLaunch.Action {
   fileprivate var title: String? {
     if case .openTab(let title, _) = self { return title }
     return nil
+  }
+}
+
+@Suite
+struct PendingWorktreeRemovalTests {
+  private let branched = Worktree(
+    path: URL(fileURLWithPath: "/trees/feat"), projectID: "/repo", head: "abc", branch: "feat")
+  private let detached = Worktree(
+    path: URL(fileURLWithPath: "/trees/pinned"), projectID: "/repo", head: "abc1234")
+
+  /// The dialog the decision asks for, or a failed requirement.
+  private func asked(
+    _ worktree: Worktree, confirms: Bool, alwaysDeletesBranch: Bool
+  ) throws -> PendingWorktreeRemoval {
+    let decision = PendingWorktreeRemoval.decide(
+      worktree, confirms: confirms, alwaysDeletesBranch: alwaysDeletesBranch)
+    guard case .ask(let pending) = decision else {
+      throw RemovalTestFailure(decision: decision)
+    }
+    return pending
+  }
+
+  private struct RemovalTestFailure: Error {
+    let decision: PendingWorktreeRemoval.Decision
+  }
+
+  @Test func withConfirmationOnTheDialogAsksAboutTheBranchUnlessASettingSettlesIt() throws {
+    let pending = try asked(branched, confirms: true, alwaysDeletesBranch: false)
+    #expect(pending.offersBranchDeletion)
+    #expect(!pending.deletesBranch)
+    #expect(pending.removeLabel == "Remove Worktree")
+    #expect(pending.removeWithBranchLabel == "Remove Worktree and Branch")
+    #expect(pending.title == "Remove worktree feat?")
+
+    let settled = try asked(branched, confirms: true, alwaysDeletesBranch: true)
+    #expect(!settled.offersBranchDeletion)
+    #expect(settled.deletesBranch)
+    #expect(settled.removeLabel == "Remove Worktree and Branch", "one button, saying what it does")
+  }
+
+  @Test func withConfirmationOffOnlyAnOpenBranchQuestionStillAsks() throws {
+    #expect(
+      PendingWorktreeRemoval.decide(branched, confirms: false, alwaysDeletesBranch: true)
+        == .remove(deletingBranch: true))
+    #expect(
+      PendingWorktreeRemoval.decide(detached, confirms: false, alwaysDeletesBranch: false)
+        == .remove(deletingBranch: false), "nothing to ask about a detached worktree")
+    let pending = try asked(branched, confirms: false, alwaysDeletesBranch: false)
+    #expect(pending.offersBranchDeletion, "deleting a branch is not undone from the sidebar")
+  }
+
+  @Test func aDetachedWorktreeNeverHasItsBranchDeleted() throws {
+    let pending = try asked(detached, confirms: true, alwaysDeletesBranch: true)
+    #expect(!pending.deletesBranch && !pending.offersBranchDeletion)
+    #expect(pending.removeLabel == "Remove Worktree")
+    #expect(!pending.message(warning: nil).contains("branch"))
+  }
+
+  @Test func theMessageNamesThePathTheBranchsFateAndTheWarning() {
+    let asks = PendingWorktreeRemoval(worktree: branched, branch: .asks)
+    #expect(
+      asks.message(warning: "2 open terminals will be closed.")
+        == "Runs git worktree remove on /trees/feat.\n\nThe branch feat is kept unless you remove it too.\n\n2 open terminals will be closed."
+    )
+    let deletes = PendingWorktreeRemoval(worktree: branched, branch: .decided(deletes: true))
+    #expect(deletes.message(warning: nil).hasSuffix("The branch feat is deleted with it."))
+    let keeps = PendingWorktreeRemoval(worktree: branched, branch: .decided(deletes: false))
+    #expect(keeps.message(warning: nil).hasSuffix("The branch feat is kept."))
+  }
+}
+
+@Suite
+struct WorktreeOperationTests {
+  @Test func eachStepHasATitleAndSaysWhatHappensWhenItEnds() {
+    let create = WorktreeOperation(.postCreateHook)
+    #expect(!create.isRemoval)
+    #expect(create.title == "Running the post-create hook…")
+    #expect(create.detail.contains("first terminal opens"))
+
+    let removal = WorktreeOperation(WorktreeRemovalStep.preDeleteHook)
+    #expect(removal.isRemoval && removal.step == .preDeleteHook)
+    #expect(removal.detail.contains("stays if the hook refuses"))
+    #expect(WorktreeOperation(WorktreeRemovalStep.deletingBranch).title == "Deleting the branch…")
+    #expect(
+      WorktreeOperation(WorktreeRemovalStep.removingWorktree).detail
+        == WorktreeOperation(WorktreeRemovalStep.postDeleteHook).detail)
+  }
+
+  @Test func aFailureChangesTheTitleAndTheDetailAndEndsTheRun() {
+    var hook = WorktreeOperation(.postCreateHook)
+    #expect(hook.isRunning)
+    hook.failure = "npm ERR! nope"
+    #expect(!hook.isRunning)
+    #expect(hook.title == "The post-create hook failed")
+    #expect(hook.detail.contains("Dismiss to open its first terminal"))
+
+    let veto = WorktreeOperation(.preDeleteHook, failure: "")
+    #expect(veto.title == "The pre-delete hook refused the removal")
+    #expect(veto.detail.contains("terminals stay"))
   }
 }
 

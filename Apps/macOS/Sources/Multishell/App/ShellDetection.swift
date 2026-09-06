@@ -61,11 +61,12 @@ struct ShellDetection: Equatable {
   }
 
   func isInstalled(_ path: String) -> Bool {
-    path == ShellCatalogue.loginShellID || installed.contains(path)
+    path == ShellCatalogue.loginShellID || path == ShellCatalogue.customID
+      || installed.contains(path)
   }
 
   /// The login shell first, then every installed shell, then the selected
-  /// one if it is not installed.
+  /// one if it is not installed, then the custom path.
   func options(selected: String?) -> [Option] {
     var options = [
       Option(
@@ -80,6 +81,7 @@ struct ShellDetection: Equatable {
           id: selected, label: "\(Self.name(selected))  \(selected) (not installed)",
           isInstalled: false))
     }
+    options.append(Option(id: ShellCatalogue.customID, label: "Custom path…", isInstalled: true))
     return options
   }
 }

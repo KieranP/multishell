@@ -66,7 +66,9 @@ extension AppModel {
   /// Cmd+Shift+T: a tab running the preferred agent. The store records the
   /// agent id; the command line is built when the shell starts.
   func newAgentTab() {
-    guard let worktree = workspace.selectedWorktree, directoryExists(of: worktree) else { return }
+    guard let worktree = workspace.selectedWorktree, !isBusy(worktree.id),
+      directoryExists(of: worktree)
+    else { return }
     guard let agentID = preferredAgentID(for: worktree) else {
       presentedError = PresentedError(
         title: "No agent chosen",

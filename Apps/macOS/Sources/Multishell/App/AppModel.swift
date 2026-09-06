@@ -18,7 +18,15 @@ final class AppModel {
   var presentedError: PresentedError?
   var newWorktreeRequest: NewWorktreeRequest?
   /// A removal waiting on the confirmation dialog.
-  var pendingRemoval: Worktree?
+  var pendingRemoval: PendingWorktreeRemoval?
+  /// Which stage a create is in while the sheet still waits on it: the
+  /// pre-create hook and `git worktree add`. `nil` when none is running.
+  var worktreeCreationStep: WorktreeCreationStep?
+  /// The create or remove running on each worktree, shown in its detail
+  /// pane in place of the terminals; see `WorktreeOperation`.
+  var worktreeOperations: [Worktree.ID: WorktreeOperation] = [:]
+  /// The post-create hooks still running, so a test can await one.
+  @ObservationIgnored var postCreateHooks: [Worktree.ID: Task<Void, Never>] = [:]
   /// A project removal waiting on its dialog, in whichever window asked.
   var pendingProjectRemoval: PendingProjectRemoval?
   /// A pane or tab close waiting on it, because an agent there is working.

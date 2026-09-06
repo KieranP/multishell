@@ -42,7 +42,22 @@ struct PresentedErrorTests {
         executable: "sh", arguments: ["-c", "npm install"], status: 1, message: "npm ERR!"))
     let presented = PresentedError(failure)
     #expect(presented.title == "Worktree created, but its hook failed")
-    #expect(presented.message == "npm ERR!")
+    #expect(presented.message == "npm ERR!\n\nExited with status 1.")
+  }
+
+  @Test func aSilentHookFailureGetsItsStatusNotTheCommandLineItRanAs() {
+    let silent = ProcessFailure(
+      executable: "zsh", arguments: ["-l", "-i", "-c", "set -e\nexit 3"], status: 3, message: "")
+    let presented = PresentedError(HookFailure(stage: .postCreate, underlying: silent))
+    #expect(presented.message == "Exited with status 3 and printed nothing.")
+  }
+
+  @Test func aHookThatOnlyEchoedBeforeFailingGetsItsStatusAfterItsWords() {
+    let echoed = ProcessFailure(
+      executable: "zsh", arguments: ["-l", "-i", "-c", "echo Created\nexit 1"], status: 1,
+      message: "Created")
+    let presented = PresentedError(HookFailure(stage: .postCreate, underlying: echoed))
+    #expect(presented.message == "Created\n\nExited with status 1.")
   }
 
   @Test func preHookFailuresSayTheOperationDidNotHappen() {
@@ -51,7 +66,7 @@ struct PresentedErrorTests {
       message: "no ticket number")
     let create = PresentedError(HookFailure(stage: .preCreate, underlying: refused))
     #expect(create.title == "Worktree not created: its pre-create hook failed")
-    #expect(create.message == "no ticket number")
+    #expect(create.message == "no ticket number\n\nExited with status 1.")
     let delete = PresentedError(HookFailure(stage: .preDelete, underlying: refused))
     #expect(delete.title == "Worktree not removed: its pre-delete hook failed")
     #expect(

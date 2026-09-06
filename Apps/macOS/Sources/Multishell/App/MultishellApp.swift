@@ -70,23 +70,27 @@ struct RootView: View {
     .ignoresSafeArea()
     .preferredColorScheme(theme.colorScheme)
     .confirmationDialog(
-      "Remove worktree \(model.pendingRemoval?.name ?? "")?",
+      model.pendingRemoval?.title ?? "",
       isPresented: Binding(
         get: { model.pendingRemoval != nil }, set: { if !$0 { model.pendingRemoval = nil } }),
       titleVisibility: .visible,
       presenting: model.pendingRemoval
-    ) { worktree in
-      Button("Remove Worktree", role: .destructive) {
+    ) { pending in
+      Button(pending.removeLabel, role: .destructive) {
         model.pendingRemoval = nil
-        Task { await model.removeWorktree(worktree) }
+        Task {
+          await model.removeWorktree(pending.worktree, deletingBranch: pending.deletesBranch)
+        }
+      }
+      if pending.offersBranchDeletion {
+        Button(pending.removeWithBranchLabel, role: .destructive) {
+          model.pendingRemoval = nil
+          Task { await model.removeWorktree(pending.worktree, deletingBranch: true) }
+        }
       }
       Button("Cancel", role: .cancel) { model.pendingRemoval = nil }
-    } message: { worktree in
-      Text(
-        [
-          "Runs git worktree remove on \(worktree.path.path). The branch is kept.",
-          model.removalWarning(for: worktree),
-        ].compactMap { $0 }.joined(separator: "\n\n"))
+    } message: { pending in
+      Text(pending.message(warning: model.removalWarning(for: pending.worktree)))
     }
     .projectRemovalDialog(model: model, source: .workspace)
     .confirmationDialog(

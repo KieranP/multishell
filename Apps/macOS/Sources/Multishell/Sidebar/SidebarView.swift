@@ -176,6 +176,7 @@ struct SidebarView: View {
             worktree: worktree,
             terminalCount: model.workspace.sessions(in: worktree.id).count,
             state: model.state(ofWorktree: worktree.id),
+            operation: model.worktreeOperations[worktree.id],
             isSelected: model.workspace.selectedWorktreeID == worktree.id,
             status: model.statuses[worktree.id],
             theme: theme,

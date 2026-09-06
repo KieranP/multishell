@@ -32,6 +32,9 @@ struct PresentedError: Identifiable {
         case .postDelete: "Worktree removed, but its hook failed"
         }
       message = Self.describe(failure.underlying)
+    case let failure as BranchDeletionFailure:
+      title = "Worktree removed, but branch \(failure.branch) was not deleted"
+      message = Self.describe(failure.underlying)
     case let failure as ProcessFailure where failure.message.contains("invalid reference: HEAD"):
       // An unborn HEAD: the repository has never been committed to.
       title = "This repository has no commits yet"
@@ -59,8 +62,16 @@ struct PresentedError: Identifiable {
     }
   }
 
+  /// A hook's own words where it had any, its stdout and stderr with the
+  /// shell's startup noise cut away, then the exit status on its own line:
+  /// a hook that only echoes before it fails has nothing else to say about
+  /// why. Never the command line it ran as.
   private static func describe(_ error: any Error) -> String {
-    if let failure = error as? ProcessFailure, !failure.message.isEmpty { return failure.message }
+    if let failure = error as? ProcessFailure {
+      return failure.message.isEmpty
+        ? "Exited with status \(failure.status) and printed nothing."
+        : "\(failure.message)\n\nExited with status \(failure.status)."
+    }
     return String(describing: error)
   }
 }

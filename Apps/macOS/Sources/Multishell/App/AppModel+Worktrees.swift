@@ -127,11 +127,33 @@ extension AppModel {
     guard directoryExists(of: worktree) else { return false }
     store.selectWorktree(worktree.id)
     warmWorktrees.insert(worktree.id)
-    if openingFirstTab, workspace.tabs(in: worktree.id).isEmpty, workspace.opensTerminalOnSelect {
+    if openingFirstTab, !isBusy(worktree.id), workspace.tabs(in: worktree.id).isEmpty,
+      workspace.opensTerminalOnSelect
+    {
       openFirstOrNewTab(in: worktree)
     }
     sync()
     return true
+  }
+
+  /// A create or remove is running on the worktree, or has failed and not
+  /// been dismissed. Nothing starts a shell there until then: a post-create
+  /// hook is still installing, the worktree is about to go, or the pane is
+  /// saying what went wrong.
+  func isBusy(_ id: Worktree.ID) -> Bool {
+    worktreeOperations[id] != nil
+  }
+
+  /// The pane's Dismiss after a failed stage. A dismissed post-create
+  /// failure hands over the way a finished hook does: the first tab opens.
+  func dismissOperationFailure(of worktree: Worktree) {
+    guard let operation = worktreeOperations[worktree.id], !operation.isRunning else { return }
+    worktreeOperations[worktree.id] = nil
+    if operation.step == .postCreateHook, workspace.selectedWorktreeID == worktree.id,
+      let current = workspace.worktree(worktree.id)
+    {
+      select(current)
+    }
   }
 
   /// A shell spawned in a missing directory silently lands in $HOME, which
@@ -175,6 +197,10 @@ extension AppModel {
     (try? await worktrees?.currentBranch(project)) ?? "HEAD"
   }
 
+  /// Returns once the worktree exists and is selected, or the create
+  /// failed. The post-create hook then runs on its own with the pane
+  /// showing it, and holds the first tab back until it ends; see
+  /// `WorktreeOperation`.
   func createWorktree(
     branch: String,
     basedOn startPoint: String?,
@@ -182,23 +208,20 @@ extension AppModel {
     in project: Project
   ) async {
     guard let worktrees else { return }
+    defer { worktreeCreationStep = nil }
+    let settings = workspace.worktreeSettings(for: project)
+    let shell = workspace.defaultShell(for: project)
     let path: URL
     do {
-      path = try await worktrees.create(
+      path = try await worktrees.add(
         branch: branch,
         basedOn: startPoint,
         createBranch: createBranch,
         in: project,
-        settings: workspace.worktreeSettings(for: project),
-        shellPath: workspace.defaultShell(for: project)
+        settings: settings,
+        shellPath: shell,
+        onStep: { [weak self] step in Task { @MainActor in self?.worktreeCreationStep = step } }
       )
-    } catch let failure as HookFailure where failure.stage.operationHappened {
-      // The worktree exists; only the hook went wrong. Refresh anyway so
-      // it appears in the sidebar, then say what happened.
-      report(failure)
-      path = worktrees.plannedPath(
-        forBranch: branch, createBranch: createBranch, in: project,
-        settings: workspace.worktreeSettings(for: project))
     } catch {
       report(error)
       return
@@ -208,22 +231,70 @@ extension AppModel {
     // git reports resolved paths, so on a symlinked volume the directory we
     // asked for and the one it lists can differ. Fall back to the branch.
     let name = WorktreeCoordinator.branchName(
-      branch, createBranch: createBranch, settings: workspace.worktreeSettings(for: project))
-    let created =
-      workspace.worktree(path.standardizedFileURL.path)
-      ?? workspace.worktrees(of: project.id).first { $0.branch == name }
-    if let created {
-      select(created)
+      branch, createBranch: createBranch, settings: settings)
+    guard
+      let created = workspace.worktree(path.standardizedFileURL.path)
+        ?? workspace.worktrees(of: project.id).first(where: { $0.branch == name })
+    else { return }
+    if WorktreeHooks.hasScript(project.settings.postCreateHook) {
+      worktreeOperations[created.id] = WorktreeOperation(.postCreateHook)
+      postCreateHooks[created.id] = Task {
+        await runPostCreateHook(for: created, branch: name, in: project, shellPath: shell)
+      }
+    }
+    select(created)
+  }
+
+  private func runPostCreateHook(
+    for worktree: Worktree, branch: String, in project: Project, shellPath: String?
+  ) async {
+    defer { postCreateHooks[worktree.id] = nil }
+    do {
+      try await worktrees?.runPostCreate(
+        for: project, worktreePath: worktree.path, branch: branch, shellPath: shellPath)
+    } catch {
+      // The pane says so until dismissed, where the worktree is still
+      // there to have a pane; an alert otherwise.
+      if worktreeOperations[worktree.id]?.step == .postCreateHook,
+        workspace.worktree(worktree.id) != nil
+      {
+        worktreeOperations[worktree.id]?.failure = PresentedError(error).message
+      } else {
+        report(error)
+      }
+      return
+    }
+    // A removal that began meanwhile owns the entry now.
+    guard worktreeOperations[worktree.id]?.step == .postCreateHook else { return }
+    worktreeOperations[worktree.id] = nil
+    // The first tab was held back while the hook ran; it opens now if the
+    // worktree is still what the user is looking at, else on the next visit.
+    if workspace.selectedWorktreeID == worktree.id, let current = workspace.worktree(worktree.id) {
+      select(current)
     }
   }
 
-  /// Entry point from the UI. Asks first unless the project opted out.
+  func setConfirmsWorktreeRemoval(_ enabled: Bool) {
+    store.setConfirmsWorktreeRemoval(enabled)
+  }
+
+  func setDeletesBranchWithWorktree(_ enabled: Bool) {
+    store.setDeletesBranchWithWorktree(enabled)
+  }
+
+  /// Entry point from the UI. Asks first unless the settings have settled
+  /// both the removal and the branch; see `PendingWorktreeRemoval.decide`.
+  /// Nothing while a create or remove is already running there.
   func requestRemoval(of worktree: Worktree) {
-    let confirms = workspace.project(worktree.projectID)?.settings.confirmsWorktreeRemoval ?? true
-    if confirms {
-      pendingRemoval = worktree
-    } else {
-      Task { await removeWorktree(worktree) }
+    guard !isBusy(worktree.id) else { return }
+    switch PendingWorktreeRemoval.decide(
+      worktree, confirms: workspace.confirmsWorktreeRemoval,
+      alwaysDeletesBranch: workspace.deletesBranchWithWorktree)
+    {
+    case .ask(let pending):
+      pendingRemoval = pending
+    case .remove(let deletingBranch):
+      Task { await removeWorktree(worktree, deletingBranch: deletingBranch) }
     }
   }
 
@@ -242,31 +313,76 @@ extension AppModel {
     return notes.isEmpty ? nil : notes.joined(separator: " ")
   }
 
-  func removeWorktree(_ worktree: Worktree, force: Bool = false) async {
+  /// The pane shows each stage while this runs. A git refusal clears it and
+  /// the terminals come back, with the alert offering the forced form; a
+  /// pre-delete veto leaves the pane saying why until dismissed.
+  func removeWorktree(
+    _ worktree: Worktree, force: Bool = false, deletingBranch: Bool = false
+  ) async {
     guard let worktrees, let project = workspace.project(worktree.projectID) else { return }
+    worktreeOperations[worktree.id] = WorktreeOperation(WorktreeRemovalStep.first(for: project))
     do {
       try await worktrees.remove(
-        worktree, force: force, in: project, shellPath: workspace.defaultShell(for: project))
+        worktree, force: force, deletingBranch: deletingBranch, in: project,
+        shellPath: workspace.defaultShell(for: project),
+        onStep: { [weak self] step in
+          Task { @MainActor in
+            guard self?.worktreeOperations[worktree.id]?.isRunning == true else { return }
+            self?.worktreeOperations[worktree.id] = WorktreeOperation(step)
+          }
+        })
     } catch let failure as HookFailure where failure.stage.operationHappened {
-      report(failure)
+      // The branch is deleted after the post hook, so a hook that failed
+      // kept it; the alert has to say so, or the user believes it went.
+      var presented = PresentedError(failure)
+      if deletingBranch, let branch = worktree.branch {
+        presented = PresentedError(
+          title: presented.title,
+          message: presented.message + "\n\nThe branch \(branch) was kept.")
+      }
+      presentedError = presented
     } catch let failure as HookFailure {
       // The pre-delete hook refused, so nothing was removed and there is
-      // nothing to refresh.
-      report(failure)
+      // nothing to refresh; the worktree keeps its pane to say why.
+      worktreeOperations[worktree.id] = WorktreeOperation(
+        .preDeleteHook, failure: PresentedError(failure).message)
       return
+    } catch let failure as BranchDeletionFailure {
+      // The worktree is gone; only the branch stayed, because it has
+      // commits nothing else has. Offer the forced form.
+      var presented = PresentedError(failure)
+      presented.retryLabel = "Delete Branch Anyway"
+      presented.retry = { [weak self] in
+        await self?.deleteBranch(failure.branch, of: project, force: true)
+      }
+      presentedError = presented
     } catch {
       // git refuses dirty or locked worktrees. Offer the force form
       // rather than leaving the user to find a terminal.
       var presented = PresentedError(error)
       if !force {
         presented.retryLabel = "Remove Anyway"
-        presented.retry = { [weak self] in await self?.removeWorktree(worktree, force: true) }
+        presented.retry = { [weak self] in
+          await self?.removeWorktree(worktree, force: true, deletingBranch: deletingBranch)
+        }
       }
       presentedError = presented
+      worktreeOperations[worktree.id] = nil
       return
     }
+    worktreeOperations[worktree.id] = nil
     await refresh(project)
     await rearmWatcher()
     sync()
+  }
+
+  /// The branch alone, after a removal that left it behind.
+  func deleteBranch(_ branch: String, of project: Project, force: Bool) async {
+    guard let worktrees else { return }
+    do {
+      try await worktrees.deleteBranch(branch, force: force, in: project)
+    } catch {
+      report(error)
+    }
   }
 }

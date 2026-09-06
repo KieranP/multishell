@@ -129,4 +129,11 @@ public struct WorktreeService: Sendable {
   public func prune(_ project: Project) async throws {
     _ = try await git.run(["worktree", "prune"], in: project.path)
   }
+
+  /// `git branch -d`, which refuses a branch with commits no other branch
+  /// has; `force` is `-D`.
+  public func deleteBranch(_ branch: String, force: Bool = false, in project: Project) async throws
+  {
+    _ = try await git.run(["branch", force ? "-D" : "-d", branch], in: project.path)
+  }
 }

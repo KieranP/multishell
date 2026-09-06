@@ -1,4 +1,5 @@
 import MultishellCore
+import MultishellGitKit
 
 /// What the New Worktree sheet decides, apart from the view so the rules are
 /// testable: when Create is allowed, what git is asked for, and what a
@@ -98,6 +99,18 @@ struct NewWorktreeDraft: Equatable {
   /// empty string a cleared field would otherwise send.
   var startPoint: String? {
     createBranch && !baseBranch.isEmpty ? baseBranch : nil
+  }
+
+  /// What the sheet says beside its spinner while a create runs. A hook can
+  /// take a minute, and without a name for the stage the sheet looked hung.
+  /// `nil` is the tail after the hooks: the refresh and the select.
+  static func progressText(for step: WorktreeCreationStep?) -> String {
+    switch step {
+    case .preCreateHook: "Running the pre-create hook…"
+    case .addingWorktree: "Running git worktree add…"
+    case .postCreateHook: "Running the post-create hook…"
+    case nil: "Creating the worktree…"
+    }
   }
 
   /// Picker labels. A folder name alone, unless another project shares it,

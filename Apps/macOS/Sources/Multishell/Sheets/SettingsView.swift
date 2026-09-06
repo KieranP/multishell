@@ -79,7 +79,7 @@ private struct GeneralSettingsTab: View {
             .foregroundStyle(.secondary)
             .lineLimit(1)
             .truncationMode(.head)
-          Button("Reveal") { NSWorkspace.shared.activateFileViewerSelecting([Paths.stateFile]) }
+          IconButton.reveal { NSWorkspace.shared.activateFileViewerSelecting([Paths.stateFile]) }
             .controlSize(.small)
         }
       }
@@ -113,8 +113,25 @@ private struct TerminalSettingsTab: View {
           detection: model.shellDetection,
           refresh: { Task { await model.refreshLoginEnvironment() } },
           info:
-            "What new tabs run, and what project hooks run through. Terminals already running keep their shell. zsh and bash get the command-status hooks; another shell is launched plainly. Any project can override this. Refresh after installing one."
+            "What new tabs run, and what project hooks run through. Terminals already running keep their shell. zsh and bash get the command-status hooks; another shell is launched plainly. Any project can override this. Refresh after installing one, or pick Custom path for one the list does not find."
         )
+        if model.workspace.defaultShell == ShellCatalogue.customID {
+          InfoRow(
+            "Path:",
+            info:
+              "The shell's executable, for one that is neither in /etc/shells nor on the login shell's PATH. Run as a login shell like any other choice; a project override of Custom path means this same path."
+          ) {
+            TextField(
+              "Path:",
+              text: Binding(
+                get: { model.workspace.customShellPath },
+                set: { model.setCustomShellPath($0) }),
+              prompt: Text("/opt/homebrew/bin/nu"))
+          }
+          if let problem = model.customShellPathProblem {
+            SettingsCaption(problem)
+          }
+        }
         InfoToggle(
           "Open a terminal when a worktree is selected",
           info:
@@ -154,7 +171,7 @@ private struct AppearanceSettingsTab: View {
             "Any .json in the folder appears in the list. The examples/ subfolder holds the built-ins to copy from; nothing in there is loaded."
         ) {
           Button("Open Folder") { model.revealThemesFolder() }
-          Button("Reload") { model.reloadThemes() }
+          IconButton.refresh(help: "Reload theme files") { model.reloadThemes() }
         }
         .controlSize(.small)
       }
@@ -247,6 +264,23 @@ private struct WorktreeSettingsTab: View {
           SettingsCaption("Typing tabs creates \(defaults.qualifiedBranch("tabs")).")
         }
       }
+
+      Section {
+        InfoToggle(
+          "Ask before removing a worktree",
+          info:
+            "The confirmation also warns about uncommitted changes and open terminals in that worktree. Off is for people who remove worktrees all day; a removal then still asks about the branch unless the toggle below settles it.",
+          isOn: Binding(
+            get: { model.workspace.confirmsWorktreeRemoval },
+            set: { model.setConfirmsWorktreeRemoval($0) }))
+        InfoToggle(
+          "Always delete the branch with its worktree",
+          info:
+            "Runs git branch -d after git worktree remove, once the post-delete hook has run. Off, removing a worktree asks whether the branch goes too. A branch with commits nothing else has is refused and offered again with the forced form.",
+          isOn: Binding(
+            get: { model.workspace.deletesBranchWithWorktree },
+            set: { model.setDeletesBranchWithWorktree($0) }))
+      }
     }
     .formStyle(.grouped)
   }
@@ -279,8 +313,8 @@ struct SettingsCaption: View {
 }
 
 /// The dropdown both settings windows use for the shell: the login shell,
-/// the installed ones, the stored value marked when it is not installed, and
-/// a Refresh.
+/// the installed ones, the stored value marked when it is not installed,
+/// Custom path, and a Refresh.
 struct ShellPicker: View {
   let label: String
   @Binding var selection: String
@@ -298,7 +332,7 @@ struct ShellPicker: View {
         }
       }
       .disabled(!isEnabled)
-      Button("Refresh", action: refresh).controlSize(.small).disabled(!isEnabled)
+      IconButton.refresh(action: refresh).controlSize(.small).disabled(!isEnabled)
     }
   }
 }
@@ -322,7 +356,7 @@ struct EditorPicker: View {
         }
       }
       .disabled(!isEnabled)
-      Button("Refresh", action: refresh).controlSize(.small).disabled(!isEnabled)
+      IconButton.refresh(action: refresh).controlSize(.small).disabled(!isEnabled)
     }
   }
 }

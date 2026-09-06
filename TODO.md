@@ -19,9 +19,11 @@ day. Three tiers; ship after the first two.
   An update check, Sparkle or a plain "a newer version exists" link, so the
   first bug fix reaches people.
 - Bare repositories (Gaps, below).
-- A hook timeout. A hook that never exits blocks the sheet forever, and a
-  pre hook that never exits blocks the create or remove itself; a
-  configurable limit, a minute by default, with the hook killed and reported.
+- A hook timeout, or a Cancel on the pane. A pre-create hook that never
+  exits blocks the sheet; any other hook that never exits leaves its
+  worktree busy, with the pane showing the stage and no way to stop it
+  short of a relaunch. A configurable limit, a minute by default, with the
+  hook killed and reported, or a Cancel that kills it.
 - "Remove Anyway" deletes uncommitted work for good. The forced removal is
   `git worktree remove --force`, which unlinks the directory. When the status
   badge says the worktree is dirty, move the directory to the Trash with
@@ -71,6 +73,9 @@ day. Three tiers; ship after the first two.
 Accessibility labels, a Linux GUI, and the rest of the Gaps section.
 
 ## Features
+
+* Translation support
+* Add support for defining project config in config files
 
 ### Terminals view
 
@@ -124,9 +129,8 @@ it the list has nothing to group by.
 - Tabs and panes: no tab overflow, no swap or zoom of a pane, no moving a tab
   to another worktree, no close from a non-active tab.
 - Worktree operations stop at create and remove: no fetch to refresh the
-  remote list, no tracking checkout of a remote-only branch,
-  no "delete the branch too" on removal, no view of merged branches that
-  could go.
+  remote list, no tracking checkout of a remote-only branch, no view of
+  merged branches that could go.
 - Nothing per project shapes the terminal beyond its shell: no startup
   commands or environment variables. The store can open a tab running a
   command; the agent tab and Open in Editor reach it.
@@ -153,8 +157,8 @@ it the list has nothing to group by.
 - No accessibility labels on the hand-drawn sidebar and tab bar.
 - The Ghostty engine, the default, has no automated test. Linux and Windows
   have a core but no GUI and have not been built locally.
-- Documented open decisions: a hook that never exits blocks the sheet; the
-  directory check before a click runs on the main thread.
+- Documented open decisions: a hook that never exits cannot be stopped from
+  the app; the directory check before a click runs on the main thread.
 - Unverified: whether this embedding loads the user's own Ghostty config
   from `~/.config/ghostty`. If it does, a user's keybinds can undo the app's
   unbinds and their theme can fight the app's; if it does not, people with

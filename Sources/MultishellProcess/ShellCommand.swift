@@ -27,6 +27,13 @@ public struct ShellCommand: Sendable {
   /// have no such switch and run the script as written. `shellPath` names
   /// the shell to run it through, as an interactive login shell; `nil` is
   /// `$SHELL`.
+  ///
+  /// A failure's message is everything the script itself printed: stdout,
+  /// then stderr, since a hook's `echo` is as much its account of what went
+  /// wrong as its errors are. The rc files run first and some write to
+  /// stderr under `-i` with no terminal (`can't change option: zle`), so the
+  /// script's first line writes a marker there and its stderr is taken from
+  /// after it.
   public func runScript(
     _ script: String,
     in directory: URL,
@@ -34,10 +41,28 @@ public struct ShellCommand: Sendable {
     shellPath: String? = nil
   ) async throws -> String {
     guard let shell = Self.shell(preferring: shellPath) else { throw ShellUnavailable() }
-    return try await runner.run(
-      shell.executable,
-      shell.arguments + [Self.stoppingAtFirstFailure(script, shell: shell.executable)],
-      in: directory, environment: environment)
+    let prepared = Self.markingOutput(
+      Self.stoppingAtFirstFailure(script, shell: shell.executable), shell: shell.executable)
+    let arguments = shell.arguments + [prepared]
+    let output = try await runner.capture(
+      shell.executable, arguments, in: directory, environment: environment)
+    guard output.succeeded else {
+      throw ProcessFailure(
+        executable: shell.executable.lastPathComponent, arguments: arguments,
+        status: output.status,
+        message: Self.failureMessage(
+          standardOutput: output.standardOutput, standardError: output.standardError))
+    }
+    return output.standardOutput
+  }
+
+  /// What a failed script printed, stdout first. The two streams are read
+  /// apart, so their order against each other is not kept.
+  static func failureMessage(standardOutput: String, standardError: String) -> String {
+    [standardOutput, scriptOutput(fromStderr: standardError)]
+      .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+      .filter { !$0.isEmpty }
+      .joined(separator: "\n")
   }
 
   /// Shells whose `set -e` exits on the first failing command. Set inside
@@ -48,6 +73,26 @@ public struct ShellCommand: Sendable {
   static func stoppingAtFirstFailure(_ script: String, shell: URL) -> String {
     guard errexitShells.contains(shell.lastPathComponent) else { return script }
     return "set -e\n" + script
+  }
+
+  /// Where the script's stderr begins. Written by the script itself, so it
+  /// comes after whatever the rc files printed.
+  static let outputMarker = "--multishell-hook-output--"
+
+  /// Shells that take `>&2`. The csh family does not, and its rc files are
+  /// left in the message.
+  static let markingShells: Set<String> = errexitShells.union(["fish"])
+
+  static func markingOutput(_ script: String, shell: URL) -> String {
+    guard markingShells.contains(shell.lastPathComponent) else { return script }
+    return "printf '%s\\n' '\(outputMarker)' >&2\n" + script
+  }
+
+  /// The part of a failure's stderr after the marker, or all of it for a
+  /// shell that wrote none.
+  static func scriptOutput(fromStderr text: String) -> String {
+    guard let marker = text.range(of: outputMarker) else { return text }
+    return String(text[marker.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
   }
 
   /// The user's shell as an interactive login shell, so a hook sees the

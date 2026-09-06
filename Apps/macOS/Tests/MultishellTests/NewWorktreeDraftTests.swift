@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import MultishellGitKit
 import Testing
 
 @testable import Multishell
@@ -189,6 +190,13 @@ struct NewWorktreeDraftTests {
     let project = Project(path: URL(fileURLWithPath: "/repos/demo"))
     let labels = NewWorktreeDraft.labels(for: [project, project])
     #expect(labels == [project.id: "demo  (/repos/demo)"])
+  }
+
+  @Test func theProgressTextNamesTheStageOrTheTailAfterIt() {
+    #expect(NewWorktreeDraft.progressText(for: .preCreateHook) == "Running the pre-create hook…")
+    #expect(NewWorktreeDraft.progressText(for: .addingWorktree) == "Running git worktree add…")
+    #expect(NewWorktreeDraft.progressText(for: .postCreateHook) == "Running the post-create hook…")
+    #expect(NewWorktreeDraft.progressText(for: nil) == "Creating the worktree…")
   }
 
   @Test func creatingLocksTheDraft() {

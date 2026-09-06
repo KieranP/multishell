@@ -5,6 +5,8 @@ struct WorktreeRow: View {
   let worktree: Worktree
   let terminalCount: Int
   let state: SessionState?
+  /// A create or remove running here, or failed and not yet dismissed.
+  let operation: WorktreeOperation?
   let isSelected: Bool
   let status: WorktreeStatus?
   let theme: Theme
@@ -35,6 +37,18 @@ struct WorktreeRow: View {
 
       Spacer(minLength: 4)
 
+      if let operation {
+        if operation.isRunning {
+          ProgressView()
+            .controlSize(.mini)
+            .help(operation.title)
+        } else {
+          Image(systemName: "exclamationmark.triangle.fill")
+            .font(.system(size: metrics.badge))
+            .foregroundStyle(theme.ansiRGB[1].color)
+            .help(operation.title)
+        }
+      }
       if worktree.isLocked {
         Image(systemName: "lock.fill")
           .font(.system(size: metrics.badge - 1))

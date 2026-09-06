@@ -129,7 +129,9 @@ public struct WorktreeCoordinator: Sendable {
   /// post-create hook. A `HookFailure` from the pre stage means nothing was
   /// created; from the post stage, that the worktree exists and only the
   /// hook went wrong. `shellPath` is the project's shell for its hooks, or
-  /// `nil` for `$SHELL`.
+  /// `nil` for `$SHELL`. `onStep` is told as each stage starts, so a sheet
+  /// can say which hook it is waiting on; a hook with no script is skipped
+  /// without a step.
   @discardableResult
   public func create(
     branch rawBranch: String,
@@ -137,13 +139,38 @@ public struct WorktreeCoordinator: Sendable {
     createBranch: Bool = true,
     in project: Project,
     settings: WorktreeSettings,
-    shellPath: String? = nil
+    shellPath: String? = nil,
+    onStep: (@Sendable (WorktreeCreationStep) -> Void)? = nil
+  ) async throws -> URL {
+    let path = try await add(
+      branch: rawBranch, basedOn: startPoint, createBranch: createBranch, in: project,
+      settings: settings, shellPath: shellPath, onStep: onStep)
+    let branch = Self.branchName(rawBranch, createBranch: createBranch, settings: settings)
+    if WorktreeHooks.hasScript(project.settings.postCreateHook) { onStep?(.postCreateHook) }
+    try await runPostCreate(for: project, worktreePath: path, branch: branch, shellPath: shellPath)
+    return path
+  }
+
+  /// The first half of `create`: the pre-create hook and `git worktree add`.
+  /// The post-create hook is `runPostCreate`, kept apart so the app can show
+  /// the worktree, and let the user move on, while a slow hook runs.
+  @discardableResult
+  public func add(
+    branch rawBranch: String,
+    basedOn startPoint: String? = nil,
+    createBranch: Bool = true,
+    in project: Project,
+    settings: WorktreeSettings,
+    shellPath: String? = nil,
+    onStep: (@Sendable (WorktreeCreationStep) -> Void)? = nil
   ) async throws -> URL {
     let branch = Self.branchName(rawBranch, createBranch: createBranch, settings: settings)
     let path = settings.worktreePath(forBranch: branch, in: project)
 
+    if WorktreeHooks.hasScript(project.settings.preCreateHook) { onStep?(.preCreateHook) }
     try await hooks.runPreCreate(
       for: project, worktreePath: path, branch: branch, shellPath: shellPath)
+    onStep?(.addingWorktree)
     try FileManager.default.createDirectory(
       at: path.deletingLastPathComponent(),
       withIntermediateDirectories: true
@@ -155,9 +182,15 @@ public struct WorktreeCoordinator: Sendable {
       createBranch: createBranch,
       in: project
     )
-    try await hooks.runPostCreate(
-      for: project, worktreePath: path, branch: branch, shellPath: shellPath)
     return path
+  }
+
+  /// The second half of `create`. Returns at once when the hook is blank.
+  public func runPostCreate(
+    for project: Project, worktreePath: URL, branch: String, shellPath: String? = nil
+  ) async throws {
+    try await hooks.runPostCreate(
+      for: project, worktreePath: worktreePath, branch: branch, shellPath: shellPath)
   }
 
   /// Runs the pre-delete hook, removes the worktree, then runs the
@@ -168,19 +201,85 @@ public struct WorktreeCoordinator: Sendable {
   /// A worktree whose directory is already gone cannot be removed, only
   /// pruned: `git worktree remove` refuses with "does not exist". Prune is
   /// what the user meant in that case, and the hooks still run.
+  ///
+  /// `deletingBranch` deletes the worktree's branch last, after the post
+  /// hook, so a hook that pushes it still finds it, and a hook that fails
+  /// keeps it. `git branch -d` refuses a branch with commits nothing else
+  /// has; that is reported as a `BranchDeletionFailure`, with the worktree
+  /// already gone, for the caller to offer `deleteBranch(force:)`.
+  ///
+  /// `onStep` is told as each stage starts, hook stages only when the hook
+  /// has a script, so the detail pane can say what the worktree is waiting
+  /// on.
   public func remove(
-    _ worktree: Worktree, force: Bool = false, in project: Project, shellPath: String? = nil
+    _ worktree: Worktree, force: Bool = false, deletingBranch: Bool = false, in project: Project,
+    shellPath: String? = nil, onStep: (@Sendable (WorktreeRemovalStep) -> Void)? = nil
   ) async throws {
     let path = worktree.path
     let branch = worktree.branch ?? worktree.head
+    if WorktreeHooks.hasScript(project.settings.preDeleteHook) { onStep?(.preDeleteHook) }
     try await hooks.runPreDelete(
       for: project, worktreePath: path, branch: branch, shellPath: shellPath)
+    onStep?(.removingWorktree)
     if FileManager.default.fileExists(atPath: path.path) {
       try await service.remove(worktree, force: force, in: project)
     } else {
       try await service.prune(project)
     }
+    if WorktreeHooks.hasScript(project.settings.postDeleteHook) { onStep?(.postDeleteHook) }
     try await hooks.runPostDelete(
       for: project, worktreePath: path, branch: branch, shellPath: shellPath)
+    if deletingBranch, let branch = worktree.branch {
+      onStep?(.deletingBranch)
+      try await deleteBranch(branch, in: project)
+    }
+  }
+
+  public func deleteBranch(_ branch: String, force: Bool = false, in project: Project) async throws
+  {
+    do {
+      try await service.deleteBranch(branch, force: force, in: project)
+    } catch {
+      throw BranchDeletionFailure(branch: branch, underlying: error)
+    }
+  }
+}
+
+/// The stages of a create, in order, for a sheet to show while it waits. A
+/// hook stage is reported only when that hook has a script.
+public enum WorktreeCreationStep: Sendable, Equatable {
+  case preCreateHook
+  case addingWorktree
+  case postCreateHook
+}
+
+/// The stages of a remove, in order. A hook stage is reported only when that
+/// hook has a script; the branch stage only when the branch is to go.
+public enum WorktreeRemovalStep: Sendable, Equatable {
+  case preDeleteHook
+  case removingWorktree
+  case postDeleteHook
+  case deletingBranch
+
+  /// Where a remove of this worktree under these settings starts, so a
+  /// caller can show the first stage before the first report arrives.
+  public static func first(for project: Project) -> WorktreeRemovalStep {
+    WorktreeHooks.hasScript(project.settings.preDeleteHook) ? .preDeleteHook : .removingWorktree
+  }
+}
+
+/// The worktree is gone but its branch is not: git refused to delete it,
+/// usually because it has commits no other branch has.
+public struct BranchDeletionFailure: Error, CustomStringConvertible {
+  public let branch: String
+  public let underlying: any Error
+
+  public init(branch: String, underlying: any Error) {
+    self.branch = branch
+    self.underlying = underlying
+  }
+
+  public var description: String {
+    "branch \(branch) was not deleted: \(underlying)"
   }
 }

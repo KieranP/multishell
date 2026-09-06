@@ -106,8 +106,12 @@ from the Finder has PATH set to the system directories only, so
 Node came from Homebrew or a version manager.
 The terminals in this app are interactive login shells, and a hook should see
 what they see; `-l` alone misses `.zshrc`, where many people set PATH. Cost:
-a hook pays for the user's shell startup, and rc-file output lands in the
-hook's stderr if it fails.
+a hook pays for the user's shell startup. Its rc files also write to stderr
+under `-i` with no terminal (`can't change option: zle`), and that used to
+be the whole of a failing hook's message, so the script's first line writes
+a marker to stderr and the message is the hook's stdout, then its stderr
+from after the marker (`ShellCommand`): a hook's `echo` is as much its
+account of what went wrong as its errors are.
 
 ## Watch where git records worktrees, poll for everything else
 
@@ -250,11 +254,12 @@ delete someone's setup. The failure is reported once, not on every watcher
 tick and every return to the foreground; a Refresh the user asks for reports
 it again.
 
-## Worktree removal asks first, per project
+## Worktree removal asks first
 
-The confirmation names the path, says the branch is kept, and adds what the
-status badge and live-shell count know: uncommitted files and open terminals.
-A project can turn it off in its settings.
+The confirmation names the path, says what happens to the branch, and adds
+what the status badge and live-shell count know: uncommitted files and open
+terminals. The toggle was per project at first; it is global now, see
+"Removal and the branch are global settings" below.
 
 ## Settings windows look like Settings
 
@@ -622,13 +627,13 @@ With auto-start on, New Tab (Cmd+T) and the first tab a worktree gets when
 selected, which is what follows a create, start the preferred agent instead
 of a shell. It is a global toggle with a per-project override, like the agent
 itself, and does nothing where no agent is in force. New Shell Tab
-(Cmd+Shift+T) and New Tab in the worktree menu always open a shell so one
+(Cmd+Shift+T), also the worktree menu's item, always opens a shell so one
 stays reachable, New Agent Tab moved to Cmd+Option+T, and splits stay plain
 shells. Whether selecting opens a first tab at all is its own toggle; see
-"Selecting a worktree opens a terminal, unless told not to". The
-post-create hook finishes before the worktree appears, so the agent starts
-after `npm install`; a failing hook still selects, so it starts with the
-hook's alert on top. Nothing else changed: the tab records the agent id and
+"Selecting a worktree opens a terminal, unless told not to". The first tab
+is held back until the post-create hook ends, so the agent starts after
+`npm install`; a failing hook still hands over, so it starts with the hook's
+alert on top. Nothing else changed: the tab records the agent id and
 builds its command line at launch, so a saved agent tab resumes where it can.
 
 ## Debug builds keep their own state, socket and integration
@@ -703,7 +708,7 @@ Cost: a shell without the `-l -i -c` flags (nu, xonsh) still falls back to
 ## Open in Editor, and one menu for what acts on a worktree
 
 The detail header's right side is one actions menu: Open in Editor, Reveal
-in Finder, Copy Path, Copy Branch, New Tab, New Agent Tab, Clear Status and
+in Finder, Copy Path, Copy Branch, New Shell Tab, New Agent Tab, Clear Status and
 Remove Worktree. The sidebar's worktree context menu is the same view
 (`WorktreeActions`), so an action added once appears in both. The copy
 icons beside the branch and path, and the header's own New Tab and New Agent
@@ -768,3 +773,72 @@ it empty, and Cmd+T or the actions menu starts the first shell; saved tabs
 still warm up on a visit, and a create follows the same rule since it ends
 in a select. Why: a person triaging many worktrees wanted to look without
 starting a shell in each. Cost: one more thing the first tab depends on.
+
+## Removal and the branch are global settings
+
+"Ask before removing a worktree" moved from project settings to Settings >
+Worktrees, and a second toggle beside it, "Always delete the branch with its
+worktree", is off by default. With it off, removing a worktree asks whether
+the branch goes too, even for a person who turned the confirmation off:
+deleting a branch is the one part of a removal the sidebar cannot undo, and
+`PendingWorktreeRemoval.decide` is where the two toggles and a detached
+worktree meet. The branch is deleted last, after the post-delete hook, so a
+hook that pushes it still finds it and a hook that fails keeps it. It is
+`git branch -d`: a branch with commits nothing else has is refused, the
+alert says the worktree went but the branch stayed, and offers `-D` as
+"Delete Branch Anyway", the shape "Remove Anyway" has.
+
+Why global: whether a removal asks is about the person, not the repository,
+and a per-project flag that was off silently made the branch question
+unanswerable. Cost: a project's stored `confirmsWorktreeRemoval` is read no
+more, so anyone who had turned it off turns the global one off once.
+
+## A custom shell is a path typed once, an id everywhere
+
+The shell dropdown ends in "Custom path…", the shape the agent and editor
+dropdowns have: the store keeps `ShellCatalogue.customID` and the path in
+`Workspace.customShellPath`, and `effectivePath` resolves the id when a
+shell starts or a hook runs. A project can pick the custom id too and means
+that same path. Blank resolves to `$SHELL`, and a caption under the field
+says so, or says nothing executable is there.
+
+Why an id rather than storing the typed path as the shell: the dropdown
+lists paths it found, and a typed one that is not among them would show as
+"not installed" whether it exists or not.
+
+## A slow hook shows in the pane, not in a modal
+
+Only the pre-create hook and `git worktree add` run under the New Worktree
+sheet: until they finish there is no worktree to show, and the sheet names
+the stage beside Cancel. As soon as git has added the worktree the sheet
+closes, the worktree is selected, and the post-create hook runs on its own
+with the detail pane showing "Running the post-create hook…" in place of
+the terminals; the sidebar row carries a spinner. The first tab is held back
+until the hook ends, then opens if the worktree is still the one shown, or
+on the next visit; nothing else starts a shell there meanwhile, and Remove
+waits too. Removal takes the same shape: the dialog answers, and the pane
+shows the pre-delete hook, `git worktree remove`, the post-delete hook and
+the branch deletion stage by stage while the terminals are still there
+underneath. A veto or a refusal clears the stage and the terminals return.
+
+Why: a post-create hook running `npm install` held the sheet, and with it
+the whole window, for a minute; a pre-delete hook did the same with nothing
+on screen at all. With the operation a runtime value per worktree
+(`AppModel.worktreeOperations`, a `WorktreeOperation`), two creates can run
+side by side and the user can work elsewhere.
+
+A hook that fails while the worktree is still there, the post-create hook or
+a pre-delete veto, stays on the pane: the stage's title, what the hook
+printed, and a Dismiss, with a red mark on the sidebar row for a worktree
+that is not the one shown. Dismissing a post-create failure opens the first
+tab the hook had held back. An alert was tried first and lost twice over: a
+hook that fails at once raised it while the sheet was still going away, and
+macOS drops a presentation started under another; a hook that fails later
+raised it over whatever the user had moved on to. Failures of the stages
+that end with the worktree gone, git's own refusal, the post-delete hook and
+the branch deletion, keep their alerts: the first two have nothing left to
+show a pane for, and the refusal carries "Remove Anyway".
+
+Cost: the terminals of a worktree being removed are hidden a moment before
+they close, and a failed hook holds its worktree, New Tab and Remove
+included, until someone clicks Dismiss.

@@ -18,7 +18,9 @@ extension AppModel {
   /// Cmd+T: the preferred agent when auto-start is on for this project,
   /// else a plain shell.
   func newTab() {
-    guard let worktree = workspace.selectedWorktree, directoryExists(of: worktree) else { return }
+    guard let worktree = workspace.selectedWorktree, !isBusy(worktree.id),
+      directoryExists(of: worktree)
+    else { return }
     openFirstOrNewTab(in: worktree)
     sync()
   }
@@ -26,7 +28,9 @@ extension AppModel {
   /// Cmd+Shift+T: always a plain shell, so one stays reachable when every
   /// New Tab starts an agent.
   func newShellTab() {
-    guard let worktree = workspace.selectedWorktree, directoryExists(of: worktree) else { return }
+    guard let worktree = workspace.selectedWorktree, !isBusy(worktree.id),
+      directoryExists(of: worktree)
+    else { return }
     store.openTab(in: worktree.id)
     sync()
   }
@@ -87,6 +91,7 @@ extension AppModel {
     guard
       let worktree = workspace.selectedWorktree,
       let tab = workspace.activeTab(in: worktree.id),
+      !isBusy(worktree.id),
       directoryExists(of: worktree)
     else { return }
     store.splitFocusedPane(of: tab.id, axis: axis)

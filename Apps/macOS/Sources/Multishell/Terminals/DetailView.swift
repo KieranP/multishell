@@ -9,7 +9,13 @@ struct DetailView: View {
     VStack(spacing: 0) {
       if let worktree = model.workspace.selectedWorktree {
         toolbar(worktree, theme: theme)
-        if let tab = model.workspace.activeTab(in: worktree.id) {
+        if let operation = model.worktreeOperations[worktree.id] {
+          // In place of the terminals: a create has none yet, and a
+          // remove is about to close them.
+          WorktreeOperationView(operation: operation, theme: theme) {
+            model.dismissOperationFailure(of: worktree)
+          }
+        } else if let tab = model.workspace.activeTab(in: worktree.id) {
           TabBar(
             model: model,
             tabs: model.workspace.tabs(in: worktree.id),

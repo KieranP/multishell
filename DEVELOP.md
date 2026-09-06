@@ -79,7 +79,10 @@ portability rule below.
                                 thing views talk to), commands, delegate,
                                 PresentedError, NewWorktreeRequest,
                                 SessionStates (who clears what), PendingClose,
-                                PendingProjectRemoval, NotificationPolicy,
+                                PendingProjectRemoval, PendingWorktreeRemoval
+                                (what the removal dialog asks),
+                                WorktreeOperation (the create or remove stage
+                                the pane shows), NotificationPolicy,
                                 AgentLaunch, AgentDetection, ShellDetection,
                                 EditorDetection, EditorLaunch (what Open in
                                 Editor does)
@@ -87,13 +90,15 @@ portability rule below.
                                 the menu items shared with the detail header
         Terminals/              hosts (Ghostty, SwiftTerm, MultiEngine),
                                 SurfaceView, PaneTreeView + WeightedSplit,
-                                SplitMath (divider arithmetic), TabBar
+                                SplitMath (divider arithmetic), TabBar,
+                                WorktreeOperationView (a hook in progress)
         Sheets/                 new-worktree sheet and its NewWorktreeDraft (the
                                 sheet's decisions, testable), project settings
                                 window, app settings, AgentSettingsTab, the
                                 project-removal dialog
         Support/                theme -> Color, UIMetrics, kqueue watcher,
-                                ToolbarTabs, InfoButton (settings help), the
+                                ToolbarTabs, InfoButton (settings help),
+                                IconButton (refresh and reveal), the
                                 project icon view, title-bar behaviour,
                                 WindowAccessor, home-directory abbreviation,
                                 DescriptorLimit, SocketStateSource,
@@ -229,7 +234,10 @@ it by either and `EditorLaunch` decides what Open in Editor does.
 
 **A hook stage.** Add a case to `HookFailure.Stage`, run it from
 `WorktreeCoordinator` in the right order, give `PresentedError` a title that
-says whether the operation happened, and an editor in `HooksTab`.
+says whether the operation happened, and an editor in `HooksTab`. A stage
+the sheet waits on gets a `WorktreeCreationStep` and its text in
+`NewWorktreeDraft.progressText`; one the pane shows gets a
+`WorktreeRemovalStep` or a `WorktreeOperation.Step` and its title there.
 
 **A keyboard shortcut.** Also add it to `GhosttyTerminalHost.appShortcuts`,
 or the surface consumes the keystroke before the menu bar sees it.
@@ -315,8 +323,8 @@ volume that has gone away it blocks for as long as the mount takes to time
 out. The checks the polling paths make run off the main thread
 (`AppModel.offMain`), so a dead mount slows a tick rather than the app.
 
-Open decisions, not defects: a hook that never exits keeps the sheet
-waiting, and a pre hook that never exits blocks the create or remove, with
-no timeout; the existing-branch picker lists local
+Open decisions, not defects: a pre-create hook that never exits keeps the
+sheet waiting, and any other hook that never exits keeps its worktree busy,
+with no timeout and no Cancel; the existing-branch picker lists local
 branches only, so a remote-only branch is created as a new one based on its
 remote.

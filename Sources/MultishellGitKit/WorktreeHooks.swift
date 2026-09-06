@@ -107,6 +107,11 @@ public struct WorktreeHooks: Sendable {
     )
   }
 
+  /// Whether a hook field has anything to run; blank means no hook.
+  public static func hasScript(_ script: String) -> Bool {
+    !script.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+  }
+
   private func run(
     _ script: String,
     stage: HookFailure.Stage,
@@ -117,7 +122,7 @@ public struct WorktreeHooks: Sendable {
     shellPath: String?
   ) async throws {
     let command = script.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !command.isEmpty else { return }
+    guard Self.hasScript(command) else { return }
 
     let environment = [
       "MULTISHELL_PROJECT_PATH": project.path.path,

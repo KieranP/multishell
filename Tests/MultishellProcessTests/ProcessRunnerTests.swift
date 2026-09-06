@@ -320,6 +320,66 @@ struct HookShellTests {
     #expect(out == "ab", "a sound script runs every line")
   }
 
+  /// The user's rc files write to stderr under `-i` with no terminal, and
+  /// that noise used to be the whole of a failing hook's message when the
+  /// hook itself printed little or nothing.
+  @Test func aFailingScriptsMessageIsItsOwnStderrNotTheRcFiles() async throws {
+    let home = URL(fileURLWithPath: NSTemporaryDirectory())
+      .appendingPathComponent("multishell-home-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: home, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: home) }
+    for file in [".zshrc", ".zprofile", ".zshenv", ".bashrc", ".bash_profile", ".profile"] {
+      try "echo 'rc noise' >&2\n".write(
+        to: home.appendingPathComponent(file), atomically: true, encoding: .utf8)
+    }
+    let shell = ShellCommand.shell!.executable.lastPathComponent
+    guard ShellCommand.markingShells.contains(shell) else { return }
+
+    let cases: [(script: String, message: String)] = [
+      ("echo 'the hook said so' >&2\nexit 3", "the hook said so"),
+      ("exit 3", ""),
+      ("echo hey\necho 'and then' >&2\nexit 3", "hey\nand then"),
+      ("echo hey\nexit 3", "hey"),
+    ]
+    for (script, message) in cases {
+      do {
+        _ = try await ShellCommand().runScript(script, in: home, environment: ["HOME": home.path])
+        Issue.record("the script did not fail")
+      } catch let failure as ProcessFailure {
+        #expect(failure.status == 3)
+        #expect(!failure.message.contains("rc noise"), "\(script): \(failure.message)")
+        #expect(failure.message == message, "\(script): \(failure.message)")
+      }
+    }
+  }
+
+  @Test func aFailureMessageIsStdoutThenTheScriptsStderr() {
+    let marker = ShellCommand.outputMarker
+    #expect(
+      ShellCommand.failureMessage(standardOutput: "hey\n", standardError: "noise\n\(marker)\nbad\n")
+        == "hey\nbad")
+    #expect(
+      ShellCommand.failureMessage(standardOutput: "", standardError: "\(marker)\n") == "",
+      "silent")
+    #expect(ShellCommand.failureMessage(standardOutput: "  hey  ", standardError: "") == "hey")
+  }
+
+  @Test func theMarkerSplitsStderrAndIsWrittenForShellsThatTakeTheRedirect() {
+    let marker = ShellCommand.outputMarker
+    #expect(ShellCommand.scriptOutput(fromStderr: "noise\n\(marker)\nmine\n") == "mine")
+    #expect(ShellCommand.scriptOutput(fromStderr: "noise\n\(marker)\n") == "")
+    #expect(ShellCommand.scriptOutput(fromStderr: "no marker here") == "no marker here")
+    #expect(
+      ShellCommand.markingOutput("a", shell: URL(fileURLWithPath: "/bin/zsh"))
+        == "printf '%s\\n' '\(marker)' >&2\na")
+    #expect(
+      ShellCommand.markingOutput("a", shell: URL(fileURLWithPath: "/opt/homebrew/bin/fish"))
+        .hasPrefix("printf"))
+    #expect(
+      ShellCommand.markingOutput("a", shell: URL(fileURLWithPath: "/bin/tcsh")) == "a",
+      "csh has no >&2")
+  }
+
   @Test func errexitIsPrependedForThePosixFamilyOnly() {
     #expect(
       ShellCommand.stoppingAtFirstFailure("a\nb", shell: URL(fileURLWithPath: "/bin/zsh"))

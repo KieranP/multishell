@@ -318,6 +318,10 @@ extension WorkspaceStore {
     workspace.defaultShell = path
   }
 
+  public func setCustomShellPath(_ path: String) {
+    workspace.customShellPath = path
+  }
+
   public func setPreferredEditor(_ id: String?) {
     workspace.preferredEditorID = id
   }
@@ -328,5 +332,17 @@ extension WorkspaceStore {
 
   public func setOpensTerminalOnSelect(_ enabled: Bool) {
     workspace.opensTerminalOnSelect = enabled
+  }
+}
+
+// MARK: - Worktree removal
+
+extension WorkspaceStore {
+  public func setConfirmsWorktreeRemoval(_ enabled: Bool) {
+    workspace.confirmsWorktreeRemoval = enabled
+  }
+
+  public func setDeletesBranchWithWorktree(_ enabled: Bool) {
+    workspace.deletesBranchWithWorktree = enabled
   }
 }

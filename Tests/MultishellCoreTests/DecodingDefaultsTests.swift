@@ -189,6 +189,7 @@ struct DecodingDefaultsTests {
   @Test func aWorkspaceWithoutShellEditorOrSelectionFieldsGetsTheDefaults() throws {
     let workspace = try decode(Workspace.self, #"{ "projects": [] }"#)
     #expect(workspace.defaultShell == nil, "$SHELL")
+    #expect(workspace.customShellPath == "")
     #expect(workspace.preferredEditorID == nil)
     #expect(workspace.customEditorCommand == "")
     #expect(workspace.opensTerminalOnSelect, "on until turned off")
@@ -200,6 +201,24 @@ struct DecodingDefaultsTests {
     #expect(chosen.defaultShell == "/opt/homebrew/bin/fish")
     #expect(chosen.preferredEditorID == "future-editor", "an unknown editor id is kept as text")
     #expect(!chosen.opensTerminalOnSelect)
+  }
+
+  @Test func aWorkspaceWithoutTheRemovalFieldsAsksAndKeepsTheBranch() throws {
+    let workspace = try decode(Workspace.self, #"{ "projects": [] }"#)
+    #expect(workspace.confirmsWorktreeRemoval, "asks until told not to")
+    #expect(!workspace.deletesBranchWithWorktree, "the branch stays until told otherwise")
+
+    let chosen = try decode(
+      Workspace.self,
+      #"{ "confirmsWorktreeRemoval": false, "deletesBranchWithWorktree": true, "defaultShell": "custom", "customShellPath": "/opt/nu" }"#
+    )
+    #expect(!chosen.confirmsWorktreeRemoval && chosen.deletesBranchWithWorktree)
+    #expect(chosen.defaultShell == ShellCatalogue.customID && chosen.customShellPath == "/opt/nu")
+  }
+
+  @Test func aProjectsOldRemovalFlagIsIgnoredNowThatTheSettingIsGlobal() throws {
+    let settings = try decode(ProjectSettings.self, #"{ "confirmsWorktreeRemoval": false }"#)
+    #expect(settings == ProjectSettings())
   }
 
   @Test func aSessionsShellIsRuntimeOnlyAndNeverSaved() throws {

@@ -108,7 +108,6 @@ struct ProjectSettingsTests {
     #expect(settings.worktreeDirectory == "./.worktrees")
     #expect(settings.branchPrefix == nil)
     #expect(settings.effective(defaults: defaults).branchPrefix == "team/")
-    #expect(settings.confirmsWorktreeRemoval)
   }
 }
 
@@ -124,6 +123,21 @@ struct ShellCatalogueTests {
       ShellCatalogue.effectivePath(global: "/bin/bash", override: ShellCatalogue.loginShellID)
         == nil, "a project can step back to $SHELL")
     #expect(ShellCatalogue.effectivePath(global: "", override: nil) == nil)
+  }
+
+  @Test func theCustomIdResolvesToTheTypedPathOrToTheLoginShellWhenBlank() {
+    let custom = ShellCatalogue.customID
+    #expect(
+      ShellCatalogue.effectivePath(global: custom, override: nil, customPath: " /opt/nu ")
+        == "/opt/nu")
+    #expect(ShellCatalogue.effectivePath(global: custom, override: nil, customPath: "  ") == nil)
+    #expect(ShellCatalogue.effectivePath(global: custom, override: nil) == nil)
+    #expect(
+      ShellCatalogue.effectivePath(global: "/bin/bash", override: custom, customPath: "/opt/nu")
+        == "/opt/nu", "a project can pick the custom path over a global shell")
+    #expect(
+      ShellCatalogue.effectivePath(global: custom, override: "/bin/bash", customPath: "/opt/nu")
+        == "/bin/bash")
   }
 
   @Test func theLoginShellFallsBackToZshWhenTheEnvironmentHasNone() {
@@ -145,6 +159,11 @@ struct ShellCatalogueTests {
     #expect(workspace.defaultShell(for: plain) == "/bin/bash")
     #expect(workspace.defaultShell(for: fish) == "/usr/local/bin/fish")
     #expect(workspace.defaultShell(for: login) == nil)
+
+    workspace.defaultShell = ShellCatalogue.customID
+    workspace.customShellPath = "/opt/homebrew/bin/nu"
+    #expect(workspace.defaultShell(for: plain) == "/opt/homebrew/bin/nu")
+    #expect(workspace.defaultShell(for: fish) == "/usr/local/bin/fish")
   }
 }
 

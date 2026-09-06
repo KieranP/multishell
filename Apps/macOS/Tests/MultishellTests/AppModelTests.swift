@@ -299,16 +299,49 @@ struct AppModelTests {
     #expect(h.model.liveTerminalCount == 1)
   }
 
-  @Test func removalAsksUnlessTheProjectOptedOut() {
+  @Test func removalAsksUnlessTheGlobalSettingsSettleBothTheWorktreeAndTheBranch() {
     let h = Harness()
     h.model.requestRemoval(of: h.feature)
     #expect(h.model.pendingRemoval?.id == h.feature.id)
+    #expect(h.model.pendingRemoval?.offersBranchDeletion == true)
 
     h.model.pendingRemoval = nil
-    h.model.updateSettings(ProjectSettings(confirmsWorktreeRemoval: false), for: h.project)
+    h.model.setConfirmsWorktreeRemoval(false)
+    h.model.requestRemoval(of: h.feature)
+    #expect(h.model.pendingRemoval?.id == h.feature.id, "the branch question is still open")
+    #expect(h.model.pendingRemoval?.offersBranchDeletion == true)
+
+    h.model.pendingRemoval = nil
+    h.model.setDeletesBranchWithWorktree(true)
     h.model.requestRemoval(of: h.feature)
     #expect(
       h.model.pendingRemoval == nil, "goes straight to removal, which needs git and so no-ops here")
+
+    h.model.setConfirmsWorktreeRemoval(true)
+    h.model.requestRemoval(of: h.feature)
+    #expect(h.model.pendingRemoval?.deletesBranch == true)
+    #expect(h.model.pendingRemoval?.offersBranchDeletion == false)
+  }
+
+  @Test func theCustomShellPathReachesTabsAndTheCaptionSaysWhenItWillNot() {
+    let h = Harness()
+    let session = TerminalSession(
+      worktreeID: h.main.id, workingDirectory: h.main.path, title: "Shell")
+    h.model.setDefaultShell(ShellCatalogue.customID)
+    #expect(h.model.prepared(session).shell == ShellCatalogue.loginShellPath(), "blank path")
+    #expect(h.model.customShellPathProblem?.hasPrefix("Blank") == true)
+    #expect(h.model.shellDisplayName(ShellCatalogue.customID).contains("blank"))
+
+    h.model.setCustomShellPath("/no/such/shell")
+    #expect(h.model.prepared(session).shell == "/no/such/shell")
+    #expect(h.model.customShellPathProblem?.hasPrefix("Nothing executable") == true)
+
+    h.model.setCustomShellPath(" /bin/sh ")
+    #expect(h.model.prepared(session).shell == "/bin/sh")
+    #expect(h.model.customShellPathProblem == nil)
+    #expect(h.model.shellDisplayName(ShellCatalogue.customID) == "the custom path /bin/sh")
+    h.model.updateSettings(ProjectSettings(defaultShell: "/bin/bash"), for: h.project)
+    #expect(h.model.prepared(session).shell == "/bin/bash", "a project override still wins")
   }
 
   @Test func activityInABackgroundTabIsRememberedUntilItIsShown() {

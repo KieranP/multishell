@@ -18,13 +18,15 @@ struct WorktreeActions: View {
     // whichever worktree the detail view is showing, and without the first
     // tab a select would add. Always a shell: the agent has its own item,
     // so auto-start does not apply here.
-    Button("New Tab") {
+    Button("New Shell Tab") {
       if model.select(worktree, openingFirstTab: false) { model.newShellTab() }
     }
+    .disabled(model.isBusy(worktree.id))
     if model.preferredAgentID(for: worktree) != nil {
       Button("New Agent Tab") {
         if model.select(worktree, openingFirstTab: false) { model.newAgentTab() }
       }
+      .disabled(model.isBusy(worktree.id))
     }
     if model.state(ofWorktree: worktree.id) != nil {
       Divider()
@@ -33,6 +35,7 @@ struct WorktreeActions: View {
     if !worktree.isPrimary {
       Divider()
       Button("Remove Worktree…", role: .destructive) { model.requestRemoval(of: worktree) }
+        .disabled(model.isBusy(worktree.id))
     }
   }
 }
