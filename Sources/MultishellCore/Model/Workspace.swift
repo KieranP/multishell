@@ -12,6 +12,12 @@ public struct Workspace: Codable, Hashable, Sendable {
 
   public var selectedWorktreeID: Worktree.ID?
   public var activeTabByWorktree: [Worktree.ID: TerminalTab.ID] = [:]
+  /// The user's own name for a worktree, where they gave one. Kept here
+  /// rather than on `Worktree` because git's list replaces those wholesale
+  /// on every refresh, and a name the user typed must outlive that. An
+  /// entry goes when its worktree does, so a removed worktree leaves
+  /// nothing behind in the state file.
+  public var worktreeNames: [Worktree.ID: String] = [:]
 
   public var appearance = Appearance()
   public var terminalEngine: TerminalEngine = .ghostty
@@ -71,6 +77,7 @@ public struct Workspace: Codable, Hashable, Sendable {
     selectedWorktreeID = try c.decodeIfPresent(Worktree.ID.self, forKey: .selectedWorktreeID)
     activeTabByWorktree =
       try c.decodeIfPresent([Worktree.ID: TerminalTab.ID].self, forKey: .activeTabByWorktree) ?? [:]
+    worktreeNames = try c.decodeIfPresent([Worktree.ID: String].self, forKey: .worktreeNames) ?? [:]
     appearance = try c.decodeIfPresent(Appearance.self, forKey: .appearance) ?? Appearance()
     // `try?`, not `try`: a state file from a newer build may name an engine
     // this build does not have, and that must not cost the sidebar.
@@ -132,6 +139,17 @@ extension Workspace {
       return nil
     }
     return siblings[(index + offset + siblings.count) % siblings.count]
+  }
+
+  /// The name the user gave this worktree, or `nil` where they gave none.
+  public func customName(of worktree: Worktree.ID) -> String? {
+    worktreeNames[worktree]
+  }
+
+  /// What the sidebar and the header call a worktree: the user's name where
+  /// there is one, else the branch, SHA or folder `Worktree.name` gives.
+  public func displayName(of worktree: Worktree) -> String {
+    worktreeNames[worktree.id] ?? worktree.name
   }
 
   public func worktrees(of project: Project.ID) -> [Worktree] {

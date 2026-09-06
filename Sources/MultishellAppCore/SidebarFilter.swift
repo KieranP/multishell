@@ -3,8 +3,10 @@ import MultishellCore
 /// What the sidebar shows for a filter string.
 ///
 /// A project whose own name matches keeps all its worktrees; otherwise only
-/// matching branches remain and the project is forced open. Pure, so the
-/// rules are tested without a view.
+/// worktrees whose name matches remain and the project is forced open. A
+/// renamed worktree matches on either name: the user may remember the one
+/// they typed or the branch under it. Pure, so the rules are tested without
+/// a view.
 public struct SidebarFilter: Sendable {
   public struct Entry: Equatable, Sendable {
     public let project: Project
@@ -29,7 +31,10 @@ public struct SidebarFilter: Sendable {
       if project.name.lowercased().contains(needle) {
         return Entry(project: project, worktrees: worktrees, forcedOpen: true)
       }
-      let matching = worktrees.filter { $0.name.lowercased().contains(needle) }
+      let matching = worktrees.filter {
+        $0.name.lowercased().contains(needle)
+          || workspace.displayName(of: $0).lowercased().contains(needle)
+      }
       return matching.isEmpty ? nil : Entry(project: project, worktrees: matching, forcedOpen: true)
     }
   }

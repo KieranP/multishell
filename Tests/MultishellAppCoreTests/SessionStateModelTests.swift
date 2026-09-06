@@ -57,6 +57,20 @@ struct SessionStateModelTests {
     #expect(h.model.sessionStates.isEmpty)
   }
 
+  /// A banner arrives with the app off screen, so it must name the worktree
+  /// the way the sidebar the user is picturing does.
+  @Test func aRenamedWorktreeIsNamedByItsNameInABanner() {
+    let h = Harness()
+    h.model.setNotifications(.attentionAndDone)
+    h.model.renameWorktree(h.feature.id, to: "Checkout flow")
+
+    h.source.send(SessionStateReport(state: .attention, cwd: h.feature.path.path))
+
+    #expect(h.notifier.posted.count == 1)
+    #expect(h.notifier.posted.first?.title.contains("Checkout flow") == true)
+    #expect(h.notifier.posted.first?.title.contains("feature") == false, "not the branch")
+  }
+
   @Test func notificationsFollowThePreferenceAndTheShownTab() {
     let h = Harness()
     h.source.send(SessionStateReport(state: .attention, cwd: h.main.path.path))

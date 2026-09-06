@@ -51,6 +51,20 @@ struct SidebarFilterTests {
     #expect(entries.allSatisfy { $0.worktrees.map(\.name) == ["main"] })
   }
 
+  /// A renamed worktree is findable by the name the user typed and by the
+  /// branch it still is.
+  @Test func aRenamedWorktreeMatchesOnEitherName() {
+    var ws = workspace
+    ws.worktreeNames[ws.worktrees[1].id] = "Checkout flow"
+
+    let byName = SidebarFilter("checkout FLOW").apply(to: ws)
+    #expect(byName.map(\.project.name) == ["acme-web"])
+    #expect(byName[0].worktrees.map(\.name) == ["feat/checkout"])
+
+    let byBranch = SidebarFilter("feat/").apply(to: ws)
+    #expect(byBranch[0].worktrees.map(\.name) == ["feat/checkout"])
+  }
+
   @Test func noMatchIsEmpty() {
     #expect(SidebarFilter("zzz").apply(to: workspace).isEmpty)
   }

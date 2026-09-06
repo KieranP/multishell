@@ -198,6 +198,16 @@ struct PendingWorktreeRemovalTests {
     #expect(settled.removeLabel == "Remove Worktree and Branch", "one button, saying what it does")
   }
 
+  /// The dialog names the row the user right-clicked. The branch is still
+  /// in the body: that is the part that cannot be undone.
+  @Test func aRenamedWorktreeIsAskedAboutByItsName() throws {
+    let decision = PendingWorktreeRemoval.decide(
+      branched, customName: "Checkout flow", confirms: true, alwaysDeletesBranch: false)
+    guard case .ask(let pending) = decision else { throw RemovalTestFailure(decision: decision) }
+    #expect(pending.title == "Remove worktree Checkout flow?")
+    #expect(pending.message(warning: nil).contains("The branch feat is kept unless"))
+  }
+
   @Test func withConfirmationOffOnlyAnOpenBranchQuestionStillAsks() throws {
     #expect(
       PendingWorktreeRemoval.decide(branched, confirms: false, alwaysDeletesBranch: true)

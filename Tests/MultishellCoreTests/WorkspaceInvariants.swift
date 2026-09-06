@@ -38,6 +38,11 @@ enum WorkspaceInvariants {
     for worktreeID in worktreeIDs where !ws.tabs(in: worktreeID).isEmpty {
       #expect(ws.activeTabByWorktree[worktreeID] != nil, "\(context): tabs but no active one")
     }
+    for (worktreeID, name) in ws.worktreeNames {
+      #expect(worktreeIDs.contains(worktreeID), "\(context): a name for a missing worktree")
+      #expect(
+        !name.trimmingCharacters(in: .whitespaces).isEmpty, "\(context): a blank custom name")
+    }
     if let selected = ws.selectedWorktreeID {
       #expect(worktreeIDs.contains(selected), "\(context): selection of a missing worktree")
     }

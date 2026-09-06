@@ -9,8 +9,8 @@ struct UIMetricsTests {
     let small = UIMetrics(fontSize: 11)
     let large = UIMetrics(fontSize: 16)
     for keyPath in [
-      \UIMetrics.body, \.secondary, \.caption, \.badge, \.mono, \.icon, \.rowHeight, \.tabHeight,
-      \.indent,
+      \UIMetrics.body, \.secondary, \.caption, \.badge, \.mono, \.icon, \.rowHeight,
+      \.namedRowHeight, \.tabHeight, \.indent,
     ] {
       #expect(small[keyPath: keyPath] < large[keyPath: keyPath])
     }
@@ -20,6 +20,9 @@ struct UIMetricsTests {
     for size in stride(from: 10.0, through: 18.0, by: 1) {
       let metrics = UIMetrics(fontSize: size)
       #expect(metrics.rowHeight >= metrics.body * 1.8, "size \(size)")
+      #expect(
+        metrics.namedRowHeight >= metrics.rowHeight + metrics.badge,
+        "a named row holds a branch line under the name at \(size)")
       #expect(metrics.badge >= 7, "badge text must stay legible at \(size)")
     }
   }

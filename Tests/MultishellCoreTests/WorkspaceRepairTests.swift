@@ -104,6 +104,18 @@ struct WorkspaceRepairTests {
     #expect(ws.activeTabByWorktree[worktree.id] == tab.id)
   }
 
+  @Test func aNameForAMissingWorktreeGoesAndABlankOneWithIt() {
+    var (ws, _) = sound()
+    let other = Worktree(
+      path: URL(fileURLWithPath: "/repos/demo-b"), projectID: project.id, head: "b")
+    ws.worktrees.append(other)
+    ws.worktreeNames = [worktree.id: "Checkout", other.id: "  ", "/repos/nowhere": "Ghost"]
+
+    ws.repairReferences()
+
+    #expect(ws.worktreeNames == [worktree.id: "Checkout"])
+  }
+
   @Test func aSelectionOfAMissingWorktreeIsCleared() {
     var (ws, _) = sound()
     ws.selectedWorktreeID = "/repos/nowhere"
@@ -128,6 +140,8 @@ struct WorkspaceRepairTests {
       { $0.activeTabByWorktree[$0.worktrees[0].id] = UUID() },
       { $0.activeTabByWorktree["/nowhere"] = tab.id },
       { $0.selectedWorktreeID = "/nowhere" },
+      { $0.worktreeNames["/nowhere"] = "Ghost" },
+      { $0.worktreeNames[$0.worktrees[0].id] = "  " },
       {
         $0.worktrees.append(
           Worktree(path: URL(fileURLWithPath: "/x"), projectID: "/gone", head: "h"))

@@ -9,6 +9,13 @@ struct WorktreeActions: View {
   let worktree: Worktree
 
   var body: some View {
+    // The field it opens is on the sidebar row, wherever the menu was
+    // asked for; the model carries which worktree is being renamed.
+    Button("Rename…") { model.beginRenaming(worktree) }
+    if model.customName(of: worktree) != nil {
+      Button("Use Branch Name") { model.renameWorktree(worktree.id, to: nil) }
+    }
+    Divider()
     Button("Open in Editor") { model.openInEditor(worktree) }
     Button("Reveal in Finder") { model.revealInFileBrowser(worktree.path) }
     Button("Copy Path") { model.copyToClipboard(worktree.path.path) }

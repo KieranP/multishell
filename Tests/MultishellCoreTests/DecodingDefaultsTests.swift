@@ -350,6 +350,13 @@ struct NewerFieldDefaultsTests {
     #expect(unlimited.hookTimeout == nil)
   }
 
+  @Test func aWorkspaceWithoutCustomWorktreeNamesHasNone() throws {
+    #expect(try decode(Workspace.self, #"{ "projects": [] }"#).worktreeNames.isEmpty)
+    let named = try decode(
+      Workspace.self, #"{ "worktreeNames": { "/repos/demo": "Checkout flow" } }"#)
+    #expect(named.worktreeNames == ["/repos/demo": "Checkout flow"])
+  }
+
   @Test func projectSettingsWithoutADecisionHaveNoneAndABrokenOneCostsOnlyItself() throws {
     #expect(try decode(ProjectSettings.self, "{}").sharedHooks == nil)
     let decided = try decode(

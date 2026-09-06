@@ -99,6 +99,12 @@ extension AppModel {
         return
       }
       store.replaceWorktrees(discovered, forProject: project.id)
+      // A worktree removed here or by hand takes its half-finished rename
+      // with it; a stale id would otherwise open a field unbidden if git
+      // ever listed that path again.
+      if let renaming = renamingWorktreeID, workspace.worktree(renaming) == nil {
+        renamingWorktreeID = nil
+      }
       worktreeRecords[project.id] = records
       missingProjects.remove(project.id)
       noteSharedSettings(shared.result, stamp: shared.stamp, for: project)
@@ -141,6 +147,48 @@ extension AppModel {
     }
     sync()
     return true
+  }
+
+  /// The name the user gave this worktree, or `nil` for none.
+  public func customName(of worktree: Worktree) -> String? {
+    workspace.customName(of: worktree.id)
+  }
+
+  /// What a row or a header calls this worktree: the user's name where they
+  /// gave one, else its branch.
+  public func displayName(of worktree: Worktree) -> String {
+    workspace.displayName(of: worktree)
+  }
+
+  /// The menus' Rename: the sidebar row swaps its name for a field. The
+  /// project is opened first, since the item is also in the detail header's
+  /// menu, where a collapsed project would leave no row to type into.
+  /// Nothing for a worktree that has gone since the menu opened.
+  public func beginRenaming(_ worktree: Worktree) {
+    guard workspace.worktree(worktree.id) != nil else { return }
+    store.setExpanded(true, forProject: worktree.projectID)
+    renamingWorktreeID = worktree.id
+  }
+
+  /// The field's Return, or the focus leaving it. Ignored once the rename
+  /// has ended, so the Escape that cancels is not undone by the commit that
+  /// losing focus would otherwise trigger.
+  public func commitRename(of id: Worktree.ID, to name: String) {
+    guard renamingWorktreeID == id else { return }
+    renamingWorktreeID = nil
+    store.setCustomName(name, forWorktree: id)
+  }
+
+  /// The field's Escape: the name stays as it was.
+  public func cancelRenaming() {
+    renamingWorktreeID = nil
+  }
+
+  /// Sets or clears a name without going through the field; `nil` is the
+  /// menu's Use Branch Name.
+  public func renameWorktree(_ id: Worktree.ID, to name: String?) {
+    renamingWorktreeID = nil
+    store.setCustomName(name, forWorktree: id)
   }
 
   /// A create or remove is running on the worktree, or has failed and not
@@ -335,7 +383,8 @@ extension AppModel {
   public func requestRemoval(of worktree: Worktree) {
     guard !isBusy(worktree.id) else { return }
     switch PendingWorktreeRemoval.decide(
-      worktree, confirms: workspace.confirmsWorktreeRemoval,
+      worktree, customName: customName(of: worktree),
+      confirms: workspace.confirmsWorktreeRemoval,
       alwaysDeletesBranch: workspace.deletesBranchWithWorktree)
     {
     case .ask(let pending):
@@ -359,6 +408,7 @@ extension AppModel {
   /// the worktree back if it is still there.
   public func removeWorktree(_ worktree: Worktree, deletingBranch: Bool = false) async {
     guard let worktrees, let project = workspace.project(worktree.projectID) else { return }
+    if renamingWorktreeID == worktree.id { renamingWorktreeID = nil }
     let resolved = resolved(project)
     worktreeOperations.begin(.init(WorktreeRemovalStep.first(for: resolved)), on: worktree.id)
     let stopper = ProcessStopper()

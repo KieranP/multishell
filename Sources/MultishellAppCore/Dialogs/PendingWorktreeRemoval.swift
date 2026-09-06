@@ -25,15 +25,20 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
 
   public let worktree: Worktree
   public let branch: BranchChoice
+  /// The name the user gave this worktree, or `nil` for none.
+  public let customName: String?
 
-  public init(worktree: Worktree, branch: BranchChoice) {
+  public init(worktree: Worktree, branch: BranchChoice, customName: String? = nil) {
     self.worktree = worktree
     self.branch = branch
+    self.customName = customName
   }
 
   public var id: String { worktree.id }
 
-  public var title: String { "Remove worktree \(worktree.name)?" }
+  /// The row the user right-clicked, by the name that row shows. The branch
+  /// is not lost: `message` names it, and the path, under this.
+  public var title: String { "Remove worktree \(customName ?? worktree.name)?" }
 
   /// The one button when the branch is decided; the keep-branch button when
   /// the dialog asks, beside `removeWithBranchLabel`.
@@ -50,7 +55,7 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
   public var deletesBranch: Bool { branch == .decided(deletes: true) }
 
   public static func decide(
-    _ worktree: Worktree, confirms: Bool, alwaysDeletesBranch: Bool
+    _ worktree: Worktree, customName: String? = nil, confirms: Bool, alwaysDeletesBranch: Bool
   ) -> Decision {
     let hasBranch = worktree.branch != nil
     let deletes = hasBranch && alwaysDeletesBranch
@@ -58,7 +63,8 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
     guard confirms || branchIsOpen else { return .remove(deletingBranch: deletes) }
     return .ask(
       PendingWorktreeRemoval(
-        worktree: worktree, branch: branchIsOpen ? .asks : .decided(deletes: deletes)))
+        worktree: worktree, branch: branchIsOpen ? .asks : .decided(deletes: deletes),
+        customName: customName))
   }
 
   /// Names the path and where it goes, says what happens to the branch,

@@ -150,9 +150,15 @@ struct SidebarView: View {
   private func projectRows(_ project: Project, worktrees: [Worktree], theme: Theme) -> some View {
     let metrics = model.metrics
     let expanded = project.isExpanded || isFiltering
-    let visibleRows = 1 + (expanded ? worktrees.count : 0)
+    let visible = expanded ? worktrees : []
+    // A renamed worktree's row is two lines tall, so the drop's halfway
+    // point cannot be counted off one row height.
     let blockHeight =
-      CGFloat(visibleRows) * metrics.rowHeight + CGFloat(visibleRows - 1) * Self.rowSpacing
+      visible.reduce(metrics.rowHeight) { total, worktree in
+        let tall =
+          model.customName(of: worktree) != nil || model.renamingWorktreeID == worktree.id
+        return total + Self.rowSpacing + (tall ? metrics.namedRowHeight : metrics.rowHeight)
+      }
 
     return VStack(spacing: Self.rowSpacing) {
       ProjectRow(
@@ -174,21 +180,24 @@ struct SidebarView: View {
         return NSItemProvider(object: project.id as NSString)
       }
 
-      if expanded {
-        ForEach(worktrees) { worktree in
-          WorktreeRow(
-            worktree: worktree,
-            terminalCount: model.workspace.sessions(in: worktree.id).count,
-            state: model.state(ofWorktree: worktree.id),
-            operation: model.worktreeOperations[worktree.id],
-            isSelected: model.workspace.selectedWorktreeID == worktree.id,
-            status: model.statuses[worktree.id],
-            theme: theme,
-            metrics: metrics
-          )
-          .onTapGesture { model.select(worktree) }
-          .contextMenu { worktreeMenu(worktree) }
-        }
+      ForEach(visible) { worktree in
+        WorktreeRow(
+          worktree: worktree,
+          customName: model.customName(of: worktree),
+          isRenaming: model.renamingWorktreeID == worktree.id,
+          terminalCount: model.workspace.sessions(in: worktree.id).count,
+          state: model.state(ofWorktree: worktree.id),
+          operation: model.worktreeOperations[worktree.id],
+          isSelected: model.workspace.selectedWorktreeID == worktree.id,
+          status: model.statuses[worktree.id],
+          theme: theme,
+          metrics: metrics,
+          beginRename: { model.beginRenaming(worktree) },
+          commit: { model.commitRename(of: worktree.id, to: $0) },
+          cancel: { model.cancelRenaming() }
+        )
+        .onTapGesture { model.select(worktree) }
+        .contextMenu { worktreeMenu(worktree) }
       }
     }
     .overlay(alignment: dropTarget?.edge == .bottom ? .bottom : .top) {

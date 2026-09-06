@@ -45,6 +45,13 @@ extension Workspace {
     let owned = Set(tabs.flatMap(\.sessionIDs))
     sessions.removeAll { !owned.contains($0.id) }
 
+    // A name whose worktree is gone would come back if a worktree were
+    // ever made at that path again, and a blank one would draw an empty
+    // first line over the branch.
+    worktreeNames = worktreeNames.filter { id, name in
+      worktreeIDs.contains(id) && !name.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
     for (worktreeID, tabID) in activeTabByWorktree where tab(tabID)?.worktreeID != worktreeID {
       activeTabByWorktree[worktreeID] = tabs(in: worktreeID).last?.id
     }

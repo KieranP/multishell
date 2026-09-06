@@ -28,6 +28,10 @@ public final class AppModel<Surface> {
   /// pane in place of the terminals; see `WorktreeOperations` for who owns
   /// an entry.
   public var worktreeOperations = WorktreeOperations()
+  /// The worktree whose sidebar row is showing its name field, or `nil`
+  /// when none is. Runtime state, so the menu that starts a rename and the
+  /// row that draws the field need not know about each other.
+  public var renamingWorktreeID: Worktree.ID?
   /// The post-create hooks still running, so a test can await one.
   @ObservationIgnored public var postCreateHooks: [Worktree.ID: Task<Void, Never>] = [:]
   /// The stop handle for the hook running on each worktree, behind the

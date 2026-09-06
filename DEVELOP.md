@@ -145,8 +145,9 @@ macOS: `~/Library/Application Support/Multishell/`. Linux:
 `multishell.debug.sock` and `integration.debug/` so `make run` never touches
 the installed app's state; themes and the helper link are shared.
 
-- `state.json`: the sidebar, tabs, pane trees and every setting. Not
-  processes, not shell titles, not the shell a tab resolved to.
+- `state.json`: the sidebar, tabs, pane trees, the names given to worktrees
+  and every setting. Not processes, not shell titles, not the shell a tab
+  resolved to.
 - `state.<timestamp>.broken.json`: a state file that failed to decode.
 - `themes/*.json`, with `themes/examples/` not loaded.
 - `multishell.sock`, mode 0600, unlinked on quit and at launch when nobody

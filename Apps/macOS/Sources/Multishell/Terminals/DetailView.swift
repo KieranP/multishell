@@ -47,7 +47,8 @@ struct DetailView: View {
     .background(theme.backgroundColor)
   }
 
-  /// One line: project › branch, then the path, then the actions menu. The
+  /// One line: project › name, the branch under a renamed one, then the
+  /// path, then the actions menu. The
   /// path gives way first when the window is narrow; the names never do.
   /// As tall as the title-bar band; see `UIMetrics.headerHeight`.
   private func toolbar(_ worktree: Worktree, theme: Theme) -> some View {
@@ -67,11 +68,20 @@ struct DetailView: View {
       Image(systemName: "chevron.right")
         .font(.system(size: 9, weight: .bold))
         .foregroundStyle(theme.textTertiary)
-      Text(worktree.name)
+      Text(model.displayName(of: worktree))
         .font(.system(size: model.metrics.mono, weight: .medium, design: .monospaced))
         .foregroundStyle(theme.ansiRGB[6].color)
         .lineLimit(1)
         .layoutPriority(1)
+      // A renamed worktree still says which branch it is: every git command
+      // the user runs here acts on that, not on the name they chose.
+      if model.customName(of: worktree) != nil {
+        Text(worktree.name)
+          .font(.system(size: model.metrics.caption, design: .monospaced))
+          .foregroundStyle(theme.textTertiary)
+          .lineLimit(1)
+          .truncationMode(.middle)
+      }
       Text(worktree.path.path.abbreviatingHomeDirectory())
         .font(.system(size: model.metrics.caption, design: .monospaced))
         .foregroundStyle(theme.textTertiary)

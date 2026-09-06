@@ -34,6 +34,16 @@ struct AccessibilityTextTests {
       .contains("failed: The post-create hook failed"))
   }
 
+  @Test func aRenamedRowReadsItsNameThenItsBranch() {
+    let feature = Worktree(
+      path: URL(fileURLWithPath: "/w/feat"), projectID: "/w", head: "abc", branch: "feat")
+    #expect(
+      AccessibilityText.worktree(
+        feature, customName: "Checkout flow", state: nil, status: nil, operation: nil,
+        terminalCount: 0, isSelected: false)
+        == "Checkout flow, linked worktree, branch feat, Nothing running")
+  }
+
   @Test func theKindNamesBareDetachedMainAndLinked() {
     let main = Worktree(
       path: URL(fileURLWithPath: "/r"), projectID: "/r", head: "abc", branch: "main",

@@ -506,3 +506,31 @@ letting the picker go blank, the shape the shell dropdown already had.
 The sidebar and tab strip are plain views, so nothing told a screen reader
 what a row was. Each row is one element whose label reads its glyphs in
 drawing order. Cost: a string rebuilt per render of a row.
+
+## A worktree's name is the user's, beside the worktrees, not on them
+
+`git worktree list` is the truth about which worktrees exist, and every
+refresh replaces the whole list for a project. A name written onto `Worktree`
+would be gone on the next tick, so `worktreeNames` is a dictionary on the
+workspace keyed by worktree id, next to `activeTabByWorktree`. The store
+clears an entry wherever it forgets a worktree, so a removal leaves nothing
+in the state file to be inherited by whatever is created at that path next,
+and `repairReferences` drops names for worktrees that are not there and
+blank ones a hand edit could leave.
+
+The branch is never replaced, only demoted: the sidebar row shows the name
+on the first line and the branch under it, and the detail header shows the
+branch after the name. Every git command in that directory acts on the
+branch, and a row that hid it would be lying about where the user is.
+
+Everywhere else the app names a worktree to the user follows the row: the
+detail header, the removal dialog's title and a notification's banner, which
+arrives with the app off screen and must match the sidebar they are
+picturing. The removal dialog still names the branch and the path in its
+body, where the part that cannot be undone belongs.
+
+Which worktree is being renamed is runtime state on `AppModel`, not a flag
+on the row. The menu that starts a rename is shared by the sidebar and the
+detail header, and only the model is in both places. Cost: a taller row for
+a renamed worktree, so the sidebar's drag block measures its rows rather
+than counting them.

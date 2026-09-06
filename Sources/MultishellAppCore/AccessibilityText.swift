@@ -17,12 +17,14 @@ public enum AccessibilityText {
   }
 
   /// A worktree row: everything its glyphs mean, in the order they are
-  /// drawn.
+  /// drawn. A renamed row reads its name first and its branch after, the
+  /// two lines it shows.
   public static func worktree(
-    _ worktree: Worktree, state: SessionState?, status: WorktreeStatus?,
-    operation: WorktreeOperation?, terminalCount: Int, isSelected: Bool
+    _ worktree: Worktree, customName: String? = nil, state: SessionState?,
+    status: WorktreeStatus?, operation: WorktreeOperation?, terminalCount: Int, isSelected: Bool
   ) -> String {
-    var parts = ["\(worktree.name), \(kind(of: worktree).lowercased())"]
+    var parts = ["\(customName ?? worktree.name), \(kind(of: worktree).lowercased())"]
+    if customName != nil { parts.append("branch \(worktree.name)") }
     if isSelected { parts.append("selected") }
     parts.append((state ?? .idle).displayName)
     if let operation {

@@ -83,6 +83,42 @@ struct WorkspaceStoreTests {
     #expect(store.workspace.selectedWorktreeID == nil)
   }
 
+  @Test func aCustomNameIsTrimmedAndAnEmptyOneClearsIt() {
+    let (store, _, worktree) = demoStore()
+    store.setCustomName("  Checkout flow  ", forWorktree: worktree.id)
+    #expect(store.workspace.customName(of: worktree.id) == "Checkout flow")
+    #expect(store.workspace.displayName(of: worktree) == "Checkout flow")
+
+    store.setCustomName("   ", forWorktree: worktree.id)
+    #expect(store.workspace.worktreeNames.isEmpty, "a blank name is not a name")
+    #expect(store.workspace.displayName(of: worktree) == "main", "the branch takes the row back")
+
+    store.setCustomName("Later", forWorktree: worktree.id)
+    store.setCustomName(nil, forWorktree: worktree.id)
+    #expect(store.workspace.worktreeNames.isEmpty)
+  }
+
+  @Test func namingAWorktreeThatIsGoneIsIgnored() {
+    let (store, _, _) = demoStore()
+    store.setCustomName("Ghost", forWorktree: "/repos/vanished")
+    #expect(store.workspace.worktreeNames.isEmpty)
+  }
+
+  /// The name is the user's, but it belongs to a directory that no longer
+  /// exists; leaving it would put it back on whatever is made there next.
+  @Test func aRemovedWorktreeLeavesNoNameBehind() {
+    let (store, project, worktree) = demoStore()
+    store.setCustomName("Checkout flow", forWorktree: worktree.id)
+
+    store.replaceWorktrees([], forProject: project.id)
+    #expect(store.workspace.worktreeNames.isEmpty)
+
+    store.replaceWorktrees([worktree], forProject: project.id)
+    store.setCustomName("Checkout flow", forWorktree: worktree.id)
+    store.removeProject(project.id)
+    #expect(store.workspace.worktreeNames.isEmpty, "a removed project takes its names too")
+  }
+
   @Test func closingTheActiveTabActivatesAnother() {
     let (store, _, worktree) = demoStore()
     let first = store.openTab(in: worktree.id)!

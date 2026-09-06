@@ -112,10 +112,19 @@ extension WorkspaceStore {
     workspace.selectedWorktreeID = id
   }
 
+  /// The user's own name for a worktree, shown in place of its branch.
+  /// Empty or whitespace clears it, so the branch takes over again.
+  public func setCustomName(_ name: String?, forWorktree id: Worktree.ID) {
+    guard workspace.worktree(id) != nil else { return }
+    let trimmed = name?.trimmingCharacters(in: .whitespaces) ?? ""
+    workspace.worktreeNames[id] = trimmed.isEmpty ? nil : trimmed
+  }
+
   /// Forgets a worktree and everything hanging off it. Removing the
   /// directory itself is git's job, not the store's.
   private func discardWorktree(_ id: Worktree.ID) {
     workspace.worktrees.removeAll { $0.id == id }
+    workspace.worktreeNames[id] = nil
     workspace.tabs.removeAll { $0.worktreeID == id }
     workspace.sessions.removeAll { $0.worktreeID == id }
     workspace.activeTabByWorktree[id] = nil

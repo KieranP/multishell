@@ -16,6 +16,9 @@ struct UIMetrics {
   var icon: Double { body - 2 }
 
   var rowHeight: Double { (body * 2.15).rounded() }
+  /// A sidebar row carrying a user's name over its branch. Two lines of
+  /// text where `rowHeight` holds one, so the branch is not clipped.
+  var namedRowHeight: Double { (body * 3.2).rounded() }
 
   /// The sidebar and detail headers. Not smaller: a window with a hidden
   /// title bar and a unified-compact toolbar keeps a 40 pt title-bar band at

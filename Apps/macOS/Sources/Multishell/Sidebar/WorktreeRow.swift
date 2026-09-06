@@ -4,6 +4,12 @@ import SwiftUI
 
 struct WorktreeRow: View {
   let worktree: Worktree
+  /// The name the user gave this worktree, or `nil` for none. Shown in
+  /// place of the branch, which drops to a second line under it.
+  let customName: String?
+  /// The row is showing its name field; the model decides, so the menu that
+  /// starts the rename does not have to be the sidebar's.
+  let isRenaming: Bool
   let terminalCount: Int
   let state: SessionState?
   /// A create or remove running here, or failed and not yet dismissed.
@@ -12,8 +18,21 @@ struct WorktreeRow: View {
   let status: WorktreeStatus?
   let theme: Theme
   let metrics: UIMetrics
+  let beginRename: () -> Void
+  let commit: (String) -> Void
+  let cancel: () -> Void
+
+  @State private var draft = ""
+  @FocusState private var fieldFocused: Bool
 
   private var kind: String { AccessibilityText.kind(of: worktree) }
+
+  /// Two lines of text need the taller row; one line does not. The field
+  /// keeps the branch under it, so a row being renamed is always the tall
+  /// one.
+  private var height: Double {
+    customName == nil && !isRenaming ? metrics.rowHeight : metrics.namedRowHeight
+  }
 
   var body: some View {
     HStack(spacing: 7) {
@@ -27,11 +46,11 @@ struct WorktreeRow: View {
         .frame(width: metrics.icon + 2)
         .help("\(kind) · \((state ?? .idle).displayName)")
 
-      Text(worktree.name)
-        .font(.system(size: metrics.mono, design: .monospaced))
-        .foregroundStyle(theme.textPrimary.opacity(isSelected ? 1 : 0.8))
-        .lineLimit(1)
-        .truncationMode(.middle)
+      if isRenaming {
+        nameField
+      } else {
+        names
+      }
 
       Spacer(minLength: 4)
 
@@ -71,7 +90,7 @@ struct WorktreeRow: View {
     }
     .padding(.leading, metrics.indent)
     .padding(.trailing, 8)
-    .frame(height: metrics.rowHeight)
+    .frame(height: height)
     // Selected is a blue outline, not a fill: a filled row tinted the state
     // dot and hid its colour. A faint wash keeps it legible without that.
     .background(
@@ -88,10 +107,67 @@ struct WorktreeRow: View {
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(
       AccessibilityText.worktree(
-        worktree, state: state, status: status, operation: operation, terminalCount: terminalCount,
-        isSelected: isSelected)
+        worktree, customName: customName, state: state, status: status, operation: operation,
+        terminalCount: terminalCount, isSelected: isSelected)
     )
     .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    .accessibilityAction(named: "Rename", beginRename)
+  }
+
+  /// The user's name over the branch it stands for, or the branch alone
+  /// where they gave no name. The branch never disappears: it is what every
+  /// git command in this directory acts on.
+  @ViewBuilder
+  private var names: some View {
+    if let customName {
+      VStack(alignment: .leading, spacing: 0) {
+        Text(customName)
+          .font(.system(size: metrics.secondary, weight: .medium))
+          .foregroundStyle(theme.textPrimary.opacity(isSelected ? 1 : 0.85))
+          .lineLimit(1)
+          .truncationMode(.tail)
+        Text(worktree.name)
+          .font(.system(size: metrics.badge, design: .monospaced))
+          .foregroundStyle(theme.textTertiary)
+          .lineLimit(1)
+          .truncationMode(.middle)
+      }
+      .help(worktree.name)
+    } else {
+      Text(worktree.name)
+        .font(.system(size: metrics.mono, design: .monospaced))
+        .foregroundStyle(theme.textPrimary.opacity(isSelected ? 1 : 0.8))
+        .lineLimit(1)
+        .truncationMode(.middle)
+    }
+  }
+
+  /// Return commits, Escape leaves the name as it was, and leaving the field
+  /// commits. An empty name clears the custom one, so the branch takes the
+  /// row back. The branch stays under the field: it is what says which
+  /// worktree is being named.
+  private var nameField: some View {
+    VStack(alignment: .leading, spacing: 0) {
+      TextField("Name", text: $draft)
+        .textFieldStyle(.plain)
+        .font(.system(size: metrics.secondary, weight: .medium))
+        .foregroundStyle(theme.textPrimary)
+        .focused($fieldFocused)
+        .onSubmit { commit(draft) }
+        .onExitCommand(perform: cancel)
+        .onAppear {
+          draft = customName ?? ""
+          fieldFocused = true
+        }
+        .onChange(of: fieldFocused) { _, focused in
+          if !focused { commit(draft) }
+        }
+      Text(worktree.name)
+        .font(.system(size: metrics.badge, design: .monospaced))
+        .foregroundStyle(theme.textTertiary)
+        .lineLimit(1)
+        .truncationMode(.middle)
+    }
   }
 
   /// A dot in the theme's yellow while files are changed, with the count;

@@ -27,7 +27,7 @@ struct WorkspaceStoreInvariantTests {
 
     for step in 0..<400 {
       let ws = store.workspace
-      switch Int.random(in: 0..<10, using: &rng) {
+      switch Int.random(in: 0..<11, using: &rng) {
       case 0, 1:
         if let worktree = worktrees.randomElement(using: &rng) {
           store.openTab(in: worktree.id)
@@ -52,6 +52,14 @@ struct WorkspaceStoreInvariantTests {
           store.setSplitWeights(
             [Double.random(in: 0.1...3, using: &rng), Double.random(in: 0.1...3, using: &rng)],
             at: [], ofTab: tab.id)
+        }
+      case 9:
+        // Naming a worktree, blanking a name, and naming one a refresh may
+        // already have dropped.
+        if let worktree = worktrees.randomElement(using: &rng) {
+          store.setCustomName(
+            ["Checkout flow", "  ", "", "Spike"].randomElement(using: &rng),
+            forWorktree: worktree.id)
         }
       default:
         // A refresh that lost a worktree, or found one again.
