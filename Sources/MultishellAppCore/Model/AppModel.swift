@@ -38,6 +38,11 @@ public final class AppModel<Surface> {
   /// What each project's `.multishell.json` says, re-read on every refresh.
   /// Absent for a project without one.
   public var sharedSettings: [Project.ID: SharedProjectSettings] = [:]
+  /// The date each project's file had when it was last read, so a tick can
+  /// tell an edited file from an untouched one with a stat rather than a
+  /// read; `.distantPast` for a project that has none. Absent until the
+  /// first read, which is what tells a change apart from a first sight.
+  @ObservationIgnored var sharedSettingsStamps: [Project.ID: Date] = [:]
   /// Why a project's `.multishell.json` could not be read, for its Hooks tab.
   public var sharedSettingsProblems: [Project.ID: String] = [:]
   /// The trust question about one project's shared hooks, waiting on its
@@ -221,12 +226,16 @@ public final class AppModel<Surface> {
   /// list` is derived from tells those apart from a real change without
   /// spawning git. A project with no records yet, or none git can find, is
   /// refreshed in full; that path also notices a repository that has gone.
+  /// A tick where nothing moved still stats each `.multishell.json`, since
+  /// a full refresh is the only other thing that reads one and a file
+  /// edited by hand moves no record.
   public func refreshWorktreesIfRecordsChanged() async {
     for project in workspace.projects {
       if let common = await commonGitDirectory(of: project),
         let known = worktreeRecords[project.id],
         await Self.offMain({ WorktreeRecords.read(commonDirectory: common) }) == known
       {
+        await refreshSharedSettingsIfChanged(project)
         continue
       }
       await refresh(project)

@@ -335,6 +335,21 @@ hook cannot refuse. `set -e` goes inside the script, after the rc files have
 run, so a chatty `.zshrc` is not what stops it; fish and csh have no such
 switch.
 
+## A repository's settings are re-read on their date, not on a git change
+
+`.multishell.json` used to be read only where the worktree records had
+moved, so a hook edited while the app was up stayed the version the run
+started with, and the create it was written for ran the old script with
+nothing on screen to say so. A tick now stats each project's file and reads
+only one whose date has moved. Hooks that change under the project on
+screen ask for trust there and then, since the next thing the user does may
+be the create the edit was for and an untrusted hook does not run; a first
+read asks nothing, so a launch still opens without a queue of questions.
+The status poll stats it too: the watcher watches `.git`, and a poll's
+`git status` carries `--no-optional-locks` precisely so that it writes no
+index, so an app sitting frontmost sees no tick at all. Cost: one stat per
+project per poll, and a question can now arrive without a click.
+
 ## Removing a project asks, in the window that asked
 
 Project settings is its own `Window`, and a dialog on the workspace window

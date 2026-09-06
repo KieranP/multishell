@@ -31,15 +31,83 @@ extension AppModel {
     return project.settings.trustsHooks(of: shared)
   }
 
+  /// The file and the date it had when it was read. The date is taken
+  /// first, so a write landing during the read is caught by the next tick
+  /// rather than passed over as the version just read.
+  nonisolated static func readSharedSettings(
+    from repository: URL
+  ) -> (
+    result: Result<SharedProjectSettings?, any Error>, stamp: Date
+  ) {
+    let stamp = modificationDate(of: SharedProjectSettings.file(in: repository))
+    return (Result { try SharedProjectSettings.load(from: repository) }, stamp)
+  }
+
+  /// `.distantPast` for a file that is not there, so its arrival reads as a
+  /// change like any other.
+  nonisolated static func modificationDate(of file: URL) -> Date {
+    (try? file.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate)
+      ?? .distantPast
+  }
+
+  /// Every project's file, re-read where its date has moved. On the status
+  /// poll because nothing else would see it: the watcher watches `.git`,
+  /// and a poll's `git status` carries `--no-optional-locks` so that it
+  /// writes no index for the watcher to notice. An edit made with the app
+  /// frontmost would otherwise wait for a worktree to come or go.
+  /// A project whose repository is unreachable is left alone: its stat is
+  /// the one that would block on a dead mount, and its hooks cannot run
+  /// while it is gone. The refresh that finds it again reads the file.
+  func refreshChangedSharedSettings() async {
+    for project in workspace.projects where !missingProjects.contains(project.id) {
+      await refreshSharedSettingsIfChanged(project)
+    }
+  }
+
+  /// A tick's check for a file edited while the app is up. `refresh` reads
+  /// it, but runs only when the worktree records change, so an edited hook
+  /// would otherwise stay the version this run started with until a
+  /// worktree came or went. One stat per project per tick is what it costs;
+  /// only a file whose date has moved is read.
+  func refreshSharedSettingsIfChanged(_ project: Project) async {
+    let path = project.path
+    let stamp = await Self.offMain {
+      Self.modificationDate(of: SharedProjectSettings.file(in: path))
+    }
+    guard sharedSettingsStamps[project.id] != stamp else { return }
+    let read = await Self.offMain { Self.readSharedSettings(from: path) }
+    guard workspace.project(project.id) != nil else { return }
+    noteSharedSettings(read.result, stamp: read.stamp, for: project)
+  }
+
   /// What a refresh read from the repository. A file that will not parse
   /// costs the shared settings, not the project; the Hooks tab says why.
+  ///
+  /// Hooks that change under the project the user is looking at are asked
+  /// about here rather than waiting for the next selection by hand: the
+  /// next thing they do may be the create the hook was edited for, and an
+  /// untrusted hook does not run. The first read of a project says nothing,
+  /// so a launch still opens without a queue of questions.
   func noteSharedSettings(
-    _ result: Result<SharedProjectSettings?, any Error>, for project: Project
+    _ result: Result<SharedProjectSettings?, any Error>, stamp: Date, for project: Project
   ) {
+    let firstRead = sharedSettingsStamps.index(forKey: project.id) == nil
+    sharedSettingsStamps[project.id] = stamp
     switch result {
     case .success(let shared):
       sharedSettingsProblems[project.id] = nil
-      if sharedSettings[project.id] != shared { sharedSettings[project.id] = shared }
+      guard sharedSettings[project.id] != shared else { return }
+      sharedSettings[project.id] = shared
+      // A question already up for this project is about text the file no
+      // longer has, and trusting it would store hooks nobody committed. It
+      // gives way to one about what the file says now.
+      let wasAsking = pendingSharedHooksTrust?.projectID == project.id
+      if wasAsking, pendingSharedHooksTrust?.hooks != shared?.hooksText {
+        pendingSharedHooksTrust = nil
+      }
+      if !firstRead, wasAsking || workspace.selectedWorktree?.projectID == project.id {
+        askAboutSharedHooksIfNeeded(for: project.id)
+      }
     case .failure(let error):
       sharedSettings[project.id] = nil
       let problem = "\(SharedProjectSettings.fileName) could not be read: \(error)"
@@ -56,6 +124,10 @@ extension AppModel {
   /// repositories nobody is looking at. Nothing for hooks already decided
   /// about, and nothing over a question already up.
   func askAboutSharedHooksIfNeeded(for id: Project.ID) {
+    // Never over the new-worktree sheet or the create it starts: a dialog
+    // and a sheet on the same window fight, and the sheet is the one the
+    // user is answering. The question comes back on the next selection.
+    guard newWorktreeRequest == nil, worktreeCreationStep == nil else { return }
     guard pendingSharedHooksTrust == nil, let project = workspace.project(id),
       let shared = sharedSettings[id], let hooks = shared.hooksText,
       project.settings.needsHookDecision(for: shared)
@@ -88,12 +160,13 @@ extension AppModel {
       report(error)
       return
     }
+    let stamp = Self.modificationDate(of: SharedProjectSettings.file(in: current.path))
     if let hooks = shared.hooksText {
       var settings = current.settings
       settings.sharedHooks = SharedHooksDecision(hooks: hooks, trusted: true)
       store.updateSettings(settings, forProject: current.id)
     }
-    noteSharedSettings(.success(shared), for: current)
+    noteSharedSettings(.success(shared), stamp: stamp, for: current)
   }
 
   /// From the project's Hooks tab: trust the file's current hooks, or stop.

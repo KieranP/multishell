@@ -871,6 +871,56 @@ struct AppModelHookControlTests {
     #expect(h.model.pendingSharedHooksTrust?.hooks == "post-create:\necho changed")
   }
 
+  @Test func aSettingsFileEditedWhileTheAppIsUpIsReadOnTheNextTick() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let file = SharedProjectSettings.file(in: h.project.path)
+    try #"{ "postCreateHook": "echo one" }"#.write(to: file, atomically: true, encoding: .utf8)
+    await h.model.refresh(h.project)
+    #expect(h.model.pendingSharedHooksTrust == nil, "the first read of a project says nothing")
+
+    // No worktree comes or goes, so the records are the same and the file's
+    // date is the only thing that says it changed.
+    try #"{ "postCreateHook": "echo two" }"#.write(to: file, atomically: true, encoding: .utf8)
+    await h.model.refreshChangedSharedSettings()
+    #expect(h.model.sharedSettings[h.project.id]?.postCreateHook == "echo two")
+    #expect(h.model.pendingSharedHooksTrust == nil, "not a project the user is looking at")
+
+    h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
+    let stale = try #require(h.model.pendingSharedHooksTrust)
+
+    // The file moves on while its question is still up.
+    try #"{ "postCreateHook": "echo two and a half" }"#
+      .write(to: file, atomically: true, encoding: .utf8)
+    await h.model.refreshWorktreesIfRecordsChanged()
+    let pending = try #require(h.model.pendingSharedHooksTrust)
+    #expect(
+      pending.hooks == "post-create:\necho two and a half",
+      "the question up was about text the file no longer has")
+
+    h.model.decideSharedHooks(pending, trusted: true)
+    #expect(h.model.trustsSharedHooks(of: h.model.workspace.project(h.project.id)!))
+    #expect(stale.hooks != pending.hooks)
+
+    // Not over the new-worktree sheet, which the user is answering.
+    h.model.newWorktreeRequest = NewWorktreeRequest(projectID: h.project.id)
+    try #"{ "postCreateHook": "echo three and a half" }"#
+      .write(to: file, atomically: true, encoding: .utf8)
+    await h.model.refreshWorktreesIfRecordsChanged()
+    #expect(h.model.sharedSettings[h.project.id]?.postCreateHook == "echo three and a half")
+    #expect(h.model.pendingSharedHooksTrust == nil, "the sheet is what is being answered")
+    h.model.newWorktreeRequest = nil
+
+    try #"{ "postCreateHook": "echo three" }"#.write(to: file, atomically: true, encoding: .utf8)
+    await h.model.refreshWorktreesIfRecordsChanged()
+
+    #expect(h.model.sharedSettings[h.project.id]?.postCreateHook == "echo three")
+    #expect(
+      h.model.pendingSharedHooksTrust?.hooks == "post-create:\necho three",
+      "asked while it is the project on screen")
+    #expect(!h.model.trustsSharedHooks(of: h.model.workspace.project(h.project.id)!))
+  }
+
   @Test func aBrokenSettingsFileIsAProblemOnTheHooksTabNotAnAlert() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }

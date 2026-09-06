@@ -58,7 +58,10 @@ struct ProjectHooksTab: View {
           LabeledContent {
             Text(variable.meaning).foregroundStyle(.secondary)
           } label: {
-            Text(variable.name).font(.system(size: 11, design: .monospaced))
+            HStack(spacing: 4) {
+              Text(variable.name).font(.system(size: 11, design: .monospaced))
+              CopyButton("$\(variable.name)", model: model)
+            }
           }
         }
       } header: {

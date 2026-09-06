@@ -41,6 +41,7 @@ extension AppModel {
     commonGitDirectories[project.id] = nil
     worktreeRecords[project.id] = nil
     sharedSettings[project.id] = nil
+    sharedSettingsStamps[project.id] = nil
     sharedSettingsProblems[project.id] = nil
     if pendingSharedHooksTrust?.projectID == project.id { pendingSharedHooksTrust = nil }
     store.removeProject(project.id)
@@ -88,7 +89,7 @@ extension AppModel {
     if let common = await commonGitDirectory(of: project) {
       records = await Self.offMain { WorktreeRecords.read(commonDirectory: common) }
     }
-    let shared = await Self.offMain { Result { try SharedProjectSettings.load(from: path) } }
+    let shared = await Self.offMain { Self.readSharedSettings(from: path) }
     do {
       let discovered = try await worktrees.refresh(project)
       // Removed while git ran: the store ignores the list, and the records
@@ -100,7 +101,7 @@ extension AppModel {
       store.replaceWorktrees(discovered, forProject: project.id)
       worktreeRecords[project.id] = records
       missingProjects.remove(project.id)
-      noteSharedSettings(shared, for: project)
+      noteSharedSettings(shared.result, stamp: shared.stamp, for: project)
     } catch {
       // Every watcher tick and every return to the foreground refreshes a
       // project git cannot read, so the alert goes up on the first failure

@@ -159,7 +159,9 @@ Claude Code's hooks live in `~/.claude/settings.json`; the app writes there
 only when asked and keeps `settings.json.before-multishell` the first time.
 Sidebar width is in `UserDefaults`. A repository may carry
 `.multishell.json` at its root, written by Export in project settings, with
-the same keys as a project's settings in `state.json`.
+the same keys as a project's settings in `state.json`. It is read at launch,
+whenever a project's worktree records change, and on any watcher tick or
+status poll where its modification date has moved.
 
 ## Dependencies worth knowing about
 
