@@ -169,6 +169,7 @@ struct SidebarView: View {
         // stands in for them only once they are folded away.
         state: expanded ? nil : model.state(ofProject: project.id),
         worktreeCount: worktrees.count,
+        isFetching: model.isFetching(project),
         theme: theme,
         metrics: metrics,
         toggle: { model.setExpanded(!project.isExpanded, for: project) },
@@ -190,6 +191,7 @@ struct SidebarView: View {
           operation: model.worktreeOperations[worktree.id],
           isSelected: model.workspace.selectedWorktreeID == worktree.id,
           status: model.statuses[worktree.id],
+          mergeState: model.mergeState(of: worktree),
           theme: theme,
           metrics: metrics,
           beginRename: { model.beginRenaming(worktree) },
@@ -228,6 +230,10 @@ struct SidebarView: View {
   private func projectMenu(_ project: Project) -> some View {
     Button("New Worktree…") { model.requestNewWorktree(in: project) }
     Button("Refresh") { Task { await model.refreshRequested(project) } }
+    // Refresh asks git what is on disk; Fetch asks the remote, which is
+    // what the merged badges are measured against.
+    Button("Fetch") { Task { await model.fetch(project) } }
+      .disabled(model.isFetching(project))
     Divider()
     Button("Project Settings…") {
       model.settingsProjectID = project.id
@@ -254,6 +260,9 @@ struct ProjectRow: View {
   let isMissing: Bool
   let state: SessionState?
   let worktreeCount: Int
+  /// A `git fetch` is running here. The one thing this app does that waits
+  /// on a network, so it is the one thing the sidebar has to show waiting.
+  let isFetching: Bool
   let theme: Theme
   let metrics: UIMetrics
   let toggle: () -> Void
@@ -273,7 +282,15 @@ struct ProjectRow: View {
           .frame(width: 10)
           .help(project.isExpanded ? "Collapse" : "Expand")
 
-        if let state {
+        if isFetching {
+          // The icon's own slot, like the dot below it, so nothing shifts
+          // and no control is taken away while it spins.
+          ProgressView()
+            .controlSize(.mini)
+            .scaleEffect(0.7)
+            .frame(width: metrics.icon + 6)
+            .help("Fetching from the remote")
+        } else if let state {
           Circle()
             .fill(theme.color(for: state))
             .frame(width: 7, height: 7)
@@ -300,7 +317,7 @@ struct ProjectRow: View {
       .accessibilityLabel(
         AccessibilityText.project(
           name: project.name, isExpanded: project.isExpanded, isMissing: isMissing, state: state,
-          worktreeCount: worktreeCount)
+          worktreeCount: worktreeCount, isFetching: isFetching)
       )
       .accessibilityAddTraits(.isButton)
       .accessibilityAction(named: project.isExpanded ? "Collapse" : "Expand", toggle)

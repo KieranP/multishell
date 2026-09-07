@@ -65,6 +65,84 @@ public struct WorktreeService: Sendable {
     return WorktreeStatusParser.parse(output)
   }
 
+  /// Every local and remote branch with its tip, the upstream a local one
+  /// tracks and whether that upstream is still there. One process for the
+  /// whole repository; see `BranchRefParser` for the format.
+  public func branchRefs(_ project: Project) async -> [BranchRef] {
+    let format = [
+      "%(refname)", "%(objectname)", "%(upstream)", "%(upstream:track)", "%(symref)",
+    ]
+    let output = await git.output(
+      [
+        "for-each-ref", "--format=" + format.joined(separator: "%09"), "refs/heads", "refs/remotes",
+      ],
+      in: project.path)
+    return BranchRefParser.parse(output ?? "")
+  }
+
+  /// The branches `base` can reach: merged into it by a merge commit or a
+  /// fast-forward. One process answers for every branch in the repository,
+  /// which is why the check starts here rather than with a `merge-base` per
+  /// worktree.
+  /// `nil` where git could not answer, which is not the same as "none":
+  /// taken as an answer it would be cached as a confident "not merged"
+  /// until the branch next moved.
+  public func mergedBranches(into base: String, in project: Project) async -> Set<String>? {
+    guard
+      let output = await git.output(
+        ["branch", "--merged", base, "--format=%(refname:short)"], in: project.path)
+    else { return nil }
+    return MergedBranchParser.parse(output)
+  }
+
+  /// Whether `branch` has moved since it was created, from the number of
+  /// entries in its reflog: `git worktree add -b` cuts a branch at the
+  /// commit it starts from and writes one entry, and every commit made on
+  /// it writes another.
+  ///
+  /// This is what tells a branch that has landed from one that never left.
+  /// Both are reachable from the default branch, and no amount of ancestry
+  /// separates them: a new worktree's branch is an ancestor of the trunk
+  /// from the moment it exists.
+  ///
+  /// `nil` where the reflog cannot answer, so the caller can fall back: a
+  /// bare repository keeps no reflog unless asked, and entries expire.
+  public func branchHasMoved(_ branch: String, in project: Project) async -> Bool? {
+    let output = await git.output(
+      ["rev-list", "--walk-reflogs", "--count", branch], in: project.path)
+    guard let text = output?.trimmingCharacters(in: .whitespacesAndNewlines),
+      let entries = Int(text), entries > 0
+    else { return nil }
+    return entries > 1
+  }
+
+  /// Whether `base` already has an equivalent patch for every commit on
+  /// `branch`: how a rebase-merge or a run of cherry-picks lands, which no
+  /// ancestry test can see. Costs a patch id per commit on the branch, so
+  /// it is asked only about branches `mergedBranches` did not name.
+  public func isPatchEquivalent(
+    _ branch: String, against base: String, in project: Project
+  ) async -> Bool {
+    guard let output = await git.output(["cherry", base, branch], in: project.path) else {
+      return false
+    }
+    return PatchEquivalenceParser.parse(output)
+  }
+
+  /// `git fetch --prune`, so what a branch has been merged into is asked of
+  /// a remote as it is now, and an upstream deleted on the merge is seen to
+  /// be gone.
+  ///
+  /// The user's click only, never a poll: it is the one git call here that
+  /// talks to a network. `GIT_TERMINAL_PROMPT=0` so a repository wanting a
+  /// password fails instead of waiting on a terminal this app does not have,
+  /// and a timeout for the ones that would hang before that.
+  public func fetch(_ project: Project, timeout: Duration = .seconds(120)) async throws {
+    _ = try await git.run(
+      ["fetch", "--prune", "--quiet"], in: project.path,
+      environment: ["GIT_TERMINAL_PROMPT": "0"], timeout: timeout)
+  }
+
   public func localBranches(_ project: Project) async throws -> [String] {
     let output = try await git.run(
       ["for-each-ref", "--format=%(refname:short)", "refs/heads"],

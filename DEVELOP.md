@@ -93,7 +93,8 @@ named as sentences about behaviour.
   for what real git cannot do on demand: print nothing, fail once, run
   slowly. Parsers are tested on fixture text including CRLF, spaces, an
   unborn repository and malformed lines.
-- Git on a timer reads only (`StatusLockTests`).
+- Git on a timer reads only (`StatusLockTests`). The merged-branch check
+  keeps to it: no `commit-tree`, and `git fetch` only from a menu item.
 - Hooks are checked through real shells under a substitute home
   (`HookShellTests`), and ending them through real zsh and bash
   (`ProcessStopTests` checks the `sleep` they started is gone too).

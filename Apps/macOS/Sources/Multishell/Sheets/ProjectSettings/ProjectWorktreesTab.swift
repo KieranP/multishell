@@ -47,8 +47,30 @@ struct ProjectWorktreesTab: View {
             + (settings.branchPrefix == nil && shared?.branchPrefix != nil
               ? " The prefix comes from \(SharedProjectSettings.fileName)." : ""))
       }
+
+      Section {
+        InfoToggle(
+          "Override default branch",
+          info:
+            "The branch this project's work is merged into. A worktree whose branch has landed on it gets a badge in the sidebar saying it can go. Detected from origin/HEAD, then origin/main, origin/master, main, master. A name typed here is looked for on origin before it is looked for locally.",
+          isOn: overrides(\.defaultBranch, default: detected))
+        TextField(
+          "Branch:", text: text(\.defaultBranch, fallback: detected), prompt: Text("main")
+        )
+        .disabled(settings.defaultBranch == nil)
+        SettingsCaption(
+          model.mergeBase(of: project).map { "Merges are measured against \($0.ref)." }
+            ?? "No branch to measure merges against, so no worktree is badged as merged.")
+      }
     }
     .formStyle(.grouped)
+  }
+
+  /// What the field shows while the override is off: the branch the model
+  /// resolved, without the remote it was found on, so turning the override
+  /// on seeds `main` rather than `origin/main`.
+  private var detected: String {
+    model.mergeBase(of: project)?.branch ?? "main"
   }
 
   /// Turning an override on seeds it with the global value so the field is

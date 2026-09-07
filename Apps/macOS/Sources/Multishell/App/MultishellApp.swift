@@ -85,16 +85,14 @@ struct RootView: View {
       titleVisibility: .visible,
       presenting: model.pendingRemoval
     ) { pending in
-      Button(pending.removeLabel, role: .destructive) {
-        model.pendingRemoval = nil
-        Task {
-          await model.removeWorktree(pending.worktree, deletingBranch: pending.deletesBranch)
-        }
-      }
-      if pending.offersBranchDeletion {
-        Button(pending.removeWithBranchLabel, role: .destructive) {
+      // The order is the value's: a merged branch leads with the button
+      // that deletes it. See `PendingWorktreeRemoval.choices`.
+      ForEach(pending.choices, id: \.label) { choice in
+        Button(choice.label, role: .destructive) {
           model.pendingRemoval = nil
-          Task { await model.removeWorktree(pending.worktree, deletingBranch: true) }
+          Task {
+            await model.removeWorktree(pending.worktree, deletingBranch: choice.deletesBranch)
+          }
         }
       }
       Button("Cancel", role: .cancel) { model.pendingRemoval = nil }

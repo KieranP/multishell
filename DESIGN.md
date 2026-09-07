@@ -534,3 +534,99 @@ on the row. The menu that starts a rename is shared by the sidebar and the
 detail header, and only the model is in both places. Cost: a taller row for
 a renamed worktree, so the sidebar's drag block measures its rows rather
 than counting them.
+
+## A merged branch is inferred from three signs, none of which writes
+
+A worktree whose branch has landed on the default branch can go, and the
+sidebar says so with a green merge glyph. Deciding it is the whole feature;
+the glyph is the easy half.
+
+`git branch --merged` only finds the branch whose tip the base can reach: a
+merge commit or a fast-forward. It also finds every branch that has never
+left. `git worktree add -b` cuts a branch at the commit it starts from, so a
+worktree is an ancestor of the trunk from the moment it exists, and ancestry
+cannot tell "landed" from "never began" — a fast-forwarded branch and a
+brand-new one end up on the very same commit. The branch's reflog can: a
+branch cut and not committed to has one entry. Where there is no reflog to
+ask — a bare repository keeps none unless told to, and entries expire — the
+fallback is the case that is certainly fresh, its tip still the base's own.
+
+A rebase-merge and a run of cherry-picks
+leave no reachable tip, so the branches `--merged` does not name get a `git cherry`,
+which compares patch ids and says whether the base already has every commit
+in some other form. A squash merge leaves neither, and the recipe for
+finding one — `commit-tree` on the branch's tree with the merge base as
+parent, then `git cherry` on the result — writes an object. That write takes
+no lock and the object is unreferenced garbage, but this runs on a timer,
+and "git on a timer reads only" is a rule worth more than the case it would
+buy. What is taken instead is the trace a squash merge leaves for free:
+`git for-each-ref` reports `[gone]` for a branch whose upstream has been
+deleted, which is what "delete branch on merge" does to it.
+
+That last sign is inference, not proof — a pull request closed without
+merging leaves it too — so `WorktreeMergeState.isCertain` separates the
+three. The badge appears for all of them; the removal dialog leads with the
+button that deletes the branch only for the two that are proof, because that
+branch may be the only copy of the work.
+
+Whatever the evidence, the badge is hidden while the worktree holds work
+that is only there: uncommitted files, or commits the upstream has not got.
+Both would go to the Trash with the directory, and a row that says "this can
+go" over them is the one thing this badge must never do. The dialog still
+names the branch as merged, because it is: the branch landed, and the files
+in the way of removing the worktree are counted separately in its warning.
+
+A git call that fails is not an answer either. `mergedBranches` hands back
+`nil` rather than an empty set, and the whole check stops there: taken as an
+answer, every branch would be recorded as unmerged and stay that way until
+it next moved.
+
+The base is `origin/HEAD` where the clone recorded one, then `origin/main`,
+`origin/master`, `main`, `master`, with a per-project override that a
+repository may ship in `.multishell.json`. A remote-tracking ref is
+preferred over a local branch of the same name: a local `main` is stale
+until someone pulls, and what a branch has been merged into is a question
+about the remote. An override that resolves to nothing leaves the project
+with no base and no badges, rather than quietly measuring against a guess.
+
+It follows that a badge is only as fresh as the last fetch, and fetching on
+a timer is not on the table: it is network, it may want credentials, and it
+is the one git call here that can hang. Fetch is a menu item instead, in the
+project's menu where it belongs and in the worktree actions menu where the
+badge is read, and it runs with `GIT_TERMINAL_PROMPT=0` and a timeout so a
+repository wanting a password fails rather than waits on a terminal the app
+does not have. That failure gets its own words, because it is the likeliest
+one and "git fetch failed (129)" would not help anybody set up an SSH key.
+
+It is also the only thing this app does that waits on something outside the
+machine, so it is the only thing the sidebar shows waiting: the project's
+row spins in the icon's own slot, where the collapsed state dot already
+goes, so nothing shifts and no control is taken away. The mark covers the
+re-reads that follow the fetch, not just the fetch — the badges are what the
+click was for, and stopping the spinner before they moved would be a lie —
+and a project already fetching refuses a second one rather than queueing it.
+
+The check rides the status poll rather than the watcher: a commit moves
+`refs/heads/<branch>`, which no file `WorktreeRecords` compares mentions, so
+nothing else would ever see the last change of a branch land. What it costs
+on a tick where nothing moved is one read per project: `origin/HEAD` is a
+ref like any other, so `%(symref)` carries it in the same `for-each-ref`
+that lists the branches. Each verdict is memoised on the base tip, the
+branch and the branch's tip, so a branch that has not moved is not asked
+about again.
+
+Riding the poll carries an obligation with it: nothing observable may be
+written unless it changed. Putting a dictionary entry back unchanged still
+tells every view watching it to draw again, so an unguarded write here would
+redraw the whole sidebar every five seconds for nothing. A verdict is also
+only recorded when git actually answered — a read that failed brings none,
+and stamping the memo for it would pin the stale verdict to the new tip and
+never ask again. The branch is in that key and not only its tip: `git checkout -b
+copy` leaves two branches on one commit, and only one of them may have an
+upstream that has gone.
+
+The main worktree, a bare repository, a detached HEAD and the trunk's own
+checkout are never badged. The first cannot be removed, the second has no
+checkout, the third has no branch to delete, and the fourth is not merged
+into itself — which is what a bare layout's `main` worktree would otherwise
+claim.

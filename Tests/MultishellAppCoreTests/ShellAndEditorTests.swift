@@ -170,10 +170,12 @@ struct PendingWorktreeRemovalTests {
 
   /// The dialog the decision asks for, or a failed requirement.
   private func asked(
-    _ worktree: Worktree, confirms: Bool, alwaysDeletesBranch: Bool
+    _ worktree: Worktree, confirms: Bool, alwaysDeletesBranch: Bool,
+    mergeState: WorktreeMergeState = .unknown
   ) throws -> PendingWorktreeRemoval {
     let decision = PendingWorktreeRemoval.decide(
-      worktree, confirms: confirms, alwaysDeletesBranch: alwaysDeletesBranch)
+      worktree, confirms: confirms, alwaysDeletesBranch: alwaysDeletesBranch,
+      mergeState: mergeState)
     guard case .ask(let pending) = decision else {
       throw RemovalTestFailure(decision: decision)
     }
@@ -250,6 +252,34 @@ struct PendingWorktreeRemovalTests {
     #expect(deletes.message(warning: nil).hasSuffix("The branch feat is deleted with it."))
     let keeps = PendingWorktreeRemoval(worktree: branched, branch: .decided(deletes: false))
     #expect(keeps.message(warning: nil).hasSuffix("The branch feat is kept."))
+  }
+
+  @Test func aMergedBranchLeadsWithTheButtonThatDeletesItAndSaysWhy() throws {
+    let decision = PendingWorktreeRemoval.decide(
+      branched, confirms: true, alwaysDeletesBranch: false,
+      mergeState: .merged(.ancestor, into: "origin/main"))
+    guard case .ask(let pending) = decision else { throw RemovalTestFailure(decision: decision) }
+    #expect(pending.choices.map(\.deletesBranch) == [true, false])
+    #expect(pending.choices.first?.label == "Remove Worktree and Branch")
+    #expect(pending.message(warning: nil).contains("feat is merged into origin/main."))
+  }
+
+  @Test func anUpstreamThatHasGoneIsNotEnoughToLeadWithDeletingTheBranch() throws {
+    let pending = try asked(
+      branched, confirms: true, alwaysDeletesBranch: false,
+      mergeState: .merged(.upstreamGone, into: "origin/main"))
+    #expect(pending.choices.map(\.deletesBranch) == [false, true], "keeping it stays the default")
+    #expect(pending.message(warning: nil).contains("likely squash-merged"))
+  }
+
+  @Test func aSettledBranchQuestionStillOffersOneButtonWhateverTheMergeState() throws {
+    let pending = try asked(
+      branched, confirms: true, alwaysDeletesBranch: true,
+      mergeState: .merged(.ancestor, into: "origin/main"))
+    #expect(
+      pending.choices == [
+        PendingWorktreeRemoval.Choice(label: "Remove Worktree and Branch", deletesBranch: true)
+      ])
   }
 }
 

@@ -49,6 +49,19 @@ public struct PresentedError: Identifiable {
       // An unborn HEAD: the repository has never been committed to.
       title = "This repository has no commits yet"
       message = "A worktree needs a commit to start from. Make the first commit, then try again."
+    case let failure as ProcessFailure where failure.arguments.first == "fetch":
+      // The app runs fetch with no terminal to answer on, so a repository
+      // that wants a password waits until the timeout rather than asking.
+      // That is the likeliest way this ends, and the message has to say so.
+      switch failure.stop {
+      case .timedOut:
+        title = "Fetch did not finish"
+        message =
+          "The remote did not answer in time, or it asked for a password. Multishell has no terminal to type one into: use an SSH key or a git credential helper."
+      case .stopped, .none:
+        title = "Fetch failed"
+        message = failure.message.isEmpty ? "Exit status \(failure.status)." : failure.message
+      }
     case let failure as ProcessFailure:
       title = "\(failure.executable) \(failure.arguments.prefix(2).joined(separator: " ")) failed"
       message = failure.message.isEmpty ? "Exit status \(failure.status)." : failure.message

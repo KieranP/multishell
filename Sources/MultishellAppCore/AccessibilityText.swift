@@ -7,11 +7,13 @@ public enum AccessibilityText {
   /// A project row: the name, whether it is open, and the dot it carries
   /// while collapsed.
   public static func project(
-    name: String, isExpanded: Bool, isMissing: Bool, state: SessionState?, worktreeCount: Int
+    name: String, isExpanded: Bool, isMissing: Bool, state: SessionState?, worktreeCount: Int,
+    isFetching: Bool = false
   ) -> String {
     var parts = ["\(name), project", isExpanded ? "expanded" : "collapsed"]
     parts.append(Wording.count(worktreeCount, "worktree"))
     if isMissing { parts.append("not reachable") }
+    if isFetching { parts.append("fetching") }
     if let state { parts.append(state.displayName) }
     return parts.joined(separator: ", ")
   }
@@ -21,7 +23,8 @@ public enum AccessibilityText {
   /// two lines it shows.
   public static func worktree(
     _ worktree: Worktree, customName: String? = nil, state: SessionState?,
-    status: WorktreeStatus?, operation: WorktreeOperation?, terminalCount: Int, isSelected: Bool
+    status: WorktreeStatus?, operation: WorktreeOperation?, terminalCount: Int, isSelected: Bool,
+    mergeState: WorktreeMergeState = .unknown
   ) -> String {
     var parts = ["\(customName ?? worktree.name), \(kind(of: worktree).lowercased())"]
     if customName != nil { parts.append("branch \(worktree.name)") }
@@ -31,6 +34,7 @@ public enum AccessibilityText {
       parts.append(operation.isRunning ? operation.title : "failed: \(operation.title)")
     }
     if worktree.isLocked { parts.append("locked") }
+    if mergeState.showsBadge(with: status) { parts.append(mergeState.summary) }
     if let status, !status.isClean { parts.append(status.summary) }
     if terminalCount > 0 { parts.append(Wording.count(terminalCount, "terminal")) }
     return parts.joined(separator: ", ")

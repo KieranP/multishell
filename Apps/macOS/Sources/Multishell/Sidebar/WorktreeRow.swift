@@ -16,6 +16,9 @@ struct WorktreeRow: View {
   let operation: WorktreeOperation?
   let isSelected: Bool
   let status: WorktreeStatus?
+  /// Whether the branch has already landed on the project's default branch,
+  /// which is what says the worktree can go.
+  let mergeState: WorktreeMergeState
   let theme: Theme
   let metrics: UIMetrics
   let beginRename: () -> Void
@@ -72,6 +75,15 @@ struct WorktreeRow: View {
           .foregroundStyle(theme.textTertiary)
           .help("Locked worktree")
       }
+      // Never beside the yellow changes dot or an unpushed count: work
+      // that is only here hides the badge, so the two never meet. See
+      // `WorktreeMergeState.showsBadge`.
+      if mergeState.showsBadge(with: status) {
+        Image(systemName: "arrow.triangle.merge")
+          .font(.system(size: metrics.badge))
+          .foregroundStyle(theme.ansiRGB[2].color)
+          .help(mergeState.help)
+      }
       // Git changes sit left of the terminal count, so the count stays at
       // the row's right edge and lines up with rows that have no changes.
       if let status, !status.isClean {
@@ -108,7 +120,7 @@ struct WorktreeRow: View {
     .accessibilityLabel(
       AccessibilityText.worktree(
         worktree, customName: customName, state: state, status: status, operation: operation,
-        terminalCount: terminalCount, isSelected: isSelected)
+        terminalCount: terminalCount, isSelected: isSelected, mergeState: mergeState)
     )
     .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     .accessibilityAction(named: "Rename", beginRename)

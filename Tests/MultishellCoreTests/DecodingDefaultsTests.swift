@@ -170,11 +170,18 @@ struct DecodingDefaultsTests {
     #expect(settings.postCreateHook == "npm install")
     #expect(settings.defaultShell == nil, "follows the global shell")
     #expect(settings.iconGlyph == nil && settings.iconTint == nil, "the folder, untinted")
+    #expect(settings.defaultBranch == nil, "detected rather than named")
 
     let shell = try decode(ProjectSettings.self, #"{ "defaultShell": "" }"#)
     #expect(shell.defaultShell == nil, "empty reads as no override, like the other strings")
     let login = try decode(ProjectSettings.self, #"{ "defaultShell": "login" }"#)
     #expect(login.defaultShell == ShellCatalogue.loginShellID)
+
+    let branch = try decode(ProjectSettings.self, #"{ "defaultBranch": "" }"#)
+    #expect(branch.defaultBranch == nil, "empty reads as detect, like the other strings")
+    #expect(
+      try decode(ProjectSettings.self, #"{ "defaultBranch": "develop" }"#).defaultBranch
+        == "develop")
   }
 
   @Test func anIconTintOutsideTheThemeOrOfTheWrongTypeIsDropped() throws {

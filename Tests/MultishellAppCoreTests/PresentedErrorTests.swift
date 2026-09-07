@@ -74,6 +74,25 @@ struct PresentedErrorTests {
         == "Worktree removed, but its hook failed")
   }
 
+  /// The app runs fetch with no terminal to answer on, so the way it fails
+  /// most often is by waiting on a password prompt nobody can see.
+  @Test func aFetchThatRanOutOfTimeSaysWhatToDoAboutIt() {
+    let timedOut = PresentedError(
+      ProcessFailure(
+        executable: "git", arguments: ["fetch", "--prune", "--quiet"], status: 129, message: "",
+        stop: .timedOut(after: .seconds(120))))
+    #expect(timedOut.title == "Fetch did not finish")
+    #expect(timedOut.message.contains("asked for a password"))
+    #expect(timedOut.message.contains("SSH key"))
+
+    let refused = PresentedError(
+      ProcessFailure(
+        executable: "git", arguments: ["fetch", "--prune", "--quiet"], status: 128,
+        message: "fatal: could not read from remote repository"))
+    #expect(refused.title == "Fetch failed")
+    #expect(refused.message == "fatal: could not read from remote repository")
+  }
+
   @Test func unreadableStateNamesTheBackupFile() {
     let backup = URL(fileURLWithPath: "/tmp/state.2026.broken.json")
     let presented = PresentedError(

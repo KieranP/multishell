@@ -38,6 +38,8 @@ extension AppModel {
   }
 
   public func removeProject(_ project: Project) {
+    forgetMergeStates(of: project.id)
+    mergeBases[project.id] = nil
     commonGitDirectories[project.id] = nil
     worktreeRecords[project.id] = nil
     sharedSettings[project.id] = nil
@@ -385,7 +387,8 @@ extension AppModel {
     switch PendingWorktreeRemoval.decide(
       worktree, customName: customName(of: worktree),
       confirms: workspace.confirmsWorktreeRemoval,
-      alwaysDeletesBranch: workspace.deletesBranchWithWorktree)
+      alwaysDeletesBranch: workspace.deletesBranchWithWorktree,
+      mergeState: mergeState(of: worktree))
     {
     case .ask(let pending):
       pendingRemoval = pending

@@ -75,6 +75,18 @@ public final class AppModel<Surface> {
   public var themes: [Theme] = Theme.builtins
   /// `git status` per worktree. Runtime only; see `WorktreeStatus`.
   public var statuses: [Worktree.ID: WorktreeStatus] = [:]
+  /// Whether each worktree's branch has already landed on its project's
+  /// default branch. Runtime only; see `WorktreeMergeState`.
+  public var mergeStates: [Worktree.ID: WorktreeMergeState] = [:]
+  /// The branch each project's merges are measured against, `origin/main`
+  /// and the like. Absent for a project with none to measure against.
+  public var mergeBases: [Project.ID: DefaultBranch] = [:]
+  /// Projects with a `git fetch` running, which the sidebar shows and a
+  /// second Fetch waits for. Runtime state, like the statuses beside it.
+  public var fetchingProjects: Set<Project.ID> = []
+  /// What each worktree's merge verdict was computed from, so a refresh
+  /// that finds nothing moved spawns no git; see `MergeCheck`.
+  @ObservationIgnored var mergeChecks: [Worktree.ID: MergeCheck] = [:]
   /// Sessions with a running shell, mirrored from the host after each
   /// reconcile so views can observe it; the host itself is not observable.
   public var liveSessions: Set<TerminalSession.ID> = []
@@ -222,6 +234,7 @@ public final class AppModel<Surface> {
   public func refreshAll() async {
     await refreshWorktreesIfRecordsChanged()
     await refreshStatuses()
+    await refreshMergeStates()
   }
 
   /// What a watcher tick and a return to the foreground run. The watched

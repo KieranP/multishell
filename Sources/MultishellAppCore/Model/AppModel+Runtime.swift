@@ -60,6 +60,7 @@ extension AppModel {
         guard let self else { return }
         guard platform.isActive else { continue }
         await refreshStatuses()
+        await refreshMergeStates()
         await refreshChangedSharedSettings()
       }
     }

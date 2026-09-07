@@ -16,6 +16,15 @@ struct WorktreeActions: View {
       Button("Use Branch Name") { model.renameWorktree(worktree.id, to: nil) }
     }
     Divider()
+    // The one item here that acts on the repository rather than this
+    // worktree, in a group of its own so it does not read as one. It earns
+    // its place: the detail header has no project menu, and a merged badge
+    // that looks out of date is answered by fetching.
+    if let project = model.workspace.project(worktree.projectID) {
+      Button("Fetch") { Task { await model.fetch(project) } }
+        .disabled(model.isFetching(project))
+      Divider()
+    }
     Button("Open in Editor") { model.openInEditor(worktree) }
     Button("Reveal in Finder") { model.revealInFileBrowser(worktree.path) }
     Button("Copy Path") { model.copyToClipboard(worktree.path.path) }

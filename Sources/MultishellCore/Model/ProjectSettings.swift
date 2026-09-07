@@ -7,6 +7,11 @@ import Foundation
 public struct ProjectSettings: Codable, Hashable, Sendable {
   public var worktreeDirectory: String?
   public var branchPrefix: String?
+  /// The branch this project's work is merged into, for the sidebar's
+  /// merged badge. `nil` detects it: `origin/HEAD`, then `origin/main`,
+  /// `origin/master`, `main`, `master`. A name typed here is looked for on
+  /// `origin` before it is looked for locally.
+  public var defaultBranch: String?
 
   /// Scripts run through the user's login shell around `git worktree add`
   /// and `git worktree remove`. Empty means no hook. A pre hook that fails
@@ -42,6 +47,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   public init(
     worktreeDirectory: String? = nil,
     branchPrefix: String? = nil,
+    defaultBranch: String? = nil,
     preCreateHook: String = "",
     postCreateHook: String = "",
     preDeleteHook: String = "",
@@ -55,6 +61,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   ) {
     self.worktreeDirectory = worktreeDirectory
     self.branchPrefix = branchPrefix
+    self.defaultBranch = defaultBranch
     self.preCreateHook = preCreateHook
     self.postCreateHook = postCreateHook
     self.preDeleteHook = preDeleteHook
@@ -76,6 +83,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     worktreeDirectory = Self.override(
       try c.decodeIfPresent(String.self, forKey: .worktreeDirectory))
     branchPrefix = Self.override(try c.decodeIfPresent(String.self, forKey: .branchPrefix))
+    defaultBranch = Self.override(try c.decodeIfPresent(String.self, forKey: .defaultBranch))
     preCreateHook = try c.decodeIfPresent(String.self, forKey: .preCreateHook) ?? ""
     postCreateHook = try c.decodeIfPresent(String.self, forKey: .postCreateHook) ?? ""
     preDeleteHook = try c.decodeIfPresent(String.self, forKey: .preDeleteHook) ?? ""
@@ -116,6 +124,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     var result = self
     result.worktreeDirectory = worktreeDirectory ?? shared.worktreeDirectory
     result.branchPrefix = branchPrefix ?? shared.branchPrefix
+    result.defaultBranch = defaultBranch ?? shared.defaultBranch
     result.iconGlyph = iconGlyph ?? shared.iconGlyph
     result.iconTint = iconTint ?? ProjectIcon.validTint(shared.iconTint)
     if trustsHooks(of: shared) {

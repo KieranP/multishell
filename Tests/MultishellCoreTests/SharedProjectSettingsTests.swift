@@ -54,19 +54,21 @@ struct SharedProjectSettingsTests {
 
   @Test func theUsersValuesWinAndTheFileFillsWhatTheyLeftBlank() {
     let shared = SharedProjectSettings(
-      worktreeDirectory: "../trees", branchPrefix: "team/", postCreateHook: "npm ci",
-      iconGlyph: "hammer", iconTint: 4)
+      worktreeDirectory: "../trees", branchPrefix: "team/", defaultBranch: "develop",
+      postCreateHook: "npm ci", iconGlyph: "hammer", iconTint: 4)
     let blank = ProjectSettings().layered(over: shared)
     #expect(blank.worktreeDirectory == "../trees" && blank.branchPrefix == "team/")
+    #expect(blank.defaultBranch == "develop", "a repository may name the branch it merges into")
     #expect(blank.iconGlyph == "hammer" && blank.iconTint == 4)
     #expect(blank.postCreateHook == "", "hooks wait for trust")
 
     let own = ProjectSettings(
-      branchPrefix: "me/", postCreateHook: "make", iconTint: 1,
+      branchPrefix: "me/", defaultBranch: "trunk", postCreateHook: "make", iconTint: 1,
       sharedHooks: SharedHooksDecision(hooks: shared.hooksText!, trusted: true)
     ).layered(over: shared)
     #expect(own.worktreeDirectory == "../trees", "left blank, so the file's")
     #expect(own.branchPrefix == "me/" && own.iconTint == 1)
+    #expect(own.defaultBranch == "trunk", "the user's name stands over the file's")
     #expect(own.postCreateHook == "make", "the user's hook stands over the file's")
 
     #expect(

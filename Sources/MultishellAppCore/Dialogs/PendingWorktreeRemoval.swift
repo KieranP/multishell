@@ -23,15 +23,34 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
     case ask(PendingWorktreeRemoval)
   }
 
+  /// One of the dialog's remove buttons.
+  public struct Choice: Equatable, Sendable {
+    public let label: String
+    public let deletesBranch: Bool
+
+    public init(label: String, deletesBranch: Bool) {
+      self.label = label
+      self.deletesBranch = deletesBranch
+    }
+  }
+
   public let worktree: Worktree
   public let branch: BranchChoice
   /// The name the user gave this worktree, or `nil` for none.
   public let customName: String?
+  /// Whether the branch has already landed on the project's default branch,
+  /// which decides which button the dialog leads with and adds a line to
+  /// what it says.
+  public let mergeState: WorktreeMergeState
 
-  public init(worktree: Worktree, branch: BranchChoice, customName: String? = nil) {
+  public init(
+    worktree: Worktree, branch: BranchChoice, customName: String? = nil,
+    mergeState: WorktreeMergeState = .unknown
+  ) {
     self.worktree = worktree
     self.branch = branch
     self.customName = customName
+    self.mergeState = mergeState
   }
 
   public var id: String { worktree.id }
@@ -51,11 +70,30 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
 
   public var offersBranchDeletion: Bool { branch == .asks }
 
+  /// The remove buttons in the order the dialog shows them; the first is
+  /// the one it leads with.
+  ///
+  /// A branch already merged leads with deleting it, since by then keeping
+  /// it is the unusual choice. Only on evidence that is proof: an upstream
+  /// that has gone is left the same way by a pull request closed without
+  /// merging, and that branch is the only copy of the work.
+  public var choices: [Choice] {
+    switch branch {
+    case .decided(let deletes):
+      return [Choice(label: removeLabel, deletesBranch: deletes)]
+    case .asks:
+      let keep = Choice(label: removeLabel, deletesBranch: false)
+      let delete = Choice(label: removeWithBranchLabel, deletesBranch: true)
+      return mergeState.isCertain ? [delete, keep] : [keep, delete]
+    }
+  }
+
   /// What confirming the first button deletes.
   public var deletesBranch: Bool { branch == .decided(deletes: true) }
 
   public static func decide(
-    _ worktree: Worktree, customName: String? = nil, confirms: Bool, alwaysDeletesBranch: Bool
+    _ worktree: Worktree, customName: String? = nil, confirms: Bool, alwaysDeletesBranch: Bool,
+    mergeState: WorktreeMergeState = .unknown
   ) -> Decision {
     let hasBranch = worktree.branch != nil
     let deletes = hasBranch && alwaysDeletesBranch
@@ -64,7 +102,7 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
     return .ask(
       PendingWorktreeRemoval(
         worktree: worktree, branch: branchIsOpen ? .asks : .decided(deletes: deletes),
-        customName: customName))
+        customName: customName, mergeState: mergeState))
   }
 
   /// Names the path and where it goes, says what happens to the branch,
@@ -77,6 +115,9 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
       case .decided(deletes: true): notes.append("The branch \(name) is deleted with it.")
       case .decided(deletes: false): notes.append("The branch \(name) is kept.")
       }
+    }
+    if let name = worktree.branch, let note = mergeState.removalNote(branch: name) {
+      notes.append(note)
     }
     if let warning { notes.append(warning) }
     return notes.joined(separator: "\n\n")

@@ -12,6 +12,7 @@ import Foundation
 public struct SharedProjectSettings: Equatable, Sendable {
   public var worktreeDirectory: String?
   public var branchPrefix: String?
+  public var defaultBranch: String?
   public var preCreateHook: String?
   public var postCreateHook: String?
   public var preDeleteHook: String?
@@ -24,6 +25,7 @@ public struct SharedProjectSettings: Equatable, Sendable {
   public init(
     worktreeDirectory: String? = nil,
     branchPrefix: String? = nil,
+    defaultBranch: String? = nil,
     preCreateHook: String? = nil,
     postCreateHook: String? = nil,
     preDeleteHook: String? = nil,
@@ -33,6 +35,7 @@ public struct SharedProjectSettings: Equatable, Sendable {
   ) {
     self.worktreeDirectory = Self.text(worktreeDirectory)
     self.branchPrefix = Self.text(branchPrefix)
+    self.defaultBranch = Self.text(defaultBranch)
     self.preCreateHook = Self.text(preCreateHook)
     self.postCreateHook = Self.text(postCreateHook)
     self.preDeleteHook = Self.text(preDeleteHook)
@@ -61,6 +64,7 @@ public struct SharedProjectSettings: Equatable, Sendable {
     self.init(
       worktreeDirectory: settings.worktreeDirectory,
       branchPrefix: settings.branchPrefix,
+      defaultBranch: settings.defaultBranch,
       preCreateHook: settings.preCreateHook,
       postCreateHook: settings.postCreateHook,
       preDeleteHook: settings.preDeleteHook,
@@ -103,14 +107,15 @@ public struct SharedProjectSettings: Equatable, Sendable {
 
 extension SharedProjectSettings: Codable {
   private enum CodingKeys: String, CodingKey {
-    case worktreeDirectory, branchPrefix, preCreateHook, postCreateHook, preDeleteHook,
-      postDeleteHook, iconGlyph, iconTint
+    case worktreeDirectory, branchPrefix, defaultBranch, preCreateHook, postCreateHook,
+      preDeleteHook, postDeleteHook, iconGlyph, iconTint
   }
 
   public func encode(to encoder: any Encoder) throws {
     var c = encoder.container(keyedBy: CodingKeys.self)
     try c.encodeIfPresent(worktreeDirectory, forKey: .worktreeDirectory)
     try c.encodeIfPresent(branchPrefix, forKey: .branchPrefix)
+    try c.encodeIfPresent(defaultBranch, forKey: .defaultBranch)
     try c.encodeIfPresent(preCreateHook, forKey: .preCreateHook)
     try c.encodeIfPresent(postCreateHook, forKey: .postCreateHook)
     try c.encodeIfPresent(preDeleteHook, forKey: .preDeleteHook)
@@ -127,6 +132,7 @@ extension SharedProjectSettings: Codable {
     self.init(
       worktreeDirectory: string(.worktreeDirectory),
       branchPrefix: string(.branchPrefix),
+      defaultBranch: string(.defaultBranch),
       preCreateHook: string(.preCreateHook),
       postCreateHook: string(.postCreateHook),
       preDeleteHook: string(.preDeleteHook),

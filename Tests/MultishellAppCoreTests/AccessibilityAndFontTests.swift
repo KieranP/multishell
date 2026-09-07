@@ -34,6 +34,33 @@ struct AccessibilityTextTests {
       .contains("failed: The post-create hook failed"))
   }
 
+  /// The green glyph, in the place it is drawn: after the lock, before the
+  /// changes. It is read only where it is drawn, so work that is only in
+  /// this worktree silences it here too.
+  @Test func aMergedRowSaysSoBetweenItsLockAndItsChanges() {
+    var behind = WorktreeStatus()
+    behind.behind = 2
+    #expect(
+      AccessibilityText.worktree(
+        feature, state: nil, status: behind, operation: nil, terminalCount: 0, isSelected: false,
+        mergeState: .merged(.ancestor, into: "origin/main"))
+        == "feat, linked worktree, Nothing running, Merged into origin/main, ↓2")
+
+    var dirty = WorktreeStatus()
+    dirty.untracked = 1
+    dirty.changedFiles = 1
+    #expect(
+      !AccessibilityText.worktree(
+        feature, state: nil, status: dirty, operation: nil, terminalCount: 0, isSelected: false,
+        mergeState: .merged(.ancestor, into: "origin/main")
+      ).contains("Merged"))
+    #expect(
+      !AccessibilityText.worktree(
+        feature, state: nil, status: nil, operation: nil, terminalCount: 0, isSelected: false,
+        mergeState: .unmerged
+      ).contains("Merged"))
+  }
+
   @Test func aRenamedRowReadsItsNameThenItsBranch() {
     let feature = Worktree(
       path: URL(fileURLWithPath: "/w/feat"), projectID: "/w", head: "abc", branch: "feat")
@@ -67,6 +94,10 @@ struct AccessibilityTextTests {
       AccessibilityText.project(
         name: "acme", isExpanded: true, isMissing: false, state: nil, worktreeCount: 4)
         == "acme, project, expanded, 4 worktrees")
+    #expect(
+      AccessibilityText.project(
+        name: "acme", isExpanded: true, isMissing: false, state: nil, worktreeCount: 4,
+        isFetching: true) == "acme, project, expanded, 4 worktrees, fetching")
     #expect(
       AccessibilityText.tab(title: "zsh", isActive: true, isSplit: true, state: .done)
         == "zsh, tab, selected, split, Done")
