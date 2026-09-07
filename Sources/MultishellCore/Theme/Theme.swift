@@ -67,10 +67,6 @@ public struct Theme: Identifiable, Codable, Hashable, Sendable {
 extension Theme {
   public static let builtins: [Theme] = [.multishellDark, .multishellLight]
 
-  public static func builtin(_ id: String) -> Theme? {
-    builtins.first { $0.id == id }
-  }
-
   public static let multishellDark = Theme(
     id: "multishell.dark",
     name: "Multishell Dark",
