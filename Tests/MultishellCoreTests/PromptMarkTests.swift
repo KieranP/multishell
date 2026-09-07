@@ -64,11 +64,16 @@ struct PromptMarkTests {
     }
   }
 
+  /// A prompt of its own, because the input mark rides on the end of PS1 and
+  /// readline drops the end of a prompt as wide as the screen: on a machine
+  /// whose `/etc/bashrc` made `\h:\W \u\$` reach 80 columns, the mark was
+  /// written and then scrolled off, and the test read as our file's fault.
   @Test func aRealBashWritesAllThreeMarksUnderGhosttyAndNoneWithoutIt() throws {
     let bash = "/bin/bash"
     guard FileManager.default.isExecutableFile(atPath: bash) else { return }
     let files = try GeneratedIntegration(helper: "/bin/echo")
     defer { files.remove() }
+    try files.writeHomeFile(".bashrc", "PS1='> '\n")
 
     func output(termProgram: String?) throws -> String {
       var environment = files.environment(termProgram: termProgram)
@@ -80,7 +85,7 @@ struct PromptMarkTests {
 
     let marked = try output(termProgram: "ghostty")
     #expect(marked.contains(Marks.claim), "prompt start")
-    #expect(marked.contains(Marks.input), "input start, at the end of PS1")
+    #expect(marked.contains("> " + Marks.input), "input start, on the end of PS1")
     #expect(marked.contains(Marks.output), "output start, once the command ran")
 
     let plain = try output(termProgram: nil)
@@ -212,7 +217,7 @@ struct PromptMarkTests {
     guard FileManager.default.isExecutableFile(atPath: zsh) else { return }
     let files = try GeneratedIntegration(helper: "/bin/echo")
     defer { files.remove() }
-    let bootstrap = try files.writeEngineBootstrap()
+    _ = try files.writeEngineBootstrap()
     // A tab is a pty, so the shell it starts is interactive; a pipe is not.
     let exec = ShellLaunch.execCommandLine(
       forShell: zsh, zshIntegration: files.zshDirectory, bashInit: files.bashInit

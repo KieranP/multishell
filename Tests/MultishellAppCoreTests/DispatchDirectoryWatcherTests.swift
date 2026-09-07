@@ -16,26 +16,33 @@
       return url
     }
 
-    /// Resolves when `onChange` fires, or after `seconds`. The default is
-    /// far above the watcher's 400 ms coalesce because both the event and
-    /// this deadline land on the main actor, which the rest of the suite is
-    /// also using; a busy runner has taken over ten seconds to get here.
-    private func nextChange(
-      of watcher: DispatchDirectoryWatcher, within seconds: Double = 30
-    ) async -> Bool {
-      await withCheckedContinuation { continuation in
-        var done = false
-        watcher.onChange = {
-          guard !done else { return }
-          done = true
-          continuation.resume(returning: true)
+    /// Counts the watcher's callbacks from the moment it is made.
+    ///
+    /// Made before the change it is counting, never after: the watcher
+    /// coalesces and delivers once, so a callback that lands while nobody is
+    /// listening is gone, and nothing touches the directory a second time.
+    /// Awaiting an `async let` around the change was that mistake, and it
+    /// cost a whole test run on a runner where the callback won the race.
+    private func changes(of watcher: DispatchDirectoryWatcher) -> Changes {
+      let changes = Changes()
+      watcher.onChange = { changes.count += 1 }
+      return changes
+    }
+
+    @MainActor final class Changes {
+      var count = 0
+
+      /// Whether a callback has arrived, waiting up to `seconds` for one.
+      /// The wait is far above the watcher's 400 ms coalesce because both the
+      /// event and this loop land on the main actor, which the rest of the
+      /// suite is also using; a busy runner has taken over ten seconds to
+      /// deliver.
+      func arrived(within seconds: Double = 30) async -> Bool {
+        let deadline = ContinuousClock.now + .seconds(seconds)
+        while count == 0, ContinuousClock.now < deadline {
+          try? await Task.sleep(for: .milliseconds(20))
         }
-        Task { @MainActor in
-          try? await Task.sleep(for: .seconds(seconds))
-          guard !done else { return }
-          done = true
-          continuation.resume(returning: false)
-        }
+        return count > 0
       }
     }
 
@@ -46,10 +53,10 @@
       watcher.watch([dir])
       defer { watcher.stop() }
 
-      async let fired = nextChange(of: watcher)
+      let changed = changes(of: watcher)
       try "x".write(to: dir.appendingPathComponent("new.txt"), atomically: true, encoding: .utf8)
 
-      #expect(await fired)
+      #expect(await changed.arrived())
     }
 
     @Test func burstsAreCoalescedIntoOneCallback() async throws {
@@ -58,22 +65,15 @@
       let watcher = DispatchDirectoryWatcher()
       watcher.watch([dir])
       defer { watcher.stop() }
-      var calls = 0
-      watcher.onChange = { calls += 1 }
 
+      let changed = changes(of: watcher)
       for i in 0..<20 {
         try "x".write(to: dir.appendingPathComponent("f\(i)"), atomically: true, encoding: .utf8)
       }
-      // Waiting for the first call rather than for a fixed span, so a busy
-      // runner cannot read as zero calls. The second wait is what would
-      // catch a burst arriving as several.
-      let deadline = ContinuousClock.now + .seconds(30)
-      while calls == 0, ContinuousClock.now < deadline {
-        try await Task.sleep(for: .milliseconds(50))
-      }
-      try await Task.sleep(for: .seconds(1))
 
-      #expect(calls == 1)
+      #expect(await changed.arrived(), "the burst arrived")
+      try await Task.sleep(for: .seconds(1))
+      #expect(changed.count == 1, "as one callback")
     }
 
     @Test func replacingTheWatchedSetStopsOldDirectoriesAndKeepsMissingOnesOut() async throws {
@@ -88,13 +88,13 @@
       watcher.watch([b])
       defer { watcher.stop() }
 
-      async let firedForA = nextChange(of: watcher, within: 1)
+      let forA = changes(of: watcher)
       try "x".write(to: a.appendingPathComponent("ignored"), atomically: true, encoding: .utf8)
-      #expect(await firedForA == false)
+      #expect(await forA.arrived(within: 1) == false)
 
-      async let firedForB = nextChange(of: watcher)
+      let forB = changes(of: watcher)
       try "x".write(to: b.appendingPathComponent("seen"), atomically: true, encoding: .utf8)
-      #expect(await firedForB)
+      #expect(await forB.arrived())
     }
 
     /// Every refresh re-arms the watcher with the current directory set.
@@ -142,11 +142,11 @@
       watcher.watch([dir])
       watcher.stop()
 
-      async let fired = nextChange(of: watcher, within: 1)
+      let changed = changes(of: watcher)
       try "x".write(
         to: dir.appendingPathComponent("after-stop"), atomically: true, encoding: .utf8)
 
-      #expect(await fired == false)
+      #expect(await changed.arrived(within: 1) == false)
     }
   }
 #endif
