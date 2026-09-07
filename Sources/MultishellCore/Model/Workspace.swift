@@ -28,9 +28,13 @@ public struct Workspace: Codable, Hashable, Sendable {
   public var preferredAgentID: String?
   /// What `AgentCatalogue.customID` runs, as the user typed it.
   public var customAgentCommand = ""
-  /// New Tab, and the first tab of a worktree, start the preferred agent
-  /// rather than a plain shell. Projects may override it.
+  /// New Tab, and the first tab of a worktree turned to, start the
+  /// preferred agent rather than a plain shell. Projects may override it.
   public var autoStartAgent = false
+  /// The same for the tab a newly created worktree opens, asked about
+  /// separately: a worktree is often made for an agent to work in by
+  /// someone whose own tabs are shells. Projects may override it.
+  public var autoStartAgentOnCreate = false
   /// Path of the shell new tabs run, `ShellCatalogue.customID` for the path
   /// typed in `customShellPath`, or `nil` for `$SHELL`. Projects may
   /// override it in `ProjectSettings`.
@@ -44,6 +48,11 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// Selecting a worktree with no tabs opens one. Off, Cmd+T or the
   /// actions menu does.
   public var opensTerminalOnSelect = true
+  /// A worktree just created opens its first terminal. Asked separately
+  /// from `opensTerminalOnSelect`, since a create is a worktree asked for
+  /// rather than one looked at. Projects may override it in
+  /// `ProjectSettings`.
+  public var opensTerminalOnCreate = true
   /// Ask before `git worktree remove`. Off is for people who remove
   /// worktrees all day and trust themselves; the default protects everyone
   /// else.
@@ -90,12 +99,20 @@ public struct Workspace: Codable, Hashable, Sendable {
     preferredAgentID = try c.decodeIfPresent(String.self, forKey: .preferredAgentID)
     customAgentCommand = try c.decodeIfPresent(String.self, forKey: .customAgentCommand) ?? ""
     autoStartAgent = try c.decodeIfPresent(Bool.self, forKey: .autoStartAgent) ?? false
+    // State from before the two were split says one thing about both.
+    autoStartAgentOnCreate =
+      try c.decodeIfPresent(Bool.self, forKey: .autoStartAgentOnCreate) ?? autoStartAgent
     defaultShell = try c.decodeIfPresent(String.self, forKey: .defaultShell)
     customShellPath = try c.decodeIfPresent(String.self, forKey: .customShellPath) ?? ""
     preferredEditorID = try c.decodeIfPresent(String.self, forKey: .preferredEditorID)
     customEditorCommand = try c.decodeIfPresent(String.self, forKey: .customEditorCommand) ?? ""
     opensTerminalOnSelect =
       try c.decodeIfPresent(Bool.self, forKey: .opensTerminalOnSelect) ?? true
+    // Before the two were split a create opened its terminal by going
+    // through the selection that follows it, so state that predates the
+    // field keeps what it said about selecting.
+    opensTerminalOnCreate =
+      try c.decodeIfPresent(Bool.self, forKey: .opensTerminalOnCreate) ?? opensTerminalOnSelect
     confirmsWorktreeRemoval =
       try c.decodeIfPresent(Bool.self, forKey: .confirmsWorktreeRemoval) ?? true
     deletesBranchWithWorktree =
@@ -188,6 +205,11 @@ extension Workspace {
     appearance.theme()
   }
 
+  // Every resolution below reads `project.settings`, so the project handed
+  // to it must be the one the model resolved (`AppModel.resolved`): a
+  // repository's `.multishell.json` may supply any of these, and the record
+  // straight out of `workspace.projects` has not been layered with it.
+
   public func worktreeSettings(for project: Project) -> WorktreeSettings {
     project.settings.effective(defaults: worktreeDefaults)
   }
@@ -202,6 +224,23 @@ extension Workspace {
   /// when it has one, else the global, and only when an agent is in force.
   public func autoStartsAgent(for project: Project) -> Bool {
     (project.settings.autoStartAgent ?? autoStartAgent) && preferredAgentID(for: project) != nil
+  }
+
+  /// The same for the tab a worktree created here opens.
+  public func autoStartsAgentOnCreate(for project: Project) -> Bool {
+    (project.settings.autoStartAgentOnCreate ?? autoStartAgentOnCreate)
+      && preferredAgentID(for: project) != nil
+  }
+
+  /// Whether a worktree in this project opens a terminal when it is turned
+  /// to: the project's say when it has one, else the global.
+  public func opensTerminalOnSelect(for project: Project) -> Bool {
+    project.settings.opensTerminalOnSelect ?? opensTerminalOnSelect
+  }
+
+  /// The same for a worktree just created here.
+  public func opensTerminalOnCreate(for project: Project) -> Bool {
+    project.settings.opensTerminalOnCreate ?? opensTerminalOnCreate
   }
 
   /// The shell a new tab in this project runs, or `nil` for `$SHELL`.

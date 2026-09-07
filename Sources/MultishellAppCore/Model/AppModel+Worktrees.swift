@@ -5,11 +5,11 @@ import MultishellGitKit
 // MARK: - The worktree in view, its name, and the operation running on it
 
 extension AppModel {
-  /// A worktree with no tabs gets one, unless the setting says selecting
-  /// should only show the worktree and leave the first shell to Cmd+T or
-  /// the actions menu. `openingFirstTab: false` is for a caller about to
-  /// open its own tab. Returns false when the directory is gone and nothing
-  /// was selected, so that caller does not act on whatever was selected.
+  /// A worktree with no tabs gets one, unless the setting for why it is
+  /// being shown says to leave the first shell to Cmd+T or the actions
+  /// menu; see `TabOpening`. Returns false when the directory is gone and
+  /// nothing was selected, so that caller does not act on whatever was
+  /// selected.
   ///
   /// Selecting is where the question about the repository's shared hooks is
   /// asked; `byUser: false` is for the selection that follows a create,
@@ -17,7 +17,7 @@ extension AppModel {
   /// dialog under it.
   @discardableResult
   public func select(
-    _ worktree: Worktree, openingFirstTab: Bool = true, byUser: Bool = true
+    _ worktree: Worktree, openingFirstTab: TabOpening = .onSelect, byUser: Bool = true
   )
     -> Bool
   {
@@ -25,10 +25,10 @@ extension AppModel {
     store.selectWorktree(worktree.id)
     warmWorktrees.insert(worktree.id)
     if byUser { askAboutSharedHooksIfNeeded(for: worktree.projectID) }
-    if openingFirstTab, !isBusy(worktree.id), workspace.tabs(in: worktree.id).isEmpty,
-      workspace.opensTerminalOnSelect
+    if !isBusy(worktree.id), workspace.tabs(in: worktree.id).isEmpty,
+      opensTab(in: worktree, on: openingFirstTab)
     {
-      openFirstOrNewTab(in: worktree)
+      openFirstOrNewTab(in: worktree, on: openingFirstTab)
     }
     sync()
     return true

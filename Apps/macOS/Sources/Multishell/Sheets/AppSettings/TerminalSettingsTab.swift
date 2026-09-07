@@ -45,8 +45,13 @@ struct TerminalSettingsTab: View {
         InfoToggle(
           "Open a terminal when a worktree is selected",
           info:
-            "On, clicking a worktree with no tabs starts its first shell, or the agent where auto-start is on. Off, the worktree is shown empty and New Tab (⌘T) or the header's actions menu starts one.",
+            "On, clicking a worktree with no tabs starts its first shell, or the agent where auto-start on tab open is on. Off, the worktree is shown empty and New Tab (⌘T) or the header's actions menu starts one. A worktree just created is the setting below's to decide. Any project can override this.",
           isOn: model.setting(\.opensTerminalOnSelect, write: model.setOpensTerminalOnSelect))
+        InfoToggle(
+          "Open a terminal when a worktree is created",
+          info:
+            "On, a worktree gets its first shell as soon as it is created, or once its post-create hook has finished, whatever selecting a worktree does. Off, the new worktree is shown empty. Any project can override this.",
+          isOn: model.setting(\.opensTerminalOnCreate, write: model.setOpensTerminalOnCreate))
       }
     }
     .formStyle(.grouped)

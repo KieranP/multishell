@@ -14,7 +14,7 @@ struct ProjectWorktreesTab: View {
     Form {
       Section {
         InfoToggle(
-          "Override worktree path",
+          "Override: Worktree path",
           info:
             "Where this project's worktrees are created. {project} is the repository folder name, ~ is home. Relative paths start at the repository.",
           isOn: overrides(\.worktreeDirectory, default: defaults.worktreeDirectory))
@@ -32,7 +32,7 @@ struct ProjectWorktreesTab: View {
 
       Section {
         InfoToggle(
-          "Override branch prefix",
+          "Override: Branch prefix",
           info:
             "Prepended to branch names typed in the new-worktree sheet for this project. Turn the override on and leave it blank to use no prefix while the global has one.",
           isOn: overrides(\.branchPrefix, default: defaults.branchPrefix))
@@ -50,7 +50,7 @@ struct ProjectWorktreesTab: View {
 
       Section {
         InfoToggle(
-          "Override default branch",
+          "Override: Default branch",
           info:
             "The branch this project's work is merged into. A worktree whose branch has landed on it gets a badge in the sidebar saying it can go. Detected from origin/HEAD, then origin/main, origin/master, main, master. A name typed here is looked for on origin before it is looked for locally.",
           isOn: overrides(\.defaultBranch, default: detected))

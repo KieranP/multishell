@@ -26,6 +26,17 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   public var preferredAgentID: String?
   /// Whether new tabs here start the agent. `nil` follows the global.
   public var autoStartAgent: Bool?
+  /// Whether the tab a worktree created here opens starts the agent. `nil`
+  /// follows the global.
+  public var autoStartAgentOnCreate: Bool?
+
+  /// Whether a worktree here opens a terminal when it is turned to. `nil`
+  /// follows the global.
+  public var opensTerminalOnSelect: Bool?
+
+  /// Whether a worktree created here opens a terminal once the create, and
+  /// any post-create hook, is done. `nil` follows the global.
+  public var opensTerminalOnCreate: Bool?
 
   /// Shell override by path. `nil` follows the global choice;
   /// `ShellCatalogue.loginShellID` means `$SHELL` here whatever it says.
@@ -54,6 +65,9 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     postDeleteHook: String = "",
     preferredAgentID: String? = nil,
     autoStartAgent: Bool? = nil,
+    autoStartAgentOnCreate: Bool? = nil,
+    opensTerminalOnSelect: Bool? = nil,
+    opensTerminalOnCreate: Bool? = nil,
     defaultShell: String? = nil,
     iconGlyph: String? = nil,
     iconTint: Int? = nil,
@@ -68,6 +82,9 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     self.postDeleteHook = postDeleteHook
     self.preferredAgentID = preferredAgentID
     self.autoStartAgent = autoStartAgent
+    self.autoStartAgentOnCreate = autoStartAgentOnCreate
+    self.opensTerminalOnSelect = opensTerminalOnSelect
+    self.opensTerminalOnCreate = opensTerminalOnCreate
     self.defaultShell = defaultShell
     self.iconGlyph = iconGlyph
     self.iconTint = ProjectIcon.validTint(iconTint)
@@ -90,6 +107,12 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     postDeleteHook = try c.decodeIfPresent(String.self, forKey: .postDeleteHook) ?? ""
     preferredAgentID = Self.override(try c.decodeIfPresent(String.self, forKey: .preferredAgentID))
     autoStartAgent = try c.decodeIfPresent(Bool.self, forKey: .autoStartAgent)
+    // Absent is "follow the global", not "what `autoStartAgent` says": a
+    // nil override is written as an absent key, so seeding it from the
+    // other one would turn the global back into an override on every load.
+    autoStartAgentOnCreate = try c.decodeIfPresent(Bool.self, forKey: .autoStartAgentOnCreate)
+    opensTerminalOnSelect = try c.decodeIfPresent(Bool.self, forKey: .opensTerminalOnSelect)
+    opensTerminalOnCreate = try c.decodeIfPresent(Bool.self, forKey: .opensTerminalOnCreate)
     defaultShell = Self.override(try c.decodeIfPresent(String.self, forKey: .defaultShell))
     iconGlyph = Self.override(try c.decodeIfPresent(String.self, forKey: .iconGlyph))
     // `try?`: a tint that is not a number costs the tint, not the file.
@@ -116,15 +139,20 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   }
 
   /// These settings with the repository's own filling the gaps: a path or
-  /// prefix the user left following the global, an icon they did not set,
-  /// and a hook they left blank, the last only once its text is trusted. A
-  /// whitespace-only hook is the user's "none" and stays.
+  /// prefix the user left following the global, what a worktree here opens
+  /// where they said nothing, an icon they did not set, and a hook they
+  /// left blank, the last only once its text is trusted. A whitespace-only
+  /// hook is the user's "none" and stays.
   public func layered(over shared: SharedProjectSettings?) -> ProjectSettings {
     guard let shared else { return self }
     var result = self
     result.worktreeDirectory = worktreeDirectory ?? shared.worktreeDirectory
     result.branchPrefix = branchPrefix ?? shared.branchPrefix
     result.defaultBranch = defaultBranch ?? shared.defaultBranch
+    result.autoStartAgent = autoStartAgent ?? shared.autoStartAgent
+    result.autoStartAgentOnCreate = autoStartAgentOnCreate ?? shared.autoStartAgentOnCreate
+    result.opensTerminalOnSelect = opensTerminalOnSelect ?? shared.opensTerminalOnSelect
+    result.opensTerminalOnCreate = opensTerminalOnCreate ?? shared.opensTerminalOnCreate
     result.iconGlyph = iconGlyph ?? shared.iconGlyph
     result.iconTint = iconTint ?? ProjectIcon.validTint(shared.iconTint)
     if trustsHooks(of: shared) {

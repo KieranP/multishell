@@ -76,6 +76,37 @@ struct SharedProjectSettingsTests {
         == ProjectSettings(branchPrefix: "me/"))
   }
 
+  /// A repository may ship what its worktrees open, so a team gets the same
+  /// setup without each person finding the settings. Unlike a hook, this
+  /// runs nothing the repository wrote: it starts the shell or the agent
+  /// the user themselves chose, so it needs no trust decision.
+  @Test func aRepositoryMaySayWhatItsWorktreesOpenAndTheUsersOwnAnswerWins() throws {
+    let shared = try decode(
+      #"{ "autoStartAgent": true, "autoStartAgentOnCreate": true, "opensTerminalOnSelect": false, "opensTerminalOnCreate": true }"#
+    )
+    #expect(shared.autoStartAgent == true && shared.autoStartAgentOnCreate == true)
+    #expect(shared.opensTerminalOnSelect == false && shared.opensTerminalOnCreate == true)
+
+    let blank = ProjectSettings().layered(over: shared)
+    #expect(blank.autoStartAgent == true && blank.autoStartAgentOnCreate == true)
+    #expect(blank.opensTerminalOnSelect == false && blank.opensTerminalOnCreate == true)
+
+    let own = ProjectSettings(autoStartAgent: false, opensTerminalOnSelect: true)
+      .layered(over: shared)
+    #expect(own.autoStartAgent == false, "the user's off stands over the file's on")
+    #expect(own.opensTerminalOnSelect == true)
+    #expect(own.autoStartAgentOnCreate == true, "left alone, so the file's")
+
+    let exported = SharedProjectSettings(exporting: blank)
+    #expect(exported.autoStartAgentOnCreate == true && exported.opensTerminalOnSelect == false)
+  }
+
+  @Test func aFlagOfTheWrongTypeCostsThatFlagOnly() throws {
+    let shared = try decode(#"{ "autoStartAgent": "yes", "opensTerminalOnCreate": false }"#)
+    #expect(shared.autoStartAgent == nil)
+    #expect(shared.opensTerminalOnCreate == false)
+  }
+
   @Test func sharedHooksRunOnlyWhenTrustedAndOnlyWhileTheTextIsTheOneTrusted() {
     let shared = SharedProjectSettings(postCreateHook: "npm ci", preDeleteHook: "exit 1")
     let text = shared.hooksText!

@@ -8,11 +8,20 @@ import Foundation
 ///
 /// Hooks run code on the user's machine on the say of whoever committed the
 /// file, so they take effect only once the user has trusted that exact
-/// text; see `SharedHooksDecision`.
+/// text; see `SharedHooksDecision`. Nothing else here runs anything the
+/// repository wrote: what a worktree opens starts the shell or the agent
+/// the user themselves chose, and only where they left the choice to the
+/// global.
 public struct SharedProjectSettings: Equatable, Sendable {
   public var worktreeDirectory: String?
   public var branchPrefix: String?
   public var defaultBranch: String?
+  /// What a worktree here opens, and whether it runs the agent: a team may
+  /// ship "a worktree comes up with an agent working in it".
+  public var autoStartAgent: Bool?
+  public var autoStartAgentOnCreate: Bool?
+  public var opensTerminalOnSelect: Bool?
+  public var opensTerminalOnCreate: Bool?
   public var preCreateHook: String?
   public var postCreateHook: String?
   public var preDeleteHook: String?
@@ -26,6 +35,10 @@ public struct SharedProjectSettings: Equatable, Sendable {
     worktreeDirectory: String? = nil,
     branchPrefix: String? = nil,
     defaultBranch: String? = nil,
+    autoStartAgent: Bool? = nil,
+    autoStartAgentOnCreate: Bool? = nil,
+    opensTerminalOnSelect: Bool? = nil,
+    opensTerminalOnCreate: Bool? = nil,
     preCreateHook: String? = nil,
     postCreateHook: String? = nil,
     preDeleteHook: String? = nil,
@@ -36,6 +49,10 @@ public struct SharedProjectSettings: Equatable, Sendable {
     self.worktreeDirectory = Self.text(worktreeDirectory)
     self.branchPrefix = Self.text(branchPrefix)
     self.defaultBranch = Self.text(defaultBranch)
+    self.autoStartAgent = autoStartAgent
+    self.autoStartAgentOnCreate = autoStartAgentOnCreate
+    self.opensTerminalOnSelect = opensTerminalOnSelect
+    self.opensTerminalOnCreate = opensTerminalOnCreate
     self.preCreateHook = Self.text(preCreateHook)
     self.postCreateHook = Self.text(postCreateHook)
     self.preDeleteHook = Self.text(preDeleteHook)
@@ -65,6 +82,10 @@ public struct SharedProjectSettings: Equatable, Sendable {
       worktreeDirectory: settings.worktreeDirectory,
       branchPrefix: settings.branchPrefix,
       defaultBranch: settings.defaultBranch,
+      autoStartAgent: settings.autoStartAgent,
+      autoStartAgentOnCreate: settings.autoStartAgentOnCreate,
+      opensTerminalOnSelect: settings.opensTerminalOnSelect,
+      opensTerminalOnCreate: settings.opensTerminalOnCreate,
       preCreateHook: settings.preCreateHook,
       postCreateHook: settings.postCreateHook,
       preDeleteHook: settings.preDeleteHook,
@@ -107,8 +128,9 @@ public struct SharedProjectSettings: Equatable, Sendable {
 
 extension SharedProjectSettings: Codable {
   private enum CodingKeys: String, CodingKey {
-    case worktreeDirectory, branchPrefix, defaultBranch, preCreateHook, postCreateHook,
-      preDeleteHook, postDeleteHook, iconGlyph, iconTint
+    case worktreeDirectory, branchPrefix, defaultBranch, autoStartAgent, autoStartAgentOnCreate,
+      opensTerminalOnSelect, opensTerminalOnCreate, preCreateHook, postCreateHook, preDeleteHook,
+      postDeleteHook, iconGlyph, iconTint
   }
 
   public func encode(to encoder: any Encoder) throws {
@@ -116,6 +138,10 @@ extension SharedProjectSettings: Codable {
     try c.encodeIfPresent(worktreeDirectory, forKey: .worktreeDirectory)
     try c.encodeIfPresent(branchPrefix, forKey: .branchPrefix)
     try c.encodeIfPresent(defaultBranch, forKey: .defaultBranch)
+    try c.encodeIfPresent(autoStartAgent, forKey: .autoStartAgent)
+    try c.encodeIfPresent(autoStartAgentOnCreate, forKey: .autoStartAgentOnCreate)
+    try c.encodeIfPresent(opensTerminalOnSelect, forKey: .opensTerminalOnSelect)
+    try c.encodeIfPresent(opensTerminalOnCreate, forKey: .opensTerminalOnCreate)
     try c.encodeIfPresent(preCreateHook, forKey: .preCreateHook)
     try c.encodeIfPresent(postCreateHook, forKey: .postCreateHook)
     try c.encodeIfPresent(preDeleteHook, forKey: .preDeleteHook)
@@ -129,10 +155,18 @@ extension SharedProjectSettings: Codable {
     func string(_ key: CodingKeys) -> String? {
       (try? c.decodeIfPresent(String.self, forKey: key)) ?? nil
     }
+    // Same as `string`: a key of the wrong type costs that key, not the file.
+    func flag(_ key: CodingKeys) -> Bool? {
+      (try? c.decodeIfPresent(Bool.self, forKey: key)) ?? nil
+    }
     self.init(
       worktreeDirectory: string(.worktreeDirectory),
       branchPrefix: string(.branchPrefix),
       defaultBranch: string(.defaultBranch),
+      autoStartAgent: flag(.autoStartAgent),
+      autoStartAgentOnCreate: flag(.autoStartAgentOnCreate),
+      opensTerminalOnSelect: flag(.opensTerminalOnSelect),
+      opensTerminalOnCreate: flag(.opensTerminalOnCreate),
       preCreateHook: string(.preCreateHook),
       postCreateHook: string(.postCreateHook),
       preDeleteHook: string(.preDeleteHook),

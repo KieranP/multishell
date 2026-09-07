@@ -38,7 +38,7 @@ struct ProjectGeneralTab: View {
         HStack(spacing: 8) {
           Button("Export") { model.exportSharedSettings(for: project) }
           InfoButton(
-            "Writes this project's worktree path, branch prefix, hooks and icon, as they are in effect, to \(SharedProjectSettings.fileName) at the repository root, for the team to commit, replacing one already there. Anyone who adds the repository gets them as defaults under their own; they are asked once before its hooks run."
+            "Writes this project's worktree path, branch prefix, hooks, icon and what its worktrees open, as they are in effect, to \(SharedProjectSettings.fileName) at the repository root, for the team to commit, replacing one already there. Anyone who adds the repository gets them as defaults under their own; they are asked once before its hooks run."
           )
           Spacer()
           Button("Remove Project…", role: .destructive) {

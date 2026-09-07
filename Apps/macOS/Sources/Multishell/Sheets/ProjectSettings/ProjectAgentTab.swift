@@ -9,10 +9,14 @@ struct ProjectAgentTab: View {
   var body: some View {
     let settings = model.settings(of: project)
     let global = model.workspace.preferredAgentID
+    let onTabOpen = model.inherited(
+      \.autoStartAgent, global: model.workspace.autoStartAgent, for: project)
+    let onCreate = model.inherited(
+      \.autoStartAgentOnCreate, global: model.workspace.autoStartAgentOnCreate, for: project)
     Form {
       Section {
         InfoToggle(
-          "Override preferred agent",
+          "Override: Preferred agent",
           info:
             "New Agent Tab (⌥⌘T) in this project's worktrees starts this agent instead of the global one. None opts the project out. The custom command is the global one.",
           isOn: overrides(default: global))
@@ -35,41 +39,52 @@ struct ProjectAgentTab: View {
 
       Section {
         InfoToggle(
-          "Override auto-start",
+          "Override: Auto-start on tab open",
           info:
-            "Whether New Tab and a worktree's first tab here start the agent, whatever the global says.",
-          isOn: overridesAutoStart)
-        Toggle(
-          "Start the agent in new tabs",
-          isOn: Binding(
-            get: { settings.autoStartAgent ?? model.workspace.autoStartAgent },
-            set: { model.updateSettings(with(settings, autoStart: $0), for: project) })
-        )
-        .disabled(settings.autoStartAgent == nil)
+            "Whether New Tab, and the first tab of a worktree turned to here, start the agent, whatever the global says.",
+          isOn: overrides(\.autoStartAgent, default: onTabOpen.value))
+        Toggle("Auto-start on tab open", isOn: value(\.autoStartAgent, default: onTabOpen.value))
+          .disabled(settings.autoStartAgent == nil)
       } footer: {
-        if settings.autoStartAgent == nil {
-          SettingsCaption(
-            "Using the global value: \(model.workspace.autoStartAgent ? "on" : "off").")
-        }
+        if settings.autoStartAgent == nil { SettingsCaption(onTabOpen.caption) }
+      }
+
+      Section {
+        InfoToggle(
+          "Override: Auto-start on worktree creation",
+          info:
+            "Whether the tab a worktree created here opens starts the agent, whatever the global says. Nothing opens at all unless the Terminal tab opens one on create.",
+          isOn: overrides(\.autoStartAgentOnCreate, default: onCreate.value))
+        Toggle(
+          "Auto-start on worktree creation",
+          isOn: value(\.autoStartAgentOnCreate, default: onCreate.value)
+        )
+        .disabled(settings.autoStartAgentOnCreate == nil)
+      } footer: {
+        if settings.autoStartAgentOnCreate == nil { SettingsCaption(onCreate.caption) }
       }
     }
     .formStyle(.grouped)
   }
 
-  private func with(_ settings: ProjectSettings, autoStart: Bool) -> ProjectSettings {
-    var updated = settings
-    updated.autoStartAgent = autoStart
-    return updated
-  }
-
-  /// Turning the override on seeds it with the global value.
-  private var overridesAutoStart: Binding<Bool> {
-    let source = model.setting(\.autoStartAgent, of: project)
-    let global = model.workspace.autoStartAgent
+  /// Turning an override on seeds it with the global value; turning it off
+  /// returns to following the global.
+  private func overrides(
+    _ keyPath: WritableKeyPath<ProjectSettings, Bool?>, default global: Bool
+  ) -> Binding<Bool> {
+    let source = model.setting(keyPath, of: project)
     return Binding(
       get: { source.wrappedValue != nil },
       set: { on in source.wrappedValue = on ? global : nil }
     )
+  }
+
+  /// The overridden value, showing the global while it is not overridden.
+  private func value(
+    _ keyPath: WritableKeyPath<ProjectSettings, Bool?>, default global: Bool
+  ) -> Binding<Bool> {
+    let source = model.setting(keyPath, of: project)
+    return Binding(get: { source.wrappedValue ?? global }, set: { source.wrappedValue = $0 })
   }
 
   private func with(_ settings: ProjectSettings, agent: String) -> ProjectSettings {

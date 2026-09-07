@@ -27,6 +27,10 @@ extension AppModel {
     store.setOpensTerminalOnSelect(enabled)
   }
 
+  public func setOpensTerminalOnCreate(_ enabled: Bool) {
+    store.setOpensTerminalOnCreate(enabled)
+  }
+
   /// The shell a tab in this worktree runs: the project's override, else
   /// the global choice, else `$SHELL`.
   public func shellPath(forWorktree id: Worktree.ID) -> String {

@@ -235,4 +235,20 @@ struct AgentCatalogueTests {
     #expect(workspace.autoStartsAgent(for: follows))
     #expect(!workspace.autoStartsAgent(for: forcedOff))
   }
+
+  @Test func autoStartOnCreationIsAskedApartFromAutoStartOnTabOpen() {
+    var workspace = Workspace()
+    workspace.preferredAgentID = "claude"
+    workspace.autoStartAgentOnCreate = true
+    let follows = Project(path: URL(fileURLWithPath: "/a"))
+    let forcedOff = Project(
+      path: URL(fileURLWithPath: "/b"), settings: ProjectSettings(autoStartAgentOnCreate: false))
+    let noAgent = Project(
+      path: URL(fileURLWithPath: "/c"), settings: ProjectSettings(preferredAgentID: "none"))
+
+    #expect(workspace.autoStartsAgentOnCreate(for: follows))
+    #expect(!workspace.autoStartsAgent(for: follows), "the tab-open setting is still off")
+    #expect(!workspace.autoStartsAgentOnCreate(for: forcedOff))
+    #expect(!workspace.autoStartsAgentOnCreate(for: noAgent), "nothing to start")
+  }
 }

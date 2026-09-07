@@ -141,6 +141,15 @@ struct DecodingDefaultsTests {
     #expect(workspace.preferredAgentID == nil)
     #expect(workspace.customAgentCommand == "")
     #expect(!workspace.autoStartAgent, "off until asked for")
+    #expect(!workspace.autoStartAgentOnCreate, "off until asked for")
+  }
+
+  @Test func aWorkspaceFromBeforeAutoStartWasSplitSaysTheSameAboutCreation() throws {
+    let on = try decode(Workspace.self, #"{ "autoStartAgent": true }"#)
+    #expect(on.autoStartAgentOnCreate, "what the one setting used to mean")
+    let split = try decode(
+      Workspace.self, #"{ "autoStartAgent": true, "autoStartAgentOnCreate": false }"#)
+    #expect(split.autoStartAgent && !split.autoStartAgentOnCreate)
   }
 
   @Test func aNotificationPreferenceThisBuildDoesNotKnowFallsBack() throws {
@@ -162,6 +171,40 @@ struct DecodingDefaultsTests {
     #expect(try decode(ProjectSettings.self, "{}").autoStartAgent == nil, "follows the global")
     #expect(
       try decode(ProjectSettings.self, #"{ "autoStartAgent": false }"#).autoStartAgent == false)
+  }
+
+  @Test func projectSettingsSplitAutoStartAndOpenOnCreateFollowTheGlobalUntilOverridden() throws {
+    let empty = try decode(ProjectSettings.self, "{}")
+    #expect(empty.autoStartAgentOnCreate == nil && empty.opensTerminalOnCreate == nil)
+    #expect(empty.opensTerminalOnSelect == nil)
+    // The one override state files had before the split stays the tab-open
+    // one; creation follows the global, which carries the old value.
+    let old = try decode(ProjectSettings.self, #"{ "autoStartAgent": true }"#)
+    #expect(old.autoStartAgentOnCreate == nil, "follows the global")
+    let split = try decode(
+      ProjectSettings.self, #"{ "autoStartAgent": true, "autoStartAgentOnCreate": false }"#)
+    #expect(split.autoStartAgentOnCreate == false)
+    #expect(
+      try decode(ProjectSettings.self, #"{ "opensTerminalOnCreate": false }"#)
+        .opensTerminalOnCreate == false)
+    #expect(
+      try decode(ProjectSettings.self, #"{ "opensTerminalOnSelect": false }"#)
+        .opensTerminalOnSelect == false)
+  }
+
+  /// One override on and its neighbour following the global is a state the
+  /// forms can produce, so it has to survive being written and read back:
+  /// a nil override is an absent key, and seeding one field from another
+  /// would read that absence as an override next launch.
+  @Test func anOverriddenSettingBesideOneFollowingTheGlobalSurvivesARoundTrip() throws {
+    var settings = ProjectSettings()
+    settings.autoStartAgent = true
+    settings.opensTerminalOnCreate = false
+    let json = try JSONEncoder().encode(settings)
+    let back = try JSONDecoder().decode(ProjectSettings.self, from: json)
+    #expect(back.autoStartAgent == true)
+    #expect(back.autoStartAgentOnCreate == nil, "still following the global")
+    #expect(back.opensTerminalOnCreate == false)
   }
 
   @Test func projectSettingsWithoutTheNewerFieldsGetTheirDefaults() throws {
@@ -200,14 +243,26 @@ struct DecodingDefaultsTests {
     #expect(workspace.preferredEditorID == nil)
     #expect(workspace.customEditorCommand == "")
     #expect(workspace.opensTerminalOnSelect, "on until turned off")
+    #expect(workspace.opensTerminalOnCreate, "on until turned off")
 
     let chosen = try decode(
       Workspace.self,
-      #"{ "defaultShell": "/opt/homebrew/bin/fish", "preferredEditorID": "future-editor", "opensTerminalOnSelect": false }"#
+      #"{ "defaultShell": "/opt/homebrew/bin/fish", "preferredEditorID": "future-editor", "opensTerminalOnSelect": false, "opensTerminalOnCreate": false }"#
     )
     #expect(chosen.defaultShell == "/opt/homebrew/bin/fish")
     #expect(chosen.preferredEditorID == "future-editor", "an unknown editor id is kept as text")
     #expect(!chosen.opensTerminalOnSelect)
+    #expect(!chosen.opensTerminalOnCreate)
+  }
+
+  /// A create used to open its terminal through the selection that follows
+  /// it, so someone who turned selecting off is not handed one now.
+  @Test func aWorkspaceFromBeforeOpenOnCreateWasSplitKeepsWhatSelectingSaid() throws {
+    let looksFirst = try decode(Workspace.self, #"{ "opensTerminalOnSelect": false }"#)
+    #expect(!looksFirst.opensTerminalOnCreate, "no terminal on create either, as before")
+    let split = try decode(
+      Workspace.self, #"{ "opensTerminalOnSelect": false, "opensTerminalOnCreate": true }"#)
+    #expect(split.opensTerminalOnCreate, "once said separately, it is its own setting")
   }
 
   @Test func aWorkspaceWithoutTheRemovalFieldsAsksAndKeepsTheBranch() throws {

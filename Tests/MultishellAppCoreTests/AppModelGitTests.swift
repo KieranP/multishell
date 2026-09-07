@@ -159,6 +159,107 @@ struct AppModelGitTests {
     #expect(h.model.workspace.tabs(in: created.id).count == 1)
   }
 
+  /// The two ends of the matrix a create and a selection are asked about
+  /// separately: nothing, a shell, or an agent, for each.
+  @Test func whatACreatedWorktreeOpensIsAskedApartFromWhatASelectedOneDoes() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    h.model.setOpensTerminalOnCreate(false)
+
+    await h.model.createWorktree(branch: "quiet", basedOn: nil, createBranch: true, in: h.project)
+    let quiet = try #require(h.worktree(onBranch: "quiet"))
+    #expect(h.model.workspace.tabs(in: quiet.id).isEmpty, "created, and shown empty")
+
+    let main = try #require(h.worktree(onBranch: "main"))
+    h.model.select(main)
+    h.model.select(quiet)
+    #expect(h.model.workspace.tabs(in: quiet.id).count == 1, "turning to it is the other setting")
+
+    h.model.updateSettings(ProjectSettings(opensTerminalOnCreate: true), for: h.project)
+    await h.model.createWorktree(branch: "loud", basedOn: nil, createBranch: true, in: h.project)
+    let loud = try #require(h.worktree(onBranch: "loud"))
+    #expect(h.model.workspace.tabs(in: loud.id).count == 1, "the project override turns it on")
+  }
+
+  @Test func aCreatedWorktreeStartsTheAgentOnItsOwnSettingNotTheTabOpenOne() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    h.model.setPreferredAgent("claude")
+    h.model.setAutoStartAgentOnCreate(true)
+
+    await h.model.createWorktree(branch: "working", basedOn: nil, createBranch: true, in: h.project)
+    let created = try #require(h.worktree(onBranch: "working"))
+    let first = try #require(h.model.workspace.activeTab(in: created.id))
+    #expect(
+      h.model.workspace.session(first.focusedSessionID)?.agentID == "claude",
+      "created, and an agent is already working in it")
+
+    h.model.newTab()
+    let second = try #require(h.model.workspace.activeTab(in: created.id))
+    #expect(
+      h.model.workspace.session(second.focusedSessionID)?.agentID == nil,
+      "auto-start on tab open is still off")
+
+    h.model.updateSettings(ProjectSettings(autoStartAgentOnCreate: false), for: h.project)
+    await h.model.createWorktree(branch: "plain", basedOn: nil, createBranch: true, in: h.project)
+    let plain = try #require(h.worktree(onBranch: "plain"))
+    let shell = try #require(h.model.workspace.activeTab(in: plain.id))
+    #expect(
+      h.model.workspace.session(shell.focusedSessionID)?.agentID == nil,
+      "the project override turns it off")
+  }
+
+  /// The file is only worth carrying these if the runtime path reads the
+  /// layered settings rather than the project's own.
+  /// The other way round from the test above it: someone whose own tabs are
+  /// agents can still ask for a fresh worktree to come up as a shell.
+  @Test func aCreatedWorktreeIsAShellWhenOnlyTabOpenAutoStartsTheAgent() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    h.model.setPreferredAgent("claude")
+    h.model.setAutoStartAgent(true)
+
+    await h.model.createWorktree(branch: "byhand", basedOn: nil, createBranch: true, in: h.project)
+    let created = try #require(h.worktree(onBranch: "byhand"))
+    let tab = try #require(h.model.workspace.activeTab(in: created.id))
+    #expect(
+      h.model.workspace.session(tab.focusedSessionID)?.agentID == nil,
+      "auto-start on worktree creation is off, so a shell")
+
+    h.model.newTab()
+    let second = try #require(h.model.workspace.activeTab(in: created.id))
+    #expect(
+      h.model.workspace.session(second.focusedSessionID)?.agentID == "claude",
+      "while a tab asked for here is still an agent")
+  }
+
+  @Test func aRepositorySaysWhatItsWorktreesOpenAndTheUsersOwnAnswerStillWins() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    h.model.setPreferredAgent("claude")
+    try #"{ "autoStartAgentOnCreate": true, "opensTerminalOnSelect": false }"#
+      .write(to: SharedProjectSettings.file(in: h.project.path), atomically: true, encoding: .utf8)
+    await h.model.refresh(h.project)
+
+    let main = try #require(h.worktree(onBranch: "main"))
+    h.model.select(main)
+    #expect(h.model.workspace.tabs(in: main.id).isEmpty, "the file says looking does not start one")
+
+    await h.model.createWorktree(branch: "shipped", basedOn: nil, createBranch: true, in: h.project)
+    let created = try #require(h.worktree(onBranch: "shipped"))
+    let tab = try #require(h.model.workspace.activeTab(in: created.id))
+    #expect(
+      h.model.workspace.session(tab.focusedSessionID)?.agentID == "claude",
+      "and that a worktree it made comes up with the agent working")
+
+    h.model.updateSettings(ProjectSettings(opensTerminalOnSelect: true), for: h.project)
+    let second = try #require(h.worktree(onBranch: "main"))
+    h.model.select(second)
+    #expect(
+      h.model.workspace.tabs(in: second.id).count == 1, "the user's own answer stands over the file"
+    )
+  }
+
   @Test func removalShowsItsStageInThePaneUntilItEnds() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }

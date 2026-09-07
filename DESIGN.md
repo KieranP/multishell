@@ -49,7 +49,10 @@ A team convention set once, with per-repository exceptions. `nil` follows the
 global and an empty string overrides to "none", a distinction the sheet makes
 visible with toggles. A repository's `.multishell.json` fills only the gaps
 the user left, because a team default should never override a choice someone
-made.
+made. It may also say what a worktree here opens and whether that runs the
+agent, so a team gets one setup rather than each person finding four
+settings; that starts the shell or agent the user themselves chose, so
+unlike a hook it runs nothing the repository wrote and needs no trust.
 
 Its hooks run code on the say of whoever committed the file, so they wait for
 a one-time yes stored with the exact text. The question comes when the user
@@ -402,7 +405,13 @@ because every tick would re-raise it.
 
 - Sessions warm up when visited, since a saved workspace could imply dozens
   of shells at launch. Selecting a worktree opens a terminal unless told not
-  to, for someone triaging many worktrees who wants to look first.
+  to, for someone triaging many worktrees who wants to look first. A create
+  is asked about apart from a selection, both for whether a terminal opens
+  and for whether it runs the agent, because a worktree asked for and a
+  worktree looked at are not the same event: the common setup is a click
+  that only shows, and a create that comes up with an agent already working.
+  Cost: four settings where there were two, and a project may override the
+  two a create reads.
 - Engines coexist, because "next launch" is a poor answer to an engine
   change. Cost: two renderers the theme conversion must keep identical, and a
   command reaches libghostty as one quoted line but SwiftTerm as an array.

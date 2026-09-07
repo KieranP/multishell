@@ -33,10 +33,17 @@ struct AgentSettingsTab: View {
           }
         }
         InfoToggle(
-          "Start it in new tabs",
+          "Auto-start on tab open",
           info:
-            "New Tab (⌘T) and a worktree's first tab run the agent instead of a shell. New Shell Tab, in the File menu (⇧⌘T) and the worktree menu, and splits stay shells. A saved agent tab resumes its conversation on relaunch where the agent can.",
+            "New Tab (⌘T), and the first tab of a worktree you turn to, run the agent instead of a shell. New Shell Tab, in the File menu (⇧⌘T) and the worktree menu, and splits stay shells. A saved agent tab resumes its conversation on relaunch where the agent can.",
           isOn: model.setting(\.autoStartAgent, write: model.setAutoStartAgent)
+        )
+        .disabled(model.workspace.preferredAgentID == nil)
+        InfoToggle(
+          "Auto-start on worktree creation",
+          info:
+            "The tab a newly created worktree opens runs the agent instead of a shell, whatever tabs opened any other way do. Nothing opens at all unless Terminal > Open a terminal when a worktree is created is on. Any project can override this.",
+          isOn: model.setting(\.autoStartAgentOnCreate, write: model.setAutoStartAgentOnCreate)
         )
         .disabled(model.workspace.preferredAgentID == nil)
       }

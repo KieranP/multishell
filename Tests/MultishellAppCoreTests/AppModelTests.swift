@@ -92,12 +92,34 @@ struct AppModelTests {
     // What the menu does: select without the first tab, then its own tab.
     let h = Harness()
     h.model.select(h.main)
-    #expect(h.model.select(h.feature, openingFirstTab: false))
+    #expect(h.model.select(h.feature, openingFirstTab: .never))
     h.model.newShellTab()
 
     #expect(h.model.workspace.selectedWorktreeID == h.feature.id)
     #expect(h.model.workspace.tabs(in: h.feature.id).count == 1, "not a first tab and then another")
     #expect(h.model.workspace.tabs(in: h.main.id).count == 1)
+  }
+
+  @Test func withOpenOnSelectOffAWorktreeIsShownEmptyUntilATabIsAskedFor() {
+    let h = Harness()
+    h.model.setOpensTerminalOnSelect(false)
+
+    h.model.select(h.main)
+    #expect(h.model.workspace.tabs(in: h.main.id).isEmpty, "looked at, not started")
+
+    h.model.newTab()
+    #expect(h.model.workspace.tabs(in: h.main.id).count == 1, "a tab asked for still opens")
+  }
+
+  @Test func turningToAWorktreeStartsTheAgentWhereAutoStartOnTabOpenIsOn() {
+    let h = Harness()
+    h.model.setPreferredAgent("claude")
+    h.model.setAutoStartAgent(true)
+
+    h.model.select(h.main)
+
+    let tab = h.model.workspace.activeTab(in: h.main.id)
+    #expect(h.model.workspace.session(tab!.focusedSessionID)?.agentID == "claude")
   }
 
   @Test func selectingAMissingWorktreeSaysSoInsteadOfActingOnTheSelectedOne() throws {
@@ -108,7 +130,7 @@ struct AppModelTests {
       head: "c", branch: "ghost")
     h.store.replaceWorktrees([h.main, h.feature, ghost], forProject: h.project.id)
 
-    #expect(!h.model.select(ghost, openingFirstTab: false), "the menu must not open a tab in main")
+    #expect(!h.model.select(ghost, openingFirstTab: .never), "the menu must not open a tab in main")
     #expect(h.model.workspace.selectedWorktreeID == h.main.id)
     #expect(h.model.workspace.tabs(in: h.main.id).count == 1)
   }

@@ -47,6 +47,10 @@ extension AppModel {
     store.setAutoStartAgent(enabled)
   }
 
+  public func setAutoStartAgentOnCreate(_ enabled: Bool) {
+    store.setAutoStartAgentOnCreate(enabled)
+  }
+
   /// The agent id in force for a worktree's project, or `nil` for none.
   public func preferredAgentID(for worktree: Worktree) -> String? {
     guard let project = workspace.project(worktree.projectID) else { return nil }

@@ -27,7 +27,7 @@ extension AppModel {
   /// else a plain shell.
   public func newTab() {
     guard let worktree = worktreeReadyForShell() else { return }
-    openFirstOrNewTab(in: worktree)
+    openFirstOrNewTab(in: worktree, on: .byUser)
     sync()
   }
 
@@ -39,17 +39,58 @@ extension AppModel {
     sync()
   }
 
-  /// What a new tab is by default here: the agent if the project auto-starts
-  /// one, a shell otherwise. Also the first tab a worktree gets when
-  /// selected, which is what follows a create.
-  func openFirstOrNewTab(in worktree: Worktree) {
-    if let project = workspace.project(worktree.projectID),
-      workspace.autoStartsAgent(for: project),
+  /// What a new tab is by default here: the agent if the project
+  /// auto-starts one for this occasion, a shell otherwise. Also the first
+  /// tab a worktree gets when it is selected or created.
+  func openFirstOrNewTab(in worktree: Worktree, on opening: TabOpening) {
+    if let project = project(of: worktree),
+      autoStartsAgent(in: project, on: opening),
       let agentID = workspace.preferredAgentID(for: project)
     {
       store.openTab(in: worktree.id, title: agentDisplayName(agentID), agentID: agentID)
     } else {
       store.openTab(in: worktree.id)
+    }
+  }
+
+  /// Whether a worktree with no tabs gets one for this reason: always when
+  /// the tab was asked for, the create setting after a create, the select
+  /// setting when the user turned to it. A worktree whose project has gone
+  /// follows the global.
+  func opensTab(in worktree: Worktree, on opening: TabOpening) -> Bool {
+    switch opening {
+    case .byUser: true
+    case .onSelect:
+      if let project = project(of: worktree) {
+        workspace.opensTerminalOnSelect(for: project)
+      } else {
+        workspace.opensTerminalOnSelect
+      }
+    case .onCreate:
+      if let project = project(of: worktree) {
+        workspace.opensTerminalOnCreate(for: project)
+      } else {
+        workspace.opensTerminalOnCreate
+      }
+    case .never: false
+    }
+  }
+
+  /// The worktree's project with the repository's `.multishell.json`
+  /// layered in, which is what these settings are read from: the file may
+  /// say what a worktree here opens, and reading `project.settings` would
+  /// pass over it.
+  private func project(of worktree: Worktree) -> Project? {
+    workspace.project(worktree.projectID).map { resolved($0) }
+  }
+
+  /// Whether that tab runs the agent rather than a shell. Only a create
+  /// asks the create setting; a tab opened any other way, including the
+  /// first tab of a worktree turned to, follows auto-start on tab open.
+  private func autoStartsAgent(in project: Project, on opening: TabOpening) -> Bool {
+    switch opening {
+    case .onCreate: workspace.autoStartsAgentOnCreate(for: project)
+    case .byUser, .onSelect, .never: workspace.autoStartsAgent(for: project)
     }
   }
 

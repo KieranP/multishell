@@ -25,6 +25,19 @@ extension AppModel {
     effectiveSettings(for: project).effective(defaults: workspace.worktreeDefaults)
   }
 
+  /// The value in force for a flag this project does not override, and
+  /// where it comes from: the repository's file where it says, else the
+  /// user's global. What the project settings forms show and seed an
+  /// override with.
+  public func inherited(
+    _ keyPath: KeyPath<SharedProjectSettings, Bool?>, global: Bool, for project: Project
+  ) -> InheritedFlag {
+    if let shared = sharedSettings[project.id]?[keyPath: keyPath] {
+      return InheritedFlag(value: shared, isFromRepository: true)
+    }
+    return InheritedFlag(value: global, isFromRepository: false)
+  }
+
   /// Whether the file's hooks are the ones in force for this project.
   public func trustsSharedHooks(of project: Project) -> Bool {
     guard let shared = sharedSettings[project.id] else { return false }

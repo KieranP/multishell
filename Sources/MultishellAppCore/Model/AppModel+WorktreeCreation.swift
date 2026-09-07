@@ -102,7 +102,7 @@ extension AppModel {
           for: created, branch: name, in: resolved, shellPath: shell, stopper: stopper)
       }
     }
-    select(created, byUser: false)
+    select(created, openingFirstTab: .onCreate, byUser: false)
   }
 
   private func runPostCreateHook(
@@ -143,10 +143,11 @@ extension AppModel {
   }
 
   /// The first tab was held back while the hook ran; it opens now if the
-  /// worktree is still what the user is looking at, else on the next visit.
+  /// worktree is still what the user is looking at, and if the create
+  /// setting says a new worktree gets one, else on the next visit.
   func openHeldBackTab(of worktree: Worktree) {
     if workspace.selectedWorktreeID == worktree.id, let current = workspace.worktree(worktree.id) {
-      select(current, byUser: false)
+      select(current, openingFirstTab: .onCreate, byUser: false)
     }
   }
 }

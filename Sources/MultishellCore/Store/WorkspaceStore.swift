@@ -317,6 +317,10 @@ extension WorkspaceStore {
   public func setAutoStartAgent(_ enabled: Bool) {
     workspace.autoStartAgent = enabled
   }
+
+  public func setAutoStartAgentOnCreate(_ enabled: Bool) {
+    workspace.autoStartAgentOnCreate = enabled
+  }
 }
 
 // MARK: - Shell, editor and selection
@@ -340,6 +344,10 @@ extension WorkspaceStore {
 
   public func setOpensTerminalOnSelect(_ enabled: Bool) {
     workspace.opensTerminalOnSelect = enabled
+  }
+
+  public func setOpensTerminalOnCreate(_ enabled: Bool) {
+    workspace.opensTerminalOnCreate = enabled
   }
 }
 
