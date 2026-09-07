@@ -12,6 +12,14 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
   weak var delegate: (any TerminalHostDelegate)?
 
   private let controller = TerminalController()
+
+  /// `MULTISHELL_TERMINAL_DEBUG=1` makes libghostty's wrapper report what it
+  /// hands the surface — keys, mouse, and whether the surface consumed each
+  /// one — on stderr. The engine's own path has no test that can see this.
+  private static let debugLogging: Void = {
+    guard ProcessInfo.processInfo.environment["MULTISHELL_TERMINAL_DEBUG"] != nil else { return }
+    TerminalDebugLog.isEnabled = true
+  }()
   private var surfaces: [TerminalSession.ID: TerminalView] = [:]
   private var containers: [TerminalSession.ID: SurfaceContainerView] = [:]
   /// `TerminalView.delegate` is weak, so the per-surface observers must be
@@ -21,6 +29,7 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
   var openSessionIDs: Set<TerminalSession.ID> { Set(surfaces.keys) }
 
   func open(_ session: TerminalSession) throws {
+    _ = Self.debugLogging
     guard surfaces[session.id] == nil else { return }
 
     let view = TerminalView(frame: .zero)
@@ -28,7 +37,8 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
     view.configuration = TerminalSurfaceOptions(
       backend: .exec,
       workingDirectory: session.workingDirectory.path,
-      envVars: SessionEnvironment.variables(for: session, socket: Paths.socketFile),
+      envVars: SessionEnvironment.variables(
+        for: session, socket: Paths.socketFile, engineZshBootstrap: Self.zshBootstrap),
       command: Self.command(for: session)
     )
 
@@ -40,6 +50,11 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
     surfaces[session.id] = view
     containers[session.id] = container
   }
+
+  /// libghostty's own zsh startup file, entered before ours so its marks and
+  /// titles are written; see `SessionEnvironment.zshIntegration`.
+  private static let zshBootstrap: URL? = GhosttyRuntimeResources.directoryURL?
+    .appendingPathComponent("shell-integration/zsh", isDirectory: true)
 
   /// A tab's command, or an override that names a chosen shell or injects
   /// the hooks into an otherwise-default one. zsh as `$SHELL` needs none: its

@@ -29,6 +29,14 @@ public enum ShellLaunch {
   /// fragment: `exec` plus the same integration a fresh tab gets. Our `.zshrc`
   /// hands `ZDOTDIR` back to the user, so it is set again here; bash gets its
   /// init file. `.exec` alone otherwise.
+  ///
+  /// Under Ghostty the engine's own zsh bootstrap is entered first, with ours
+  /// where it looks for the directory it displaced, the pair a fresh tab gets
+  /// from `SessionEnvironment`. The engine's resources are found through the
+  /// variable it leaves in every child's environment; a tab in another engine
+  /// has none, and enters ours directly. That test is POSIX, and the line it
+  /// ends is run by the user's login shell, which may be fish or csh, so it
+  /// runs under `/bin/sh`.
   public static func execCommandLine(
     forShell shellPath: String,
     zshIntegration: URL = Paths.zshIntegrationDirectory,
@@ -37,7 +45,13 @@ public enum ShellLaunch {
     let shell = ShellQuoting.quote(shellPath)
     switch URL(fileURLWithPath: shellPath).lastPathComponent {
     case "zsh" where FileManager.default.fileExists(atPath: zshIntegration.path):
-      return "ZDOTDIR=\(ShellQuoting.quote(zshIntegration.path)) exec \(shell) -l"
+      let ours = ShellQuoting.quote(zshIntegration.path)
+      let engine = "\"$GHOSTTY_RESOURCES_DIR/shell-integration/zsh\""
+      let script =
+        "if [ -f \"${GHOSTTY_RESOURCES_DIR-}/shell-integration/zsh/.zshenv\" ]; then "
+        + "ZDOTDIR=\(engine) \(SessionEnvironment.ghosttyZdotdirKey)=\(ours) exec \(shell) -l; "
+        + "else ZDOTDIR=\(ours) exec \(shell) -l; fi"
+      return "exec /bin/sh -c \(ShellQuoting.quote(script))"
     case "bash" where FileManager.default.fileExists(atPath: bashInit.path):
       return "exec \(shell) --init-file \(ShellQuoting.quote(bashInit.path)) -i"
     default:
@@ -56,8 +70,9 @@ public enum ShellLaunch {
   /// swallows the init into `GHOSTTY_BASH_RCFILE`, adds `--posix` and points
   /// `ENV` at its bootstrap, and macOS's bash 3.2 in that mode reads neither,
   /// so no hooks at all attach. `sh` gets no injection and hands bash our
-  /// init intact; Ghostty's OSC 133 marks are lost for bash, which the hooks
-  /// more than replace.
+  /// init intact. Ghostty writes no OSC 133 marks for bash whichever way it is
+  /// launched, since it refuses Apple's bash 3.2 outright, so the init writes
+  /// the ones a prompt click needs itself.
   public static func overrideCommand(
     forShell shellPath: String,
     loginShell: String = ShellCatalogue.loginShellPath(),

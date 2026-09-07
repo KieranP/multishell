@@ -296,8 +296,8 @@ user's rc files. Under Ghostty bash goes through `/bin/sh -c 'exec bash …'`
 because Ghostty keys its own injection on the command's first word: handed
 `bash --init-file X` it added `--posix`, under which macOS's bash 3.2 read
 neither its bootstrap nor our init, so nothing attached. Reproduced on a
-pty with the bundled bootstrap. Ghostty's OSC 133 marks are lost for bash,
-which the hooks more than replace.
+pty with the bundled bootstrap. Ghostty writes no OSC 133 marks for bash,
+since it refuses Apple's bash 3.2 outright; the init writes its own.
 
 The helper is reached through a symlink refreshed at launch so a moved
 bundle breaks no hook line. A stale socket is unlinked only after a connect
@@ -712,3 +712,47 @@ pasted as a path again, which is the bug this fixed; a copied file sits in the
 state directory for a week, after which a mention written today stops
 resolving; and a file whose name a terminal would act on has to be typed by
 hand.
+
+## A click in the prompt moves the cursor, because the prompt claims it
+
+Ghostty answers a click inside a prompt only for a shell whose OSC 133 A
+mark carries `cl=line`, one arrow key per cell, and only over cells its B
+mark called input. Neither shell got either from the engine. libghostty
+ships an MIT rewrite of the zsh integration, Ghostty's being GPLv3, and it
+never claims; and it was not loading at all, because the engine points
+`ZDOTDIR` at its bootstrap and then applies a surface's variables on top, so
+ours replaced it. That left a claim with no input mark: Ghostty took every
+click, found nothing to cross, and answered with no keys. Silent, which is
+why it looked handled in every log. For bash the engine writes nothing,
+since it refuses Apple's bash 3.2 and the launch through `sh` hides a newer
+one.
+
+So a zsh session names the pair the engine would have, `ZDOTDIR` at the
+bootstrap and ours in `GHOSTTY_ZSH_ZDOTDIR`, and the shell after an exited
+agent does the same through the resources variable, under `/bin/sh` because
+the login shell running that line may be fish or csh. Cost: the chain is
+checked against a stand-in bootstrap, since libghostty's is a build artifact
+the core tests cannot reach, and its contract was read from the rewrite's
+source.
+
+The zsh claim rides at the front of PS1 rather than being printed: the
+rewrite prints a plain A from a precmd that runs after ours, a plain mark
+withdraws the claim, and PS1 is expanded after every precmd and on every
+redraw. B goes on the end of PS1 whether or not the rewrite has put one
+there, so a claim never again stands over unmarked text. C is printed on
+preexec for a session that enters our files without the rewrite's, where the
+claim would otherwise stand while a program runs and swallow the clicks it
+is waiting for.
+
+bash writes the whole set. A is printed, not put in PS1: it moves to a fresh
+line after output that ended mid-line, and inside PS1 readline would count
+that line as free and edit at the wrong column. B rides on the end of PS1,
+put back last in `PROMPT_COMMAND` after any framework has rebuilt it. C comes
+off the DEBUG trap. D is absent: the exit code is the socket's to report.
+Cost: a printed A is not rewritten on redraw, so a click then lands on the
+mark the prompt above left.
+
+Only when `TERM_PROGRAM` names ghostty. A SwiftTerm tab has no marks from
+anywhere, and half a set would open a prompt that never ends. Cost: no
+click-to-move there, nor on the later lines of a multi-line buffer, which
+need PS2 marks neither integration writes.

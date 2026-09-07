@@ -200,8 +200,10 @@ app can hold it. Elsewhere `TerminalController()` traps when the first
 terminal opens. The fix is building with Xcode, whose accessor looks in the
 main bundle, or a patched libghostty-spm.
 
-The Ghostty engine's path is untested; its shell integration has been seen
-active by hand, not by a test. Linux has never been compiled locally; CI is
+The Ghostty engine's path is untested. Its zsh integration is entered
+through the `ZDOTDIR` pair `SessionEnvironment` sets, checked against a
+stand-in bootstrap; libghostty's own file is a build artifact the core tests
+cannot reach. Linux has never been compiled locally; CI is
 the first run. `swift-format` output may differ slightly between the local
 6.3 toolchain and the runner's.
 
@@ -225,3 +227,9 @@ not yet been read with VoiceOver. The existing-branch picker lists local
 branches only, so a remote-only branch is created as a new one based on its
 remote; a decision, not a defect. `.multishell.json` is read from the project
 path, which for a bare repository holds no checkout.
+
+Click-to-move in the prompt works under Ghostty only: a SwiftTerm tab has
+no OSC 133 marks, and the later lines of a multi-line buffer need PS2 marks
+neither integration writes. Both shells are spawned to check they write the
+marks; that Ghostty then moves the cursor was checked by replaying a
+captured session through the pinned engine's own tests, not here.

@@ -63,6 +63,36 @@ struct ZshIntegrationTests {
       "nothing when the setting has not generated the directory")
   }
 
+  /// libghostty sets `ZDOTDIR` to its own bootstrap and then applies the
+  /// surface's variables on top, so ours would replace it and its integration
+  /// would never load. Given the bootstrap, the session enters it first.
+  @Test func theEnginesBootstrapIsEnteredFirstWhenItHasOne() throws {
+    let ours = try directoryThatExists()
+    defer { try? FileManager.default.removeItem(at: ours) }
+    let bootstrap = try directoryThatExists()
+    defer { try? FileManager.default.removeItem(at: bootstrap) }
+    try Data().write(to: bootstrap.appendingPathComponent(".zshenv"))
+
+    let chained = SessionEnvironment.zshIntegration(
+      shellPath: "/bin/zsh", environment: ["ZDOTDIR": "/u"], integrationDirectory: ours,
+      engineBootstrap: bootstrap)
+    #expect(chained["ZDOTDIR"] == bootstrap.path)
+    #expect(chained[SessionEnvironment.ghosttyZdotdirKey] == ours.path)
+    #expect(chained["MULTISHELL_USER_ZDOTDIR"] == "/u", "and ours still chains to the user's")
+
+    let empty = try directoryThatExists()
+    defer { try? FileManager.default.removeItem(at: empty) }
+    let unbootstrapped = SessionEnvironment.zshIntegration(
+      shellPath: "/bin/zsh", environment: [:], integrationDirectory: ours, engineBootstrap: empty)
+    #expect(unbootstrapped["ZDOTDIR"] == ours.path, "a bootstrap with no startup file is no chain")
+    #expect(unbootstrapped[SessionEnvironment.ghosttyZdotdirKey] == nil)
+    #expect(
+      SessionEnvironment.zshIntegration(
+        shellPath: "/bin/bash", environment: [:], integrationDirectory: ours,
+        engineBootstrap: bootstrap
+      ).isEmpty, "bash is not chained either way")
+  }
+
   @Test func aSessionsVariablesFoldInTheIntegrationWhenPresent() throws {
     let dir = try directoryThatExists()
     defer { try? FileManager.default.removeItem(at: dir) }
@@ -148,9 +178,15 @@ struct ShellLaunchTests {
     try FileManager.default.createDirectory(at: zshDir, withIntermediateDirectories: true)
     defer { try? FileManager.default.removeItem(at: zshDir) }
 
+    let ours = ShellQuoting.quote(zshDir.path)
+    let script =
+      "if [ -f \"${GHOSTTY_RESOURCES_DIR-}/shell-integration/zsh/.zshenv\" ]; then "
+      + "ZDOTDIR=\"$GHOSTTY_RESOURCES_DIR/shell-integration/zsh\" GHOSTTY_ZSH_ZDOTDIR=\(ours) "
+      + "exec /bin/zsh -l; else ZDOTDIR=\(ours) exec /bin/zsh -l; fi"
     #expect(
       ShellLaunch.execCommandLine(forShell: "/bin/zsh", zshIntegration: zshDir, bashInit: bashInit)
-        == "ZDOTDIR=\(ShellQuoting.quote(zshDir.path)) exec /bin/zsh -l")
+        == "exec /bin/sh -c \(ShellQuoting.quote(script))",
+      "the engine's bootstrap first where there is one, ours where it looks for the displaced one")
     #expect(
       ShellLaunch.execCommandLine(forShell: "/bin/bash", zshIntegration: zshDir, bashInit: bashInit)
         == "exec /bin/bash --init-file \(ShellQuoting.quote(bashInit.path)) -i")
@@ -197,7 +233,9 @@ struct ShellLaunchTests {
     #expect(text.contains("$HOME/.bash_profile"))
     #expect(text.contains("$HOME/.bashrc"))
     #expect(text.contains("command-started --pid $$") && text.contains("command-finished"))
-    #expect(text.contains("$MULTISHELL_SESSION"), "does nothing outside a tab")
+    #expect(
+      text.contains("${MULTISHELL_SESSION-}"),
+      "does nothing outside a tab, and reading it does not trip a shell run with nounset")
     #expect(text.contains("/x/multishell"))
     #expect(text.range(of: ".bashrc")!.lowerBound < text.range(of: "command-started")!.lowerBound)
   }

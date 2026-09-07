@@ -10,6 +10,10 @@ import Foundation
 /// owns, and the hooks do nothing outside a Multishell terminal
 /// (`MULTISHELL_SESSION` unset) or when the helper is missing.
 ///
+/// The zsh script also tells Ghostty a click in its prompt may move the
+/// cursor; see `hooks.zsh`. Ghostty's own zsh files are entered before these,
+/// through the pair `SessionEnvironment.zshIntegration` sets.
+///
 /// The scripts themselves are `Resources/hooks.zsh` and `Resources/init.bash`,
 /// plain shell files with `__MULTISHELL_HELPER__` where the helper's path
 /// goes, so they read and lint as shell rather than as escaped Swift.
