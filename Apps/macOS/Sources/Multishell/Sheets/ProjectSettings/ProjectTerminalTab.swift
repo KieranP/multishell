@@ -7,7 +7,7 @@ struct ProjectTerminalTab: View {
   let project: Project
 
   var body: some View {
-    let settings = model.workspace.project(project.id)?.settings ?? project.settings
+    let settings = model.settings(of: project)
     Form {
       Section {
         InfoToggle(
@@ -41,7 +41,7 @@ struct ProjectTerminalTab: View {
   /// Turning the override on seeds it with the global value, or the login
   /// shell; turning it off returns to following the global.
   private var overridesShell: Binding<Bool> {
-    let source = projectSetting(\.defaultShell, of: project, in: model)
+    let source = model.setting(\.defaultShell, of: project)
     let global = model.workspace.defaultShell ?? ShellCatalogue.loginShellID
     return Binding(
       get: { source.wrappedValue != nil },

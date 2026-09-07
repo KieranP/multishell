@@ -70,6 +70,13 @@ public struct WorktreeCoordinator: Sendable {
     try await service.remoteBranches(project)
   }
 
+  /// Stable for the life of a project, so callers ask once and read the
+  /// directories to watch and `WorktreeRecords` off it, with no process
+  /// spawn per watcher tick.
+  public func commonGitDirectory(_ project: Project) async throws -> URL {
+    try await service.commonGitDirectory(project)
+  }
+
   /// Directories whose contents change when worktrees are added, removed or
   /// switch branch: `.git/worktrees/` and each entry in it (where a linked
   /// worktree's `HEAD` lives). Until the first worktree exists that folder
@@ -79,18 +86,6 @@ public struct WorktreeCoordinator: Sendable {
   /// `.git/index`, so watching the root turns every status poll into a
   /// spurious refresh. The main worktree's own branch switches are caught by
   /// the status poll instead.
-  public func directoriesToWatch(for project: Project) async -> [URL] {
-    guard let common = try? await service.commonGitDirectory(project) else { return [] }
-    return Self.directoriesToWatch(in: common)
-  }
-
-  /// Stable for the life of a project, so callers may cache it and use the
-  /// pure `directoriesToWatch(in:)` and `WorktreeRecords.read` without a
-  /// process spawn per watcher tick.
-  public func commonGitDirectory(_ project: Project) async throws -> URL {
-    try await service.commonGitDirectory(project)
-  }
-
   public static func directoriesToWatch(in common: URL) -> [URL] {
     let worktrees = common.appendingPathComponent("worktrees", isDirectory: true)
     guard FileManager.default.fileExists(atPath: worktrees.path) else { return [common] }
@@ -133,40 +128,16 @@ public struct WorktreeCoordinator: Sendable {
       ? settings.qualifiedBranch(raw) : raw.trimmingCharacters(in: .whitespaces)
   }
 
-  /// Runs the pre-create hook, creates the worktree, then runs the
-  /// post-create hook. A `HookFailure` from the pre stage means nothing was
-  /// created; from the post stage, that the worktree exists and only the
-  /// hook went wrong. `shellPath` is the project's shell for its hooks, or
-  /// `nil` for `$SHELL`. `onStep` is told as each stage starts, so a sheet
-  /// can say which hook it is waiting on; a hook with no script is skipped
-  /// without a step. `timeout` and `stopper` apply to the hooks, never to
-  /// git; see `WorktreeHooks`.
-  @discardableResult
-  public func create(
-    branch rawBranch: String,
-    basedOn startPoint: String? = nil,
-    createBranch: Bool = true,
-    in project: Project,
-    settings: WorktreeSettings,
-    shellPath: String? = nil,
-    timeout: Duration? = nil,
-    stopper: ProcessStopper? = nil,
-    onStep: (@Sendable (WorktreeCreationStep) -> Void)? = nil
-  ) async throws -> URL {
-    let path = try await add(
-      branch: rawBranch, basedOn: startPoint, createBranch: createBranch, in: project,
-      settings: settings, shellPath: shellPath, timeout: timeout, stopper: stopper, onStep: onStep)
-    let branch = Self.branchName(rawBranch, createBranch: createBranch, settings: settings)
-    if WorktreeHooks.hasScript(project.settings.postCreateHook) { onStep?(.postCreateHook) }
-    try await runPostCreate(
-      for: project, worktreePath: path, branch: branch, shellPath: shellPath, timeout: timeout,
-      stopper: stopper)
-    return path
-  }
-
-  /// The first half of `create`: the pre-create hook and `git worktree add`.
-  /// The post-create hook is `runPostCreate`, kept apart so the app can show
-  /// the worktree, and let the user move on, while a slow hook runs.
+  /// The pre-create hook and `git worktree add`. The post-create hook is
+  /// `runPostCreate`, called separately so the app can show the worktree,
+  /// and let the user move on, while a slow hook runs.
+  ///
+  /// A `HookFailure` here means nothing was created; one from `runPostCreate`
+  /// means the worktree exists and only the hook went wrong. `shellPath` is
+  /// the project's shell for its hooks, or `nil` for `$SHELL`. `onStep` is
+  /// told as each stage starts, so a sheet can say which hook it is waiting
+  /// on; a hook with no script is skipped without a step. `timeout` and
+  /// `stopper` apply to the hooks, never to git; see `WorktreeHooks`.
   @discardableResult
   public func add(
     branch rawBranch: String,
@@ -201,7 +172,7 @@ public struct WorktreeCoordinator: Sendable {
     return path
   }
 
-  /// The second half of `create`. Returns at once when the hook is blank.
+  /// The other half of a create. Returns at once when the hook is blank.
   public func runPostCreate(
     for project: Project, worktreePath: URL, branch: String, shellPath: String? = nil,
     timeout: Duration? = nil, stopper: ProcessStopper? = nil

@@ -92,13 +92,7 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
   }
 
   func focus(_ id: TerminalSession.ID) {
-    guard let view = surfaces[id], let window = view.window else { return }
-    if window.firstResponder !== view {
-      window.makeFirstResponder(view)
-      // Menu enablement follows the first responder; ask AppKit to look
-      // again now rather than at its next scheduled update.
-      NSApp.setWindowsNeedUpdate(true)
-    }
+    surfaces[id]?.takeFirstResponder()
   }
 
   func apply(_ theme: Theme, appearance: Appearance) {
@@ -207,42 +201,5 @@ private final class SurfaceObserver:
 
   func terminalDidChangeFocus(_ focused: Bool) {
     if focused { host?.focused(sessionID) }
-  }
-}
-
-/// Metal-backed surfaces need an explicit `fitToSize` after any layout change.
-@MainActor
-final class SurfaceContainerView: NSView {
-  private let surface: TerminalView
-
-  init(surface: TerminalView) {
-    self.surface = surface
-    super.init(frame: .zero)
-    surface.autoresizingMask = [.width, .height]
-    addSubview(surface)
-  }
-
-  @available(*, unavailable)
-  required init?(coder: NSCoder) { nil }
-
-  override func layout() {
-    super.layout()
-    surface.frame = bounds
-    surface.fitToSize()
-  }
-
-  /// A click anywhere in the container is a click on the terminal. Without
-  /// this, a click that lands on the SwiftUI hosting layer leaves focus there
-  /// and the Edit menu stays disabled until some later update moves it.
-  override func mouseDown(with event: NSEvent) {
-    if window?.firstResponder !== surface {
-      window?.makeFirstResponder(surface)
-    }
-    super.mouseDown(with: event)
-  }
-
-  override func viewDidMoveToWindow() {
-    super.viewDidMoveToWindow()
-    surface.setSurfaceVisible(window != nil)
   }
 }

@@ -12,7 +12,7 @@ struct AppearanceSettingsTab: View {
   var body: some View {
     Form {
       Section {
-        Picker("Theme:", selection: theme) {
+        Picker("Theme:", selection: model.setting(\.appearance.themeID, write: model.setTheme)) {
           ForEach(model.themes) { Text($0.name).tag($0.id) }
         }
         InfoRow(
@@ -42,15 +42,13 @@ struct AppearanceSettingsTab: View {
 
       Section {
         sizeRow(
-          "UI size:", value: uiFontSize, current: model.workspace.appearance.uiFontSize,
+          "UI size:",
+          value: model.setting(\.appearance.uiFontSize, write: model.setUIFontSize),
+          current: model.workspace.appearance.uiFontSize,
           range: 10...18, info: "Sidebar, tabs and header. Row heights follow it.")
       }
     }
     .formStyle(.grouped)
-  }
-
-  private var theme: Binding<Theme.ID> {
-    Binding(get: { model.workspace.appearance.themeID }, set: { model.setTheme($0) })
   }
 
   private var fontName: Binding<String> {
@@ -70,10 +68,6 @@ struct AppearanceSettingsTab: View {
       get: { model.workspace.appearance.fontSize },
       set: { model.setFont(name: model.workspace.appearance.fontName, size: $0) }
     )
-  }
-
-  private var uiFontSize: Binding<Double> {
-    Binding(get: { model.workspace.appearance.uiFontSize }, set: { model.setUIFontSize($0) })
   }
 
   private func sizeRow(

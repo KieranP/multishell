@@ -399,12 +399,16 @@ struct GitIntegrationTests {
     defer { try? FileManager.default.removeItem(at: root) }
     let coordinator = WorktreeCoordinator(service: WorktreeService(git: git))
 
-    let before = await coordinator.directoriesToWatch(for: project)
+    // Asked the way the app asks: the common directory once, then the
+    // directories read off it without spawning git for each watcher tick.
+    let common = try await coordinator.commonGitDirectory(project)
+
+    let before = WorktreeCoordinator.directoriesToWatch(in: common)
     #expect(before.map(\.lastPathComponent) == [".git"])
 
     try await coordinator.create(
       branch: "one", in: project, settings: WorktreeSettings(worktreeDirectory: "../trees"))
-    let after = await coordinator.directoriesToWatch(for: project)
+    let after = WorktreeCoordinator.directoriesToWatch(in: common)
     #expect(after.map(\.lastPathComponent) == ["worktrees", "one"])
   }
 

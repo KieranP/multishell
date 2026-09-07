@@ -41,21 +41,3 @@ struct ProjectSettingsWindow: View {
     }
   }
 }
-
-/// A binding into the project's settings that writes straight to the store.
-@MainActor
-func projectSetting<Value>(
-  _ keyPath: WritableKeyPath<ProjectSettings, Value>, of project: Project, in model: AppModel
-) -> Binding<Value> {
-  Binding(
-    get: {
-      model.workspace.project(project.id)?.settings[keyPath: keyPath]
-        ?? project.settings[keyPath: keyPath]
-    },
-    set: { value in
-      var settings = model.workspace.project(project.id)?.settings ?? project.settings
-      settings[keyPath: keyPath] = value
-      model.updateSettings(settings, for: project)
-    }
-  )
-}

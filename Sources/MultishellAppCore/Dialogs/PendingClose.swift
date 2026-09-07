@@ -27,4 +27,13 @@ public enum PendingClose: Identifiable, Equatable, Sendable {
     case .tab: "Close Tab"
     }
   }
+
+  /// The shells this close would end: the one pane, or every pane of the
+  /// tab. What decides whether the question is asked at all.
+  public func sessionIDs(in tab: TerminalTab) -> [TerminalSession.ID] {
+    switch self {
+    case .pane(let id): [id]
+    case .tab: tab.sessionIDs
+    }
+  }
 }

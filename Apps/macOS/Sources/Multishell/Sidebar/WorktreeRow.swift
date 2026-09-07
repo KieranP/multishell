@@ -30,11 +30,8 @@ struct WorktreeRow: View {
 
   private var kind: String { AccessibilityText.kind(of: worktree) }
 
-  /// Two lines of text need the taller row; one line does not. The field
-  /// keeps the branch under it, so a row being renamed is always the tall
-  /// one.
   private var height: Double {
-    customName == nil && !isRenaming ? metrics.rowHeight : metrics.namedRowHeight
+    metrics.worktreeRowHeight(isNamed: customName != nil, isRenaming: isRenaming)
   }
 
   var body: some View {

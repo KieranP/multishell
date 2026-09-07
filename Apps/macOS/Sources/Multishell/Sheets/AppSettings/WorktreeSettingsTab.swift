@@ -39,9 +39,13 @@ struct WorktreeSettingsTab: View {
           info:
             "How long a project hook may run before it is stopped and reported, in seconds. A hook that hangs would otherwise hold its worktree until relaunch. Stop Hook on the pane ends one sooner; 0 is no limit."
         ) {
-          TextField("Hook timeout:", value: hookTimeout, format: .number)
-            .frame(width: 60)
-            .multilineTextAlignment(.trailing)
+          TextField(
+            "Hook timeout:",
+            value: model.setting(\.hookTimeoutSeconds, write: model.setHookTimeoutSeconds),
+            format: .number
+          )
+          .frame(width: 60)
+          .multilineTextAlignment(.trailing)
           Text("seconds")
         }
       }
@@ -51,25 +55,17 @@ struct WorktreeSettingsTab: View {
           "Ask before removing a worktree",
           info:
             "The directory goes to the Trash and git prunes it. The confirmation also counts uncommitted changes and open terminals in that worktree. Off is for people who remove worktrees all day; a removal then still asks about the branch unless the toggle below settles it.",
-          isOn: Binding(
-            get: { model.workspace.confirmsWorktreeRemoval },
-            set: { model.setConfirmsWorktreeRemoval($0) }))
+          isOn: model.setting(
+            \.confirmsWorktreeRemoval, write: model.setConfirmsWorktreeRemoval))
         InfoToggle(
           "Always delete the branch with its worktree",
           info:
             "Runs git branch -d after git worktree remove, once the post-delete hook has run. Off, removing a worktree asks whether the branch goes too. A branch with commits nothing else has is refused and offered again with the forced form.",
-          isOn: Binding(
-            get: { model.workspace.deletesBranchWithWorktree },
-            set: { model.setDeletesBranchWithWorktree($0) }))
+          isOn: model.setting(
+            \.deletesBranchWithWorktree, write: model.setDeletesBranchWithWorktree))
       }
     }
     .formStyle(.grouped)
-  }
-
-  private var hookTimeout: Binding<Int> {
-    Binding(
-      get: { model.workspace.hookTimeoutSeconds },
-      set: { model.setHookTimeoutSeconds($0) })
   }
 
   private func field(_ keyPath: WritableKeyPath<WorktreeSettings, String>) -> Binding<String> {

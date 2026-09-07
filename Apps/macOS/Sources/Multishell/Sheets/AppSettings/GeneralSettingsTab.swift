@@ -12,9 +12,8 @@ struct GeneralSettingsTab: View {
       Section {
         DetectionPicker(
           label: "Editor:",
-          selection: Binding(
-            get: { model.workspace.preferredEditorID ?? EditorCatalogue.noneID },
-            set: { model.setPreferredEditor($0) }),
+          selection: model.setting(
+            \.preferredEditorID, or: EditorCatalogue.noneID, write: model.setPreferredEditor),
           options: model.editorDetection.options(selected:),
           refresh: { Task { await model.refreshLoginEnvironment() } },
           info:
@@ -28,9 +27,7 @@ struct GeneralSettingsTab: View {
           ) {
             TextField(
               "Command:",
-              text: Binding(
-                get: { model.workspace.customEditorCommand },
-                set: { model.setCustomEditorCommand($0) }),
+              text: model.setting(\.customEditorCommand, write: model.setCustomEditorCommand),
               prompt: Text("code-insiders {path}"))
           }
         }
@@ -42,7 +39,10 @@ struct GeneralSettingsTab: View {
           info:
             "A system notification when a tab you are not looking at needs input, or finishes: an agent's turn, or a shell command that ran longer than ten seconds. Off by default; macOS asks for permission the first time one is posted."
         ) {
-          Picker("Notifications:", selection: notifications) {
+          Picker(
+            "Notifications:",
+            selection: model.setting(\.notifications, write: model.setNotifications)
+          ) {
             ForEach(NotificationPreference.allCases, id: \.self) { Text($0.displayName).tag($0) }
           }
         }
@@ -65,9 +65,5 @@ struct GeneralSettingsTab: View {
       }
     }
     .formStyle(.grouped)
-  }
-
-  private var notifications: Binding<NotificationPreference> {
-    Binding(get: { model.workspace.notifications }, set: { model.setNotifications($0) })
   }
 }

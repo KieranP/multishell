@@ -46,6 +46,11 @@ indent, 100 columns, the standard rules. One type per file, named for the
 type; `Type+Concern.swift` for an extension. Tests are swift-testing, named
 as sentences about behaviour.
 
+A dialog is a `View` extension in a file named for it, not a type:
+`RootView` attaches one line per dialog, and the project settings window
+attaches its own removal dialog because a dialog belongs to the scene that
+asked for it.
+
 ## Rules that CI or tests enforce
 
 - The four libraries import Foundation only: no AppKit, SwiftUI, GTK or
@@ -107,6 +112,10 @@ command through `didFinishCommandIn` if the engine can tell, and frame
 `WorktreeCoordinator` in order, a `PresentedError` title saying whether the
 operation happened, an editor in `ProjectHooksTab`, and a step value with its
 text.
+
+**A variable a hook receives.** A case in `HookVariable` with its meaning and
+its value. That one list both builds the environment and draws the Hooks
+tab's table, so the help cannot fall behind what a hook is given.
 
 **A keyboard shortcut.** Also in `GhosttyTerminalHost.appShortcuts`, or the
 surface eats it before the menu sees it.

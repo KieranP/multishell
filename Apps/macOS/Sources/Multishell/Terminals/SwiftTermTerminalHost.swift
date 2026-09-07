@@ -97,11 +97,7 @@ final class SwiftTermTerminalHost: NSObject, TerminalHost {
   private static let pasteEnd = "\u{1b}[201~"
 
   func focus(_ id: TerminalSession.ID) {
-    guard let view = views[id], let window = view.window else { return }
-    if window.firstResponder !== view {
-      window.makeFirstResponder(view)
-      NSApp.setWindowsNeedUpdate(true)
-    }
+    views[id]?.takeFirstResponder()
   }
 
   func apply(_ theme: Theme, appearance: Appearance) {

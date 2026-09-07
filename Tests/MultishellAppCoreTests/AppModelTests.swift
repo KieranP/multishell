@@ -261,13 +261,13 @@ struct AppModelTests {
     let h = Harness()
     h.model.requestRemoval(of: h.feature)
     #expect(h.model.pendingRemoval?.id == h.feature.id)
-    #expect(h.model.pendingRemoval?.offersBranchDeletion == true)
+    #expect(h.model.pendingRemoval?.choices.count == 2)
 
     h.model.pendingRemoval = nil
     h.model.setConfirmsWorktreeRemoval(false)
     h.model.requestRemoval(of: h.feature)
     #expect(h.model.pendingRemoval?.id == h.feature.id, "the branch question is still open")
-    #expect(h.model.pendingRemoval?.offersBranchDeletion == true)
+    #expect(h.model.pendingRemoval?.choices.count == 2)
 
     h.model.pendingRemoval = nil
     h.model.setDeletesBranchWithWorktree(true)
@@ -278,7 +278,7 @@ struct AppModelTests {
     h.model.setConfirmsWorktreeRemoval(true)
     h.model.requestRemoval(of: h.feature)
     #expect(h.model.pendingRemoval?.deletesBranch == true)
-    #expect(h.model.pendingRemoval?.offersBranchDeletion == false)
+    #expect(h.model.pendingRemoval?.choices.count == 1)
   }
 
   @Test func theCustomShellPathReachesTabsAndTheCaptionSaysWhenItWillNot() {

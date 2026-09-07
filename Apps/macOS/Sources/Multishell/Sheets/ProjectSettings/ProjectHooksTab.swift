@@ -1,5 +1,6 @@
 import MultishellAppCore
 import MultishellCore
+import MultishellGitKit
 import SwiftUI
 
 /// Four scripts, grouped by the operation they surround. Each is a small
@@ -12,7 +13,7 @@ struct ProjectHooksTab: View {
   let project: Project
 
   var body: some View {
-    let current = model.workspace.project(project.id) ?? project
+    let current = model.current(project)
     let shared = model.sharedSettings[project.id]
     Form {
       if let shared, shared.hasHooks {
@@ -28,14 +29,14 @@ struct ProjectHooksTab: View {
             "Runs in the repository before git worktree add, with MULTISHELL_WORKTREE_PATH set to the planned path. A non-zero exit stops the create; git is never asked.",
           placeholder: shared?.preCreateHook
             ?? "test -n \"$TICKET\" || { echo 'set TICKET first' >&2; exit 1; }",
-          text: projectSetting(\.preCreateHook, of: project, in: model))
+          text: model.setting(\.preCreateHook, of: project))
         HookEditor(
           title: "Post-create",
           info:
             "Runs in the new worktree after git worktree add. A failure is reported; the worktree stays.",
           placeholder: shared?.postCreateHook
             ?? "npm install\ncp \"$MULTISHELL_PROJECT_PATH/.env\" .",
-          text: projectSetting(\.postCreateHook, of: project, in: model))
+          text: model.setting(\.postCreateHook, of: project))
       }
 
       Section("Delete") {
@@ -45,16 +46,16 @@ struct ProjectHooksTab: View {
             "Runs in the worktree before git worktree remove, after the confirmation. A non-zero exit stops the removal; the worktree stays.",
           placeholder: shared?.preDeleteHook
             ?? "test -z \"$(git log @{upstream}.. 2>/dev/null)\" || exit 1",
-          text: projectSetting(\.preDeleteHook, of: project, in: model))
+          text: model.setting(\.preDeleteHook, of: project))
         HookEditor(
           title: "Post-delete",
           info: "Runs in the repository after git worktree remove, once the directory is gone.",
           placeholder: shared?.postDeleteHook ?? "Optional shell script",
-          text: projectSetting(\.postDeleteHook, of: project, in: model))
+          text: model.setting(\.postDeleteHook, of: project))
       }
 
       Section {
-        ForEach(Self.hookVariables, id: \.name) { variable in
+        ForEach(HookVariable.allCases, id: \.self) { variable in
           LabeledContent {
             Text(variable.meaning).foregroundStyle(.secondary)
           } label: {
@@ -102,12 +103,6 @@ struct ProjectHooksTab: View {
     }
   }
 
-  private static let hookVariables: [(name: String, meaning: String)] = [
-    ("MULTISHELL_PROJECT_PATH", "Repository root"),
-    ("MULTISHELL_PROJECT_NAME", "Repository folder name"),
-    ("MULTISHELL_WORKTREE_PATH", "The worktree created or removed"),
-    ("MULTISHELL_BRANCH", "Its branch"),
-  ]
 }
 
 private struct HookEditor: View {

@@ -20,6 +20,14 @@ struct UIMetrics {
   /// text where `rowHeight` holds one, so the branch is not clipped.
   var namedRowHeight: Double { (body * 3.2).rounded() }
 
+  /// How tall a worktree's row is. Asked here rather than worked out at
+  /// each call site: the row draws itself this tall and the sidebar counts
+  /// a project's block off it to place the drop indicator, and the two
+  /// disagreeing puts the indicator in the wrong half.
+  func worktreeRowHeight(isNamed: Bool, isRenaming: Bool) -> Double {
+    isNamed || isRenaming ? namedRowHeight : rowHeight
+  }
+
   /// The sidebar and detail headers. Not smaller: a window with a hidden
   /// title bar and a unified-compact toolbar keeps a 40 pt title-bar band at
   /// the top, and anything but the header that reaches into it (the tab

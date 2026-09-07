@@ -7,7 +7,7 @@ struct ProjectAgentTab: View {
   let project: Project
 
   var body: some View {
-    let settings = model.workspace.project(project.id)?.settings ?? project.settings
+    let settings = model.settings(of: project)
     let global = model.workspace.preferredAgentID
     Form {
       Section {
@@ -64,7 +64,7 @@ struct ProjectAgentTab: View {
 
   /// Turning the override on seeds it with the global value.
   private var overridesAutoStart: Binding<Bool> {
-    let source = projectSetting(\.autoStartAgent, of: project, in: model)
+    let source = model.setting(\.autoStartAgent, of: project)
     let global = model.workspace.autoStartAgent
     return Binding(
       get: { source.wrappedValue != nil },
@@ -80,7 +80,7 @@ struct ProjectAgentTab: View {
 
   /// Turning the override on seeds it with the global value, or None.
   private func overrides(default global: String?) -> Binding<Bool> {
-    let source = projectSetting(\.preferredAgentID, of: project, in: model)
+    let source = model.setting(\.preferredAgentID, of: project)
     return Binding(
       get: { source.wrappedValue != nil },
       set: { on in source.wrappedValue = on ? (global ?? AgentCatalogue.noneID) : nil }

@@ -228,8 +228,7 @@ extension WorkspaceStore {
     workspace.activeTabByWorktree[workspace.tabs[index].worktreeID] = workspace.tabs[index].id
   }
 
-  /// Splits the focused pane of a tab. Not reachable from the MVP UI; the
-  /// store supports it so shipping splits is a view change.
+  /// Splits the focused pane of a tab, the new pane taking the focus.
   @discardableResult
   public func splitFocusedPane(
     of tabID: TerminalTab.ID, axis: SplitAxis, command: [String]? = nil

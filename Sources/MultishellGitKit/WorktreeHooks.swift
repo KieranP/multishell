@@ -145,12 +145,8 @@ public struct WorktreeHooks: Sendable {
     let command = script.trimmingCharacters(in: .whitespacesAndNewlines)
     guard Self.hasScript(command) else { return }
 
-    let environment = [
-      "MULTISHELL_PROJECT_PATH": project.path.path,
-      "MULTISHELL_PROJECT_NAME": project.name,
-      "MULTISHELL_WORKTREE_PATH": worktreePath.path,
-      "MULTISHELL_BRANCH": branch,
-    ]
+    let environment = HookVariable.environment(
+      project: project, worktreePath: worktreePath, branch: branch)
     do {
       _ = try await shell.runScript(
         command, in: directory, environment: environment, shellPath: shellPath, timeout: timeout,

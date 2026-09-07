@@ -60,10 +60,7 @@ struct MultishellCommands: Commands {
       Button("Previous Tab") { model.selectPreviousTab() }
         .keyboardShortcut(.tab, modifiers: [.control, .shift])
       Divider()
-      Picker(
-        "Theme",
-        selection: Binding(get: { model.workspace.appearance.themeID }, set: { model.setTheme($0) })
-      ) {
+      Picker("Theme", selection: model.setting(\.appearance.themeID, write: model.setTheme)) {
         ForEach(model.themes) { theme in
           Text(theme.name).tag(theme.id)
         }

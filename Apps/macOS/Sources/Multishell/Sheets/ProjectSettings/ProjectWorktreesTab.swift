@@ -7,8 +7,8 @@ struct ProjectWorktreesTab: View {
 
   var body: some View {
     let defaults = model.workspace.worktreeDefaults
-    let settings = model.workspace.project(project.id)?.settings ?? project.settings
-    let effective = model.worktreeSettings(for: model.workspace.project(project.id) ?? project)
+    let settings = model.settings(of: project)
+    let effective = model.worktreeSettings(for: model.current(project))
     let shared = model.sharedSettings[project.id]
 
     Form {
@@ -80,7 +80,7 @@ struct ProjectWorktreesTab: View {
   )
     -> Binding<Bool>
   {
-    let source = projectSetting(keyPath, of: project, in: model)
+    let source = model.setting(keyPath, of: project)
     return Binding(
       get: { source.wrappedValue != nil },
       set: { on in source.wrappedValue = on ? (source.wrappedValue ?? value) : nil }
@@ -92,7 +92,7 @@ struct ProjectWorktreesTab: View {
   private func text(
     _ keyPath: WritableKeyPath<ProjectSettings, String?>, fallback: String
   ) -> Binding<String> {
-    let source = projectSetting(keyPath, of: project, in: model)
+    let source = model.setting(keyPath, of: project)
     return Binding(
       get: { source.wrappedValue ?? fallback },
       set: { source.wrappedValue = $0 }

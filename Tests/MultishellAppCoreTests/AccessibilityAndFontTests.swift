@@ -144,7 +144,7 @@ struct RemovalStageWordingTests {
     let removing = WorktreeOperation(.removingWorktree)
     #expect(removing.title == "Moving the worktree to the Trash…")
     #expect(removing.detail.contains("in the Trash"))
-    #expect(removing.isRemoval && !removing.step.isHook)
+    #expect(!removing.step.isHook)
     #expect(WorktreeOperation(.postCreateHook).step.isHook)
     #expect(
       WorktreeOperation(.removingWorktree, failure: "x").title

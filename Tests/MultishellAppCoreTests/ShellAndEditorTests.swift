@@ -188,14 +188,14 @@ struct PendingWorktreeRemovalTests {
 
   @Test func withConfirmationOnTheDialogAsksAboutTheBranchUnlessASettingSettlesIt() throws {
     let pending = try asked(branched, confirms: true, alwaysDeletesBranch: false)
-    #expect(pending.offersBranchDeletion)
+    #expect(pending.choices.count == 2, "one button for the branch, one without it")
     #expect(!pending.deletesBranch)
     #expect(pending.removeLabel == "Remove Worktree")
     #expect(pending.removeWithBranchLabel == "Remove Worktree and Branch")
     #expect(pending.title == "Remove worktree feat?")
 
     let settled = try asked(branched, confirms: true, alwaysDeletesBranch: true)
-    #expect(!settled.offersBranchDeletion)
+    #expect(settled.choices.count == 1)
     #expect(settled.deletesBranch)
     #expect(settled.removeLabel == "Remove Worktree and Branch", "one button, saying what it does")
   }
@@ -218,12 +218,12 @@ struct PendingWorktreeRemovalTests {
       PendingWorktreeRemoval.decide(detached, confirms: false, alwaysDeletesBranch: false)
         == .remove(deletingBranch: false), "nothing to ask about a detached worktree")
     let pending = try asked(branched, confirms: false, alwaysDeletesBranch: false)
-    #expect(pending.offersBranchDeletion, "deleting a branch is not undone from the sidebar")
+    #expect(pending.choices.count == 2, "deleting a branch is not undone from the sidebar")
   }
 
   @Test func aDetachedWorktreeNeverHasItsBranchDeleted() throws {
     let pending = try asked(detached, confirms: true, alwaysDeletesBranch: true)
-    #expect(!pending.deletesBranch && !pending.offersBranchDeletion)
+    #expect(!pending.deletesBranch && pending.choices.count == 1)
     #expect(pending.removeLabel == "Remove Worktree")
     #expect(!pending.message(warning: nil).contains("branch"))
   }
@@ -287,12 +287,12 @@ struct PendingWorktreeRemovalTests {
 struct WorktreeOperationTests {
   @Test func eachStepHasATitleAndSaysWhatHappensWhenItEnds() {
     let create = WorktreeOperation(.postCreateHook)
-    #expect(!create.isRemoval)
+    #expect(create.step == .postCreateHook)
     #expect(create.title == "Running the post-create hook…")
     #expect(create.detail.contains("first terminal opens"))
 
     let removal = WorktreeOperation(WorktreeRemovalStep.preDeleteHook)
-    #expect(removal.isRemoval && removal.step == .preDeleteHook)
+    #expect(removal.step == .preDeleteHook)
     #expect(removal.detail.contains("stays if the hook refuses"))
     #expect(WorktreeOperation(WorktreeRemovalStep.deletingBranch).title == "Deleting the branch…")
     #expect(

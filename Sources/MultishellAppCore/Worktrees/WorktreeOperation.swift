@@ -57,8 +57,6 @@ public struct WorktreeOperation: Equatable, Sendable {
     self.init(Step(step))
   }
 
-  public var isRemoval: Bool { step != .postCreateHook }
-
   public var isRunning: Bool { failure == nil }
 
   public var title: String {

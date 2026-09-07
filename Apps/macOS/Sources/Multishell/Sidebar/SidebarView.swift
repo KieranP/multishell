@@ -155,9 +155,10 @@ struct SidebarView: View {
     // point cannot be counted off one row height.
     let blockHeight =
       visible.reduce(metrics.rowHeight) { total, worktree in
-        let tall =
-          model.customName(of: worktree) != nil || model.renamingWorktreeID == worktree.id
-        return total + Self.rowSpacing + (tall ? metrics.namedRowHeight : metrics.rowHeight)
+        total + Self.rowSpacing
+          + metrics.worktreeRowHeight(
+            isNamed: model.customName(of: worktree) != nil,
+            isRenaming: model.renamingWorktreeID == worktree.id)
       }
 
     return VStack(spacing: Self.rowSpacing) {

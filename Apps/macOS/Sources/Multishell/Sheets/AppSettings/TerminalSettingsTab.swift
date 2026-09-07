@@ -11,15 +11,17 @@ struct TerminalSettingsTab: View {
     Form {
       Section {
         InfoRow("Terminal engine:", info: engineInfo) {
-          Picker("Terminal engine:", selection: engine) {
+          Picker(
+            "Terminal engine:",
+            selection: model.setting(\.terminalEngine, write: model.setTerminalEngine)
+          ) {
             ForEach(TerminalEngine.allCases, id: \.self) { Text($0.displayName).tag($0) }
           }
         }
         DetectionPicker(
           label: "Default shell:",
-          selection: Binding(
-            get: { model.workspace.defaultShell ?? ShellCatalogue.loginShellID },
-            set: { model.setDefaultShell($0) }),
+          selection: model.setting(
+            \.defaultShell, or: ShellCatalogue.loginShellID, write: model.setDefaultShell),
           options: model.shellDetection.options(selected:),
           refresh: { Task { await model.refreshLoginEnvironment() } },
           info:
@@ -33,9 +35,7 @@ struct TerminalSettingsTab: View {
           ) {
             TextField(
               "Path:",
-              text: Binding(
-                get: { model.workspace.customShellPath },
-                set: { model.setCustomShellPath($0) }),
+              text: model.setting(\.customShellPath, write: model.setCustomShellPath),
               prompt: Text("/opt/homebrew/bin/nu"))
           }
           if let problem = model.customShellPathProblem {
@@ -46,11 +46,8 @@ struct TerminalSettingsTab: View {
           "Open a terminal when a worktree is selected",
           info:
             "On, clicking a worktree with no tabs starts its first shell, or the agent where auto-start is on. Off, the worktree is shown empty and New Tab (⌘T) or the header's actions menu starts one.",
-          isOn: Binding(
-            get: { model.workspace.opensTerminalOnSelect },
-            set: { model.setOpensTerminalOnSelect($0) }))
+          isOn: model.setting(\.opensTerminalOnSelect, write: model.setOpensTerminalOnSelect))
       }
-
     }
     .formStyle(.grouped)
   }
@@ -59,9 +56,5 @@ struct TerminalSettingsTab: View {
     model.workspace.terminalEngine == .swiftTerm
       ? "Used for every terminal opened from now on. Terminals already running keep the engine that started them. SwiftTerm has no shell integration and swallows the bell, so under it the state dots come from agent hooks alone."
       : "Used for every terminal opened from now on. Terminals already running keep the engine that started them."
-  }
-
-  private var engine: Binding<TerminalEngine> {
-    Binding(get: { model.workspace.terminalEngine }, set: { model.setTerminalEngine($0) })
   }
 }

@@ -55,6 +55,10 @@ Working rules:
 - The sidebar and detail headers are `UIMetrics.headerHeight` tall, the
   height of the hidden title bar's band. Nothing but a header may reach into
   that band, or AppKit paints over it.
+- A worktree row's height is `UIMetrics.worktreeRowHeight`, asked by both the
+  row that draws it and the sidebar, which counts a project's block off it to
+  place the drop indicator. The two disagreeing puts the indicator in the
+  wrong half of the block.
 - Debug builds use `state.debug.json`, `multishell.debug.sock` and
   `integration.debug/`, decided by `#if DEBUG` in `Paths`; keep new
   per-build files on that pattern so `make run` never touches the installed
@@ -79,10 +83,19 @@ Working rules:
 - A project's settings are read through `model.effectiveSettings(for:)` and
   `model.worktreeSettings(for:)`, never `project.settings` directly: the
   repository's `.multishell.json` fills the gaps the user left, and its
-  hooks apply only once trusted. The user's own value always wins.
+  hooks apply only once trusted. The user's own value always wins. The
+  override forms are the exception, and go through `model.settings(of:)`:
+  they edit what the user set, where blank has to keep meaning "follow the
+  global" rather than "override with nothing".
+- A settings row binds through `model.setting(...)`, which reads the stored
+  value each time. A form field written as its own `Binding` goes stale
+  against a change made elsewhere.
 - A hook is ended through `ProcessStopper`, SIGHUP to the child's process
   group then SIGKILL, never `Process.terminate()`: interactive shells ignore
   SIGTERM, and a shell with no terminal does not pass SIGHUP to its job.
+- What a hook is told is a case in `HookVariable`, which both builds the
+  environment and draws the Hooks tab's table. A name spelled into only one
+  of those is a variable the help never mentions.
 - A worktree is removed by moving its directory to the Trash through the
   `Platform` port and running `git worktree prune`; `git worktree remove` is
   not used. A Trash that refuses falls back to deletion.

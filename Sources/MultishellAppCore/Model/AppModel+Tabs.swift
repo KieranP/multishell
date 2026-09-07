@@ -53,25 +53,43 @@ extension AppModel {
     }
   }
 
+  /// Cmd+W closes the focused pane; the tab goes with its last pane.
+  public func closeActivePane() {
+    closeInShownTab { .pane($0.focusedSessionID) }
+  }
+
+  /// Cmd+Shift+W closes the whole tab, panes and all.
   public func closeActiveTab() {
+    closeInShownTab { .tab($0.id) }
+  }
+
+  /// Both closes. A close keystroke issued in a settings window closes that
+  /// window instead, nothing happens with no tab on screen, and a pane whose
+  /// agent reported Working asks before it goes; `PendingClose` says which
+  /// shells each form would end.
+  private func closeInShownTab(_ closing: (TerminalTab) -> PendingClose) {
     guard platform.workspaceWindowIsKey else { return platform.closeKeyWindow() }
     guard
       let worktree = workspace.selectedWorktreeID,
       let tab = workspace.activeTab(in: worktree)
     else { return }
-    if tab.sessionIDs.contains(where: { sessionStates[.session($0)] == .running }) {
-      pendingClose = .tab(tab.id)
+    let close = closing(tab)
+    if close.sessionIDs(in: tab).contains(where: { sessionStates[.session($0)] == .running }) {
+      pendingClose = close
       return
     }
-    store.closeTab(tab.id)
-    sync()
+    perform(close)
   }
 
   /// The confirmed half of a close that found a working agent.
   public func confirmPendingClose() {
     guard let pending = pendingClose else { return }
     pendingClose = nil
-    switch pending {
+    perform(pending)
+  }
+
+  private func perform(_ close: PendingClose) {
+    switch close {
     case .pane(let id): store.closeSession(id)
     case .tab(let id): store.closeTab(id)
     }
@@ -100,22 +118,6 @@ extension AppModel {
 
   public func setSplitWeights(_ weights: [Double], at path: [Int], ofTab tabID: TerminalTab.ID) {
     store.setSplitWeights(weights, at: path, ofTab: tabID)
-  }
-
-  /// Cmd+W closes the focused pane; the tab goes with its last pane. A pane
-  /// whose agent reported Working asks first.
-  public func closeActivePane() {
-    guard platform.workspaceWindowIsKey else { return platform.closeKeyWindow() }
-    guard
-      let worktree = workspace.selectedWorktreeID,
-      let tab = workspace.activeTab(in: worktree)
-    else { return }
-    if sessionStates[.session(tab.focusedSessionID)] == .running {
-      pendingClose = .pane(tab.focusedSessionID)
-      return
-    }
-    store.closeSession(tab.focusedSessionID)
-    sync()
   }
 
   public func selectNextTab() { step(1) }

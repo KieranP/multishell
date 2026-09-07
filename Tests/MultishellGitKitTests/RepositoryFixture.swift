@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import MultishellProcess
 
 @testable import MultishellGitKit
 
@@ -66,6 +67,36 @@ struct RepositoryFixture {
 }
 
 extension WorktreeCoordinator {
+  /// Both halves of a create in one call, in the order `AppModel` runs them:
+  /// `add`, then the post-create hook, with the same `.postCreateHook` step
+  /// reported before a hook that has a script.
+  ///
+  /// The app keeps them apart so a worktree appears, and can be worked in,
+  /// while a slow hook is still running. A test about the git side has no
+  /// use for that, so it waits here for both.
+  @discardableResult
+  func create(
+    branch rawBranch: String,
+    basedOn startPoint: String? = nil,
+    createBranch: Bool = true,
+    in project: Project,
+    settings: WorktreeSettings,
+    shellPath: String? = nil,
+    timeout: Duration? = nil,
+    stopper: ProcessStopper? = nil,
+    onStep: (@Sendable (WorktreeCreationStep) -> Void)? = nil
+  ) async throws -> URL {
+    let path = try await add(
+      branch: rawBranch, basedOn: startPoint, createBranch: createBranch, in: project,
+      settings: settings, shellPath: shellPath, timeout: timeout, stopper: stopper, onStep: onStep)
+    if WorktreeHooks.hasScript(project.settings.postCreateHook) { onStep?(.postCreateHook) }
+    try await runPostCreate(
+      for: project, worktreePath: path,
+      branch: Self.branchName(rawBranch, createBranch: createBranch, settings: settings),
+      shellPath: shellPath, timeout: timeout, stopper: stopper)
+    return path
+  }
+
   /// The removal with the directory unlinked in place of a Trash, for tests
   /// about the git side of it.
   func remove(

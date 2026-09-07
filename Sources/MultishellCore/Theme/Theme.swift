@@ -65,6 +65,16 @@ public struct Theme: Identifiable, Codable, Hashable, Sendable {
 }
 
 extension Theme {
+  /// What each `ansi` slot is called, where a setting lets one be picked.
+  /// The slot's name, not the colour's: a theme may put anything in slot 1,
+  /// and a project tinted from it follows whatever the current theme has
+  /// there.
+  public static let ansiSlotNames = [
+    "Black", "Red", "Green", "Yellow", "Blue", "Magenta", "Cyan", "White",
+    "Bright black", "Bright red", "Bright green", "Bright yellow", "Bright blue",
+    "Bright magenta", "Bright cyan", "Bright white",
+  ]
+
   public static let builtins: [Theme] = [.multishellDark, .multishellLight]
 
   public static let multishellDark = Theme(

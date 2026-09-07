@@ -15,9 +15,8 @@ struct AgentSettingsTab: View {
       Section {
         DetectionPicker(
           label: "Preferred agent:",
-          selection: Binding(
-            get: { model.workspace.preferredAgentID ?? AgentCatalogue.noneID },
-            set: { model.setPreferredAgent($0) }),
+          selection: model.setting(
+            \.preferredAgentID, or: AgentCatalogue.noneID, write: model.setPreferredAgent),
           options: model.agentDetection.options(selected:),
           refresh: { Task { await model.refreshLoginEnvironment() } },
           info: environmentCaption
@@ -29,9 +28,7 @@ struct AgentSettingsTab: View {
           ) {
             TextField(
               "Command:",
-              text: Binding(
-                get: { model.workspace.customAgentCommand },
-                set: { model.setCustomAgentCommand($0) }),
+              text: model.setting(\.customAgentCommand, write: model.setCustomAgentCommand),
               prompt: Text("my-agent --flag"))
           }
         }
@@ -39,8 +36,7 @@ struct AgentSettingsTab: View {
           "Start it in new tabs",
           info:
             "New Tab (⌘T) and a worktree's first tab run the agent instead of a shell. New Shell Tab, in the File menu (⇧⌘T) and the worktree menu, and splits stay shells. A saved agent tab resumes its conversation on relaunch where the agent can.",
-          isOn: Binding(
-            get: { model.workspace.autoStartAgent }, set: { model.setAutoStartAgent($0) })
+          isOn: model.setting(\.autoStartAgent, write: model.setAutoStartAgent)
         )
         .disabled(model.workspace.preferredAgentID == nil)
       }

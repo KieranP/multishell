@@ -68,8 +68,6 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
 
   public var removeWithBranchLabel: String { "Remove Worktree and Branch" }
 
-  public var offersBranchDeletion: Bool { branch == .asks }
-
   /// The remove buttons in the order the dialog shows them; the first is
   /// the one it leads with.
   ///
