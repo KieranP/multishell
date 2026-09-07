@@ -21,8 +21,10 @@ Xcode 26 with Swift 6, selected if only the command line tools are active:
 `Scripts/make-app.sh` wraps the SwiftPM binary in a bundle, copies SwiftPM's
 resource bundles into `Contents/Resources` (libghostty's terminfo has to be
 there), builds the `multishell` helper into `Contents/Helpers`, and ad-hoc
-signs both. The first app build downloads the libghostty xcframework, about
-80 MB.
+signs both. The version it writes into the bundle is the commit it built
+from, so an About panel screenshot in a bug report names the code; a build
+from a modified tree is marked `-dirty`. The first app build downloads the
+libghostty xcframework, about 80 MB.
 
 CI builds and tests the libraries on macOS, the app the same, then runs
 `make lint`. Nothing compiles the libraries without a GUI framework any
