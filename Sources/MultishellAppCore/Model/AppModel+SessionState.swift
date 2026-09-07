@@ -30,6 +30,11 @@ extension AppModel {
   public func apply(_ report: SessionStateReport) {
     if let id = report.sessionID {
       guard liveSessions.contains(id), let session = workspace.session(id) else { return }
+      // Who is at that prompt, for a drop on it to be written as that agent
+      // reads a file. A dot is all this changes about the pane itself.
+      if let agent = report.agent {
+        reportedAgents[id] = ReportedAgent(agentID: agent, pid: report.pid)
+      }
       let shown = isShown(id)
       mutateStates { $0.report(report.state, pid: report.pid, for: .session(id), isShown: shown) }
       notifyIfNeeded(report, key: .session(id), worktreeID: session.worktreeID, isShown: shown)

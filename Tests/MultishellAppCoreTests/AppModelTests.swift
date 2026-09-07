@@ -20,6 +20,8 @@ final class FakeEngine: TerminalSurfaceHost {
   var openSessionIDs: Set<TerminalSession.ID> = []
   var focused: [TerminalSession.ID] = []
   var closed: [TerminalSession.ID] = []
+  /// What was pasted into each session, in order.
+  var pasted: [(id: TerminalSession.ID, text: String)] = []
   /// What the registry asked for, command line included.
   var opened: [TerminalSession] = []
   weak var delegate: (any TerminalHostDelegate)?
@@ -32,6 +34,11 @@ final class FakeEngine: TerminalSurfaceHost {
     closed.append(id)
   }
   func focus(_ id: TerminalSession.ID) { focused.append(id) }
+  func paste(_ text: String, into id: TerminalSession.ID) -> Bool {
+    guard openSessionIDs.contains(id) else { return false }
+    pasted.append((id, text))
+    return true
+  }
   func view(for id: TerminalSession.ID) -> FakeSurface? { nil }
   func apply(_ theme: Theme, appearance: Appearance) {}
 }
@@ -689,10 +696,14 @@ struct AppModelInvariantTests {
           default: nil
           }
         let cwd = Bool.random(using: &rng) ? worktrees.randomElement(using: &rng)!.path.path : "/x"
+        // Some reports name an agent, as Claude's hooks do; an id this
+        // build does not know is as likely as one it does.
+        let agent = ["claude", "future-agent", nil].randomElement(using: &rng)!
         h.source.send(
           SessionStateReport(
             state: state, sessionID: session, cwd: cwd,
-            pid: Bool.random(using: &rng) ? Int32.random(in: 1...99999, using: &rng) : nil))
+            pid: Bool.random(using: &rng) ? Int32.random(in: 1...99999, using: &rng) : nil,
+            agent: agent))
       case 13:
         if let id = live.randomElement(using: &rng) {
           h.engine.delegate?.terminalHost(
@@ -723,6 +734,9 @@ struct AppModelInvariantTests {
     #expect(h.model.liveSessions == live, "\(context): views see a different live set")
     #expect(live.isSubset(of: sessionIDs), "\(context): a shell with no session")
     #expect(Set(h.model.sessionTitles.keys).isSubset(of: live), "\(context): title of a dead shell")
+    #expect(
+      Set(h.model.reportedAgents.keys).isSubset(of: live),
+      "\(context): an agent reported in a dead shell")
     for key in h.model.sessionStates.states.keys {
       switch key {
       case .session(let id): #expect(live.contains(id), "\(context): dot for a dead shell")

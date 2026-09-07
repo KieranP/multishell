@@ -78,9 +78,16 @@ named as sentences about behaviour.
 - Runtime state (titles, session states, statuses, live sessions) is
   `AppModel`'s, never the workspace's (`AppModelInvariantTests`,
   `SessionStatesTests`).
-- The socket changes a dot and nothing else (`UnixSocketTests`,
-  `HelperTests` on the built binary, `SessionStateReportTests` on malformed
-  lines). Its protocol only adds fields.
+- The socket says what a session is doing and who is doing it, and nothing
+  else: no tabs opened, no commands run, no text of its own put at a prompt
+  (`UnixSocketTests`, `HelperTests` on the built binary,
+  `SessionStateReportTests` on malformed lines). Its protocol only adds
+  fields. `agent` is the newest: it names the agent at a pane's prompt,
+  because an agent started by hand leaves the tab's `agentID` nil and
+  libghostty's foreground-pid call is a stub on the pinned Ghostty. A file
+  the user drops on that pane is written the way that agent reads one
+  (`AppModel.agentAtThePrompt`, `ReportedAgent`, `FileDropTests`), and the
+  entry lasts only while the pid it named is in the process table.
 - Shell integration is generated per session and never written to a file
   the user owns; `ShellLaunch` and `SessionEnvironment` are the only places
   that decide how a tab's shell starts.
@@ -110,7 +117,9 @@ built-ins to copy and is not loaded.
 **A terminal engine.** Implement `TerminalSurfaceHost`, add a case to
 `TerminalEngine`, return it from `TerminalEngine.makeHost()`. Pass
 `SessionEnvironment.variables` to the child and report a finished foreground
-command through `didFinishCommandIn` if the engine can tell.
+command through `didFinishCommandIn` if the engine can tell. `paste` puts
+text at the prompt, framed as a bracketed paste where the engine can; a file
+dropped on a surface arrives that way (`FileDrop`, `AppModel.dropFiles`).
 
 **An agent or editor.** A row in `AgentCatalogue.agents` or
 `EditorCatalogue.editors`; detection and the dropdowns follow.
@@ -131,7 +140,11 @@ written by `ShellIntegration.refresh`, and picked up by `ShellLaunch` (and
 its name to `ShellCatalogue.searched` if Homebrew installs it without
 registering it in `/etc/shells`. The hooks call `multishell command-started
 --pid $$` before a command and `command-finished --exit $? --duration S` at
-the next prompt, and must do nothing when `MULTISHELL_SESSION` is unset.
+the next prompt, and must do nothing when `MULTISHELL_SESSION` is unset. An
+agent's own hooks report through `multishell state <state> --agent <id>`,
+which is what tells a pane running an agent from a pane at a shell prompt;
+`multishell claude-hook` is that call with Claude Code's payload mapped to a
+state and its id filled in.
 
 **A platform GUI.** Depend on the four libraries, fix `AppModel<Surface>`
 to the platform's view type once, and implement `Platform`,
@@ -192,6 +205,16 @@ the first run. `swift-format` output may differ slightly between the local
 The directory check before a click starts a shell runs on the main thread;
 on a network volume that has gone away it blocks until the mount times out.
 The polling paths' checks run off it (`AppModel.offMain`).
+
+Files are dropped on a terminal through `SurfaceFrame`, which relies on
+AppKit walking up from an unregistered engine surface to the frame that is
+registered, the same mechanism a table view's row drop rests on. Apple's
+documentation states the registration requirement but not the search order,
+and neither engine registers a dragged type today; if one ever does, it
+becomes the destination and the frame stops seeing drops. The text below it
+is tested against a real shell, the walk itself only by hand. A drag that offers a promised file rather than one on
+disk, as an image dragged out of a browser does, is refused. The sidebar and
+the tab strip take no drops.
 
 Sidebar keyboard navigation, tab strip overflow and a shortcut to focus the
 filter are not built. No automated view tests. The accessibility labels have

@@ -24,6 +24,11 @@ private final class RecordingHost: TerminalHost {
     log.append("focus \(id.uuidString.prefix(4))")
   }
 
+  func paste(_ text: String, into id: TerminalSession.ID) -> Bool {
+    log.append("paste \(text)")
+    return true
+  }
+
   func apply(_ theme: Theme, appearance: Appearance) {}
 }
 
@@ -201,6 +206,7 @@ private final class OpenRecordingHost: TerminalHost {
   }
   func close(_ id: TerminalSession.ID) { openSessionIDs.remove(id) }
   func focus(_ id: TerminalSession.ID) {}
+  func paste(_ text: String, into id: TerminalSession.ID) -> Bool { true }
   func apply(_ theme: Theme, appearance: Appearance) {}
 }
 
@@ -216,6 +222,7 @@ private final class FailingHost: TerminalHost {
   }
   func close(_ id: TerminalSession.ID) { openSessionIDs.remove(id) }
   func focus(_ id: TerminalSession.ID) {}
+  func paste(_ text: String, into id: TerminalSession.ID) -> Bool { true }
   func apply(_ theme: Theme, appearance: Appearance) {}
 }
 

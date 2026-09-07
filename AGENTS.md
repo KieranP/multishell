@@ -35,14 +35,17 @@ Working rules:
 - Every store operation must leave `WorkspaceInvariants` true. The seeded
   random tests (`WorkspaceStoreInvariantTests`, `AppModelInvariantTests`) will
   find it if not; a failure prints its seed and step so it can be replayed.
-- Runtime state (shell titles, session states, statuses, live sessions)
-  lives in `AppModel`, never in the workspace, so a prompt does not save or
-  re-render. `SessionStates` owns who clears what; change it there and in
+- Runtime state (shell titles, session states, statuses, live sessions, the
+  agent that reported in each pane) lives in `AppModel`, never in the
+  workspace, so a prompt does not save or re-render. `SessionStates` owns who clears what; change it there and in
   `SessionStatesTests`, not in a view.
-- The socket accepts reports that change a dot and nothing else: no opening
-  tabs, no running commands. Its protocol only ever adds fields, so an old
-  helper keeps working against a new app. A report naming a session the app
-  does not know is dropped, not matched by its directory.
+- The socket accepts reports that say what a session is doing and who is
+  doing it, and nothing else: no opening tabs, no running commands, no text
+  put at a prompt. A report moves a dot, and its `agent` names which agent
+  is at that pane's prompt, which is read when the user themselves drops a
+  file there. Its protocol only ever adds fields, so an old helper keeps
+  working against a new app. A report naming a session the app does not
+  know is dropped, not matched by its directory.
 - Shell integration is generated per session under the state directory and
   injected through `ZDOTDIR` (zsh) or `--init-file` (bash). Never write to a
   user's rc file. Claude Code's hooks are the one exception, and only on the

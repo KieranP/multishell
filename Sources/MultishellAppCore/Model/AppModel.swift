@@ -93,6 +93,10 @@ public final class AppModel<Surface> {
   /// What each running shell last said its title was. Kept apart from the
   /// workspace so a prompt does not re-render the sidebar or schedule a save.
   public var sessionTitles: [TerminalSession.ID: String] = [:]
+  /// Which agent last reported in each session; see `ReportedAgent`. What
+  /// a file dropped on a pane is written as reads this, so an agent started
+  /// by hand is addressed as itself. Runtime state, like the titles above.
+  @ObservationIgnored var reportedAgents: [TerminalSession.ID: ReportedAgent] = [:]
   /// Projects whose directory has gone. Kept in the sidebar, dimmed, rather
   /// than dropped: an unmounted drive should not delete someone's setup.
   public var missingProjects: Set<Project.ID> = []
@@ -180,6 +184,7 @@ public final class AppModel<Surface> {
       let live = registry.liveSessionIDs
       if live != liveSessions { liveSessions = live }
       sessionTitles = sessionTitles.filter { live.contains($0.key) }
+      reportedAgents = reportedAgents.filter { live.contains($0.key) }
       pruneStates()
       // A shell exiting can bring another tab into view; it is being looked
       // at now, whatever happened in it before.

@@ -31,6 +31,10 @@ private final class RecordingEngine: TerminalSurfaceHost {
   }
 
   func focus(_ id: TerminalSession.ID) { log.append("focus") }
+  func paste(_ text: String, into id: TerminalSession.ID) -> Bool {
+    log.append("paste \(text)")
+    return true
+  }
   func view(for id: TerminalSession.ID) -> FakeSurface? {
     openSessionIDs.contains(id) ? FakeSurface() : nil
   }
@@ -87,12 +91,14 @@ struct MultiEngineHostTests {
     #expect(engine(.swiftTerm).openSessionIDs == [second.id])
     #expect(host.openSessionIDs == [first.id, second.id])
 
+    host.paste("@a.swift ", into: second.id)
     host.close(first.id)
     host.focus(second.id)
     #expect(engine(.ghostty).log == ["open", "close"])
-    #expect(engine(.swiftTerm).log == ["open", "focus"])
+    #expect(engine(.swiftTerm).log == ["open", "paste @a.swift ", "focus"])
     #expect(host.view(for: second.id) != nil)
     #expect(host.view(for: first.id) == nil)
+    #expect(!host.paste("x", into: first.id), "a session no engine owns takes no text")
   }
 
   @Test func enginesAreCreatedLazilyAndStyledOnCreation() throws {

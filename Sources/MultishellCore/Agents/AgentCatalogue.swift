@@ -11,16 +11,22 @@ public struct AgentDescriptor: Identifiable, Hashable, Sendable {
   /// comes back after a relaunch. `nil` means the agent has no such flag
   /// and the tab comes back as a plain shell.
   public let resumeArguments: [String]?
+  /// How this agent is told about a file at its prompt: `@` for one that
+  /// reads mentions. `nil` means it is told nothing special, and a file
+  /// dropped on its tab arrives as a plain path, which any agent can read.
+  /// Only set it for an agent whose prompt is known to resolve them.
+  public let fileMentionPrefix: String?
 
   public init(
     id: String, name: String, executable: String, launchArguments: [String] = [],
-    resumeArguments: [String]? = nil
+    resumeArguments: [String]? = nil, fileMentionPrefix: String? = nil
   ) {
     self.id = id
     self.name = name
     self.executable = executable
     self.launchArguments = launchArguments
     self.resumeArguments = resumeArguments
+    self.fileMentionPrefix = fileMentionPrefix
   }
 }
 
@@ -36,7 +42,8 @@ public enum AgentCatalogue {
 
   public static let agents: [AgentDescriptor] = [
     AgentDescriptor(
-      id: claudeID, name: "Claude Code", executable: "claude", resumeArguments: ["--continue"]),
+      id: claudeID, name: "Claude Code", executable: "claude", resumeArguments: ["--continue"],
+      fileMentionPrefix: "@"),
     AgentDescriptor(
       id: "codex", name: "Codex", executable: "codex", resumeArguments: ["resume", "--last"]),
     AgentDescriptor(id: "gemini", name: "Gemini CLI", executable: "gemini"),

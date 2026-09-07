@@ -67,6 +67,15 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
     containers[id]
   }
 
+  /// libghostty frames this as a paste itself, bracketed where the program
+  /// asked for it. `false` back means the surface is not created yet, which
+  /// a session with no shell running is.
+  @discardableResult
+  func paste(_ text: String, into id: TerminalSession.ID) -> Bool {
+    guard !text.isEmpty, let view = surfaces[id] else { return false }
+    return view.paste(text: text)
+  }
+
   func focus(_ id: TerminalSession.ID) {
     guard let view = surfaces[id], let window = view.window else { return }
     if window.firstResponder !== view {

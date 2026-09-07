@@ -12,11 +12,13 @@ enum Helper {
   static let usage = """
     usage:
       multishell state <running|attention|done|error|idle> [--session ID] [--cwd PATH]
-                       [--pid PID] [--message TEXT]
+                       [--pid PID] [--message TEXT] [--agent ID]
           Report a state for the terminal this runs in. Defaults come from the
           environment the app sets: MULTISHELL_SESSION, MULTISHELL_WORKTREE,
           MULTISHELL_SOCKET. The pid defaults to the nearest ancestor that is
-          not a shell: the program that ran this.
+          not a shell: the program that ran this. --agent names the agent at
+          the prompt, by catalogue id, so the app can tell an agent's pane
+          from a plain shell; Claude Code's own hooks set it.
       multishell command-started [--pid N]
           Report that a foreground command has started (running). For a shell
           preexec hook; pass the shell's pid so the state clears if the shell
@@ -93,7 +95,8 @@ enum Helper {
       cwd: options["cwd"] ?? environment[SessionEnvironment.worktreeKey]
         ?? FileManager.default.currentDirectoryPath,
       pid: options.int32("pid") ?? ProcessAncestry.reportingProcess(),
-      message: options["message"])
+      message: options["message"],
+      agent: options["agent"])
     do {
       try send(report, environment: environment)
       return 0
@@ -114,7 +117,8 @@ enum Helper {
       sessionID: environment[SessionEnvironment.sessionKey].flatMap { UUID(uuidString: $0) },
       cwd: payload.cwd ?? environment[SessionEnvironment.worktreeKey],
       pid: ProcessAncestry.reportingProcess(),
-      message: payload.message)
+      message: payload.message,
+      agent: AgentCatalogue.claudeID)
     try? send(report, environment: environment)
   }
 

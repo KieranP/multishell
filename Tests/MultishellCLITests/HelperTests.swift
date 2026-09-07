@@ -105,6 +105,7 @@ struct HelperTests {
     #expect(report?.sessionID == session)
     #expect(report?.message == "Claude needs your permission to use Bash")
     #expect((report?.pid ?? 0) > 0, "the parent's pid, for staleness checks")
+    #expect(report?.agent == AgentCatalogue.claudeID, "who is at that prompt")
 
     // An event that says nothing, and no app at all: both exit 0 in silence.
     let ignored = try await run(
@@ -117,6 +118,24 @@ struct HelperTests {
     #expect(orphan.succeeded && orphan.standardError.isEmpty)
     try await Task.sleep(for: .milliseconds(200))
     #expect(recorder.received.count == 1)
+  }
+
+  /// Any tool can say which agent is at the prompt, the way Claude's hooks
+  /// do, so the app writes a dropped file the way that agent reads one.
+  @Test func stateCanNameTheAgentAtThePrompt() async throws {
+    let path = socketPath()
+    let server = UnixSocketServer(path: path)
+    defer { server.stop() }
+    let recorder = LineRecorder()
+    server.onLine = { recorder.record($0) }
+    try server.start()
+
+    let output = try await run(
+      ["state", "running", "--agent", "codex"], environment: ["MULTISHELL_SOCKET": path.path])
+    #expect(output.succeeded, "\(output.standardError)")
+
+    try await waitUntil { !recorder.received.isEmpty }
+    #expect(SessionStateReport.parse(recorder.received.first ?? "")?.agent == "codex")
   }
 
   /// The pid reported is the program that ran the hook, past any shells

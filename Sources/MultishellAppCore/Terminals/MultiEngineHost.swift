@@ -47,6 +47,11 @@ public final class MultiEngineHost<Surface>: TerminalSurfaceHost {
     host(owning: id)?.focus(id)
   }
 
+  @discardableResult
+  public func paste(_ text: String, into id: TerminalSession.ID) -> Bool {
+    host(owning: id)?.paste(text, into: id) ?? false
+  }
+
   public func view(for id: TerminalSession.ID) -> Surface? {
     host(owning: id)?.view(for: id)
   }

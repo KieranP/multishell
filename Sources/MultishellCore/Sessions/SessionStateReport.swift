@@ -25,6 +25,12 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   /// How long the finished command ran, in seconds, when the source knows.
   /// A shell hook sets it; the GUI does not post a banner for a short one.
   public var duration: Double?
+  /// Which agent the report came from, by catalogue id. Claude Code's hooks
+  /// set it; a shell hook leaves it out. It says what is at a pane's prompt,
+  /// which the tab's own `agentID` cannot: an agent is usually started by
+  /// hand in a plain shell tab, and a tab opened for one keeps its id long
+  /// after the agent has quit.
+  public var agent: String?
 
   enum CodingKeys: String, CodingKey {
     case version = "v"
@@ -34,6 +40,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     case pid
     case message
     case duration
+    case agent
   }
 
   public init(
@@ -42,7 +49,8 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     cwd: String? = nil,
     pid: Int32? = nil,
     message: String? = nil,
-    duration: Double? = nil
+    duration: Double? = nil,
+    agent: String? = nil
   ) {
     self.version = Self.protocolVersion
     self.state = state
@@ -51,6 +59,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     self.pid = pid
     self.message = message
     self.duration = duration
+    self.agent = agent
   }
 
   public init(from decoder: any Decoder) throws {
@@ -62,6 +71,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     pid = try c.decodeIfPresent(Int32.self, forKey: .pid)
     message = try c.decodeIfPresent(String.self, forKey: .message)
     duration = try c.decodeIfPresent(Double.self, forKey: .duration)
+    agent = try c.decodeIfPresent(String.self, forKey: .agent)
   }
 
   /// `nil` for anything that is not one well-formed report: the channel is

@@ -1,5 +1,6 @@
 import AppKit
 import MultishellCore
+import SwiftTerm
 import Testing
 
 @testable import Multishell
@@ -53,6 +54,10 @@ struct SwiftTermHostTests {
     #expect(recorder.exits.first?.1 == 3, "the code the child exited with")
     #expect(
       recorder.titles.contains("from-the-shell"), "OSC 0 reached the core: \(recorder.titles)")
+
+    #expect(
+      !host.paste("@a.swift ", into: session.id),
+      "a child that has gone takes no text, and the drop is told so")
 
     // The registry answers an exit with close. SwiftTerm still holds the
     // reaped pid, so close must not signal it; nothing to observe but the
@@ -139,6 +144,33 @@ struct SwiftTermHostTests {
     #expect(fields[1] == session.workingDirectory.path)
     #expect(fields[2] == Paths.socketFile.path)
     #expect(!fields[3].isEmpty, "SwiftTerm's own defaults are kept alongside")
+    host.close(session.id)
+  }
+
+  /// What a drop leaves at the prompt: the text reaches the child, framed
+  /// as a paste once the program has asked for bracketed paste. The newline
+  /// is how the test makes `read` return; a drop never sends one.
+  @Test func pastedTextReachesTheChildFramedAsAPaste() async throws {
+    let host = SwiftTermTerminalHost()
+    let marker = directory.appendingPathComponent("multishell-paste-\(UUID().uuidString)")
+    defer { try? FileManager.default.removeItem(at: marker) }
+    let session = TerminalSession(
+      worktreeID: "/w", workingDirectory: directory, title: "t",
+      command: [
+        "/bin/sh", "-c",
+        "printf '\\033[?2004h'; read line; printf '%s' \"$line\" > '\(marker.path)'",
+      ])
+
+    try host.open(session)
+    let view = try #require(host.view(for: session.id) as? LocalProcessTerminalView)
+    try await waitUntil { view.terminal.bracketedPasteMode }
+
+    host.paste("@Sources/App.swift \n", into: session.id)
+
+    try await waitUntil { FileManager.default.fileExists(atPath: marker.path) }
+    let line = try String(contentsOf: marker, encoding: .utf8)
+    #expect(line.contains("@Sources/App.swift"), "the drop's text: \(line.debugDescription)")
+    #expect(line.contains("[200~"), "framed as a paste: \(line.debugDescription)")
     host.close(session.id)
   }
 

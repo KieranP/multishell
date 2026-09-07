@@ -11,6 +11,14 @@ public protocol TerminalHost: AnyObject {
   func close(_ id: TerminalSession.ID)
   func focus(_ id: TerminalSession.ID)
 
+  /// Text put into a session as if it had been pasted, framed as a paste
+  /// where the engine can: what files dropped on a terminal leave at its
+  /// prompt. `false` when it reached no pty — a session the host does not
+  /// have open, or whose surface the engine has not created yet — so a drop
+  /// can be refused rather than swallowed.
+  @discardableResult
+  func paste(_ text: String, into id: TerminalSession.ID) -> Bool
+
   /// Applied to every open terminal and to any opened afterwards.
   func apply(_ theme: Theme, appearance: Appearance)
 

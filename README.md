@@ -52,10 +52,14 @@ way they are.
   Removing one moves it to the Trash, so a wrong click is recoverable.
 - A state dot on every tab and worktree: working, waiting for input, done,
   failed. Claude Code reports through its hooks; zsh and bash report plain
-  commands with no setup; any tool can through `multishell state`.
+  commands with no setup; any tool can through `multishell state`, which
+  also takes `--agent` to say which agent is at that pane's prompt.
 - Pick a preferred agent and open it in a tab with one shortcut, or have
   every new tab start it.
 - Optional notifications when a tab you are not looking at needs you.
+- Drop files from Finder onto a terminal: a Claude Code tab gets them as
+  `@` mentions relative to the worktree, a shell gets quoted paths. Nothing
+  is run — you press Return.
 - Dirty-file badges and ahead/behind counts, from a `git status` that never
   takes the index lock.
 - Pre- and post-create and delete hooks per project, run through your own

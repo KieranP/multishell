@@ -265,9 +265,26 @@ agents apart from shells.
 A socket rather than a URL scheme because a URL activates the app and hooks
 fire dozens of times a minute; a helper rather than `nc` for quoting, a
 stable protocol and one place for the Claude mapping. Fields are only ever
-added so an old helper keeps working. It changes a dot and nothing else,
-and a report naming an unknown session is dropped rather than matched by
-directory: the channel is trusted no further than the tab it can prove.
+added so an old helper keeps working. A report naming an unknown session is
+dropped rather than matched by directory: the channel is trusted no further
+than the tab it can prove.
+
+What a report carries is what the app cannot see for itself. A state and a
+pid, because no engine says whether the program in a pty is working or
+waiting on the user. A message, because "Claude needs your permission to
+use Bash" says more than "waiting". A duration, so a command over in
+milliseconds posts no banner. And an `agent`, because which agent a pane
+holds is otherwise unknowable: it is usually started by hand at a shell
+prompt, so the tab's own `agentID` is nil, and libghostty's foreground-pid
+call is a stub on the pinned Ghostty, so there is no process to inspect
+either. Claude Code's hooks set it and `multishell state --agent` offers it
+to any tool.
+
+What a report may do is unchanged: it moves a dot, raises a notification,
+and now decides how a file the user drops on that pane is written — a path
+for a shell, a mention for an agent that reads them. It still opens no tab,
+runs no command, and puts no text of its own at a prompt; the drop is the
+user's gesture, and the report only says who is listening.
 
 The shell reports run inline: backgrounding them let a fast command's
 finished overtake its started, let a fast close skip one, and printed job
@@ -630,3 +647,34 @@ checkout are never badged. The first cannot be removed, the second has no
 checkout, the third has no branch to delete, and the fourth is not merged
 into itself — which is what a bare layout's `main` worktree would otherwise
 claim.
+
+## Files dropped on a terminal are pasted, never run
+
+A drop is text at the prompt and nothing else. A shell gets absolute paths
+quoted for it, what every terminal emulator does; an agent whose prompt reads
+mentions gets its prefix and paths relative to the session's directory, which
+is what a mention resolves against and what its user would have typed. The
+prefix is a catalogue column (`fileMentionPrefix`), set for Claude Code's `@`
+and left unset for an agent whose prompt is not known to resolve them, which
+then gets a plain path it can still read.
+
+Which agent a pane holds is asked of what reported there, not of the tab: an
+agent is usually started by hand at a shell prompt, where the tab's `agentID`
+is nil, and a tab opened for one keeps that id long after the agent quit. The
+answer comes off the inbound channel (see the section on it) and holds while
+the pid that report named is still in the process table, so a pane goes back
+to plain paths when its agent exits. A build whose hooks are not installed
+hears nothing and falls back to the tab's own id: right for a tab opened as
+an agent tab, wrong for a hand-started agent, which gets a plain path that
+every agent can still read. Bracketed where the engine can frame
+it, a trailing space, and never a newline: the user reads what landed and
+presses Return. A name carrying a control character is left out of the drop
+altogether, since a newline in a file name would press Return itself and no
+quoting reaches through a terminal to stop it. The pane takes focus with the
+files, since that is where the next keystroke belongs, and a paste that
+reached no pty is reported back to the drag as refused rather than swallowed.
+Cost: the mention form is a claim about an agent's prompt, so a wrong column
+would leave a stray `@` in front of a path the agent can still read; only file
+drags are taken, so something promised but not yet on disk is refused rather
+than written to a temporary file; and a file whose name a terminal would act
+on has to be typed by hand.

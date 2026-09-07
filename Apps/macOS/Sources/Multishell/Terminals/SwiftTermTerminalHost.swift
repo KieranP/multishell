@@ -79,6 +79,23 @@ final class SwiftTermTerminalHost: NSObject, TerminalHost {
     views[id]
   }
 
+  /// SwiftTerm's own paste is not public, so the framing is done here: a
+  /// program that asked for bracketed paste sees one paste rather than a run
+  /// of keystrokes. A session whose child has gone is left alone; its view
+  /// still holds a pty nobody reads.
+  @discardableResult
+  func paste(_ text: String, into id: TerminalSession.ID) -> Bool {
+    guard !text.isEmpty, let view = views[id], !exited.contains(id) else { return false }
+    let bracketed = view.terminal?.bracketedPasteMode == true
+    view.send(txt: bracketed ? Self.pasteStart + text + Self.pasteEnd : text)
+    return true
+  }
+
+  /// `CSI 200 ~` and `CSI 201 ~`, spelled out because SwiftTerm keeps its
+  /// copies in mutable statics that strict concurrency will not read.
+  private static let pasteStart = "\u{1b}[200~"
+  private static let pasteEnd = "\u{1b}[201~"
+
   func focus(_ id: TerminalSession.ID) {
     guard let view = views[id], let window = view.window else { return }
     if window.firstResponder !== view {
