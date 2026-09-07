@@ -16,9 +16,12 @@
       return url
     }
 
-    /// Resolves when `onChange` fires, or after `seconds`.
+    /// Resolves when `onChange` fires, or after `seconds`. The default is
+    /// far above the watcher's 400 ms coalesce because both the event and
+    /// this deadline land on the main actor, which the rest of the suite is
+    /// also using; a busy runner has taken over ten seconds to get here.
     private func nextChange(
-      of watcher: DispatchDirectoryWatcher, within seconds: Double = 3
+      of watcher: DispatchDirectoryWatcher, within seconds: Double = 30
     ) async -> Bool {
       await withCheckedContinuation { continuation in
         var done = false
@@ -61,7 +64,14 @@
       for i in 0..<20 {
         try "x".write(to: dir.appendingPathComponent("f\(i)"), atomically: true, encoding: .utf8)
       }
-      try await Task.sleep(for: .seconds(1.2))
+      // Waiting for the first call rather than for a fixed span, so a busy
+      // runner cannot read as zero calls. The second wait is what would
+      // catch a burst arriving as several.
+      let deadline = ContinuousClock.now + .seconds(30)
+      while calls == 0, ContinuousClock.now < deadline {
+        try await Task.sleep(for: .milliseconds(50))
+      }
+      try await Task.sleep(for: .seconds(1))
 
       #expect(calls == 1)
     }

@@ -33,7 +33,8 @@ public struct ShellCommand: Sendable {
   /// wrong as its errors are. The rc files run first and some write to
   /// stderr under `-i` with no terminal (`can't change option: zle`), so the
   /// script's first line writes a marker there and its stderr is taken from
-  /// after it.
+  /// after it. Bash then announces the login shell's own exit after the
+  /// script has printed, so that line goes too.
   ///
   /// A script still running at `timeout`, or when `stopper.stop()` is
   /// called, is ended and reported as a failure whose `stop` says which.
@@ -96,10 +97,19 @@ public struct ShellCommand: Sendable {
   }
 
   /// The part of a failure's stderr after the marker, or all of it for a
-  /// shell that wrote none.
+  /// shell that wrote none, without the shell's own parting word.
   static func scriptOutput(fromStderr text: String) -> String {
-    guard let marker = text.range(of: outputMarker) else { return text }
-    return String(text[marker.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
+    let script = text.range(of: outputMarker).map { String(text[$0.upperBound...]) } ?? text
+    return withoutExitNotice(script.trimmingCharacters(in: .whitespacesAndNewlines))
+  }
+
+  /// What an interactive login shell prints on its way out, after the script
+  /// it ran. Bash and the csh family say `logout`; zsh and fish say nothing.
+  static let exitNotice = "logout"
+
+  static func withoutExitNotice(_ text: String) -> String {
+    guard text == exitNotice || text.hasSuffix("\n" + exitNotice) else { return text }
+    return String(text.dropLast(exitNotice.count)).trimmingCharacters(in: .whitespacesAndNewlines)
   }
 
   /// The user's shell as an interactive login shell, so a hook sees the

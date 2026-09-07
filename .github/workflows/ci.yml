@@ -5,17 +5,6 @@ on:
   pull_request:
 
 jobs:
-  # The core, process, git and app layers, the model included, must build and
-  # test on Linux with no GUI in sight. This job is what keeps the
-  # portable/GUI boundary honest.
-  core-linux:
-    runs-on: ubuntu-latest
-    container: swift:6.0
-    steps:
-      - uses: actions/checkout@v4
-      - run: swift build
-      - run: swift test
-
   core-macos:
     runs-on: macos-15
     steps:

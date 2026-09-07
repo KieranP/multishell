@@ -76,8 +76,9 @@ way they are.
 
 Early and unshipped. Nothing is signed or notarised, and the release bundle
 runs only on the machine that built it until the libghostty resource lookup
-is fixed (see Known gaps in DEVELOP.md). Only macOS has a GUI; the core
-builds and tests on Linux in CI.
+is fixed (see Known gaps in DEVELOP.md). Only macOS has a GUI, and only
+macOS is built in CI; the core keeps to Foundation so another frontend can
+use it, but nothing compiles it without one.
 
 Every line of code in this repository was written by an AI (Claude), under
 direction from a human who set the requirements, reviewed the results in the

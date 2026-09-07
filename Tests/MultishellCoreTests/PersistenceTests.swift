@@ -137,9 +137,12 @@ struct PersistenceTests {
     let loadTime = ContinuousClock.now - loading
 
     #expect(loaded == workspace)
-    // Bounds are for a two-core CI runner; locally each is a few tens of ms.
-    #expect(saved < .seconds(2), "save took \(saved)")
-    #expect(loadTime < .seconds(2), "load took \(loadTime)")
+    // Locally each is a few tens of ms. The bounds are far above that
+    // because these are wall-clock readings taken while the rest of the
+    // suite runs beside them on a two-core runner; what they catch is an
+    // accidental quadratic, which costs minutes, not a doubling.
+    #expect(saved < .seconds(5), "save took \(saved)")
+    #expect(loadTime < .seconds(5), "load took \(loadTime)")
 
     // Every launch repairs what it loaded, on the main thread, before the
     // window appears.
@@ -148,7 +151,7 @@ struct PersistenceTests {
     repaired.repairReferences()
     let repairTime = ContinuousClock.now - repairing
     #expect(repaired == loaded, "a sound workspace is left alone")
-    #expect(repairTime < .seconds(1), "repair took \(repairTime)")
+    #expect(repairTime < .seconds(5), "repair took \(repairTime)")
   }
 
   @Test func roundTripPreservesEverything() throws {

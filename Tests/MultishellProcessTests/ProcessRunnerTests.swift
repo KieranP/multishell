@@ -370,6 +370,13 @@ struct HookShellTests {
     #expect(ShellCommand.scriptOutput(fromStderr: "noise\n\(marker)\n") == "")
     #expect(ShellCommand.scriptOutput(fromStderr: "no marker here") == "no marker here")
     #expect(
+      ShellCommand.scriptOutput(fromStderr: "noise\n\(marker)\nmine\nlogout\n") == "mine",
+      "bash's parting word is not the hook's")
+    #expect(ShellCommand.scriptOutput(fromStderr: "\(marker)\nlogout\n") == "", "silent hook")
+    #expect(
+      ShellCommand.scriptOutput(fromStderr: "\(marker)\nlogout early\n") == "logout early",
+      "only the whole last line goes")
+    #expect(
       ShellCommand.markingOutput("a", shell: URL(fileURLWithPath: "/bin/zsh"))
         == "printf '%s\\n' '\(marker)' >&2\na")
     #expect(

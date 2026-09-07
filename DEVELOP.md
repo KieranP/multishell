@@ -2,7 +2,7 @@
 
 ## Requirements
 
-Xcode 26 with Swift 6. Select it if only the command line tools are active:
+Xcode 26 with Swift 6, selected if only the command line tools are active:
 
     sudo xcode-select -s /Applications/Xcode.app
 
@@ -10,124 +10,101 @@ Xcode 26 with Swift 6. Select it if only the command line tools are active:
 
 ## Build, test, run
 
-    make test        # libraries and the model, then the Mac hosts (two swift test runs)
+    make test        # libraries and model, then the Mac hosts
     make test-app    # compile the macOS app without bundling
-    make build       # -> build/Multishell.app (debug); CONFIG=release for optimised
+    make build       # -> build/Multishell.app; CONFIG=release for optimised
     make run         # build and open it
-    make install     # release build copied to /Applications (INSTALL_DIR=... to change)
-    make format      # rewrite to the project style; run before looking at a diff
+    make install     # release build to /Applications (INSTALL_DIR= to change)
+    make format      # rewrite to the project style; run before reading a diff
     make lint        # what CI runs, --strict: a warning fails
 
-Underneath: `swift test`, `swift build --package-path Apps/macOS`, and
-`Scripts/make-app.sh [release]`, which wraps the SwiftPM binary in a bundle,
-copies SwiftPM's resource bundles into `Contents/Resources` (libghostty's
-terminfo lives there), builds the `multishell` helper into
-`Contents/Helpers`, and ad-hoc signs both. The first app build downloads the
-libghostty xcframework, about 80 MB.
+`Scripts/make-app.sh` wraps the SwiftPM binary in a bundle, copies SwiftPM's
+resource bundles into `Contents/Resources` (libghostty's terminfo has to be
+there), builds the `multishell` helper into `Contents/Helpers`, and ad-hoc
+signs both. The first app build downloads the libghostty xcframework, about
+80 MB.
 
-CI (`.github/workflows/ci.yml`): the libraries built and tested on Linux in
-a `swift:6.0` container, the same on macOS, the app built and tested on
-macOS, and `make lint`. The Linux job is what enforces the portability rule.
+CI builds and tests the libraries on macOS, the app the same, then runs
+`make lint`. Nothing compiles the libraries without a GUI framework any
+more, so the portability rule is on review rather than on a job.
 
 ## Layout
 
-Four portable libraries in the root package, each Foundation only:
-`MultishellCore` (model, store, theme, ports), `MultishellProcess`
-(processes, sockets), `MultishellGitKit` (git worktree operations, parsers,
-hooks) and `MultishellAppCore` (the app layer: `AppModel`, detections,
-dialogs, error mapping, every decision a view makes). `MultishellCLI` is the
-helper that ships in `Contents/Helpers`. `Apps/macOS` is its own package:
-views, the two engine hosts and `MacPlatform`. One test target per library;
-the Mac target tests the SwiftTerm host against real shells and the plain
-values beside the views.
+Four Foundation-only libraries in the root package: `MultishellCore` (model,
+store, theme, ports), `MultishellProcess` (processes, sockets),
+`MultishellGitKit` (worktree operations, parsers, hooks) and
+`MultishellAppCore` (`AppModel`, detections, dialogs, error mapping, every
+decision a view makes). `MultishellCLI` is the helper. `Apps/macOS` is its
+own package: views, the two engine hosts, `MacPlatform`.
 
 ## Style
 
 `swift-format` from the toolchain with the root `.swift-format`: 2-space
-indent, 100 columns, the standard rule set. One type per file, named for the
-type; `Type+Concern.swift` for an extension file. Tests are swift-testing,
-named as sentences about behaviour.
+indent, 100 columns, the standard rules. One type per file, named for the
+type; `Type+Concern.swift` for an extension. Tests are swift-testing, named
+as sentences about behaviour.
 
 ## Rules that CI or tests enforce
 
 - The four libraries import Foundation only: no AppKit, SwiftUI, GTK or
-  terminal library. The Linux job fails if this slips.
-- `Apps/macOS` holds views and AppKit only. A plain value beside a Mac view
-  goes in `MultishellAppCore` unless it names AppKit or a Mac measurement,
-  and is tested there; views are not tested. The model reaches the desktop
-  only through `Platform` (`AppModelPlatformTests`).
+  terminal library, checked by hand in a `swift:6.0` container now that
+  Linux is out of CI. `Apps/macOS` holds views and AppKit only; a plain value
+  beside a view goes in `MultishellAppCore` and is tested there, and the
+  model reaches the desktop only through `Platform`. Views are not tested.
 - Mac and Linux only. `#if os(Linux)` or `#if canImport(Darwin)`, in the
-  process layer or a port implementation, never in a model or a view.
-  `Paths.swift` is the one core file allowed `#if os(...)`.
-- Every persisted field decodes with a default, including an enum value this
-  build does not know. Add a case to `DecodingDefaultsTests` for each field.
-  Worktrees, sessions and tabs are lossy (`LossyDecodingTests`); projects
-  are strict.
+  process layer or a port, never in a model or a view. `Paths.swift` is the
+  one core file allowed `#if os(...)`.
+- Every persisted field decodes with a default, including an unknown enum
+  value (`DecodingDefaultsTests`). Worktrees, sessions and tabs are lossy;
+  projects are strict.
 - Every store operation keeps `WorkspaceInvariants` true, and
-  `Workspace.repairReferences` restores references after a load. Extend
-  `WorkspaceInvariants`, `WorkspaceRepairTests` and
-  `WorkspaceStoreInvariantTests` with any new collection or reference; the
-  seeded tests print seed and step on a failure.
+  `repairReferences` restores references after a load. Extend both, and the
+  seeded tests, with any new collection or reference; a failure prints its
+  seed and step.
+- Runtime state (titles, session states, statuses, live sessions) is
+  `AppModel`'s, never the workspace's.
 - Nothing in the core blocks a thread. `ProcessRunnerTests` runs 96 children
-  at once under a wall-clock bound and counts descriptors after failed
-  launches. `DescriptorExhaustionTests` lowers the process-wide limit, so it
-  runs only with `MULTISHELL_EXHAUST_DESCRIPTORS=1` and `--filter`.
+  at once under a wall-clock bound. `DescriptorExhaustionTests` lowers the
+  process-wide limit, so it needs `MULTISHELL_EXHAUST_DESCRIPTORS=1` and a
+  `--filter`.
 - A closed tab's shell ends and is collected (`SwiftTermHostTests`, real
   shells). Ghostty's path is not covered: its surface needs a window and
   Metal.
-- Runtime state (titles, session states, statuses, live sessions) is
-  `AppModel`'s, never the workspace's (`AppModelInvariantTests`,
-  `SessionStatesTests`).
 - The socket says what a session is doing and who is doing it, and nothing
-  else: no tabs opened, no commands run, no text of its own put at a prompt
-  (`UnixSocketTests`, `HelperTests` on the built binary,
-  `SessionStateReportTests` on malformed lines). Its protocol only adds
-  fields. `agent` is the newest: it names the agent at a pane's prompt,
-  because an agent started by hand leaves the tab's `agentID` nil and
-  libghostty's foreground-pid call is a stub on the pinned Ghostty. A file
-  the user drops on that pane is written the way that agent reads one
-  (`AppModel.agentAtThePrompt`, `ReportedAgent`, `FileDropTests`), and the
-  entry lasts only while the pid it named is in the process table.
-- Shell integration is generated per session and never written to a file
-  the user owns; `ShellLaunch` and `SessionEnvironment` are the only places
-  that decide how a tab's shell starts.
-- Detection runs against fake executables on a fake PATH, a fake
-  `/etc/shells` and a table for the bundle lookup, never the machine.
-- Timing bounds in tests are sized for a two-core CI runner, several times a
-  laptop's figure. Keep that headroom.
+  else: no tabs opened, no commands run, no text of its own at a prompt. Its
+  protocol only adds fields.
+- Shell integration is generated per session and never written to a file the
+  user owns; `ShellLaunch` and `SessionEnvironment` are the only places that
+  decide how a tab's shell starts.
+- Git on a timer reads only (`StatusLockTests`): no `commit-tree`, and
+  `git fetch` only from a menu item.
 - Git is tested against real repositories (`RepositoryFixture`), including a
-  bare clone with worktrees beside it. `FakeGit`, a shell script, is only
-  for what real git cannot do on demand: print nothing, fail once, run
-  slowly. Parsers are tested on fixture text including CRLF, spaces, an
-  unborn repository and malformed lines.
-- Git on a timer reads only (`StatusLockTests`). The merged-branch check
-  keeps to it: no `commit-tree`, and `git fetch` only from a menu item.
-- Hooks are checked through real shells under a substitute home
-  (`HookShellTests`), and ending them through real zsh and bash
-  (`ProcessStopTests` checks the `sleep` they started is gone too).
-- A test path that must not exist on any machine exists nowhere
-  (`resolutionDoesNotDependOnTheDirectoryExisting`).
+  bare clone with worktrees beside it. `FakeGit` is only for what real git
+  cannot do on demand: print nothing, fail once, run slowly. Parsers get
+  fixture text, CRLF and malformed lines included.
+- Detection runs against fake executables on a fake PATH, never the machine.
+  Hooks run through real shells under a substitute home.
+- Timing bounds are sized for a two-core CI runner, several times a laptop's
+  figure. Keep that headroom.
 
 ## Adding things
 
-**A theme.** Drop a `.json` in the themes folder (Settings > Appearance >
-Open Folder). The shape is `Theme`'s Codable form; `examples/` there has the
-built-ins to copy and is not loaded.
+**A theme.** A `.json` in the themes folder (Settings > Appearance > Open
+Folder), in `Theme`'s Codable shape. `examples/` there is not loaded.
 
 **A terminal engine.** Implement `TerminalSurfaceHost`, add a case to
-`TerminalEngine`, return it from `TerminalEngine.makeHost()`. Pass
-`SessionEnvironment.variables` to the child and report a finished foreground
-command through `didFinishCommandIn` if the engine can tell. `paste` puts
-text at the prompt, framed as a bracketed paste where the engine can; a file
-dropped on a surface arrives that way (`FileDrop`, `AppModel.dropFiles`).
+`TerminalEngine`, return it from `makeHost()`. Pass
+`SessionEnvironment.variables` to the child, report a finished foreground
+command through `didFinishCommandIn` if the engine can tell, and frame
+`paste` as a bracketed paste where it can.
 
 **An agent or editor.** A row in `AgentCatalogue.agents` or
 `EditorCatalogue.editors`; detection and the dropdowns follow.
 
 **A hook stage.** A case in `HookFailure.Stage`, run from
-`WorktreeCoordinator` in order, a `PresentedError` title that says whether
-the operation happened, an editor in `ProjectHooksTab`, and a
-`WorktreeCreationStep` or `WorktreeRemovalStep` with its text.
+`WorktreeCoordinator` in order, a `PresentedError` title saying whether the
+operation happened, an editor in `ProjectHooksTab`, and a step value with its
+text.
 
 **A keyboard shortcut.** Also in `GhosttyTerminalHost.appShortcuts`, or the
 surface eats it before the menu sees it.
@@ -135,51 +112,43 @@ surface eats it before the menu sees it.
 **A shell with command-status hooks.** A script under
 `Sources/MultishellCore/Resources` with `__MULTISHELL_HELPER__` for the
 helper's path, listed in `Package.swift`, loaded by `ShellStateHooks`,
-written by `ShellIntegration.refresh`, and picked up by `ShellLaunch` (and
-`SessionEnvironment` if carried by a variable, as zsh's `ZDOTDIR` is). Add
-its name to `ShellCatalogue.searched` if Homebrew installs it without
-registering it in `/etc/shells`. The hooks call `multishell command-started
---pid $$` before a command and `command-finished --exit $? --duration S` at
-the next prompt, and must do nothing when `MULTISHELL_SESSION` is unset. An
-agent's own hooks report through `multishell state <state> --agent <id>`,
-which is what tells a pane running an agent from a pane at a shell prompt;
-`multishell claude-hook` is that call with Claude Code's payload mapped to a
-state and its id filled in.
+written by `ShellIntegration.refresh` and picked up by `ShellLaunch` (and
+`SessionEnvironment` if carried by a variable, as zsh's `ZDOTDIR` is). It
+calls `multishell command-started --pid $$` and `command-finished --exit $?
+--duration S`, and must do nothing when `MULTISHELL_SESSION` is unset. Add
+the name to `ShellCatalogue.searched` if Homebrew installs it without
+registering it in `/etc/shells`.
 
-**A platform GUI.** Depend on the four libraries, fix `AppModel<Surface>`
-to the platform's view type once, and implement `Platform`,
+**A platform GUI.** Depend on the four libraries, fix `AppModel<Surface>` to
+the platform's view type once, and implement `Platform`,
 `TerminalSurfaceHost`, `DirectoryWatcher` (inotify on Linux) and
-`SessionNotifier`. `Platform.moveToTrash` may delete outright until the
-platform has a Trash. Everything else comes ready-made and tested.
+`SessionNotifier`. `moveToTrash` may delete outright until the platform has a
+Trash.
 
 ## State on disk
 
-macOS: `~/Library/Application Support/Multishell/`. Linux:
-`$XDG_CONFIG_HOME/multishell/`. A debug build uses `state.debug.json`,
-`multishell.debug.sock`, `integration.debug/` and `drops.debug/` so `make run`
-never touches
-the installed app's state; themes and the helper link are shared.
+`~/Library/Application Support/Multishell/` on macOS,
+`$XDG_CONFIG_HOME/multishell/` on Linux. A debug build uses
+`state.debug.json`, `multishell.debug.sock`, `integration.debug/` and
+`drops.debug/`; themes and the helper link are shared.
 
-- `state.json`: the sidebar, tabs, pane trees, the names given to worktrees
-  and every setting. Not processes, not shell titles, not the shell a tab
-  resolved to.
+- `state.json`: the sidebar, tabs, pane trees, worktree names and every
+  setting. Not processes, not shell titles, not the shell a tab resolved to.
 - `state.<timestamp>.broken.json`: a state file that failed to decode.
 - `themes/*.json`, with `themes/examples/` not loaded.
-- `multishell.sock`, mode 0600, unlinked on quit and at launch when nobody
-  answers.
+- `multishell.sock`, mode 0600.
 - `bin/multishell`: a symlink to the helper in the current bundle, refreshed
-  at launch; hook lines reference this path.
-- `integration/zsh/`, `integration/bash/init.bash`: generated at launch.
-- `drops/<uuid>/`: files a drag promised rather than handed over, one
-  directory per drag, swept at launch once a week old.
+  at launch. Hook lines reference this path.
+- `integration/`: generated at launch.
+- `drops/<uuid>/`: files a drag promised rather than handed over, swept at
+  launch once a week old.
 
-Claude Code's hooks live in `~/.claude/settings.json`; the app writes there
-only when asked and keeps `settings.json.before-multishell` the first time.
-Sidebar width is in `UserDefaults`. A repository may carry
-`.multishell.json` at its root, written by Export in project settings, with
-the same keys as a project's settings in `state.json`. It is read at launch,
-whenever a project's worktree records change, and on any watcher tick or
-status poll where its modification date has moved.
+Claude Code's hooks live in `~/.claude/settings.json`, written only when
+asked, with `settings.json.before-multishell` kept the first time. Sidebar
+width is in `UserDefaults`. A repository may carry `.multishell.json` at its
+root, written by Export in project settings, with the same keys as a
+project's settings; it is read at launch, when a project's worktree records
+change, and on any tick or poll where its modification date has moved.
 
 ## Dependencies worth knowing about
 
@@ -193,43 +162,33 @@ status poll where its modification date has moved.
 ## Known gaps
 
 The release bundle runs only on the machine that built it. libghostty finds
-its terminfo through SwiftPM's generated `Bundle.module`, which looks at the
-root of `Multishell.app` and then at an absolute path inside
-`Apps/macOS/.build`, never in `Contents/Resources`, the only place a signable
-app can hold it. Elsewhere `TerminalController()` traps when the first
-terminal opens. The fix is building with Xcode, whose accessor looks in the
-main bundle, or a patched libghostty-spm.
+its terminfo through SwiftPM's `Bundle.module`, which looks at the root of
+the app and then at an absolute path inside `Apps/macOS/.build`, never in
+`Contents/Resources`, the only place a signable app can hold it. Elsewhere
+`TerminalController()` traps when the first terminal opens. The fix is
+building with Xcode, whose accessor looks in the main bundle, or a patched
+libghostty-spm.
 
-The Ghostty engine's path is untested. Its zsh integration is entered
-through the `ZDOTDIR` pair `SessionEnvironment` sets, checked against a
-stand-in bootstrap; libghostty's own file is a build artifact the core tests
-cannot reach. Linux has never been compiled locally; CI is
-the first run. `swift-format` output may differ slightly between the local
-6.3 toolchain and the runner's.
+The Ghostty engine's path is untested, its zsh chain checked only against a
+stand-in bootstrap, since libghostty's own file is a build artifact the core
+tests cannot reach. Click-to-move works there and nowhere else, and not on
+the later lines of a multi-line buffer. Linux has never been compiled at
+all, locally or in CI.
 
-The directory check before a click starts a shell runs on the main thread;
-on a network volume that has gone away it blocks until the mount times out.
-The polling paths' checks run off it (`AppModel.offMain`).
+The directory check before a click starts a shell runs on the main thread, so
+a network volume that has gone away blocks until the mount times out. The
+polling paths' checks run off it.
 
-Files are dropped on a terminal through `SurfaceFrame`, which relies on
-AppKit walking up from an unregistered engine surface to the frame that is
-registered, the same mechanism a table view's row drop rests on. Apple's
-documentation states the registration requirement but not the search order,
-and neither engine registers a dragged type today; if one ever does, it
-becomes the destination and the frame stops seeing drops. The text below it
-is tested against a real shell, the walk itself only by hand. A drag that offers a promised file rather than one on
-disk, as an image dragged out of a browser does, is refused. The sidebar and
-the tab strip take no drops.
+Drops reach `SurfaceFrame` because AppKit walks up from an unregistered
+engine surface to the frame that is registered. Apple documents the
+registration requirement but not the search order, and if either engine ever
+registers a dragged type it becomes the destination and the frame stops
+seeing drops. The walk itself is checked only by hand. The sidebar and the
+tab strip take no drops.
 
 Sidebar keyboard navigation, tab strip overflow and a shortcut to focus the
-filter are not built. No automated view tests. The accessibility labels have
-not yet been read with VoiceOver. The existing-branch picker lists local
-branches only, so a remote-only branch is created as a new one based on its
-remote; a decision, not a defect. `.multishell.json` is read from the project
-path, which for a bare repository holds no checkout.
-
-Click-to-move in the prompt works under Ghostty only: a SwiftTerm tab has
-no OSC 133 marks, and the later lines of a multi-line buffer need PS2 marks
-neither integration writes. Both shells are spawned to check they write the
-marks; that Ghostty then moves the cursor was checked by replaying a
-captured session through the pinned engine's own tests, not here.
+filter are not built. No view tests, and the accessibility labels have not
+been read with VoiceOver. The existing-branch picker lists local branches
+only, so a remote-only branch is created as a new one based on its remote; a
+decision, not a defect. `.multishell.json` is read from the project path,
+which for a bare repository holds no checkout.
