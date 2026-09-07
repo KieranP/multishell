@@ -64,6 +64,17 @@ public enum Paths {
       .appendingPathComponent("init.bash", isDirectory: false)
   }
 
+  /// Where a drag's promised files are copied.
+  ///
+  /// A screenshot's preview hands its file over as a promise, and the copy
+  /// macOS materialises for the app sits in a per-drag directory it opens to
+  /// that app alone: the path pastes and the pane's own shell is refused it.
+  /// So the copy is made here instead, where the shell and the agent at that
+  /// prompt can read it and where the user can still find it afterwards.
+  public static var dropsDirectory: URL {
+    configDirectory.appendingPathComponent("drops\(variant)", isDirectory: true)
+  }
+
   /// A stable path to the helper binary. It ships inside the bundle, and a
   /// hook holding the bundle's path breaks when the app moves; the app
   /// refreshes this link at every launch instead.

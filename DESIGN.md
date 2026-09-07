@@ -673,8 +673,42 @@ altogether, since a newline in a file name would press Return itself and no
 quoting reaches through a terminal to stop it. The pane takes focus with the
 files, since that is where the next keystroke belongs, and a paste that
 reached no pty is reported back to the drag as refused rather than swallowed.
+A drag whose path is a copy macOS made for this app is taken by its promise
+instead, and that copy is made in the state directory. A screenshot's floating
+preview is the case that matters: its pasteboard does carry a file URL, so the
+drop looked ordinary and pasted, but that copy sits under `TemporaryItems` in
+a directory macOS opens to the receiving app alone. The app could read it and
+the pane's own shell could not — `EPERM` on a path that is there — so the
+agent was handed a file name nothing at its prompt could open, which is the
+whole of what "dropping a screenshot does nothing" was. Asked for again
+through the promise, into a directory of ours, the same file arrives as an
+ordinary one.
+
+The path is used whenever it is the user's own file, and only a copy is
+refused, because a copy is not the file: an agent told to edit one would edit
+something swept in a week while the file went untouched. Reading cannot tell
+the two apart — the app can read both, which is the trap — so the marks the
+copy carries are read instead: `TemporaryItems` under the temporary directory,
+or a directory named for whoever promised it. A drag out of the Finder carries
+neither and keeps its path, and a drag of both at once pastes the files the
+user has and then the copies, rather than losing the ones nobody promised. The
+copies are swept at launch once a week has
+passed, since a prompt is read minutes later and a mention can outlive the
+session, and nothing else would ever remove them. A source that never answers
+is given two minutes, after which whatever arrived is pasted: a promise nobody
+keeps would otherwise hold the drop for as long as the app runs.
+
+The pane takes focus with the files only if it is still on screen when they
+land. Taking it switches the worktree's tab and saves that, and a copy that
+took its time would otherwise pull the user back to a tab they had left.
+
 Cost: the mention form is a claim about an agent's prompt, so a wrong column
-would leave a stray `@` in front of a path the agent can still read; only file
-drags are taken, so something promised but not yet on disk is refused rather
-than written to a temporary file; and a file whose name a terminal would act
-on has to be typed by hand.
+would leave a stray `@` in front of a path the agent can still read; a promised
+drag is answered before its copies land, so it is the one drop that cannot be
+refused back to the drag when no pty takes it, and a drag whose sources all
+refuse pastes nothing and says nothing; telling a copy from a file is a reading
+of how macOS names and places one, so a copy it stops marking that way would be
+pasted as a path again, which is the bug this fixed; a copied file sits in the
+state directory for a week, after which a mention written today stops
+resolving; and a file whose name a terminal would act on has to be typed by
+hand.

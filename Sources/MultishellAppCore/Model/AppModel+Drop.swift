@@ -14,7 +14,9 @@ extension AppModel {
   /// no prompt to paste at, and a file name a terminal cannot be told
   /// safely is left out by `FileDrop`.
   @discardableResult
-  public func dropFiles(_ urls: [URL], into id: TerminalSession.ID) -> Bool {
+  public func dropFiles(
+    _ urls: [URL], into id: TerminalSession.ID, takingFocus: Bool = true
+  ) -> Bool {
     guard acceptsFileDrop(into: id), let session = workspace.session(id) else { return false }
     let text = FileDrop.text(
       for: urls,
@@ -24,9 +26,14 @@ extension AppModel {
     guard !text.isEmpty, host.paste(text, into: id) else { return false }
     // The pane the files landed in is the one being worked in now. Recorded
     // as well as focused: only an engine that reports focus back would
-    // otherwise move the tab's focused pane.
-    store.focusSession(id)
-    host.focus(id)
+    // otherwise move the tab's focused pane. Not when the caller says the
+    // pane has left the screen since the drop, which a drag whose files took
+    // their time can do: the recording switches the worktree's tab, and the
+    // user would be pulled back to one they had left.
+    if takingFocus {
+      store.focusSession(id)
+      host.focus(id)
+    }
     return true
   }
 

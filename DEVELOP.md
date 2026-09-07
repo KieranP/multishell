@@ -156,7 +156,8 @@ platform has a Trash. Everything else comes ready-made and tested.
 
 macOS: `~/Library/Application Support/Multishell/`. Linux:
 `$XDG_CONFIG_HOME/multishell/`. A debug build uses `state.debug.json`,
-`multishell.debug.sock` and `integration.debug/` so `make run` never touches
+`multishell.debug.sock`, `integration.debug/` and `drops.debug/` so `make run`
+never touches
 the installed app's state; themes and the helper link are shared.
 
 - `state.json`: the sidebar, tabs, pane trees, the names given to worktrees
@@ -169,6 +170,8 @@ the installed app's state; themes and the helper link are shared.
 - `bin/multishell`: a symlink to the helper in the current bundle, refreshed
   at launch; hook lines reference this path.
 - `integration/zsh/`, `integration/bash/init.bash`: generated at launch.
+- `drops/<uuid>/`: files a drag promised rather than handed over, one
+  directory per drag, swept at launch once a week old.
 
 Claude Code's hooks live in `~/.claude/settings.json`; the app writes there
 only when asked and keeps `settings.json.before-multishell` the first time.

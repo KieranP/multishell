@@ -1,4 +1,5 @@
 import AppKit
+import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
@@ -21,7 +22,9 @@ struct SurfaceView: NSViewRepresentable {
     frame.adopt(model.surface(for: sessionID))
     frame.requestFocus = { [model] in model.focusSurface(sessionID) }
     frame.acceptsDrop = { [model] in model.acceptsFileDrop(into: sessionID) }
-    frame.receiveDrop = { [model] urls in model.dropFiles(urls, into: sessionID) }
+    frame.receiveDrop = { [model] urls, focus in
+      model.dropFiles(urls, into: sessionID, takingFocus: focus)
+    }
     frame.wantsFocus = isFocused
   }
 }
@@ -34,7 +37,7 @@ struct SurfaceView: NSViewRepresentable {
 final class SurfaceFrame: NSView {
   var requestFocus: (() -> Void)?
   var acceptsDrop: (() -> Bool)?
-  var receiveDrop: (([URL]) -> Bool)?
+  var receiveDrop: (([URL], Bool) -> Bool)?
   var wantsFocus = false { didSet { focusIfReady() } }
 
   private var surface: NSView?
@@ -43,8 +46,10 @@ final class SurfaceFrame: NSView {
   init() {
     super.init(frame: .zero)
     // Neither engine registers a dragged type, so a drop that lands in a
-    // surface walks up to this frame, whichever engine drew it.
-    registerForDraggedTypes([.fileURL])
+    // surface walks up to this frame, whichever engine drew it. Promises are
+    // registered too, or a drag whose files are not written yet — which
+    // offers no file URL at all — would be offered no drop.
+    registerForDraggedTypes([.fileURL] + PromisedDrop.draggedTypes)
   }
 
   @available(*, unavailable)
@@ -85,7 +90,7 @@ final class SurfaceFrame: NSView {
 
 extension SurfaceFrame {
   override func draggingEntered(_ sender: any NSDraggingInfo) -> NSDragOperation {
-    guard acceptsDrop?() == true, !Self.fileURLs(from: sender).isEmpty else { return [] }
+    guard acceptsDrop?() == true, Self.hasFiles(sender) else { return [] }
     let operation = Self.operation(allowedBy: sender)
     guard !operation.isEmpty else { return [] }
     showHighlight()
@@ -120,15 +125,57 @@ extension SurfaceFrame {
     hideHighlight()
   }
 
+  /// The path a drag offers is used when the file is the user's own, and its
+  /// promise asked for when the path is a copy this app alone can read, which
+  /// is what a screenshot's preview offers (see `PromisedDrop`). That way
+  /// round because a copy is not the file: an agent told to edit one edits
+  /// something swept in a week, while the user's file goes untouched. A drag
+  /// offering nothing but an unreadable path and no promise is still pasted,
+  /// there being nothing better to say.
+  ///
+  /// The copies take a moment to arrive, so a promised drag is answered
+  /// before its paste has happened: the one drop that cannot be refused back
+  /// to the drag when no pty takes it.
   override func performDragOperation(_ sender: any NSDraggingInfo) -> Bool {
     hideHighlight()
     let urls = Self.fileURLs(from: sender)
-    guard !urls.isEmpty else { return false }
-    return receiveDrop?(urls) ?? false
+    let own = DroppedFiles.own(among: urls)
+    let promises =
+      DroppedFiles.needsPromise(for: urls) ? PromisedDrop.receivers(from: sender) : []
+    // Held from here rather than read again when the files land: this frame
+    // outlives the session it shows, and a pane tree that changed in between
+    // would have rebound it to another one. The drop belongs to the pane it
+    // was made on.
+    let drop = receiveDrop
+    guard !promises.isEmpty else {
+      guard !urls.isEmpty else { return false }
+      return drop?(urls, true) ?? false
+    }
+    // A drag of both kinds at once: what the user has goes in now, and the
+    // copies follow when they arrive. Two pastes rather than one, which is
+    // better than the files nobody promised going missing.
+    if !own.isEmpty { _ = drop?(own, true) }
+    PromisedDrop.receive(promises) { [weak self] urls in
+      guard !urls.isEmpty else { return }
+      // Focus only if this pane is still on screen. A copy that took its
+      // time must not pull the user back to a tab they have since left,
+      // which taking focus would do and would save.
+      _ = drop?(urls, self?.window != nil)
+    }
+    return true
   }
 
-  /// Files only. A drag of text or of something promised but not yet on
-  /// disk has no path to hand the terminal, so it is not offered a drop.
+  /// Files only. A drag of text, or of an image no app has made a file of,
+  /// has no path to hand the terminal, so it is not offered a drop.
+  ///
+  /// The promise is asked about first because asking for a promised drag's
+  /// file URL is what has macOS write the copy this app is meant to read, and
+  /// a hover over a pane is no reason to copy a file that may never be
+  /// dropped. Which of the two a drop then uses is decided when it lands.
+  private static func hasFiles(_ sender: any NSDraggingInfo) -> Bool {
+    !PromisedDrop.receivers(from: sender).isEmpty || !fileURLs(from: sender).isEmpty
+  }
+
   private static func fileURLs(from sender: any NSDraggingInfo) -> [URL] {
     sender.draggingPasteboard.readObjects(
       forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL] ?? []

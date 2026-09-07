@@ -185,6 +185,28 @@ struct AppModelDropTests {
     #expect(h.engine.focused.last == first)
   }
 
+  /// A promised drag's files land after the drop, and by then the user may
+  /// have moved on. The paste still belongs to the pane it was dropped on;
+  /// the focus does not, since taking it switches the worktree's tab and
+  /// saves that.
+  @Test func aDropWhoseFilesArrivedLateDoesNotTakeTheFocusBack() {
+    let h = Harness()
+    h.model.select(h.main)
+    let first = h.model.workspace.sessions(in: h.main.id)[0].id
+    h.model.splitActivePane(.horizontal)
+    guard let second = h.model.workspace.activeTab(in: h.main.id)?.focusedSessionID,
+      second != first
+    else { return #expect(Bool(false), "the split made a second pane and focused it") }
+
+    let dropped = h.model.dropFiles(
+      [h.main.path.appendingPathComponent("a.swift")], into: first, takingFocus: false)
+
+    #expect(dropped, "the files are still pasted where they were dropped")
+    #expect(h.engine.pasted.last?.id == first)
+    #expect(h.model.workspace.activeTab(in: h.main.id)?.focusedSessionID == second)
+    #expect(h.engine.focused.last != first)
+  }
+
   @Test func aDropOnATabWithNoShellRunningIsRefused() {
     let h = Harness()
     // A tab in a worktree that has never been visited has no shell: nothing

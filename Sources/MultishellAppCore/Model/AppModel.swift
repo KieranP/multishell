@@ -230,6 +230,10 @@ public final class AppModel<Surface> {
     } catch {
       report(error)
     }
+    // Outside the refreshes, which throw: the sweep is all that bounds the
+    // drops directory, and a machine whose integration cannot be written is
+    // the last one that should also keep every file ever dropped.
+    DroppedFiles.sweep()
     await refreshAll()
     sync()
     startStatusPolling()
