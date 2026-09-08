@@ -36,6 +36,11 @@ extension AppModel {
 
   public func removeProject(_ project: Project) {
     forgetMergeStates(of: project.id)
+    // Not part of `forgetMergeStates`: that also runs for a project whose
+    // default branch went away, which must keep its commit dates. Cleared
+    // here so re-adding the project does not order its rows by dates read
+    // before it left; paths are ids, so the entries would still match.
+    for worktree in workspace.worktrees(of: project.id) { lastCommits[worktree.id] = nil }
     mergeBases[project.id] = nil
     commonGitDirectories[project.id] = nil
     worktreeRecords[project.id] = nil

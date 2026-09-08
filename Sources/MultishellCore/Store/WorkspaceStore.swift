@@ -95,13 +95,30 @@ extension WorkspaceStore {
   /// removed; that must not resurrect the worktrees. An unchanged list is
   /// left alone so a watcher tick does not trigger a save and a re-render.
   public func replaceWorktrees(_ discovered: [Worktree], forProject id: Project.ID) {
-    guard workspace.project(id) != nil, workspace.worktrees(of: id) != discovered else { return }
-    let survivors = Set(discovered.map(\.id))
+    guard workspace.project(id) != nil else { return }
+    let fresh = discovered.map(keepingKnownCreationDate)
+    guard workspace.worktrees(of: id) != fresh else { return }
+    let survivors = Set(fresh.map(\.id))
     for worktree in workspace.worktrees(of: id) where !survivors.contains(worktree.id) {
       discardWorktree(worktree.id)
     }
     workspace.worktrees.removeAll { $0.projectID == id }
-    workspace.worktrees.append(contentsOf: discovered)
+    workspace.worktrees.append(contentsOf: fresh)
+  }
+
+  /// A creation date once read is not forgotten because a later stat could
+  /// not answer. A directory on a volume that blinked would otherwise flip
+  /// to undated, which is a change: it costs a save and a re-render, and
+  /// moves the row to the end of the sidebar's created order and back.
+  ///
+  /// Only where the fresh listing has no date, so a worktree genuinely
+  /// recreated at the same path takes the new one.
+  private func keepingKnownCreationDate(_ worktree: Worktree) -> Worktree {
+    guard worktree.createdAt == nil, let known = workspace.worktree(worktree.id)?.createdAt
+    else { return worktree }
+    var kept = worktree
+    kept.createdAt = known
+    return kept
   }
 
   /// A row's worktree can be stale by the time the click lands, if a refresh
@@ -390,6 +407,18 @@ extension WorkspaceStore {
 
   public func setOpensTerminalOnCreate(_ enabled: Bool) {
     workspace.opensTerminalOnCreate = enabled
+  }
+}
+
+// MARK: - Worktree listing
+
+extension WorkspaceStore {
+  public func setWorktreeSortOrder(_ order: WorktreeSortOrder) {
+    workspace.worktreeSortOrder = order
+  }
+
+  public func setShowsActiveWorktreesFirst(_ enabled: Bool) {
+    workspace.showsActiveWorktreesFirst = enabled
   }
 }
 

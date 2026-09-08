@@ -37,7 +37,7 @@ struct SidebarView: View {
             .padding(.bottom, 2)
 
           ForEach(visibleProjects, id: \.project.id) { entry in
-            projectRows(entry.project, worktrees: entry.worktrees, theme: theme)
+            projectRows(entry.project, worktrees: rows(of: entry), theme: theme)
           }
         }
         .padding(.horizontal, 8)
@@ -73,6 +73,11 @@ struct SidebarView: View {
 
   private var visibleProjects: [SidebarFilter.Entry] {
     SidebarFilter(filter).apply(to: model.workspace)
+  }
+
+  /// The rows of one project's block, in the order its settings ask for.
+  private func rows(of entry: SidebarFilter.Entry) -> [Worktree] {
+    model.ordered(entry.worktrees, in: entry.project)
   }
 
   private var isFiltering: Bool {

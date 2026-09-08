@@ -4,16 +4,14 @@ import MultishellCore
 /// Which branches have already landed on their project's default branch,
 /// and what that branch is.
 extension WorktreeCoordinator {
-  /// Where the project's default branch points and what every local branch
-  /// is, in one process: `origin/HEAD` is a ref like any other, so the ref
-  /// list carries it. `nil` for a repository with no branch to measure
-  /// against; see `DefaultBranch.resolve`.
+  /// Where the project's default branch points, what every local branch is,
+  /// and when each was last committed to, in one process: `origin/HEAD` is
+  /// a ref like any other, so the ref list carries it. See `BranchScan`.
   ///
   /// `override` is the project's `defaultBranch` setting, `nil` to detect.
-  public func mergeScan(of project: Project, defaultBranch override: String?) async -> MergeScan? {
-    let branches = await service.branchRefs(project)
-    guard let base = DefaultBranch.resolve(from: branches, override: override) else { return nil }
-    return MergeScan(base: base, refs: branches)
+  public func scanBranches(of project: Project, defaultBranch override: String?) async -> BranchScan
+  {
+    BranchScan(refs: await service.branchRefs(project), defaultBranch: override)
   }
 
   /// Whether each of `branches` has already landed on `scan.base`.

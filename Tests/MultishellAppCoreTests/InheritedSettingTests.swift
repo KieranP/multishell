@@ -8,7 +8,7 @@ import Testing
 /// The global stopped being the only answer when the repository's file
 /// gained these keys.
 @Suite @MainActor
-struct InheritedFlagTests {
+struct InheritedSettingTests {
   @Test func aFlagTheRepositorySuppliesIsNamedAsItsOwn() {
     let fromFile = InheritedFlag(value: true, isFromRepository: true)
     #expect(fromFile.caption == "Using the value in .multishell.json: on.")
@@ -32,5 +32,22 @@ struct InheritedFlagTests {
     let untouched = h.model.inherited(\.opensTerminalOnCreate, global: true, for: project)
     #expect(
       untouched.isFromRepository == false, "a key the file does not carry is still the global")
+  }
+}
+
+/// The order carries the same sentence as a flag, so a caption cannot say
+/// "on" about a picker or word the file differently from row to row.
+@Suite
+struct InheritedOrderTests {
+  @Test func theCaptionNamesTheLabelAndWhereItCameFrom() {
+    let fromFile = InheritedSetting(
+      value: WorktreeSortOrder.committedNewestFirst,
+      isFromRepository: true)
+    #expect(fromFile.caption == "Using the value in .multishell.json: Last commit, newest first.")
+
+    let fromGlobal = InheritedSetting(
+      value: WorktreeSortOrder.alphabetical,
+      isFromRepository: false)
+    #expect(fromGlobal.caption == "Using the global value: Name.")
   }
 }

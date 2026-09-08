@@ -38,7 +38,20 @@ public struct WorktreeService: Sendable {
         executable: "git", arguments: ["worktree", "list"], status: 0,
         message: "git listed no worktrees for \(project.path.path)")
     }
-    return worktrees
+    return worktrees.map(Self.datedByDirectory)
+  }
+
+  /// git records no creation time for a worktree, so the date the sidebar
+  /// sorts by is the birth time of the directory `git worktree add` made.
+  /// The parser stays free of the filesystem, so it is stamped on here.
+  ///
+  /// `nil` where the filesystem keeps no birth time, or the directory is
+  /// gone: that orders the worktree last rather than first, which is what a
+  /// date nobody knows deserves.
+  private static func datedByDirectory(_ worktree: Worktree) -> Worktree {
+    var dated = worktree
+    dated.createdAt = try? worktree.path.resourceValues(forKeys: [.creationDateKey]).creationDate
+    return dated
   }
 
   /// The main worktree of the repository `url` is in, whether `url` is that
@@ -66,18 +79,31 @@ public struct WorktreeService: Sendable {
   }
 
   /// Every local and remote branch with its tip, the upstream a local one
-  /// tracks and whether that upstream is still there. One process for the
-  /// whole repository; see `BranchRefParser` for the format.
+  /// tracks, whether that upstream is still there, and when it was last
+  /// committed to. One process for the whole repository; see
+  /// `BranchRefParser` for the format.
+  /// The date atom is asked for separately from the rest: git fails the
+  /// whole query on a format atom it does not know, and the merged badges
+  /// read this too. Without the second attempt, a git too old for
+  /// `%(committerdate:unix)` would cost every badge as well as the order,
+  /// silently, on every poll. The retry costs a process only where the
+  /// first call already failed.
   public func branchRefs(_ project: Project) async -> [BranchRef] {
-    let format = [
+    if let output = await git.output(Self.refQuery(withDates: true), in: project.path) {
+      return BranchRefParser.parse(output)
+    }
+    let output = await git.output(Self.refQuery(withDates: false), in: project.path)
+    return BranchRefParser.parse(output ?? "")
+  }
+
+  private static func refQuery(withDates: Bool) -> [String] {
+    var format = [
       "%(refname)", "%(objectname)", "%(upstream)", "%(upstream:track)", "%(symref)",
     ]
-    let output = await git.output(
-      [
-        "for-each-ref", "--format=" + format.joined(separator: "%09"), "refs/heads", "refs/remotes",
-      ],
-      in: project.path)
-    return BranchRefParser.parse(output ?? "")
+    if withDates { format.append("%(committerdate:unix)") }
+    return [
+      "for-each-ref", "--format=" + format.joined(separator: "%09"), "refs/heads", "refs/remotes",
+    ]
   }
 
   /// The branches `base` can reach: merged into it by a merge commit or a

@@ -26,6 +26,12 @@ public struct SharedProjectSettings: Equatable, Sendable {
   public var postCreateHook: String?
   public var preDeleteHook: String?
   public var postDeleteHook: String?
+  /// What order a project's worktree rows come in: a team may ship "our
+  /// worktrees list by what was committed to last". Display only, so like
+  /// the settings above and unlike the hooks it runs nothing the
+  /// repository wrote.
+  public var worktreeSortOrder: WorktreeSortOrder?
+  public var showsActiveWorktreesFirst: Bool?
   public var iconGlyph: String?
   public var iconTint: Int?
 
@@ -43,6 +49,8 @@ public struct SharedProjectSettings: Equatable, Sendable {
     postCreateHook: String? = nil,
     preDeleteHook: String? = nil,
     postDeleteHook: String? = nil,
+    worktreeSortOrder: WorktreeSortOrder? = nil,
+    showsActiveWorktreesFirst: Bool? = nil,
     iconGlyph: String? = nil,
     iconTint: Int? = nil
   ) {
@@ -57,6 +65,8 @@ public struct SharedProjectSettings: Equatable, Sendable {
     self.postCreateHook = Self.text(postCreateHook)
     self.preDeleteHook = Self.text(preDeleteHook)
     self.postDeleteHook = Self.text(postDeleteHook)
+    self.worktreeSortOrder = worktreeSortOrder
+    self.showsActiveWorktreesFirst = showsActiveWorktreesFirst
     self.iconGlyph = Self.text(iconGlyph)
     self.iconTint = iconTint
   }
@@ -90,6 +100,8 @@ public struct SharedProjectSettings: Equatable, Sendable {
       postCreateHook: settings.postCreateHook,
       preDeleteHook: settings.preDeleteHook,
       postDeleteHook: settings.postDeleteHook,
+      worktreeSortOrder: settings.worktreeSortOrder,
+      showsActiveWorktreesFirst: settings.showsActiveWorktreesFirst,
       iconGlyph: settings.iconGlyph,
       iconTint: settings.iconTint)
   }
@@ -130,7 +142,7 @@ extension SharedProjectSettings: Codable {
   private enum CodingKeys: String, CodingKey {
     case worktreeDirectory, branchPrefix, defaultBranch, autoStartAgent, autoStartAgentOnCreate,
       opensTerminalOnSelect, opensTerminalOnCreate, preCreateHook, postCreateHook, preDeleteHook,
-      postDeleteHook, iconGlyph, iconTint
+      postDeleteHook, worktreeSortOrder, showsActiveWorktreesFirst, iconGlyph, iconTint
   }
 
   public func encode(to encoder: any Encoder) throws {
@@ -146,6 +158,8 @@ extension SharedProjectSettings: Codable {
     try c.encodeIfPresent(postCreateHook, forKey: .postCreateHook)
     try c.encodeIfPresent(preDeleteHook, forKey: .preDeleteHook)
     try c.encodeIfPresent(postDeleteHook, forKey: .postDeleteHook)
+    try c.encodeIfPresent(worktreeSortOrder, forKey: .worktreeSortOrder)
+    try c.encodeIfPresent(showsActiveWorktreesFirst, forKey: .showsActiveWorktreesFirst)
     try c.encodeIfPresent(iconGlyph, forKey: .iconGlyph)
     try c.encodeIfPresent(iconTint, forKey: .iconTint)
   }
@@ -171,6 +185,11 @@ extension SharedProjectSettings: Codable {
       postCreateHook: string(.postCreateHook),
       preDeleteHook: string(.preDeleteHook),
       postDeleteHook: string(.postDeleteHook),
+      // An order a newer build named, or a typo someone committed, costs
+      // the key and leaves the user's own choice in force.
+      worktreeSortOrder: (try? c.decodeIfPresent(
+        WorktreeSortOrder.self, forKey: .worktreeSortOrder)) ?? nil,
+      showsActiveWorktreesFirst: flag(.showsActiveWorktreesFirst),
       iconGlyph: string(.iconGlyph),
       iconTint: (try? c.decodeIfPresent(Int.self, forKey: .iconTint)) ?? nil)
   }

@@ -120,6 +120,18 @@ tab's table, so the help cannot fall behind what a hook is given.
 **A keyboard shortcut.** Also in `GhosttyTerminalHost.appShortcuts`, or the
 surface eats it before the menu sees it.
 
+**A way of ordering worktree rows.** A case in `WorktreeSortOrder` with its
+display name, a comparison in `WorktreeOrder.precedes`, and a case in
+`WorktreeOrderTests`. Its raw value goes into repositories through
+`.multishell.json`, so a new case is free but renaming an existing raw value
+breaks a file someone has committed: their order would silently become the
+default. The picker in Settings > Worktrees and the override in
+Project Settings > General are driven off `allCases`, so both follow, but
+their `InfoButton` text does not. Anything an order needs that is not already
+on `Worktree` is passed to `sort` as a closure, the way `isActive` and
+`lastCommit` are: they read `AppModel`'s runtime state, and the sorter stays
+pure. The bands stay: nothing sorts above the trunk row.
+
 **A shell with command-status hooks.** A script under
 `Sources/MultishellCore/Resources` with `__MULTISHELL_HELPER__` for the
 helper's path, listed in `Package.swift`, loaded by `ShellStateHooks`,
@@ -143,8 +155,10 @@ Trash.
 `state.debug.json`, `multishell.debug.sock`, `integration.debug/` and
 `drops.debug/`; themes and the helper link are shared.
 
-- `state.json`: the sidebar, tabs, pane trees, worktree names and every
-  setting. Not processes, not shell titles, not the shell a tab resolved to.
+- `state.json`: the sidebar, tabs, pane trees, worktree names, each
+  worktree's directory creation date and every setting. Not processes, not
+  shell titles, not the shell a tab resolved to, and not a branch's last
+  commit time, which is runtime state beside the merge badges.
 - `state.<timestamp>.broken.json`: a state file that failed to decode.
 - `themes/*.json`, with `themes/examples/` not loaded.
 - `multishell.sock`, mode 0600.
@@ -158,8 +172,14 @@ Claude Code's hooks live in `~/.claude/settings.json`, written only when
 asked, with `settings.json.before-multishell` kept the first time. Sidebar
 width is in `UserDefaults`. A repository may carry `.multishell.json` at its
 root, written by Export in project settings, with the same keys as a
-project's settings; it is read at launch, when a project's worktree records
-change, and on any tick or poll where its modification date has moved.
+project's settings — the display-only ones included: what its worktrees open
+and the order they are listed in. It is read at launch, when a project's
+worktree records change, and on any tick or poll where its modification date
+has moved. A field a repository ships fills only a gap the user left, so
+adding one to `SharedProjectSettings` also means a line in
+`ProjectSettings.layered`, a decode that costs the key and not the file, and
+a form that seeds its override from `InheritedSetting` rather than from the
+global.
 
 ## Dependencies worth knowing about
 

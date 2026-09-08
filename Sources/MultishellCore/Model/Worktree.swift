@@ -16,6 +16,13 @@ public struct Worktree: Identifiable, Codable, Hashable, Sendable {
   /// The repository itself in a bare layout: listed first by git, with no
   /// checkout to show a status for.
   public var isBare: Bool
+  /// When the directory was made, read off the filesystem at discovery;
+  /// `nil` where it could not be. git records no creation time for a
+  /// worktree, and the directory `git worktree add` makes is the closest
+  /// thing there is. A worktree whose directory was copied in, or one on a
+  /// filesystem that keeps no birth time, has none, and the date orders
+  /// sort it last rather than pretend it is the oldest.
+  public var createdAt: Date?
 
   /// Synthesized decoding would keep whatever URL was written, so the
   /// directory normalisation from `init` is applied here too.
@@ -28,6 +35,11 @@ public struct Worktree: Identifiable, Codable, Hashable, Sendable {
     self.isPrimary = try c.decodeIfPresent(Bool.self, forKey: .isPrimary) ?? false
     self.isLocked = try c.decodeIfPresent(Bool.self, forKey: .isLocked) ?? false
     self.isBare = try c.decodeIfPresent(Bool.self, forKey: .isBare) ?? false
+    // `try?`, as `ProjectSettings` does for its tint: a date a newer build
+    // wrote in another shape costs the date, not the worktree. Worktrees
+    // decode lossily, so throwing here would drop the row, and the tabs
+    // saved under it, until the next refresh.
+    self.createdAt = (try? c.decodeIfPresent(Date.self, forKey: .createdAt)) ?? nil
   }
 
   public var id: String { path.path }
@@ -46,7 +58,8 @@ public struct Worktree: Identifiable, Codable, Hashable, Sendable {
     branch: String? = nil,
     isPrimary: Bool = false,
     isLocked: Bool = false,
-    isBare: Bool = false
+    isBare: Bool = false,
+    createdAt: Date? = nil
   ) {
     self.path = Project.directory(path)
     self.projectID = projectID
@@ -55,5 +68,6 @@ public struct Worktree: Identifiable, Codable, Hashable, Sendable {
     self.isPrimary = isPrimary
     self.isLocked = isLocked
     self.isBare = isBare
+    self.createdAt = createdAt
   }
 }

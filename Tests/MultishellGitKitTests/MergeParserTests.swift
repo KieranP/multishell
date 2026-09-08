@@ -1,3 +1,4 @@
+import Foundation
 import MultishellCore
 import Testing
 
@@ -10,7 +11,7 @@ struct MergeParserTests {
   @Test func branchRefsCarryTheirTipAndWhetherTheirUpstreamIsGone() {
     let output = """
       refs/heads/main\tab1\trefs/remotes/origin/main\t
-      refs/heads/feat\tcd2\trefs/remotes/origin/feat\t[ahead 1]
+      refs/heads/feat\tcd2\trefs/remotes/origin/feat\t[ahead 1]\t\t1700000000
       refs/heads/squashed\tef3\trefs/remotes/origin/squashed\t[gone]
       refs/heads/local-only\t004\t\t
       refs/remotes/origin/main\tab1\t\t
@@ -28,6 +29,20 @@ struct MergeParserTests {
     #expect(byName["refs/heads/local-only"]?.upstream == nil)
     #expect(byName["refs/heads/local-only"]?.isUpstreamGone == false)
     #expect(byName["refs/remotes/origin/main"]?.isRemote == true)
+    // The date is the sixth field, so every row written before it existed
+    // simply has none; the badges never read it.
+    #expect(
+      byName["refs/heads/feat"]?.committedAt == Date(timeIntervalSince1970: 1_700_000_000))
+    #expect(byName["refs/heads/main"]?.committedAt == nil)
+  }
+
+  /// A date git could not print, or one from a build that formatted it
+  /// differently, costs the date and not the row.
+  @Test func aRefWhoseDateIsNotANumberKeepsTheRest() {
+    let refs = BranchRefParser.parse("refs/heads/main\tab1\t\t\t\tMon Jan 1 2024\n")
+    #expect(refs.count == 1)
+    #expect(refs[0].tip == "ab1")
+    #expect(refs[0].committedAt == nil)
   }
 
   @Test func aRowWithoutANameOrATipIsDroppedAndTheRestSurvive() {

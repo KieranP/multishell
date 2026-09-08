@@ -432,6 +432,25 @@ struct GitIntegrationTests {
     #expect(dirty.branch == "main")
   }
 
+  /// The date the sidebar's created orders sort by. git records none, so it
+  /// is the birth time of the directory `git worktree add` made, and a
+  /// worktree created second must not read as the older of the two.
+  @Test func listStampsEachWorktreeWithItsDirectorysCreationDate() async throws {
+    let (root, project) = try await makeRepository()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let coordinator = WorktreeCoordinator(service: WorktreeService(git: git))
+    let trees = WorktreeSettings(worktreeDirectory: "../trees")
+    try await coordinator.create(branch: "first", in: project, settings: trees)
+    try await coordinator.create(branch: "second", in: project, settings: trees)
+
+    let listed = try await WorktreeService(git: git).list(project)
+    let dates = try listed.map { try #require($0.createdAt, "no date for \($0.name)") }
+    let byBranch = Dictionary(uniqueKeysWithValues: zip(listed.map(\.name), dates))
+
+    #expect(byBranch["first"]! <= byBranch["second"]!)
+    #expect(byBranch["main"]! <= byBranch["first"]!, "the repository predates its worktrees")
+  }
+
   @Test func removingAWorktreeWhoseDirectoryIsGonePrunesIt() async throws {
     let (root, project) = try await makeRepository()
     defer { try? FileManager.default.removeItem(at: root) }

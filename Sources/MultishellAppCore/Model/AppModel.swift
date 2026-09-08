@@ -81,6 +81,12 @@ public final class AppModel<Surface> {
   /// The branch each project's merges are measured against, `origin/main`
   /// and the like. Absent for a project with none to measure against.
   public var mergeBases: [Project.ID: DefaultBranch] = [:]
+  /// When each worktree's branch was last committed to, for the sidebar's
+  /// last-commit orders. Runtime only, and for the same reason as the
+  /// merge states beside it: a commit moves it, and the workspace must not
+  /// be rewritten because someone committed. Absent for a worktree that is
+  /// detached or bare, which has no branch to date.
+  public var lastCommits: [Worktree.ID: Date] = [:]
   /// Projects with a `git fetch` running, which the sidebar shows and a
   /// second Fetch waits for. Runtime state, like the statuses beside it.
   public var fetchingProjects: Set<Project.ID> = []

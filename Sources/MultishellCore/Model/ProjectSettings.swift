@@ -34,6 +34,13 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   /// follows the global.
   public var opensTerminalOnSelect: Bool?
 
+  /// The order this project's worktree rows are listed in. `nil` follows
+  /// the global.
+  public var worktreeSortOrder: WorktreeSortOrder?
+  /// Whether this project's busy worktrees are listed above the rest.
+  /// `nil` follows the global.
+  public var showsActiveWorktreesFirst: Bool?
+
   /// Whether a worktree created here opens a terminal once the create, and
   /// any post-create hook, is done. `nil` follows the global.
   public var opensTerminalOnCreate: Bool?
@@ -68,6 +75,8 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     autoStartAgentOnCreate: Bool? = nil,
     opensTerminalOnSelect: Bool? = nil,
     opensTerminalOnCreate: Bool? = nil,
+    worktreeSortOrder: WorktreeSortOrder? = nil,
+    showsActiveWorktreesFirst: Bool? = nil,
     defaultShell: String? = nil,
     iconGlyph: String? = nil,
     iconTint: Int? = nil,
@@ -85,6 +94,8 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     self.autoStartAgentOnCreate = autoStartAgentOnCreate
     self.opensTerminalOnSelect = opensTerminalOnSelect
     self.opensTerminalOnCreate = opensTerminalOnCreate
+    self.worktreeSortOrder = worktreeSortOrder
+    self.showsActiveWorktreesFirst = showsActiveWorktreesFirst
     self.defaultShell = defaultShell
     self.iconGlyph = iconGlyph
     self.iconTint = ProjectIcon.validTint(iconTint)
@@ -113,6 +124,12 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     autoStartAgentOnCreate = try c.decodeIfPresent(Bool.self, forKey: .autoStartAgentOnCreate)
     opensTerminalOnSelect = try c.decodeIfPresent(Bool.self, forKey: .opensTerminalOnSelect)
     opensTerminalOnCreate = try c.decodeIfPresent(Bool.self, forKey: .opensTerminalOnCreate)
+    // `try?`: an order a newer build named is not an override this one can
+    // honour, and following the global beats losing the project.
+    worktreeSortOrder =
+      (try? c.decodeIfPresent(WorktreeSortOrder.self, forKey: .worktreeSortOrder)) ?? nil
+    showsActiveWorktreesFirst = try c.decodeIfPresent(
+      Bool.self, forKey: .showsActiveWorktreesFirst)
     defaultShell = Self.override(try c.decodeIfPresent(String.self, forKey: .defaultShell))
     iconGlyph = Self.override(try c.decodeIfPresent(String.self, forKey: .iconGlyph))
     // `try?`: a tint that is not a number costs the tint, not the file.
@@ -140,8 +157,9 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
 
   /// These settings with the repository's own filling the gaps: a path or
   /// prefix the user left following the global, what a worktree here opens
-  /// where they said nothing, an icon they did not set, and a hook they
-  /// left blank, the last only once its text is trusted. A whitespace-only
+  /// where they said nothing, the order its rows come in, an icon they did
+  /// not set, and a hook they left blank, the last only once its text is
+  /// trusted. A whitespace-only
   /// hook is the user's "none" and stays.
   public func layered(over shared: SharedProjectSettings?) -> ProjectSettings {
     guard let shared else { return self }
@@ -153,6 +171,9 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     result.autoStartAgentOnCreate = autoStartAgentOnCreate ?? shared.autoStartAgentOnCreate
     result.opensTerminalOnSelect = opensTerminalOnSelect ?? shared.opensTerminalOnSelect
     result.opensTerminalOnCreate = opensTerminalOnCreate ?? shared.opensTerminalOnCreate
+    result.worktreeSortOrder = worktreeSortOrder ?? shared.worktreeSortOrder
+    result.showsActiveWorktreesFirst =
+      showsActiveWorktreesFirst ?? shared.showsActiveWorktreesFirst
     result.iconGlyph = iconGlyph ?? shared.iconGlyph
     result.iconTint = iconTint ?? ProjectIcon.validTint(shared.iconTint)
     if trustsHooks(of: shared) {

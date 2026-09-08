@@ -29,13 +29,13 @@ extension AppModel {
   /// where it comes from: the repository's file where it says, else the
   /// user's global. What the project settings forms show and seed an
   /// override with.
-  public func inherited(
-    _ keyPath: KeyPath<SharedProjectSettings, Bool?>, global: Bool, for project: Project
-  ) -> InheritedFlag {
+  public func inherited<Value: Equatable & Sendable>(
+    _ keyPath: KeyPath<SharedProjectSettings, Value?>, global: Value, for project: Project
+  ) -> InheritedSetting<Value> {
     if let shared = sharedSettings[project.id]?[keyPath: keyPath] {
-      return InheritedFlag(value: shared, isFromRepository: true)
+      return InheritedSetting(value: shared, isFromRepository: true)
     }
-    return InheritedFlag(value: global, isFromRepository: false)
+    return InheritedSetting(value: global, isFromRepository: false)
   }
 
   /// Whether the file's hooks are the ones in force for this project.

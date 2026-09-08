@@ -21,8 +21,9 @@ struct WorktreeMergeTests {
 
   private func scan(_ fixture: RepositoryFixture, override: String? = nil) async throws -> MergeScan
   {
-    let scan = await fixture.coordinator.mergeScan(of: fixture.project, defaultBranch: override)
-    return try #require(scan)
+    let scan = await fixture.coordinator.scanBranches(
+      of: fixture.project, defaultBranch: override)
+    return try #require(scan.merges)
   }
 
   @Test func aBranchMergedWithAMergeCommitIsFoundByAncestry() async throws {
@@ -186,9 +187,10 @@ struct WorktreeMergeTests {
     #expect(overridden.base.ref == "develop")
 
     // A name that is nowhere: no base, so nothing is badged.
-    let missing = await fixture.coordinator.mergeScan(
+    let missing = await fixture.coordinator.scanBranches(
       of: fixture.project, defaultBranch: "nowhere")
-    #expect(missing == nil)
+    #expect(missing.merges == nil)
+    #expect(missing.lastCommits["main"] != nil, "the dates come back with no base to measure")
   }
 
   @Test func aScanOfNoBranchesAsksGitNothingAndAnswersNothing() async throws {
@@ -221,5 +223,111 @@ struct WorktreeMergeTests {
     #expect(!WorktreeMergeState.applies(to: trunk, base: "main"))
     #expect(!WorktreeMergeState.applies(to: detached, base: "main"))
     #expect(!WorktreeMergeState.applies(to: bare, base: "main"))
+  }
+}
+
+/// The dates the sidebar's recently-committed orders go by. They come off the
+/// ref list the merge scan already reads, so they cost no process of their
+/// own.
+@Suite(.serialized)
+struct BranchCommitDateTests {
+  @Test func eachLocalBranchCarriesItsLastCommitTime() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let path = fixture.project.path
+    _ = try await fixture.git.run(["checkout", "-q", "-b", "feat"], in: path)
+    try await fixture.commit("later", file: "feat.txt", content: "a\n")
+    _ = try await fixture.git.run(["checkout", "-q", "main"], in: path)
+
+    let scan = await fixture.coordinator.scanBranches(of: fixture.project, defaultBranch: nil)
+    let main = try #require(scan.lastCommits["main"])
+    let feat = try #require(scan.lastCommits["feat"])
+
+    #expect(main <= feat, "feat was committed to after main was left behind")
+    #expect(abs(feat.timeIntervalSinceNow) < 300, "a real commit time, not the epoch")
+    #expect(scan.lastCommits["origin/main"] == nil, "local branches only")
+  }
+
+  /// The dates are looked up by the branch a worktree reports, so the two
+  /// spellings have to agree: `git worktree list` gives `feat/tabs` and the
+  /// ref list must key it the same way, not as `refs/heads/feat/tabs` or
+  /// with the first component dropped.
+  @Test func aBranchWithSlashesIsKeyedTheWayAWorktreeNamesIt() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let path = try await fixture.coordinator.create(
+      branch: "feat/tabs", in: fixture.project,
+      settings: WorktreeSettings(worktreeDirectory: "../trees"))
+
+    let listed = try await WorktreeService(git: fixture.git).list(fixture.project)
+    let worktree = try #require(
+      listed.first { $0.path.standardizedFileURL == path.standardizedFileURL })
+    let scan = await fixture.coordinator.scanBranches(of: fixture.project, defaultBranch: nil)
+
+    #expect(worktree.branch == "feat/tabs")
+    #expect(worktree.branch.flatMap { scan.lastCommits[$0] } != nil, "the lookup finds it")
+  }
+
+  /// A worktree's branch is what the app looks the date up by, so a
+  /// detached checkout has none rather than borrowing another branch's.
+  @Test func aDetachedWorktreeHasNoBranchToDate() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let head = try await fixture.head(of: fixture.project.path)
+    let path = fixture.root.appendingPathComponent("detached", isDirectory: true)
+    _ = try await fixture.git.run(
+      ["worktree", "add", "-q", "--detach", path.path, head], in: fixture.project.path)
+
+    let listed = try await WorktreeService(git: fixture.git).list(fixture.project)
+    let detached = try #require(listed.first { $0.path.lastPathComponent == "detached" })
+    let scan = await fixture.coordinator.scanBranches(of: fixture.project, defaultBranch: nil)
+
+    #expect(detached.branch == nil)
+    #expect(detached.branch.flatMap { scan.lastCommits[$0] } == nil)
+    #expect(detached.createdAt != nil, "the directory still has a creation date")
+  }
+}
+
+/// The ref read carries the commit dates the sidebar orders by and the tips
+/// the merged badges are measured from. A git that cannot do the first must
+/// still answer the second.
+@Suite
+struct BranchRefFallbackTests {
+  @Test func aGitTooOldForTheDateAtomStillAnswersWithTheRest() async throws {
+    // Fails any query naming committerdate, as git does for an unknown
+    // format atom, and answers the rest.
+    let fake = try FakeGit.make(
+      """
+      case "$*" in
+        *committerdate*) echo "fatal: unknown field name: committerdate:unix" >&2; exit 128 ;;
+      esac
+      printf 'refs/heads/main\\t111\\t\\t\\t\\n'
+      """)
+    defer { fake.tearDown() }
+
+    let refs = await WorktreeService(git: fake.runner).branchRefs(Project(path: fake.directory))
+
+    #expect(refs.map(\.fullName) == ["refs/heads/main"], "the badges still have their tips")
+    #expect(refs.first?.tip == "111")
+    #expect(refs.first?.committedAt == nil, "the order loses its dates, and only those")
+  }
+
+  /// The retry is only for a failure: a git that answers the first query is
+  /// asked once.
+  @Test func aGitThatAnswersIsAskedOnce() async throws {
+    let fake = try FakeGit.make(
+      """
+      echo x >> "$SCRATCH/calls"
+      printf 'refs/heads/main\\t111\\t\\t\\t\\t1700000000\\n'
+      """)
+    defer { fake.tearDown() }
+
+    let refs = await WorktreeService(git: fake.runner).branchRefs(Project(path: fake.directory))
+    let calls =
+      (try? String(contentsOf: fake.directory.appendingPathComponent("calls"), encoding: .utf8))
+      ?? ""
+
+    #expect(refs.first?.committedAt == Date(timeIntervalSince1970: 1_700_000_000))
+    #expect(calls.split(whereSeparator: \.isNewline).count == 1)
   }
 }

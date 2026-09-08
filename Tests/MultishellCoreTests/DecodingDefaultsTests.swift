@@ -278,6 +278,83 @@ struct DecodingDefaultsTests {
     #expect(chosen.defaultShell == ShellCatalogue.customID && chosen.customShellPath == "/opt/nu")
   }
 
+  @Test func aWorkspaceWithoutTheListingFieldsSortsByNameWithNothingLifted() throws {
+    let workspace = try decode(Workspace.self, #"{ "projects": [] }"#)
+    #expect(workspace.worktreeSortOrder == .alphabetical)
+    #expect(!workspace.showsActiveWorktreesFirst, "off until asked for")
+
+    let chosen = try decode(
+      Workspace.self,
+      #"{ "worktreeSortOrder": "createdNewestFirst", "showsActiveWorktreesFirst": true }"#)
+    #expect(chosen.worktreeSortOrder == .createdNewestFirst && chosen.showsActiveWorktreesFirst)
+  }
+
+  /// An order a newer build named costs the sidebar nothing: it reads as
+  /// the default rather than failing the file.
+  @Test func anUnknownSortOrderFallsBackRatherThanLosingTheWorkspace() throws {
+    let workspace = try decode(
+      Workspace.self, #"{ "projects": [], "worktreeSortOrder": "byMergeState" }"#)
+    #expect(workspace.worktreeSortOrder == .alphabetical)
+
+    let settings = try decode(ProjectSettings.self, #"{ "worktreeSortOrder": "byMergeState" }"#)
+    #expect(settings.worktreeSortOrder == nil, "follows the global instead")
+  }
+
+  @Test func projectSettingsWithoutTheListingFieldsFollowTheGlobal() throws {
+    let empty = try decode(ProjectSettings.self, "{}")
+    #expect(empty.worktreeSortOrder == nil && empty.showsActiveWorktreesFirst == nil)
+    let chosen = try decode(
+      ProjectSettings.self,
+      #"{ "worktreeSortOrder": "createdOldestFirst", "showsActiveWorktreesFirst": false }"#)
+    #expect(chosen.worktreeSortOrder == .createdOldestFirst)
+    #expect(chosen.showsActiveWorktreesFirst == false, "an override that says off")
+  }
+
+  /// The date is read off the filesystem at discovery, so state written
+  /// before the field existed simply has none.
+  @Test func aWorktreeWithoutACreationDateHasNone() throws {
+    let worktree = try decode(
+      Worktree.self,
+      #"{ "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "abc" }"#)
+    #expect(worktree.createdAt == nil)
+
+    let dated = try decode(
+      Worktree.self,
+      #"{ "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "abc", "createdAt": 1000 }"#
+    )
+    #expect(dated.createdAt == Date(timeIntervalSinceReferenceDate: 1000))
+  }
+
+  /// A date in a shape this build does not read costs the date, not the
+  /// worktree. Worktrees decode lossily, so throwing would drop the row and
+  /// the tabs saved under it, and one odd entry must not take its
+  /// neighbours with it either.
+  @Test func aWorktreeWithAnUnreadableDateKeepsEverythingElse() throws {
+    let odd = try decode(
+      Worktree.self,
+      #"""
+      { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "abc",
+        "createdAt": "2026-09-08T00:00:00Z" }
+      """#)
+    #expect(odd.createdAt == nil)
+    #expect(odd.id == "/repos/demo", "the worktree itself still loads")
+
+    let workspace = try decode(
+      Workspace.self,
+      #"""
+      { "projects": [ { "path": "file:///repos/demo/" } ],
+        "worktrees": [
+          { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "a",
+            "createdAt": "nonsense" },
+          { "path": "file:///repos/demo-feat/", "projectID": "/repos/demo", "head": "b",
+            "createdAt": 1000 }
+        ] }
+      """#)
+    #expect(workspace.worktrees.count == 2)
+    #expect(workspace.worktrees[0].createdAt == nil)
+    #expect(workspace.worktrees[1].createdAt == Date(timeIntervalSinceReferenceDate: 1000))
+  }
+
   @Test func aProjectsOldRemovalFlagIsIgnoredNowThatTheSettingIsGlobal() throws {
     let settings = try decode(ProjectSettings.self, #"{ "confirmsWorktreeRemoval": false }"#)
     #expect(settings == ProjectSettings())

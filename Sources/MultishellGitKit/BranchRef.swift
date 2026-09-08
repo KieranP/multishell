@@ -19,16 +19,23 @@ public struct BranchRef: Hashable, Sendable {
   /// `refs/remotes/origin/HEAD` is. Read here so the clone's own default
   /// branch costs no process of its own.
   public let symref: String?
+  /// When the commit this ref points at was committed, which is what the
+  /// sidebar's last-commit orders go by; `nil` where the row carried
+  /// no date. Read here for the same reason as `symref`: the ref list is
+  /// already being asked for, and a date per branch would otherwise cost a
+  /// process each.
+  public let committedAt: Date?
 
   public init(
     fullName: String, tip: String, upstream: String? = nil, isUpstreamGone: Bool = false,
-    symref: String? = nil
+    symref: String? = nil, committedAt: Date? = nil
   ) {
     self.fullName = fullName
     self.tip = tip
     self.upstream = upstream
     self.isUpstreamGone = isUpstreamGone
     self.symref = symref
+    self.committedAt = committedAt
   }
 
   /// The ref a clone records as the remote's default branch.

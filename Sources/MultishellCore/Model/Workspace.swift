@@ -53,6 +53,14 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// rather than one looked at. Projects may override it in
   /// `ProjectSettings`.
   public var opensTerminalOnCreate = true
+  /// The order worktree rows are listed in under their project. Projects
+  /// may override it in `ProjectSettings`.
+  public var worktreeSortOrder = WorktreeSortOrder.default
+  /// Worktrees with a terminal open or a state reported are listed above
+  /// the rest, each group then in `worktreeSortOrder`. Projects may
+  /// override it. Off by default: a list that reorders itself as agents
+  /// report in is a surprise until it is asked for.
+  public var showsActiveWorktreesFirst = false
   /// Ask before `git worktree remove`. Off is for people who remove
   /// worktrees all day and trust themselves; the default protects everyone
   /// else.
@@ -113,6 +121,13 @@ public struct Workspace: Codable, Hashable, Sendable {
     // field keeps what it said about selecting.
     opensTerminalOnCreate =
       try c.decodeIfPresent(Bool.self, forKey: .opensTerminalOnCreate) ?? opensTerminalOnSelect
+    // `try?`: a state file from a newer build may name an order this build
+    // does not have, and that must not cost the sidebar.
+    worktreeSortOrder =
+      (try? c.decodeIfPresent(WorktreeSortOrder.self, forKey: .worktreeSortOrder))
+      ?? WorktreeSortOrder.default
+    showsActiveWorktreesFirst =
+      try c.decodeIfPresent(Bool.self, forKey: .showsActiveWorktreesFirst) ?? false
     confirmsWorktreeRemoval =
       try c.decodeIfPresent(Bool.self, forKey: .confirmsWorktreeRemoval) ?? true
     deletesBranchWithWorktree =
@@ -241,6 +256,17 @@ extension Workspace {
   /// The same for a worktree just created here.
   public func opensTerminalOnCreate(for project: Project) -> Bool {
     project.settings.opensTerminalOnCreate ?? opensTerminalOnCreate
+  }
+
+  /// The order this project's worktree rows are listed in: the project's
+  /// say when it has one, else the global.
+  public func worktreeSortOrder(for project: Project) -> WorktreeSortOrder {
+    project.settings.worktreeSortOrder ?? worktreeSortOrder
+  }
+
+  /// Whether this project lifts its busy worktrees to the top of its block.
+  public func showsActiveWorktreesFirst(for project: Project) -> Bool {
+    project.settings.showsActiveWorktreesFirst ?? showsActiveWorktreesFirst
   }
 
   /// The shell a new tab in this project runs, or `nil` for `$SHELL`.

@@ -80,8 +80,9 @@ visible with toggles. A repository's `.multishell.json` fills only the gaps
 the user left, because a team default should never override a choice someone
 made. It may also say what a worktree here opens and whether that runs the
 agent, so a team gets one setup rather than each person finding four
-settings; that starts the shell or agent the user themselves chose, so
-unlike a hook it runs nothing the repository wrote and needs no trust.
+settings, and what order its worktree rows come in; those start the shell or
+agent the user themselves chose and change only what is drawn, so unlike a
+hook they run nothing the repository wrote and need no trust.
 
 Its hooks run code on the say of whoever committed the file, so they wait for
 a one-time yes stored with the exact text. The question comes when the user
@@ -305,6 +306,80 @@ the app off screen. Every git command in that directory acts on the branch,
 and a row that hid it would be lying about where the user is; the removal
 dialog names the branch and the path in its body, where the part that cannot
 be undone belongs.
+
+## The trunk row holds the top, whatever the sort says
+
+`WorktreeOrder` sorts a project's rows in bands before it sorts within one:
+git's main worktree, then a linked worktree checked out on the trunk, then —
+only if the user asked — the busy ones, then the rest. The trunk row is what
+every other worktree is read against, and a list that let it drift into
+alphabetical or chronological order would read as a different project each
+time a branch was cut. Two bands rather than one because a bare clone with
+its worktrees beside it is a layout this app's audience favours: there the
+main worktree is the bare repository and the trunk is checked out in a linked
+one, so both belong above the work.
+
+Which branch is the trunk is the same answer the merged badges use,
+`DefaultBranch.branch`, so a project whose trunk is `develop` pins that row
+and lets `main` sort with the rest. Until the first merge scan resolves one
+the order falls back to the names `main` and `master`, which is git's own
+guess and is right nearly always; the cost is that a `develop` project's rows
+can settle once, seconds after launch.
+
+Sorting by creation date needed a date, and git records none: a worktree is a
+directory and a few files under `.git/worktrees`, none of them stamped with
+when the user asked for it. `Worktree.createdAt` is the birth time of the
+directory `git worktree add` made, read off the filesystem in
+`WorktreeService.list` so `WorktreeListParser` stays testable on fixture text
+alone. It is persisted like the branch beside it and, unlike the branch, never
+re-derived from anything: `replaceWorktrees` keeps a date it already had when
+a later listing comes back without one, so a volume that blinked does not cost
+a save, a re-render and a row's place in the order.
+
+Sorting by when a worktree was last committed to is a different date, and it
+is runtime state: a commit moves it, and the workspace must not be rewritten
+because someone committed. The orders are named for the commit rather than
+for the worktree being "updated", because that is exactly what they measure:
+a week of uncommitted work does not move a row. It comes nearly free.
+`for-each-ref` over the whole
+repository already runs once per project on the status poll to resolve the
+trunk and every branch tip, so `%(committerdate:unix)` was appended to that
+format and `BranchScan` hands back both answers from the one read. The dates
+come back even where no trunk could be resolved, which is why that scan is a
+value of its own rather than an optional `MergeScan`: a repository with
+nothing to measure merges against still has branches the sidebar can order.
+
+The "nearly" is that git fails a whole query on a format atom it does not
+know, and the merged badges read this same query. A git too old for
+`%(committerdate:unix)` would therefore have cost every badge, silently, on
+every poll — a new order taking out a feature that already worked. So
+`branchRefs` asks again without the date atom when the first call fails,
+which spends a process only where one had already failed for some reason.
+
+`%(committerdate:unix)` is whole seconds, so two branches committed to in the
+same second cannot be told apart and fall back to the name. That is right for
+a sidebar and wrong for a test: the one that checks a real scan sets
+`GIT_COMMITTER_DATE` rather than racing the clock, because a repository
+built and committed to inside one second gave every branch the same date and
+passed for the wrong reason.
+
+A worktree with no date either way — a directory copied in rather than
+created, a detached checkout with no branch to look a commit time up by, a
+project whose first scan has not answered — sorts last in *both* directions.
+"Oldest created first" is not a claim that an undated worktree is the oldest.
+The name breaks the tie among them, and it is also why the default is
+alphabetical: it is the only order that reads the same on every machine.
+
+"Show active at the top" is off by default. A worktree counts as active while
+it has a terminal open or a state something reported, so with it on the rows
+move as agents report in — welcome once asked for, and startling before.
+
+Both settings are things a repository may ship, because a team that works in
+worktrees tends to agree about how to read the list, and neither runs
+anything. The form therefore seeds an override from what is actually in
+force — `InheritedSetting`, the file's value where it has one — rather than
+from the user's global: seeding from the global would replace what the
+project was already doing with a value nobody was using.
 
 ## Persisted state never loses data, and is repaired rather than trusted
 

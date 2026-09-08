@@ -35,6 +35,27 @@ struct WorktreeSettingsTab: View {
 
       Section {
         InfoRow(
+          "Sort worktrees:",
+          info:
+            "The order worktree rows are listed in under their project. Name goes by the name the row shows, which is the one you gave it where you gave one. Created goes by when the worktree's directory was made, Last commit by the last commit on its branch. A worktree with no date either way — a directory copied in rather than created, a detached checkout with no branch — is listed last. The main worktree, and the one on the default branch, stay at the top whichever order is chosen. Any project can override it."
+        ) {
+          Picker(
+            "Sort worktrees:",
+            selection: model.setting(\.worktreeSortOrder, write: model.setWorktreeSortOrder)
+          ) {
+            ForEach(WorktreeSortOrder.allCases, id: \.self) { Text($0.displayName).tag($0) }
+          }
+        }
+        InfoToggle(
+          "Show active at the top",
+          info:
+            "Worktrees with a terminal open, or with a state an agent or a hook reported, are listed above the rest, each group then in the order above. Rows move as terminals open and close and as agents report in. Any project can override it.",
+          isOn: model.setting(
+            \.showsActiveWorktreesFirst, write: model.setShowsActiveWorktreesFirst))
+      }
+
+      Section {
+        InfoRow(
           "Hook timeout:",
           info:
             "How long a project hook may run before it is stopped and reported, in seconds. A hook that hangs would otherwise hold its worktree until relaunch. Stop Hook on the pane ends one sooner; 0 is no limit."

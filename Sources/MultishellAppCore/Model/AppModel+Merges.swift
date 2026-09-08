@@ -32,12 +32,21 @@ extension AppModel {
     let kept = mergeStates.filter { known.contains($0.key) }
     if kept.count != mergeStates.count { mergeStates = kept }
     mergeChecks = mergeChecks.filter { known.contains($0.key) }
+    let dates = lastCommits.filter { known.contains($0.key) }
+    if dates.count != lastCommits.count { lastCommits = dates }
   }
 
   func refreshMergeStates(of project: Project) async {
     guard let worktrees else { return }
     let override = effectiveSettings(for: project).defaultBranch
-    guard let scan = await worktrees.mergeScan(of: project, defaultBranch: override) else {
+    let branches = await worktrees.scanBranches(of: project, defaultBranch: override)
+    // Gone, or renamed, while git ran.
+    guard workspace.project(project.id) != nil else { return }
+    // Before the base is resolved, and whether or not it can be: the
+    // sidebar orders by these, and a repository with no trunk still has
+    // branches that were committed to.
+    note(branches.lastCommits, asLastCommitsOf: project.id)
+    guard let scan = branches.merges else {
       // No branch to measure against, or one the user named that is not
       // there: drop the badges rather than leave them saying something
       // about a base that no longer applies.
@@ -45,8 +54,6 @@ extension AppModel {
       note(nil, asMergeBaseOf: project.id)
       return
     }
-    // Gone, or renamed, while git ran.
-    guard workspace.project(project.id) != nil else { return }
     note(scan.base, asMergeBaseOf: project.id)
 
     var checks: [Worktree.ID: MergeCheck] = [:]
@@ -90,6 +97,17 @@ extension AppModel {
   /// would redraw every five seconds for nothing.
   private func note(_ base: DefaultBranch?, asMergeBaseOf id: Project.ID) {
     if mergeBases[id] != base { mergeBases[id] = base }
+  }
+
+  /// The scan answers by branch; the sidebar asks by worktree. Written back
+  /// only when something moved, so a tick where nobody committed does not
+  /// re-render the sidebar.
+  private func note(_ dates: [String: Date], asLastCommitsOf id: Project.ID) {
+    var fresh = lastCommits
+    for worktree in workspace.worktrees(of: id) {
+      fresh[worktree.id] = worktree.branch.flatMap { dates[$0] }
+    }
+    if fresh != lastCommits { lastCommits = fresh }
   }
 
   private func forget(_ ids: [Worktree.ID]) {

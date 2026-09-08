@@ -250,3 +250,70 @@ struct WorktreeSettingsExpansionTests {
     #expect(settings.worktreeContainer(for: project).path == "/w/repo/odd~name")
   }
 }
+
+/// The two listing settings resolve project-over-global like the rest; the
+/// forms edit the override, and every reader goes through these.
+@Suite
+struct WorktreeListingResolutionTests {
+  private func project(
+    order: WorktreeSortOrder? = nil, activeFirst: Bool? = nil
+  ) -> Project {
+    var project = Project(path: URL(fileURLWithPath: "/w/demo"))
+    project.settings = ProjectSettings(
+      worktreeSortOrder: order, showsActiveWorktreesFirst: activeFirst)
+    return project
+  }
+
+  @Test func aProjectWithNoOverrideFollowsTheGlobal() {
+    var workspace = Workspace()
+    workspace.worktreeSortOrder = .createdOldestFirst
+    workspace.showsActiveWorktreesFirst = true
+
+    #expect(workspace.worktreeSortOrder(for: project()) == .createdOldestFirst)
+    #expect(workspace.showsActiveWorktreesFirst(for: project()))
+  }
+
+  @Test func aProjectsOwnChoiceWins() {
+    var workspace = Workspace()
+    workspace.worktreeSortOrder = .createdOldestFirst
+    workspace.showsActiveWorktreesFirst = true
+    let overridden = project(order: .committedNewestFirst, activeFirst: false)
+
+    #expect(workspace.worktreeSortOrder(for: overridden) == .committedNewestFirst)
+    #expect(!workspace.showsActiveWorktreesFirst(for: overridden))
+  }
+
+  /// An override that says "off" is not the same as no override: without
+  /// this, turning the global on would drag every project with it.
+  @Test func anOverrideThatMatchesTheOldGlobalStillHolds() {
+    var workspace = Workspace()
+    let overridden = project(order: .alphabetical, activeFirst: false)
+    workspace.worktreeSortOrder = .createdNewestFirst
+    workspace.showsActiveWorktreesFirst = true
+
+    #expect(workspace.worktreeSortOrder(for: overridden) == .alphabetical)
+    #expect(!workspace.showsActiveWorktreesFirst(for: overridden))
+  }
+}
+
+/// The picker in Settings > Worktrees and the override in Project Settings
+/// are built off `allCases`, and its labels are the only thing a view test
+/// would have caught: two orders sharing a label, or one added without one,
+/// give a dropdown with rows the user cannot tell apart.
+@Suite
+struct WorktreeSortOrderLabelTests {
+  @Test func everyOrderHasItsOwnLabel() {
+    let labels = WorktreeSortOrder.allCases.map(\.displayName)
+    #expect(Set(labels).count == labels.count, "two orders share a label")
+    #expect(labels.allSatisfy { !$0.trimmingCharacters(in: .whitespaces).isEmpty })
+  }
+
+  /// Raw values are what the state file holds, so they have to stay
+  /// distinct from each other and stable against a case being reordered.
+  @Test func everyOrderHasItsOwnStoredName() {
+    let stored = WorktreeSortOrder.allCases.map(\.rawValue)
+    #expect(Set(stored).count == stored.count)
+    #expect(WorktreeSortOrder(rawValue: "alphabetical") == .alphabetical)
+    #expect(WorktreeSortOrder.default == .alphabetical)
+  }
+}

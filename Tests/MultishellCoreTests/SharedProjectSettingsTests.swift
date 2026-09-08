@@ -101,6 +101,59 @@ struct SharedProjectSettingsTests {
     #expect(exported.autoStartAgentOnCreate == true && exported.opensTerminalOnSelect == false)
   }
 
+  @Test func aRepositoryMaySayWhatOrderItsWorktreesListInAndTheUsersOwnWins() throws {
+    let shared = try decode(
+      #"{ "worktreeSortOrder": "committedNewestFirst", "showsActiveWorktreesFirst": true }"#)
+    #expect(shared.worktreeSortOrder == .committedNewestFirst)
+    #expect(shared.showsActiveWorktreesFirst == true)
+
+    let blank = ProjectSettings().layered(over: shared)
+    #expect(blank.worktreeSortOrder == .committedNewestFirst, "the gap the user left")
+    #expect(blank.showsActiveWorktreesFirst == true)
+
+    let own = ProjectSettings(
+      worktreeSortOrder: .alphabetical, showsActiveWorktreesFirst: false
+    ).layered(over: shared)
+    #expect(own.worktreeSortOrder == .alphabetical, "the user's choice stands over the file's")
+    #expect(own.showsActiveWorktreesFirst == false)
+
+    // What Export writes back out, so a round trip through the file keeps
+    // the order the project is actually using.
+    let exported = SharedProjectSettings(exporting: blank)
+    #expect(exported.worktreeSortOrder == .committedNewestFirst)
+    #expect(exported.showsActiveWorktreesFirst == true)
+    let written = try decode(String(decoding: try JSONEncoder().encode(exported), as: UTF8.self))
+    #expect(written == exported)
+  }
+
+  /// An order a newer build named, or a typo someone committed, must not
+  /// cost the rest of the file or override the user's own choice.
+  @Test func anOrderTheBuildDoesNotKnowCostsThatKeyOnly() throws {
+    let shared = try decode(
+      #"{ "worktreeSortOrder": "byMergeState", "branchPrefix": "team/" }"#)
+    #expect(shared.worktreeSortOrder == nil)
+    #expect(shared.branchPrefix == "team/")
+    #expect(ProjectSettings().layered(over: shared).worktreeSortOrder == nil, "follows the global")
+
+    let wrongType = try decode(#"{ "worktreeSortOrder": 3 }"#)
+    #expect(wrongType.worktreeSortOrder == nil)
+    let wrongFlag = try decode(
+      #"{ "showsActiveWorktreesFirst": "yes", "worktreeSortOrder": "createdOldestFirst" }"#)
+    #expect(wrongFlag.showsActiveWorktreesFirst == nil)
+    #expect(wrongFlag.worktreeSortOrder == .createdOldestFirst, "the good key survives")
+  }
+
+  /// The raw values travel in a committed file, so they are part of its
+  /// format: this pins every one of them, and fails if a case is renamed
+  /// rather than added.
+  @Test func theStoredNamesAreTheFileFormat() {
+    #expect(
+      WorktreeSortOrder.allCases.map(\.rawValue) == [
+        "alphabetical", "createdNewestFirst", "createdOldestFirst", "committedNewestFirst",
+        "committedOldestFirst",
+      ])
+  }
+
   @Test func aFlagOfTheWrongTypeCostsThatFlagOnly() throws {
     let shared = try decode(#"{ "autoStartAgent": "yes", "opensTerminalOnCreate": false }"#)
     #expect(shared.autoStartAgent == nil)
