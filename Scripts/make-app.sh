@@ -56,6 +56,27 @@ cat > "$app/Contents/Info.plist" <<PLIST
     <key>CFBundleIconFile</key><string>Multishell</string>
     <key>LSMinimumSystemVersion</key><string>14.0</string>
     <key>NSHighResolutionCapable</key><true/>
+    <!-- What macOS puts under its own line in the permission alert. A
+         terminal reaches these places because a command run in one did, and
+         the alert names this app rather than that command: macOS holds the
+         app that spawned a process responsible for what the process reads.
+         Without a string here the alert offers the user no reason at all. -->
+    <key>NSNetworkVolumesUsageDescription</key>
+    <string>A command you ran in a Multishell terminal is reading files on a network volume.</string>
+    <key>NSRemovableVolumesUsageDescription</key>
+    <string>A command you ran in a Multishell terminal is reading files on a removable volume.</string>
+    <key>NSDesktopFolderUsageDescription</key>
+    <string>A command you ran in a Multishell terminal is reading files on your Desktop.</string>
+    <key>NSDocumentsFolderUsageDescription</key>
+    <string>A command you ran in a Multishell terminal is reading files in your Documents folder.</string>
+    <key>NSDownloadsFolderUsageDescription</key>
+    <string>A command you ran in a Multishell terminal is reading files in your Downloads folder.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>A command you ran in a Multishell terminal is reading your photo library.</string>
+    <key>NSAppleMusicUsageDescription</key>
+    <string>A command you ran in a Multishell terminal is reading your media library.</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Multishell asks the system to install its command line tool, which needs an administrator.</string>
     <!-- The pasteboard type a dragged tab carries. Declared so macOS knows
          it is ours; see TabTransfer. -->
     <key>UTExportedTypeDeclarations</key>
@@ -70,8 +91,42 @@ cat > "$app/Contents/Info.plist" <<PLIST
 </plist>
 PLIST
 
-# Ad-hoc signing: unsigned bundles are killed on launch on Apple silicon.
-codesign --force --sign - "$app/Contents/Helpers/multishell" >/dev/null 2>&1 || true
-codesign --force --sign - "$app" >/dev/null 2>&1 || true
+# Signing. An unsigned bundle is killed on launch on Apple silicon, so this is
+# not optional, but which identity signs decides whether the app keeps the
+# privacy permissions the user granted it. TCC keys a grant to the signature's
+# designated requirement, and an ad-hoc signature's requirement is a bare
+# cdhash: it changes with every build, so each install asks again for the
+# volumes and folders a terminal reaches, and the App Management box the user
+# ticked stops matching and silently denies. A certificate makes the
+# requirement name the certificate, which outlives a rebuild.
+# Scripts/make-signing-identity.sh creates it; ad-hoc is the fallback so a
+# fresh clone still builds.
+identity="${MULTISHELL_SIGN_IDENTITY:-Multishell Dev}"
+if [ "$identity" != "-" ] && ! security find-certificate -c "$identity" >/dev/null 2>&1; then
+    echo "note: no '$identity' certificate; signing ad hoc, so macOS will ask" >&2
+    echo "      for file permissions again after this install. Create one:" >&2
+    echo "      make signing-identity" >&2
+    identity="-"
+fi
+
+sign() {
+    if output="$(codesign --force --sign "$identity" "$1" 2>&1)"; then
+        return
+    fi
+    if [ "$identity" = "-" ]; then
+        echo "warning: ad-hoc signing $1 failed, and macOS kills an unsigned" >&2
+        echo "         bundle on launch: $output" >&2
+        return
+    fi
+    # Worth the noise: a silent fall back to ad hoc is what the certificate
+    # exists to avoid, and the reason is the only way to fix it.
+    echo "warning: signing $1 as '$identity' failed; signing ad hoc" >&2
+    echo "         $output" >&2
+    codesign --force --sign - "$1" >/dev/null 2>&1 || true
+}
+
+sign "$app/Contents/Helpers/multishell"
+sign "$app"
+codesign --verify "$app" || echo "warning: $app is not validly signed" >&2
 
 echo "built $app ($version)"

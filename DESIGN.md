@@ -505,6 +505,26 @@ whose directory is gone stays dimmed rather than dropped, since an unmounted
 drive must not delete someone's setup, and the failure is reported once
 because every tick would re-raise it.
 
+## A local build is signed by a certificate, not ad hoc
+
+A terminal is blamed for what runs in it: macOS holds the spawning app
+responsible for what a process reads, so an alert about a command in a pane
+names Multishell, which was idle. Hence the usage strings in the Info.plist,
+the only place that can say a command asked. And hence a certificate rather
+than ad hoc, since a grant is keyed to the signature's designated requirement
+and an ad-hoc one is a bare cdhash: every build asked again for everything,
+and a box already ticked in System Settings stopped matching and denied in
+silence.
+
+Cost: a setup step before the first build, and a certificate nothing else
+trusts, so it buys nothing towards distribution. App Management is out of
+reach either way, never prompted for and only denied.
+
+Disclaiming the child instead, so an alert named the program that asked, would
+mean owning the pty spawn — SwiftTerm forks and execs, libghostty spawns
+inside the xcframework — and the name would then be an unsigned binary, which
+TCC refuses rather than asks about.
+
 ## Smaller decisions
 
 - Sessions warm up when visited, since a saved workspace could imply dozens

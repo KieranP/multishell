@@ -10,21 +10,27 @@ Xcode 26 with Swift 6, selected if only the command line tools are active:
 
 ## Build, test, run
 
-    make test        # libraries and model, then the Mac hosts
-    make test-app    # compile the macOS app without bundling
-    make build       # -> build/Multishell.app; CONFIG=release for optimised
-    make run         # build and open it
-    make install     # release build to /Applications (INSTALL_DIR= to change)
-    make format      # rewrite to the project style; run before reading a diff
-    make lint        # what CI runs, --strict: a warning fails
+    make signing-identity  # once per machine, before the first build
+    make test              # libraries and model, then the Mac hosts
+    make test-app          # compile the macOS app without bundling
+    make build             # -> build/Multishell.app; CONFIG=release for optimised
+    make run               # build and open it
+    make install           # release build to /Applications (INSTALL_DIR= to change)
+    make format            # rewrite to the project style; run before reading a diff
+    make lint              # what CI runs, --strict: a warning fails
 
 `Scripts/make-app.sh` wraps the SwiftPM binary in a bundle, copies SwiftPM's
 resource bundles into `Contents/Resources` (libghostty's terminfo has to be
-there), builds the `multishell` helper into `Contents/Helpers`, and ad-hoc
-signs both. The version it writes into the bundle is the commit it built
-from, so an About panel screenshot in a bug report names the code; a build
-from a modified tree is marked `-dirty`. The first app build downloads the
+there), builds the `multishell` helper into `Contents/Helpers`, and signs
+both. The version it writes into the bundle is the commit it built from, so
+an About panel screenshot in a bug report names the code; a build from a
+modified tree is marked `-dirty`. The first app build downloads the
 libghostty xcframework, about 80 MB.
+
+`make signing-identity` creates the self-signed `Multishell Dev` certificate
+`make-app.sh` signs with; without it it signs ad hoc and says so. Not for
+distribution — nothing else trusts it — but so the permissions the user grants
+survive a rebuild. See Permissions macOS asks for.
 
 CI builds and tests the libraries on macOS, the app the same, then runs
 `make lint`. Nothing compiles the libraries without a GUI framework any
@@ -180,6 +186,40 @@ adding one to `SharedProjectSettings` also means a line in
 `ProjectSettings.layered`, a decode that costs the key and not the file, and
 a form that seeds its override from `InheritedSetting` rather than from the
 global.
+
+## Permissions macOS asks for
+
+macOS holds the app that spawned a process responsible for what it reads, so
+an alert provoked by a command in a pane names Multishell. The usage strings
+in `make-app.sh`'s Info.plist are the only place that can say otherwise;
+extend them when a pane starts reaching somewhere new.
+
+A grant is keyed to the signature's designated requirement, so an ad-hoc
+build's bare cdhash loses every permission at each rebuild and a certificate
+keeps them. What a build will be remembered by:
+
+    codesign -d -r- build/Multishell.app
+
+App Management and Full Disk Access are never prompted for, only denied:
+`tccd` logs `does not allow prompting for unentitled binaries` and the user
+gets "was prevented from modifying apps on your Mac", a notice with no button.
+They are added by hand in System Settings. Anything a pane runs that writes
+inside an app bundle needs the first, a `make install` of this app included.
+
+A record the requirement no longer matches is ignored rather than consulted,
+so a changed identity is simply asked about again. `tccutil reset
+SystemPolicyNetworkVolumes io.multishell.app` is for a remembered no, which is
+not revisited, or for tidying what the Settings pane shows. Its service names
+are the log's less the `kTCCService` prefix, so App Management is
+`SystemPolicyAppBundles`.
+
+Which command actually asked, and for what:
+
+    log show --last 1h --predicate 'subsystem == "com.apple.TCC"' --style compact \
+        | grep -i multishell
+
+`AUTHREQ_ATTRIBUTION` names the `accessing` process beside `responsible`,
+which is always this app.
 
 ## Dependencies worth knowing about
 

@@ -5,7 +5,11 @@ CONFIG ?= debug
 APP     = build/Multishell.app
 INSTALL_DIR ?= /Applications
 
-.PHONY: build release test test-app lint format install run clean
+.PHONY: build release test test-app lint format install run clean signing-identity
+
+## Once per machine: the certificate that keeps the app's privacy permissions.
+signing-identity:
+	Scripts/make-signing-identity.sh
 
 ## Build the app bundle (debug). `make build CONFIG=release` for optimised.
 build:
