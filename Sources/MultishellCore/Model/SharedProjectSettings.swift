@@ -11,7 +11,8 @@ import Foundation
 /// text; see `SharedHooksDecision`. Nothing else here runs anything the
 /// repository wrote: what a worktree opens starts the shell or the agent
 /// the user themselves chose, and only where they left the choice to the
-/// global.
+/// global, and the copy list only duplicates files already in the
+/// checkout.
 public struct SharedProjectSettings: Equatable, Sendable {
   public var worktreeDirectory: String?
   public var branchPrefix: String?
@@ -26,6 +27,11 @@ public struct SharedProjectSettings: Equatable, Sendable {
   public var postCreateHook: String?
   public var preDeleteHook: String?
   public var postDeleteHook: String?
+  /// Paths a new worktree is given a copy of, one per line. It copies
+  /// inside the checkout the user already has and runs nothing, so unlike
+  /// the hooks above it needs no trust; `WorktreeCopier` refuses a path
+  /// that would reach outside the repository.
+  public var copiedPaths: String?
   /// What order a project's worktree rows come in: a team may ship "our
   /// worktrees list by what was committed to last". Display only, so like
   /// the settings above and unlike the hooks it runs nothing the
@@ -49,6 +55,7 @@ public struct SharedProjectSettings: Equatable, Sendable {
     postCreateHook: String? = nil,
     preDeleteHook: String? = nil,
     postDeleteHook: String? = nil,
+    copiedPaths: String? = nil,
     worktreeSortOrder: WorktreeSortOrder? = nil,
     showsActiveWorktreesFirst: Bool? = nil,
     iconGlyph: String? = nil,
@@ -65,6 +72,7 @@ public struct SharedProjectSettings: Equatable, Sendable {
     self.postCreateHook = Self.text(postCreateHook)
     self.preDeleteHook = Self.text(preDeleteHook)
     self.postDeleteHook = Self.text(postDeleteHook)
+    self.copiedPaths = Self.text(copiedPaths)
     self.worktreeSortOrder = worktreeSortOrder
     self.showsActiveWorktreesFirst = showsActiveWorktreesFirst
     self.iconGlyph = Self.text(iconGlyph)
@@ -100,6 +108,7 @@ public struct SharedProjectSettings: Equatable, Sendable {
       postCreateHook: settings.postCreateHook,
       preDeleteHook: settings.preDeleteHook,
       postDeleteHook: settings.postDeleteHook,
+      copiedPaths: settings.copiedPaths,
       worktreeSortOrder: settings.worktreeSortOrder,
       showsActiveWorktreesFirst: settings.showsActiveWorktreesFirst,
       iconGlyph: settings.iconGlyph,
@@ -142,7 +151,7 @@ extension SharedProjectSettings: Codable {
   private enum CodingKeys: String, CodingKey {
     case worktreeDirectory, branchPrefix, defaultBranch, autoStartAgent, autoStartAgentOnCreate,
       opensTerminalOnSelect, opensTerminalOnCreate, preCreateHook, postCreateHook, preDeleteHook,
-      postDeleteHook, worktreeSortOrder, showsActiveWorktreesFirst, iconGlyph, iconTint
+      postDeleteHook, copiedPaths, worktreeSortOrder, showsActiveWorktreesFirst, iconGlyph, iconTint
   }
 
   public func encode(to encoder: any Encoder) throws {
@@ -158,6 +167,7 @@ extension SharedProjectSettings: Codable {
     try c.encodeIfPresent(postCreateHook, forKey: .postCreateHook)
     try c.encodeIfPresent(preDeleteHook, forKey: .preDeleteHook)
     try c.encodeIfPresent(postDeleteHook, forKey: .postDeleteHook)
+    try c.encodeIfPresent(copiedPaths, forKey: .copiedPaths)
     try c.encodeIfPresent(worktreeSortOrder, forKey: .worktreeSortOrder)
     try c.encodeIfPresent(showsActiveWorktreesFirst, forKey: .showsActiveWorktreesFirst)
     try c.encodeIfPresent(iconGlyph, forKey: .iconGlyph)
@@ -185,6 +195,7 @@ extension SharedProjectSettings: Codable {
       postCreateHook: string(.postCreateHook),
       preDeleteHook: string(.preDeleteHook),
       postDeleteHook: string(.postDeleteHook),
+      copiedPaths: string(.copiedPaths),
       // An order a newer build named, or a typo someone committed, costs
       // the key and leaves the user's own choice in force.
       worktreeSortOrder: (try? c.decodeIfPresent(

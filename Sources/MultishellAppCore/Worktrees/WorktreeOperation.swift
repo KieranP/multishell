@@ -9,13 +9,14 @@ import MultishellProcess
 /// Only the pre-create hook and `git worktree add` still run under the
 /// sheet: until they finish there is no worktree to show.
 ///
-/// A hook that fails while the worktree is still there, the post-create
-/// hook or a pre-delete veto, leaves the entry in place with `failure` set:
-/// the pane shows what the hook said until the user dismisses it. An alert
+/// A stage that fails while the worktree is still there, the copy, the
+/// post-create hook or a pre-delete veto, leaves the entry with `failure`:
+/// the pane shows what went wrong until the user dismisses it. An alert
 /// would go up over whatever the user had moved on to, or be lost under the
 /// sheet's own dismissal when the hook fails at once.
 public struct WorktreeOperation: Equatable, Sendable {
   public enum Step: Equatable, Sendable {
+    case copyingFiles
     case postCreateHook
     case preDeleteHook
     case removingWorktree
@@ -62,6 +63,7 @@ public struct WorktreeOperation: Equatable, Sendable {
   public var title: String {
     if failure != nil {
       switch step {
+      case .copyingFiles: return "Some files were not copied into the worktree"
       case .postCreateHook:
         return timedOut ? "The post-create hook did not finish" : "The post-create hook failed"
       case .preDeleteHook:
@@ -73,6 +75,7 @@ public struct WorktreeOperation: Equatable, Sendable {
       }
     }
     switch step {
+    case .copyingFiles: return "Copying files into the worktree…"
     case .postCreateHook: return "Running the post-create hook…"
     case .preDeleteHook: return "Running the pre-delete hook…"
     case .removingWorktree: return "Moving the worktree to the Trash…"
@@ -86,6 +89,11 @@ public struct WorktreeOperation: Equatable, Sendable {
   public var detail: String {
     if failure != nil {
       switch step {
+      case .copyingFiles:
+        // Not "the hook did not run": a project may list files and have no
+        // hook, and this is the pane for that one too.
+        return
+          "The worktree was created, and nothing else ran in it. Dismiss to open its first terminal."
       case .postCreateHook:
         return "The worktree was created. Dismiss to open its first terminal."
       case .preDeleteHook:
@@ -95,6 +103,7 @@ public struct WorktreeOperation: Equatable, Sendable {
       }
     }
     switch step {
+    case .copyingFiles: return "The first terminal opens here when it finishes."
     case .postCreateHook: return "The first terminal opens here when it finishes."
     case .preDeleteHook: return "The worktree stays if the hook refuses."
     case .removingWorktree, .postDeleteHook, .deletingBranch:

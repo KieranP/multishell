@@ -40,13 +40,93 @@ struct AppModelHookControlTests {
 
     await h.model.createWorktree(branch: "slow", basedOn: nil, createBranch: true, in: h.project)
     let created = try #require(h.worktree(onBranch: "slow"))
-    await h.model.postCreateHooks[created.id]?.value
+    await h.model.worktreeSetups[created.id]?.value
 
     #expect(ContinuousClock.now - started < .seconds(10))
     let failed = try #require(h.model.worktreeOperations[created.id])
     #expect(failed.timedOut && failed.title == "The post-create hook did not finish")
     #expect(failed.failure == "installing\n\nStopped after 1 second, the hook timeout.")
     #expect(h.model.workspace.tabs(in: created.id).isEmpty, "held back until dismissed")
+  }
+
+  /// The copy runs between `git worktree add` and the hook, so the hook
+  /// finds what it was given: an `npm install` wants the `.env` first.
+  @Test func listedFilesAreCopiedInBeforeThePostCreateHookRuns() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    try "SECRET=1".write(
+      to: h.project.path.appendingPathComponent(".env"), atomically: true, encoding: .utf8)
+    h.model.updateSettings(
+      ProjectSettings(postCreateHook: "cp .env seen.txt", copiedPaths: ".env\nmissing.env"),
+      for: h.project)
+
+    await h.model.createWorktree(branch: "copied", basedOn: nil, createBranch: true, in: h.project)
+    let created = try #require(h.worktree(onBranch: "copied"))
+    await h.model.worktreeSetups[created.id]?.value
+
+    #expect(h.model.presentedError == nil, "a path the repository does not have is skipped")
+    #expect(
+      try String(contentsOf: created.path.appendingPathComponent("seen.txt"), encoding: .utf8)
+        == "SECRET=1")
+  }
+
+  /// A copy list runs nothing, so unlike the hooks beside it in the file
+  /// it does not wait for the trust question.
+  @Test func aRepositorysCopyListAppliesWithoutTheTrustQuestion() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    try "SECRET=1".write(
+      to: h.project.path.appendingPathComponent(".env"), atomically: true, encoding: .utf8)
+    try #"{ "copiedPaths": ".env", "postCreateHook": "echo ran > hook.txt" }"#
+      .write(
+        to: SharedProjectSettings.file(in: h.project.path), atomically: true, encoding: .utf8)
+    await h.model.refresh(h.project)
+
+    await h.model.createWorktree(branch: "shared", basedOn: nil, createBranch: true, in: h.project)
+    let created = try #require(h.worktree(onBranch: "shared"))
+    await h.model.worktreeSetups[created.id]?.value
+
+    #expect(
+      FileManager.default.fileExists(atPath: created.path.appendingPathComponent(".env").path),
+      "the copy list applied")
+    #expect(
+      !FileManager.default.fileExists(atPath: created.path.appendingPathComponent("hook.txt").path),
+      "the hook beside it in the same file still waited to be trusted")
+    #expect(h.model.worktreeOperations[created.id] == nil, "the copy stage ended")
+    #expect(
+      !h.model.workspace.tabs(in: created.id).isEmpty,
+      "and the first terminal opened once it had, with no hook to wait for")
+  }
+
+  /// The alert would be raised as the sheet went away, which is where one
+  /// gets dropped, so a failed copy goes to the pane and holds the tab.
+  @Test func aFailedCopyShowsInThePaneAndKeepsThePostCreateHookFromRunning() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let outside = h.root.appendingPathComponent("outside")
+    try FileManager.default.createDirectory(at: outside, withIntermediateDirectories: true)
+    try "SECRET=1".write(
+      to: outside.appendingPathComponent("key"), atomically: true, encoding: .utf8)
+    h.model.updateSettings(
+      ProjectSettings(postCreateHook: "echo ran > hook.txt", copiedPaths: "../outside/key"),
+      for: h.project)
+
+    await h.model.createWorktree(branch: "escaped", basedOn: nil, createBranch: true, in: h.project)
+    let created = try #require(h.worktree(onBranch: "escaped"))
+    await h.model.worktreeSetups[created.id]?.value
+
+    #expect(h.model.presentedError == nil, "not an alert the sheet's dismissal would drop")
+    let shown = try #require(h.model.worktreeOperations[created.id])
+    #expect(shown.title == "Some files were not copied into the worktree")
+    #expect(shown.failure?.contains("../outside/key") == true)
+    #expect(
+      !FileManager.default.fileExists(
+        atPath: created.path.appendingPathComponent("hook.txt").path),
+      "the hook did not run")
+    #expect(h.model.workspace.tabs(in: created.id).isEmpty, "held back until dismissed")
+
+    h.model.dismissOperationFailure(of: created)
+    #expect(h.model.worktreeOperations[created.id] == nil)
   }
 
   @Test func stopHookEndsAPostCreateHookAndHandsTheWorktreeOver() async throws {
@@ -58,7 +138,7 @@ struct AppModelHookControlTests {
     let created = try #require(h.worktree(onBranch: "stopped"))
     #expect(h.model.worktreeOperations[created.id]?.isRunning == true)
     h.model.stopHook(of: created)
-    await h.model.postCreateHooks[created.id]?.value
+    await h.model.worktreeSetups[created.id]?.value
 
     #expect(h.model.worktreeOperations[created.id] == nil, "nothing to dismiss")
     #expect(h.model.presentedError == nil)
@@ -186,7 +266,7 @@ struct AppModelHookControlTests {
     await h.model.createWorktree(branch: "a", basedOn: nil, createBranch: true, in: h.project)
     #expect(h.model.pendingSharedHooksTrust == nil, "the sheet is still going away then")
     let a = try #require(h.worktree(onBranch: "team/a"))
-    #expect(h.model.postCreateHooks[a.id] == nil)
+    #expect(h.model.worktreeSetups[a.id] == nil)
     #expect(!FileManager.default.fileExists(atPath: a.path.appendingPathComponent("hook.txt").path))
 
     h.model.decideSharedHooks(pending, trusted: true)
@@ -194,7 +274,7 @@ struct AppModelHookControlTests {
     #expect(h.model.trustsSharedHooks(of: h.project))
     await h.model.createWorktree(branch: "b", basedOn: nil, createBranch: true, in: h.project)
     let b = try #require(h.worktree(onBranch: "team/b"))
-    await h.model.postCreateHooks[b.id]?.value
+    await h.model.worktreeSetups[b.id]?.value
     #expect(FileManager.default.fileExists(atPath: b.path.appendingPathComponent("hook.txt").path))
 
     // The user's own prefix wins; a changed hook asks again.
@@ -278,7 +358,9 @@ struct AppModelHookControlTests {
     let h = try await GitHarness()
     defer { h.tearDown() }
     h.model.updateSettings(
-      ProjectSettings(branchPrefix: "team/", postCreateHook: "npm ci", iconGlyph: "🚀", iconTint: 3),
+      ProjectSettings(
+        branchPrefix: "team/", postCreateHook: "npm ci", copiedPaths: ".env\n.env.*",
+        iconGlyph: "🚀", iconTint: 3),
       for: h.project)
 
     h.model.exportSharedSettings(for: h.project)
@@ -286,6 +368,8 @@ struct AppModelHookControlTests {
     let written = try #require(try SharedProjectSettings.load(from: h.project.path))
     #expect(written.branchPrefix == "team/" && written.postCreateHook == "npm ci")
     #expect(written.iconGlyph == "🚀" && written.iconTint == 3)
+    #expect(written.copiedPaths == ".env\n.env.*", "the copy list travels with the hooks")
+    #expect(written.hooksText?.contains(".env") != true, "but is not part of the hook question")
     #expect(written.worktreeDirectory == nil, "following the global is not exported")
     #expect(h.model.sharedSettings[h.project.id] == written)
     #expect(h.model.pendingSharedHooksTrust == nil, "the hooks are the user's own words")

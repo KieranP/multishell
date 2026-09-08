@@ -69,7 +69,7 @@ struct AppModelGitTests {
     let created = try #require(h.worktree(onBranch: "hooked"))
     #expect(h.model.workspace.selectedWorktreeID == created.id, "shown before the hook ends")
     h.model.presentedError = nil
-    await h.model.postCreateHooks[created.id]?.value
+    await h.model.worktreeSetups[created.id]?.value
 
     // In the pane, not an alert: an alert raised while the sheet is still
     // going away is lost, and one raised later lands over other work.
@@ -95,7 +95,7 @@ struct AppModelGitTests {
 
     await h.model.createWorktree(branch: "loud", basedOn: nil, createBranch: true, in: h.project)
     let created = try #require(h.worktree(onBranch: "loud"))
-    await h.model.postCreateHooks[created.id]?.value
+    await h.model.worktreeSetups[created.id]?.value
 
     #expect(
       h.model.worktreeOperations[created.id]?.failure
@@ -132,7 +132,7 @@ struct AppModelGitTests {
     h.model.requestRemoval(of: created)
     #expect(h.model.pendingRemoval == nil, "and nothing removes it meanwhile")
 
-    await h.model.postCreateHooks[created.id]?.value
+    await h.model.worktreeSetups[created.id]?.value
 
     #expect(h.model.presentedError == nil)
     #expect(h.model.worktreeOperations.isEmpty)
@@ -151,7 +151,7 @@ struct AppModelGitTests {
     let main = try #require(h.worktree(onBranch: "main"))
     h.model.select(main)
 
-    await h.model.postCreateHooks[created.id]?.value
+    await h.model.worktreeSetups[created.id]?.value
 
     #expect(h.model.workspace.tabs(in: created.id).isEmpty, "not opened behind the user's back")
     #expect(h.model.workspace.selectedWorktreeID == main.id)
@@ -334,7 +334,7 @@ struct AppModelGitTests {
     await h.model.createWorktree(branch: "bashed", basedOn: nil, createBranch: true, in: h.project)
 
     let created = try #require(h.worktree(onBranch: "bashed"))
-    await h.model.postCreateHooks[created.id]?.value
+    await h.model.worktreeSetups[created.id]?.value
     let version = try String(
       contentsOf: created.path.appendingPathComponent("shell.txt"), encoding: .utf8)
     #expect(!version.isEmpty, "the project's bash, not the global zsh")
@@ -348,7 +348,7 @@ struct AppModelGitTests {
     let started = ContinuousClock.now
     await h.model.createWorktree(branch: "served", basedOn: nil, createBranch: true, in: h.project)
     let created = try #require(h.worktree(onBranch: "served"))
-    await h.model.postCreateHooks[created.id]?.value
+    await h.model.worktreeSetups[created.id]?.value
     let elapsed = ContinuousClock.now - started
 
     #expect(h.model.presentedError == nil)
@@ -478,6 +478,6 @@ struct AppModelGitTests {
     #expect(!seen.contains(.postCreateHook), "the post hook runs after the sheet has gone")
     #expect(h.model.worktreeCreationStep == nil, "cleared once the sheet's part is over")
     let created = try #require(h.worktree(onBranch: "stepped"))
-    await h.model.postCreateHooks[created.id]?.value
+    await h.model.worktreeSetups[created.id]?.value
   }
 }

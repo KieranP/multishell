@@ -91,28 +91,86 @@ extension AppModel {
       let created = workspace.worktree(path.standardizedFileURL.path)
         ?? workspace.worktrees(of: project.id).first(where: { $0.branch == name })
     else { return }
-    if WorktreeHooks.hasScript(resolved.settings.postCreateHook) {
-      worktreeOperations.begin(.postCreateHook, on: created.id)
+    // The copy and the hook run in the pane, not under the sheet: a build
+    // cache is not something to hold the window for, and the pane is where
+    // a failure can still be read once the sheet has gone.
+    let copies = !WorktreeCopier.paths(in: resolved.settings.copiedPaths).isEmpty
+    let hasHook = WorktreeHooks.hasScript(resolved.settings.postCreateHook)
+    if copies || hasHook {
+      worktreeOperations.begin(copies ? .copyingFiles : .postCreateHook, on: created.id)
       // Made here, not in the task: a Stop Hook clicked before the task has
       // run would otherwise find nothing to stop.
       let stopper = ProcessStopper()
       hookStoppers[created.id] = stopper
-      postCreateHooks[created.id] = Task {
-        await runPostCreateHook(
-          for: created, branch: name, in: resolved, shellPath: shell, stopper: stopper)
+      worktreeSetups[created.id] = Task {
+        await prepareWorktree(
+          created, branch: name, in: resolved, shellPath: shell, stopper: stopper,
+          copying: copies, runningHook: hasHook)
       }
     }
     select(created, openingFirstTab: .onCreate, byUser: false)
+  }
+
+  /// What a new worktree gets before its first terminal: the copy list,
+  /// then the post-create hook, as one pane operation moving through its
+  /// stages. A copy that fails stops there, since a hook written to use
+  /// the files it was promised turns one clear failure into a confusing
+  /// second one.
+  private func prepareWorktree(
+    _ worktree: Worktree, branch: String, in project: Project, shellPath: String?,
+    stopper: ProcessStopper, copying: Bool, runningHook: Bool
+  ) async {
+    if copying {
+      if let failure = await copyListedFiles(into: worktree.path, for: project) {
+        endSetup(of: worktree, stopper: stopper)
+        let shownInPane =
+          workspace.worktree(worktree.id) != nil
+          && worktreeOperations.fail(
+            .copyingFiles, on: worktree.id, message: PresentedError(failure).message)
+        if !shownInPane { report(failure) }
+        return
+      }
+      guard runningHook else {
+        endSetup(of: worktree, stopper: stopper)
+        // A removal that began meanwhile owns the entry now.
+        if worktreeOperations.finish(.copyingFiles, on: worktree.id) {
+          openHeldBackTab(of: worktree)
+        }
+        return
+      }
+      worktreeOperations.advance(to: .postCreateHook, on: worktree.id)
+    }
+    await runPostCreateHook(
+      for: worktree, branch: branch, in: project, shellPath: shellPath, stopper: stopper)
+  }
+
+  /// Lets go of the task and its stop handle, whichever stage ended.
+  private func endSetup(of worktree: Worktree, stopper: ProcessStopper) {
+    worktreeSetups[worktree.id] = nil
+    if hookStoppers[worktree.id] === stopper { hookStoppers[worktree.id] = nil }
+  }
+
+  /// The project's copy list, before the post-create hook, so the hook and
+  /// the first terminal both find the files. Returns what went wrong
+  /// rather than throwing, since the stage it belongs to is the caller's.
+  /// Off the main thread: a list may name a build cache.
+  private func copyListedFiles(into path: URL, for project: Project) async -> (any Error)? {
+    guard let worktrees else { return nil }
+    return await Self.offMain {
+      do {
+        try worktrees.copyFiles(for: project, into: path)
+        return nil
+      } catch {
+        return error
+      }
+    }
   }
 
   private func runPostCreateHook(
     for worktree: Worktree, branch: String, in project: Project, shellPath: String?,
     stopper: ProcessStopper
   ) async {
-    defer {
-      postCreateHooks[worktree.id] = nil
-      if hookStoppers[worktree.id] === stopper { hookStoppers[worktree.id] = nil }
-    }
+    defer { endSetup(of: worktree, stopper: stopper) }
     do {
       try await worktrees?.runPostCreate(
         for: project, worktreePath: worktree.path, branch: branch, shellPath: shellPath,

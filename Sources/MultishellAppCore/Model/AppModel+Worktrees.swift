@@ -88,7 +88,9 @@ extension AppModel {
   /// failure hands over the way a finished hook does: the first tab opens.
   public func dismissOperationFailure(of worktree: Worktree) {
     guard let operation = worktreeOperations.dismiss(worktree.id) else { return }
-    if operation.step == .postCreateHook { openHeldBackTab(of: worktree) }
+    if operation.step == .postCreateHook || operation.step == .copyingFiles {
+      openHeldBackTab(of: worktree)
+    }
   }
 
   /// The pane's Stop Hook: ends the hook running on the worktree, which

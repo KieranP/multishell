@@ -3,11 +3,12 @@ import MultishellCore
 import MultishellGitKit
 import SwiftUI
 
-/// Four scripts, grouped by the operation they surround. Each is a small
-/// monospaced editor, since a hook of any substance has more than one line.
+/// Four scripts and the list of files a new worktree is given, grouped by
+/// the operation they surround. Each is a small monospaced editor, since a
+/// hook of any substance has more than one line.
 /// Where the repository's `.multishell.json` has a hook and the user's is
-/// blank, the editor shows the repository's as its placeholder, and a
-/// section above says whether those hooks are trusted.
+/// blank, the editor shows the repository's in grey, and a section above
+/// says whether those hooks are trusted.
 struct ProjectHooksTab: View {
   let model: AppModel
   let project: Project
@@ -23,34 +24,37 @@ struct ProjectHooksTab: View {
       }
 
       Section("Create") {
-        HookEditor(
+        MonospacedEditor(
           title: "Pre-create",
           info:
             "Runs in the repository before git worktree add, with MULTISHELL_WORKTREE_PATH set to the planned path. A non-zero exit stops the create; git is never asked.",
-          placeholder: shared?.preCreateHook
-            ?? "test -n \"$TICKET\" || { echo 'set TICKET first' >&2; exit 1; }",
+          placeholder: shared?.preCreateHook,
           text: model.setting(\.preCreateHook, of: project))
-        HookEditor(
+        MonospacedEditor(
+          title: "Copy into new worktrees",
+          info:
+            "Copied out of the repository after git worktree add, before the post-create hook, so the hook and the first terminal both find them. One path per line, relative to the repository root; a folder is copied whole. A name may be a pattern: * for any run of characters and ? for one, neither crossing a /, so .env.* takes .env.local and .env.test. A pattern matches a name starting with a dot only when it spells the dot, as a shell does. A path the repository does not have, or one git already put in the worktree, is skipped, and a path leading outside the repository or the worktree is not copied and is named afterwards. A list in \(SharedProjectSettings.fileName) fills a blank one here without being trusted first, since copying runs nothing.",
+          placeholder: shared?.copiedPaths,
+          text: model.setting(\.copiedPaths, of: project))
+        MonospacedEditor(
           title: "Post-create",
           info:
             "Runs in the new worktree after git worktree add. A failure is reported; the worktree stays.",
-          placeholder: shared?.postCreateHook
-            ?? "npm install\ncp \"$MULTISHELL_PROJECT_PATH/.env\" .",
+          placeholder: shared?.postCreateHook,
           text: model.setting(\.postCreateHook, of: project))
       }
 
       Section("Delete") {
-        HookEditor(
+        MonospacedEditor(
           title: "Pre-delete",
           info:
             "Runs in the worktree before git worktree remove, after the confirmation. A non-zero exit stops the removal; the worktree stays.",
-          placeholder: shared?.preDeleteHook
-            ?? "test -z \"$(git log @{upstream}.. 2>/dev/null)\" || exit 1",
+          placeholder: shared?.preDeleteHook,
           text: model.setting(\.preDeleteHook, of: project))
-        HookEditor(
+        MonospacedEditor(
           title: "Post-delete",
           info: "Runs in the repository after git worktree remove, once the directory is gone.",
-          placeholder: shared?.postDeleteHook ?? "Optional shell script",
+          placeholder: shared?.postDeleteHook,
           text: model.setting(\.postDeleteHook, of: project))
       }
 
@@ -78,7 +82,7 @@ struct ProjectHooksTab: View {
   }
 
   /// The repository's hooks run only once trusted, and a change to them
-  /// asks again; the placeholders above show what they are.
+  /// asks again; the grey text in the editors above is what they are.
   private func sharedHooksSection(_ shared: SharedProjectSettings, project: Project) -> some View {
     let trusted = model.trustsSharedHooks(of: project)
     return Section {
@@ -86,7 +90,7 @@ struct ProjectHooksTab: View {
         Text(
           trusted
             ? "Its hooks run where yours are blank."
-            : "Its hooks are shown as placeholders and do not run.")
+            : "Its hooks are shown in grey above and do not run.")
         Spacer()
         Button(trusted ? "Stop Trusting" : "Trust Hooks") {
           model.setTrustsSharedHooks(!trusted, for: project)
@@ -105,10 +109,16 @@ struct ProjectHooksTab: View {
 
 }
 
-private struct HookEditor: View {
+/// One multi-line monospaced field: a hook's script, or the copy list.
+///
+/// The only placeholder passed is what the repository ships, so grey text
+/// means that and nothing else. No example scripts: an example drawn the
+/// same way as an inherited one left no way to tell a suggestion from what
+/// would really run.
+private struct MonospacedEditor: View {
   let title: String
   let info: String
-  let placeholder: String
+  let placeholder: String?
   @Binding var text: String
 
   var body: some View {
@@ -121,7 +131,7 @@ private struct HookEditor: View {
         .padding(4)
         .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 5))
         .overlay(alignment: .topLeading) {
-          if text.isEmpty {
+          if text.isEmpty, let placeholder {
             Text(placeholder)
               .font(.system(size: 11, design: .monospaced))
               .foregroundStyle(.tertiary)

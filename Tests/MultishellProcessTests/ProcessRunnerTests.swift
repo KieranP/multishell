@@ -48,9 +48,17 @@ struct ProcessRunnerTests {
   }
 
   /// Blocking waits inside a `Task` occupy the cooperative pool, one thread
-  /// per core; ninety-six such waits ran in a dozen rounds here and would
-  /// take forty-eight, twelve seconds, on a two-core runner. Without any
-  /// blocked thread they all overlap and finish together.
+  /// per core, so ninety-six of them run in rounds of as many as the machine
+  /// has cores: twenty-four seconds on the single-core CI runner. Without a
+  /// blocked thread they overlap and take the quarter second plus what the
+  /// launches cost, and on one core the launches are nearly all of it, three
+  /// seconds of the measured three and a tenth. Eight is that with room for
+  /// a runner having a worse day, and a third of what starving costs it.
+  ///
+  /// The bound holds on the runner, not on a laptop, where twelve cores
+  /// starve to two seconds and the eight would not notice. That is the trade:
+  /// a figure with headroom over three seconds of launches cannot also catch
+  /// a machine that starves in two.
   @Test func manyConcurrentProcessesDoNotStarveEachOther() async throws {
     let started = ContinuousClock.now
     try await withThrowingTaskGroup(of: String.self) { group in
@@ -62,7 +70,7 @@ struct ProcessRunnerTests {
       }
     }
     let elapsed = ContinuousClock.now - started
-    #expect(elapsed < .seconds(3), "took \(elapsed)")
+    #expect(elapsed < .seconds(8), "took \(elapsed)")
   }
 
   @Test func extraEnvironmentIsMergedOverTheParents() async throws {

@@ -97,8 +97,10 @@ asked for it.
   fixture text, CRLF and malformed lines included.
 - Detection runs against fake executables on a fake PATH, never the machine.
   Hooks run through real shells under a substitute home.
-- Timing bounds are sized for a two-core CI runner, several times a laptop's
-  figure. Keep that headroom.
+- Timing bounds are sized for a single-core CI runner, many times a laptop's
+  figure. Keep that headroom. Where the machine's width is what the bound is
+  really about, the runner is the machine it has to hold on
+  (`manyConcurrentProcessesDoNotStarveEachOther` says what that costs).
 
 ## Adding things
 
@@ -178,14 +180,14 @@ Claude Code's hooks live in `~/.claude/settings.json`, written only when
 asked, with `settings.json.before-multishell` kept the first time. Sidebar
 width is in `UserDefaults`. A repository may carry `.multishell.json` at its
 root, written by Export in project settings, with the same keys as a
-project's settings — the display-only ones included: what its worktrees open
-and the order they are listed in. It is read at launch, when a project's
-worktree records change, and on any tick or poll where its modification date
-has moved. A field a repository ships fills only a gap the user left, so
-adding one to `SharedProjectSettings` also means a line in
-`ProjectSettings.layered`, a decode that costs the key and not the file, and
-a form that seeds its override from `InheritedSetting` rather than from the
-global.
+project's settings — the ones that run nothing included: what its worktrees
+open, the order they are listed in, and the files a new one is given. It is
+read at launch, when a project's worktree records change, and on any tick or
+poll where its modification date has moved. A field a repository ships fills
+only a gap the user left, so adding one to `SharedProjectSettings` also
+means a line in `ProjectSettings.layered`, a decode that costs the key and
+not the file, and a form that seeds its override from `InheritedSetting`
+rather than from the global.
 
 ## Permissions macOS asks for
 

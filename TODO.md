@@ -23,12 +23,11 @@ DEVELOP.md under Known gaps.
   - Grouping, ordering and elapsed-time text in a plain value beside the
     view, tested there.
 - Tabs and panes: swap or zoom a pane.
-- Worktree operations beyond create and remove: fetch, tracking checkout of
-  a remote-only branch, a view of merged branches.
+- A view of a project's merged branches. The badge says which worktree has
+  landed; a branch whose worktree is already gone is in no list.
 - Per-project startup commands and environment variables.
-- A "copy into new worktrees" list for `.env` and the like.
 - "Locate…" on a missing project, rebinding it to a chosen directory.
-- Terminal: find; SwiftTerm bell raising activity.
+- Terminal: find.
 - A Linux GUI, an inotify `DirectoryWatcher`, and an XDG Trash for its
   `Platform` (removal deletes outright until then).
 - Translation support.
@@ -54,8 +53,6 @@ DEVELOP.md under Known gaps.
   refuse to start.
 - Confirm the pid a hook reports is Claude itself, not a wrapper that
   outlives the hook, against a real Claude Code session.
-- Shared settings for a bare layout: `.multishell.json` is read from the
-  project path, which for a bare repository holds no checkout.
 - Whether this embedding loads `~/.config/ghostty` is unverified.
 
 ## Packaging
@@ -63,10 +60,12 @@ DEVELOP.md under Known gaps.
 - The bundle runs only where it was built: libghostty's `Bundle.module`
   never looks in `Contents/Resources`. Build with Xcode or patch
   libghostty-spm. See Known gaps in DEVELOP.md.
-- Developer ID signing and notarisation; check whether libghostty needs an
-  entitlement under the hardened runtime.
+- Developer ID signing and notarisation, so another machine will run it; the
+  local certificate buys privacy grants and nothing towards distribution.
+  Check whether libghostty needs an entitlement under the hardened runtime.
 - A release workflow: versioned DMG or zip from a tag, the version from the
-  tag rather than `make-app.sh`, and an update check.
-- A README for installers: download, Gatekeeper, add a project, hooks,
-  where state lives.
+  tag rather than the commit `make-app.sh` writes, and an update check.
+- What the README owes someone installing a release rather than building:
+  download, Gatekeeper, where state lives. Adding a project and the Claude
+  Code hooks are already there.
 - Homebrew cask.

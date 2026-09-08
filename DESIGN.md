@@ -93,6 +93,11 @@ hook edited while the app was up used to stay the version the run started
 with. Cost: the layering must be asked of the model, never read off
 `project.settings`, and a trust question can arrive without a click.
 
+The hook editors show a repository's script in grey and offer no example of
+their own. Both were drawn the same way, so grey text could have been a
+suggestion or the thing that would really run, and there was no telling
+which. Grey now means inherited and nothing else.
+
 Odd shapes, each from a bug: the prefix is not applied to an existing branch,
 a blank worktree directory means the default rather than the repository
 itself, `.` and `..` and an empty slug become `_`, and a whitespace-only hook
@@ -118,6 +123,53 @@ It is stopped by SIGHUP to the child's process group and then SIGKILL:
 interactive shells ignore SIGTERM, and SIGHUP to the shell alone left its
 `sleep` running. To the group only, since by then the leader's pid may have
 been reissued.
+
+## A new worktree is given files by a list, not by a hook
+
+`cp "$MULTISHELL_PROJECT_PATH/.env" .` was the post-create hook nearly
+everyone wrote, and it cost them a login shell, a timeout and the pane. A
+list of paths does it between `git worktree add` and the hook, so the hook
+and the first terminal both find the files. Nothing is copied over what git
+checked out, and a path the repository does not have is skipped, since a
+list naming `.env` is right for the checkouts that have one.
+
+A name may be a pattern, `*` and `?` within one component, because `.env.*`
+is how people hold more than one of these. It follows the shell in not
+matching a leading dot unless the pattern says the dot, or `*` would copy
+`.git` into the worktree. A plain path is never looked up, so what happens
+to one does not turn on a directory being readable, and a pattern matching
+nothing is the same as naming a file that is not there. Bracket expressions
+are left out: they are more than a copy list needs, and they are taken
+literally rather than half-supported.
+
+It copies inside a checkout the user already has and runs nothing, so a list
+a repository ships in `.multishell.json` applies without the trust question
+its hooks wait for. That holds only while neither end can leave its
+directory, and that is decided against the disk rather than against the
+spelling: the folders on the way to each end are resolved and checked. `..`
+resolves there, a leading `/` or `~` lands under the repository and finds
+nothing, and a folder that is a symlink is caught, which no reading of the
+text can do. A symlink at the end of the path is copied as a symlink and
+never followed, which is what a checkout with `.env` pointing elsewhere
+already relies on.
+
+Resolving the whole path says nothing on the way in, because a path whose
+tail does not exist yet is left alone, symlinked folders and all. It is the
+deepest folder already there that is resolved; what is created below that is
+never a symlink. Containment is also settled before the destination is
+tested for being there already, since the two ends of an escaping path often
+resolve to the same file and that test would take it for something git had
+checked out.
+
+The copy and the hook are one pane operation moving through its stages,
+begun once the worktree is there rather than under the sheet. A build cache
+is not something to hold the window for, and an alert raised as the sheet
+goes away is dropped, which is the same reason the hook is shown there. A
+copy that fails stops before the hook, since a hook written to use the files
+it was promised turns one clear failure into a confusing second one.
+
+Cost: the copy stage cannot be stopped the way a hook can, having no process
+to signal.
 
 ## Watch where git records worktrees, poll for everything else
 

@@ -210,6 +210,7 @@ struct DecodingDefaultsTests {
   @Test func projectSettingsWithoutTheNewerFieldsGetTheirDefaults() throws {
     let settings = try decode(ProjectSettings.self, #"{ "postCreateHook": "npm install" }"#)
     #expect(settings.preCreateHook == "" && settings.preDeleteHook == "")
+    #expect(settings.copiedPaths == "", "a new worktree is given nothing")
     #expect(settings.postCreateHook == "npm install")
     #expect(settings.defaultShell == nil, "follows the global shell")
     #expect(settings.iconGlyph == nil && settings.iconTint == nil, "the folder, untinted")

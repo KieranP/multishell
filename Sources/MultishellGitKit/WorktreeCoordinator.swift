@@ -7,10 +7,15 @@ import MultishellProcess
 public struct WorktreeCoordinator: Sendable {
   let service: WorktreeService
   private let hooks: WorktreeHooks
+  private let copier: WorktreeCopier
 
-  public init(service: WorktreeService, hooks: WorktreeHooks = WorktreeHooks()) {
+  public init(
+    service: WorktreeService, hooks: WorktreeHooks = WorktreeHooks(),
+    copier: WorktreeCopier = WorktreeCopier()
+  ) {
     self.service = service
     self.hooks = hooks
+    self.copier = copier
   }
 
   public init() throws {
@@ -170,6 +175,15 @@ public struct WorktreeCoordinator: Sendable {
       in: project
     )
     return path
+  }
+
+  /// Copies the project's listed files into a worktree git has just made,
+  /// before the post-create hook runs, so a hook and the first terminal
+  /// both find them. Throws `WorktreeCopyFailure` for what it could not
+  /// copy; the worktree is created either way. Returns at once when the
+  /// list is blank.
+  public func copyFiles(for project: Project, into worktreePath: URL) throws {
+    try copier.copy(project.settings.copiedPaths, from: project.path, to: worktreePath)
   }
 
   /// The other half of a create. Returns at once when the hook is blank.
