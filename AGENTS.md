@@ -52,6 +52,11 @@ Working rules:
   user's click, with a copy kept beside the file.
 - A new keyboard shortcut also goes in `GhosttyTerminalHost.appShortcuts`, or
   the surface eats it before the menu sees it.
+- A dragged tab is `TabTransfer`, under its own type, spelled both in that
+  file and in the `Info.plist` `make-app.sh` writes. Its own type and not
+  text: a project is dragged as text to reorder the sidebar, and one type
+  for both would offer each drag the other's targets. A worktree row would
+  light up for a project it cannot take, and swallow the drop.
 - The sidebar and detail headers are `UIMetrics.headerHeight` tall, the
   height of the hidden title bar's band. Nothing but a header may reach into
   that band, or AppKit paints over it.

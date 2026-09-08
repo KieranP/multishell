@@ -15,6 +15,8 @@ struct WorktreeRow: View {
   /// A create or remove running here, or failed and not yet dismissed.
   let operation: WorktreeOperation?
   let isSelected: Bool
+  /// A tab is being dragged over this row and would land here on release.
+  let isDropTarget: Bool
   let status: WorktreeStatus?
   /// Whether the branch has already landed on the project's default branch,
   /// which is what says the worktree can go.
@@ -103,11 +105,17 @@ struct WorktreeRow: View {
     // Selected is a blue outline, not a fill: a filled row tinted the state
     // dot and hid its colour. A faint wash keeps it legible without that.
     .background(
-      isSelected ? Color.accentColor.opacity(0.12) : .clear,
+      isSelected || isDropTarget ? Color.accentColor.opacity(0.12) : .clear,
       in: RoundedRectangle(cornerRadius: 6)
     )
+    // A dashed border for a tab hovering over the row, since the solid one
+    // already means selected and a row can be both at once: dashed reads as
+    // "lands here", which is what the drag is asking.
     .overlay {
-      if isSelected {
+      if isDropTarget {
+        RoundedRectangle(cornerRadius: 6)
+          .strokeBorder(Color.accentColor, style: StrokeStyle(lineWidth: 2, dash: [4, 3]))
+      } else if isSelected {
         RoundedRectangle(cornerRadius: 6)
           .strokeBorder(Color.accentColor, lineWidth: 1.5)
       }

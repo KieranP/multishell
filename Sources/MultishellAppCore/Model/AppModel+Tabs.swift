@@ -104,17 +104,28 @@ extension AppModel {
     closeInShownTab { .tab($0.id) }
   }
 
-  /// Both closes. A close keystroke issued in a settings window closes that
-  /// window instead, nothing happens with no tab on screen, and a pane whose
-  /// agent reported Working asks before it goes; `PendingClose` says which
-  /// shells each form would end.
+  /// Both keystrokes. One issued in a settings window closes that window
+  /// instead, and nothing happens with no tab on screen.
   private func closeInShownTab(_ closing: (TerminalTab) -> PendingClose) {
     guard platform.workspaceWindowIsKey else { return platform.closeKeyWindow() }
     guard
       let worktree = workspace.selectedWorktreeID,
       let tab = workspace.activeTab(in: worktree)
     else { return }
-    let close = closing(tab)
+    requestClose(closing(tab), in: tab)
+  }
+
+  /// A middle click on a tab in the strip, which closes that tab whether or
+  /// not it is the active one. No key-window dance as the keystrokes do: the
+  /// click landed on this tab, so this window is the one being acted in.
+  public func closeTab(_ id: TerminalTab.ID) {
+    guard let tab = workspace.tab(id) else { return }
+    requestClose(.tab(id), in: tab)
+  }
+
+  /// A close whose panes hold a working agent is asked about rather than
+  /// done; `PendingClose` says which shells each form would end.
+  private func requestClose(_ close: PendingClose, in tab: TerminalTab) {
     if close.sessionIDs(in: tab).contains(where: { sessionStates[.session($0)] == .running }) {
       pendingClose = close
       return
@@ -142,8 +153,42 @@ extension AppModel {
     sync()
   }
 
-  public func moveTab(_ id: TerminalTab.ID, before target: TerminalTab.ID) {
-    store.moveTab(id, before: target)
+  /// Moves `id` to sit just before or just after `target` in its strip.
+  public func moveTab(
+    _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, _ target: TerminalTab.ID
+  ) {
+    store.moveTab(id, placement, target)
+  }
+
+  /// A tab dragged onto a worktree's row in the sidebar. Its shells come
+  /// with it, still running, and the worktree it landed in is what its
+  /// panes start in and take their shell from from now on.
+  ///
+  /// The destination is turned to, so the tab is still in front of the user
+  /// who dragged it, and so the worktree is warm: a tab whose shells are
+  /// live must not land in a worktree the next reconcile would close them
+  /// for.
+  ///
+  /// `false` when the move cannot happen, so the drag springs back rather
+  /// than the tab appearing to vanish: the worktree it is already in, either
+  /// end busy with a create or a remove, or a destination whose directory
+  /// has gone, which raises the same alert every other way of starting a
+  /// shell there does. A worktree on its way out is refused at both ends:
+  /// a tab dragged clear of a removal would be the one thing left running
+  /// in a directory about to be in the Trash.
+  @discardableResult
+  public func moveTab(_ id: TerminalTab.ID, to worktreeID: Worktree.ID) -> Bool {
+    guard
+      let source = workspace.tab(id)?.worktreeID, source != worktreeID, !isBusy(source),
+      let worktree = workspace.worktree(worktreeID), !isBusy(worktreeID),
+      directoryExists(of: worktree), store.moveTab(id, to: worktreeID)
+    else { return false }
+    // Warmed here rather than left to the selection to do: the tab's shells
+    // are live, and a destination a refused selection left cold is one the
+    // next reconcile would close them for.
+    warmWorktrees.insert(worktreeID)
+    select(worktree)
+    return true
   }
 
   public func renameTab(_ id: TerminalTab.ID, to title: String?) {

@@ -129,6 +129,72 @@ struct WorkspaceStoreTests {
     #expect(store.workspace.activeTabByWorktree[worktree.id] == first.id)
   }
 
+  /// Dragged onto another worktree's row in the sidebar. The tab is listed
+  /// there from now on, panes and all, and lands after the tabs already
+  /// there.
+  @Test func aTabMovedToAnotherWorktreeTakesItsPanesAndLandsLast() {
+    let (store, project, main) = demoStore()
+    let feature = Worktree(
+      path: main.path.appendingPathComponent("feature"), projectID: project.id, head: "b",
+      branch: "feature")
+    store.replaceWorktrees([main, feature], forProject: project.id)
+    let settled = store.openTab(in: feature.id)!
+    let moving = store.openTab(in: main.id)!
+    store.splitFocusedPane(of: moving.id, axis: .vertical)
+
+    #expect(store.moveTab(moving.id, to: feature.id))
+
+    #expect(store.workspace.tab(moving.id)?.worktreeID == feature.id)
+    #expect(store.workspace.tabs(in: feature.id).map(\.id) == [settled.id, moving.id])
+    #expect(store.workspace.tabs(in: main.id).isEmpty)
+    #expect(store.workspace.sessions(in: feature.id).count == 3, "both panes came along")
+    #expect(store.workspace.sessions(in: main.id).isEmpty)
+    #expect(store.workspace.activeTabByWorktree[feature.id] == moving.id)
+  }
+
+  /// The directory travels with the tab. It is where the tab's panes start,
+  /// and the shell they start is resolved from the same worktree, so a tab
+  /// left pointing at the old directory would open one project's shell in
+  /// another project's checkout on the next launch.
+  @Test func aMovedTabsPanesStartInTheWorktreeItLandedIn() {
+    let (store, project, main) = demoStore()
+    let feature = Worktree(
+      path: main.path.appendingPathComponent("feature"), projectID: project.id, head: "b",
+      branch: "feature")
+    store.replaceWorktrees([main, feature], forProject: project.id)
+    let tab = store.openTab(in: main.id)!
+
+    store.moveTab(tab.id, to: feature.id)
+
+    #expect(store.workspace.session(tab.focusedSessionID)?.workingDirectory == feature.path)
+  }
+
+  @Test func theWorktreeATabLeavesFallsBackToItsLastTab() {
+    let (store, project, main) = demoStore()
+    let feature = Worktree(
+      path: main.path.appendingPathComponent("feature"), projectID: project.id, head: "b",
+      branch: "feature")
+    store.replaceWorktrees([main, feature], forProject: project.id)
+    let first = store.openTab(in: main.id)!
+    let second = store.openTab(in: main.id)!
+
+    store.moveTab(second.id, to: feature.id)
+    #expect(store.workspace.activeTabByWorktree[main.id] == first.id)
+
+    store.moveTab(first.id, to: feature.id)
+    #expect(store.workspace.activeTabByWorktree[main.id] == nil, "no tabs, no active one")
+  }
+
+  @Test func aTabIsNotMovedToAWorktreeThatCannotTakeIt() {
+    let (store, _, worktree) = demoStore()
+    let tab = store.openTab(in: worktree.id)!
+
+    #expect(store.moveTab(tab.id, to: "/repos/nowhere") == false)
+    #expect(store.moveTab(tab.id, to: worktree.id) == false, "already there")
+    #expect(store.moveTab(UUID(), to: worktree.id) == false, "no such tab")
+    #expect(store.workspace.tab(tab.id)?.worktreeID == worktree.id)
+  }
+
   @Test func sessionsInheritTheWorktreeDirectory() {
     let (store, _, worktree) = demoStore()
     let tab = store.openTab(in: worktree.id)!
@@ -309,7 +375,7 @@ struct CrossWorktreeTests {
     let a = store.openTab(in: main.id)!
     let b = store.openTab(in: other.id)!
 
-    store.moveTab(a.id, before: b.id)
+    store.moveTab(a.id, .before, b.id)
 
     #expect(store.workspace.tabs(in: main.id).map(\.id) == [a.id])
     #expect(store.workspace.tabs(in: other.id).map(\.id) == [b.id])

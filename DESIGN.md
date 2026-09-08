@@ -38,6 +38,35 @@ So splits, which came later, were a renderer change with no schema change.
 Same-axis splits add a sibling and halve the focused pane's share, as tmux
 and iTerm do.
 
+## A tab dragged to a worktree moves, it does not re-open
+
+Dropping a tab on a worktree's row in the sidebar relists it there. The
+shells keep running: nothing is restarted, and no `cd` is typed at a prompt
+on the user's behalf here any more than it is on the socket's word. What
+moves with the tab is where its panes start and which shell they start,
+which are read together at launch and are both the destination's to decide;
+a tab left pointing at the directory it came from would open one project's
+shell in another project's checkout on the next launch.
+
+A tab whose shells are live is turned to when it lands, which is also what
+makes the destination warm: leaving it cold would have the next reconcile
+close the very shells that were dragged there.
+
+The drag carries its own pasteboard type rather than the plain text a project
+is dragged as, because the sidebar already drags projects to reorder them:
+with one type for both, a worktree row would light up for a project it cannot
+take, and swallow the drop that was meant to move the project.
+
+The store keeps a session's worktree in step with its tab's, since that is
+what decides whether a shell runs at all. `repairReferences` puts a file that
+disagrees back to what the tab says.
+
+Cost: a moved tab's shell is still in the directory it was started in until
+the user cds, so a file dropped on it is written against the worktree the tab
+now belongs to rather than where that shell stands — the same approximation
+the app already makes for anyone who has cd'd. A worktree with no tabs left
+loses what was on screen, since the tab it was showing is somewhere else.
+
 ## Themes are hex strings
 
 Portability and user theme files for free. Cost: a light terminal gets a

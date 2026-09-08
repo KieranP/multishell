@@ -24,6 +24,13 @@ enum WorkspaceInvariants {
       #expect(tab.root.contains(tab.focusedSessionID), "\(context): focus outside its tree")
       for id in tab.sessionIDs {
         #expect(sessionIDs.contains(id), "\(context): pane without a session")
+        // A session's worktree is the worktree of the tab that shows it:
+        // warmth, and so whether its shell is running at all, is decided
+        // from the session's own copy.
+        if let session = ws.session(id) {
+          #expect(
+            session.worktreeID == tab.worktreeID, "\(context): a pane in another worktree")
+        }
         owned[id, default: 0] += 1
       }
       #expect(weightsAligned(tab.root), "\(context): weights out of step with children")

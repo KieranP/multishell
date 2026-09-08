@@ -56,6 +56,16 @@ cat > "$app/Contents/Info.plist" <<PLIST
     <key>CFBundleIconFile</key><string>Multishell</string>
     <key>LSMinimumSystemVersion</key><string>14.0</string>
     <key>NSHighResolutionCapable</key><true/>
+    <!-- The pasteboard type a dragged tab carries. Declared so macOS knows
+         it is ours; see TabTransfer. -->
+    <key>UTExportedTypeDeclarations</key>
+    <array>
+        <dict>
+            <key>UTTypeIdentifier</key><string>io.multishell.tab</string>
+            <key>UTTypeDescription</key><string>Multishell Terminal Tab</string>
+            <key>UTTypeConformsTo</key><array><string>public.data</string></array>
+        </dict>
+    </array>
 </dict>
 </plist>
 PLIST

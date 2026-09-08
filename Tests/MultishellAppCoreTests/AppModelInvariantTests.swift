@@ -32,7 +32,7 @@ struct AppModelInvariantTests {
     for step in 0..<300 {
       let ws = h.model.workspace
       let live = Array(h.engine.openSessionIDs)
-      switch Int.random(in: 0..<16, using: &rng) {
+      switch Int.random(in: 0..<17, using: &rng) {
       case 0, 1: h.model.select(worktrees.randomElement(using: &rng)!)
       case 2: h.model.newTab()
       case 3: h.model.closeActivePane()
@@ -89,6 +89,11 @@ struct AppModelInvariantTests {
           h.model.clearState(of: tab)
         } else {
           h.model.clearState(ofWorktree: worktrees.randomElement(using: &rng)!.id)
+        }
+      case 15:
+        // A tab dragged onto another worktree's row in the sidebar.
+        if let tab = ws.tabs.randomElement(using: &rng) {
+          h.model.moveTab(tab.id, to: worktrees.randomElement(using: &rng)!.id)
         }
       default:
         // A refresh that lost or found a worktree, then the sync every

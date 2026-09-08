@@ -13,6 +13,8 @@ struct SidebarView: View {
 
   @State private var draggingProject: Project.ID?
   @State private var dropTarget: ProjectDropTarget?
+  /// The worktree a dragged tab is hovering over, drawn on its row.
+  @State private var tabDropTarget: Worktree.ID?
   @State private var filter = ""
   @Environment(\.openWindow) private var openWindow
 
@@ -191,6 +193,7 @@ struct SidebarView: View {
           state: model.state(ofWorktree: worktree.id),
           operation: model.worktreeOperations[worktree.id],
           isSelected: model.workspace.selectedWorktreeID == worktree.id,
+          isDropTarget: tabDropTarget == worktree.id,
           status: model.statuses[worktree.id],
           mergeState: model.mergeState(of: worktree),
           theme: theme,
@@ -201,6 +204,20 @@ struct SidebarView: View {
         )
         .onTapGesture { model.select(worktree) }
         .contextMenu { worktreeMenu(worktree) }
+        // A tab dragged from the strip lands here. The type is the tab's
+        // own, so a project being dragged past on its way to a new place in
+        // the sidebar is not offered this row at all.
+        .dropDestination(for: TabTransfer.self) { dropped, _ in
+          tabDropTarget = nil
+          guard let moving = dropped.first?.id else { return false }
+          return model.moveTab(moving, to: worktree.id)
+        } isTargeted: { isTargeted in
+          if isTargeted {
+            tabDropTarget = worktree.id
+          } else if tabDropTarget == worktree.id {
+            tabDropTarget = nil
+          }
+        }
       }
     }
     .overlay(alignment: dropTarget?.edge == .bottom ? .bottom : .top) {

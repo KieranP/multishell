@@ -42,8 +42,24 @@ extension Workspace {
       return repaired
     }
 
-    let owned = Set(tabs.flatMap(\.sessionIDs))
-    sessions.removeAll { !owned.contains($0.id) }
+    var owner: [TerminalSession.ID: Worktree.ID] = [:]
+    for tab in tabs {
+      for id in tab.sessionIDs { owner[id] = tab.worktreeID }
+    }
+    sessions.removeAll { owner[$0.id] == nil }
+    // A session belongs to the worktree of the tab that shows it, and the
+    // store writes the two together. A file where they disagree gets the
+    // tab's answer: it is what the sidebar lists the tab under, and what
+    // decides whether the session's shell is started at all.
+    let pathOfWorktree = Dictionary(uniqueKeysWithValues: worktrees.map { ($0.id, $0.path) })
+    for index in sessions.indices where sessions[index].worktreeID != owner[sessions[index].id] {
+      let worktree = owner[sessions[index].id]!
+      sessions[index].worktreeID = worktree
+      // The directory goes with it, as it does when a tab is moved: a
+      // session left pointing into another worktree would start this
+      // project's shell in that one's checkout.
+      if let path = pathOfWorktree[worktree] { sessions[index].workingDirectory = path }
+    }
 
     // A name whose worktree is gone would come back if a worktree were
     // ever made at that path again, and a blank one would draw an empty

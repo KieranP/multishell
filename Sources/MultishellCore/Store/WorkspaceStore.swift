@@ -159,9 +159,12 @@ extension WorkspaceStore {
     removeTab(at: index)
   }
 
-  /// Reorders within a worktree. `tabs` is one flat array, so the move is
-  /// done on the worktree's slice and written back in place.
-  public func moveTab(_ id: TerminalTab.ID, before target: TerminalTab.ID) {
+  /// Reorders within a worktree, landing just before or just after `target`.
+  /// `tabs` is one flat array, so the move is done on the worktree's slice
+  /// and written back in place.
+  public func moveTab(
+    _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, _ target: TerminalTab.ID
+  ) {
     guard
       let moving = workspace.tab(id), let anchor = workspace.tab(target),
       moving.worktreeID == anchor.worktreeID, id != target
@@ -169,13 +172,52 @@ extension WorkspaceStore {
     var siblings = workspace.tabs(in: moving.worktreeID)
     siblings.removeAll { $0.id == id }
     guard let slot = siblings.firstIndex(where: { $0.id == target }) else { return }
-    siblings.insert(moving, at: slot)
+    siblings.insert(moving, at: placement == .before ? slot : slot + 1)
 
     var reordered = siblings.makeIterator()
     for index in workspace.tabs.indices where workspace.tabs[index].worktreeID == moving.worktreeID
     {
       workspace.tabs[index] = reordered.next()!
     }
+  }
+
+  /// Moves a tab, panes and all, to another worktree.
+  ///
+  /// The shells keep running; nothing is typed at their prompts and nothing
+  /// is restarted. What moves is the tab's own place: its worktree, and the
+  /// directory its panes start in, which the destination decides from now
+  /// on. The two are kept together because both are read at launch, and a
+  /// tab that opened one project's shell in another project's directory
+  /// would be neither.
+  ///
+  /// The tab lands last in the destination's strip and takes the active slot
+  /// there, since a tab dragged somewhere is the one being worked in. The
+  /// worktree it left falls back to its last remaining tab.
+  @discardableResult
+  public func moveTab(_ id: TerminalTab.ID, to worktreeID: Worktree.ID) -> Bool {
+    guard
+      let index = workspace.tabs.firstIndex(where: { $0.id == id }),
+      let destination = workspace.worktree(worktreeID),
+      workspace.tabs[index].worktreeID != worktreeID
+    else { return false }
+
+    var tab = workspace.tabs.remove(at: index)
+    let source = tab.worktreeID
+    tab.worktreeID = worktreeID
+    // `tabs(in:)` filters in array order, so appending is landing last.
+    workspace.tabs.append(tab)
+
+    let moving = Set(tab.sessionIDs)
+    for index in workspace.sessions.indices where moving.contains(workspace.sessions[index].id) {
+      workspace.sessions[index].worktreeID = worktreeID
+      workspace.sessions[index].workingDirectory = destination.path
+    }
+
+    if workspace.activeTabByWorktree[source] == id {
+      workspace.activeTabByWorktree[source] = workspace.tabs(in: source).last?.id
+    }
+    workspace.activeTabByWorktree[worktreeID] = id
+    return true
   }
 
   /// Empty or whitespace clears the custom title, so the shell's takes over

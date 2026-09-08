@@ -22,8 +22,7 @@ DEVELOP.md under Known gaps.
     `WorktreeActions`; optionally the Dock badge shows the Waiting count.
   - Grouping, ordering and elapsed-time text in a plain value beside the
     view, tested there.
-- Tabs and panes: swap or zoom a pane, move a tab to another worktree,
-  close a non-active tab.
+- Tabs and panes: swap or zoom a pane.
 - Worktree operations beyond create and remove: fetch, tracking checkout of
   a remote-only branch, a view of merged branches.
 - Per-project startup commands and environment variables.

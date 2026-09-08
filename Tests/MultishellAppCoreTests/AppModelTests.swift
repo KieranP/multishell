@@ -447,10 +447,100 @@ struct AppModelTests {
     let b = h.model.workspace.activeTab(in: h.main.id)!
 
     h.model.renameTab(a.id, to: "build")
-    h.model.moveTab(b.id, before: a.id)
+    h.model.moveTab(b.id, .before, a.id)
 
     #expect(h.model.workspace.title(of: h.model.workspace.tab(a.id)!) == "build")
     #expect(h.model.workspace.tabs(in: h.main.id).map(\.id) == [b.id, a.id])
+
+    h.model.moveTab(b.id, .after, a.id)
+    #expect(h.model.workspace.tabs(in: h.main.id).map(\.id) == [a.id, b.id])
+  }
+
+  /// A middle click closes the tab it landed on, which need not be the
+  /// active one; the keystrokes only ever close what is on screen.
+  @Test func aMiddleClickClosesTheTabItLandedOnActiveOrNot() {
+    let h = Harness()
+    h.model.select(h.main)
+    let first = h.model.workspace.activeTab(in: h.main.id)!
+    h.model.newTab()
+    let second = h.model.workspace.activeTab(in: h.main.id)!
+
+    h.model.closeTab(first.id)
+
+    #expect(h.model.workspace.tabs(in: h.main.id).map(\.id) == [second.id])
+    #expect(h.model.workspace.activeTabByWorktree[h.main.id] == second.id, "the active one stays")
+    #expect(h.engine.closed == [first.focusedSessionID], "its shell went with it")
+
+    h.model.closeTab(UUID())
+    #expect(h.model.workspace.tabs(in: h.main.id).count == 1, "no such tab")
+  }
+
+  /// The same question Cmd+Shift+W asks, since a middle click on the wrong
+  /// tab is at least as easy to make.
+  @Test func aMiddleClickOnAWorkingAgentAsksFirst() {
+    let h = Harness()
+    h.model.select(h.main)
+    h.model.newTab()
+    let working = h.model.workspace.activeTab(in: h.main.id)!
+    h.model.select(h.feature)
+    h.source.send(
+      SessionStateReport(state: .running, sessionID: working.focusedSessionID, cwd: nil, pid: nil))
+
+    h.model.closeTab(working.id)
+
+    #expect(h.model.pendingClose == .tab(working.id))
+    #expect(h.model.workspace.tab(working.id) != nil, "nothing closed until it is confirmed")
+
+    h.model.confirmPendingClose()
+    #expect(h.model.workspace.tab(working.id) == nil)
+  }
+
+  /// Dragged from the strip onto another worktree's row. The shells come
+  /// with it and keep running, and the worktree it landed in is the one on
+  /// screen, so the tab is where the drag left it.
+  @Test func aTabDraggedOntoAnotherWorktreeGoesThereWithItsShells() {
+    let h = Harness()
+    h.model.select(h.main)
+    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    h.model.splitActivePane(.vertical)
+    let panes = Set(h.model.workspace.tab(tab.id)!.sessionIDs)
+
+    #expect(h.model.moveTab(tab.id, to: h.feature.id))
+
+    #expect(h.model.workspace.selectedWorktreeID == h.feature.id)
+    #expect(h.model.workspace.activeTab(in: h.feature.id)?.id == tab.id)
+    #expect(h.model.workspace.tabs(in: h.main.id).isEmpty)
+    #expect(panes.isSubset(of: h.engine.openSessionIDs), "the shells kept running")
+    #expect(h.engine.closed.isEmpty)
+    #expect(h.model.workspace.tabs(in: h.feature.id).count == 1, "no second tab was opened")
+  }
+
+  @Test func aTabIsNotDraggedIntoAWorktreeThatCannotTakeIt() {
+    let h = Harness()
+    let gone = Worktree(
+      path: URL(fileURLWithPath: "/repos/gone"), projectID: h.project.id, head: "c",
+      branch: "gone")
+    h.store.replaceWorktrees([h.main, h.feature, gone], forProject: h.project.id)
+    h.model.select(h.main)
+    let tab = h.model.workspace.activeTab(in: h.main.id)!
+
+    h.model.worktreeOperations.begin(.removingWorktree, on: h.feature.id)
+    #expect(h.model.moveTab(tab.id, to: h.feature.id) == false, "a worktree on its way out")
+    h.model.worktreeOperations.clear(h.feature.id)
+
+    // The other end of the same rule: a tab dragged clear of a removal
+    // would be the one thing still running in a trashed directory.
+    h.model.worktreeOperations.begin(.removingWorktree, on: h.main.id)
+    #expect(h.model.moveTab(tab.id, to: h.feature.id) == false, "dragged out of a removal")
+    h.model.worktreeOperations.clear(h.main.id)
+
+    h.model.presentedError = nil
+    #expect(h.model.moveTab(tab.id, to: gone.id) == false)
+    #expect(h.model.presentedError?.title == "Worktree directory is missing")
+    #expect(h.model.moveTab(tab.id, to: h.main.id) == false, "already there")
+
+    #expect(h.model.workspace.tab(tab.id)?.worktreeID == h.main.id)
+    #expect(h.model.workspace.selectedWorktreeID == h.main.id)
   }
 }
 

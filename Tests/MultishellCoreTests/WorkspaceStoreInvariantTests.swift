@@ -27,7 +27,7 @@ struct WorkspaceStoreInvariantTests {
 
     for step in 0..<400 {
       let ws = store.workspace
-      switch Int.random(in: 0..<11, using: &rng) {
+      switch Int.random(in: 0..<12, using: &rng) {
       case 0, 1:
         if let worktree = worktrees.randomElement(using: &rng) {
           store.openTab(in: worktree.id)
@@ -45,7 +45,7 @@ struct WorkspaceStoreInvariantTests {
         if let session = ws.sessions.randomElement(using: &rng) { store.focusSession(session.id) }
       case 7:
         if let a = ws.tabs.randomElement(using: &rng), let b = ws.tabs.randomElement(using: &rng) {
-          store.moveTab(a.id, before: b.id)
+          store.moveTab(a.id, Bool.random(using: &rng) ? .before : .after, b.id)
         }
       case 8:
         if let tab = ws.tabs.randomElement(using: &rng) {
@@ -60,6 +60,13 @@ struct WorkspaceStoreInvariantTests {
           store.setCustomName(
             ["Checkout flow", "  ", "", "Spike"].randomElement(using: &rng),
             forWorktree: worktree.id)
+        }
+      case 10:
+        // A tab dragged onto another worktree's row.
+        if let tab = ws.tabs.randomElement(using: &rng),
+          let worktree = worktrees.randomElement(using: &rng)
+        {
+          store.moveTab(tab.id, to: worktree.id)
         }
       default:
         // A refresh that lost a worktree, or found one again.

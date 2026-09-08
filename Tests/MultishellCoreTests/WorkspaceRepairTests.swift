@@ -116,6 +116,22 @@ struct WorkspaceRepairTests {
     #expect(ws.worktreeNames == [worktree.id: "Checkout"])
   }
 
+  /// The store writes a session's worktree with its tab's, so a file where
+  /// they disagree was written by something else. The tab is what the
+  /// sidebar lists it under, so the tab decides.
+  @Test func aSessionSaidToBeInAnotherWorktreeThanItsTabIsPutBack() {
+    var (ws, tab) = sound()
+    ws.sessions[0].worktreeID = "/repos/nowhere"
+
+    ws.repairReferences()
+
+    #expect(ws.sessions.count == 1, "the session is the tab's, not a stray")
+    #expect(ws.sessions[0].worktreeID == ws.tab(tab.id)?.worktreeID)
+    #expect(
+      ws.sessions[0].workingDirectory == worktree.path,
+      "the directory it starts in comes back with it")
+  }
+
   @Test func aSelectionOfAMissingWorktreeIsCleared() {
     var (ws, _) = sound()
     ws.selectedWorktreeID = "/repos/nowhere"
@@ -162,6 +178,7 @@ struct WorkspaceRepairTests {
       { $0.projects.append($0.projects[0]) },
       { $0.worktrees.append($0.worktrees[0]) },
       { ws in ws.sessions.append(ws.sessions[0]) },
+      { ws in ws.sessions[0].worktreeID = "/nowhere" },
     ]
     for _ in 0..<Int.random(in: 1...6, using: &rng) {
       damage.randomElement(using: &rng)!(&ws)

@@ -207,11 +207,16 @@ struct OrderingTests {
     let t2 = store.openTab(in: worktree.id)!
     let t3 = store.openTab(in: worktree.id)!
 
-    store.moveTab(t3.id, before: t1.id)
+    store.moveTab(t3.id, .before, t1.id)
     #expect(store.workspace.tabs(in: worktree.id).map(\.id) == [t3.id, t1.id, t2.id])
 
-    store.moveTab(t1.id, before: UUID())
+    store.moveTab(t1.id, .before, UUID())
     #expect(store.workspace.tabs(in: worktree.id).map(\.id) == [t3.id, t1.id, t2.id])
+
+    // The trailing half of the last tab, which is the only way to the end
+    // of the strip: there is no tab past it to land before.
+    store.moveTab(t3.id, .after, t2.id)
+    #expect(store.workspace.tabs(in: worktree.id).map(\.id) == [t1.id, t2.id, t3.id])
   }
 
   @Test func nextAndPreviousWrapAround() {
