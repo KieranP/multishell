@@ -449,6 +449,16 @@ settings is a `Window` too, because a `WindowGroup` adds its own Close and
 AppKit gives Cmd+W to the first matching item, so that Close beat Close Pane
 and shut the app.
 
+Either settings window opens centred on the workspace's screen, on its first
+tab and scrolled to the top, whatever the user left behind. SwiftUI shows the
+same window again after a close, so nothing on the way in can do that by
+itself: the close places it while there is nothing on screen to jump, becoming
+key is the first point that knows which screen the workspace is on, and each
+resize is the window settling to the size of its content, which had been
+leaving it half a toolbar's height low. Centring on the window's own screen
+was not enough, because one left on a second display kept reopening there,
+away from the app.
+
 ## Agents and shells are ids in the store, command lines at launch
 
 Ids are strings, so a newer build's agent loads harmlessly on an older one,

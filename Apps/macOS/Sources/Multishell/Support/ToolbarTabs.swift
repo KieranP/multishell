@@ -21,6 +21,14 @@ struct ToolbarTabs: NSViewControllerRepresentable {
   }
 
   let tabs: [Tab]
+  /// A value never seen before sends the window back to its first tab. The
+  /// controller owns the live selection, so a binding holding an index would
+  /// go stale the moment the user clicked a tab and writing the old one back
+  /// would read as no change. A caller mints a token rather than counting,
+  /// so that asking for a reset never has to read state back.
+  let firstTabToken: UUID
+
+  func makeCoordinator() -> Coordinator { Coordinator() }
 
   func makeNSViewController(context: Context) -> NSTabViewController {
     let controller = NSTabViewController()
@@ -31,6 +39,7 @@ struct ToolbarTabs: NSViewControllerRepresentable {
       item.image = NSImage(systemSymbolName: tab.symbol, accessibilityDescription: tab.title)
       controller.addTabViewItem(item)
     }
+    context.coordinator.appliedToken = firstTabToken
     return controller
   }
 
@@ -40,5 +49,13 @@ struct ToolbarTabs: NSViewControllerRepresentable {
     for (item, tab) in zip(controller.tabViewItems, tabs) {
       (item.viewController as? NSHostingController<AnyView>)?.rootView = tab.content
     }
+    if context.coordinator.appliedToken != firstTabToken {
+      context.coordinator.appliedToken = firstTabToken
+      controller.selectedTabViewItemIndex = 0
+    }
+  }
+
+  final class Coordinator {
+    var appliedToken: UUID?
   }
 }

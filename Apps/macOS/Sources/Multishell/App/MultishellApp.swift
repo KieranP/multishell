@@ -34,7 +34,7 @@ struct MultishellApp: App {
     .commands { MultishellCommands(model: model) }
 
     Settings {
-      SettingsView(model: model)
+      SettingsView(model: model, platform: platform)
     }
 
     // One settings window, retargeted from the sidebar. A `Window`, not a
@@ -45,7 +45,7 @@ struct MultishellApp: App {
       // Reachable from the Window menu too, with no project chosen yet: fall
       // back to the current project rather than showing an empty window.
       if let projectID = model.settingsProjectID ?? model.activeProject?.id {
-        ProjectSettingsWindow(model: model, projectID: projectID)
+        ProjectSettingsWindow(model: model, platform: platform, projectID: projectID)
       } else {
         Text("Right-click a project in the sidebar and choose Project Settings.")
           .foregroundStyle(.secondary)
