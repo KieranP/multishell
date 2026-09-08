@@ -121,6 +121,13 @@ command through `didFinishCommandIn` if the engine can tell, and frame
 operation happened, an editor in `ProjectHooksTab`, and a step value with its
 text.
 
+**A list of files a new worktree is given.** A case in `WorktreePlacement`
+with the settings field it reads, a `WorktreeOperation.Step` for its stage
+with its titles and the help its Cancel shows, an editor in `ProjectHooksTab`,
+and, if a repository may ship it, a field on `SharedProjectSettings` and a
+line in `ProjectSettings.layered`. `AppModel` runs one stage per list the
+project has filled in, in the enum's own order, before the post-create hook.
+
 **A variable a hook receives.** A case in `HookVariable` with its meaning and
 its value. That one list both builds the environment and draws the Hooks
 tab's table, so the help cannot fall behind what a hook is given.
@@ -181,7 +188,8 @@ asked, with `settings.json.before-multishell` kept the first time. Sidebar
 width is in `UserDefaults`. A repository may carry `.multishell.json` at its
 root, written by Export in project settings, with the same keys as a
 project's settings — the ones that run nothing included: what its worktrees
-open, the order they are listed in, and the files a new one is given. It is
+open, the order they are listed in, and the files a new one is linked to or
+given. It is
 read at launch, when a project's worktree records change, and on any tick or
 poll where its modification date has moved. A field a repository ships fills
 only a gap the user left, so adding one to `SharedProjectSettings` also
@@ -251,6 +259,11 @@ all, locally or in CI.
 The directory check before a click starts a shell runs on the main thread, so
 a network volume that has gone away blocks until the mount times out. The
 polling paths' checks run off it.
+
+A file list a new worktree is given has no timeout of its own, unlike a
+hook: it runs until it is done or the pane's Cancel, which lands between
+paths, so one enormous file or folder holds the stage until the file system
+is finished with it.
 
 Drops reach `SurfaceFrame` because AppKit walks up from an unregistered
 engine surface to the frame that is registered. Apple documents the

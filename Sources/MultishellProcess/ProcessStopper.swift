@@ -41,6 +41,14 @@ public final class ProcessStopper: @unchecked Sendable {
     lock.withLock { applied }
   }
 
+  /// Whether a stop has been asked for at all, whether or not there was a
+  /// child to receive it. Work with no process to signal reads this to end
+  /// itself, so one handle behind a pane's button covers a stage that runs
+  /// a hook and a stage that only touches files.
+  public var isStopped: Bool {
+    lock.withLock { pending != nil || applied != nil }
+  }
+
   func stop(_ reason: ProcessStop) {
     let target: Process? = lock.withLock {
       guard applied == nil else { return nil }

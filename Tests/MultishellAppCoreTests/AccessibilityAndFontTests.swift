@@ -137,15 +137,22 @@ struct FontDetectionTests {
   }
 }
 
-/// The pane's stage titles for a removal and a stopped hook.
+/// The pane's stage titles, and which stages offer its Cancel.
 @Suite
 struct RemovalStageWordingTests {
   @Test func thePaneNamesTheTrashAndAHookThatDidNotFinish() {
     let removing = WorktreeOperation(.removingWorktree)
     #expect(removing.title == "Moving the worktree to the Trash…")
     #expect(removing.detail.contains("in the Trash"))
-    #expect(!removing.step.isHook)
-    #expect(WorktreeOperation(.postCreateHook).step.isHook)
+    #expect(removing.step.cancelHelp == nil, "git's own stages are left to finish")
+    #expect(WorktreeOperation(.postCreateHook).step.cancelHelp?.contains("hook") == true)
+    #expect(
+      WorktreeOperation(.copyingFiles).step.cancelHelp?.contains("nothing else runs in it") == true,
+      "the same Cancel, and what it means where it is not a hook")
+    #expect(WorktreeOperation(.linkingFiles).title == "Linking files into the worktree…")
+    #expect(
+      WorktreeOperation(.linkingFiles, failure: "x").title
+        == "Some files were not linked into the worktree")
     #expect(
       WorktreeOperation(.removingWorktree, failure: "x").title
         == "The worktree could not be removed")

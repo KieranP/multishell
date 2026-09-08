@@ -3,13 +3,13 @@ import MultishellCore
 import SwiftUI
 
 /// What the detail pane shows while a create or remove runs on the selected
-/// worktree: the stage, what happens here when it ends, and a Stop Hook
-/// while a hook is the stage. After a failure, what the hook said and a
-/// Dismiss.
+/// worktree: the stage, what happens here when it ends, and a Cancel for a
+/// stage that can be ended early. After a failure, what the stage said and
+/// a Dismiss.
 struct WorktreeOperationView: View {
   let operation: WorktreeOperation
   let theme: Theme
-  let stopHook: () -> Void
+  let cancel: () -> Void
   let dismiss: () -> Void
 
   var body: some View {
@@ -32,11 +32,10 @@ struct WorktreeOperationView: View {
         .multilineTextAlignment(.center)
         .frame(maxWidth: 380)
         .padding(.top, 6)
-      if operation.isRunning, operation.step.isHook {
-        Button("Stop Hook", action: stopHook)
+      if operation.isRunning, let help = operation.step.cancelHelp {
+        Button("Cancel", action: cancel)
           .padding(.top, 18)
-          .help(
-            "Ends the hook now. It runs under the hook timeout in Settings > Worktrees otherwise.")
+          .help(help)
       }
       if let failure = operation.failure {
         ScrollView(.vertical) {

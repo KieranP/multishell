@@ -39,8 +39,12 @@ public struct PresentedError: Identifiable {
         case .postDelete: "Worktree removed, but its hook \(ending)"
         }
       message = Self.describe(failure.underlying)
-    case let failure as WorktreeCopyFailure:
-      title = "Worktree created, but some of its files were not copied"
+    case let failure as WorktreeFileFailure:
+      title =
+        switch failure.placement {
+        case .link: "Worktree created, but some of its files were not linked"
+        case .copy: "Worktree created, but some of its files were not copied"
+        }
       message = failure.description
     case let failure as BranchDeletionFailure:
       title = "Worktree removed, but branch \(failure.branch) was not deleted"

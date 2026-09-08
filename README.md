@@ -26,7 +26,8 @@ Requires macOS with Xcode 26 and `git` on your `PATH`.
     git clone https://github.com/KieranP/multishell.git
     cd multishell
     sudo xcode-select -s /Applications/Xcode.app   # once, if only the command line tools are active
-    make install                                    # release build into /Applications
+    make signing-identity                          # once per machine, so privacy grants survive a rebuild
+    make install                                   # release build into /Applications
 
 `make run` builds and opens a debug copy that keeps its own state, so it
 sits beside an installed one. The first build downloads libghostty, about
@@ -47,38 +48,51 @@ way they are.
 ## Features
 
 - Projects in a sidebar, every git worktree under them, terminal tabs and
-  splits per worktree. Terminals keep running while you look elsewhere.
-- Create a worktree and its branch in one step, where the project says.
-  Removing one moves it to the Trash, so a wrong click is recoverable.
+  splits per worktree. Terminals keep running while you look elsewhere, and
+  a tab dragged onto another worktree's row moves there without restarting.
+- Create a worktree and its branch in one step, where the project says, and
+  it opens with a terminal, or your agent, already running. Removing one
+  moves it to the Trash, so a wrong click is recoverable.
+- Give a new worktree the files git does not carry: one list of paths copied
+  into it, another symlinked back to the repository, so `.env` comes along
+  and `node_modules` is shared instead of installed again.
 - A state dot on every tab and worktree: working, waiting for input, done,
   failed. Claude Code reports through its hooks; zsh and bash report plain
   commands with no setup; any tool can through `multishell state`, which
   also takes `--agent` to say which agent is at that pane's prompt.
 - Pick a preferred agent and open it in a tab with one shortcut, or have
-  every new tab start it.
-- Optional notifications when a tab you are not looking at needs you.
+  every new tab start it. Optional notifications when a tab you are not
+  looking at needs you.
 - Drop files from Finder onto a terminal: a Claude Code tab gets them as
   `@` mentions relative to the worktree, a shell gets quoted paths. Nothing
   is run — you press Return.
-- Dirty-file badges and ahead/behind counts, from a `git status` that never
-  takes the index lock.
+- Dirty-file badges, ahead/behind counts, and a badge when a branch has
+  landed, from git calls that never take the index lock and never fetch on
+  a timer.
+- Sort worktree rows by name, creation or last commit, busy ones first if
+  you like, with the trunk pinned to the top; filter them, and name one
+  yourself over the branch it still is.
 - Pre- and post-create and delete hooks per project, run through your own
-  shell, with a timeout and a Stop button.
-- A `.multishell.json` a repository can commit with its path, prefix, hooks
-  and icon. Hooks from someone else's run only after you have said yes.
+  shell, with a timeout and a Cancel button in the pane rather than a
+  blocking sheet.
+- A `.multishell.json` a repository can commit with its path, prefix, file
+  lists, hooks and icon. Hooks from someone else's run only after you have
+  said yes; the lists, which run nothing, apply straight away.
 - Bare clones with worktrees beside them work as projects.
 - Ghostty or SwiftTerm as the terminal, themes as plain JSON that colour the
-  whole window, a font picker, Open in Editor.
+  whole window, a font picker, Open in Editor, and a click in the prompt
+  that moves the cursor (Ghostty only).
 - Nothing written to your shell's rc files, and state that survives an
   older or newer build.
 
 ## Status
 
-Early and unshipped. Nothing is signed or notarised, and the release bundle
-runs only on the machine that built it until the libghostty resource lookup
-is fixed (see Known gaps in DEVELOP.md). Only macOS has a GUI, and only
-macOS is built in CI; the core keeps to Foundation so another frontend can
-use it, but nothing compiles it without one.
+Early and unshipped. A build signs itself with a self-signed local
+certificate, so the permissions you grant it survive a rebuild, but nothing
+is notarised and the bundle runs only on the machine that built it until the
+libghostty resource lookup is fixed (see Known gaps in DEVELOP.md). Only
+macOS has a GUI, and only macOS is built in CI; the core keeps to Foundation
+so another frontend can use it, but nothing compiles it without one.
 
 Every line of code in this repository was written by an AI (Claude), under
 direction from a human who set the requirements, reviewed the results in the

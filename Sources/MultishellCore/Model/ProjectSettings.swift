@@ -21,9 +21,14 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   public var preDeleteHook: String
   public var postDeleteHook: String
 
+  /// Files and folders each new worktree is given a symlink to, pointing
+  /// back at the repository's own, one path per line, for what a worktree
+  /// can share rather than hold twice: `node_modules`, a build cache.
+  /// Blank means nothing is linked.
+  public var linkedPaths: String
   /// Files and folders copied from the repository into each new worktree,
-  /// one path per line, for what git does not carry: `.env`, a local
-  /// config, a build cache. Blank means nothing is copied.
+  /// one path per line, for what git does not carry and a worktree wants
+  /// its own of: `.env`, a local config. Blank means nothing is copied.
   public var copiedPaths: String
 
   /// Agent override by catalogue id. `nil` follows the global choice;
@@ -75,6 +80,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     postCreateHook: String = "",
     preDeleteHook: String = "",
     postDeleteHook: String = "",
+    linkedPaths: String = "",
     copiedPaths: String = "",
     preferredAgentID: String? = nil,
     autoStartAgent: Bool? = nil,
@@ -95,6 +101,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     self.postCreateHook = postCreateHook
     self.preDeleteHook = preDeleteHook
     self.postDeleteHook = postDeleteHook
+    self.linkedPaths = linkedPaths
     self.copiedPaths = copiedPaths
     self.preferredAgentID = preferredAgentID
     self.autoStartAgent = autoStartAgent
@@ -123,6 +130,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     postCreateHook = try c.decodeIfPresent(String.self, forKey: .postCreateHook) ?? ""
     preDeleteHook = try c.decodeIfPresent(String.self, forKey: .preDeleteHook) ?? ""
     postDeleteHook = try c.decodeIfPresent(String.self, forKey: .postDeleteHook) ?? ""
+    linkedPaths = try c.decodeIfPresent(String.self, forKey: .linkedPaths) ?? ""
     copiedPaths = try c.decodeIfPresent(String.self, forKey: .copiedPaths) ?? ""
     preferredAgentID = Self.override(try c.decodeIfPresent(String.self, forKey: .preferredAgentID))
     autoStartAgent = try c.decodeIfPresent(Bool.self, forKey: .autoStartAgent)
@@ -166,9 +174,9 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   /// These settings with the repository's own filling the gaps: a path or
   /// prefix the user left following the global, what a worktree here opens
   /// where they said nothing, the order its rows come in, an icon they did
-  /// not set, the files a new worktree is given, and a hook they left
-  /// blank, the last only once its text is trusted. A whitespace-only hook,
-  /// or copy list, is the user's "none" and stays.
+  /// not set, the files a new worktree is linked to or given, and a hook
+  /// they left blank, the last only once its text is trusted. A
+  /// whitespace-only hook, or file list, is the user's "none" and stays.
   public func layered(over shared: SharedProjectSettings?) -> ProjectSettings {
     guard let shared else { return self }
     var result = self
@@ -184,6 +192,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
       showsActiveWorktreesFirst ?? shared.showsActiveWorktreesFirst
     result.iconGlyph = iconGlyph ?? shared.iconGlyph
     result.iconTint = iconTint ?? ProjectIcon.validTint(shared.iconTint)
+    result.linkedPaths = linkedPaths.isEmpty ? shared.linkedPaths ?? "" : linkedPaths
     result.copiedPaths = copiedPaths.isEmpty ? shared.copiedPaths ?? "" : copiedPaths
     if trustsHooks(of: shared) {
       result.preCreateHook = preCreateHook.isEmpty ? shared.preCreateHook ?? "" : preCreateHook

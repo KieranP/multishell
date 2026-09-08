@@ -32,12 +32,12 @@ public final class AppModel<Surface> {
   /// when none is. Runtime state, so the menu that starts a rename and the
   /// row that draws the field need not know about each other.
   public var renamingWorktreeID: Worktree.ID?
-  /// The copy and post-create hook still running on each worktree, as one
-  /// task, so a test can await it.
+  /// The file lists and post-create hook still running on each worktree,
+  /// as one task, so a test can await it.
   @ObservationIgnored public var worktreeSetups: [Worktree.ID: Task<Void, Never>] = [:]
-  /// The stop handle for the hook running on each worktree, behind the
-  /// pane's Stop Hook.
-  @ObservationIgnored var hookStoppers: [Worktree.ID: ProcessStopper] = [:]
+  /// The stop handle for the stage running on each worktree, behind the
+  /// pane's Cancel: a hook by signal, a file list between files.
+  @ObservationIgnored var stageStoppers: [Worktree.ID: ProcessStopper] = [:]
   /// The stop handle for the pre-create hook under the sheet.
   @ObservationIgnored var creationStopper: ProcessStopper?
   /// What each project's `.multishell.json` says, re-read on every refresh.

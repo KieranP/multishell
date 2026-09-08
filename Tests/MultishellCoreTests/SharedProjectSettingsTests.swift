@@ -160,15 +160,20 @@ struct SharedProjectSettingsTests {
     #expect(shared.opensTerminalOnCreate == false)
   }
 
-  /// Copying duplicates files the checkout already has and runs nothing,
-  /// so it is not part of the hook question and applies straight away.
+  /// Linking and copying work inside the checkout the user already has
+  /// and run nothing, so neither list is part of the hook question and
+  /// both apply straight away.
   @Test func aRepositoryMaySayWhatNewWorktreesAreGivenWithoutBeingTrusted() throws {
-    let shared = try decode(#"{ "copiedPaths": ".env\n.env.local" }"#)
-    #expect(!shared.hasHooks, "a copy list is not a hook and is not asked about")
-    #expect(ProjectSettings().layered(over: shared).copiedPaths == ".env\n.env.local")
-    let own = ProjectSettings(copiedPaths: ".env")
+    let shared = try decode(
+      #"{ "copiedPaths": ".env\n.env.local", "linkedPaths": "node_modules" }"#)
+    #expect(!shared.hasHooks, "a file list is not a hook and is not asked about")
+    let layered = ProjectSettings().layered(over: shared)
+    #expect(layered.copiedPaths == ".env\n.env.local" && layered.linkedPaths == "node_modules")
+    let own = ProjectSettings(linkedPaths: "vendor", copiedPaths: ".env")
     #expect(own.layered(over: shared).copiedPaths == ".env", "the user's list wins whole")
+    #expect(own.layered(over: shared).linkedPaths == "vendor")
     #expect(ProjectSettings(copiedPaths: " ").layered(over: shared).copiedPaths == " ")
+    #expect(ProjectSettings(linkedPaths: " ").layered(over: shared).linkedPaths == " ")
   }
 
   @Test func sharedHooksRunOnlyWhenTrustedAndOnlyWhileTheTextIsTheOneTrusted() {

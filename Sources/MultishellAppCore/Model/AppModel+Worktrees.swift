@@ -84,20 +84,19 @@ extension AppModel {
     worktreeOperations.isBusy(id)
   }
 
-  /// The pane's Dismiss after a failed stage. A dismissed post-create
-  /// failure hands over the way a finished hook does: the first tab opens.
+  /// The pane's Dismiss after a failed stage. A dismissed create stage
+  /// hands over the way a finished one does: the first tab opens.
   public func dismissOperationFailure(of worktree: Worktree) {
     guard let operation = worktreeOperations.dismiss(worktree.id) else { return }
-    if operation.step == .postCreateHook || operation.step == .copyingFiles {
-      openHeldBackTab(of: worktree)
-    }
+    if operation.step.isCreation { openHeldBackTab(of: worktree) }
   }
 
-  /// The pane's Stop Hook: ends the hook running on the worktree, which
-  /// then reports itself stopped. What follows depends on the stage; see
+  /// The pane's Cancel: ends the stage running on the worktree, a hook by
+  /// signal and a file list at its next path, which then reports itself
+  /// stopped. What follows depends on the stage; see `prepareWorktree`,
   /// `runPostCreateHook` and `removeWorktree`.
-  public func stopHook(of worktree: Worktree) {
-    hookStoppers[worktree.id]?.stop()
+  public func cancelStage(of worktree: Worktree) {
+    stageStoppers[worktree.id]?.stop()
   }
 
   public func setHookTimeoutSeconds(_ seconds: Int) {

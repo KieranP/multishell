@@ -11,7 +11,7 @@ import Foundation
 /// text; see `SharedHooksDecision`. Nothing else here runs anything the
 /// repository wrote: what a worktree opens starts the shell or the agent
 /// the user themselves chose, and only where they left the choice to the
-/// global, and the copy list only duplicates files already in the
+/// global, and the file lists only link or duplicate files already in the
 /// checkout.
 public struct SharedProjectSettings: Equatable, Sendable {
   public var worktreeDirectory: String?
@@ -27,10 +27,12 @@ public struct SharedProjectSettings: Equatable, Sendable {
   public var postCreateHook: String?
   public var preDeleteHook: String?
   public var postDeleteHook: String?
-  /// Paths a new worktree is given a copy of, one per line. It copies
-  /// inside the checkout the user already has and runs nothing, so unlike
-  /// the hooks above it needs no trust; `WorktreeCopier` refuses a path
-  /// that would reach outside the repository.
+  /// Paths a new worktree is given a symlink to, one per line, and paths
+  /// it is given a copy of. Both work inside the checkout the user already
+  /// has and run nothing, so unlike the hooks above they need no trust;
+  /// `WorktreeFiles` refuses a path that would reach outside the
+  /// repository or the worktree.
+  public var linkedPaths: String?
   public var copiedPaths: String?
   /// What order a project's worktree rows come in: a team may ship "our
   /// worktrees list by what was committed to last". Display only, so like
@@ -55,6 +57,7 @@ public struct SharedProjectSettings: Equatable, Sendable {
     postCreateHook: String? = nil,
     preDeleteHook: String? = nil,
     postDeleteHook: String? = nil,
+    linkedPaths: String? = nil,
     copiedPaths: String? = nil,
     worktreeSortOrder: WorktreeSortOrder? = nil,
     showsActiveWorktreesFirst: Bool? = nil,
@@ -72,6 +75,7 @@ public struct SharedProjectSettings: Equatable, Sendable {
     self.postCreateHook = Self.text(postCreateHook)
     self.preDeleteHook = Self.text(preDeleteHook)
     self.postDeleteHook = Self.text(postDeleteHook)
+    self.linkedPaths = Self.text(linkedPaths)
     self.copiedPaths = Self.text(copiedPaths)
     self.worktreeSortOrder = worktreeSortOrder
     self.showsActiveWorktreesFirst = showsActiveWorktreesFirst
@@ -108,6 +112,7 @@ public struct SharedProjectSettings: Equatable, Sendable {
       postCreateHook: settings.postCreateHook,
       preDeleteHook: settings.preDeleteHook,
       postDeleteHook: settings.postDeleteHook,
+      linkedPaths: settings.linkedPaths,
       copiedPaths: settings.copiedPaths,
       worktreeSortOrder: settings.worktreeSortOrder,
       showsActiveWorktreesFirst: settings.showsActiveWorktreesFirst,
@@ -151,7 +156,8 @@ extension SharedProjectSettings: Codable {
   private enum CodingKeys: String, CodingKey {
     case worktreeDirectory, branchPrefix, defaultBranch, autoStartAgent, autoStartAgentOnCreate,
       opensTerminalOnSelect, opensTerminalOnCreate, preCreateHook, postCreateHook, preDeleteHook,
-      postDeleteHook, copiedPaths, worktreeSortOrder, showsActiveWorktreesFirst, iconGlyph, iconTint
+      postDeleteHook, linkedPaths, copiedPaths, worktreeSortOrder, showsActiveWorktreesFirst,
+      iconGlyph, iconTint
   }
 
   public func encode(to encoder: any Encoder) throws {
@@ -167,6 +173,7 @@ extension SharedProjectSettings: Codable {
     try c.encodeIfPresent(postCreateHook, forKey: .postCreateHook)
     try c.encodeIfPresent(preDeleteHook, forKey: .preDeleteHook)
     try c.encodeIfPresent(postDeleteHook, forKey: .postDeleteHook)
+    try c.encodeIfPresent(linkedPaths, forKey: .linkedPaths)
     try c.encodeIfPresent(copiedPaths, forKey: .copiedPaths)
     try c.encodeIfPresent(worktreeSortOrder, forKey: .worktreeSortOrder)
     try c.encodeIfPresent(showsActiveWorktreesFirst, forKey: .showsActiveWorktreesFirst)
@@ -195,6 +202,7 @@ extension SharedProjectSettings: Codable {
       postCreateHook: string(.postCreateHook),
       preDeleteHook: string(.preDeleteHook),
       postDeleteHook: string(.postDeleteHook),
+      linkedPaths: string(.linkedPaths),
       copiedPaths: string(.copiedPaths),
       // An order a newer build named, or a typo someone committed, costs
       // the key and leaves the user's own choice in force.

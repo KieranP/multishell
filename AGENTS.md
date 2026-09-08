@@ -26,6 +26,15 @@ Working rules:
 - Run `make format` on anything you touched, then `make lint`, `make test`
   (both packages), `make build` and `make release`. All must pass, and both
   builds must compile with no warnings, before you say something works.
+- You cannot see or drive the app. This environment has neither Apple events
+  (System Events answers `-1743`) nor Screen Recording (`screencapture`
+  answers "could not create image from display"), so there is no window to
+  click through and no screenshot to look at. Do not try, and do not ask for
+  those permissions. A view change goes as far as the checks above and no
+  further: say what is left unverified and leave the looking to the user.
+  Whatever can be decided without a screen belongs in a plain value in
+  `MultishellAppCore`, tested there, which is what makes that boundary worth
+  keeping.
 - Every persisted field decodes with a default, including an enum value this
   build does not know. Add a case to `DecodingDefaultsTests` when you add one.
   Worktrees, sessions and tabs decode element by element and drop a broken

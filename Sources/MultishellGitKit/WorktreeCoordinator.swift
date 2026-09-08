@@ -7,15 +7,15 @@ import MultishellProcess
 public struct WorktreeCoordinator: Sendable {
   let service: WorktreeService
   private let hooks: WorktreeHooks
-  private let copier: WorktreeCopier
+  private let files: WorktreeFiles
 
   public init(
     service: WorktreeService, hooks: WorktreeHooks = WorktreeHooks(),
-    copier: WorktreeCopier = WorktreeCopier()
+    files: WorktreeFiles = WorktreeFiles()
   ) {
     self.service = service
     self.hooks = hooks
-    self.copier = copier
+    self.files = files
   }
 
   public init() throws {
@@ -177,13 +177,19 @@ public struct WorktreeCoordinator: Sendable {
     return path
   }
 
-  /// Copies the project's listed files into a worktree git has just made,
-  /// before the post-create hook runs, so a hook and the first terminal
-  /// both find them. Throws `WorktreeCopyFailure` for what it could not
-  /// copy; the worktree is created either way. Returns at once when the
-  /// list is blank.
-  public func copyFiles(for project: Project, into worktreePath: URL) throws {
-    try copier.copy(project.settings.copiedPaths, from: project.path, to: worktreePath)
+  /// Links or copies the project's listed files into a worktree git has
+  /// just made, before the post-create hook runs, so a hook and the first
+  /// terminal both find them. Throws `WorktreeFileFailure` for what it
+  /// could not place, or `WorktreeFilesStopped` if `stopper` was used part
+  /// way through; the worktree is created either way. Returns at once when
+  /// that list is blank.
+  public func placeFiles(
+    _ placement: WorktreePlacement, for project: Project, into worktreePath: URL,
+    stopper: ProcessStopper? = nil
+  ) throws {
+    try files.place(
+      placement.paths(in: project.settings), as: placement, from: project.path,
+      to: worktreePath, isStopped: { stopper?.isStopped == true })
   }
 
   /// The other half of a create. Returns at once when the hook is blank.

@@ -50,9 +50,9 @@ extension AppModel {
     let resolved = resolved(project)
     worktreeOperations.begin(.init(WorktreeRemovalStep.first(for: resolved)), on: worktree.id)
     let stopper = ProcessStopper()
-    hookStoppers[worktree.id] = stopper
+    stageStoppers[worktree.id] = stopper
     defer {
-      if hookStoppers[worktree.id] === stopper { hookStoppers[worktree.id] = nil }
+      if stageStoppers[worktree.id] === stopper { stageStoppers[worktree.id] = nil }
     }
     do {
       try await worktrees.remove(

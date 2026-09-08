@@ -15,7 +15,7 @@ struct DetailView: View {
           // remove is about to close them.
           WorktreeOperationView(
             operation: operation, theme: theme,
-            stopHook: { model.stopHook(of: worktree) },
+            cancel: { model.cancelStage(of: worktree) },
             dismiss: { model.dismissOperationFailure(of: worktree) })
         } else if let tab = model.workspace.activeTab(in: worktree.id) {
           TabBar(

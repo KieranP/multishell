@@ -129,22 +129,41 @@ been reissued.
 `cp "$MULTISHELL_PROJECT_PATH/.env" .` was the post-create hook nearly
 everyone wrote, and it cost them a login shell, a timeout and the pane. A
 list of paths does it between `git worktree add` and the hook, so the hook
-and the first terminal both find the files. Nothing is copied over what git
-checked out, and a path the repository does not have is skipped, since a
-list naming `.env` is right for the checkouts that have one.
+and the first terminal both find the files. Nothing is placed over what git
+checked out — over anything at that path, a symlink whose target this branch
+does not carry included, since what matters is that something is in the way
+and not where it leads — and a path the repository does not have is skipped,
+since a list naming `.env` is right for the checkouts that have one.
+
+Two lists, because there are two answers. A copy gives the worktree its
+own, which is what a file it will edit wants. A symlink to the repository's
+own file shares it, which is what `node_modules` or a build cache wants:
+hundreds of megabytes and an `npm install` per worktree, for a directory
+nothing branches. The link list runs first, so a path spelled in both ends
+up the link and the copy finds it already there.
+
+A link is absolute and points at the repository's own file: a write through
+it writes there, which is the point and the cost, since a worktree cannot
+then hold a `node_modules` of its own. Absolute rather than relative,
+because a relative link would be to where the worktree sits today, and git
+records a worktree's path absolutely for the same reason.
 
 A name may be a pattern, `*` and `?` within one component, because `.env.*`
 is how people hold more than one of these. It follows the shell in not
-matching a leading dot unless the pattern says the dot, or `*` would copy
+matching a leading dot unless the pattern says the dot, or `*` would take
 `.git` into the worktree. A plain path is never looked up, so what happens
 to one does not turn on a directory being readable, and a pattern matching
 nothing is the same as naming a file that is not there. Bracket expressions
-are left out: they are more than a copy list needs, and they are taken
+are left out: they are more than these lists need, and they are taken
 literally rather than half-supported.
 
-It copies inside a checkout the user already has and runs nothing, so a list
-a repository ships in `.multishell.json` applies without the trust question
-its hooks wait for. That holds only while neither end can leave its
+Both lists work inside a checkout the user already has and run nothing, so
+one a repository ships in `.multishell.json` applies without the trust
+question its hooks wait for. Nothing being placed over what git checked out
+is the other half of that: every tracked path is already in the new
+worktree, so a list can only reach the paths git left alone, and a
+committed `linkedPaths: src` cannot quietly point a worktree's source at
+the main checkout. That holds only while neither end can leave its
 directory, and that is decided against the disk rather than against the
 spelling: the folders on the way to each end are resolved and checked. `..`
 resolves there, a leading `/` or `~` lands under the repository and finds
@@ -161,15 +180,25 @@ tested for being there already, since the two ends of an escaping path often
 resolve to the same file and that test would take it for something git had
 checked out.
 
-The copy and the hook are one pane operation moving through its stages,
+The lists and the hook are one pane operation moving through its stages,
 begun once the worktree is there rather than under the sheet. A build cache
 is not something to hold the window for, and an alert raised as the sheet
 goes away is dropped, which is the same reason the hook is shown there. A
-copy that fails stops before the hook, since a hook written to use the files
-it was promised turns one clear failure into a confusing second one.
+list that fails stops the stages after it, since a hook written to use the
+files it was promised turns one clear failure into a confusing second one.
 
-Cost: the copy stage cannot be stopped the way a hook can, having no process
-to signal.
+The pane's Cancel ends a list stage too, though there is no process to
+signal: the list asks its stopper before each path and gives up there,
+leaving what it has already placed where a stopped hook's work is left. The
+handle is made before the task, or a click landing in that gap would find
+nothing to stop. One word on the button at every stage, since the question
+it answers is always "must I wait for this?"; what it means differs, and
+that is in its help.
+
+Cost: a cancel waits for the file being copied, so one enormous directory is
+not interruptible half way. And it ends the setup rather than skipping the
+stage: "get on with the worktree" is what one button can mean, and which of
+the stages after it to keep is not a decision it could carry.
 
 ## Watch where git records worktrees, poll for everything else
 

@@ -58,7 +58,7 @@ struct WorktreeSettingsTab: View {
         InfoRow(
           "Hook timeout:",
           info:
-            "How long a project hook may run before it is stopped and reported, in seconds. A hook that hangs would otherwise hold its worktree until relaunch. Stop Hook on the pane ends one sooner; 0 is no limit."
+            "How long a project hook may run before it is stopped and reported, in seconds. A hook that hangs would otherwise hold its worktree until relaunch. Cancel on the pane ends one sooner; 0 is no limit."
         ) {
           TextField(
             "Hook timeout:",

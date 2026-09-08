@@ -9,19 +9,27 @@ import MultishellProcess
 /// Only the pre-create hook and `git worktree add` still run under the
 /// sheet: until they finish there is no worktree to show.
 ///
-/// A stage that fails while the worktree is still there, the copy, the
+/// A stage that fails while the worktree is still there, a file list, the
 /// post-create hook or a pre-delete veto, leaves the entry with `failure`:
 /// the pane shows what went wrong until the user dismisses it. An alert
 /// would go up over whatever the user had moved on to, or be lost under the
 /// sheet's own dismissal when the hook fails at once.
 public struct WorktreeOperation: Equatable, Sendable {
   public enum Step: Equatable, Sendable {
+    case linkingFiles
     case copyingFiles
     case postCreateHook
     case preDeleteHook
     case removingWorktree
     case postDeleteHook
     case deletingBranch
+
+    public init(_ placement: WorktreePlacement) {
+      switch placement {
+      case .link: self = .linkingFiles
+      case .copy: self = .copyingFiles
+      }
+    }
 
     public init(_ removal: WorktreeRemovalStep) {
       switch removal {
@@ -32,10 +40,27 @@ public struct WorktreeOperation: Equatable, Sendable {
       }
     }
 
-    /// A stage the user can stop from the pane. Git's own stages are quick
-    /// and are left to finish.
-    public var isHook: Bool {
-      self == .postCreateHook || self == .preDeleteHook || self == .postDeleteHook
+    /// A stage of a create: the worktree is there, and its first terminal
+    /// is held back until this ends or its failure is dismissed.
+    public var isCreation: Bool {
+      self == .linkingFiles || self == .copyingFiles || self == .postCreateHook
+    }
+
+    /// What the pane's Cancel does at this stage, and `nil` for a stage
+    /// that has none: git's own are quick and are left to finish. One
+    /// property, so a stage cannot offer the button and say nothing about
+    /// it; the word on it is the same everywhere, and what it means is
+    /// not, a hook being ended and a list being given up on.
+    public var cancelHelp: String? {
+      switch self {
+      case .linkingFiles, .copyingFiles:
+        return
+          "Ends the list once the file it is on is done. What is already in the worktree stays, and nothing else runs in it."
+      case .postCreateHook, .preDeleteHook, .postDeleteHook:
+        return
+          "Ends the hook now. It runs under the hook timeout in Settings > Worktrees otherwise."
+      case .removingWorktree, .deletingBranch: return nil
+      }
     }
   }
 
@@ -63,6 +88,7 @@ public struct WorktreeOperation: Equatable, Sendable {
   public var title: String {
     if failure != nil {
       switch step {
+      case .linkingFiles: return "Some files were not linked into the worktree"
       case .copyingFiles: return "Some files were not copied into the worktree"
       case .postCreateHook:
         return timedOut ? "The post-create hook did not finish" : "The post-create hook failed"
@@ -75,6 +101,7 @@ public struct WorktreeOperation: Equatable, Sendable {
       }
     }
     switch step {
+    case .linkingFiles: return "Linking files into the worktree…"
     case .copyingFiles: return "Copying files into the worktree…"
     case .postCreateHook: return "Running the post-create hook…"
     case .preDeleteHook: return "Running the pre-delete hook…"
@@ -89,7 +116,7 @@ public struct WorktreeOperation: Equatable, Sendable {
   public var detail: String {
     if failure != nil {
       switch step {
-      case .copyingFiles:
+      case .linkingFiles, .copyingFiles:
         // Not "the hook did not run": a project may list files and have no
         // hook, and this is the pane for that one too.
         return
@@ -103,8 +130,8 @@ public struct WorktreeOperation: Equatable, Sendable {
       }
     }
     switch step {
-    case .copyingFiles: return "The first terminal opens here when it finishes."
-    case .postCreateHook: return "The first terminal opens here when it finishes."
+    case .linkingFiles, .copyingFiles, .postCreateHook:
+      return "The first terminal opens here when it finishes."
     case .preDeleteHook: return "The worktree stays if the hook refuses."
     case .removingWorktree, .postDeleteHook, .deletingBranch:
       return "Its terminals close when it is gone; the directory is in the Trash."

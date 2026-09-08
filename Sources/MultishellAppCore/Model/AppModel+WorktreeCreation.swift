@@ -91,55 +91,74 @@ extension AppModel {
       let created = workspace.worktree(path.standardizedFileURL.path)
         ?? workspace.worktrees(of: project.id).first(where: { $0.branch == name })
     else { return }
-    // The copy and the hook run in the pane, not under the sheet: a build
-    // cache is not something to hold the window for, and the pane is where
-    // a failure can still be read once the sheet has gone.
-    let copies = !WorktreeCopier.paths(in: resolved.settings.copiedPaths).isEmpty
+    // The file lists and the hook run in the pane, not under the sheet: a
+    // build cache is not something to hold the window for, and the pane is
+    // where a failure can still be read once the sheet has gone.
+    let placements = WorktreePlacement.allCases.filter {
+      !WorktreeFiles.paths(in: $0.paths(in: resolved.settings)).isEmpty
+    }
     let hasHook = WorktreeHooks.hasScript(resolved.settings.postCreateHook)
-    if copies || hasHook {
-      worktreeOperations.begin(copies ? .copyingFiles : .postCreateHook, on: created.id)
-      // Made here, not in the task: a Stop Hook clicked before the task has
+    let first: WorktreeOperation.Step? =
+      placements.first.map(WorktreeOperation.Step.init) ?? (hasHook ? .postCreateHook : nil)
+    if let first {
+      worktreeOperations.begin(first, on: created.id)
+      // Made here, not in the task: a Cancel clicked before the task has
       // run would otherwise find nothing to stop.
       let stopper = ProcessStopper()
-      hookStoppers[created.id] = stopper
+      stageStoppers[created.id] = stopper
       worktreeSetups[created.id] = Task {
         await prepareWorktree(
           created, branch: name, in: resolved, shellPath: shell, stopper: stopper,
-          copying: copies, runningHook: hasHook)
+          placements: placements, runningHook: hasHook)
       }
     }
     select(created, openingFirstTab: .onCreate, byUser: false)
   }
 
-  /// What a new worktree gets before its first terminal: the copy list,
-  /// then the post-create hook, as one pane operation moving through its
-  /// stages. A copy that fails stops there, since a hook written to use
-  /// the files it was promised turns one clear failure into a confusing
-  /// second one.
+  /// What a new worktree gets before its first terminal: the file lists a
+  /// project has, in `placements` order, then the post-create hook, as one
+  /// pane operation moving through its stages.
+  ///
+  /// A list that fails stops the stages after it, since a hook written to
+  /// use the files it was promised turns one clear failure into a confusing
+  /// second one. So does the user's Cancel, which is a decision to get on
+  /// with the worktree rather than to run the rest of the setup.
   private func prepareWorktree(
     _ worktree: Worktree, branch: String, in project: Project, shellPath: String?,
-    stopper: ProcessStopper, copying: Bool, runningHook: Bool
+    stopper: ProcessStopper, placements: [WorktreePlacement], runningHook: Bool
   ) async {
-    if copying {
-      if let failure = await copyListedFiles(into: worktree.path, for: project) {
-        endSetup(of: worktree, stopper: stopper)
-        let shownInPane =
-          workspace.worktree(worktree.id) != nil
-          && worktreeOperations.fail(
-            .copyingFiles, on: worktree.id, message: PresentedError(failure).message)
-        if !shownInPane { report(failure) }
+    for (index, placement) in placements.enumerated() {
+      let stage = WorktreeOperation.Step(placement)
+      if index > 0 { worktreeOperations.advance(to: stage, on: worktree.id) }
+      guard
+        let failure = await placeListedFiles(
+          placement, into: worktree.path, for: project, stopper: stopper)
+      else { continue }
+      endSetup(of: worktree, stopper: stopper)
+      // The user's Cancel: the worktree is theirs to use, as after a
+      // stopped hook, with what was placed before it left where it is.
+      guard !(failure is WorktreeFilesStopped) else {
+        if worktreeOperations.finish(stage, on: worktree.id) { openHeldBackTab(of: worktree) }
         return
       }
-      guard runningHook else {
-        endSetup(of: worktree, stopper: stopper)
-        // A removal that began meanwhile owns the entry now.
-        if worktreeOperations.finish(.copyingFiles, on: worktree.id) {
-          openHeldBackTab(of: worktree)
-        }
-        return
-      }
-      worktreeOperations.advance(to: .postCreateHook, on: worktree.id)
+      let shownInPane =
+        workspace.worktree(worktree.id) != nil
+        && worktreeOperations.fail(
+          stage, on: worktree.id, message: PresentedError(failure).message)
+      if !shownInPane { report(failure) }
+      return
     }
+    guard runningHook else {
+      endSetup(of: worktree, stopper: stopper)
+      // A removal that began meanwhile owns the entry now.
+      if let last = placements.last,
+        worktreeOperations.finish(WorktreeOperation.Step(last), on: worktree.id)
+      {
+        openHeldBackTab(of: worktree)
+      }
+      return
+    }
+    if !placements.isEmpty { worktreeOperations.advance(to: .postCreateHook, on: worktree.id) }
     await runPostCreateHook(
       for: worktree, branch: branch, in: project, shellPath: shellPath, stopper: stopper)
   }
@@ -147,18 +166,20 @@ extension AppModel {
   /// Lets go of the task and its stop handle, whichever stage ended.
   private func endSetup(of worktree: Worktree, stopper: ProcessStopper) {
     worktreeSetups[worktree.id] = nil
-    if hookStoppers[worktree.id] === stopper { hookStoppers[worktree.id] = nil }
+    if stageStoppers[worktree.id] === stopper { stageStoppers[worktree.id] = nil }
   }
 
-  /// The project's copy list, before the post-create hook, so the hook and
-  /// the first terminal both find the files. Returns what went wrong
-  /// rather than throwing, since the stage it belongs to is the caller's.
-  /// Off the main thread: a list may name a build cache.
-  private func copyListedFiles(into path: URL, for project: Project) async -> (any Error)? {
+  /// One of the project's file lists, before the post-create hook, so the
+  /// hook and the first terminal both find the files. Returns what went
+  /// wrong rather than throwing, since the stage it belongs to is the
+  /// caller's. Off the main thread: a list may name a build cache.
+  private func placeListedFiles(
+    _ placement: WorktreePlacement, into path: URL, for project: Project, stopper: ProcessStopper
+  ) async -> (any Error)? {
     guard let worktrees else { return nil }
     return await Self.offMain {
       do {
-        try worktrees.copyFiles(for: project, into: path)
+        try worktrees.placeFiles(placement, for: project, into: path, stopper: stopper)
         return nil
       } catch {
         return error

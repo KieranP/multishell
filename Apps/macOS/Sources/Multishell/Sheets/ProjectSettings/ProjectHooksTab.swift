@@ -3,9 +3,9 @@ import MultishellCore
 import MultishellGitKit
 import SwiftUI
 
-/// Four scripts and the list of files a new worktree is given, grouped by
-/// the operation they surround. Each is a small monospaced editor, since a
-/// hook of any substance has more than one line.
+/// Four scripts and the two lists of files a new worktree is given, grouped
+/// by the operation they surround. Each is a small monospaced editor, since
+/// a hook of any substance has more than one line.
 /// Where the repository's `.multishell.json` has a hook and the user's is
 /// blank, the editor shows the repository's in grey, and a section above
 /// says whether those hooks are trusted.
@@ -31,9 +31,15 @@ struct ProjectHooksTab: View {
           placeholder: shared?.preCreateHook,
           text: model.setting(\.preCreateHook, of: project))
         MonospacedEditor(
+          title: "Link into new worktrees",
+          info:
+            "Symlinked in the new worktree back to the repository's own file after git worktree add, before the copy list and the post-create hook, so the hook and the first terminal both find them. For what a worktree can share rather than hold twice: a folder is linked whole, so node_modules or a build cache is one directory again, and writing through the link writes the repository's file. One path per line, relative to the repository root, with the same patterns and the same skipping as the copy list below. A path leading outside the repository or the worktree is not linked and is named afterwards. A list in \(SharedProjectSettings.fileName) fills a blank one here without being trusted first, since linking runs nothing.",
+          placeholder: shared?.linkedPaths,
+          text: model.setting(\.linkedPaths, of: project))
+        MonospacedEditor(
           title: "Copy into new worktrees",
           info:
-            "Copied out of the repository after git worktree add, before the post-create hook, so the hook and the first terminal both find them. One path per line, relative to the repository root; a folder is copied whole. A name may be a pattern: * for any run of characters and ? for one, neither crossing a /, so .env.* takes .env.local and .env.test. A pattern matches a name starting with a dot only when it spells the dot, as a shell does. A path the repository does not have, or one git already put in the worktree, is skipped, and a path leading outside the repository or the worktree is not copied and is named afterwards. A list in \(SharedProjectSettings.fileName) fills a blank one here without being trusted first, since copying runs nothing.",
+            "Copied out of the repository after the link list, before the post-create hook, so the hook and the first terminal both find them. For what the worktree wants its own of: an .env it will edit. One path per line, relative to the repository root; a folder is copied whole. A name may be a pattern: * for any run of characters and ? for one, neither crossing a /, so .env.* takes .env.local and .env.test. A pattern matches a name starting with a dot only when it spells the dot, as a shell does. A path the repository does not have, or one git or the link list already put in the worktree, is skipped, and a path leading outside the repository or the worktree is not copied and is named afterwards. A list in \(SharedProjectSettings.fileName) fills a blank one here without being trusted first, since copying runs nothing.",
           placeholder: shared?.copiedPaths,
           text: model.setting(\.copiedPaths, of: project))
         MonospacedEditor(
@@ -109,7 +115,8 @@ struct ProjectHooksTab: View {
 
 }
 
-/// One multi-line monospaced field: a hook's script, or the copy list.
+/// One multi-line monospaced field: a hook's script, or one of the file
+/// lists.
 ///
 /// The only placeholder passed is what the repository ships, so grey text
 /// means that and nothing else. No example scripts: an example drawn the

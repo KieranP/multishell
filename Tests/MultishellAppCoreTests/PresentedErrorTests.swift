@@ -45,6 +45,28 @@ struct PresentedErrorTests {
     #expect(presented.message == "npm ERR!\n\nExited with status 1.")
   }
 
+  /// The alert for a file list that could not finish, which is only ever
+  /// raised when the pane it belongs to has gone: it names which list it
+  /// was, since a worktree may have had both.
+  @Test func aFileListFailureSaysWhichListItWasAndNamesEachPath() {
+    for (placement, expected) in [
+      (WorktreePlacement.link, "Worktree created, but some of its files were not linked"),
+      (WorktreePlacement.copy, "Worktree created, but some of its files were not copied"),
+    ] {
+      let presented = PresentedError(
+        WorktreeFileFailure(
+          placement: placement,
+          items: [
+            WorktreeFileFailure.Item(path: "../outside/key", underlying: WorktreeFileEscape())
+          ]
+        ))
+      #expect(presented.title == expected)
+      #expect(
+        presented.message
+          == "../outside/key: It leads outside the repository or the worktree.")
+    }
+  }
+
   @Test func aSilentHookFailureGetsItsStatusNotTheCommandLineItRanAs() {
     let silent = ProcessFailure(
       executable: "zsh", arguments: ["-l", "-i", "-c", "set -e\nexit 3"], status: 3, message: "")

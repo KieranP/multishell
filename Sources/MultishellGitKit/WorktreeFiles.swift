@@ -1,23 +1,32 @@
 import Foundation
 
-/// Copies the files a project lists into each new worktree, for what git
-/// does not carry across: `.env`, a local config, a build cache.
+/// Puts the files a project lists into each new worktree, for what git does
+/// not carry across: `.env`, a local config, a build cache, `node_modules`.
+///
+/// Two lists, run in `WorktreePlacement`'s order. A link points at the
+/// repository's own file, so a folder a worktree only reads is shared
+/// rather than duplicated; a copy gives the worktree its own, so what it
+/// edits is its own. A destination that already exists is left alone, since
+/// git put it there and a tracked file beats what a list would place. That
+/// is also what settles a path spelled in both lists: the link is made
+/// first, and the copy finds something there.
 ///
 /// One path per line, relative to the repository root. A blank line, and a
 /// line starting with `#`, is skipped, as is a path the repository does not
 /// have: a list naming `.env` is right for a checkout that has one and
-/// should not fail the ones that do not. A destination that already exists
-/// is left alone, since git put it there and a tracked file beats a copy.
+/// should not fail the ones that do not. So is a path the worktree already
+/// has anything at, a symlink whose target this branch does not carry
+/// included; see `isPresent`.
 ///
 /// A component may be a pattern: `*` for any run of characters and `?` for
 /// one, neither crossing a `/`. `.env.*` is the reason it is here. A
 /// pattern matches a name starting with `.` only when it spells the dot,
 /// as a shell does, so `*` does not sweep up `.git`.
-public struct WorktreeCopier: Sendable {
+public struct WorktreeFiles: Sendable {
   public init() {}
 
   /// The paths in a list, in order, without blanks, comments or repeats.
-  /// Nothing here judges the shape of a path: `copy` decides what is in
+  /// Nothing here judges the shape of a path: `place` decides what is in
   /// reach against the disk, which is the only place that can say.
   public static func paths(in list: String) -> [String] {
     var seen: Set<String> = []
@@ -28,17 +37,27 @@ public struct WorktreeCopier: Sendable {
     }
   }
 
-  /// Copies each listed path from `repository` into `worktree`, making the
-  /// parent directories a nested path needs. Copies everything it can and
-  /// then throws `WorktreeCopyFailure` naming what it could not, so one
-  /// unreadable file does not cost the rest of the list.
-  public func copy(_ list: String, from repository: URL, to worktree: URL) throws {
+  /// Links or copies each listed path from `repository` into `worktree`,
+  /// making the parent directories a nested path needs. Places everything
+  /// it can and then throws `WorktreeFileFailure` naming what it could
+  /// not, so one unreadable file does not cost the rest of the list.
+  ///
+  /// `isStopped` is asked before each path, for the pane's button: there
+  /// is no process to signal, so a stop takes effect at the next path and
+  /// throws `WorktreeFilesStopped` with what has been placed left where it
+  /// is. A stop wins over what could not be placed, since the user asked
+  /// for this to end rather than for a report on it.
+  public func place(
+    _ list: String, as placement: WorktreePlacement, from repository: URL, to worktree: URL,
+    isStopped: @Sendable () -> Bool = { false }
+  ) throws {
     let manager = FileManager.default
     let repositoryBase = repository.resolvingSymlinksInPath()
     let worktreeBase = worktree.resolvingSymlinksInPath()
-    var failures: [WorktreeCopyFailure.Item] = []
+    var failures: [WorktreeFileFailure.Item] = []
 
     for path in Self.paths(in: list).flatMap({ Self.expand($0, in: repository) }) {
+      guard !isStopped() else { throw WorktreeFilesStopped() }
       let source = repository.appendingPathComponent(path)
       let destination = worktree.appendingPathComponent(path)
       // A path the repository does not have is the quiet case and comes
@@ -56,26 +75,35 @@ public struct WorktreeCopier: Sendable {
       guard Self.isInside(repositoryBase, source.deletingLastPathComponent()),
         Self.isInside(worktreeBase, Self.deepestExistingAncestor(of: destination))
       else {
-        failures.append(WorktreeCopyFailure.Item(path: path, underlying: WorktreeCopyEscape()))
+        failures.append(WorktreeFileFailure.Item(path: path, underlying: WorktreeFileEscape()))
         continue
       }
-      guard !manager.fileExists(atPath: destination.path) else { continue }
+      guard !Self.isPresent(destination) else { continue }
       do {
         try manager.createDirectory(
           at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try manager.copyItem(at: source, to: destination)
+        switch placement {
+        case .link:
+          // The repository's path as it was given, unresolved, so the link
+          // reads as the checkout the user is looking at. Absolute, since a
+          // relative one would be to where the worktree sits today; git
+          // records a worktree's path absolutely for the same reason.
+          try manager.createSymbolicLink(at: destination, withDestinationURL: source)
+        case .copy:
+          try manager.copyItem(at: source, to: destination)
+        }
       } catch {
-        failures.append(WorktreeCopyFailure.Item(path: path, underlying: error))
+        failures.append(WorktreeFileFailure.Item(path: path, underlying: error))
       }
     }
-    guard failures.isEmpty else { throw WorktreeCopyFailure(items: failures) }
+    guard failures.isEmpty else { throw WorktreeFileFailure(placement: placement, items: failures) }
   }
 
   /// The paths a listed one stands for. A path with no pattern in it is
   /// itself, untouched and never looked up, so what happens to a plain
   /// path does not depend on a directory being readable. A pattern that
   /// matches nothing yields nothing, the same as naming a file that is not
-  /// there. Sorted, so a copy of many files goes in a stated order.
+  /// there. Sorted, so a list of many files is placed in a stated order.
   static func expand(_ path: String, in base: URL) -> [String] {
     let components = path.split(separator: "/").map(String.init)
     guard components.contains(where: isPattern) else { return [path] }
@@ -97,7 +125,7 @@ public struct WorktreeCopier: Sendable {
   }
 
   /// Whether one name matches one pattern component. `*` and `?` only:
-  /// a bracket expression is more than a copy list needs and is taken
+  /// a bracket expression is more than these lists need and is taken
   /// literally.
   static func matches(_ name: String, pattern: String) -> Bool {
     // As a shell does: a name a person meant to hide is matched only by a
@@ -131,6 +159,16 @@ public struct WorktreeCopier: Sendable {
     return pattern[patternIndex...].allSatisfy { $0 == "*" }
   }
 
+  /// Whether anything is at `url`, a symlink included, without asking
+  /// where it leads. The destination question is whether something is in
+  /// the way, not whether it resolves: a branch may track a symlink whose
+  /// target it does not carry, and `fileExists` calls that nothing, which
+  /// left the placement to fail on it as "a file with the same name
+  /// already exists" instead of leaving what git checked out alone.
+  private static func isPresent(_ url: URL) -> Bool {
+    (try? FileManager.default.attributesOfItem(atPath: url.path)) != nil
+  }
+
   private static func isPattern(_ component: String) -> Bool {
     component.contains("*") || component.contains("?")
   }
@@ -146,8 +184,9 @@ public struct WorktreeCopier: Sendable {
   /// The nearest folder on the way to `url` that is already there.
   /// Resolving `url` itself would say nothing: a path whose tail does not
   /// exist yet is left alone, symlinked folders and all. Only what is
-  /// below this is created, and what is created is never a symlink, so
-  /// this is the whole of what the copy can be diverted through.
+  /// below this is created, and what is created is never a symlink to
+  /// somewhere else, so this is the whole of what a placement can be
+  /// diverted through.
   private static func deepestExistingAncestor(of url: URL) -> URL {
     var current = url.deletingLastPathComponent()
     while current.pathComponents.count > 1,
@@ -159,10 +198,9 @@ public struct WorktreeCopier: Sendable {
   }
 }
 
-/// Raised when the copy into a new worktree could not finish. The worktree
-/// exists and everything else on the list is in it; only these paths are
-/// missing.
-public struct WorktreeCopyFailure: Error, CustomStringConvertible {
+/// Raised when a list could not be finished. The worktree exists and
+/// everything else on the list is in it; only these paths are missing.
+public struct WorktreeFileFailure: Error, CustomStringConvertible {
   public struct Item: Sendable {
     public let path: String
     public let underlying: any Error
@@ -173,9 +211,12 @@ public struct WorktreeCopyFailure: Error, CustomStringConvertible {
     }
   }
 
+  /// Which list it was, so what is said about it can say linked or copied.
+  public let placement: WorktreePlacement
   public let items: [Item]
 
-  public init(items: [Item]) {
+  public init(placement: WorktreePlacement, items: [Item]) {
+    self.placement = placement
     self.items = items
   }
 
@@ -184,10 +225,17 @@ public struct WorktreeCopyFailure: Error, CustomStringConvertible {
   }
 }
 
+/// Raised when the user stopped a list part way through. What was placed
+/// before the stop stays: it is in the worktree the user is being given,
+/// as the work a stopped hook had already done is.
+public struct WorktreeFilesStopped: Error {
+  public init() {}
+}
+
 /// A listed path that leads out of the repository or the worktree, by
 /// `..` or through a folder that is a symlink. `LocalizedError`, so it
 /// reads as a sentence in the alert beside the file system's own reasons.
-public struct WorktreeCopyEscape: LocalizedError {
+public struct WorktreeFileEscape: LocalizedError {
   public init() {}
 
   public var errorDescription: String? {
