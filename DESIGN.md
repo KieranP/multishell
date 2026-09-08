@@ -85,13 +85,37 @@ agent the user themselves chose and change only what is drawn, so unlike a
 hook they run nothing the repository wrote and need no trust.
 
 Its hooks run code on the say of whoever committed the file, so they wait for
-a one-time yes stored with the exact text. The question comes when the user
+a one-time yes, stored against the sha256 of the exact file. The question comes when the user
 selects one of that project's worktrees, not when a refresh finds the file,
 or a launch would open onto a queue of questions about repositories nobody is
 looking at. The file is re-read whenever its modification date moves, since a
 hook edited while the app was up used to stay the version the run started
 with. Cost: the layering must be asked of the model, never read off
 `project.settings`, and a trust question can arrive without a click.
+
+An answer is kept per file, sixteen of them, not as the one last answer. The
+file is tracked, so it differs between branches, and one answer meant
+checking out the other branch asked again and forgot the answer just given:
+moving between two of them asked on every switch. Kept per file, each is
+asked about once, and a switch back runs the hooks the user said yes to or
+leaves out the ones they said no to. The cap drops the file longest
+unanswered-about, so a file edited on a loop cannot grow the state without
+bound. Cost: a yes is remembered for a file the repository may no longer
+carry, and running those hooks again needs no second yes.
+
+A question goes away with the file it was about: one deleted, or edited into
+something that will not parse, drops it, since nothing it named can run
+then, and it comes back when the file does.
+
+What an answer is held against is the sha256 of the file's bytes, not the
+hook text: the state keeps a fixed-length name for what was answered for
+rather than copies of everyone's scripts, and a yes is about the bytes that
+were on disk when it was given. Costs: editing any other key in the file
+asks about hooks that did not change, since the bytes did; the answers a
+build that stored the text had are dropped on the first load, so each
+project asks once more; and the core hashes it itself, sixty lines of
+FIPS 180-4 with the vectors under test, because these libraries import
+Foundation only and take no package dependency.
 
 The hook editors show a repository's script in grey and offer no example of
 their own. Both were drawn the same way, so grey text could have been a

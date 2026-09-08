@@ -416,6 +416,62 @@ struct AppModelHookControlTests {
     #expect(h.model.pendingSharedHooksTrust?.hooks == "post-create:\necho changed")
   }
 
+  /// The file is tracked, so checking out another branch changes it. Each
+  /// file is asked about once, against the sha256 of its bytes: a switch
+  /// back to a branch already answered for runs its hooks, or not, without
+  /// asking again. Real commits and real checkouts, since what the app sees
+  /// of a branch switch is git rewriting the file under it.
+  @Test func switchingBetweenTwoBranchesHooksAsksAboutEachOnce() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let repository = h.project.path
+    let file = SharedProjectSettings.file(in: repository)
+    func commit(_ json: String, _ message: String) async throws {
+      try json.write(to: file, atomically: true, encoding: .utf8)
+      _ = try await h.git.run(["add", "."], in: repository)
+      _ = try await h.git.run(["commit", "-q", "-m", message], in: repository)
+    }
+
+    try await commit(#"{ "postCreateHook": "echo main" }"#, "main hooks")
+    await h.model.refresh(h.project)
+    h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
+    h.model.decideSharedHooks(try #require(h.model.pendingSharedHooksTrust), trusted: true)
+    #expect(h.model.effectiveSettings(for: h.project).postCreateHook == "echo main")
+
+    // The other branch's file: bytes nobody has answered for, so asked.
+    _ = try await h.git.run(["checkout", "-q", "-b", "feature"], in: repository)
+    try await commit(#"{ "postCreateHook": "echo feature" }"#, "feature hooks")
+    await h.model.refreshChangedSharedSettings()
+    let feature = try #require(h.model.pendingSharedHooksTrust)
+    #expect(feature.hooks == "post-create:\necho feature")
+    h.model.decideSharedHooks(feature, trusted: false)
+    #expect(!h.model.trustsSharedHooks(of: h.model.workspace.project(h.project.id)!))
+
+    // Back to the first branch: the yes it was given stands, unasked.
+    _ = try await h.git.run(["checkout", "-q", "main"], in: repository)
+    await h.model.refreshChangedSharedSettings()
+    #expect(h.model.pendingSharedHooksTrust == nil, "answered for already")
+    #expect(h.model.trustsSharedHooks(of: h.model.workspace.project(h.project.id)!))
+    #expect(h.model.effectiveSettings(for: h.project).postCreateHook == "echo main")
+
+    // And back to the other: its no stands, also unasked.
+    _ = try await h.git.run(["checkout", "-q", "feature"], in: repository)
+    await h.model.refreshChangedSharedSettings()
+    #expect(h.model.pendingSharedHooksTrust == nil, "and the no is not asked again either")
+    #expect(!h.model.trustsSharedHooks(of: h.model.workspace.project(h.project.id)!))
+    #expect(h.model.effectiveSettings(for: h.project).postCreateHook == "")
+
+    // The answer is against the file's bytes, so a branch that ships the
+    // trusted hooks alongside another key is a file of its own and asks.
+    _ = try await h.git.run(["checkout", "-q", "-b", "prefixed", "main"], in: repository)
+    try await commit(
+      #"{ "branchPrefix": "team/", "postCreateHook": "echo main" }"#, "hooks and a prefix")
+    await h.model.refreshChangedSharedSettings()
+    #expect(
+      h.model.pendingSharedHooksTrust?.hooks == "post-create:\necho main",
+      "the same hooks, in bytes nobody has answered for")
+  }
+
   @Test func aSettingsFileEditedWhileTheAppIsUpIsReadOnTheNextTick() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
@@ -478,6 +534,31 @@ struct AppModelHookControlTests {
         == true)
     #expect(h.model.sharedSettings[h.project.id] == nil)
     #expect(h.platform.logged.count == 1)
+  }
+
+  /// A file that stops parsing takes its question with it: the app has no
+  /// hooks from it to run, so a dialog offering to trust them is offering
+  /// nothing, the way a deleted file's question is dropped.
+  @Test func aQuestionGoesAwayWithTheFileItWasAbout() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let file = SharedProjectSettings.file(in: h.project.path)
+    try #"{ "postCreateHook": "echo one" }"#.write(to: file, atomically: true, encoding: .utf8)
+    await h.model.refresh(h.project)
+    h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
+    #expect(h.model.pendingSharedHooksTrust != nil)
+
+    try "not json".write(to: file, atomically: true, encoding: .utf8)
+    await h.model.refreshChangedSharedSettings()
+    #expect(h.model.pendingSharedHooksTrust == nil, "the hooks it named are not the app's any more")
+
+    // The same for a branch that carries no file at all.
+    try #"{ "postCreateHook": "echo one" }"#.write(to: file, atomically: true, encoding: .utf8)
+    await h.model.refreshChangedSharedSettings()
+    #expect(h.model.pendingSharedHooksTrust != nil, "and comes back when it parses again")
+    try FileManager.default.removeItem(at: file)
+    await h.model.refreshChangedSharedSettings()
+    #expect(h.model.pendingSharedHooksTrust == nil)
   }
 
   @Test func exportWritesTheSettingsInForceAndTrustsItsOwnHooks() async throws {

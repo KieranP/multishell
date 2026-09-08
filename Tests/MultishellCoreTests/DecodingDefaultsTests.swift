@@ -500,14 +500,44 @@ struct NewerFieldDefaultsTests {
   }
 
   @Test func projectSettingsWithoutADecisionHaveNoneAndABrokenOneCostsOnlyItself() throws {
-    #expect(try decode(ProjectSettings.self, "{}").sharedHooks == nil)
+    let digest = FileDigest.sha256(of: Data(#"{ "postCreateHook": "npm ci" }"#.utf8))
+    #expect(try decode(ProjectSettings.self, "{}").sharedHooks.isEmpty)
     let decided = try decode(
-      ProjectSettings.self,
-      #"{ "sharedHooks": { "hooks": "post-create:\nnpm ci", "trusted": true } }"#)
-    #expect(
-      decided.sharedHooks == SharedHooksDecision(hooks: "post-create:\nnpm ci", trusted: true))
+      ProjectSettings.self, #"{ "sharedHooks": [{ "digest": "\#(digest)", "trusted": true }] }"#)
+    #expect(decided.sharedHooks == [SharedHooksDecision(digest: digest, trusted: true)])
     let broken = try decode(
       ProjectSettings.self, #"{ "sharedHooks": "yes", "branchPrefix": "k/" }"#)
-    #expect(broken.sharedHooks == nil && broken.branchPrefix == "k/")
+    #expect(broken.sharedHooks.isEmpty && broken.branchPrefix == "k/")
+    let oneBrokenAnswer = try decode(
+      ProjectSettings.self,
+      #"""
+      { "sharedHooks": [{ "digest": "\#(digest)" },
+                        { "digest": "beef", "trusted": false }], "branchPrefix": "k/" }
+      """#)
+    #expect(
+      oneBrokenAnswer.sharedHooks == [SharedHooksDecision(digest: "beef", trusted: false)],
+      "an answer that will not decode costs that answer, not the others or the project")
+    #expect(oneBrokenAnswer.branchPrefix == "k/")
+
+    // And what is written comes back, so an answer survives a save.
+    let two = ProjectSettings(
+      sharedHooks: [
+        SharedHooksDecision(digest: digest, trusted: true),
+        SharedHooksDecision(digest: "beef", trusted: false),
+      ])
+    let written = try JSONDecoder().decode(
+      ProjectSettings.self, from: try JSONEncoder().encode(two))
+    #expect(written.sharedHooks == two.sharedHooks)
+  }
+
+  /// A build before the answers were held against the file's digest stored
+  /// the hook text it was answered about, which no digest can be had from.
+  /// Such an answer is dropped and the hooks are asked about once more.
+  @Test func aDecisionStoredAgainstTheHookTextIsDroppedRatherThanTrusted() throws {
+    let legacy = try decode(
+      ProjectSettings.self,
+      #"{ "sharedHooks": { "hooks": "post-create:\nnpm ci", "trusted": true }, "branchPrefix": "k/" }"#
+    )
+    #expect(legacy.sharedHooks.isEmpty && legacy.branchPrefix == "k/")
   }
 }

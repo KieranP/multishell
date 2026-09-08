@@ -68,9 +68,21 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   public var iconTint: Int?
 
   /// What the user said about the hooks in the repository's
-  /// `.multishell.json`, and which text they said it about. `nil` until
-  /// asked; a file whose hooks have since changed asks again.
-  public var sharedHooks: SharedHooksDecision?
+  /// `.multishell.json`, one answer per file they were asked about, held
+  /// against the sha256 of its bytes, the most recent first. Empty until
+  /// asked; a file with no answer here asks.
+  ///
+  /// A list rather than the one last answer, because the file is tracked
+  /// and so differs between branches: two branches shipping different
+  /// hooks asked again on every switch between them, and each answer
+  /// forgot the other. The oldest is dropped past
+  /// `rememberedSharedHooks`, so a file edited on a loop cannot grow the
+  /// state without bound.
+  public var sharedHooks: [SharedHooksDecision]
+
+  /// How many files a project remembers an answer for: enough for the
+  /// branches someone moves between, and for a file edited a few times.
+  public static let rememberedSharedHooks = 16
 
   public init(
     worktreeDirectory: String? = nil,
@@ -92,7 +104,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     defaultShell: String? = nil,
     iconGlyph: String? = nil,
     iconTint: Int? = nil,
-    sharedHooks: SharedHooksDecision? = nil
+    sharedHooks: [SharedHooksDecision] = []
   ) {
     self.worktreeDirectory = worktreeDirectory
     self.branchPrefix = branchPrefix
@@ -150,7 +162,12 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     iconGlyph = Self.override(try c.decodeIfPresent(String.self, forKey: .iconGlyph))
     // `try?`: a tint that is not a number costs the tint, not the file.
     iconTint = ProjectIcon.validTint(try? c.decodeIfPresent(Int.self, forKey: .iconTint))
-    sharedHooks = (try? c.decodeIfPresent(SharedHooksDecision.self, forKey: .sharedHooks)) ?? nil
+    // Lossy: an answer that will not decode costs that answer and not the
+    // project's others, and its hooks are asked about again. What builds
+    // before the digest wrote is a whole such value, one decision holding
+    // the hook text it was answered about, which no digest can be had
+    // from; it reads as no answers, and asks once more.
+    sharedHooks = c.decodeLossy(SharedHooksDecision.self, forKey: .sharedHooks)
   }
 
   private static func override(_ value: String?) -> String? {
@@ -158,24 +175,44 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     return value
   }
 
-  /// Whether the hooks in `shared` are the ones the user trusted. A file
-  /// whose hooks have changed since is not trusted until asked again.
-  public func trustsHooks(of shared: SharedProjectSettings) -> Bool {
-    guard let text = shared.hooksText, let decision = sharedHooks else { return false }
-    return decision.trusted && decision.hooks == text
+  /// Stores the answer for the file with digest `digest`, replacing any
+  /// earlier answer about those same bytes and moving it to the front, so
+  /// what falls off the end is the file longest unanswered-about.
+  public mutating func recordSharedHooks(file digest: String, trusted: Bool) {
+    sharedHooks.removeAll { $0.digest == digest }
+    sharedHooks.insert(SharedHooksDecision(digest: digest, trusted: trusted), at: 0)
+    if sharedHooks.count > Self.rememberedSharedHooks {
+      sharedHooks.removeLast(sharedHooks.count - Self.rememberedSharedHooks)
+    }
   }
 
-  /// Whether `shared` has hooks the user has not yet been asked about.
+  /// The answer stored about the file with digest `digest`, if the user has
+  /// given one.
+  func decision(aboutFile digest: String) -> SharedHooksDecision? {
+    sharedHooks.first { $0.digest == digest }
+  }
+
+  /// Whether the hooks in `shared` are hooks the user trusted: the file it
+  /// was read from is one they said yes to. A file edited to bytes nobody
+  /// answered about is not trusted until asked; one changed back to bytes
+  /// they trusted is. Settings that came from no file trust nothing.
+  public func trustsHooks(of shared: SharedProjectSettings) -> Bool {
+    guard shared.hasHooks, let digest = shared.digest else { return false }
+    return decision(aboutFile: digest)?.trusted == true
+  }
+
+  /// Whether `shared` has hooks in a file the user has not yet been asked
+  /// about.
   public func needsHookDecision(for shared: SharedProjectSettings) -> Bool {
-    guard let text = shared.hooksText else { return false }
-    return sharedHooks?.hooks != text
+    guard shared.hasHooks, let digest = shared.digest else { return false }
+    return decision(aboutFile: digest) == nil
   }
 
   /// These settings with the repository's own filling the gaps: a path or
   /// prefix the user left following the global, what a worktree here opens
   /// where they said nothing, the order its rows come in, an icon they did
   /// not set, the files a new worktree is linked to or given, and a hook
-  /// they left blank, the last only once its text is trusted. A
+  /// they left blank, the last only once its file is trusted. A
   /// whitespace-only hook, or file list, is the user's "none" and stays.
   public func layered(over shared: SharedProjectSettings?) -> ProjectSettings {
     guard let shared else { return self }

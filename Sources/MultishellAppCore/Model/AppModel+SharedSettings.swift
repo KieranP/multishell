@@ -111,11 +111,11 @@ extension AppModel {
       sharedSettingsProblems[project.id] = nil
       guard sharedSettings[project.id] != shared else { return }
       sharedSettings[project.id] = shared
-      // A question already up for this project is about text the file no
-      // longer has, and trusting it would store hooks nobody committed. It
-      // gives way to one about what the file says now.
+      // A question already up for this project is about a file the disk no
+      // longer has, and trusting it would store an answer for bytes nobody
+      // committed. It gives way to one about what the file says now.
       let wasAsking = pendingSharedHooksTrust?.projectID == project.id
-      if wasAsking, pendingSharedHooksTrust?.hooks != shared?.hooksText {
+      if wasAsking, pendingSharedHooksTrust?.digest != shared?.digest {
         pendingSharedHooksTrust = nil
       }
       if !firstRead, wasAsking || workspace.selectedWorktree?.projectID == project.id {
@@ -123,6 +123,11 @@ extension AppModel {
       }
     case .failure(let error):
       sharedSettings[project.id] = nil
+      // A question up for this project names hooks the app no longer has,
+      // and nothing it ran would come from the file it was asked about, so
+      // it goes the way a deleted file's does. It comes back if the file
+      // parses again.
+      if pendingSharedHooksTrust?.projectID == project.id { pendingSharedHooksTrust = nil }
       let problem = "\(SharedProjectSettings.fileName) could not be read: \(error)"
       if sharedSettingsProblems[project.id] != problem {
         sharedSettingsProblems[project.id] = problem
@@ -142,19 +147,19 @@ extension AppModel {
     // user is answering. The question comes back on the next selection.
     guard newWorktreeRequest == nil, worktreeCreationStep == nil else { return }
     guard pendingSharedHooksTrust == nil, let project = workspace.project(id),
-      let shared = sharedSettings[id], let hooks = shared.hooksText,
+      let shared = sharedSettings[id], let hooks = shared.hooksText, let digest = shared.digest,
       project.settings.needsHookDecision(for: shared)
     else { return }
     pendingSharedHooksTrust = PendingSharedHooksTrust(
-      projectID: id, projectName: project.name, hooks: hooks)
+      projectID: id, projectName: project.name, hooks: hooks, digest: digest)
   }
 
   /// The dialog's answer. Either way the question is not asked again for
-  /// this text.
+  /// this file, this branch's or another's.
   public func decideSharedHooks(_ pending: PendingSharedHooksTrust, trusted: Bool) {
     if let project = workspace.project(pending.projectID) {
       var settings = project.settings
-      settings.sharedHooks = SharedHooksDecision(hooks: pending.hooks, trusted: trusted)
+      settings.recordSharedHooks(file: pending.digest, trusted: trusted)
       store.updateSettings(settings, forProject: project.id)
     }
     if pendingSharedHooksTrust == pending { pendingSharedHooksTrust = nil }
@@ -166,17 +171,20 @@ extension AppModel {
   /// own words, so they are trusted without asking.
   public func exportSharedSettings(for project: Project) {
     guard let current = workspace.project(project.id) else { return }
-    let shared = SharedProjectSettings(exporting: effectiveSettings(for: current))
+    let shared: SharedProjectSettings
     do {
-      try shared.write(to: current.path)
+      // What was written, digest and all, so nothing turns on reading the
+      // file back and finding the bytes this run put there.
+      shared = try SharedProjectSettings(exporting: effectiveSettings(for: current))
+        .write(to: current.path)
     } catch {
       report(error)
       return
     }
     let stamp = Self.modificationDate(of: SharedProjectSettings.file(in: current.path))
-    if let hooks = shared.hooksText {
+    if shared.hasHooks, let digest = shared.digest {
       var settings = current.settings
-      settings.sharedHooks = SharedHooksDecision(hooks: hooks, trusted: true)
+      settings.recordSharedHooks(file: digest, trusted: true)
       store.updateSettings(settings, forProject: current.id)
     }
     noteSharedSettings(.success(shared), stamp: stamp, for: current)
@@ -184,9 +192,10 @@ extension AppModel {
 
   /// From the project's Hooks tab: trust the file's current hooks, or stop.
   public func setTrustsSharedHooks(_ trusted: Bool, for project: Project) {
-    guard let hooks = sharedSettings[project.id]?.hooksText else { return }
+    guard let shared = sharedSettings[project.id], shared.hasHooks, let digest = shared.digest
+    else { return }
     var settings = workspace.project(project.id)?.settings ?? project.settings
-    settings.sharedHooks = SharedHooksDecision(hooks: hooks, trusted: trusted)
+    settings.recordSharedHooks(file: digest, trusted: trusted)
     store.updateSettings(settings, forProject: project.id)
     if pendingSharedHooksTrust?.projectID == project.id { pendingSharedHooksTrust = nil }
   }

@@ -68,8 +68,8 @@ asked for it.
   process layer or a port, never in a model or a view. `Paths.swift` is the
   one core file allowed `#if os(...)`.
 - Every persisted field decodes with a default, including an unknown enum
-  value (`DecodingDefaultsTests`). Worktrees, sessions and tabs are lossy;
-  projects are strict.
+  value (`DecodingDefaultsTests`). Worktrees, sessions, tabs and a project's
+  shared-hook answers are lossy; projects are strict.
 - Every store operation keeps `WorkspaceInvariants` true, and
   `repairReferences` restores references after a load. Extend both, and the
   seeded tests, with any new collection or reference; a failure prints its
@@ -195,7 +195,10 @@ poll where its modification date has moved. A field a repository ships fills
 only a gap the user left, so adding one to `SharedProjectSettings` also
 means a line in `ProjectSettings.layered`, a decode that costs the key and
 not the file, and a form that seeds its override from `InheritedSetting`
-rather than from the global.
+rather than from the global. The answer to its hook question is held
+against the sha256 of the whole file (`FileDigest`, one answer per file in
+`ProjectSettings.sharedHooks`), so any key added to a file someone has
+committed asks about its hooks again.
 
 ## Permissions macOS asks for
 

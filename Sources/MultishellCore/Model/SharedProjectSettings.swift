@@ -43,6 +43,17 @@ public struct SharedProjectSettings: Equatable, Sendable {
   public var iconGlyph: String?
   public var iconTint: Int?
 
+  /// The sha256 of the file these were read from, `FileDigest`, which is
+  /// what a hook trust decision is stored against: the answer is about the
+  /// bytes on disk, and the state keeps a name for them rather than a copy
+  /// of the scripts. `nil` for settings that came from no file, which
+  /// trust nothing.
+  ///
+  /// Not a key of its own, and set only by `load` and `write`: it decides
+  /// whether hooks run, so nothing outside this file may hand a value one
+  /// and have it read as the file the user said yes to.
+  public private(set) var digest: String?
+
   public static let fileName = ".multishell.json"
 
   public init(
@@ -62,7 +73,8 @@ public struct SharedProjectSettings: Equatable, Sendable {
     worktreeSortOrder: WorktreeSortOrder? = nil,
     showsActiveWorktreesFirst: Bool? = nil,
     iconGlyph: String? = nil,
-    iconTint: Int? = nil
+    iconTint: Int? = nil,
+    digest: String? = nil
   ) {
     self.worktreeDirectory = Self.text(worktreeDirectory)
     self.branchPrefix = Self.text(branchPrefix)
@@ -81,6 +93,7 @@ public struct SharedProjectSettings: Equatable, Sendable {
     self.showsActiveWorktreesFirst = showsActiveWorktreesFirst
     self.iconGlyph = Self.text(iconGlyph)
     self.iconTint = iconTint
+    self.digest = digest
   }
 
   /// Where the file lives for a repository at `repository`.
@@ -88,12 +101,16 @@ public struct SharedProjectSettings: Equatable, Sendable {
     repository.appendingPathComponent(fileName, isDirectory: false)
   }
 
-  /// The file's contents, or `nil` when the repository has none. Throws for
-  /// a file that is there but is not JSON, so the project can say so.
+  /// The file's contents and the digest of its bytes, or `nil` when the
+  /// repository has none. Throws for a file that is there but is not JSON,
+  /// so the project can say so.
   public static func load(from repository: URL) throws -> SharedProjectSettings? {
     let url = file(in: repository)
     guard FileManager.default.fileExists(atPath: url.path) else { return nil }
-    return try JSONDecoder().decode(SharedProjectSettings.self, from: Data(contentsOf: url))
+    let data = try Data(contentsOf: url)
+    var settings = try JSONDecoder().decode(SharedProjectSettings.self, from: data)
+    settings.digest = FileDigest.sha256(of: data)
+    return settings
   }
 
   /// What a project's settings look like as a file: the overrides and hooks
@@ -121,16 +138,22 @@ public struct SharedProjectSettings: Equatable, Sendable {
   }
 
   /// Writes the file for `repository`, sorted keys and indented so a diff
-  /// of it reads well; absent fields are left out.
-  public func write(to repository: URL) throws {
+  /// of it reads well; absent fields are left out. Returns these settings
+  /// as the file now holds them, digest and all, so the writer can trust
+  /// what it wrote without reading the file back.
+  @discardableResult public func write(to repository: URL) throws -> SharedProjectSettings {
     let encoder = JSONEncoder()
     encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-    try encoder.encode(self).write(to: Self.file(in: repository), options: .atomic)
+    let data = try encoder.encode(self)
+    try data.write(to: Self.file(in: repository), options: .atomic)
+    var written = self
+    written.digest = FileDigest.sha256(of: data)
+    return written
   }
 
-  /// The four hooks as one text, what a trust decision is about; `nil` when
-  /// the file has none. Named so a decision made about one text does not
-  /// carry over to a pre-delete hook added later.
+  /// The four hooks as one text, what the trust question shows; `nil` when
+  /// the file has none. The decision itself is stored against `digest`, so
+  /// this is for reading and not for comparing.
   public var hooksText: String? {
     let hooks = [
       ("pre-create", preCreateHook), ("post-create", postCreateHook),
@@ -215,14 +238,21 @@ extension SharedProjectSettings: Codable {
 }
 
 /// The user's answer to "run the hooks in this repository's
-/// `.multishell.json`?", with the text it was about. Stored on the project,
-/// so it is asked once per text, not once per launch.
+/// `.multishell.json`?", against the sha256 of the file it was about.
+/// Stored on the project, one per file in `ProjectSettings.sharedHooks`, so
+/// a file is asked about once and not once per launch or per switch back to
+/// the branch that carries it.
+///
+/// The digest and not the hook text: the state keeps a fixed-length name
+/// for the file rather than copies of everyone's scripts, and a yes is
+/// about the bytes that were on disk when it was given.
 public struct SharedHooksDecision: Codable, Hashable, Sendable {
-  public var hooks: String
+  /// `FileDigest.sha256` of the `.multishell.json` this answers for.
+  public var digest: String
   public var trusted: Bool
 
-  public init(hooks: String, trusted: Bool) {
-    self.hooks = hooks
+  public init(digest: String, trusted: Bool) {
+    self.digest = digest
     self.trusted = trusted
   }
 }

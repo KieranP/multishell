@@ -37,9 +37,10 @@ Working rules:
   keeping.
 - Every persisted field decodes with a default, including an enum value this
   build does not know. Add a case to `DecodingDefaultsTests` when you add one.
-  Worktrees, sessions and tabs decode element by element and drop a broken
-  one (`LossyArray`); projects stay strict. References between collections
-  are restored by `Workspace.repairReferences` after a load; extend it, and
+  Worktrees, sessions, tabs and a project's shared-hook answers decode
+  element by element and drop a broken one (`LossyArray`); projects stay
+  strict. References between collections are restored by
+  `Workspace.repairReferences` after a load; extend it, and
   `WorkspaceInvariants`, when you add a collection or a reference.
 - Every store operation must leave `WorkspaceInvariants` true. The seeded
   random tests (`WorkspaceStoreInvariantTests`, `AppModelInvariantTests`) will

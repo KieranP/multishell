@@ -183,7 +183,8 @@ struct StoppedHookPresentationTests {
 
   @Test func theSharedHooksQuestionShowsTheHooksAndNamesTheFile() {
     let pending = PendingSharedHooksTrust(
-      projectID: "/r", projectName: "acme", hooks: "post-create:\nnpm ci")
+      projectID: "/r", projectName: "acme", hooks: "post-create:\nnpm ci",
+      digest: FileDigest.sha256(of: Data()))
     #expect(pending.title == "Run the hooks in acme's .multishell.json?")
     #expect(pending.message.hasSuffix("post-create:\nnpm ci"))
     #expect(pending.trustLabel == "Run Hooks" && pending.declineLabel == "Ignore Hooks")

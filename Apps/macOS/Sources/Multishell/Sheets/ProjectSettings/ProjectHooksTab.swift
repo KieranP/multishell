@@ -107,7 +107,7 @@ struct ProjectHooksTab: View {
       HStack(spacing: 6) {
         Text("From \(SharedProjectSettings.fileName)")
         InfoButton(
-          "The repository ships hooks in \(SharedProjectSettings.fileName) at its root. They run code through your shell, so they are off until you trust them, and a change to their text asks again. A whitespace-only hook of your own turns the repository's off for that stage."
+          "The repository ships hooks in \(SharedProjectSettings.fileName) at its root. They run code through your shell, so they are off until you trust them, and an edit to the file asks again unless you have answered for those exact contents before, so switching to a branch whose file you have already answered for does not ask. A whitespace-only hook of your own turns the repository's off for that stage."
         )
       }
     }
