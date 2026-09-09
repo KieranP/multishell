@@ -1,505 +1,292 @@
 # Design decisions
 
-Why the code is shaped as it is, and what each shape costs. What the code
-does is in the code; this records what it does not say. Newest at the bottom.
+Why the code is shaped as it is, and what each shape costs. What the code does
+is in the code; this records what it does not say. Newest at the bottom.
 
 ## The core decides what exists; the GUI decides how it appears
 
-libghostty and SwiftTerm disagree about who owns the pty, and a Linux
-frontend will disagree again, so the core never sees a descriptor, a byte
-stream or a view. `AppModel` carries the runtime state the core refuses, and
-lives in a library rather than the Mac app so a Linux frontend need not copy
-it out; a Linux CI job compiled it with no GUI framework, which is what
-enforced that until the job was dropped. Windows went the same way: never
-built, nobody writing its port. Cost: `public` on every moved type and a
-`Platform` conformance per frontend.
+The engines disagree about who owns the pty, so the core never sees a
+descriptor, a byte stream or a view. `AppModel` holds the runtime state the
+core refuses, and lives in a library rather than the Mac app so a Linux
+frontend need not copy it out. Windows went the same way and was never built.
+Cost: `public` on every moved type and a `Platform` conformance per frontend.
 
 ## Reconcile, don't command
 
 One path for tab open, tab close, worktree removed, project removed, process
-exited and relaunch. Cost: a session that fails to open is reported and
-removed afterwards, not prevented.
+exited and relaunch. Cost: a session that fails to open is removed afterwards,
+not prevented.
 
 ## Identity is the path
 
 Worktrees are rediscovered from git on every refresh, and a minted id would
-change under persisted selection. Cost: moving a repository on disk is a new
-project.
+change under persisted selection. Cost: moving a repository is a new project.
 
 ## Shell out to git
 
-libgit2's worktree support is the part it does worst, gitoxide's is
-incomplete, and the porcelain formats are a stable contract. Cost: git must
-be installed and every operation is a process spawn.
+libgit2's worktree support is the part it does worst, gitoxide's is incomplete,
+and the porcelain formats are a stable contract. Cost: git must be installed
+and every operation is a spawn.
 
 ## Tabs own a pane tree, from day one
 
 So splits, which came later, were a renderer change with no schema change.
-Same-axis splits add a sibling and halve the focused pane's share, as tmux
-and iTerm do.
+Same-axis splits add a sibling and halve the focused pane, as tmux and iTerm do.
 
 ## A tab dragged to a worktree moves, it does not re-open
 
-Dropping a tab on a worktree's row in the sidebar relists it there. The
-shells keep running: nothing is restarted, and no `cd` is typed at a prompt
-on the user's behalf here any more than it is on the socket's word. What
-moves with the tab is where its panes start and which shell they start,
-which are read together at launch and are both the destination's to decide;
-a tab left pointing at the directory it came from would open one project's
-shell in another project's checkout on the next launch.
+The shells keep running; nothing is restarted and nothing is `cd`'d. Where
+panes start and which shell they start are the destination's to decide, or the
+next launch opens one project's shell in another's checkout. A live tab is
+turned to on landing, which keeps the destination warm. The drag has its own
+pasteboard type, since projects drag as text to reorder and one type for both
+would offer each drag the other's targets.
 
-A tab whose shells are live is turned to when it lands, which is also what
-makes the destination warm: leaving it cold would have the next reconcile
-close the very shells that were dragged there.
-
-The drag carries its own pasteboard type rather than the plain text a project
-is dragged as, because the sidebar already drags projects to reorder them:
-with one type for both, a worktree row would light up for a project it cannot
-take, and swallow the drop that was meant to move the project.
-
-The store keeps a session's worktree in step with its tab's, since that is
-what decides whether a shell runs at all. `repairReferences` puts a file that
-disagrees back to what the tab says.
-
-Cost: a moved tab's shell is still in the directory it was started in until
-the user cds, so a file dropped on it is written against the worktree the tab
-now belongs to rather than where that shell stands — the same approximation
-the app already makes for anyone who has cd'd. A worktree with no tabs left
-loses what was on screen, since the tab it was showing is somewhere else.
+Cost: the shell is still in its old directory until the user cds, so a dropped
+file is written against the tab's new worktree. A worktree left with no tabs
+loses what was on screen.
 
 ## Themes are hex strings
 
-Portability and user theme files for free. Cost: a light terminal gets a
-light sidebar whatever the OS mode.
+Portability and user theme files for free. Cost: a light terminal gets a light
+sidebar whatever the OS mode.
 
 ## Settings resolve project over global, and a repository may ship its own
 
-A team convention set once, with per-repository exceptions. `nil` follows the
-global and an empty string overrides to "none", a distinction the sheet makes
-visible with toggles. A repository's `.multishell.json` fills only the gaps
-the user left, because a team default should never override a choice someone
-made. It may also say what a worktree here opens and whether that runs the
-agent, so a team gets one setup rather than each person finding four
-settings, and what order its worktree rows come in; those start the shell or
-agent the user themselves chose and change only what is drawn, so unlike a
-hook they run nothing the repository wrote and need no trust.
+`nil` follows the global, an empty string overrides to "none". A repository's
+`.multishell.json` fills only the gaps the user left: a team default must never
+override a choice someone made. What it may say — what a worktree opens,
+whether that runs the agent, the row order — changes only what is drawn, so
+unlike a hook it needs no trust.
 
-Its hooks run code on the say of whoever committed the file, so they wait for
-a one-time yes, stored against the sha256 of the exact file. The question comes when the user
-selects one of that project's worktrees, not when a refresh finds the file,
-or a launch would open onto a queue of questions about repositories nobody is
-looking at. The file is re-read whenever its modification date moves, since a
-hook edited while the app was up used to stay the version the run started
-with. Cost: the layering must be asked of the model, never read off
-`project.settings`, and a trust question can arrive without a click.
+Its hooks run code committed by someone else, so they wait for a one-time yes,
+held against the sha256 of the file's bytes and asked when the user selects one
+of that project's worktrees. The file is re-read when its modification date
+moves, and an answer is kept per file, sixteen of them: the file is tracked, so
+it differs between branches, and one shared answer asked again on every switch.
 
-An answer is kept per file, sixteen of them, not as the one last answer. The
-file is tracked, so it differs between branches, and one answer meant
-checking out the other branch asked again and forgot the answer just given:
-moving between two of them asked on every switch. Kept per file, each is
-asked about once, and a switch back runs the hooks the user said yes to or
-leaves out the ones they said no to. The cap drops the file longest
-unanswered-about, so a file edited on a loop cannot grow the state without
-bound. Cost: a yes is remembered for a file the repository may no longer
-carry, and running those hooks again needs no second yes.
+Costs: the layering must be asked of the model, never read off
+`project.settings`; a trust question can arrive without a click; editing any
+other key re-asks; and a yes outlives the file.
 
-A question goes away with the file it was about: one deleted, or edited into
-something that will not parse, drops it, since nothing it named can run
-then, and it comes back when the file does.
-
-What an answer is held against is the sha256 of the file's bytes, not the
-hook text: the state keeps a fixed-length name for what was answered for
-rather than copies of everyone's scripts, and a yes is about the bytes that
-were on disk when it was given. Costs: editing any other key in the file
-asks about hooks that did not change, since the bytes did; the answers a
-build that stored the text had are dropped on the first load, so each
-project asks once more; and the core hashes it itself, sixty lines of
-FIPS 180-4 with the vectors under test, because these libraries import
-Foundation only and take no package dependency.
-
-The hook editors show a repository's script in grey and offer no example of
-their own. Both were drawn the same way, so grey text could have been a
-suggestion or the thing that would really run, and there was no telling
-which. Grey now means inherited and nothing else.
-
-Odd shapes, each from a bug: the prefix is not applied to an existing branch,
-a blank worktree directory means the default rather than the repository
-itself, `.` and `..` and an empty slug become `_`, and a whitespace-only hook
-is the user's "none".
+Grey in a hook editor means inherited and nothing else. Odd shapes, each from a
+bug: no prefix on an existing branch, a blank worktree directory means the
+default, `.` and `..` and an empty slug become `_`, a whitespace-only hook is
+"none".
 
 ## A hook is a shell script, and only a pre hook can refuse
 
 Context arrives in environment variables, so nothing needs quoting. The shell
-is login and interactive, because `-l` alone misses `.zshrc` and a
-Finder-launched app has only the system PATH, so `npm install` failed for
-anyone on Homebrew or a version manager. `set -e` goes inside the script,
-after the rc files, so a chatty `.zshrc` is not what stops it. Cost: startup
-time, and rc files write to stderr under `-i` with no terminal, which used to
-be the whole of a failing hook's message.
+is login *and* interactive, or a Finder-launched app's bare PATH fails
+`npm install` for anyone on Homebrew or a version manager; `set -e` goes inside
+the script, after the rc files. A running hook shows in the pane, not a modal,
+which would hold the window. It is stopped by SIGHUP to the child's process
+group then SIGKILL, interactive shells ignoring SIGTERM.
 
-A running hook shows in the pane, not in a modal, because `npm install` held
-the sheet and the window for a minute; a failed one stays there, because an
-alert raised as the sheet went away was dropped and one raised later landed
-over whatever the user had moved on to. Cost: a failed hook holds its
-worktree until Dismiss.
-
-It is stopped by SIGHUP to the child's process group and then SIGKILL:
-interactive shells ignore SIGTERM, and SIGHUP to the shell alone left its
-`sleep` running. To the group only, since by then the leader's pid may have
-been reissued.
+Cost: startup time, stderr noise from rc files under `-i`, and a failed hook
+holds its worktree until Dismiss.
 
 ## A new worktree is given files by a list, not by a hook
 
-`cp "$MULTISHELL_PROJECT_PATH/.env" .` was the post-create hook nearly
-everyone wrote, and it cost them a login shell, a timeout and the pane. A
-list of paths does it between `git worktree add` and the hook, so the hook
-and the first terminal both find the files. Nothing is placed over what git
-checked out — over anything at that path, a symlink whose target this branch
-does not carry included, since what matters is that something is in the way
-and not where it leads — and a path the repository does not have is skipped,
-since a list naming `.env` is right for the checkouts that have one.
+Copying `.env` in was the post-create hook nearly everyone wrote, at the cost
+of a login shell, a timeout and the pane. The lists run between
+`git worktree add` and the hook, so both it and the first terminal find the
+files. Nothing is placed over what git checked out, and a path the repository
+lacks is skipped.
 
-Two lists, because there are two answers. A copy gives the worktree its
-own, which is what a file it will edit wants. A symlink to the repository's
-own file shares it, which is what `node_modules` or a build cache wants:
-hundreds of megabytes and an `npm install` per worktree, for a directory
-nothing branches. The link list runs first, so a path spelled in both ends
-up the link and the copy finds it already there.
+Two lists: a copy gives the worktree its own file, a symlink shares the
+repository's, which is what `node_modules` wants. Links run first, so a path in
+both ends up the link, and a link is absolute, a relative one pointing at where
+the worktree sits today. A name may be a pattern, `*` and `?` within one
+component, not matching a leading dot, or `*` would take `.git` in. Bracket
+expressions are left out rather than half-supported.
 
-A link is absolute and points at the repository's own file: a write through
-it writes there, which is the point and the cost, since a worktree cannot
-then hold a `node_modules` of its own. Absolute rather than relative,
-because a relative link would be to where the worktree sits today, and git
-records a worktree's path absolutely for the same reason.
+Both lists run nothing, so a repository may ship them untrusted; nothing
+overwriting a checked-out path is the other half of that, since a committed
+`linkedPaths: src` must not point a worktree's source at the main checkout.
+Containment is decided against the disk, not the spelling: the deepest existing
+folder on each path is resolved and checked, catching `..`, a leading `/` or
+`~`, and a folder that is itself a symlink. A symlink at the end of a path is
+copied as a symlink, never followed.
 
-A name may be a pattern, `*` and `?` within one component, because `.env.*`
-is how people hold more than one of these. It follows the shell in not
-matching a leading dot unless the pattern says the dot, or `*` would take
-`.git` into the worktree. A plain path is never looked up, so what happens
-to one does not turn on a directory being readable, and a pattern matching
-nothing is the same as naming a file that is not there. Bracket expressions
-are left out: they are more than these lists need, and they are taken
-literally rather than half-supported.
-
-Both lists work inside a checkout the user already has and run nothing, so
-one a repository ships in `.multishell.json` applies without the trust
-question its hooks wait for. Nothing being placed over what git checked out
-is the other half of that: every tracked path is already in the new
-worktree, so a list can only reach the paths git left alone, and a
-committed `linkedPaths: src` cannot quietly point a worktree's source at
-the main checkout. That holds only while neither end can leave its
-directory, and that is decided against the disk rather than against the
-spelling: the folders on the way to each end are resolved and checked. `..`
-resolves there, a leading `/` or `~` lands under the repository and finds
-nothing, and a folder that is a symlink is caught, which no reading of the
-text can do. A symlink at the end of the path is copied as a symlink and
-never followed, which is what a checkout with `.env` pointing elsewhere
-already relies on.
-
-Resolving the whole path says nothing on the way in, because a path whose
-tail does not exist yet is left alone, symlinked folders and all. It is the
-deepest folder already there that is resolved; what is created below that is
-never a symlink. Containment is also settled before the destination is
-tested for being there already, since the two ends of an escaping path often
-resolve to the same file and that test would take it for something git had
-checked out.
-
-The lists and the hook are one pane operation moving through its stages,
-begun once the worktree is there rather than under the sheet. A build cache
-is not something to hold the window for, and an alert raised as the sheet
-goes away is dropped, which is the same reason the hook is shown there. A
-list that fails stops the stages after it, since a hook written to use the
-files it was promised turns one clear failure into a confusing second one.
-
-The pane's Cancel ends a list stage too, though there is no process to
-signal: the list asks its stopper before each path and gives up there,
-leaving what it has already placed where a stopped hook's work is left. The
-handle is made before the task, or a click landing in that gap would find
-nothing to stop. One word on the button at every stage, since the question
-it answers is always "must I wait for this?"; what it means differs, and
-that is in its help.
-
-Cost: a cancel waits for the file being copied, so one enormous directory is
-not interruptible half way. And it ends the setup rather than skipping the
-stage: "get on with the worktree" is what one button can mean, and which of
-the stages after it to keep is not a decision it could carry.
+The lists and the hook are one pane operation in stages, begun once the
+worktree exists rather than under the sheet, and a failed list stops the stages
+after it. Costs: no `node_modules` of the worktree's own; and Cancel lands
+between paths, so it waits for the file being copied and ends the whole setup
+rather than skipping a stage.
 
 ## Watch where git records worktrees, poll for everything else
 
 Never the `.git` root once `worktrees/` exists: `git status` rewrites
-`.git/index`, so every status poll became a refresh. Working-tree edits touch
-nothing under `.git`, so status is polled, frontmost only, eight at a time,
-coalesced 250 ms after terminal activity because a prompt raises several
-events. A tick compares the records before it runs git, or every return to
-the app cost one `git worktree list` per project. Cost: a change git makes
-elsewhere waits for the next tick.
-
-Git on a timer reads only, and `git status` carries `--no-optional-locks`,
-because a plain one takes `index.lock` and a `git commit` typed at the wrong
-moment failed.
+`.git/index`, so every poll would be a refresh. Status is therefore polled —
+frontmost only, eight at a time, coalesced 250 ms after terminal activity, each
+tick comparing records before it runs git. Timer git reads only, and
+`git status` carries `--no-optional-locks`, or it takes `index.lock` and fails
+the user's own commit. Cost: a change git makes elsewhere waits for a tick.
 
 ## A terminal's state comes from what runs in it
 
-Neither engine can say a command is running, and SwiftTerm's view swallows
-even the bell, so engine activity is only what Terminal.app's dot is:
-something happened here since you looked. Only the program in the terminal
-can say it is waiting for an answer, so Working and Waiting come from reports
-alone; inferring Working from the title flipped a tab the moment it opened.
-An exit code above 128 is a signal, usually the user's own Ctrl+C, not a
+Neither engine can say a command is running, so engine activity means only what
+Terminal.app's dot means: something happened here. Working and Waiting come
+from reports alone. An exit code above 128 is a signal, usually Ctrl+C, not a
 failure.
 
-Done and Failed are about the user, so showing the tab clears them. Working
-and Waiting are about the process, so they stay while the user looks: a
-question seen but not answered is still waiting. An agent killed with Ctrl+C
-sends no Stop, so reports carry a pid the app watches; no timeout, because a
-long task is not a stale one. Cost: Cmd+W on a Working pane asks first.
+Done and Failed are about the user, so showing the tab clears them; Working and
+Waiting are about the process, so they stay while the user looks. Ctrl+C sends
+no Stop, so reports carry a pid the app watches; no timeout, a long task not
+being a stale one. Cost: Cmd+W on a Working pane asks first.
 
 ## The inbound channel is a Unix socket and a small helper
 
-A socket rather than a URL scheme, because a URL activates the app and hooks
-fire dozens of times a minute; a helper rather than `nc` for quoting, a
-stable protocol and one place for the Claude mapping. Fields are only ever
-added, so an old helper keeps working. A report naming an unknown session is
-dropped rather than matched by directory: the channel is trusted no further
-than the tab it can prove.
+A socket rather than a URL scheme, which would activate the app dozens of times
+a minute; a helper rather than `nc` for quoting, a stable protocol and one
+place for the Claude mapping. Fields are only ever added, and a report naming
+an unknown session is dropped rather than matched by directory.
 
-A report carries only what the app cannot see for itself. A state and a pid,
-because no engine says whether the program in a pty is working or waiting. A
-message, because "Claude needs your permission to use Bash" says more than
-"waiting". A duration, so a command over in milliseconds posts no banner. And
-an `agent`, because which agent a pane holds is otherwise unknowable: it is
-usually started by hand at a shell prompt, so the tab's `agentID` is nil, and
-libghostty's foreground-pid call is a stub on the pinned Ghostty.
-
-What a report may do is unchanged: it moves a dot, raises a notification, and
-decides how a dropped file is written. It opens no tab, runs no command, and
-puts no text of its own at a prompt. The shell reports run inline, because
-backgrounded a fast command's finished overtook its started and job notices
-printed at the prompt. A stale socket is unlinked only after a connect to it
-is refused, since one that answers belongs to a running instance.
+It carries only what the app cannot see for itself: a state and a pid, a
+message, a duration so a millisecond command posts no banner, and an `agent`,
+a pane's agent usually being started by hand with the tab's `agentID` nil. It
+moves a dot, raises a notification and decides how a dropped file is written;
+it opens no tab, runs no command and puts no text at a prompt. Shell reports
+run inline, or a fast command's finished overtakes its started.
 
 ## Shell integration is injected, never written to a user's file
 
-Generated per session and reached through `ZDOTDIR` or `--init-file`. The
-helper is reached through a symlink refreshed at launch, so a moved bundle
-breaks no hook line. Claude Code's hooks are the one exception, appended one
-entry per event on the user's click, with a copy kept the first time. Under
-Ghostty bash goes through `/bin/sh -c 'exec bash …'`, because Ghostty keys
-its own injection on the command's first word and handed `bash --init-file X`
-added `--posix`, under which macOS's bash 3.2 read neither file.
+Generated per session, reached through `ZDOTDIR` or `--init-file`, with the
+helper behind a symlink refreshed at launch so a moved bundle breaks no hook
+line. Claude Code's hooks are the one exception: appended on the user's click,
+with a copy kept. Under Ghostty bash goes through `/bin/sh -c 'exec bash …'`,
+Ghostty keying its own injection on the command's first word and adding
+`--posix`, under which macOS's bash 3.2 reads neither file.
 
 ## A click in the prompt moves the cursor, because the prompt claims it
 
 Ghostty answers a click only for a shell whose OSC 133 A mark carries
-`cl=line`, and only over cells its B mark called input. Neither shell got
-either from the engine: libghostty's MIT rewrite of the zsh integration,
-Ghostty's own being GPLv3, never claims, and it was not loading at all,
-because the engine points `ZDOTDIR` at its bootstrap and then applies a
-surface's variables on top, so ours replaced it. A claim with no input mark
-answers with no keys, silently, which is why it looked handled in every log.
-So a zsh session names both, the bootstrap in `ZDOTDIR` and ours in
-`GHOSTTY_ZSH_ZDOTDIR`.
+`cl=line`, over cells its B mark called input; a claim with no input mark
+answers silently. The engine points `ZDOTDIR` at its own bootstrap, which never
+claims, so a zsh session names both, ours in `GHOSTTY_ZSH_ZDOTDIR`. The zsh
+claim rides at the front of PS1, a plain A printed later withdrawing it; bash
+writes the whole set and prints its A, or readline edits at the wrong column.
+No D: the exit code is the socket's. Only when `TERM_PROGRAM` names ghostty,
+half a set opening a prompt that never ends.
 
-The zsh claim rides at the front of PS1 rather than being printed, because
-the rewrite prints a plain A from a later precmd, a plain mark withdraws the
-claim, and PS1 is expanded on every redraw. bash writes the whole set, since
-the engine refuses Apple's bash 3.2; its A is printed rather than put in PS1,
-or readline counts that fresh line as free and edits at the wrong column. D
-is absent: the exit code is the socket's to report.
-
-Only when `TERM_PROGRAM` names ghostty, since half a set opens a prompt that
-never ends. Cost: no click-to-move under SwiftTerm, none on the later lines
-of a multi-line buffer, which needs PS2 marks neither integration writes, and
-a printed A is not rewritten on redraw.
+Cost: no click-to-move under SwiftTerm, and none on the later lines of a
+multi-line buffer.
 
 ## Files dropped on a terminal are pasted, never run
 
-A drop is text at the prompt and nothing else. A shell gets absolute paths
-quoted for it; an agent whose prompt reads mentions gets its prefix and paths
-relative to the session's directory, which is what a mention resolves
-against. The prefix is a catalogue column, unset for an agent not known to
-resolve them, which then gets a plain path it can still read. Which agent a
-pane holds is asked of what reported there, not of the tab: an agent started
-by hand leaves `agentID` nil, and a tab opened for one keeps that id long
-after the agent quit.
+A shell gets absolute quoted paths; an agent whose prompt reads mentions gets
+its prefix, a catalogue column, and paths relative to the session's directory.
+Which agent a pane holds is asked of what reported there, not of the tab, since
+one started by hand leaves `agentID` nil and a tab keeps its id after the agent
+quits.
 
-Bracketed where the engine can frame it, a trailing space, never a newline:
-the user reads what landed and presses Return. A name carrying a control
-character is left out altogether, since no quoting reaches through a terminal
-to stop a newline pressing Return itself. The pane takes focus, but only if
-it is still on screen when the files land, since taking focus switches and
-saves the worktree's tab.
+Bracketed where the engine can frame it, a trailing space, never a newline: the
+user reads what landed and presses Return. A name with a control character is
+left out altogether, no quoting stopping a newline from pressing Return itself.
+The pane takes focus only if still on screen when the files land, since focus
+switches and saves the worktree's tab.
 
 A copy macOS made for this app is asked for again through its promise, into a
-directory of ours. A screenshot's floating preview is the case that matters:
-its copy sits under `TemporaryItems`, which macOS opens to the receiving app
-alone, so the app could read the file and the pane's own shell could not.
-Only a copy is refused, because a copy is not the file: an agent told to edit
-one would edit something swept in a week. Reading cannot tell the two apart,
-so the marks a copy carries are read instead, and copies of ours are swept at
-launch once a week old.
+directory of ours swept once a week, because such a copy can sit somewhere the
+app can read and the pane's shell cannot. Only a copy is refused, a copy not
+being the file, and it is recognised by the marks it carries rather than by
+reading it.
 
-Cost: a wrong mention column leaves a stray `@` in front of a path the agent
-can still read; a promised drop is answered before its copies land, so it is
-the one that cannot be refused back to the drag; a copy macOS stops marking
-that way would be pasted as a path again, which is the bug this fixed; and a
-file whose name a terminal would act on has to be typed by hand.
+Costs: a promised drop cannot be refused back to the drag; a copy macOS stops
+marking is pasted as a path again; and a file whose name a terminal would act
+on must be typed.
 
 ## A merged branch is inferred from three signs, none of which writes
 
 Deciding it is the whole feature; the green glyph is the easy half.
 
-`git branch --merged` finds only a branch whose tip the base can reach, and
-`git worktree add -b` cuts a branch at the commit it starts from, so ancestry
-cannot tell "landed" from "never began": a fast-forwarded branch and a
-brand-new one sit on the same commit. The branch's reflog can, since a branch
-cut and not committed to has one entry; where there is none, a bare
-repository keeps no reflog unless told to, the fallback is the case that is
-certainly fresh, its tip still the base's own. A rebase-merge or a run of
-cherry-picks leaves no reachable tip, so those branches get a `git cherry`,
-which compares patch ids. A squash merge leaves neither, and finding one
-needs `commit-tree`, a write, so the sign taken instead is the `[gone]`
-upstream that "delete branch on merge" leaves behind.
+Ancestry cannot tell "landed" from "never began", since `git worktree add -b`
+cuts a branch at its start commit; the branch's reflog can, one entry meaning
+never committed to. A rebase-merge or a run of cherry-picks leaves no reachable
+tip, so those get a `git cherry` on patch ids. A squash merge leaves neither,
+and detecting one needs `commit-tree`, a write, so the sign taken is the
+`[gone]` upstream that "delete branch on merge" leaves.
 
-That last one is inference, since a pull request closed without merging
-leaves it too, so `isCertain` separates the three. All three are badged; only
-the two that are proof get a removal dialog led by the button that deletes
-the branch, which may be the only copy of the work. The badge is hidden while
-the worktree holds work that is only there, uncommitted files or unpushed
-commits, since both would go to the Trash with the directory. A failed git
-call is not an answer: `mergedBranches` hands back `nil` rather than an empty
-set, or every branch would be recorded unmerged until it next moved.
+That last is inference, a PR closed unmerged leaving it too, so `isCertain`
+separates the three. All three badge; only the two that are proof get a removal
+dialog led by the button that deletes the branch, which may be the only copy of
+the work. The badge hides while the worktree holds uncommitted or unpushed
+work. A failed git call returns `nil`, not an empty set, or every branch would
+read as unmerged.
 
 The base is `origin/HEAD`, then `origin/main`, `origin/master`, `main`,
-`master`, with an override a repository may ship. A remote-tracking ref beats
-a local branch of the same name, since a local `main` is stale until someone
-pulls. An override that resolves to nothing leaves the project with no badges
-rather than a guess.
+`master`, with a repository override; a remote-tracking ref beats a local
+branch of the same name, and an override resolving to nothing means no badges
+rather than a guess. Fetching on a timer is out — network, credentials, and the
+one git call here that can hang — so a badge is only as fresh as the last
+fetch, and Fetch is a menu item with a timeout and the only sidebar spinner.
 
-A badge is therefore only as fresh as the last fetch, and fetching on a timer
-is out: it is network, it may want credentials, and it is the one git call
-here that can hang. Fetch is a menu item with `GIT_TERMINAL_PROMPT=0` and a
-timeout, and its credential failure gets its own words. It is the only thing
-the app does that waits on something off the machine, so the only thing the
-sidebar shows waiting, spinning in the project icon's own slot so nothing
-shifts, and covering the re-reads after it because the badges are what the
-click was for.
-
-The check rides the status poll, not the watcher: a commit moves
-`refs/heads/<branch>`, which no watched file mentions. A quiet tick costs one
-`for-each-ref` per project, and each verdict is memoised on the base tip, the
-branch and the branch's tip; the branch is in that key because `git checkout
--b copy` leaves two branches on one commit and only one may have a gone
-upstream. Riding the poll means nothing observable may be written unless it
-changed, or the sidebar redraws every five seconds, and a verdict is recorded
-only when git answered, or a failed read would pin a stale verdict to the new
-tip forever.
+The check rides the status poll, not the watcher: a commit moves a ref no
+watched file mentions. Each verdict is memoised on the base tip, the branch and
+the branch's tip — the branch is in the key because two branches may sit on one
+commit with only one gone upstream — and is recorded only when git answered.
+Nothing observable is written unless it changed, or the sidebar redraws every
+five seconds.
 
 Never badged: the main worktree, a bare repository, a detached HEAD and the
 trunk's own checkout.
 
 ## A worktree's name is the user's, kept beside the worktrees
 
-Every refresh replaces a project's whole worktree list, so a name written
-onto `Worktree` would be gone on the next tick; `worktreeNames` is a
-dictionary on the workspace, cleared wherever the store forgets a worktree so
-nothing is left for whatever is created at that path next.
+Every refresh replaces a project's whole worktree list, so a name written onto
+`Worktree` would be gone next tick. `worktreeNames` is a dictionary on the
+workspace, cleared wherever the store forgets a worktree.
 
-The branch is never replaced, only demoted, and every place the app names a
-worktree follows the sidebar row, including a notification that arrives with
-the app off screen. Every git command in that directory acts on the branch,
-and a row that hid it would be lying about where the user is; the removal
-dialog names the branch and the path in its body, where the part that cannot
-be undone belongs.
+The branch is never replaced, only demoted: every git command in that directory
+acts on the branch, so a row that hid it would lie. The removal dialog names
+branch and path in its body, where what cannot be undone belongs.
 
 ## The trunk row holds the top, whatever the sort says
 
-`WorktreeOrder` sorts a project's rows in bands before it sorts within one:
-git's main worktree, then a linked worktree checked out on the trunk, then —
-only if the user asked — the busy ones, then the rest. The trunk row is what
-every other worktree is read against, and a list that let it drift into
-alphabetical or chronological order would read as a different project each
-time a branch was cut. Two bands rather than one because a bare clone with
-its worktrees beside it is a layout this app's audience favours: there the
-main worktree is the bare repository and the trunk is checked out in a linked
-one, so both belong above the work.
+`WorktreeOrder` sorts in bands before sorting within one: git's main worktree,
+then a linked worktree checked out on the trunk, then — only if the user asked
+— the busy ones, then the rest. The trunk row is what every other worktree is
+read against. Two bands, because in a bare clone with its worktrees beside it
+the trunk is a linked worktree.
 
-Which branch is the trunk is the same answer the merged badges use,
-`DefaultBranch.branch`, so a project whose trunk is `develop` pins that row
-and lets `main` sort with the rest. Until the first merge scan resolves one
-the order falls back to the names `main` and `master`, which is git's own
-guess and is right nearly always; the cost is that a `develop` project's rows
-can settle once, seconds after launch.
+The trunk is `DefaultBranch.branch`, the same answer the badges use, falling
+back to `main` and `master` until the first scan resolves one; cost: a
+`develop` project's rows can settle once, seconds after launch.
 
-Sorting by creation date needed a date, and git records none: a worktree is a
-directory and a few files under `.git/worktrees`, none of them stamped with
-when the user asked for it. `Worktree.createdAt` is the birth time of the
-directory `git worktree add` made, read off the filesystem in
-`WorktreeService.list` so `WorktreeListParser` stays testable on fixture text
-alone. It is persisted like the branch beside it and, unlike the branch, never
-re-derived from anything: `replaceWorktrees` keeps a date it already had when
-a later listing comes back without one, so a volume that blinked does not cost
-a save, a re-render and a row's place in the order.
+Git records no creation date, so `Worktree.createdAt` is the directory's birth
+time, read in `WorktreeService.list` so the parser stays testable on fixture
+text alone. It is persisted and never re-derived, or a volume that blinked
+would cost a save, a re-render and a row's place. Last commit is runtime state
+instead — the workspace must not be rewritten because someone committed — and
+the orders are named for the commit because that is what they measure: a week
+of uncommitted work does not move a row. It rides the `for-each-ref` the badges
+already run, as `%(committerdate:unix)`; since git fails a whole query on an
+unknown format atom, `branchRefs` asks again without it when the first call
+fails, or an old git would cost every badge.
 
-Sorting by when a worktree was last committed to is a different date, and it
-is runtime state: a commit moves it, and the workspace must not be rewritten
-because someone committed. The orders are named for the commit rather than
-for the worktree being "updated", because that is exactly what they measure:
-a week of uncommitted work does not move a row. It comes nearly free.
-`for-each-ref` over the whole
-repository already runs once per project on the status poll to resolve the
-trunk and every branch tip, so `%(committerdate:unix)` was appended to that
-format and `BranchScan` hands back both answers from the one read. The dates
-come back even where no trunk could be resolved, which is why that scan is a
-value of its own rather than an optional `MergeScan`: a repository with
-nothing to measure merges against still has branches the sidebar can order.
+A worktree with no date sorts last in *both* directions: "oldest created first"
+is not a claim that an undated worktree is the oldest. The name breaks ties,
+and is the default, being the only order that reads the same everywhere.
 
-The "nearly" is that git fails a whole query on a format atom it does not
-know, and the merged badges read this same query. A git too old for
-`%(committerdate:unix)` would therefore have cost every badge, silently, on
-every poll — a new order taking out a feature that already worked. So
-`branchRefs` asks again without the date atom when the first call fails,
-which spends a process only where one had already failed for some reason.
-
-`%(committerdate:unix)` is whole seconds, so two branches committed to in the
-same second cannot be told apart and fall back to the name. That is right for
-a sidebar and wrong for a test: the one that checks a real scan sets
-`GIT_COMMITTER_DATE` rather than racing the clock, because a repository
-built and committed to inside one second gave every branch the same date and
-passed for the wrong reason.
-
-A worktree with no date either way — a directory copied in rather than
-created, a detached checkout with no branch to look a commit time up by, a
-project whose first scan has not answered — sorts last in *both* directions.
-"Oldest created first" is not a claim that an undated worktree is the oldest.
-The name breaks the tie among them, and it is also why the default is
-alphabetical: it is the only order that reads the same on every machine.
-
-"Show active at the top" is off by default. A worktree counts as active while
-it has a terminal open or a state something reported, so with it on the rows
-move as agents report in — welcome once asked for, and startling before.
-
-Both settings are things a repository may ship, because a team that works in
-worktrees tends to agree about how to read the list, and neither runs
-anything. The form therefore seeds an override from what is actually in
-force — `InheritedSetting`, the file's value where it has one — rather than
-from the user's global: seeding from the global would replace what the
-project was already doing with a value nobody was using.
+"Show active at the top" is off by default: a worktree is active while it has a
+terminal open or a reported state, so with it on the rows move as agents report
+in. Both settings are shippable by a repository and run nothing, and the
+override form seeds from `InheritedSetting`, what is actually in force, rather
+than the user's global.
 
 ## Persisted state never loses data, and is repaired rather than trusted
 
-Silently starting empty and then saving deletes the user's sidebar to fix a
-bug of ours. Projects stay strict where the other collections are lossy: a
-project is the one thing git cannot give back, and a tab from a newer build
-with an unknown pane kind once cost every project. Per-field defaults do not
-cover references between types, and a session no tab shows would get a shell
-nothing can close, so references are repaired on load. Cost: a hand edit that
-breaks a reference is tidied quietly.
+Silently starting empty and then saving deletes the user's sidebar to fix a bug
+of ours. Projects stay strict where the other collections are lossy: a project
+is the one thing git cannot give back, and one unknown pane kind from a newer
+build would otherwise cost every project. Per-field defaults do not cover
+references between types, so references are repaired on load.
 
-Runtime state stays out of the file. A shell title used to re-evaluate every
-view and schedule a save several times per prompt, for a string a relaunched
-tab replaces within a second. Cost: a saved tab shows its starting title
-until its shell speaks.
+Runtime state stays out of the file: a shell title would otherwise schedule
+several saves per prompt for a string a relaunched tab replaces within a
+second. Costs: a hand edit that breaks a reference is tidied quietly, and a
+saved tab shows its starting title until its shell speaks.
 
 ## Invariants are tested at random, with seeds
 
@@ -509,43 +296,36 @@ replayed to understand.
 
 ## Nothing in the core blocks a thread
 
-Waits inside `Task`s held one cooperative-pool thread per core, GCD ran out
-of threads, children blocked on full pipes, and the test suite hung. Both
-pipes are drained at once, or the second fills its 64 KiB buffer and blocks
-the child. The EOFs count as arrived one second after the exit, since `npm
-run dev &` exits at once and leaves its server holding them.
+Waits inside `Task`s held one cooperative-pool thread per core until GCD ran
+out of threads and the suite hung. Both pipes drain at once, or the second
+fills its 64 KiB buffer and blocks the child, and the EOFs count as arrived one
+second after the exit, since a backgrounded server holds them open.
 
-Running out of descriptors is an error, never an empty answer. launchd gives
-a GUI app 256; at the limit `Pipe()` cannot fail and returned two handles on
-descriptor 0, so the child wrote to the app's stdin, the reader saw stdin's
-EOF, `git worktree list` seemed to say the project had no worktrees, and the
-store dropped every tab and saved. Hence the `pipe` syscall, the refused
-empty list and the raised limit.
+Running out of descriptors is an error, never an empty answer: at the limit
+`Pipe()` cannot fail and hands back stdin, so `git worktree list` read as a
+project with no worktrees and the store dropped every tab. Hence the `pipe`
+syscall, the refused empty list and the raised limit.
 
 ## A closed tab ends its shell, next turn
 
-libghostty no longer frees a surface in the view's `deinit`, the view lives
-as long as any SwiftUI frame that adopted it, and on a process exit `close`
-runs inside libghostty's own callback, where freeing the surface would free
-the object mid-call. SwiftTerm cancels the monitor that would have reaped the
-child, so the host reaps with `waitpid` itself. No signal to a child that
-already exited: the pid may have been reissued.
+libghostty no longer frees a surface in the view's `deinit`, the view outlives
+any SwiftUI frame that adopted it, and on a process exit `close` runs inside
+libghostty's own callback, where freeing the surface would free the object
+mid-call. SwiftTerm cancels the monitor that would have reaped the child, so
+the host reaps with `waitpid` itself. No signal to a child that already exited:
+the pid may have been reissued.
 
 ## The window chrome is drawn by hand
 
 macOS 26 renders `NavigationSplitView` sidebars as floating glass, and
-`HSplitView` sizes children however it likes and exposes nothing. Cost:
-sidebar keyboard navigation has to be built, `WeightedSplit` uses
-`_VariadicView`, and each hand-drawn row needs an accessibility label reading
-its glyphs in drawing order.
+`HSplitView` sizes children however it likes and exposes nothing. Cost: sidebar
+keyboard navigation has to be built, `WeightedSplit` uses `_VariadicView`, and
+each hand-drawn row needs an accessibility label reading its glyphs in order.
 
-Both headers stand in for the title bar and are 40 pt, the band a hidden
-title bar with a unified-compact toolbar keeps; a 28 pt header put the tab
-strip inside that band, where AppKit painted its backdrop over it. Nothing
-collapses the sidebar, since the traffic lights need something under them.
-The state dot takes the icon's place on the left because the dirty-files dot
-is already yellow on the right, and a project row shows its worktrees' dots
-only once collapsed.
+Both headers stand in for the title bar at 40 pt, the band a hidden title bar
+with a unified-compact toolbar keeps; anything shorter puts the tab strip
+inside that band, where AppKit paints over it. Nothing collapses the sidebar,
+the traffic lights needing something under them.
 
 ## One workspace window, and `Window` scenes only
 
@@ -555,59 +335,47 @@ AppKit gives Cmd+W to the first matching item, so that Close beat Close Pane
 and shut the app.
 
 Either settings window opens centred on the workspace's screen, on its first
-tab and scrolled to the top, whatever the user left behind. SwiftUI shows the
-same window again after a close, so nothing on the way in can do that by
-itself: the close places it while there is nothing on screen to jump, becoming
-key is the first point that knows which screen the workspace is on, and each
-resize is the window settling to the size of its content, which had been
-leaving it half a toolbar's height low. Centring on the window's own screen
-was not enough, because one left on a second display kept reopening there,
-away from the app.
+tab, scrolled to the top. SwiftUI reshows the same window after a close, so
+nothing on the way in can do it: the close places the window while nothing is
+on screen to jump, and becoming key is the first point that knows which screen
+the workspace is on.
 
 ## Agents and shells are ids in the store, command lines at launch
 
-Ids are strings, so a newer build's agent loads harmlessly on an older one,
-and a custom shell is an id rather than the typed path, because the dropdown
-lists paths it found and a typed one would show as "not installed" whether it
-exists or not. An agent launches as `agent; exec <shell> -l`, so it is found
-on the terminal's PATH and a shell remains with the scrollback. A session off
-disk resumes rather than starts: four saved agent tabs must not start four
-agents. The shell is re-read from the setting at launch rather than
-persisted; under Ghostty `$SHELL` keeps the engine default, the path seen to
-work. Cost: a shell without `-l -i -c` (nu, xonsh) still gets `/bin/sh` for
-hooks.
+Ids are strings, so a newer build's agent loads harmlessly on an older one, and
+a custom shell is an id rather than a typed path, which would show as "not
+installed" whether it exists or not. An agent launches as `agent; exec <shell>
+-l`, so it is found on the terminal's PATH and a shell remains with the
+scrollback. A session off disk resumes rather than starts: four saved agent
+tabs must not start four agents. Cost: a shell without `-l -i -c` (nu, xonsh)
+still gets `/bin/sh` for hooks.
 
-Every agent people install lives under Homebrew, npm or a version manager,
-none of which a Finder-launched app has on PATH, so one login-shell
-environment is captured at launch, with an eight second limit past which a
-poorer PATH beats empty dropdowns.
-
-Auto-start opens the agent where a shell would have opened, held back until
-the post-create hook ends so it starts after `npm install`; New Shell Tab
-always opens a shell, so one stays reachable.
+Agents live under Homebrew, npm or a version manager, none of which a
+Finder-launched app has on PATH, so one login-shell environment is captured at
+launch, with an eight second limit past which a poorer PATH beats empty
+dropdowns. Auto-start opens the agent where a shell would have, held back until
+the post-create hook ends; New Shell Tab always opens a shell, so one stays
+reachable.
 
 ## A removed worktree goes to the Trash, not through `git worktree remove`
 
-`git worktree remove` refused a dirty tree, and its `--force` unlinked the
-files behind a second dialog; the one time someone removes the wrong worktree
-is the time that matters. A locked worktree is unlocked first, since prune
-skips locked records. A Trash that refuses, as on a volume without a
-`.Trashes`, falls back to deletion. Cost: on such a volume the recovery the
-Trash promised is not there.
+`git worktree remove` refuses a dirty tree, and its `--force` unlinks the
+files; the one time someone removes the wrong worktree is the time that
+matters. A locked worktree is unlocked first, prune skipping locked records. A
+Trash that refuses falls back to deletion; cost: on such a volume the recovery
+the Trash promised is not there.
 
-Whether a removal asks at all is a global setting, about the person and not
-the repository, but it always asks about the branch, the one part the sidebar
+Whether a removal asks at all is a global setting, about the person and not the
+repository, but it always asks about the branch, the one part the sidebar
 cannot undo. The branch goes last, after the post-delete hook, so a hook that
 pushes it still finds it.
 
 ## A bare repository is a project
 
-`--is-inside-work-tree` prints `false` for one, and a bare clone with its
-worktrees beside it is a common layout for people who live in worktrees;
-`--git-dir` succeeds anywhere inside. A repository hidden as `proj/.bare`
-takes the name of the folder holding it, the name the layout is known by.
-Cost: the default `../{project}-worktrees` lands inside `proj/` for that
-layout.
+`--is-inside-work-tree` prints `false` for one, and `--git-dir` succeeds
+anywhere inside. A repository hidden as `proj/.bare` takes the name of the
+folder holding it; cost: the default `../{project}-worktrees` then lands inside
+`proj/`.
 
 A project is the main worktree whatever was picked, because a linked worktree
 lists the same worktrees and two rows would select together and share tabs.
@@ -616,75 +384,55 @@ Cost: the sidebar shows the repository's name, not the folder picked.
 ## A missing directory is refused, not worked around
 
 A shell spawned in a missing directory silently lands in `$HOME`. A project
-whose directory is gone stays dimmed rather than dropped, since an unmounted
-drive must not delete someone's setup, and the failure is reported once
-because every tick would re-raise it.
+whose directory is gone stays dimmed rather than dropped, an unmounted drive
+not being reason to delete someone's setup, and the failure is reported once.
 
 ## A local build is signed by a certificate, not ad hoc
 
-A terminal is blamed for what runs in it: macOS holds the spawning app
-responsible for what a process reads, so an alert about a command in a pane
-names Multishell, which was idle. Hence the usage strings in the Info.plist,
-the only place that can say a command asked. And hence a certificate rather
-than ad hoc, since a grant is keyed to the signature's designated requirement
-and an ad-hoc one is a bare cdhash: every build asked again for everything,
-and a box already ticked in System Settings stopped matching and denied in
-silence.
+macOS holds the spawning app responsible for what a process reads, so an alert
+about a command in a pane names Multishell; hence the usage strings in the
+Info.plist, the only place that can say a command asked. And hence a
+certificate rather than ad hoc: a grant is keyed to the signature's designated
+requirement, and an ad-hoc one is a bare cdhash, so every build asked again for
+everything and a box already ticked denied in silence. Disclaiming the child
+instead would mean owning the pty spawn, and the name would then be an unsigned
+binary, which TCC refuses rather than asks about.
 
 Cost: a setup step before the first build, and a certificate nothing else
-trusts, so it buys nothing towards distribution. App Management is out of
-reach either way, never prompted for and only denied.
-
-Disclaiming the child instead, so an alert named the program that asked, would
-mean owning the pty spawn — SwiftTerm forks and execs, libghostty spawns
-inside the xcframework — and the name would then be an unsigned binary, which
-TCC refuses rather than asks about.
+trusts.
 
 ## Smaller decisions
 
-- Sessions warm up when visited, since a saved workspace could imply dozens
-  of shells at launch. Selecting a worktree opens a terminal unless told not
-  to, for someone triaging many worktrees who wants to look first. A create
-  is asked about apart from a selection, both for whether a terminal opens
-  and for whether it runs the agent, because a worktree asked for and a
-  worktree looked at are not the same event: the common setup is a click
-  that only shows, and a create that comes up with an agent already working.
-  Cost: four settings where there were two, and a project may override the
-  two a create reads.
-- Engines coexist, because "next launch" is a poor answer to an engine
-  change. Cost: two renderers the theme conversion must keep identical, and a
-  command reaches libghostty as one quoted line but SwiftTerm as an array.
-  Both sit behind a protocol with a recording fake, which is how the engines,
-  the watcher and the platform are tested without a terminal or a desktop.
+- Sessions warm up when visited, a saved workspace implying dozens of shells at
+  launch. Selecting a worktree opens a terminal unless told not to; a create is
+  asked about separately, since a worktree asked for and a worktree looked at
+  are not the same event. Cost: four settings where there were two.
+- Engines coexist, "next launch" being a poor answer to an engine change. Cost:
+  two renderers the theme conversion must keep identical, and a command reaches
+  libghostty as one quoted line but SwiftTerm as an array. Both sit behind a
+  protocol with a recording fake, which is how they are tested without a
+  terminal.
 - Ghostty's keybinds are unbound by name, not `keybind = clear`, which also
   removes alt+arrow word movement and super+backspace.
-- Paths are directory URLs always: `URL(fileURLWithPath:)` asks the
-  filesystem whether a path is a directory, and a relative worktree path
-  resolved against a URL Foundation took for a file landed in the parent.
-- Errors are mapped, not stringified. The alert is the only place a user
-  learns why something failed, so it gets git's own words.
-- Settings use the Mac's own idiom, so project settings hosts
-  `NSTabViewController` in `.toolbar` style, which SwiftUI gives only to the
-  `Settings` scene. Removing a project asks in that window, or the dialog
-  would be behind it.
-- Help is behind an (i), because captions doubled every form's height and
-  were read once. A caption is left only for a value computed live.
-- Notifications are for reports, not bells, and nothing under ten seconds:
-  `ls` is not news, a build is. A bell in a background tab is a dot.
-- Debug builds keep their own state file, socket and integration directory,
-  so `make run` beside the installed app neither overwrites its state nor
-  takes its socket.
-- The terminal font is picked, not typed, monospaced families first and then
-  everything else, because some programming fonts carry ligature and icon
-  glyphs and are not marked fixed-pitch.
-- A project icon is a description tinted from a theme slot rather than a hex,
-  so a theme change keeps it in step with the terminal. Image files would
-  mean a folder, resizing and cleanup on removal.
-- One `WorktreeActions` menu serves the detail header and the context menu,
-  so an action added once appears in both. A terminal editor opens as a tab,
-  because one run in the background fails silently with no tty. Cost: an
-  editor tab's command line is saved, so a relaunch reopens the editor.
-- New Worktree always opens, even with several projects and nothing selected,
-  and its decisions are a tested value because a cancelled branch load once
-  re-enabled Create against the wrong project. The branch picker offers local
-  branches only, since a large repository has hundreds of remote ones.
+- Paths are directory URLs always: a relative worktree path resolved against a
+  URL Foundation took for a file lands in the parent.
+- Errors are mapped, not stringified: the alert is the only place a user learns
+  why something failed, so it gets git's own words.
+- Project settings hosts `NSTabViewController` in `.toolbar` style, which
+  SwiftUI gives only to the `Settings` scene, and asks about removing a project
+  in that window, or the dialog would be behind it.
+- Help is behind an (i): captions doubled every form's height and were read
+  once. A caption is left only for a value computed live.
+- Notifications are for reports, not bells, and nothing under ten seconds: `ls`
+  is not news, a build is. A bell in a background tab is a dot.
+- Debug builds keep their own state file, socket and integration directory, so
+  `make run` beside the installed app touches neither.
+- The terminal font is picked, not typed, some programming fonts not being
+  marked fixed-pitch. A project icon is tinted from a theme slot rather than a
+  hex, so a theme change keeps it in step with the terminal.
+- One `WorktreeActions` menu serves the detail header and the context menu. A
+  terminal editor opens as a tab, one run in the background failing silently
+  with no tty; cost: a relaunch reopens the editor.
+- New Worktree always opens, even with nothing selected, and its decisions are
+  a tested value because a cancelled branch load once re-enabled Create against
+  the wrong project. Its branch picker offers local branches only.
