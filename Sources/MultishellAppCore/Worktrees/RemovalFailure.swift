@@ -14,7 +14,15 @@ import MultishellProcess
 /// was to be deleted, says it was kept.
 public enum RemovalFailure: Equatable, Sendable {
   public enum Retry: Equatable, Sendable {
+    /// `git branch -D` on a branch `-d` refused. The alert's title already
+    /// names the branch, so the button says only what it does.
     case deleteBranchAnyway(String)
+
+    public var label: String {
+      switch self {
+      case .deleteBranchAnyway: "Force Deletion"
+      }
+    }
   }
 
   /// The worktree stays; the pane shows this until the user dismisses it.

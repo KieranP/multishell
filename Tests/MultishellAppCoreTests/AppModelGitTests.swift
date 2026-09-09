@@ -428,7 +428,7 @@ struct AppModelGitTests {
 
     let refused = try #require(h.model.presentedError)
     #expect(refused.title == "Worktree removed, but branch ahead was not deleted")
-    #expect(refused.retryLabel == "Delete Branch Anyway")
+    #expect(refused.retryLabel == "Force Deletion")
     #expect(h.worktree(onBranch: "ahead") == nil, "the worktree itself went")
     #expect(h.model.liveTerminalCount == 0)
 

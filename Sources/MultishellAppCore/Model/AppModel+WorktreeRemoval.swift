@@ -79,8 +79,8 @@ extension AppModel {
         return
       case .alert(let title, let message, let retry, let worktreeRemoved):
         var presented = PresentedError(title: title, message: message)
-        if case .deleteBranchAnyway(let branch) = retry {
-          presented.retryLabel = "Delete Branch Anyway"
+        if let retry, case .deleteBranchAnyway(let branch) = retry {
+          presented.retryLabel = retry.label
           presented.retry = { [weak self] in
             await self?.deleteBranch(branch, of: project, force: true)
           }

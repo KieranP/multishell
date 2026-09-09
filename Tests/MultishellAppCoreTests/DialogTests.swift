@@ -119,6 +119,7 @@ struct RemovalFailureTests {
     }
     #expect(title == "Worktree removed, but branch feat was not deleted")
     #expect(retry == .deleteBranchAnyway("feat"))
+    #expect(retry?.label == "Force Deletion")
     #expect(removed)
   }
 }
