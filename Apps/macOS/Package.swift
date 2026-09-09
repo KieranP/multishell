@@ -5,7 +5,11 @@ let package = Package(
   name: "Multishell",
   platforms: [.macOS(.v14)],
   dependencies: [
-    .package(path: "../.."),
+    // Named, not just pathed: SwiftPM takes a path dependency's identity from
+    // its directory, which is "multishell" in a checkout but the branch's name
+    // in a git worktree, and every `package: "multishell"` below would then
+    // name a package that does not exist.
+    .package(name: "multishell", path: "../.."),
     // Pinned exactly: libghostty's embedding API is not stable, so a
     // range would let an upgrade break the build without warning.
     .package(url: "https://github.com/Lakr233/libghostty-spm", exact: "1.5.20260906"),

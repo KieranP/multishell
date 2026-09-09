@@ -427,6 +427,11 @@ trusts.
   is not news, a build is. A bell in a background tab is a dot.
 - Debug builds keep their own state file, socket and integration directory, so
   `make run` beside the installed app touches neither.
+- The app package names its path dependency rather than only pointing at it.
+  SwiftPM identifies a local package by its directory, which is `multishell`
+  in a checkout and the branch's name in a worktree, so the unnamed form built
+  from the checkout alone. Cost: the name is written twice, in the dependency
+  and in the directory it usually matches.
 - The terminal font is picked, not typed, some programming fonts not being
   marked fixed-pitch. A project icon is tinted from a theme slot rather than a
   hex, so a theme change keeps it in step with the terminal.

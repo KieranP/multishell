@@ -27,6 +27,14 @@ app build downloads the libghostty xcframework, about 80 MB.
 without it the build signs ad hoc and says so. Not for distribution — it is so
 the user's permission grants survive a rebuild.
 
+Every target works the same from a git worktree as from the checkout: the
+build directories are the worktree's own, and the version is the worktree's
+commit. A debug bundle still shares `state.debug.json` and
+`multishell.debug.sock` with every other build on the machine, so `make run`
+in two worktrees at once is two apps over one state file. A bundle built in a
+worktree also keeps reading its resources from that worktree, which the build
+says as it finishes; Known gaps has the why.
+
 CI builds and tests the libraries and the app on macOS, then runs `make lint`.
 
 ## Layout
@@ -199,7 +207,9 @@ names are the log's less the `kTCCService` prefix, so App Management is
   its terminfo through `Bundle.module`, which looks at the app root and then an
   absolute path inside `Apps/macOS/.build`, never `Contents/Resources`, so
   elsewhere `TerminalController()` traps on the first terminal. The fix is
-  building with Xcode or a patched libghostty-spm.
+  building with Xcode or a patched libghostty-spm. The same path is why a
+  bundle installed from a worktree stops working once that worktree is
+  removed: install from the checkout, or rebuild after the removal.
 - The Ghostty engine's path is untested, its zsh chain checked only against a
   stand-in bootstrap. Click-to-move works there and nowhere else, and not on
   the later lines of a multi-line buffer.

@@ -129,4 +129,16 @@ sign "$app/Contents/Helpers/multishell"
 sign "$app"
 codesign --verify "$app" || echo "warning: $app is not validly signed" >&2
 
+# SwiftPM writes this tree's own .build path into the binary as the only place
+# Bundle.module looks that exists (the other is the app root, where codesign
+# refuses to let the bundles live). From a worktree that path is the worktree,
+# which is the one directory the user is expected to throw away.
+if [ "$(git -C "$root" rev-parse --git-dir 2>/dev/null)" \
+    != "$(git -C "$root" rev-parse --git-common-dir 2>/dev/null)" ]; then
+    echo "note: built from a git worktree, so the bundle reads its resources from" >&2
+    echo "      $root/Apps/macOS/.build" >&2
+    echo "      and stops working once that worktree is removed. Build from the" >&2
+    echo "      main checkout before 'make install'." >&2
+fi
+
 echo "built $app ($version)"
