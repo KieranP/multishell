@@ -102,6 +102,14 @@ ship it, a field on `SharedProjectSettings` and a line in
 `ProjectSettings.layered`. `AppModel` runs one stage per filled-in list, in the
 enum's order, before the post-create hook.
 
+**An agent's hooks.** An `AgentHookIntegration` in `AgentHooks.integrations`,
+naming the file, the events, and what each event says the session is doing;
+the agent also needs a row in `AgentCatalogue.agents`, since the settings tab
+offers hooks for the agents detection found. Four agents hand a command the
+same payload on stdin, which `AgentHookPayload` reads and `agent-hook --agent`
+maps; one whose file is ours alone is written whole and deleted to remove it.
+An agent with no hooks at all needs a `.plugin`, as OpenCode has.
+
 **A variable a hook receives.** A case in `HookVariable`. That one list both
 builds the environment and draws the Hooks tab's table, so the help cannot fall
 behind.
@@ -151,9 +159,12 @@ helper link are shared.
 - `drops/<uuid>/`: files a drag promised rather than handed over, swept at
   launch once a week old.
 
-Claude Code's hooks live in `~/.claude/settings.json`, written only when asked,
-with `settings.json.before-multishell` kept the first time. Sidebar width is in
-`UserDefaults`.
+An agent's hooks live in its own file, written only when asked: Claude Code's
+in `~/.claude/settings.json`, Codex's in `~/.codex/hooks.json` and Gemini's in
+`~/.gemini/settings.json`, each keeping a `.before-multishell` copy the first
+time; Copilot's in `~/.copilot/hooks/multishell.json` and OpenCode's plugin in
+`~/.config/opencode/plugin/multishell.js`, both files of ours alone, deleted to
+remove them. Sidebar width is in `UserDefaults`.
 
 A repository may carry `.multishell.json` at its root, written by Export in
 project settings, with the same keys as a project's settings. It is read at

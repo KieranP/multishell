@@ -53,6 +53,17 @@ DEVELOP.md under Known gaps.
   refuse to start.
 - Confirm the pid a hook reports is Claude itself, not a wrapper that
   outlives the hook, against a real Claude Code session.
+- The four hook files are written from each agent's documented shape, and
+  only Claude Code's has been watched moving a dot in a real session. Run
+  each agent once and check its events fire and that Codex's `/hooks` trust
+  holds. The OpenCode plugin's own logic has been driven against a stub
+  helper; what is unproven is that OpenCode loads a plugin exporting a
+  function rather than a default `{ id, setup }`, its loader having two
+  generations of that contract.
+- An OpenCode server started from one pane and reused by another reports
+  that first pane's `MULTISHELL_SESSION`, so the dot lands on the wrong
+  tab. Only the plugin has this: every other agent's hook runs in the
+  session's own process.
 - Whether this embedding loads `~/.config/ghostty` is unverified.
 
 ## Packaging
@@ -66,6 +77,6 @@ DEVELOP.md under Known gaps.
 - A release workflow: versioned DMG or zip from a tag, the version from the
   tag rather than the commit `make-app.sh` writes, and an update check.
 - What the README owes someone installing a release rather than building:
-  download, Gatekeeper, where state lives. Adding a project and the Claude
-  Code hooks are already there.
+  download, Gatekeeper, where state lives. Adding a project and the agent
+  hooks are already there.
 - Homebrew cask.

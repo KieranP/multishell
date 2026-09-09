@@ -28,7 +28,7 @@ public enum ShellStateHooks {
   /// hands `ZDOTDIR` back so nested shells are untouched. This is how the
   /// hooks reach a terminal without editing any file the user owns.
   public static func zshIntegrationFiles(
-    helper: String = ClaudeCodeHooks.helperReference
+    helper: String = AgentHooks.helperReference
   )
     -> [String: String]
   {
@@ -89,7 +89,7 @@ public enum ShellStateHooks {
   /// it instead of `~/.bashrc` and, since it is not a login shell, would skip
   /// the profile chain, so this reproduces that chain first, then the user's
   /// `.bashrc`, then adds the hooks. Nothing is written to the user's files.
-  public static func bashInitFile(helper: String = ClaudeCodeHooks.helperReference) -> String {
+  public static func bashInitFile(helper: String = AgentHooks.helperReference) -> String {
     script("init", extension: "bash", helper: helper) + "\n"
   }
 

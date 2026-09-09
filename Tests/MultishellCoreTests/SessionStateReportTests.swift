@@ -85,4 +85,23 @@ struct SessionStateReportTests {
     #expect(variables["MULTISHELL_WORKTREE"] == "/w/repo")
     #expect(variables["MULTISHELL_SOCKET"] == "/state/multishell.sock")
   }
+
+  /// The channel drops a line over 64 KB as not speaking the protocol, so a
+  /// message long enough to push a report past it would lose the state as
+  /// well as the text — and the state it loses is Waiting for input, from a
+  /// permission prompt quoting a very long command.
+  @Test func averyLongMessageIsTrimmedSoItsReportStillFits() throws {
+    let report = SessionStateReport(
+      state: .attention, cwd: String(repeating: "d", count: 900),
+      message: String(repeating: "x", count: 200_000))
+
+    let message = try #require(report.message)
+    #expect(
+      message.count == SessionStateReport.maximumMessageLength + 1, "trimmed, with an ellipsis")
+    #expect(message.hasSuffix("…"))
+    #expect(try report.encodedLine().utf8.count < 64 * 1024, "the channel takes no more")
+
+    let short = SessionStateReport(state: .attention, message: "Allow rm -rf?")
+    #expect(short.message == "Allow rm -rf?", "anything a banner shows is left alone")
+  }
 }

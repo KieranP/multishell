@@ -123,6 +123,26 @@ struct PresentedErrorTests {
     #expect(presented.message.contains("state.2026.broken.json"))
   }
 
+  /// A settings file Multishell will not rewrite has to say which file and
+  /// what to do instead, or the user is left with a JSON parser's words.
+  @Test func aSettingsFileItWillNotRewriteSaysWhichAndWhatToDoInstead() {
+    let file = URL(fileURLWithPath: "/Users/x/.gemini/settings.json")
+    let unparsable = PresentedError(UnparsableSettingsFile(file: file))
+    #expect(unparsable.title == "That settings file is not plain JSON")
+    #expect(unparsable.message.contains("/Users/x/.gemini/settings.json"))
+    #expect(unparsable.message.contains("comment"))
+    #expect(unparsable.message.contains("Show JSON"))
+
+    let entries = PresentedError(UnreadableHookEntries(file: file, event: "BeforeTool"))
+    #expect(entries.title == "That settings file has hooks Multishell does not recognise")
+    #expect(entries.message.contains("hooks.BeforeTool"))
+    #expect(entries.message.contains("Show JSON"))
+
+    let shape = PresentedError(UnexpectedSettingsShape(file: file))
+    #expect(shape.title == "That settings file is not a JSON object")
+    #expect(shape.message.contains("Show JSON"))
+  }
+
   @Test func retryIsAbsentUnlessAdded() {
     var presented = PresentedError(GitUnavailable())
     #expect(presented.retryLabel == nil && presented.retry == nil)

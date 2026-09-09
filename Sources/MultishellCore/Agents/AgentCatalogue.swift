@@ -46,7 +46,11 @@ public enum AgentCatalogue {
       fileMentionPrefix: "@"),
     AgentDescriptor(
       id: "codex", name: "Codex", executable: "codex", resumeArguments: ["resume", "--last"]),
-    AgentDescriptor(id: "gemini", name: "Gemini CLI", executable: "gemini"),
+    AgentDescriptor(
+      id: "gemini", name: "Gemini CLI", executable: "gemini",
+      resumeArguments: ["--resume", "latest"]),
+    AgentDescriptor(
+      id: "copilot", name: "Copilot CLI", executable: "copilot", resumeArguments: ["--continue"]),
     AgentDescriptor(id: "aider", name: "Aider", executable: "aider"),
     AgentDescriptor(
       id: "opencode", name: "OpenCode", executable: "opencode", resumeArguments: ["--continue"]),

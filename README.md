@@ -34,12 +34,15 @@ sits beside an installed one. The first build downloads libghostty, about
 80 MB. Then add a repository with the folder button at the top of the
 sidebar, or Cmd+O.
 
-**Claude Code hooks.** For the state dots to follow Claude Code, it has to
-report through its hooks. Open Settings > Agents and click "Add to
-~/.claude/settings.json"; Multishell appends one entry of its own per event,
-leaves the rest of the file as it is, and keeps a copy beside it the first
-time. Remove takes only its own entries out again. Plain shell commands
-report without this step.
+**Agent hooks.** For the state dots to follow an agent, it has to report
+through its hooks. Open Settings > Agents, where every agent on your PATH
+that has them — Claude Code, Codex, Gemini CLI, Copilot CLI and OpenCode —
+gets a row with Add. Where the file is the agent's own, Multishell appends
+one entry per event, leaves the rest of it as it is, keeps a copy beside it
+the first time, and Remove takes only its own entries out again; where the
+agent reads a directory of hook files, or a plugin, it writes a file of its
+own and deletes it again. Codex asks you to trust a new hook once, with
+`/hooks`. Plain shell commands report without any of this.
 
 To work on it, start with [DEVELOP.md](DEVELOP.md) for the build, the tests
 and the rules CI enforces, and [DESIGN.md](DESIGN.md) for why things are the
@@ -57,7 +60,7 @@ way they are.
   into it, another symlinked back to the repository, so `.env` comes along
   and `node_modules` is shared instead of installed again.
 - A state dot on every tab and worktree: working, waiting for input, done,
-  failed. Claude Code reports through its hooks; zsh and bash report plain
+  failed. Five agents report through their hooks; zsh and bash report plain
   commands with no setup; any tool can through `multishell state`, which
   also takes `--agent` to say which agent is at that pane's prompt.
 - Pick a preferred agent and open it in a tab with one shortcut, or have

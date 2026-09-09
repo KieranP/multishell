@@ -3,11 +3,11 @@ import MultishellCore
 import MultishellProcess
 
 /// The `multishell` command: reports a session's state to the running app
-/// over its socket, and installs the Claude Code hooks that do so.
+/// over its socket, and installs the agent hooks that do so.
 ///
 /// Small enough to hand-parse. Every failure to reach the app is silent
 /// from a hook and loud from the terminal: a hook fires with or without
-/// Multishell running and must never make Claude show an error for it.
+/// Multishell running and must never make an agent show an error for it.
 enum Helper {
   static let usage = """
     usage:
@@ -18,7 +18,7 @@ enum Helper {
           MULTISHELL_SOCKET. The pid defaults to the nearest ancestor that is
           not a shell: the program that ran this. --agent names the agent at
           the prompt, by catalogue id, so the app can tell an agent's pane
-          from a plain shell; Claude Code's own hooks set it.
+          from a plain shell; the agents' own hooks set it.
       multishell command-started [--pid N]
           Report that a foreground command has started (running). For a shell
           preexec hook; pass the shell's pid so the state clears if the shell
@@ -27,12 +27,13 @@ enum Helper {
           Report that it finished: done when N is 0 or a signal, failed
           otherwise. For a shell precmd hook; a short duration posts no
           notification.
-      multishell claude-hook
-          Read a Claude Code hook payload from stdin and report the matching
-          state. Always exits 0.
-      multishell install-claude-hooks [--print]
-          Add the hooks to ~/.claude/settings.json, or print them.
-      multishell remove-claude-hooks
+      multishell agent-hook --agent ID
+          Read that agent's hook payload from stdin and report the state its
+          event stands for. Always exits 0. Known agents:
+          \(AgentHooks.integrations.map(\.id).joined(separator: ", ")).
+      multishell install-agent-hooks --agent ID [--print]
+          Write the hooks into that agent's own file, or print them.
+      multishell remove-agent-hooks --agent ID
       multishell --version
 
     """
@@ -54,13 +55,15 @@ enum Helper {
         return report(
           SessionState.finished(exitCode: options.int32("exit")), environment: environment,
           duration: options.double("duration"))
-      case "claude-hook":
-        claudeHook(environment: environment, input: standardInput)
+      // `claude-hook` is what the first hooks were installed with, and is
+      // still written in the settings files those installs wrote.
+      case "agent-hook", "claude-hook":
+        agentHook(agentID(in: arguments), environment: environment, input: standardInput)
         return 0
-      case "install-claude-hooks":
-        return installClaudeHooks(print: arguments.contains("--print"))
-      case "remove-claude-hooks":
-        return removeClaudeHooks()
+      case "install-agent-hooks", "install-claude-hooks":
+        return installHooks(try agent(in: arguments), print: arguments.contains("--print"))
+      case "remove-agent-hooks", "remove-claude-hooks":
+        return removeHooks(try agent(in: arguments))
       case "--version", "version":
         print("multishell helper, protocol version \(SessionStateReport.protocolVersion)")
         return 0
@@ -106,19 +109,26 @@ enum Helper {
     }
   }
 
-  // MARK: - claude-hook
+  // MARK: - agent-hook
 
-  /// Nothing this prints or returns may disturb Claude: exit 0, no stdout.
-  private static func claudeHook(environment: [String: String], input: FileHandle) {
+  /// Nothing this prints or returns may disturb the agent: exit 0, no
+  /// stdout, and an event that stands for nothing costs one silent process.
+  private static func agentHook(
+    _ id: String, environment: [String: String], input: FileHandle
+  ) {
     let data = input.readDataToEndOfFile()
-    guard let payload = ClaudeHookPayload(json: data), let state = payload.state else { return }
+    guard
+      let integration = AgentHooks.integration(for: id),
+      let payload = AgentHookPayload(json: data),
+      let state = integration.state(for: payload)
+    else { return }
     let report = SessionStateReport(
       state: state,
       sessionID: environment[SessionEnvironment.sessionKey].flatMap { UUID(uuidString: $0) },
       cwd: payload.cwd ?? environment[SessionEnvironment.worktreeKey],
       pid: ProcessAncestry.reportingProcess(),
       message: payload.message,
-      agent: AgentCatalogue.claudeID)
+      agent: id)
     try? send(report, environment: environment)
   }
 
@@ -154,14 +164,39 @@ enum Helper {
 
   // MARK: - hooks
 
-  private static func installClaudeHooks(print shouldPrint: Bool) -> Int32 {
+  /// Which agent the line names. Claude Code when it names none: its hooks
+  /// were installed before there was a flag, and those lines are still in
+  /// the settings files that install wrote. Read by hand rather than
+  /// through `Options`, since a hook must never fail over an argument.
+  private static func agentID(in arguments: [String]) -> String {
+    guard let flag = arguments.firstIndex(of: "--agent"), flag + 1 < arguments.count else {
+      return AgentCatalogue.claudeID
+    }
+    return arguments[flag + 1]
+  }
+
+  private static func agent(in arguments: [String]) throws -> AgentHookIntegration {
+    let id = agentID(in: arguments)
+    guard let integration = AgentHooks.integration(for: id) else {
+      throw UsageError(
+        "no hooks for \(id); known agents: "
+          + AgentHooks.integrations.map(\.id).joined(separator: ", "))
+    }
+    return integration
+  }
+
+  private static func installHooks(
+    _ integration: AgentHookIntegration, print shouldPrint: Bool
+  )
+    -> Int32
+  {
     if shouldPrint {
-      print(ClaudeCodeHooks.snippet(), terminator: "")
+      print(integration.snippet(), terminator: "")
       return 0
     }
     do {
-      try ClaudeCodeHooks.install()
-      print("Claude Code hooks added to \(ClaudeCodeHooks.userSettingsFile.path)")
+      try integration.install()
+      print("\(integration.name) hooks added to \(integration.file.path)")
       return 0
     } catch {
       fail("\(error)")
@@ -169,10 +204,10 @@ enum Helper {
     }
   }
 
-  private static func removeClaudeHooks() -> Int32 {
+  private static func removeHooks(_ integration: AgentHookIntegration) -> Int32 {
     do {
-      try ClaudeCodeHooks.remove()
-      print("Claude Code hooks removed from \(ClaudeCodeHooks.userSettingsFile.path)")
+      try integration.remove()
+      print("\(integration.name) hooks removed from \(integration.file.path)")
       return 0
     } catch {
       fail("\(error)")

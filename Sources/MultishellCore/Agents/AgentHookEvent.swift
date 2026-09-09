@@ -1,0 +1,33 @@
+import Foundation
+
+/// One event an agent's hooks are asked for, and what it says the session
+/// is doing.
+public struct AgentHookEvent: Hashable, Sendable {
+  /// What the settings file calls the event.
+  public let name: String
+  /// What the payload calls it, which is usually the same word. Copilot
+  /// takes `notification` in its file and reports `Notification` in the
+  /// payload, and a hook that read either name from the other would map
+  /// nothing.
+  public let reported: String
+  public let state: SessionState
+  /// Which occurrences of the event to ask for, where the agent can filter
+  /// them and only some of them mean what we are after.
+  public let matcher: String?
+  /// Whether the event means waiting only when the agent is in a mode that
+  /// stops for the user. Codex asks its hook before deciding whether a call
+  /// needs anyone at all, so under `--full-auto` the event fires for work
+  /// nobody is waiting on.
+  public let onlyWhenPrompting: Bool
+
+  public init(
+    _ name: String, _ state: SessionState, reported: String? = nil, matcher: String? = nil,
+    onlyWhenPrompting: Bool = false
+  ) {
+    self.name = name
+    self.reported = reported ?? name
+    self.state = state
+    self.matcher = matcher
+    self.onlyWhenPrompting = onlyWhenPrompting
+  }
+}

@@ -79,7 +79,7 @@ struct HelperTests {
     #expect(report?.version == SessionStateReport.protocolVersion)
   }
 
-  @Test func aClaudeHookPayloadBecomesTheMatchingReportAndAlwaysExitsZero() async throws {
+  @Test func anAgentHookPayloadBecomesTheMatchingReportAndAlwaysExitsZero() async throws {
     let path = socketPath()
     let server = UnixSocketServer(path: path)
     defer { server.stop() }
@@ -118,6 +118,18 @@ struct HelperTests {
     #expect(orphan.succeeded && orphan.standardError.isEmpty)
     try await Task.sleep(for: .milliseconds(200))
     #expect(recorder.received.count == 1)
+
+    // The same line for an agent whose events are named its own way: a
+    // Gemini turn that has ended is Done, and Gemini is at that prompt.
+    let gemini = try await run(
+      ["agent-hook", "--agent", "gemini"], environment: ["MULTISHELL_SOCKET": path.path],
+      stdin: #"{"hook_event_name":"AfterAgent","cwd":"/w/repo"}"#)
+    #expect(gemini.succeeded && gemini.standardOutput.isEmpty)
+    try await waitUntil { recorder.received.count == 2 }
+    let second = SessionStateReport.parse(recorder.received.last ?? "")
+    #expect(second?.state == .done)
+    #expect(second?.agent == "gemini")
+    #expect(second?.cwd == "/w/repo")
   }
 
   /// Any tool can say which agent is at the prompt, the way Claude's hooks
@@ -371,10 +383,23 @@ struct HelperTests {
   }
 
   @Test func printingTheHooksGivesTheSnippetWithoutTouchingAnyFile() async throws {
-    let output = try await run(["install-claude-hooks", "--print"])
-    #expect(output.succeeded)
+    // The command an older build wrote scripts against still means Claude.
+    let claude = try await run(["install-claude-hooks", "--print"])
+    #expect(claude.succeeded)
     let object =
-      try JSONSerialization.jsonObject(with: Data(output.standardOutput.utf8)) as? [String: Any]
-    #expect(ClaudeCodeHooks.isInstalled(in: object ?? [:]))
+      try JSONSerialization.jsonObject(with: Data(claude.standardOutput.utf8)) as? [String: Any]
+    #expect(AgentHooks.claude.isInstalled(in: object ?? [:]))
+
+    let copilot = try await run(["install-agent-hooks", "--agent", "copilot", "--print"])
+    #expect(copilot.succeeded)
+    let file =
+      try JSONSerialization.jsonObject(with: Data(copilot.standardOutput.utf8)) as? [String: Any]
+    #expect(file?["version"] as? Int == 1)
+
+    let plugin = try await run(["install-agent-hooks", "--agent", "opencode", "--print"])
+    #expect(plugin.succeeded && plugin.standardOutput.contains("MultishellPlugin"))
+
+    let unknown = try await run(["install-agent-hooks", "--agent", "aider"])
+    #expect(unknown.status == 2 && unknown.standardError.contains("no hooks for aider"))
   }
 }

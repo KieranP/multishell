@@ -22,11 +22,11 @@ extension AppModel {
     refreshAgentStatus()
   }
 
-  /// What the Agent settings show: whether the hooks and the command-line
+  /// What the Agent settings show: whose hooks and whether the command-line
   /// tool are installed. Read from disk on demand, not observed.
   public func refreshAgentStatus() {
-    let hooks = ClaudeCodeHooks.isInstalled()
-    if hooks != claudeHooksInstalled { claudeHooksInstalled = hooks }
+    let hooks = Set(AgentHooks.integrations.filter { $0.isInstalled() }.map(\.id))
+    if hooks != installedAgentHooks { installedAgentHooks = hooks }
     let tool = HelperLink.isCommandLineToolInstalled
     if tool != commandLineToolInstalled { commandLineToolInstalled = tool }
   }
@@ -117,23 +117,34 @@ extension AppModel {
   }
 }
 
-// MARK: - Claude Code hooks and the command-line tool
+// MARK: - Agent hooks and the command-line tool
 
 extension AppModel {
-  public var claudeHooksSnippet: String { ClaudeCodeHooks.snippet() }
+  /// The agents Settings > Agents offers hooks for: the ones this machine
+  /// has, and any whose hooks are still installed.
+  public var agentHooksRows: [AgentHooksRow] {
+    AgentHooksRow.rows(detection: agentDetection, installed: installedAgentHooks)
+  }
 
-  public func installClaudeHooks() {
+  /// The file as it would be written, for the row that shows it.
+  public func agentHooksSnippet(_ id: String) -> String {
+    AgentHooks.integration(for: id)?.snippet() ?? ""
+  }
+
+  public func installAgentHooks(_ id: String) {
+    guard let integration = AgentHooks.integration(for: id) else { return }
     do {
-      try ClaudeCodeHooks.install()
+      try integration.install()
     } catch {
       report(error)
     }
     refreshAgentStatus()
   }
 
-  public func removeClaudeHooks() {
+  public func removeAgentHooks(_ id: String) {
+    guard let integration = AgentHooks.integration(for: id) else { return }
     do {
-      try ClaudeCodeHooks.remove()
+      try integration.remove()
     } catch {
       report(error)
     }

@@ -2,13 +2,14 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Settings > Agents: the preferred agent, and the Claude Code hooks that
-/// feed the state dots, shown only when Claude Code is on the login shell's
-/// PATH. Without it, the way to get it.
+/// Settings > Agents: the preferred agent, and the hooks that feed the
+/// state dots, one row per agent this machine has. Without Claude Code,
+/// the way to get it.
 struct AgentSettingsTab: View {
   let model: AppModel
 
-  @State private var showsSnippet = false
+  /// Which row's file is on show, at most one at a time.
+  @State private var shownContents: String?
 
   var body: some View {
     Form {
@@ -48,9 +49,11 @@ struct AgentSettingsTab: View {
         .disabled(model.workspace.preferredAgentID == nil)
       }
 
-      if model.agentDetection.isClaudeCodeInstalled {
-        claudeCodeSection
-      } else {
+      if !model.agentHooksRows.isEmpty {
+        hooksSection
+      }
+
+      if !model.agentDetection.isClaudeCodeInstalled {
         Section("Claude Code") {
           InfoRow(
             "Claude Code:",
@@ -87,42 +90,43 @@ struct AgentSettingsTab: View {
     .onAppear { model.refreshAgentStatus() }
   }
 
-  private var claudeCodeSection: some View {
-    Section("Claude Code") {
-      LabeledContent("Claude Code:") {
-        Text(model.agentDetection.found[AgentCatalogue.claudeID]?.path ?? "")
-          .font(.system(size: 11, design: .monospaced))
-          .foregroundStyle(.secondary)
-          .lineLimit(1)
-          .truncationMode(.head)
-      }
-      InfoRow(
-        "Hooks:",
-        info:
-          "Claude reports Working, Waiting for input and Done through its hooks, and the tab bar and sidebar colour the dot. Other hooks in the file are left as they are; the first write keeps a copy beside it."
-      ) {
-        Text(model.claudeHooksInstalled ? "Installed" : "Not installed")
-          .foregroundStyle(.secondary)
-        if model.claudeHooksInstalled {
-          Button("Remove") { model.removeClaudeHooks() }
-        } else {
-          Button("Add to ~/.claude/settings.json") { model.installClaudeHooks() }
-        }
-        Button(showsSnippet ? "Hide JSON" : "Show JSON") { showsSnippet.toggle() }
-      }
-      .controlSize(.small)
-      if showsSnippet {
-        VStack(alignment: .leading, spacing: 6) {
-          ScrollView(.vertical) {
-            Text(model.claudeHooksSnippet)
-              .font(.system(size: 10, design: .monospaced))
-              .textSelection(.enabled)
-              .frame(maxWidth: .infinity, alignment: .leading)
+  private var hooksSection: some View {
+    Section("Agent hooks") {
+      ForEach(model.agentHooksRows) { row in
+        InfoRow("\(row.name):", info: row.info) {
+          Text(row.isInstalled ? "Installed in \(row.path)" : "Not installed")
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .truncationMode(.head)
+          if row.isInstalled {
+            Button("Remove") { model.removeAgentHooks(row.id) }
+          } else {
+            Button("Add") { model.installAgentHooks(row.id) }
           }
-          .frame(height: 140)
-          Button("Copy") { model.copyToClipboard(model.claudeHooksSnippet) }.controlSize(.small)
+          Button(shownContents == row.id ? "Hide \(row.contentsName)" : "Show \(row.contentsName)")
+          {
+            shownContents = shownContents == row.id ? nil : row.id
+          }
+        }
+        .controlSize(.small)
+        if shownContents == row.id {
+          contents(of: row)
         }
       }
+    }
+  }
+
+  private func contents(of row: AgentHooksRow) -> some View {
+    VStack(alignment: .leading, spacing: 6) {
+      ScrollView(.vertical) {
+        Text(model.agentHooksSnippet(row.id))
+          .font(.system(size: 10, design: .monospaced))
+          .textSelection(.enabled)
+          .frame(maxWidth: .infinity, alignment: .leading)
+      }
+      .frame(height: 140)
+      Button("Copy") { model.copyToClipboard(model.agentHooksSnippet(row.id)) }
+        .controlSize(.small)
     }
   }
 

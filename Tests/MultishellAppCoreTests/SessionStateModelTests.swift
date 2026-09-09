@@ -303,7 +303,7 @@ struct AgentTabTests {
     let before = Harness(stateFile: file)
     before.model.select(before.main)
     before.store.openTab(in: before.main.id, title: "Claude Code", agentID: "claude")
-    before.store.openTab(in: before.main.id, title: "Gemini CLI", agentID: "gemini")
+    before.store.openTab(in: before.main.id, title: "Aider", agentID: "aider")
     before.model.saveNow()
 
     let (store, _) = WorkspaceStore.restored(from: WorkspaceSnapshot(fileURL: file))
@@ -316,9 +316,8 @@ struct AgentTabTests {
     let byTitle = Dictionary(
       uniqueKeysWithValues: engine.opened.map { (store.workspace.session($0.id)!.title, $0) })
     #expect(byTitle["Claude Code"]?.command?.last?.hasPrefix("claude --continue; ") == true)
-    #expect(
-      byTitle["Gemini CLI"]?.command == nil, "no resume flag, so a plain shell keeps the title")
-    #expect(after.title(of: store.workspace.tabs(in: before.main.id)[2]) == "Gemini CLI")
+    #expect(byTitle["Aider"]?.command == nil, "no resume flag, so a plain shell keeps the title")
+    #expect(after.title(of: store.workspace.tabs(in: before.main.id)[2]) == "Aider")
   }
 
   @Test func anAgentThatIsNotInstalledOpensAShellAndSaysSoOnce() {

@@ -58,8 +58,12 @@ Working rules:
   know is dropped, not matched by its directory.
 - Shell integration is generated per session under the state directory and
   injected through `ZDOTDIR` (zsh) or `--init-file` (bash). Never write to a
-  user's rc file. Claude Code's hooks are the one exception, and only on the
-  user's click, with a copy kept beside the file.
+  user's rc file. An agent's hooks are the one exception, and only on the
+  user's click, with a copy kept beside a file that is the user's; the
+  agents that read a file of their own are given one to themselves.
+- An agent's hooks are one `AgentHookIntegration` in `AgentHooks`: the file,
+  what each event is called, what each event says the session is doing, and
+  how that file spells one hook. Nothing else in the app names an agent.
 - A new keyboard shortcut also goes in `GhosttyTerminalHost.appShortcuts`, or
   the surface eats it before the menu sees it.
 - A dragged tab is `TabTransfer`, under its own type, spelled both in that

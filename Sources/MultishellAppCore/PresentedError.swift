@@ -82,6 +82,18 @@ public struct PresentedError: Identifiable {
     case let failure as SocketFailure:
       title = "Session state reports are unavailable"
       message = "Could not listen on the socket: \(failure)"
+    case let entries as UnreadableHookEntries:
+      title = "That settings file has hooks Multishell does not recognise"
+      message =
+        "\(entries.file.path) holds something under hooks.\(entries.event) that is not the list of hooks the agent documents, and writing ours there would lose it. Use Show JSON beside the agent and add the entries yourself."
+    case let unparsable as UnparsableSettingsFile:
+      title = "That settings file is not plain JSON"
+      message =
+        "\(unparsable.file.path) has something in it Multishell cannot read back — a comment or a trailing comma will do it — and rewriting the file would lose it. Use Show JSON beside the agent and add the entries yourself."
+    case let shape as UnexpectedSettingsShape:
+      title = "That settings file is not a JSON object"
+      message =
+        "\(shape.file.path) holds something else at its top level, so Multishell will not rewrite it. Use Show JSON beside the agent and add the entries yourself."
     case let state as UnreadableState:
       title = "Saved state could not be read"
       message =

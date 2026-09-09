@@ -71,7 +71,9 @@ public final class AppModel<Surface> {
   public var shellDetection = ShellDetection.empty
   /// Which catalogue editors are installed, by application id or shim.
   public var editorDetection = EditorDetection.empty
-  public var claudeHooksInstalled = false
+  /// Which agents' hooks are in place, by catalogue id. Read from disk on
+  /// demand by `refreshAgentStatus`, not observed.
+  public var installedAgentHooks: Set<String> = []
   public var commandLineToolInstalled = false
   public var themes: [Theme] = Theme.builtins
   /// `git status` per worktree. Runtime only; see `WorktreeStatus`.

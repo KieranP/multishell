@@ -40,7 +40,9 @@ struct AgentLaunchTests {
     #expect(AgentLaunch.arguments(for: claude, resume: false) == ["claude"])
     #expect(AgentLaunch.arguments(for: claude, resume: true) == ["claude", "--continue"])
     let gemini = AgentCatalogue.agent("gemini")!
-    #expect(AgentLaunch.arguments(for: gemini, resume: true) == nil, "no resume flag: plain shell")
+    #expect(AgentLaunch.arguments(for: gemini, resume: true) == ["gemini", "--resume", "latest"])
+    let aider = AgentCatalogue.agent("aider")!
+    #expect(AgentLaunch.arguments(for: aider, resume: true) == nil, "no resume flag: plain shell")
   }
 }
 
@@ -74,5 +76,44 @@ struct AgentDetectionTests {
     #expect(unknown.map(\.id).contains("future-agent"), "a newer build's id still shows")
     #expect(detection.isInstalled("custom"))
     #expect(!detection.isInstalled("claude"))
+  }
+}
+
+@Suite
+struct AgentHooksRowTests {
+  private func detection(_ ids: [String]) -> AgentDetection {
+    AgentDetection(
+      found: Dictionary(uniqueKeysWithValues: ids.map { ($0, URL(fileURLWithPath: "/bin/\($0)")) }))
+  }
+
+  /// An agent this machine has gets a row, and so does one whose hooks are
+  /// still installed after it has gone: those have to be removable.
+  @Test func rowsAreForTheAgentsHereAndTheHooksLeftBehind() {
+    let rows = AgentHooksRow.rows(
+      detection: detection(["claude", "gemini", "aider"]), installed: ["codex"])
+
+    #expect(rows.map(\.id) == ["claude", "codex", "gemini"], "catalogue order")
+    #expect(rows.first { $0.id == "codex" }?.isInstalled == true)
+    #expect(rows.first { $0.id == "claude" }?.isInstalled == false)
+    #expect(!rows.contains { $0.id == "aider" }, "no hooks to offer")
+    #expect(!rows.contains { $0.id == "copilot" }, "not on this machine")
+  }
+
+  @Test func eachRowNamesItsFileAndWhatWritingItDoes() throws {
+    let rows = AgentHooksRow.rows(
+      detection: detection(["claude", "codex", "copilot", "opencode"]), installed: [])
+    let claude = try #require(rows.first { $0.id == "claude" })
+    let codex = try #require(rows.first { $0.id == "codex" })
+    let copilot = try #require(rows.first { $0.id == "copilot" })
+    let openCode = try #require(rows.first { $0.id == "opencode" })
+
+    #expect(claude.path == "~/.claude/settings.json")
+    #expect(claude.info.contains("Other hooks in ~/.claude/settings.json are left as they are"))
+    #expect(claude.contentsName == "JSON")
+    #expect(copilot.info.contains("Multishell's own file"), "nothing of the user's to keep")
+    #expect(codex.info.contains("/hooks in Codex"), "it runs no hook it has not been told to trust")
+    #expect(!claude.info.contains("/hooks in Codex"))
+    #expect(openCode.contentsName == "Plugin")
+    for row in rows { #expect(row.info.contains(row.name)) }
   }
 }

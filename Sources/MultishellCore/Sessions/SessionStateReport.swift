@@ -10,6 +10,9 @@ import Foundation
 /// the connection.
 public struct SessionStateReport: Codable, Hashable, Sendable {
   public static let protocolVersion = 1
+  /// More than a notification banner shows, and far inside what the channel
+  /// carries.
+  public static let maximumMessageLength = 500
 
   public var version: Int
   public var state: SessionState
@@ -20,12 +23,16 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   /// The process the state is about, so the app can notice it is gone.
   public var pid: Int32?
   /// Shown in the notification when present: "Claude needs your permission
-  /// to use Bash" says more than "Waiting for input".
+  /// to use Bash" says more than "Waiting for input". Trimmed to
+  /// `maximumMessageLength` as it is set: the channel drops a line longer
+  /// than 64 KB as not speaking the protocol, and a permission prompt
+  /// quoting a very long command would otherwise lose the report that
+  /// matters most, the one saying the agent is waiting.
   public var message: String?
   /// How long the finished command ran, in seconds, when the source knows.
   /// A shell hook sets it; the GUI does not post a banner for a short one.
   public var duration: Double?
-  /// Which agent the report came from, by catalogue id. Claude Code's hooks
+  /// Which agent the report came from, by catalogue id. An agent's hooks
   /// set it; a shell hook leaves it out. It says what is at a pane's prompt,
   /// which the tab's own `agentID` cannot: an agent is usually started by
   /// hand in a plain shell tab, and a tab opened for one keeps its id long
@@ -57,7 +64,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     self.sessionID = sessionID
     self.cwd = cwd
     self.pid = pid
-    self.message = message
+    self.message = Self.trimmed(message)
     self.duration = duration
     self.agent = agent
   }
@@ -72,6 +79,11 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     message = try c.decodeIfPresent(String.self, forKey: .message)
     duration = try c.decodeIfPresent(Double.self, forKey: .duration)
     agent = try c.decodeIfPresent(String.self, forKey: .agent)
+  }
+
+  private static func trimmed(_ message: String?) -> String? {
+    guard let message, message.count > maximumMessageLength else { return message }
+    return message.prefix(maximumMessageLength) + "…"
   }
 
   /// `nil` for anything that is not one well-formed report: the channel is

@@ -140,7 +140,7 @@ being a stale one. Cost: Cmd+W on a Working pane asks first.
 
 A socket rather than a URL scheme, which would activate the app dozens of times
 a minute; a helper rather than `nc` for quoting, a stable protocol and one
-place for the Claude mapping. Fields are only ever added, and a report naming
+place for each agent's mapping. Fields are only ever added, and a report naming
 an unknown session is dropped rather than matched by directory.
 
 It carries only what the app cannot see for itself: a state and a pid, a
@@ -150,11 +150,68 @@ moves a dot, raises a notification and decides how a dropped file is written;
 it opens no tab, runs no command and puts no text at a prompt. Shell reports
 run inline, or a fast command's finished overtakes its started.
 
+## Five agents' hooks, one hook line and one parser
+
+Claude Code, Codex, Gemini CLI and Copilot CLI each run a command at each
+lifecycle event and hand it the same three fields, so all four get the same
+line: run the helper, which reads the payload and maps the event that fired.
+What differs is the file, what each agent calls an event, and how that file
+spells one hook, and that is all an `AgentHookIntegration` holds — the app
+knows no agent by name anywhere else. Codex is asked for `PermissionRequest`
+where Claude has `Notification`; Copilot is asked in the spelling whose payload
+names its event, since the other spelling names none. Gemini counts the timeout
+in milliseconds, and five would kill the helper before it reached the socket.
+
+Copilot reads a directory of hook files rather than one settings file, so its
+is ours alone: written whole, deleted to remove, no copy to keep. OpenCode
+reports to no command at all — only a plugin sees a session go idle — so it is
+given a plugin that calls the helper the way any script would. Cost: it is
+JavaScript in the user's agent, so it spawns, unrefs and swallows everything,
+and it is the one integration whose contract we do not control from a payload.
+
+Two events had to be narrowed, because "the agent raised a notification" is
+not "the agent is waiting". Copilot raises one when a background shell
+finishes as much as when it needs an answer, so ours asks for the two types
+that are questions and lets the file do the filtering. Codex has no
+notification at all, only a permission request that fires before it decides
+whether anyone need answer, so under `--full-auto` every tool call would
+have posted a banner; it counts as waiting only in a mode that stops for the
+user, and a mode we have not heard of is taken to stop. Gemini needed
+neither: its Notification has one type, a tool permission.
+
+The line runs the helper rather than `exec`ing it, and exits 0 whatever
+became of it. Copilot denies a tool call on any non-zero exit from a
+`preToolUse` hook and Claude blocks one on exit 2, so under `exec` a helper
+killed by Gatekeeper or dying on a signal would stop the agent working rather
+than stop the dots moving. Cost: one short-lived shell per event, and nothing
+else — the pid the report carries comes from walking past shells either way.
+
+A settings file that is a symlink is written through, not over: an atomic
+write would leave a regular file where a dotfiles repository's link was, and
+the user's own copy would stop being the one the agent reads. The copy kept
+holds the contents and sits beside the link, not in the repository it points
+into, which would leave a file their next `git status` has to explain.
+
+Nothing under an event is written over. Absent means an empty list to add
+ours to; a string, an object, or a shape a later version of the agent takes
+means something of the user's this cannot put back, so Add refuses and names
+the event and Remove steps over it. Remove takes back what Add put in and
+nothing else, which is the whole of what it promises.
+
+A settings file that will not read back as plain JSON is refused, not parsed
+loosely: Gemini's takes comments and Gemini keeps them when it writes the file
+itself, and a re-serialisation here would take them out. Cost: those users add
+the entries by hand, so the alert names the file and points at Show JSON.
+
+Codex will run no hook it has not been told to trust, so installing is not the
+end of it and the row says so; nothing here can trust a hook on the user's
+behalf.
+
 ## Shell integration is injected, never written to a user's file
 
 Generated per session, reached through `ZDOTDIR` or `--init-file`, with the
 helper behind a symlink refreshed at launch so a moved bundle breaks no hook
-line. Claude Code's hooks are the one exception: appended on the user's click,
+line. An agent's hooks are the one exception: appended on the user's click,
 with a copy kept. Under Ghostty bash goes through `/bin/sh -c 'exec bash …'`,
 Ghostty keying its own injection on the command's first word and adding
 `--posix`, under which macOS's bash 3.2 reads neither file.
