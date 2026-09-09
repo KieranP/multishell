@@ -8,34 +8,15 @@ import Testing
 /// End-to-end against a real repository in a temporary directory.
 @Suite(.serialized)
 struct WorktreeCoordinatorTests {
-  private let git = try! GitRunner()
-
-  private func makeRepository() async throws -> (root: URL, project: Project) {
-    let root = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-tests-\(UUID().uuidString)", isDirectory: true)
-    let repository = root.appendingPathComponent("demo", isDirectory: true)
-    try FileManager.default.createDirectory(at: repository, withIntermediateDirectories: true)
-
-    _ = try await git.run(["init", "--initial-branch=main"], in: repository)
-    _ = try await git.run(["config", "user.email", "tests@multishell.local"], in: repository)
-    _ = try await git.run(["config", "user.name", "Multishell Tests"], in: repository)
-    try "hello\n".write(
-      to: repository.appendingPathComponent("README.md"), atomically: true, encoding: .utf8)
-    _ = try await git.run(["add", "."], in: repository)
-    _ = try await git.run(["commit", "-m", "initial"], in: repository)
-
-    return (root, Project(path: repository))
-  }
-
   @Test func createsAWorktreeWhereTheSettingsSayAndRunsTheHook() async throws {
-    let (root, base) = try await makeRepository()
-    defer { try? FileManager.default.removeItem(at: root) }
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
 
-    var project = base
+    var project = repo.project
     project.settings = ProjectSettings(postCreateHook: "echo created > hook.txt")
     let settings = WorktreeSettings(worktreeDirectory: "../trees", branchPrefix: "kieran/")
 
-    let coordinator = WorktreeCoordinator(service: WorktreeService(git: git))
+    let coordinator = repo.coordinator
     let path = try await coordinator.create(branch: "tabs", in: project, settings: settings)
 
     #expect(path.lastPathComponent == "kieran-tabs")
@@ -48,14 +29,14 @@ struct WorktreeCoordinatorTests {
   }
 
   @Test func removesAWorktreeAndRunsTheDeleteHook() async throws {
-    let (root, base) = try await makeRepository()
-    defer { try? FileManager.default.removeItem(at: root) }
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
 
-    var project = base
+    var project = repo.project
     project.settings = ProjectSettings(postDeleteHook: "echo gone > deleted.txt")
     let settings = WorktreeSettings(worktreeDirectory: "../trees")
 
-    let coordinator = WorktreeCoordinator(service: WorktreeService(git: git))
+    let coordinator = repo.coordinator
     try await coordinator.create(branch: "scratch", in: project, settings: settings)
 
     let worktree = try await coordinator.refresh(project).first { $0.branch == "scratch" }
@@ -68,14 +49,14 @@ struct WorktreeCoordinatorTests {
   }
 
   @Test func aFailingHookLeavesTheWorktreeInPlace() async throws {
-    let (root, base) = try await makeRepository()
-    defer { try? FileManager.default.removeItem(at: root) }
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
 
-    var project = base
+    var project = repo.project
     project.settings = ProjectSettings(postCreateHook: "exit 3")
     let settings = WorktreeSettings(worktreeDirectory: "../trees")
 
-    let coordinator = WorktreeCoordinator(service: WorktreeService(git: git))
+    let coordinator = repo.coordinator
     await #expect(throws: HookFailure.self) {
       try await coordinator.create(branch: "doomed", in: project, settings: settings)
     }
@@ -324,7 +305,7 @@ struct WorktreeCoordinatorTests {
   }
 
   @Test func recognisesADirectoryThatIsNotARepository() async throws {
-    let coordinator = WorktreeCoordinator(service: WorktreeService(git: git))
+    let coordinator = WorktreeCoordinator(service: WorktreeService(git: try GitRunner()))
     let empty = URL(fileURLWithPath: NSTemporaryDirectory())
       .appendingPathComponent("multishell-empty-\(UUID().uuidString)", isDirectory: true)
     try FileManager.default.createDirectory(at: empty, withIntermediateDirectories: true)
@@ -355,34 +336,15 @@ final class RemovalStepLog: @unchecked Sendable {
 
 @Suite(.serialized)
 struct GitIntegrationTests {
-  private let git = try! GitRunner()
-
-  private func makeRepository(commit: Bool = true) async throws -> (root: URL, project: Project) {
-    let root = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-tests-\(UUID().uuidString)", isDirectory: true)
-    let repository = root.appendingPathComponent("demo", isDirectory: true)
-    try FileManager.default.createDirectory(at: repository, withIntermediateDirectories: true)
-    _ = try await git.run(["init", "--initial-branch=main"], in: repository)
-    _ = try await git.run(["config", "user.email", "tests@multishell.local"], in: repository)
-    _ = try await git.run(["config", "user.name", "Multishell Tests"], in: repository)
-    if commit {
-      try "hello\n".write(
-        to: repository.appendingPathComponent("README.md"), atomically: true, encoding: .utf8)
-      _ = try await git.run(["add", "."], in: repository)
-      _ = try await git.run(["commit", "-m", "initial"], in: repository)
-    }
-    return (root, Project(path: repository))
-  }
-
   @Test func hooksReceiveTheDocumentedEnvironment() async throws {
-    let (root, base) = try await makeRepository()
-    defer { try? FileManager.default.removeItem(at: root) }
-    var project = base
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    var project = repo.project
     project.settings = ProjectSettings(
       postCreateHook:
         "printf \"%s|%s|%s|%s\" \"$MULTISHELL_PROJECT_PATH\" \"$MULTISHELL_PROJECT_NAME\" \"$MULTISHELL_WORKTREE_PATH\" \"$MULTISHELL_BRANCH\" > env.txt"
     )
-    let coordinator = WorktreeCoordinator(service: WorktreeService(git: git))
+    let coordinator = repo.coordinator
     let path = try await coordinator.create(
       branch: "hooked", in: project, settings: WorktreeSettings(worktreeDirectory: "../trees"))
 
@@ -395,9 +357,10 @@ struct GitIntegrationTests {
   }
 
   @Test func watchPathsMoveFromDotGitToWorktreesOnceOneExists() async throws {
-    let (root, project) = try await makeRepository()
-    defer { try? FileManager.default.removeItem(at: root) }
-    let coordinator = WorktreeCoordinator(service: WorktreeService(git: git))
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    let project = repo.project
+    let coordinator = repo.coordinator
 
     // Asked the way the app asks: the common directory once, then the
     // directories read off it without spawning git for each watcher tick.
@@ -413,9 +376,10 @@ struct GitIntegrationTests {
   }
 
   @Test func statusReflectsWorkingTreeChangesAndBranch() async throws {
-    let (root, project) = try await makeRepository()
-    defer { try? FileManager.default.removeItem(at: root) }
-    let service = WorktreeService(git: git)
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    let project = repo.project
+    let service = WorktreeService(git: repo.git)
     let main = try await service.list(project)[0]
 
     #expect(try await service.status(of: main).isClean)
@@ -436,14 +400,15 @@ struct GitIntegrationTests {
   /// is the birth time of the directory `git worktree add` made, and a
   /// worktree created second must not read as the older of the two.
   @Test func listStampsEachWorktreeWithItsDirectorysCreationDate() async throws {
-    let (root, project) = try await makeRepository()
-    defer { try? FileManager.default.removeItem(at: root) }
-    let coordinator = WorktreeCoordinator(service: WorktreeService(git: git))
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    let project = repo.project
+    let coordinator = repo.coordinator
     let trees = WorktreeSettings(worktreeDirectory: "../trees")
     try await coordinator.create(branch: "first", in: project, settings: trees)
     try await coordinator.create(branch: "second", in: project, settings: trees)
 
-    let listed = try await WorktreeService(git: git).list(project)
+    let listed = try await WorktreeService(git: repo.git).list(project)
     let dates = try listed.map { try #require($0.createdAt, "no date for \($0.name)") }
     let byBranch = Dictionary(uniqueKeysWithValues: zip(listed.map(\.name), dates))
 
@@ -452,9 +417,10 @@ struct GitIntegrationTests {
   }
 
   @Test func removingAWorktreeWhoseDirectoryIsGonePrunesIt() async throws {
-    let (root, project) = try await makeRepository()
-    defer { try? FileManager.default.removeItem(at: root) }
-    let coordinator = WorktreeCoordinator(service: WorktreeService(git: git))
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    let project = repo.project
+    let coordinator = repo.coordinator
     let path = try await coordinator.create(
       branch: "ghost", in: project, settings: WorktreeSettings(worktreeDirectory: "../trees"))
     try FileManager.default.removeItem(at: path)
@@ -466,25 +432,27 @@ struct GitIntegrationTests {
   }
 
   @Test func hasCommitsIsFalseUntilTheFirstCommit() async throws {
-    let (root, project) = try await makeRepository(commit: false)
-    defer { try? FileManager.default.removeItem(at: root) }
-    let coordinator = WorktreeCoordinator(service: WorktreeService(git: git))
+    let repo = try await RepositoryFixture.make(commit: false)
+    defer { repo.tearDown() }
+    let project = repo.project
+    let coordinator = repo.coordinator
 
     #expect(await coordinator.hasCommits(project) == false)
     try "x\n".write(to: project.path.appendingPathComponent("f"), atomically: true, encoding: .utf8)
-    _ = try await git.run(["add", "."], in: project.path)
-    _ = try await git.run(["commit", "-m", "first"], in: project.path)
+    _ = try await repo.git.run(["add", "."], in: project.path)
+    _ = try await repo.git.run(["commit", "-m", "first"], in: project.path)
     #expect(await coordinator.hasCommits(project) == true)
   }
 
   @Test func remoteBranchesComeFromRefsRemotesWithoutHEAD() async throws {
-    let (root, upstream) = try await makeRepository()
-    defer { try? FileManager.default.removeItem(at: root) }
-    _ = try await git.run(["branch", "feature"], in: upstream.path)
-    let clone = root.appendingPathComponent("clone", isDirectory: true)
-    _ = try await git.run(["clone", "-q", upstream.path.path, clone.path], in: root)
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    let upstream = repo.project
+    _ = try await repo.git.run(["branch", "feature"], in: upstream.path)
+    let clone = repo.root.appendingPathComponent("clone", isDirectory: true)
+    _ = try await repo.git.run(["clone", "-q", upstream.path.path, clone.path], in: repo.root)
 
-    let branches = try await WorktreeService(git: git).remoteBranches(Project(path: clone))
+    let branches = try await WorktreeService(git: repo.git).remoteBranches(Project(path: clone))
     #expect(branches.sorted() == ["origin/feature", "origin/main"])
   }
 }

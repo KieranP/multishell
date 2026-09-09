@@ -100,14 +100,68 @@ struct ProjectSettingsTests {
     #expect(effective.qualifiedBranch("tabs") == "tabs")
   }
 
-  @Test func legacyEmptyStringsDecodeAsNoOverride() throws {
+  /// The worktree fields have no other spelling for "none", so a blank one
+  /// keeps the override it is; a project pinned to no prefix while the
+  /// global has one used to go back to following the global on the next load.
+  @Test func aBlankWorktreeFieldDecodesAsTheOverrideToNone() throws {
     let json = Data(
-      #"{ "worktreeDirectory": "./.worktrees", "branchPrefix": "", "postCreateHook": "", "postDeleteHook": "" }"#
+      #"{ "worktreeDirectory": "", "branchPrefix": "", "defaultBranch": "", "postCreateHook": "" }"#
         .utf8)
     let settings = try JSONDecoder().decode(ProjectSettings.self, from: json)
-    #expect(settings.worktreeDirectory == "./.worktrees")
-    #expect(settings.branchPrefix == nil)
-    #expect(settings.effective(defaults: defaults).branchPrefix == "team/")
+
+    #expect(settings.branchPrefix == "")
+    #expect(settings.worktreeDirectory == "")
+    #expect(settings.defaultBranch == "")
+    #expect(settings.effective(defaults: defaults).branchPrefix == "", "not the global's team/")
+  }
+
+  /// A project pinned to no prefix has to survive being exported, committed
+  /// and read by someone whose own global has one, or the team gets the
+  /// opposite of what was shared.
+  @Test func aBlankOverrideSurvivesAnExportAndTheFileItIsWrittenTo() throws {
+    let repository = URL(fileURLWithPath: NSTemporaryDirectory())
+      .appendingPathComponent("multishell-export-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: repository, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: repository) }
+
+    let exported = SharedProjectSettings(exporting: ProjectSettings(branchPrefix: ""))
+    #expect(exported.branchPrefix == "")
+    try exported.write(to: repository)
+
+    let read = try #require(try SharedProjectSettings.load(from: repository))
+    #expect(read.branchPrefix == "")
+    // The reader leaves it alone, so the file's answer stands over a global
+    // that has a prefix of its own.
+    let inEffect = ProjectSettings().layered(over: read).effective(defaults: defaults)
+    #expect(inEffect.branchPrefix == "")
+    #expect(inEffect.qualifiedBranch("tabs") == "tabs")
+  }
+
+  /// A field that spells "none" some other way reads `""` as noise, so an
+  /// empty one keeps following the global rather than overriding with
+  /// nothing.
+  @Test func aBlankFieldWithASentinelOfItsOwnStaysNoOverride() throws {
+    let json = Data(#"{ "preferredAgentID": "", "defaultShell": "", "iconGlyph": "" }"#.utf8)
+    let settings = try JSONDecoder().decode(ProjectSettings.self, from: json)
+
+    #expect(settings.preferredAgentID == nil)
+    #expect(settings.defaultShell == nil)
+    #expect(settings.iconGlyph == nil)
+  }
+
+  /// What the bug actually cost: the whole trip through the store and the
+  /// file, which is where the override used to be lost.
+  @Test @MainActor func aBlankOverrideSurvivesASaveAndLoad() throws {
+    let store = WorkspaceStore()
+    let project = store.addProject(at: URL(fileURLWithPath: "/repos/demo"))
+    store.updateSettings(ProjectSettings(branchPrefix: ""), forProject: project.id)
+
+    let data = try JSONEncoder().encode(store.workspace)
+    let restored = try JSONDecoder().decode(Workspace.self, from: data)
+    let settings = try #require(restored.project(project.id)?.settings)
+
+    #expect(settings.branchPrefix == "", "the project is still pinned to no prefix")
+    #expect(settings.effective(defaults: defaults).branchPrefix == "")
   }
 }
 

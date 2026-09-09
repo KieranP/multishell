@@ -272,6 +272,59 @@ struct AppModelHookControlTests {
       h.model.workspace.tabs(in: created.id).count == 1, "the first tab opens as after a finish")
   }
 
+  /// Removing the project is a decision about everything in it, hooks
+  /// included. Left alone, the user's script ran on against a worktree the
+  /// sidebar no longer shows; the `sleep 30` is what proves it is signalled,
+  /// since the setup task could not be awaited otherwise.
+  @Test func removingAProjectEndsAHookStillRunningInItsWorktrees() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    h.model.updateSettings(ProjectSettings(postCreateHook: "sleep 30"), for: h.project)
+
+    // `h.project` re-read each time: the create takes its hooks off the
+    // value it is handed, so a copy from before the settings write has none.
+    await h.model.createWorktree(branch: "setup", basedOn: nil, createBranch: true, in: h.project)
+    let created = try #require(h.worktree(onBranch: "setup"))
+    #expect(h.model.worktreeOperations[created.id]?.isRunning == true)
+
+    // Taken before the removal, which is what clears the entry.
+    let setup = h.model.worktreeSetups[created.id]
+    h.model.removeProject(h.project)
+    await setup?.value
+
+    #expect(h.model.workspace.projects.isEmpty)
+    #expect(h.model.worktreeOperations[created.id] == nil)
+    #expect(h.model.worktreeSetups[created.id] == nil)
+    #expect(h.model.presentedError == nil, "the user asked for this, so there is nothing to report")
+    #expect(
+      h.model.workspace.tabs(in: created.id).isEmpty,
+      "and no first tab opens in a worktree whose project has gone")
+  }
+
+  /// The settings window is its own scene, so a New Worktree sheet on the
+  /// workspace window is not in the way of a project removal confirmed
+  /// there, and outlives it. Its Create used to run `git worktree add` for
+  /// real and leave a directory the sidebar never shows, since `refresh`
+  /// drops the result for a project that has gone.
+  @Test func creatingFromASheetHeldOpenAcrossARemovalTouchesNothingOnDisk() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let project = h.project
+    let container = h.model.worktreeSettings(for: project).worktreeContainer(for: project)
+
+    h.model.requestNewWorktree(in: project)
+    h.model.removeProject(project)
+    #expect(h.model.newWorktreeRequest == nil, "the sheet goes with the project")
+
+    await h.model.createWorktree(branch: "orphan", basedOn: nil, createBranch: true, in: project)
+
+    #expect(h.model.workspace.projects.isEmpty)
+    #expect(h.model.presentedError == nil)
+    #expect(
+      !FileManager.default.fileExists(atPath: container.appendingPathComponent("orphan").path),
+      "no worktree directory for a project that has left")
+  }
+
   @Test func cancelOnAPreDeleteHookLeavesTheWorktreeQuietly() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
@@ -530,7 +583,8 @@ struct AppModelHookControlTests {
     await h.model.refresh(h.project)
     #expect(h.model.presentedError == nil)
     #expect(
-      h.model.sharedSettingsProblems[h.project.id]?.hasPrefix(".multishell.json could not be read")
+      h.model.sharedSettings.problem(of: h.project.id)?.hasPrefix(
+        ".multishell.json could not be read")
         == true)
     #expect(h.model.sharedSettings[h.project.id] == nil)
     #expect(h.platform.logged.count == 1)

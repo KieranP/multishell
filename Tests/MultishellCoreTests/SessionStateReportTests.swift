@@ -104,4 +104,19 @@ struct SessionStateReportTests {
     let short = SessionStateReport(state: .attention, message: "Allow rm -rf?")
     #expect(short.message == "Allow rm -rf?", "anything a banner shows is left alone")
   }
+
+  /// The cap has to hold coming in, not only going out. The channel is a
+  /// file any process of the user's can write to, so the reports the app
+  /// trusts are the parsed ones, and a message well under the line limit
+  /// would otherwise reach a notification body whole.
+  @Test func aLongMessageIsTrimmedComingOffTheChannelAndNotOnlyGoingOntoIt() throws {
+    let long = String(repeating: "x", count: 60_000)
+    let report = try #require(
+      SessionStateReport.parse(#"{"v":1,"state":"attention","message":"\#(long)"}"#))
+
+    let message = try #require(report.message)
+    #expect(
+      message.count == SessionStateReport.maximumMessageLength + 1, "trimmed, with an ellipsis")
+    #expect(message.hasSuffix("…"))
+  }
 }

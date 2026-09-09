@@ -119,6 +119,23 @@ extension AppModel {
     for id in ids where mergeChecks[id] != nil { mergeChecks[id] = nil }
   }
 
+  /// What a refresh found gone: a worktree removed in a terminal, or a
+  /// directory deleted by hand. Every writer here only ever answers for a
+  /// worktree the workspace has, so nothing else drops these.
+  ///
+  /// Paths are ids. A worktree created at a path one was removed from would
+  /// otherwise inherit its badge and its commit date until the next merge
+  /// scan answered, which is a merged badge on a branch that has never
+  /// landed. `refreshStatuses` filters for the same reason.
+  func forgetVanishedWorktrees() {
+    let known = Set(workspace.worktrees.map(\.id))
+    let states = mergeStates.filter { known.contains($0.key) }
+    if states.count != mergeStates.count { mergeStates = states }
+    let dates = lastCommits.filter { known.contains($0.key) }
+    if dates.count != lastCommits.count { lastCommits = dates }
+    mergeChecks = mergeChecks.filter { known.contains($0.key) }
+  }
+
   /// After a project is removed, and where its default branch has gone.
   func forgetMergeStates(of project: Project.ID) {
     forget(workspace.worktrees(of: project).map(\.id))

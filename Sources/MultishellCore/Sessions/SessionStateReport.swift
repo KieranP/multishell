@@ -76,7 +76,10 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     sessionID = try c.decodeIfPresent(UUID.self, forKey: .sessionID)
     cwd = try c.decodeIfPresent(String.self, forKey: .cwd)
     pid = try c.decodeIfPresent(Int32.self, forKey: .pid)
-    message = try c.decodeIfPresent(String.self, forKey: .message)
+    // Trimmed here as well as on the way out: the writer of a line is any
+    // process of the user's, not only our own helper, so the cap has to be
+    // the reader's rule and not the sender's courtesy.
+    message = Self.trimmed(try c.decodeIfPresent(String.self, forKey: .message))
     duration = try c.decodeIfPresent(Double.self, forKey: .duration)
     agent = try c.decodeIfPresent(String.self, forKey: .agent)
   }

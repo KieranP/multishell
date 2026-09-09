@@ -209,6 +209,22 @@ struct SessionStateModelTests {
     #expect(h.model.liveTerminalCount == 0)
   }
 
+  /// The question goes when its subject does, whichever way that happens.
+  /// A project removal is one way; this is the other, and it is why the
+  /// prune lives in `sync` rather than beside a removal.
+  @Test func aCloseWaitingOnAConfirmationGoesWithTheProjectItAskedAbout() {
+    let h = Harness()
+    h.model.select(h.main)
+    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    h.source.send(SessionStateReport(state: .running, sessionID: tab.focusedSessionID))
+
+    h.model.closeActiveTab()
+    #expect(h.model.pendingClose == .tab(tab.id))
+
+    h.model.removeProject(h.project)
+    #expect(h.model.pendingClose == nil, "nothing left to ask about")
+  }
+
   @Test func clearingByHandDropsAStaleWorkingDot() {
     let h = Harness()
     h.model.select(h.main)

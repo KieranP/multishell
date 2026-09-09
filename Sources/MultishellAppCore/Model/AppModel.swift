@@ -40,16 +40,9 @@ public final class AppModel<Surface> {
   @ObservationIgnored var stageStoppers: [Worktree.ID: ProcessStopper] = [:]
   /// The stop handle for the pre-create hook under the sheet.
   @ObservationIgnored var creationStopper: ProcessStopper?
-  /// What each project's `.multishell.json` says, re-read on every refresh.
-  /// Absent for a project without one.
-  public var sharedSettings: [Project.ID: SharedProjectSettings] = [:]
-  /// The date each project's file had when it was last read, so a tick can
-  /// tell an edited file from an untouched one with a stat rather than a
-  /// read; `.distantPast` for a project that has none. Absent until the
-  /// first read, which is what tells a change apart from a first sight.
-  @ObservationIgnored var sharedSettingsStamps: [Project.ID: Date] = [:]
-  /// Why a project's `.multishell.json` could not be read, for its Hooks tab.
-  public var sharedSettingsProblems: [Project.ID: String] = [:]
+  /// What each project's `.multishell.json` says, the date it had when it
+  /// was read, and why it would not parse; see `SharedSettingsCache`.
+  public var sharedSettings = SharedSettingsCache()
   /// The trust question about one project's shared hooks, waiting on its
   /// dialog.
   public var pendingSharedHooksTrust: PendingSharedHooksTrust?

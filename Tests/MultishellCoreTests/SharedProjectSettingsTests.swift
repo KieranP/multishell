@@ -34,10 +34,30 @@ struct SharedProjectSettingsTests {
     #expect(throws: DecodingError.self) { try decode("[1, 2]") }
   }
 
-  @Test func blankStringsReadAsAbsent() throws {
-    let shared = try decode(#"{ "worktreeDirectory": "  ", "preCreateHook": "" }"#)
-    #expect(shared.worktreeDirectory == nil && shared.preCreateHook == nil)
-    #expect(!shared.hasHooks)
+  /// A blank hook is not a hook to be trusted, and a blank file list links
+  /// nothing, so for those blank and absent come to the same thing.
+  @Test func blankStringsReadAsAbsentWhereNoneAndNoOpinionAgree() throws {
+    let shared = try decode(
+      #"{ "preCreateHook": "", "postCreateHook": "  ", "linkedPaths": "", "iconGlyph": "" }"#)
+    #expect(shared.preCreateHook == nil && shared.postCreateHook == nil)
+    #expect(shared.linkedPaths == nil && shared.iconGlyph == nil)
+    #expect(!shared.hasHooks, "or the trust question would ask about an empty script")
+  }
+
+  /// The three worktree fields are the exception: blank is the only way they
+  /// say "none", so a file that says it must be able to.
+  @Test func aBlankWorktreeFieldIsAnOpinionAndNotAnAbsence() throws {
+    let shared = try decode(
+      #"{ "worktreeDirectory": "  ", "branchPrefix": "", "defaultBranch": "" }"#)
+    #expect(shared.worktreeDirectory == "  ")
+    #expect(shared.branchPrefix == "")
+    #expect(shared.defaultBranch == "")
+
+    let layered = ProjectSettings().layered(over: shared)
+    let defaults = WorktreeSettings(worktreeDirectory: "/global/trees", branchPrefix: "team/")
+    #expect(
+      layered.effective(defaults: defaults).branchPrefix == "",
+      "the file's no-prefix beats the reader's global")
   }
 
   /// The text is what the question shows, and names each hook so the user

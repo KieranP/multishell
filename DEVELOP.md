@@ -172,7 +172,12 @@ launch, when a project's worktree records change, and on any tick where its
 modification date has moved. A field it ships fills only a gap the user left,
 so adding one to `SharedProjectSettings` also means a line in
 `ProjectSettings.layered`, a decode that costs the key and not the file, and a
-form that seeds its override from `InheritedSetting`. The answer to its hook
+form that seeds its override from `InheritedSetting`. Decide too what a blank
+one means: `Self.text` for a field where "none" and "no opinion" agree, and
+nothing for the worktree path, prefix and default branch, where blank is how
+"none" is spelled in both files. Getting that wrong is not cosmetic — a blank
+hook left uncoerced counts as a hook, and the trust question asks about an
+empty script. The answer to its hook
 question is held against the sha256 of the whole file (`FileDigest`, one answer
 per file in `ProjectSettings.sharedHooks`), so any key added to a committed
 file asks again.

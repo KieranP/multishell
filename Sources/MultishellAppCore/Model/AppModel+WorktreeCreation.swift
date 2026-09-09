@@ -53,7 +53,11 @@ extension AppModel {
     createBranch: Bool,
     in project: Project
   ) async {
-    guard let worktrees else { return }
+    // The workspace and not the value handed in: a sheet held open across a
+    // removal would otherwise run `git worktree add` for a project that has
+    // gone, and `refresh` drops the result, leaving a directory on disk that
+    // nothing in the app lists.
+    guard let worktrees, workspace.project(project.id) != nil else { return }
     let stopper = ProcessStopper()
     creationStopper = stopper
     defer {

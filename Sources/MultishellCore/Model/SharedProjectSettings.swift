@@ -14,6 +14,12 @@ import Foundation
 /// global, and the file lists only link or duplicate files already in the
 /// checkout.
 public struct SharedProjectSettings: Equatable, Sendable {
+  /// Absent means the file has no opinion and the user's own value stands.
+  /// Blank is an opinion: the built-in directory, no prefix, or detect,
+  /// whatever the reader's global says. It is the only spelling these three
+  /// have for "none", the same as in `ProjectSettings`, and without it an
+  /// export could not carry a project pinned that way. Every reader trims,
+  /// so blank and whitespace say the same thing.
   public var worktreeDirectory: String?
   public var branchPrefix: String?
   public var defaultBranch: String?
@@ -76,9 +82,9 @@ public struct SharedProjectSettings: Equatable, Sendable {
     iconTint: Int? = nil,
     digest: String? = nil
   ) {
-    self.worktreeDirectory = Self.text(worktreeDirectory)
-    self.branchPrefix = Self.text(branchPrefix)
-    self.defaultBranch = Self.text(defaultBranch)
+    self.worktreeDirectory = worktreeDirectory
+    self.branchPrefix = branchPrefix
+    self.defaultBranch = defaultBranch
     self.autoStartAgent = autoStartAgent
     self.autoStartAgentOnCreate = autoStartAgentOnCreate
     self.opensTerminalOnSelect = opensTerminalOnSelect
@@ -165,8 +171,11 @@ public struct SharedProjectSettings: Equatable, Sendable {
 
   public var hasHooks: Bool { hooksText != nil }
 
-  /// Blank is the same as absent, so a committed `""` does not read as an
-  /// override of "none".
+  /// Blank is the same as absent for a field where "none" and "no opinion"
+  /// come to the same thing: an empty hook is not a hook to be trusted, an
+  /// empty file list links nothing, and a blank glyph draws the folder `nil`
+  /// draws. The three worktree fields above are the exception and keep
+  /// theirs, blank being the only way they say "none".
   private static func text(_ value: String?) -> String? {
     guard let value, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
       return nil

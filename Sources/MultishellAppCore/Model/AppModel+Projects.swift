@@ -35,6 +35,21 @@ extension AppModel {
   }
 
   public func removeProject(_ project: Project) {
+    // A file list or post-create hook still running in one of these
+    // worktrees is ended the way the pane's Cancel ends it, by signal: the
+    // user has just said the project goes, and the alternative is their own
+    // script running on against a worktree nothing shows any more. The
+    // entry goes with it, so the setup task that unwinds later finds
+    // nothing to finish and opens no tab in a project that has left.
+    for worktree in workspace.worktrees(of: project.id) {
+      cancelStage(of: worktree)
+      worktreeOperations.clear(worktree.id)
+      // A half-finished rename goes with its row. `refresh` clears one whose
+      // worktree git no longer lists, but no refresh runs for a project that
+      // has left, and re-adding it would list that path again and open the
+      // field unbidden.
+      if renamingWorktreeID == worktree.id { renamingWorktreeID = nil }
+    }
     forgetMergeStates(of: project.id)
     // Not part of `forgetMergeStates`: that also runs for a project whose
     // default branch went away, which must keep its commit dates. Cleared
@@ -47,10 +62,18 @@ extension AppModel {
     missingProjects.remove(project.id)
     commonGitDirectories[project.id] = nil
     worktreeRecords[project.id] = nil
-    sharedSettings[project.id] = nil
-    sharedSettingsStamps[project.id] = nil
-    sharedSettingsProblems[project.id] = nil
+    sharedSettings.forget(project.id)
     if pendingSharedHooksTrust?.projectID == project.id { pendingSharedHooksTrust = nil }
+    // Or the settings window's fallback to the current project never fires:
+    // a stale id wins over it, and the window opens only to dismiss itself.
+    if settingsProjectID == project.id { settingsProjectID = nil }
+    // The dialogs this project's own windows left standing. A removal can be
+    // confirmed in the settings window, which is its own scene, so a sheet
+    // on the workspace window is not in the way of one and outlives it. The
+    // sheet matters most: its Create would run `git worktree add` for real
+    // and leave a directory the sidebar never shows.
+    if newWorktreeRequest?.projectID == project.id { newWorktreeRequest = nil }
+    if pendingRemoval?.worktree.projectID == project.id { pendingRemoval = nil }
     store.removeProject(project.id)
     sync()
     Task { await rearmWatcher() }
@@ -106,6 +129,7 @@ extension AppModel {
         return
       }
       store.replaceWorktrees(discovered, forProject: project.id)
+      forgetVanishedWorktrees()
       // A worktree removed here or by hand takes its half-finished rename
       // with it; a stale id would otherwise open a field unbidden if git
       // ever listed that path again.

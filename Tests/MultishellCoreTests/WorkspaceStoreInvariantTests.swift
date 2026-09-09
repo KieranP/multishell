@@ -27,7 +27,7 @@ struct WorkspaceStoreInvariantTests {
 
     for step in 0..<400 {
       let ws = store.workspace
-      switch Int.random(in: 0..<12, using: &rng) {
+      switch Int.random(in: 0..<13, using: &rng) {
       case 0, 1:
         if let worktree = worktrees.randomElement(using: &rng) {
           store.openTab(in: worktree.id)
@@ -68,6 +68,20 @@ struct WorkspaceStoreInvariantTests {
         {
           store.moveTab(tab.id, to: worktree.id)
         }
+      case 11:
+        // The project settings forms: an override turned on, blanked, given
+        // whitespace to opt out of a global, and turned off again. A blank
+        // one has to come back as an override, which the round-trip check
+        // below is what proves.
+        let project = projects.randomElement(using: &rng)!
+        var settings = ws.project(project.id)?.settings ?? ProjectSettings()
+        let value = ["team/", "", "  ", "../trees"].randomElement(using: &rng)!
+        switch Int.random(in: 0..<3, using: &rng) {
+        case 0: settings.branchPrefix = Bool.random(using: &rng) ? value : nil
+        case 1: settings.worktreeDirectory = Bool.random(using: &rng) ? value : nil
+        default: settings.defaultBranch = Bool.random(using: &rng) ? value : nil
+        }
+        store.updateSettings(settings, forProject: project.id)
       default:
         // A refresh that lost a worktree, or found one again.
         let project = projects.randomElement(using: &rng)!

@@ -53,7 +53,16 @@ sidebar whatever the OS mode.
 
 ## Settings resolve project over global, and a repository may ship its own
 
-`nil` follows the global, an empty string overrides to "none". A repository's
+`nil` follows the global, an empty string overrides to "none" — for the
+worktree path, branch prefix and default branch, which have no other spelling
+for it, in the user's settings and in a repository's file alike, so an export
+can carry a project pinned that way. Elsewhere blank reads as absent, because
+"none" and "no opinion" come to the same thing: a field with a sentinel of its
+own, an agent's `none` or a shell's `login`, would otherwise have two ways to
+say one thing and lose the distinction on the next load, an empty hook is not
+a hook to be trusted, and an empty file list links nothing. Cost: a stray
+empty key for one of those three fields is an opinion, not a typo. A
+repository's
 `.multishell.json` fills only the gaps the user left: a team default must never
 override a choice someone made. What it may say — what a worktree opens,
 whether that runs the agent, the row order — changes only what is drawn, so

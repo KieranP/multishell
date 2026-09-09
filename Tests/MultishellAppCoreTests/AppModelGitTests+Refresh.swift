@@ -51,6 +51,28 @@ extension AppModelGitTests {
     #expect(h.model.missingProjects.isEmpty)
   }
 
+  /// A worktree removed in a terminal rather than in the app: paths are ids,
+  /// so a badge and a commit date left behind would come back to whatever is
+  /// created at that path next, saying a branch has landed when it has not.
+  @Test func aWorktreeRemovedOutsideTheAppTakesItsBadgeAndItsDateWithIt() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    await h.model.createWorktree(branch: "gone", basedOn: nil, createBranch: true, in: h.project)
+    let created = try #require(h.worktree(onBranch: "gone"))
+
+    h.model.mergeStates[created.id] = .merged(.ancestor, into: "main")
+    h.model.lastCommits[created.id] = Date(timeIntervalSince1970: 1000)
+
+    _ = try await h.git.run(
+      ["worktree", "remove", "--force", created.path.path], in: h.project.path)
+    await h.model.refresh(h.project)
+
+    #expect(h.worktree(onBranch: "gone") == nil, "git no longer lists it")
+    #expect(h.model.mergeStates[created.id] == nil)
+    #expect(h.model.lastCommits[created.id] == nil)
+    #expect(h.model.mergeChecks[created.id] == nil)
+  }
+
   /// The dimming is per project and the alert is raised on the first failure
   /// only, so a project that leaves dimmed must not take the mark with it: it
   /// would come back to a project added under the same path and cost that one

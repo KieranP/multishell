@@ -219,15 +219,32 @@ struct DecodingDefaultsTests {
     #expect(settings.defaultBranch == nil, "detected rather than named")
 
     let shell = try decode(ProjectSettings.self, #"{ "defaultShell": "" }"#)
-    #expect(shell.defaultShell == nil, "empty reads as no override, like the other strings")
+    #expect(shell.defaultShell == nil, "empty is noise where `login` is how none is spelled")
     let login = try decode(ProjectSettings.self, #"{ "defaultShell": "login" }"#)
     #expect(login.defaultShell == ShellCatalogue.loginShellID)
 
-    let branch = try decode(ProjectSettings.self, #"{ "defaultBranch": "" }"#)
-    #expect(branch.defaultBranch == nil, "empty reads as detect, like the other strings")
+    // Kept, not coerced, for all three worktree fields: blank is the only
+    // way one of them says "none" — the built-in directory, no prefix, or
+    // detect — over what the global or the repository's file says. Every
+    // reader trims, so `""` still means the built-in and still detects.
+    let blank = try decode(
+      ProjectSettings.self,
+      #"{ "worktreeDirectory": "", "branchPrefix": "", "defaultBranch": "" }"#)
+    #expect(blank.worktreeDirectory == "")
+    #expect(blank.branchPrefix == "")
+    #expect(blank.defaultBranch == "")
     #expect(
       try decode(ProjectSettings.self, #"{ "defaultBranch": "develop" }"#).defaultBranch
         == "develop")
+
+    // The absent key is what "follow the global" is written as, and it must
+    // stay distinguishable from the blank above across a round trip.
+    var pinned = ProjectSettings()
+    pinned.branchPrefix = ""
+    let restored = try JSONDecoder().decode(
+      ProjectSettings.self, from: try JSONEncoder().encode(pinned))
+    #expect(restored.branchPrefix == "", "pinned to no prefix, not following the global")
+    #expect(restored.worktreeDirectory == nil, "untouched, so still following the global")
   }
 
   @Test func anIconTintOutsideTheThemeOrOfTheWrongTypeIsDropped() throws {

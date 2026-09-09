@@ -17,6 +17,7 @@ extension AppModel {
     }
     registry.focusActiveSession()
     pruneStates()
+    prunePendingClose()
     markShownTabSeen()
   }
 

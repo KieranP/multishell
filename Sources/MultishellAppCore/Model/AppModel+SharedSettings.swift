@@ -87,7 +87,7 @@ extension AppModel {
     let stamp = await Self.offMain {
       Self.modificationDate(of: SharedProjectSettings.file(in: path))
     }
-    guard sharedSettingsStamps[project.id] != stamp else { return }
+    guard sharedSettings.hasMoved(stamp, for: project.id) else { return }
     let read = await Self.offMain { Self.readSharedSettings(from: path) }
     guard workspace.project(project.id) != nil else { return }
     noteSharedSettings(read.result, stamp: read.stamp, for: project)
@@ -104,13 +104,10 @@ extension AppModel {
   func noteSharedSettings(
     _ result: Result<SharedProjectSettings?, any Error>, stamp: Date, for project: Project
   ) {
-    let firstRead = sharedSettingsStamps.index(forKey: project.id) == nil
-    sharedSettingsStamps[project.id] = stamp
+    let firstRead = !sharedSettings.hasRead(project.id)
     switch result {
     case .success(let shared):
-      sharedSettingsProblems[project.id] = nil
-      guard sharedSettings[project.id] != shared else { return }
-      sharedSettings[project.id] = shared
+      guard sharedSettings.note(shared, stamp: stamp, for: project.id) else { return }
       // A question already up for this project is about a file the disk no
       // longer has, and trusting it would store an answer for bytes nobody
       // committed. It gives way to one about what the file says now.
@@ -122,15 +119,13 @@ extension AppModel {
         askAboutSharedHooksIfNeeded(for: project.id)
       }
     case .failure(let error):
-      sharedSettings[project.id] = nil
       // A question up for this project names hooks the app no longer has,
       // and nothing it ran would come from the file it was asked about, so
       // it goes the way a deleted file's does. It comes back if the file
       // parses again.
       if pendingSharedHooksTrust?.projectID == project.id { pendingSharedHooksTrust = nil }
       let problem = "\(SharedProjectSettings.fileName) could not be read: \(error)"
-      if sharedSettingsProblems[project.id] != problem {
-        sharedSettingsProblems[project.id] = problem
+      if sharedSettings.note(problem: problem, stamp: stamp, for: project.id) {
         platform.log("\(project.name): \(problem)")
       }
     }

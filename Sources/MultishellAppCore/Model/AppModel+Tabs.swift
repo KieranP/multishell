@@ -133,6 +133,19 @@ extension AppModel {
     perform(close)
   }
 
+  /// A close whose tab or pane has gone since it was asked about has nothing
+  /// left to ask. It goes with its worktree, or with its project, and the
+  /// dialog would otherwise stand over a subject that is not there; run from
+  /// `sync`, so every path that takes one away is covered rather than the
+  /// removals alone.
+  func prunePendingClose() {
+    switch pendingClose {
+    case .pane(let id) where workspace.session(id) == nil: pendingClose = nil
+    case .tab(let id) where workspace.tab(id) == nil: pendingClose = nil
+    default: break
+    }
+  }
+
   /// The confirmed half of a close that found a working agent.
   public func confirmPendingClose() {
     guard let pending = pendingClose else { return }

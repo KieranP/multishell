@@ -128,16 +128,37 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     self.sharedHooks = sharedHooks
   }
 
-  /// An empty string on disk reads as "no override". State from before
-  /// overrides existed stored "" for "no prefix", and it should keep
-  /// following the global once one is set. Opting out of a global value is
-  /// a whitespace-only string, which `effective` trims to empty.
+  /// An empty string is the override to "none" for the three worktree
+  /// fields, and noise for a field that spells its own "none" some other
+  /// way.
+  ///
+  /// The worktree fields have no other spelling for it: blank is how a
+  /// project pins itself to the built-in directory, to no prefix while the
+  /// global has one, or to detecting its default branch while the
+  /// repository's file names one. Coercing those to `nil` sent them back to
+  /// following the global on the next load, losing the very thing the
+  /// settings form's help offers. `preferredAgentID` and `defaultShell`
+  /// have `AgentCatalogue.noneID` and `ShellCatalogue.loginShellID` for it,
+  /// and a blank `iconGlyph` draws the same folder `nil` does, so `""`
+  /// there says nothing an absent key does not.
+  ///
+  /// `SharedProjectSettings` deliberately does the opposite for these same
+  /// three, and says why: a `""` someone committed must not read as the team
+  /// asking for "none". A choice the user made in the form and a stray key
+  /// in a tracked file are not the same claim. The cost is that an export
+  /// cannot carry a blank override, and drops it back to following the
+  /// global for whoever reads the file.
+  ///
+  /// State from before this repository's first commit stored `""` for "no
+  /// prefix"; that loads as the override now. For the prefix it is the
+  /// behaviour those projects already had. For `worktreeDirectory` it is
+  /// not quite: blank resolves to the built-in `../{project}-worktrees`
+  /// rather than to a global the user has since set.
   public init(from decoder: any Decoder) throws {
     let c = try decoder.container(keyedBy: CodingKeys.self)
-    worktreeDirectory = Self.override(
-      try c.decodeIfPresent(String.self, forKey: .worktreeDirectory))
-    branchPrefix = Self.override(try c.decodeIfPresent(String.self, forKey: .branchPrefix))
-    defaultBranch = Self.override(try c.decodeIfPresent(String.self, forKey: .defaultBranch))
+    worktreeDirectory = try c.decodeIfPresent(String.self, forKey: .worktreeDirectory)
+    branchPrefix = try c.decodeIfPresent(String.self, forKey: .branchPrefix)
+    defaultBranch = try c.decodeIfPresent(String.self, forKey: .defaultBranch)
     preCreateHook = try c.decodeIfPresent(String.self, forKey: .preCreateHook) ?? ""
     postCreateHook = try c.decodeIfPresent(String.self, forKey: .postCreateHook) ?? ""
     preDeleteHook = try c.decodeIfPresent(String.self, forKey: .preDeleteHook) ?? ""

@@ -19,7 +19,7 @@ struct ProjectHooksTab: View {
     Form {
       if let shared, shared.hasHooks {
         sharedHooksSection(shared, project: current)
-      } else if let problem = model.sharedSettingsProblems[project.id] {
+      } else if let problem = model.sharedSettings.problem(of: project.id) {
         Section { SettingsCaption(problem) }
       }
 

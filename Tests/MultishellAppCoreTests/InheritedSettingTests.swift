@@ -23,7 +23,8 @@ struct InheritedSettingTests {
     let global = h.model.inherited(\.autoStartAgentOnCreate, global: true, for: project)
     #expect(global == InheritedFlag(value: true, isFromRepository: false))
 
-    h.model.sharedSettings[project.id] = SharedProjectSettings(autoStartAgentOnCreate: false)
+    h.model.sharedSettings.note(
+      SharedProjectSettings(autoStartAgentOnCreate: false), stamp: .now, for: project.id)
     let file = h.model.inherited(\.autoStartAgentOnCreate, global: true, for: project)
     #expect(
       file == InheritedFlag(value: false, isFromRepository: true),
@@ -32,6 +33,28 @@ struct InheritedSettingTests {
     let untouched = h.model.inherited(\.opensTerminalOnCreate, global: true, for: project)
     #expect(
       untouched.isFromRepository == false, "a key the file does not carry is still the global")
+  }
+
+  /// The last link between a committed "no prefix" and the form: blank is a
+  /// value the file carries, not a key it left out, so the row shows it and
+  /// says where it came from instead of falling back to the user's global.
+  @Test func aBlankPrefixInTheFileIsTheValueInForceAndNotAFallThroughToTheGlobal() {
+    let h = Harness()
+    let project = h.project
+
+    // A real global prefix, so the file's blank has something to beat.
+    h.model.setWorktreeDefaults(WorktreeSettings(branchPrefix: "team/"))
+    #expect(h.model.worktreeSettings(for: project).qualifiedBranch("tabs") == "team/tabs")
+
+    h.model.sharedSettings.note(
+      SharedProjectSettings(branchPrefix: ""), stamp: .now, for: project.id)
+
+    let prefix = h.model.inherited(
+      \.branchPrefix, global: h.model.workspace.worktreeDefaults.branchPrefix, for: project)
+    #expect(prefix == InheritedSetting(value: "", isFromRepository: true))
+    #expect(
+      h.model.worktreeSettings(for: project).qualifiedBranch("tabs") == "tabs",
+      "and the branch the sheet would create carries no prefix")
   }
 }
 

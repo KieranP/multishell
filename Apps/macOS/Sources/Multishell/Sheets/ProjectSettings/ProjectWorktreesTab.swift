@@ -1,3 +1,4 @@
+import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
@@ -9,7 +10,9 @@ struct ProjectWorktreesTab: View {
     let defaults = model.workspace.worktreeDefaults
     let settings = model.settings(of: project)
     let effective = model.worktreeSettings(for: model.current(project))
-    let shared = model.sharedSettings[project.id]
+    let directory = model.inherited(
+      \.worktreeDirectory, global: defaults.worktreeDirectory, for: project)
+    let prefix = model.inherited(\.branchPrefix, global: defaults.branchPrefix, for: project)
 
     Form {
       Section {
@@ -17,16 +20,15 @@ struct ProjectWorktreesTab: View {
           "Override: Worktree path",
           info:
             "Where this project's worktrees are created. {project} is the repository folder name, ~ is home. Relative paths start at the repository.",
-          isOn: overrides(\.worktreeDirectory, default: defaults.worktreeDirectory))
+          isOn: model.hasOverride(\.worktreeDirectory, of: project, fallback: directory.value))
         TextField(
           "Path:",
-          text: text(
-            \.worktreeDirectory, fallback: shared?.worktreeDirectory ?? defaults.worktreeDirectory)
+          text: model.overrideValue(\.worktreeDirectory, of: project, fallback: directory.value)
         )
         .disabled(settings.worktreeDirectory == nil)
         SettingsCaption(
           "Resolves to \(effective.worktreeContainer(for: project).path)"
-            + (settings.worktreeDirectory == nil && shared?.worktreeDirectory != nil
+            + (settings.worktreeDirectory == nil && directory.isFromRepository
               ? ", from \(SharedProjectSettings.fileName)." : "."))
       }
 
@@ -35,16 +37,16 @@ struct ProjectWorktreesTab: View {
           "Override: Branch prefix",
           info:
             "Prepended to branch names typed in the new-worktree sheet for this project. Turn the override on and leave it blank to use no prefix while the global has one.",
-          isOn: overrides(\.branchPrefix, default: defaults.branchPrefix))
+          isOn: model.hasOverride(\.branchPrefix, of: project, fallback: prefix.value))
         TextField(
           "Prefix:",
-          text: text(\.branchPrefix, fallback: shared?.branchPrefix ?? defaults.branchPrefix),
+          text: model.overrideValue(\.branchPrefix, of: project, fallback: prefix.value),
           prompt: Text("none")
         )
         .disabled(settings.branchPrefix == nil)
         SettingsCaption(
           "Typing tabs creates \(effective.qualifiedBranch("tabs")) at \(effective.worktreePath(forBranch: effective.qualifiedBranch("tabs"), in: project).path)"
-            + (settings.branchPrefix == nil && shared?.branchPrefix != nil
+            + (settings.branchPrefix == nil && prefix.isFromRepository
               ? " The prefix comes from \(SharedProjectSettings.fileName)." : ""))
       }
 
@@ -53,9 +55,11 @@ struct ProjectWorktreesTab: View {
           "Override: Default branch",
           info:
             "The branch this project's work is merged into. A worktree whose branch has landed on it gets a badge in the sidebar saying it can go. Detected from origin/HEAD, then origin/main, origin/master, main, master. A name typed here is looked for on origin before it is looked for locally.",
-          isOn: overrides(\.defaultBranch, default: detected))
+          isOn: model.hasOverride(\.defaultBranch, of: project, fallback: detected))
         TextField(
-          "Branch:", text: text(\.defaultBranch, fallback: detected), prompt: Text("main")
+          "Branch:",
+          text: model.overrideValue(\.defaultBranch, of: project, fallback: detected),
+          prompt: Text("main")
         )
         .disabled(settings.defaultBranch == nil)
         SettingsCaption(
@@ -67,35 +71,10 @@ struct ProjectWorktreesTab: View {
   }
 
   /// What the field shows while the override is off: the branch the model
-  /// resolved, without the remote it was found on, so turning the override
-  /// on seeds `main` rather than `origin/main`.
+  /// resolved, which already carries what the repository's file says, and
+  /// without the remote it was found on, so turning the override on seeds
+  /// `main` rather than `origin/main`.
   private var detected: String {
     model.mergeBase(of: project)?.branch ?? "main"
-  }
-
-  /// Turning an override on seeds it with the global value so the field is
-  /// never blank; turning it off returns to following the global.
-  private func overrides(
-    _ keyPath: WritableKeyPath<ProjectSettings, String?>, default value: String
-  )
-    -> Binding<Bool>
-  {
-    let source = model.setting(keyPath, of: project)
-    return Binding(
-      get: { source.wrappedValue != nil },
-      set: { on in source.wrappedValue = on ? (source.wrappedValue ?? value) : nil }
-    )
-  }
-
-  /// Shows the global value while the override is off, so the disabled
-  /// field reads as what is in effect rather than as empty.
-  private func text(
-    _ keyPath: WritableKeyPath<ProjectSettings, String?>, fallback: String
-  ) -> Binding<String> {
-    let source = model.setting(keyPath, of: project)
-    return Binding(
-      get: { source.wrappedValue ?? fallback },
-      set: { source.wrappedValue = $0 }
-    )
   }
 }

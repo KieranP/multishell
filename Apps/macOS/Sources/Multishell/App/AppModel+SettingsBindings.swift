@@ -45,6 +45,40 @@ extension AppModel {
     )
   }
 
+  /// Whether the project overrides `keyPath` at all, for the toggle above
+  /// the row. Turning it on seeds the override with `fallback`, so nothing
+  /// the user was looking at changes as the toggle flips; turning it off
+  /// goes back to following it.
+  ///
+  /// Pass what the row was actually showing, which is what
+  /// `model.inherited(_:global:for:)` answers where a repository's
+  /// `.multishell.json` may have had the say. Seeding from the global
+  /// instead would replace what the project was doing with a value nobody
+  /// was using.
+  ///
+  /// Named well apart from `overrideValue`: for a `Bool` setting both give a
+  /// `Binding<Bool>` from the same arguments, so a swapped pair would
+  /// compile and quietly bind each control to the other's job.
+  func hasOverride<Value: Equatable & Sendable>(
+    _ keyPath: WritableKeyPath<ProjectSettings, Value?>, of project: Project, fallback: Value
+  ) -> Binding<Bool> {
+    let source = setting(keyPath, of: project)
+    return Binding(
+      get: { source.wrappedValue != nil },
+      set: { on in source.wrappedValue = on ? fallback : nil }
+    )
+  }
+
+  /// The overridden value itself, reading as `fallback` while the override
+  /// is off so the disabled control shows what is actually in effect rather
+  /// than blank.
+  func overrideValue<Value: Equatable & Sendable>(
+    _ keyPath: WritableKeyPath<ProjectSettings, Value?>, of project: Project, fallback: Value
+  ) -> Binding<Value> {
+    let source = setting(keyPath, of: project)
+    return Binding(get: { source.wrappedValue ?? fallback }, set: { source.wrappedValue = $0 })
+  }
+
   /// The record as the workspace has it now, falling back to the one the
   /// window was opened with. A settings window is its own scene and stays
   /// up across refreshes, so the project it was handed goes stale.
