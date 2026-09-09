@@ -137,6 +137,7 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
       "super+t", "super+shift+t", "super+alt+t", "super+w", "super+shift+w", "super+n",
       "super+shift+n",
       "super+o", "super+shift+o", "super+d", "super+shift+d", "super+comma", "super+q",
+      "super+z", "super+shift+z",
       "ctrl+tab", "ctrl+shift+tab",
       "super+ctrl+f", "super+enter",
     ]

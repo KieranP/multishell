@@ -29,6 +29,8 @@ struct MultishellCommands: Commands {
     // standard selectors to the first responder, the way AppKit menus do, and
     // stay enabled; a terminal with nothing selected simply ignores copy:.
     CommandGroup(replacing: .pasteboard) {
+      Button("Cut") { NSApp.sendAction(#selector(NSText.cut(_:)), to: nil, from: nil) }
+        .keyboardShortcut("x")
       Button("Copy") { NSApp.sendAction(#selector(NSText.copy(_:)), to: nil, from: nil) }
         .keyboardShortcut("c")
       Button("Paste") { NSApp.sendAction(#selector(NSText.paste(_:)), to: nil, from: nil) }
@@ -37,9 +39,30 @@ struct MultishellCommands: Commands {
         .keyboardShortcut("a")
     }
 
-    // Undo, Find, Spelling, Substitutions, Speech: text-editing items with no
+    // The focused responder's own manager, not the key window's: a text field
+    // edits in the window's field editor, which keeps a manager of its own
+    // that the window's never sees. A `TextEditor`'s manager is the window's,
+    // so asking the responder covers both. A terminal surface has none and
+    // the walk up ends at the window's, which holds nothing only while no
+    // `TextEditor` shares that window; one beside a pane would undo into it
+    // from a prompt. `NSApp.sendAction` is no use: `undo:` and `redo:`, what
+    // the stock items send, are undeclared, and `NSWindow` answers them from
+    // its own manager.
+    CommandGroup(replacing: .undoRedo) {
+      Button("Undo") {
+        guard let manager = Self.focusedUndoManager, manager.canUndo else { return }
+        manager.undo()
+      }
+      .keyboardShortcut("z")
+      Button("Redo") {
+        guard let manager = Self.focusedUndoManager, manager.canRedo else { return }
+        manager.redo()
+      }
+      .keyboardShortcut("z", modifiers: [.command, .shift])
+    }
+
+    // Find, Spelling, Substitutions, Speech: text-editing items with no
     // meaning in a terminal, and the same lazily-validated kind as above.
-    CommandGroup(replacing: .undoRedo) {}
     CommandGroup(replacing: .textEditing) {}
 
     CommandGroup(replacing: .saveItem) {
@@ -66,5 +89,9 @@ struct MultishellCommands: Commands {
         }
       }
     }
+  }
+
+  private static var focusedUndoManager: UndoManager? {
+    NSApp.keyWindow?.firstResponder?.undoManager
   }
 }
