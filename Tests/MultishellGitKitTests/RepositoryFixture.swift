@@ -40,8 +40,17 @@ struct RepositoryFixture {
   }
 
   func commit(_ message: String, file: String, content: String) async throws {
-    try content.write(
-      to: project.path.appendingPathComponent(file), atomically: true, encoding: .utf8)
+    try await commit(message, files: [file: content])
+  }
+
+  /// One commit writing several files, which is what a squash merge lands.
+  func commit(_ message: String, files: [String: String]) async throws {
+    for (file, content) in files {
+      let url = project.path.appendingPathComponent(file)
+      try FileManager.default.createDirectory(
+        at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+      try content.write(to: url, atomically: true, encoding: .utf8)
+    }
     _ = try await git.run(["add", "."], in: project.path)
     _ = try await git.run(["commit", "-q", "-m", message], in: project.path)
   }

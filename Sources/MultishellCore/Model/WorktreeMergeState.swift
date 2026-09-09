@@ -23,11 +23,20 @@ public enum WorktreeMergeState: Hashable, Sendable {
     /// The base has an equivalent patch for every commit on the branch:
     /// how a rebase-merge or a run of cherry-picks lands.
     case patchEquivalent
-    /// The branch tracked a remote branch that is no longer there. What
-    /// "delete branch on merge" leaves behind, and the only trace a squash
-    /// merge leaves that can be read without writing to the object
-    /// database. Not proof: a pull request closed without merging leaves
-    /// exactly the same thing.
+    /// The branch tracked a remote branch that is no longer there, and the
+    /// base has moved on without it. What "delete branch on merge" leaves
+    /// behind, and the only trace a squash merge leaves that can be read
+    /// without writing to the object database. Not proof: a pull request
+    /// closed without merging leaves exactly the same thing.
+    ///
+    /// What is asked beside the gone upstream is not decoration. The base
+    /// having moved on, because a branch cut under a name used before
+    /// inherits the old branch's `branch.<name>` config and so tracks an
+    /// upstream that was never there, which git reports as gone in the very
+    /// same words. And the branch's changes reading the same on the base,
+    /// because a branch whose upstream is gone is ahead of nothing, so work
+    /// committed here after the squash landed is work `showsBadge` cannot
+    /// see to hide the badge for.
     case upstreamGone
   }
 

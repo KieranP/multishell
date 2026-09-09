@@ -21,8 +21,8 @@ struct WorktreeMergeTests {
 
   private func scan(_ fixture: RepositoryFixture, override: String? = nil) async throws -> MergeScan
   {
-    let scan = await fixture.coordinator.scanBranches(
-      of: fixture.project, defaultBranch: override)
+    let scan = try #require(
+      await fixture.coordinator.scanBranches(of: fixture.project, defaultBranch: override))
     return try #require(scan.merges)
   }
 
@@ -75,9 +75,21 @@ struct WorktreeMergeTests {
     try await withRemote(fixture)
 
     _ = try await fixture.git.run(["checkout", "-q", "-b", "squashed"], in: path)
+    // Two commits, so the one the forge squashes them into shares a patch id
+    // with neither and `git cherry` cannot answer for the branch.
     try await fixture.commit("work", file: "squashed.txt", content: "a\n")
+    try await fixture.commit("more work", file: "squashed-too.txt", content: "b\n")
     _ = try await fixture.git.run(["push", "-q", "-u", "origin", "squashed"], in: path)
-    // The merge on the forge squashes the commits and deletes the branch.
+    // The merge on the forge squashes the commits onto main and deletes the
+    // branch.
+    _ = try await fixture.git.run(["checkout", "-q", "main"], in: path)
+    // One commit carrying the branch's whole tree, which is what a squash is
+    // and what says the work landed; see `WorktreeService.changesAreOnBase`.
+    // Two commits mirroring the branch's own would be a cherry-pick, and
+    // `git cherry` would answer for it before the upstream was ever read.
+    try await fixture.commit(
+      "squashed work", files: ["squashed.txt": "a\n", "squashed-too.txt": "b\n"])
+    _ = try await fixture.git.run(["push", "-q", "origin", "main"], in: path)
     _ = try await fixture.git.run(["push", "-q", "origin", "--delete", "squashed"], in: path)
     _ = try await fixture.git.run(["fetch", "-q", "--prune", "origin"], in: path)
 
@@ -87,6 +99,266 @@ struct WorktreeMergeTests {
     let states = await fixture.coordinator.mergeStates(
       of: ["squashed"], in: fixture.project, scan: scan)
     #expect(states["squashed"] == .merged(.upstreamGone, into: "origin/main"))
+  }
+
+  /// A worktree cut before the trunk moved, then brought up to date. The
+  /// branch has been carried onto commits it was handed and has none of its
+  /// own, which is the day it was cut all over again.
+  @Test func aBranchFastForwardedOntoTheTrunkHasNotLanded() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let path = fixture.project.path
+    let tree = fixture.root.appendingPathComponent("trees/behind", isDirectory: true)
+    _ = try await fixture.git.run(
+      ["worktree", "add", "-q", "-b", "behind", tree.path, "HEAD"], in: path)
+    // The trunk moves, and the worktree pulls it in.
+    try await fixture.commit("trunk moves on", file: "trunk.txt", content: "a\n")
+    _ = try await fixture.git.run(["merge", "-q", "--ff-only", "main"], in: tree)
+
+    let scan = try await scan(fixture)
+    #expect(scan.tip(of: "behind") == scan.base.tip, "carried up to the trunk")
+    let states = await fixture.coordinator.mergeStates(
+      of: ["behind"], in: fixture.project, scan: scan)
+    #expect(states["behind"] == .unmerged, "moved is not landed")
+  }
+
+  /// `git cherry` skips merge commits, so a worktree that has merged the
+  /// trunk in and written nothing of its own prints no lines at all. Read as
+  /// "every commit landed", that badges a branch that has landed nothing.
+  @Test func aBranchWhoseOnlyCommitIsAMergeOfTheTrunkIsNotMerged() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let path = fixture.project.path
+    let tree = fixture.root.appendingPathComponent("trees/merged-in", isDirectory: true)
+    _ = try await fixture.git.run(
+      ["worktree", "add", "-q", "-b", "merged-in", tree.path, "HEAD"], in: path)
+    try await fixture.commit("trunk moves on", file: "trunk.txt", content: "a\n")
+    _ = try await fixture.git.run(
+      ["merge", "-q", "--no-ff", "-m", "merge the trunk", "main"], in: tree)
+
+    let scan = try await scan(fixture)
+    let cherry = await WorktreeService(git: fixture.git).isPatchEquivalent(
+      "merged-in", against: "main", in: fixture.project)
+    #expect(cherry == false, "nothing printed is not every patch landed")
+    let states = await fixture.coordinator.mergeStates(
+      of: ["merged-in"], in: fixture.project, scan: scan)
+    #expect(states["merged-in"] == .unmerged)
+  }
+
+  /// The badge hides while a worktree holds work that is only there, and for
+  /// a gone upstream `git status` cannot see it: there is no upstream left to
+  /// be ahead of. So what the branch changed is measured against the base.
+  @Test func workCommittedAfterTheSquashLandedTakesTheBadgeBack() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let path = fixture.project.path
+    try await withRemote(fixture)
+
+    _ = try await fixture.git.run(["checkout", "-q", "-b", "squashed"], in: path)
+    try await fixture.commit("work", file: "squashed.txt", content: "a\n")
+    try await fixture.commit("more work", file: "squashed-too.txt", content: "b\n")
+    _ = try await fixture.git.run(["push", "-q", "-u", "origin", "squashed"], in: path)
+    _ = try await fixture.git.run(["checkout", "-q", "main"], in: path)
+    try await fixture.commit(
+      "squashed work", files: ["squashed.txt": "a\n", "squashed-too.txt": "b\n"])
+    _ = try await fixture.git.run(["push", "-q", "origin", "main"], in: path)
+    _ = try await fixture.git.run(["push", "-q", "origin", "--delete", "squashed"], in: path)
+    _ = try await fixture.git.run(["fetch", "-q", "--prune", "origin"], in: path)
+
+    let landed = try await scan(fixture)
+    var states = await fixture.coordinator.mergeStates(
+      of: ["squashed"], in: fixture.project, scan: landed)
+    #expect(states["squashed"] == .merged(.upstreamGone, into: "origin/main"))
+
+    // Work carried on in the same worktree after the pull request landed.
+    _ = try await fixture.git.run(["checkout", "-q", "squashed"], in: path)
+    try await fixture.commit("carrying on", file: "squashed.txt", content: "a\nand more\n")
+    _ = try await fixture.git.run(["checkout", "-q", "main"], in: path)
+
+    let after = try await scan(fixture)
+    #expect(after.upstreamIsGone("squashed"), "still gone, and still says nothing about this")
+    states = await fixture.coordinator.mergeStates(
+      of: ["squashed"], in: fixture.project, scan: after)
+    #expect(states["squashed"] == .unmerged, "this worktree holds the only copy of that")
+  }
+
+  /// A branch may share its name with a path in the repository, and git reads
+  /// a bare name as "both revision and filename" and fails the whole read. The
+  /// reflog answer is lost that way, and with nothing behind it the branch
+  /// reads as never written in however much work it landed.
+  @Test func aBranchNamedAfterADirectoryIsStillJudgedByItsReflog() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let path = fixture.project.path
+    try await fixture.commit("a directory to collide with", file: "docs/notes.md", content: "a\n")
+
+    _ = try await fixture.git.run(["checkout", "-q", "-b", "docs"], in: path)
+    try await fixture.commit("work", file: "docs/one.md", content: "one\n")
+    _ = try await fixture.git.run(["checkout", "-q", "main"], in: path)
+    _ = try await fixture.git.run(["merge", "-q", "--no-ff", "-m", "merge docs", "docs"], in: path)
+
+    let scan = try await scan(fixture)
+    let states = await fixture.coordinator.mergeStates(
+      of: ["docs"], in: fixture.project, scan: scan)
+
+    #expect(states["docs"] == .merged(.ancestor, into: "main"))
+  }
+
+  /// The same collision on the content read, where the two-name form of
+  /// `git diff` takes the branch for a path: the answer is lost, and with it
+  /// the badge a squash-merged branch had earned.
+  @Test func aSquashedBranchNamedAfterADirectoryStillReadsAsMerged() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let path = fixture.project.path
+    try await fixture.commit("a directory to collide with", file: "docs/notes.md", content: "a\n")
+    try await withRemote(fixture)
+
+    _ = try await fixture.git.run(["checkout", "-q", "-b", "docs"], in: path)
+    try await fixture.commit("work", file: "docs/one.md", content: "one\n")
+    try await fixture.commit("more work", file: "docs/two.md", content: "two\n")
+    _ = try await fixture.git.run(["push", "-q", "-u", "origin", "docs"], in: path)
+    _ = try await fixture.git.run(["checkout", "-q", "main"], in: path)
+    try await fixture.commit(
+      "squashed work", files: ["docs/one.md": "one\n", "docs/two.md": "two\n"])
+    _ = try await fixture.git.run(["push", "-q", "origin", "main"], in: path)
+    _ = try await fixture.git.run(["push", "-q", "origin", "--delete", "docs"], in: path)
+    _ = try await fixture.git.run(["fetch", "-q", "--prune", "origin"], in: path)
+
+    let scan = try await scan(fixture)
+    let states = await fixture.coordinator.mergeStates(
+      of: ["docs"], in: fixture.project, scan: scan)
+
+    #expect(states["docs"] == .merged(.upstreamGone, into: "origin/main"))
+  }
+
+  /// A bare repository logs no branch creation, so a worktree cut there has
+  /// no reflog to be judged by until it is written in, and ancestry alone
+  /// cannot tell a branch that landed from one cut behind the trunk. Nothing
+  /// is claimed for it rather than guessed from the tips.
+  ///
+  /// The first commit is logged even there, so a branch that did land still
+  /// says so: what goes is the guess, not the badge.
+  @Test func aBareRepositoryClaimsNothingForABranchItHasNoReflogFor() async throws {
+    let (fixture, checkout) = try await RepositoryFixture.makeBare()
+    defer { fixture.tearDown() }
+    let bare = fixture.project.path
+    let cutFrom = try await fixture.head(of: checkout)
+    try await commit("the trunk moves on", file: "later.txt", in: checkout, with: fixture.git)
+
+    let old = fixture.root.appendingPathComponent("trees/old", isDirectory: true)
+    _ = try await fixture.git.run(
+      ["worktree", "add", "-q", "-b", "old", old.path, cutFrom], in: bare)
+
+    let service = WorktreeService(git: fixture.git)
+    #expect(
+      await service.hasWorkOfItsOwn("old", in: fixture.project) == false,
+      "a bare repository logs no branch creation, so it has nothing to show for itself")
+    let cut = try await scan(fixture)
+    #expect(
+      cut.tip(of: "old") != cut.base.tip, "cut behind the trunk, which tips alone would badge")
+    var states = await fixture.coordinator.mergeStates(
+      of: ["old"], in: fixture.project, scan: cut)
+    #expect(states["old"] == .unmerged, "nothing to derive it from, so nothing said")
+
+    // A commit is logged even here, so a branch that landed keeps its badge.
+    let work = fixture.root.appendingPathComponent("trees/work", isDirectory: true)
+    _ = try await fixture.git.run(
+      ["worktree", "add", "-q", "-b", "work", work.path, "main"], in: bare)
+    try await commit("work of its own", file: "work.txt", in: work, with: fixture.git)
+    _ = try await fixture.git.run(
+      ["merge", "-q", "--no-ff", "-m", "merge work", "work"], in: checkout)
+
+    let landed = try await scan(fixture)
+    states = await fixture.coordinator.mergeStates(
+      of: ["work"], in: fixture.project, scan: landed)
+    #expect(states["work"] == .merged(.ancestor, into: "main"))
+  }
+
+  /// `RepositoryFixture.commit` writes to the repository itself; a bare
+  /// layout's commits are made in one of its worktrees.
+  private func commit(
+    _ message: String, file: String, in directory: URL, with git: GitRunner
+  ) async throws {
+    try "\(message)\n".write(
+      to: directory.appendingPathComponent(file), atomically: true, encoding: .utf8)
+    _ = try await git.run(["add", "."], in: directory)
+    _ = try await git.run(["commit", "-q", "-m", message], in: directory)
+  }
+
+  /// No reflog is an answer git gives with an empty output and a success; a
+  /// read that failed is not that answer, and settling on it would leave the
+  /// branch reading as never written in until it or the trunk next moved.
+  @Test func aReflogReadThatFailedLeavesTheBranchUnanswered() async throws {
+    let fake = try FakeGit.make(
+      """
+      case "$*" in
+        branch\\ --merged*) printf 'main\\nfeat\\n' ;;
+        log\\ -g*) exit 128 ;;
+      esac
+      """)
+    defer { fake.tearDown() }
+    let scan = MergeScan(
+      base: DefaultBranch(ref: "main", branch: "main", tip: "MMM"),
+      refs: [BranchRef(fullName: "refs/heads/feat", tip: "FFF")])
+
+    let states = await WorktreeCoordinator(service: WorktreeService(git: fake.runner))
+      .mergeStates(of: ["feat"], in: Project(path: fake.directory), scan: scan)
+
+    #expect(states.isEmpty, "no answer, rather than an answer of unmerged")
+  }
+
+  /// A read that failed is no verdict: recorded as one it would be pinned to
+  /// the tips it was reached at and never asked about again.
+  @Test func aPatchReadThatFailedLeavesTheBranchUnanswered() async throws {
+    let fake = try FakeGit.make(
+      """
+      case "$*" in
+        branch\\ --merged*) echo main ;;
+        cherry*) exit 128 ;;
+      esac
+      """)
+    defer { fake.tearDown() }
+    let scan = MergeScan(
+      base: DefaultBranch(ref: "main", branch: "main", tip: "MMM"),
+      refs: [BranchRef(fullName: "refs/heads/feat", tip: "FFF")])
+
+    let states = await WorktreeCoordinator(service: WorktreeService(git: fake.runner))
+      .mergeStates(of: ["feat"], in: Project(path: fake.directory), scan: scan)
+
+    #expect(states.isEmpty, "no answer, rather than an answer of unmerged")
+  }
+
+  /// The same `[gone]`, with nothing behind it. `branch.<name>` config
+  /// outlives the branch it names, so a name used before hands the branch cut
+  /// under it an upstream that was never on the remote, and git reports that
+  /// in the same words as one deleted on a merge. The badge showed on the
+  /// first commit, when ancestry stopped answering for the branch and the
+  /// gone upstream was all that was left.
+  @Test func aBranchWhoseUpstreamWasNeverThereIsNotMerged() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let path = fixture.project.path
+    try await withRemote(fixture)
+
+    // What the branch that had the name before left behind.
+    _ = try await fixture.git.run(["config", "branch.reused.remote", "origin"], in: path)
+    _ = try await fixture.git.run(["config", "branch.reused.merge", "refs/heads/reused"], in: path)
+    let tree = fixture.root.appendingPathComponent("trees/reused", isDirectory: true)
+    _ = try await fixture.git.run(
+      ["worktree", "add", "-q", "-b", "reused", tree.path, "HEAD"], in: path)
+
+    let cut = try await scan(fixture)
+    #expect(cut.upstreamIsGone("reused"), "git cannot tell the two apart")
+    var states = await fixture.coordinator.mergeStates(
+      of: ["reused"], in: fixture.project, scan: cut)
+    #expect(states["reused"] == .unmerged, "cut from the trunk and not written in")
+
+    _ = try await fixture.git.run(["commit", "-q", "--allow-empty", "-m", "work"], in: tree)
+    let committed = try await scan(fixture)
+    states = await fixture.coordinator.mergeStates(
+      of: ["reused"], in: fixture.project, scan: committed)
+    #expect(states["reused"] == .unmerged, "a first commit is not a merge")
   }
 
   /// `git worktree add -b` cuts the branch at the trunk's own tip, which
@@ -187,8 +459,8 @@ struct WorktreeMergeTests {
     #expect(overridden.base.ref == "develop")
 
     // A name that is nowhere: no base, so nothing is badged.
-    let missing = await fixture.coordinator.scanBranches(
-      of: fixture.project, defaultBranch: "nowhere")
+    let missing = try #require(
+      await fixture.coordinator.scanBranches(of: fixture.project, defaultBranch: "nowhere"))
     #expect(missing.merges == nil)
     #expect(missing.lastCommits["main"] != nil, "the dates come back with no base to measure")
   }
@@ -239,7 +511,8 @@ struct BranchCommitDateTests {
     try await fixture.commit("later", file: "feat.txt", content: "a\n")
     _ = try await fixture.git.run(["checkout", "-q", "main"], in: path)
 
-    let scan = await fixture.coordinator.scanBranches(of: fixture.project, defaultBranch: nil)
+    let scan = try #require(
+      await fixture.coordinator.scanBranches(of: fixture.project, defaultBranch: nil))
     let main = try #require(scan.lastCommits["main"])
     let feat = try #require(scan.lastCommits["feat"])
 
@@ -262,7 +535,8 @@ struct BranchCommitDateTests {
     let listed = try await WorktreeService(git: fixture.git).list(fixture.project)
     let worktree = try #require(
       listed.first { $0.path.standardizedFileURL == path.standardizedFileURL })
-    let scan = await fixture.coordinator.scanBranches(of: fixture.project, defaultBranch: nil)
+    let scan = try #require(
+      await fixture.coordinator.scanBranches(of: fixture.project, defaultBranch: nil))
 
     #expect(worktree.branch == "feat/tabs")
     #expect(worktree.branch.flatMap { scan.lastCommits[$0] } != nil, "the lookup finds it")
@@ -280,7 +554,8 @@ struct BranchCommitDateTests {
 
     let listed = try await WorktreeService(git: fixture.git).list(fixture.project)
     let detached = try #require(listed.first { $0.path.lastPathComponent == "detached" })
-    let scan = await fixture.coordinator.scanBranches(of: fixture.project, defaultBranch: nil)
+    let scan = try #require(
+      await fixture.coordinator.scanBranches(of: fixture.project, defaultBranch: nil))
 
     #expect(detached.branch == nil)
     #expect(detached.branch.flatMap { scan.lastCommits[$0] } == nil)
@@ -305,7 +580,8 @@ struct BranchRefFallbackTests {
       """)
     defer { fake.tearDown() }
 
-    let refs = await WorktreeService(git: fake.runner).branchRefs(Project(path: fake.directory))
+    let refs = try #require(
+      await WorktreeService(git: fake.runner).branchRefs(Project(path: fake.directory)))
 
     #expect(refs.map(\.fullName) == ["refs/heads/main"], "the badges still have their tips")
     #expect(refs.first?.tip == "111")
@@ -322,7 +598,8 @@ struct BranchRefFallbackTests {
       """)
     defer { fake.tearDown() }
 
-    let refs = await WorktreeService(git: fake.runner).branchRefs(Project(path: fake.directory))
+    let refs = try #require(
+      await WorktreeService(git: fake.runner).branchRefs(Project(path: fake.directory)))
     let calls =
       (try? String(contentsOf: fake.directory.appendingPathComponent("calls"), encoding: .utf8))
       ?? ""

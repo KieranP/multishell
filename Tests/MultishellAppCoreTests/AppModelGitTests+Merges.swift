@@ -94,6 +94,33 @@ extension AppModelGitTests {
     #expect(afterRetry > afterFailure, "the failed pass must not settle the question")
   }
 
+  /// The ref read answers two questions at once, so a failure taken as an
+  /// answer would say the project has no branches: every badge dropped, the
+  /// base forgotten and every commit date the rows are ordered by blanked,
+  /// on one bad read.
+  @Test func aFailedRefReadLeavesTheBaseAndTheBadgesWhereTheyWere() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let model = try h.modelOnFakeGit(
+      """
+      case "$*" in
+        for-each-ref*)
+          if [ -f "$SCRATCH/read-once" ]; then exit 128; fi
+          : > "$SCRATCH/read-once"
+          printf 'refs/heads/main\\tMMM\\t\\t\\n' ;;
+        branch\\ --merged*) echo main ;;
+        *) exit 0 ;;
+      esac
+      """)
+
+    await model.refreshMergeStates()
+    #expect(model.mergeBase(of: h.project)?.ref == "main")
+
+    await model.refreshMergeStates()
+
+    #expect(model.mergeBase(of: h.project)?.ref == "main", "a failed read settles nothing")
+  }
+
   /// A fetch waits on a network, so the sidebar has to say it is happening
   /// and a second click must not start another one.
   @Test func aFetchMarksItsProjectForAllOfItAndRefusesASecond() async throws {
@@ -158,5 +185,64 @@ extension AppModelGitTests {
     #expect(!second.contains { $0.hasPrefix("branch --merged") || $0.hasPrefix("cherry") })
     #expect(second.count == 1, "the one read that says nothing moved, and nothing else")
     #expect(model.mergeState(of: feat) == .unmerged)
+  }
+
+  /// The verdict is memoised on what it was drawn from, and whether the
+  /// upstream was gone is part of that. A first push puts one back under a
+  /// branch that had none, moving neither the branch nor the trunk, and the
+  /// badge the missing upstream earned has to go with it.
+  @Test func aBadgeFromAGoneUpstreamGoesWhenAPushPutsTheUpstreamBack() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let path = h.project.path
+    let origin = h.root.appendingPathComponent("origin.git", isDirectory: true)
+    _ = try await h.git.run(["clone", "-q", "--bare", path.path, origin.path], in: h.root)
+    _ = try await h.git.run(["remote", "add", "origin", origin.path], in: path)
+    _ = try await h.git.run(["fetch", "-q", "origin"], in: path)
+
+    await h.model.createWorktree(branch: "feat", basedOn: nil, createBranch: true, in: h.project)
+    let feat = try #require(h.worktree(onBranch: "feat"))
+    // Real changes, and two of them: the commit the forge squashes them into
+    // shares a patch id with neither, so only the gone upstream is left to
+    // answer for the branch.
+    try await commit("work", file: "feat.txt", content: "a\n", in: feat.path, with: h.git)
+    try await commit("more work", file: "feat-too.txt", content: "b\n", in: feat.path, with: h.git)
+    _ = try await h.git.run(["push", "-q", "-u", "origin", "feat"], in: feat.path)
+    // The forge squashes the branch onto main and deletes it.
+    // One commit carrying the branch's whole tree, as a squash does. Two
+    // mirroring its own would be a cherry-pick, which `git cherry` answers
+    // for before the upstream is ever read.
+    try await commit(
+      "squashed work", files: ["feat.txt": "a\n", "feat-too.txt": "b\n"], in: path, with: h.git)
+    _ = try await h.git.run(["push", "-q", "origin", "main"], in: path)
+    _ = try await h.git.run(["push", "-q", "origin", "--delete", "feat"], in: path)
+    _ = try await h.git.run(["fetch", "-q", "--prune", "origin"], in: path)
+
+    await h.model.refreshMergeStates()
+    #expect(h.model.mergeState(of: feat) == .merged(.upstreamGone, into: "origin/main"))
+
+    // Pushed again: the upstream is back, and neither tip has moved.
+    _ = try await h.git.run(["push", "-q", "-u", "origin", "feat"], in: feat.path)
+    await h.model.refreshMergeStates()
+
+    #expect(h.model.mergeState(of: feat) == .unmerged, "the sign it was badged on is gone")
+    #expect(h.model.presentedError == nil)
+  }
+
+  private func commit(
+    _ message: String, file: String, content: String, in directory: URL, with git: GitRunner
+  ) async throws {
+    try await commit(message, files: [file: content], in: directory, with: git)
+  }
+
+  private func commit(
+    _ message: String, files: [String: String], in directory: URL, with git: GitRunner
+  ) async throws {
+    for (file, content) in files {
+      try content.write(
+        to: directory.appendingPathComponent(file), atomically: true, encoding: .utf8)
+    }
+    _ = try await git.run(["add", "."], in: directory)
+    _ = try await git.run(["commit", "-q", "-m", message], in: directory)
   }
 }

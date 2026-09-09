@@ -202,18 +202,55 @@ on must be typed.
 Deciding it is the whole feature; the green glyph is the easy half.
 
 Ancestry cannot tell "landed" from "never began", since `git worktree add -b`
-cuts a branch at its start commit; the branch's reflog can, one entry meaning
-never committed to. A rebase-merge or a run of cherry-picks leaves no reachable
-tip, so those get a `git cherry` on patch ids. A squash merge leaves neither,
-and detecting one needs `commit-tree`, a write, so the sign taken is the
-`[gone]` upstream that "delete branch on merge" leaves.
+cuts a branch at its start commit, nor from "was carried up", since a `git pull`
+in a worktree cut before the trunk moved fast-forwards it onto commits it was
+handed. What the branch's reflog says was done to it can: a creation, a reset,
+a clone, a fetch and a merge or pull that fast-forwarded are arrivals, and
+everything else — a `commit:`, a rebase's `(finish)`, a merge that made a
+commit — is work of its own. A deny list, because the arrivals are the closed
+set and a message a later git invents reads as work, which is what counting
+entries assumed of every entry anyway. The names are given to git whole, with
+`--` after them, or a branch sharing a name with a path in the repository is
+"both revision and filename" and the read fails instead of answering.
+
+Where there is no reflog at all, nothing is claimed. A bare repository logs no
+branch creation, so guessing from the tips instead badges every worktree it
+holds that was cut from anywhere but the trunk's own tip, which in that layout
+is most of them. It does log a commit, so a branch that landed still says so;
+what the rule costs is the badge on a branch whose reflog has expired, and a
+badge not drawn is a worktree nobody is told to remove.
+
+A rebase-merge or a run of cherry-picks leaves no reachable tip, so those get a
+`git cherry` on patch ids: at least one `-` and no `+`. Not "no `+`" alone —
+cherry skips merge commits, so a worktree that merged the trunk in and wrote
+nothing of its own prints nothing at all, and read as "every patch landed" that
+badges a branch that landed nothing.
+
+A squash merge leaves neither, and detecting one needs `commit-tree`, a write,
+so the sign taken is the `[gone]` upstream that "delete branch on merge" leaves
+— with two things beside it, `[gone]` alone being three different stories. A
+base that has moved on, since `branch.<name>` config outlives the branch it
+names and a name used before hands its successor an upstream that was never on
+the remote, spelled `[gone]` in the very same words. And the branch's own
+changes reading the same on the base, since the badge hides while a worktree
+holds work only it has, and `git status` cannot see that here: a branch whose
+upstream is gone is ahead of nothing. That last is two `git diff --name-only`,
+the paths the branch changed since it forked against the paths where the two
+differ now, and nothing in both; a path the base has changed since counts as
+differing, so it errs towards no badge. Four reads, paid only by the branches
+whose upstream is gone.
 
 That last is inference, a PR closed unmerged leaving it too, so `isCertain`
 separates the three. All three badge; only the two that are proof get a removal
 dialog led by the button that deletes the branch, which may be the only copy of
 the work. The badge hides while the worktree holds uncommitted or unpushed
-work. A failed git call returns `nil`, not an empty set, or every branch would
-read as unmerged.
+work. A failed read is not a verdict: `nil` and not an empty set from the merged
+list, `nil` and not a `false` from the patch, behind and content reads, `nil`
+from the ref read, which otherwise says a project has no branches at all and
+drops every badge and commit date it has, and `nil` from the reflog read, where
+git answers "no reflog" with an empty output and a success, so only a real
+failure is silent. A verdict is only recorded, and
+only memoised, where git answered.
 
 The base is `origin/HEAD`, then `origin/main`, `origin/master`, `main`,
 `master`, with a repository override; a remote-tracking ref beats a local
@@ -223,9 +260,11 @@ one git call here that can hang — so a badge is only as fresh as the last
 fetch, and Fetch is a menu item with a timeout and the only sidebar spinner.
 
 The check rides the status poll, not the watcher: a commit moves a ref no
-watched file mentions. Each verdict is memoised on the base tip, the branch and
-the branch's tip — the branch is in the key because two branches may sit on one
-commit with only one gone upstream — and is recorded only when git answered.
+watched file mentions. Each verdict is memoised on the base tip, the branch, the branch's
+tip and whether its upstream was gone — the branch is in the key
+because two branches may sit on one commit with only one gone upstream, and the
+upstream because a first push puts one back without moving either tip — and is
+recorded only when git answered.
 Nothing observable is written unless it changed, or the sidebar redraws every
 five seconds.
 

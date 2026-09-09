@@ -51,6 +51,27 @@ extension AppModelGitTests {
     #expect(h.model.missingProjects.isEmpty)
   }
 
+  /// The dimming is per project and the alert is raised on the first failure
+  /// only, so a project that leaves dimmed must not take the mark with it: it
+  /// would come back to a project added under the same path and cost that one
+  /// its alert.
+  @Test func aProjectRemovedWhileDimmedTakesTheMarkWithIt() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let project = h.project
+    try FileManager.default.removeItem(at: project.path.appendingPathComponent(".git"))
+    await h.model.refresh(project)
+    #expect(h.model.missingProjects == [project.id])
+
+    h.model.presentedError = nil
+    h.model.removeProject(project)
+
+    #expect(h.model.missingProjects.isEmpty)
+
+    await h.model.addProject(at: project.path)
+    #expect(h.model.presentedError != nil, "still unreadable, and said so again")
+  }
+
   @Test func aRepositoryGitCanNoLongerReadIsReportedOnceThenDimmed() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }

@@ -85,8 +85,72 @@ struct MergeParserTests {
     #expect(PatchEquivalenceParser.parse("- ab1\n- cd2\n"))
     #expect(!PatchEquivalenceParser.parse("- ab1\n+ cd2\n"))
     #expect(!PatchEquivalenceParser.parse("+ ab1\n"))
-    // Nothing to land is the same answer as everything having landed.
-    #expect(PatchEquivalenceParser.parse(""))
+    // Nothing printed is not an answer: `git cherry` skips merge commits, so
+    // a branch whose every commit ahead is a merge prints exactly this.
+    #expect(!PatchEquivalenceParser.parse(""))
+    #expect(!PatchEquivalenceParser.parse("\n  \n"))
+  }
+
+  /// The messages git itself writes, taken from a real repository: what
+  /// `git worktree add -b`, a `git pull` that fast-forwards, a commit, an
+  /// amend, a rebase and a reset leave in a branch's reflog.
+  @Test func aReflogSaysWhetherWorkWasEverMadeOnTheBranch() {
+    #expect(!ReflogWorkParser.parse("branch: Created from main\n"))
+    #expect(
+      !ReflogWorkParser.parse(
+        """
+        merge origin/main: Fast-forward
+        branch: Created from main
+        """), "a worktree cut before the trunk moved, brought up to date")
+    #expect(
+      !ReflogWorkParser.parse(
+        """
+        pull -q --rebase origin main: Fast-forward
+        branch: Created from main
+        """), "the command the user typed is in the message, so only the end is read")
+    #expect(
+      !ReflogWorkParser.parse(
+        """
+        reset: moving to origin/main
+        branch: Created from main
+        """))
+    #expect(!ReflogWorkParser.parse(""))
+
+    #expect(
+      ReflogWorkParser.parse(
+        """
+        commit: my work
+        branch: Created from main
+        """))
+    #expect(ReflogWorkParser.parse("commit (amend): my work, amended\n"))
+    #expect(
+      ReflogWorkParser.parse(
+        "pull --rebase origin main (finish): refs/heads/feat onto d5e54dd\n"),
+      "there were commits of its own to rebase")
+    #expect(
+      ReflogWorkParser.parse("merge origin/main: Merge made by the 'ort' strategy.\n"),
+      "a merge commit is a commit of the branch's own")
+    #expect(
+      ReflogWorkParser.parse("something a later git writes: whatever it says\n"),
+      "unlisted reads as work, which is what counting entries assumed of every entry")
+    #expect(
+      ReflogWorkParser.parse("commit: Fast-forward\n"),
+      "the detail is only read for a merge or a pull, so a subject cannot pose as one")
+
+    // What a fetch writes straight into a local branch, and what a clone
+    // leaves on the branch it checked out: someone else's commits, arriving.
+    #expect(!ReflogWorkParser.parse("fetch -q origin main:feat: storing head\n"))
+    #expect(!ReflogWorkParser.parse("fetch origin main:feat: fast-forward\n"))
+    #expect(!ReflogWorkParser.parse("clone: from /tmp/origin.git\n"))
+  }
+
+  /// `-z`, so a path holding a newline arrives whole rather than quoted.
+  @Test func changedPathsAreReadFromTheNulSeparatedList() {
+    #expect(ChangedPathParser.parse("a.txt\u{0}dir/b.txt\u{0}") == ["a.txt", "dir/b.txt"])
+    #expect(ChangedPathParser.parse("") == [])
+    #expect(
+      ChangedPathParser.parse("odd\nname.txt\u{0}b.txt\u{0}") == ["odd\nname.txt", "b.txt"],
+      "the newline is part of the path, not a separator")
   }
 
   @Test func theRemoteIsPreferredOverALocalBranchOfTheSameName() {

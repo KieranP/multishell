@@ -42,6 +42,9 @@ extension AppModel {
     // before it left; paths are ids, so the entries would still match.
     for worktree in workspace.worktrees(of: project.id) { lastCommits[worktree.id] = nil }
     mergeBases[project.id] = nil
+    // Or a project re-added while git still cannot read it would be dimmed
+    // with no alert: the first failure is what reports one.
+    missingProjects.remove(project.id)
     commonGitDirectories[project.id] = nil
     worktreeRecords[project.id] = nil
     sharedSettings[project.id] = nil

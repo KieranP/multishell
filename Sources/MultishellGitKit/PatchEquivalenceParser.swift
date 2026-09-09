@@ -5,15 +5,21 @@ import Foundation
 /// not. Every line a `-` means the branch has landed by a rebase-merge or a
 /// run of cherry-picks, which no ancestry test can see.
 ///
-/// No output at all means no commit is missing from the base, which is the
-/// same answer. Pure, tested against fixture text.
+/// At least one `-` is required, so no output at all is not an answer.
+/// `git cherry` skips merge commits, and it is only asked about branches the
+/// base cannot reach, which have at least one commit of their own: a branch
+/// that prints nothing is one whose every commit ahead is a merge, and a
+/// merge of the trunk into a worktree is not that worktree landing.
+/// Pure, tested against fixture text.
 public enum PatchEquivalenceParser {
   public static func parse(_ output: String) -> Bool {
+    var landed = false
     for line in output.split(omittingEmptySubsequences: true, whereSeparator: \.isNewline) {
       let trimmed = line.trimmingCharacters(in: .whitespaces)
       guard !trimmed.isEmpty else { continue }
       if trimmed.hasPrefix("+") { return false }
+      if trimmed.hasPrefix("-") { landed = true }
     }
-    return true
+    return landed
   }
 }

@@ -42,6 +42,9 @@ extension AppModel {
     let branches = await worktrees.scanBranches(of: project, defaultBranch: override)
     // Gone, or renamed, while git ran.
     guard workspace.project(project.id) != nil else { return }
+    // A ref read that failed is not a repository with no branches: the
+    // badges and the commit dates stand until one answers.
+    guard let branches else { return }
     // Before the base is resolved, and whether or not it can be: the
     // sidebar orders by these, and a repository with no trunk still has
     // branches that were committed to.
@@ -67,7 +70,8 @@ extension AppModel {
         continue
       }
       let check = MergeCheck(
-        base: scan.base.ref, baseTip: scan.base.tip, branch: branch, tip: tip)
+        base: scan.base.ref, baseTip: scan.base.tip, branch: branch, tip: tip,
+        upstreamIsGone: scan.upstreamIsGone(branch))
       checks[worktree.id] = check
       // Nothing has moved since the answer we have, so nothing to ask. A
       // branch checked out in two worktrees is asked about once.
@@ -150,16 +154,22 @@ extension AppModel {
   }
 }
 
-/// What one worktree's merge verdict was computed from. Merged-ness changes
-/// only when the base or the branch moves, so a refresh that finds both
-/// where they were asks git nothing more.
+/// What one worktree's merge verdict was computed from, so a refresh that
+/// finds all of it where it was asks git nothing more.
 ///
 /// The branch is part of it, not only its tip: `git checkout -b copy` leaves
 /// two branches on the same commit, and only one of them may have an
 /// upstream that has gone.
+///
+/// So is whether that upstream was gone, which is the one thing a verdict is
+/// drawn from that neither tip records: a first push puts an upstream back
+/// under a branch that had none, and a prune takes one away, both without
+/// moving either. Left out, the badge that the missing upstream earned would
+/// stand until the branch or the trunk next moved.
 struct MergeCheck: Equatable, Sendable {
   let base: String
   let baseTip: String
   let branch: String
   let tip: String
+  let upstreamIsGone: Bool
 }
