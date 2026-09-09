@@ -2,51 +2,35 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// The glyph and tint the sidebar draws for the project. Two controls set
-/// one glyph: a symbol from the curated list, or an emoji typed or pasted
-/// from the character palette; whichever was set last wins. The controls
-/// show what is drawn, the repository's icon included, and a change writes
-/// the user's own settings over it.
+/// The glyph and tint the sidebar draws for the project. One palette sets
+/// the glyph. The controls show what is drawn, the repository's icon
+/// included, and a change writes the user's own settings over it.
 struct ProjectIconSection: View {
   let model: AppModel
   let project: Project
 
-  private static let emojiTag = "emoji"
-  private static let folderTag = "folder"
-
   var body: some View {
-    let current = model.current(project)
-    let own = current.settings
-    let settings = model.effectiveSettings(for: current)
+    let own = model.settings(of: project)
+    let settings = model.effectiveSettings(for: model.current(project))
     let kind = ProjectIcon.kind(of: settings.iconGlyph)
     let shared = model.sharedSettings[project.id]
+    // Read the same way `ProjectSettings.layered` does, or the caption and
+    // the icon disagree: a glyph that is not a symbol name is a gap on
+    // either side, so a leftover emoji of the user's does not stop the
+    // file's icon being the one in force, and one in the file is not it.
     let fromFile =
-      (own.iconGlyph == nil && shared?.iconGlyph != nil)
+      (ProjectIcon.symbolName(own.iconGlyph) == nil
+        && ProjectIcon.symbolName(shared?.iconGlyph) != nil)
       || (own.iconTint == nil && ProjectIcon.validTint(shared?.iconTint) != nil)
     Section("Icon") {
       InfoRow(
-        "Symbol:",
+        "Icon:",
         info:
-          "Drawn in the sidebar, the header and the project picker in place of the folder. Whichever was set last wins: picking a symbol replaces an emoji, typing an emoji replaces the symbol."
+          "Drawn in the sidebar, the header and the project picker in place of the folder. The palette is grouped by what a symbol is of, with jumps to each group along the foot; the field at the top matches both a symbol's name and what it is used for, so \"database\", \"git\" and \"docker\" all find something. Down from the field moves into the grid, the arrows walk it and Return picks. The folder is the first cell and is what a project has until one is picked."
       ) {
-        Picker("Symbol:", selection: symbol(own, kind: kind)) {
-          Label("Folder", systemImage: "folder").tag(Self.folderTag)
-          if case .emoji(let emoji) = kind {
-            Text("\(emoji)  Emoji").tag(Self.emojiTag)
-          }
-          Divider()
-          ForEach(ProjectIcon.symbols.filter { $0 != "folder" }.sorted(), id: \.self) { name in
-            Label(name, systemImage: name).tag(name)
-          }
+        IconPicker(kind: kind, tint: tint(settings)) { glyph in
+          model.setting(\.iconGlyph, of: project).wrappedValue = glyph
         }
-      }
-      InfoRow(
-        "Emoji:",
-        info:
-          "One character; ⌃⌘Space opens the palette. Emoji keep their own colours, so the tint does not apply."
-      ) {
-        TextField("Emoji:", text: emoji(own, kind: kind), prompt: Text("Optional"))
-          .frame(width: 60)
       }
       InfoRow(
         "Tint:",
@@ -54,9 +38,9 @@ struct ProjectIconSection: View {
           "One of the theme's sixteen colours, so a later theme change keeps the icon in step with the terminal. Applies to symbols and the folder."
       ) {
         HStack(spacing: 5) {
-          swatch(nil, own: own, shown: settings, color: model.currentTheme.textSecondary)
+          swatch(nil, shown: settings, color: model.currentTheme.textSecondary)
           ForEach(0..<16, id: \.self) { slot in
-            swatch(slot, own: own, shown: settings, color: model.currentTheme.ansiRGB[slot].color)
+            swatch(slot, shown: settings, color: model.currentTheme.ansiRGB[slot].color)
           }
         }
       }
@@ -66,46 +50,15 @@ struct ProjectIconSection: View {
     }
   }
 
-  private func symbol(_ settings: ProjectSettings, kind: ProjectIcon.Kind) -> Binding<String> {
-    Binding(
-      get: {
-        switch kind {
-        case .folder: Self.folderTag
-        case .emoji: Self.emojiTag
-        case .symbol(let name): name
-        }
-      },
-      set: { chosen in
-        guard chosen != Self.emojiTag else { return }
-        update(settings) { $0.iconGlyph = chosen == Self.folderTag ? nil : chosen }
-      })
+  private func tint(_ settings: ProjectSettings) -> Color {
+    settings.iconTint.map { model.currentTheme.ansiRGB[$0].color }
+      ?? model.currentTheme.textSecondary
   }
 
-  private func emoji(_ settings: ProjectSettings, kind: ProjectIcon.Kind) -> Binding<String> {
-    Binding(
-      get: {
-        if case .emoji(let emoji) = kind { return emoji }
-        return ""
-      },
-      set: { typed in
-        switch ProjectIcon.kind(of: typed) {
-        case .emoji(let emoji): update(settings) { $0.iconGlyph = emoji }
-        case .folder, .symbol:
-          // Cleared, or ASCII typed by mistake: back to the folder, unless a
-          // symbol is what the glyph already is.
-          if case .emoji = kind { update(settings) { $0.iconGlyph = nil } }
-        }
-      })
-  }
-
-  private func swatch(
-    _ slot: Int?, own: ProjectSettings, shown: ProjectSettings, color: Color
-  )
-    -> some View
-  {
+  private func swatch(_ slot: Int?, shown: ProjectSettings, color: Color) -> some View {
     let selected = shown.iconTint == slot
     return Button {
-      update(own) { $0.iconTint = slot }
+      model.setting(\.iconTint, of: project).wrappedValue = slot
     } label: {
       ZStack {
         Circle().fill(color).frame(width: 14, height: 14)
@@ -121,11 +74,5 @@ struct ProjectIconSection: View {
     }
     .buttonStyle(.plain)
     .help(slot.map { Theme.ansiSlotNames[$0] } ?? "No tint")
-  }
-
-  private func update(_ settings: ProjectSettings, _ change: (inout ProjectSettings) -> Void) {
-    var updated = settings
-    change(&updated)
-    model.updateSettings(updated, for: project)
   }
 }

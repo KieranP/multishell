@@ -2,8 +2,8 @@ import MultishellCore
 import SwiftUI
 
 /// A project's glyph as the sidebar, the header and the project picker draw
-/// it: the folder, a symbol from the curated list, or an emoji, tinted from
-/// the theme's ANSI slots where a tint is set. A missing project is dimmed
+/// it: the folder, or a symbol from the curated list, tinted from the
+/// theme's ANSI slots where a tint is set. A missing project is dimmed
 /// and badged rather than swapped for another symbol, so the user's choice
 /// survives an unmounted drive.
 struct ProjectIconView: View {
@@ -33,8 +33,6 @@ struct ProjectIconView: View {
       Image(systemName: "folder").font(.system(size: size)).foregroundStyle(tint)
     case .symbol(let name):
       Image(systemName: name).font(.system(size: size)).foregroundStyle(tint)
-    case .emoji(let emoji):
-      Text(emoji).font(.system(size: size + 1))
     }
   }
 

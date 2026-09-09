@@ -142,6 +142,50 @@ struct SharedProjectSettingsTests {
     #expect(exported.autoStartAgentOnCreate == true && exported.opensTerminalOnSelect == false)
   }
 
+  @Test func aGlyphNoBuildDrawsIsNotAChoiceAndDoesNotMaskTheRepositorys() throws {
+    let shared = try decode(#"{ "iconGlyph": "server.rack", "iconTint": 4 }"#)
+
+    let blank = ProjectSettings().layered(over: shared)
+    #expect(blank.iconGlyph == "server.rack" && blank.iconTint == 4)
+
+    let own = ProjectSettings(iconGlyph: "cylinder").layered(over: shared)
+    #expect(own.iconGlyph == "cylinder", "the user's choice stands over the file's")
+
+    let leftover = ProjectSettings(iconGlyph: "🚀").layered(over: shared)
+    #expect(
+      leftover.iconGlyph == "server.rack",
+      "an emoji from a build that offered them is a gap, not a choice over the file")
+
+    let fileEmoji = try decode(#"{ "iconGlyph": "🚀" }"#)
+    #expect(ProjectSettings().layered(over: fileEmoji).iconGlyph == nil, "and neither way round")
+  }
+
+  /// Whatever is stored either side, and however it got there, what the app
+  /// reads is a symbol name or nothing, and a trip out through the
+  /// repository's file and back does not change it.
+  @Test func theIconInForceIsAlwaysASymbolNameAndSurvivesARoundTrip() {
+    let stored: [String?] = [
+      nil, "", "   ", "folder", "hammer", "  hammer  ", "server.rack",
+      "sparkle.magnifyingglass", "not.a.symbol", "🚀", " 🚀 ", "🚀 hammer",
+    ]
+    for own in stored {
+      for file in stored {
+        let settings = ProjectSettings(iconGlyph: own)
+        for shared in [SharedProjectSettings(iconGlyph: file), nil] {
+          let effective = settings.layered(over: shared)
+          #expect(
+            ProjectIcon.symbolName(effective.iconGlyph) == effective.iconGlyph,
+            "own \(own ?? "nil"), file \(file ?? "nil"): not a symbol name")
+
+          let exported = SharedProjectSettings(exporting: effective)
+          #expect(
+            ProjectSettings().layered(over: exported).iconGlyph == effective.iconGlyph,
+            "own \(own ?? "nil"), file \(file ?? "nil"): changed by the round trip")
+        }
+      }
+    }
+  }
+
   @Test func aRepositoryMaySayWhatOrderItsWorktreesListInAndTheUsersOwnWins() throws {
     let shared = try decode(
       #"{ "worktreeSortOrder": "committedNewestFirst", "showsActiveWorktreesFirst": true }"#)

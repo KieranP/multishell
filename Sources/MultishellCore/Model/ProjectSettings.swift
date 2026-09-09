@@ -59,12 +59,11 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   /// `ShellCatalogue.loginShellID` means `$SHELL` here whatever it says.
   public var defaultShell: String?
 
-  /// The sidebar glyph: an emoji, or an SF Symbol name from
-  /// `ProjectIcon.symbols`. `nil` draws the folder.
+  /// The sidebar glyph: an SF Symbol name from `ProjectIcon.symbols`. `nil`,
+  /// or any other string, draws the folder.
   public var iconGlyph: String?
   /// A slot in the theme's sixteen ANSI colours, or `nil` for the chrome's
-  /// own text colour. Applies to symbols and the folder; emoji keep their
-  /// own colours.
+  /// own text colour. Applies to symbols and the folder alike.
   public var iconTint: Int?
 
   /// What the user said about the hooks in the repository's
@@ -236,8 +235,12 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   /// they left blank, the last only once its file is trusted. A
   /// whitespace-only hook, or file list, is the user's "none" and stays.
   public func layered(over shared: SharedProjectSettings?) -> ProjectSettings {
-    guard let shared else { return self }
+    // Whatever is stored, what the app reads is a symbol name or nothing,
+    // with or without a file to fall through to. Normalising on only one of
+    // those paths left the two disagreeing over the same stored value.
     var result = self
+    result.iconGlyph = ProjectIcon.symbolName(iconGlyph)
+    guard let shared else { return result }
     result.worktreeDirectory = worktreeDirectory ?? shared.worktreeDirectory
     result.branchPrefix = branchPrefix ?? shared.branchPrefix
     result.defaultBranch = defaultBranch ?? shared.defaultBranch
@@ -248,7 +251,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     result.worktreeSortOrder = worktreeSortOrder ?? shared.worktreeSortOrder
     result.showsActiveWorktreesFirst =
       showsActiveWorktreesFirst ?? shared.showsActiveWorktreesFirst
-    result.iconGlyph = iconGlyph ?? shared.iconGlyph
+    result.iconGlyph = result.iconGlyph ?? ProjectIcon.symbolName(shared.iconGlyph)
     result.iconTint = iconTint ?? ProjectIcon.validTint(shared.iconTint)
     result.linkedPaths = linkedPaths.isEmpty ? shared.linkedPaths ?? "" : linkedPaths
     result.copiedPaths = copiedPaths.isEmpty ? shared.copiedPaths ?? "" : copiedPaths

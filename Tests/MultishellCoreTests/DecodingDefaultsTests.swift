@@ -253,7 +253,9 @@ struct DecodingDefaultsTests {
     #expect(try decode(ProjectSettings.self, #"{ "iconTint": "red" }"#).iconTint == nil)
     #expect(try decode(ProjectSettings.self, #"{ "iconTint": 3 }"#).iconTint == 3)
     #expect(
-      try decode(ProjectSettings.self, #"{ "iconGlyph": "🚀", "iconTint": 3 }"#).iconGlyph == "🚀")
+      try decode(ProjectSettings.self, #"{ "iconGlyph": "🚀", "iconTint": 3 }"#).iconGlyph == "🚀",
+      "kept as written, nothing on disk being rewritten behind the user; that it counts as no choice is ProjectIcon.symbolName's to say"
+    )
   }
 
   @Test func aWorkspaceWithoutShellEditorOrSelectionFieldsGetsTheDefaults() throws {

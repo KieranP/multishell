@@ -182,12 +182,9 @@ struct NewWorktreeSheet: View {
   }
 
   /// The project's icon beside its name, so same-named projects are told
-  /// apart by more than their path. A menu item draws text and a symbol
-  /// image; an emoji rides along as text.
-  @ViewBuilder
+  /// apart by more than their path.
   private func pickerLabel(_ project: Project, text: String) -> some View {
     switch ProjectIcon.kind(of: model.effectiveSettings(for: project).iconGlyph) {
-    case .emoji(let emoji): Text("\(emoji)  \(text)")
     case .symbol(let name): Label(text, systemImage: name)
     case .folder: Label(text, systemImage: "folder")
     }

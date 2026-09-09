@@ -256,15 +256,16 @@ struct EditorCatalogueTests {
 
 @Suite
 struct ProjectIconTests {
-  @Test func aGlyphIsAnEmojiASymbolNameOrNothing() {
+  @Test func aGlyphIsASymbolNameOrNothing() {
     #expect(ProjectIcon.kind(of: nil) == .folder)
     #expect(ProjectIcon.kind(of: "") == .folder)
     #expect(ProjectIcon.kind(of: "  ") == .folder)
-    #expect(ProjectIcon.kind(of: "🚀") == .emoji("🚀"))
-    #expect(ProjectIcon.kind(of: " 🚀🔥 ") == .emoji("🚀"), "one grapheme, whatever was pasted")
-    #expect(ProjectIcon.kind(of: "👩‍💻") == .emoji("👩‍💻"), "a joined sequence is one grapheme")
     #expect(ProjectIcon.kind(of: "hammer") == .symbol("hammer"))
+    #expect(ProjectIcon.kind(of: " hammer ") == .symbol("hammer"))
     #expect(ProjectIcon.kind(of: "not.a.symbol") == .folder, "only the curated list is drawn")
+    #expect(
+      ProjectIcon.kind(of: "🚀") == .folder,
+      "an emoji a build that offered them stored draws the folder, not a blank")
   }
 
   @Test func tintsOutsideTheThemeAreNone() {
@@ -279,6 +280,79 @@ struct ProjectIconTests {
   @Test func theCuratedSymbolsAreDistinctAndPlain() {
     #expect(Set(ProjectIcon.symbols).count == ProjectIcon.symbols.count)
     #expect(ProjectIcon.symbols.allSatisfy { $0.unicodeScalars.allSatisfy(\.isASCII) })
+  }
+
+  @Test func everySymbolIsInOneNamedGroup() {
+    let groups = ProjectIcon.symbolGroups
+    #expect(!groups.isEmpty)
+    #expect(groups.allSatisfy { !$0.name.isEmpty && !$0.glyphs.isEmpty })
+    #expect(Set(groups.map(\.name)).count == groups.count)
+    #expect(
+      groups.first?.glyphs.first == "folder",
+      "the folder is the first cell, and picking it is what clears the glyph")
+  }
+
+  @Test func onlyASymbolNameCountsAsAGlyph() {
+    #expect(ProjectIcon.symbolName("hammer") == "hammer")
+    #expect(ProjectIcon.symbolName("  hammer  ") == "hammer")
+    #expect(
+      ProjectIcon.symbolName("sparkle.magnifyingglass") == "sparkle.magnifyingglass",
+      "a name this build does not carry may still be one a teammate's build draws")
+    #expect(ProjectIcon.symbolName("🚀") == nil, "no build draws an emoji any more")
+    #expect(ProjectIcon.symbolName("") == nil)
+    #expect(ProjectIcon.symbolName(nil) == nil)
+  }
+
+  @Test func everySearchWordNamesASymbolStillInThePalette() {
+    let offered = Set(ProjectIcon.symbols)
+    for name in ProjectIcon.searchWords.keys {
+      #expect(offered.contains(name), "\(name) has search words but is not in the palette")
+    }
+    #expect(
+      ProjectIcon.searchWords.values.allSatisfy { $0 == $0.lowercased() },
+      "the query is lowercased before it is matched, so the words must be too")
+  }
+
+  @Test func aSearchNeverLeavesAGroupEmptyOrAddsToOne() {
+    let source = Dictionary(
+      uniqueKeysWithValues: ProjectIcon.symbolGroups.map { ($0.name, Set($0.glyphs)) })
+    for query in ["", " ", "a", "e.", "folder", "Infra", "git", "zzz", "...", "1"] {
+      for group in ProjectIcon.symbolGroups(matching: query) {
+        // A group with no symbols under it draws a heading over nothing, and
+        // the row of jumps takes its first symbol as the button to press.
+        #expect(!group.glyphs.isEmpty, "\(query) left \(group.name) empty")
+        #expect(
+          Set(group.glyphs).isSubset(of: source[group.name] ?? []),
+          "\(query) put a symbol in \(group.name) that is not one of its own")
+      }
+    }
+  }
+
+  @Test func searchingFindsASymbolByWhatItIsUsedFor() {
+    func found(_ query: String) -> [String] {
+      ProjectIcon.symbolGroups(matching: query).flatMap(\.glyphs)
+    }
+    #expect(found("database").contains("cylinder"))
+    #expect(found("git").contains("arrow.triangle.branch"))
+    #expect(found("docker").contains("shippingbox"))
+    #expect(found("shell").contains("terminal"))
+    #expect(found("bug").contains("ladybug"))
+    #expect(found("cron").contains("clock"))
+    #expect(found("SEARCH").contains("magnifyingglass"), "the query is folded, not the words")
+  }
+
+  @Test func searchingNarrowsAGroupToItsMatchesAndDropsTheRest() {
+    #expect(ProjectIcon.symbolGroups(matching: "  ").count == ProjectIcon.symbolGroups.count)
+    let folders = ProjectIcon.symbolGroups(matching: "folder")
+    #expect(folders.allSatisfy { $0.glyphs.allSatisfy { $0.contains("folder") } })
+    #expect(folders.flatMap(\.glyphs).contains("folder.fill"))
+    let named = ProjectIcon.symbolGroups(matching: "Animals")
+    #expect(named.count == 1)
+    #expect(
+      named.first?.glyphs.count
+        == ProjectIcon.symbolGroups.first { $0.name == "Animals" }?.glyphs.count,
+      "a group named outright keeps all of its symbols")
+    #expect(ProjectIcon.symbolGroups(matching: "zzz").isEmpty)
   }
 }
 

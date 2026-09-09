@@ -117,6 +117,22 @@ behind.
 **A keyboard shortcut.** Also in `GhosttyTerminalHost.appShortcuts`, or the
 surface eats it before the menu sees it.
 
+**A project icon.** A name in one of `ProjectIcon.symbolGroups`, or a group of
+its own. It must exist as far back as macOS 14: the app's deployment target is
+`.v14`, and a name that does not resolve draws nothing at all rather than
+failing. Check it in
+`/System/Library/CoreServices/CoreGlyphs.bundle/Contents/Resources/name_availability.plist`,
+whose `year_to_release` maps the year beside each symbol to the macOS it
+shipped in. `ProjectIconSymbolTests` then resolves every name through AppKit,
+which catches a typo but not a symbol too new for the target, the test machine
+being newer. Give it a line in `ProjectIcon.searchWords` where its name does
+not say what it is for: an SF Symbol is named for the picture, so `cylinder`
+is what a search for "database" has to find. Those words are lowercase, and a
+test fails on a key that no longer names a symbol. It must also be no more
+than twice as wide as it is tall: the sidebar draws it in a square and SwiftUI
+does not clip, so a wider one spills over the project's name.
+`ProjectIconSymbolTests` measures every one through AppKit.
+
 **A way of ordering worktree rows.** A case in `WorktreeSortOrder` with its
 display name, a comparison in `WorktreeOrder.precedes`, and a case in
 `WorktreeOrderTests`. Raw values reach repositories through `.multishell.json`,

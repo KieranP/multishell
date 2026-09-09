@@ -540,6 +540,26 @@ trusts.
 - The terminal font is picked, not typed, some programming fonts not being
   marked fixed-pitch. A project icon is tinted from a theme slot rather than a
   hex, so a theme change keeps it in step with the terminal.
+- The project icon is picked from a grouped palette, read by shape, rather
+  than a popup menu of names read line by line. The menu is what held the list
+  to sixty; the palette carries three hundred and eighty-eight in fourteen
+  groups, weighted towards code, network and infrastructure, with a field that
+  searches both the name and a word for what the symbol is used for, an SF
+  Symbol being named for its picture rather than for a database or a git
+  branch, and none of them more than twice as wide as it is tall, which is
+  what the sidebar's square was sized for. The menu it replaced could be
+  driven from the keyboard, so the
+  palette can too: Down from the field enters the grid, the arrows walk it and
+  Return picks, and a row of jumps along the foot stands in for the fifty rows
+  of scrolling between the first group and the last. Emoji, which a text field
+  beside the menu once set, are gone: they looked out of place beside the
+  symbols, and a glyph is now a symbol name or nothing. Cost: a project that
+  had an emoji draws the folder. A glyph that is not a symbol name counts as
+  no choice at all, one rule read the same way everywhere: a leftover emoji
+  does not mask the icon a repository's shared file names, and is not written
+  back into that file for the team. A name that does not exist draws nothing
+  at all, so a Mac test resolves every one of them, and a new one is checked
+  for macOS 14 against CoreGlyphs' availability data by hand.
 - One `WorktreeActions` menu serves the detail header and the context menu. A
   terminal editor opens as a tab, one run in the background failing silently
   with no tty; cost: a relaunch reopens the editor.

@@ -615,6 +615,18 @@ struct AppModelHookControlTests {
     #expect(h.model.pendingSharedHooksTrust == nil)
   }
 
+  @Test func exportLeavesOutAGlyphNoBuildCanDraw() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    h.model.updateSettings(ProjectSettings(iconGlyph: "🚀", iconTint: 3), for: h.project)
+
+    h.model.exportSharedSettings(for: h.project)
+
+    let written = try #require(try SharedProjectSettings.load(from: h.project.path))
+    #expect(written.iconGlyph == nil, "an emoji left over from an older build is not the team's")
+    #expect(written.iconTint == 3, "the tint it was set with still is")
+  }
+
   @Test func exportWritesTheSettingsInForceAndTrustsItsOwnHooks() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
@@ -622,14 +634,14 @@ struct AppModelHookControlTests {
       ProjectSettings(
         branchPrefix: "team/", postCreateHook: "npm ci", linkedPaths: "node_modules",
         copiedPaths: ".env\n.env.*",
-        iconGlyph: "🚀", iconTint: 3),
+        iconGlyph: "server.rack", iconTint: 3),
       for: h.project)
 
     h.model.exportSharedSettings(for: h.project)
 
     let written = try #require(try SharedProjectSettings.load(from: h.project.path))
     #expect(written.branchPrefix == "team/" && written.postCreateHook == "npm ci")
-    #expect(written.iconGlyph == "🚀" && written.iconTint == 3)
+    #expect(written.iconGlyph == "server.rack" && written.iconTint == 3)
     #expect(written.copiedPaths == ".env\n.env.*", "the file lists travel with the hooks")
     #expect(written.linkedPaths == "node_modules")
     #expect(written.hooksText?.contains(".env") != true, "but are not part of the hook question")

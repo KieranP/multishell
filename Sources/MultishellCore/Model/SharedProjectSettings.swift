@@ -139,7 +139,7 @@ public struct SharedProjectSettings: Equatable, Sendable {
       copiedPaths: settings.copiedPaths,
       worktreeSortOrder: settings.worktreeSortOrder,
       showsActiveWorktreesFirst: settings.showsActiveWorktreesFirst,
-      iconGlyph: settings.iconGlyph,
+      iconGlyph: ProjectIcon.symbolName(settings.iconGlyph),
       iconTint: settings.iconTint)
   }
 
