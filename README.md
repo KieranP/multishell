@@ -66,9 +66,9 @@ way they are.
 - Pick a preferred agent and open it in a tab with one shortcut, or have
   every new tab start it. Optional notifications when a tab you are not
   looking at needs you.
-- Drop files from Finder onto a terminal: a Claude Code tab gets them as
-  `@` mentions relative to the worktree, a shell gets quoted paths. Nothing
-  is run — you press Return.
+- Drop files from Finder onto a terminal: an agent whose prompt reads
+  mentions gets them as `@` mentions relative to the worktree, a shell gets
+  quoted paths. Nothing is run — you press Return.
 - Dirty-file badges, ahead/behind counts, and a badge when a branch has
   landed, from git calls that never take the index lock and never fetch on
   a timer.

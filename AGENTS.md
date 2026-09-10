@@ -26,15 +26,12 @@ Working rules:
 - Run `make format` on anything you touched, then `make lint`, `make test`
   (both packages), `make build` and `make release`. All must pass, and both
   builds must compile with no warnings, before you say something works.
-- You cannot see or drive the app. This environment has neither Apple events
-  (System Events answers `-1743`) nor Screen Recording (`screencapture`
-  answers "could not create image from display"), so there is no window to
-  click through and no screenshot to look at. Do not try, and do not ask for
-  those permissions. A view change goes as far as the checks above and no
-  further: say what is left unverified and leave the looking to the user.
-  Whatever can be decided without a screen belongs in a plain value in
-  `MultishellAppCore`, tested there, which is what makes that boundary worth
-  keeping.
+- You cannot see or drive the app: no Apple events (System Events answers
+  `-1743`) and no Screen Recording (`screencapture` cannot create an image).
+  Do not try, and do not ask for those permissions. A view change goes as far
+  as the checks above and no further: say what is unverified and leave the
+  looking to the user. Whatever can be decided without a screen belongs in a
+  plain value in `MultishellAppCore`, tested there.
 - Every persisted field decodes with a default, including an enum value this
   build does not know. Add a case to `DecodingDefaultsTests` when you add one.
   Worktrees, sessions, tabs and a project's shared-hook answers decode
@@ -47,8 +44,8 @@ Working rules:
   find it if not; a failure prints its seed and step so it can be replayed.
 - Runtime state (shell titles, session states, statuses, live sessions, the
   agent that reported in each pane) lives in `AppModel`, never in the
-  workspace, so a prompt does not save or re-render. `SessionStates` owns who clears what; change it there and in
-  `SessionStatesTests`, not in a view.
+  workspace, so a prompt does not save or re-render. `SessionStates` owns who
+  clears what; change it there and in `SessionStatesTests`, not in a view.
 - The socket accepts reports that say what a session is doing and who is
   doing it, and nothing else: no opening tabs, no running commands, no text
   put at a prompt. A report moves a dot, and its `agent` names which agent
@@ -63,9 +60,13 @@ Working rules:
   agents that read a file of their own are given one to themselves.
 - An agent's hooks are one `AgentHookIntegration` in `AgentHooks`: the file,
   what each event is called, what each event says the session is doing, and
-  how that file spells one hook. Nothing else in the app names an agent.
-- A new keyboard shortcut also goes in `GhosttyTerminalHost.appShortcuts`, or
-  the surface eats it before the menu sees it.
+  how that file spells one hook. Nothing else in the app names an agent, and
+  nothing recommends one: no install prompt, no setup link, no section of its
+  own. The settings offer what detection found on the PATH.
+- A new keyboard shortcut is an `AppShortcut` in `AppShortcuts`, listed in
+  its `all`, which is where both the menu item and the surface's unbind come
+  from; a shortcut declared and not listed is one the surface eats before the
+  menu sees it. `surfaceKeeps` is for the few the terminal handles itself.
 - A dragged tab is `TabTransfer`, under its own type, spelled both in that
   file and in the `Info.plist` `make-app.sh` writes. Its own type and not
   text: a project is dragged as text to reorder the sidebar, and one type
@@ -107,8 +108,12 @@ Working rules:
   they edit what the user set, where blank has to keep meaning "follow the
   global" rather than "override with nothing".
 - A settings row binds through `model.setting(...)`, which reads the stored
-  value each time. A form field written as its own `Binding` goes stale
-  against a change made elsewhere.
+  value each time; a field with its own `Binding` goes stale against a change
+  made elsewhere. A project override is an `OverrideSection`, which names the
+  key path once — written out it appeared three times and a wrong one still
+  compiled. `SettingsBindingTests` catches a swapped `hasOverride` /
+  `overrideValue` pair, which take the same arguments and return the same
+  type.
 - A hook is ended through `ProcessStopper`, SIGHUP to the child's process
   group then SIGKILL, never `Process.terminate()`: interactive shells ignore
   SIGTERM, and a shell with no terminal does not pass SIGHUP to its job.
@@ -121,7 +126,7 @@ Working rules:
 - Test git behaviour against a real repository with `RepositoryFixture`, not
   with mocks. Test parsers on fixture text, including the odd lines in the
   robustness tests.
-- Timing bounds in tests are sized for a two-core CI runner, several times a
+- Timing bounds in tests are sized for a single-core CI runner, many times a
   laptop's figure. Keep that headroom when you add one.
 - Small single-purpose files. Comments only for why, non-local consequences,
   or facts the code cannot show. No restatements.

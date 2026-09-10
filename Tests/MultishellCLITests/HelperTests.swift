@@ -383,8 +383,7 @@ struct HelperTests {
   }
 
   @Test func printingTheHooksGivesTheSnippetWithoutTouchingAnyFile() async throws {
-    // The command an older build wrote scripts against still means Claude.
-    let claude = try await run(["install-claude-hooks", "--print"])
+    let claude = try await run(["install-agent-hooks", "--agent", "claude", "--print"])
     #expect(claude.succeeded)
     let object =
       try JSONSerialization.jsonObject(with: Data(claude.standardOutput.utf8)) as? [String: Any]

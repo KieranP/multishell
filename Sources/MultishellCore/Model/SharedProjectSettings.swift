@@ -193,34 +193,34 @@ extension SharedProjectSettings: Codable {
   }
 
   public func encode(to encoder: any Encoder) throws {
-    var c = encoder.container(keyedBy: CodingKeys.self)
-    try c.encodeIfPresent(worktreeDirectory, forKey: .worktreeDirectory)
-    try c.encodeIfPresent(branchPrefix, forKey: .branchPrefix)
-    try c.encodeIfPresent(defaultBranch, forKey: .defaultBranch)
-    try c.encodeIfPresent(autoStartAgent, forKey: .autoStartAgent)
-    try c.encodeIfPresent(autoStartAgentOnCreate, forKey: .autoStartAgentOnCreate)
-    try c.encodeIfPresent(opensTerminalOnSelect, forKey: .opensTerminalOnSelect)
-    try c.encodeIfPresent(opensTerminalOnCreate, forKey: .opensTerminalOnCreate)
-    try c.encodeIfPresent(preCreateHook, forKey: .preCreateHook)
-    try c.encodeIfPresent(postCreateHook, forKey: .postCreateHook)
-    try c.encodeIfPresent(preDeleteHook, forKey: .preDeleteHook)
-    try c.encodeIfPresent(postDeleteHook, forKey: .postDeleteHook)
-    try c.encodeIfPresent(linkedPaths, forKey: .linkedPaths)
-    try c.encodeIfPresent(copiedPaths, forKey: .copiedPaths)
-    try c.encodeIfPresent(worktreeSortOrder, forKey: .worktreeSortOrder)
-    try c.encodeIfPresent(showsActiveWorktreesFirst, forKey: .showsActiveWorktreesFirst)
-    try c.encodeIfPresent(iconGlyph, forKey: .iconGlyph)
-    try c.encodeIfPresent(iconTint, forKey: .iconTint)
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encodeIfPresent(worktreeDirectory, forKey: .worktreeDirectory)
+    try container.encodeIfPresent(branchPrefix, forKey: .branchPrefix)
+    try container.encodeIfPresent(defaultBranch, forKey: .defaultBranch)
+    try container.encodeIfPresent(autoStartAgent, forKey: .autoStartAgent)
+    try container.encodeIfPresent(autoStartAgentOnCreate, forKey: .autoStartAgentOnCreate)
+    try container.encodeIfPresent(opensTerminalOnSelect, forKey: .opensTerminalOnSelect)
+    try container.encodeIfPresent(opensTerminalOnCreate, forKey: .opensTerminalOnCreate)
+    try container.encodeIfPresent(preCreateHook, forKey: .preCreateHook)
+    try container.encodeIfPresent(postCreateHook, forKey: .postCreateHook)
+    try container.encodeIfPresent(preDeleteHook, forKey: .preDeleteHook)
+    try container.encodeIfPresent(postDeleteHook, forKey: .postDeleteHook)
+    try container.encodeIfPresent(linkedPaths, forKey: .linkedPaths)
+    try container.encodeIfPresent(copiedPaths, forKey: .copiedPaths)
+    try container.encodeIfPresent(worktreeSortOrder, forKey: .worktreeSortOrder)
+    try container.encodeIfPresent(showsActiveWorktreesFirst, forKey: .showsActiveWorktreesFirst)
+    try container.encodeIfPresent(iconGlyph, forKey: .iconGlyph)
+    try container.encodeIfPresent(iconTint, forKey: .iconTint)
   }
 
   public init(from decoder: any Decoder) throws {
-    let c = try decoder.container(keyedBy: CodingKeys.self)
+    let container = try decoder.container(keyedBy: CodingKeys.self)
     func string(_ key: CodingKeys) -> String? {
-      (try? c.decodeIfPresent(String.self, forKey: key)) ?? nil
+      (try? container.decodeIfPresent(String.self, forKey: key)) ?? nil
     }
     // Same as `string`: a key of the wrong type costs that key, not the file.
     func flag(_ key: CodingKeys) -> Bool? {
-      (try? c.decodeIfPresent(Bool.self, forKey: key)) ?? nil
+      (try? container.decodeIfPresent(Bool.self, forKey: key)) ?? nil
     }
     self.init(
       worktreeDirectory: string(.worktreeDirectory),
@@ -238,11 +238,11 @@ extension SharedProjectSettings: Codable {
       copiedPaths: string(.copiedPaths),
       // An order a newer build named, or a typo someone committed, costs
       // the key and leaves the user's own choice in force.
-      worktreeSortOrder: (try? c.decodeIfPresent(
+      worktreeSortOrder: (try? container.decodeIfPresent(
         WorktreeSortOrder.self, forKey: .worktreeSortOrder)) ?? nil,
       showsActiveWorktreesFirst: flag(.showsActiveWorktreesFirst),
       iconGlyph: string(.iconGlyph),
-      iconTint: (try? c.decodeIfPresent(Int.self, forKey: .iconTint)) ?? nil)
+      iconTint: (try? container.decodeIfPresent(Int.self, forKey: .iconTint)) ?? nil)
   }
 }
 

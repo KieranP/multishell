@@ -20,30 +20,6 @@ public struct ProcessOutput: Sendable {
   public var succeeded: Bool { status == 0 }
 }
 
-public struct ProcessFailure: Error, CustomStringConvertible {
-  public let executable: String
-  public let arguments: [String]
-  public let status: Int32
-  public let message: String
-  /// Why the child did not finish on its own, when it did not.
-  public let stop: ProcessStop?
-
-  public init(
-    executable: String, arguments: [String], status: Int32, message: String,
-    stop: ProcessStop? = nil
-  ) {
-    self.executable = executable
-    self.arguments = arguments
-    self.status = status
-    self.message = message
-    self.stop = stop
-  }
-
-  public var description: String {
-    "\(executable) \(arguments.joined(separator: " ")) failed (\(status)): \(message)"
-  }
-}
-
 /// Runs a child process and captures its output.
 public struct ProcessRunner: Sendable {
   public init() {}
@@ -197,15 +173,6 @@ private func launch(
 /// A pipe's 64 KiB buffer is all a child can leave unread when it exits, and
 /// one readability callback takes it. The margin is for a loaded machine.
 private let eofGraceAfterExit: TimeInterval = 1
-
-/// The process is out of file descriptors. Each watched worktree holds one
-/// and each live shell several; a Finder-launched app starts with 256.
-public struct PipeUnavailable: Error, CustomStringConvertible {
-  public let code: Int32
-  public var description: String {
-    "could not create a pipe: \(String(cString: strerror(code))) (\(code))"
-  }
-}
 
 /// Both ends of a new pipe, or `PipeUnavailable`.
 ///

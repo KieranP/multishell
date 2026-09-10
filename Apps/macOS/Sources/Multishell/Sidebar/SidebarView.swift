@@ -158,72 +158,10 @@ struct SidebarView: View {
     let metrics = model.metrics
     let expanded = project.isExpanded || isFiltering
     let visible = expanded ? worktrees : []
-    // A renamed worktree's row is two lines tall, so the drop's halfway
-    // point cannot be counted off one row height.
-    let blockHeight =
-      visible.reduce(metrics.rowHeight) { total, worktree in
-        total + Self.rowSpacing
-          + metrics.worktreeRowHeight(
-            isNamed: model.customName(of: worktree) != nil,
-            isRenaming: model.renamingWorktreeID == worktree.id)
-      }
 
     return VStack(spacing: Self.rowSpacing) {
-      ProjectRow(
-        project: project,
-        settings: model.effectiveSettings(for: project),
-        isMissing: model.missingProjects.contains(project.id),
-        // The worktree rows carry the dots while they are visible; the folder
-        // stands in for them only once they are folded away.
-        state: expanded ? nil : model.state(ofProject: project.id),
-        worktreeCount: worktrees.count,
-        isFetching: model.isFetching(project),
-        theme: theme,
-        metrics: metrics,
-        toggle: { model.setExpanded(!project.isExpanded, for: project) },
-        newWorktree: { model.requestNewWorktree(in: project) }
-      )
-      .contextMenu { projectMenu(project) }
-      .onDrag {
-        draggingProject = project.id
-        return NSItemProvider(object: project.id as NSString)
-      }
-
-      ForEach(visible) { worktree in
-        WorktreeRow(
-          worktree: worktree,
-          customName: model.customName(of: worktree),
-          isRenaming: model.renamingWorktreeID == worktree.id,
-          terminalCount: model.workspace.sessions(in: worktree.id).count,
-          state: model.state(ofWorktree: worktree.id),
-          operation: model.worktreeOperations[worktree.id],
-          isSelected: model.workspace.selectedWorktreeID == worktree.id,
-          isDropTarget: tabDropTarget == worktree.id,
-          status: model.statuses[worktree.id],
-          mergeState: model.mergeState(of: worktree),
-          theme: theme,
-          metrics: metrics,
-          beginRename: { model.beginRenaming(worktree) },
-          commit: { model.commitRename(of: worktree.id, to: $0) },
-          cancel: { model.cancelRenaming() }
-        )
-        .onTapGesture { model.select(worktree) }
-        .contextMenu { worktreeMenu(worktree) }
-        // A tab dragged from the strip lands here. The type is the tab's
-        // own, so a project being dragged past on its way to a new place in
-        // the sidebar is not offered this row at all.
-        .dropDestination(for: TabTransfer.self) { dropped, _ in
-          tabDropTarget = nil
-          guard let moving = dropped.first?.id else { return false }
-          return model.moveTab(moving, to: worktree.id)
-        } isTargeted: { isTargeted in
-          if isTargeted {
-            tabDropTarget = worktree.id
-          } else if tabDropTarget == worktree.id {
-            tabDropTarget = nil
-          }
-        }
-      }
+      projectRow(project, worktrees: worktrees, expanded: expanded, theme: theme, metrics: metrics)
+      ForEach(visible) { worktreeRow($0, theme: theme, metrics: metrics) }
     }
     .overlay(alignment: dropTarget?.edge == .bottom ? .bottom : .top) {
       if draggingProject != nil, let target = dropTarget, target.projectID == project.id {
@@ -238,7 +176,7 @@ struct SidebarView: View {
       of: [.text],
       delegate: ProjectDropDelegate(
         projectID: project.id,
-        blockHeight: blockHeight,
+        blockHeight: blockHeight(of: visible, metrics: metrics),
         target: $dropTarget,
         perform: { edge in
           if let moving = draggingProject {
@@ -247,6 +185,83 @@ struct SidebarView: View {
           endDrag()
         }
       ))
+  }
+
+  /// How tall a project's whole block is, which is what the drop delegate
+  /// halves to decide before from after. Counted off the same
+  /// `worktreeRowHeight` the rows draw themselves at, and asking each
+  /// worktree rather than multiplying: a named or renaming row is two lines
+  /// tall, and a block measured as if every row were one puts the indicator
+  /// in the wrong half.
+  private func blockHeight(of visible: [Worktree], metrics: UIMetrics) -> CGFloat {
+    visible.reduce(metrics.rowHeight) { total, worktree in
+      total + Self.rowSpacing
+        + metrics.worktreeRowHeight(
+          isNamed: model.customName(of: worktree) != nil,
+          isRenaming: model.renamingWorktreeID == worktree.id)
+    }
+  }
+
+  private func projectRow(
+    _ project: Project, worktrees: [Worktree], expanded: Bool, theme: Theme, metrics: UIMetrics
+  ) -> some View {
+    ProjectRow(
+      project: project,
+      settings: model.effectiveSettings(for: project),
+      isMissing: model.missingProjects.contains(project.id),
+      // The worktree rows carry the dots while they are visible; the folder
+      // stands in for them only once they are folded away.
+      state: expanded ? nil : model.state(ofProject: project.id),
+      worktreeCount: worktrees.count,
+      isFetching: model.isFetching(project),
+      theme: theme,
+      metrics: metrics,
+      toggle: { model.setExpanded(!project.isExpanded, for: project) },
+      newWorktree: { model.requestNewWorktree(in: project) }
+    )
+    .contextMenu { projectMenu(project) }
+    .onDrag {
+      draggingProject = project.id
+      return NSItemProvider(object: project.id as NSString)
+    }
+  }
+
+  private func worktreeRow(
+    _ worktree: Worktree, theme: Theme, metrics: UIMetrics
+  ) -> some View {
+    WorktreeRow(
+      worktree: worktree,
+      customName: model.customName(of: worktree),
+      isRenaming: model.renamingWorktreeID == worktree.id,
+      terminalCount: model.workspace.sessions(in: worktree.id).count,
+      state: model.state(ofWorktree: worktree.id),
+      operation: model.worktreeOperations[worktree.id],
+      isSelected: model.workspace.selectedWorktreeID == worktree.id,
+      isDropTarget: tabDropTarget == worktree.id,
+      status: model.statuses[worktree.id],
+      mergeState: model.mergeState(of: worktree),
+      theme: theme,
+      metrics: metrics,
+      beginRename: { model.beginRenaming(worktree) },
+      commit: { model.commitRename(of: worktree.id, to: $0) },
+      cancel: { model.cancelRenaming() }
+    )
+    .onTapGesture { model.select(worktree) }
+    .contextMenu { worktreeMenu(worktree) }
+    // A tab dragged from the strip lands here. The type is the tab's own,
+    // so a project being dragged past on its way to a new place in the
+    // sidebar is not offered this row at all.
+    .dropDestination(for: TabTransfer.self) { dropped, _ in
+      tabDropTarget = nil
+      guard let moving = dropped.first?.id else { return false }
+      return model.moveTab(moving, to: worktree.id)
+    } isTargeted: { isTargeted in
+      if isTargeted {
+        tabDropTarget = worktree.id
+      } else if tabDropTarget == worktree.id {
+        tabDropTarget = nil
+      }
+    }
   }
 
   @ViewBuilder

@@ -25,11 +25,11 @@ public struct WorktreeSettings: Codable, Hashable, Sendable {
   }
 
   public init(from decoder: any Decoder) throws {
-    let c = try decoder.container(keyedBy: CodingKeys.self)
+    let container = try decoder.container(keyedBy: CodingKeys.self)
     worktreeDirectory =
-      try c.decodeIfPresent(String.self, forKey: .worktreeDirectory)
+      try container.decodeIfPresent(String.self, forKey: .worktreeDirectory)
       ?? Self.defaultWorktreeDirectory
-    branchPrefix = try c.decodeIfPresent(String.self, forKey: .branchPrefix) ?? ""
+    branchPrefix = try container.decodeIfPresent(String.self, forKey: .branchPrefix) ?? ""
   }
 }
 

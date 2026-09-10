@@ -3,8 +3,12 @@ import MultishellCore
 import SwiftUI
 
 /// Settings > Agents: the preferred agent, and the hooks that feed the
-/// state dots, one row per agent this machine has. Without Claude Code,
-/// the way to get it.
+/// state dots, one row per agent this machine has.
+///
+/// What detection found and nothing else. No agent is named here, none is
+/// recommended, and none is offered an installer: a machine with none
+/// installed gets an empty picker, which says the same thing without
+/// pointing anywhere.
 struct AgentSettingsTab: View {
   let model: AppModel
 
@@ -51,24 +55,6 @@ struct AgentSettingsTab: View {
 
       if !model.agentHooksRows.isEmpty {
         hooksSection
-      }
-
-      if !model.agentDetection.isClaudeCodeInstalled {
-        Section("Claude Code") {
-          InfoRow(
-            "Claude Code:",
-            info:
-              "Opens the setup guide. The native installer is \(ClaudeCodeInstall.installerCommand); run Refresh above once it is done."
-          ) {
-            Text("Not found on the login shell's PATH.").foregroundStyle(.secondary)
-            Button("Install…") { NSWorkspace.shared.open(ClaudeCodeInstall.setupGuideURL) }
-              .controlSize(.small)
-            Button("Copy Install Command") {
-              model.copyToClipboard(ClaudeCodeInstall.installerCommand)
-            }
-            .controlSize(.small)
-          }
-        }
       }
 
       Section("Command line tool") {

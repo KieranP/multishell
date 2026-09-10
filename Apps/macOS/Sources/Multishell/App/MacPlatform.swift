@@ -11,7 +11,12 @@ final class MacPlatform: Platform {
   weak var mainWindow: NSWindow?
   var onDidBecomeActive: (@MainActor () -> Void)?
 
-  private let logger = Logger(subsystem: "io.multishell.app", category: "platform")
+  /// The bundle identifier `make-app.sh` writes, which is what
+  /// `log show --predicate 'subsystem == "io.multishell.app"'` matches on.
+  /// Named rather than left a literal so a test can hold the two together.
+  nonisolated static let loggingSubsystem = "io.multishell.app"
+
+  private let logger = Logger(subsystem: loggingSubsystem, category: "platform")
 
   init() {
     NotificationCenter.default.addObserver(

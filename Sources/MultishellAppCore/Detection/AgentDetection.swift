@@ -23,8 +23,6 @@ public struct AgentDetection: Equatable, Sendable {
     self.found = found
   }
 
-  public var isClaudeCodeInstalled: Bool { found[AgentCatalogue.claudeID] != nil }
-
   public func isInstalled(_ id: String) -> Bool {
     id == AgentCatalogue.customID || found[id] != nil
   }

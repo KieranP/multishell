@@ -30,7 +30,7 @@ extension AppModel {
       presentedError = .noEditorChosen
       return
     }
-    guard directoryExists(of: worktree), let shell = ShellCommand.shell else { return }
+    guard requireDirectory(of: worktree), let shell = ShellCommand.shell else { return }
     let action = EditorLaunch.action(
       editorID: editorID,
       found: editorDetection.found[editorID],

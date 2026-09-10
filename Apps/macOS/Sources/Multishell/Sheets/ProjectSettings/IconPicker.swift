@@ -107,7 +107,7 @@ struct IconPicker: View {
           if let highlighted { proxy.scrollTo(highlighted, anchor: .center) }
           return .handled
         }
-        .onKeyPress(.return) { press() }
+        .onKeyPress(.return) { pickHighlighted() }
       if !query.isEmpty {
         Button {
           query = ""
@@ -168,7 +168,7 @@ struct IconPicker: View {
     .onKeyPress(.rightArrow) { walk(.right, through: groups, proxy: proxy) }
     .onKeyPress(.upArrow) { walk(.up, through: groups, proxy: proxy) }
     .onKeyPress(.downArrow) { walk(.down, through: groups, proxy: proxy) }
-    .onKeyPress(.return) { press() }
+    .onKeyPress(.return) { pickHighlighted() }
   }
 
   /// One button per group, its first symbol standing for it, as the emoji
@@ -236,7 +236,7 @@ struct IconPicker: View {
 
   /// Return picks what the ring is on, and is left alone when there is no
   /// ring, rather than swallowed.
-  private func press() -> KeyPress.Result {
+  private func pickHighlighted() -> KeyPress.Result {
     guard let highlighted else { return .ignored }
     pick(highlighted)
     return .handled

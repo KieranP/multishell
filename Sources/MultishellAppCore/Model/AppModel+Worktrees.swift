@@ -21,7 +21,7 @@ extension AppModel {
   )
     -> Bool
   {
-    guard directoryExists(of: worktree) else { return false }
+    guard requireDirectory(of: worktree) else { return false }
     store.selectWorktree(worktree.id)
     warmWorktrees.insert(worktree.id)
     if byUser { askAboutSharedHooksIfNeeded(for: worktree.projectID) }
@@ -105,7 +105,10 @@ extension AppModel {
 
   /// Checked before anything that starts a shell: selecting, a new tab, a
   /// split. A missing directory is refused, not worked around.
-  public func directoryExists(of worktree: Worktree) -> Bool {
+  ///
+  /// Named for the demand rather than the question, because it raises the
+  /// alert itself: a caller reading `directoryExists` would not expect one.
+  public func requireDirectory(of worktree: Worktree) -> Bool {
     if FileManager.default.fileExists(atPath: worktree.path.path) { return true }
     presentedError = .worktreeDirectoryMissing(worktree.path.path)
     return false

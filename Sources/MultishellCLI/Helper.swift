@@ -55,14 +55,18 @@ enum Helper {
         return report(
           SessionState.finished(exitCode: options.int32("exit")), environment: environment,
           duration: options.double("duration"))
-      // `claude-hook` is what the first hooks were installed with, and is
-      // still written in the settings files those installs wrote.
+      // `claude-hook` stays, and is not the `install-claude-hooks` kind of
+      // alias those two were: it is written into `~/.claude/settings.json`
+      // by builds before the rename, so those files are on disk now and
+      // run this line. Removing it exits 2 on every hook an older install
+      // wrote and takes that user's state dots with it, silently.
+      // `AgentHooks.isMultishellHook` matches it for the same reason.
       case "agent-hook", "claude-hook":
         agentHook(agentID(in: arguments), environment: environment, input: standardInput)
         return 0
-      case "install-agent-hooks", "install-claude-hooks":
+      case "install-agent-hooks":
         return installHooks(try agent(in: arguments), print: arguments.contains("--print"))
-      case "remove-agent-hooks", "remove-claude-hooks":
+      case "remove-agent-hooks":
         return removeHooks(try agent(in: arguments))
       case "--version", "version":
         print("multishell helper, protocol version \(SessionStateReport.protocolVersion)")

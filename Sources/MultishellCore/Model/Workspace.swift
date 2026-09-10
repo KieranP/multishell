@@ -86,54 +86,63 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// silently is what the `.broken.json` backup exists to prevent.
   /// `repairReferences` then removes what pointed at a dropped element.
   public init(from decoder: any Decoder) throws {
-    let c = try decoder.container(keyedBy: CodingKeys.self)
-    projects = try c.decodeIfPresent([Project].self, forKey: .projects) ?? []
-    worktrees = c.decodeLossy(Worktree.self, forKey: .worktrees)
-    sessions = c.decodeLossy(TerminalSession.self, forKey: .sessions)
-    tabs = c.decodeLossy(TerminalTab.self, forKey: .tabs)
-    selectedWorktreeID = try c.decodeIfPresent(Worktree.ID.self, forKey: .selectedWorktreeID)
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    projects = try container.decodeIfPresent([Project].self, forKey: .projects) ?? []
+    worktrees = container.decodeLossy(Worktree.self, forKey: .worktrees)
+    sessions = container.decodeLossy(TerminalSession.self, forKey: .sessions)
+    tabs = container.decodeLossy(TerminalTab.self, forKey: .tabs)
+    selectedWorktreeID = try container.decodeIfPresent(
+      Worktree.ID.self, forKey: .selectedWorktreeID)
     activeTabByWorktree =
-      try c.decodeIfPresent([Worktree.ID: TerminalTab.ID].self, forKey: .activeTabByWorktree) ?? [:]
-    worktreeNames = try c.decodeIfPresent([Worktree.ID: String].self, forKey: .worktreeNames) ?? [:]
-    appearance = try c.decodeIfPresent(Appearance.self, forKey: .appearance) ?? Appearance()
+      try container.decodeIfPresent(
+        [Worktree.ID: TerminalTab.ID].self, forKey: .activeTabByWorktree) ?? [:]
+    worktreeNames =
+      try container.decodeIfPresent([Worktree.ID: String].self, forKey: .worktreeNames) ?? [:]
+    appearance = try container.decodeIfPresent(Appearance.self, forKey: .appearance) ?? Appearance()
     // `try?`, not `try`: a state file from a newer build may name an engine
     // this build does not have, and that must not cost the sidebar.
     terminalEngine =
-      (try? c.decodeIfPresent(TerminalEngine.self, forKey: .terminalEngine)) ?? .ghostty
+      (try? container.decodeIfPresent(TerminalEngine.self, forKey: .terminalEngine)) ?? .ghostty
     worktreeDefaults =
-      try c.decodeIfPresent(WorktreeSettings.self, forKey: .worktreeDefaults) ?? WorktreeSettings()
+      try container.decodeIfPresent(WorktreeSettings.self, forKey: .worktreeDefaults)
+      ?? WorktreeSettings()
     notifications =
-      (try? c.decodeIfPresent(NotificationPreference.self, forKey: .notifications)) ?? .default
-    preferredAgentID = try c.decodeIfPresent(String.self, forKey: .preferredAgentID)
-    customAgentCommand = try c.decodeIfPresent(String.self, forKey: .customAgentCommand) ?? ""
-    autoStartAgent = try c.decodeIfPresent(Bool.self, forKey: .autoStartAgent) ?? false
+      (try? container.decodeIfPresent(NotificationPreference.self, forKey: .notifications))
+      ?? .default
+    preferredAgentID = try container.decodeIfPresent(String.self, forKey: .preferredAgentID)
+    customAgentCommand =
+      try container.decodeIfPresent(String.self, forKey: .customAgentCommand) ?? ""
+    autoStartAgent = try container.decodeIfPresent(Bool.self, forKey: .autoStartAgent) ?? false
     // State from before the two were split says one thing about both.
     autoStartAgentOnCreate =
-      try c.decodeIfPresent(Bool.self, forKey: .autoStartAgentOnCreate) ?? autoStartAgent
-    defaultShell = try c.decodeIfPresent(String.self, forKey: .defaultShell)
-    customShellPath = try c.decodeIfPresent(String.self, forKey: .customShellPath) ?? ""
-    preferredEditorID = try c.decodeIfPresent(String.self, forKey: .preferredEditorID)
-    customEditorCommand = try c.decodeIfPresent(String.self, forKey: .customEditorCommand) ?? ""
+      try container.decodeIfPresent(Bool.self, forKey: .autoStartAgentOnCreate) ?? autoStartAgent
+    defaultShell = try container.decodeIfPresent(String.self, forKey: .defaultShell)
+    customShellPath = try container.decodeIfPresent(String.self, forKey: .customShellPath) ?? ""
+    preferredEditorID = try container.decodeIfPresent(String.self, forKey: .preferredEditorID)
+    customEditorCommand =
+      try container.decodeIfPresent(String.self, forKey: .customEditorCommand) ?? ""
     opensTerminalOnSelect =
-      try c.decodeIfPresent(Bool.self, forKey: .opensTerminalOnSelect) ?? true
+      try container.decodeIfPresent(Bool.self, forKey: .opensTerminalOnSelect) ?? true
     // Before the two were split a create opened its terminal by going
     // through the selection that follows it, so state that predates the
     // field keeps what it said about selecting.
     opensTerminalOnCreate =
-      try c.decodeIfPresent(Bool.self, forKey: .opensTerminalOnCreate) ?? opensTerminalOnSelect
+      try container.decodeIfPresent(Bool.self, forKey: .opensTerminalOnCreate)
+      ?? opensTerminalOnSelect
     // `try?`: a state file from a newer build may name an order this build
     // does not have, and that must not cost the sidebar.
     worktreeSortOrder =
-      (try? c.decodeIfPresent(WorktreeSortOrder.self, forKey: .worktreeSortOrder))
+      (try? container.decodeIfPresent(WorktreeSortOrder.self, forKey: .worktreeSortOrder))
       ?? WorktreeSortOrder.default
     showsActiveWorktreesFirst =
-      try c.decodeIfPresent(Bool.self, forKey: .showsActiveWorktreesFirst) ?? false
+      try container.decodeIfPresent(Bool.self, forKey: .showsActiveWorktreesFirst) ?? false
     confirmsWorktreeRemoval =
-      try c.decodeIfPresent(Bool.self, forKey: .confirmsWorktreeRemoval) ?? true
+      try container.decodeIfPresent(Bool.self, forKey: .confirmsWorktreeRemoval) ?? true
     deletesBranchWithWorktree =
-      try c.decodeIfPresent(Bool.self, forKey: .deletesBranchWithWorktree) ?? false
+      try container.decodeIfPresent(Bool.self, forKey: .deletesBranchWithWorktree) ?? false
     hookTimeoutSeconds =
-      try c.decodeIfPresent(Int.self, forKey: .hookTimeoutSeconds) ?? Self.defaultHookTimeoutSeconds
+      try container.decodeIfPresent(Int.self, forKey: .hookTimeoutSeconds)
+      ?? Self.defaultHookTimeoutSeconds
   }
 }
 

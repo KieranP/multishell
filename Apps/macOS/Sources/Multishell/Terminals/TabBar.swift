@@ -9,8 +9,6 @@ struct TabBar: View {
   let theme: Theme
 
   @State private var editingTabID: TerminalTab.ID?
-  @State private var draftTitle = ""
-  @FocusState private var titleFieldFocused: Bool
   @State private var draggingTab: TerminalTab.ID?
   @State private var dropTarget: TabDropTarget?
   /// Each tab's width, which the drop delegate halves to decide which side
@@ -200,29 +198,22 @@ struct TabBar: View {
     }
   }
 
-  /// Return commits, Escape cancels, leaving the field commits. An empty
-  /// name clears the custom title rather than storing a blank one.
+  /// An empty name clears the custom title rather than storing a blank one;
+  /// `InlineNameField` has the keyboard contract.
   private func titleField(_ tab: TerminalTab) -> some View {
-    TextField("Tab name", text: $draftTitle)
-      .textFieldStyle(.plain)
-      .font(.system(size: model.metrics.secondary, weight: .medium))
-      .foregroundStyle(theme.textPrimary)
-      .focused($titleFieldFocused)
-      .onSubmit { commit(tab) }
-      .onExitCommand { editingTabID = nil }
-      .onChange(of: titleFieldFocused) { _, focused in
-        if !focused, editingTabID == tab.id { commit(tab) }
-      }
+    InlineNameField(
+      initial: tab.customTitle ?? model.title(of: tab),
+      prompt: "Tab name",
+      font: .system(size: model.metrics.secondary, weight: .medium),
+      color: theme.textPrimary,
+      commit: { title in
+        model.renameTab(tab.id, to: title)
+        editingTabID = nil
+      },
+      cancel: { editingTabID = nil })
   }
 
   private func beginEditing(_ tab: TerminalTab) {
-    draftTitle = tab.customTitle ?? model.title(of: tab)
     editingTabID = tab.id
-    titleFieldFocused = true
-  }
-
-  private func commit(_ tab: TerminalTab) {
-    model.renameTab(tab.id, to: draftTitle)
-    editingTabID = nil
   }
 }

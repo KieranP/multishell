@@ -28,13 +28,17 @@ struct UIMetrics {
     isNamed || isRenaming ? namedRowHeight : rowHeight
   }
 
-  /// The sidebar and detail headers. Not smaller: a window with a hidden
-  /// title bar and a unified-compact toolbar keeps a 40 pt title-bar band at
-  /// the top, and anything but the header that reaches into it (the tab
-  /// strip, a surface) makes AppKit paint the band's backdrop over the
-  /// header. Measured with `NSWindow.contentLayoutRect`; 32 without a
-  /// toolbar, 52 for the unified style.
-  static let headerHeight: Double = 40
   var tabHeight: Double { (body * 2.6).rounded() }
   var indent: Double { (body * 2).rounded() }
+
+  /// The sidebar and detail headers. The one size here that does not scale
+  /// with the font, so it is a constant and sits apart from the rest.
+  ///
+  /// Not smaller: a window with a hidden title bar and a unified-compact
+  /// toolbar keeps a 40 pt title-bar band at the top, and anything but the
+  /// header that reaches into it (the tab strip, a surface) makes AppKit
+  /// paint the band's backdrop over the header. Measured with
+  /// `NSWindow.contentLayoutRect`; 32 without a toolbar, 52 for the
+  /// unified style.
+  static let headerHeight: Double = 40
 }

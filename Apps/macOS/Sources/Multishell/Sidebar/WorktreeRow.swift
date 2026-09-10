@@ -27,9 +27,6 @@ struct WorktreeRow: View {
   let commit: (String) -> Void
   let cancel: () -> Void
 
-  @State private var draft = ""
-  @FocusState private var fieldFocused: Bool
-
   private var kind: String { AccessibilityText.kind(of: worktree) }
 
   private var height: Double {
@@ -159,26 +156,18 @@ struct WorktreeRow: View {
     }
   }
 
-  /// Return commits, Escape leaves the name as it was, and leaving the field
-  /// commits. An empty name clears the custom one, so the branch takes the
-  /// row back. The branch stays under the field: it is what says which
-  /// worktree is being named.
+  /// An empty name clears the custom one, so the branch takes the row back;
+  /// `InlineNameField` has the keyboard contract. The branch stays under the
+  /// field: it is what says which worktree is being named.
   private var nameField: some View {
     VStack(alignment: .leading, spacing: 0) {
-      TextField("Name", text: $draft)
-        .textFieldStyle(.plain)
-        .font(.system(size: metrics.secondary, weight: .medium))
-        .foregroundStyle(theme.textPrimary)
-        .focused($fieldFocused)
-        .onSubmit { commit(draft) }
-        .onExitCommand(perform: cancel)
-        .onAppear {
-          draft = customName ?? ""
-          fieldFocused = true
-        }
-        .onChange(of: fieldFocused) { _, focused in
-          if !focused { commit(draft) }
-        }
+      InlineNameField(
+        initial: customName ?? "",
+        prompt: "Name",
+        font: .system(size: metrics.secondary, weight: .medium),
+        color: theme.textPrimary,
+        commit: commit,
+        cancel: cancel)
       Text(worktree.name)
         .font(.system(size: metrics.badge, design: .monospaced))
         .foregroundStyle(theme.textTertiary)

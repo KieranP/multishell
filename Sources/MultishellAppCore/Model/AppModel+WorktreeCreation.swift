@@ -141,25 +141,16 @@ extension AppModel {
       endSetup(of: worktree, stopper: stopper)
       // The user's Cancel: the worktree is theirs to use, as after a
       // stopped hook, with what was placed before it left where it is.
-      guard !(failure is WorktreeFilesStopped) else {
-        if worktreeOperations.finish(stage, on: worktree.id) { openHeldBackTab(of: worktree) }
-        return
+      if failure is WorktreeFilesStopped {
+        finishStage(stage, of: worktree)
+      } else {
+        failStage(stage, of: worktree, failure)
       }
-      let shownInPane =
-        workspace.worktree(worktree.id) != nil
-        && worktreeOperations.fail(
-          stage, on: worktree.id, message: PresentedError(failure).message)
-      if !shownInPane { report(failure) }
       return
     }
     guard runningHook else {
       endSetup(of: worktree, stopper: stopper)
-      // A removal that began meanwhile owns the entry now.
-      if let last = placements.last,
-        worktreeOperations.finish(WorktreeOperation.Step(last), on: worktree.id)
-      {
-        openHeldBackTab(of: worktree)
-      }
+      if let last = placements.last { finishStage(WorktreeOperation.Step(last), of: worktree) }
       return
     }
     if !placements.isEmpty { worktreeOperations.advance(to: .postCreateHook, on: worktree.id) }
@@ -171,6 +162,29 @@ extension AppModel {
   private func endSetup(of worktree: Worktree, stopper: ProcessStopper) {
     worktreeSetups[worktree.id] = nil
     if stageStoppers[worktree.id] === stopper { stageStoppers[worktree.id] = nil }
+  }
+
+  /// The stage ended and the worktree is the user's to use, so the first
+  /// tab held back while it ran opens now. Nothing happens when a removal
+  /// that began meanwhile owns the entry; see `WorktreeOperations`.
+  private func finishStage(_ step: WorktreeOperation.Step, of worktree: Worktree) {
+    guard worktreeOperations.finish(step, on: worktree.id) else { return }
+    openHeldBackTab(of: worktree)
+  }
+
+  /// A stage that failed with the worktree still there says so on its pane,
+  /// where it can still be read once the sheet has gone. An alert only
+  /// where there is no pane to say it on: the worktree went while the stage
+  /// ran, or a removal took the entry.
+  private func failStage(
+    _ step: WorktreeOperation.Step, of worktree: Worktree, _ error: any Error,
+    timedOut: Bool = false
+  ) {
+    let shownInPane =
+      workspace.worktree(worktree.id) != nil
+      && worktreeOperations.fail(
+        step, on: worktree.id, message: PresentedError(error).message, timedOut: timedOut)
+    if !shownInPane { report(error) }
   }
 
   /// One of the project's file lists, before the post-create hook, so the
@@ -203,26 +217,16 @@ extension AppModel {
     } catch {
       let stop = (error as? HookFailure)?.stop
       // Stopped by the user: the worktree is theirs to use, as after a
-      // finish. Anything else stays on the pane until dismissed, where the
-      // worktree is still there to have a pane and the hook still owns it;
-      // an alert otherwise.
-      guard stop != .stopped else {
-        if worktreeOperations.finish(.postCreateHook, on: worktree.id) {
-          openHeldBackTab(of: worktree)
-        }
-        return
+      // finish. Anything else stays on the pane until dismissed. A stop for
+      // any other reason is the timeout.
+      if stop == .stopped {
+        finishStage(.postCreateHook, of: worktree)
+      } else {
+        failStage(.postCreateHook, of: worktree, error, timedOut: stop != nil)
       }
-      let shownInPane =
-        workspace.worktree(worktree.id) != nil
-        && worktreeOperations.fail(
-          .postCreateHook, on: worktree.id, message: PresentedError(error).message,
-          timedOut: stop != nil)
-      if !shownInPane { report(error) }
       return
     }
-    // A removal that began meanwhile owns the entry now.
-    guard worktreeOperations.finish(.postCreateHook, on: worktree.id) else { return }
-    openHeldBackTab(of: worktree)
+    finishStage(.postCreateHook, of: worktree)
   }
 
   /// The first tab was held back while the hook ran; it opens now if the

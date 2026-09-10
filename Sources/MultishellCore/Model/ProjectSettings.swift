@@ -154,40 +154,42 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   /// not quite: blank resolves to the built-in `../{project}-worktrees`
   /// rather than to a global the user has since set.
   public init(from decoder: any Decoder) throws {
-    let c = try decoder.container(keyedBy: CodingKeys.self)
-    worktreeDirectory = try c.decodeIfPresent(String.self, forKey: .worktreeDirectory)
-    branchPrefix = try c.decodeIfPresent(String.self, forKey: .branchPrefix)
-    defaultBranch = try c.decodeIfPresent(String.self, forKey: .defaultBranch)
-    preCreateHook = try c.decodeIfPresent(String.self, forKey: .preCreateHook) ?? ""
-    postCreateHook = try c.decodeIfPresent(String.self, forKey: .postCreateHook) ?? ""
-    preDeleteHook = try c.decodeIfPresent(String.self, forKey: .preDeleteHook) ?? ""
-    postDeleteHook = try c.decodeIfPresent(String.self, forKey: .postDeleteHook) ?? ""
-    linkedPaths = try c.decodeIfPresent(String.self, forKey: .linkedPaths) ?? ""
-    copiedPaths = try c.decodeIfPresent(String.self, forKey: .copiedPaths) ?? ""
-    preferredAgentID = Self.override(try c.decodeIfPresent(String.self, forKey: .preferredAgentID))
-    autoStartAgent = try c.decodeIfPresent(Bool.self, forKey: .autoStartAgent)
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    worktreeDirectory = try container.decodeIfPresent(String.self, forKey: .worktreeDirectory)
+    branchPrefix = try container.decodeIfPresent(String.self, forKey: .branchPrefix)
+    defaultBranch = try container.decodeIfPresent(String.self, forKey: .defaultBranch)
+    preCreateHook = try container.decodeIfPresent(String.self, forKey: .preCreateHook) ?? ""
+    postCreateHook = try container.decodeIfPresent(String.self, forKey: .postCreateHook) ?? ""
+    preDeleteHook = try container.decodeIfPresent(String.self, forKey: .preDeleteHook) ?? ""
+    postDeleteHook = try container.decodeIfPresent(String.self, forKey: .postDeleteHook) ?? ""
+    linkedPaths = try container.decodeIfPresent(String.self, forKey: .linkedPaths) ?? ""
+    copiedPaths = try container.decodeIfPresent(String.self, forKey: .copiedPaths) ?? ""
+    preferredAgentID = Self.override(
+      try container.decodeIfPresent(String.self, forKey: .preferredAgentID))
+    autoStartAgent = try container.decodeIfPresent(Bool.self, forKey: .autoStartAgent)
     // Absent is "follow the global", not "what `autoStartAgent` says": a
     // nil override is written as an absent key, so seeding it from the
     // other one would turn the global back into an override on every load.
-    autoStartAgentOnCreate = try c.decodeIfPresent(Bool.self, forKey: .autoStartAgentOnCreate)
-    opensTerminalOnSelect = try c.decodeIfPresent(Bool.self, forKey: .opensTerminalOnSelect)
-    opensTerminalOnCreate = try c.decodeIfPresent(Bool.self, forKey: .opensTerminalOnCreate)
+    autoStartAgentOnCreate = try container.decodeIfPresent(
+      Bool.self, forKey: .autoStartAgentOnCreate)
+    opensTerminalOnSelect = try container.decodeIfPresent(Bool.self, forKey: .opensTerminalOnSelect)
+    opensTerminalOnCreate = try container.decodeIfPresent(Bool.self, forKey: .opensTerminalOnCreate)
     // `try?`: an order a newer build named is not an override this one can
     // honour, and following the global beats losing the project.
     worktreeSortOrder =
-      (try? c.decodeIfPresent(WorktreeSortOrder.self, forKey: .worktreeSortOrder)) ?? nil
-    showsActiveWorktreesFirst = try c.decodeIfPresent(
+      (try? container.decodeIfPresent(WorktreeSortOrder.self, forKey: .worktreeSortOrder)) ?? nil
+    showsActiveWorktreesFirst = try container.decodeIfPresent(
       Bool.self, forKey: .showsActiveWorktreesFirst)
-    defaultShell = Self.override(try c.decodeIfPresent(String.self, forKey: .defaultShell))
-    iconGlyph = Self.override(try c.decodeIfPresent(String.self, forKey: .iconGlyph))
+    defaultShell = Self.override(try container.decodeIfPresent(String.self, forKey: .defaultShell))
+    iconGlyph = Self.override(try container.decodeIfPresent(String.self, forKey: .iconGlyph))
     // `try?`: a tint that is not a number costs the tint, not the file.
-    iconTint = ProjectIcon.validTint(try? c.decodeIfPresent(Int.self, forKey: .iconTint))
+    iconTint = ProjectIcon.validTint(try? container.decodeIfPresent(Int.self, forKey: .iconTint))
     // Lossy: an answer that will not decode costs that answer and not the
     // project's others, and its hooks are asked about again. What builds
     // before the digest wrote is a whole such value, one decision holding
     // the hook text it was answered about, which no digest can be had
     // from; it reads as no answers, and asks once more.
-    sharedHooks = c.decodeLossy(SharedHooksDecision.self, forKey: .sharedHooks)
+    sharedHooks = container.decodeLossy(SharedHooksDecision.self, forKey: .sharedHooks)
   }
 
   private static func override(_ value: String?) -> String? {

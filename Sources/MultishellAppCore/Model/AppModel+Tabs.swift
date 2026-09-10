@@ -18,7 +18,7 @@ extension AppModel {
   /// missing-directory alert already raised.
   func worktreeReadyForShell() -> Worktree? {
     guard let worktree = workspace.selectedWorktree, !isBusy(worktree.id),
-      directoryExists(of: worktree)
+      requireDirectory(of: worktree)
     else { return nil }
     return worktree
   }
@@ -104,17 +104,6 @@ extension AppModel {
     closeInShownTab { .tab($0.id) }
   }
 
-  /// Both keystrokes. One issued in a settings window closes that window
-  /// instead, and nothing happens with no tab on screen.
-  private func closeInShownTab(_ closing: (TerminalTab) -> PendingClose) {
-    guard platform.workspaceWindowIsKey else { return platform.closeKeyWindow() }
-    guard
-      let worktree = workspace.selectedWorktreeID,
-      let tab = workspace.activeTab(in: worktree)
-    else { return }
-    requestClose(closing(tab), in: tab)
-  }
-
   /// A middle click on a tab in the strip, which closes that tab whether or
   /// not it is the active one. No key-window dance as the keystrokes do: the
   /// click landed on this tab, so this window is the one being acted in.
@@ -123,14 +112,11 @@ extension AppModel {
     requestClose(.tab(id), in: tab)
   }
 
-  /// A close whose panes hold a working agent is asked about rather than
-  /// done; `PendingClose` says which shells each form would end.
-  private func requestClose(_ close: PendingClose, in tab: TerminalTab) {
-    if close.sessionIDs(in: tab).contains(where: { sessionStates[.session($0)] == .running }) {
-      pendingClose = close
-      return
-    }
-    perform(close)
+  /// The confirmed half of a close that found a working agent.
+  public func confirmPendingClose() {
+    guard let pending = pendingClose else { return }
+    pendingClose = nil
+    perform(pending)
   }
 
   /// A close whose tab or pane has gone since it was asked about has nothing
@@ -146,11 +132,29 @@ extension AppModel {
     }
   }
 
-  /// The confirmed half of a close that found a working agent.
-  public func confirmPendingClose() {
-    guard let pending = pendingClose else { return }
-    pendingClose = nil
-    perform(pending)
+  // The three entry points above meet here. Both keystrokes come through
+  // `closeInShownTab`, which has to find the tab first; the click already
+  // knows its own.
+
+  /// Both keystrokes. One issued in a settings window closes that window
+  /// instead, and nothing happens with no tab on screen.
+  private func closeInShownTab(_ closing: (TerminalTab) -> PendingClose) {
+    guard platform.workspaceWindowIsKey else { return platform.closeKeyWindow() }
+    guard
+      let worktree = workspace.selectedWorktreeID,
+      let tab = workspace.activeTab(in: worktree)
+    else { return }
+    requestClose(closing(tab), in: tab)
+  }
+
+  /// A close whose panes hold a working agent is asked about rather than
+  /// done; `PendingClose` says which shells each form would end.
+  private func requestClose(_ close: PendingClose, in tab: TerminalTab) {
+    if close.sessionIDs(in: tab).contains(where: { sessionStates[.session($0)] == .running }) {
+      pendingClose = close
+      return
+    }
+    perform(close)
   }
 
   private func perform(_ close: PendingClose) {
@@ -194,7 +198,7 @@ extension AppModel {
     guard
       let source = workspace.tab(id)?.worktreeID, source != worktreeID, !isBusy(source),
       let worktree = workspace.worktree(worktreeID), !isBusy(worktreeID),
-      directoryExists(of: worktree), store.moveTab(id, to: worktreeID)
+      requireDirectory(of: worktree), store.moveTab(id, to: worktreeID)
     else { return false }
     // Warmed here rather than left to the selection to do: the tab's shells
     // are live, and a destination a refused selection left cold is one the
@@ -219,14 +223,15 @@ extension AppModel {
     store.setSplitWeights(weights, at: path, ofTab: tabID)
   }
 
-  public func selectNextTab() { step(1) }
-  public func selectPreviousTab() { step(-1) }
+  public func selectNextTab() { selectTab(offset: 1) }
+  public func selectPreviousTab() { selectTab(offset: -1) }
 
-  func step(_ direction: Int) {
+  /// The tab `offset` places along the strip, wrapping at either end.
+  func selectTab(offset: Int) {
     guard
       let worktree = workspace.selectedWorktreeID,
       let current = workspace.activeTab(in: worktree),
-      let next = direction > 0
+      let next = offset > 0
         ? workspace.tab(after: current.id) : workspace.tab(before: current.id)
     else { return }
     activate(next)

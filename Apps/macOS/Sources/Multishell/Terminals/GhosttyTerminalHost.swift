@@ -126,21 +126,15 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
       // bar sees it. Unbind exactly those. `clear` would also drop the
       // bindings that make a Mac terminal feel right: alt+arrow word
       // movement, super+backspace, super+left/right.
-      for combo in Self.appShortcuts {
+      //
+      // The list is `AppShortcuts`, which the menu builds from too, so a
+      // shortcut added to one is not missing from the other. The clipboard
+      // combinations are deliberately not in it; see `AppShortcuts.copy`.
+      for combo in AppShortcuts.unbound {
         builder.withCustom("keybind", "\(combo)=unbind")
       }
     }
   }
-
-  private static let appShortcuts: [String] =
-    [
-      "super+t", "super+shift+t", "super+alt+t", "super+w", "super+shift+w", "super+n",
-      "super+shift+n",
-      "super+o", "super+shift+o", "super+d", "super+shift+d", "super+comma", "super+q",
-      "super+z", "super+shift+z",
-      "ctrl+tab", "ctrl+shift+tab",
-      "super+ctrl+f", "super+enter",
-    ]
 
   fileprivate func retitle(_ id: TerminalSession.ID, to title: String) {
     delegate?.terminalHost(self, didRetitle: id, to: title)

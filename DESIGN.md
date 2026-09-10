@@ -61,12 +61,12 @@ can carry a project pinned that way. Elsewhere blank reads as absent, because
 own, an agent's `none` or a shell's `login`, would otherwise have two ways to
 say one thing and lose the distinction on the next load, an empty hook is not
 a hook to be trusted, and an empty file list links nothing. Cost: a stray
-empty key for one of those three fields is an opinion, not a typo. A
-repository's
-`.multishell.json` fills only the gaps the user left: a team default must never
-override a choice someone made. What it may say — what a worktree opens,
-whether that runs the agent, the row order — changes only what is drawn, so
-unlike a hook it needs no trust.
+empty key for one of those three fields is an opinion, not a typo.
+
+A repository's `.multishell.json` fills only the gaps the user left: a team
+default must never override a choice someone made. What it may say — what a
+worktree opens, whether that runs the agent, the row order — changes only what
+is drawn, so unlike a hook it needs no trust.
 
 Its hooks run code committed by someone else, so they wait for a one-time yes,
 held against the sha256 of the file's bytes and asked when the user selects one
@@ -216,6 +216,12 @@ Codex will run no hook it has not been told to trust, so installing is not the
 end of it and the row says so; nothing here can trust a hook on the user's
 behalf.
 
+No agent is recommended, and none has anything of its own outside that table.
+Claude Code briefly had an install prompt with a setup link and a `curl` line,
+an endorsement in a workspace built to run whichever agent the user already
+chose; it is gone, with the property that asked about that one agent. Cost: a
+machine with none installed gets an empty picker and no help filling it.
+
 ## Shell integration is injected, never written to a user's file
 
 Generated per session, reached through `ZDOTDIR` or `--init-file`, with the
@@ -315,8 +321,8 @@ list, `nil` and not a `false` from the patch, behind and content reads, `nil`
 from the ref read, which otherwise says a project has no branches at all and
 drops every badge and commit date it has, and `nil` from the reflog read, where
 git answers "no reflog" with an empty output and a success, so only a real
-failure is silent. A verdict is only recorded, and
-only memoised, where git answered.
+failure is silent. A verdict is only recorded, and only memoised, where git
+answered.
 
 The base is `origin/HEAD`, then `origin/main`, `origin/master`, `main`,
 `master`, with a repository override; a remote-tracking ref beats a local
@@ -326,11 +332,10 @@ one git call here that can hang — so a badge is only as fresh as the last
 fetch, and Fetch is a menu item with a timeout and the only sidebar spinner.
 
 The check rides the status poll, not the watcher: a commit moves a ref no
-watched file mentions. Each verdict is memoised on the base tip, the branch, the branch's
-tip and whether its upstream was gone — the branch is in the key
+watched file mentions. Each verdict is memoised on the base tip, the branch,
+the branch's tip and whether its upstream was gone — the branch is in the key
 because two branches may sit on one commit with only one gone upstream, and the
-upstream because a first push puts one back without moving either tip — and is
-recorded only when git answered.
+upstream because a first push puts one back without moving either tip.
 Nothing observable is written unless it changed, or the sidebar redraws every
 five seconds.
 
@@ -518,7 +523,11 @@ trusts.
   protocol with a recording fake, which is how they are tested without a
   terminal.
 - Ghostty's keybinds are unbound by name, not `keybind = clear`, which also
-  removes alt+arrow word movement and super+backspace.
+  removes alt+arrow word movement and super+backspace. The names and the menu
+  items come from one `AppShortcuts` table, since a shortcut in only one list
+  was a keystroke that worked everywhere but a pane. The clipboard ones stay
+  bound: in a pane Cmd+C is Ghostty's copy of the terminal's selection, and
+  unbinding it hands the keystroke to a menu item with nothing to copy.
 - Paths are directory URLs always: a relative worktree path resolved against a
   URL Foundation took for a file lands in the parent.
 - Errors are mapped, not stringified: the alert is the only place a user learns
@@ -540,26 +549,18 @@ trusts.
 - The terminal font is picked, not typed, some programming fonts not being
   marked fixed-pitch. A project icon is tinted from a theme slot rather than a
   hex, so a theme change keeps it in step with the terminal.
-- The project icon is picked from a grouped palette, read by shape, rather
-  than a popup menu of names read line by line. The menu is what held the list
-  to sixty; the palette carries three hundred and eighty-eight in fourteen
-  groups, weighted towards code, network and infrastructure, with a field that
-  searches both the name and a word for what the symbol is used for, an SF
-  Symbol being named for its picture rather than for a database or a git
-  branch, and none of them more than twice as wide as it is tall, which is
-  what the sidebar's square was sized for. The menu it replaced could be
-  driven from the keyboard, so the
-  palette can too: Down from the field enters the grid, the arrows walk it and
-  Return picks, and a row of jumps along the foot stands in for the fifty rows
-  of scrolling between the first group and the last. Emoji, which a text field
-  beside the menu once set, are gone: they looked out of place beside the
-  symbols, and a glyph is now a symbol name or nothing. Cost: a project that
-  had an emoji draws the folder. A glyph that is not a symbol name counts as
-  no choice at all, one rule read the same way everywhere: a leftover emoji
-  does not mask the icon a repository's shared file names, and is not written
-  back into that file for the team. A name that does not exist draws nothing
-  at all, so a Mac test resolves every one of them, and a new one is checked
-  for macOS 14 against CoreGlyphs' availability data by hand.
+- The project icon is picked from a grouped palette read by shape, not a popup
+  menu of names read line by line: the menu is what held the list to sixty,
+  where the palette carries close to four hundred. It stayed keyboard-drivable
+  like the menu it replaced, and its search covers a word for what each symbol
+  is used for as well as its name, an SF Symbol being named for its picture
+  rather than for a database or a git branch. Emoji, which a field beside the
+  menu once set, are gone: they looked out of place, and a glyph is now a
+  symbol name or nothing. Cost: a project that had one draws the folder. A
+  glyph that is not a symbol name counts as no choice at all, one rule read
+  the same way everywhere, so a leftover emoji neither masks the icon a
+  repository's shared file names nor is written back into it. What a new name
+  has to satisfy is in DEVELOP.md.
 - One `WorktreeActions` menu serves the detail header and the context menu. A
   terminal editor opens as a tab, one run in the background failing silently
   with no tty; cost: a relaunch reopens the editor.

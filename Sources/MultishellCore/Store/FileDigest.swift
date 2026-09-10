@@ -8,6 +8,12 @@ import Foundation
 /// Apple's alone and Swift Crypto is a package dependency the libraries do
 /// not have. FIPS 180-4, one block at a time; the files it is asked about
 /// are a few hundred bytes.
+///
+/// The names inside are the specification's, not shorthand: `a` through `h`
+/// are its working variables, `two` and `fifteen` are its `W[i-2]` and
+/// `W[i-15]`. Anything more descriptive would read better and be harder to
+/// check line by line against the document, which is the only way anyone
+/// can tell this is right.
 public enum FileDigest {
   /// The digest of `data`, sixty-four hex characters.
   public static func sha256(of data: Data) -> String {

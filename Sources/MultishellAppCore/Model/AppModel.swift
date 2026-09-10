@@ -14,35 +14,31 @@ import Observation
 @Observable
 @MainActor
 public final class AppModel<Surface> {
+  // Grouped in the same concerns the extensions are split into, and each
+  // property left its own: bundling the observed ones into structs would
+  // coarsen what `@Observable` tracks, so writing a last-commit date would
+  // invalidate every view that reads only a status.
+
+  // MARK: - Dependencies
+
   let host: MultiEngineHost<Surface>
   public let platform: any Platform
+  @ObservationIgnored let store: WorkspaceStore
+  @ObservationIgnored let registry: SessionRegistry
+  @ObservationIgnored let stateSource: any SessionStateSource
+  @ObservationIgnored let notifier: any SessionNotifier
+  @ObservationIgnored let watcher: any DirectoryWatcher
+  @ObservationIgnored let worktrees: WorktreeCoordinator?
+  /// Sessions that came off disk this run. Their agent tabs resume rather
+  /// than start afresh; see `prepared`.
+  @ObservationIgnored let restoredSessionIDs: Set<TerminalSession.ID>
+
+  // MARK: - Waiting on the user
 
   public var presentedError: PresentedError?
   public var newWorktreeRequest: NewWorktreeRequest?
   /// A removal waiting on the confirmation dialog.
   public var pendingRemoval: PendingWorktreeRemoval?
-  /// Which stage a create is in while the sheet still waits on it: the
-  /// pre-create hook and `git worktree add`. `nil` when none is running.
-  public var worktreeCreationStep: WorktreeCreationStep?
-  /// The create or remove running on each worktree, shown in its detail
-  /// pane in place of the terminals; see `WorktreeOperations` for who owns
-  /// an entry.
-  public var worktreeOperations = WorktreeOperations()
-  /// The worktree whose sidebar row is showing its name field, or `nil`
-  /// when none is. Runtime state, so the menu that starts a rename and the
-  /// row that draws the field need not know about each other.
-  public var renamingWorktreeID: Worktree.ID?
-  /// The file lists and post-create hook still running on each worktree,
-  /// as one task, so a test can await it.
-  @ObservationIgnored public var worktreeSetups: [Worktree.ID: Task<Void, Never>] = [:]
-  /// The stop handle for the stage running on each worktree, behind the
-  /// pane's Cancel: a hook by signal, a file list between files.
-  @ObservationIgnored var stageStoppers: [Worktree.ID: ProcessStopper] = [:]
-  /// The stop handle for the pre-create hook under the sheet.
-  @ObservationIgnored var creationStopper: ProcessStopper?
-  /// What each project's `.multishell.json` says, the date it had when it
-  /// was read, and why it would not parse; see `SharedSettingsCache`.
-  public var sharedSettings = SharedSettingsCache()
   /// The trust question about one project's shared hooks, waiting on its
   /// dialog.
   public var pendingSharedHooksTrust: PendingSharedHooksTrust?
@@ -52,9 +48,55 @@ public final class AppModel<Surface> {
   public var pendingClose: PendingClose?
   /// Which project the settings window shows.
   public var settingsProjectID: Project.ID?
+  /// The worktree whose sidebar row is showing its name field, or `nil`
+  /// when none is. Runtime state, so the menu that starts a rename and the
+  /// row that draws the field need not know about each other.
+  public var renamingWorktreeID: Worktree.ID?
+
+  // MARK: - Creates and removes under way
+
+  /// Which stage a create is in while the sheet still waits on it: the
+  /// pre-create hook and `git worktree add`. `nil` when none is running.
+  public var worktreeCreationStep: WorktreeCreationStep?
+  /// The create or remove running on each worktree, shown in its detail
+  /// pane in place of the terminals; see `WorktreeOperations` for who owns
+  /// an entry.
+  public var worktreeOperations = WorktreeOperations()
+  /// The file lists and post-create hook still running on each worktree,
+  /// as one task, so a test can await it.
+  @ObservationIgnored public var worktreeSetups: [Worktree.ID: Task<Void, Never>] = [:]
+  /// The stop handle for the stage running on each worktree, behind the
+  /// pane's Cancel: a hook by signal, a file list between files.
+  @ObservationIgnored var stageStoppers: [Worktree.ID: ProcessStopper] = [:]
+  /// The stop handle for the pre-create hook under the sheet.
+  @ObservationIgnored var creationStopper: ProcessStopper?
+
+  // MARK: - Terminals
+
+  /// Sessions with a running shell, mirrored from the host after each
+  /// reconcile so views can observe it; the host itself is not observable.
+  public var liveSessions: Set<TerminalSession.ID> = []
+  /// What each running shell last said its title was. Kept apart from the
+  /// workspace so a prompt does not re-render the sidebar or schedule a save.
+  public var sessionTitles: [TerminalSession.ID: String] = [:]
   /// What each live terminal is doing, from the engine and from reports over
   /// the socket; see `SessionStates` for who clears what.
   public var sessionStates = SessionStates()
+  /// Which agent last reported in each session; see `ReportedAgent`. What
+  /// a file dropped on a pane is written as reads this, so an agent started
+  /// by hand is addressed as itself. Runtime state, like the titles above.
+  @ObservationIgnored var reportedAgents: [TerminalSession.ID: ReportedAgent] = [:]
+  /// Worktrees whose saved tabs have been given live shells. Empty at launch,
+  /// so relaunching with many saved tabs starts nothing; grows as worktrees
+  /// are visited and never shrinks while the app runs.
+  @ObservationIgnored var warmWorktrees: Set<Worktree.ID> = []
+  @ObservationIgnored var pidWatch: Task<Void, Never>?
+  /// How often a Working state's pid is checked. Settable so a test does
+  /// not wait the full interval.
+  @ObservationIgnored public var pidPollInterval: Duration = .seconds(2)
+
+  // MARK: - What the machine has
+
   /// The environment of the user's interactive login shell, once captured.
   /// `nil` until the shell has answered.
   public var loginEnvironment: LoginShellEnvironment?
@@ -69,6 +111,10 @@ public final class AppModel<Surface> {
   public var installedAgentHooks: Set<String> = []
   public var commandLineToolInstalled = false
   public var themes: [Theme] = Theme.builtins
+  @ObservationIgnored var reportedMissingAgents: Set<String> = []
+
+  // MARK: - What git says
+
   /// `git status` per worktree. Runtime only; see `WorktreeStatus`.
   public var statuses: [Worktree.ID: WorktreeStatus] = [:]
   /// Whether each worktree's branch has already landed on its project's
@@ -86,54 +132,34 @@ public final class AppModel<Surface> {
   /// Projects with a `git fetch` running, which the sidebar shows and a
   /// second Fetch waits for. Runtime state, like the statuses beside it.
   public var fetchingProjects: Set<Project.ID> = []
-  /// What each worktree's merge verdict was computed from, so a refresh
-  /// that finds nothing moved spawns no git; see `MergeCheck`.
-  @ObservationIgnored var mergeChecks: [Worktree.ID: MergeCheck] = [:]
-  /// Sessions with a running shell, mirrored from the host after each
-  /// reconcile so views can observe it; the host itself is not observable.
-  public var liveSessions: Set<TerminalSession.ID> = []
-  /// What each running shell last said its title was. Kept apart from the
-  /// workspace so a prompt does not re-render the sidebar or schedule a save.
-  public var sessionTitles: [TerminalSession.ID: String] = [:]
-  /// Which agent last reported in each session; see `ReportedAgent`. What
-  /// a file dropped on a pane is written as reads this, so an agent started
-  /// by hand is addressed as itself. Runtime state, like the titles above.
-  @ObservationIgnored var reportedAgents: [TerminalSession.ID: ReportedAgent] = [:]
   /// Projects whose directory has gone. Kept in the sidebar, dimmed, rather
   /// than dropped: an unmounted drive should not delete someone's setup.
   public var missingProjects: Set<Project.ID> = []
-  /// Worktrees whose saved tabs have been given live shells. Empty at launch,
-  /// so relaunching with many saved tabs starts nothing; grows as worktrees
-  /// are visited and never shrinks while the app runs.
-  @ObservationIgnored var warmWorktrees: Set<Worktree.ID> = []
-
-  @ObservationIgnored let store: WorkspaceStore
-  @ObservationIgnored let registry: SessionRegistry
-  @ObservationIgnored let stateSource: any SessionStateSource
-  @ObservationIgnored let notifier: any SessionNotifier
-  /// Sessions that came off disk this run. Their agent tabs resume rather
-  /// than start afresh; see `prepared`.
-  @ObservationIgnored let restoredSessionIDs: Set<TerminalSession.ID>
-  @ObservationIgnored var pidWatch: Task<Void, Never>?
-  /// How often a Working state's pid is checked. Settable so a test does
-  /// not wait the full interval.
-  @ObservationIgnored public var pidPollInterval: Duration = .seconds(2)
-  @ObservationIgnored var reportedMissingAgents: Set<String> = []
-  @ObservationIgnored let worktrees: WorktreeCoordinator?
-  @ObservationIgnored var pendingSave: Task<Void, Never>?
-  /// Set while saves are failing, so the alert is raised once rather than
-  /// again after every change until the disk is writable.
-  @ObservationIgnored var saveFailureReported = false
-  @ObservationIgnored let watcher: any DirectoryWatcher
-  @ObservationIgnored var statusPolling: Task<Void, Never>?
-  /// One coalesced status refresh per worktree; see `noteActivity`.
-  @ObservationIgnored var pendingStatusRefreshes: [Worktree.ID: Task<Void, Never>] = [:]
+  /// What each worktree's merge verdict was computed from, so a refresh
+  /// that finds nothing moved spawns no git; see `MergeCheck`.
+  @ObservationIgnored var mergeChecks: [Worktree.ID: MergeCheck] = [:]
   /// `git rev-parse --git-common-dir` per project, asked once. The watcher
-  /// and the records check below run from it without spawning git.
+  /// and the records check run from it without spawning git.
   @ObservationIgnored var commonGitDirectories: [Project.ID: URL] = [:]
   /// What the last refresh of each project was computed from; see
   /// `refreshWorktreesIfRecordsChanged`.
   @ObservationIgnored var worktreeRecords: [Project.ID: WorktreeRecords] = [:]
+  @ObservationIgnored var statusPolling: Task<Void, Never>?
+  /// One coalesced status refresh per worktree; see `noteActivity`.
+  @ObservationIgnored var pendingStatusRefreshes: [Worktree.ID: Task<Void, Never>] = [:]
+
+  // MARK: - What the repository says
+
+  /// What each project's `.multishell.json` says, the date it had when it
+  /// was read, and why it would not parse; see `SharedSettingsCache`.
+  public var sharedSettings = SharedSettingsCache()
+
+  // MARK: - Saving
+
+  @ObservationIgnored var pendingSave: Task<Void, Never>?
+  /// Set while saves are failing, so the alert is raised once rather than
+  /// again after every change until the disk is writable.
+  @ObservationIgnored var saveFailureReported = false
 
   public var workspace: Workspace { store.workspace }
 

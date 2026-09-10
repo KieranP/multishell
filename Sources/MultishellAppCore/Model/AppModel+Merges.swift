@@ -28,12 +28,7 @@ extension AppModel {
     for project in workspace.projects where !missingProjects.contains(project.id) {
       await refreshMergeStates(of: project)
     }
-    let known = Set(workspace.worktrees.map(\.id))
-    let kept = mergeStates.filter { known.contains($0.key) }
-    if kept.count != mergeStates.count { mergeStates = kept }
-    mergeChecks = mergeChecks.filter { known.contains($0.key) }
-    let dates = lastCommits.filter { known.contains($0.key) }
-    if dates.count != lastCommits.count { lastCommits = dates }
+    forgetVanishedWorktrees()
   }
 
   func refreshMergeStates(of project: Project) async {

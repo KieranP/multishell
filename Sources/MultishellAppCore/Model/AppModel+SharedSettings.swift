@@ -149,14 +149,23 @@ extension AppModel {
       projectID: id, projectName: project.name, hooks: hooks, digest: digest)
   }
 
+  /// Stores an answer against the sha256 of the file it was about; see
+  /// `ProjectSettings.sharedHooks`. The project is read again rather than
+  /// taken from the caller: a settings window outlives the refresh that
+  /// replaced the record it was opened with. Who takes down the question
+  /// still up is the caller's, since the three of them do not agree on it.
+  private func recordSharedHooks(file digest: String, trusted: Bool, for id: Project.ID) {
+    guard var settings = workspace.project(id)?.settings else { return }
+    settings.recordSharedHooks(file: digest, trusted: trusted)
+    store.updateSettings(settings, forProject: id)
+  }
+
   /// The dialog's answer. Either way the question is not asked again for
   /// this file, this branch's or another's.
   public func decideSharedHooks(_ pending: PendingSharedHooksTrust, trusted: Bool) {
-    if let project = workspace.project(pending.projectID) {
-      var settings = project.settings
-      settings.recordSharedHooks(file: pending.digest, trusted: trusted)
-      store.updateSettings(settings, forProject: project.id)
-    }
+    recordSharedHooks(file: pending.digest, trusted: trusted, for: pending.projectID)
+    // The whole value, not its project: a different question that arrived
+    // while this one stood is not answered by it.
     if pendingSharedHooksTrust == pending { pendingSharedHooksTrust = nil }
   }
 
@@ -178,9 +187,7 @@ extension AppModel {
     }
     let stamp = Self.modificationDate(of: SharedProjectSettings.file(in: current.path))
     if shared.hasHooks, let digest = shared.digest {
-      var settings = current.settings
-      settings.recordSharedHooks(file: digest, trusted: true)
-      store.updateSettings(settings, forProject: current.id)
+      recordSharedHooks(file: digest, trusted: true, for: current.id)
     }
     noteSharedSettings(.success(shared), stamp: stamp, for: current)
   }
@@ -189,9 +196,7 @@ extension AppModel {
   public func setTrustsSharedHooks(_ trusted: Bool, for project: Project) {
     guard let shared = sharedSettings[project.id], shared.hasHooks, let digest = shared.digest
     else { return }
-    var settings = workspace.project(project.id)?.settings ?? project.settings
-    settings.recordSharedHooks(file: digest, trusted: trusted)
-    store.updateSettings(settings, forProject: project.id)
+    recordSharedHooks(file: digest, trusted: trusted, for: project.id)
     if pendingSharedHooksTrust?.projectID == project.id { pendingSharedHooksTrust = nil }
   }
 }

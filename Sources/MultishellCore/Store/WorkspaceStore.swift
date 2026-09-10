@@ -6,9 +6,15 @@ import Observation
 /// Views observe and call these methods; they never mutate `workspace`
 /// directly and never touch a process. That is what lets a second GUI reuse
 /// this unchanged.
+///
+/// One file, long as it is, and not an extension per collection: `private`
+/// in Swift reaches the whole file and no further, so the setters have to
+/// sit beside the property to write it. Splitting them out means widening
+/// that to `internal(set)`, which is the guarantee above given up.
 @Observable
 @MainActor
 public final class WorkspaceStore {
+  /// `private(set)`, so nothing outside this file writes the workspace.
   public private(set) var workspace: Workspace
 
   @ObservationIgnored private let snapshot: WorkspaceSnapshot

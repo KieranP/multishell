@@ -44,21 +44,21 @@ public struct Theme: Identifiable, Codable, Hashable, Sendable {
   /// colours is refused here and reported by `ThemeCatalog` rather than
   /// crashing the first view that draws with it.
   public init(from decoder: any Decoder) throws {
-    let c = try decoder.container(keyedBy: CodingKeys.self)
-    let ansi = try c.decode([String].self, forKey: .ansi)
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    let ansi = try container.decode([String].self, forKey: .ansi)
     guard ansi.count == 16 else {
       throw DecodingError.dataCorruptedError(
-        forKey: .ansi, in: c,
+        forKey: .ansi, in: container,
         debugDescription: "a theme needs exactly 16 ANSI colours, found \(ansi.count)")
     }
     self.init(
-      id: try c.decode(String.self, forKey: .id),
-      name: try c.decode(String.self, forKey: .name),
-      isDark: try c.decode(Bool.self, forKey: .isDark),
-      background: try c.decode(String.self, forKey: .background),
-      foreground: try c.decode(String.self, forKey: .foreground),
-      cursor: try c.decode(String.self, forKey: .cursor),
-      selectionBackground: try c.decode(String.self, forKey: .selectionBackground),
+      id: try container.decode(String.self, forKey: .id),
+      name: try container.decode(String.self, forKey: .name),
+      isDark: try container.decode(Bool.self, forKey: .isDark),
+      background: try container.decode(String.self, forKey: .background),
+      foreground: try container.decode(String.self, forKey: .foreground),
+      cursor: try container.decode(String.self, forKey: .cursor),
+      selectionBackground: try container.decode(String.self, forKey: .selectionBackground),
       ansi: ansi
     )
   }

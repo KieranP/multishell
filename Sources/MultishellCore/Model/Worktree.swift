@@ -27,19 +27,19 @@ public struct Worktree: Identifiable, Codable, Hashable, Sendable {
   /// Synthesized decoding would keep whatever URL was written, so the
   /// directory normalisation from `init` is applied here too.
   public init(from decoder: any Decoder) throws {
-    let c = try decoder.container(keyedBy: CodingKeys.self)
-    self.path = Project.directory(try c.decode(URL.self, forKey: .path))
-    self.projectID = try c.decode(Project.ID.self, forKey: .projectID)
-    self.head = try c.decodeIfPresent(String.self, forKey: .head) ?? ""
-    self.branch = try c.decodeIfPresent(String.self, forKey: .branch)
-    self.isPrimary = try c.decodeIfPresent(Bool.self, forKey: .isPrimary) ?? false
-    self.isLocked = try c.decodeIfPresent(Bool.self, forKey: .isLocked) ?? false
-    self.isBare = try c.decodeIfPresent(Bool.self, forKey: .isBare) ?? false
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    self.path = Project.directory(try container.decode(URL.self, forKey: .path))
+    self.projectID = try container.decode(Project.ID.self, forKey: .projectID)
+    self.head = try container.decodeIfPresent(String.self, forKey: .head) ?? ""
+    self.branch = try container.decodeIfPresent(String.self, forKey: .branch)
+    self.isPrimary = try container.decodeIfPresent(Bool.self, forKey: .isPrimary) ?? false
+    self.isLocked = try container.decodeIfPresent(Bool.self, forKey: .isLocked) ?? false
+    self.isBare = try container.decodeIfPresent(Bool.self, forKey: .isBare) ?? false
     // `try?`, as `ProjectSettings` does for its tint: a date a newer build
     // wrote in another shape costs the date, not the worktree. Worktrees
     // decode lossily, so throwing here would drop the row, and the tabs
     // saved under it, until the next refresh.
-    self.createdAt = (try? c.decodeIfPresent(Date.self, forKey: .createdAt)) ?? nil
+    self.createdAt = (try? container.decodeIfPresent(Date.self, forKey: .createdAt)) ?? nil
   }
 
   public var id: String { path.path }

@@ -50,13 +50,15 @@ package: views, the two engine hosts, `MacPlatform`.
 
 `swift-format` from the toolchain with the root `.swift-format`: 2-space
 indent, 100 columns. One type per file, named for the type; `Type+Concern.swift`
-for an extension. Tests are swift-testing, named as sentences about behaviour. A
+for an extension, and `*Failures.swift` for a group of error types, which go
+together rather than under the type that throws them. Tests are swift-testing,
+named as sentences about behaviour. A
 dialog is a `View` extension in a file named for it, attached by the scene that
 asked for it.
 
 ## Rules CI and tests enforce
 
-CLAUDE.md states the rules; this is what catches a breach.
+AGENTS.md states the rules; this is what catches a breach.
 
 - Persisted defaults, unknown enum values included: `DecodingDefaultsTests`.
 - `WorkspaceInvariants` and `repairReferences`: the seeded random tests, which
@@ -72,10 +74,17 @@ CLAUDE.md states the rules; this is what catches a breach.
   do on demand; parsers get fixture text, CRLF and malformed lines included.
 - Detection runs against fake executables on a fake PATH, never the machine;
   hooks run through real shells under a substitute home.
+- A shortcut's two spellings agree and the clipboard ones stay with the
+  terminal: `AppShortcutTests`, pinned against the config Ghostty was given
+  before it was derived.
+- Identifiers spelled in both Swift and the generated `Info.plist` still
+  match: `BundleDeclarationTests`, reading `make-app.sh` out of the checkout.
+  Nothing at build or run time notices these having parted.
+- Each override binds to its own setting: `SettingsBindingTests`, since
+  `hasOverride` and `overrideValue` take the same arguments and return the
+  same type.
 - Foundation-only imports are checked by hand in a `swift:6.0` container, Linux
-  being out of CI. Views are not tested.
-- Timing bounds are sized for a single-core CI runner, many times a laptop's
-  figure. Keep that headroom.
+  being out of CI. Views are not tested, but a value a view reads is.
 
 ## Adding things
 
@@ -114,8 +123,10 @@ An agent with no hooks at all needs a `.plugin`, as OpenCode has.
 builds the environment and draws the Hooks tab's table, so the help cannot fall
 behind.
 
-**A keyboard shortcut.** Also in `GhosttyTerminalHost.appShortcuts`, or the
-surface eats it before the menu sees it.
+**A keyboard shortcut.** An `AppShortcut` in `AppShortcuts`, listed in its
+`all`, which the menu item and the Ghostty `keybind=…=unbind` are both derived
+from. One declared and left out of `all` works everywhere but a pane.
+`surfaceKeeps` marks the clipboard combinations, which the terminal keeps.
 
 **A project icon.** A name in one of `ProjectIcon.symbolGroups`, or a group of
 its own. It must exist as far back as macOS 14: the app's deployment target is
@@ -187,16 +198,16 @@ project settings, with the same keys as a project's settings. It is read at
 launch, when a project's worktree records change, and on any tick where its
 modification date has moved. A field it ships fills only a gap the user left,
 so adding one to `SharedProjectSettings` also means a line in
-`ProjectSettings.layered`, a decode that costs the key and not the file, and a
-form that seeds its override from `InheritedSetting`. Decide too what a blank
-one means: `Self.text` for a field where "none" and "no opinion" agree, and
-nothing for the worktree path, prefix and default branch, where blank is how
-"none" is spelled in both files. Getting that wrong is not cosmetic — a blank
-hook left uncoerced counts as a hook, and the trust question asks about an
-empty script. The answer to its hook
-question is held against the sha256 of the whole file (`FileDigest`, one answer
-per file in `ProjectSettings.sharedHooks`), so any key added to a committed
-file asks again.
+`ProjectSettings.layered`, a decode that costs the key and not the file, and an
+`OverrideSection` in the tab, seeded from `InheritedSetting`.
+
+Decide too what a blank one means: `Self.text` for a field where "none" and "no
+opinion" agree, and nothing for the worktree path, prefix and default branch,
+where blank is how "none" is spelled in both files. Getting that wrong is not
+cosmetic — a blank hook left uncoerced counts as a hook, and the trust question
+asks about an empty script. The answer is held against the sha256 of the whole
+file (`FileDigest`, one answer per file in `ProjectSettings.sharedHooks`), so
+any key added to a committed file asks again.
 
 ## Permissions macOS asks for
 

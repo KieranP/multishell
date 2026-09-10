@@ -54,9 +54,10 @@ struct AgentDetectionTests {
 
     let detection = AgentDetection(path: "/usr/bin:\(bin.path)")
     #expect(Set(detection.found.keys) == ["claude", "aider"])
-    #expect(detection.isClaudeCodeInstalled)
     #expect(detection.found["claude"]?.path == bin.appendingPathComponent("claude").path)
-    #expect(!AgentDetection(path: "/usr/bin").isClaudeCodeInstalled)
+    #expect(detection.isInstalled("claude"))
+    #expect(!detection.isInstalled("codex"))
+    #expect(AgentDetection(path: "/usr/bin").found.isEmpty, "nothing on a path with no agents")
   }
 
   @Test func theDropdownListsInstalledAgentsTheStaleChoiceAndCustom() throws {

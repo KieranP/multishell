@@ -11,17 +11,17 @@ struct MultishellCommands: Commands {
     // a no-op when it does not apply.
     CommandGroup(replacing: .newItem) {
       Button("New Tab") { model.newTab() }
-        .keyboardShortcut("t")
+        .keyboardShortcut(AppShortcuts.newTab)
       Button("New Shell Tab") { model.newShellTab() }
-        .keyboardShortcut("t", modifiers: [.command, .shift])
+        .keyboardShortcut(AppShortcuts.newShellTab)
       Button("New Agent Tab") { model.newAgentTab() }
-        .keyboardShortcut("t", modifiers: [.command, .option])
+        .keyboardShortcut(AppShortcuts.newAgentTab)
       Button("New Worktree…") { model.requestNewWorktree() }
-        .keyboardShortcut("n")
+        .keyboardShortcut(AppShortcuts.newWorktree)
       Button("Add Project…") { Task { await model.chooseProject() } }
-        .keyboardShortcut("o")
+        .keyboardShortcut(AppShortcuts.addProject)
       Button("Open in Editor") { model.openSelectedWorktreeInEditor() }
-        .keyboardShortcut("o", modifiers: [.command, .shift])
+        .keyboardShortcut(AppShortcuts.openInEditor)
     }
 
     // SwiftUI's stock Edit items decide their own enablement on its update
@@ -30,13 +30,13 @@ struct MultishellCommands: Commands {
     // stay enabled; a terminal with nothing selected simply ignores copy:.
     CommandGroup(replacing: .pasteboard) {
       Button("Cut") { NSApp.sendAction(#selector(NSText.cut(_:)), to: nil, from: nil) }
-        .keyboardShortcut("x")
+        .keyboardShortcut(AppShortcuts.cut)
       Button("Copy") { NSApp.sendAction(#selector(NSText.copy(_:)), to: nil, from: nil) }
-        .keyboardShortcut("c")
+        .keyboardShortcut(AppShortcuts.copy)
       Button("Paste") { NSApp.sendAction(#selector(NSText.paste(_:)), to: nil, from: nil) }
-        .keyboardShortcut("v")
+        .keyboardShortcut(AppShortcuts.paste)
       Button("Select All") { NSApp.sendAction(#selector(NSText.selectAll(_:)), to: nil, from: nil) }
-        .keyboardShortcut("a")
+        .keyboardShortcut(AppShortcuts.selectAll)
     }
 
     // The focused responder's own manager, not the key window's: a text field
@@ -53,12 +53,12 @@ struct MultishellCommands: Commands {
         guard let manager = Self.focusedUndoManager, manager.canUndo else { return }
         manager.undo()
       }
-      .keyboardShortcut("z")
+      .keyboardShortcut(AppShortcuts.undo)
       Button("Redo") {
         guard let manager = Self.focusedUndoManager, manager.canRedo else { return }
         manager.redo()
       }
-      .keyboardShortcut("z", modifiers: [.command, .shift])
+      .keyboardShortcut(AppShortcuts.redo)
     }
 
     // Find, Spelling, Substitutions, Speech: text-editing items with no
@@ -67,21 +67,21 @@ struct MultishellCommands: Commands {
 
     CommandGroup(replacing: .saveItem) {
       Button("Close Pane") { model.closeActivePane() }
-        .keyboardShortcut("w")
+        .keyboardShortcut(AppShortcuts.closePane)
       Button("Close Tab") { model.closeActiveTab() }
-        .keyboardShortcut("w", modifiers: [.command, .shift])
+        .keyboardShortcut(AppShortcuts.closeTab)
     }
 
     CommandMenu("Terminal") {
       Button("Split Right") { model.splitActivePane(.horizontal) }
-        .keyboardShortcut("d")
+        .keyboardShortcut(AppShortcuts.splitRight)
       Button("Split Down") { model.splitActivePane(.vertical) }
-        .keyboardShortcut("d", modifiers: [.command, .shift])
+        .keyboardShortcut(AppShortcuts.splitDown)
       Divider()
       Button("Next Tab") { model.selectNextTab() }
-        .keyboardShortcut(.tab, modifiers: .control)
+        .keyboardShortcut(AppShortcuts.nextTab)
       Button("Previous Tab") { model.selectPreviousTab() }
-        .keyboardShortcut(.tab, modifiers: [.control, .shift])
+        .keyboardShortcut(AppShortcuts.previousTab)
       Divider()
       Picker("Theme", selection: model.setting(\.appearance.themeID, write: model.setTheme)) {
         ForEach(model.themes) { theme in
