@@ -40,7 +40,46 @@ struct HexColorTests {
       #expect(HexColor.parse(theme.foreground) != nil)
       #expect(HexColor.parse(theme.cursor) != nil)
       #expect(HexColor.parse(theme.selectionBackground) != nil)
+      #expect(theme.focusRingRGB != nil, "\(theme.id) draws no focus ring")
+      #expect(
+        theme.focusRingRGB != theme.selectionRGB,
+        "\(theme.id) rings in its selection colour, which is mixed to sit under text")
+      #expect(
+        theme.inactivePaneOpacity > Theme.minimumInactivePaneOpacity
+          && theme.inactivePaneOpacity < 1,
+        "\(theme.id) fades unfocused panes by nothing, or by all")
     }
+  }
+}
+
+/// The focus ring reads three spellings of one key; see `Theme.focusRing`.
+@Suite
+struct FocusRingTests {
+  private func theme(ring: String?) -> Theme {
+    var theme = Theme.multishellDark
+    theme.focusRing = ring
+    return theme
+  }
+
+  @Test func aColourIsThatColour() {
+    #expect(theme(ring: "#6cc763").focusRingRGB == RGB(red: 0x6c, green: 0xc7, blue: 0x63))
+    #expect(theme(ring: " 6cc763 ").focusRingRGB == RGB(red: 0x6c, green: 0xc7, blue: 0x63))
+  }
+
+  @Test func anEmptyStringIsNoRingAtAll() {
+    #expect(theme(ring: "").focusRingRGB == nil)
+    #expect(theme(ring: "   ").focusRingRGB == nil, "whitespace is how a JSON file says empty")
+  }
+
+  @Test func theKeyLeftOutIsTheSelectionColour() {
+    #expect(theme(ring: nil).focusRingRGB == Theme.multishellDark.selectionRGB)
+  }
+
+  /// A typo costs the colour, not the ring: reading it as off would
+  /// silently remove the thing the key was setting.
+  @Test func aColourThatWillNotParseFallsBackRatherThanTurningTheRingOff() {
+    #expect(theme(ring: "cornflower").focusRingRGB == Theme.multishellDark.selectionRGB)
+    #expect(theme(ring: "#12345").focusRingRGB == Theme.multishellDark.selectionRGB)
   }
 }
 

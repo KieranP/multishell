@@ -9,9 +9,16 @@ public struct Workspace: Codable, Hashable, Sendable {
   public var worktrees: [Worktree] = []
   public var sessions: [TerminalSession] = []
   public var tabs: [TerminalTab] = []
+  /// The columns of tabs each worktree is divided into, in display order
+  /// left to right; see `TabGroup`. A worktree with tabs has at least one.
+  public var tabGroups: [TabGroup] = []
 
   public var selectedWorktreeID: Worktree.ID?
-  public var activeTabByWorktree: [Worktree.ID: TerminalTab.ID] = [:]
+  /// Which column a worktree's keystrokes go to: the one whose active tab
+  /// `activeTab(in:)` answers with, and the one a new tab opens in. Kept
+  /// here rather than on `Worktree` for the same reason `worktreeNames` is,
+  /// git's list replacing those records wholesale on every refresh.
+  public var focusedGroupByWorktree: [Worktree.ID: TabGroup.ID] = [:]
   /// The user's own name for a worktree, where they gave one. Kept here
   /// rather than on `Worktree` because git's list replaces those wholesale
   /// on every refresh, and a name the user typed must outlive that. An
@@ -80,22 +87,24 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// existed still loads. Without this, adding a property here would make
   /// the app forget every project on the next launch.
   ///
-  /// Worktrees, sessions and tabs drop a broken element rather than failing
-  /// the file: worktrees are re-read from git on the first refresh and a tab
-  /// is a fresh shell either way. Projects stay strict, because dropping one
-  /// silently is what the `.broken.json` backup exists to prevent.
-  /// `repairReferences` then removes what pointed at a dropped element.
+  /// Worktrees, sessions, tabs and groups drop a broken element rather than
+  /// failing the file: worktrees are re-read from git on the first refresh
+  /// and a tab is a fresh shell either way. Projects stay strict, because
+  /// dropping one silently is what the `.broken.json` backup exists to
+  /// prevent. `repairReferences` then removes what pointed at a dropped
+  /// element.
   public init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     projects = try container.decodeIfPresent([Project].self, forKey: .projects) ?? []
     worktrees = container.decodeLossy(Worktree.self, forKey: .worktrees)
     sessions = container.decodeLossy(TerminalSession.self, forKey: .sessions)
     tabs = container.decodeLossy(TerminalTab.self, forKey: .tabs)
+    tabGroups = container.decodeLossy(TabGroup.self, forKey: .tabGroups)
     selectedWorktreeID = try container.decodeIfPresent(
       Worktree.ID.self, forKey: .selectedWorktreeID)
-    activeTabByWorktree =
+    focusedGroupByWorktree =
       try container.decodeIfPresent(
-        [Worktree.ID: TerminalTab.ID].self, forKey: .activeTabByWorktree) ?? [:]
+        [Worktree.ID: TabGroup.ID].self, forKey: .focusedGroupByWorktree) ?? [:]
     worktreeNames =
       try container.decodeIfPresent([Worktree.ID: String].self, forKey: .worktreeNames) ?? [:]
     appearance = try container.decodeIfPresent(Appearance.self, forKey: .appearance) ?? Appearance()
@@ -143,6 +152,24 @@ public struct Workspace: Codable, Hashable, Sendable {
     hookTimeoutSeconds =
       try container.decodeIfPresent(Int.self, forKey: .hookTimeoutSeconds)
       ?? Self.defaultHookTimeoutSeconds
+
+    // A file written before tabs sat in columns names no group and says
+    // which tab each worktree had active. Read here rather than left to
+    // `repairReferences`, which takes no arguments and would have to fall
+    // back to the last tab: what the user was looking at is theirs, and an
+    // upgrade quietly changing it is the sort of loss the lossy decode
+    // exists to prevent.
+    let legacy = try? decoder.container(keyedBy: LegacyKeys.self)
+    let wasActive =
+      (try? legacy?.decodeIfPresent(
+        [Worktree.ID: TerminalTab.ID].self, forKey: .activeTabByWorktree)) ?? nil
+    adoptUngroupedTabs(activeByWorktree: wasActive ?? [:])
+  }
+
+  /// Keys no property answers to any more, read only to carry what an older
+  /// state file said into the shape that replaced it.
+  private enum LegacyKeys: String, CodingKey {
+    case activeTabByWorktree
   }
 }
 
@@ -165,6 +192,10 @@ extension Workspace {
     tabs.first { $0.id == id }
   }
 
+  public func group(_ id: TabGroup.ID) -> TabGroup? {
+    tabGroups.first { $0.id == id }
+  }
+
   public func tab(before tab: TerminalTab.ID) -> TerminalTab? {
     neighbour(of: tab, offset: -1)
   }
@@ -173,9 +204,11 @@ extension Workspace {
     neighbour(of: tab, offset: 1)
   }
 
+  /// Cycling stays inside the tab's own column, so a group of two tabs is a
+  /// two-tab cycle rather than a walk through every tab in the worktree.
   private func neighbour(of id: TerminalTab.ID, offset: Int) -> TerminalTab? {
     guard let current = tab(id) else { return nil }
-    let siblings = tabs(in: current.worktreeID)
+    let siblings = tabs(in: current.groupID)
     guard let index = siblings.firstIndex(where: { $0.id == id }), siblings.count > 1 else {
       return nil
     }
@@ -197,8 +230,38 @@ extension Workspace {
     worktrees.filter { $0.projectID == project }
   }
 
+  /// Every tab of a worktree, whichever column it is in.
   public func tabs(in worktree: Worktree.ID) -> [TerminalTab] {
     tabs.filter { $0.worktreeID == worktree }
+  }
+
+  /// One column's tabs, in strip order. `tabs` is one flat array and its
+  /// order is display order, so a tab moved between columns is placed
+  /// beside the tab it was dropped on rather than reordered here.
+  public func tabs(in group: TabGroup.ID) -> [TerminalTab] {
+    tabs.filter { $0.groupID == group }
+  }
+
+  /// A worktree's columns, left to right.
+  public func groups(in worktree: Worktree.ID) -> [TabGroup] {
+    tabGroups.filter { $0.worktreeID == worktree }
+  }
+
+  public func group(of tab: TerminalTab.ID) -> TabGroup? {
+    self.tab(tab).flatMap { group($0.groupID) }
+  }
+
+  /// The column a worktree's keystrokes go to. Falls back to the first
+  /// column where the entry is missing or names a group that has gone, so a
+  /// hand-edited file still shows a strip; `repairReferences` writes the
+  /// entry back.
+  public func focusedGroup(in worktree: Worktree.ID) -> TabGroup? {
+    let columns = groups(in: worktree)
+    if let id = focusedGroupByWorktree[worktree], let group = columns.first(where: { $0.id == id })
+    {
+      return group
+    }
+    return columns.first
   }
 
   public func sessions(in worktree: Worktree.ID) -> [TerminalSession] {
@@ -221,8 +284,23 @@ extension Workspace {
     selectedWorktreeID.flatMap(worktree)
   }
 
+  /// The tab a column shows.
+  public func activeTab(in group: TabGroup) -> TerminalTab? {
+    group.activeTabID.flatMap { tab($0) }
+  }
+
+  /// The tab the user is working in: the focused column's. What Cmd+T,
+  /// Close Pane, a split and a rename all act on.
   public func activeTab(in worktree: Worktree.ID) -> TerminalTab? {
-    activeTabByWorktree[worktree].flatMap { tab($0) }
+    focusedGroup(in: worktree).flatMap { activeTab(in: $0) }
+  }
+
+  /// Every tab on screen for a worktree, one per column. Several tabs are
+  /// visible at once now, so anything that means "the user can see this" —
+  /// a Done state clearing, a notification suppressed — asks this rather
+  /// than `activeTab`.
+  public func shownTabs(in worktree: Worktree.ID) -> [TerminalTab] {
+    groups(in: worktree).compactMap { activeTab(in: $0) }
   }
 
   public var theme: Theme {

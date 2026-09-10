@@ -61,4 +61,20 @@ public enum AccessibilityText {
     if let state { parts.append(state.displayName) }
     return parts.joined(separator: ", ")
   }
+
+  /// One column of tabs, said before its tabs are. Empty for a worktree
+  /// with a single column: there is nothing to tell apart, and "group 1 of
+  /// 1" in front of every tab is noise.
+  public static func tabGroup(position: Int, of count: Int, isFocused: Bool) -> String {
+    guard count > 1 else { return "" }
+    var text = "Tab group \(position) of \(count)"
+    if isFocused { text += ", focused" }
+    return text
+  }
+
+  /// The band down the edge of a column's terminal area, which a dragged
+  /// tab lands on to get a column of its own.
+  public static func newTabGroupBand(_ placement: TerminalTab.Placement) -> String {
+    "New tab group \(placement == .before ? "left" : "right")"
+  }
 }

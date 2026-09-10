@@ -48,11 +48,13 @@ extension AppModel {
     updatePIDWatch()
   }
 
-  /// The pane is on screen: its worktree is selected and its tab active.
+  /// The pane is on screen: its worktree is selected and its tab is the one
+  /// its column shows. A worktree can have several columns, so this asks
+  /// every one of them rather than the focused column alone — a pane the
+  /// user is looking at in the next column over has been seen.
   public func isShown(_ id: TerminalSession.ID) -> Bool {
-    guard let worktree = workspace.selectedWorktreeID, let tab = workspace.activeTab(in: worktree)
-    else { return false }
-    return tab.root.contains(id)
+    guard let worktree = workspace.selectedWorktreeID else { return false }
+    return workspace.shownTabs(in: worktree).contains { $0.root.contains(id) }
   }
 
   /// A hook's `cwd` may be the resolved path where the worktree was added

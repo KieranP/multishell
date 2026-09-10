@@ -16,11 +16,13 @@ extension Workspace {
     projects = projects.uniqued(by: \.id)
     worktrees = worktrees.uniqued(by: \.id)
     sessions = sessions.uniqued(by: \.id)
+    tabGroups = tabGroups.uniqued(by: \.id)
 
     let projectIDs = Set(projects.map(\.id))
     worktrees.removeAll { !projectIDs.contains($0.projectID) }
     let worktreeIDs = Set(worktrees.map(\.id))
     tabs.removeAll { !worktreeIDs.contains($0.worktreeID) }
+    tabGroups.removeAll { !worktreeIDs.contains($0.worktreeID) }
 
     // One pass over every pane in display order drops panes whose session is
     // missing and second appearances of a session, in this tab or an earlier
@@ -68,12 +70,80 @@ extension Workspace {
       worktreeIDs.contains(id) && !name.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
-    for (worktreeID, tabID) in activeTabByWorktree where tab(tabID)?.worktreeID != worktreeID {
-      activeTabByWorktree[worktreeID] = tabs(in: worktreeID).last?.id
-    }
+    repairGroups()
 
     if let selected = selectedWorktreeID, !worktreeIDs.contains(selected) {
       selectedWorktreeID = nil
+    }
+  }
+
+  /// Puts the columns right, after the passes above have settled which tabs
+  /// there are. A tab whose column is missing keeps its tab rather than
+  /// being dropped: the column is a layout, and the tab is a shell.
+  private mutating func repairGroups() {
+    adoptUngroupedTabs()
+
+    // A column with nothing in it draws a strip with no tabs and a pane
+    // with no terminal, and nothing but this would ever take it away: the
+    // store removes one the moment its last tab leaves.
+    let occupied = Set(tabs.map(\.groupID))
+    tabGroups.removeAll { !occupied.contains($0.id) }
+
+    for index in tabGroups.indices {
+      // A width of zero is a column nothing can be laid out in. Decoding
+      // makes the same substitution; a half-written save can leave one.
+      tabGroups[index].weight = TabGroup.usableWeight(tabGroups[index].weight)
+      let tabsHere = tabs(in: tabGroups[index].id)
+      if let active = tabGroups[index].activeTabID, tabsHere.contains(where: { $0.id == active }) {
+        continue
+      }
+      // The last tab of the column, which is where the strip's own
+      // fallbacks land: a closed tab hands the column over to its neighbour
+      // on the right.
+      tabGroups[index].activeTabID = tabsHere.last?.id
+    }
+
+    // An entry for a worktree with no columns left, or one naming a column
+    // that belongs to another worktree, would hide the strip of the
+    // worktree it names.
+    focusedGroupByWorktree = focusedGroupByWorktree.filter { worktreeID, groupID in
+      group(groupID)?.worktreeID == worktreeID
+    }
+    for worktree in Set(tabGroups.map(\.worktreeID)) where focusedGroupByWorktree[worktree] == nil {
+      focusedGroupByWorktree[worktree] = groups(in: worktree).first?.id
+    }
+  }
+
+  /// Gives every tab that names no column a column to sit in.
+  ///
+  /// This is what a state file written before tab groups existed goes
+  /// through: none of its tabs names a group, so each worktree's tabs are
+  /// gathered into the one column they were saved as, showing whichever tab
+  /// `activeByWorktree` says was active. It is also the safety net for a
+  /// file whose group decoded badly and was dropped, or one hand-edited: the
+  /// worktree's first column takes the orphans rather than a new column
+  /// appearing beside it.
+  mutating func adoptUngroupedTabs(activeByWorktree: [Worktree.ID: TerminalTab.ID] = [:]) {
+    let known = Dictionary(
+      tabGroups.map { ($0.id, $0.worktreeID) }, uniquingKeysWith: { a, _ in a })
+    var minted: [Worktree.ID: TabGroup.ID] = [:]
+
+    for index in tabs.indices {
+      let tab = tabs[index]
+      guard known[tab.groupID] != tab.worktreeID else { continue }
+
+      if let existing = minted[tab.worktreeID] ?? groups(in: tab.worktreeID).first?.id {
+        tabs[index].groupID = existing
+        continue
+      }
+      let group = TabGroup(
+        worktreeID: tab.worktreeID, activeTabID: activeByWorktree[tab.worktreeID] ?? tab.id)
+      tabGroups.append(group)
+      minted[tab.worktreeID] = group.id
+      tabs[index].groupID = group.id
+      if focusedGroupByWorktree[tab.worktreeID] == nil {
+        focusedGroupByWorktree[tab.worktreeID] = group.id
+      }
     }
   }
 }

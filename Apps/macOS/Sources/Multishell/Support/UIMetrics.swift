@@ -29,7 +29,24 @@ struct UIMetrics {
   }
 
   var tabHeight: Double { (body * 2.6).rounded() }
+  /// What a tab is drawn at when the strip has room for it.
+  var tabMaxWidth: Double { (body * 14.6).rounded() }
+  /// And the least it is ever drawn: below this the icon, the title and the
+  /// close button have nowhere to go, and the strip scrolls instead. See
+  /// `TabStripLayout`.
+  var tabMinWidth: Double { (body * 7.5).rounded() }
+  /// The New Tab button at the end of a strip, which never scrolls away.
+  var newTabWidth: Double { (body * 2.6).rounded() }
+  /// The arrow at either end of a strip that has more tabs that way. Its
+  /// room is kept whether the arrow is drawn or not, so the tabs do not
+  /// shift under the pointer as one end runs out.
+  var tabArrowWidth: Double { (body * 1.7).rounded() }
   var indent: Double { (body * 2).rounded() }
+
+  /// How wide the band down each edge of a column's terminal area is while
+  /// a tab is being dragged; see `TabGroupBands`. Wide enough to aim at
+  /// without covering enough of the terminal to hide what is under it.
+  static let dropBandWidth: Double = 74
 
   /// The sidebar and detail headers. The one size here that does not scale
   /// with the font, so it is a constant and sits apart from the rest.

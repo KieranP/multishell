@@ -33,4 +33,15 @@ public enum SplitMath {
     updated[index + 1] = pair - first
     return updated
   }
+
+  /// Whether something that long can be halved and leave both halves at the
+  /// minimum, the divider between them taken out first.
+  ///
+  /// What a drop that would make a new tab group asks before it offers
+  /// itself: two columns too narrow to read is not what the drag meant, and
+  /// refusing springs it back where a resize would merely stop moving.
+  public static func canHalve(_ length: Double, minimumPane: Double, divider: Double) -> Bool {
+    guard length.isFinite, minimumPane.isFinite, divider.isFinite else { return false }
+    return length - divider >= minimumPane * 2
+  }
 }

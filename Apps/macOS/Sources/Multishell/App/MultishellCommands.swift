@@ -78,6 +78,15 @@ struct MultishellCommands: Commands {
       Button("Split Down") { model.splitActivePane(.vertical) }
         .keyboardShortcut(AppShortcuts.splitDown)
       Divider()
+      // Beside the splits, which is the layout it is a step out from: a
+      // split divides a tab, this divides the worktree.
+      Button("Move Tab to New Group") { model.moveActiveTabToNewGroup() }
+        .keyboardShortcut(AppShortcuts.moveTabToNewGroup)
+      Button("Focus Next Group") { model.focusNextGroup() }
+        .keyboardShortcut(AppShortcuts.nextGroup)
+      Button("Focus Previous Group") { model.focusPreviousGroup() }
+        .keyboardShortcut(AppShortcuts.previousGroup)
+      Divider()
       Button("Next Tab") { model.selectNextTab() }
         .keyboardShortcut(AppShortcuts.nextTab)
       Button("Previous Tab") { model.selectPreviousTab() }

@@ -25,9 +25,13 @@ extension AppModel {
 
   /// Cmd+T: the preferred agent when auto-start is on for this project,
   /// else a plain shell.
-  public func newTab() {
+  ///
+  /// The New Tab button in a column's strip names that column, so a click
+  /// in one column never opens a tab in another; the keystroke names none
+  /// and opens in the focused column.
+  public func newTab(in group: TabGroup.ID? = nil) {
     guard let worktree = worktreeReadyForShell() else { return }
-    openFirstOrNewTab(in: worktree, on: .byUser)
+    openFirstOrNewTab(in: worktree, on: .byUser, group: group)
     sync()
   }
 
@@ -42,14 +46,15 @@ extension AppModel {
   /// What a new tab is by default here: the agent if the project
   /// auto-starts one for this occasion, a shell otherwise. Also the first
   /// tab a worktree gets when it is selected or created.
-  func openFirstOrNewTab(in worktree: Worktree, on opening: TabOpening) {
+  func openFirstOrNewTab(in worktree: Worktree, on opening: TabOpening, group: TabGroup.ID? = nil) {
     if let project = project(of: worktree),
       autoStartsAgent(in: project, on: opening),
       let agentID = workspace.preferredAgentID(for: project)
     {
-      store.openTab(in: worktree.id, title: agentDisplayName(agentID), agentID: agentID)
+      store.openTab(
+        in: worktree.id, group: group, title: agentDisplayName(agentID), agentID: agentID)
     } else {
-      store.openTab(in: worktree.id)
+      store.openTab(in: worktree.id, group: group)
     }
   }
 
@@ -170,11 +175,31 @@ extension AppModel {
     sync()
   }
 
-  /// Moves `id` to sit just before or just after `target` in its strip.
+  /// Moves `id` to sit just before or just after `target`, which may be a
+  /// tab in another column of the same worktree.
+  ///
+  /// A move that would leave the strip reading the same writes nothing.
+  /// Reordering inside a column happens as the pointer passes each tab, so
+  /// by the time the tab is let go the move has usually already been made,
+  /// and doing it again costs a save and a re-render for no change.
   public func moveTab(
     _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, _ target: TerminalTab.ID
   ) {
+    guard changesTheStrip(id, placement, target) else { return }
     store.moveTab(id, placement, target)
+  }
+
+  /// A tab landing in another column always changes something, if only
+  /// which column it is in. Inside one column it is a question of order.
+  private func changesTheStrip(
+    _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, _ target: TerminalTab.ID
+  ) -> Bool {
+    guard
+      let moving = workspace.tab(id), let anchor = workspace.tab(target),
+      moving.groupID == anchor.groupID
+    else { return true }
+    return TabShuffle.reorders(
+      id, placement, of: target, in: workspace.tabs(in: moving.groupID).map(\.id))
   }
 
   /// A tab dragged onto a worktree's row in the sidebar. Its shells come

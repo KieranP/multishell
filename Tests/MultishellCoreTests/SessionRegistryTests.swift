@@ -190,8 +190,8 @@ struct LazySessionTests {
 
     host.delegate?.terminalHost(host, didFocus: first.focusedSessionID)
 
-    #expect(store.workspace.activeTabByWorktree[worktree.id] == first.id)
-    #expect(store.workspace.activeTabByWorktree[worktree.id] != second.id)
+    #expect(store.workspace.activeTab(in: worktree.id)?.id == first.id)
+    #expect(store.workspace.activeTab(in: worktree.id)?.id != second.id)
   }
 }
 

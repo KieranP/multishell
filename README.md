@@ -51,8 +51,10 @@ way they are.
 ## Features
 
 - Projects in a sidebar, every git worktree under them, terminal tabs and
-  splits per worktree. Terminals keep running while you look elsewhere, and
-  a tab dragged onto another worktree's row moves there without restarting.
+  splits per worktree. Drag a tab to the edge of the terminal area and it
+  gets a column of its own, so two agents in one worktree are watched side by
+  side. Terminals keep running while you look elsewhere, and a tab dragged
+  onto another worktree's row moves there without restarting.
 - Create a worktree and its branch in one step, where the project says, and
   it opens with a terminal, or your agent, already running. Removing one
   moves it to the Trash, so a wrong click is recoverable.

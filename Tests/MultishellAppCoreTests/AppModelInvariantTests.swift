@@ -32,7 +32,7 @@ struct AppModelInvariantTests {
     for step in 0..<300 {
       let ws = h.model.workspace
       let live = Array(h.engine.openSessionIDs)
-      switch Int.random(in: 0..<17, using: &rng) {
+      switch Int.random(in: 0..<22, using: &rng) {
       case 0, 1: h.model.select(worktrees.randomElement(using: &rng)!)
       case 2: h.model.newTab()
       case 3: h.model.closeActivePane()
@@ -95,6 +95,36 @@ struct AppModelInvariantTests {
         if let tab = ws.tabs.randomElement(using: &rng) {
           h.model.moveTab(tab.id, to: worktrees.randomElement(using: &rng)!.id)
         }
+      case 16:
+        // Move Tab to New Group, from the menu.
+        h.model.moveActiveTabToNewGroup()
+      case 17:
+        // A tab dragged to the band down one edge of a column.
+        if let tab = ws.tabs.randomElement(using: &rng),
+          let group = ws.tabGroups.randomElement(using: &rng)
+        {
+          h.model.moveTab(
+            tab.id, Bool.random(using: &rng) ? .before : .after, toNewGroupOf: group.id)
+        }
+      case 18:
+        // A tab dropped on another column's strip, clear of its tabs.
+        if let tab = ws.tabs.randomElement(using: &rng),
+          let group = ws.tabGroups.randomElement(using: &rng)
+        {
+          h.model.moveTab(tab.id, toEndOf: group.id)
+        }
+      case 19:
+        Bool.random(using: &rng) ? h.model.focusNextGroup() : h.model.focusPreviousGroup()
+      case 20:
+        // The New Tab button of one column, and the divider drag beside it.
+        if let group = ws.tabGroups.randomElement(using: &rng) {
+          Bool.random(using: &rng)
+            ? h.model.newTab(in: group.id)
+            : h.model.setGroupWeights(
+              (0..<Int.random(in: 1...3, using: &rng)).map { _ in
+                Double.random(in: 0.1...3, using: &rng)
+              }, in: group.worktreeID)
+        }
       default:
         // A refresh that lost or found a worktree, then the sync every
         // model action ends with.
@@ -131,7 +161,7 @@ struct AppModelInvariantTests {
       #expect(
         h.model.sessionStates[.worktree(selected)]?.isFinished != true,
         "\(context): unseen Done or Failed shown")
-      for id in ws.activeTab(in: selected)?.sessionIDs ?? [] {
+      for id in ws.shownTabs(in: selected).flatMap(\.sessionIDs) {
         #expect(
           h.model.sessionStates[.session(id)]?.isFinished != true,
           "\(context): unseen Done or Failed shown")
@@ -153,6 +183,15 @@ struct AppModelInvariantTests {
     for tab in ws.tabs {
       #expect(tab.root.contains(tab.focusedSessionID), "\(context): focus outside its tree")
       #expect(tab.sessionIDs.allSatisfy(sessionIDs.contains), "\(context): pane without a session")
+      #expect(
+        ws.group(tab.groupID)?.worktreeID == tab.worktreeID,
+        "\(context): a tab in another worktree's column, or in none")
+    }
+    for group in ws.tabGroups {
+      #expect(!ws.tabs(in: group.id).isEmpty, "\(context): a column with no tabs")
+      #expect(
+        ws.activeTab(in: group) != nil, "\(context): a column showing nothing")
+      #expect(group.weight.isFinite && group.weight > 0, "\(context): a column with no width")
     }
   }
 }

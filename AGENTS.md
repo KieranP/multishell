@@ -8,6 +8,9 @@ Read these before changing anything:
 - `DESIGN.md`: why each decision was made and what it cost, and nothing the
   code already says. Do not undo one without knowing what it cost to make; a
   few record features that were removed on purpose.
+- `TODO.md`: what is queued. Finishing something means moving its note to the
+  right file: a decision made to `DESIGN.md`, a gap left rather than fixed to
+  `DEVELOP.md` under Known gaps, and only work still wanted stays here.
 
 Working rules:
 
@@ -23,6 +26,14 @@ Working rules:
   port implementation, never in a model or a view.
 - Views call `AppModel`; they never touch the store, a host, or git. A view
   gets a terminal's view through `model.surface(for:)`.
+- A worktree's tabs sit in columns, `TabGroup`, side by side and never one
+  above another. A column holds its width and its active tab; a tab names
+  its column. `activeTab(in: worktree)` is the focused column's, which is
+  what a keystroke, a split and a rename act on; `shownTabs(in:)` is every
+  column's, which is what "the user can see this" means. A column never
+  stands empty: the store takes it away with its last tab, and
+  `repairReferences` gives an ungrouped tab the column its worktree already
+  has.
 - Run `make format` on anything you touched, then `make lint`, `make test`
   (both packages), `make build` and `make release`. All must pass, and both
   builds must compile with no warnings, before you say something works.
@@ -30,8 +41,10 @@ Working rules:
   `-1743`) and no Screen Recording (`screencapture` cannot create an image).
   Do not try, and do not ask for those permissions. A view change goes as far
   as the checks above and no further: say what is unverified and leave the
-  looking to the user. Whatever can be decided without a screen belongs in a
-  plain value in `MultishellAppCore`, tested there.
+  looking to the user, and record what you could not check in `DEVELOP.md`
+  under Known gaps, with the fallback if it turns out wrong. Whatever can be
+  decided without a screen belongs in a plain value in `MultishellAppCore`,
+  tested there.
 - Every persisted field decodes with a default, including an enum value this
   build does not know. Add a case to `DecodingDefaultsTests` when you add one.
   Worktrees, sessions, tabs and a project's shared-hook answers decode
@@ -67,11 +80,24 @@ Working rules:
   its `all`, which is where both the menu item and the surface's unbind come
   from; a shortcut declared and not listed is one the surface eats before the
   menu sees it. `surfaceKeeps` is for the few the terminal handles itself.
+  Check the combination is not the system's before claiming it: Cmd+Option+D
+  reads as the third of the split family and is the Dock's own, taken by the
+  WindowServer before a menu bar sees it. Those go in `systemOwned`.
 - A dragged tab is `TabTransfer`, under its own type, spelled both in that
   file and in the `Info.plist` `make-app.sh` writes. Its own type and not
   text: a project is dragged as text to reorder the sidebar, and one type
   for both would offer each drag the other's targets. A worktree row would
   light up for a project it cannot take, and swallow the drop.
+- A tab drag carries no image: `.onDrag` gets a one-point clear `preview:`,
+  because AppKit holds the card it draws on screen for the best part of a
+  second after the mouse comes up and nothing in SwiftUI reaches that. Do not
+  give it one back without owning the drag in AppKit. Nothing is drawn from a
+  flag set when the drag began, only from what the pointer is over
+  (`TabDragState.isEngaged`, `showsBands`): a drag can be let go where no
+  target sees it, and a highlight would stay on screen with no drag behind it.
+  Every drop answers `true` and moves the tab a turn later, so the drag ends
+  against the view tree it began in and a refusal does not slide the preview
+  home.
 - The sidebar and detail headers are `UIMetrics.headerHeight` tall, the
   height of the hidden title bar's band. Nothing but a header may reach into
   that band, or AppKit paints over it.
@@ -94,8 +120,15 @@ Working rules:
   `--no-optional-locks`. A background call that takes `index.lock` breaks the
   user's own commits.
 - Decisions a view makes live in a plain value in `MultishellAppCore`
-  (`NewWorktreeDraft`, `SplitMath`, `SidebarFilter`, `EditorLaunch`) and are
-  tested there. Views are not tested.
+  (`NewWorktreeDraft`, `SplitMath`, `SidebarFilter`, `EditorLaunch`,
+  `TabStripLayout`, `TabShuffle`, `TabDragState`) and are tested there. Views
+  are not tested. A tab strip measures nothing: `TabStripLayout` gives every
+  tab one width from the room and the count, and the drop reads that.
+- Which pane the keystrokes go to is drawn from the theme, never from a
+  colour in a view: `focusRing` is a colour, `""` for no ring, or absent for
+  the selection colour, and `inactivePaneOpacity` fades the rest. A colour
+  that will not parse falls back rather than reading as off, so a typo costs
+  the colour and not the ring.
 - Settings help text goes behind an `InfoButton`, not a caption under the
   row. A `SettingsCaption` is for a value computed live from the settings.
 - Anything that acts on a worktree goes in `WorktreeActions`, which the

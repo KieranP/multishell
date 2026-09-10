@@ -33,8 +33,10 @@ DEVELOP.md under Known gaps.
 - Keyboard: Cmd+1 to 9 for tabs, next and previous worktree, focus between
   panes, focus the sidebar filter. Each is an `AppShortcut` in
   `AppShortcuts.all`.
-- Tab overflow: twelve tabs shrink to icons. Scroll the strip or collapse
-  the inactive ones.
+- New Tab in New Group: one action for "open a terminal beside this one",
+  which today is Cmd+T and then Move Tab to New Group, with a flicker of two
+  tabs in one strip in between. A store operation that opens a tab straight
+  into a fresh column beside the focused one, a Terminal menu item and a key.
 - `os.Logger` for process runs, hooks, refreshes and decode failures; only
   `MacPlatform` logs today. A Help menu with the repository and issue
   tracker, and "Copy diagnostics".

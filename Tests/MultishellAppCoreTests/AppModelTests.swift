@@ -468,7 +468,7 @@ struct AppModelTests {
     h.model.closeTab(first.id)
 
     #expect(h.model.workspace.tabs(in: h.main.id).map(\.id) == [second.id])
-    #expect(h.model.workspace.activeTabByWorktree[h.main.id] == second.id, "the active one stays")
+    #expect(h.model.workspace.activeTab(in: h.main.id)?.id == second.id, "the active one stays")
     #expect(h.engine.closed == [first.focusedSessionID], "its shell went with it")
 
     h.model.closeTab(UUID())

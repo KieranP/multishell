@@ -105,6 +105,21 @@ struct AccessibilityTextTests {
       AccessibilityText.tab(title: "claude", isActive: false, isSplit: false, state: nil)
         == "claude, tab")
   }
+
+  /// A worktree with one column has nothing to tell apart, so its strip
+  /// says nothing rather than "group 1 of 1" before every tab.
+  @Test func aColumnOfTabsNamesItselfOnlyWhereThereAreSeveral() {
+    #expect(AccessibilityText.tabGroup(position: 1, of: 1, isFocused: true).isEmpty)
+    #expect(
+      AccessibilityText.tabGroup(position: 2, of: 3, isFocused: true)
+        == "Tab group 2 of 3, focused")
+    #expect(AccessibilityText.tabGroup(position: 1, of: 2, isFocused: false) == "Tab group 1 of 2")
+  }
+
+  @Test func aDropBandSaysWhichSideTheNewColumnGoes() {
+    #expect(AccessibilityText.newTabGroupBand(.before) == "New tab group left")
+    #expect(AccessibilityText.newTabGroupBand(.after) == "New tab group right")
+  }
 }
 
 /// The terminal font picker's rows.

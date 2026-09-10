@@ -61,6 +61,9 @@ asked for it.
 AGENTS.md states the rules; this is what catches a breach.
 
 - Persisted defaults, unknown enum values included: `DecodingDefaultsTests`.
+- A state file written before a feature existed still loads with what it said:
+  `TabGroupMigrationTests` reads a real pre-columns file, tabs, splits, custom
+  titles and its `activeTabByWorktree`, through `WorkspaceStore.restored`.
 - `WorkspaceInvariants` and `repairReferences`: the seeded random tests, which
   print the failing seed and step. Extend both with any new collection.
 - No blocking in the core: `ProcessRunnerTests` runs 96 children under a
@@ -89,7 +92,17 @@ AGENTS.md states the rules; this is what catches a breach.
 ## Adding things
 
 **A theme.** A `.json` in the themes folder (Settings > Appearance > Open
-Folder), in `Theme`'s Codable shape. `examples/` there is not loaded.
+Folder), in `Theme`'s Codable shape. `examples/` there is not loaded, and an
+example already written is not rewritten, so keys added since are only in a
+folder seeded after them.
+
+Two keys are not colours the terminal draws. `focusRing` is the line round the
+pane the keystrokes go to: a colour, `""` for no line, or the key left out for
+the theme's `selectionBackground`, which is what the app drew before the key
+existed; an unparsable colour falls back the same way rather than reading as
+off. `inactivePaneOpacity` fades every other pane towards the theme's
+background, `1` fading nothing and anything under `0.25` clamping to it. Both
+are drawn per pane by `PaneTreeView`; see `Theme.focusRingRGB`.
 
 **A terminal engine.** Implement `TerminalSurfaceHost`, add a case to
 `TerminalEngine`, return it from `makeHost()`. Pass
@@ -123,10 +136,27 @@ An agent with no hooks at all needs a `.plugin`, as OpenCode has.
 builds the environment and draws the Hooks tab's table, so the help cannot fall
 behind.
 
+**A tab strip measurement.** `UIMetrics.tabMinWidth` and `tabMaxWidth` are
+what a tab is drawn between, and `TabStripLayout` divides the strip by them:
+tabs share it up to the cap, shrink together, and stop at the floor, past
+which the strip scrolls and clips. The floor has to leave room for the side
+padding, the dot or icon, the gap and the close button with something over for
+the title, which `MetricsAndColourTests` checks across the font-size range,
+along with `tabArrowWidth` holding its own glyph and two gutters still leaving
+room for a tab. `TabStripLayout.Edges` says which end has more past it and
+`stepTarget` which tab its arrow scrolls to; `newTabWidth` and the two gutters
+come off the room before any of that is asked, so nothing measures itself.
+
 **A keyboard shortcut.** An `AppShortcut` in `AppShortcuts`, listed in its
 `all`, which the menu item and the Ghostty `keybind=…=unbind` are both derived
-from. One declared and left out of `all` works everywhere but a pane.
-`surfaceKeeps` marks the clipboard combinations, which the terminal keeps.
+from. A key Ghostty names rather than takes the character of (tab, enter,
+comma, the arrows) needs a case in `ghosttyName`, or the config carries a
+private-use scalar Ghostty cannot parse, and a combination the system owns
+belongs in `systemOwned` rather than on a menu item: Cmd+Option+D reads as the
+third of the split family and is the Dock's own, taken by the WindowServer
+before a menu bar sees it. One declared and left out of `all` works everywhere
+but a pane. `surfaceKeeps` marks the clipboard combinations, which the
+terminal keeps.
 
 **A project icon.** A name in one of `ProjectIcon.symbolGroups`, or a group of
 its own. It must exist as far back as macOS 14: the app's deployment target is
@@ -174,9 +204,14 @@ Trash.
 `multishell.debug.sock`, `integration.debug/` and `drops.debug/`; themes and the
 helper link are shared.
 
-- `state.json`: the sidebar, tabs, pane trees, worktree names, each worktree's
-  directory creation date and every setting. Not processes, shell titles, the
-  shell a tab resolved to, or a branch's last commit time.
+- `state.json`: the sidebar, tabs, the columns they sit in with each column's
+  width and active tab, pane trees, worktree names, each worktree's directory
+  creation date and every setting. Not processes, shell titles, the shell a tab
+  resolved to, or a branch's last commit time.
+  A file written before columns existed names no group on any tab and carries
+  an `activeTabByWorktree` this build no longer has a property for: `Workspace`
+  reads that key to know which tab was active, and `repairReferences` gathers
+  each worktree's ungrouped tabs into the one column they were saved as.
 - `state.<timestamp>.broken.json`: a state file that failed to decode.
 - `themes/*.json`, with `themes/examples/` not loaded.
 - `multishell.sock`, mode 0600.
@@ -266,10 +301,54 @@ names are the log's less the `kTCCService` prefix, so App Management is
   engine surface to the frame that is registered — documented behaviour for the
   registration, undocumented for the search order, so if either engine ever
   registers a dragged type the frame stops seeing drops. Checked only by hand.
-  The sidebar and the tab strip take no drops.
-- Sidebar keyboard navigation, tab strip overflow and a shortcut to focus the
-  filter are not built. No view tests, and the accessibility labels have not
-  been read with VoiceOver.
+  The same walk is what carries a dragged tab past a surface to the SwiftUI
+  band over it, `SurfaceFrame` being registered for files and promises and not
+  for `io.multishell.tab`; if a band never lights, registering the tab type on
+  the frame and answering it there is the fallback. The tab strips of every
+  column take a tab, and the sidebar's worktree rows take one; nothing else
+  does.
+- The tab-group drawing is unverified on screen: whether the bands appear as a
+  tab crosses a terminal area, whether the insertion line lands in the right
+  strip, how a column reads while it has no focus, and whether a strip's
+  scroll arrows read as "more tabs this way" any better than the fade they
+  replaced. The store, the model
+  and the wording are tested; the drawing is not. Nothing is drawn from a flag
+  set when the drag began, only from what the pointer is over, so a drag
+  released where no target of ours saw it leaves no highlight behind; the cost
+  is that the bands are not on screen until the tab reaches a terminal.
+- Whether a SwiftUI overlay composites above an engine's surface is unverified
+  for Ghostty, whose surface is Metal-backed: the focus ring has always been
+  drawn that way and the fade for unfocused panes now is too. If neither
+  appears there, both are silent rather than wrong, and the fade would have to
+  become a view inside `SurfaceFrame` the way its drop highlight is.
+- A tab drag carries no image. AppKit draws the preview for `.onDrag` itself,
+  as an elevated card, and holds it on screen for the best part of a second
+  after the mouse comes up, wherever the tab landed; nothing in SwiftUI's drag
+  API reaches that disposal, and deferring the move out of `performDrop` did
+  not change it. So `.onDrag` is given a one-point clear `preview:`, and what
+  a drag shows instead is the tab itself: along its own strip it moves as the
+  pointer passes its neighbours, and elsewhere it dims where it sits while the
+  insertion line, the bands or the sidebar row's highlight say where it would
+  land. Bringing a carried image back means
+  owning the drag as an AppKit source, where the session's
+  `animatesToStartingPositionsOnCancelOrFail` and the image are settable,
+  which also means owning the tab's click, double click and middle click.
+- Every tab drop still answers the drag before it moves the tab, a turn later
+  on the main actor. It made no difference to the preview, but it is the right
+  order: the drag ends against the view tree it started in.
+- A scrolled tab strip does not scroll itself while a tab is dragged near its
+  end, so a tab cannot be dragged past the tabs that are visible: reordering
+  reaches only what is on screen, and a tab off the end cannot be dropped on.
+  Auto-scroll needs the drop's own pointer position and a repeating step, and
+  the strip's `ScrollViewProxy` reaching the drop delegate.
+- Reordering inside one column happens as the pointer passes each tab, not on
+  release; see `TabShuffle` and `AppModel.shuffleTab`. Unverified on screen is
+  how it looks at the edges: a strip whose tabs are of very different widths
+  could in principle move a tab back and forth across one boundary, since the
+  tab that lands under the pointer is what stops that from happening.
+- Sidebar keyboard navigation and a shortcut to focus the filter are not
+  built. No view tests, and the accessibility labels have not been read with
+  VoiceOver.
 - The existing-branch picker lists local branches only, so a remote-only branch
   is created as a new one based on its remote; a decision, not a defect.
 - `.multishell.json` is read from the project path, which for a bare repository

@@ -253,8 +253,20 @@ struct SidebarView: View {
     // sidebar is not offered this row at all.
     .dropDestination(for: TabTransfer.self) { dropped, _ in
       tabDropTarget = nil
-      guard let moving = dropped.first?.id else { return false }
-      return model.moveTab(moving, to: worktree.id)
+      // Refused here, and only here, so the drag springs back where the
+      // answer is plainly no: an unknown tab, or the row it already sits
+      // under. The rest of what can stop a move — either end busy with a
+      // create or a remove, a directory that has gone — says so with an
+      // alert of its own rather than a silent spring-back.
+      guard let moving = dropped.first?.id, let tab = model.workspace.tab(moving),
+        tab.worktreeID != worktree.id
+      else { return false }
+      // A turn later, so the drag is over before the tab leaves the strip
+      // it was dragged from; see `TabDropDelegate`. This drop moves the
+      // selection too, so it is the one where the preview had furthest to
+      // hunt for a view that had gone.
+      Task { @MainActor in model.moveTab(moving, to: worktree.id) }
+      return true
     } isTargeted: { isTargeted in
       if isTargeted {
         tabDropTarget = worktree.id

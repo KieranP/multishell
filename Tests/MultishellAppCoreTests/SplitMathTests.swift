@@ -26,6 +26,15 @@ struct SplitMathTests {
     #expect(close(drag(-1000, weights: [1, 1, 1]), to: [0.4, 1.6, 1]))
   }
 
+  /// What a drop that would make a new tab group asks first. 6 points of
+  /// divider and 80 a pane, so 166 fits and 165 does not.
+  @Test func aLengthTooShortToHalveIsRefused() {
+    #expect(SplitMath.canHalve(166, minimumPane: 80, divider: 6))
+    #expect(!SplitMath.canHalve(165, minimumPane: 80, divider: 6))
+    #expect(!SplitMath.canHalve(0, minimumPane: 80, divider: 6))
+    #expect(!SplitMath.canHalve(.nan, minimumPane: 80, divider: 6), "a width not yet measured")
+  }
+
   private func close(_ a: [Double], to b: [Double]) -> Bool {
     a.count == b.count && zip(a, b).allSatisfy { abs($0 - $1) < 1e-9 }
   }

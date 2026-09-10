@@ -21,11 +21,11 @@ extension AppModel {
     markShownTabSeen()
   }
 
-  /// Done clears for what is on screen: the active tab's panes, and the
-  /// selected worktree's own entry.
+  /// Done clears for what is on screen: the panes of every column's active
+  /// tab, and the selected worktree's own entry.
   func markShownTabSeen() {
     guard let worktree = workspace.selectedWorktreeID else { return }
-    let shown = workspace.activeTab(in: worktree)?.sessionIDs ?? []
+    let shown = workspace.shownTabs(in: worktree).flatMap(\.sessionIDs)
     mutateStates { $0.markSeen(sessions: shown, worktree: worktree) }
   }
 

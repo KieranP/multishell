@@ -84,4 +84,18 @@ extension Theme {
   public var selectionRGB: RGB {
     HexColor.parse(selectionBackground) ?? RGB(red: 64, green: 96, blue: 144)
   }
+
+  /// The line round the focused pane, or `nil` for no line.
+  ///
+  /// The three spellings of the key: a colour is that colour, an empty
+  /// string is no ring, and the key left out is the selection colour, which
+  /// is what the app drew before the key existed. A colour that will not
+  /// parse reads as the key left out and not as no ring, so a typo costs
+  /// the colour rather than silently removing the thing it was setting.
+  public var focusRingRGB: RGB? {
+    guard let focusRing else { return selectionRGB }
+    let text = focusRing.trimmingCharacters(in: .whitespaces)
+    guard !text.isEmpty else { return nil }
+    return HexColor.parse(text) ?? selectionRGB
+  }
 }

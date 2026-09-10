@@ -46,12 +46,18 @@ struct AppShortcut {
     return parts.joined(separator: "+")
   }
 
-  /// Ghostty names a few keys rather than taking their character.
+  /// Ghostty names a few keys rather than taking their character. The
+  /// arrows arrive as the private-use scalars AppKit gives them, which is
+  /// what `KeyEquivalent.leftArrow` and its siblings hold.
   private static func ghosttyName(of key: KeyEquivalent) -> String {
     switch key.character {
     case "\t": "tab"
     case "\r": "enter"
     case ",": "comma"
+    case KeyEquivalent.leftArrow.character: "left"
+    case KeyEquivalent.rightArrow.character: "right"
+    case KeyEquivalent.upArrow.character: "up"
+    case KeyEquivalent.downArrow.character: "down"
     default: String(key.character)
     }
   }
@@ -79,6 +85,14 @@ enum AppShortcuts {
   static let closeTab = AppShortcut("w", .shift)
   static let splitRight = AppShortcut("d")
   static let splitDown = AppShortcut("d", .shift)
+  /// Not Cmd+Option+D, which reads as the third of the split family but is
+  /// the system's own toggle for hiding the Dock: the WindowServer takes it
+  /// before a menu bar sees it, so the item would never fire.
+  static let moveTabToNewGroup = AppShortcut("g", .option)
+  /// Alt and an arrow is word movement in a terminal, which stays bound;
+  /// these carry Command as well, so nothing in a pane wants them.
+  static let nextGroup = AppShortcut(.rightArrow, .option)
+  static let previousGroup = AppShortcut(.leftArrow, .option)
   static let undo = AppShortcut("z")
   static let redo = AppShortcut("z", .shift)
   static let nextTab = AppShortcut.control(.tab)
@@ -103,6 +117,7 @@ enum AppShortcuts {
   static let all: [AppShortcut] = [
     newTab, newShellTab, newAgentTab, closePane, closeTab, newWorktree,
     addProject, openInEditor, splitRight, splitDown,
+    moveTabToNewGroup, nextGroup, previousGroup,
     undo, redo, nextTab, previousTab,
     cut, copy, paste, selectAll,
   ]
@@ -113,6 +128,9 @@ enum AppShortcuts {
   /// still give them up.
   static let systemOwned = [
     "super+shift+n", "super+comma", "super+q", "super+ctrl+f", "super+enter",
+    // Hides the Dock. Listed so nothing here claims it, and so the reason
+    // Move Tab to New Group is not on it stays written down.
+    "super+alt+d",
   ]
 
   /// What the terminal surface is told to unbind, or it eats these before

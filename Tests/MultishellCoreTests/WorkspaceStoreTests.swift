@@ -124,9 +124,9 @@ struct WorkspaceStoreTests {
     let first = store.openTab(in: worktree.id)!
     let second = store.openTab(in: worktree.id)!
 
-    #expect(store.workspace.activeTabByWorktree[worktree.id] == second.id)
+    #expect(store.workspace.activeTab(in: worktree.id)?.id == second.id)
     store.closeTab(second.id)
-    #expect(store.workspace.activeTabByWorktree[worktree.id] == first.id)
+    #expect(store.workspace.activeTab(in: worktree.id)?.id == first.id)
   }
 
   /// Dragged onto another worktree's row in the sidebar. The tab is listed
@@ -149,7 +149,7 @@ struct WorkspaceStoreTests {
     #expect(store.workspace.tabs(in: main.id).isEmpty)
     #expect(store.workspace.sessions(in: feature.id).count == 3, "both panes came along")
     #expect(store.workspace.sessions(in: main.id).isEmpty)
-    #expect(store.workspace.activeTabByWorktree[feature.id] == moving.id)
+    #expect(store.workspace.activeTab(in: feature.id)?.id == moving.id)
   }
 
   /// The directory travels with the tab. It is where the tab's panes start,
@@ -179,10 +179,10 @@ struct WorkspaceStoreTests {
     let second = store.openTab(in: main.id)!
 
     store.moveTab(second.id, to: feature.id)
-    #expect(store.workspace.activeTabByWorktree[main.id] == first.id)
+    #expect(store.workspace.activeTab(in: main.id)?.id == first.id)
 
     store.moveTab(first.id, to: feature.id)
-    #expect(store.workspace.activeTabByWorktree[main.id] == nil, "no tabs, no active one")
+    #expect(store.workspace.activeTab(in: main.id)?.id == nil, "no tabs, no active one")
   }
 
   @Test func aTabIsNotMovedToAWorktreeThatCannotTakeIt() {
@@ -330,7 +330,7 @@ struct WorkspaceStoreEdgeTests {
 
     store.focusSession(first.focusedSessionID)
 
-    #expect(store.workspace.activeTabByWorktree[worktree.id] == first.id)
+    #expect(store.workspace.activeTab(in: worktree.id)?.id == first.id)
   }
 
   @Test func unknownIDsAreIgnored() {
@@ -391,7 +391,7 @@ struct CrossWorktreeTests {
 
     store.focusSession(b.focusedSessionID)
 
-    #expect(store.workspace.activeTabByWorktree[other.id] == b.id)
+    #expect(store.workspace.activeTab(in: other.id)?.id == b.id)
     #expect(
       store.workspace.selectedWorktreeID == main.id,
       "focus is per worktree; selection is the user's")

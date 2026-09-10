@@ -18,6 +18,19 @@ public struct Theme: Identifiable, Codable, Hashable, Sendable {
   /// The 16 ANSI colours, normal 0-7 then bright 8-15.
   public var ansi: [String]
 
+  /// The line round the pane keystrokes go to. An empty string is no line
+  /// at all; `nil` follows `selectionBackground`, which is what the app
+  /// drew before this key existed, so no theme file already written changes
+  /// appearance. See `focusRingRGB`, which reads the three spellings.
+  public var focusRing: String?
+  /// What every pane but the focused one draws at, faded towards the
+  /// theme's own background. `1` fades nothing.
+  public var inactivePaneOpacity: Double
+
+  /// Anything less would be a pane nobody can read, which looks broken
+  /// rather than unfocused.
+  public static let minimumInactivePaneOpacity = 0.25
+
   public init(
     id: String,
     name: String,
@@ -26,7 +39,9 @@ public struct Theme: Identifiable, Codable, Hashable, Sendable {
     foreground: String,
     cursor: String,
     selectionBackground: String,
-    ansi: [String]
+    ansi: [String],
+    focusRing: String? = nil,
+    inactivePaneOpacity: Double = 1
   ) {
     precondition(ansi.count == 16, "a theme needs exactly 16 ANSI colours")
     self.id = id
@@ -37,12 +52,23 @@ public struct Theme: Identifiable, Codable, Hashable, Sendable {
     self.cursor = cursor
     self.selectionBackground = selectionBackground
     self.ansi = ansi
+    self.focusRing = focusRing
+    self.inactivePaneOpacity = Self.usableOpacity(inactivePaneOpacity)
+  }
+
+  static func usableOpacity(_ value: Double) -> Double {
+    guard value.isFinite else { return 1 }
+    return min(max(value, minimumInactivePaneOpacity), 1)
   }
 
   /// Synthesized decoding would skip the precondition above, and the GUI
   /// indexes `ansi` directly, so a user theme file with the wrong number of
   /// colours is refused here and reported by `ThemeCatalog` rather than
   /// crashing the first view that draws with it.
+  ///
+  /// The focus ring and the fade are read with `try?`, so a file that spells
+  /// either as the wrong type costs that key and not the theme. Both have a
+  /// default that draws what the app drew before they existed.
   public init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     let ansi = try container.decode([String].self, forKey: .ansi)
@@ -51,6 +77,7 @@ public struct Theme: Identifiable, Codable, Hashable, Sendable {
         forKey: .ansi, in: container,
         debugDescription: "a theme needs exactly 16 ANSI colours, found \(ansi.count)")
     }
+    let opacity = (try? container.decodeIfPresent(Double.self, forKey: .inactivePaneOpacity)) ?? nil
     self.init(
       id: try container.decode(String.self, forKey: .id),
       name: try container.decode(String.self, forKey: .name),
@@ -59,7 +86,9 @@ public struct Theme: Identifiable, Codable, Hashable, Sendable {
       foreground: try container.decode(String.self, forKey: .foreground),
       cursor: try container.decode(String.self, forKey: .cursor),
       selectionBackground: try container.decode(String.self, forKey: .selectionBackground),
-      ansi: ansi
+      ansi: ansi,
+      focusRing: (try? container.decodeIfPresent(String.self, forKey: .focusRing)) ?? nil,
+      inactivePaneOpacity: opacity ?? 1
     )
   }
 }
@@ -90,7 +119,11 @@ extension Theme {
       "#5aa9f8", "#bf5af2", "#64d2ff", "#c8c8cd",
       "#4a4a52", "#ff8b82", "#8fdb87", "#f0d49b",
       "#7fbdff", "#d191f5", "#8fe0ff", "#f2f2f5",
-    ]
+    ],
+    // The theme's own blue rather than its selection colour, which is
+    // mixed to sit under text and reads as a smudge as a one-point line.
+    focusRing: "#5aa9f8",
+    inactivePaneOpacity: 0.8
   )
 
   public static let multishellLight = Theme(
@@ -106,6 +139,8 @@ extension Theme {
       "#2f6fd0", "#8b3fbd", "#237f96", "#dcdcdf",
       "#6b6b73", "#e05548", "#54a84b", "#b98d28",
       "#4a8ae8", "#a55dd4", "#3399b0", "#f7f7f8",
-    ]
+    ],
+    focusRing: "#2f6fd0",
+    inactivePaneOpacity: 0.8
   )
 }

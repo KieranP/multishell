@@ -9,8 +9,8 @@ import Testing
 /// kept in step by hand; these pin what the one list now derives.
 @Suite
 struct AppShortcutTests {
-  /// The combinations the surface is told to give up, exactly as the
-  /// hand-written config listed them before they were derived. This is the
+  /// The combinations the surface is told to give up: the hand-written
+  /// config's own list, plus the tab-group items added since. This is the
   /// assertion that says the change to one source altered nothing.
   @Test func theDerivedUnbindListIsTheOneGhosttyWasAlwaysGiven() {
     #expect(
@@ -19,6 +19,8 @@ struct AppShortcutTests {
         "super+shift+n",
         "super+o", "super+shift+o", "super+d", "super+shift+d", "super+comma", "super+q",
         "super+z", "super+shift+z",
+        "super+alt+g", "super+alt+left", "super+alt+right",
+        "super+alt+d",
         "ctrl+tab", "ctrl+shift+tab",
         "super+ctrl+f", "super+enter",
       ])
@@ -53,6 +55,16 @@ struct AppShortcutTests {
     #expect(AppShortcuts.nextTab.modifiers == .control)
     #expect(AppShortcuts.nextTab.ghosttyCombo == "ctrl+tab")
     #expect(AppShortcuts.previousTab.ghosttyCombo == "ctrl+shift+tab")
+
+    // The arrows arrive as private-use scalars, which Ghostty would not
+    // parse; it names them instead. Alt and a bare arrow is word movement
+    // in a terminal and stays bound, so these carry Command as well.
+    #expect(AppShortcuts.nextGroup.ghosttyCombo == "super+alt+right")
+    #expect(AppShortcuts.previousGroup.ghosttyCombo == "super+alt+left")
+    // Not super+alt+d: the system's Dock toggle, which the
+    // WindowServer takes before a menu item can see it.
+    #expect(AppShortcuts.moveTabToNewGroup.ghosttyCombo == "super+alt+g")
+    #expect(AppShortcuts.systemOwned.contains("super+alt+d"))
   }
 
   /// Two menu items on one combination is one of them never firing, and

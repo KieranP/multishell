@@ -103,6 +103,80 @@ struct DecodingDefaultsTests {
     #expect(try JSONDecoder().decode(Theme.self, from: full) == Theme.multishellDark)
   }
 
+  /// A theme file written before the focus ring and the fade existed, and
+  /// one that spells either as the wrong type. Both keys have to default,
+  /// or every user theme file stops loading.
+  @Test func aThemeWithoutAFocusRingOrAFadeStillLoads() throws {
+    let bare = try decode(
+      Theme.self,
+      #"""
+      { "id": "bare", "name": "Bare", "isDark": true, "background": "#000000",
+        "foreground": "#ffffff", "cursor": "#ffffff", "selectionBackground": "#2f4f7a",
+        "ansi": ["#000"\#(String(repeating: ",\"#000\"", count: 15))] }
+      """#)
+    #expect(bare.focusRing == nil)
+    #expect(bare.focusRingRGB == bare.selectionRGB, "the key left out is the selection colour")
+    #expect(bare.inactivePaneOpacity == 1, "nothing fades until a theme asks for it")
+
+    let wrongTypes = try decode(
+      Theme.self,
+      #"""
+      { "id": "odd", "name": "Odd", "isDark": true, "background": "#000000",
+        "foreground": "#ffffff", "cursor": "#ffffff", "selectionBackground": "#2f4f7a",
+        "focusRing": 12, "inactivePaneOpacity": "half",
+        "ansi": ["#000"\#(String(repeating: ",\"#000\"", count: 15))] }
+      """#)
+    #expect(wrongTypes.focusRingRGB == wrongTypes.selectionRGB)
+    #expect(wrongTypes.inactivePaneOpacity == 1)
+  }
+
+  /// A fade nobody can read through is not a signal, so the value is
+  /// clamped rather than taken at its word.
+  @Test func aFadeOutsideTheUsableRangeIsClamped() throws {
+    func opacity(_ value: String) throws -> Double {
+      try decode(
+        Theme.self,
+        #"""
+        { "id": "x", "name": "X", "isDark": true, "background": "#000000",
+          "foreground": "#ffffff", "cursor": "#ffffff", "selectionBackground": "#2f4f7a",
+          "inactivePaneOpacity": \#(value),
+          "ansi": ["#000"\#(String(repeating: ",\"#000\"", count: 15))] }
+        """#
+      ).inactivePaneOpacity
+    }
+    #expect(try opacity("0") == Theme.minimumInactivePaneOpacity)
+    #expect(try opacity("-4") == Theme.minimumInactivePaneOpacity)
+    #expect(try opacity("2") == 1)
+    #expect(try opacity("0.6") == 0.6)
+  }
+
+  /// A group written by a build that had neither field, and one whose width
+  /// is a number nothing can be laid out in.
+  @Test func aTabGroupWithoutAWidthOrAnActiveTabStillLoads() throws {
+    let bare = try decode(
+      TabGroup.self, #"{ "id": "\#(UUID())", "worktreeID": "/repos/demo" }"#)
+    #expect(bare.weight == 1)
+    #expect(bare.activeTabID == nil)
+
+    let zero = try decode(
+      TabGroup.self, #"{ "id": "\#(UUID())", "worktreeID": "/repos/demo", "weight": 0 }"#)
+    #expect(zero.weight == 1, "a column of no width would draw nothing")
+  }
+
+  /// Every tab of a state file written before columns existed. The tabs and
+  /// their panes must survive; the column is `repairReferences`' to supply.
+  @Test func aTabWithoutAColumnDecodesAsUnassigned() throws {
+    let session = UUID()
+    let tab = try decode(
+      TerminalTab.self,
+      #"""
+      { "id": "\#(UUID())", "worktreeID": "/repos/demo", "focusedSessionID": "\#(session)",
+        "root": { "terminal": { "_0": "\#(session)" } } }
+      """#)
+    #expect(tab.groupID == TabGroup.unassigned)
+    #expect(tab.sessionIDs == [session])
+  }
+
   @Test func anEngineThisBuildDoesNotKnowFallsBackRatherThanFailingTheFile() throws {
     // Written by a newer build with a third engine. Losing the engine choice
     // is fine; losing every project is not.
@@ -474,10 +548,15 @@ struct LossyDecodingTests {
     let worktree = Worktree(path: project.path, projectID: project.id, head: "a", branch: "main")
     let session = TerminalSession(
       worktreeID: worktree.id, workingDirectory: worktree.path, title: "sh")
+    var group = TabGroup(worktreeID: worktree.id)
+    let tab = TerminalTab(worktreeID: worktree.id, groupID: group.id, session: session.id)
+    group.activeTabID = tab.id
     workspace.projects = [project]
     workspace.worktrees = [worktree]
     workspace.sessions = [session]
-    workspace.tabs = [TerminalTab(worktreeID: worktree.id, session: session.id)]
+    workspace.tabs = [tab]
+    workspace.tabGroups = [group]
+    workspace.focusedGroupByWorktree = [worktree.id: group.id]
 
     let json = try JSONEncoder().encode(workspace)
     #expect(try JSONDecoder().decode(Workspace.self, from: json) == workspace)

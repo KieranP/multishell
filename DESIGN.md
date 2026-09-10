@@ -511,6 +511,144 @@ binary, which TCC refuses rather than asks about.
 Cost: a setup step before the first build, and a certificate nothing else
 trusts.
 
+## A worktree's tabs sit in columns, and a column only ever sits beside another
+
+Two agents in one worktree can be watched at once without either becoming a
+pane of the other: a column has its own strip, its own active tab and its own
+width. Never one above another, because a pane below is what a split already
+is, and a tree of columns holding trees of panes would be two layouts doing
+one job. So `TabGroup` is a flat record with a weight and the renderer is one
+`WeightedSplit` on the horizontal axis.
+
+A column is a record of its own rather than a field on the tab because it
+outlives the tabs that pass through it: its width and which tab it shows have
+to survive the last tab moving out and a new one moving in. It holds its own
+`activeTabID`, where the worktree's active tab was a dictionary on the
+workspace: git hands back worktree records on every refresh, and nothing
+rediscovers a column.
+
+A column never stands empty. Its last tab leaving takes it with it and hands
+the focus to the column that slid into its place, which is what a strip does
+when the active tab closes. Weights are relative, so the rest come back in
+proportion with nothing to renormalise.
+
+Only the edges of a terminal area take a tab. A band down each side makes a
+column on that side, and the space between them offers nothing: the strip
+above is where a tab goes to join a column, and a target over every terminal
+in the window would be a second way to do that, drawn over everything. A band
+refuses where halving the column would put either half under the minimum a
+pane already has, so the drag springs back rather than making two columns
+nobody can read.
+
+One pane in the window asks for the keyboard, not one per column: a surface
+given focus reports it back, which focuses its column, so two panes asking
+would leave the columns trading the focus between renders.
+
+Costs: `activeTabByWorktree` has left the state file, so an older build
+reading a newer one forgets which tab each worktree had active. A tab written
+before columns existed names no group, so `repairReferences` gathers a
+worktree's ungrouped tabs into the one column they were saved as, and a hand
+edit that loses a column is repaired the same way rather than by dropping
+tabs. And everything that meant "the tab on screen" had to become "the tab on
+screen in this column": `isShown`, the Done state that clears when it is
+looked at, and the notification that is not raised because it was.
+
+## A dragged tab is its own preview
+
+AppKit draws the preview for a SwiftUI `.onDrag` itself, as an elevated card,
+and holds it on screen for the best part of a second after the mouse comes up,
+wherever the tab landed. Nothing in SwiftUI's drag API reaches that disposal:
+answering the drop before moving the tab, so the drag ends against the view
+tree it began in, made no difference, and neither would any return value — the
+image is AppKit's. So `.onDrag` is given a one-point clear preview and there
+is nothing to hold.
+
+What shows the drag instead is the tab. Along its own strip it moves as the
+pointer passes each of its neighbours, which is what a tab strip does
+everywhere, and the arithmetic that decides has to agree with the store's
+exactly or the tab moves on every mouse event and never settles: hence
+`TabShuffle`, tested against the same index sum. The tab that just slid under
+the pointer is not an anchor to move itself past, which is what keeps it from
+oscillating. Elsewhere the tab stays where it is and fades, and the place it
+would land lights up: a line in another column's strip, a band over a
+terminal, a row in the sidebar.
+
+Only within one column. A tab crossing into another column waits for the drop,
+because a column emptied by the move closes, and closing one under the pointer
+takes the layout out from under a drag that is still going on.
+
+Costs: a reorder is committed as the pointer passes, so a drag abandoned
+half-way leaves the tabs where it dragged them rather than springing back;
+saves are coalesced at 300 ms, so a drag's worth of moves is one write.
+Nothing follows the cursor outside a strip, which is a departure from the Mac
+convention of carrying a ghost, and bringing one back means owning the drag as
+an AppKit source, where the image and the session's
+`animatesToStartingPositionsOnCancelOrFail` are settable — and owning the
+tab's click, double click and middle click with it.
+
+## A strip out of room scrolls, and says which way there is more
+
+Every tab is drawn at one width, computed from the room and the count. They
+share the strip up to a cap, shrink together as more arrive, and stop at a
+floor: below it the icon, the title and the close button have nowhere to go
+and run into each other and into the next tab, which is what a strip with no
+overflow behaviour looks like. Past the floor it scrolls and clips.
+
+A column's own minimum width is not the answer to that, which is where this
+started: a minimum would have to grow with the number of tabs, and a worktree
+with eight of them would stop being something you can put beside another. The
+floor belongs to the tab.
+
+The end with tabs past it carries an arrow, in a gutter of its own outside the
+scroller. An arrow drawn over the tabs would either take the click meant for
+the tab under it or sit there looking like a button and doing nothing, and a
+gutter costs the room an arrow needs and buys a control that actually scrolls:
+it moves on by the first whole tab past that end, a tab counting as seen if
+any of it is. It was a fade at first, on the argument that a fade cannot be
+mistaken for a control, and the fade turned out to be too quiet to read as
+anything at all.
+
+Both gutters keep their room whether an arrow is drawn or not, so the tabs do
+not shift under the pointer as one end runs out, and that reserved room is
+what the viewport is measured as: which arrow shows and how wide the view is
+cannot then chase each other. A strip with no room for both gutters and a tab
+besides has neither, or two arrows and nothing to scroll would be drawn over
+the column beside it.
+
+The New Tab button sits outside the scroller too, so a full strip cannot push
+it out of reach, and the tab turned to is scrolled into view, since Cmd+T in a
+full strip would otherwise open a tab nobody can see. Neither is laid out
+beside a spacer: a scroller and a spacer are both infinitely flexible, and the
+stack would divide the strip between the two.
+
+Costs: no auto-scroll while a tab is dragged near an end, so a reorder reaches
+only the tabs on screen; and a strip whose tabs differ widely in width is the
+one shape where the shuffle could in principle cross a boundary twice.
+
+## The focus ring and the fade are the theme's
+
+Which pane the keystrokes go to was a one-point line in the theme's selection
+colour, drawn only inside a split. Columns make that question sharper, and a
+line that thin is the wrong answer at a glance, so both signals are theme
+keys: `focusRing` is any colour, or empty for no line at all, and
+`inactivePaneOpacity` fades every other pane towards the theme's own
+background. The built-ins ring in their own blue rather than their selection
+colour, which is mixed to sit under text and reads as a smudge as a line, and
+fade unfocused panes to four fifths, which is legible without being asked for.
+
+An unparsable colour falls back to the selection colour rather than reading
+as off: a typo should cost the colour, not silently remove the thing the key
+was setting. The fade clamps at a quarter, below which a pane looks broken
+rather than unfocused.
+
+The fade is a scrim in the theme's background colour laid over the pane, not
+`.opacity` on the surface: the panes are `NSView`s, one of them Metal-backed,
+and view opacity is not something both engines honour the same way. Hit
+testing is off, so a click still reaches the terminal and focuses it, which is
+what undims it. Cost: a light theme fades towards white, which is a wash
+rather than a dimming, and a theme that turns both off has nothing left to
+say where the keyboard is.
+
 ## Smaller decisions
 
 - Sessions warm up when visited, a saved workspace implying dozens of shells at

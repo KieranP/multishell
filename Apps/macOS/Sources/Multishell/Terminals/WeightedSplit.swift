@@ -64,7 +64,10 @@ struct WeightedSplit<Content: View>: View {
   }
 }
 
-private enum SplitMetrics {
+/// The one place the divider's thickness and a pane's minimum width live:
+/// `WeightedSplit` lays out to them, and `TabGroupBands` refuses a drop
+/// that would leave a column under the minimum.
+enum SplitMetrics {
   /// Layout space the divider occupies. Wider than the visible line because
   /// the panes are NSViews, which take mouse events before any SwiftUI
   /// overlay that spills onto them; the grab area has to be its own strip.

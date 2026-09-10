@@ -23,13 +23,19 @@ struct WorkspaceRepairTests {
     ws.projects = [project]
     ws.worktrees = [worktree]
     let s = session()
-    let tab = TerminalTab(worktreeID: worktree.id, session: s.id)
+    var group = TabGroup(worktreeID: worktree.id)
+    let tab = TerminalTab(worktreeID: worktree.id, groupID: group.id, session: s.id)
+    group.activeTabID = tab.id
     ws.sessions = [s]
     ws.tabs = [tab]
-    ws.activeTabByWorktree[worktree.id] = tab.id
+    ws.tabGroups = [group]
+    ws.focusedGroupByWorktree[worktree.id] = group.id
     ws.selectedWorktreeID = worktree.id
     return (ws, tab)
   }
+
+  /// The one column a sound single-column workspace has.
+  private func onlyGroup(_ ws: Workspace) -> TabGroup { ws.tabGroups[0] }
 
   @Test func aSoundWorkspaceIsLeftAlone() {
     let (ws, _) = sound()
@@ -44,14 +50,18 @@ struct WorkspaceRepairTests {
       path: URL(fileURLWithPath: "/repos/x"), projectID: "/repos/gone", head: "b")
     let straySession = TerminalSession(
       worktreeID: stray.id, workingDirectory: stray.path, title: "sh")
+    let strayGroup = TabGroup(worktreeID: stray.id)
     ws.worktrees.append(stray)
     ws.sessions.append(straySession)
-    ws.tabs.append(TerminalTab(worktreeID: stray.id, session: straySession.id))
+    ws.tabGroups.append(strayGroup)
+    ws.tabs.append(
+      TerminalTab(worktreeID: stray.id, groupID: strayGroup.id, session: straySession.id))
 
     ws.repairReferences()
 
     #expect(ws.worktrees.map(\.id) == [worktree.id])
     #expect(ws.tabs.count == 1 && ws.sessions.count == 1)
+    #expect(ws.tabGroups.count == 1, "the column went with the worktree")
   }
 
   @Test func aSessionNoTabOwnsIsDropped() {
@@ -81,14 +91,16 @@ struct WorkspaceRepairTests {
 
   @Test func aTabWithNoLiveSessionsIsRemovedAndTheActiveEntryMovesOn() {
     var (ws, tab) = sound()
-    let empty = TerminalTab(worktreeID: worktree.id, session: UUID())
+    let empty = TerminalTab(
+      worktreeID: worktree.id, groupID: onlyGroup(ws).id, session: UUID())
     ws.tabs.append(empty)
-    ws.activeTabByWorktree[worktree.id] = empty.id
+    ws.tabGroups[0].activeTabID = empty.id
 
     ws.repairReferences()
 
     #expect(ws.tabs.map(\.id) == [tab.id])
-    #expect(ws.activeTabByWorktree[worktree.id] == tab.id, "otherwise the tab strip is hidden")
+    #expect(
+      ws.tabGroups[0].activeTabID == tab.id, "otherwise the column shows nothing")
   }
 
   @Test func anActiveEntryForAnotherWorktreesTabIsCorrected() {
@@ -96,12 +108,13 @@ struct WorkspaceRepairTests {
     let other = Worktree(
       path: URL(fileURLWithPath: "/repos/demo-b"), projectID: project.id, head: "b")
     ws.worktrees.append(other)
-    ws.activeTabByWorktree[other.id] = tab.id
+    ws.focusedGroupByWorktree[other.id] = onlyGroup(ws).id
 
     ws.repairReferences()
 
-    #expect(ws.activeTabByWorktree[other.id] == nil)
-    #expect(ws.activeTabByWorktree[worktree.id] == tab.id)
+    #expect(ws.focusedGroupByWorktree[other.id] == nil)
+    #expect(ws.focusedGroupByWorktree[worktree.id] == onlyGroup(ws).id)
+    #expect(ws.activeTab(in: worktree.id)?.id == tab.id)
   }
 
   @Test func aNameForAMissingWorktreeGoesAndABlankOneWithIt() {
@@ -132,6 +145,81 @@ struct WorkspaceRepairTests {
       "the directory it starts in comes back with it")
   }
 
+  /// Every tab of a state file written before columns existed names no
+  /// group. They belong in the one column they were saved as, not in one
+  /// column each.
+  @Test func tabsThatNameNoColumnAreGatheredIntoOne() {
+    var (ws, tab) = sound()
+    let second = session()
+    ws.sessions.append(second)
+    ws.tabs.append(
+      TerminalTab(worktreeID: worktree.id, groupID: TabGroup.unassigned, session: second.id))
+    ws.tabs[0].groupID = TabGroup.unassigned
+    ws.tabGroups = []
+    ws.focusedGroupByWorktree = [:]
+
+    ws.repairReferences()
+
+    WorkspaceInvariants.check(ws, "ungrouped tabs")
+    #expect(ws.tabGroups.count == 1, "one column, not one each")
+    #expect(ws.tabs.allSatisfy { $0.groupID == ws.tabGroups[0].id })
+    #expect(ws.activeTab(in: worktree.id)?.id == tab.id, "the first tab of the column shows")
+  }
+
+  /// A column whose group decoded badly and was dropped leaves its tabs
+  /// behind. They join the column the worktree still has rather than
+  /// opening a second one beside it.
+  @Test func aTabWhoseColumnIsGoneJoinsTheWorktreesFirstColumn() {
+    var (ws, tab) = sound()
+    let stray = session()
+    ws.sessions.append(stray)
+    ws.tabs.append(TerminalTab(worktreeID: worktree.id, groupID: UUID(), session: stray.id))
+
+    ws.repairReferences()
+
+    WorkspaceInvariants.check(ws, "orphan tab")
+    #expect(ws.tabGroups.count == 1)
+    #expect(ws.tabs.count == 2)
+    #expect(ws.activeTab(in: worktree.id)?.id == tab.id)
+  }
+
+  /// Two columns, and the focused one is emptied by the pane pass. The
+  /// focus has to land on the column that is left, or the worktree draws no
+  /// strip at all.
+  @Test func aColumnLeftWithNoTabsGoesAndTheFocusMovesOn() {
+    var (ws, tab) = sound()
+    var second = TabGroup(worktreeID: worktree.id)
+    let doomed = TerminalTab(worktreeID: worktree.id, groupID: second.id, session: UUID())
+    second.activeTabID = doomed.id
+    ws.tabGroups.append(second)
+    ws.tabs.append(doomed)
+    ws.focusedGroupByWorktree[worktree.id] = second.id
+
+    ws.repairReferences()
+
+    WorkspaceInvariants.check(ws, "emptied column")
+    #expect(ws.tabGroups.map(\.id) == [onlyGroup(ws).id])
+    #expect(ws.focusedGroupByWorktree[worktree.id] == onlyGroup(ws).id)
+    #expect(ws.activeTab(in: worktree.id)?.id == tab.id)
+  }
+
+  @Test func aColumnShowingAnotherColumnsTabIsCorrected() {
+    var (ws, tab) = sound()
+    let other = session()
+    var second = TabGroup(worktreeID: worktree.id)
+    let itsOwn = TerminalTab(worktreeID: worktree.id, groupID: second.id, session: other.id)
+    // Pointing at the first column's tab, which is not one of its own.
+    second.activeTabID = tab.id
+    ws.sessions.append(other)
+    ws.tabGroups.append(second)
+    ws.tabs.append(itsOwn)
+
+    ws.repairReferences()
+
+    WorkspaceInvariants.check(ws, "column showing a foreign tab")
+    #expect(ws.tabGroups[1].activeTabID == itsOwn.id)
+  }
+
   @Test func aSelectionOfAMissingWorktreeIsCleared() {
     var (ws, _) = sound()
     ws.selectedWorktreeID = "/repos/nowhere"
@@ -144,7 +232,7 @@ struct WorkspaceRepairTests {
   @Test(arguments: [7, 11, 19, 23, 29, 31] as [UInt64])
   func repairIsCompleteAndIdempotentOnRandomDamage(seed: UInt64) {
     var rng = SeededGenerator(seed: seed)
-    var (ws, tab) = sound()
+    var (ws, _) = sound()
     let ghost = UUID()
     let damage: [(inout Workspace) -> Void] = [
       {
@@ -152,9 +240,18 @@ struct WorkspaceRepairTests {
           TerminalSession(
             worktreeID: "/nowhere", workingDirectory: URL(fileURLWithPath: "/n"), title: "x"))
       },
-      { $0.tabs.append(TerminalTab(worktreeID: "/nowhere", session: ghost)) },
-      { $0.activeTabByWorktree[$0.worktrees[0].id] = UUID() },
-      { $0.activeTabByWorktree["/nowhere"] = tab.id },
+      {
+        $0.tabs.append(
+          TerminalTab(worktreeID: "/nowhere", groupID: TabGroup.unassigned, session: ghost))
+      },
+      { $0.tabGroups[0].activeTabID = UUID() },
+      { $0.tabGroups.append(TabGroup(worktreeID: "/nowhere")) },
+      { $0.tabGroups.append($0.tabGroups[0]) },
+      { $0.tabGroups[0].weight = 0 },
+      { $0.focusedGroupByWorktree[$0.worktrees[0].id] = UUID() },
+      { $0.focusedGroupByWorktree["/nowhere"] = $0.tabGroups[0].id },
+      // Every tab of a state file written before columns existed.
+      { ws in for index in ws.tabs.indices { ws.tabs[index].groupID = TabGroup.unassigned } },
       { $0.selectedWorktreeID = "/nowhere" },
       { $0.worktreeNames["/nowhere"] = "Ghost" },
       { $0.worktreeNames[$0.worktrees[0].id] = "  " },
@@ -172,8 +269,8 @@ struct WorkspaceRepairTests {
       {
         $0.tabs.append(
           TerminalTab(
-            worktreeID: $0.worktrees[0].id, root: .split(axis: .horizontal, children: []),
-            focusedSessionID: ghost))
+            worktreeID: $0.worktrees[0].id, groupID: $0.tabGroups[0].id,
+            root: .split(axis: .horizontal, children: []), focusedSessionID: ghost))
       },
       { $0.projects.append($0.projects[0]) },
       { $0.worktrees.append($0.worktrees[0]) },
@@ -202,7 +299,8 @@ struct WorkspaceRepairTests {
 
     #expect(ws.tabs.isEmpty)
     #expect(ws.sessions.isEmpty)
-    #expect(ws.activeTabByWorktree[worktree.id] == nil)
+    #expect(ws.tabGroups.isEmpty, "a column with no tabs does not stand")
+    #expect(ws.focusedGroupByWorktree[worktree.id] == nil)
   }
 }
 
@@ -225,7 +323,9 @@ struct WorkspaceRepairShapeTests {
     ws.worktrees = [worktree]
     ws.sessions = sessions
     ws.tabs = tabs
-    if let last = tabs.last { ws.activeTabByWorktree[worktree.id] = last.id }
+    // The tabs arrive naming no column, which is the shape of every state
+    // file written before columns existed: repair gives them the one they
+    // were saved as.
     return ws
   }
 
@@ -236,9 +336,10 @@ struct WorkspaceRepairShapeTests {
   @Test func aSessionInTwoTabsStaysInTheFirstOnly() {
     let shared = session()
     let own = session()
-    let first = TerminalTab(worktreeID: worktree.id, session: shared.id)
+    let first = TerminalTab(
+      worktreeID: worktree.id, groupID: TabGroup.unassigned, session: shared.id)
     let second = TerminalTab(
-      worktreeID: worktree.id,
+      worktreeID: worktree.id, groupID: TabGroup.unassigned,
       root: .split(axis: .horizontal, children: [.terminal(own.id), .terminal(shared.id)]),
       focusedSessionID: shared.id)
     var ws = workspace(tabs: [first, second], sessions: [shared, own])
@@ -254,7 +355,7 @@ struct WorkspaceRepairShapeTests {
     let twice = session()
     let other = session()
     let tab = TerminalTab(
-      worktreeID: worktree.id,
+      worktreeID: worktree.id, groupID: TabGroup.unassigned,
       root: .split(
         axis: .vertical, children: [.terminal(twice.id), .terminal(other.id), .terminal(twice.id)]),
       focusedSessionID: twice.id)
@@ -270,7 +371,7 @@ struct WorkspaceRepairShapeTests {
   @Test func aNestedSplitWithNoChildrenIsRemovedAndTheTabKept() {
     let s = session()
     let tab = TerminalTab(
-      worktreeID: worktree.id,
+      worktreeID: worktree.id, groupID: TabGroup.unassigned,
       root: .split(
         axis: .horizontal, children: [.terminal(s.id), .split(axis: .vertical, children: [])]),
       focusedSessionID: s.id)
@@ -286,7 +387,7 @@ struct WorkspaceRepairShapeTests {
     let a = session()
     let b = session()
     let tab = TerminalTab(
-      worktreeID: worktree.id,
+      worktreeID: worktree.id, groupID: TabGroup.unassigned,
       root: .split(
         axis: .horizontal,
         children: [.terminal(a.id), .split(axis: .vertical, children: [.terminal(b.id)])],
@@ -331,7 +432,7 @@ struct WorkspaceRepairShapeTests {
       let root = tree(depth: 3)
       tabs.append(
         TerminalTab(
-          worktreeID: worktree.id, root: root,
+          worktreeID: worktree.id, groupID: TabGroup.unassigned, root: root,
           focusedSessionID: root.sessionIDs.randomElement(using: &rng) ?? ghost))
     }
     var ws = workspace(tabs: tabs, sessions: pool)

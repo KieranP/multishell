@@ -26,6 +26,28 @@ struct UIMetricsTests {
       #expect(metrics.badge >= 7, "badge text must stay legible at \(size)")
     }
   }
+
+  /// A tab's floor has to leave room for what a tab always draws: side
+  /// padding, a state dot or an icon, the gap after it, and the close
+  /// button, with something over for the title. Below that the glyphs run
+  /// into each other, which is what the strip scrolls to avoid.
+  @Test func theNarrowestTabStillHasRoomForItsTitle() {
+    for size in stride(from: 10.0, through: 18.0, by: 1) {
+      let metrics = UIMetrics(fontSize: size)
+      let furniture = 20.0 + metrics.icon + 7 + 20
+      #expect(
+        metrics.tabMinWidth >= furniture + metrics.body * 2,
+        "no room for a title at \(size)")
+      #expect(metrics.tabMinWidth < metrics.tabMaxWidth, "size \(size)")
+      #expect(metrics.newTabWidth >= metrics.icon * 2, "the plus needs a target at \(size)")
+      #expect(
+        metrics.tabArrowWidth >= metrics.body,
+        "the scroll arrow's own glyph does not fit at \(size)")
+      #expect(
+        metrics.tabMinWidth > 2 * metrics.tabArrowWidth,
+        "two gutters must leave room for a tab at \(size)")
+    }
+  }
 }
 
 @Suite

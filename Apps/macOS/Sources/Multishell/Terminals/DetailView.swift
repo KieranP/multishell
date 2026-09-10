@@ -17,22 +17,8 @@ struct DetailView: View {
             operation: operation, theme: theme,
             cancel: { model.cancelStage(of: worktree) },
             dismiss: { model.dismissOperationFailure(of: worktree) })
-        } else if let tab = model.workspace.activeTab(in: worktree.id) {
-          TabBar(
-            model: model,
-            tabs: model.workspace.tabs(in: worktree.id),
-            activeID: tab.id,
-            theme: theme
-          )
-          PaneTreeView(
-            model: model,
-            tabID: tab.id,
-            node: tab.root,
-            focusedSessionID: tab.focusedSessionID,
-            isSplit: tab.isSplit,
-            theme: theme
-          )
-          .id(tab.id)
+        } else if !model.workspace.groups(in: worktree.id).isEmpty {
+          TabGroupsView(model: model, worktree: worktree, theme: theme)
         } else {
           Spacer()
         }
