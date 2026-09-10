@@ -74,8 +74,9 @@ way they are.
   to land in that pane. A Dock badge counts the ones waiting, and a toggle
   brings in plain shells, which report through the same columns.
 - Pick a preferred agent and open it in a tab with one shortcut, or have
-  every new tab start it. Optional notifications when a tab you are not
-  looking at needs you.
+  every new tab start it. System notifications for a tab you are not looking
+  at, with a toggle for each of waiting for input, failed and done, so you
+  hear about a finished build and nothing else if that is all you want.
 - Drop files from Finder onto a terminal: an agent whose prompt reads
   mentions gets them as `@` mentions relative to the worktree, a shell gets
   quoted paths. Nothing is run — you press Return.

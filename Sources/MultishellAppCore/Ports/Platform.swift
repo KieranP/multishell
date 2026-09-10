@@ -49,6 +49,12 @@ public protocol Platform: AnyObject {
   /// does nothing, as `NullPlatform` does.
   func setBadgeCount(_ count: Int?)
 
+  /// Where the desktop grants notification permission, as the user would
+  /// find it: "System Settings > Notifications" on the Mac. `nil` where
+  /// there is no such place, and the settings page then says a refusal
+  /// without saying where to lift it.
+  var notificationSettingsLocation: String? { get }
+
   /// A line for the platform's log, for what is worth a note but not an
   /// alert.
   func log(_ message: String)
@@ -72,5 +78,6 @@ public final class NullPlatform: Platform {
   public var bundledHelper: URL? { nil }
   public func installCommandLineTool() throws {}
   public func setBadgeCount(_ count: Int?) {}
+  public var notificationSettingsLocation: String? { nil }
   public func log(_ message: String) {}
 }

@@ -772,6 +772,25 @@ say where the keyboard is.
   once. A caption is left only for a value computed live.
 - Notifications are for reports, not bells, and nothing under ten seconds: `ls`
   is not news, a build is. A bell in a background tab is a dot.
+- Which states raise a banner is three toggles on a tab of their own, not one
+  picker with a rung per combination. The picker offered three of the eight
+  answers and could not say "only when something failed", which is the whole
+  of what some people want; a rung per combination is a menu nobody reads.
+  Cost: a state file written by this build reads as off on a build with the
+  picker, the settings being an object where a name was. What holds whichever
+  toggles are on is a caption at the foot of the page: three toggles each
+  carrying it behind their own (i) said it three times.
+- Permission is asked for as a toggle goes on, not at the first report. The
+  dialog then arrives while the user is looking at the thing it is about, and
+  a refusal is answered where it can be acted on: the caption becomes where to
+  lift it, since three toggles that do nothing say nothing about why. Only a
+  state going on asks; asking on the way down is a question about something
+  the user has just refused. The answer is runtime state, read as the page
+  opens and as the app comes back to the front, because it is the system's,
+  and the front is the return from the settings the caption points at. No
+  desktop is named in the core: the place to lift a refusal comes from
+  `Platform`, and a desktop that never asks answers `unavailable`, which is
+  what keeps the page from promising a dialog nobody will see.
 - Debug builds keep their own state file, socket and integration directory, so
   `make run` beside the installed app touches neither.
 - The app package names its path dependency rather than only pointing at it.

@@ -57,8 +57,16 @@ final class FakeStateSource: SessionStateSource {
 final class FakeNotifier: SessionNotifier {
   var onActivate: (@MainActor (SessionStates.Key) -> Void)?
   var posted: [(title: String, body: String, key: SessionStates.Key)] = []
+  /// What the system would answer, and how often it was asked.
+  var answer = NotificationAuthorization.allowed
+  var authorizationRequests = 0
   func notify(title: String, body: String, about key: SessionStates.Key) {
     posted.append((title, body, key))
+  }
+  func authorization() async -> NotificationAuthorization { answer }
+  func requestAuthorization() async -> NotificationAuthorization {
+    authorizationRequests += 1
+    return answer
   }
 }
 
@@ -108,6 +116,7 @@ final class FakePlatform: Platform {
   /// clear as well as count.
   var badges: [Int?] = []
   func setBadgeCount(_ count: Int?) { badges.append(count) }
+  var notificationSettingsLocation: String? = "System Settings > Notifications"
   func log(_ message: String) { logged.append(message) }
 }
 
@@ -145,5 +154,12 @@ struct Harness {
     model = AppModel(
       store: store, host: host, worktrees: nil, watcher: watcher, platform: platform,
       stateSource: source, notifier: notifier)
+  }
+
+  /// Lets the model's own tasks finish. They are `@MainActor`, so yielding
+  /// hands them the actor this test holds; a handful of turns covers one
+  /// that awaits a port on the way.
+  func settled(turns: Int = 10) async {
+    for _ in 0..<turns { await Task.yield() }
   }
 }

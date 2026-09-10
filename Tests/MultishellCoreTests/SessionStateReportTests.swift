@@ -63,17 +63,21 @@ struct SessionStateReportTests {
     #expect(SessionState.done.stored == .done)
   }
 
-  @Test func notificationPreferencesNeverNotifyForRunning() {
-    for preference in NotificationPreference.allCases {
-      #expect(!preference.notifies(.running), "\(preference)")
-      #expect(!preference.notifies(.idle), "\(preference)")
+  @Test func eachNotifiedStateIsAskedForOnItsOwnAndRunningNeverBanners() {
+    let all = NotificationPreference(attention: true, error: true, done: true)
+    #expect(!all[.running], "a banner per tool call would be noise")
+    #expect(!all[.idle])
+    #expect(NotificationPreference.notifiableStates == [.attention, .error, .done])
+
+    for state in NotificationPreference.notifiableStates {
+      var one = NotificationPreference.off
+      one[state] = true
+      #expect(one[state], "\(state)")
+      for other in NotificationPreference.notifiableStates where other != state {
+        #expect(!one[other], "\(state) does not turn on \(other)")
+      }
     }
-    #expect(NotificationPreference.attentionOnly.notifies(.attention))
-    #expect(!NotificationPreference.attentionOnly.notifies(.done))
-    #expect(NotificationPreference.attentionAndDone.notifies(.done))
-    #expect(NotificationPreference.attentionAndDone.notifies(.error))
-    #expect(!NotificationPreference.attentionOnly.notifies(.error))
-    #expect(!NotificationPreference.off.notifies(.attention))
+    #expect(NotificationPreference.notifiableStates.allSatisfy { !NotificationPreference.off[$0] })
   }
 
   @Test func exitCodesBecomeDoneOrFailedAndSignalsAreNotFailures() {

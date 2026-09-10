@@ -100,6 +100,10 @@ final class MacPlatform: Platform {
     NSApp.dockTile.badgeLabel = count.map(String.init)
   }
 
+  /// Where macOS keeps the permission, spelled as the Settings app's own
+  /// path to it.
+  var notificationSettingsLocation: String? { "System Settings > Notifications" }
+
   func log(_ message: String) {
     logger.notice("\(message, privacy: .public)")
   }

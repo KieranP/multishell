@@ -44,8 +44,4 @@ extension AppModel {
   public func setWorktreeDefaults(_ defaults: WorktreeSettings) {
     store.setWorktreeDefaults(defaults)
   }
-
-  public func setNotifications(_ preference: NotificationPreference) {
-    store.setNotifications(preference)
-  }
 }

@@ -211,7 +211,7 @@ struct DecodingDefaultsTests {
 
   @Test func aWorkspaceWithoutAgentOrNotificationFieldsGetsTheDefaults() throws {
     let workspace = try decode(Workspace.self, #"{ "projects": [] }"#)
-    #expect(workspace.notifications == .off)
+    #expect(workspace.notifications == .off, "no state banners until asked for")
     #expect(workspace.preferredAgentID == nil)
     #expect(workspace.customAgentCommand == "")
     #expect(!workspace.autoStartAgent, "off until asked for")
@@ -234,6 +234,23 @@ struct DecodingDefaultsTests {
     #expect(workspace.notifications == .off)
     #expect(workspace.preferredAgentID == "future-agent", "an unknown agent id is kept as text")
     #expect(workspace.projects.count == 1)
+
+    let partial = try decode(
+      NotificationPreference.self, #"{ "done": true, "whisper": true, "error": "yes" }"#)
+    #expect(
+      partial == NotificationPreference(done: true),
+      "a state this build has not got is not one, and a bad value costs its own toggle")
+  }
+
+  @Test func aWorkspaceFromBeforeTheNotificationTogglesKeepsWhatThePickerSaid() throws {
+    let attention = try decode(Workspace.self, #"{ "notifications": "attentionOnly" }"#)
+    #expect(attention.notifications == NotificationPreference(attention: true))
+    let everything = try decode(Workspace.self, #"{ "notifications": "attentionAndDone" }"#)
+    #expect(
+      everything.notifications == NotificationPreference(attention: true, error: true, done: true),
+      "the picker's last rung was all three")
+    let off = try decode(Workspace.self, #"{ "notifications": "off" }"#)
+    #expect(off.notifications == .off)
   }
 
   @Test func projectSettingsKeepAnUnknownAgentIdAndReadEmptyAsNoOverride() throws {

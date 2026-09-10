@@ -17,7 +17,7 @@ public enum NotificationPolicy {
     // Two reports stand for one permission prompt, the immediate one and
     // the agent's own notification six seconds later. The dot moves on the
     // first, the banner comes with the second.
-    guard !silent, preference.notifies(state) else { return false }
+    guard !silent, preference[state] else { return false }
     if state.isFinished, let duration, duration < minimumNotifiedDuration { return false }
     return !(isShown && appIsActive)
   }

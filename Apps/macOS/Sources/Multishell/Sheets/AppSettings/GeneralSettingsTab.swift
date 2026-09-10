@@ -2,8 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Settings > General: the editor Open in Editor uses, notifications, and
-/// where the state file is.
+/// Settings > General: the editor Open in Editor uses, and where the state
+/// file is.
 struct GeneralSettingsTab: View {
   let model: AppModel
 
@@ -29,21 +29,6 @@ struct GeneralSettingsTab: View {
               "Command:",
               text: model.setting(\.customEditorCommand, write: model.setCustomEditorCommand),
               prompt: Text("code-insiders {path}"))
-          }
-        }
-      }
-
-      Section {
-        InfoRow(
-          "Notifications:",
-          info:
-            "A system notification when a tab you are not looking at needs input, or finishes: an agent's turn, or a shell command that ran longer than ten seconds. Off by default; macOS asks for permission the first time one is posted."
-        ) {
-          Picker(
-            "Notifications:",
-            selection: model.setting(\.notifications, write: model.setNotifications)
-          ) {
-            ForEach(NotificationPreference.allCases, id: \.self) { Text($0.displayName).tag($0) }
           }
         }
       }

@@ -6,13 +6,15 @@ import MultishellCore
 /// `SessionNotifier` on `UNUserNotificationCenter`, which needs a bundle: a
 /// bare binary from `swift run` has none, and asking the center there
 /// crashes, so this does nothing outside an app bundle. Authorization is
-/// requested on first use.
+/// asked for when a notification is first turned on in Settings, and again
+/// here if a report arrives before anyone has been asked.
 @MainActor
 final class UserNotificationNotifier: NSObject, SessionNotifier {
   var onActivate: (@MainActor (SessionStates.Key) -> Void)?
 
   private let center: UNUserNotificationCenter?
-  private var authorizationRequested = false
+  /// The last answer, so a settled permission costs no hop before posting.
+  private var known = NotificationAuthorization.notAsked
 
   override init() {
     center = Bundle.main.bundleIdentifier == nil ? nil : UNUserNotificationCenter.current()
@@ -29,16 +31,38 @@ final class UserNotificationNotifier: NSObject, SessionNotifier {
     content.userInfo = Self.userInfo(for: key)
     let request = UNNotificationRequest(
       identifier: UUID().uuidString, content: content, trigger: nil)
-    if authorizationRequested {
+    if known == .allowed {
       center.add(request)
       return
     }
-    authorizationRequested = true
     Task {
-      guard (try? await center.requestAuthorization(options: [.alert, .sound])) == true else {
-        return
-      }
+      guard await requestAuthorization() == .allowed else { return }
       try? await center.add(request)
+    }
+  }
+
+  func authorization() async -> NotificationAuthorization {
+    guard let center else { return .unavailable }
+    known = Self.mapped(await center.notificationSettings().authorizationStatus)
+    return known
+  }
+
+  /// The system dialog appears on the first call only; later ones answer
+  /// with what was settled then, whether or not it was a yes.
+  func requestAuthorization() async -> NotificationAuthorization {
+    guard let center else { return .unavailable }
+    if (try? await center.requestAuthorization(options: [.alert, .sound])) == true {
+      known = .allowed
+      return known
+    }
+    return await authorization()
+  }
+
+  private static func mapped(_ status: UNAuthorizationStatus) -> NotificationAuthorization {
+    switch status {
+    case .notDetermined: .notAsked
+    case .denied: .refused
+    default: .allowed
     }
   }
 

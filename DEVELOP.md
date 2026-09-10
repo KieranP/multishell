@@ -63,7 +63,9 @@ AGENTS.md states the rules; this is what catches a breach.
 - Persisted defaults, unknown enum values included: `DecodingDefaultsTests`.
 - A state file written before a feature existed still loads with what it said:
   `TabGroupMigrationTests` reads a real pre-columns file, tabs, splits, custom
-  titles and its `activeTabByWorktree`, through `WorkspaceStore.restored`.
+  titles and its `activeTabByWorktree`, through `WorkspaceStore.restored`;
+  `NotificationPreferenceMigrationTests` reads the notification picker this
+  build replaced with toggles, and checks the save after it writes toggles.
 - `WorkspaceInvariants` and `repairReferences`: the seeded random tests, which
   print the failing seed and step. Extend both with any new collection.
 - No blocking in the core: `ProcessRunnerTests` runs 96 children under a
@@ -220,7 +222,10 @@ by `ShellIntegration.refresh` and picked up by `ShellLaunch` (and
 the platform's view type once, and implement `Platform`,
 `TerminalSurfaceHost`, `DirectoryWatcher` (inotify on Linux) and
 `SessionNotifier`. `moveToTrash` may delete outright until the platform has a
-Trash.
+Trash. A notifier that posts without anyone's permission answers
+`unavailable` to both authorization questions, and the notification settings
+page then neither promises a permission dialog nor offers to lift one;
+`notificationSettingsLocation` is `nil` where the desktop has no such place.
 
 ## State on disk
 
@@ -321,6 +326,10 @@ names are the log's less the `kTCCService` prefix, so App Management is
   stand-in bootstrap. Click-to-move works there and nowhere else, and not on
   the later lines of a multi-line buffer.
 - Linux has never been compiled, locally or in CI.
+- The Notifications settings page has never been seen on screen: the toggles,
+  the caption under them and the six-tab band in a 560pt window are unchecked.
+  If the band clips, raise the width in `SettingsView`; the caption and the
+  help behind each (i) are strings in `NotificationSettings`.
 - The directory check before a click starts a shell runs on the main thread, so
   a network volume that has gone away blocks until the mount times out. The
   polling paths' checks run off it.

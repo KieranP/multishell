@@ -61,7 +61,7 @@ struct SessionStateModelTests {
   /// the way the sidebar the user is picturing does.
   @Test func aRenamedWorktreeIsNamedByItsNameInABanner() {
     let h = Harness()
-    h.model.setNotifications(.attentionAndDone)
+    h.model.setNotifications(NotificationPreference(attention: true, error: true, done: true))
     h.model.renameWorktree(h.feature.id, to: "Checkout flow")
 
     h.source.send(SessionStateReport(state: .attention, cwd: h.feature.path.path))
@@ -75,7 +75,7 @@ struct SessionStateModelTests {
     let h = Harness()
     h.source.send(SessionStateReport(state: .attention, cwd: h.main.path.path))
     #expect(h.notifier.posted.isEmpty, "off until turned on")
-    h.model.setNotifications(.attentionAndDone)
+    h.model.setNotifications(NotificationPreference(attention: true, error: true, done: true))
     h.model.select(h.main)
     let first = h.model.workspace.activeTab(in: h.main.id)!
     h.model.newTab()
@@ -91,7 +91,7 @@ struct SessionStateModelTests {
     #expect(h.notifier.posted.first?.title.contains("main") == true)
     #expect(h.notifier.posted.first?.key == .session(first.focusedSessionID))
 
-    h.model.setNotifications(.attentionOnly)
+    h.model.setNotifications(NotificationPreference(attention: true))
     h.source.send(SessionStateReport(state: .done, sessionID: first.focusedSessionID))
     #expect(h.notifier.posted.count == 1)
 

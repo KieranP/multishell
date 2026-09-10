@@ -9,7 +9,7 @@ struct SettingsView: View {
   let platform: MacPlatform
 
   private enum Tab: Hashable {
-    case general, worktrees, terminal, agents, appearance
+    case general, worktrees, terminal, agents, notifications, appearance
   }
 
   @State private var tab = Tab.general
@@ -28,6 +28,9 @@ struct SettingsView: View {
       AgentSettingsTab(model: model)
         .tabItem { Label("Agents", systemImage: "sparkles") }
         .tag(Tab.agents)
+      NotificationSettingsTab(model: model)
+        .tabItem { Label("Notifications", systemImage: "bell") }
+        .tag(Tab.notifications)
       AppearanceSettingsTab(model: model)
         .tabItem { Label("Appearance", systemImage: "paintpalette") }
         .tag(Tab.appearance)

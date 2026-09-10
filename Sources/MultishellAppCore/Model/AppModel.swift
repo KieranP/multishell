@@ -129,6 +129,11 @@ public final class AppModel<Surface> {
   /// demand by `refreshAgentStatus`, not observed.
   public var installedAgentHooks: Set<String> = []
   public var commandLineToolInstalled = false
+  /// What the notification centre has been told about this app. Runtime
+  /// state: the answer is the system's, not the workspace's, and it can be
+  /// changed in System Settings while the app runs. Read by the settings
+  /// page, which asks `refreshNotificationAuthorization` for it.
+  public internal(set) var notificationAuthorization = NotificationAuthorization.notAsked
   public var themes: [Theme] = Theme.builtins
   @ObservationIgnored var reportedMissingAgents: Set<String> = []
 
@@ -218,8 +223,13 @@ public final class AppModel<Surface> {
     store.selectWorktree(nil)
 
     // Statuses only poll while frontmost, so coming back from another app
-    // would otherwise show badges up to five seconds stale.
-    platform.onDidBecomeActive = { [weak self] in Task { await self?.refreshAll() } }
+    // would otherwise show badges up to five seconds stale. The permission
+    // is read back for the same reason: the return from System Settings is
+    // where a notification refusal is lifted.
+    platform.onDidBecomeActive = { [weak self] in
+      Task { await self?.refreshAll() }
+      self?.refreshNotificationAuthorization()
+    }
 
     registry.onActivity = { [weak self] id in self?.noteActivity(in: id) }
     registry.onCommandFinished = { [weak self] id, code in

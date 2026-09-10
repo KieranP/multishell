@@ -56,9 +56,10 @@ Working rules:
   random tests (`WorkspaceStoreInvariantTests`, `AppModelInvariantTests`) will
   find it if not; a failure prints its seed and step so it can be replayed.
 - Runtime state (shell titles, session states, statuses, live sessions, the
-  agent that reported in each pane) lives in `AppModel`, never in the
-  workspace, so a prompt does not save or re-render. `SessionStates` owns who
-  clears what; change it there and in `SessionStatesTests`, not in a view.
+  agent that reported in each pane, the desktop's answer about notification
+  permission) lives in `AppModel`, never in the workspace, so a prompt does
+  not save or re-render. `SessionStates` owns who clears what; change it
+  there and in `SessionStatesTests`, not in a view.
 - The socket accepts reports that say what a session is doing and who is
   doing it, and nothing else: no opening tabs, no running commands, no text
   put at a prompt. A report moves a dot, and its `agent` names which agent
@@ -129,17 +130,27 @@ Working rules:
 - Decisions a view makes live in a plain value in `MultishellAppCore`
   (`NewWorktreeDraft`, `SplitMath`, `SidebarFilter`, `EditorLaunch`,
   `TabStripLayout`, `TabShuffle`, `TabDragState`, `AgentBoard`,
-  `AgentBoardLayout`) and are tested there. Views are not tested. A tab strip
-  measures nothing: `TabStripLayout` gives every tab one width from the room
-  and the count, and the drop reads that; the board's columns come the same
-  way, and its wording, ordering and elapsed text are values too.
+  `AgentBoardLayout`, `NotificationSettings`) and are tested there. Views are
+  not tested. A tab strip measures nothing: `TabStripLayout` gives every tab
+  one width from the room and the count, and the drop reads that; the board's
+  columns come the same way, and its wording, ordering and elapsed text are
+  values too.
 - Which pane the keystrokes go to is drawn from the theme, never from a
   colour in a view: `focusRing` is a colour, `""` for no ring, or absent for
   the selection colour, and `inactivePaneOpacity` fades the rest. A colour
   that will not parse falls back rather than reading as off, so a typo costs
   the colour and not the ring.
 - Settings help text goes behind an `InfoButton`, not a caption under the
-  row. A `SettingsCaption` is for a value computed live from the settings.
+  row. A `SettingsCaption` is for a value computed live: from the settings,
+  or from what the desktop reports, as the note under the notification
+  toggles is.
+- Which states notify is one toggle each in `NotificationPreference`, whose
+  subscript answers for every state so a caller can hand it whatever was
+  reported. Permission is asked for as a state goes on, never on the way
+  down, through `SessionNotifier`; the page's words are
+  `NotificationSettings`, and no desktop is named in them. Where a refusal is
+  lifted comes from `Platform`, and a desktop that posts without asking
+  answers `unavailable`.
 - Anything that acts on a worktree goes in `WorktreeActions`, which the
   detail header's menu and the sidebar's context menu both show.
 - A project's settings are read through `model.effectiveSettings(for:)` and

@@ -200,23 +200,26 @@ struct SessionStatesTests {
 
 @Suite
 struct NotificationPolicyTests {
+  private let everyState = NotificationPreference(attention: true, error: true, done: true)
+  private let waitingOnly = NotificationPreference(attention: true)
+
   @Test func aShownTabInAnActiveAppIsNotWorthABanner() {
     #expect(
       !NotificationPolicy.shouldNotify(
-        .attention, preference: .attentionAndDone, isShown: true, appIsActive: true))
+        .attention, preference: everyState, isShown: true, appIsActive: true))
     #expect(
       NotificationPolicy.shouldNotify(
-        .attention, preference: .attentionAndDone, isShown: true, appIsActive: false),
+        .attention, preference: everyState, isShown: true, appIsActive: false),
       "the user is in another app")
     #expect(
       NotificationPolicy.shouldNotify(
-        .done, preference: .attentionAndDone, isShown: false, appIsActive: true))
+        .done, preference: everyState, isShown: false, appIsActive: true))
     #expect(
       !NotificationPolicy.shouldNotify(
-        .done, preference: .attentionOnly, isShown: false, appIsActive: true))
+        .done, preference: waitingOnly, isShown: false, appIsActive: true))
     #expect(
       !NotificationPolicy.shouldNotify(
-        .running, preference: .attentionAndDone, isShown: false, appIsActive: false))
+        .running, preference: everyState, isShown: false, appIsActive: false))
   }
 
   /// A permission prompt reports twice, once at the prompt and once when
@@ -225,29 +228,29 @@ struct NotificationPolicyTests {
   @Test func aSilentReportMovesTheDotAndRaisesNoBanner() {
     #expect(
       !NotificationPolicy.shouldNotify(
-        .attention, preference: .attentionAndDone, isShown: false, appIsActive: false,
+        .attention, preference: everyState, isShown: false, appIsActive: false,
         silent: true))
     #expect(
       NotificationPolicy.shouldNotify(
-        .attention, preference: .attentionAndDone, isShown: false, appIsActive: false),
+        .attention, preference: everyState, isShown: false, appIsActive: false),
       "the same report without the flag is the banner")
   }
 
   @Test func aShortCommandDoesNotEarnABannerButAnAgentOrALongOneDoes() {
     #expect(
       !NotificationPolicy.shouldNotify(
-        .done, preference: .attentionAndDone, isShown: false, appIsActive: true, duration: 0.2),
+        .done, preference: everyState, isShown: false, appIsActive: true, duration: 0.2),
       "ls in a background tab")
     #expect(
       NotificationPolicy.shouldNotify(
-        .done, preference: .attentionAndDone, isShown: false, appIsActive: true, duration: 45))
+        .done, preference: everyState, isShown: false, appIsActive: true, duration: 45))
     #expect(
       NotificationPolicy.shouldNotify(
-        .done, preference: .attentionAndDone, isShown: false, appIsActive: true, duration: nil),
+        .done, preference: everyState, isShown: false, appIsActive: true, duration: nil),
       "an agent's Stop hook carries no duration")
     #expect(
       NotificationPolicy.shouldNotify(
-        .attention, preference: .attentionAndDone, isShown: false, appIsActive: true,
+        .attention, preference: everyState, isShown: false, appIsActive: true,
         duration: 0.1),
       "waiting is never short")
   }
