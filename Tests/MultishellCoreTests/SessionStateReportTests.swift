@@ -11,7 +11,7 @@ struct SessionStateReportTests {
     let id = UUID()
     let report = SessionStateReport(
       state: .attention, sessionID: id, cwd: "/w/repo", pid: 4242, message: "Needs permission",
-      duration: 12.5, agent: "claude")
+      duration: 12.5, agent: "claude", silent: true)
     let line = try report.encodedLine()
     #expect(line.hasSuffix("\n"))
     #expect(!line.dropLast().contains("\n"), "one line per message")
@@ -25,6 +25,16 @@ struct SessionStateReportTests {
     #expect(report?.sessionID == nil && report?.cwd == nil && report?.pid == nil)
     #expect(report?.duration == nil)
     #expect(report?.agent == nil, "an older helper names no agent and still reports")
+    #expect(report?.silent == nil, "absent is the usual: the report raises its banner")
+  }
+
+  /// The dot moves on the first of the two reports a permission prompt
+  /// makes, and the banner waits for the second.
+  @Test func aSilentReportIsCarriedAndKeepsItsBannerBack() throws {
+    let silent = SessionStateReport(state: .attention, silent: true)
+    #expect(try silent.encodedLine().contains("\"silent\":true"))
+    #expect(SessionStateReport.parse(try silent.encodedLine())?.silent == true)
+    #expect(!(try SessionStateReport(state: .attention).encodedLine().contains("silent")))
   }
 
   @Test func aNewerHelperWithFieldsThisBuildDoesNotKnowStillParses() {

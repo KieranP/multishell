@@ -13,7 +13,7 @@ public struct AgentHookPayload: Hashable, Sendable {
   public var cwd: String?
   public var message: String?
   /// The approval mode the agent is in, where it says: `default`,
-  /// `dontAsk` and the rest. Codex is the one that says.
+  /// `dontAsk` and the rest. Claude Code and Codex are the ones that say.
   public var permissionMode: String?
 
   public init(
@@ -41,7 +41,9 @@ public struct AgentHookPayload: Hashable, Sendable {
   /// amber when it need not costs less than one that never does.
   public var promptsForPermission: Bool {
     switch permissionMode {
-    case "dontAsk", "bypassPermissions": false
+    // Claude's `auto` has a classifier answer the request, so it is one
+    // more mode where the agent asks the hook and nobody is waiting.
+    case "dontAsk", "bypassPermissions", "auto": false
     default: true
     }
   }

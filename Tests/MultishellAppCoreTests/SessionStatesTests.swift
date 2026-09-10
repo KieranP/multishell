@@ -219,6 +219,20 @@ struct NotificationPolicyTests {
         .running, preference: .attentionAndDone, isShown: false, appIsActive: false))
   }
 
+  /// A permission prompt reports twice, once at the prompt and once when
+  /// the agent decides nobody has answered. The dot moves on both, and the
+  /// second one carries the banner for the pair.
+  @Test func aSilentReportMovesTheDotAndRaisesNoBanner() {
+    #expect(
+      !NotificationPolicy.shouldNotify(
+        .attention, preference: .attentionAndDone, isShown: false, appIsActive: false,
+        silent: true))
+    #expect(
+      NotificationPolicy.shouldNotify(
+        .attention, preference: .attentionAndDone, isShown: false, appIsActive: false),
+      "the same report without the flag is the banner")
+  }
+
   @Test func aShortCommandDoesNotEarnABannerButAnAgentOrALongOneDoes() {
     #expect(
       !NotificationPolicy.shouldNotify(

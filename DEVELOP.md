@@ -129,7 +129,9 @@ ship it, a field on `SharedProjectSettings` and a line in
 enum's order, before the post-create hook.
 
 **An agent's hooks.** An `AgentHookIntegration` in `AgentHooks.integrations`,
-naming the file, the events, and what each event says the session is doing;
+naming the file, the events, what each event says the session is doing, and
+which of two events standing for one thing is `silent`, moving the dot while
+the other raises the banner;
 the agent also needs a row in `AgentCatalogue.agents`, since the settings tab
 offers hooks for the agents detection found. Four agents hand a command the
 same payload on stdin, which `AgentHookPayload` reads and `agent-hook --agent`

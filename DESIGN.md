@@ -215,27 +215,73 @@ lifecycle event and hand it the same three fields, so all four get the same
 line: run the helper, which reads the payload and maps the event that fired.
 What differs is the file, what each agent calls an event, and how that file
 spells one hook, and that is all an `AgentHookIntegration` holds — the app
-knows no agent by name anywhere else. Codex is asked for `PermissionRequest`
-where Claude has `Notification`; Copilot is asked in the spelling whose payload
-names its event, since the other spelling names none. Gemini counts the timeout
+knows no agent by name anywhere else. Codex has a permission request where
+Gemini has a notification, and Claude, which has both, is asked for both;
+Copilot is asked in the spelling whose payload names its event, since the other
+spelling names none. Gemini counts the timeout
 in milliseconds, and five would kill the helper before it reached the socket.
 
 Copilot reads a directory of hook files rather than one settings file, so its
 is ours alone: written whole, deleted to remove, no copy to keep. OpenCode
 reports to no command at all — only a plugin sees a session go idle — so it is
-given a plugin that calls the helper the way any script would. Cost: it is
+given a plugin that calls the helper the way any script would. It is also the
+only agent that says a permission was answered, allowed as well as denied, so
+its pane is the only one whose Waiting clears on the answer rather than at the
+next tool call. Both come off the event bus. Its `permission.ask` hook, which is
+what the plugin used to listen on, is not: it is in the plugin types and has
+not been called since the 1.1 permissions rewrite, and the day it is called
+again it would report the prompt the bus already reported. Cost: it is
 JavaScript in the user's agent, so it spawns, unrefs and swallows everything,
 and it is the one integration whose contract we do not control from a payload.
 
-Two events had to be narrowed, because "the agent raised a notification" is
+Three events had to be narrowed, because "the agent raised a notification" is
 not "the agent is waiting". Copilot raises one when a background shell
 finishes as much as when it needs an answer, so ours asks for the two types
 that are questions and lets the file do the filtering. Codex has no
 notification at all, only a permission request that fires before it decides
 whether anyone need answer, so under `--full-auto` every tool call would
 have posted a banner; it counts as waiting only in a mode that stops for the
-user, and a mode we have not heard of is taken to stop. Gemini needed
-neither: its Notification has one type, a tool permission.
+user, and a mode we have not heard of is taken to stop. Claude's request is
+the same shape and is narrowed the same way, its classifier mode being one
+more that answers without the user. Gemini needed neither: its Notification
+has one type, a tool permission.
+
+Claude is asked for that request beside its notification, not instead of it,
+because the notification is the slower of the two: it comes six seconds after
+the prompt goes up and is dropped if the user answers first, so on its own a
+prompt answered quickly never moved the dot and a slower one moved it six
+seconds late. The request fires as the call reaches the prompt, and after the
+tool call's own `PreToolUse`, so Working does not land on top of it. Both
+timings are measured from a session run against this build, not read off a
+page.
+
+A prompt therefore reports twice, and only the second is heard from: the
+request moves the dot and raises no banner, the notification raises it. Six
+seconds is as good a rule as any for when a prompt is worth interrupting
+someone for, it is the agent's own rule, and the notification is the report
+that carries the wording, the request having no message in it at all. Without
+that, one prompt meant two banners six seconds apart. A `silent` report is the
+general form: it moves a dot where another report about the same thing will do
+the talking.
+
+Nothing reports the answer, so the dot stays amber until the next tool call or
+the end of the turn: an approved call that takes two minutes holds it for two
+minutes, and a prompt escaped holds it until the next prompt. `PermissionDenied`
+is not the missing half, whatever its name suggests. It fires for one thing
+only, a call the auto mode's classifier turned down, so a hook can appeal it; a
+person refusing at the prompt fires nothing. Taking it would have put a line in
+the user's settings for an event that can only arrive in a mode this reports no
+waiting in.
+
+The other three CLIs have nothing of the kind to take. Codex's request is
+already the immediate one and it reports no answer to it; Gemini's notification
+has a single type, a tool permission, and no confirmation event behind it.
+Copilot has a permission request, but it fires before its own rules run and its
+payload never says the mode, so under `--allow-all-tools` it would post a
+banner per tool call with nothing to narrow it by, and its notification already
+covers the prompt. Copilot's `errorOccurred` is the one thing deliberately left:
+it carries a `recoverable` flag, and a red dot for something the agent recovers
+from is worse than no red dot at all.
 
 The line runs the helper rather than `exec`ing it, and exits 0 whatever
 became of it. Copilot denies a tool call on any non-zero exit from a

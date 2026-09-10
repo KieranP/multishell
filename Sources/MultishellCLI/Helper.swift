@@ -124,15 +124,16 @@ enum Helper {
     guard
       let integration = AgentHooks.integration(for: id),
       let payload = AgentHookPayload(json: data),
-      let state = integration.state(for: payload)
+      let event = integration.event(for: payload)
     else { return }
     let report = SessionStateReport(
-      state: state,
+      state: event.state,
       sessionID: environment[SessionEnvironment.sessionKey].flatMap { UUID(uuidString: $0) },
       cwd: payload.cwd ?? environment[SessionEnvironment.worktreeKey],
       pid: ProcessAncestry.reportingProcess(),
       message: payload.message,
-      agent: id)
+      agent: id,
+      silent: event.silent ? true : nil)
     try? send(report, environment: environment)
   }
 

@@ -19,15 +19,20 @@ public struct AgentHookEvent: Hashable, Sendable {
   /// needs anyone at all, so under `--full-auto` the event fires for work
   /// nobody is waiting on.
   public let onlyWhenPrompting: Bool
+  /// Whether the event moves the dot and says nothing else. For the second
+  /// of two events that stand for one thing: Claude reports a permission
+  /// prompt twice, and one banner is enough.
+  public let silent: Bool
 
   public init(
     _ name: String, _ state: SessionState, reported: String? = nil, matcher: String? = nil,
-    onlyWhenPrompting: Bool = false
+    onlyWhenPrompting: Bool = false, silent: Bool = false
   ) {
     self.name = name
     self.reported = reported ?? name
     self.state = state
     self.matcher = matcher
     self.onlyWhenPrompting = onlyWhenPrompting
+    self.silent = silent
   }
 }

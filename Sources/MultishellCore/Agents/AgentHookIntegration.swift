@@ -67,13 +67,19 @@ public struct AgentHookIntegration: Identifiable, Sendable {
     return false
   }
 
-  /// What one payload says the session is doing. Unknown events, the ones
-  /// that say nothing about whether the agent is waiting, and an event the
-  /// mode has made meaningless map to nothing, and the hook exits quietly.
-  public func state(for payload: AgentHookPayload) -> SessionState? {
+  /// Which of the events asked for one payload is, or nothing where it
+  /// says nothing about whether the agent is waiting: an unknown event, one
+  /// this does not ask for, or one the mode has made meaningless. The hook
+  /// exits quietly on nothing.
+  public func event(for payload: AgentHookPayload) -> AgentHookEvent? {
     guard let event = events.first(where: { $0.reported == payload.eventName }) else { return nil }
     if event.onlyWhenPrompting, !payload.promptsForPermission { return nil }
-    return event.state
+    return event
+  }
+
+  /// What one payload says the session is doing.
+  public func state(for payload: AgentHookPayload) -> SessionState? {
+    event(for: payload)?.state
   }
 
   // MARK: - What is written

@@ -64,6 +64,28 @@ public enum AgentHooks {
 
   /// Claude Code: `~/.claude/settings.json`. `StopFailure` is the only
   /// event any of these agents has for a turn that ended badly.
+  ///
+  /// It is the one agent asked for both a permission request and a
+  /// notification, and a standing prompt fires both. Claude raises the
+  /// notification six seconds after the prompt goes up and cancels it if
+  /// the user answers first, so on that event alone a prompt answered
+  /// quickly never moves the dot and a slower one moves it six seconds
+  /// late. `PermissionRequest` fires as the call reaches the prompt, and
+  /// like Codex's it is also consulted where nobody will be asked, so it
+  /// counts as waiting only in a mode that stops for the user.
+  /// `Notification` stays for what it alone says: an idle prompt, a
+  /// question from an MCP server, and it is the one of the two that
+  /// raises the banner: the dot goes amber at once, and the six seconds
+  /// Claude waits before its notification are as good a rule as any for
+  /// when a prompt is worth interrupting the user for. Two banners for one
+  /// prompt would be the cost of taking both.
+  ///
+  /// Nothing reports the answer. Allowing fires nothing until the tool
+  /// returns, refusing fires nothing at all, and `PermissionDenied` is not
+  /// it: that one is only for a call the auto mode's classifier turned
+  /// down, which is a mode this does not report waiting in anyway. So an
+  /// allowed call that takes two minutes holds the dot amber for two
+  /// minutes, and a prompt escaped holds it until the next prompt.
   public static let claude = AgentHookIntegration(
     id: AgentCatalogue.claudeID,
     name: "Claude Code",
@@ -74,6 +96,7 @@ public enum AgentHooks {
       AgentHookEvent("UserPromptSubmit", .running),
       AgentHookEvent("PreToolUse", .running),
       AgentHookEvent("PostToolUse", .running),
+      AgentHookEvent("PermissionRequest", .attention, onlyWhenPrompting: true, silent: true),
       AgentHookEvent("Notification", .attention),
       AgentHookEvent("Stop", .done),
       AgentHookEvent("StopFailure", .error),
@@ -98,7 +121,7 @@ public enum AgentHooks {
       AgentHookEvent("UserPromptSubmit", .running),
       AgentHookEvent("PreToolUse", .running),
       AgentHookEvent("PostToolUse", .running),
-      AgentHookEvent("PermissionRequest", .attention, onlyWhenPrompting: true),
+      AgentHookEvent("PermissionRequest", .attention, onlyWhenPrompting: true, silent: true),
       AgentHookEvent("Stop", .done),
       AgentHookEvent("Interrupt", .idle),
       AgentHookEvent("SessionEnd", .idle),

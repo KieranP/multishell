@@ -130,6 +130,34 @@ struct HelperTests {
     #expect(second?.state == .done)
     #expect(second?.agent == "gemini")
     #expect(second?.cwd == "/w/repo")
+
+    // Claude says one prompt twice. The request comes as it is asked and
+    // moves the dot without a banner; its notification, above, is the one
+    // that speaks and the one that carries the wording.
+    let request = try await run(
+      ["agent-hook", "--agent", "claude"],
+      environment: ["MULTISHELL_SOCKET": path.path, "MULTISHELL_SESSION": session.uuidString],
+      stdin: #"""
+        {"hook_event_name":"PermissionRequest","cwd":"/w/repo",
+         "permission_mode":"default","tool_name":"Bash"}
+        """#)
+    #expect(request.succeeded && request.standardOutput.isEmpty)
+    try await waitUntil { recorder.received.count == 3 }
+    let third = SessionStateReport.parse(recorder.received.last ?? "")
+    #expect(third?.state == .attention)
+    #expect(third?.silent == true)
+    #expect(third?.message == nil)
+
+    // The mode where a classifier answers the prompt: nobody is waiting,
+    // so nothing is said at all.
+    let classifier = try await run(
+      ["agent-hook", "--agent", "claude"], environment: ["MULTISHELL_SOCKET": path.path],
+      stdin: #"""
+        {"hook_event_name":"PermissionRequest","cwd":"/w/repo","permission_mode":"auto"}
+        """#)
+    #expect(classifier.succeeded && classifier.standardError.isEmpty)
+    try await Task.sleep(for: .milliseconds(200))
+    #expect(recorder.received.count == 3)
   }
 
   /// Any tool can say which agent is at the prompt, the way Claude's hooks

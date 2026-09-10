@@ -16,13 +16,18 @@ struct AgentHookPayloadTests {
     #expect(state(claude, "UserPromptSubmit") == .running)
     #expect(state(claude, "PreToolUse") == .running)
     #expect(state(claude, "PostToolUse") == .running)
+    #expect(state(claude, "PermissionRequest") == .attention)
+    #expect(state(claude, "PermissionDenied") == nil, "only an auto-mode classifier's refusal")
     #expect(state(claude, "Notification") == .attention)
     #expect(state(claude, "Stop") == .done)
     #expect(state(claude, "StopFailure") == .error)
     #expect(state(claude, "SessionEnd") == .idle)
     #expect(state(claude, "SessionStart") == .idle)
     #expect(state(claude, "SubagentStop") == nil, "the agent is still working")
+    #expect(state(claude, "SubagentStart") == nil, "the tool call already said working")
+    #expect(state(claude, "PostToolUseFailure") == nil, "a tool failing is not a turn failing")
     #expect(state(claude, "PreCompact") == nil)
+    #expect(state(claude, "PostCompact") == nil, "it fires when the compaction is over")
     #expect(state(claude, "SomethingNew") == nil)
 
     let codex = AgentHooks.codex
@@ -55,6 +60,33 @@ struct AgentHookPayloadTests {
       state(codex, "PermissionRequest", mode: "a-mode-from-a-later-codex") == .attention,
       "an amber dot too early beats one that never comes")
     #expect(state(codex, "Stop", mode: "dontAsk") == .done, "the mode governs that event only")
+  }
+
+  /// Claude asks the hook before it decides whether a call needs anyone at
+  /// all, the same as Codex, so the mode governs the request there too. Its
+  /// `auto` is the mode a classifier answers in.
+  @Test func claudeOnlyWaitsOnARequestInAModeThatStopsForTheUser() {
+    let claude = AgentHooks.claude
+    #expect(state(claude, "PermissionRequest", mode: "default") == .attention)
+    #expect(state(claude, "PermissionRequest", mode: "plan") == .attention)
+    #expect(state(claude, "PermissionRequest", mode: "auto") == nil)
+    #expect(state(claude, "PermissionRequest", mode: "bypassPermissions") == nil)
+    #expect(
+      state(claude, "Notification", mode: "auto") == .attention,
+      "the mode governs that event only")
+  }
+
+  /// Claude reports a standing prompt twice, immediately and again six
+  /// seconds later. Both move the dot; only the second is worth a banner.
+  @Test func claudeAsksTwiceForOnePromptAndOnlyOneOfThemIsHeard() throws {
+    let claude = AgentHooks.claude
+    let request = try #require(claude.event(for: AgentHookPayload(eventName: "PermissionRequest")))
+    let notification = try #require(claude.event(for: AgentHookPayload(eventName: "Notification")))
+    #expect(request.state == notification.state)
+    #expect(request.silent)
+    #expect(!notification.silent)
+    #expect(claude.events.filter(\.silent).count == 1)
+    #expect(AgentHooks.integrations.allSatisfy { $0.events.filter(\.silent).count <= 1 })
   }
 
   /// Copilot takes `notification` in its file and reports `Notification`;
@@ -491,6 +523,11 @@ struct AgentHooksTests {
       #expect(source.contains("report(\"\(state.rawValue)\""), "no \(state.rawValue)")
     }
     #expect(source.contains("session.idle"))
+    #expect(source.contains("permission.asked"), "the hook of that name is never called")
+    #expect(source.contains("permission.replied"), "the one agent that says the answer came")
+    #expect(
+      !source.contains("\"permission.ask\":"),
+      "listening on both would report one prompt twice")
     #expect(openCode.isInstalled(in: file))
     #expect(openCode.entries(helper: helper).isEmpty, "a plugin is not a hooks object")
 

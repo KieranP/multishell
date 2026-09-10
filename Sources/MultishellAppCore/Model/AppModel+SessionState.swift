@@ -86,7 +86,8 @@ extension AppModel {
     guard
       NotificationPolicy.shouldNotify(
         report.state, preference: workspace.notifications, isShown: isShown,
-        appIsActive: platform.isActive, duration: report.duration),
+        appIsActive: platform.isActive, duration: report.duration,
+        silent: report.silent == true),
       let worktree = workspace.worktree(worktreeID)
     else { return }
     let project = workspace.project(worktree.projectID)?.name ?? ""

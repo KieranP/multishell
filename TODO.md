@@ -40,7 +40,9 @@ DEVELOP.md under Known gaps.
   wrapper outliving the hook, and that Codex's `/hooks` trust holds. The
   OpenCode plugin's logic has been driven against a stub helper; unproven is
   that OpenCode loads a plugin exporting a function rather than a default
-  `{ id, setup }`, its loader having two generations of that contract.
+  `{ id, setup }`, its loader having two generations of that contract, and
+  that the two permission events arrive under the names the plugin now
+  listens for, with the title where it reads it.
 - An OpenCode server started from one pane and reused by another reports
   that first pane's `MULTISHELL_SESSION`, so the dot lands on the wrong
   tab. Only the plugin has this: every other agent's hook runs in the

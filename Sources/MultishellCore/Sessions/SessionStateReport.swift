@@ -38,6 +38,10 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   /// hand in a plain shell tab, and a tab opened for one keeps its id long
   /// after the agent has quit.
   public var agent: String?
+  /// Set where the report moves a dot and should raise no banner, because
+  /// another report about the same thing will. Absent means the usual, so
+  /// a helper from before this field keeps its banners.
+  public var silent: Bool?
 
   enum CodingKeys: String, CodingKey {
     case version = "v"
@@ -48,6 +52,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     case message
     case duration
     case agent
+    case silent
   }
 
   public init(
@@ -57,7 +62,8 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     pid: Int32? = nil,
     message: String? = nil,
     duration: Double? = nil,
-    agent: String? = nil
+    agent: String? = nil,
+    silent: Bool? = nil
   ) {
     self.version = Self.protocolVersion
     self.state = state
@@ -67,6 +73,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     self.message = Self.trimmed(message)
     self.duration = duration
     self.agent = agent
+    self.silent = silent
   }
 
   public init(from decoder: any Decoder) throws {
@@ -82,6 +89,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     message = Self.trimmed(try container.decodeIfPresent(String.self, forKey: .message))
     duration = try container.decodeIfPresent(Double.self, forKey: .duration)
     agent = try container.decodeIfPresent(String.self, forKey: .agent)
+    silent = try container.decodeIfPresent(Bool.self, forKey: .silent)
   }
 
   private static func trimmed(_ message: String?) -> String? {
