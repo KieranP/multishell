@@ -43,6 +43,16 @@ struct UIMetrics {
   var tabArrowWidth: Double { (body * 1.7).rounded() }
   var indent: Double { (body * 2).rounded() }
 
+  /// The narrowest a board column is drawn. Below this a card's top row —
+  /// the dot, the occupant's name and the time in state — runs into itself,
+  /// and the board scrolls sideways instead; see `AgentBoardLayout`.
+  var boardColumnMinWidth: Double { (body * 16).rounded() }
+  /// Between two board columns, and round the lot of them. Both are taken
+  /// off the room before a column width is asked for, so nothing measures
+  /// itself.
+  var boardGap: Double { (body * 0.8).rounded() }
+  var boardPadding: Double { (body * 0.9).rounded() }
+
   /// How wide the band down each edge of a column's terminal area is while
   /// a tab is being dragged; see `TabGroupBands`. Wide enough to aim at
   /// without covering enough of the terminal to hide what is under it.

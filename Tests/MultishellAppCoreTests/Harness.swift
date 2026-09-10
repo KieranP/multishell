@@ -104,6 +104,10 @@ final class FakePlatform: Platform {
     opened.append((directory, application))
   }
   func installCommandLineTool() throws { installedCommandLineTool = true }
+  /// Every value the badge has been set to, in order, so a test can see it
+  /// clear as well as count.
+  var badges: [Int?] = []
+  func setBadgeCount(_ count: Int?) { badges.append(count) }
   func log(_ message: String) { logged.append(message) }
 }
 

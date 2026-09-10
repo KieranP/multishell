@@ -18,6 +18,12 @@ extension Theme {
   var sidebarColor: Color { lifted(0.09) }
   var chromeColor: Color { lifted(0.045) }
 
+  /// A board column, and a card on it: two more steps away from the
+  /// terminal, drawn from the same lift the sidebar and toolbar are so a
+  /// light theme gets a light board.
+  var columnColor: Color { lifted(0.03) }
+  var cardColor: Color { lifted(0.07) }
+
   var textPrimary: Color { foregroundColor.opacity(0.92) }
   var textSecondary: Color { foregroundColor.opacity(0.6) }
   var textTertiary: Color { foregroundColor.opacity(0.38) }

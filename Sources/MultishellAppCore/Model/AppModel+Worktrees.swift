@@ -22,6 +22,10 @@ extension AppModel {
     -> Bool
   {
     guard requireDirectory(of: worktree) else { return false }
+    // Before anything else: the panes are what fills the detail area from
+    // here, and `isShown` has to agree with that for the rest of this. The
+    // seen-clearing is left to the `sync` at the end.
+    leaveAgentBoard()
     store.selectWorktree(worktree.id)
     warmWorktrees.insert(worktree.id)
     if byUser { askAboutSharedHooksIfNeeded(for: worktree.projectID) }

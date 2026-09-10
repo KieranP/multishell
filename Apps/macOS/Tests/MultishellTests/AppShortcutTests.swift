@@ -20,6 +20,7 @@ struct AppShortcutTests {
         "super+o", "super+shift+o", "super+d", "super+shift+d", "super+comma", "super+q",
         "super+z", "super+shift+z",
         "super+alt+g", "super+alt+left", "super+alt+right",
+        "super+shift+a",
         "super+alt+d",
         "ctrl+tab", "ctrl+shift+tab",
         "super+ctrl+f", "super+enter",

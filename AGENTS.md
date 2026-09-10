@@ -98,6 +98,13 @@ Working rules:
   Every drop answers `true` and moves the tab a turn later, so the drag ends
   against the view tree it began in and a refusal does not slide the preview
   home.
+- The Agents board fills the detail area in place of the selected worktree's
+  terminals, and that worktree stays selected behind it. So nothing on screen
+  is a pane while it is up: `isShown` and `markShownTabSeen` answer false, or
+  a Done clears before anyone has seen it, and everything that acts on "the
+  tab in front of the user" asks `worktreeInView`, or Cmd+W ends a shell in a
+  pane nobody can see. A card is one open pane, never a tab and never a
+  worktree-level report, which has no pane to take you to.
 - The sidebar and detail headers are `UIMetrics.headerHeight` tall, the
   height of the hidden title bar's band. Nothing but a header may reach into
   that band, or AppKit paints over it.
@@ -121,9 +128,11 @@ Working rules:
   user's own commits.
 - Decisions a view makes live in a plain value in `MultishellAppCore`
   (`NewWorktreeDraft`, `SplitMath`, `SidebarFilter`, `EditorLaunch`,
-  `TabStripLayout`, `TabShuffle`, `TabDragState`) and are tested there. Views
-  are not tested. A tab strip measures nothing: `TabStripLayout` gives every
-  tab one width from the room and the count, and the drop reads that.
+  `TabStripLayout`, `TabShuffle`, `TabDragState`, `AgentBoard`,
+  `AgentBoardLayout`) and are tested there. Views are not tested. A tab strip
+  measures nothing: `TabStripLayout` gives every tab one width from the room
+  and the count, and the drop reads that; the board's columns come the same
+  way, and its wording, ordering and elapsed text are values too.
 - Which pane the keystrokes go to is drawn from the theme, never from a
   colour in a view: `focusRing` is a colour, `""` for no ring, or absent for
   the selection colour, and `inactivePaneOpacity` fades the rest. A colour

@@ -36,12 +36,20 @@ extension AppModel {
         reportedAgents[id] = ReportedAgent(agentID: agent, pid: report.pid)
       }
       let shown = isShown(id)
-      mutateStates { $0.report(report.state, pid: report.pid, for: .session(id), isShown: shown) }
+      mutateStates {
+        $0.report(
+          report.state, pid: report.pid, message: report.message, duration: report.duration,
+          for: .session(id), isShown: shown)
+      }
       notifyIfNeeded(report, key: .session(id), worktreeID: session.worktreeID, isShown: shown)
     } else if let cwd = report.cwd, let worktree = worktree(atPath: cwd) {
-      let shown = workspace.selectedWorktreeID == worktree.id
+      // Gated on the board for the same reason `isShown` is: the worktree is
+      // selected, but nothing of it is on screen.
+      let shown = !showsAgentBoard && workspace.selectedWorktreeID == worktree.id
       mutateStates {
-        $0.report(report.state, pid: report.pid, for: .worktree(worktree.id), isShown: shown)
+        $0.report(
+          report.state, pid: report.pid, message: report.message, duration: report.duration,
+          for: .worktree(worktree.id), isShown: shown)
       }
       notifyIfNeeded(report, key: .worktree(worktree.id), worktreeID: worktree.id, isShown: shown)
     }
@@ -53,7 +61,11 @@ extension AppModel {
   /// every one of them rather than the focused column alone — a pane the
   /// user is looking at in the next column over has been seen.
   public func isShown(_ id: TerminalSession.ID) -> Bool {
-    guard let worktree = workspace.selectedWorktreeID else { return false }
+    // The board fills the detail area, so no pane is on screen behind it.
+    // Without this the selected worktree's Done states clear the moment the
+    // board opens and their cards sit in Idle having never passed through
+    // Done, so nothing would ever say that a pane had finished.
+    guard !showsAgentBoard, let worktree = workspace.selectedWorktreeID else { return false }
     return workspace.shownTabs(in: worktree).contains { $0.root.contains(id) }
   }
 
@@ -128,7 +140,12 @@ extension AppModel {
   func mutateStates(_ change: (inout SessionStates) -> Void) {
     var changed = sessionStates
     change(&changed)
-    if changed != sessionStates { sessionStates = changed }
+    // The one place a clock reaches the states, so `SessionStates` itself
+    // stays testable without one.
+    changed.stampChanges(against: sessionStates, at: Date())
+    guard changed != sessionStates else { return }
+    sessionStates = changed
+    updateDockBadge()
   }
 
   // MARK: Queries for views
@@ -154,6 +171,14 @@ extension AppModel {
     updatePIDWatch()
   }
 
+  /// One pane's own dot, for a card whose agent is long gone. The worktree's
+  /// clear beside it in the same menu takes every pane at once; this takes
+  /// the one the card is about.
+  public func clearState(ofSession id: TerminalSession.ID) {
+    mutateStates { $0.clear(.session(id)) }
+    updatePIDWatch()
+  }
+
   public func clearState(ofWorktree id: Worktree.ID) {
     mutateStates { $0.clear(sessions: workspace.sessions(in: id).map(\.id), worktree: id) }
     updatePIDWatch()
@@ -166,7 +191,7 @@ extension AppModel {
   /// its state dropped once the process is gone. No timeout: a long task is
   /// not a stale one.
   func updatePIDWatch() {
-    guard !sessionStates.trackedPIDs.isEmpty else {
+    guard !watchedPIDs.isEmpty else {
       pidWatch?.cancel()
       pidWatch = nil
       return
@@ -177,14 +202,43 @@ extension AppModel {
         guard let self else { return }
         try? await Task.sleep(for: pidPollInterval)
         guard !Task.isCancelled else { return }
-        for pid in sessionStates.trackedPIDs where ProcessAncestry.isGone(pid) {
-          mutateStates { $0.processGone(pid) }
-        }
-        if sessionStates.trackedPIDs.isEmpty {
+        sweepGonePIDs()
+        if watchedPIDs.isEmpty {
           pidWatch = nil
           return
         }
       }
     }
+  }
+
+  /// The pids worth a poll.
+  ///
+  /// The ones a state is about, always: a Working dot must not outlive its
+  /// process wherever the user happens to be looking. The ones an agent
+  /// reported itself under, only while the board is up, which is the one
+  /// place a quit agent shows as anything — a file dropped on a pane asks
+  /// `ReportedAgent.isAtThePrompt` at the moment of the drop instead. The
+  /// board sweeps once as it opens, so its first frame is not stale. Cost
+  /// avoided: a two-second timer running for as long as any agent has ever
+  /// reported, rather than while anything is being said about one.
+  var watchedPIDs: Set<Int32> {
+    guard showsAgentBoard else { return sessionStates.trackedPIDs }
+    return sessionStates.trackedPIDs.union(reportedAgents.values.compactMap(\.pid))
+  }
+
+  /// One pass over them. A state whose process has gone loses the claim it
+  /// was making; a pane whose agent has gone is a plain shell again.
+  func sweepGonePIDs() {
+    for pid in watchedPIDs where ProcessAncestry.isGone(pid) {
+      mutateStates { $0.processGone(pid) }
+      dropReportedAgents(withPID: pid)
+    }
+  }
+
+  private func dropReportedAgents(withPID pid: Int32) {
+    let remaining = reportedAgents.filter { $0.value.pid != pid }
+    guard remaining.count != reportedAgents.count else { return }
+    reportedAgents = remaining
+    updateDockBadge()
   }
 }

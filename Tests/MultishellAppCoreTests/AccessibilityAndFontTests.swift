@@ -12,6 +12,53 @@ struct AccessibilityTextTests {
   private let feature = Worktree(
     path: URL(fileURLWithPath: "/trees/feat"), projectID: "/r", head: "abc", branch: "feat")
 
+  private let now = Date(timeIntervalSince1970: 1_000_000)
+
+  private func card(
+    occupant: AgentBoardCard.Occupant, state: SessionState?, secondsAgo: Double? = nil,
+    note: SessionNote? = nil, status: WorktreeStatus? = nil
+  ) -> AgentBoardCard {
+    AgentBoardCard(
+      id: UUID(), tabID: UUID(), worktreeID: "/r", occupant: occupant,
+      title: "claude — repairReferences", projectName: "multishell", worktreeName: "agents-view",
+      state: state, since: secondsAgo.map { now.addingTimeInterval(-$0) }, note: note,
+      status: status)
+  }
+
+  @Test func aBoardCardReadsInTheOrderItIsDrawn() {
+    var status = WorktreeStatus()
+    status.unstaged = 3
+    status.changedFiles = 3
+    #expect(
+      AccessibilityText.card(
+        card(
+          occupant: .agent("Claude Code"), state: .attention, secondsAgo: 360,
+          note: SessionNote(state: .attention, message: "Permission to run rm -rf .build"),
+          status: status),
+        at: now)
+          == """
+          Claude Code, agent, Waiting for input, for 6m, claude — repairReferences, \
+          multishell, agents-view, Permission to run rm -rf .build, 3 modified
+          """)
+
+    // A shell says so, and a pane with nothing to report says the idle
+    // wording rather than nothing at all.
+    #expect(
+      AccessibilityText.card(card(occupant: .shell("zsh"), state: nil), at: now)
+        == "zsh, shell, Nothing running, claude — repairReferences, multishell, agents-view",
+      "no time to give, and nothing said")
+  }
+
+  @Test func theAgentsRowReadsItsCounts() {
+    #expect(
+      AccessibilityText.agentsRow([(.waiting, 2), (.working, 3), (.done, 0)])
+        == "Agents, 2 waiting for you, 3 working",
+      "a lane with nothing in it is not said")
+    #expect(
+      AccessibilityText.agentsRow([(.waiting, 0), (.working, 0), (.done, 0)])
+        == "Agents, nothing running")
+  }
+
   @Test func aWorktreeRowReadsEverythingItsGlyphsMean() {
     var status = WorktreeStatus()
     status.unstaged = 2

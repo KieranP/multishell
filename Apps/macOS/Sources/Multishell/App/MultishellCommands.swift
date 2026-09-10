@@ -72,6 +72,15 @@ struct MultishellCommands: Commands {
         .keyboardShortcut(AppShortcuts.closeTab)
     }
 
+    // Into the standard View menu rather than a `CommandMenu("View")` of our
+    // own, which would sit beside the one AppKit adds for the toolbar rather
+    // than in it. The board is a place to go, not something done to the
+    // focused pane, so it does not belong in Terminal.
+    CommandGroup(after: .toolbar) {
+      Button("Agents") { model.toggleAgentBoard() }
+        .keyboardShortcut(AppShortcuts.showAgents)
+    }
+
     CommandMenu("Terminal") {
       Button("Split Right") { model.splitActivePane(.horizontal) }
         .keyboardShortcut(AppShortcuts.splitRight)

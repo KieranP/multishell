@@ -10,7 +10,7 @@ extension AppModel {
   /// The column the keystrokes go to, which is what the menu items and the
   /// tab-strip chrome are drawn from.
   public var focusedGroup: TabGroup? {
-    workspace.selectedWorktreeID.flatMap { workspace.focusedGroup(in: $0) }
+    worktreeInView.flatMap { workspace.focusedGroup(in: $0.id) }
   }
 
   /// A click anywhere in a column's strip. The pane keeps whatever focus it
@@ -26,7 +26,7 @@ extension AppModel {
   /// Wraps at either end, the way `selectTab` walks a strip.
   private func focusGroup(offset: Int) {
     guard
-      let worktree = workspace.selectedWorktreeID,
+      let worktree = worktreeInView?.id,
       let current = workspace.focusedGroup(in: worktree)
     else { return }
     let columns = workspace.groups(in: worktree)

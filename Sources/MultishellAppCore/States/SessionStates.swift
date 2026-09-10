@@ -1,3 +1,4 @@
+import Foundation
 import MultishellCore
 
 /// What each live terminal, and each worktree reported on from outside a
@@ -20,6 +21,13 @@ public struct SessionStates: Equatable, Sendable {
   public private(set) var states: [Key: SessionState] = [:]
   /// The process behind a Working or Waiting state, when the report said.
   public private(set) var pids: [Key: Int32] = [:]
+  /// When each key's state last changed, going back to nothing included, so
+  /// the board can say how long a pane has been in the column it is in. The
+  /// one time in this value, and it is handed in rather than read from a
+  /// clock; see `stampChanges`.
+  public private(set) var since: [Key: Date] = [:]
+  /// What the last report about each key said beyond its state.
+  public private(set) var notes: [Key: SessionNote] = [:]
 
   public init() {}
 
@@ -29,7 +37,10 @@ public struct SessionStates: Equatable, Sendable {
 
   /// A report over the channel. `isShown` means the user is looking at the
   /// tab, or at the worktree for a worktree-level report.
-  public mutating func report(_ state: SessionState, pid: Int32?, for key: Key, isShown: Bool) {
+  public mutating func report(
+    _ state: SessionState, pid: Int32?, message: String? = nil, duration: Double? = nil,
+    for key: Key, isShown: Bool
+  ) {
     switch state {
     case .idle:
       clear(key)
@@ -39,6 +50,11 @@ public struct SessionStates: Equatable, Sendable {
     case .running, .attention:
       states[key] = state
       if let pid { pids[key] = pid }
+    }
+    // Only where a state survived the report: a Done about a tab the user is
+    // looking at leaves nothing to say something about.
+    if states[key] != nil {
+      notes[key] = SessionNote(state: state, message: message, duration: duration)
     }
   }
 
@@ -104,6 +120,8 @@ public struct SessionStates: Equatable, Sendable {
     }
     states = states.filter { keep($0.key) }
     pids = pids.filter { keep($0.key) }
+    since = since.filter { keep($0.key) }
+    notes = notes.filter { keep($0.key) }
   }
 
   /// The process a state was about has left the table. Working and Waiting
@@ -113,6 +131,21 @@ public struct SessionStates: Equatable, Sendable {
     for (key, tracked) in pids where tracked == pid {
       if states[key]?.isFinished != true { states[key] = nil }
       pids[key] = nil
+    }
+  }
+
+  // MARK: - Time in state
+
+  /// Records when each key's state changed, measured against what this value
+  /// held before the change. Called once per mutation by the model, which is
+  /// the only place a clock is read; a key whose state did not move keeps the
+  /// time it has, so an agent reporting Working on every tool call does not
+  /// keep resetting how long it has been working.
+  public mutating func stampChanges(against previous: SessionStates, at now: Date) {
+    for key in Set(states.keys).union(previous.states.keys)
+    where states[key] != previous.states[key] {
+      since[key] = now
+      if states[key] == nil { notes[key] = nil }
     }
   }
 

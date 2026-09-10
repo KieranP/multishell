@@ -121,6 +121,74 @@ struct SessionStatesTests {
     #expect(states.trackedPIDs == [1])
   }
 
+  @Test func aStateThatMovesIsStampedAndOneThatRepeatsIsNot() {
+    let start = Date(timeIntervalSince1970: 1_000_000)
+    var states = SessionStates()
+
+    var stamped = states
+    stamped.report(.running, pid: 1, for: .session(a), isShown: false)
+    stamped.stampChanges(against: states, at: start)
+    #expect(stamped.since[.session(a)] == start)
+
+    // An agent reports Working on every tool call; how long it has been
+    // working must not keep resetting.
+    states = stamped
+    var again = states
+    again.report(.running, pid: 1, for: .session(a), isShown: false)
+    again.stampChanges(against: states, at: start.addingTimeInterval(60))
+    #expect(again.since[.session(a)] == start, "the state did not move")
+
+    states = again
+    var finished = states
+    finished.report(.done, pid: nil, for: .session(a), isShown: false)
+    finished.stampChanges(against: states, at: start.addingTimeInterval(90))
+    #expect(finished.since[.session(a)] == start.addingTimeInterval(90))
+  }
+
+  /// Idle is never a stored state, so the board reads how long a pane has
+  /// been idle from the stamp its last state left behind.
+  @Test func goingBackToNothingIsStampedTooAndDropsTheNote() {
+    let start = Date(timeIntervalSince1970: 1_000_000)
+    var states = SessionStates()
+    states.report(.attention, pid: 1, message: "Needs Bash", for: .session(a), isShown: false)
+    #expect(states.notes[.session(a)]?.message == "Needs Bash")
+
+    var cleared = states
+    cleared.markSeen(sessions: [a], worktree: nil)
+    cleared.report(.idle, pid: nil, for: .session(a), isShown: false)
+    cleared.stampChanges(against: states, at: start)
+    #expect(cleared[.session(a)] == nil)
+    #expect(cleared.since[.session(a)] == start)
+    #expect(cleared.notes[.session(a)] == nil, "nothing left for the note to be about")
+  }
+
+  @Test func aNoteCarriesTheStateItArrivedWith() {
+    var states = SessionStates()
+    states.report(.done, pid: nil, duration: 194, for: .session(a), isShown: false)
+    let note = states.notes[.session(a)]
+    #expect(note?.state == .done)
+    #expect(note?.duration == 194)
+    #expect(note?.describing(.done) == note)
+    #expect(note?.describing(.attention) == nil, "it stopped describing the pane")
+  }
+
+  @Test func aReportAboutAShownTabLeavesNoNote() {
+    var states = SessionStates()
+    states.report(.done, pid: nil, duration: 3, for: .session(a), isShown: true)
+    #expect(states[.session(a)] == nil)
+    #expect(states.notes[.session(a)] == nil)
+  }
+
+  @Test func retainDropsTheStampsAndNotesWithTheirKeys() {
+    var states = SessionStates()
+    states.report(.running, pid: 1, message: "building", for: .session(a), isShown: false)
+    states.report(.running, pid: 2, message: "testing", for: .session(b), isShown: false)
+    states.stampChanges(against: SessionStates(), at: Date(timeIntervalSince1970: 1))
+    states.retain(sessions: [a], worktrees: [])
+    #expect(states.since.keys.map { $0 } == [.session(a)])
+    #expect(states.notes.keys.map { $0 } == [.session(a)])
+  }
+
   @Test func clearingByHandTakesEverythingForTheKeys() {
     var states = SessionStates()
     states.report(.running, pid: 1, for: .session(a), isShown: false)

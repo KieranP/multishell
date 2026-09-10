@@ -6,22 +6,7 @@ DEVELOP.md under Known gaps.
 
 ## Features
 
-- Terminals view: every open terminal in one list grouped by state, so
-  someone running agents in several worktrees sees which one wants them, with
-  a next-waiting shortcut. Idle shells left out behind a "show all" toggle.
-  - A list, not thumbnails: a surface is one NSView. An entry above Projects
-    in the sidebar with per-state counts, filling the detail area when
-    selected; the selection is a runtime flag in `AppModel`.
-  - Rows: tab title, project › worktree, state, time in state, sorted by
-    state then most recent change. No output line; neither engine hands
-    scrollback to the core.
-  - Click selects the worktree and activates the tab; context menu is
-    `WorktreeActions`; optionally a Dock badge for the Waiting count.
-  - Grouping, ordering and elapsed-time text in a plain value, tested there.
 - Tabs and panes: swap or zoom a pane.
-- A view of a project's merged branches. The badge says which worktree has
-  landed; a branch whose worktree is already gone is in no list.
-- Per-project startup commands and environment variables.
 - "Locate…" on a missing project, rebinding it to a chosen directory.
 - Terminal: find.
 - A Linux GUI, an inotify `DirectoryWatcher`, and an XDG Trash for its

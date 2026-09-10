@@ -53,6 +53,23 @@ public final class AppModel<Surface> {
   /// row that draws the field need not know about each other.
   public var renamingWorktreeID: Worktree.ID?
 
+  // MARK: - The Agents board
+
+  /// Whether the board fills the detail area in place of the selected
+  /// worktree's terminals. Runtime state: which of the two the user is
+  /// looking at is about this moment, not about the workspace. Set through
+  /// `showAgentBoard` and `hideAgentBoard`, which have the seen-clearing to
+  /// do with it.
+  public internal(set) var showsAgentBoard = false
+  /// Whether the board shows every terminal or only the panes with an agent
+  /// at the prompt. Here rather than in the view, because the Dock badge
+  /// counts what the Waiting column shows and so has to read the same
+  /// filter. Cost: it is off again after a relaunch. Set through
+  /// `setShowsAllTerminals`.
+  public internal(set) var showsAllTerminals = false
+  /// What the badge was last set to, so it is written only when it changes.
+  @ObservationIgnored var badgedWaitingCount = 0
+
   // MARK: - Creates and removes under way
 
   /// Which stage a create is in while the sheet still waits on it: the
@@ -84,8 +101,10 @@ public final class AppModel<Surface> {
   public var sessionStates = SessionStates()
   /// Which agent last reported in each session; see `ReportedAgent`. What
   /// a file dropped on a pane is written as reads this, so an agent started
-  /// by hand is addressed as itself. Runtime state, like the titles above.
-  @ObservationIgnored var reportedAgents: [TerminalSession.ID: ReportedAgent] = [:]
+  /// by hand is addressed as itself, and what the Agents board reads to tell
+  /// an agent's pane from a plain shell. Runtime state, like the titles
+  /// above, and observed because a card is drawn from it.
+  public internal(set) var reportedAgents: [TerminalSession.ID: ReportedAgent] = [:]
   /// Worktrees whose saved tabs have been given live shells. Empty at launch,
   /// so relaunching with many saved tabs starts nothing; grows as worktrees
   /// are visited and never shrinks while the app runs.
@@ -212,7 +231,11 @@ public final class AppModel<Surface> {
       let live = registry.liveSessionIDs
       if live != liveSessions { liveSessions = live }
       sessionTitles = sessionTitles.filter { live.contains($0.key) }
-      reportedAgents = reportedAgents.filter { live.contains($0.key) }
+      // Assigned only when it actually drops one: the board and the sidebar
+      // entry are drawn from this now, and a write with nothing in it is a
+      // render of both for no change.
+      let remaining = reportedAgents.filter { live.contains($0.key) }
+      if remaining.count != reportedAgents.count { reportedAgents = remaining }
       pruneStates()
       // A shell exiting can bring another tab into view; it is being looked
       // at now, whatever happened in it before.

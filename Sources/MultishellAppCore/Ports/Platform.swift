@@ -44,6 +44,11 @@ public protocol Platform: AnyObject {
   /// privilege prompt the platform needs.
   func installCommandLineTool() throws
 
+  /// The count on the app's icon, or `nil` for no badge at all. The Agents
+  /// board's Waiting column is what it counts. A platform with no such place
+  /// does nothing, as `NullPlatform` does.
+  func setBadgeCount(_ count: Int?)
+
   /// A line for the platform's log, for what is worth a note but not an
   /// alert.
   func log(_ message: String)
@@ -66,5 +71,6 @@ public final class NullPlatform: Platform {
   public func open(_ directory: URL, withApplication application: URL) async throws {}
   public var bundledHelper: URL? { nil }
   public func installCommandLineTool() throws {}
+  public func setBadgeCount(_ count: Int?) {}
   public func log(_ message: String) {}
 }

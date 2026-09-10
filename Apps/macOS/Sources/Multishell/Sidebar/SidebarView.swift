@@ -28,6 +28,15 @@ struct SidebarView: View {
       filterField(theme, metrics: metrics)
       ScrollView {
         LazyVStack(spacing: 1) {
+          AgentsRow(
+            counts: model.agentSidebarCounts,
+            isSelected: model.showsAgentBoard,
+            theme: theme,
+            metrics: metrics,
+            select: { model.showAgentBoard() }
+          )
+          .padding(.bottom, 4)
+
           Text("Projects")
             .font(.system(size: metrics.caption, weight: .semibold))
             .foregroundStyle(theme.textTertiary)
@@ -236,7 +245,7 @@ struct SidebarView: View {
       terminalCount: model.workspace.sessions(in: worktree.id).count,
       state: model.state(ofWorktree: worktree.id),
       operation: model.worktreeOperations[worktree.id],
-      isSelected: model.workspace.selectedWorktreeID == worktree.id,
+      isSelected: !model.showsAgentBoard && model.workspace.selectedWorktreeID == worktree.id,
       isDropTarget: tabDropTarget == worktree.id,
       status: model.statuses[worktree.id],
       mergeState: model.mergeState(of: worktree),

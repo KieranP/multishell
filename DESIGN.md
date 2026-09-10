@@ -145,6 +145,55 @@ Waiting are about the process, so they stay while the user looks. Ctrl+C sends
 no Stop, so reports carry a pid the app watches; no timeout, a long task not
 being a stale one. Cost: Cmd+W on a Working pane asks first.
 
+## The Agents board is a roster, not a queue
+
+Every open pane has one card for as long as it is open, and the card moves
+between columns as its state moves. State picks the column; it never decides
+whether a card exists, so nothing is ever hidden by having been looked at. A
+card goes when its pane closes, and in one other case: an agent whose process
+has gone leaves a plain shell behind, which the filter then hides.
+
+Failed waits with Waiting rather than sitting in Done. A failure wants the
+user, which is what that column means, and it leaves Done meaning one thing.
+Cost: two clearing rules in one column, a question clearing only when its agent
+says so and a failure when its tab is shown.
+
+The filter is the one control and decides membership alone: a shell it lets in
+lands where its state says, exactly as an agent does, because the zsh and bash
+integration already reports a command started and finished. So `make release`
+is Working and a failed `swift test` waits, with no new plumbing. No duration
+floor, though `NotificationPolicy` has one: a banner interrupts and a card does
+not, and the sidebar dot already goes green for an `ls`. It lives on the model
+rather than in the view because the Dock badge counts what the Waiting column
+shows and has to read the same filter; cost, it is off again after a relaunch.
+
+While it is up, nothing that acts on "the tab in front of the user" acts at
+all: Cmd+W would otherwise end a shell in a pane nobody can see, and Cmd+T open
+a tab that appears only once the board is left. One `worktreeInView` answers
+that for every one of them.
+
+An agent's pid is polled only while the board is up, with one sweep as it
+opens. Nowhere else shows a quit agent — a dropped file asks whether it is
+still at the prompt at the moment of the drop — and watching always would leave
+a two-second timer running for as long as any agent had ever reported.
+
+The four columns are always drawn, empty or not: labelled columns say what the
+board is for, where a page in their place says only that it is not working. An
+empty board adds one line saying what would put something on it, since without
+a report nothing can know an agent is at a prompt. Not gated on whether hooks
+are installed: one agent's being in place says nothing about the agent actually
+at the prompt.
+
+Showing the board means no pane is shown, or the selected worktree's Done
+states clear as it opens and their cards reach Idle having never passed through
+Done. Ordering is newest first everywhere, so an arriving card pushes the rest
+down a place; nothing else about a card moves on its own. Columns share the
+room down to a floor and the board scrolls past it, a partial column at the
+edge saying there is more. No end arrows, which the tab strip needs because a
+tab scrolled out of sight is one you forget exists; the board has four fixed
+columns and half of one showing says which way the rest are. No line of output
+on a card: neither engine hands scrollback to the core.
+
 ## The inbound channel is a Unix socket and a small helper
 
 A socket rather than a URL scheme, which would activate the app dozens of times
@@ -699,7 +748,10 @@ say where the keyboard is.
   the same way everywhere, so a leftover emoji neither masks the icon a
   repository's shared file names nor is written back into it. What a new name
   has to satisfy is in DEVELOP.md.
-- One `WorktreeActions` menu serves the detail header and the context menu. A
+- One `WorktreeActions` menu serves the detail header, the sidebar's context
+  menu and a board card's, the last under a heading naming the worktree, since
+  the card carries a Clear Status of its own for the pane and two unlabelled
+  ones would read as the same thing. A
   terminal editor opens as a tab, one run in the background failing silently
   with no tty; cost: a relaunch reopens the editor.
 - New Worktree always opens, even with nothing selected, and its decisions are

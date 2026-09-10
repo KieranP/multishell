@@ -94,6 +94,12 @@ final class MacPlatform: Platform {
     }
   }
 
+  /// The Dock tile's badge. An empty label is not the same as none, so a
+  /// count of nothing clears it rather than drawing an empty red circle.
+  func setBadgeCount(_ count: Int?) {
+    NSApp.dockTile.badgeLabel = count.map(String.init)
+  }
+
   func log(_ message: String) {
     logger.notice("\(message, privacy: .public)")
   }

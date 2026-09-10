@@ -86,6 +86,10 @@ AGENTS.md states the rules; this is what catches a breach.
 - Each override binds to its own setting: `SettingsBindingTests`, since
   `hasOverride` and `overrideValue` take the same arguments and return the
   same type.
+- The sidebar's Agents counts agree with the columns they summarise:
+  `AgentBoardModelTests` walks every state and both filter positions.
+  `agentLaneCounts` counts without building a card, so a shell reporting a new
+  prompt does not re-render the sidebar, and two ways of counting can part.
 - Foundation-only imports are checked by hand in a `swift:6.0` container, Linux
   being out of CI. Views are not tested, but a value a view reads is.
 
@@ -147,6 +151,25 @@ room for a tab. `TabStripLayout.Edges` says which end has more past it and
 `stepTarget` which tab its arrow scrolls to; `newTabWidth` and the two gutters
 come off the room before any of that is asked, so nothing measures itself.
 
+**A column on the Agents board.** A case in `AgentBoardLane`, in the order the
+columns are drawn, with its title, the state whose colour its header wears, and
+a line in `AgentBoardLane.of`, which is total over `SessionState` so a state
+with no column is a compile error. Four columns already need about 1135pt of
+window against a 720 minimum; a fifth pushes that to about 1355.
+
+**A fact on a board card.** A field on `AgentBoardCard`, filled in
+`AppModel.agentBoardCards`, and a line in `AgentCardView` and in
+`AccessibilityText.card`. A fact that comes off a report rather than the
+workspace needs a field on `SessionNote` too, written by `SessionStates.report`;
+a note carries the state it arrived with and `describing(_:)` is what stops it
+being shown once the pane has moved on.
+
+**An item on a card's context menu.** A line in `AgentCardActions`, above
+the `Section` if it acts on the pane and inside `WorktreeActions` if it acts
+on the worktree, which the sidebar row and the detail header then show too.
+Both halves already carry a Clear Status, and the section heading naming the
+worktree is what tells them apart.
+
 **A keyboard shortcut.** An `AppShortcut` in `AppShortcuts`, listed in its
 `all`, which the menu item and the Ghostty `keybind=…=unbind` are both derived
 from. A key Ghostty names rather than takes the character of (tab, enter,
@@ -207,7 +230,11 @@ helper link are shared.
 - `state.json`: the sidebar, tabs, the columns they sit in with each column's
   width and active tab, pane trees, worktree names, each worktree's directory
   creation date and every setting. Not processes, shell titles, the shell a tab
-  resolved to, or a branch's last commit time.
+  resolved to, or a branch's last commit time. Nor anything about the Agents
+  board: whether it is showing and whether it is filtered to agents are runtime
+  state on `AppModel`, so the filter is off again after a relaunch — the Dock
+  badge counts what its Waiting column shows and has to read the same flag,
+  which a view-local `@AppStorage` could not offer it.
   A file written before columns existed names no group on any tab and carries
   an `activeTabByWorktree` this build no longer has a property for: `Workspace`
   reads that key to know which tab was active, and `repairReferences` gathers
@@ -346,6 +373,25 @@ names are the log's less the `kTCCService` prefix, so App Management is
   how it looks at the edges: a strip whose tabs are of very different widths
   could in principle move a tab back and forth across one boundary, since the
   tab that lands under the pointer is what stops that from happening.
+- The Agents board's drawing is unverified on screen: whether a card reads at
+  the 208pt column floor, whether a partial column at the edge reads as "more
+  this way" without the arrows a tab strip has, whether nesting a vertical
+  scroll per column inside the board's horizontal one feels right to a
+  trackpad, and whether the Dock badge appears at all under this build's
+  signing. The arrangement, the widths, the wording and the badge's count are
+  tested in `MultishellAppCore`; the drawing is not. If the partial column does
+  not read, the fallback is the tab strip's: an arrow in a gutter at each end
+  that has cards past it, from `TabStripLayout.Edges`. Two known divergences
+  from the mockup it was drawn from: columns are full height rather than
+  hugging their cards, which is what lets each scroll on its own, and the View
+  menu item's position within that menu is AppKit's to decide, since it is
+  added to the standard group rather than to a menu of ours.
+- While the Agents board is up, what acts on a pane does nothing, but what
+  acts on a worktree still acts on the selected one — Open in Editor and New
+  Worktree — and no sidebar row draws as selected then, so those commands have
+  nothing on screen naming their subject. Left as it is because neither is
+  destructive; the fix is to route them through `worktreeInView` as the pane
+  commands already are.
 - Sidebar keyboard navigation and a shortcut to focus the filter are not
   built. No view tests, and the accessibility labels have not been read with
   VoiceOver.

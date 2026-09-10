@@ -8,7 +8,12 @@ struct DetailView: View {
   var body: some View {
     let theme = model.currentTheme
     VStack(spacing: 0) {
-      if let worktree = model.workspace.selectedWorktree {
+      // The board first: it fills the detail area in place of the selected
+      // worktree's terminals, and the selection is left alone behind it so
+      // those shells stay live.
+      if model.showsAgentBoard {
+        AgentBoardView(model: model, theme: theme)
+      } else if let worktree = model.workspace.selectedWorktree {
         toolbar(worktree, theme: theme)
         if let operation = model.worktreeOperations[worktree.id] {
           // In place of the terminals: a create has none yet, and a

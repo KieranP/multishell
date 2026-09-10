@@ -13,12 +13,22 @@ extension AppModel {
     return workspace.projects.count == 1 ? workspace.projects.first : nil
   }
 
-  /// The selected worktree, when a shell may start in it: no create or
+  /// The worktree whose terminals are actually on screen, which is the
+  /// selected one unless the Agents board is covering them.
+  ///
+  /// Everything a keystroke does to "the tab in front of the user" asks this
+  /// first. Without it Cmd+W with the board up ends a shell in a pane nobody
+  /// can see, and Cmd+T opens a tab that appears only once the board is
+  /// left.
+  var worktreeInView: Worktree? {
+    showsAgentBoard ? nil : workspace.selectedWorktree
+  }
+
+  /// The worktree in view, when a shell may start in it: no create or
   /// remove is running there and its directory exists. `nil` otherwise, the
   /// missing-directory alert already raised.
   func worktreeReadyForShell() -> Worktree? {
-    guard let worktree = workspace.selectedWorktree, !isBusy(worktree.id),
-      requireDirectory(of: worktree)
+    guard let worktree = worktreeInView, !isBusy(worktree.id), requireDirectory(of: worktree)
     else { return nil }
     return worktree
   }
@@ -145,9 +155,7 @@ extension AppModel {
   /// instead, and nothing happens with no tab on screen.
   private func closeInShownTab(_ closing: (TerminalTab) -> PendingClose) {
     guard platform.workspaceWindowIsKey else { return platform.closeKeyWindow() }
-    guard
-      let worktree = workspace.selectedWorktreeID,
-      let tab = workspace.activeTab(in: worktree)
+    guard let worktree = worktreeInView?.id, let tab = workspace.activeTab(in: worktree)
     else { return }
     requestClose(closing(tab), in: tab)
   }
@@ -254,7 +262,7 @@ extension AppModel {
   /// The tab `offset` places along the strip, wrapping at either end.
   func selectTab(offset: Int) {
     guard
-      let worktree = workspace.selectedWorktreeID,
+      let worktree = worktreeInView?.id,
       let current = workspace.activeTab(in: worktree),
       let next = offset > 0
         ? workspace.tab(after: current.id) : workspace.tab(before: current.id)

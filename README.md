@@ -42,7 +42,9 @@ one entry per event, leaves the rest of it as it is, keeps a copy beside it
 the first time, and Remove takes only its own entries out again; where the
 agent reads a directory of hook files, or a plugin, it writes a file of its
 own and deletes it again. Codex asks you to trust a new hook once, with
-`/hooks`. Plain shell commands report without any of this.
+`/hooks`. Plain shell commands report without any of this. Until an agent's
+hooks are in, nothing it does reaches the app, so its dots never move and the
+Agents board stays empty.
 
 To work on it, start with [DEVELOP.md](DEVELOP.md) for the build, the tests
 and the rules CI enforces, and [DESIGN.md](DESIGN.md) for why things are the
@@ -65,6 +67,12 @@ way they are.
   failed. Five agents report through their hooks; zsh and bash report plain
   commands with no setup; any tool can through `multishell state`, which
   also takes `--agent` to say which agent is at that pane's prompt.
+- An Agents entry above the projects, opening a board of every terminal with
+  an agent at its prompt: one card each, in a column for what it is doing —
+  waiting for you, working, done, idle — carrying the project and worktree it
+  is in, how long it has been there and the last thing it said. Click a card
+  to land in that pane. A Dock badge counts the ones waiting, and a toggle
+  brings in plain shells, which report through the same columns.
 - Pick a preferred agent and open it in a tab with one shortcut, or have
   every new tab start it. Optional notifications when a tab you are not
   looking at needs you.

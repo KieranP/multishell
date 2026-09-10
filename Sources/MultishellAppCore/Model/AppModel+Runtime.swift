@@ -23,8 +23,13 @@ extension AppModel {
 
   /// Done clears for what is on screen: the panes of every column's active
   /// tab, and the selected worktree's own entry.
+  ///
+  /// Nothing is on screen while the Agents board covers the detail area, and
+  /// this runs from every `sync` and from a shell exiting. Without the guard
+  /// an unrelated shell closing would clear the Done of a pane the user has
+  /// not looked at, and its card would jump from Done to Idle under them.
   func markShownTabSeen() {
-    guard let worktree = workspace.selectedWorktreeID else { return }
+    guard !showsAgentBoard, let worktree = workspace.selectedWorktreeID else { return }
     let shown = workspace.shownTabs(in: worktree).flatMap(\.sessionIDs)
     mutateStates { $0.markSeen(sessions: shown, worktree: worktree) }
   }

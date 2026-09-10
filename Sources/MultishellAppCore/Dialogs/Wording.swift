@@ -1,4 +1,4 @@
-/// The few English forms the dialogs build by hand.
+/// The few English forms built by hand, for the dialogs and the board.
 enum Wording {
   /// "1 open terminal", "3 open terminals". Only for nouns that pluralise
   /// with an s.
