@@ -46,9 +46,9 @@ own and deletes it again. Codex asks you to trust a new hook once, with
 hooks are in, nothing it does reaches the app, so its dots never move and the
 Agents board stays empty.
 
-To work on it, start with [DEVELOP.md](DEVELOP.md) for the build, the tests
-and the rules CI enforces, and [DESIGN.md](DESIGN.md) for why things are the
-way they are.
+To work on it, start with [AGENTS.md](AGENTS.md), which indexes
+`docs/develop/` for the build, the tests and the rules, and `docs/design/`
+for why things are the way they are.
 
 ## Features
 
@@ -104,14 +104,14 @@ way they are.
 Early and unshipped. A build signs itself with a self-signed local
 certificate, so the permissions you grant it survive a rebuild, but nothing
 is notarised and the bundle runs only on the machine that built it until the
-libghostty resource lookup is fixed (see Known gaps in DEVELOP.md). Only
+libghostty resource lookup is fixed (see `docs/develop/known-gaps.md`). Only
 macOS has a GUI, and only macOS is built in CI; the core keeps to Foundation
 so another frontend can use it, but nothing compiles it without one.
 
 Every line of code in this repository was written by an AI (Claude), under
 direction from a human who set the requirements, reviewed the results in the
 running app, and sent it back when something was wrong. The design decisions
-in DESIGN.md were argued out in that conversation, and the tests were written
+under `docs/design/` were argued out in that conversation, and the tests were written
 to pin behaviour the human had actually exercised. It is not vibe-coded: the
 architecture, the trade-offs and what shipped were human calls.
 

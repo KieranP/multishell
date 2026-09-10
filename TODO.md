@@ -1,8 +1,8 @@
 # TODO
 
 The queue, most pressing first within each heading. A decision that gets
-made moves to DESIGN.md; a gap that is documented rather than fixed lives in
-DEVELOP.md under Known gaps.
+made moves to the right file under `docs/design/`; a gap that is documented rather
+than fixed lives in `docs/develop/known-gaps.md`.
 
 ## Features
 
@@ -53,7 +53,7 @@ DEVELOP.md under Known gaps.
 
 - The bundle runs only where it was built: libghostty's `Bundle.module`
   never looks in `Contents/Resources`. Build with Xcode or patch
-  libghostty-spm. See Known gaps in DEVELOP.md.
+  libghostty-spm. See `docs/develop/known-gaps.md`.
 - Developer ID signing and notarisation, so another machine will run it; the
   local certificate buys privacy grants and nothing towards distribution.
   Check whether libghostty needs an entitlement under the hardened runtime.

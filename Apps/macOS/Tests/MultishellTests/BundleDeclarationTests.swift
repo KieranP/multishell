@@ -33,7 +33,7 @@ struct BundleDeclarationTests {
 
   /// The subsystem `MacPlatform` logs under is the bundle id, so
   /// `log show --predicate 'subsystem == "…"'` finds this app's lines.
-  /// DEVELOP.md's permissions section tells you to run exactly that.
+  /// docs/develop/permissions.md tells you to run exactly that.
   @Test func theLoggingSubsystemIsTheBundleIdentifier() throws {
     let subsystem = MacPlatform.loggingSubsystem
     let isBundleIdentifier = try makeAppScript().contains(
@@ -42,7 +42,8 @@ struct BundleDeclarationTests {
       isBundleIdentifier,
       """
       MacPlatform logs under \(subsystem), which is not the bundle identifier make-app.sh \
-      writes, so the `log show` predicate in DEVELOP.md finds none of this app's lines.
+      writes, so the `log show` predicate in docs/develop/permissions.md finds none of \
+      this app's lines.
       """)
   }
 
