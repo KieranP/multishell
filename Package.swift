@@ -31,10 +31,15 @@ let package = Package(
     .executableTarget(
       name: "MultishellCLI", dependencies: ["MultishellCore", "MultishellProcess"]),
 
+    // What two test targets share. A plain target, since a test target
+    // cannot be depended on.
+    .target(name: "TestSupport", dependencies: ["MultishellGitKit"], path: "Tests/TestSupport"),
+
     .testTarget(name: "MultishellCoreTests", dependencies: ["MultishellCore"]),
     .testTarget(name: "MultishellProcessTests", dependencies: ["MultishellProcess"]),
-    .testTarget(name: "MultishellGitKitTests", dependencies: ["MultishellGitKit"]),
-    .testTarget(name: "MultishellAppCoreTests", dependencies: ["MultishellAppCore"]),
+    .testTarget(name: "MultishellGitKitTests", dependencies: ["MultishellGitKit", "TestSupport"]),
+    .testTarget(
+      name: "MultishellAppCoreTests", dependencies: ["MultishellAppCore", "TestSupport"]),
     // Runs the built helper against a real socket; depends on the target so
     // the binary exists before the test does.
     .testTarget(

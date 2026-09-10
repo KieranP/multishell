@@ -2,6 +2,7 @@ import Foundation
 import MultishellCore
 import MultishellGitKit
 import Observation
+import TestSupport
 import Testing
 
 @testable import MultishellAppCore
@@ -20,7 +21,7 @@ struct GitHarness {
   let platform = FakePlatform()
 
   init() async throws {
-    git = try GitRunner()
+    git = try TestGit.build()
     root = URL(fileURLWithPath: NSTemporaryDirectory())
       .appendingPathComponent("multishell-appgit-\(UUID().uuidString)", isDirectory: true)
     let repository = root.appendingPathComponent("demo", isDirectory: true)

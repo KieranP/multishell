@@ -12,7 +12,9 @@ Root package, four Foundation-only libraries:
   decision a view makes
 
 MultishellCLI = the helper. `Apps/macOS` = its own package: views, the two
-engine hosts, MacPlatform.
+engine hosts, MacPlatform. `Tests/TestSupport` is a plain target rather than
+a test one, since a test target cannot be depended on: what two test targets
+share goes there.
 
 ## Style
 

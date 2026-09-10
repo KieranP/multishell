@@ -1,6 +1,7 @@
 import Foundation
 import MultishellCore
 import MultishellProcess
+import TestSupport
 
 @testable import MultishellGitKit
 
@@ -11,7 +12,7 @@ struct RepositoryFixture {
   let project: Project
 
   static func make(commit: Bool = true) async throws -> RepositoryFixture {
-    let git = try GitRunner()
+    let git = try TestGit.build()
     let root = URL(fileURLWithPath: NSTemporaryDirectory())
       .appendingPathComponent("multishell-tests-\(UUID().uuidString)", isDirectory: true)
     let repository = root.appendingPathComponent("demo", isDirectory: true)

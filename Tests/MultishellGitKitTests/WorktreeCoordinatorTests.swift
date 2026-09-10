@@ -486,14 +486,16 @@ struct WorktreeServiceGuardTests {
 struct StatusConcurrencyTests {
   /// Thirty `git status` at once thrash the disk; the coordinator promises at
   /// most eight. Each fake run notes how many others are running when it
-  /// starts, then holds its slot for a moment.
+  /// starts, then holds its slot for a moment. The hold is long enough that
+  /// spawning twenty shells, which on a loaded runner costs seconds, cannot
+  /// carry the total past the bound on its own.
   @Test func statusesRunAtMostEightAtATimeAndStillOverlap() async throws {
     let fake = try FakeGit.make(
       """
       mkdir -p "$SCRATCH/running" "$SCRATCH/peaks"
       : > "$SCRATCH/running/$$"
       ls "$SCRATCH/running" | wc -l > "$SCRATCH/peaks/$$"
-      sleep 0.3
+      sleep 0.5
       rm "$SCRATCH/running/$$"
       printf '## main\\n'
       """)
@@ -519,8 +521,9 @@ struct StatusConcurrencyTests {
     #expect(peaks.count == 20, "every run recorded a peak")
     #expect(peaks.max() ?? 0 <= WorktreeCoordinator.maxConcurrentStatuses, "\(peaks)")
     #expect(peaks.max() ?? 0 >= 4, "runs did not overlap: \(peaks)")
-    // Twenty runs of 0.3 s: six seconds serially, under a second in threes.
-    #expect(elapsed < .seconds(4), "took \(elapsed)")
+    // Twenty runs of 0.5 s: ten seconds of sleeping serially, under two in
+    // threes.
+    #expect(elapsed < .seconds(8), "took \(elapsed)")
   }
 }
 

@@ -46,3 +46,7 @@ What each test catches, and the conventions a new one follows.
   mocks. Parsers get fixture text, odd lines included.
 - Timing bounds are sized for a single-core CI runner, many times a laptop's
   figure. Keep that headroom when you add one.
+- Real git comes from a fixture, whose runner carries `commit.gpgsign=false`:
+  a developer whose global config signs would be asked for the key once per
+  fixture commit. It rides on the runner, so a clone a new test adds needs no
+  step of its own.
