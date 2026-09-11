@@ -20,7 +20,7 @@ struct AgentsRow: View {
         .font(.system(size: metrics.icon, weight: .medium))
         .foregroundStyle(isSelected ? theme.textPrimary : theme.textSecondary)
         .frame(width: metrics.icon + 2)
-      Text("Agents")
+      Text(t("label.agents"))
         .font(.system(size: metrics.secondary, weight: .medium))
         .foregroundStyle(theme.textPrimary.opacity(isSelected ? 1 : 0.85))
         .lineLimit(1)

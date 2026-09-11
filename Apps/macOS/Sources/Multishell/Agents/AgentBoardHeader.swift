@@ -12,7 +12,7 @@ struct AgentBoardHeader: View {
 
   var body: some View {
     HStack(spacing: 8) {
-      Text("Agents")
+      Text(t("label.agents"))
         .font(.system(size: metrics.body, weight: .semibold))
         .foregroundStyle(theme.textPrimary)
       Text(board.summary)
@@ -34,7 +34,7 @@ struct AgentBoardHeader: View {
   /// agent does.
   private var allTerminalsToggle: some View {
     Toggle(
-      "Show all terminals",
+      t("board.show-all-terminals"),
       isOn: Binding(
         get: { model.showsAllTerminals }, set: { model.setShowsAllTerminals($0) })
     )
@@ -42,6 +42,6 @@ struct AgentBoardHeader: View {
     .controlSize(.mini)
     .font(.system(size: metrics.caption))
     .foregroundStyle(theme.textSecondary)
-    .help("Show terminals with no agent at the prompt")
+    .help(t("board.show-all-terminals-info"))
   }
 }

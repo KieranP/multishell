@@ -121,7 +121,7 @@ extension ProjectIcon {
   /// cell that goes back to no glyph is the one the eye lands on.
   public static let symbolGroups: [Group] = [
     Group(
-      name: "Files",
+      name: t("icon-group.files"),
       glyphs: [
         "folder", "folder.fill", "folder.circle", "folder.badge.plus", "folder.badge.minus",
         "folder.badge.gearshape", "folder.badge.questionmark", "folder.badge.person.crop", "tray",
@@ -136,7 +136,7 @@ extension ProjectIcon {
         "rectangle.stack", "square.stack",
       ]),
     Group(
-      name: "Code",
+      name: t("icon-group.code"),
       glyphs: [
         "terminal", "terminal.fill", "chevron.left.forwardslash.chevron.right",
         "chevron.left.slash.chevron.right", "curlybraces", "curlybraces.square",
@@ -155,7 +155,7 @@ extension ProjectIcon {
         "app.connected.to.app.below.fill", "square.split.2x1", "sidebar.left", "square.split.1x2",
       ]),
     Group(
-      name: "Network",
+      name: t("icon-group.network"),
       glyphs: [
         "network", "network.slash", "network.badge.shield.half.filled", "globe", "globe.americas",
         "globe.europe.africa", "globe.asia.australia", "globe.central.south.asia", "globe.desk",
@@ -170,7 +170,7 @@ extension ProjectIcon {
         "esim", "simcard",
       ]),
     Group(
-      name: "Infra",
+      name: t("icon-group.infra"),
       glyphs: [
         "server.rack", "xserve", "xserve.raid", "macpro.gen3.server", "macstudio",
         "cylinder", "cylinder.fill", "cylinder.split.1x2", "externaldrive", "externaldrive.fill",
@@ -182,7 +182,7 @@ extension ProjectIcon {
         "fanblades", "thermometer", "lock.shield", "checkmark.shield", "key.radiowaves.forward",
       ]),
     Group(
-      name: "Data",
+      name: t("icon-group.data"),
       glyphs: [
         "chart.bar", "chart.bar.fill", "chart.bar.xaxis", "chart.pie", "chart.dots.scatter",
         "chart.line.uptrend.xyaxis", "chart.line.downtrend.xyaxis", "chart.line.flattrend.xyaxis",
@@ -191,7 +191,7 @@ extension ProjectIcon {
         "circle.grid.3x3", "rectangle.3.offgrid", "circle.grid.cross", "waveform", "waveform.path",
       ]),
     Group(
-      name: "Tools",
+      name: t("icon-group.tools"),
       glyphs: [
         "hammer", "hammer.fill", "wrench.and.screwdriver", "wrench.adjustable", "screwdriver",
         "gearshape", "gearshape.2", "gear", "slider.horizontal.3", "switch.2", "paintbrush",
@@ -200,7 +200,7 @@ extension ProjectIcon {
         "bandage",
       ]),
     Group(
-      name: "Devices",
+      name: t("icon-group.devices"),
       glyphs: [
         "iphone", "ipad", "laptopcomputer", "desktopcomputer", "macpro.gen3", "display",
         "display.2",
@@ -208,7 +208,7 @@ extension ProjectIcon {
         "video", "tv", "gamecontroller", "homepod", "appletvremote.gen4", "hifispeaker",
       ]),
     Group(
-      name: "Work",
+      name: t("icon-group.work"),
       glyphs: [
         "building", "building.2", "building.columns", "house", "house.fill", "storefront",
         "briefcase", "graduationcap", "person", "person.2", "figure.walk", "cart",
@@ -217,7 +217,7 @@ extension ProjectIcon {
         "envelope", "envelope.open", "bubble.left.and.bubble.right", "calendar",
       ]),
     Group(
-      name: "Nature",
+      name: t("icon-group.nature"),
       glyphs: [
         "leaf", "tree", "camera.macro", "drop", "flame", "bolt", "sun.max", "sun.min", "sunrise",
         "sunset", "moon", "moon.stars", "sparkles", "cloud.rain", "cloud.bolt", "cloud.snow",
@@ -225,32 +225,32 @@ extension ProjectIcon {
         "allergens", "carrot",
       ]),
     Group(
-      name: "Animals",
+      name: t("icon-group.animals"),
       glyphs: [
         "ant", "tortoise", "hare", "bird", "fish", "dog", "cat", "lizard", "pawprint", "teddybear",
       ]),
     Group(
-      name: "Media",
+      name: t("icon-group.media"),
       glyphs: [
         "music.note", "music.mic", "music.quarternote.3", "film", "photo", "photo.stack",
         "play.circle", "speaker.wave.2", "mic", "theatermasks", "ticket", "guitars", "radio",
         "waveform.circle",
       ]),
     Group(
-      name: "Travel",
+      name: t("icon-group.travel"),
       glyphs: [
         "airplane", "car", "bus", "tram", "bicycle", "scooter", "sailboat", "ferry", "truck.box",
         "fuelpump", "road.lanes", "map", "mappin.and.ellipse", "signpost.right", "location",
         "suitcase", "beach.umbrella", "tent", "binoculars", "figure.hiking",
       ]),
     Group(
-      name: "Time",
+      name: t("icon-group.time"),
       glyphs: [
         "clock", "alarm", "timer", "stopwatch", "hourglass", "calendar.badge.clock", "deskclock",
         "clock.arrow.circlepath", "clock.arrow.2.circlepath", "arrow.triangle.capsulepath",
       ]),
     Group(
-      name: "Symbols",
+      name: t("icon-group.symbols"),
       glyphs: [
         "star", "star.fill", "heart", "heart.fill", "flag", "flag.fill", "flag.checkered", "bell",
         "pin", "mappin", "target", "scope", "triangle", "square", "circle", "diamond", "seal",

@@ -25,15 +25,15 @@ public enum NotificationPolicy {
   /// The tab's title, or the worktree's name for a worktree-level report,
   /// then where it is.
   public static func title(subject: String, project: String, worktree: String) -> String {
-    "\(subject) · \(project) › \(worktree)"
+    t("notification.title", subject, project, worktree)
   }
 
   public static func body(for state: SessionState, message: String?) -> String {
     if let message, !message.isEmpty { return message }
     switch state {
-    case .attention: return "Waiting for your input."
-    case .done: return "Finished."
-    case .error: return "Finished with an error."
+    case .attention: return t("notification.attention")
+    case .done: return t("notification.done")
+    case .error: return t("notification.error")
     case .running, .idle: return state.displayName
     }
   }

@@ -128,7 +128,7 @@ public enum AgentHooks {
     ],
     format: .sharedSettings(millisecondTimeout: false),
     trustNote:
-      "Codex runs no hook it has not been told to trust: run /hooks in Codex once and trust this one."
+      t("agent-hooks.codex-trust")
   )
 
   /// Gemini CLI: `~/.gemini/settings.json`, whose events are named for what

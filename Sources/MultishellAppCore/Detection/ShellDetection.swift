@@ -63,20 +63,24 @@ public struct ShellDetection: Equatable, Sendable {
   public func options(selected: String?) -> [DetectionOption] {
     var options = [
       DetectionOption(
-        id: ShellCatalogue.loginShellID, label: "Login shell (\(loginShell))", isInstalled: true)
+        id: ShellCatalogue.loginShellID, label: t("option.login-shell", loginShell),
+        isInstalled: true)
     ]
     for path in installed {
       options.append(
-        DetectionOption(id: path, label: "\(Self.name(path))  \(path)", isInstalled: true))
+        DetectionOption(
+          id: path, label: t("option.shell-path", Self.name(path), path), isInstalled: true))
     }
     if let selected, !isInstalled(selected) {
       options.append(
         DetectionOption(
-          id: selected, label: "\(Self.name(selected))  \(selected) (not installed)",
+          id: selected,
+          label: t("option.shell-not-installed", Self.name(selected), selected),
           isInstalled: false))
     }
     options.append(
-      DetectionOption(id: ShellCatalogue.customID, label: "Custom path…", isInstalled: true))
+      DetectionOption(
+        id: ShellCatalogue.customID, label: t("option.custom-path"), isInstalled: true))
     return options
   }
 }

@@ -20,23 +20,25 @@ struct ProjectSettingsWindow: View {
     if let project = model.workspace.project(projectID) {
       ToolbarTabs(
         tabs: [
-          .init("General", symbol: "gearshape") {
+          .init(t("settings.general"), symbol: "gearshape") {
             ProjectGeneralTab(model: model, project: project)
           },
-          .init("Worktrees", symbol: "arrow.trianglehead.branch") {
+          .init(t("settings.worktrees"), symbol: "arrow.trianglehead.branch") {
             ProjectWorktreesTab(model: model, project: project)
           },
-          .init("Hooks", symbol: "bolt.horizontal") {
+          .init(t("settings.hooks"), symbol: "bolt.horizontal") {
             ProjectHooksTab(model: model, project: project)
           },
-          .init("Terminal", symbol: "terminal") {
+          .init(t("settings.terminal"), symbol: "terminal") {
             ProjectTerminalTab(model: model, project: project)
           },
-          .init("Agents", symbol: "sparkles") { ProjectAgentTab(model: model, project: project) },
+          .init(t("label.agents"), symbol: "sparkles") {
+            ProjectAgentTab(model: model, project: project)
+          },
         ], firstTabToken: firstTabToken
       )
       .frame(width: SettingsView.windowSize.width, height: SettingsView.windowSize.height)
-      .navigationTitle("\(project.name) Settings")
+      .navigationTitle(t("window.project-settings-title", project.name))
       // This window is its own scene, so a removal asked for here has to
       // be confirmed here; the workspace window's dialog would be behind it.
       .projectRemovalDialog(model: model, source: .settings)

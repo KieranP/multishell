@@ -27,7 +27,7 @@ struct OverrideSection<Value: Equatable & Sendable, Content: View, Footer: View>
     let isOverridden = model.settings(of: project)[keyPath: setting] != nil
     Section {
       InfoToggle(
-        "Override: " + label, info: info,
+        t("project.override", label), info: info,
         isOn: model.hasOverride(setting, of: project, fallback: fallback))
       content(model.overrideValue(setting, of: project, fallback: fallback), isOverridden)
     } footer: {

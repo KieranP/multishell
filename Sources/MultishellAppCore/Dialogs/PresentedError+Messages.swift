@@ -6,56 +6,48 @@ import MultishellCore
 extension PresentedError {
   public static func notARepository(_ url: URL) -> PresentedError {
     PresentedError(
-      title: "Not a git repository",
-      message:
-        "\(url.lastPathComponent) is not inside a repository and is not a bare one, or git could not read it."
-    )
+      title: t("error.not-a-repository-title"),
+      message: t("error.not-a-repository-message", url.lastPathComponent))
   }
 
   /// A shell spawned in a missing directory silently lands in $HOME, which
   /// is worse than an honest refusal.
   public static func worktreeDirectoryMissing(_ path: String) -> PresentedError {
     PresentedError(
-      title: "Worktree directory is missing",
-      message:
-        "\(path) does not exist. If it was deleted by hand, remove the worktree to let git prune it."
-    )
+      title: t("error.worktree-missing-title"),
+      message: t("error.worktree-missing-message", path))
   }
 
   public static var noAgentChosen: PresentedError {
     PresentedError(
-      title: "No agent chosen",
-      message: "Pick a preferred agent in Settings > Agents, or in this project's settings.")
+      title: t("error.no-agent-title"), message: t("error.no-agent-message"))
   }
 
   /// The tab has already opened as a plain shell by the time this shows.
   public static func agentNotInstalled(_ name: String) -> PresentedError {
     PresentedError(
-      title: "\(name) is not installed",
-      message:
-        "The tab opened as a plain shell. Install \(name), or choose another agent in Settings > Agents, then use Refresh."
-    )
+      title: t("error.not-installed-title", name),
+      message: t("error.agent-not-installed-message", name))
   }
 
   public static var noEditorChosen: PresentedError {
     PresentedError(
-      title: "No editor chosen", message: "Pick a preferred editor in Settings > General.")
+      title: t("error.no-editor-title"), message: t("error.no-editor-message"))
   }
 
   public static var noEditorCommand: PresentedError {
     PresentedError(
-      title: "No editor command",
-      message: "Type the command in Settings > General, with {path} for the worktree.")
+      title: t("error.no-editor-command-title"),
+      message: t("error.no-editor-command-message"))
   }
 
   public static func editorNotInstalled(_ name: String) -> PresentedError {
     PresentedError(
-      title: "\(name) is not installed",
-      message: "Install \(name), or choose another editor in Settings > General, then use Refresh."
-    )
+      title: t("error.not-installed-title", name),
+      message: t("error.editor-not-installed-message", name))
   }
 
   public static func themeUnreadable(_ problem: String) -> PresentedError {
-    PresentedError(title: "A theme file could not be read", message: problem)
+    PresentedError(title: t("error.theme-unreadable-title"), message: problem)
   }
 }

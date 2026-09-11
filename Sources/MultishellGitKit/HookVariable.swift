@@ -17,10 +17,10 @@ public enum HookVariable: String, CaseIterable, Sendable {
   /// The one-line description the Hooks tab shows beside the name.
   public var meaning: String {
     switch self {
-    case .projectPath: "Repository root"
-    case .projectName: "Repository folder name"
-    case .worktreePath: "The worktree created or removed"
-    case .branch: "Its branch"
+    case .projectPath: t("hook-variable.project-path")
+    case .projectName: t("hook-variable.project-name")
+    case .worktreePath: t("hook-variable.worktree-path")
+    case .branch: t("hook-variable.branch")
     }
   }
 

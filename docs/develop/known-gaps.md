@@ -54,6 +54,32 @@ does.
   reach: the settings rows name `{{branch}}` as an example, and the rest live
   in `AgentPlaceholder` waiting for a documentation site.
 
+- The app ships English only, so nothing has been seen in another language:
+  what is unproven is not the lookup, which TranslationTests and a read out
+  of a built bundle both cover, but the layouts. Several settings pages
+  already fit their fixed window with little to spare, and a language that
+  runs thirty per cent longer than English would be the thing that overflows
+  them; SettingsPageSizeTests measures English. The sidebar rows, the tab
+  strip and the board columns all size themselves off measured text, so
+  those should give rather than clip.
+- A number inside a phrase is written the way Swift writes one, no locale:
+  the board's one decimal reads `0.4s` in a language that would write a
+  comma. Deliberate, since the alternative makes every test of it read the
+  machine's region; fix if it grates = a locale in `t(_:_:)` and
+  those tests pinned to one.
+- A tab's title is a persisted field, and a plain shell's starts as the
+  translated word for Shell, so tabs made before a language change keep the
+  old one. It corrects itself under zsh and bash, whose integration
+  retitles the tab on the next command; under SwiftTerm with another shell
+  it stays until the tab is closed. Fix if it matters = store the default
+  as absent and translate it where it is drawn, which is a change to a
+  persisted field.
+- `ProjectIcon.searchWords` is English. In another language the icon picker
+  matches the group names, which are translated, and the SF Symbol names,
+  which are not, so a search for the local word for "database" finds
+  nothing. Fix = the words move into the catalogue, one key per symbol,
+  which is another ninety entries for a search box.
+
 ## Unconfirmed behaviour
 
 - Ghostty engine's path untested, its zsh chain checked only against a
@@ -79,7 +105,14 @@ does.
   at least keeps it out of the text libghostty is handed.
   Any other relative path in the file resolves from the temporary directory
   the effective config is written to rather than from the file's own.
-- Linux never compiled, locally or in CI.
+- Linux never compiled, locally or in CI. The counted phrases are the part
+  of the catalogue to look at first when it is: `Localizable.strings` is
+  plain enough that corelibs-foundation reads it, and whether its
+  `NSLocalizedString` applies a `.stringsdict` plural rule at all is
+  unchecked. If it does not, every counted phrase answers with its own key
+  and the number is dropped; the fallback is to build those few forms by
+  hand where they are read, which is where they came from before the
+  catalogue had them.
 - Notifications settings page never seen on screen: the toggles, the caption
   under them, the six-tab band in a 560pt window. SettingsPageSizeTests holds
   this page's height under the window's own, so what is left is how it reads

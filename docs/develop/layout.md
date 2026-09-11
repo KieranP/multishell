@@ -5,14 +5,22 @@ Which package holds what, what may import what, how a file is written.
 ## Layout
 
 Root package, four Foundation-only libraries:
-- MultishellCore: model, store, theme, ports
+- MultishellCore: model, store, theme, ports, and `t(_:_:)`, which reads
+  the libraries' string catalogue
 - MultishellProcess: processes, sockets
 - MultishellGitKit: worktree operations, parsers, hooks
 - MultishellAppCore: AppModel, detections, dialogs, error mapping, every
   decision a view makes
 
 MultishellCLI = the helper. `Apps/macOS` = its own package: views, the two
-engine hosts, MacPlatform.
+engine hosts, MacPlatform, and a `t(_:_:)` of its own.
+
+Each half's words are a `Resources/en.lproj` inside the target that says
+them: `Sources/MultishellCore/Resources` for the libraries, with the
+shell-integration scripts, and `Sources/Multishell/Resources` for the Mac
+app. A second frontend is a third of these. `Apps/macOS/Resources` is not
+one of them: that is the icon, which the bundling script copies and SwiftPM
+never sees.
 
 What the suites share sits in plain targets, since a test target cannot be
 depended on. Two of them, split by what they drag in: `Tests/TestScratch`
@@ -49,3 +57,7 @@ a `View` extension in a file named for it, attached by the scene that asked.
   NotificationSettings), tested there. Views are untested and measure nothing.
 - Small single-purpose files. Comments only for why, non-local consequence, or
   a fact the code cannot show.
+- No user-visible literal outside a catalogue: a word on screen is a
+  `t("a.key")`, wherever it is written, and it goes in the catalogue of the
+  half that says it. A view never reads the libraries' words; one they both
+  say is written in both. See `docs/design/translation.md`.

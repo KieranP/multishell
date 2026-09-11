@@ -1,4 +1,5 @@
 import MultishellAppCore
+import MultishellCore
 import SwiftUI
 
 extension View {
@@ -22,7 +23,7 @@ extension View {
           }
         }
       }
-      Button("Cancel", role: .cancel) { model.pendingRemoval = nil }
+      Button(t("action.cancel"), role: .cancel) { model.pendingRemoval = nil }
     } message: { pending in
       Text(pending.message(warning: model.removalWarning(for: pending.worktree)))
     }

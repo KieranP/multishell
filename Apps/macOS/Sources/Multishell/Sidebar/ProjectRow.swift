@@ -32,7 +32,7 @@ struct ProjectRow: View {
           .rotationEffect(.degrees(project.isExpanded ? 90 : 0))
           .foregroundStyle(theme.textTertiary)
           .frame(width: 10)
-          .help(project.isExpanded ? "Collapse" : "Expand")
+          .help(project.isExpanded ? t("sidebar.collapse") : t("sidebar.expand"))
 
         if isFetching {
           // The icon's own slot, like the dot below it, so nothing shifts
@@ -41,13 +41,13 @@ struct ProjectRow: View {
             .controlSize(.mini)
             .scaleEffect(0.7)
             .frame(width: metrics.icon + 6)
-            .help("Fetching from the remote")
+            .help(t("sidebar.fetching"))
         } else if let state {
           Circle()
             .fill(theme.color(for: state))
             .frame(width: 7, height: 7)
             .frame(width: metrics.icon + 6)
-            .help("\(state.displayName) in a terminal of a collapsed worktree")
+            .help(t("sidebar.collapsed-state", state.displayName))
         } else {
           ProjectIconView(
             settings: settings, isMissing: isMissing, theme: theme, size: metrics.icon
@@ -60,7 +60,7 @@ struct ProjectRow: View {
           .foregroundStyle(theme.textPrimary)
           .lineLimit(1)
           .opacity(isMissing ? 0.5 : 1)
-          .help(isMissing ? "\(project.path.path) is not reachable right now" : "")
+          .help(isMissing ? t("sidebar.not-reachable", project.path.path) : "")
       }
       .frame(height: metrics.rowHeight)
       .contentShape(.rect)
@@ -72,11 +72,12 @@ struct ProjectRow: View {
           worktreeCount: worktreeCount, isFetching: isFetching)
       )
       .accessibilityAddTraits(.isButton)
-      .accessibilityAction(named: project.isExpanded ? "Collapse" : "Expand", toggle)
+      .accessibilityAction(
+        named: project.isExpanded ? t("sidebar.collapse") : t("sidebar.expand"), toggle)
 
       Spacer(minLength: 4)
 
-      rowButton("plus", help: "New Worktree", action: newWorktree)
+      rowButton("plus", help: t("sidebar.new-worktree"), action: newWorktree)
     }
     .padding(.horizontal, 8)
     .frame(height: metrics.rowHeight)

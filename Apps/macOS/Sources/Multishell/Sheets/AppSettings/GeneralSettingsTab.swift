@@ -11,34 +11,25 @@ struct GeneralSettingsTab: View {
     Form {
       Section {
         DetectionPicker(
-          label: "Editor:",
+          label: t("general.editor"),
           selection: model.setting(
             \.preferredEditorID, or: EditorCatalogue.noneID, write: model.setPreferredEditor),
           options: model.editorDetection.options(selected:),
           refresh: { Task { await model.refreshLoginEnvironment() } },
-          info:
-            "What Open in Editor (⇧⌘O) in the worktree menu uses. Applications are found by bundle identifier, or by their command line shim on the login shell's PATH; a terminal editor opens as a new tab in the worktree."
+          info: t("general.editor-info")
         )
         if model.workspace.preferredEditorID == EditorCatalogue.customID {
-          InfoRow(
-            "Command:",
-            info:
-              "Run as a new tab in the worktree through your login shell, with {path} replaced by the worktree's quoted path, or the path appended if {path} is absent. A shell takes over when it exits."
-          ) {
+          InfoRow(t("agents.command"), info: t("general.editor-command-info")) {
             TextField(
-              "Command:",
+              t("agents.command"),
               text: model.setting(\.customEditorCommand, write: model.setCustomEditorCommand),
-              prompt: Text("code-insiders {path}"))
+              prompt: Text(t("general.editor-command-prompt")))
           }
         }
       }
 
       Section {
-        InfoRow(
-          "State file:",
-          info:
-            "Projects, worktrees, tabs and these settings. Running shells are not saved; each tab gets a fresh one on relaunch."
-        ) {
+        InfoRow(t("general.state-file"), info: t("general.state-file-info")) {
           Text(Paths.stateFile.path)
             .font(.system(size: 11, design: .monospaced))
             .foregroundStyle(.secondary)

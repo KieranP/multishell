@@ -25,8 +25,8 @@ public struct InheritedSetting<Value: Equatable & Sendable>: Equatable, Sendable
   /// of setting and none of them can word it differently.
   public func caption(_ shown: String) -> String {
     isFromRepository
-      ? "Using the value in \(SharedProjectSettings.fileName): \(shown)."
-      : "Using the global value: \(shown)."
+      ? t("inherited.from-repository", SharedProjectSettings.fileName, shown)
+      : t("inherited.from-global", shown)
   }
 }
 
@@ -34,7 +34,9 @@ public struct InheritedSetting<Value: Equatable & Sendable>: Equatable, Sendable
 public typealias InheritedFlag = InheritedSetting<Bool>
 
 extension InheritedSetting where Value == Bool {
-  public var caption: String { caption(value ? "on" : "off") }
+  public var caption: String {
+    caption(value ? t("inherited.on") : t("inherited.off"))
+  }
 }
 
 extension InheritedSetting where Value == WorktreeSortOrder {

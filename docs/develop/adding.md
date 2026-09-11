@@ -166,5 +166,27 @@ elsewhere. An override is an `OverrideSection`, naming the key path once. Help
 goes behind an `InfoButton`; a `SettingsCaption` is only for a value computed
 live.
 
+**A user-visible string.** A line in the catalogue of the half that says
+it, in key order, and `t("the.key")` where the words are wanted. A word in
+a view goes in
+`Apps/macOS/Sources/Multishell/Resources/en.lproj/Localizable.strings`; one
+in a library goes in
+`Sources/MultishellCore/Resources/en.lproj/Localizable.strings`; a word
+both say is written in both, and app code never reads the libraries'
+catalogue.
+TranslationTests, one per half, fails a key its catalogue has not got, an
+entry nothing asks for, and a call that passes the wrong number of
+arguments. A form whose wording turns on a number goes in
+`Localizable.stringsdict` instead, with `one` and `other`, and takes the
+number like any other argument; two or more arguments have to be numbered,
+`%1$@ %2$@`. Views say `Text(t("the.key"))`, never a literal.
+
+**A language.** A `<code>.lproj` beside `en.lproj` with both files
+translated, and a line for it in `Package.swift`; `make-app.sh` puts the
+code in `CFBundleLocalizations` from the folder alone, which is what makes
+it pickable in System Settings. The permission strings macOS shows are not
+in the catalogue: they are an `InfoPlist.strings` under
+`Apps/macOS/Resources/<code>.lproj`.
+
 **A notified state.** A toggle in `NotificationPreference`, whose subscript
 answers for every state so a caller can hand it whatever was reported.

@@ -1,3 +1,4 @@
+import MultishellCore
 import MultishellGitKit
 import MultishellProcess
 
@@ -53,12 +54,8 @@ public struct WorktreeOperation: Equatable, Sendable {
     /// not, a hook being ended and a list being given up on.
     public var cancelHelp: String? {
       switch self {
-      case .linkingFiles, .copyingFiles:
-        return
-          "Ends the list once the file it is on is done. What is already in the worktree stays, and nothing else runs in it."
-      case .postCreateHook, .preDeleteHook, .postDeleteHook:
-        return
-          "Ends the hook now. It runs under the hook timeout in Settings > Worktrees otherwise."
+      case .linkingFiles, .copyingFiles: return t("step.cancel-files-help")
+      case .postCreateHook, .preDeleteHook, .postDeleteHook: return t("step.cancel-hook-help")
       case .removingWorktree, .deletingBranch: return nil
       }
     }
@@ -88,26 +85,27 @@ public struct WorktreeOperation: Equatable, Sendable {
   public var title: String {
     if failure != nil {
       switch step {
-      case .linkingFiles: return "Some files were not linked into the worktree"
-      case .copyingFiles: return "Some files were not copied into the worktree"
+      case .linkingFiles: return t("step.files-not-linked")
+      case .copyingFiles: return t("step.files-not-copied")
       case .postCreateHook:
-        return timedOut ? "The post-create hook did not finish" : "The post-create hook failed"
+        return timedOut
+          ? t("step.post-create-hook-timed-out") : t("step.post-create-hook-failed")
       case .preDeleteHook:
         return timedOut
-          ? "The pre-delete hook did not finish" : "The pre-delete hook refused the removal"
-      case .removingWorktree: return "The worktree could not be removed"
-      case .postDeleteHook: return "The post-delete hook failed"
-      case .deletingBranch: return "The branch was not deleted"
+          ? t("step.pre-delete-hook-timed-out") : t("step.pre-delete-hook-refused")
+      case .removingWorktree: return t("step.worktree-not-removed")
+      case .postDeleteHook: return t("step.post-delete-hook-failed")
+      case .deletingBranch: return t("step.branch-not-deleted")
       }
     }
     switch step {
-    case .linkingFiles: return "Linking files into the worktree…"
-    case .copyingFiles: return "Copying files into the worktree…"
-    case .postCreateHook: return "Running the post-create hook…"
-    case .preDeleteHook: return "Running the pre-delete hook…"
-    case .removingWorktree: return "Moving the worktree to the Trash…"
-    case .postDeleteHook: return "Running the post-delete hook…"
-    case .deletingBranch: return "Deleting the branch…"
+    case .linkingFiles: return t("step.linking-files")
+    case .copyingFiles: return t("step.copying-files")
+    case .postCreateHook: return t("step.post-create-hook")
+    case .preDeleteHook: return t("step.pre-delete-hook")
+    case .removingWorktree: return t("step.removing-worktree")
+    case .postDeleteHook: return t("step.post-delete-hook")
+    case .deletingBranch: return t("step.deleting-branch")
     }
   }
 
@@ -119,22 +117,17 @@ public struct WorktreeOperation: Equatable, Sendable {
       case .linkingFiles, .copyingFiles:
         // Not "the hook did not run": a project may list files and have no
         // hook, and this is the pane for that one too.
-        return
-          "The worktree was created, and nothing else ran in it. Dismiss to open its first terminal."
-      case .postCreateHook:
-        return "The worktree was created. Dismiss to open its first terminal."
-      case .preDeleteHook:
-        return "The worktree and its terminals stay. Dismiss to go back to them."
+        return t("step.files-failed-detail")
+      case .postCreateHook: return t("step.post-create-failed-detail")
+      case .preDeleteHook: return t("step.pre-delete-failed-detail")
       case .removingWorktree, .postDeleteHook, .deletingBranch:
-        return "Dismiss to go back to the terminals."
+        return t("step.removal-failed-detail")
       }
     }
     switch step {
-    case .linkingFiles, .copyingFiles, .postCreateHook:
-      return "The first terminal opens here when it finishes."
-    case .preDeleteHook: return "The worktree stays if the hook refuses."
-    case .removingWorktree, .postDeleteHook, .deletingBranch:
-      return "Its terminals close when it is gone; the directory is in the Trash."
+    case .linkingFiles, .copyingFiles, .postCreateHook: return t("step.creation-detail")
+    case .preDeleteHook: return t("step.pre-delete-detail")
+    case .removingWorktree, .postDeleteHook, .deletingBranch: return t("step.removal-detail")
     }
   }
 }

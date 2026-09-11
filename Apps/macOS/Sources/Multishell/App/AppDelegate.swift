@@ -1,5 +1,6 @@
 import AppKit
 import MultishellAppCore
+import MultishellCore
 import MultishellProcess
 
 /// Asks before quitting while terminals are open. Every open session is a
@@ -26,11 +27,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     guard count > 0 else { return .terminateNow }
 
     let alert = NSAlert()
-    alert.messageText = "Quit Multishell?"
+    alert.messageText = t("quit.title")
     alert.informativeText = QuitGuard.message(terminals: count, working: working)
     alert.alertStyle = .warning
-    alert.addButton(withTitle: "Quit")
-    alert.addButton(withTitle: "Cancel")
+    alert.addButton(withTitle: t("action.quit"))
+    alert.addButton(withTitle: t("action.cancel"))
     return alert.runModal() == .alertFirstButtonReturn ? .terminateNow : .terminateCancel
   }
 }

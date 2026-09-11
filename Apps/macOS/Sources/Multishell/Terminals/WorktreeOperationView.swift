@@ -33,7 +33,7 @@ struct WorktreeOperationView: View {
         .frame(maxWidth: 380)
         .padding(.top, 6)
       if operation.isRunning, let help = operation.step.cancelHelp {
-        Button("Cancel", action: cancel)
+        Button(t("action.cancel"), action: cancel)
           .padding(.top, 18)
           .help(help)
       }
@@ -51,7 +51,7 @@ struct WorktreeOperationView: View {
         .padding(.top, 18)
         // No Return binding: a window-wide default action would also fire
         // from the sidebar's filter field.
-        Button("Dismiss", action: dismiss)
+        Button(t("action.dismiss"), action: dismiss)
           .buttonStyle(.borderedProminent)
           .padding(.top, 18)
       }

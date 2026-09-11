@@ -12,15 +12,14 @@ struct EmptyStateView: View {
         .font(.system(size: 40, weight: .light))
         .foregroundStyle(theme.textTertiary)
 
-      Text(hasProjects ? "Select a worktree" : "Add a project to get started")
+      Text(hasProjects ? t("empty.select-worktree") : t("empty.add-project"))
         .font(.system(size: 18, weight: .semibold))
         .foregroundStyle(theme.textPrimary)
         .padding(.top, 20)
 
       Text(
         hasProjects
-          ? "Pick one in the sidebar and its terminals open here."
-          : "Point Multishell at a git repository. Its worktrees appear in the sidebar, and each one gets its own set of terminals."
+          ? t("empty.select-worktree-detail") : t("empty.add-project-detail")
       )
       .font(.system(size: 13))
       .foregroundStyle(theme.textSecondary)
@@ -30,7 +29,7 @@ struct EmptyStateView: View {
 
       if !hasProjects {
         Button(action: addProject) {
-          Label("Add Project…", systemImage: "plus")
+          Label(t("menu.add-project"), systemImage: "plus")
         }
         .buttonStyle(.borderedProminent)
         .padding(.top, 22)

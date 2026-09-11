@@ -34,11 +34,11 @@ public enum WorktreeSortOrder: String, Codable, Hashable, Sendable, CaseIterable
   /// only one with an order nobody has to be told.
   public var displayName: String {
     switch self {
-    case .alphabetical: "Name"
-    case .createdNewestFirst: "Created, newest first"
-    case .createdOldestFirst: "Created, oldest first"
-    case .committedNewestFirst: "Last commit, newest first"
-    case .committedOldestFirst: "Last commit, oldest first"
+    case .alphabetical: t("sort.alphabetical")
+    case .createdNewestFirst: t("sort.created-newest-first")
+    case .createdOldestFirst: t("sort.created-oldest-first")
+    case .committedNewestFirst: t("sort.committed-newest-first")
+    case .committedOldestFirst: t("sort.committed-oldest-first")
     }
   }
 }

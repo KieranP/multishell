@@ -1,4 +1,5 @@
 import MultishellAppCore
+import MultishellCore
 import SwiftUI
 
 extension View {
@@ -14,11 +15,11 @@ extension View {
       titleVisibility: .visible,
       presenting: model.pendingProjectRemoval
     ) { pending in
-      Button("Remove Project", role: .destructive) {
+      Button(t("dialog.remove-project"), role: .destructive) {
         model.pendingProjectRemoval = nil
         model.removeProject(pending.project)
       }
-      Button("Cancel", role: .cancel) { model.pendingProjectRemoval = nil }
+      Button(t("action.cancel"), role: .cancel) { model.pendingProjectRemoval = nil }
     } message: { pending in
       Text(model.projectRemovalMessage(for: pending.project))
     }

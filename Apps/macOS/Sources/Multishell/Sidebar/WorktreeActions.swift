@@ -11,38 +11,40 @@ struct WorktreeActions: View {
   var body: some View {
     // The field it opens is on the sidebar row, wherever the menu was
     // asked for; the model carries which worktree is being renamed.
-    Button("Rename…") { model.beginRenaming(worktree) }
+    Button(t("action.rename")) { model.beginRenaming(worktree) }
     if model.customName(of: worktree) != nil {
-      Button("Use Branch Name") { model.renameWorktree(worktree.id, to: nil) }
+      Button(t("actions.use-branch-name")) { model.renameWorktree(worktree.id, to: nil) }
     }
     Divider()
-    Button("Open in Editor") { model.openInEditor(worktree) }
-    Button("Reveal in Finder") { model.revealInFileBrowser(worktree.path) }
-    Button("Copy Path") { model.copyToClipboard(worktree.path.path) }
-    Button("Copy Branch") { model.copyToClipboard(worktree.name) }
+    Button(t("action.open-in-editor")) { model.openInEditor(worktree) }
+    Button(t("action.reveal-in-finder")) { model.revealInFileBrowser(worktree.path) }
+    Button(t("actions.copy-path")) { model.copyToClipboard(worktree.path.path) }
+    Button(t("actions.copy-branch")) { model.copyToClipboard(worktree.name) }
     Divider()
     // Selected first, so the menu opens the tab where it was asked for
     // whichever worktree the detail view is showing, and without the first
     // tab a select would add. Always a shell: the agent has its own item,
     // so auto-start does not apply here.
-    Button("New Shell Tab") {
+    Button(t("menu.new-shell-tab")) {
       if model.select(worktree, openingFirstTab: .never) { model.newShellTab() }
     }
     .disabled(model.isBusy(worktree.id))
     if model.preferredAgentID(for: worktree) != nil {
-      Button("New Agent Tab") {
+      Button(t("menu.new-agent-tab")) {
         if model.select(worktree, openingFirstTab: .never) { model.newAgentTab() }
       }
       .disabled(model.isBusy(worktree.id))
     }
     if model.state(ofWorktree: worktree.id) != nil {
       Divider()
-      Button("Clear Status") { model.clearState(ofWorktree: worktree.id) }
+      Button(t("actions.clear-status")) { model.clearState(ofWorktree: worktree.id) }
     }
     if !worktree.isPrimary {
       Divider()
-      Button("Remove Worktree…", role: .destructive) { model.requestRemoval(of: worktree) }
-        .disabled(model.isBusy(worktree.id))
+      Button(t("actions.remove-worktree"), role: .destructive) {
+        model.requestRemoval(of: worktree)
+      }
+      .disabled(model.isBusy(worktree.id))
     }
   }
 }

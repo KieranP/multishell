@@ -1,3 +1,4 @@
+import MultishellCore
 import MultishellGitKit
 import MultishellProcess
 
@@ -20,7 +21,7 @@ public enum RemovalFailure: Equatable, Sendable {
 
     public var label: String {
       switch self {
-      case .deleteBranchAnyway: "Force Deletion"
+      case .deleteBranchAnyway: t("removal.force-deletion")
       }
     }
   }
@@ -50,7 +51,7 @@ public enum RemovalFailure: Equatable, Sendable {
       // The branch is deleted after the post hook, so a hook that failed
       // kept it; the alert has to say so, or the user believes it went.
       let presented = PresentedError(failure)
-      let kept = branch.map { "\n\nThe branch \($0) was kept." } ?? ""
+      let kept = branch.map { "\n\n" + t("removal.branch-was-kept", $0) } ?? ""
       return .alert(
         title: presented.title, message: presented.message + kept, retry: nil,
         worktreeRemoved: true)

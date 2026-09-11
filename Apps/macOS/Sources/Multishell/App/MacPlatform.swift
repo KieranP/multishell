@@ -102,7 +102,7 @@ final class MacPlatform: Platform {
 
   /// Where macOS keeps the permission, spelled as the Settings app's own
   /// path to it.
-  var notificationSettingsLocation: String? { "System Settings > Notifications" }
+  var notificationSettingsLocation: String? { t("platform.notification-settings") }
 
   func log(_ message: String) {
     logger.notice("\(message, privacy: .public)")

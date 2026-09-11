@@ -14,9 +14,9 @@ struct AgentCardActions: View {
   let card: AgentBoardCard
 
   var body: some View {
-    Button("Go to Terminal") { model.open(card) }
+    Button(t("card.go-to-terminal")) { model.open(card) }
     if card.state != nil {
-      Button("Clear Status") { model.clearState(ofSession: card.id) }
+      Button(t("actions.clear-status")) { model.clearState(ofSession: card.id) }
     }
     if let worktree = model.workspace.worktree(card.worktreeID) {
       Section(model.displayName(of: worktree)) {

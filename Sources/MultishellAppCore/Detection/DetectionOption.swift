@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 
 /// One row of a settings dropdown that lists what a machine has.
 ///
@@ -29,22 +30,25 @@ extension DetectionOption {
     noneID: String,
     customID: String
   ) -> [DetectionOption] {
-    var options = [DetectionOption(id: noneID, label: "None", isInstalled: true)]
+    var options = [DetectionOption(id: noneID, label: t("option.none"), isInstalled: true)]
     for entry in entries {
       if installed(entry.id) {
         options.append(DetectionOption(id: entry.id, label: entry.name, isInstalled: true))
       } else if entry.id == selected {
         options.append(
-          DetectionOption(id: entry.id, label: "\(entry.name) (not installed)", isInstalled: false))
+          DetectionOption(
+            id: entry.id, label: t("option.not-installed", entry.name), isInstalled: false))
       }
     }
     if let selected, selected != noneID, selected != customID,
       !entries.contains(where: { $0.id == selected })
     {
       options.append(
-        DetectionOption(id: selected, label: "\(selected) (not installed)", isInstalled: false))
+        DetectionOption(
+          id: selected, label: t("option.not-installed", selected), isInstalled: false))
     }
-    options.append(DetectionOption(id: customID, label: "Custom command…", isInstalled: true))
+    options.append(
+      DetectionOption(id: customID, label: t("option.custom-command-item"), isInstalled: true))
     return options
   }
 }

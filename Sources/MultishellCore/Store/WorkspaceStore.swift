@@ -483,7 +483,7 @@ extension WorkspaceStore {
   }
 
   private func defaultTitle(for command: [String]?) -> String {
-    guard let executable = command?.first else { return "Shell" }
+    guard let executable = command?.first else { return t("tab.shell") }
     return URL(fileURLWithPath: executable).lastPathComponent
   }
 }

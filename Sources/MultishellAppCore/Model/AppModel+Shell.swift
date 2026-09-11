@@ -16,9 +16,9 @@ extension AppModel {
   /// nothing to say when it names an executable.
   public var customShellPathProblem: String? {
     let path = workspace.customShellPath.trimmingCharacters(in: .whitespaces)
-    if path.isEmpty { return "Blank, so tabs run the login shell, \(shellDetection.loginShell)." }
+    if path.isEmpty { return t("shell.path-blank", shellDetection.loginShell) }
     if !FileManager.default.isExecutableFile(atPath: path) {
-      return "Nothing executable at that path; a new tab would fail to start."
+      return t("shell.path-not-executable")
     }
     return nil
   }

@@ -8,7 +8,6 @@ than fixed lives in `docs/develop/known-gaps.md`.
 
 - "Locate…" on a missing project, rebinding it to a chosen directory.
 - Terminal: find.
-- Translation support.
 
 ## Refinements
 

@@ -43,7 +43,7 @@ struct WorktreeRow: View {
         .fill(theme.color(for: state ?? .idle))
         .frame(width: 7, height: 7)
         .frame(width: metrics.icon + 2)
-        .help("\(kind) · \((state ?? .idle).displayName)")
+        .help(t("sidebar.kind-and-state", kind, (state ?? .idle).displayName))
 
       if isRenaming {
         nameField
@@ -69,7 +69,7 @@ struct WorktreeRow: View {
         Image(systemName: "lock.fill")
           .font(.system(size: metrics.badge - 1))
           .foregroundStyle(theme.textTertiary)
-          .help("Locked worktree")
+          .help(t("sidebar.locked"))
       }
       // Never beside the yellow changes dot or an unpushed count: work
       // that is only here hides the badge, so the two never meet. See
@@ -93,7 +93,7 @@ struct WorktreeRow: View {
           .padding(.horizontal, 6)
           .padding(.vertical, 1)
           .background(theme.rowHover, in: Capsule())
-          .help(Wording.count(terminalCount, "terminal"))
+          .help(t("count.terminals", terminalCount))
       }
     }
     .padding(.leading, metrics.indent)
@@ -125,7 +125,7 @@ struct WorktreeRow: View {
         terminalCount: terminalCount, isSelected: isSelected, mergeState: mergeState)
     )
     .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
-    .accessibilityAction(named: "Rename", beginRename)
+    .accessibilityAction(named: t("action.rename-spoken"), beginRename)
   }
 
   /// The user's name over the branch it stands for, or the branch alone
@@ -163,7 +163,7 @@ struct WorktreeRow: View {
     VStack(alignment: .leading, spacing: 0) {
       InlineNameField(
         initial: customName ?? "",
-        prompt: "Name",
+        prompt: t("sidebar.name-prompt"),
         font: .system(size: metrics.secondary, weight: .medium),
         color: theme.textPrimary,
         commit: commit,

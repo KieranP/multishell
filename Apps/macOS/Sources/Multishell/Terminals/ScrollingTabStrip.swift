@@ -101,8 +101,8 @@ struct ScrollingTabStrip<Tabs: View>: View {
           .contentShape(.rect)
       }
       .buttonStyle(.plain)
-      .help(leading ? "Scroll tabs left" : "Scroll tabs right")
-      .accessibilityLabel(leading ? "More tabs to the left" : "More tabs to the right")
+      .help(leading ? t("tab.scroll-left") : t("tab.scroll-right"))
+      .accessibilityLabel(leading ? t("tab.more-left") : t("tab.more-right"))
     } else {
       // The room is kept, so the tabs stay put as an end runs out.
       Color.clear.frame(width: gutter)

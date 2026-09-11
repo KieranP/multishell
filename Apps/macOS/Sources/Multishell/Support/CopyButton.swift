@@ -1,4 +1,5 @@
 import MultishellAppCore
+import MultishellCore
 import SwiftUI
 
 /// The copy icon beside a value meant to be pasted somewhere else, so it
@@ -30,6 +31,6 @@ struct CopyButton: View {
         .contentShape(.rect)
     }
     .buttonStyle(.plain)
-    .help("Copy \(text)")
+    .help(t("action.copy-value", text))
   }
 }

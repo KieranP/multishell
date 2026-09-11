@@ -57,16 +57,18 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
 
   /// The row the user right-clicked, by the name that row shows. The branch
   /// is not lost: `message` names it, and the path, under this.
-  public var title: String { "Remove worktree \(customName ?? worktree.name)?" }
+  public var title: String {
+    t("worktree-removal.title", customName ?? worktree.name)
+  }
 
   /// The one button when the branch is decided; the keep-branch button when
   /// the dialog asks, beside `removeWithBranchLabel`.
   public var removeLabel: String {
     if case .decided(deletes: true) = branch { return removeWithBranchLabel }
-    return "Remove Worktree"
+    return t("worktree-removal.remove")
   }
 
-  public var removeWithBranchLabel: String { "Remove Worktree and Branch" }
+  public var removeWithBranchLabel: String { t("worktree-removal.remove-with-branch") }
 
   /// The remove buttons in the order the dialog shows them; the first is
   /// the one it leads with.
@@ -106,12 +108,12 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
   /// Names the path and where it goes, says what happens to the branch,
   /// then whatever the status badge and live-shell count know.
   public func message(warning: String?) -> String {
-    var notes = ["Moves \(worktree.path.path) to the Trash and prunes it from git."]
+    var notes = [t("worktree-removal.moves", worktree.path.path)]
     if let name = worktree.branch {
       switch branch {
-      case .asks: notes.append("The branch \(name) is kept unless you remove it too.")
-      case .decided(deletes: true): notes.append("The branch \(name) is deleted with it.")
-      case .decided(deletes: false): notes.append("The branch \(name) is kept.")
+      case .asks: notes.append(t("worktree-removal.branch-asked", name))
+      case .decided(deletes: true): notes.append(t("worktree-removal.branch-deleted", name))
+      case .decided(deletes: false): notes.append(t("worktree-removal.branch-kept", name))
       }
     }
     if let name = worktree.branch, let note = mergeState.removalNote(branch: name) {
@@ -128,11 +130,10 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
   public static func warning(changedFiles: Int, liveTerminals: Int) -> String? {
     var notes: [String] = []
     if changedFiles > 0 {
-      let files = Wording.count(changedFiles, "changed file")
-      notes.append("It has \(files), kept in the Trash with the directory.")
+      notes.append(t("removal.changed-files", changedFiles))
     }
     if liveTerminals > 0 {
-      notes.append("\(Wording.count(liveTerminals, "open terminal")) will be closed.")
+      notes.append(t("removal.terminals-closed", liveTerminals))
     }
     return notes.isEmpty ? nil : notes.joined(separator: " ")
   }

@@ -41,7 +41,7 @@ struct AgentBoardColumnView: View {
       Circle()
         .fill(theme.color(for: column.lane.headerState))
         .frame(width: 7, height: 7)
-      Text(column.lane.title)
+      Text(column.lane.title())
         .font(.system(size: metrics.badge, weight: .semibold))
         .foregroundStyle(theme.textPrimary)
         .lineLimit(1)
@@ -55,6 +55,6 @@ struct AgentBoardColumnView: View {
     .padding(.bottom, 6)
     .overlay(alignment: .bottom) { theme.hairline.frame(height: 0.5) }
     .accessibilityElement(children: .combine)
-    .accessibilityLabel("\(column.lane.title), \(column.count)")
+    .accessibilityLabel(t("board.lane-count", column.lane.title(), column.count))
   }
 }

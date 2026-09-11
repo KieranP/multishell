@@ -58,9 +58,9 @@ public enum WorktreeMergeState: Hashable, Sendable {
   public var summary: String {
     guard case .merged(let evidence, let base) = self else { return "" }
     switch evidence {
-    case .ancestor: return "Merged into \(base)"
-    case .patchEquivalent: return "Merged into \(base), rebased"
-    case .upstreamGone: return "Its upstream branch is gone from the remote"
+    case .ancestor: return t("merged.into", base)
+    case .patchEquivalent: return t("merged.into-rebased", base)
+    case .upstreamGone: return t("merged.upstream-gone")
     }
   }
 
@@ -82,7 +82,7 @@ public enum WorktreeMergeState: Hashable, Sendable {
   /// the badge is not drawn at all where there is work to lose.
   public var help: String {
     guard isMerged else { return "" }
-    return isCertain ? summary + " · safe to remove" : summary
+    return isCertain ? t("merged.safe-to-remove", summary) : summary
   }
 
   /// What the removal dialog adds about the branch it is offering to
@@ -91,10 +91,9 @@ public enum WorktreeMergeState: Hashable, Sendable {
     guard case .merged(let evidence, let base) = self else { return nil }
     switch evidence {
     case .ancestor, .patchEquivalent:
-      return "\(branch) is merged into \(base)."
+      return t("merged.removal-note", branch, base)
     case .upstreamGone:
-      return
-        "\(branch) tracked a remote branch that is gone, so it was likely squash-merged. Check before deleting it: a closed pull request leaves the same trace."
+      return t("merged.removal-note-upstream-gone", branch)
     }
   }
 

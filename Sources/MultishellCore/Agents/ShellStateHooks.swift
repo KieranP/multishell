@@ -107,20 +107,6 @@ public enum ShellStateHooks {
     return text.replacingOccurrences(of: helperPlaceholder, with: helper)
   }
 
-  /// SwiftPM's `Bundle.module` looks beside the executable and in the build
-  /// directory, not in an app bundle's `Contents/Resources`, which is where
-  /// `make-app.sh` puts the resource bundles. Try there first; the generated
-  /// accessor covers `swift test`, the helper and Linux.
-  private static let resourceBundle: Bundle = {
-    if let resources = Bundle.main.resourceURL {
-      let inApp = resources.appendingPathComponent(
-        "multishell_MultishellCore.bundle", isDirectory: true)
-      if let bundle = Bundle(url: inApp),
-        bundle.url(forResource: "hooks", withExtension: "zsh") != nil
-      {
-        return bundle
-      }
-    }
-    return Bundle.module
-  }()
+  private static let resourceBundle = PackageBundle.holding(
+    "hooks", withExtension: "zsh", named: "multishell_MultishellCore.bundle", or: .module)
 }

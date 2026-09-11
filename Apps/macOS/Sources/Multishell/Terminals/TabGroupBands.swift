@@ -36,7 +36,7 @@ struct TabGroupBands: View {
               drag: $drag,
               perform: { moving in model.moveTab(moving, toEndOf: group.id) })
           )
-          .accessibilityLabel("Move tab to this group")
+          .accessibilityLabel(t("tab.move-to-this-group"))
         if fits, drag.showsBands(of: group.id) {
           HStack(spacing: 0) {
             band(.before)

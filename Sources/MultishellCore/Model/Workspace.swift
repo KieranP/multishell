@@ -271,7 +271,7 @@ extension Workspace {
   /// shell reports is runtime state the GUI layers on top.
   public func title(of tab: TerminalTab) -> String {
     if let custom = tab.customTitle { return custom }
-    return session(tab.focusedSessionID)?.title ?? "Shell"
+    return session(tab.focusedSessionID)?.title ?? t("tab.shell")
   }
 
   public func tabOwning(_ session: TerminalSession.ID) -> TerminalTab? {

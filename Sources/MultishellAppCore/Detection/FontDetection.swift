@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 
 /// The font families the terminal picker offers, from the list the platform
 /// hands over: the system monospace face first, then the monospaced
@@ -29,11 +30,15 @@ public struct FontDetection: Equatable, Sendable {
   }
 
   public func options(selected: String?) -> [DetectionOption] {
-    var options = [DetectionOption(id: Self.systemID, label: "System monospace", isInstalled: true)]
+    var options = [
+      DetectionOption(
+        id: Self.systemID, label: t("option.system-monospace"), isInstalled: true)
+    ]
     options += monospaced.map { DetectionOption(id: $0, label: $0, isInstalled: true) }
     if let selected, !selected.isEmpty, !isInstalled(selected) {
       options.append(
-        DetectionOption(id: selected, label: "\(selected) (not installed)", isInstalled: false))
+        DetectionOption(
+          id: selected, label: t("option.not-installed", selected), isInstalled: false))
     }
     if !others.isEmpty {
       options.append(DetectionOption(id: Self.dividerID, label: "", isInstalled: true))

@@ -1,4 +1,5 @@
 import MultishellAppCore
+import MultishellCore
 import SwiftUI
 
 extension View {
@@ -13,9 +14,9 @@ extension View {
       presenting: model.pendingClose
     ) { pending in
       Button(pending.buttonLabel, role: .destructive) { model.confirmPendingClose() }
-      Button("Cancel", role: .cancel) { model.pendingClose = nil }
+      Button(t("action.cancel"), role: .cancel) { model.pendingClose = nil }
     } message: { _ in
-      Text("An agent here reported that it is still working. Closing ends it.")
+      Text(t("dialog.agent-still-working"))
     }
   }
 }

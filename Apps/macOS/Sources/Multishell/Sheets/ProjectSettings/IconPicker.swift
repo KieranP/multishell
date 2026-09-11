@@ -45,7 +45,7 @@ struct IconPicker: View {
     HStack(spacing: 6) {
       Image(systemName: kind.symbolName).foregroundStyle(tint)
       switch kind {
-      case .folder: Text("Folder")
+      case .folder: Text(t("icon-picker.folder"))
       case .symbol(let name): Text(name).lineLimit(1).truncationMode(.middle)
       }
       Spacer(minLength: 4)
@@ -63,7 +63,7 @@ struct IconPicker: View {
         search(groups, proxy: proxy)
         if groups.isEmpty {
           Spacer()
-          Text("No symbol called that").font(.system(size: 11)).foregroundStyle(.secondary)
+          Text(t("icon-picker.no-match")).font(.system(size: 11)).foregroundStyle(.secondary)
           Spacer()
         } else {
           grid(groups, proxy: proxy)
@@ -87,7 +87,7 @@ struct IconPicker: View {
   private func search(_ groups: [ProjectIcon.Group], proxy: ScrollViewProxy) -> some View {
     HStack(spacing: 4) {
       Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-      TextField("Search", text: $query)
+      TextField(t("icon-picker.search"), text: $query)
         .textFieldStyle(.plain)
         .focused($focus, equals: .search)
         .onKeyPress(.escape) {
@@ -113,8 +113,8 @@ struct IconPicker: View {
           Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
         }
         .buttonStyle(.plain)
-        .help("Clear")
-        .accessibilityLabel("Clear the search")
+        .help(t("action.clear"))
+        .accessibilityLabel(t("icon-picker.clear-search"))
       }
     }
     .font(.system(size: 11))

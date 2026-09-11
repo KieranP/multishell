@@ -12,38 +12,37 @@ struct ProjectTerminalTab: View {
     Form {
       OverrideSection(
         model: model, project: project, setting: \.defaultShell,
-        label: "Default shell",
-        info:
-          "New tabs in this project's worktrees run this shell instead of the global choice, and so do its hooks. Login shell here means $SHELL whatever the global says.",
+        label: t("project.default-shell"),
+        info: t("project.default-shell-info"),
         fallback: shell
       ) { selection, isOverridden in
         DetectionPicker(
-          label: "Shell:",
+          label: t("project.shell-label"),
           selection: selection,
           options: model.shellDetection.options(selected:),
           refresh: { Task { await model.refreshLoginEnvironment() } },
           info:
-            "The shells in /etc/shells and on the login shell's PATH. Refresh after installing one. Custom path is the one typed in Settings > Terminal.",
+            t("project.shell-picker-info"),
           isEnabled: isOverridden
         )
       } footer: {
         SettingsCaption(
-          "Using the global value, \(model.shellDisplayName(model.workspace.defaultShell)).")
+          t(
+            "project.using-global-value",
+            model.shellDisplayName(model.workspace.defaultShell)))
       }
 
       OverrideSection(
         model: model, project: project, setting: \.opensTerminalOnSelect,
-        label: "Open a terminal when a worktree is selected",
-        info:
-          "Whether turning to a worktree here with no tabs starts its first shell, whatever the global says. A worktree just created is the setting below's to decide.",
+        label: t("terminal.open-on-select"),
+        info: t("project.open-on-select-info"),
         inherited: model.inherited(
           \.opensTerminalOnSelect, global: model.workspace.opensTerminalOnSelect, for: project))
 
       OverrideSection(
         model: model, project: project, setting: \.opensTerminalOnCreate,
-        label: "Open a terminal when a worktree is created",
-        info:
-          "Whether a worktree created here opens a terminal once the create, and any post-create hook, is done, whatever the global says. Selecting a worktree is the global's to decide either way.",
+        label: t("terminal.open-on-create"),
+        info: t("project.open-on-create-info"),
         inherited: model.inherited(
           \.opensTerminalOnCreate, global: model.workspace.opensTerminalOnCreate, for: project))
     }

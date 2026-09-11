@@ -10,17 +10,17 @@ struct MultishellCommands: Commands {
     // model changes, so a disabled item can stay disabled. Each action is
     // a no-op when it does not apply.
     CommandGroup(replacing: .newItem) {
-      Button("New Tab") { model.newTab() }
+      Button(t("menu.new-tab")) { model.newTab() }
         .keyboardShortcut(AppShortcuts.newTab)
-      Button("New Shell Tab") { model.newShellTab() }
+      Button(t("menu.new-shell-tab")) { model.newShellTab() }
         .keyboardShortcut(AppShortcuts.newShellTab)
-      Button("New Agent Tab") { model.newAgentTab() }
+      Button(t("menu.new-agent-tab")) { model.newAgentTab() }
         .keyboardShortcut(AppShortcuts.newAgentTab)
-      Button("New Worktree…") { model.requestNewWorktree() }
+      Button(t("menu.new-worktree")) { model.requestNewWorktree() }
         .keyboardShortcut(AppShortcuts.newWorktree)
-      Button("Add Project…") { Task { await model.chooseProject() } }
+      Button(t("menu.add-project")) { Task { await model.chooseProject() } }
         .keyboardShortcut(AppShortcuts.addProject)
-      Button("Open in Editor") { model.openSelectedWorktreeInEditor() }
+      Button(t("action.open-in-editor")) { model.openSelectedWorktreeInEditor() }
         .keyboardShortcut(AppShortcuts.openInEditor)
     }
 
@@ -29,14 +29,16 @@ struct MultishellCommands: Commands {
     // standard selectors to the first responder, the way AppKit menus do, and
     // stay enabled; a terminal with nothing selected simply ignores copy:.
     CommandGroup(replacing: .pasteboard) {
-      Button("Cut") { NSApp.sendAction(#selector(NSText.cut(_:)), to: nil, from: nil) }
+      Button(t("menu.cut")) { NSApp.sendAction(#selector(NSText.cut(_:)), to: nil, from: nil) }
         .keyboardShortcut(AppShortcuts.cut)
-      Button("Copy") { NSApp.sendAction(#selector(NSText.copy(_:)), to: nil, from: nil) }
+      Button(t("action.copy")) { NSApp.sendAction(#selector(NSText.copy(_:)), to: nil, from: nil) }
         .keyboardShortcut(AppShortcuts.copy)
-      Button("Paste") { NSApp.sendAction(#selector(NSText.paste(_:)), to: nil, from: nil) }
+      Button(t("menu.paste")) { NSApp.sendAction(#selector(NSText.paste(_:)), to: nil, from: nil) }
         .keyboardShortcut(AppShortcuts.paste)
-      Button("Select All") { NSApp.sendAction(#selector(NSText.selectAll(_:)), to: nil, from: nil) }
-        .keyboardShortcut(AppShortcuts.selectAll)
+      Button(t("menu.select-all")) {
+        NSApp.sendAction(#selector(NSText.selectAll(_:)), to: nil, from: nil)
+      }
+      .keyboardShortcut(AppShortcuts.selectAll)
     }
 
     // The focused responder's own manager, not the key window's: a text field
@@ -49,12 +51,12 @@ struct MultishellCommands: Commands {
     // the stock items send, are undeclared, and `NSWindow` answers them from
     // its own manager.
     CommandGroup(replacing: .undoRedo) {
-      Button("Undo") {
+      Button(t("menu.undo")) {
         guard let manager = Self.focusedUndoManager, manager.canUndo else { return }
         manager.undo()
       }
       .keyboardShortcut(AppShortcuts.undo)
-      Button("Redo") {
+      Button(t("menu.redo")) {
         guard let manager = Self.focusedUndoManager, manager.canRedo else { return }
         manager.redo()
       }
@@ -66,9 +68,9 @@ struct MultishellCommands: Commands {
     CommandGroup(replacing: .textEditing) {}
 
     CommandGroup(replacing: .saveItem) {
-      Button("Close Pane") { model.closeActivePane() }
+      Button(t("close.pane-button")) { model.closeActivePane() }
         .keyboardShortcut(AppShortcuts.closePane)
-      Button("Close Tab") { model.closeActiveTab() }
+      Button(t("close.tab-button")) { model.closeActiveTab() }
         .keyboardShortcut(AppShortcuts.closeTab)
     }
 
@@ -77,31 +79,33 @@ struct MultishellCommands: Commands {
     // than in it. The board is a place to go, not something done to the
     // focused pane, so it does not belong in Terminal.
     CommandGroup(after: .toolbar) {
-      Button("Agents") { model.toggleAgentBoard() }
+      Button(t("label.agents")) { model.toggleAgentBoard() }
         .keyboardShortcut(AppShortcuts.showAgents)
     }
 
-    CommandMenu("Terminal") {
-      Button("Split Right") { model.splitActivePane(.horizontal) }
+    CommandMenu(t("menu.terminal")) {
+      Button(t("menu.split-right")) { model.splitActivePane(.horizontal) }
         .keyboardShortcut(AppShortcuts.splitRight)
-      Button("Split Down") { model.splitActivePane(.vertical) }
+      Button(t("menu.split-down")) { model.splitActivePane(.vertical) }
         .keyboardShortcut(AppShortcuts.splitDown)
       Divider()
       // Beside the splits, which is the layout it is a step out from: a
       // split divides a tab, this divides the worktree.
-      Button("Move Tab to New Group") { model.moveActiveTabToNewGroup() }
+      Button(t("menu.move-tab-to-new-group")) { model.moveActiveTabToNewGroup() }
         .keyboardShortcut(AppShortcuts.moveTabToNewGroup)
-      Button("Focus Next Group") { model.focusNextGroup() }
+      Button(t("menu.focus-next-group")) { model.focusNextGroup() }
         .keyboardShortcut(AppShortcuts.nextGroup)
-      Button("Focus Previous Group") { model.focusPreviousGroup() }
+      Button(t("menu.focus-previous-group")) { model.focusPreviousGroup() }
         .keyboardShortcut(AppShortcuts.previousGroup)
       Divider()
-      Button("Next Tab") { model.selectNextTab() }
+      Button(t("menu.next-tab")) { model.selectNextTab() }
         .keyboardShortcut(AppShortcuts.nextTab)
-      Button("Previous Tab") { model.selectPreviousTab() }
+      Button(t("menu.previous-tab")) { model.selectPreviousTab() }
         .keyboardShortcut(AppShortcuts.previousTab)
       Divider()
-      Picker("Theme", selection: model.setting(\.appearance.themeID, write: model.setTheme)) {
+      Picker(
+        t("menu.theme"), selection: model.setting(\.appearance.themeID, write: model.setTheme)
+      ) {
         ForEach(model.themes) { theme in
           Text(theme.name).tag(theme.id)
         }

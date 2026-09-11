@@ -28,12 +28,12 @@ public struct WorktreeStatus: Hashable, Sendable {
   /// One line for a tooltip: "3 changed · 1 untracked · ↑2".
   public var summary: String {
     var parts: [String] = []
-    if staged > 0 { parts.append("\(staged) staged") }
-    if unstaged > 0 { parts.append("\(unstaged) modified") }
-    if untracked > 0 { parts.append("\(untracked) untracked") }
-    if conflicted > 0 { parts.append("\(conflicted) conflicted") }
-    if ahead > 0 { parts.append("↑\(ahead)") }
-    if behind > 0 { parts.append("↓\(behind)") }
-    return parts.isEmpty ? "Clean" : parts.joined(separator: " · ")
+    if staged > 0 { parts.append(t("status.staged", staged)) }
+    if unstaged > 0 { parts.append(t("status.modified", unstaged)) }
+    if untracked > 0 { parts.append(t("status.untracked", untracked)) }
+    if conflicted > 0 { parts.append(t("status.conflicted", conflicted)) }
+    if ahead > 0 { parts.append(t("status.ahead", ahead)) }
+    if behind > 0 { parts.append(t("status.behind", behind)) }
+    return parts.isEmpty ? t("status.clean") : parts.joined(separator: " · ")
   }
 }

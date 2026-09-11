@@ -15,6 +15,13 @@ struct NewWorktreeSheet: View {
     _draft = State(initialValue: NewWorktreeDraft(projectID: initialProjectID))
   }
 
+  /// One sentence naming the project, then where the rest comes from.
+  private var subtitle: String {
+    let opening =
+      project.map { t("sheet.creates-from", $0.name) } ?? t("sheet.creates-from-chosen")
+    return opening + " " + t("sheet.location-note")
+  }
+
   private var project: Project? {
     draft.projectID.flatMap(model.workspace.project)
   }
@@ -25,30 +32,26 @@ struct NewWorktreeSheet: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
-      Text("New Worktree")
+      Text(t("sheet.new-worktree"))
         .font(.system(size: 15, weight: .semibold))
-      Text(
-        (project.map { "Creates a linked checkout of \($0.name)." }
-          ?? "Creates a linked checkout of the chosen project.")
-          + " Location and branch prefix come from project settings."
-      )
-      .font(.system(size: 12))
-      .foregroundStyle(.secondary)
-      .padding(.top, 3)
+      Text(subtitle)
+        .font(.system(size: 12))
+        .foregroundStyle(.secondary)
+        .padding(.top, 3)
 
       Form {
         if model.workspace.projects.isEmpty {
           Label {
-            Text("No projects yet. Add a repository first (⌘O).")
+            Text(t("sheet.no-projects"))
               .font(.system(size: 12))
           } icon: {
             Image(systemName: "folder.badge.plus").foregroundStyle(.secondary)
           }
         } else {
           let labels = NewWorktreeDraft.labels(for: model.workspace.projects)
-          Picker("Project:", selection: $draft.projectID) {
+          Picker(t("sheet.project"), selection: $draft.projectID) {
             if draft.projectID == nil {
-              Text("Choose a project").tag(Project.ID?.none)
+              Text(t("sheet.choose-project")).tag(Project.ID?.none)
             }
             ForEach(model.workspace.projects) { candidate in
               pickerLabel(candidate, text: labels[candidate.id] ?? candidate.name)
@@ -75,12 +78,12 @@ struct NewWorktreeSheet: View {
         // While a create runs, Cancel stops its pre-create hook and the
         // sheet closes when the create returns; nothing is created. Once
         // git itself is running there is nothing to stop, so no button.
-        Button("Cancel", role: .cancel) {
+        Button(t("action.cancel"), role: .cancel) {
           if draft.isCreating { model.cancelWorktreeCreation() } else { dismiss() }
         }
         .keyboardShortcut(.cancelAction)
         .disabled(draft.isCreating && model.worktreeCreationStep != .preCreateHook)
-        Button("Create Worktree", action: create)
+        Button(t("sheet.create-worktree"), action: create)
           .keyboardShortcut(.defaultAction)
           .disabled(!draft.canCreate(checkedOut: checkedOut))
       }
@@ -117,36 +120,34 @@ struct NewWorktreeSheet: View {
   private var fields: some View {
     if project != nil, !draft.hasCommits {
       Label {
-        Text(
-          "This repository has no commits yet. A worktree needs a commit to start from; make the first one, then come back."
-        )
-        .font(.system(size: 12))
+        Text(t("sheet.no-commits"))
+          .font(.system(size: 12))
       } icon: {
         Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.yellow)
       }
     }
 
     Picker("", selection: $draft.createBranch) {
-      Text("New branch").tag(true)
-      Text("Existing branch").tag(false)
+      Text(t("sheet.new-branch")).tag(true)
+      Text(t("sheet.existing-branch")).tag(false)
     }
     .pickerStyle(.segmented)
     .labelsHidden()
 
     if draft.createBranch {
-      LabeledContent("Branch:") {
+      LabeledContent(t("sheet.branch")) {
         HStack(spacing: 2) {
           if !prefix.isEmpty {
             Text(prefix)
               .font(.system(size: 13, design: .monospaced))
               .foregroundStyle(.secondary)
           }
-          TextField("", text: $draft.branch, prompt: Text("feat/tabs"))
+          TextField("", text: $draft.branch, prompt: Text(t("sheet.branch-prompt")))
             .textFieldStyle(.roundedBorder)
             .labelsHidden()
         }
       }
-      Picker("Based on:", selection: $draft.baseBranch) {
+      Picker(t("sheet.based-on"), selection: $draft.baseBranch) {
         ForEach(draft.branches, id: \.self, content: Text.init)
         if !draft.remoteBranches.isEmpty {
           Divider()
@@ -159,20 +160,20 @@ struct NewWorktreeSheet: View {
       let available = draft.availableBranches(checkedOut: checkedOut)
       if available.isEmpty, project != nil, draft.loadedProjectID == draft.projectID {
         Label {
-          Text("Every local branch is already checked out. Switch to New branch to create one.")
+          Text(t("sheet.all-branches-checked-out"))
             .font(.system(size: 12))
             .foregroundStyle(.secondary)
         } icon: {
           Image(systemName: "info.circle").foregroundStyle(.secondary)
         }
       } else {
-        Picker("Branch:", selection: $draft.branch) {
+        Picker(t("sheet.branch"), selection: $draft.branch) {
           ForEach(available, id: \.self, content: Text.init)
         }
       }
     }
 
-    LabeledContent("Location:") {
+    LabeledContent(t("sheet.location")) {
       Text(plannedPath)
         .font(.system(size: 11, design: .monospaced))
         .foregroundStyle(.secondary)

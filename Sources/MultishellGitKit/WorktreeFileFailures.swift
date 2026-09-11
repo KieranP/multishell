@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 
 /// Raised when a list could not be finished. The worktree exists and
 /// everything else on the list is in it; only these paths are missing.
@@ -41,6 +42,6 @@ public struct WorktreeFileEscape: LocalizedError {
   public init() {}
 
   public var errorDescription: String? {
-    "It leads outside the repository or the worktree."
+    t("worktree-file.escape")
   }
 }

@@ -27,13 +27,11 @@ public struct PendingSharedHooksTrust: Identifiable, Equatable, Sendable {
   public var id: String { projectID }
 
   public var title: String {
-    "Run the hooks in \(projectName)'s \(SharedProjectSettings.fileName)?"
+    t("shared-hooks.title", projectName, SharedProjectSettings.fileName)
   }
 
-  public var message: String {
-    "The repository ships these hooks. They would run through your shell when a worktree is created or removed, where your own hook for that stage is blank.\n\n\(hooks)"
-  }
+  public var message: String { t("shared-hooks.message", hooks) }
 
-  public var trustLabel: String { "Run Hooks" }
-  public var declineLabel: String { "Ignore Hooks" }
+  public var trustLabel: String { t("shared-hooks.trust") }
+  public var declineLabel: String { t("shared-hooks.decline") }
 }

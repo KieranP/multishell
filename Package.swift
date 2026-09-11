@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
   name: "multishell",
+  defaultLocalization: "en",
   platforms: [.macOS(.v14)],
   products: [
     .library(name: "MultishellCore", targets: ["MultishellCore"]),
@@ -14,10 +15,17 @@ let package = Package(
   ],
   targets: [
     // Pure model and state. No processes, no platform UI. The resources are
-    // the shell-integration scripts, kept as shell files.
+    // the shell-integration scripts, kept as shell files, and the libraries'
+    // string catalogue, read through `t(_:_:)`. Inside the target that
+    // declares them, so a path here is where it says it is; each frontend
+    // keeps its own the same way. A new language is another `<code>.lproj`
+    // beside `en.lproj` and another line here.
     .target(
       name: "MultishellCore",
-      resources: [.copy("Resources/hooks.zsh"), .copy("Resources/init.bash")]),
+      resources: [
+        .copy("Resources/hooks.zsh"), .copy("Resources/init.bash"),
+        .process("Resources/en.lproj"),
+      ]),
     // Portable subprocess execution and Unix sockets.
     .target(name: "MultishellProcess"),
     // git worktree operations and their hooks.

@@ -10,10 +10,13 @@ public enum AccessibilityText {
     name: String, isExpanded: Bool, isMissing: Bool, state: SessionState?, worktreeCount: Int,
     isFetching: Bool = false
   ) -> String {
-    var parts = ["\(name), project", isExpanded ? "expanded" : "collapsed"]
-    parts.append(Wording.count(worktreeCount, "worktree"))
-    if isMissing { parts.append("not reachable") }
-    if isFetching { parts.append("fetching") }
+    var parts = [
+      t("spoken.project", name),
+      isExpanded ? t("spoken.expanded") : t("spoken.collapsed"),
+    ]
+    parts.append(t("count.worktrees", worktreeCount))
+    if isMissing { parts.append(t("spoken.not-reachable")) }
+    if isFetching { parts.append(t("spoken.fetching")) }
     if let state { parts.append(state.displayName) }
     return parts.joined(separator: ", ")
   }
@@ -26,26 +29,40 @@ public enum AccessibilityText {
     status: WorktreeStatus?, operation: WorktreeOperation?, terminalCount: Int, isSelected: Bool,
     mergeState: WorktreeMergeState = .unknown
   ) -> String {
-    var parts = ["\(customName ?? worktree.name), \(kind(of: worktree).lowercased())"]
-    if customName != nil { parts.append("branch \(worktree.name)") }
-    if isSelected { parts.append("selected") }
+    var parts = [
+      t("spoken.named", customName ?? worktree.name, kind(of: worktree, inSentence: true))
+    ]
+    if customName != nil { parts.append(t("spoken.branch", worktree.name)) }
+    if isSelected { parts.append(t("spoken.selected")) }
     parts.append((state ?? .idle).displayName)
     if let operation {
-      parts.append(operation.isRunning ? operation.title : "failed: \(operation.title)")
+      parts.append(
+        operation.isRunning ? operation.title : t("spoken.operation-failed", operation.title))
     }
-    if worktree.isLocked { parts.append("locked") }
+    if worktree.isLocked { parts.append(t("spoken.locked")) }
     if mergeState.showsBadge(with: status) { parts.append(mergeState.summary) }
     if let status, !status.isClean { parts.append(status.summary) }
-    if terminalCount > 0 { parts.append(Wording.count(terminalCount, "terminal")) }
+    if terminalCount > 0 { parts.append(t("count.terminals", terminalCount)) }
     return parts.joined(separator: ", ")
   }
 
   /// "Main worktree", "Linked worktree", "Bare repository", or the SHA for
-  /// a detached one. Also the tooltip on the row's dot.
-  public static func kind(of worktree: Worktree) -> String {
-    if worktree.isBare { return "Bare repository" }
-    if worktree.isDetached { return "Detached at \(worktree.head.prefix(7))" }
-    return worktree.isPrimary ? "Main worktree" : "Linked worktree"
+  /// a detached one. Also the tooltip on the row's dot. `inSentence` is the
+  /// same fact mid-sentence, which a language that capitalises its nouns
+  /// cannot get by lowercasing the other.
+  public static func kind(of worktree: Worktree, inSentence: Bool = false) -> String {
+    if worktree.isBare {
+      return inSentence ? t("kind.bare-in-sentence") : t("kind.bare")
+    }
+    if worktree.isDetached {
+      let head = String(worktree.head.prefix(7))
+      return inSentence
+        ? t("kind.detached-in-sentence", head) : t("kind.detached", head)
+    }
+    if worktree.isPrimary {
+      return inSentence ? t("kind.main-in-sentence") : t("kind.main")
+    }
+    return inSentence ? t("kind.linked-in-sentence") : t("kind.linked")
   }
 
   /// A tab in the strip: its title, whether it is the one shown, its state
@@ -55,9 +72,9 @@ public enum AccessibilityText {
   )
     -> String
   {
-    var parts = ["\(title), tab"]
-    if isActive { parts.append("selected") }
-    if isSplit { parts.append("split") }
+    var parts = [t("spoken.tab", title)]
+    if isActive { parts.append(t("spoken.selected")) }
+    if isSplit { parts.append(t("spoken.split")) }
     if let state { parts.append(state.displayName) }
     return parts.joined(separator: ", ")
   }
@@ -67,14 +84,15 @@ public enum AccessibilityText {
   /// 1" in front of every tab is noise.
   public static func tabGroup(position: Int, of count: Int, isFocused: Bool) -> String {
     guard count > 1 else { return "" }
-    var text = "Tab group \(position) of \(count)"
-    if isFocused { text += ", focused" }
+    var text = t("spoken.tab-group", position, count)
+    if isFocused { text += ", " + t("spoken.focused") }
     return text
   }
 
   /// The band down the edge of a column's terminal area, which a dragged
   /// tab lands on to get a column of its own.
   public static func newTabGroupBand(_ placement: TerminalTab.Placement) -> String {
-    "New tab group \(placement == .before ? "left" : "right")"
+    placement == .before
+      ? t("spoken.new-tab-group-left") : t("spoken.new-tab-group-right")
   }
 }

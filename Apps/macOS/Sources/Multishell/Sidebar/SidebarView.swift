@@ -37,7 +37,7 @@ struct SidebarView: View {
           )
           .padding(.bottom, 4)
 
-          Text("Projects")
+          Text(t("sidebar.projects"))
             .font(.system(size: metrics.caption, weight: .semibold))
             .foregroundStyle(theme.textTertiary)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -54,11 +54,11 @@ struct SidebarView: View {
       }
       .overlay {
         if model.workspace.projects.isEmpty {
-          Text("No projects yet")
+          Text(t("sidebar.no-projects"))
             .font(.system(size: metrics.secondary))
             .foregroundStyle(theme.textTertiary)
         } else if visibleProjects.isEmpty {
-          Text("Nothing matches")
+          Text(t("sidebar.nothing-matches"))
             .font(.system(size: metrics.secondary))
             .foregroundStyle(theme.textTertiary)
         }
@@ -98,7 +98,7 @@ struct SidebarView: View {
       Image(systemName: "magnifyingglass")
         .font(.system(size: metrics.icon, weight: .semibold))
         .foregroundStyle(theme.textTertiary)
-      TextField("Filter", text: $filter)
+      TextField(t("sidebar.filter"), text: $filter)
         .textFieldStyle(.plain)
         .font(.system(size: metrics.secondary))
         .foregroundStyle(theme.textPrimary)
@@ -112,7 +112,7 @@ struct SidebarView: View {
             .foregroundStyle(theme.textTertiary)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Clear filter")
+        .accessibilityLabel(t("sidebar.clear-filter"))
       }
     }
     .padding(.horizontal, 8)
@@ -138,7 +138,7 @@ struct SidebarView: View {
       }
       .buttonStyle(.plain)
       .foregroundStyle(theme.textSecondary)
-      .help("Add Project (⌘O)")
+      .help(t("sidebar.add-project"))
     }
     .padding(.horizontal, 14)
     .frame(height: UIMetrics.headerHeight)
@@ -149,9 +149,11 @@ struct SidebarView: View {
     let worktrees = model.workspace.worktrees.count
     let sessions = model.workspace.sessions.count
     return HStack {
-      Text("\(Wording.count(worktrees, "worktree")) · \(Wording.count(sessions, "terminal"))")
-        .font(.system(size: model.metrics.caption))
-        .foregroundStyle(theme.textTertiary)
+      Text(
+        t("sidebar.counts", t("count.worktrees", worktrees), t("count.terminals", sessions))
+      )
+      .font(.system(size: model.metrics.caption))
+      .foregroundStyle(theme.textTertiary)
       Spacer()
     }
     .padding(.horizontal, 14)
@@ -285,20 +287,20 @@ struct SidebarView: View {
 
   @ViewBuilder
   private func projectMenu(_ project: Project) -> some View {
-    Button("New Worktree…") { model.requestNewWorktree(in: project) }
-    Button("Refresh") { Task { await model.refreshRequested(project) } }
+    Button(t("actions.new-worktree")) { model.requestNewWorktree(in: project) }
+    Button(t("action.refresh")) { Task { await model.refreshRequested(project) } }
     // Refresh asks git what is on disk; Fetch asks the remote, which is
     // what the merged badges are measured against.
-    Button("Fetch") { Task { await model.fetch(project) } }
+    Button(t("actions.fetch")) { Task { await model.fetch(project) } }
       .disabled(model.isFetching(project))
     Divider()
-    Button("Project Settings…") {
+    Button(t("actions.project-settings")) {
       model.settingsProjectID = project.id
       openWindow(id: ProjectSettingsWindow.windowID)
     }
-    Button("Reveal in Finder") { model.revealInFileBrowser(project.path) }
+    Button(t("action.reveal-in-finder")) { model.revealInFileBrowser(project.path) }
     Divider()
-    Button("Remove Project…", role: .destructive) {
+    Button(t("actions.remove-project"), role: .destructive) {
       model.requestProjectRemoval(project, from: .workspace)
     }
   }

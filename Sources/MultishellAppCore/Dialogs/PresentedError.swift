@@ -27,79 +27,80 @@ public struct PresentedError: Identifiable {
       // failed on its own or was ended from here.
       let ending =
         switch failure.stop {
-        case .none: "failed"
-        case .timedOut: "did not finish"
-        case .stopped: "was stopped"
+        case .none: t("error.hook-failed")
+        case .timedOut: t("error.hook-did-not-finish")
+        case .stopped: t("error.hook-was-stopped")
         }
       title =
         switch failure.stage {
-        case .preCreate: "Worktree not created: its pre-create hook \(ending)"
-        case .postCreate: "Worktree created, but its hook \(ending)"
-        case .preDelete: "Worktree not removed: its pre-delete hook \(ending)"
-        case .postDelete: "Worktree removed, but its hook \(ending)"
+        case .preCreate: t("error.pre-create-hook", ending)
+        case .postCreate: t("error.post-create-hook", ending)
+        case .preDelete: t("error.pre-delete-hook", ending)
+        case .postDelete: t("error.post-delete-hook", ending)
         }
       message = Self.describe(failure.underlying)
     case let failure as WorktreeFileFailure:
       title =
         switch failure.placement {
-        case .link: "Worktree created, but some of its files were not linked"
-        case .copy: "Worktree created, but some of its files were not copied"
+        case .link: t("error.files-not-linked")
+        case .copy: t("error.files-not-copied")
         }
       message = failure.description
     case let failure as BranchDeletionFailure:
-      title = "Worktree removed, but branch \(failure.branch) was not deleted"
+      title = t("error.branch-not-deleted", failure.branch)
       message = Self.describe(failure.underlying)
     case let failure as TrashFailure:
-      title = "Worktree not removed: the directory could not be moved to the Trash or deleted"
+      title = t("error.trash-refused")
       message = "\(failure.path.path)\n\n\(Self.describe(failure.underlying))"
     case let failure as ProcessFailure where failure.message.contains("invalid reference: HEAD"):
       // An unborn HEAD: the repository has never been committed to.
-      title = "This repository has no commits yet"
-      message = "A worktree needs a commit to start from. Make the first commit, then try again."
+      title = t("error.no-commits-title")
+      message = t("error.no-commits-message")
     case let failure as ProcessFailure where failure.arguments.first == "fetch":
       // The app runs fetch with no terminal to answer on, so a repository
       // that wants a password waits until the timeout rather than asking.
       // That is the likeliest way this ends, and the message has to say so.
       switch failure.stop {
       case .timedOut:
-        title = "Fetch did not finish"
-        message =
-          "The remote did not answer in time, or it asked for a password. Multishell has no terminal to type one into: use an SSH key or a git credential helper."
+        title = t("error.fetch-timed-out-title")
+        message = t("error.fetch-timed-out-message")
       case .stopped, .none:
-        title = "Fetch failed"
-        message = failure.message.isEmpty ? "Exit status \(failure.status)." : failure.message
+        title = t("error.fetch-failed-title")
+        message =
+          failure.message.isEmpty
+          ? t("error.exit-status", failure.status) : failure.message
       }
     case let failure as ProcessFailure:
-      title = "\(failure.executable) \(failure.arguments.prefix(2).joined(separator: " ")) failed"
-      message = failure.message.isEmpty ? "Exit status \(failure.status)." : failure.message
+      title = t(
+        "error.command-failed-title",
+        failure.executable, failure.arguments.prefix(2).joined(separator: " "))
+      message =
+        failure.message.isEmpty ? t("error.exit-status", failure.status) : failure.message
     case is GitUnavailable:
-      title = "git not found"
-      message = "Multishell runs git from your PATH and could not find it."
+      title = t("error.git-not-found-title")
+      message = t("error.git-not-found-message")
     case let failure as SocketFailure where failure.kind == .inUse:
-      title = "Another Multishell is running"
-      message =
-        "It holds \(failure.path), so agent state reports go to it and this window's dots will not change. Quit one of them."
+      title = t("error.another-app-title")
+      message = t("error.another-app-message", failure.path)
     case let failure as SocketFailure:
-      title = "Session state reports are unavailable"
-      message = "Could not listen on the socket: \(failure)"
+      title = t("error.socket-title")
+      message = t("error.socket-message", String(describing: failure))
     case let entries as UnreadableHookEntries:
-      title = "That settings file has hooks Multishell does not recognise"
-      message =
-        "\(entries.file.path) holds something under hooks.\(entries.event) that is not the list of hooks the agent documents, and writing ours there would lose it. Use Show JSON beside the agent and add the entries yourself."
+      title = t("error.unknown-hooks-title")
+      message = t("error.unknown-hooks-message", entries.file.path, entries.event)
     case let unparsable as UnparsableSettingsFile:
-      title = "That settings file is not plain JSON"
-      message =
-        "\(unparsable.file.path) has something in it Multishell cannot read back — a comment or a trailing comma will do it — and rewriting the file would lose it. Use Show JSON beside the agent and add the entries yourself."
+      title = t("error.unparsable-settings-title")
+      message = t("error.unparsable-settings-message", unparsable.file.path)
     case let shape as UnexpectedSettingsShape:
-      title = "That settings file is not a JSON object"
-      message =
-        "\(shape.file.path) holds something else at its top level, so Multishell will not rewrite it. Use Show JSON beside the agent and add the entries yourself."
+      title = t("error.settings-shape-title")
+      message = t("error.settings-shape-message", shape.file.path)
     case let state as UnreadableState:
-      title = "Saved state could not be read"
-      message =
-        "It was moved to \(state.backup.lastPathComponent) and Multishell started empty.\n\n\(state.underlying)"
+      title = t("error.unreadable-state-title")
+      message = t(
+        "error.unreadable-state-message",
+        state.backup.lastPathComponent, String(describing: state.underlying))
     default:
-      title = "Something went wrong"
+      title = t("error.something-went-wrong")
       message = Self.describe(error)
     }
   }
@@ -113,18 +114,18 @@ public struct PresentedError: Identifiable {
     if let failure = error as? ProcessFailure {
       let ending =
         switch failure.stop {
-        case .none: "Exited with status \(failure.status)"
-        case .timedOut(let after): "Stopped after \(Self.seconds(after)), the hook timeout"
-        case .stopped: "Stopped by you"
+        case .none: t("error.exited-with-status", failure.status)
+        case .timedOut(let after): t("hook.stopped-after-seconds", Self.seconds(after))
+        case .stopped: t("error.stopped-by-you")
         }
       return failure.message.isEmpty
-        ? "\(ending) and printed nothing." : "\(failure.message)\n\n\(ending)."
+        ? t("error.printed-nothing", ending)
+        : t("error.said-then-ending", failure.message, ending)
     }
     return String(describing: error)
   }
 
-  private static func seconds(_ duration: Duration) -> String {
-    let whole = duration.components.seconds
-    return whole == 1 ? "1 second" : "\(whole) seconds"
+  private static func seconds(_ duration: Duration) -> Int {
+    Int(duration.components.seconds)
   }
 }

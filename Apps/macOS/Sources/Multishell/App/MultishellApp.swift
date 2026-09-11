@@ -41,13 +41,13 @@ struct MultishellApp: App {
     // `WindowGroup`: a group makes SwiftUI add its own Close (Cmd+W) to the
     // File menu, which then wins the key equivalent over Close Pane and
     // closes the whole app instead.
-    Window("Project Settings", id: ProjectSettingsWindow.windowID) {
+    Window(t("window.project-settings"), id: ProjectSettingsWindow.windowID) {
       // Reachable from the Window menu too, with no project chosen yet: fall
       // back to the current project rather than showing an empty window.
       if let projectID = model.settingsProjectID ?? model.activeProject?.id {
         ProjectSettingsWindow(model: model, platform: platform, projectID: projectID)
       } else {
-        Text("Right-click a project in the sidebar and choose Project Settings.")
+        Text(t("window.project-settings-empty"))
           .foregroundStyle(.secondary)
           .frame(width: 400, height: 120)
       }

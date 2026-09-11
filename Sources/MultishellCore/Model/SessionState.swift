@@ -34,11 +34,11 @@ public enum SessionState: String, Codable, Hashable, Sendable, CaseIterable {
 
   public var displayName: String {
     switch self {
-    case .idle: "Nothing running"
-    case .running: "Working"
-    case .attention: "Waiting for input"
-    case .done: "Done"
-    case .error: "Failed"
+    case .idle: t("state.idle")
+    case .running: t("state.running")
+    case .attention: t("state.attention")
+    case .done: t("state.done")
+    case .error: t("state.error")
     }
   }
 

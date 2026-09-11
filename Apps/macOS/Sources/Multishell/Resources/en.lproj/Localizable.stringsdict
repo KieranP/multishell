@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- The phrases whose wording turns on a number. A language with more than
+     one plural form adds its own keys here; English needs only one and other. -->
+<plist version="1.0">
+<dict>
+  <key>count.terminals</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d terminal</string>
+      <key>other</key><string>%d terminals</string>
+    </dict>
+  </dict>
+  <key>count.worktrees</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d worktree</string>
+      <key>other</key><string>%d worktrees</string>
+    </dict>
+  </dict>
+</dict>
+</plist>

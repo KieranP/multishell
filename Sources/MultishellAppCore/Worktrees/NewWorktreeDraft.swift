@@ -107,10 +107,10 @@ public struct NewWorktreeDraft: Equatable, Sendable {
   /// `nil` is the tail after the hooks: the refresh and the select.
   public static func progressText(for step: WorktreeCreationStep?) -> String {
     switch step {
-    case .preCreateHook: "Running the pre-create hook…"
-    case .addingWorktree: "Running git worktree add…"
-    case .postCreateHook: "Running the post-create hook…"
-    case nil: "Creating the worktree…"
+    case .preCreateHook: t("step.pre-create-hook")
+    case .addingWorktree: t("step.adding-worktree")
+    case .postCreateHook: t("step.post-create-hook")
+    case nil: t("step.creating-worktree")
     }
   }
 

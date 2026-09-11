@@ -16,15 +16,15 @@ public enum PendingClose: Identifiable, Equatable, Sendable {
 
   public var title: String {
     switch self {
-    case .pane: "Close this pane?"
-    case .tab: "Close this tab?"
+    case .pane: t("close.pane-title")
+    case .tab: t("close.tab-title")
     }
   }
 
   public var buttonLabel: String {
     switch self {
-    case .pane: "Close Pane"
-    case .tab: "Close Tab"
+    case .pane: t("close.pane-button")
+    case .tab: t("close.tab-button")
     }
   }
 

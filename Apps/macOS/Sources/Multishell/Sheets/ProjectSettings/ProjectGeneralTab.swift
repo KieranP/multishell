@@ -12,7 +12,7 @@ struct ProjectGeneralTab: View {
       \.worktreeSortOrder, global: model.workspace.worktreeSortOrder, for: project)
     Form {
       Section {
-        LabeledContent("Repository:") {
+        LabeledContent(t("project.repository")) {
           HStack {
             Text(project.path.path)
               .font(.system(size: 11, design: .monospaced))
@@ -23,10 +23,10 @@ struct ProjectGeneralTab: View {
               .controlSize(.small)
           }
         }
-        LabeledContent("Worktrees:") {
+        LabeledContent(t("project.worktrees-label")) {
           HStack {
-            Text("\(worktrees.count) discovered")
-            IconButton.refresh(help: "Refresh from git") {
+            Text(t("project.worktrees-discovered", worktrees.count))
+            IconButton.refresh(help: t("project.refresh-from-git")) {
               Task { await model.refreshRequested(project) }
             }
             .controlSize(.small)
@@ -36,12 +36,11 @@ struct ProjectGeneralTab: View {
 
       OverrideSection(
         model: model, project: project, setting: \.worktreeSortOrder,
-        label: "Sort worktrees",
-        info:
-          "The order this project's worktree rows are listed in, whatever the global says. Created goes by when the worktree's directory was made, Last commit by the last commit on its branch. The main worktree, and the one on the default branch, stay at the top whichever order is chosen.",
+        label: t("project.sort-worktrees"),
+        info: t("project.sort-worktrees-info"),
         fallback: order.value
       ) { selection, isOverridden in
-        Picker("Sort worktrees:", selection: selection) {
+        Picker(t("worktrees.sort"), selection: selection) {
           ForEach(WorktreeSortOrder.allCases, id: \.self) { Text($0.displayName).tag($0) }
         }
         .disabled(!isOverridden)
@@ -51,9 +50,8 @@ struct ProjectGeneralTab: View {
 
       OverrideSection(
         model: model, project: project, setting: \.showsActiveWorktreesFirst,
-        label: "Show active at the top",
-        info:
-          "Whether this project's worktrees with a terminal open, or with a state an agent or a hook reported, are listed above the rest, whatever the global says. Each group is then in the order above.",
+        label: t("project.active-first"),
+        info: t("project.active-first-info"),
         inherited: model.inherited(
           \.showsActiveWorktreesFirst, global: model.workspace.showsActiveWorktreesFirst,
           for: project))
@@ -62,17 +60,13 @@ struct ProjectGeneralTab: View {
 
       Section {
         HStack(spacing: 8) {
-          Button("Export") { model.exportSharedSettings(for: project) }
-          InfoButton(
-            "Writes this project's worktree path, branch prefix, hooks, the files new worktrees are linked to or given, icon, what its worktrees open and the order they are listed in, as they are in effect, to \(SharedProjectSettings.fileName) at the repository root, for the team to commit, replacing one already there. Anyone who adds the repository gets them as defaults under their own; they are asked once before its hooks run."
-          )
+          Button(t("action.export")) { model.exportSharedSettings(for: project) }
+          InfoButton(t("project.export-info", SharedProjectSettings.fileName))
           Spacer()
-          Button("Remove Project…", role: .destructive) {
+          Button(t("actions.remove-project"), role: .destructive) {
             model.requestProjectRemoval(project, from: .settings)
           }
-          InfoButton(
-            "Takes the project out of the sidebar and closes its terminals, after asking. Nothing on disk is touched."
-          )
+          InfoButton(t("project.remove-info"))
         }
       }
     }

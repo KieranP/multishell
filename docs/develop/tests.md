@@ -46,6 +46,30 @@ What each test catches, and the conventions a new one follows.
   height is the developer's rather than anyone's. Width is not checkable at
   all, a minimum-size measurement reporting where text stops wrapping rather
   than where a control is cut off.
+- A word on screen with no translation, or a translation nothing shows:
+  TranslationTests reads every `t("…")` off the source, from its own
+  `#filePath`, and checks the keys against `Localizable.strings` and
+  `Localizable.stringsdict` both ways. One per catalogue, each over its own
+  half: `Tests/MultishellCoreTests` over `Sources`, `Apps/macOS/Tests` over
+  that app's. The app's also pins the shadowing the split rests on, that a
+  view's `t(_:_:)` is the app's own and answers from the app's catalogue,
+  and that the handful of words written in both catalogues still read the
+  same in both, which is the app's to check because the libraries do not
+  know a frontend exists. It also counts each call's arguments
+  against the placeholders in its phrase, which is what the compiler would
+  have done had the keys been an enum, fails a phrase taking several
+  arguments that does not number them, and refuses a `%s`, which takes a C
+  string and would be a crash rather than a wrong word. Every counted form
+  is rendered at one and at many, since a stringsdict whose format key does
+  not name its own sub-dictionary answers with the raw format and only two
+  of the ten were exercised by what they say. It expects to find over a hundred
+  call sites, so a scan that has lost the source tree fails rather than
+  passes, and it reads the file as text as well as parsed, to catch an
+  entry written twice, which loads as one without a word, and one left
+  blank, which every other check here passes and shows nothing. The keys come off the source and the words out of the built
+  bundle, which can be a copy made before the edit: one check compares the
+  two files byte for byte, so `swift test --skip-build` after changing the
+  catalogue says so instead of passing on what is no longer there.
 - Foundation-only imports: checked by hand in a `swift:6.0` container, Linux
   being out of CI. Views untested, but a value a view reads is.
 

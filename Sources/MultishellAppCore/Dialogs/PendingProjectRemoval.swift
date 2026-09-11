@@ -22,17 +22,16 @@ public struct PendingProjectRemoval: Identifiable, Equatable, Sendable {
 
   public var id: String { project.id }
 
-  public var title: String { "Remove project \(project.name)?" }
+  public var title: String { t("project-removal.title", project.name) }
 
   /// Names what goes and what stays. The repository is never touched: the
   /// project is a sidebar entry, and its worktrees are git's.
   public static func message(liveTerminals: Int) -> String {
-    var notes = ["Takes the project and its worktrees out of the sidebar."]
+    var notes = [t("project-removal.takes")]
     if liveTerminals > 0 {
-      notes.append("\(Wording.count(liveTerminals, "open terminal")) will be closed.")
+      notes.append(t("removal.terminals-closed", liveTerminals))
     }
-    notes.append(
-      "Nothing on disk is touched; the repository and its worktrees stay where they are.")
+    notes.append(t("project-removal.nothing-on-disk"))
     return notes.joined(separator: " ")
   }
 }

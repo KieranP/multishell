@@ -23,43 +23,34 @@ struct ProjectHooksTab: View {
         Section { SettingsCaption(problem) }
       }
 
-      Section("Create") {
+      Section(t("hooks.create")) {
         MonospacedEditor(
-          title: "Pre-create",
-          info:
-            "Runs in the repository before git worktree add, with MULTISHELL_WORKTREE_PATH set to the planned path. A non-zero exit stops the create; git is never asked.",
+          title: t("hooks.pre-create"), info: t("hooks.pre-create-info"),
           placeholder: shared?.preCreateHook,
           text: model.setting(\.preCreateHook, of: project))
         MonospacedEditor(
-          title: "Link into new worktrees",
-          info:
-            "Symlinked in the new worktree back to the repository's own file after git worktree add, before the copy list and the post-create hook, so the hook and the first terminal both find them. For what a worktree can share rather than hold twice: a folder is linked whole, so node_modules or a build cache is one directory again, and writing through the link writes the repository's file. One path per line, relative to the repository root, with the same patterns and the same skipping as the copy list below. A path leading outside the repository or the worktree is not linked and is named afterwards. A list in \(SharedProjectSettings.fileName) fills a blank one here without being trusted first, since linking runs nothing.",
+          title: t("hooks.linked-paths"),
+          info: t("hooks.linked-paths-info", SharedProjectSettings.fileName),
           placeholder: shared?.linkedPaths,
           text: model.setting(\.linkedPaths, of: project))
         MonospacedEditor(
-          title: "Copy into new worktrees",
-          info:
-            "Copied out of the repository after the link list, before the post-create hook, so the hook and the first terminal both find them. For what the worktree wants its own of: an .env it will edit. One path per line, relative to the repository root; a folder is copied whole. A name may be a pattern: * for any run of characters and ? for one, neither crossing a /, so .env.* takes .env.local and .env.test. A pattern matches a name starting with a dot only when it spells the dot, as a shell does. A path the repository does not have, or one git or the link list already put in the worktree, is skipped, and a path leading outside the repository or the worktree is not copied and is named afterwards. A list in \(SharedProjectSettings.fileName) fills a blank one here without being trusted first, since copying runs nothing.",
+          title: t("hooks.copied-paths"),
+          info: t("hooks.copied-paths-info", SharedProjectSettings.fileName),
           placeholder: shared?.copiedPaths,
           text: model.setting(\.copiedPaths, of: project))
         MonospacedEditor(
-          title: "Post-create",
-          info:
-            "Runs in the new worktree after git worktree add. A failure is reported; the worktree stays.",
+          title: t("hooks.post-create"), info: t("hooks.post-create-info"),
           placeholder: shared?.postCreateHook,
           text: model.setting(\.postCreateHook, of: project))
       }
 
-      Section("Delete") {
+      Section(t("hooks.delete")) {
         MonospacedEditor(
-          title: "Pre-delete",
-          info:
-            "Runs in the worktree before git worktree remove, after the confirmation. A non-zero exit stops the removal; the worktree stays.",
+          title: t("hooks.pre-delete"), info: t("hooks.pre-delete-info"),
           placeholder: shared?.preDeleteHook,
           text: model.setting(\.preDeleteHook, of: project))
         MonospacedEditor(
-          title: "Post-delete",
-          info: "Runs in the repository after git worktree remove, once the directory is gone.",
+          title: t("hooks.post-delete"), info: t("hooks.post-delete-info"),
           placeholder: shared?.postDeleteHook,
           text: model.setting(\.postDeleteHook, of: project))
       }
@@ -77,10 +68,8 @@ struct ProjectHooksTab: View {
         }
       } header: {
         HStack(spacing: 6) {
-          Text("Environment")
-          InfoButton(
-            "Each script runs through this project's shell (the Terminal tab; $SHELL unless chosen) as an interactive login shell, with these variables set, so nothing needs quoting. In sh, bash and zsh the first failing line stops the script and is the one reported; fish runs the whole script. A hook still running at the timeout in Settings > Worktrees is stopped."
-          )
+          Text(t("hooks.environment"))
+          InfoButton(t("hooks.environment-info"))
         }
       }
     }
@@ -93,22 +82,17 @@ struct ProjectHooksTab: View {
     let trusted = model.trustsSharedHooks(of: project)
     return Section {
       HStack(spacing: 8) {
-        Text(
-          trusted
-            ? "Its hooks run where yours are blank."
-            : "Its hooks are shown in grey above and do not run.")
+        Text(trusted ? t("hooks.shared-run") : t("hooks.shared-ignored"))
         Spacer()
-        Button(trusted ? "Stop Trusting" : "Trust Hooks") {
+        Button(trusted ? t("hooks.stop-trusting") : t("hooks.trust")) {
           model.setTrustsSharedHooks(!trusted, for: project)
         }
         .controlSize(.small)
       }
     } header: {
       HStack(spacing: 6) {
-        Text("From \(SharedProjectSettings.fileName)")
-        InfoButton(
-          "The repository ships hooks in \(SharedProjectSettings.fileName) at its root. They run code through your shell, so they are off until you trust them, and an edit to the file asks again unless you have answered for those exact contents before, so switching to a branch whose file you have already answered for does not ask. A whitespace-only hook of your own turns the repository's off for that stage."
-        )
+        Text(t("hooks.shared-header", SharedProjectSettings.fileName))
+        InfoButton(t("hooks.shared-info", SharedProjectSettings.fileName))
       }
     }
   }

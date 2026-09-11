@@ -11,77 +11,57 @@ struct WorktreeSettingsTab: View {
     let defaults = model.workspace.worktreeDefaults
     Form {
       Section {
-        InfoRow(
-          "Worktree path:",
-          info:
-            "Where each project's worktrees are created. Absolute, or relative to the repository. {project} is the repository folder name, ~ is home. Default ../{project}-worktrees. Any project can override it."
-        ) {
-          TextField("Worktree path:", text: field(\.worktreeDirectory))
+        InfoRow(t("worktrees.path"), info: t("worktrees.path-info")) {
+          TextField(t("worktrees.path"), text: field(\.worktreeDirectory))
         }
       }
 
       Section {
-        InfoRow(
-          "Branch prefix:",
-          info:
-            "Prepended to branch names typed in the new-worktree sheet. An existing branch keeps its name. Any project can override it."
-        ) {
-          TextField("Branch prefix:", text: field(\.branchPrefix), prompt: Text("none"))
+        InfoRow(t("worktrees.branch-prefix"), info: t("worktrees.branch-prefix-info")) {
+          TextField(
+            t("worktrees.branch-prefix"), text: field(\.branchPrefix),
+            prompt: Text(t("worktrees.prefix-none")))
         }
         if !defaults.branchPrefix.isEmpty {
-          SettingsCaption("Typing tabs creates \(defaults.qualifiedBranch("tabs")).")
+          SettingsCaption(t("worktrees.prefix-example", defaults.qualifiedBranch("tabs")))
         }
       }
 
       Section {
-        InfoRow(
-          "Sort worktrees:",
-          info:
-            "The order worktree rows are listed in under their project. Name goes by the name the row shows, which is the one you gave it where you gave one. Created goes by when the worktree's directory was made, Last commit by the last commit on its branch. A worktree with no date either way — a directory copied in rather than created, a detached checkout with no branch — is listed last. The main worktree, and the one on the default branch, stay at the top whichever order is chosen. Any project can override it."
-        ) {
+        InfoRow(t("worktrees.sort"), info: t("worktrees.sort-info")) {
           Picker(
-            "Sort worktrees:",
+            t("worktrees.sort"),
             selection: model.setting(\.worktreeSortOrder, write: model.setWorktreeSortOrder)
           ) {
             ForEach(WorktreeSortOrder.allCases, id: \.self) { Text($0.displayName).tag($0) }
           }
         }
         InfoToggle(
-          "Show active at the top",
-          info:
-            "Worktrees with a terminal open, or with a state an agent or a hook reported, are listed above the rest, each group then in the order above. Rows move as terminals open and close and as agents report in. Any project can override it.",
+          t("worktrees.active-first"), info: t("worktrees.active-first-info"),
           isOn: model.setting(
             \.showsActiveWorktreesFirst, write: model.setShowsActiveWorktreesFirst))
       }
 
       Section {
-        InfoRow(
-          "Hook timeout:",
-          info:
-            "How long a project hook may run before it is stopped and reported, in seconds. A hook that hangs would otherwise hold its worktree until relaunch. Cancel on the pane ends one sooner; 0 is no limit."
-        ) {
+        InfoRow(t("worktrees.hook-timeout"), info: t("worktrees.hook-timeout-info")) {
           TextField(
-            "Hook timeout:",
+            t("worktrees.hook-timeout"),
             value: model.setting(\.hookTimeoutSeconds, write: model.setHookTimeoutSeconds),
             format: .number
           )
           .frame(width: 60)
           .multilineTextAlignment(.trailing)
-          Text("seconds")
+          Text(t("worktrees.seconds"))
         }
       }
 
       Section {
         InfoToggle(
-          "Ask before removing a worktree",
-          info:
-            "The directory goes to the Trash and git prunes it. The confirmation also counts uncommitted changes and open terminals in that worktree. Off is for people who remove worktrees all day; a removal then still asks about the branch unless the toggle below settles it.",
+          t("worktrees.confirm-removal"), info: t("worktrees.confirm-removal-info"),
           isOn: model.setting(
             \.confirmsWorktreeRemoval, write: model.setConfirmsWorktreeRemoval))
         InfoToggle(
-          "Always delete the branch with its worktree",
-          info:
-            "Runs git branch -d after git worktree remove, once the post-delete hook has run. Off, removing a worktree asks whether the branch goes too. A branch with commits nothing else has is refused and offered again with the forced form.",
+          t("worktrees.delete-branch"), info: t("worktrees.delete-branch-info"),
           isOn: model.setting(
             \.deletesBranchWithWorktree, write: model.setDeletesBranchWithWorktree))
       }

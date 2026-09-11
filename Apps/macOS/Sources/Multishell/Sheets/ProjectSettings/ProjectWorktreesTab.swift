@@ -17,43 +17,48 @@ struct ProjectWorktreesTab: View {
     Form {
       OverrideSection(
         model: model, project: project, setting: \.worktreeDirectory,
-        label: "Worktree path",
-        info:
-          "Where this project's worktrees are created. {project} is the repository folder name, ~ is home. Relative paths start at the repository.",
+        label: t("project.worktree-path"),
+        info: t("project.worktree-path-info"),
         fallback: directory.value
       ) { path, isOverridden in
-        TextField("Path:", text: path).disabled(!isOverridden)
+        TextField(t("project.path-label"), text: path).disabled(!isOverridden)
+        let container = effective.worktreeContainer(for: project).path
         SettingsCaption(
-          "Resolves to \(effective.worktreeContainer(for: project).path)"
-            + (!isOverridden && directory.isFromRepository
-              ? ", from \(SharedProjectSettings.fileName)." : "."))
+          !isOverridden && directory.isFromRepository
+            ? t("project.resolves-to-shared", container, SharedProjectSettings.fileName)
+            : t("project.resolves-to", container))
       }
 
       OverrideSection(
         model: model, project: project, setting: \.branchPrefix,
-        label: "Branch prefix",
-        info:
-          "Prepended to branch names typed in the new-worktree sheet for this project. Turn the override on and leave it blank to use no prefix while the global has one.",
+        label: t("project.branch-prefix"),
+        info: t("project.branch-prefix-info"),
         fallback: prefix.value
       ) { text, isOverridden in
-        TextField("Prefix:", text: text, prompt: Text("none")).disabled(!isOverridden)
+        TextField(
+          t("project.prefix-label"), text: text, prompt: Text(t("worktrees.prefix-none"))
+        )
+        .disabled(!isOverridden)
+        let path = effective.worktreePath(forBranch: branch, in: project).path
         SettingsCaption(
-          "Typing tabs creates \(branch) at \(effective.worktreePath(forBranch: branch, in: project).path)"
-            + (!isOverridden && prefix.isFromRepository
-              ? " The prefix comes from \(SharedProjectSettings.fileName)." : ""))
+          !isOverridden && prefix.isFromRepository
+            ? t(
+              "project.prefix-example-shared",
+              branch, path, SharedProjectSettings.fileName)
+            : t("project.prefix-example", branch, path))
       }
 
       OverrideSection(
         model: model, project: project, setting: \.defaultBranch,
-        label: "Default branch",
-        info:
-          "The branch this project's work is merged into. A worktree whose branch has landed on it gets a badge in the sidebar saying it can go. Detected from origin/HEAD, then origin/main, origin/master, main, master. A name typed here is looked for on origin before it is looked for locally.",
+        label: t("project.default-branch"),
+        info: t("project.default-branch-info"),
         fallback: detected
       ) { text, isOverridden in
-        TextField("Branch:", text: text, prompt: Text("main")).disabled(!isOverridden)
+        TextField(t("project.branch-label"), text: text, prompt: Text(verbatim: "main"))
+          .disabled(!isOverridden)
         SettingsCaption(
-          model.mergeBase(of: project).map { "Merges are measured against \($0.ref)." }
-            ?? "No branch to measure merges against, so no worktree is badged as merged.")
+          model.mergeBase(of: project).map { t("project.merges-measured", $0.ref) }
+            ?? t("project.no-merge-base"))
       }
     }
     .formStyle(.grouped)

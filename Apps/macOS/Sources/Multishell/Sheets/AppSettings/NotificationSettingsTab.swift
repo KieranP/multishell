@@ -19,7 +19,7 @@ struct NotificationSettingsTab: View {
           InfoToggle(row.title, info: row.info, isOn: notifies(row.state))
         }
       } header: {
-        Text("Post a notification when a tab you are not looking at reports")
+        Text(t("notifications.header"))
       } footer: {
         SettingsCaption(
           NotificationSettings.note(

@@ -16,51 +16,48 @@ struct ProjectAgentTab: View {
     Form {
       OverrideSection(
         model: model, project: project, setting: \.preferredAgentID,
-        label: "Preferred agent",
-        info:
-          "New Agent Tab (⌥⌘T) in this project's worktrees starts this agent instead of the global one. None opts the project out. The custom command is the global one.",
+        label: t("project.preferred-agent"),
+        info: t("project.preferred-agent-info"),
         fallback: global
       ) { selection, isOverridden in
         DetectionPicker(
-          label: "Agent:",
+          label: t("project.agent-label"),
           selection: selection,
           options: model.agentDetection.options(selected:),
           refresh: { Task { await model.refreshLoginEnvironment() } },
-          info: "Agents found on the login shell's PATH. Refresh after installing one.",
+          info: t("project.agent-picker-info"),
           isEnabled: isOverridden
         )
       } footer: {
-        SettingsCaption("Using the global value, \(model.agentDisplayName(global)).")
+        SettingsCaption(t("project.using-global-value", model.agentDisplayName(global)))
       }
 
       OverrideSection(
         model: model, project: project, setting: \.agentFlags,
-        label: "CLI Flags",
-        info:
-          "Added to this project's agent command line instead of the global flags. Blank runs it with none, whatever the global passes.",
+        label: t("project.flags"),
+        info: t("project.flags-info"),
         fallback: globalFlags
       ) { flags, isOverridden in
-        TextField("CLI Flags:", text: flags)
+        TextField(t("agents.flags"), text: flags)
           .disabled(!isOverridden)
       } footer: {
         SettingsCaption(
           globalFlags.isEmpty
-            ? "Using the global flags, which are none." : "Using the global flags, \(globalFlags).")
+            ? t("project.using-global-flags-none")
+            : t("project.using-global-flags", globalFlags))
       }
 
       OverrideSection(
         model: model, project: project, setting: \.autoStartAgent,
-        label: "Auto-start on tab open",
-        info:
-          "Whether New Tab, and the first tab of a worktree turned to here, start the agent, whatever the global says.",
+        label: t("agents.auto-start-tab"),
+        info: t("project.auto-start-tab-info"),
         inherited: model.inherited(
           \.autoStartAgent, global: model.workspace.autoStartAgent, for: project))
 
       OverrideSection(
         model: model, project: project, setting: \.autoStartAgentOnCreate,
-        label: "Auto-start on worktree creation",
-        info:
-          "Whether the tab a worktree created here opens starts the agent, whatever the global says. Nothing opens at all unless the Terminal tab opens one on create.",
+        label: t("agents.auto-start-create"),
+        info: t("project.auto-start-create-info"),
         inherited: model.inherited(
           \.autoStartAgentOnCreate, global: model.workspace.autoStartAgentOnCreate, for: project))
     }

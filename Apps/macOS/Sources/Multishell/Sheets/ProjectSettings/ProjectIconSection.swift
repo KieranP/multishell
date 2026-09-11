@@ -22,21 +22,13 @@ struct ProjectIconSection: View {
       (ProjectIcon.symbolName(own.iconGlyph) == nil
         && ProjectIcon.symbolName(shared?.iconGlyph) != nil)
       || (own.iconTint == nil && ProjectIcon.validTint(shared?.iconTint) != nil)
-    Section("Icon") {
-      InfoRow(
-        "Icon:",
-        info:
-          "Drawn in the sidebar, the header and the project picker in place of the folder. The palette is grouped by what a symbol is of, with jumps to each group along the foot; the field at the top matches both a symbol's name and what it is used for, so \"database\", \"git\" and \"docker\" all find something. Down from the field moves into the grid, the arrows walk it and Return picks. The folder is the first cell and is what a project has until one is picked."
-      ) {
+    Section(t("project.icon")) {
+      InfoRow(t("project.icon-label"), info: t("project.icon-info")) {
         IconPicker(kind: kind, tint: tint(settings)) { glyph in
           model.setting(\.iconGlyph, of: project).wrappedValue = glyph
         }
       }
-      InfoRow(
-        "Tint:",
-        info:
-          "One of the theme's sixteen colours, so a later theme change keeps the icon in step with the terminal. Applies to symbols and the folder."
-      ) {
+      InfoRow(t("project.tint-label"), info: t("project.tint-info")) {
         HStack(spacing: 5) {
           swatch(nil, shown: settings, color: model.currentTheme.textSecondary)
           ForEach(0..<16, id: \.self) { slot in
@@ -45,7 +37,7 @@ struct ProjectIconSection: View {
         }
       }
       if fromFile {
-        SettingsCaption("From \(SharedProjectSettings.fileName). A choice here replaces it.")
+        SettingsCaption(t("project.icon-from-shared", SharedProjectSettings.fileName))
       }
     }
   }
@@ -73,6 +65,6 @@ struct ProjectIconSection: View {
       .contentShape(.rect)
     }
     .buttonStyle(.plain)
-    .help(slot.map { Theme.ansiSlotNames[$0] } ?? "No tint")
+    .help(slot.map { Theme.ansiSlotNames[$0] } ?? t("project.no-tint"))
   }
 }

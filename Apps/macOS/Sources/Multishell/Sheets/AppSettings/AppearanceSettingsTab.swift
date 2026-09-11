@@ -12,40 +12,39 @@ struct AppearanceSettingsTab: View {
   var body: some View {
     Form {
       Section {
-        Picker("Theme:", selection: model.setting(\.appearance.themeID, write: model.setTheme)) {
+        Picker(
+          t("appearance.theme"),
+          selection: model.setting(\.appearance.themeID, write: model.setTheme)
+        ) {
           ForEach(model.themes) { Text($0.name).tag($0.id) }
         }
-        InfoRow(
-          "Theme files:",
-          info:
-            "Any .json in the folder appears in the list. The examples/ subfolder holds the built-ins to copy from; nothing in there is loaded."
-        ) {
-          Button("Open Folder") { model.revealThemesFolder() }
-          IconButton.refresh(help: "Reload theme files") { model.reloadThemes() }
+        InfoRow(t("appearance.theme-files"), info: t("appearance.theme-files-info")) {
+          Button(t("appearance.open-folder")) { model.revealThemesFolder() }
+          IconButton.refresh(help: t("appearance.reload-themes")) { model.reloadThemes() }
         }
         .controlSize(.small)
       }
 
       Section {
         DetectionPicker(
-          label: "Terminal font:",
+          label: t("appearance.terminal-font"),
           selection: fontName,
           options: fonts.options(selected:),
           refresh: { fonts = InstalledFonts.detect() },
-          info:
-            "Monospaced families first, then every other installed family, since some programming fonts are not marked fixed-pitch. Refresh after installing one. Applies to every open terminal."
+          info: t("appearance.font-info")
         )
         sizeRow(
-          "Terminal size:", value: fontSize, current: model.workspace.appearance.fontSize,
-          range: 9...24, info: "Terminal text. Applies to every open terminal.")
+          t("appearance.terminal-size"), value: fontSize,
+          current: model.workspace.appearance.fontSize,
+          range: 9...24, info: t("appearance.terminal-size-info"))
       }
 
       Section {
         sizeRow(
-          "UI size:",
+          t("appearance.ui-size"),
           value: model.setting(\.appearance.uiFontSize, write: model.setUIFontSize),
           current: model.workspace.appearance.uiFontSize,
-          range: 10...18, info: "Sidebar, tabs and header. Row heights follow it.")
+          range: 10...18, info: t("appearance.ui-size-info"))
       }
     }
     .formStyle(.grouped)
@@ -76,7 +75,7 @@ struct AppearanceSettingsTab: View {
   ) -> some View {
     InfoRow(label, info: info) {
       Slider(value: value, in: range, step: 1)
-      Text("\(Int(current)) pt")
+      Text(t("appearance.points", Int(current)))
         .monospacedDigit()
         .frame(width: 40, alignment: .trailing)
     }

@@ -11,12 +11,15 @@ public enum AgentBoardLane: String, CaseIterable, Sendable {
   case done
   case idle
 
-  public var title: String {
+  /// `inSentence` is the same name mid-sentence, for the screen reader's
+  /// line; a language that capitalises its nouns cannot get one from the
+  /// other by lowercasing.
+  public func title(inSentence: Bool = false) -> String {
     switch self {
-    case .waiting: "Waiting for you"
-    case .working: "Working"
-    case .done: "Done"
-    case .idle: "Idle"
+    case .waiting: inSentence ? t("lane.waiting-in-sentence") : t("lane.waiting")
+    case .working: inSentence ? t("lane.working-in-sentence") : t("lane.working")
+    case .done: inSentence ? t("lane.done-in-sentence") : t("lane.done")
+    case .idle: inSentence ? t("lane.idle-in-sentence") : t("lane.idle")
     }
   }
 

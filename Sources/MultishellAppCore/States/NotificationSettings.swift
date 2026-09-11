@@ -36,12 +36,12 @@ public enum NotificationSettings {
     switch authorization {
     case .refused:
       if let settingsLocation {
-        "Notifications from Multishell are turned off in \(settingsLocation). Turn them on there, or these do nothing."
+        t("notifications.refused-at", settingsLocation)
       } else {
-        "Notifications from Multishell are turned off, so these do nothing until they are allowed again."
+        t("notifications.refused")
       }
     case .notAsked:
-      "\(shownTabNote) Permission is asked for the first time you turn one of these on."
+      t("notifications.not-asked", shownTabNote)
     case .allowed, .unavailable:
       shownTabNote
     }
@@ -51,19 +51,18 @@ public enum NotificationSettings {
   /// it has been settled. The tail is what "frontmost" means to the person
   /// reading it, and it is not droppable: that same tab does notify once
   /// the user is off in another app.
-  private static let shownTabNote =
-    "The active tab on screen does not send notifications while you are working in Multishell."
+  private static var shownTabNote: String { t("notifications.shown-tab") }
 
   private static func info(for state: SessionState) -> String {
     switch state {
     case .attention:
-      "An agent stopped for a permission prompt or a question."
+      t("notifications.attention-info")
     case .error:
-      "An agent's turn failed, or a shell command exited non-zero. A command that ran under \(Int(NotificationPolicy.minimumNotifiedDuration)) seconds is not reported."
+      t("notifications.error-info", Int(NotificationPolicy.minimumNotifiedDuration))
     case .done:
-      "An agent finished its turn, or a shell command exited cleanly. A command that ran under \(Int(NotificationPolicy.minimumNotifiedDuration)) seconds is not reported."
+      t("notifications.done-info", Int(NotificationPolicy.minimumNotifiedDuration))
     case .running, .idle:
-      "Work in progress is never notified; the tab's dot says it."
+      t("notifications.running-info")
     }
   }
 }

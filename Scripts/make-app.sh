@@ -61,6 +61,30 @@ done
 
 cp "$package/Resources/Multishell.icns" "$app/Contents/Resources/Multishell.icns"
 
+# InfoPlist.strings alone, which is the one macOS reads through Bundle.main:
+# it translates the permission strings written into the Info.plist below.
+# The app's own words are Localizable.strings in the same folder, and they
+# travel in the target's resource bundle with everything else, so copying
+# the whole folder would put a second copy of them here.
+for lproj in "$package"/Sources/Multishell/Resources/*.lproj; do
+    [ -f "$lproj/InfoPlist.strings" ] || continue
+    mkdir -p "$app/Contents/Resources/$(basename "$lproj")"
+    cp "$lproj/InfoPlist.strings" "$app/Contents/Resources/$(basename "$lproj")/"
+done
+
+# The languages the app has, taken from this frontend's own catalogue.
+# macOS reads this list for its per-app language setting, and looks for it
+# here rather than in the resource bundle the catalogue travels in. The
+# libraries' catalogue has to keep pace: a language listed here whose
+# Sources half is missing draws its windows translated and says the model's
+# half in English.
+localizations=""
+for lproj in "$package"/Sources/Multishell/Resources/*.lproj; do
+    [ -d "$lproj" ] || continue
+    localizations="$localizations        <string>$(basename "$lproj" .lproj)</string>
+"
+done
+
 cat > "$app/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -75,6 +99,10 @@ cat > "$app/Contents/Info.plist" <<PLIST
     <key>CFBundleVersion</key><string>$commits</string>
     <key>CFBundleIconFile</key><string>Multishell</string>
     <key>MultishellVariant</key><string>$variant</string>
+    <key>CFBundleDevelopmentRegion</key><string>en</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+$localizations    </array>
     <key>LSMinimumSystemVersion</key><string>14.0</string>
     <key>NSHighResolutionCapable</key><true/>
     <!-- What macOS puts under its own line in the permission alert. A

@@ -4,7 +4,7 @@ import MultishellGitKit
 
 extension AppModel {
   public func chooseProject() async {
-    guard let url = await platform.chooseDirectory(prompt: "Add Project") else { return }
+    guard let url = await platform.chooseDirectory(prompt: t("action.add-project")) else { return }
     await addProject(at: url)
   }
 

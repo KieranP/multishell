@@ -35,5 +35,6 @@ Telegraphic notes, one file per subject. Newest at the bottom within each.
 | [docs/design/terminals.md](docs/design/terminals.md) | Where a session's state comes from, how a shell ends, injected integration, click-to-move, dropped files, agent and shell ids. |
 | [docs/design/agents.md](docs/design/agents.md) | What the socket accepts, each agent's hooks and why each event was narrowed, and the board as a roster. |
 | [docs/design/appearance.md](docs/design/appearance.md) | Hex themes, the focused pane's ring and the fade, hand-drawn window chrome, the header and row heights. |
+| [docs/design/translation.md](docs/design/translation.md) | One catalogue in the lowest layer, why a view holds no literal, counted forms, and what stays in English. |
 | [docs/design/signing.md](docs/design/signing.md) | Why a local build carries a dev certificate rather than signing ad hoc. |
 | [docs/design/smaller-decisions.md](docs/design/smaller-decisions.md) | Sixteen one-liners: warm-up, both engines, keybinds, error mapping, help behind an (i), notification toggles, the icon palette, the rest. |

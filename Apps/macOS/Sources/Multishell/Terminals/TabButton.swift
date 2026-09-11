@@ -137,7 +137,7 @@ struct TabButton: View {
         title: model.title(of: tab), isActive: isActive, isSplit: tab.isSplit, state: state)
     )
     .accessibilityAddTraits(isActive ? [.isButton, .isSelected] : .isButton)
-    .accessibilityAction(named: "Rename") { beginEditing() }
+    .accessibilityAction(named: t("action.rename-spoken")) { beginEditing() }
     .contextMenu { menu(state) }
   }
 
@@ -155,8 +155,8 @@ struct TabButton: View {
           .contentShape(.rect)
       }
       .buttonStyle(.plain)
-      .help("\(state.displayName). Click to clear.")
-      .accessibilityLabel("\(state.displayName). Clear status")
+      .help(t("tab.state-click-to-clear", state.displayName))
+      .accessibilityLabel(t("tab.state-clear-status", state.displayName))
     } else {
       Image(systemName: tab.isSplit ? "rectangle.split.2x1" : "apple.terminal")
         .font(.system(size: model.metrics.icon))
@@ -178,25 +178,25 @@ struct TabButton: View {
     }
     .buttonStyle(.plain)
     .foregroundStyle(theme.textSecondary)
-    .accessibilityLabel("Close Tab")
+    .accessibilityLabel(t("tab.close"))
   }
 
   @ViewBuilder
   private func menu(_ state: SessionState?) -> some View {
-    Button("Rename…") { beginEditing() }
+    Button(t("action.rename")) { beginEditing() }
     if tab.customTitle != nil {
-      Button("Use Shell Title") { model.renameTab(tab.id, to: nil) }
+      Button(t("tab.use-shell-title")) { model.renameTab(tab.id, to: nil) }
     }
     if state != nil {
       Divider()
-      Button("Clear Status") { model.clearState(of: tab) }
+      Button(t("actions.clear-status")) { model.clearState(of: tab) }
     }
     Divider()
     // The keyboard-only way to the layout the edge bands offer a drag.
     // Offered on the tab it names rather than on the active one, and only
     // where it would do something: the sole tab of a column moving out of
     // it is the same layout under a new id.
-    Button("Move to New Group") {
+    Button(t("tab.move-to-new-group")) {
       model.moveTab(tab.id, .after, toNewGroupOf: group.id)
     }
     .disabled(!canLeaveColumn)
@@ -206,7 +206,7 @@ struct TabButton: View {
     // and the keystrokes each want one. Not destructive-red: closing a tab
     // is what a tab strip is for, and a working agent is asked about
     // whichever way the close was asked for.
-    Button("Close Tab") { model.closeTab(tab.id) }
+    Button(t("tab.close")) { model.closeTab(tab.id) }
   }
 
   /// An empty name clears the custom title rather than storing a blank one;
@@ -214,7 +214,7 @@ struct TabButton: View {
   private var titleField: some View {
     InlineNameField(
       initial: tab.customTitle ?? model.title(of: tab),
-      prompt: "Tab name",
+      prompt: t("tab.name-prompt"),
       font: .system(size: model.metrics.secondary, weight: .medium),
       color: theme.textPrimary,
       commit: { title in

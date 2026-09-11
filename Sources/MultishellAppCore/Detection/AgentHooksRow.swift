@@ -30,22 +30,18 @@ public struct AgentHooksRow: Identifiable, Equatable, Sendable {
         name: integration.name,
         path: integration.displayPath,
         isInstalled: isInstalled,
-        contentsName: integration.isPlugin ? "Plugin" : "JSON",
+        contentsName: integration.isPlugin
+          ? t("agent-hooks.plugin") : t("agent-hooks.json"),
         info: info(for: integration))
     }
   }
 
   private static func info(for integration: AgentHookIntegration) -> String {
-    var sentences = [
-      "\(integration.name) reports Working, Waiting for input and Done through its hooks, and the tab bar and sidebar colour the dot."
-    ]
+    var sentences = [t("agent-hooks.reports", integration.name)]
     if integration.isOursAlone {
-      sentences.append(
-        "\(integration.displayPath) is Multishell's own file: Add writes it and Remove deletes it.")
+      sentences.append(t("agent-hooks.ours-alone", integration.displayPath))
     } else {
-      sentences.append(
-        "Other hooks in \(integration.displayPath) are left as they are; the first write keeps a copy beside it."
-      )
+      sentences.append(t("agent-hooks.shared", integration.displayPath))
     }
     if let note = integration.trustNote { sentences.append(note) }
     return sentences.joined(separator: " ")

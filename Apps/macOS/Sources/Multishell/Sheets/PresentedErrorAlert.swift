@@ -1,4 +1,5 @@
 import MultishellAppCore
+import MultishellCore
 import SwiftUI
 
 extension View {
@@ -15,7 +16,7 @@ extension View {
     ) { error in
       if let label = error.retryLabel, let retry = error.retry {
         Button(label, role: .destructive) { Task { await retry() } }
-        Button("Cancel", role: .cancel) {}
+        Button(t("action.cancel"), role: .cancel) {}
       }
     } message: { error in
       Text(error.message)

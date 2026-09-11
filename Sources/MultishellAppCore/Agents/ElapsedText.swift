@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 
 /// How long, in the two lengths the board needs.
 ///
@@ -15,11 +16,11 @@ public enum ElapsedText {
   /// backwards being the usual cause.
   public static func short(_ interval: TimeInterval) -> String? {
     guard interval.isFinite, interval >= 0 else { return nil }
-    if interval < minute { return "\(Int(interval))s" }
-    if interval < hour { return "\(Int(interval / minute))m" }
+    if interval < minute { return t("elapsed.seconds", Int(interval)) }
+    if interval < hour { return t("elapsed.minutes", Int(interval / minute)) }
     let hours = Int(interval / hour)
     let minutes = Int((interval - Double(hours) * hour) / minute)
-    return String(format: "%dh %02dm", hours, minutes)
+    return t("elapsed.hours", hours, minutes)
   }
 
   public static func short(since: Date?, now: Date) -> String? {
@@ -32,11 +33,11 @@ public enum ElapsedText {
   /// prompt and a build is.
   public static func precise(_ interval: TimeInterval) -> String? {
     guard interval.isFinite, interval >= 0 else { return nil }
-    if interval < 10 { return String(format: "%.1fs", interval) }
-    if interval < minute { return "\(Int(interval))s" }
+    if interval < 10 { return t("elapsed.seconds-precise", interval) }
+    if interval < minute { return t("elapsed.seconds", Int(interval)) }
     if interval < hour {
       let minutes = Int(interval / minute)
-      return "\(minutes)m \(Int(interval - Double(minutes) * minute))s"
+      return t("elapsed.minutes-seconds", minutes, Int(interval - Double(minutes) * minute))
     }
     return short(interval)
   }

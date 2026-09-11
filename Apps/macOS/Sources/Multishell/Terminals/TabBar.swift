@@ -138,7 +138,7 @@ struct TabBar: View {
     .buttonStyle(.plain)
     // The keystroke opens in the focused column, so only that column's
     // button is the thing ⌘T does.
-    .help(isFocused ? "New Tab (⌘T)" : "New Tab in This Group")
-    .accessibilityLabel("New Tab")
+    .help(isFocused ? t("tab.new-here") : t("tab.new-in-group"))
+    .accessibilityLabel(t("tab.new"))
   }
 }

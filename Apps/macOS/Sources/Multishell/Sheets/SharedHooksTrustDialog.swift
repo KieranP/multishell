@@ -1,4 +1,5 @@
 import MultishellAppCore
+import MultishellCore
 import SwiftUI
 
 extension View {
@@ -16,7 +17,7 @@ extension View {
       Button(pending.trustLabel) { model.decideSharedHooks(pending, trusted: true) }
       Button(pending.declineLabel) { model.decideSharedHooks(pending, trusted: false) }
       // Escape: asked again next time, since nothing was decided.
-      Button("Decide Later", role: .cancel) { model.pendingSharedHooksTrust = nil }
+      Button(t("dialog.decide-later"), role: .cancel) { model.pendingSharedHooksTrust = nil }
     } message: { pending in
       Text(pending.message)
     }

@@ -103,7 +103,7 @@ struct DetailView: View {
     .menuIndicator(.hidden)
     .fixedSize()
     .foregroundStyle(theme.textSecondary)
-    .help("Worktree actions")
-    .accessibilityLabel("Worktree actions")
+    .help(t("actions.worktree-actions"))
+    .accessibilityLabel(t("actions.worktree-actions"))
   }
 }

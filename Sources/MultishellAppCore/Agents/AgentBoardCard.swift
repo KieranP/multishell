@@ -53,8 +53,8 @@ public struct AgentBoardCard: Identifiable, Equatable, Sendable {
     if let message = note.message, !message.isEmpty { return message }
     guard let duration = note.duration, let text = ElapsedText.precise(duration) else { return nil }
     switch note.state {
-    case .done: return "Done · \(text)"
-    case .error: return "Failed · \(text)"
+    case .done: return t("card.done", text)
+    case .error: return t("card.failed", text)
     case .running, .attention, .idle: return nil
     }
   }

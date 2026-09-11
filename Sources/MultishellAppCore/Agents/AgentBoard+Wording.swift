@@ -6,9 +6,10 @@ extension AgentBoard {
   /// Beside the title: how many terminals are on the board, and how many of
   /// them want the user.
   public var summary: String {
-    let terminals = Wording.count(cardCount, "terminal")
+    let terminals = t("count.terminals", cardCount)
     let waiting = count(of: .waiting)
-    return waiting > 0 ? "\(terminals) · \(waiting) waiting on you" : terminals
+    return waiting > 0
+      ? t("board.summary", terminals, t("count.waiting-on-you", waiting)) : terminals
   }
 
   /// Said under the columns whenever there is nothing on them. Not gated on
@@ -21,7 +22,5 @@ extension AgentBoard {
   /// It names no agent and offers to install none: the settings tab lists
   /// whatever detection found on the PATH, and pointing at it is as far as
   /// anything here goes.
-  public static let emptyHint =
-    "A pane appears here once an agent reports from it. Agent hooks are installed "
-    + "under Settings › Agents."
+  public static var emptyHint: String { t("board.empty-hint") }
 }

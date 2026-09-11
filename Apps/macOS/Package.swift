@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
   name: "Multishell",
+  defaultLocalization: "en",
   platforms: [.macOS(.v14)],
   dependencies: [
     // Named, not just pathed: SwiftPM takes a path dependency's identity from
@@ -24,7 +25,12 @@ let package = Package(
         .product(name: "MultishellAppCore", package: "multishell"),
         .product(name: "GhosttyTerminal", package: "libghostty-spm"),
         .product(name: "SwiftTerm", package: "SwiftTerm"),
-      ]
+      ],
+      // This frontend's own words, inside the target that shows them. Not
+      // `Apps/macOS/Resources`, which is the icon the bundling script
+      // copies and nothing SwiftPM knows about. The libraries keep theirs
+      // the same way, under MultishellCore.
+      resources: [.process("Resources/en.lproj")]
     ),
     // Pure pieces of the app: error mapping, metrics, colour derivation.
     // Views themselves stay untested here.

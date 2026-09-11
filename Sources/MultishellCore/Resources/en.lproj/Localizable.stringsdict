@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- The phrases whose wording turns on a number. A language with more than
+     one plural form adds its own keys here; English needs only one and other. -->
+<plist version="1.0">
+<dict>
+  <key>count.terminals</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d terminal</string>
+      <key>other</key><string>%d terminals</string>
+    </dict>
+  </dict>
+  <key>count.waiting-on-you</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d waiting on you</string>
+      <key>other</key><string>%d waiting on you</string>
+    </dict>
+  </dict>
+  <key>count.worktrees</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d worktree</string>
+      <key>other</key><string>%d worktrees</string>
+    </dict>
+  </dict>
+  <key>hook.stopped-after-seconds</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>Stopped after %d second, the hook timeout</string>
+      <key>other</key><string>Stopped after %d seconds, the hook timeout</string>
+    </dict>
+  </dict>
+  <key>quit.agents-working</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>One of them has an agent that is still working.</string>
+      <key>other</key><string>%d of them have agents that are still working.</string>
+    </dict>
+  </dict>
+  <key>quit.terminals-open</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>One terminal is still open and will be closed.</string>
+      <key>other</key><string>%d terminals are still open and will be closed.</string>
+    </dict>
+  </dict>
+  <key>removal.changed-files</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>It has %d changed file, kept in the Trash with the directory.</string>
+      <key>other</key><string>It has %d changed files, kept in the Trash with the directory.</string>
+    </dict>
+  </dict>
+  <key>removal.terminals-closed</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d open terminal will be closed.</string>
+      <key>other</key><string>%d open terminals will be closed.</string>
+    </dict>
+  </dict>
+</dict>
+</plist>

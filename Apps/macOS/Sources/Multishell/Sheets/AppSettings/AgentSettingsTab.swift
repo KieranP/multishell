@@ -19,7 +19,7 @@ struct AgentSettingsTab: View {
     Form {
       Section {
         DetectionPicker(
-          label: "Preferred agent:",
+          label: t("agents.preferred-agent"),
           selection: model.setting(
             \.preferredAgentID, or: AgentCatalogue.noneID, write: model.setPreferredAgent),
           options: model.agentDetection.options(selected:),
@@ -27,38 +27,26 @@ struct AgentSettingsTab: View {
           info: environmentCaption
         )
         if model.workspace.preferredAgentID == AgentCatalogue.customID {
-          InfoRow(
-            "Command:",
-            info:
-              "Run as typed through your login shell when an agent tab opens. Placeholders such as {{branch}} are filled in from the worktree."
-          ) {
+          InfoRow(t("agents.command"), info: t("agents.command-info")) {
             TextField(
-              "Command:",
+              t("agents.command"),
               text: model.setting(\.customAgentCommand, write: model.setCustomAgentCommand),
-              prompt: Text("my-agent --flag"))
+              prompt: Text(t("agents.command-prompt")))
           }
         } else if let agentID = model.workspace.preferredAgentID, agentID != AgentCatalogue.noneID {
-          InfoRow(
-            "CLI Flags:",
-            info:
-              "Added to the agent's command line every time a tab starts it, resuming included. Quotes group a value with a space in it. Kept per agent, so choosing another agent leaves its own flags. Placeholders such as {{branch}} are filled in from the worktree."
-          ) {
+          InfoRow(t("agents.flags"), info: t("agents.flags-info")) {
             // No prompt text: a greyed example in an empty field reads as a
             // default the agent is already being started with.
-            TextField("CLI Flags:", text: model.agentFlagsSetting(for: agentID))
+            TextField(t("agents.flags"), text: model.agentFlagsSetting(for: agentID))
           }
         }
         InfoToggle(
-          "Auto-start on tab open",
-          info:
-            "New Tab (⌘T), and the first tab of a worktree you turn to, run the agent instead of a shell. New Shell Tab, in the File menu (⇧⌘T) and the worktree menu, and splits stay shells. A saved agent tab resumes its conversation on relaunch where the agent can.",
+          t("agents.auto-start-tab"), info: t("agents.auto-start-tab-info"),
           isOn: model.setting(\.autoStartAgent, write: model.setAutoStartAgent)
         )
         .disabled(model.workspace.preferredAgentID == nil)
         InfoToggle(
-          "Auto-start on worktree creation",
-          info:
-            "The tab a newly created worktree opens runs the agent instead of a shell, whatever tabs opened any other way do. Nothing opens at all unless Terminal > Open a terminal when a worktree is created is on. Any project can override this.",
+          t("agents.auto-start-create"), info: t("agents.auto-start-create-info"),
           isOn: model.setting(\.autoStartAgentOnCreate, write: model.setAutoStartAgentOnCreate)
         )
         .disabled(model.workspace.preferredAgentID == nil)
@@ -68,16 +56,15 @@ struct AgentSettingsTab: View {
         hooksSection
       }
 
-      Section("Command line tool") {
-        InfoRow(
-          "multishell:",
-          info:
-            "For your own hooks: `multishell state running|attention|done|error|idle` from any terminal in this app marks its tab. Asks for an administrator password."
-        ) {
-          Text(model.commandLineToolInstalled ? "Installed in /usr/local/bin" : "Not installed")
-            .foregroundStyle(.secondary)
+      Section(t("agents.command-line-tool")) {
+        InfoRow(t("agents.helper-label"), info: t("agents.helper-info")) {
+          Text(
+            model.commandLineToolInstalled
+              ? t("agents.helper-installed") : t("agents.not-installed")
+          )
+          .foregroundStyle(.secondary)
           if !model.commandLineToolInstalled {
-            Button("Install Command Line Tool…") { model.installCommandLineTool() }
+            Button(t("agents.install-helper")) { model.installCommandLineTool() }
               .controlSize(.small)
           }
         }
@@ -88,20 +75,26 @@ struct AgentSettingsTab: View {
   }
 
   private var hooksSection: some View {
-    Section("Agent hooks") {
+    Section(t("agents.hooks-section")) {
       ForEach(model.agentHooksRows) { row in
-        InfoRow("\(row.name):", info: row.info) {
-          Text(row.isInstalled ? "Installed in \(row.path)" : "Not installed")
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
-            .truncationMode(.head)
+        InfoRow(t("agents.row-label", row.name), info: row.info) {
+          Text(
+            row.isInstalled
+              ? t("agents.hooks-installed-in", row.path) : t("agents.not-installed")
+          )
+          .foregroundStyle(.secondary)
+          .lineLimit(1)
+          .truncationMode(.head)
           if row.isInstalled {
-            Button("Remove") { model.removeAgentHooks(row.id) }
+            Button(t("action.remove")) { model.removeAgentHooks(row.id) }
           } else {
-            Button("Add") { model.installAgentHooks(row.id) }
+            Button(t("action.add")) { model.installAgentHooks(row.id) }
           }
-          Button(shownContents == row.id ? "Hide \(row.contentsName)" : "Show \(row.contentsName)")
-          {
+          Button(
+            shownContents == row.id
+              ? t("agents.hide", row.contentsName)
+              : t("agents.show", row.contentsName)
+          ) {
             shownContents = shownContents == row.id ? nil : row.id
           }
         }
@@ -122,7 +115,7 @@ struct AgentSettingsTab: View {
           .frame(maxWidth: .infinity, alignment: .leading)
       }
       .frame(height: 140)
-      Button("Copy") { model.copyToClipboard(model.agentHooksSnippet(row.id)) }
+      Button(t("action.copy")) { model.copyToClipboard(model.agentHooksSnippet(row.id)) }
         .controlSize(.small)
     }
   }
@@ -130,13 +123,11 @@ struct AgentSettingsTab: View {
   private var environmentCaption: String {
     switch model.loginEnvironment?.source {
     case nil:
-      return "Asking your login shell for its PATH…"
+      return t("agents.path-asking")
     case .loginShell(let shell):
-      return
-        "Agents are looked up on the PATH of \(shell.path) as an interactive login shell, the same one your terminals get. Refresh after installing one."
+      return t("agents.path-from-login-shell", shell.path)
     case .processFallback(let reason):
-      return
-        "Your login shell did not answer (\(reason)), so agents are looked up on the app's own PATH. Refresh to try again."
+      return t("agents.path-fallback", reason)
     }
   }
 }
