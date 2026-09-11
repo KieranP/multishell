@@ -7,9 +7,10 @@ Newest at the bottom.
 ## Settings resolve project over global, repo may ship its own
 
 `nil` follows the global. Empty string overrides to "none", for worktree path,
-branch prefix and default branch only, which have no other spelling for it, in
-user settings and a repo's file alike -> an export can carry a project pinned
-that way. Elsewhere blank = absent, "none" and "no opinion" coming to the same
+branch prefix, default branch and agent flags only, which have no other spelling
+for it, in user settings and a repo's file alike -> an export can carry a project
+pinned that way. Agent flags are the one of the four a repo's file cannot carry:
+see agents.md. Elsewhere blank = absent, "none" and "no opinion" coming to the same
 thing: a field with its own sentinel (agent `none`, shell `login`) would have
 two ways to say one thing and lose the distinction next load, an empty hook is
 not a hook to trust, an empty file list links nothing. Cost: a stray empty key

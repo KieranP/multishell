@@ -8,6 +8,11 @@ struct ProjectAgentTab: View {
 
   var body: some View {
     let global = model.workspace.preferredAgentID ?? AgentCatalogue.noneID
+    // The flags of the agent this project actually runs, which its own
+    // override may have chosen.
+    let globalFlags =
+      model.workspace.preferredAgentID(for: model.current(project))
+      .map { model.workspace.agentFlags[$0] ?? "" } ?? ""
     Form {
       OverrideSection(
         model: model, project: project, setting: \.preferredAgentID,
@@ -26,6 +31,21 @@ struct ProjectAgentTab: View {
         )
       } footer: {
         SettingsCaption("Using the global value, \(model.agentDisplayName(global)).")
+      }
+
+      OverrideSection(
+        model: model, project: project, setting: \.agentFlags,
+        label: "CLI Flags",
+        info:
+          "Added to this project's agent command line instead of the global flags. Blank runs it with none, whatever the global passes.",
+        fallback: globalFlags
+      ) { flags, isOverridden in
+        TextField("CLI Flags:", text: flags)
+          .disabled(!isOverridden)
+      } footer: {
+        SettingsCaption(
+          globalFlags.isEmpty
+            ? "Using the global flags, which are none." : "Using the global flags, \(globalFlags).")
       }
 
       OverrideSection(

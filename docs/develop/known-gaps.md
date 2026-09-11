@@ -76,3 +76,11 @@ What is unverified or unbuilt, with the fallback where there is one.
   created as a new one based on its remote. A decision, not a defect.
 - `.multishell.json` is read from the project path, which for a bare
   repository holds no checkout.
+- Neither agent-flags row has been seen on screen: the CLI Flags field under
+  the agent picker in Settings > Agents, and the CLI Flags override in a
+  project's Agent tab. The value they write and the command line it builds are
+  tested; the rows' width, and how an empty one reads with no prompt text in
+  it, are not.
+- The placeholders an agent's flags may use are documented nowhere a user can
+  reach: the settings rows name `{{branch}}` as an example, and the rest live
+  in `AgentPlaceholder` waiting for a documentation site.

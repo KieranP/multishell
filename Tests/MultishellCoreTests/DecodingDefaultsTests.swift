@@ -214,6 +214,7 @@ struct DecodingDefaultsTests {
     #expect(workspace.notifications == .off, "no state banners until asked for")
     #expect(workspace.preferredAgentID == nil)
     #expect(workspace.customAgentCommand == "")
+    #expect(workspace.agentFlags.isEmpty, "no agent is given flags it was not asked to pass")
     #expect(!workspace.autoStartAgent, "off until asked for")
     #expect(!workspace.autoStartAgentOnCreate, "off until asked for")
   }
@@ -327,6 +328,13 @@ struct DecodingDefaultsTests {
     #expect(
       try decode(ProjectSettings.self, #"{ "defaultBranch": "develop" }"#).defaultBranch
         == "develop")
+
+    // The fourth field with no other spelling for none: blank runs the
+    // agent bare under a global that passes flags.
+    #expect(try decode(ProjectSettings.self, #"{ "agentFlags": "" }"#).agentFlags == "")
+    #expect(
+      try decode(ProjectSettings.self, #"{ "postCreateHook": "x" }"#).agentFlags == nil,
+      "absent follows the global")
 
     // The absent key is what "follow the global" is written as, and it must
     // stay distinguishable from the blank above across a round trip.

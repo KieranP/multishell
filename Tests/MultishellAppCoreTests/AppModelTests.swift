@@ -192,6 +192,74 @@ struct AppModelTests {
     #expect(prepared.command?.last == "my-agent; exec /bin/sh -l")
   }
 
+  /// The flags are the user's, so they reach the command line whole, with
+  /// `{{branch}}` standing for the tab's own worktree.
+  @Test func anAgentTabCarriesTheFlagsWithItsPlaceholdersFilledIn() {
+    let h = Harness()
+    h.model.setDefaultShell("/bin/sh")
+    h.model.setPreferredAgent(AgentCatalogue.claudeID)
+    h.model.agentDetection = AgentDetection(found: ["claude": URL(fileURLWithPath: "/bin/claude")])
+    h.model.setAgentFlags("--name={{branch}} --model opus", for: AgentCatalogue.claudeID)
+    let session = TerminalSession(
+      worktreeID: h.feature.id, workingDirectory: h.feature.path, title: "Claude Code",
+      agentID: AgentCatalogue.claudeID)
+
+    #expect(
+      h.model.prepared(session).command?.last
+        == "claude --name=feature --model opus; exec /bin/sh -l"
+    )
+
+    h.model.updateSettings(ProjectSettings(agentFlags: "--model haiku"), for: h.project)
+    #expect(
+      h.model.prepared(session).command?.last == "claude --model haiku; exec /bin/sh -l",
+      "the project's line replaces the global one")
+
+    h.model.updateSettings(ProjectSettings(agentFlags: ""), for: h.project)
+    #expect(
+      h.model.prepared(session).command?.last == "claude; exec /bin/sh -l",
+      "blank runs it bare under a global that passes flags")
+  }
+
+  /// A saved tab that comes back as `claude --continue` is the same tab,
+  /// and the flags said how that tab is meant to run.
+  @Test func aResumedAgentTabIsStartedWithTheFlagsToo() throws {
+    let file = URL(fileURLWithPath: NSTemporaryDirectory())
+      .appendingPathComponent("multishell-agent-flags-\(UUID().uuidString)", isDirectory: true)
+      .appendingPathComponent("state.json")
+    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+    let before = Harness(stateFile: file)
+    before.model.setPreferredAgent(AgentCatalogue.claudeID)
+    before.model.setAgentFlags("--name={{branch}}", for: AgentCatalogue.claudeID)
+    before.model.select(before.main)
+    before.store.openTab(in: before.main.id, title: "Claude Code", agentID: AgentCatalogue.claudeID)
+    before.model.saveNow()
+
+    let (store, _) = WorkspaceStore.restored(from: WorkspaceSnapshot(fileURL: file))
+    let engine = FakeEngine()
+    let after = AppModel(
+      store: store, host: MultiEngineHost(engine: .ghostty) { _ in engine }, worktrees: nil,
+      watcher: FakeWatcher())
+    after.select(before.main)
+
+    let opened = engine.opened.first { store.workspace.session($0.id)?.title == "Claude Code" }
+    #expect(opened?.command?.last?.hasPrefix("claude --continue --name=main; ") == true)
+  }
+
+  @Test func aRenamedWorktreeAndACustomCommandTakePlaceholdersToo() {
+    let h = Harness()
+    h.model.setDefaultShell("/bin/sh")
+    h.model.setPreferredAgent(AgentCatalogue.customID)
+    h.model.setCustomAgentCommand("my-agent --name={{worktree}}")
+    h.model.renameWorktree(h.feature.id, to: "The fix")
+    let session = TerminalSession(
+      worktreeID: h.feature.id, workingDirectory: h.feature.path, title: "Agent",
+      agentID: AgentCatalogue.customID)
+
+    #expect(
+      h.model.prepared(session).command?.last == "my-agent --name='The fix'; exec /bin/sh -l",
+      "quoted where it lands, the custom line being run as text")
+  }
+
   @Test func openInEditorNeedsAnEditorAndACustomOneBecomesATab() throws {
     let h = Harness()
     h.model.presentedError = nil

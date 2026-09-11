@@ -34,6 +34,13 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   /// Agent override by catalogue id. `nil` follows the global choice;
   /// `AgentCatalogue.noneID` opts this project out of it.
   public var preferredAgentID: String?
+  /// Extra arguments the agent is started with here, overriding the global
+  /// line for whichever agent this project runs. `nil` follows the global;
+  /// `""` is the override to no flags at all, the only spelling this field
+  /// has for it. `SharedProjectSettings` has no such key on purpose: a flag
+  /// is an argument to a program, and a repository's file is trusted for
+  /// what is drawn, not for what runs.
+  public var agentFlags: String?
   /// Whether new tabs here start the agent. `nil` follows the global.
   public var autoStartAgent: Bool?
   /// Whether the tab a worktree created here opens starts the agent. `nil`
@@ -94,6 +101,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     linkedPaths: String = "",
     copiedPaths: String = "",
     preferredAgentID: String? = nil,
+    agentFlags: String? = nil,
     autoStartAgent: Bool? = nil,
     autoStartAgentOnCreate: Bool? = nil,
     opensTerminalOnSelect: Bool? = nil,
@@ -115,6 +123,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     self.linkedPaths = linkedPaths
     self.copiedPaths = copiedPaths
     self.preferredAgentID = preferredAgentID
+    self.agentFlags = agentFlags
     self.autoStartAgent = autoStartAgent
     self.autoStartAgentOnCreate = autoStartAgentOnCreate
     self.opensTerminalOnSelect = opensTerminalOnSelect
@@ -139,7 +148,9 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   /// settings form's help offers. `preferredAgentID` and `defaultShell`
   /// have `AgentCatalogue.noneID` and `ShellCatalogue.loginShellID` for it,
   /// and a blank `iconGlyph` draws the same folder `nil` does, so `""`
-  /// there says nothing an absent key does not.
+  /// there says nothing an absent key does not. `agentFlags` is the fourth
+  /// field with no other spelling: blank is how a project runs its agent
+  /// bare under a global that passes flags.
   ///
   /// `SharedProjectSettings` deliberately does the opposite for these same
   /// three, and says why: a `""` someone committed must not read as the team
@@ -166,6 +177,10 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     copiedPaths = try container.decodeIfPresent(String.self, forKey: .copiedPaths) ?? ""
     preferredAgentID = Self.override(
       try container.decodeIfPresent(String.self, forKey: .preferredAgentID))
+    // No `override(_:)`: `""` is this field's only way to say "no flags
+    // here" under a global that has some, as blank is for the three
+    // worktree fields above.
+    agentFlags = try container.decodeIfPresent(String.self, forKey: .agentFlags)
     autoStartAgent = try container.decodeIfPresent(Bool.self, forKey: .autoStartAgent)
     // Absent is "follow the global", not "what `autoStartAgent` says": a
     // nil override is written as an absent key, so seeding it from the

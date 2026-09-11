@@ -28,6 +28,15 @@ extension AppModel {
     Binding(get: { self.workspace[keyPath: keyPath] ?? fallback }, set: write)
   }
 
+  /// One agent's flag line. Not a key path: the stored value is a
+  /// dictionary entry, and an agent with nothing stored reads as blank
+  /// rather than as an absent row.
+  func agentFlagsSetting(for agentID: String) -> Binding<String> {
+    Binding(
+      get: { self.workspace.agentFlags[agentID] ?? "" },
+      set: { self.setAgentFlags($0, for: agentID) })
+  }
+
   /// The same for one project's own settings, which are written as a whole
   /// value. The project is looked up again on every read and write: a
   /// settings window outlives the refresh that replaced the record it was

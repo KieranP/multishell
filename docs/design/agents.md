@@ -169,3 +169,62 @@ there is more. No end arrows, which the tab strip needs because a tab scrolled
 out of sight is one you forget exists; the board has four fixed columns and
 half of one showing says which way the rest are. No line of output on a card:
 neither engine hands scrollback to the core.
+
+## Flags are per agent, placeholders are one list
+
+An agent's flag line is stored against its catalogue id, not as one line for
+whichever agent is chosen. Flags are written for a particular CLI, so a line
+kept across a change of agent, or handed to a project that overrides the agent,
+is a line the other agent will reject. Cost: switching agent and back is two
+lines to fill in, and the settings row shows only the chosen agent's.
+
+Split into words here rather than passed to the shell as text -> a branch with
+a space in it stays one argument, quoted again on the way to the command line.
+Quotes and backslashes group the way a shell reads them, down to a backslash
+inside double quotes guarding only `"`, `\`, `$` and a backtick and standing
+for itself before anything else, so a regex keeps its `\d`. Checked against
+zsh by random lines over letters, spaces and the three quoting characters. A
+quote left open takes the rest of the line, there being nobody to ask; an
+opener that carries nothing, like a trailing backslash, passes no argument at
+all rather than an empty one.
+
+`{{branch}}` and the four beside it are one list, `AgentPlaceholder`. The two
+settings rows name `{{branch}}` as an example and stop there: five of them
+behind an (i) is a reference page in a tooltip, and the documentation is where
+that belongs. So unlike `HookVariable`, the list is not drawn anywhere, and a
+new case has to reach the docs by hand. An unknown placeholder is left as typed
+-> the mistake shows in the tab rather than an argument going missing.
+`{{branch}}` on a detached worktree is the short SHA, never blank: `--name=`
+reads as an error the agent reports, where a wrong name does not.
+
+Appended on resume too. A tab that comes back as `claude --continue` is the
+same tab, and the flags said how that tab is meant to run.
+
+A flag line is not shell text. Splitting it and quoting each word means a
+branch name someone else pushed cannot run anything: `$(...)`, a backtick and a
+`;` all reach the agent as literal characters. Checked against a real zsh by
+random values over quotes, backslashes, `$`, a backtick, `;&|()*~!#`, a space
+and a newline, on both paths: every one arrived as the one argument meant and
+none of them ran. The values are not only branches, which git keeps tame, but a
+worktree name the user typed and paths that are whatever the directories are
+called. The
+same quoting is why `$HOME`, `~` and `*` in a flag line are literal too, which
+is the cost: someone wanting a path there uses `{{project_path}}` or the custom
+command, which is raw shell by definition. In that custom line a placeholder
+the user has already wrapped in quotes (`--name="{{branch}}"`) ends up
+double-quoted, its value carrying the quotes; `EditorCatalogue`'s `{path}` has
+always behaved that way, and the flags field does not, having split the line
+first.
+
+Neither flags field carries prompt text. A greyed `--name={{branch}}` in an
+empty field reads as what the agent is already being started with, and the
+field's whole job is to say what is being passed. The custom command's own
+prompt stays: there a greyed example cannot be mistaken for a command that is
+running, the field being empty meaning no agent starts at all.
+
+The project override is a line, not a table: it overrides whatever agent the
+project runs. Blank is the override to no flags, the only spelling it has for
+that, which makes it the fourth field where `""` is an opinion (see
+settings.md). Nothing in `.multishell.json`: a flag is an argument to a
+program, and a repository's file is trusted for what is drawn, not for what
+runs.

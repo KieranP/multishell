@@ -29,12 +29,23 @@ struct AgentSettingsTab: View {
         if model.workspace.preferredAgentID == AgentCatalogue.customID {
           InfoRow(
             "Command:",
-            info: "Run as typed through your login shell when an agent tab opens."
+            info:
+              "Run as typed through your login shell when an agent tab opens. Placeholders such as {{branch}} are filled in from the worktree."
           ) {
             TextField(
               "Command:",
               text: model.setting(\.customAgentCommand, write: model.setCustomAgentCommand),
               prompt: Text("my-agent --flag"))
+          }
+        } else if let agentID = model.workspace.preferredAgentID, agentID != AgentCatalogue.noneID {
+          InfoRow(
+            "CLI Flags:",
+            info:
+              "Added to the agent's command line every time a tab starts it, resuming included. Quotes group a value with a space in it. Kept per agent, so choosing another agent leaves its own flags. Placeholders such as {{branch}} are filled in from the worktree."
+          ) {
+            // No prompt text: a greyed example in an empty field reads as a
+            // default the agent is already being started with.
+            TextField("CLI Flags:", text: model.agentFlagsSetting(for: agentID))
           }
         }
         InfoToggle(

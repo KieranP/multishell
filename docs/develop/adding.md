@@ -46,6 +46,11 @@ An agent with no hooks at all needs a `.plugin`, as OpenCode has.
 **A variable a hook receives.** A case in `HookVariable`, which both builds
 the environment and draws the Hooks tab's table.
 
+**A placeholder an agent's flags may use.** A case in `AgentPlaceholder` with
+its value, and a line in the documentation: the settings rows name one example
+rather than the list, so nothing in the app tells anyone the new one exists.
+Flags are stored per agent id and split into words by `AgentFlags`.
+
 **A tab strip measurement.** `UIMetrics.tabMinWidth` and `tabMaxWidth` bound
 what a tab is drawn at; `TabStripLayout` divides the strip by them.
 MetricsAndColourTests checks across the font-size range that the floor leaves

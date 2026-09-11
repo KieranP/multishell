@@ -43,6 +43,10 @@ extension AppModel {
     store.setCustomAgentCommand(command)
   }
 
+  public func setAgentFlags(_ flags: String, for id: String) {
+    store.setAgentFlags(flags, for: id)
+  }
+
   public func setAutoStartAgent(_ enabled: Bool) {
     store.setAutoStartAgent(enabled)
   }
@@ -83,17 +87,25 @@ extension AppModel {
     prepared.shell = shellPath(forWorktree: session.worktreeID)
     guard let agentID = session.agentID else { return prepared }
     prepared.command = agentCommand(
-      agentID, resume: restoredSessionIDs.contains(session.id), shell: prepared.shellPath)
+      agentID, resume: restoredSessionIDs.contains(session.id), shell: prepared.shellPath,
+      in: session.worktreeID)
     return prepared
   }
 
   /// `shell` is the tab's shell, the one that takes over when the agent
   /// quits; the agent itself runs through the login shell for its PATH.
-  public func agentCommand(_ id: String, resume: Bool, shell tabShell: String) -> [String]? {
+  /// The worktree is what the flag line's placeholders are resolved
+  /// against, so `--name={{branch}}` says which branch this tab is on.
+  public func agentCommand(
+    _ id: String, resume: Bool, shell tabShell: String, in worktreeID: Worktree.ID
+  ) -> [String]? {
     guard let shell = ShellCommand.shell else { return nil }
     let exec = ShellLaunch.execCommandLine(forShell: tabShell)
+    let values = placeholderValues(in: worktreeID)
     if id == AgentCatalogue.customID {
-      return AgentLaunch.command(customLine: workspace.customAgentCommand, shell: shell, exec: exec)
+      return AgentLaunch.command(
+        customLine: AgentFlags.expand(workspace.customAgentCommand, values: values),
+        shell: shell, exec: exec)
     }
     guard let agent = AgentCatalogue.agent(id) else {
       reportMissingAgentOnce(id, name: id)
@@ -106,7 +118,35 @@ extension AppModel {
       return nil
     }
     guard let arguments = AgentLaunch.arguments(for: agent, resume: resume) else { return nil }
-    return AgentLaunch.command(agent: arguments, shell: shell, exec: exec)
+    let flags = AgentFlags.arguments(agentFlags(id, in: worktreeID), values: values)
+    return AgentLaunch.command(agent: arguments + flags, shell: shell, exec: exec)
+  }
+
+  /// The flag line in force for a worktree's project, or none where the
+  /// worktree's project has gone.
+  private func agentFlags(_ id: String, in worktreeID: Worktree.ID) -> String {
+    guard let project = project(owning: worktreeID) else { return "" }
+    return workspace.agentFlags(for: project, agent: id)
+  }
+
+  /// What `{{branch}}` and the rest stand for in this worktree. Empty where
+  /// the worktree has gone, which leaves every placeholder as typed rather
+  /// than expanding it to nothing.
+  private func placeholderValues(in worktreeID: Worktree.ID) -> [AgentPlaceholder: String] {
+    guard let worktree = workspace.worktree(worktreeID),
+      let project = project(owning: worktreeID)
+    else { return [:] }
+    return AgentPlaceholder.values(
+      project: project, worktree: worktree, name: workspace.displayName(of: worktree))
+  }
+
+  /// The project with its repository's `.multishell.json` layered in, since
+  /// every settings resolution has to be asked of the model.
+  private func project(owning worktreeID: Worktree.ID) -> Project? {
+    guard let worktree = workspace.worktree(worktreeID),
+      let project = workspace.project(worktree.projectID)
+    else { return nil }
+    return resolved(project)
   }
 
   /// Once per agent per run, like an unreachable project: every relaunch of

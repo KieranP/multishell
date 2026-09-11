@@ -35,6 +35,12 @@ public struct Workspace: Codable, Hashable, Sendable {
   public var preferredAgentID: String?
   /// What `AgentCatalogue.customID` runs, as the user typed it.
   public var customAgentCommand = ""
+  /// Extra arguments each agent is started with, by catalogue id, as the
+  /// user typed them; see `AgentFlags`. Kept per agent rather than as one
+  /// line, so flags written for one agent are not handed to another when
+  /// the choice changes or a project overrides it. Projects may override
+  /// the line in `ProjectSettings`.
+  public var agentFlags: [String: String] = [:]
   /// New Tab, and the first tab of a worktree turned to, start the
   /// preferred agent rather than a plain shell. Projects may override it.
   public var autoStartAgent = false
@@ -121,6 +127,7 @@ public struct Workspace: Codable, Hashable, Sendable {
     preferredAgentID = try container.decodeIfPresent(String.self, forKey: .preferredAgentID)
     customAgentCommand =
       try container.decodeIfPresent(String.self, forKey: .customAgentCommand) ?? ""
+    agentFlags = try container.decodeIfPresent([String: String].self, forKey: .agentFlags) ?? [:]
     autoStartAgent = try container.decodeIfPresent(Bool.self, forKey: .autoStartAgent) ?? false
     // State from before the two were split says one thing about both.
     autoStartAgentOnCreate =
@@ -320,6 +327,14 @@ extension Workspace {
   public func preferredAgentID(for project: Project) -> String? {
     AgentCatalogue.effectiveID(
       global: preferredAgentID, override: project.settings.preferredAgentID)
+  }
+
+  /// The extra arguments this project's agent is started with: the
+  /// project's line when it overrides, else the global one for that agent.
+  /// A blank override is the way a project says "none here" under a global
+  /// that has flags; see `ProjectSettings.agentFlags`.
+  public func agentFlags(for project: Project, agent id: String) -> String {
+    project.settings.agentFlags ?? agentFlags[id] ?? ""
   }
 
   /// Whether a new tab in this project starts its agent: the project's say

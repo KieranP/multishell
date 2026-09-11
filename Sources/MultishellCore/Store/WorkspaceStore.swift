@@ -528,6 +528,16 @@ extension WorkspaceStore {
     workspace.customAgentCommand = command
   }
 
+  /// An empty line removes the entry rather than storing one: the
+  /// dictionary is keyed by catalogue id, and an agent the user tried and
+  /// cleared would otherwise sit in the state file for good. Emptiness is
+  /// the test, not blankness: a field bound to this is written on every
+  /// keystroke, and trimming would swallow the space between two flags as
+  /// it was typed.
+  public func setAgentFlags(_ flags: String, for id: String) {
+    workspace.agentFlags[id] = flags.isEmpty ? nil : flags
+  }
+
   public func setAutoStartAgent(_ enabled: Bool) {
     workspace.autoStartAgent = enabled
   }
