@@ -7,11 +7,22 @@ import MultishellCore
 /// libghostty owns the pty, the renderer and the config, so this type is
 /// thin: it creates surfaces, routes their callbacks back to the core, and
 /// translates a `Theme` into ghostty config.
+///
+/// Config is three layers: this app's terminal defaults, then the user's own
+/// Ghostty config over them, then the theme over both. See
+/// `GhosttyUserConfig`, which also settles what libghostty will not take.
 @MainActor
 final class GhosttyTerminalHost: NSObject, TerminalHost {
   weak var delegate: (any TerminalHostDelegate)?
 
-  private let controller = TerminalController()
+  private let controller: TerminalController
+
+  override init() {
+    let base = GhosttyUserConfig.base()
+    controller = TerminalController(configSource: .generated(base))
+    super.init()
+    GhosttyUserConfig.repair(controller, base: base)
+  }
 
   /// `MULTISHELL_TERMINAL_DEBUG=1` makes libghostty's wrapper report what it
   /// hands the surface — keys, mouse, and whether the surface consumed each
@@ -117,8 +128,6 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
         builder.withFontFamily(name)
       }
       builder.withFontSize(Float(appearance.fontSize))
-      builder.withWindowPaddingX(8)
-      builder.withWindowPaddingY(6)
 
       // Ghostty's defaults bind the app's shortcuts (super+t, super+w,
       // super+d, ctrl+tab, ...) to actions this embedding cannot

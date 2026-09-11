@@ -82,3 +82,59 @@ launch, with an eight second limit past which a poorer PATH beats empty
 dropdowns. Auto-start opens the agent where a shell would have, held back until
 the post-create hook ends. New Shell Tab always opens a shell, so one stays
 reachable.
+
+## A user's Ghostty config is the middle of three layers
+
+This app's terminal defaults first, the user's Ghostty config over them, the
+theme over both. So the file decides font family, cursor, scrollback, padding
+and the rest, and cannot decide the colours the chrome is painted to match or
+the font size a settings row owns. Keybinds arrive as written, less the app's
+own combinations, unbound by name as before -> a binding the user puts over a
+menu item is theirs. Both the places Ghostty reads on a Mac,
+`~/.config/ghostty/config` then the app-support file, which is the one
+Ghostty writes and so has the later word. `XDG_CONFIG_HOME` is not read, an
+app Finder launched not being given it. Read once, when the first Ghostty tab
+creates the host. SwiftTerm reads none of it.
+
+## A line libghostty refuses costs that line, not the file
+
+libghostty answers one complaint by refusing the whole config and falling
+back to its own defaults, where Ghostty names the line, skips it and carries
+on. So the app does what Ghostty does: the lines a diagnostic names are
+blanked and the rest offered again, three passes, then the app's defaults if
+it is still refused. Line numbers are read out of the diagnostic text, which
+is all there is -> a wrapper that words them differently costs the repair and
+not the terminal. This is not a corner: libghostty here is not the build of
+Ghostty a user runs, and the two differ in both directions. It has the newer
+`scrollback-limit-bytes` and the older `scrollback-limit` both, and does not
+have `copy-on-select = none`, which a current Ghostty writes.
+
+## A user's config is read through a list of what is allowed
+
+Not a list of what to refuse. The keys worth refusing are the ones about what
+runs and what a window is, and those are the keys a Ghostty release is
+likeliest to add another of -> a refusal list is one release behind, an
+allowance list is only ever missing a nicety. 117 of Ghostty 1.3.2's 207 keys
+are let through: whole families that can only draw or drive a surface
+(`font-`, `adjust-`, `cursor-`, `mouse-`, `selection-`, `palette`,
+`clipboard-`, `background`, `scrollback-`, `search-`, `bell-`, `link`,
+`resize-overlay`, `window-padding-`) and thirty named one at a time, of which
+`macos-option-as-alt` is the only `macos-` key a surface reads.
+
+A family also carries a rename: `scrollback-limit` became
+`scrollback-limit-bytes`, and the family keeps both whichever build is
+pinned. What is left out is chrome that does nothing in an embedding
+(`window-`, `macos-`, `gtk-`, `quick-terminal-`, the app's own lifecycle) and
+these, which would take a decision the app has already made: `command`,
+`initial-command` and `input` reach the child, the first two in place of the
+session's shell and the third typed into it; `working-directory` is the
+worktree; `title` is the name a tab reads from escape sequences;
+`shell-integration` is the prompt marks click-to-move and a command's exit
+code come from; `wait-after-command` holds a surface open after its shell has
+gone. `env` is left out too, the app giving each child the variables that
+name its session. `theme` is left out because this embedding ships no themes
+directory, so it is the one complaint carrying no line number for the repair
+above to place, and the app paints its own theme here anyway.
+
+Cost: a key we have not thought about is ignored in silence, and nothing in
+the app says which lines of a user's file did not count.

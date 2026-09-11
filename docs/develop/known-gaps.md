@@ -58,11 +58,27 @@ does.
 
 - Ghostty engine's path untested, its zsh chain checked only against a
   stand-in bootstrap. Click-to-move works there and nowhere else, and not on
-  the later lines of a multi-line buffer. Whether the embedding reads
-  `~/.config/ghostty` is unverified either way: nothing here passes a config
-  path, and `GhosttyTerminalHost` sets colours, font and keybinds through
-  `setTheme`, so a user's own config arrives from libghostty or not at all.
-  If it does load, its keybinds are the ones this build unbinds by name.
+  the later lines of a multi-line buffer.
+- The user's Ghostty config is read and handed to libghostty as the base
+  config, but only the text that is sent has been tested, and against
+  libghostty rather than a surface: whether a font, keybind or cursor from it
+  changes what is on screen is unseen. What was checked is that libghostty
+  accepts it, every key of a Ghostty 1.3.2 default config having been offered
+  to the pinned build one line at a time. Three limits. Nothing tells a user
+  which of their lines did not count, and there are two ways for a line to go
+  quietly now: a key outside `GhosttyUserConfig`'s allowed list, and a line
+  `repair` dropped because libghostty complained. Fix = the dropped lines
+  named in Settings, where a theme file that will not parse is already
+  reported. The files are read once, when the engine's host is created, so an
+  edit lands at the next launch and nothing says that either. And a
+  `config-file` line is not followed: the wrapper loads with
+  `ghostty_config_load_file` and never calls
+  `ghostty_config_load_recursive_files`, which is the call that expands one,
+  so a user who splits their config keeps the two files read here and loses
+  every part those include; the key is not on the allowed list either, which
+  at least keeps it out of the text libghostty is handed.
+  Any other relative path in the file resolves from the temporary directory
+  the effective config is written to rather than from the file's own.
 - Linux never compiled, locally or in CI.
 - Notifications settings page never seen on screen: the toggles, the caption
   under them, the six-tab band in a 560pt window. SettingsPageSizeTests holds
