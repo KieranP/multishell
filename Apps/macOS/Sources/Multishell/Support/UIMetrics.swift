@@ -43,9 +43,10 @@ struct UIMetrics {
   var tabArrowWidth: Double { (body * 1.7).rounded() }
   var indent: Double { (body * 2).rounded() }
 
-  /// The narrowest a board column is drawn. Below this a card's top row —
-  /// the dot, the occupant's name and the time in state — runs into itself,
-  /// and the board scrolls sideways instead; see `AgentBoardLayout`.
+  /// The narrowest a board column is drawn. Below this a card's two split
+  /// rows run into themselves: the dot, the occupant's name and the time in
+  /// state above, the project, the worktree and the git badge below. The
+  /// board scrolls sideways instead; see `AgentBoardLayout`.
   var boardColumnMinWidth: Double { (body * 16).rounded() }
   /// Between two board columns, and round the lot of them. Both are taken
   /// off the room before a column width is asked for, so nothing measures

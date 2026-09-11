@@ -60,7 +60,14 @@ public struct AgentBoardCard: Identifiable, Equatable, Sendable {
   }
 
   /// How long it has been in its column, spelled for the card's corner.
+  ///
+  /// `now` is the board's held clock and lags by up to its tick, so a pane
+  /// that entered its column since the last one has a `since` in the future.
+  /// Clamped rather than passed on: `ElapsedText` reads a negative interval
+  /// as a clock moved backwards and gives nothing back, which would blank
+  /// the corner of the one card that just changed until the next tick.
   public func elapsed(at now: Date) -> String? {
-    ElapsedText.short(since: since, now: now)
+    guard let since else { return nil }
+    return ElapsedText.short(since: since, now: max(now, since))
   }
 }

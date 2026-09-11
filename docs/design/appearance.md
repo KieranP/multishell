@@ -58,3 +58,13 @@ opacity is not something both engines honour the same way. Hit testing off, so
 a click still reaches the terminal and focuses it, which is what undims it.
 Cost: a light theme fades towards white, a wash rather than a dimming, and a
 theme that turns both off has nothing left to say where the keyboard is.
+
+A card's tab title is one line, truncated, and the git badge sits on the right
+of the line naming the worktree rather than on a line below it. Both are so
+that the card's own lines are a fixed four: what a card said about itself used
+to be buried under a title that had taken a second line and a badge that had
+taken a fifth, and the eye could not find it twice in the same place. The
+message block below them is still one to three lines and still optional, so
+cards are not all one height; that block is the occupant's words and is the
+one thing on the card worth the room. Cost: a long command is cut off, where
+two lines used to show it.

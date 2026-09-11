@@ -55,15 +55,17 @@ What is unverified or unbuilt, with the fallback where there is one.
   and forth across one boundary, the tab landing under the pointer being what
   stops that.
 - Agents board drawing unverified on screen: whether a card reads at the 208pt
-  column floor, whether a partial column at the edge reads as "more this way"
-  without the arrows a tab strip has, whether a vertical scroll per column
-  nested in the board's horizontal one feels right to a trackpad, whether the
-  Dock badge appears at all under this build's signing. If the partial column
-  does not read, fallback = the tab strip's: an arrow in a gutter at each end
-  that has cards past it, from `TabStripLayout.Edges`. Two known divergences
-  from the mockup: columns are full height rather than hugging their cards,
-  which is what lets each scroll on its own; and the View menu item's position
-  within that menu is AppKit's to decide, being added to the standard group.
+  column floor, where the worktree name and the git badge now share a line and
+  the name is what gives way, whether a partial column at the edge reads as
+  "more this way" without the arrows a tab strip has, whether a vertical
+  scroll per column nested in the board's horizontal one feels right to a
+  trackpad, whether the Dock badge appears at all under this build's signing.
+  If the partial column does not read, fallback = the tab strip's: an arrow in
+  a gutter at each end that has cards past it, from `TabStripLayout.Edges`.
+  Two known divergences from the mockup: columns are full height rather than
+  hugging their cards, which is what lets each scroll on its own; and the View
+  menu item's position within that menu is AppKit's to decide, being added to
+  the standard group.
 - While the Agents board is up, what acts on a pane does nothing, but Open in
   Editor and New Worktree still act on the selected worktree, and no sidebar
   row draws as selected then, so those two have nothing on screen naming their

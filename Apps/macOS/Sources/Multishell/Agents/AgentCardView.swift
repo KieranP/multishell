@@ -24,14 +24,10 @@ struct AgentCardView: View {
       Text(card.title)
         .font(.system(size: metrics.secondary))
         .foregroundStyle(theme.textPrimary)
-        .lineLimit(2)
-        .fixedSize(horizontal: false, vertical: true)
+        .lineLimit(1)
       place
       if let message = card.message {
         AgentCardMessage(text: message, theme: theme, metrics: metrics)
-      }
-      if let status = card.status, !status.isClean {
-        AgentCardChanges(status: status, theme: theme, metrics: metrics)
       }
     }
     .padding(.horizontal, 9)
@@ -79,6 +75,11 @@ struct AgentCardView: View {
     }
   }
 
+  /// Where the pane is, and on the same line's right edge what git makes of
+  /// it. The badge rides here rather than on a line of its own so the card
+  /// has one right-hand rail, the time above it and the counts below; a
+  /// clean worktree leaves the line as it was. The name gives way first when
+  /// the column is narrow, the badge being a few fixed characters.
   private var place: some View {
     HStack(spacing: 4) {
       Text(card.projectName)
@@ -92,6 +93,11 @@ struct AgentCardView: View {
         .foregroundStyle(theme.ansiRGB[6].color)
         .lineLimit(1)
         .truncationMode(.middle)
+      if let status = card.status, !status.isClean {
+        Spacer(minLength: 6)
+        AgentCardChanges(status: status, theme: theme, metrics: metrics)
+          .fixedSize()
+      }
     }
     .font(.system(size: metrics.badge))
   }

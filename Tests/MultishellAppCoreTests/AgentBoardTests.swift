@@ -128,6 +128,12 @@ struct AgentBoardTests {
     #expect(card("Codex").elapsed(at: start) == nil)
   }
 
+  /// The board's clock lags by up to a tick, so a pane that has just entered
+  /// its column is younger than the `now` the cards are drawn against.
+  @Test func aCardThatEnteredItsColumnSinceTheLastTickReadsZeroRatherThanNothing() {
+    #expect(card("Claude Code", state: .running, secondsAgo: -8).elapsed(at: start) == "0s")
+  }
+
   @Test func everyLaneHasAColumnEvenWithNothingInIt() {
     let board = AgentBoard(cards: [], showsShells: true)
     #expect(board.columns.map(\.lane) == AgentBoardLane.allCases)

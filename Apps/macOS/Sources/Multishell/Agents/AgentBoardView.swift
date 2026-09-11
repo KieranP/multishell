@@ -17,6 +17,17 @@ struct AgentBoardView: View {
   /// redraw the board for nothing.
   private static let tick: TimeInterval = 10
 
+  /// The clock the cards read, held rather than taken from a `TimelineView`,
+  /// which stood still. The board's body reads the titles, states and
+  /// statuses of panes that keep running behind it, so it is re-evaluated
+  /// several times a second, and the likely cause is that each of those
+  /// rebuilt the schedule from a later `.now`; that part is reasoning, not
+  /// something anyone watched. What was watched, through a temporary log in
+  /// this task, is that a held clock ticks on time and starts once, so no
+  /// identity churn restarts it. Writing this invalidates the view whatever
+  /// the body does, which is why it does not rest on the diagnosis.
+  @State private var now = Date()
+
   var body: some View {
     let metrics = model.metrics
     let board = model.agentBoard
@@ -31,31 +42,36 @@ struct AgentBoardView: View {
       }
     }
     .background(theme.backgroundColor)
+    .task {
+      while !Task.isCancelled {
+        try? await Task.sleep(for: .seconds(Self.tick))
+        guard !Task.isCancelled else { return }
+        now = Date()
+      }
+    }
   }
 
   private func scrollingColumns(_ board: AgentBoard, metrics: UIMetrics) -> some View {
-    TimelineView(.periodic(from: .now, by: Self.tick)) { timeline in
-      GeometryReader { proxy in
-        let layout = layout(
-          forWidth: proxy.size.width, count: board.columns.count, metrics: metrics)
-        ScrollView(.horizontal, showsIndicators: layout.scrolls) {
-          HStack(alignment: .top, spacing: metrics.boardGap) {
-            ForEach(board.columns) { column in
-              AgentBoardColumnView(
-                model: model,
-                column: column,
-                width: layout.columnWidth,
-                now: timeline.date,
-                theme: theme,
-                metrics: metrics)
-            }
+    GeometryReader { proxy in
+      let layout = layout(
+        forWidth: proxy.size.width, count: board.columns.count, metrics: metrics)
+      ScrollView(.horizontal, showsIndicators: layout.scrolls) {
+        HStack(alignment: .top, spacing: metrics.boardGap) {
+          ForEach(board.columns) { column in
+            AgentBoardColumnView(
+              model: model,
+              column: column,
+              width: layout.columnWidth,
+              now: now,
+              theme: theme,
+              metrics: metrics)
           }
-          .padding(metrics.boardPadding)
-          .frame(minWidth: layout.scrolls ? nil : proxy.size.width, alignment: .leading)
-          .frame(height: proxy.size.height, alignment: .top)
         }
-        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+        .padding(metrics.boardPadding)
+        .frame(minWidth: layout.scrolls ? nil : proxy.size.width, alignment: .leading)
+        .frame(height: proxy.size.height, alignment: .top)
       }
+      .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
     }
   }
 
