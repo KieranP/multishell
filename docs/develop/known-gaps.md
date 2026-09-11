@@ -167,3 +167,37 @@ does.
   project's Agent tab. The value they write and the command line it builds are
   tested; the rows' width, and how an empty one reads with no prompt text in
   it, are not.
+- Claude's fourteen notification types were read out of the 2.1.268 binary's
+  own list, not watched arriving on the hook, and which five ask a person
+  something was decided from their names. What was checked is the helper's
+  end: synthetic payloads through the built helper report `attention` for
+  `permission_prompt`, `worker_permission_prompt` and a payload naming no
+  type, and send nothing for `idle_prompt`, `agent_completed`, `auth_success`
+  and `quota_auto_resume_fired`. So a question type Claude adds or renames
+  later falls out of the list and nothing says so: no blue dot, no banner.
+  Fallback = `PermissionRequest` still moves the dot for a tool permission,
+  leaving only a question that is not one, an MCP elicitation or a worker's
+  prompt. Fix if that bites = take the types this does not know as questions
+  and name the announcing ones instead, which is the trade the other way.
+- Which type raised the banner that prompted the narrowing is unestablished.
+  It followed the turn's Done by about ten seconds, and Claude's idle prompt
+  is its own timer of sixty seconds from the turn ending
+  (`messageIdleNotifThresholdMs`, unset in this user's config), so it was
+  more likely a teammate's `agent_completed`. Both are dropped either way.
+- Neither half of the banner grouping has been seen on screen, both being
+  UserNotifications behaviour a headless test cannot reach. Unverified: that
+  re-adding a request under a delivered notification's identifier replaces
+  its row and alerts again rather than being dropped as a duplicate, and that
+  `removeDeliveredNotifications` takes down a banner still on screen rather
+  than only its row in Notification Centre. If the second turns out to only
+  clear the Centre, a stale "Waiting for input" still sits on screen for its
+  few seconds after the user has reached the pane, and there is no API for
+  that; the row behind it is the part that would have lingered for hours.
+  What is tested is the model's half: which key is posted about, which is
+  taken back, that a key is taken back once rather than on every report
+  after, that being away from the app is not being shown the banner, and
+  that closing a tab takes its banner with it.
+  One hole left in the notifier: a withdrawal between the moment a waiting
+  request is taken out of `pendingAdds` and the `add` that follows it lands
+  a banner nothing will retract. Microseconds wide, and only on the path
+  where the permission dialog has not been answered yet.

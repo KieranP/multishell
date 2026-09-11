@@ -105,6 +105,9 @@ public final class AppModel<Surface> {
   /// an agent's pane from a plain shell. Runtime state, like the titles
   /// above, and observed because a card is drawn from it.
   public internal(set) var reportedAgents: [TerminalSession.ID: ReportedAgent] = [:]
+  /// Keys whose banner may still be on screen, so one is taken back only
+  /// where there is one to take back. A key leaves as its banner does.
+  @ObservationIgnored var notifiedKeys: Set<SessionStates.Key> = []
   /// Worktrees whose saved tabs have been given live shells. Empty at launch,
   /// so relaunching with many saved tabs starts nothing; grows as worktrees
   /// are visited and never shrinks while the app runs.
@@ -229,6 +232,9 @@ public final class AppModel<Surface> {
     platform.onDidBecomeActive = { [weak self] in
       Task { await self?.refreshAll() }
       self?.refreshNotificationAuthorization()
+      // Coming back is seeing what is on screen: a Done raised while the
+      // user was elsewhere clears now, and its banner goes with it.
+      self?.markShownTabSeen()
     }
 
     registry.onActivity = { [weak self] id in self?.noteActivity(in: id) }

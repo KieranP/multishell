@@ -15,6 +15,14 @@ final class UserNotificationNotifier: NSObject, SessionNotifier {
   private let center: UNUserNotificationCenter?
   /// The last answer, so a settled permission costs no hop before posting.
   private var known = NotificationAuthorization.notAsked
+  /// The request each identifier is waiting to add once the permission
+  /// dialog is answered. A banner is taken back by removing it from the
+  /// centre, which does nothing to one not added yet, so a withdrawal drops
+  /// the entry and the waiting task finds it gone and adds nothing. Keyed
+  /// by identifier and holding the newest, so a pane reporting twice while
+  /// the dialog is up shows what it last said rather than what it said
+  /// first. An entry lives only while its task does.
+  private var pendingAdds: [String: UNNotificationRequest] = [:]
 
   override init() {
     center = Bundle.main.bundleIdentifier == nil ? nil : UNUserNotificationCenter.current()
@@ -22,6 +30,10 @@ final class UserNotificationNotifier: NSObject, SessionNotifier {
     center?.delegate = self
   }
 
+  /// One live banner per pane: the request carries the key as its
+  /// identifier, so a second report about the same terminal replaces the
+  /// first rather than stacking beside it. A pane's dot holds one state, and
+  /// its row in Notification Centre now says that same one.
   func notify(title: String, body: String, about key: SessionStates.Key) {
     guard let center else { return }
     let content = UNMutableNotificationContent()
@@ -29,16 +41,28 @@ final class UserNotificationNotifier: NSObject, SessionNotifier {
     content.body = body
     content.sound = .default
     content.userInfo = Self.userInfo(for: key)
+    let identifier = Self.identifier(for: key)
     let request = UNNotificationRequest(
-      identifier: UUID().uuidString, content: content, trigger: nil)
+      identifier: identifier, content: content, trigger: nil)
     if known == .allowed {
       center.add(request)
       return
     }
+    let waiting = pendingAdds.updateValue(request, forKey: identifier) != nil
+    // One task per identifier: a second report while the first waits
+    // replaces what that task will add rather than queueing behind it.
+    guard !waiting else { return }
     Task {
-      guard await requestAuthorization() == .allowed else { return }
-      try? await center.add(request)
+      let allowed = await requestAuthorization() == .allowed
+      guard let latest = pendingAdds.removeValue(forKey: identifier), allowed else { return }
+      try? await center.add(latest)
     }
+  }
+
+  func withdraw(about key: SessionStates.Key) {
+    let identifier = Self.identifier(for: key)
+    pendingAdds.removeValue(forKey: identifier)
+    center?.removeDeliveredNotifications(withIdentifiers: [identifier])
   }
 
   func authorization() async -> NotificationAuthorization {
@@ -63,6 +87,16 @@ final class UserNotificationNotifier: NSObject, SessionNotifier {
     case .notDetermined: .notAsked
     case .denied: .refused
     default: .allowed
+    }
+  }
+
+  /// Stable for the life of a pane, and distinct across the two kinds of
+  /// key: a worktree's id is a path, which no UUID can collide with, but the
+  /// prefix says which is meant without relying on that.
+  nonisolated static func identifier(for key: SessionStates.Key) -> String {
+    switch key {
+    case .session(let id): "session:\(id.uuidString)"
+    case .worktree(let id): "worktree:\(id)"
     }
   }
 

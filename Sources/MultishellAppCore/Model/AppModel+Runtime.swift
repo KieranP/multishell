@@ -21,17 +21,29 @@ extension AppModel {
     markShownTabSeen()
   }
 
-  /// Done clears for what is on screen: the panes of every column's active
-  /// tab, and the selected worktree's own entry.
+  /// What has now been seen: the panes of every column's active tab, and
+  /// the selected worktree's own entry. Done clears, and the banners go.
   ///
-  /// Nothing is on screen while the Agents board covers the detail area, and
-  /// this runs from every `sync` and from a shell exiting. Without the guard
-  /// an unrelated shell closing would clear the Done of a pane the user has
-  /// not looked at, and its card would jump from Done to Idle under them.
+  /// Two guards, and the same pair `hasBeenSeen` applies to a report as it
+  /// arrives. Nothing is on screen while the Agents board covers the detail
+  /// area; without that one an unrelated shell closing would clear the Done
+  /// of a pane the user has not looked at, and its card would jump from Done
+  /// to Idle under them. Nothing has been seen while the app is behind
+  /// another either, and this runs from every `sync` and from a shell
+  /// exiting, both of which happen while the user is elsewhere; without that
+  /// one a shell ending in some other worktree would clear the dot and
+  /// retract the banner for the pane they were away from.
+  ///
+  /// So coming back to the app is itself a reason to run this, and the
+  /// banners go further than `markSeen`: a Waiting state survives being
+  /// seen, its question still standing, and only its banner is spent.
   func markShownTabSeen() {
-    guard !showsAgentBoard, let worktree = workspace.selectedWorktreeID else { return }
+    guard platform.isActive, !showsAgentBoard, let worktree = workspace.selectedWorktreeID
+    else { return }
     let shown = workspace.shownTabs(in: worktree).flatMap(\.sessionIDs)
     mutateStates { $0.markSeen(sessions: shown, worktree: worktree) }
+    for id in shown { withdrawNotification(about: .session(id)) }
+    withdrawNotification(about: .worktree(worktree))
   }
 
   public func report(_ error: any Error) {
@@ -119,7 +131,7 @@ extension AppModel {
     if let session = workspace.session(id) {
       scheduleStatusRefresh(of: session.worktreeID)
     }
-    mutateStates { $0.noteActivity(in: id, isShown: isShown(id)) }
+    mutateStates { $0.noteActivity(in: id, isSeen: hasBeenSeen(id)) }
   }
 
   /// One command at a prompt raises several events in a row (title before,

@@ -44,7 +44,7 @@ day it is called again it would report a prompt the bus already reported. Cost:
 JavaScript in the user's agent, so it spawns, unrefs and swallows everything,
 and it is the one integration whose contract we do not control from a payload.
 
-Three events narrowed, "the agent raised a notification" not being "the agent
+Four events narrowed, "the agent raised a notification" not being "the agent
 is waiting":
 - Copilot raises one when a background shell finishes as much as when it needs
   an answer -> ours asks for the two types that are questions, file filters.
@@ -54,6 +54,15 @@ is waiting":
   mode we have not heard of is taken to stop.
 - Claude's request is the same shape, narrowed the same way, its classifier
   mode being one more that answers without the user.
+- Claude's notification carries fourteen types on one event and most announce
+  rather than ask: a login done, a quota resumed, and the idle prompt a minute
+  after a turn ends, which landed as "Waiting for input" on top of the Done
+  that turn's Stop had just reported -> counts as waiting for the five types
+  that ask a person something. Sorted from the payload's `notification_type`,
+  not the matcher the event does take: a matcher is written into the settings
+  file, so it would reach only the installs made after the build that adds it,
+  and a Claude old enough to send no type would match none of them and lose
+  the banner. A type we have not heard of is taken to ask.
 - Gemini needed neither: its Notification has one type, a tool permission.
 
 Claude asked for that request beside its notification, not instead: the
@@ -72,7 +81,7 @@ Without that, one prompt meant two banners six seconds apart. `silent` is the
 general form: move a dot where another report about the same thing will do the
 talking.
 
-Nothing reports the answer -> dot stays amber until the next tool call or the
+Nothing reports the answer -> dot stays blue until the next tool call or the
 end of the turn: an approved call taking two minutes holds it two minutes, a
 prompt escaped holds it until the next prompt. `PermissionDenied` is not the
 missing half, whatever the name suggests: it fires for one thing only, a call
@@ -130,9 +139,11 @@ other case: an agent whose process has gone leaves a plain shell behind, which
 the filter hides.
 
 Failed waits with Waiting, not in Done: a failure wants the user, which is what
-that column means, and it leaves Done meaning one thing. Cost: two clearing
-rules in one column, a question clearing only when its agent says so, a failure
-when its tab is shown.
+that column means, and it leaves Done meaning one thing. One rule about being seen in
+that column now, where a glance used to clear the failure and not the
+question and the cards sat under two for no reason either could state. They
+still part on a dead process: a question was a claim about that process and
+goes with it, a failure outlived the thing that failed and stays.
 
 The filter is the one control and decides membership alone: a shell it lets in
 lands where its state says, exactly as an agent does, the zsh and bash

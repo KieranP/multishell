@@ -8,8 +8,18 @@ Newest at the bottom.
 Neither engine can say a command is running -> engine activity means only what
 Terminal.app's dot means, something happened here. Working and Waiting come
 from reports alone. Exit code above 128 = a signal, usually Ctrl+C, not a
-failure. Done and Failed are about the user -> showing the tab clears them.
-Working and Waiting are about the process -> they stay while the user looks.
+failure. Done is about the user -> being seen clears it, which is the tab on screen
+and the app in front, one notion shared with the banner so the dot and the
+notification cannot disagree about whether anyone looked; a pane can be the
+shown one for hours with the window behind another app. Working and Waiting
+are about the process -> they stay while the user looks. Failed takes half
+of each: a failure is something to act on and a glance is not acting -> it
+survives being seen as Working and Waiting do, and survives the process
+dying as Done does, the thing that failed being gone by definition. Red
+until the source reports again or the user clears it by hand. Cost: a
+failure nobody deals with holds its dot until the shell is closed, which is
+the point. The banner goes on the look either way, an interruption being
+spent once it has interrupted.
 Ctrl+C sends no Stop -> reports carry a pid the app watches. No timeout, a long
 task not being a stale one. Cost: Cmd+W on a Working pane asks first.
 

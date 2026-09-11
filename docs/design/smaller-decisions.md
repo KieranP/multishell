@@ -73,3 +73,25 @@ Newest at the bottom.
 - New Worktree always opens, even with nothing selected, and its decisions are a
   tested value because a cancelled branch load once re-enabled Create against
   the wrong project. Its branch picker offers local branches only.
+- One banner per pane, replaced rather than added to: a request carries the
+  state key as its notification identifier, so a terminal holds one row in
+  Notification Centre saying what its dot says. Stacking four reports about
+  one pane described the same pane four times, three of them wrong by the
+  time they were read. The `identifier` and not `threadIdentifier`, which
+  groups rows without retiring stale ones. A banner is also taken back when
+  what it said stops being true, which is either the key's state moving on
+  or the user reaching the pane: Waiting survives being looked at, its
+  question still standing, but the interruption has been answered by the
+  arrival. Reaching it is `isSeen`, the pane on screen and the app in front,
+  which is now the only notion of seen there is: `shouldNotify` took a
+  shown flag and an active flag and the state rules took the shown one
+  alone, so a turn ending in the shown pane while the user was in another
+  app raised a banner and cleared the dot in the same breath, each of them
+  right by its own rule. One flag, computed once per report. Coming back to
+  the app is therefore a look, alongside selecting, activating and closing
+  the board, and a shell exiting while the user is elsewhere is not. Only
+  Done clears on the look: Failed keeps its dot, so the banner and the dot
+  say different things about one pane on purpose, the interruption spent and
+  the thing to deal with still there. The model keeps the keys it has posted about so nothing is taken
+  back that was never there. Cost: a Done nobody looked at disappears when
+  the next state lands, the dot being the thing that persists.

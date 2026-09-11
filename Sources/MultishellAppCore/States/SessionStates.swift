@@ -6,10 +6,19 @@ import MultishellCore
 ///
 /// Runtime only, beside the live sessions; a prompt must not save or
 /// re-render the workspace. Done is about the user and clears when the tab
-/// is shown. Working and Waiting are about the process: they stay while the
-/// user looks, and clear when the source reports again, the process is gone,
-/// or the user clears them by hand. Pure, so the rules are tested without a
-/// view or an engine.
+/// has been seen. Working and Waiting are about the process: they stay while
+/// the user looks, and clear when the source reports again, the process is
+/// gone, or the user clears them by hand. Failed takes the look half of that
+/// and not the process half: a failure is something to act on and a glance
+/// is not acting, but it has outlived the thing that failed, so only a new
+/// report or the user's own clear takes it. Pure, so the rules are tested
+/// without a view or an engine.
+///
+/// Seen is one notion throughout, and the same one a banner is raised
+/// against: the pane on screen and the app frontmost. On screen alone is not
+/// it, a pane being the shown one while the user is in another app entirely,
+/// and it is `NotificationPolicy` that would then disagree, saying they had
+/// not seen the very thing this had just cleared.
 public struct SessionStates: Equatable, Sendable {
   public enum Key: Hashable, Sendable {
     case session(TerminalSession.ID)
@@ -35,17 +44,18 @@ public struct SessionStates: Equatable, Sendable {
 
   // MARK: - Sources
 
-  /// A report over the channel. `isShown` means the user is looking at the
-  /// tab, or at the worktree for a worktree-level report.
+  /// A report over the channel. `isSeen` means the user is looking at the
+  /// tab, or at the worktree for a worktree-level report, with the app in
+  /// front of them.
   public mutating func report(
     _ state: SessionState, pid: Int32?, message: String? = nil, duration: Double? = nil,
-    for key: Key, isShown: Bool
+    for key: Key, isSeen: Bool
   ) {
     switch state {
     case .idle:
       clear(key)
     case .done, .error:
-      states[key] = isShown ? nil : state
+      states[key] = isSeen && state.clearsWhenSeen ? nil : state
       pids[key] = nil
     case .running, .attention:
       states[key] = state
@@ -61,9 +71,9 @@ public struct SessionStates: Equatable, Sendable {
   /// A bell or a title from the engine: something happened, not what. It
   /// never downgrades a state the occupant reported; an agent retitles the
   /// tab on every step while it works.
-  public mutating func noteActivity(in id: TerminalSession.ID, isShown: Bool) {
+  public mutating func noteActivity(in id: TerminalSession.ID, isSeen: Bool) {
     let key = Key.session(id)
-    guard states[key] == nil, !isShown else { return }
+    guard states[key] == nil, !isSeen else { return }
     states[key] = .done
   }
 
@@ -72,16 +82,16 @@ public struct SessionStates: Equatable, Sendable {
   /// A non-zero exit is Failed, and a failure is not covered by an earlier
   /// Done the user has not seen yet.
   public mutating func noteCommandFinished(
-    in id: TerminalSession.ID, exitCode: Int32?, isShown: Bool
+    in id: TerminalSession.ID, exitCode: Int32?, isSeen: Bool
   ) {
     let key = Key.session(id)
     let finished = SessionState.finished(exitCode: exitCode)
     switch states[key] {
     case .running, .attention, nil:
-      states[key] = isShown ? nil : finished
+      states[key] = isSeen && finished.clearsWhenSeen ? nil : finished
       pids[key] = nil
     case .done:
-      if finished == .error { states[key] = isShown ? nil : .error }
+      if finished == .error { states[key] = .error }
     case .error, .idle:
       break
     }
@@ -89,11 +99,13 @@ public struct SessionStates: Equatable, Sendable {
 
   // MARK: - Clearing
 
-  /// The shown tab and the selected worktree are being looked at.
+  /// The shown tab and the selected worktree have been seen. Done goes;
+  /// Failed stays, along with Working and Waiting, until something other
+  /// than a look deals with it.
   public mutating func markSeen(sessions: [TerminalSession.ID], worktree: Worktree.ID?) {
     var keys = sessions.map(Key.session)
     if let worktree { keys.append(.worktree(worktree)) }
-    for key in keys where states[key]?.isFinished == true {
+    for key in keys where states[key]?.clearsWhenSeen == true {
       states[key] = nil
     }
   }

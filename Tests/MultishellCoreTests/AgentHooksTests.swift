@@ -59,7 +59,7 @@ struct AgentHookPayloadTests {
       state(codex, "PermissionRequest", mode: nil) == .attention, "said nothing: assume it asks")
     #expect(
       state(codex, "PermissionRequest", mode: "a-mode-from-a-later-codex") == .attention,
-      "an amber dot too early beats one that never comes")
+      "a blue dot too early beats one that never comes")
     #expect(state(codex, "Stop", mode: "dontAsk") == .done, "the mode governs that event only")
   }
 
@@ -90,6 +90,35 @@ struct AgentHookPayloadTests {
     #expect(AgentHooks.integrations.allSatisfy { $0.events.filter(\.silent).count <= 1 })
   }
 
+  /// Claude raises a notification for a finished login and a resumed
+  /// quota as much as for a question, and the idle one a minute after a
+  /// turn ends followed the Done that turn's Stop had already reported.
+  @Test func claudeOnlyWaitsOnANotificationThatAsksSomething() {
+    let claude = AgentHooks.claude
+    func state(_ type: String?) -> SessionState? {
+      claude.event(for: AgentHookPayload(eventName: "Notification", notificationType: type))?.state
+    }
+    #expect(state("permission_prompt") == .attention)
+    #expect(state("worker_permission_prompt") == .attention)
+    #expect(state("elicitation_dialog") == .attention)
+    #expect(state("agent_needs_input") == .attention)
+    #expect(state("idle_prompt") == nil, "the Stop of that turn already said Done")
+    #expect(state("agent_completed") == nil)
+    #expect(state("auth_success") == nil)
+    #expect(state("quota_auto_resume_fired") == nil)
+    #expect(state(nil) == .attention, "a Claude from before the field keeps its banner")
+    #expect(
+      claude.event(for: AgentHookPayload(eventName: "Stop", notificationType: "idle_prompt"))?
+        .state == .done, "the types govern that event only")
+    #expect(
+      claude.events.allSatisfy { $0.state == .attention || $0.notificationTypes.isEmpty },
+      "no event but a question is filtered by type")
+    #expect(
+      AgentHooks.integrations.filter { $0.id != AgentCatalogue.claudeID }
+        .allSatisfy { $0.events.allSatisfy(\.notificationTypes.isEmpty) },
+      "Claude is the only agent whose payload names a type")
+  }
+
   /// Copilot takes `notification` in its file and reports `Notification`;
   /// a hook that read one name for the other would map nothing.
   @Test func copilotIsAskedByOneNameAndReportsByAnother() throws {
@@ -103,7 +132,7 @@ struct AgentHookPayloadTests {
   }
 
   /// Copilot raises a notification for a background shell finishing as
-  /// much as for a question, and only the questions are worth an amber
+  /// much as for a question, and only the questions are worth a blue
   /// dot; the type is asked for in the file rather than sorted out here.
   @Test func copilotAsksOnlyForTheNotificationsThatAreQuestions() throws {
     let event = try #require(AgentHooks.copilot.events.first { $0.state == .attention })
@@ -116,7 +145,7 @@ struct AgentHookPayloadTests {
       "Gemini raises a Notification for a tool permission and nothing else")
   }
 
-  @Test func theStdinPayloadYieldsEventDirectoryAndMessage() {
+  @Test func theStdinPayloadYieldsEventDirectoryAndMessage() throws {
     let payload = AgentHookPayload(
       json: Data(
         #"""
@@ -127,7 +156,8 @@ struct AgentHookPayloadTests {
     #expect(payload?.eventName == "Notification")
     #expect(payload?.cwd == "/w/repo")
     #expect(payload?.message == "Claude needs your permission")
-    #expect(state(AgentHooks.claude, payload?.eventName ?? "") == .attention)
+    #expect(payload?.notificationType == "permission_prompt")
+    #expect(AgentHooks.claude.event(for: try #require(payload))?.state == .attention)
   }
 
   /// Codex and Copilot write the same three fields under the same names,

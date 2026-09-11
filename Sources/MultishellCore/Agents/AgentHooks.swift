@@ -62,6 +62,17 @@ public enum AgentHooks {
     claude, codex, gemini, copilot, openCode,
   ]
 
+  /// Which of Claude's notifications is someone being asked something.
+  /// Sorted out from the payload rather than asked for by matcher, which
+  /// the event does take: a matcher lives in the settings file, so it
+  /// would reach only the installs made after this build, and a Claude
+  /// old enough to send no `notification_type` would match none of them
+  /// and lose the banner it has now.
+  public static let claudeQuestions: Set<String> = [
+    "permission_prompt", "worker_permission_prompt", "elicitation_dialog",
+    "elicitation_url_dialog", "agent_needs_input",
+  ]
+
   /// Claude Code: `~/.claude/settings.json`. `StopFailure` is the only
   /// event any of these agents has for a turn that ended badly.
   ///
@@ -73,18 +84,24 @@ public enum AgentHooks {
   /// late. `PermissionRequest` fires as the call reaches the prompt, and
   /// like Codex's it is also consulted where nobody will be asked, so it
   /// counts as waiting only in a mode that stops for the user.
-  /// `Notification` stays for what it alone says: an idle prompt, a
-  /// question from an MCP server, and it is the one of the two that
-  /// raises the banner: the dot goes amber at once, and the six seconds
-  /// Claude waits before its notification are as good a rule as any for
-  /// when a prompt is worth interrupting the user for. Two banners for one
+  /// `Notification` stays for what it alone says: a question from an MCP
+  /// server, a worker's prompt, and it is the one of the two that raises
+  /// the banner: the dot goes blue at once, and the six seconds Claude
+  /// waits before its notification are as good a rule as any for when a
+  /// prompt is worth interrupting the user for. Two banners for one
   /// prompt would be the cost of taking both.
+  ///
+  /// Narrowed to the types that ask a person something. The event carries
+  /// every notification Claude raises, most of which announce rather than
+  /// ask: a finished login, a quota resumed, and above all the idle prompt
+  /// a minute after a turn ends, which arrived as "Waiting for input" on
+  /// top of the Done the same turn's `Stop` had already reported.
   ///
   /// Nothing reports the answer. Allowing fires nothing until the tool
   /// returns, refusing fires nothing at all, and `PermissionDenied` is not
   /// it: that one is only for a call the auto mode's classifier turned
   /// down, which is a mode this does not report waiting in anyway. So an
-  /// allowed call that takes two minutes holds the dot amber for two
+  /// allowed call that takes two minutes holds the dot blue for two
   /// minutes, and a prompt escaped holds it until the next prompt.
   public static let claude = AgentHookIntegration(
     id: AgentCatalogue.claudeID,
@@ -97,7 +114,7 @@ public enum AgentHooks {
       AgentHookEvent("PreToolUse", .running),
       AgentHookEvent("PostToolUse", .running),
       AgentHookEvent("PermissionRequest", .attention, onlyWhenPrompting: true, silent: true),
-      AgentHookEvent("Notification", .attention),
+      AgentHookEvent("Notification", .attention, notificationTypes: claudeQuestions),
       AgentHookEvent("Stop", .done),
       AgentHookEvent("StopFailure", .error),
       AgentHookEvent("SessionEnd", .idle),

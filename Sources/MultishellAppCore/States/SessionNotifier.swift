@@ -7,6 +7,10 @@
 public protocol SessionNotifier: AnyObject {
   var onActivate: (@MainActor (SessionStates.Key) -> Void)? { get set }
   func notify(title: String, body: String, about key: SessionStates.Key)
+  /// Takes back the banner about a key, where one is still on screen. Sent
+  /// when what it said has stopped being true: the state moved on, or the
+  /// user brought the pane up and has seen it.
+  func withdraw(about key: SessionStates.Key)
   /// What the notification centre has been told, without asking for
   /// anything: the settings page reads this to show a refusal.
   func authorization() async -> NotificationAuthorization
@@ -21,6 +25,7 @@ public final class NullNotifier: SessionNotifier {
   public var onActivate: (@MainActor (SessionStates.Key) -> Void)?
   public init() {}
   public func notify(title: String, body: String, about key: SessionStates.Key) {}
+  public func withdraw(about key: SessionStates.Key) {}
   public func authorization() async -> NotificationAuthorization { .unavailable }
   public func requestAuthorization() async -> NotificationAuthorization { .unavailable }
 }

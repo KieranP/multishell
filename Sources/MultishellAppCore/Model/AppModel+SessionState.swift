@@ -35,31 +35,42 @@ extension AppModel {
       if let agent = report.agent {
         reportedAgents[id] = ReportedAgent(agentID: agent, pid: report.pid)
       }
-      let shown = isShown(id)
+      let seen = hasBeenSeen(id)
       mutateStates {
         $0.report(
           report.state, pid: report.pid, message: report.message, duration: report.duration,
-          for: .session(id), isShown: shown)
+          for: .session(id), isSeen: seen)
       }
-      notifyIfNeeded(report, key: .session(id), worktreeID: session.worktreeID, isShown: shown)
+      notifyIfNeeded(report, key: .session(id), worktreeID: session.worktreeID, isSeen: seen)
     } else if let cwd = report.cwd, let worktree = worktree(atPath: cwd) {
       // Gated on the board for the same reason `isShown` is: the worktree is
-      // selected, but nothing of it is on screen.
-      let shown = !showsAgentBoard && workspace.selectedWorktreeID == worktree.id
+      // selected, but nothing of it is on screen. And on frontmost for the
+      // reason `hasBeenSeen` is.
+      let seen =
+        !showsAgentBoard && workspace.selectedWorktreeID == worktree.id && platform.isActive
       mutateStates {
         $0.report(
           report.state, pid: report.pid, message: report.message, duration: report.duration,
-          for: .worktree(worktree.id), isShown: shown)
+          for: .worktree(worktree.id), isSeen: seen)
       }
-      notifyIfNeeded(report, key: .worktree(worktree.id), worktreeID: worktree.id, isShown: shown)
+      notifyIfNeeded(report, key: .worktree(worktree.id), worktreeID: worktree.id, isSeen: seen)
     }
     updatePIDWatch()
   }
 
+  /// Seen: on screen and the app in front of the user. The one notion a
+  /// Done clears against and a banner is raised against, so the dot and the
+  /// banner can never disagree about whether anyone looked. A pane can be
+  /// the shown one for hours with its window behind another app.
+  public func hasBeenSeen(_ id: TerminalSession.ID) -> Bool {
+    isShown(id) && platform.isActive
+  }
+
   /// The pane is on screen: its worktree is selected and its tab is the one
   /// its column shows. A worktree can have several columns, so this asks
-  /// every one of them rather than the focused column alone — a pane the
-  /// user is looking at in the next column over has been seen.
+  /// every one of them rather than the focused column alone — a pane in the
+  /// next column over is on screen too. Half of `hasBeenSeen`, and on its
+  /// own it says nothing about whether the user is at the machine.
   public func isShown(_ id: TerminalSession.ID) -> Bool {
     // The board fills the detail area, so no pane is on screen behind it.
     // Without this the selected worktree's Done states clear the moment the
@@ -81,13 +92,12 @@ extension AppModel {
   }
 
   private func notifyIfNeeded(
-    _ report: SessionStateReport, key: SessionStates.Key, worktreeID: Worktree.ID, isShown: Bool
+    _ report: SessionStateReport, key: SessionStates.Key, worktreeID: Worktree.ID, isSeen: Bool
   ) {
     guard
       NotificationPolicy.shouldNotify(
-        report.state, preference: workspace.notifications, isShown: isShown,
-        appIsActive: platform.isActive, duration: report.duration,
-        silent: report.silent == true),
+        report.state, preference: workspace.notifications, isSeen: isSeen,
+        duration: report.duration, silent: report.silent == true),
       let worktree = workspace.worktree(worktreeID)
     else { return }
     let project = workspace.project(worktree.projectID)?.name ?? ""
@@ -105,6 +115,16 @@ extension AppModel {
       title: NotificationPolicy.title(subject: subject, project: project, worktree: place),
       body: NotificationPolicy.body(for: report.state, message: report.message),
       about: key)
+    notifiedKeys.insert(key)
+  }
+
+  /// Takes a banner back, where the key has one. Called where what it said
+  /// has stopped being true: the state moved on, or the user brought the
+  /// pane up. A pane's dot is not touched, a question the user has seen but
+  /// not answered still being a question; what goes is the interruption.
+  func withdrawNotification(about key: SessionStates.Key) {
+    guard notifiedKeys.remove(key) != nil else { return }
+    notifier.withdraw(about: key)
   }
 
   /// A click on the notification: bring the tab, or the worktree, on screen.
@@ -126,11 +146,15 @@ extension AppModel {
     if let session = workspace.session(id) {
       scheduleStatusRefresh(of: session.worktreeID)
     }
-    mutateStates { $0.noteCommandFinished(in: id, exitCode: exitCode, isShown: isShown(id)) }
+    mutateStates { $0.noteCommandFinished(in: id, exitCode: exitCode, isSeen: hasBeenSeen(id)) }
     updatePIDWatch()
   }
 
-  /// Keys stay a subset of the live shells and the known worktrees.
+  /// Keys stay a subset of the live shells and the known worktrees. The
+  /// banner keys need no sweep of their own: a key is only ever notified
+  /// about while it holds a state, `sessionStates` is assigned in one place,
+  /// and that place takes the banner back for any key whose state moved, so
+  /// dropping the state here drops the banner with it.
   func pruneStates() {
     let worktrees = Set(workspace.worktrees.map(\.id))
     mutateStates { $0.retain(sessions: liveSessions, worktrees: worktrees) }
@@ -145,7 +169,12 @@ extension AppModel {
     // stays testable without one.
     changed.stampChanges(against: sessionStates, at: Date())
     guard changed != sessionStates else { return }
+    // Before the assignment, so the comparison is against what the banners
+    // were posted about. A report that moves a key on is followed by its own
+    // notify where the new state deserves one.
+    let moved = notifiedKeys.filter { changed[$0] != sessionStates[$0] }
     sessionStates = changed
+    for key in moved { withdrawNotification(about: key) }
     updateDockBadge()
   }
 

@@ -15,14 +15,20 @@ public struct AgentHookPayload: Hashable, Sendable {
   /// The approval mode the agent is in, where it says: `default`,
   /// `dontAsk` and the rest. Claude Code and Codex are the ones that say.
   public var permissionMode: String?
+  /// Which kind of notification this is, where the event is one and the
+  /// agent says: `permission_prompt`, `idle_prompt` and the rest. Claude
+  /// Code is the one that says.
+  public var notificationType: String?
 
   public init(
-    eventName: String, cwd: String? = nil, message: String? = nil, permissionMode: String? = nil
+    eventName: String, cwd: String? = nil, message: String? = nil, permissionMode: String? = nil,
+    notificationType: String? = nil
   ) {
     self.eventName = eventName
     self.cwd = cwd
     self.message = message
     self.permissionMode = permissionMode
+    self.notificationType = notificationType
   }
 
   public init?(json data: Data) {
@@ -34,11 +40,12 @@ public struct AgentHookPayload: Hashable, Sendable {
     self.cwd = object["cwd"] as? String
     self.message = object["message"] as? String
     self.permissionMode = object["permission_mode"] as? String
+    self.notificationType = object["notification_type"] as? String
   }
 
   /// Whether the mode the payload names is one that stops for the user. A
   /// mode this build has not heard of is taken to prompt: a dot that goes
-  /// amber when it need not costs less than one that never does.
+  /// blue when it need not costs less than one that never does.
   public var promptsForPermission: Bool {
     switch permissionMode {
     // Claude's `auto` has a classifier answer the request, so it is one

@@ -105,6 +105,94 @@ struct SessionStateModelTests {
     #expect(h.model.workspace.activeTab(in: h.main.id)?.id == first.id)
   }
 
+  /// The user answers the question in the pane and the agent gets back to
+  /// work: the banner is about something that has stopped being true, so it
+  /// goes rather than sitting in Notification Centre until it is swiped.
+  @Test func aBannerIsTakenBackWhenTheStateItNamedMovesOn() {
+    let h = Harness()
+    h.model.setNotifications(NotificationPreference(attention: true, error: true, done: true))
+    h.model.select(h.main)
+    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    let session = tab.focusedSessionID
+    h.model.newTab()
+
+    h.source.send(SessionStateReport(state: .attention, sessionID: session))
+    #expect(h.notifier.posted.count == 1)
+    #expect(h.notifier.withdrawn.isEmpty, "nothing has changed yet")
+
+    h.source.send(SessionStateReport(state: .running, sessionID: session))
+    #expect(h.notifier.withdrawn == [.session(session)])
+    #expect(h.notifier.posted.count == 1, "working raises none of its own")
+
+    h.source.send(SessionStateReport(state: .running, sessionID: session))
+    #expect(h.notifier.withdrawn.count == 1, "taken back once, not on every report after")
+  }
+
+  /// Looking at the pane answers the banner even where it does not answer
+  /// the question: Waiting survives being seen, and its dot stays blue,
+  /// but the interruption has done its job.
+  @Test func lookingAtThePaneTakesItsBannerBackAndLeavesTheDot() {
+    let h = Harness()
+    h.model.setNotifications(NotificationPreference(attention: true, error: true, done: true))
+    h.model.select(h.main)
+    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    let session = tab.focusedSessionID
+    h.model.newTab()
+
+    h.source.send(SessionStateReport(state: .attention, sessionID: session))
+    #expect(h.notifier.posted.count == 1)
+
+    h.model.activate(tab)
+    #expect(h.notifier.withdrawn == [.session(session)])
+    #expect(h.model.sessionStates[.session(session)] == .attention, "the question still stands")
+  }
+
+  /// The pane on screen while the user is in another app has not been seen,
+  /// and the dot and the banner have to agree about that or the one says
+  /// there is nothing to look at while the other is still saying there is.
+  /// A shell exiting anywhere runs the seen-it pass, so being away has to
+  /// hold both of them.
+  @Test func nothingCountsAsSeenWhileTheUserIsInAnotherApp() {
+    let h = Harness()
+    h.model.setNotifications(NotificationPreference(attention: true, error: true, done: true))
+    h.model.select(h.main)
+    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    let session = tab.focusedSessionID
+
+    h.platform.isActive = false
+    h.source.send(SessionStateReport(state: .done, sessionID: session))
+    #expect(h.notifier.posted.count == 1, "shown, but nobody is looking")
+    #expect(h.model.sessionStates[.session(session)] == .done, "and the dot says so too")
+
+    h.model.sync()
+    #expect(h.notifier.withdrawn.isEmpty, "still away")
+    #expect(h.model.sessionStates[.session(session)] == .done, "a shell exiting is not a look")
+
+    h.platform.isActive = true
+    h.platform.onDidBecomeActive?()
+    #expect(h.notifier.withdrawn == [.session(session)], "back, and the pane is on screen")
+    #expect(h.model.sessionStates[.session(session)] == nil, "seen now, so the dot goes as well")
+  }
+
+  /// A pane that is gone has nothing left to say, so its banner goes with
+  /// it rather than sitting in Notification Centre pointing at a tab that
+  /// cannot be opened.
+  @Test func closingATabTakesItsBannerWithIt() {
+    let h = Harness()
+    h.model.setNotifications(NotificationPreference(attention: true, error: true, done: true))
+    h.model.select(h.main)
+    let first = h.model.workspace.activeTab(in: h.main.id)!
+    let session = first.focusedSessionID
+    h.model.newTab()
+
+    h.source.send(SessionStateReport(state: .done, sessionID: session))
+    #expect(h.notifier.posted.count == 1)
+
+    h.model.closeTab(first.id)
+    #expect(h.notifier.withdrawn == [.session(session)])
+    #expect(h.model.notifiedKeys.isEmpty, "and nothing is left tracking it")
+  }
+
   @Test func launchingAnAgentFlashesThenIdlesUntilAPromptDrivesItsOwnStates() {
     let h = Harness()
     h.model.select(h.main)
@@ -187,7 +275,9 @@ struct SessionStateModelTests {
     #expect(h.model.state(of: first) == .error, "a failure is not covered by an unseen Done")
     #expect(h.model.state(ofWorktree: h.main.id) == .error)
     h.model.activate(first)
-    #expect(h.model.state(of: first) == nil, "looking clears Failed like Done")
+    #expect(h.model.state(of: first) == .error, "a look is not dealing with a failure")
+    h.model.clearState(of: first)
+    #expect(h.model.state(of: first) == nil, "the pane's own Clear Status is")
   }
 
   @Test func closingAWorkingPaneAsksFirstAndTheConfirmationCloses() {

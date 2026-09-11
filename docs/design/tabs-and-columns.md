@@ -61,7 +61,7 @@ columns existed names no group -> `repairReferences` gathers a worktree's
 ungrouped tabs into the one column they were saved as, and a hand edit that
 loses a column is repaired the same way rather than by dropping tabs. And
 everything meaning "the tab on screen" had to become "the tab on screen in this
-column": `isShown`, the Done state that clears when looked at, the notification
+column": `isShown`, the Done state that clears when seen, the notification
 not raised because it was.
 
 ## A dragged tab is its own preview

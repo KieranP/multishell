@@ -12,7 +12,7 @@ import Foundation
 /// It is the one integration that hears the answer to a permission as well
 /// as the question: `permission.replied` arrives whether the user allowed
 /// or denied, so an OpenCode pane leaves Waiting the moment the user
-/// answers. The others have no such event, and sit amber until the next
+/// answers. The others have no such event, and sit blue until the next
 /// tool call. Both come off the event bus, which is where a permission is
 /// actually announced.
 ///

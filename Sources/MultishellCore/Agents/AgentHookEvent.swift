@@ -19,6 +19,11 @@ public struct AgentHookEvent: Hashable, Sendable {
   /// needs anyone at all, so under `--full-auto` the event fires for work
   /// nobody is waiting on.
   public let onlyWhenPrompting: Bool
+  /// Which of the event's notification types mean its state, where every
+  /// type arrives on one event and the payload names which. Empty takes
+  /// them all, as does a payload naming no type: an agent from before the
+  /// field keeps the dot it had.
+  public let notificationTypes: Set<String>
   /// Whether the event moves the dot and says nothing else. For the second
   /// of two events that stand for one thing: Claude reports a permission
   /// prompt twice, and one banner is enough.
@@ -26,12 +31,13 @@ public struct AgentHookEvent: Hashable, Sendable {
 
   public init(
     _ name: String, _ state: SessionState, reported: String? = nil, matcher: String? = nil,
-    onlyWhenPrompting: Bool = false, silent: Bool = false
+    notificationTypes: Set<String> = [], onlyWhenPrompting: Bool = false, silent: Bool = false
   ) {
     self.name = name
     self.reported = reported ?? name
     self.state = state
     self.matcher = matcher
+    self.notificationTypes = notificationTypes
     self.onlyWhenPrompting = onlyWhenPrompting
     self.silent = silent
   }
