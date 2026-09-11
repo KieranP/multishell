@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellGitKit
@@ -300,8 +301,7 @@ struct WorktreeFilesTests {
   }
 
   private func directories() throws -> (repository: URL, worktree: URL) {
-    let root = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appending("files-\(UUID().uuidString)")
+    let root = Scratch.path("files")
     let repository = root.appending("repo")
     let worktree = root.appending("tree")
     for url in [repository, worktree] {

@@ -28,12 +28,9 @@ struct ProjectIconView: View {
 
   @ViewBuilder
   private var glyph: some View {
-    switch ProjectIcon.kind(of: settings.iconGlyph) {
-    case .folder:
-      Image(systemName: "folder").font(.system(size: size)).foregroundStyle(tint)
-    case .symbol(let name):
-      Image(systemName: name).font(.system(size: size)).foregroundStyle(tint)
-    }
+    Image(systemName: ProjectIcon.kind(of: settings.iconGlyph).symbolName)
+      .font(.system(size: size))
+      .foregroundStyle(tint)
   }
 
   private var tint: Color {

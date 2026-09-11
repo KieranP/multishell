@@ -1,6 +1,7 @@
 import Foundation
 import MultishellCore
 import MultishellProcess
+import TestScratch
 import TestSupport
 
 @testable import MultishellGitKit
@@ -13,15 +14,11 @@ struct RepositoryFixture {
 
   static func make(commit: Bool = true) async throws -> RepositoryFixture {
     let git = try TestGit.build()
-    let root = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-tests-\(UUID().uuidString)", isDirectory: true)
+    let root = Scratch.path("gitkit")
     let repository = root.appendingPathComponent("demo", isDirectory: true)
-    try FileManager.default.createDirectory(at: repository, withIntermediateDirectories: true)
-    _ = try await git.run(["init", "--initial-branch=main"], in: repository)
-    _ = try await git.run(["config", "user.email", "tests@multishell.local"], in: repository)
-    _ = try await git.run(["config", "user.name", "Multishell Tests"], in: repository)
+    try await TestRepository.initialise(at: repository, using: git)
     let fixture = RepositoryFixture(git: git, root: root, project: Project(path: repository))
-    if commit { try await fixture.commit("initial", file: "README.md", content: "hello\n") }
+    if commit { try await TestRepository.commitInitial(in: repository, using: git) }
     return fixture
   }
 
@@ -46,14 +43,7 @@ struct RepositoryFixture {
 
   /// One commit writing several files, which is what a squash merge lands.
   func commit(_ message: String, files: [String: String]) async throws {
-    for (file, content) in files {
-      let url = project.path.appendingPathComponent(file)
-      try FileManager.default.createDirectory(
-        at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-      try content.write(to: url, atomically: true, encoding: .utf8)
-    }
-    _ = try await git.run(["add", "."], in: project.path)
-    _ = try await git.run(["commit", "-q", "-m", message], in: project.path)
+    try await TestRepository.commit(message, files: files, in: project.path, using: git)
   }
 
   func head(of directory: URL) async throws -> String {
@@ -72,7 +62,7 @@ struct RepositoryFixture {
   var trees: WorktreeSettings { WorktreeSettings(worktreeDirectory: "../trees") }
 
   func tearDown() {
-    try? FileManager.default.removeItem(at: root)
+    Scratch.remove(root)
   }
 }
 

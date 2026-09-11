@@ -46,8 +46,8 @@ public struct Project: Identifiable, Codable, Hashable, Sendable {
   public init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     self.path = Self.directory(try container.decode(URL.self, forKey: .path))
-    self.isExpanded = try container.decodeIfPresent(Bool.self, forKey: .isExpanded) ?? true
-    self.settings =
-      try container.decodeIfPresent(ProjectSettings.self, forKey: .settings) ?? ProjectSettings()
+    self.isExpanded = try container.decode(Bool.self, forKey: .isExpanded, or: true)
+    self.settings = try container.decode(
+      ProjectSettings.self, forKey: .settings, or: ProjectSettings())
   }
 }

@@ -93,7 +93,7 @@ struct WorktreeRow: View {
           .padding(.horizontal, 6)
           .padding(.vertical, 1)
           .background(theme.rowHover, in: Capsule())
-          .help("\(terminalCount) terminal\(terminalCount == 1 ? "" : "s")")
+          .help(Wording.count(terminalCount, "terminal"))
       }
     }
     .padding(.leading, metrics.indent)

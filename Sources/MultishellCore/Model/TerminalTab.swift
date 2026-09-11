@@ -51,9 +51,8 @@ public struct TerminalTab: Identifiable, Codable, Hashable, Sendable {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     self.id = try container.decode(UUID.self, forKey: .id)
     self.worktreeID = try container.decode(Worktree.ID.self, forKey: .worktreeID)
-    self.groupID =
-      (try? container.decodeIfPresent(TabGroup.ID.self, forKey: .groupID)) ?? nil
-      ?? TabGroup.unassigned
+    self.groupID = container.decodeTolerantly(
+      TabGroup.ID.self, forKey: .groupID, or: TabGroup.unassigned)
     self.root = try container.decode(PaneNode.self, forKey: .root)
     self.focusedSessionID = try container.decode(
       TerminalSession.ID.self, forKey: .focusedSessionID)

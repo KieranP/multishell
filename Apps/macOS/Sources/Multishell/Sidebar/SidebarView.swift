@@ -149,11 +149,9 @@ struct SidebarView: View {
     let worktrees = model.workspace.worktrees.count
     let sessions = model.workspace.sessions.count
     return HStack {
-      Text(
-        "\(worktrees) worktree\(worktrees == 1 ? "" : "s") · \(sessions) terminal\(sessions == 1 ? "" : "s")"
-      )
-      .font(.system(size: model.metrics.caption))
-      .foregroundStyle(theme.textTertiary)
+      Text("\(Wording.count(worktrees, "worktree")) · \(Wording.count(sessions, "terminal"))")
+        .font(.system(size: model.metrics.caption))
+        .foregroundStyle(theme.textTertiary)
       Spacer()
     }
     .padding(.horizontal, 14)
@@ -256,7 +254,7 @@ struct SidebarView: View {
       cancel: { model.cancelRenaming() }
     )
     .onTapGesture { model.select(worktree) }
-    .contextMenu { worktreeMenu(worktree) }
+    .contextMenu { WorktreeActions(model: model, worktree: worktree) }
     // A tab dragged from the strip lands here. The type is the tab's own,
     // so a project being dragged past on its way to a new place in the
     // sidebar is not offered this row at all.
@@ -303,10 +301,5 @@ struct SidebarView: View {
     Button("Remove Project…", role: .destructive) {
       model.requestProjectRemoval(project, from: .workspace)
     }
-  }
-
-  @ViewBuilder
-  private func worktreeMenu(_ worktree: Worktree) -> some View {
-    WorktreeActions(model: model, worktree: worktree)
   }
 }

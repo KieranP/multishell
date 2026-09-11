@@ -101,64 +101,56 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// element.
   public init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
-    projects = try container.decodeIfPresent([Project].self, forKey: .projects) ?? []
+    projects = try container.decode([Project].self, forKey: .projects, or: [])
     worktrees = container.decodeLossy(Worktree.self, forKey: .worktrees)
     sessions = container.decodeLossy(TerminalSession.self, forKey: .sessions)
     tabs = container.decodeLossy(TerminalTab.self, forKey: .tabs)
     tabGroups = container.decodeLossy(TabGroup.self, forKey: .tabGroups)
     selectedWorktreeID = try container.decodeIfPresent(
       Worktree.ID.self, forKey: .selectedWorktreeID)
-    focusedGroupByWorktree =
-      try container.decodeIfPresent(
-        [Worktree.ID: TabGroup.ID].self, forKey: .focusedGroupByWorktree) ?? [:]
-    worktreeNames =
-      try container.decodeIfPresent([Worktree.ID: String].self, forKey: .worktreeNames) ?? [:]
-    appearance = try container.decodeIfPresent(Appearance.self, forKey: .appearance) ?? Appearance()
-    // `try?`, not `try`: a state file from a newer build may name an engine
-    // this build does not have, and that must not cost the sidebar.
-    terminalEngine =
-      (try? container.decodeIfPresent(TerminalEngine.self, forKey: .terminalEngine)) ?? .ghostty
-    worktreeDefaults =
-      try container.decodeIfPresent(WorktreeSettings.self, forKey: .worktreeDefaults)
-      ?? WorktreeSettings()
-    notifications =
-      (try? container.decodeIfPresent(NotificationPreference.self, forKey: .notifications))
-      ?? .default
+    focusedGroupByWorktree = try container.decode(
+      [Worktree.ID: TabGroup.ID].self, forKey: .focusedGroupByWorktree, or: [:])
+    worktreeNames = try container.decode(
+      [Worktree.ID: String].self, forKey: .worktreeNames, or: [:])
+    appearance = try container.decode(Appearance.self, forKey: .appearance, or: Appearance())
+    // Tolerated, not thrown on: a state file from a newer build may name an
+    // engine this build does not have, and that must not cost the sidebar.
+    terminalEngine = container.decodeTolerantly(
+      TerminalEngine.self, forKey: .terminalEngine, or: .ghostty)
+    worktreeDefaults = try container.decode(
+      WorktreeSettings.self, forKey: .worktreeDefaults, or: WorktreeSettings())
+    notifications = container.decodeTolerantly(
+      NotificationPreference.self, forKey: .notifications, or: .default)
     preferredAgentID = try container.decodeIfPresent(String.self, forKey: .preferredAgentID)
-    customAgentCommand =
-      try container.decodeIfPresent(String.self, forKey: .customAgentCommand) ?? ""
-    agentFlags = try container.decodeIfPresent([String: String].self, forKey: .agentFlags) ?? [:]
-    autoStartAgent = try container.decodeIfPresent(Bool.self, forKey: .autoStartAgent) ?? false
+    customAgentCommand = try container.decode(String.self, forKey: .customAgentCommand, or: "")
+    agentFlags = try container.decode([String: String].self, forKey: .agentFlags, or: [:])
+    autoStartAgent = try container.decode(Bool.self, forKey: .autoStartAgent, or: false)
     // State from before the two were split says one thing about both.
-    autoStartAgentOnCreate =
-      try container.decodeIfPresent(Bool.self, forKey: .autoStartAgentOnCreate) ?? autoStartAgent
+    autoStartAgentOnCreate = try container.decode(
+      Bool.self, forKey: .autoStartAgentOnCreate, or: autoStartAgent)
     defaultShell = try container.decodeIfPresent(String.self, forKey: .defaultShell)
-    customShellPath = try container.decodeIfPresent(String.self, forKey: .customShellPath) ?? ""
+    customShellPath = try container.decode(String.self, forKey: .customShellPath, or: "")
     preferredEditorID = try container.decodeIfPresent(String.self, forKey: .preferredEditorID)
-    customEditorCommand =
-      try container.decodeIfPresent(String.self, forKey: .customEditorCommand) ?? ""
-    opensTerminalOnSelect =
-      try container.decodeIfPresent(Bool.self, forKey: .opensTerminalOnSelect) ?? true
+    customEditorCommand = try container.decode(String.self, forKey: .customEditorCommand, or: "")
+    opensTerminalOnSelect = try container.decode(
+      Bool.self, forKey: .opensTerminalOnSelect, or: true)
     // Before the two were split a create opened its terminal by going
     // through the selection that follows it, so state that predates the
     // field keeps what it said about selecting.
-    opensTerminalOnCreate =
-      try container.decodeIfPresent(Bool.self, forKey: .opensTerminalOnCreate)
-      ?? opensTerminalOnSelect
-    // `try?`: a state file from a newer build may name an order this build
-    // does not have, and that must not cost the sidebar.
-    worktreeSortOrder =
-      (try? container.decodeIfPresent(WorktreeSortOrder.self, forKey: .worktreeSortOrder))
-      ?? WorktreeSortOrder.default
-    showsActiveWorktreesFirst =
-      try container.decodeIfPresent(Bool.self, forKey: .showsActiveWorktreesFirst) ?? false
-    confirmsWorktreeRemoval =
-      try container.decodeIfPresent(Bool.self, forKey: .confirmsWorktreeRemoval) ?? true
-    deletesBranchWithWorktree =
-      try container.decodeIfPresent(Bool.self, forKey: .deletesBranchWithWorktree) ?? false
-    hookTimeoutSeconds =
-      try container.decodeIfPresent(Int.self, forKey: .hookTimeoutSeconds)
-      ?? Self.defaultHookTimeoutSeconds
+    opensTerminalOnCreate = try container.decode(
+      Bool.self, forKey: .opensTerminalOnCreate, or: opensTerminalOnSelect)
+    // Tolerated: a state file from a newer build may name an order this
+    // build does not have, and that must not cost the sidebar.
+    worktreeSortOrder = container.decodeTolerantly(
+      WorktreeSortOrder.self, forKey: .worktreeSortOrder, or: .default)
+    showsActiveWorktreesFirst = try container.decode(
+      Bool.self, forKey: .showsActiveWorktreesFirst, or: false)
+    confirmsWorktreeRemoval = try container.decode(
+      Bool.self, forKey: .confirmsWorktreeRemoval, or: true)
+    deletesBranchWithWorktree = try container.decode(
+      Bool.self, forKey: .deletesBranchWithWorktree, or: false)
+    hookTimeoutSeconds = try container.decode(
+      Int.self, forKey: .hookTimeoutSeconds, or: Self.defaultHookTimeoutSeconds)
 
     // A file written before tabs sat in columns names no group and says
     // which tab each worktree had active. Read here rather than left to
@@ -167,9 +159,8 @@ public struct Workspace: Codable, Hashable, Sendable {
     // upgrade quietly changing it is the sort of loss the lossy decode
     // exists to prevent.
     let legacy = try? decoder.container(keyedBy: LegacyKeys.self)
-    let wasActive =
-      (try? legacy?.decodeIfPresent(
-        [Worktree.ID: TerminalTab.ID].self, forKey: .activeTabByWorktree)) ?? nil
+    let wasActive = legacy?.decodeTolerantly(
+      [Worktree.ID: TerminalTab.ID].self, forKey: .activeTabByWorktree)
     adoptUngroupedTabs(activeByWorktree: wasActive ?? [:])
   }
 

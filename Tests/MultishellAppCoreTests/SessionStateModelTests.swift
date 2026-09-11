@@ -1,6 +1,7 @@
 import Foundation
 import MultishellCore
 import MultishellProcess
+import TestScratch
 import Testing
 
 @testable import MultishellAppCore
@@ -243,9 +244,7 @@ struct SessionStateModelTests {
     let path = URL(fileURLWithPath: "/tmp/ms-model-\(UUID().uuidString.prefix(8)).sock")
     let source = SocketStateSource(path: path)
     defer { source.stop() }
-    let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-socket-\(UUID().uuidString)", isDirectory: true)
-    try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+    let tmp = try Scratch.directory("socket")
     let store = WorkspaceStore(
       snapshot: WorkspaceSnapshot(fileURL: tmp.appendingPathComponent("state.json")))
     let project = store.addProject(at: tmp)
@@ -312,8 +311,7 @@ struct AgentTabTests {
   }
 
   @Test func aSavedAgentTabResumesWhereItCanAndIsAShellWhereItCannot() throws {
-    let file = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-agent-relaunch-\(UUID().uuidString)", isDirectory: true)
+    let file = Scratch.path("agent-relaunch")
       .appendingPathComponent("state.json")
     defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
     let before = Harness(stateFile: file)

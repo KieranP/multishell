@@ -77,11 +77,6 @@ public struct AgentHookIntegration: Identifiable, Sendable {
     return event
   }
 
-  /// What one payload says the session is doing.
-  public func state(for payload: AgentHookPayload) -> SessionState? {
-    event(for: payload)?.state
-  }
-
   // MARK: - What is written
 
   /// The hooks as the file spells them: the whole file for one of ours, the

@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import TestScratch
 import Testing
 
 @testable import MultishellAppCore
@@ -10,9 +11,7 @@ import Testing
 @Suite(.serialized) @MainActor
 struct AutosaveTests {
   private func stateFile() -> URL {
-    URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-autosave-\(UUID().uuidString)", isDirectory: true)
-      .appendingPathComponent("state.json")
+    Scratch.path("autosave").appendingPathComponent("state.json")
   }
 
   /// The debounce is 300 ms. Polling rather than a fixed sleep keeps this

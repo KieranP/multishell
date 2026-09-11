@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellCore
@@ -268,8 +269,7 @@ private struct GeneratedIntegration {
   let bashInit: URL
 
   init(helper: String) throws {
-    root = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("ms-marks-\(UUID().uuidString)", isDirectory: true)
+    root = Scratch.path("marks")
     home = root.appendingPathComponent("home", isDirectory: true)
     zshDirectory = root.appendingPathComponent("zsh", isDirectory: true)
     bashInit = root.appendingPathComponent("bash/init.bash")

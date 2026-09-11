@@ -7,6 +7,15 @@ public enum ProjectIcon {
   public enum Kind: Hashable, Sendable {
     case folder
     case symbol(String)
+
+    /// The symbol name a GUI draws for this icon, so the three places that
+    /// draw one need not each decide what the folder looks like.
+    public var symbolName: String {
+      switch self {
+      case .folder: ProjectIcon.folderSymbol
+      case .symbol(let name): name
+      }
+    }
   }
 
   /// A glyph is a symbol name from the palette. Whitespace around it is
@@ -30,6 +39,13 @@ public enum ProjectIcon {
     guard !trimmed.isEmpty, trimmed.unicodeScalars.allSatisfy(\.isASCII) else { return nil }
     return trimmed
   }
+
+  /// What a project with no glyph of its own is drawn as, and so also the
+  /// palette's first cell: the picker offers the default's own picture as the
+  /// way back to it. Picking that cell stores nothing rather than storing
+  /// this, which is why `Kind.folder` and `.symbol(folderSymbol)` are the
+  /// same picture and not the same state.
+  public static let folderSymbol = "folder"
 
   /// The theme has sixteen slots; anything else is no tint.
   public static func validTint(_ slot: Int?) -> Int? {
@@ -64,268 +80,4 @@ public enum ProjectIcon {
       return matches.isEmpty ? nil : Group(name: group.name, glyphs: matches)
     }
   }
-
-  /// What a symbol is used for, where its name does not say. An SF Symbol is
-  /// named for the picture, so a search for the thing a project is about
-  /// ("database", "git", "docker") finds nothing without these.
-  static let searchWords: [String: String] = [
-    "cylinder": "database db sql store",
-    "cylinder.fill": "database db sql store",
-    "cylinder.split.1x2": "database replica shard cluster",
-    "shippingbox": "container docker image package",
-    "shippingbox.fill": "container docker image package",
-    "cube": "container package module build",
-    "cube.fill": "container package module build",
-    "arrow.triangle.branch": "git branch fork vcs",
-    "arrow.triangle.pull": "git pull request pr merge vcs",
-    "arrow.triangle.merge": "git merge rebase vcs",
-    "arrow.triangle.swap": "git swap switch",
-    "arrow.triangle.2.circlepath": "sync refresh retry loop",
-    "arrow.2.squarepath": "sync loop retry",
-    "arrow.clockwise": "refresh retry restart",
-    "gearshape.arrow.triangle.2.circlepath": "ci cd pipeline build automation",
-    "server.rack": "server host backend datacentre datacenter",
-    "xserve": "server rack host",
-    "xserve.raid": "server raid storage array",
-    "macpro.gen3.server": "server host machine",
-    "cpu": "processor compute core",
-    "memorychip": "memory ram cache",
-    "externaldrive": "disk volume storage backup",
-    "externaldrive.fill": "disk volume storage backup",
-    "internaldrive": "disk ssd storage volume",
-    "opticaldisc": "disc image iso",
-    "doc.zipper": "zip archive tarball compress",
-    "terminal": "shell console cli bash zsh prompt",
-    "terminal.fill": "shell console cli bash zsh prompt",
-    "curlybraces": "json code braces config",
-    "curlybraces.square": "json code braces config",
-    "chevron.left.forwardslash.chevron.right": "code html tag markup source",
-    "chevron.left.slash.chevron.right": "code html tag markup source",
-    "ladybug": "bug debug defect issue",
-    "ladybug.fill": "bug debug defect issue",
-    "flask": "test lab experiment",
-    "testtube.2": "test lab experiment fixture",
-    "brain": "ai model ml agent llm",
-    "brain.head.profile": "ai model ml agent llm",
-    "sparkles": "ai magic generate",
-    "sparkle": "ai magic generate",
-    "wand.and.rays": "ai magic generate format",
-    "puzzlepiece": "plugin extension addon module",
-    "puzzlepiece.extension": "plugin extension addon module",
-    "app.connected.to.app.below.fill": "service microservice dependency",
-    "app.dashed": "app placeholder sandbox",
-    "flowchart": "diagram graph pipeline dag",
-    "flowchart.fill": "diagram graph pipeline dag",
-    "point.3.connected.trianglepath.dotted": "graph cluster nodes mesh topology",
-    "point.3.filled.connected.trianglepath.dotted": "graph cluster nodes mesh topology",
-    "square.3.layers.3d": "stack layers tiers",
-    "square.2.layers.3d": "stack layers tiers",
-    "square.stack.3d.up": "stack layers build",
-    "rectangle.3.group": "grid dashboard layout",
-    "circle.hexagongrid": "cluster nodes mesh",
-    "network": "lan ethernet topology",
-    "network.slash": "offline disconnected",
-    "wifi.router": "router gateway access point",
-    "cable.connector": "cable port plug",
-    "cable.coaxial": "cable coax broadband",
-    "personalhotspot": "tether hotspot share",
-    "bonjour": "mdns discovery zeroconf",
-    "esim": "sim mobile carrier",
-    "simcard": "sim mobile carrier",
-    "rectangle.connected.to.line.below": "gateway bridge uplink",
-    "globe": "web www internet http site",
-    "globe.desk": "web internet intranet",
-    "icloud": "cloud storage sync",
-    "cloud": "cloud hosting saas",
-    "link": "url href hyperlink",
-    "magnifyingglass": "search find query grep",
-    "text.magnifyingglass": "search find text grep",
-    "doc.text.magnifyingglass": "search find document grep",
-    "lock.shield": "security auth hardening",
-    "checkmark.shield": "security verified passed audit",
-    "key": "secret token credential auth",
-    "key.radiowaves.forward": "secret key wireless auth",
-    "shield": "security firewall protection",
-    "function": "function method lambda",
-    "numbersign": "hash tag channel",
-    "number": "hash tag count",
-    "macwindow": "app window gui ui desktop",
-    "cursorarrow": "pointer click ui",
-    "tablecells": "table spreadsheet rows sql",
-    "waveform": "logs metrics trace signal",
-    "waveform.path.ecg": "monitor metrics health uptime",
-    "chart.line.uptrend.xyaxis": "metrics analytics growth",
-    "gauge.high": "load performance throughput",
-    "speedometer": "performance benchmark speed",
-    "bolt": "fast performance power energy",
-    "clock": "cron schedule timer",
-    "calendar.badge.clock": "cron schedule job",
-    "envelope": "mail email smtp",
-    "bubble.left.and.bubble.right": "chat messages comments",
-    "paperclip": "attachment file",
-    "hammer": "build compile make",
-    "wrench.and.screwdriver": "tools maintenance fix",
-    "bandage": "fix patch hotfix",
-    "lifepreserver": "support help rescue",
-    "pencil": "edit write",
-    "trash": "delete remove cleanup",
-    "thermometer": "temperature load heat",
-    "fanblades": "cooling fan hardware",
-    "powerplug": "power supply energy",
-    "batteryblock": "battery power ups",
-    "tortoise": "slow performance",
-    "hare": "fast speed",
-    "ant": "small worker swarm",
-  ]
-
-  /// Symbols that read at sidebar size and exist on macOS 14, which is what
-  /// the deployment target makes the floor. The folder is first: picking it
-  /// is what clears the glyph.
-  public static let symbolGroups: [Group] = [
-    Group(
-      name: "Files",
-      glyphs: [
-        "folder", "folder.fill", "folder.circle", "folder.badge.plus", "folder.badge.minus",
-        "folder.badge.gearshape", "folder.badge.questionmark", "folder.badge.person.crop", "tray",
-        "tray.full", "tray.2", "tray.and.arrow.down", "tray.and.arrow.up", "archivebox", "trash",
-        "doc.zipper", "doc", "doc.fill", "doc.text", "doc.richtext", "doc.plaintext", "doc.on.doc",
-        "doc.on.clipboard", "doc.badge.plus", "doc.badge.clock", "doc.badge.gearshape",
-        "doc.viewfinder", "note.text", "list.bullet.clipboard", "list.bullet", "list.number",
-        "text.quote", "text.alignleft", "scroll", "book", "book.closed", "books.vertical",
-        "text.book.closed", "book.pages", "book.and.wrench", "newspaper", "magazine", "bookmark",
-        "bookmark.fill", "tag", "tag.fill", "paperclip", "square.and.arrow.down",
-        "square.and.arrow.up", "arrow.down.doc", "arrow.up.doc", "square.on.square",
-        "rectangle.stack", "square.stack",
-      ]),
-    Group(
-      name: "Code",
-      glyphs: [
-        "terminal", "terminal.fill", "chevron.left.forwardslash.chevron.right",
-        "chevron.left.slash.chevron.right", "curlybraces", "curlybraces.square",
-        "curlybraces.square.fill", "doc.text.magnifyingglass", "magnifyingglass",
-        "text.magnifyingglass", "text.cursor", "function", "sum", "percent", "x.squareroot",
-        "plus.forwardslash.minus", "minus.forwardslash.plus", "number", "numbersign",
-        "number.square",
-        "command", "option", "control", "keyboard", "macwindow", "cursorarrow", "brain",
-        "brain.head.profile", "macwindow.on.rectangle", "macwindow.badge.plus",
-        "text.and.command.macwindow", "ladybug", "ladybug.fill", "flask", "testtube.2", "atom",
-        "puzzlepiece", "puzzlepiece.extension", "arrow.triangle.branch", "arrow.triangle.pull",
-        "arrow.triangle.merge", "arrow.triangle.swap", "arrow.triangle.2.circlepath",
-        "arrow.2.squarepath", "arrow.clockwise", "gearshape.arrow.triangle.2.circlepath",
-        "checkmark.seal", "flowchart", "flowchart.fill", "point.3.connected.trianglepath.dotted",
-        "point.3.filled.connected.trianglepath.dotted", "app.dashed",
-        "app.connected.to.app.below.fill", "square.split.2x1", "sidebar.left", "square.split.1x2",
-      ]),
-    Group(
-      name: "Network",
-      glyphs: [
-        "network", "network.slash", "network.badge.shield.half.filled", "globe", "globe.americas",
-        "globe.europe.africa", "globe.asia.australia", "globe.central.south.asia", "globe.desk",
-        "globe.badge.chevron.backward", "wifi", "wifi.router", "wifi.exclamationmark", "wifi.slash",
-        "antenna.radiowaves.left.and.right", "dot.radiowaves.left.and.right",
-        "dot.radiowaves.forward", "dot.radiowaves.up.forward", "personalhotspot", "bonjour", "link",
-        "link.badge.plus", "link.circle", "cable.connector",
-        "cable.coaxial", "airport.express", "airport.extreme", "airport.extreme.tower", "icloud",
-        "icloud.and.arrow.up", "icloud.and.arrow.down", "cloud", "cloud.fill",
-        "arrow.up.arrow.down",
-        "arrow.left.arrow.right", "arrow.up.arrow.down.circle", "rectangle.connected.to.line.below",
-        "esim", "simcard",
-      ]),
-    Group(
-      name: "Infra",
-      glyphs: [
-        "server.rack", "xserve", "xserve.raid", "macpro.gen3.server", "macstudio",
-        "cylinder", "cylinder.fill", "cylinder.split.1x2", "externaldrive", "externaldrive.fill",
-        "externaldrive.connected.to.line.below", "externaldrive.badge.checkmark",
-        "externaldrive.badge.timemachine", "internaldrive", "opticaldisc", "opticaldiscdrive",
-        "sdcard", "memorychip", "cpu", "shippingbox", "shippingbox.fill", "cube", "cube.fill",
-        "square.stack.3d.up", "square.3.layers.3d", "square.2.layers.3d", "rectangle.3.group",
-        "circle.hexagongrid", "hexagon", "powerplug", "power", "batteryblock",
-        "fanblades", "thermometer", "lock.shield", "checkmark.shield", "key.radiowaves.forward",
-      ]),
-    Group(
-      name: "Data",
-      glyphs: [
-        "chart.bar", "chart.bar.fill", "chart.bar.xaxis", "chart.pie", "chart.dots.scatter",
-        "chart.line.uptrend.xyaxis", "chart.line.downtrend.xyaxis", "chart.line.flattrend.xyaxis",
-        "chart.xyaxis.line", "waveform.path.ecg", "gauge", "gauge.high", "gauge.low", "speedometer",
-        "dial.medium", "barometer", "tablecells", "square.grid.2x2", "square.grid.3x3",
-        "circle.grid.3x3", "rectangle.3.offgrid", "circle.grid.cross", "waveform", "waveform.path",
-      ]),
-    Group(
-      name: "Tools",
-      glyphs: [
-        "hammer", "hammer.fill", "wrench.and.screwdriver", "wrench.adjustable", "screwdriver",
-        "gearshape", "gearshape.2", "gear", "slider.horizontal.3", "switch.2", "paintbrush",
-        "paintbrush.pointed", "paintpalette", "eyedropper", "scissors", "pencil",
-        "highlighter", "wand.and.stars", "wand.and.rays", "gyroscope", "lifepreserver",
-        "bandage",
-      ]),
-    Group(
-      name: "Devices",
-      glyphs: [
-        "iphone", "ipad", "laptopcomputer", "desktopcomputer", "macpro.gen3", "display",
-        "display.2",
-        "applewatch", "airpods", "headphones", "computermouse", "printer", "scanner", "camera",
-        "video", "tv", "gamecontroller", "homepod", "appletvremote.gen4", "hifispeaker",
-      ]),
-    Group(
-      name: "Work",
-      glyphs: [
-        "building", "building.2", "building.columns", "house", "house.fill", "storefront",
-        "briefcase", "graduationcap", "person", "person.2", "figure.walk", "cart",
-        "bag",
-        "giftcard", "creditcard", "banknote", "dollarsign.circle", "eurosign.circle", "signature",
-        "envelope", "envelope.open", "bubble.left.and.bubble.right", "calendar",
-      ]),
-    Group(
-      name: "Nature",
-      glyphs: [
-        "leaf", "tree", "camera.macro", "drop", "flame", "bolt", "sun.max", "sun.min", "sunrise",
-        "sunset", "moon", "moon.stars", "sparkles", "cloud.rain", "cloud.bolt", "cloud.snow",
-        "snowflake", "wind", "tornado", "hurricane", "water.waves", "mountain.2", "microbe",
-        "allergens", "carrot",
-      ]),
-    Group(
-      name: "Animals",
-      glyphs: [
-        "ant", "tortoise", "hare", "bird", "fish", "dog", "cat", "lizard", "pawprint", "teddybear",
-      ]),
-    Group(
-      name: "Media",
-      glyphs: [
-        "music.note", "music.mic", "music.quarternote.3", "film", "photo", "photo.stack",
-        "play.circle", "speaker.wave.2", "mic", "theatermasks", "ticket", "guitars", "radio",
-        "waveform.circle",
-      ]),
-    Group(
-      name: "Travel",
-      glyphs: [
-        "airplane", "car", "bus", "tram", "bicycle", "scooter", "sailboat", "ferry", "truck.box",
-        "fuelpump", "road.lanes", "map", "mappin.and.ellipse", "signpost.right", "location",
-        "suitcase", "beach.umbrella", "tent", "binoculars", "figure.hiking",
-      ]),
-    Group(
-      name: "Time",
-      glyphs: [
-        "clock", "alarm", "timer", "stopwatch", "hourglass", "calendar.badge.clock", "deskclock",
-        "clock.arrow.circlepath", "clock.arrow.2.circlepath", "arrow.triangle.capsulepath",
-      ]),
-    Group(
-      name: "Symbols",
-      glyphs: [
-        "star", "star.fill", "heart", "heart.fill", "flag", "flag.fill", "flag.checkered", "bell",
-        "pin", "mappin", "target", "scope", "triangle", "square", "circle", "diamond", "seal",
-        "rosette", "crown", "trophy", "exclamationmark.triangle", "lock", "lock.fill", "lock.open",
-        "key", "shield", "shield.fill", "sparkle", "bolt.fill", "asterisk", "infinity",
-        "circle.dashed", "square.dashed",
-      ]),
-  ]
-
-  /// Every symbol the picker offers, which is what a stored glyph is checked
-  /// against. The set is what `kind(of:)` reads, a project's icon being drawn
-  /// far more often than the palette is opened.
-  public static let symbols: [String] = symbolGroups.flatMap(\.glyphs)
-
-  private static let offered = Set(symbols)
 }

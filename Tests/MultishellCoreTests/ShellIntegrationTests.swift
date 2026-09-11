@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellCore
@@ -8,9 +9,7 @@ import Testing
 @Suite
 struct ShellIntegrationTests {
   private func scratch() throws -> URL {
-    let url = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("ms-integration-\(UUID().uuidString)", isDirectory: true)
-    try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+    let url = try Scratch.directory("integration")
     return url
   }
 

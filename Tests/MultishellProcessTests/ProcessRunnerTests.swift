@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellProcess
@@ -293,9 +294,7 @@ struct HookShellTests {
   /// hook must see one of them. Written for zsh, bash and sh; another shell
   /// only has to run the command.
   @Test func aHookRunsInTheUsersInteractiveLoginShell() async throws {
-    let home = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-home-\(UUID().uuidString)", isDirectory: true)
-    try FileManager.default.createDirectory(at: home, withIntermediateDirectories: true)
+    let home = try Scratch.directory("home")
     defer { try? FileManager.default.removeItem(at: home) }
     for (file, marker) in [
       (".zshrc", "zshrc"), (".zprofile", "zprofile"), (".bashrc", "bashrc"),
@@ -323,9 +322,7 @@ struct HookShellTests {
   }
 
   @Test func aScriptStopsAtItsFirstFailingLineWhereTheShellCanBeTold() async throws {
-    let scratch = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-script-\(UUID().uuidString)", isDirectory: true)
-    try FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: true)
+    let scratch = try Scratch.directory("script")
     defer { try? FileManager.default.removeItem(at: scratch) }
 
     let shell = ShellCommand.shell!.executable.lastPathComponent
@@ -348,9 +345,7 @@ struct HookShellTests {
   /// that noise used to be the whole of a failing hook's message when the
   /// hook itself printed little or nothing.
   @Test func aFailingScriptsMessageIsItsOwnStderrNotTheRcFiles() async throws {
-    let home = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-home-\(UUID().uuidString)", isDirectory: true)
-    try FileManager.default.createDirectory(at: home, withIntermediateDirectories: true)
+    let home = try Scratch.directory("home")
     defer { try? FileManager.default.removeItem(at: home) }
     for file in [".zshrc", ".zprofile", ".zshenv", ".bashrc", ".bash_profile", ".profile"] {
       try "echo 'rc noise' >&2\n".write(

@@ -2,6 +2,7 @@ import Foundation
 import MultishellCore
 import MultishellGitKit
 import Observation
+import TestScratch
 import TestSupport
 import Testing
 
@@ -22,17 +23,10 @@ struct GitHarness {
 
   init() async throws {
     git = try TestGit.build()
-    root = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-appgit-\(UUID().uuidString)", isDirectory: true)
+    root = Scratch.path("appgit")
     let repository = root.appendingPathComponent("demo", isDirectory: true)
-    try FileManager.default.createDirectory(at: repository, withIntermediateDirectories: true)
-    _ = try await git.run(["init", "--initial-branch=main"], in: repository)
-    _ = try await git.run(["config", "user.email", "tests@multishell.local"], in: repository)
-    _ = try await git.run(["config", "user.name", "Multishell Tests"], in: repository)
-    try "hello\n".write(
-      to: repository.appendingPathComponent("README.md"), atomically: true, encoding: .utf8)
-    _ = try await git.run(["add", "."], in: repository)
-    _ = try await git.run(["commit", "-q", "-m", "initial"], in: repository)
+    try await TestRepository.initialise(at: repository, using: git)
+    try await TestRepository.commitInitial(in: repository, using: git)
 
     store = WorkspaceStore(
       snapshot: WorkspaceSnapshot(fileURL: root.appendingPathComponent("state.json")))
@@ -60,13 +54,12 @@ struct GitHarness {
   /// `$SCRATCH/calls`.
   func modelOnFakeGit(_ body: String) throws -> AppModel<FakeSurface> {
     let script = root.appendingPathComponent("fake-git-\(UUID().uuidString)")
-    try """
-    #!/bin/sh
-    SCRATCH="\(root.path)"
-    echo "$*" >> "$SCRATCH/calls"
-    \(body)
-    """.write(to: script, atomically: true, encoding: .utf8)
-    try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path)
+    try Scratch.script(
+      """
+      SCRATCH="\(root.path)"
+      echo "$*" >> "$SCRATCH/calls"
+      \(body)
+      """, at: script)
     let engine = self.engine
     let model = AppModel(
       store: store,
@@ -88,7 +81,7 @@ struct GitHarness {
   }
 
   func tearDown() {
-    try? FileManager.default.removeItem(at: root)
+    Scratch.remove(root)
   }
 }
 

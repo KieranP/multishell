@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellCore
@@ -119,9 +120,7 @@ struct ProjectSettingsTests {
   /// and read by someone whose own global has one, or the team gets the
   /// opposite of what was shared.
   @Test func aBlankOverrideSurvivesAnExportAndTheFileItIsWrittenTo() throws {
-    let repository = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-export-\(UUID().uuidString)", isDirectory: true)
-    try FileManager.default.createDirectory(at: repository, withIntermediateDirectories: true)
+    let repository = try Scratch.directory("export")
     defer { try? FileManager.default.removeItem(at: repository) }
 
     let exported = SharedProjectSettings(exporting: ProjectSettings(branchPrefix: ""))
@@ -288,8 +287,8 @@ struct ProjectIconTests {
     #expect(groups.allSatisfy { !$0.name.isEmpty && !$0.glyphs.isEmpty })
     #expect(Set(groups.map(\.name)).count == groups.count)
     #expect(
-      groups.first?.glyphs.first == "folder",
-      "the folder is the first cell, and picking it is what clears the glyph")
+      groups.first?.glyphs.first == ProjectIcon.folderSymbol,
+      "the folder is the first cell, and picking it is what goes back to no glyph")
   }
 
   @Test func onlyASymbolNameCountsAsAGlyph() {

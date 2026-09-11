@@ -27,12 +27,10 @@ public struct Appearance: Codable, Hashable, Sendable {
 
   public init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
-    themeID =
-      try container.decodeIfPresent(Theme.ID.self, forKey: .themeID) ?? Theme.multishellDark.id
+    themeID = try container.decode(Theme.ID.self, forKey: .themeID, or: Theme.multishellDark.id)
     fontName = try container.decodeIfPresent(String.self, forKey: .fontName)
-    fontSize = try container.decodeIfPresent(Double.self, forKey: .fontSize) ?? Self.defaultFontSize
-    uiFontSize =
-      try container.decodeIfPresent(Double.self, forKey: .uiFontSize) ?? Self.defaultUIFontSize
+    fontSize = try container.decode(Double.self, forKey: .fontSize, or: Self.defaultFontSize)
+    uiFontSize = try container.decode(Double.self, forKey: .uiFontSize, or: Self.defaultUIFontSize)
   }
 
   /// Falls back to the built-in dark theme when a saved theme id no longer

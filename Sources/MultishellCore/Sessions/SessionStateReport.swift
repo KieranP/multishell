@@ -78,7 +78,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
 
   public init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
-    version = try container.decodeIfPresent(Int.self, forKey: .version) ?? 1
+    version = try container.decode(Int.self, forKey: .version, or: 1)
     state = try container.decode(SessionState.self, forKey: .state)
     sessionID = try container.decodeIfPresent(UUID.self, forKey: .sessionID)
     cwd = try container.decodeIfPresent(String.self, forKey: .cwd)

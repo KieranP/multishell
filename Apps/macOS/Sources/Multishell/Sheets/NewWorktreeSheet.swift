@@ -184,10 +184,9 @@ struct NewWorktreeSheet: View {
   /// The project's icon beside its name, so same-named projects are told
   /// apart by more than their path.
   private func pickerLabel(_ project: Project, text: String) -> some View {
-    switch ProjectIcon.kind(of: model.effectiveSettings(for: project).iconGlyph) {
-    case .symbol(let name): Label(text, systemImage: name)
-    case .folder: Label(text, systemImage: "folder")
-    }
+    Label(
+      text,
+      systemImage: ProjectIcon.kind(of: model.effectiveSettings(for: project).iconGlyph).symbolName)
   }
 
   /// The project's effective prefix, shown as fixed text so the user types

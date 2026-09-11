@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import TestScratch
 import Testing
 
 @testable import MultishellAppCore
@@ -92,8 +93,7 @@ final class FakePlatform: Platform {
   var logged: [String] = []
   /// Where `moveToTrash` puts things, standing in for the Trash; `nil`
   /// makes it refuse.
-  var trash: URL? = URL(fileURLWithPath: NSTemporaryDirectory())
-    .appendingPathComponent("multishell-trash-\(UUID().uuidString)", isDirectory: true)
+  var trash: URL? = Scratch.path("trash")
   var trashed: [URL] = []
 
   func closeKeyWindow() { closedKeyWindows += 1 }
@@ -134,8 +134,7 @@ struct Harness {
   let feature: Worktree
 
   init(savedSelection: Bool = false, stateFile: URL? = nil) {
-    let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-appmodel-\(UUID().uuidString)", isDirectory: true)
+    let tmp = Scratch.path("appmodel")
     try? FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
     store = WorkspaceStore(
       snapshot: WorkspaceSnapshot(

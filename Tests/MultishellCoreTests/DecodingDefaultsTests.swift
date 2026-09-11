@@ -663,4 +663,38 @@ struct NewerFieldDefaultsTests {
     )
     #expect(legacy.sharedHooks.isEmpty && legacy.branchPrefix == "k/")
   }
+
+  // MARK: - The two reads themselves
+
+  /// `decode(_:forKey:or:)` fills in an absent key but still fails on one of
+  /// the wrong type, which is what moves a state file aside as `.broken.json`
+  /// rather than quietly replacing it.
+  @Test func theStrictReadDefaultsWhatIsAbsentAndFailsOnWhatIsWrong() throws {
+    #expect(try decode(Workspace.self, "{}").customShellPath == "")
+    #expect(
+      try decode(Workspace.self, #"{ "customShellPath": "/bin/fish" }"#)
+        .customShellPath == "/bin/fish")
+    #expect(throws: (any Error).self) {
+      try decode(Workspace.self, #"{ "customShellPath": 7 }"#)
+    }
+  }
+
+  /// Both `decodeTolerantly` reads take the default for a value this build
+  /// cannot read, and the rest of the file loads around it.
+  @Test func theTolerantReadKeepsTheRestOfTheFile() throws {
+    let engine = try decode(
+      Workspace.self, #"{ "terminalEngine": "holodeck", "customShellPath": "/bin/fish" }"#)
+    #expect(engine.terminalEngine == .ghostty, "an engine this build does not have")
+    #expect(engine.customShellPath == "/bin/fish", "and the rest still loads")
+
+    let order = try decode(
+      Workspace.self, #"{ "worktreeSortOrder": 12, "customShellPath": "/bin/fish" }"#)
+    #expect(order.worktreeSortOrder == WorktreeSortOrder.default)
+    #expect(order.customShellPath == "/bin/fish")
+
+    // The optional form, where absent is itself the answer.
+    #expect(
+      try decode(ProjectSettings.self, #"{ "worktreeSortOrder": 12 }"#)
+        .worktreeSortOrder == nil)
+  }
 }

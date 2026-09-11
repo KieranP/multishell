@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellAppCore
@@ -6,9 +7,7 @@ import Testing
 @Suite
 struct DroppedFilesTests {
   private func makeParent() throws -> URL {
-    let parent = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("ms-drops-\(UUID().uuidString)", isDirectory: true)
-    try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true)
+    let parent = try Scratch.directory("drops")
     return parent
   }
 
@@ -96,8 +95,7 @@ struct DroppedFilesTests {
   /// Nothing makes the drops directory before the first drop needs it, and a
   /// drop that could not make it delivers nothing at all.
   @Test func theFirstDragMakesTheDirectoryItself() throws {
-    let parent = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("ms-drops-\(UUID().uuidString)", isDirectory: true)
+    let parent = Scratch.path("drops")
     defer { try? FileManager.default.removeItem(at: parent) }
     #expect(!FileManager.default.fileExists(atPath: parent.path))
 
@@ -122,8 +120,7 @@ struct DroppedFilesTests {
   /// Nothing to sweep is not a failure: the directory is made by the first
   /// promised drag, and most launches come before one.
   @Test func aSweepOfADirectoryThatIsNotThereDoesNothing() {
-    let missing = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("ms-drops-\(UUID().uuidString)", isDirectory: true)
+    let missing = Scratch.path("drops")
     DroppedFiles.sweep(in: missing)
     #expect(!FileManager.default.fileExists(atPath: missing.path))
   }

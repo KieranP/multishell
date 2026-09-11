@@ -66,10 +66,10 @@ public struct NotificationPreference: Codable, Hashable, Sendable {
       return
     }
     let container = try decoder.container(keyedBy: CodingKeys.self)
-    // `try?` per state: a hand-edited file with one bad value costs that
-    // toggle and not the other two.
-    attention = (try? container.decodeIfPresent(Bool.self, forKey: .attention)) ?? false
-    error = (try? container.decodeIfPresent(Bool.self, forKey: .error)) ?? false
-    done = (try? container.decodeIfPresent(Bool.self, forKey: .done)) ?? false
+    // Tolerated per state: a hand-edited file with one bad value costs
+    // that toggle and not the other two.
+    attention = container.decodeTolerantly(Bool.self, forKey: .attention, or: false)
+    error = container.decodeTolerantly(Bool.self, forKey: .error, or: false)
+    done = container.decodeTolerantly(Bool.self, forKey: .done, or: false)
   }
 }

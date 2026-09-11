@@ -130,8 +130,22 @@ offers to lift one; `notificationSettingsLocation` = `nil` where the desktop
 has no such place.
 
 **A persisted field.** Decode with a default, an unknown enum value included,
-and add a case to DecodingDefaultsTests. Element-by-element decode that drops
+and add a case to DecodingDefaultsTests. `DecodingDefaults` puts that choice in the
+verb: `decode(_:forKey:or:)` where a key of the wrong type should still fail
+the file, `decodeTolerantly` where a value this build cannot read must cost
+that value alone, which is the answer for an enum a newer build may have
+named. `or:` is the same fallback in both. Element-by-element decode that drops
 a broken one is `LossyArray`; projects stay strict.
+
+**A preference.** Four touch points, in this order: the field on `Workspace`,
+decoded as above; a setter on `WorkspaceStore`, which has to sit beside the
+`private(set) var workspace` in that one file, since Swift's `private` reaches
+no further; a method on AppModel, doing whatever else the change needs (see
+`setTheme`, which reapplies to the host); and the row, bound through
+`model.setting(...)`. A project override is a second field on
+`ProjectSettings`, a resolver on `Workspace` reading `project.settings` first,
+and, if a repository may ship it, a field on `SharedProjectSettings` with a
+line in `ProjectSettings.layered`.
 
 **A collection, or a reference between collections.** Extend
 `Workspace.repairReferences` and WorkspaceInvariants. Every store operation

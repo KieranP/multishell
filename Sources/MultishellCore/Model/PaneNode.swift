@@ -50,9 +50,9 @@ extension PaneNode {
       return
     }
     let split = try root.nestedContainer(keyedBy: SplitKeys.self, forKey: .split)
-    let axis = (try? split.decode(SplitAxis.self, forKey: .axis)) ?? .horizontal
+    let axis = split.decodeTolerantly(SplitAxis.self, forKey: .axis, or: .horizontal)
     let children = try split.decode([PaneNode].self, forKey: .children)
-    let weights = try split.decodeIfPresent([Double].self, forKey: .weights) ?? []
+    let weights = try split.decode([Double].self, forKey: .weights, or: [])
     guard weights.count == children.count, weights.allSatisfy({ $0.isFinite && $0 >= 0 }) else {
       self = .split(axis: axis, children: children)
       return

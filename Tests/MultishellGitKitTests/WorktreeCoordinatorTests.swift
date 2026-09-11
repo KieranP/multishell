@@ -1,6 +1,7 @@
 import Foundation
 import MultishellCore
 import MultishellProcess
+import TestScratch
 import Testing
 
 @testable import MultishellGitKit
@@ -306,9 +307,7 @@ struct WorktreeCoordinatorTests {
 
   @Test func recognisesADirectoryThatIsNotARepository() async throws {
     let coordinator = WorktreeCoordinator(service: WorktreeService(git: try GitRunner()))
-    let empty = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-empty-\(UUID().uuidString)", isDirectory: true)
-    try FileManager.default.createDirectory(at: empty, withIntermediateDirectories: true)
+    let empty = try Scratch.directory("empty")
     defer { try? FileManager.default.removeItem(at: empty) }
 
     #expect(await coordinator.isRepository(empty) == false)

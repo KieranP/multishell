@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellCore
@@ -15,9 +16,7 @@ struct SharedProjectSettingsTests {
   /// its digest is the sha256 of real bytes, which is what a hook decision
   /// is held against.
   private func asRead(_ settings: SharedProjectSettings) throws -> SharedProjectSettings {
-    let root = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("ms-shared-\(UUID().uuidString)", isDirectory: true)
-    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    let root = try Scratch.directory("shared")
     defer { try? FileManager.default.removeItem(at: root) }
     try settings.write(to: root)
     return try #require(try SharedProjectSettings.load(from: root))
@@ -73,9 +72,7 @@ struct SharedProjectSettingsTests {
   }
 
   @Test func loadReturnsNilForARepositoryWithoutTheFileAndThrowsForABrokenOne() throws {
-    let root = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("ms-shared-\(UUID().uuidString)", isDirectory: true)
-    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    let root = try Scratch.directory("shared")
     defer { try? FileManager.default.removeItem(at: root) }
 
     #expect(try SharedProjectSettings.load(from: root) == nil)

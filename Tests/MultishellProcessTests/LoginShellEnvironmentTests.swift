@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellProcess
@@ -46,9 +47,7 @@ struct LoginShellEnvironmentTests {
   }
 
   @Test func executableLookupWalksTheGivenPathNotTheProcessOne() throws {
-    let directory = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-path-\(UUID().uuidString)", isDirectory: true)
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let directory = try Scratch.directory("path")
     defer { try? FileManager.default.removeItem(at: directory) }
     let fake = directory.appendingPathComponent("claude")
     try "#!/bin/sh\nexit 0\n".write(to: fake, atomically: true, encoding: .utf8)

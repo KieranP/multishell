@@ -2,6 +2,7 @@ import Foundation
 import MultishellCore
 import MultishellGitKit
 import MultishellProcess
+import TestScratch
 import Testing
 
 @testable import MultishellAppCore
@@ -170,8 +171,7 @@ struct DisplayNameTests {
 @Suite
 struct HelperLinkTests {
   @Test func refreshPointsTheLinkAtTheHelperAndReplacesAStaleOne() throws {
-    let root = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("ms-helperlink-\(UUID().uuidString)", isDirectory: true)
+    let root = Scratch.path("helperlink")
     defer { try? FileManager.default.removeItem(at: root) }
     let link = root.appendingPathComponent("bin/multishell")
     let old = root.appendingPathComponent("old/multishell")

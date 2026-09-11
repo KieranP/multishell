@@ -12,9 +12,15 @@ Root package, four Foundation-only libraries:
   decision a view makes
 
 MultishellCLI = the helper. `Apps/macOS` = its own package: views, the two
-engine hosts, MacPlatform. `Tests/TestSupport` is a plain target rather than
-a test one, since a test target cannot be depended on: what two test targets
-share goes there.
+engine hosts, MacPlatform.
+
+What the suites share sits in plain targets, since a test target cannot be
+depended on. Two of them, split by what they drag in: `Tests/TestScratch`
+(`Scratch`, throwaway paths and shell shims) has no dependencies, so a Core
+or Process suite can have a temp directory without linking the git layer;
+`Tests/TestSupport` (`TestGit`, `TestRepository`) needs MultishellGitKit and
+is for the two suites that touch a real repository. `Apps/macOS` is its own
+package and reaches neither, so its harness keeps its own.
 
 ## Style
 

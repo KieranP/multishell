@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellCore
@@ -49,9 +50,7 @@ struct DebugPathsTests {
 @Suite
 struct PersistenceTests {
   private func scratchFile() -> URL {
-    URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-\(UUID().uuidString)", isDirectory: true)
-      .appendingPathComponent("state.json")
+    Scratch.path("state").appendingPathComponent("state.json")
   }
 
   @Test func stateWrittenBeforeAFieldExistedStillLoads() throws {
@@ -190,13 +189,41 @@ struct PersistenceTests {
     let file = scratchFile()
     defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
 
+    // Every scalar set away from its default, so a field the decoder forgets
+    // to read fails here rather than silently reverting on someone's next
+    // launch. The pairs that seed one field from another when the key is
+    // absent (auto-start, opens-terminal) are set to differ from each other,
+    // or a dropped key would read as the value it was meant to have.
     var workspace = Workspace()
     workspace.projects = [
       Project(
         path: URL(fileURLWithPath: "/repos/demo"), settings: ProjectSettings(branchPrefix: "k/"))
     ]
+    workspace.worktreeNames = ["/repos/demo": "trunk"]
     workspace.terminalEngine = .swiftTerm
+    workspace.appearance.themeID = "multishell.light"
+    workspace.appearance.fontName = "Menlo"
     workspace.appearance.fontSize = 15
+    workspace.appearance.uiFontSize = 16
+    workspace.worktreeDefaults = WorktreeSettings(
+      worktreeDirectory: "/trees", branchPrefix: "team/")
+    workspace.notifications = NotificationPreference(attention: true, done: true)
+    workspace.preferredAgentID = "claude"
+    workspace.customAgentCommand = "my-agent --flag"
+    workspace.agentFlags = ["claude": "--model haiku"]
+    workspace.autoStartAgent = true
+    workspace.autoStartAgentOnCreate = false
+    workspace.defaultShell = "/opt/homebrew/bin/fish"
+    workspace.customShellPath = "/usr/local/bin/zsh"
+    workspace.preferredEditorID = "vscode"
+    workspace.customEditorCommand = "edit {path}"
+    workspace.opensTerminalOnSelect = false
+    workspace.opensTerminalOnCreate = true
+    workspace.worktreeSortOrder = .committedNewestFirst
+    workspace.showsActiveWorktreesFirst = true
+    workspace.confirmsWorktreeRemoval = false
+    workspace.deletesBranchWithWorktree = true
+    workspace.hookTimeoutSeconds = 5
 
     let snapshot = WorkspaceSnapshot(fileURL: file)
     try snapshot.save(workspace)
@@ -266,8 +293,7 @@ struct OrderingTests {
 @Suite
 struct ThemeCatalogTests {
   @Test func userFilesAreAddedAndCanReplaceBuiltins() throws {
-    let directory = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-themes-\(UUID().uuidString)", isDirectory: true)
+    let directory = Scratch.path("themes")
     defer { try? FileManager.default.removeItem(at: directory) }
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
@@ -290,8 +316,7 @@ struct ThemeCatalogTests {
   }
 
   @Test func aThemeFileWithTooFewColoursIsAProblemNotACrash() throws {
-    let directory = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-themes-\(UUID().uuidString)", isDirectory: true)
+    let directory = Scratch.path("themes")
     defer { try? FileManager.default.removeItem(at: directory) }
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     var short = Theme.multishellDark
@@ -308,8 +333,7 @@ struct ThemeCatalogTests {
   }
 
   @Test func loadAloneRelocatesStrayExamples() throws {
-    let directory = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-themes-\(UUID().uuidString)", isDirectory: true)
+    let directory = Scratch.path("themes")
     defer { try? FileManager.default.removeItem(at: directory) }
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     try JSONEncoder().encode(Theme.multishellDark).write(
@@ -324,8 +348,7 @@ struct ThemeCatalogTests {
   }
 
   @Test func examplesAreWrittenBesideTheThemesNotAmongThem() throws {
-    let directory = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-themes-\(UUID().uuidString)", isDirectory: true)
+    let directory = Scratch.path("themes")
     defer { try? FileManager.default.removeItem(at: directory) }
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     // A leftover from the earlier layout, which loaded as a duplicate.
@@ -349,8 +372,7 @@ struct PartialStateTests {
   /// the store must come up with the project, the sound tab and no error,
   /// and the session the dropped tab owned must go with it.
   @Test func aStateFileWithOneUnreadableTabRestoresEverythingElse() throws {
-    let file = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-\(UUID().uuidString)", isDirectory: true)
+    let file = Scratch.path("scratch")
       .appendingPathComponent("state.json")
     defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
     try FileManager.default.createDirectory(
@@ -394,8 +416,7 @@ struct PartialStateTests {
 @Suite @MainActor
 struct NotificationPreferenceMigrationTests {
   @Test func thePickersLastRungComesBackAsThreeTogglesAndIsSavedThatWay() throws {
-    let file = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-\(UUID().uuidString)", isDirectory: true)
+    let file = Scratch.path("scratch")
       .appendingPathComponent("state.json")
     defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
     try FileManager.default.createDirectory(
@@ -434,8 +455,7 @@ struct NotificationPreferenceMigrationTests {
 @Suite @MainActor
 struct TabGroupMigrationTests {
   @Test func aStateFileWrittenBeforeColumnsComesBackAsOneColumnPerWorktree() throws {
-    let file = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-\(UUID().uuidString)", isDirectory: true)
+    let file = Scratch.path("scratch")
       .appendingPathComponent("state.json")
     defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
     try FileManager.default.createDirectory(

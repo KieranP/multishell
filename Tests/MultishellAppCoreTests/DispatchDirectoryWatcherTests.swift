@@ -1,5 +1,6 @@
 #if canImport(Darwin)
   import Foundation
+  import TestScratch
   import Testing
 
   @testable import MultishellAppCore
@@ -10,10 +11,7 @@
   @Suite(.serialized) @MainActor
   struct DispatchDirectoryWatcherTests {
     private func scratch() throws -> URL {
-      let url = URL(fileURLWithPath: NSTemporaryDirectory())
-        .appendingPathComponent("multishell-watch-\(UUID().uuidString)", isDirectory: true)
-      try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-      return url
+      try Scratch.directory("watch")
     }
 
     /// Counts the watcher's callbacks from the moment it is made.

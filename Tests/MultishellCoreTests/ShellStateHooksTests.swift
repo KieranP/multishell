@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellCore
@@ -6,9 +7,7 @@ import Testing
 @Suite
 struct ZshIntegrationTests {
   private func directoryThatExists() throws -> URL {
-    let url = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("ms-zdotdir-\(UUID().uuidString)", isDirectory: true)
-    try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+    let url = try Scratch.directory("zdotdir")
     return url
   }
 
@@ -173,9 +172,7 @@ struct ShellLaunchTests {
   @Test func theExecAfterAnAgentCarriesTheIntegrationBackIn() throws {
     let bashInit = try bashInitThatExists()
     defer { try? FileManager.default.removeItem(at: bashInit) }
-    let zshDir = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("ms-zdot-\(UUID().uuidString)", isDirectory: true)
-    try FileManager.default.createDirectory(at: zshDir, withIntermediateDirectories: true)
+    let zshDir = try Scratch.directory("zdot")
     defer { try? FileManager.default.removeItem(at: zshDir) }
 
     let ours = ShellQuoting.quote(zshDir.path)
@@ -203,9 +200,7 @@ struct ShellLaunchTests {
   /// A stray quote in the Swift literal renders as a shell syntax error that
   /// silently defines no hooks; the shells' own parsers are the check.
   @Test func everyGeneratedFileParsesInItsShell() throws {
-    let directory = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("ms-syntax-\(UUID().uuidString)", isDirectory: true)
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let directory = try Scratch.directory("syntax")
     defer { try? FileManager.default.removeItem(at: directory) }
     var files: [(String, String)] = ShellStateHooks.zshIntegrationFiles(helper: "/x/multishell")
       .map { ("/bin/zsh", $0.value) }

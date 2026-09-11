@@ -31,15 +31,25 @@ let package = Package(
     .executableTarget(
       name: "MultishellCLI", dependencies: ["MultishellCore", "MultishellProcess"]),
 
-    // What two test targets share. A plain target, since a test target
-    // cannot be depended on.
-    .target(name: "TestSupport", dependencies: ["MultishellGitKit"], path: "Tests/TestSupport"),
+    // What the test targets share. Plain targets, since a test target cannot
+    // be depended on. Two of them: every suite wants a scratch directory,
+    // but only the two that touch git want the git fixtures, and a Core or
+    // Process suite should not link MultishellGitKit to get a temp path.
+    .target(name: "TestScratch", path: "Tests/TestScratch"),
+    .target(
+      name: "TestSupport", dependencies: ["MultishellGitKit", "TestScratch"],
+      path: "Tests/TestSupport"),
 
-    .testTarget(name: "MultishellCoreTests", dependencies: ["MultishellCore"]),
-    .testTarget(name: "MultishellProcessTests", dependencies: ["MultishellProcess"]),
-    .testTarget(name: "MultishellGitKitTests", dependencies: ["MultishellGitKit", "TestSupport"]),
     .testTarget(
-      name: "MultishellAppCoreTests", dependencies: ["MultishellAppCore", "TestSupport"]),
+      name: "MultishellCoreTests", dependencies: ["MultishellCore", "TestScratch"]),
+    .testTarget(
+      name: "MultishellProcessTests", dependencies: ["MultishellProcess", "TestScratch"]),
+    .testTarget(
+      name: "MultishellGitKitTests",
+      dependencies: ["MultishellGitKit", "TestSupport", "TestScratch"]),
+    .testTarget(
+      name: "MultishellAppCoreTests",
+      dependencies: ["MultishellAppCore", "TestSupport", "TestScratch"]),
     // Runs the built helper against a real socket; depends on the target so
     // the binary exists before the test does.
     .testTarget(

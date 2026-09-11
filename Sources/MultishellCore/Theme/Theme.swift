@@ -77,7 +77,7 @@ public struct Theme: Identifiable, Codable, Hashable, Sendable {
         forKey: .ansi, in: container,
         debugDescription: "a theme needs exactly 16 ANSI colours, found \(ansi.count)")
     }
-    let opacity = (try? container.decodeIfPresent(Double.self, forKey: .inactivePaneOpacity)) ?? nil
+    let opacity = container.decodeTolerantly(Double.self, forKey: .inactivePaneOpacity)
     self.init(
       id: try container.decode(String.self, forKey: .id),
       name: try container.decode(String.self, forKey: .name),
@@ -87,7 +87,7 @@ public struct Theme: Identifiable, Codable, Hashable, Sendable {
       cursor: try container.decode(String.self, forKey: .cursor),
       selectionBackground: try container.decode(String.self, forKey: .selectionBackground),
       ansi: ansi,
-      focusRing: (try? container.decodeIfPresent(String.self, forKey: .focusRing)) ?? nil,
+      focusRing: container.decodeTolerantly(String.self, forKey: .focusRing),
       inactivePaneOpacity: opacity ?? 1
     )
   }

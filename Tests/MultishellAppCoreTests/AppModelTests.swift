@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import TestScratch
 import Testing
 
 @testable import MultishellAppCore
@@ -223,8 +224,7 @@ struct AppModelTests {
   /// A saved tab that comes back as `claude --continue` is the same tab,
   /// and the flags said how that tab is meant to run.
   @Test func aResumedAgentTabIsStartedWithTheFlagsToo() throws {
-    let file = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-agent-flags-\(UUID().uuidString)", isDirectory: true)
+    let file = Scratch.path("agent-flags")
       .appendingPathComponent("state.json")
     defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
     let before = Harness(stateFile: file)
@@ -714,8 +714,7 @@ struct NewWorktreeRequestTests {
 @Suite(.serialized) @MainActor
 struct RelaunchTests {
   @Test func aSavedWorkspaceComesBackAndWarmsOnTheFirstVisit() throws {
-    let file = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-relaunch-\(UUID().uuidString)", isDirectory: true)
+    let file = Scratch.path("relaunch")
       .appendingPathComponent("state.json")
     defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
 
@@ -764,9 +763,7 @@ struct RelaunchTests {
 @Suite @MainActor
 struct NullPlatformTests {
   @Test func withoutATrashARemovedDirectoryIsDeleted() throws {
-    let directory = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-null-\(UUID().uuidString)", isDirectory: true)
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let directory = try Scratch.directory("null")
     try "x".write(to: directory.appendingPathComponent("f"), atomically: true, encoding: .utf8)
 
     try NullPlatform().moveToTrash(directory)

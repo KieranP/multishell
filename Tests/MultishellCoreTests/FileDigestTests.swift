@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellCore
@@ -37,9 +38,7 @@ struct FileDigestTests {
 
   /// What the app actually hashes: the bytes of a `.multishell.json`.
   @Test func aFilesBytesHashToTheSameDigestAsItsContents() throws {
-    let directory = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("digest-\(UUID().uuidString)")
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let directory = try Scratch.directory("digest")
     defer { try? FileManager.default.removeItem(at: directory) }
     let file = directory.appendingPathComponent("settings.json")
     try #"{ "postCreateHook": "npm ci" }"#.appending("\n")

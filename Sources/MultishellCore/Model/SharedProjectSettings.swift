@@ -215,12 +215,13 @@ extension SharedProjectSettings: Codable {
 
   public init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
+    // Tolerated throughout: a key of the wrong type costs that key, not
+    // the file, which someone else on the team committed.
     func string(_ key: CodingKeys) -> String? {
-      (try? container.decodeIfPresent(String.self, forKey: key)) ?? nil
+      container.decodeTolerantly(String.self, forKey: key)
     }
-    // Same as `string`: a key of the wrong type costs that key, not the file.
     func flag(_ key: CodingKeys) -> Bool? {
-      (try? container.decodeIfPresent(Bool.self, forKey: key)) ?? nil
+      container.decodeTolerantly(Bool.self, forKey: key)
     }
     self.init(
       worktreeDirectory: string(.worktreeDirectory),
@@ -238,11 +239,11 @@ extension SharedProjectSettings: Codable {
       copiedPaths: string(.copiedPaths),
       // An order a newer build named, or a typo someone committed, costs
       // the key and leaves the user's own choice in force.
-      worktreeSortOrder: (try? container.decodeIfPresent(
-        WorktreeSortOrder.self, forKey: .worktreeSortOrder)) ?? nil,
+      worktreeSortOrder: container.decodeTolerantly(
+        WorktreeSortOrder.self, forKey: .worktreeSortOrder),
       showsActiveWorktreesFirst: flag(.showsActiveWorktreesFirst),
       iconGlyph: string(.iconGlyph),
-      iconTint: (try? container.decodeIfPresent(Int.self, forKey: .iconTint)) ?? nil)
+      iconTint: container.decodeTolerantly(Int.self, forKey: .iconTint))
   }
 }
 

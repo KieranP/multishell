@@ -43,13 +43,10 @@ struct IconPicker: View {
 
   private var field: some View {
     HStack(spacing: 6) {
+      Image(systemName: kind.symbolName).foregroundStyle(tint)
       switch kind {
-      case .folder:
-        Image(systemName: "folder").foregroundStyle(tint)
-        Text("Folder")
-      case .symbol(let name):
-        Image(systemName: name).foregroundStyle(tint)
-        Text(name).lineLimit(1).truncationMode(.middle)
+      case .folder: Text("Folder")
+      case .symbol(let name): Text(name).lineLimit(1).truncationMode(.middle)
       }
       Spacer(minLength: 4)
       Image(systemName: "chevron.up.chevron.down")
@@ -243,7 +240,9 @@ struct IconPicker: View {
   }
 
   private func pick(_ name: String) {
-    choose(name == "folder" ? nil : name)
+    // The folder cell is the way back to no glyph at all, so it stores
+    // nothing rather than storing its name.
+    choose(name == ProjectIcon.folderSymbol ? nil : name)
     isPresented = false
   }
 
@@ -263,10 +262,5 @@ struct IconPicker: View {
     return .handled
   }
 
-  private var chosen: String {
-    switch kind {
-    case .folder: "folder"
-    case .symbol(let name): name
-    }
-  }
+  private var chosen: String { kind.symbolName }
 }

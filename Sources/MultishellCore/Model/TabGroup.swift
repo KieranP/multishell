@@ -54,9 +54,7 @@ public struct TabGroup: Identifiable, Codable, Hashable, Sendable {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     self.id = try container.decode(UUID.self, forKey: .id)
     self.worktreeID = try container.decode(Worktree.ID.self, forKey: .worktreeID)
-    let weight = (try? container.decodeIfPresent(Double.self, forKey: .weight)) ?? nil
-    self.weight = Self.usableWeight(weight ?? 1)
-    self.activeTabID =
-      (try? container.decodeIfPresent(TerminalTab.ID.self, forKey: .activeTabID)) ?? nil
+    self.weight = Self.usableWeight(container.decodeTolerantly(Double.self, forKey: .weight, or: 1))
+    self.activeTabID = container.decodeTolerantly(TerminalTab.ID.self, forKey: .activeTabID)
   }
 }

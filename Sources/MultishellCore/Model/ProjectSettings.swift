@@ -169,12 +169,12 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     worktreeDirectory = try container.decodeIfPresent(String.self, forKey: .worktreeDirectory)
     branchPrefix = try container.decodeIfPresent(String.self, forKey: .branchPrefix)
     defaultBranch = try container.decodeIfPresent(String.self, forKey: .defaultBranch)
-    preCreateHook = try container.decodeIfPresent(String.self, forKey: .preCreateHook) ?? ""
-    postCreateHook = try container.decodeIfPresent(String.self, forKey: .postCreateHook) ?? ""
-    preDeleteHook = try container.decodeIfPresent(String.self, forKey: .preDeleteHook) ?? ""
-    postDeleteHook = try container.decodeIfPresent(String.self, forKey: .postDeleteHook) ?? ""
-    linkedPaths = try container.decodeIfPresent(String.self, forKey: .linkedPaths) ?? ""
-    copiedPaths = try container.decodeIfPresent(String.self, forKey: .copiedPaths) ?? ""
+    preCreateHook = try container.decode(String.self, forKey: .preCreateHook, or: "")
+    postCreateHook = try container.decode(String.self, forKey: .postCreateHook, or: "")
+    preDeleteHook = try container.decode(String.self, forKey: .preDeleteHook, or: "")
+    postDeleteHook = try container.decode(String.self, forKey: .postDeleteHook, or: "")
+    linkedPaths = try container.decode(String.self, forKey: .linkedPaths, or: "")
+    copiedPaths = try container.decode(String.self, forKey: .copiedPaths, or: "")
     preferredAgentID = Self.override(
       try container.decodeIfPresent(String.self, forKey: .preferredAgentID))
     // No `override(_:)`: `""` is this field's only way to say "no flags
@@ -189,16 +189,16 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
       Bool.self, forKey: .autoStartAgentOnCreate)
     opensTerminalOnSelect = try container.decodeIfPresent(Bool.self, forKey: .opensTerminalOnSelect)
     opensTerminalOnCreate = try container.decodeIfPresent(Bool.self, forKey: .opensTerminalOnCreate)
-    // `try?`: an order a newer build named is not an override this one can
-    // honour, and following the global beats losing the project.
-    worktreeSortOrder =
-      (try? container.decodeIfPresent(WorktreeSortOrder.self, forKey: .worktreeSortOrder)) ?? nil
+    // Tolerated: an order a newer build named is not an override this one
+    // can honour, and following the global beats losing the project.
+    worktreeSortOrder = container.decodeTolerantly(
+      WorktreeSortOrder.self, forKey: .worktreeSortOrder)
     showsActiveWorktreesFirst = try container.decodeIfPresent(
       Bool.self, forKey: .showsActiveWorktreesFirst)
     defaultShell = Self.override(try container.decodeIfPresent(String.self, forKey: .defaultShell))
     iconGlyph = Self.override(try container.decodeIfPresent(String.self, forKey: .iconGlyph))
-    // `try?`: a tint that is not a number costs the tint, not the file.
-    iconTint = ProjectIcon.validTint(try? container.decodeIfPresent(Int.self, forKey: .iconTint))
+    // Tolerated: a tint that is not a number costs the tint, not the file.
+    iconTint = ProjectIcon.validTint(container.decodeTolerantly(Int.self, forKey: .iconTint))
     // Lossy: an answer that will not decode costs that answer and not the
     // project's others, and its hooks are asked about again. What builds
     // before the digest wrote is a whole such value, one decision holding

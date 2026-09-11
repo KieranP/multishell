@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellCore
@@ -8,7 +9,7 @@ struct AgentHookPayloadTests {
   private func state(
     _ integration: AgentHookIntegration, _ event: String, mode: String? = nil
   ) -> SessionState? {
-    integration.state(for: AgentHookPayload(eventName: event, permissionMode: mode))
+    integration.event(for: AgentHookPayload(eventName: event, permissionMode: mode))?.state
   }
 
   @Test func eachAgentsEventsMapToTheStatesTheyStandFor() {
@@ -558,8 +559,7 @@ struct AgentHooksTests {
   }
 
   private func temporaryDirectory() -> URL {
-    URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-hooks-\(UUID().uuidString)", isDirectory: true)
+    Scratch.path("hooks")
   }
 }
 
