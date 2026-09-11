@@ -5,6 +5,10 @@ import SwiftUI
 /// Per-project settings live behind the cog on each sidebar row. Help sits
 /// behind each row's (i); captions are kept for values computed live.
 struct SettingsView: View {
+  /// Fixed: a settings window sized to its tallest tab would resize as the
+  /// user moved between them. SettingsPageSizeTests holds the pages to it.
+  static let windowSize = CGSize(width: 560, height: 480)
+
   let model: AppModel
   let platform: MacPlatform
 
@@ -35,7 +39,7 @@ struct SettingsView: View {
         .tabItem { Label("Appearance", systemImage: "paintpalette") }
         .tag(Tab.appearance)
     }
-    .frame(width: 560, height: 480)
+    .frame(width: Self.windowSize.width, height: Self.windowSize.height)
     .settingsWindowReset(
       on: { platform.mainWindow?.screen }, showFirstTab: { tab = .general })
   }

@@ -16,9 +16,30 @@ What is unverified or unbuilt, with the fallback where there is one.
   the later lines of a multi-line buffer.
 - Linux never compiled, locally or in CI.
 - Notifications settings page never seen on screen: the toggles, the caption
-  under them, the six-tab band in a 560pt window. If the band clips, raise the
-  width in SettingsView; caption and the help behind each (i) are strings in
-  NotificationSettings.
+  under them, the six-tab band in a 560pt window. SettingsPageSizeTests holds
+  this page's height under the window's own, so what is left is how it reads
+  rather than whether it runs off the bottom. The band is measurable by
+  nothing, SwiftUI drawing it outside the AppKit hierarchy; if it clips, raise
+  the width in SettingsView. Caption and the help behind each (i) are strings
+  in NotificationSettings.
+- Agent settings outgrows its window once four of the five supported agents
+  have hooks installed: 260pt with none, 357 with one, 481.5 with four, 550.5
+  with five, against a 480pt window, so the Command line tool section below
+  them goes under the fold with nothing saying so. Measured headlessly with
+  the page's `onAppear` refresh taken out; with it in, the page is as tall as
+  whatever the machine has, which is also why SettingsPageSizeTests leaves
+  this page alone and nothing holds it. Fix = the hooks rows want their own
+  scroll, or the window is taller than the rest need.
+- Project settings' General tab wants 581pt in a 480pt window, so its last
+  rows are below the fold with nothing saying so. Nobody has ruled on whether
+  that is wanted; SettingsPageSizeTests records it as deliberate so the next
+  page to overflow is not lost in it. Hooks overflows too, at 973pt, and that
+  one is six editors and could never have fitted.
+- Whether a headless layout test runs on CI's macOS runner: it needs a window
+  server, which is a session rather than a permission, and no such test has
+  been through CI yet. If SettingsPageSizeTests fails there and passes on a
+  laptop, that is why, and the fallback is to skip it when
+  `NSScreen.screens.isEmpty`.
 - Directory check before a click starts a shell runs on the main thread, so a
   network volume that has gone away blocks until the mount times out. Polling
   paths' checks run off it.

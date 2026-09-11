@@ -1,4 +1,3 @@
-import AppKit
 import MultishellAppCore
 import MultishellCore
 import Testing
@@ -21,7 +20,7 @@ struct SettingsBindingTests {
   /// setting, and the project would start auto-starting an agent because
   /// someone ticked "override".
   @Test func turningAnOverrideOnSeedsItWithWhatWasInForce() {
-    let harness = BindingHarness()
+    let harness = ModelHarness()
     let project = harness.project
     #expect(harness.model.workspace.autoStartAgent == false, "the global this inherits from")
 
@@ -40,7 +39,7 @@ struct SettingsBindingTests {
   /// Turning it off goes back to following, rather than storing the value
   /// the disabled control happened to be showing.
   @Test func turningAnOverrideOffClearsItRatherThanStoringWhatWasShown() {
-    let harness = BindingHarness()
+    let harness = ModelHarness()
     let project = harness.project
     harness.model.overrideValue(\.autoStartAgent, of: project, fallback: false).wrappedValue = true
     #expect(harness.settings(of: project).autoStartAgent == true)
@@ -55,7 +54,7 @@ struct SettingsBindingTests {
   /// read as "this project has no worktree path", which is a different
   /// claim from "it uses the one you set globally".
   @Test func anOverrideThatIsOffShowsTheInheritedValue() {
-    let harness = BindingHarness()
+    let harness = ModelHarness()
     let project = harness.project
 
     let field = harness.model.overrideValue(
@@ -72,7 +71,7 @@ struct SettingsBindingTests {
   /// A blank override is a value, not an absence: it is how "no prefix" is
   /// spelled while the global has one. The pair has to keep them apart.
   @Test func aBlankOverrideStaysAnOverride() {
-    let harness = BindingHarness()
+    let harness = ModelHarness()
     let project = harness.project
     harness.model.setWorktreeDefaults(WorktreeSettings(branchPrefix: "team/"))
 
@@ -93,7 +92,7 @@ struct SettingsBindingTests {
   /// record up again; a binding that closed over the old one would write
   /// its settings back over anything changed meanwhile.
   @Test func aBindingFollowsTheRecordAndNotTheProjectItWasBuiltWith() {
-    let harness = BindingHarness()
+    let harness = ModelHarness()
     let stale = harness.project
 
     // Something else changes the project while the window holds `stale`.
@@ -103,53 +102,4 @@ struct SettingsBindingTests {
     #expect(harness.model.current(stale).isExpanded == false, "the change is not lost")
     #expect(harness.settings(of: stale).autoStartAgent == true, "and the write still landed")
   }
-}
-
-/// The Mac model with nothing behind it: no git, no watcher, no engine.
-/// These tests only read and write settings, so none of the three is ever
-/// reached.
-@MainActor
-private struct BindingHarness {
-  let model: Multishell.AppModel
-  let project: Project
-
-  init() {
-    let directory = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-bindings-\(UUID().uuidString)", isDirectory: true)
-    try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-    let store = WorkspaceStore(
-      snapshot: WorkspaceSnapshot(fileURL: directory.appendingPathComponent("state.json")))
-    project = store.addProject(at: directory)
-    let engine = NoEngine()
-    model = AppModel(
-      store: store,
-      host: MultiEngineHost(engine: .ghostty) { _ in engine },
-      worktrees: nil,
-      watcher: NoWatcher())
-  }
-
-  /// The project's own settings, the repository's not layered in, which is
-  /// what these forms edit.
-  func settings(of project: Project) -> ProjectSettings {
-    model.settings(of: project)
-  }
-}
-
-@MainActor
-private final class NoEngine: TerminalSurfaceHost {
-  var openSessionIDs: Set<TerminalSession.ID> = []
-  weak var delegate: (any TerminalHostDelegate)?
-  func open(_ session: TerminalSession) throws {}
-  func close(_ id: TerminalSession.ID) {}
-  func focus(_ id: TerminalSession.ID) {}
-  func paste(_ text: String, into id: TerminalSession.ID) -> Bool { false }
-  func view(for id: TerminalSession.ID) -> NSView? { nil }
-  func apply(_ theme: Theme, appearance: Appearance) {}
-}
-
-@MainActor
-private final class NoWatcher: DirectoryWatcher {
-  var onChange: (@MainActor () -> Void)?
-  func watch(_ directories: [URL]) {}
-  func stop() {}
 }

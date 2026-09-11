@@ -35,7 +35,7 @@ struct ProjectSettingsWindow: View {
           .init("Agents", symbol: "sparkles") { ProjectAgentTab(model: model, project: project) },
         ], firstTabToken: firstTabToken
       )
-      .frame(width: 560, height: 480)
+      .frame(width: SettingsView.windowSize.width, height: SettingsView.windowSize.height)
       .navigationTitle("\(project.name) Settings")
       // This window is its own scene, so a removal asked for here has to
       // be confirmed here; the workspace window's dialog would be behind it.

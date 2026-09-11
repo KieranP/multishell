@@ -47,7 +47,24 @@ You cannot see or drive the app: no Apple events (System Events answers
 `-1743`), no Screen Recording (`screencapture` cannot make an image). Do not
 try, do not ask for those permissions.
 
-A view change stops at the checks above: say what is unverified, leave the
-looking to the user, and record it in `known-gaps.md` with the fallback if it
-turns out wrong. Anything decidable without a screen belongs in a plain value
-in MultishellAppCore, tested there.
+What you can do instead: lay a view out in-process. An NSHostingView inside
+an NSWindow that is never ordered in measures and renders, asking for nothing,
+and `sizingOptions = [.minSize, .intrinsicContentSize]` then gives the size
+SwiftUI would refuse to go below. SettingsPageSizeTests is the pattern. It
+still needs a window server, which is not a permission but is a session: it
+passes on a developer's machine, and whether CI's runner has one is unchecked
+as of the first such test.
+
+Four limits found doing it. A TabView's band is drawn outside the AppKit
+hierarchy: it is in no bitmap and in no measured size, so a band that clips
+stays invisible here. ImageRenderer refuses a TabView outright and draws a
+placeholder in its place, where `cacheDisplay` renders the tab's content.
+A minimum width reports where text stops wrapping, not where a control is cut
+off, so it reads as a clip for any page with a caption. Metal is untried: a
+Ghostty surface is expected to come out blank, since neither path captures a
+drawable, but nobody has looked.
+
+A view change otherwise stops at the checks above: say what is unverified,
+leave the looking to the user, and record it in `known-gaps.md` with the
+fallback if it turns out wrong. Anything decidable without a screen belongs in
+a plain value in MultishellAppCore, tested there.

@@ -37,6 +37,14 @@ What each test catches, and the conventions a new one follows.
   AgentBoardModelTests, every state and both filter positions.
   `agentLaneCounts` counts without building a card, so a shell reporting a new
   prompt does not re-render the sidebar, and the two ways of counting can part.
+- A settings page outgrowing its fixed window: SettingsPageSizeTests lays the
+  pages of both settings windows out at 560 in an NSHostingView in an NSWindow
+  never ordered in, and holds each to 480. No screen and no permission: what
+  macOS gates is reading another process, not your own. Three pages are left
+  out and say why: two scroll on purpose, and Agent settings reads the machine
+  on appear, so its height is the developer's rather than anyone's. Width is
+  not checkable at all, a minimum-size measurement reporting where text stops
+  wrapping rather than where a control is cut off.
 - Foundation-only imports: checked by hand in a `swift:6.0` container, Linux
   being out of CI. Views untested, but a value a view reads is.
 
