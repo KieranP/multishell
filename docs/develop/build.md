@@ -28,11 +28,21 @@ downloads the libghostty xcframework, ~80 MB.
 without it the build signs ad hoc and says so. Not for distribution: it is so
 the user's permission grants survive a rebuild.
 
-Every target works the same from a git worktree as from the checkout. But a
-debug bundle shares `state.debug.json` and `multishell.debug.sock` with every
-other build on the machine, so `make run` in two worktrees = two apps over one
-state file; and a bundle built in a worktree keeps reading resources from
-there, which the build says as it finishes (`known-gaps.md` has why).
+Every target works the same from a git worktree as from the checkout, and two
+worktrees can build at once: the scratch directories are per-worktree and the
+shared SwiftPM caches only lock briefly. Running the tests is the exception,
+several of their bounds being wall-clock. So `make test` compiles with
+`--build-tests`, unguarded, then runs with `--skip-build` under `lockf` on
+`~/Library/Caches/multishell-test.lock`: a second worktree compiles alongside
+the first and waits, without saying so, only for its turn to run. A bare
+`swift test` takes no lock. Nothing caps the compiler's own parallelism
+either, so three full builds at once still oversubscribe the machine; `-j` if
+that bites.
+
+A debug bundle built in a worktree names that worktree in its state file and
+socket (`state-on-disk.md`), so two of them can run at once. It still reads
+its resources from that worktree, which the build says as it finishes
+(`known-gaps.md` has why).
 
 CI: builds and tests libraries and app on macOS, then `make lint`.
 

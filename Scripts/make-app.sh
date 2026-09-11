@@ -23,6 +23,26 @@ if [ -n "$(git -C "$root" --no-optional-locks status --porcelain 2>/dev/null)" ]
 fi
 version="$committed-$commit"
 
+# A debug bundle built from a git worktree names that worktree, and Paths
+# gives it its own state file, socket, integration directory and drops: two
+# worktrees can then both `make run` without the last autosave winning. Empty
+# from the checkout, which keeps the plain `.debug` files, and empty for
+# release, which reads no key at all.
+#
+# Spelled down to a safe set here and not left to Paths, because the name goes
+# into the XML below: an unescaped `&` in a branch name makes the whole
+# Info.plist unparseable, and a bundle whose Info.plist will not parse does
+# not launch.
+worktree=""
+if [ "$(git -C "$root" rev-parse --git-dir 2>/dev/null)" \
+    != "$(git -C "$root" rev-parse --git-common-dir 2>/dev/null)" ]; then
+    worktree="$(printf %s "$(basename "$root")" | tr -c 'A-Za-z0-9_-' '-')"
+fi
+variant=""
+if [ "$config" != "release" ]; then
+    variant="$worktree"
+fi
+
 swift build --package-path "$package" -c "$config"
 # The helper is a product of the root package, which the app depends on but
 # cannot list as a dependency (an executable product is not linkable).
@@ -54,6 +74,7 @@ cat > "$app/Contents/Info.plist" <<PLIST
     <key>CFBundleShortVersionString</key><string>$version</string>
     <key>CFBundleVersion</key><string>$commits</string>
     <key>CFBundleIconFile</key><string>Multishell</string>
+    <key>MultishellVariant</key><string>$variant</string>
     <key>LSMinimumSystemVersion</key><string>14.0</string>
     <key>NSHighResolutionCapable</key><true/>
     <!-- What macOS puts under its own line in the permission alert. A
@@ -133,8 +154,7 @@ codesign --verify "$app" || echo "warning: $app is not validly signed" >&2
 # Bundle.module looks that exists (the other is the app root, where codesign
 # refuses to let the bundles live). From a worktree that path is the worktree,
 # which is the one directory the user is expected to throw away.
-if [ "$(git -C "$root" rev-parse --git-dir 2>/dev/null)" \
-    != "$(git -C "$root" rev-parse --git-common-dir 2>/dev/null)" ]; then
+if [ -n "$worktree" ]; then
     echo "note: built from a git worktree, so the bundle reads its resources from" >&2
     echo "      $root/Apps/macOS/.build" >&2
     echo "      and stops working once that worktree is removed. Build from the" >&2

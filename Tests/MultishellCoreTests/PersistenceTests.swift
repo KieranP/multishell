@@ -7,14 +7,42 @@ import Testing
 struct DebugPathsTests {
   /// Tests are debug builds, so they see the debug variant; a release build
   /// drops the suffix. Either way the three move together.
-  @Test func debugBuildsKeepTheirOwnStateSocketAndIntegration() {
+  ///
+  /// Under a time limit because reading the variant walks up from the running
+  /// binary looking for an `.app`, and a walk that does not end hangs the run
+  /// rather than failing it: a job that times out after an hour says far less
+  /// than this does.
+  @Test(.timeLimit(.minutes(1)))
+  func debugBuildsKeepTheirOwnStateSocketAndIntegration() {
     #expect(Paths.stateFile.lastPathComponent == "state\(Paths.variant).json")
     #expect(Paths.socketFile.lastPathComponent == "multishell\(Paths.variant).sock")
     #expect(Paths.integrationDirectory.lastPathComponent == "integration\(Paths.variant)")
     #expect(Paths.helperLink.lastPathComponent == "multishell", "shared: hooks reference it")
     #if DEBUG
+      // A test process is no app bundle, so it carries no worktree name.
       #expect(Paths.variant == ".debug")
     #endif
+  }
+
+  /// A debug bundle built from a worktree gets its own state file, socket,
+  /// integration directory and drops, so two worktrees can both `make run`.
+  @Test func aWorktreesDebugBundleNamesItself() {
+    #expect(Paths.debugVariant(named: "fix1") == ".debug-fix1")
+    #expect(Paths.debugVariant(named: nil) == ".debug", "the checkout keeps the plain files")
+    #expect(Paths.debugVariant(named: "") == ".debug", "make-app.sh writes the key empty")
+  }
+
+  /// The name lands in a socket path, and `sun_path` holds 104 bytes: this
+  /// directory plus `multishell.debug-.sock` already spends about 75, so an
+  /// uncut branch name would make the socket unbindable.
+  @Test func aLongOrOddWorktreeNameIsCutAndSpelledSafely() {
+    let longest = Paths.debugVariant(named: String(repeating: "\u{1F600}", count: 40))
+    #expect(longest == ".debug-" + String(repeating: "-", count: 16))
+    #expect(Paths.debugVariant(named: "feat.two words/x") == ".debug-feat-two-words-x")
+    let socket =
+      "/Users/averylongusername/Library/Application Support/Multishell"
+      + "/multishell\(longest).sock"
+    #expect(socket.utf8.count < 104, "\(socket.utf8.count) bytes: \(socket)")
   }
 }
 

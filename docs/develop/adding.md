@@ -141,8 +141,10 @@ printing the seed and step to replay.
 **Runtime state.** On AppModel, never the workspace. SessionStates owns who
 clears what: change it there and in SessionStatesTests, not in a view.
 
-**A per-build file.** On the `#if DEBUG` pattern in Paths, so `make run` never
-touches the installed app's state.
+**A per-build file.** On the `Paths.variant` pattern, so `make run` never
+touches the installed app's state and two worktrees never touch each other's.
+A file that a hook or the helper reads from outside the app is the exception:
+those stay shared, and the app hands the path over in the environment instead.
 
 **A settings row.** Bind through `model.setting(...)`, which re-reads the
 stored value; a field with its own `Binding` goes stale against a change made

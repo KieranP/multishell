@@ -53,7 +53,9 @@ What each test catches, and the conventions a new one follows.
 - Git behaviour goes against a real repository with RepositoryFixture, never
   mocks. Parsers get fixture text, odd lines included.
 - Timing bounds are sized for a single-core CI runner, many times a laptop's
-  figure. Keep that headroom when you add one.
+  figure. Keep that headroom when you add one. `make test` holds a lock across
+  worktrees for the same reason; a bare `swift test` does not, so two of those
+  at once is the one way left to fail a bound on a fast machine.
 - Real git comes from a fixture, whose runner carries `commit.gpgsign=false`:
   a developer whose global config signs would be asked for the key once per
   fixture commit. It rides on the runner, so a clone a new test adds needs no

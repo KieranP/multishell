@@ -21,16 +21,70 @@ public enum Paths {
     #endif
   }
 
+  /// The `Info.plist` key naming the worktree a debug bundle was built from.
+  /// `Scripts/make-app.sh` writes it; nothing at build time joins the two.
+  public static let variantKey = "MultishellVariant"
+
   /// Debug builds keep their own state, socket and integration files beside
   /// the release app's, so `make run` and the installed copy can run at once
   /// without the last autosave winning over the other's `state.json` or the
   /// two fighting for one socket. Themes and the helper link stay shared.
+  ///
+  /// A debug bundle built from a git worktree adds that worktree's name, for
+  /// the same reason one level down: two worktrees can then both `make run`.
+  /// The name rides in the bundle rather than the environment because `open`
+  /// passes none to the app it launches. A build from the checkout carries
+  /// no name and stays plain `.debug`, so an existing debug state file is
+  /// still the one it reads.
   public static var variant: String {
     #if DEBUG
-      ".debug"
+      debugVariant(named: bundledVariantName)
     #else
       ""
     #endif
+  }
+
+  /// Read through the enclosing `.app` rather than `Bundle.main` alone: the
+  /// helper ships in `Contents/Helpers`, which CFBundle takes for the main
+  /// bundle and which holds no `Info.plist`. Reading only `Bundle.main` would
+  /// have the helper fall back to the plain socket while the app it ships
+  /// inside listens on the named one. Held rather than recomputed because
+  /// `variant` is read on every path and this walks to the root when there is
+  /// no bundle at all, which is what a test binary looks like.
+  private static let bundledVariantName: String? = {
+    var directory = Bundle.main.bundleURL
+    // Bounded on the component count rather than on the parent coming back
+    // unchanged: at the root `deletingLastPathComponent` starts appending
+    // `..` instead of standing still, so the obvious loop never ends and
+    // every binary outside an `.app`, the test runner included, hangs.
+    while directory.pathComponents.count > 1 {
+      if directory.pathExtension == "app" {
+        let plist = directory.appendingPathComponent("Contents/Info.plist", isDirectory: false)
+        guard let data = try? Data(contentsOf: plist),
+          let contents = try? PropertyListSerialization.propertyList(from: data, format: nil)
+            as? [String: Any]
+        else { return nil }
+        return contents[variantKey] as? String
+      }
+      directory = directory.deletingLastPathComponent()
+    }
+    return Bundle.main.object(forInfoDictionaryKey: variantKey) as? String
+  }()
+
+  /// Split from `variant` so a test can name the value without a bundle.
+  ///
+  /// The name is cut to 16 characters and anything outside `[A-Za-z0-9_-]`
+  /// replaced, because it lands in a socket path: `sun_path` holds 104 bytes
+  /// and this directory plus `multishell.debug-.sock` already spends about
+  /// 75 of them, so a long branch name would make the socket unbindable
+  /// rather than merely ugly.
+  static func debugVariant(named name: String?) -> String {
+    guard let name, !name.isEmpty else { return ".debug" }
+    let safe = name.prefix(16).map { character -> Character in
+      character.isASCII && (character.isLetter || character.isNumber)
+        || character == "-" || character == "_" ? character : "-"
+    }
+    return ".debug-" + String(safe)
   }
 
   public static var stateFile: URL {

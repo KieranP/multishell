@@ -5,6 +5,16 @@ CONFIG ?= debug
 APP     = build/Multishell.app
 INSTALL_DIR ?= /Applications
 
+# Several bounds in the suite are wall-clock (ProcessRunnerTests runs 96
+# children under one), and what makes them fail is a second suite running at
+# the same time in another worktree. lockf queues that run instead of letting
+# the two oversubscribe the machine; -k keeps the file, which is what gives
+# the queue its order. `make test` in a second worktree therefore waits,
+# silently, until the first has run. Where there is no lockf, Linux included,
+# the suites run unguarded.
+TEST_LOCK_FILE ?= $(HOME)/Library/Caches/multishell-test.lock
+LOCK := $(shell command -v lockf >/dev/null 2>&1 && echo lockf -k $(TEST_LOCK_FILE))
+
 .PHONY: build release test test-app lint format install run clean signing-identity
 
 ## Once per machine: the certificate that keeps the app's privacy permissions.
@@ -20,9 +30,14 @@ release:
 	Scripts/make-app.sh release
 
 ## Test everything: the portable libraries and the model, then the Mac hosts.
+## Built before the lock and run under it: compiling in two worktrees at once
+## is fine, and holding the lock through a full build would queue the slow
+## half for nothing.
 test:
-	swift test
-	swift test --package-path Apps/macOS
+	swift build --build-tests
+	$(LOCK) swift test --skip-build
+	swift build --build-tests --package-path Apps/macOS
+	$(LOCK) swift test --skip-build --package-path Apps/macOS
 
 ## Compile the macOS app without bundling; catches SwiftUI errors fast.
 test-app:

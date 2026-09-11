@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 import Testing
 import UniformTypeIdentifiers
 
@@ -44,6 +45,23 @@ struct BundleDeclarationTests {
       MacPlatform logs under \(subsystem), which is not the bundle identifier make-app.sh \
       writes, so the `log show` predicate in docs/develop/permissions.md finds none of \
       this app's lines.
+      """)
+  }
+
+  /// The key a debug bundle built from a worktree carries its name in, so
+  /// two worktrees can both `make run` over their own state and socket.
+  ///
+  /// Renaming it on the Swift side alone breaks nothing loudly: `Paths`
+  /// finds no key, falls back to the plain `.debug` files a checkout build
+  /// wants anyway, and the two worktrees go back to sharing one state file
+  /// and one socket without a word.
+  @Test func theWorktreeVariantKeyIsWrittenIntoTheBundleTheScriptWrites() throws {
+    let isWritten = try makeAppScript().contains("<key>\(Paths.variantKey)</key>")
+    #expect(
+      isWritten,
+      """
+      make-app.sh does not write \(Paths.variantKey), so Paths.variant finds nothing and \
+      every worktree's debug build shares one state file and one socket again.
       """)
   }
 
