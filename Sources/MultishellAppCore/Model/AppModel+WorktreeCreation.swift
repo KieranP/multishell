@@ -165,10 +165,17 @@ extension AppModel {
     _ step: WorktreeOperation.Step, of worktree: Worktree, _ error: any Error,
     timedOut: Bool = false
   ) {
-    let shownInPane =
-      workspace.worktree(worktree.id) != nil
-      && worktreeOperations.fail(
-        step, on: worktree.id, message: PresentedError(error).message, timedOut: timedOut)
+    // Gone while the stage ran, and the entry goes with it: paths are ids, so
+    // the next worktree there would inherit an operation nothing can finish.
+    guard workspace.worktree(worktree.id) != nil else {
+      // `finish`, not `clear`: a removal that has since taken the entry owns
+      // it, and this stage's late result is not the one to throw it away.
+      worktreeOperations.finish(step, on: worktree.id)
+      report(error)
+      return
+    }
+    let shownInPane = worktreeOperations.fail(
+      step, on: worktree.id, message: PresentedError(error).message, timedOut: timedOut)
     if !shownInPane { report(error) }
   }
 

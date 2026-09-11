@@ -42,8 +42,17 @@ extension AgentHookIntegration {
     guard var hooks = settings["hooks"] as? [String: Any] else { return result }
     for (event, value) in hooks {
       guard let groups = groups(value) else { continue }
-      let kept = groups.filter { !isMultishellGroup($0) }
-      guard kept.count != groups.count else { continue }
+      var changed = false
+      var kept: [[String: Any]] = []
+      for group in groups {
+        guard isMultishellGroup(group) else {
+          kept.append(group)
+          continue
+        }
+        changed = true
+        if let trimmed = withoutOurHooks(group) { kept.append(trimmed) }
+      }
+      guard changed else { continue }
       hooks[event] = kept.isEmpty ? nil : kept
     }
     result["hooks"] = hooks.isEmpty ? nil : hooks
@@ -72,6 +81,20 @@ extension AgentHookIntegration {
     }
     if let command = group["command"] as? String { commands.append(command) }
     return commands.contains(where: AgentHooks.isMultishellHook)
+  }
+
+  /// Ours taken out of one group, `nil` where nothing of the user's is left.
+  /// Add only ever appends its own group, so a mixed one is theirs to keep.
+  private func withoutOurHooks(_ group: [String: Any]) -> [String: Any]? {
+    guard let entries = group["hooks"] as? [[String: Any]] else { return nil }
+    let kept = entries.filter { entry in
+      guard let command = entry["command"] as? String else { return true }
+      return !AgentHooks.isMultishellHook(command)
+    }
+    guard !kept.isEmpty else { return nil }
+    var trimmed = group
+    trimmed["hooks"] = kept
+    return trimmed
   }
 
   // MARK: - Files

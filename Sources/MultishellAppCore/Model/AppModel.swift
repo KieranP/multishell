@@ -21,7 +21,9 @@ public final class AppModel<Surface> {
   @ObservationIgnored let stateSource: any SessionStateSource
   @ObservationIgnored let notifier: any SessionNotifier
   @ObservationIgnored let watcher: any DirectoryWatcher
-  @ObservationIgnored let worktrees: WorktreeCoordinator?
+  /// `var`: git is looked up again once the login shell's PATH is known, which
+  /// is after this is built. See `refreshLoginEnvironment`.
+  @ObservationIgnored var worktrees: WorktreeCoordinator?
   /// Sessions that came off disk this run. Their agent tabs resume rather
   /// than start afresh; see `prepared`.
   @ObservationIgnored let restoredSessionIDs: Set<TerminalSession.ID>
@@ -190,6 +192,8 @@ public final class AppModel<Surface> {
 
     reloadThemes()
     host.apply(currentTheme, appearance: store.workspace.appearance)
+    // Said on the process's PATH alone. `refreshLoginEnvironment` looks again
+    // on the login shell's and takes this back if it finds git there.
     if let loadError {
       report(loadError)
     } else if worktrees == nil {

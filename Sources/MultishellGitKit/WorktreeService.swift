@@ -12,8 +12,8 @@ public struct WorktreeService: Sendable {
     self.git = git
   }
 
-  public init() throws {
-    self.git = try GitRunner()
+  public init(path: String? = nil) throws {
+    self.git = try GitRunner(executable: ExecutableLookup.find("git", path: path))
   }
 
   /// `--git-dir`, not `--is-inside-work-tree`, which prints `false` for a

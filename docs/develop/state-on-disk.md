@@ -26,7 +26,9 @@ see which one a running copy has.
   an `activeTabByWorktree` this build has no property for: `Workspace` reads
   that key for which tab was active, and `repairReferences` gathers each
   worktree's ungrouped tabs into the one column they were saved as.
-- `state.<timestamp>.broken.json`: a state file that failed to decode.
+- `state.<timestamp>.broken.json`: a state file that failed to read or to
+  decode. Where the move itself failed the original is still at `state.json`
+  and nothing saves over it; see docs/design/state-and-store.md.
 - `themes/*.json`, `themes/examples/` not loaded.
 - `multishell.sock`, mode 0600.
 - `bin/multishell`: symlink to the helper in the current bundle, refreshed at

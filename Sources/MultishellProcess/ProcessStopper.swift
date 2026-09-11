@@ -67,9 +67,10 @@ public final class ProcessStopper: @unchecked Sendable {
     guard process.isRunning else { return }
     let pid = process.processIdentifier
     if kill(-pid, SIGHUP) != 0 { kill(pid, SIGHUP) }
-    // The group only, no fallback to the pid, whose number may have gone to
-    // an unrelated process. A group id is not reused while a member lives.
+    // The group only, and only while the child lives: a group id is not reused
+    // until its last member goes, after which the number could be anyone's.
     DispatchQueue.global().asyncAfter(deadline: .now() + killGrace) {
+      guard process.isRunning else { return }
       kill(-pid, SIGKILL)
     }
   }

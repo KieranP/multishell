@@ -79,6 +79,26 @@ does.
   which are not, so a search for the local word for "database" finds
   nothing. Fix = the words move into the catalogue, one key per word,
   which is another 107 entries for a search box.
+- A tag named exactly like a local trunk still decides the base: the worktree's
+  branch goes to git as a refname now, the base does not, `DefaultBranch.ref`
+  being the short print form. Every merge read for that project would then be
+  measured against the tag. Unlikely enough to leave: a remote-tracking base
+  cannot tie with a tag, so it needs a repository whose default resolves to a
+  local `main` with a `main` tag beside it.
+- A hook group holding one of our commands as a bare `command` beside a
+  `hooks` array of the user's keeps our command after Remove, which reads as
+  Remove not working. No agent writes that shape and Add never produces it, so
+  it is reachable only by hand-editing; the two shapes are handled separately
+  and the bare one is taken as ours whole.
+- Saving is off for the whole session once state is found unreadable and
+  unmovable, and the check is made once at restore. Permissions fixed while the
+  app runs are not noticed until relaunch, and the session's work goes at quit
+  with only the launch alert having said so.
+- `MultiEngineHost` records ownership before the open, so an engine changed
+  between a failed open and the retry leaves the first engine's surface
+  unreachable by `close`. Neither shipping host throws from `open`, so only
+  `RecordingEngine.failNextOpen` reaches it; which of the two leaks is wanted
+  was read both ways by two reviewers and is unsettled.
 
 ## Unconfirmed behaviour
 
@@ -105,6 +125,11 @@ does.
   at least keeps it out of the text libghostty is handed.
   Any other relative path in the file resolves from the temporary directory
   the effective config is written to rather than from the file's own.
+- Whether SwiftUI calls `updateNSView` when every stored value of the view
+  compares equal is unseen, so how often the focus guard in `SurfaceView` was
+  actually firing is unknown. The guard is right either way and costs nothing;
+  what a screen would settle is whether the keyboard was being pulled out of
+  the sidebar filter in practice or only in principle.
 - Linux never compiled, locally or in CI. The counted phrases are the part
   of the catalogue to look at first when it is: `Localizable.strings` is
   plain enough that corelibs-foundation reads it, and whether its

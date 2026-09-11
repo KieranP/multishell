@@ -9,20 +9,29 @@ public struct WorkspaceSnapshot: Sendable {
     self.fileURL = fileURL
   }
 
-  /// A file that will not decode is moved aside, never overwritten; see
-  /// docs/design/state-and-store.md.
+  /// A file that will not read or decode is moved aside, never overwritten.
+  /// The read is inside the `do` for that; see docs/design/state-and-store.md.
   public func load() throws -> Workspace {
     guard FileManager.default.fileExists(atPath: fileURL.path) else { return Workspace() }
-    let data = try Data(contentsOf: fileURL)
     do {
-      return try JSONDecoder().decode(Workspace.self, from: data)
+      return try JSONDecoder().decode(Workspace.self, from: try Data(contentsOf: fileURL))
     } catch {
       // Computed once: the name carries a timestamp, and the error must name
       // the file that was actually written.
       let backup = backupURL
-      try? FileManager.default.moveItem(at: fileURL, to: backup)
+      do {
+        try FileManager.default.moveItem(at: fileURL, to: backup)
+      } catch let move {
+        throw UnmovedState(file: fileURL, underlying: error, move: move)
+      }
       throw UnreadableState(backup: backup, underlying: error)
     }
+  }
+
+  /// Whether a file stands where `save` would write. Asked after a failed
+  /// load, when what is still there is the user's own state.
+  public var holdsFile: Bool {
+    FileManager.default.fileExists(atPath: fileURL.path)
   }
 
   private var backupURL: URL {
@@ -52,5 +61,23 @@ public struct UnreadableState: Error, CustomStringConvertible {
 
   public var description: String {
     "Saved state could not be read and was moved to \(backup.lastPathComponent). \(underlying)"
+  }
+}
+
+/// Unreadable and unmovable both, so it still stands where a save would land.
+/// Nothing may write that path; see `WorkspaceStore.refusesToSave`.
+public struct UnmovedState: Error, CustomStringConvertible {
+  public let file: URL
+  public let underlying: any Error
+  public let move: any Error
+
+  public init(file: URL, underlying: any Error, move: any Error) {
+    self.file = file
+    self.underlying = underlying
+    self.move = move
+  }
+
+  public var description: String {
+    "Saved state could not be read and was left at \(file.path). \(underlying)"
   }
 }

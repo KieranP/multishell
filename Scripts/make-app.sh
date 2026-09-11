@@ -55,9 +55,19 @@ cp "$root/.build/$config/multishell" "$app/Contents/Helpers/multishell"
 
 # GhosttyTerminal ships terminfo and config as SPM resource bundles; without
 # them libghostty starts with no terminfo and every child process misbehaves.
+bundles=0
 for bundle in "$build"/*.bundle; do
-    [ -e "$bundle" ] && cp -R "$bundle" "$app/Contents/Resources/"
+    [ -e "$bundle" ] || continue
+    cp -R "$bundle" "$app/Contents/Resources/"
+    bundles=$((bundles + 1))
 done
+# Counted, because a glob matching nothing is no error to `set -e`: the build
+# used to finish quietly on an app whose terminals all misbehave.
+if [ "$bundles" -eq 0 ]; then
+    echo "error: no resource bundles in $build; libghostty would start with no" >&2
+    echo "       terminfo. Build the package first." >&2
+    exit 1
+fi
 
 cp "$package/Resources/Multishell.icns" "$app/Contents/Resources/Multishell.icns"
 

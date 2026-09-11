@@ -74,7 +74,11 @@ if [ -n "${MULTISHELL_SESSION-}" ] && [ -n "${MULTISHELL_SOCKET-}" ]; then
     [ "$_multishell_ran" = 1 ] || return
     _multishell_ran=0
     local d state
-    printf -v d '%.3f' $(( ${EPOCHREALTIME:-$SECONDS} - _multishell_started ))
+    # Integer milliseconds, the point written by hand: `%f` takes the locale's
+    # separator. Clamped, or a clock stepped back writes `0.-234`; terminals.md.
+    local -i _multishell_ms=$(( (${EPOCHREALTIME:-$SECONDS} - _multishell_started) * 1000 ))
+    (( _multishell_ms < 0 )) && _multishell_ms=0
+    printf -v d '%d.%03d' $(( _multishell_ms / 1000 )) $(( _multishell_ms % 1000 ))
     if [ "$e" -eq 0 ] || [ "$e" -gt 128 ]; then state=done; else state=error; fi
     _multishell_send "$(_multishell_json $state ",\"duration\":$d")" command-finished --exit "$e" --duration "$d"
   }

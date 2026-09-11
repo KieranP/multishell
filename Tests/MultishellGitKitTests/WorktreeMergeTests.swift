@@ -204,6 +204,33 @@ struct WorktreeMergeTests {
     #expect(states["docs"] == .merged(.ancestor, into: "main"))
   }
 
+  /// A tag of the branch's name makes `%(refname:short)` answer `heads/x`,
+  /// matching no worktree's branch, and a bare name reach the tag instead.
+  @Test func aTagSharingABranchsNameChangesNeitherTheListNorTheVerdict() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let path = fixture.project.path
+    // The tag sits on the first commit, so judging by it would read the
+    // branch as holding nothing of its own.
+    _ = try await fixture.git.run(["tag", "release"], in: path)
+    _ = try await fixture.git.run(["checkout", "-q", "-b", "release"], in: path)
+    try await fixture.commit("work", file: "one.md", content: "one\n")
+    _ = try await fixture.git.run(["checkout", "-q", "main"], in: path)
+    // By refname, or git merges the tag: the ambiguity this is about reaches
+    // the setup as readily as the reads.
+    _ = try await fixture.git.run(
+      ["merge", "-q", "--no-ff", "-m", "merge release", "refs/heads/release"], in: path)
+
+    let service = WorktreeService(git: fixture.git)
+    let merged = await service.mergedBranches(into: "main", in: fixture.project)
+    #expect(merged?.contains("release") == true, "got \(merged ?? [])")
+
+    let scan = try await scan(fixture)
+    let states = await fixture.coordinator.mergeStates(
+      of: ["release"], in: fixture.project, scan: scan)
+    #expect(states["release"] == .merged(.ancestor, into: "main"))
+  }
+
   /// The same collision on the content read, where the two-name form of
   /// `git diff` takes the branch for a path: the answer is lost, and with it
   /// the badge a squash-merged branch had earned.

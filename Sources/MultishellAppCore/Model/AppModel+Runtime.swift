@@ -8,6 +8,14 @@ extension AppModel {
   /// Brings the host in line with the store and focuses what should be
   /// focused. Every action that changes which terminals exist ends here.
   public func sync() {
+    reconcileSessions()
+    registry.focusActiveSession()
+    markShownTabSeen()
+  }
+
+  /// Surfaces brought in line with the workspace, keyboard left alone. What a
+  /// poll calls: `sync` would take focus off a field the user is typing in.
+  func reconcileSessions() {
     let warm = warmWorktrees
     let failures = registry.reconcile(
       shouldBeLive: { warm.contains($0.worktreeID) }, prepare: { prepared($0) })
@@ -15,10 +23,8 @@ extension AppModel {
       report(failure.error)
       store.closeSession(failure.sessionID)
     }
-    registry.focusActiveSession()
     pruneStates()
     prunePendingClose()
-    markShownTabSeen()
   }
 
   /// What has now been seen: every column's active tab and the selected

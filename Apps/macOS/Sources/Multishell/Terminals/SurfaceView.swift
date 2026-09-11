@@ -33,7 +33,14 @@ final class SurfaceFrame: NSView {
   var requestFocus: (() -> Void)?
   var acceptsDrop: (() -> Bool)?
   var receiveDrop: (([URL], Bool) -> Bool)?
-  var wantsFocus = false { didSet { focusIfReady() } }
+  /// Guarded: `updateNSView` assigns this every pass, and taking first
+  /// responder each time pulls focus out of whatever the user is typing in.
+  var wantsFocus = false {
+    didSet {
+      guard wantsFocus != oldValue else { return }
+      focusIfReady()
+    }
+  }
 
   private var surface: NSView?
   private var highlight: NSView?

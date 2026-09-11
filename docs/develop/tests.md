@@ -70,6 +70,24 @@ What each test catches, and the conventions a new one follows.
   bundle, which can be a copy made before the edit: one check compares the
   two files byte for byte, so `swift test --skip-build` after changing the
   catalogue says so instead of passing on what is no longer there.
+- State that will not open, not just will not decode, is moved aside, and a
+  file that cannot be moved either is never saved over: PersistenceTests, one
+  unreadable file and one in a directory that takes no rename.
+- The user's git config cannot change what a read means, and a tag sharing a
+  branch's name decides nothing: GitRunnerTests reads the two isolated keys
+  back through `git config --get` and watches an all-untracked worktree read
+  dirty; WorktreeMergeTests ties a tag to a merged branch. That fixture merges
+  by refname, or git takes the tag and nothing lands.
+- Remove leaves a hook the user put in our own group: AgentHooksTests.
+- A poll reconciles without taking the keyboard, and a cross-column drop takes
+  it with the tab: AppModelGitTests removes a worktree behind the app's back,
+  AppModelTests drops a tab on another column's tab. Both read `FakeEngine`'s
+  recorded focus.
+- A comma-decimal locale still sends a report that parses: HelperTests, real
+  zsh under `de_DE.UTF-8`. It points `MULTISHELL_USER_ZDOTDIR` at an empty
+  directory, or the chain reaches the developer's own `.zshrc`, whose locale
+  decides the test instead; it skips where the locale is absent rather than
+  failing on its absence.
 - Foundation-only imports: checked by hand in a `swift:6.0` container, Linux
   being out of CI. Views untested, but a value a view reads is.
 

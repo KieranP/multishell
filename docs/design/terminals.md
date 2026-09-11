@@ -149,3 +149,20 @@ for the repair above to place, and the app paints its own theme here anyway.
 
 Cost: a key we have not thought about is ignored in silence, and nothing in
 the app says which lines of a user's file did not count.
+
+## The reporting line is built without anything the user's locale decides
+
+The duration a shell hook sends is integer milliseconds with the point written
+by hand, never `%f`, which takes the locale's decimal separator. Under a comma
+region the field read `"duration":1,234`, which is not JSON: the reader drops
+the whole line rather than the number, so the report never arrives and the pane
+sits on Running until the next command. It cannot be fixed by a locale prefix
+on the printf, zsh setting its locale once at startup and `LC_ALL` outranking
+`LC_NUMERIC` in any case. Clamped at zero for the same reason the separator
+matters: `%03d` of a negative prints its sign, so `0.-234` after a clock
+stepped back over a sleeping laptop would break the line exactly as a comma
+did. The bash half is not there yet: `EPOCHREALTIME`
+carries the same separator, and the arithmetic that strips its fraction matches
+a dot only, so on bash 5 in a comma region the duration is wrong rather than
+unparseable. It reaches the helper as an argv and not as JSON, so the report
+still arrives; see BUGS.md.

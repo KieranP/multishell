@@ -76,3 +76,33 @@ back without moving either tip. Nothing observable written unless it changed,
 else the sidebar redraws every five seconds.
 
 Never badged: main worktree, bare repo, detached HEAD, the trunk's own checkout.
+
+## The user's git config is not allowed to change what a read means
+
+Every runner sets `log.showSignature=false` and `status.showUntrackedFiles=normal`,
+through `GIT_CONFIG_*` rather than `-c`, which a failure would report in its
+arguments. Both are the deny lists above meeting output they did not expect.
+Signature verification prints on stdout ahead of each reflog subject, so
+`Good "git" signature for ...` splits at its first `:` into an action no arrival
+prefix matches and reads as work of its own: every branch just cut then claims
+to have landed, and, being clean and certain, gets the dialog led by the button
+that deletes it. `showUntrackedFiles=no` empties the porcelain for a worktree
+whose work is all untracked, which reads as clean, so the badge goes over
+uncommitted work and the directory is trashed. Neither is a wording difference
+the parsers could absorb; a caller's own entry still wins over both.
+
+## A branch is named to git by refname, never bare
+
+`refs/heads/<branch>` in every read that takes a worktree's branch, and
+`%(refname:lstrip=2)` from the merged list. A bare name reaches a tag of that
+name first, and git writes the ambiguity warning to stderr, which the poll's
+reads discard. `%(refname:short)` is ambiguity-aware the other way and answers
+`heads/x` where a tag ties, matching no worktree's branch. Both directions are
+wrong and neither is silent about nothing: the tie either loses a badge the
+branch had earned, or, where the tag sits on a pre-rebase commit, hands a
+certain "merged" to a branch holding work nobody has landed.
+
+The base is not covered: `DefaultBranch.ref` is the short print form,
+`origin/main` or `main`, and goes to git as it stands. A remote-tracking base
+cannot tie with a tag, so what is left is a tag named exactly like a local
+trunk.

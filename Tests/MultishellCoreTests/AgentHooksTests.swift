@@ -329,6 +329,29 @@ struct AgentHooksTests {
     #expect(bare["hooks"] == nil, "no hooks left means no hooks key")
   }
 
+  /// Add only ever appends a group of its own, so a group holding one of
+  /// theirs beside ours is hand-written and not ours to drop whole.
+  @Test func removingKeepsAHookTheUserPutInOurGroup() throws {
+    let ours = AgentHooks.claude.adding(to: [:], helper: helper)
+    var hooks = try #require(ours["hooks"] as? [String: Any])
+    var groups = try #require(hooks["Stop"] as? [[String: Any]])
+    var group = try #require(groups.first)
+    var entries = try #require(group["hooks"] as? [[String: Any]])
+    entries.append(["type": "command", "command": "~/bin/audit-log.sh"])
+    group["hooks"] = entries
+    groups[0] = group
+    hooks["Stop"] = groups
+
+    let removed = AgentHooks.claude.removing(from: ["hooks": hooks])
+
+    let left = try #require(removed["hooks"] as? [String: Any])
+    let stop = try #require(left["Stop"] as? [[String: Any]])
+    let commands = stop.flatMap { ($0["hooks"] as? [[String: Any]]) ?? [] }
+      .compactMap { $0["command"] as? String }
+    #expect(commands == ["~/bin/audit-log.sh"])
+    #expect(!AgentHooks.claude.isInstalled(in: removed))
+  }
+
   /// Whatever is under an event this cannot read is the user's: a string
   /// where a list of hooks goes, an object, a shape a later version of the
   /// agent takes. Remove must not carry it off, and Add must not write over

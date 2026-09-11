@@ -99,6 +99,64 @@ struct PersistenceTests {
         == "not json")
   }
 
+  /// The decode path moved a file aside and the read path did not, so one
+  /// that would not open was left where an empty workspace would be saved.
+  @Test func stateThatWillNotOpenIsMovedAsideAsWellAsStateThatWillNotDecode() throws {
+    let file = scratchFile()
+    let directory = file.deletingLastPathComponent()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    try Data(#"{"projects":[{"path":"file:///repos/demo/"}]}"#.utf8).write(to: file)
+    // Readable to nobody, as a restore from a backup under sudo leaves it.
+    try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: file.path)
+
+    var reported: URL?
+    #expect(throws: (any Error).self) {
+      do {
+        _ = try WorkspaceSnapshot(fileURL: file).load()
+      } catch let state as UnreadableState {
+        reported = state.backup
+        throw state
+      }
+    }
+
+    #expect(!FileManager.default.fileExists(atPath: file.path), "left where a save would land")
+    #expect(FileManager.default.fileExists(atPath: reported?.path ?? ""), "the alert names it")
+  }
+
+  /// Moving it aside frees the path to write. Where that fails too the state
+  /// is still there; see docs/design/state-and-store.md.
+  @Test @MainActor func aStateFileThatCannotBeMovedAsideIsNeverSavedOver() throws {
+    let file = scratchFile()
+    let directory = file.deletingLastPathComponent()
+    defer {
+      try? FileManager.default.setAttributes(
+        [.posixPermissions: 0o755], ofItemAtPath: directory.path)
+      try? FileManager.default.removeItem(at: directory)
+    }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let original = #"{"projects":[{"path":"file:///repos/demo/"}]}"#
+    try Data(original.utf8).write(to: file)
+    // Unreadable, and in a directory that takes no rename, so neither the
+    // read nor the move aside can happen.
+    try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: file.path)
+    try FileManager.default.setAttributes(
+      [.posixPermissions: 0o500], ofItemAtPath: directory.path)
+
+    let (store, loadError) = WorkspaceStore.restored(from: WorkspaceSnapshot(fileURL: file))
+
+    #expect(loadError is UnmovedState)
+    #expect(store.refusesToSave)
+    #expect(store.workspace.projects.isEmpty, "it did start empty; that is the danger")
+    store.addProject(at: URL(fileURLWithPath: "/repos/other"))
+    #expect(throws: Never.self) { try store.save() }
+
+    try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: file.path)
+    #expect(
+      try String(contentsOf: file, encoding: .utf8) == original,
+      "the user's own state is still on disk, untouched")
+  }
+
   @Test @MainActor func restoringRepairsDanglingReferencesBeforeTheStoreSeesThem() throws {
     let file = scratchFile()
     defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }

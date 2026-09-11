@@ -507,6 +507,27 @@ struct AppModelTests {
     #expect(h.model.presentedError?.id == first?.id, "the same alert, not a new one each time")
   }
 
+  /// The drop activates the tab in the column it lands in, so the tab that
+  /// was showing there goes behind it and must not keep the keyboard.
+  @Test func aTabDroppedOnAnotherColumnsTabTakesTheKeyboardWithIt() throws {
+    let h = Harness()
+    h.model.select(h.main)
+    let a = try #require(h.model.workspace.activeTab(in: h.main.id))
+    h.model.newTab()
+    let b = try #require(h.model.workspace.activeTab(in: h.main.id))
+    h.model.moveActiveTabToNewGroup()
+    h.model.activate(try #require(h.model.workspace.tab(a.id)))
+    #expect(h.model.workspace.group(of: a.id)?.id != h.model.workspace.group(of: b.id)?.id)
+    h.engine.focused.removeAll()
+
+    h.model.moveTab(b.id, .before, a.id)
+
+    #expect(h.model.workspace.group(of: b.id)?.id == h.model.workspace.group(of: a.id)?.id)
+    #expect(
+      h.engine.focused.last == h.model.workspace.tab(b.id)?.focusedSessionID,
+      "b is what the column shows now; a is behind it")
+  }
+
   @Test func tabRenamesAndReordersReachTheStore() {
     let h = Harness()
     h.model.select(h.main)

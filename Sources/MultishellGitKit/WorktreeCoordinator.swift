@@ -18,8 +18,10 @@ public struct WorktreeCoordinator: Sendable {
     self.files = files
   }
 
-  public init() throws {
-    self.init(service: try WorktreeService())
+  /// `path` is the login shell's PATH. Without one the lookup sees the
+  /// process's own, which from the Finder is the system directories alone.
+  public init(path: String? = nil) throws {
+    self.init(service: try WorktreeService(path: path))
   }
 
   public func refresh(_ project: Project) async throws -> [Worktree] {

@@ -83,3 +83,14 @@ sidebar shows the repo's name, not the folder picked.
 A shell spawned in a missing directory silently lands in `$HOME`. A project
 whose directory is gone stays dimmed rather than dropped, an unmounted drive
 not being reason to delete someone's setup, and the failure is reported once.
+
+## A stage that ends with its worktree gone takes its entry with it
+
+The create and remove stages are keyed by worktree, and a worktree is its path,
+so an entry outlives the row it belonged to: a worktree made again at the same
+path inherits it. A stage that finishes clears its entry either way, but one
+that fails had nowhere to say so and left the entry running, which reads as
+busy. That worktree then opens no shell, refuses removal, and shows a Cancel
+whose stopper was already cleared, until the app is relaunched. So a failure
+with the worktree gone clears the entry and raises an alert instead, there
+being no pane left to put the message on.

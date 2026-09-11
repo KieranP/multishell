@@ -96,6 +96,11 @@ public struct PresentedError: Identifiable {
       message = t(
         "error.unreadable-state-message",
         state.backup.lastPathComponent, String(describing: state.underlying))
+    case let state as UnmovedState:
+      title = t("error.unreadable-state-title")
+      message = t(
+        "error.unmoved-state-message",
+        state.file.path, String(describing: state.underlying))
     default:
       title = t("error.something-went-wrong")
       message = Self.describe(error)

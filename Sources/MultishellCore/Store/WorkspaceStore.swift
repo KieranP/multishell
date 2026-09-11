@@ -11,6 +11,10 @@ public final class WorkspaceStore {
 
   @ObservationIgnored private let snapshot: WorkspaceSnapshot
 
+  /// Set where unread state is still on disk: saving the empty workspace over
+  /// it deletes the user's sidebar. See docs/design/state-and-store.md.
+  @ObservationIgnored public private(set) var refusesToSave = false
+
   public init(workspace: Workspace = Workspace(), snapshot: WorkspaceSnapshot = WorkspaceSnapshot())
   {
     self.workspace = workspace
@@ -27,11 +31,16 @@ public final class WorkspaceStore {
       workspace.repairReferences()
       return (WorkspaceStore(workspace: workspace, snapshot: snapshot), nil)
     } catch {
-      return (WorkspaceStore(workspace: Workspace(), snapshot: snapshot), error)
+      let store = WorkspaceStore(workspace: Workspace(), snapshot: snapshot)
+      store.refusesToSave = snapshot.holdsFile
+      return (store, error)
     }
   }
 
+  /// Silent where it refuses: the failed load has already told the user their
+  /// state could not be read, and every change would otherwise raise it again.
   public func save() throws {
+    guard !refusesToSave else { return }
     try snapshot.save(workspace)
   }
 }

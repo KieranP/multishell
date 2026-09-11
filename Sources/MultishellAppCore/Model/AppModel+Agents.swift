@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import MultishellGitKit
 import MultishellProcess
 
 // MARK: - Login shell environment
@@ -17,6 +18,17 @@ extension AppModel {
     shellDetection = ShellDetection(path: environment.path)
     editorDetection = EditorDetection(path: environment.path) {
       platform.applicationURL(forIdentifier: $0)
+    }
+    // git on the login shell's PATH like every other tool, which launch could
+    // not reach. Finding it here takes back what launch reported.
+    if worktrees == nil, let found = try? WorktreeCoordinator(path: environment.path) {
+      worktrees = found
+      if presentedError?.title == PresentedError(GitUnavailable()).title {
+        presentedError = nil
+      }
+      // `start` refreshed before this ran and found no git, so every project
+      // listed nothing; the sidebar stays empty until something asks again.
+      await refreshAll()
     }
     refreshAgentStatus()
   }

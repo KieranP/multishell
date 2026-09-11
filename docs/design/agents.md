@@ -116,6 +116,14 @@ user's this cannot put back -> Add refuses and names the event, Remove steps
 over it. Remove takes back what Add put in and nothing else, the whole of what
 it promises.
 
+That holds inside a group as well as between them. Add only ever appends a
+group of its own, so a group carrying one of ours beside one of theirs was
+written by hand and the theirs is not ours to drop: Remove strips our commands
+out of it and leaves the group standing, taking the group whole only when
+nothing of the user's is left in it. Dropping at group granularity read as
+Remove working, the agent's file even shrinking, while an audit hook someone
+had added to our entry went with it.
+
 A settings file that will not read back as plain JSON is refused, not parsed
 loosely: Gemini's takes comments and keeps them when it writes the file itself,
 and a re-serialisation here would take them out. Cost: those users add the

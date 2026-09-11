@@ -131,3 +131,13 @@ would divide the strip between the two.
 Costs: no auto-scroll while a tab is dragged near an end -> a reorder reaches
 only the tabs on screen; and a strip whose tabs differ widely in width is the
 one shape where the shuffle could in principle cross a boundary twice.
+
+## A tab dropped in another column takes the keyboard with it
+
+The drop activates the moved tab in the column it lands in, so whatever that
+column was showing goes behind it. Focus has to follow, or the first responder
+is a surface nobody can see and every keystroke after the drop goes into it.
+This is the one move that crossed columns without reconciling afterwards; the
+same pass is what marks the newly shown tab seen in the column the tab left,
+which otherwise keeps a Done dot and its banner over a tab that is now on
+screen.

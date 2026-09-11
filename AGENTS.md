@@ -3,7 +3,11 @@
 An index. Pull in the file you need; do not read them all. Rules live with
 their reasons, so a file under `docs/design/` is binding and not background.
 
-Commit only when the user asks. That is the one rule that lives here.
+Three rules live here. The rest are in the files below.
+
+* Commit only when the user explicitly asks.
+* No code comments should exceed two lines. Where more detail is needed, add to docs/design/ or docs/develop/ files and refer to them in the comment.
+* When fixing bugs, make sure to write a failing test first (where practical to do so), then fix the bug.
 
 ## Working on the code
 
@@ -17,6 +21,7 @@ Commit only when the user asks. That is the one rule that lives here.
 | [docs/develop/permissions.md](docs/develop/permissions.md) | What macOS prompts for, what it only denies, how to read the TCC log. |
 | [docs/develop/dependencies.md](docs/develop/dependencies.md) | libghostty and what moving its pin costs, SwiftTerm, the one underscored SwiftUI API. |
 | [docs/develop/known-gaps.md](docs/develop/known-gaps.md) | What is unverified or unbuilt, with the fallback where there is one. Settled behaviour under Known issues, what nobody has watched happen under Unconfirmed behaviour. Add to it when you leave a gap. |
+| [BUGS.md](BUGS.md) | Open findings from the whole-repo review, numbered and labelled by what each does to the user. Numbers are never reused, so they have gaps; a fixed entry is taken out rather than kept. |
 | [TODO.md](TODO.md) | Queued work. Finishing something moves its note: a decision to the right file under `docs/design/`, a gap left rather than fixed to known-gaps.md. |
 
 ## Why it is like this, and the rules that follow

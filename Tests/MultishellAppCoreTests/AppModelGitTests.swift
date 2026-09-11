@@ -40,6 +40,29 @@ struct AppModelGitTests {
     #expect(h.model.presentedError?.title == "Not a git repository")
   }
 
+  /// A refresh drops the vanished worktree's tabs and sessions, and without
+  /// a reconcile the host keeps the surfaces and the shells run on unreachable.
+  @Test func aWorktreeRemovedOutsideTheAppTakesItsShellsWithIt() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    await h.model.createWorktree(branch: "gone", basedOn: nil, createBranch: true, in: h.project)
+    let created = try #require(h.worktree(onBranch: "gone"))
+    let sessions = Set(h.model.workspace.sessions(in: created.id).map(\.id))
+    #expect(h.engine.openSessionIDs == sessions)
+
+    _ = try await h.git.run(
+      ["worktree", "remove", "--force", created.path.path], in: h.project.path)
+    h.engine.focused.removeAll()
+    await h.model.refresh(h.project)
+
+    #expect(h.model.workspace.worktree(created.id) == nil)
+    #expect(h.engine.openSessionIDs.isEmpty, "the shells outlived the row they belonged to")
+    #expect(Set(h.engine.closed) == sessions)
+    #expect(
+      h.engine.focused.isEmpty,
+      "a poll must not pull the keyboard out of what the user is typing in")
+  }
+
   @Test func creatingAWorktreeSelectsItOpensAShellAndWatchesItsRecords() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }

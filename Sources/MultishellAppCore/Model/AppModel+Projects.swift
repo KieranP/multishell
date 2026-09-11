@@ -127,6 +127,9 @@ extension AppModel {
       worktreeRecords[project.id] = records
       missingProjects.remove(project.id)
       noteSharedSettings(shared.result, stamp: shared.stamp, for: project)
+      // A worktree removed outside the app loses its tabs and sessions here,
+      // and without this the host keeps their surfaces and the shells run on.
+      reconcileSessions()
     } catch {
       // Every tick and every return to the front refreshes a project git
       // cannot read, so the alert goes up once; the row stays dimmed.

@@ -88,6 +88,7 @@
 "error.trash-refused" = "Worktree not removed: the directory could not be moved to the Trash or deleted";
 "error.unknown-hooks-message" = "%1$@ holds something under hooks.%2$@ that is not the list of hooks the agent documents, and writing ours there would lose it. Use Show JSON beside the agent and add the entries yourself.";
 "error.unknown-hooks-title" = "That settings file has hooks Multishell does not recognise";
+"error.unmoved-state-message" = "It could not be moved aside either, so it is still at %1$@ and Multishell started empty. Nothing will be saved over it until it is readable or moved away.\n\n%2$@";
 "error.unparsable-settings-message" = "%@ has something in it Multishell cannot read back — a comment or a trailing comma will do it — and rewriting the file would lose it. Use Show JSON beside the agent and add the entries yourself.";
 "error.unparsable-settings-title" = "That settings file is not plain JSON";
 "error.unreadable-state-message" = "It was moved to %1$@ and Multishell started empty.\n\n%2$@";

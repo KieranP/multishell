@@ -290,6 +290,57 @@ struct HelperTests {
     #expect(SessionStateReport.parse(recorder.received.first ?? "")?.sessionID == session)
   }
 
+  /// `%f` writes the locale's decimal separator, so a comma region sent
+  /// `"duration":1,234` and the reader dropped the whole report.
+  @Test func aCommaDecimalLocaleStillSendsAReportThatParses() async throws {
+    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
+    // Skips where the locale is absent rather than failing on its absence.
+    let comma = try await ProcessRunner().capture(
+      URL(fileURLWithPath: "/bin/zsh"), ["-c", "printf '%.3f' 1.5"],
+      in: URL(fileURLWithPath: "/tmp"), environment: ["LC_ALL": "de_DE.UTF-8"])
+    guard comma.standardOutput.contains(",") else { return }
+
+    let path = socketPath()
+    let server = UnixSocketServer(path: path)
+    defer { server.stop() }
+    let recorder = LineRecorder()
+    server.onLine = { recorder.record($0) }
+    try server.start()
+
+    let root = URL(fileURLWithPath: "/tmp")
+      .appendingPathComponent("ms-locale-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let integration = root.appendingPathComponent("integration", isDirectory: true)
+    // Empty, so the chain does not reach the developer's own .zshrc, which
+    // sets a locale of its own and would decide this test.
+    let userZdotdir = root.appendingPathComponent("user", isDirectory: true)
+    try FileManager.default.createDirectory(at: integration, withIntermediateDirectories: true)
+    try FileManager.default.createDirectory(at: userZdotdir, withIntermediateDirectories: true)
+    for (name, contents) in ShellStateHooks.zshIntegrationFiles(helper: Self.helper.path) {
+      try contents.write(
+        to: integration.appendingPathComponent(name), atomically: true, encoding: .utf8)
+    }
+
+    var env = ProcessInfo.processInfo.environment
+    env["ZDOTDIR"] = integration.path
+    env["MULTISHELL_USER_ZDOTDIR"] = userZdotdir.path
+    env["MULTISHELL_SOCKET"] = path.path
+    env["MULTISHELL_SESSION"] = UUID().uuidString
+    env["MULTISHELL_WORKTREE"] = "/w/repo"
+    env["LC_ALL"] = "de_DE.UTF-8"
+    _ = try await ProcessRunner().capture(
+      URL(fileURLWithPath: "/bin/zsh"),
+      ["-i", "-c", "_multishell_preexec; true; _multishell_precmd; wait"], in: root,
+      environment: env)
+
+    try await waitUntil { recorder.received.count >= 2 }
+    let finished = recorder.received.compactMap(SessionStateReport.parse).filter {
+      $0.state == .done
+    }
+    #expect(finished.count == 1, "unparsed: \(recorder.received)")
+    #expect(finished.first?.duration != nil, "the duration is what the separator broke")
+  }
+
   /// The generated bash init, as `--init-file` would read it: the user's own
   /// .bashrc still loads, and the injected hooks report running then done
   /// and failed.

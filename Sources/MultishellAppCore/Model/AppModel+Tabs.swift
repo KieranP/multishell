@@ -169,6 +169,9 @@ extension AppModel {
   ) {
     guard changesTheStrip(id, placement, target) else { return }
     store.moveTab(id, placement, target)
+    // The drop activates the tab in its new column, so without this the engine
+    // keeps focus on the one now hidden behind it.
+    sync()
   }
 
   /// A tab landing in another column always changes something, if only
