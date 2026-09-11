@@ -59,6 +59,8 @@ a click still reaches the terminal and focuses it, which is what undims it.
 Cost: a light theme fades towards white, a wash rather than a dimming, and a
 theme that turns both off has nothing left to say where the keyboard is.
 
+## A board card's own lines are a fixed four
+
 A card's tab title is one line, truncated, and the git badge sits on the right
 of the line naming the worktree rather than on a line below it. Both are so
 that the card's own lines are a fixed four: what a card said about itself used

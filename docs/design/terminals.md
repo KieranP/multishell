@@ -128,23 +128,24 @@ allowance list is only ever missing a nicety. 117 of Ghostty 1.3.2's 207 keys
 are let through: whole families that can only draw or drive a surface
 (`font-`, `adjust-`, `cursor-`, `mouse-`, `selection-`, `palette`,
 `clipboard-`, `background`, `scrollback-`, `search-`, `bell-`, `link`,
-`resize-overlay`, `window-padding-`) and thirty named one at a time, of which
-`macos-option-as-alt` is the only `macos-` key a surface reads.
+`resize-overlay`, `window-padding-`) which carry 86 between them, and
+thirty-one named one at a time, of which `macos-option-as-alt` is the only
+`macos-` key a surface reads.
 
-A family also carries a rename: `scrollback-limit` became
-`scrollback-limit-bytes`, and the family keeps both whichever build is
-pinned. What is left out is chrome that does nothing in an embedding
-(`window-`, `macos-`, `gtk-`, `quick-terminal-`, the app's own lifecycle) and
-these, which would take a decision the app has already made: `command`,
-`initial-command` and `input` reach the child, the first two in place of the
-session's shell and the third typed into it; `working-directory` is the
-worktree; `title` is the name a tab reads from escape sequences;
-`shell-integration` is the prompt marks click-to-move and a command's exit
-code come from; `wait-after-command` holds a surface open after its shell has
-gone. `env` is left out too, the app giving each child the variables that
-name its session. `theme` is left out because this embedding ships no themes
-directory, so it is the one complaint carrying no line number for the repair
-above to place, and the app paints its own theme here anyway.
+A family also carries a rename: `scrollback-limit` was split into
+`scrollback-limit-bytes` and `scrollback-limit-lines`, and the family keeps
+every spelling whichever build is pinned. What is left out is chrome that does
+nothing in an embedding (`window-`, `macos-`, `gtk-`, `quick-terminal-`, the
+app's own lifecycle) and these, which would take a decision the app has
+already made: `command`, `initial-command` and `input` reach the child, the
+first two in place of the session's shell and the third typed into it;
+`working-directory` is the worktree; `title` is the name a tab reads from
+escape sequences; `shell-integration` is the prompt marks click-to-move and a
+command's exit code come from; `wait-after-command` holds a surface open after
+its shell has gone. `env` is left out too, the app giving each child the
+variables that name its session. `theme` is left out because this embedding
+ships no themes directory, so it is the one complaint carrying no line number
+for the repair above to place, and the app paints its own theme here anyway.
 
 Cost: a key we have not thought about is ignored in silence, and nothing in
 the app says which lines of a user's file did not count.

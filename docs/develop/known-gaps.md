@@ -77,8 +77,8 @@ does.
 - `ProjectIcon.searchWords` is English. In another language the icon picker
   matches the group names, which are translated, and the SF Symbol names,
   which are not, so a search for the local word for "database" finds
-  nothing. Fix = the words move into the catalogue, one key per symbol,
-  which is another ninety entries for a search box.
+  nothing. Fix = the words move into the catalogue, one key per word,
+  which is another 107 entries for a search box.
 
 ## Unconfirmed behaviour
 

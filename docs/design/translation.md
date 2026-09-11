@@ -82,17 +82,20 @@ workaround the shell-integration scripts already needed.
 
 ## A new key when in doubt, not a shared one
 
-Twelve keys hold English another key already holds: `lane.done` and
-`state.done` are both "Done", `sidebar.name-prompt` and `sort.alphabetical`
-are both "Name", the Terminal menu and the Terminal settings page are both
-"Terminal". Deliberate. A shared key cannot be told apart by a translator,
-and the column, the state and the sort order need not be one word in every
-language; the cost of splitting is that someone types the same translation
-twice, and the cost of sharing is a translation that cannot be right.
+Twelve English strings are held by more than one key, twenty-five keys in
+all: `lane.done` and `state.done` are both "Done", `sidebar.name-prompt` and
+`sort.alphabetical` are both "Name", the Terminal menu and the Terminal
+settings page are both "Terminal". Deliberate. A shared key cannot be told
+apart by a translator, and the column, the state and the sort order need not
+be one word in every language; the cost of splitting is that someone types
+the same translation twice, and the cost of sharing is a translation that
+cannot be right.
 
 Shared anyway where the word is the same act wherever it appears: Cancel,
-Copy, Reveal in Finder, Clear Status, Close Tab. Those are one key across
-every menu and dialog that offers them.
+Copy, Reveal in Finder, Clear Status. Those are one key across every menu and
+dialog that offers them. Close Tab is not one of them, and is in the twelve
+above: the Cmd+W item and the close dialog's button share `close.tab-button`,
+where the tab's own menu and its accessibility label are `tab.close`.
 
 ## Counted things have a rule, not an `s`
 

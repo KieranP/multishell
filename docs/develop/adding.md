@@ -53,10 +53,11 @@ Flags are stored per agent id and split into words by `AgentFlags`.
 
 **A tab strip measurement.** `UIMetrics.tabMinWidth` and `tabMaxWidth` bound
 what a tab is drawn at; `TabStripLayout` divides the strip by them.
-MetricsAndColourTests checks across the font-size range that the floor leaves
-room for side padding, dot or icon, gap and close button with something over
-for the title, and that `tabArrowWidth` holds its own glyph with two gutters
-still leaving room for a tab. `TabStripLayout.Edges` = which end has more past
+UIMetricsTests, in MetricsAndColourTests.swift, checks across the font-size
+range that the floor leaves room for side padding, dot or icon, gap and close
+button with something over for the title, and that `tabArrowWidth` holds its
+own glyph with two gutters still leaving room for a tab.
+`TabStripLayout.Edges` = which end has more past
 it; `stepTarget` = which tab its arrow scrolls to. `newTabWidth` and both
 gutters come off the room first, so nothing measures itself.
 
@@ -130,12 +131,12 @@ offers to lift one; `notificationSettingsLocation` = `nil` where the desktop
 has no such place.
 
 **A persisted field.** Decode with a default, an unknown enum value included,
-and add a case to DecodingDefaultsTests. `DecodingDefaults` puts that choice in the
-verb: `decode(_:forKey:or:)` where a key of the wrong type should still fail
-the file, `decodeTolerantly` where a value this build cannot read must cost
-that value alone, which is the answer for an enum a newer build may have
-named. `or:` is the same fallback in both. Element-by-element decode that drops
-a broken one is `LossyArray`; projects stay strict.
+and add a case to DecodingDefaultsTests. `DecodingDefaults.swift` puts that
+choice in the verb: `decode(_:forKey:or:)` where a key of the wrong type
+should still fail the file, `decodeTolerantly` where a value this build cannot
+read must cost that value alone, which is the answer for an enum a newer build
+may have named. `or:` is the same fallback in both. Element-by-element decode
+that drops a broken one is `LossyArray`; projects stay strict.
 
 **A preference.** Four touch points, in this order: the field on `Workspace`,
 decoded as above; a setter on `WorkspaceStore`, which has to sit beside the
@@ -181,8 +182,9 @@ arguments. A form whose wording turns on a number goes in
 number like any other argument; two or more arguments have to be numbered,
 `%1$@ %2$@`. Views say `Text(t("the.key"))`, never a literal.
 
-**A language.** A `<code>.lproj` beside `en.lproj` with both files
-translated, and a line for it in `Package.swift`; `make-app.sh` puts the
+**A language.** A `<code>.lproj` beside `en.lproj` in both halves, each with
+both files translated, and a `.process` line for it in each half's manifest,
+`Package.swift` and `Apps/macOS/Package.swift`; `make-app.sh` puts the
 code in `CFBundleLocalizations` from the folder alone, which is what makes
 it pickable in System Settings. The permission strings macOS shows are not
 in the catalogue: they are an `InfoPlist.strings` under

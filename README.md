@@ -74,9 +74,11 @@ for why things are the way they are.
   to land in that pane. A Dock badge counts the ones waiting, and a toggle
   brings in plain shells, which report through the same columns.
 - Pick a preferred agent and open it in a tab with one shortcut, or have
-  every new tab start it. System notifications for a tab you are not looking
-  at, with a toggle for each of waiting for input, failed and done, so you
-  hear about a finished build and nothing else if that is all you want.
+  every new tab start it. Give it a line of CLI flags, per agent and
+  overridable per project, where `{{branch}}` and four others stand for the
+  worktree it is opening in. System notifications for a tab you are not
+  looking at, with a toggle for each of waiting for input, failed and done, so
+  you hear about a finished build and nothing else if that is all you want.
 - Drop files from Finder onto a terminal: an agent whose prompt reads
   mentions gets them as `@` mentions relative to the worktree, a shell gets
   quoted paths. Nothing is run — you press Return.
@@ -95,7 +97,9 @@ for why things are the way they are.
 - Bare clones with worktrees beside them work as projects.
 - Ghostty or SwiftTerm as the terminal, themes as plain JSON that colour the
   whole window, a font picker, Open in Editor, and a click in the prompt
-  that moves the cursor (Ghostty only).
+  that moves the cursor (Ghostty only). A Ghostty terminal starts from your
+  own `~/.config/ghostty/config`, less the keys that would decide what runs
+  in the pane; the theme and the font size stay the app's.
 - Nothing written to your shell's rc files, and state that survives an
   older or newer build.
 
@@ -106,7 +110,9 @@ certificate, so the permissions you grant it survive a rebuild, but nothing
 is notarised and the bundle runs only on the machine that built it until the
 libghostty resource lookup is fixed (see `docs/develop/known-gaps.md`). Only
 macOS has a GUI, and only macOS is built in CI; the core keeps to Foundation
-so another frontend can use it, but nothing compiles it without one.
+so another frontend can use it, but nothing compiles it without one. Every
+word on screen comes from a string catalogue, but English is the only one
+written, so no layout has been seen in another language.
 
 Every line of code in this repository was written by an AI (Claude), under
 direction from a human who set the requirements, reviewed the results in the

@@ -24,9 +24,9 @@ placed over what git checked out; a path the repo lacks is skipped.
 Two lists: copy gives the worktree its own file, symlink shares the repo's,
 which is what `node_modules` wants. Links first -> a path in both ends up the
 link. A link is absolute, a relative one pointing at where the worktree sits
-today. A name may be a pattern, `*` and `?` within one component, not matching
-a leading dot, or `*` would take `.git` in. Bracket expressions left out rather
-than half-supported.
+today. A name may be a pattern, `*` and `?` within one component, reaching a
+leading dot only where the pattern spells the dot, or `*` would take `.git`
+in. Bracket expressions left out rather than half-supported.
 
 Both lists run nothing -> a repo may ship them untrusted; nothing overwriting a
 checked-out path is the other half, since a committed `linkedPaths: src` must
