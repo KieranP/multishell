@@ -16,7 +16,7 @@ Commit only when the user asks. That is the one rule that lives here.
 | [docs/develop/state-on-disk.md](docs/develop/state-on-disk.md) | What is written where, the debug build's own files, a repository's `.multishell.json`. |
 | [docs/develop/permissions.md](docs/develop/permissions.md) | What macOS prompts for, what it only denies, how to read the TCC log. |
 | [docs/develop/dependencies.md](docs/develop/dependencies.md) | libghostty, SwiftTerm, the one underscored SwiftUI API. |
-| [docs/develop/known-gaps.md](docs/develop/known-gaps.md) | What is unverified or unbuilt, with the fallback where there is one. Add to it when you leave a gap. |
+| [docs/develop/known-gaps.md](docs/develop/known-gaps.md) | What is unverified or unbuilt, with the fallback where there is one. Settled behaviour under Known issues, what nobody has watched happen under Unconfirmed behaviour. Add to it when you leave a gap. |
 | [TODO.md](TODO.md) | Queued work. Finishing something moves its note: a decision to the right file under `docs/design/`, a gap left rather than fixed to known-gaps.md. |
 
 ## Why it is like this, and the rules that follow

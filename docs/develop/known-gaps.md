@@ -1,8 +1,11 @@
 # Known gaps
 
-What is unverified or unbuilt, with the fallback where there is one.
+What is unverified or unbuilt, with the fallback where there is one. A gap
+whose behaviour is settled goes under Known issues; one that nobody has
+watched happen goes under Unconfirmed behaviour, and moves up when someone
+does.
 
-## Known gaps
+## Known issues
 
 - Release bundle runs only on the machine that built it: libghostty finds its
   terminfo through `Bundle.module`, which looks at the app root then an
@@ -11,17 +14,6 @@ What is unverified or unbuilt, with the fallback where there is one.
   with Xcode or a patched libghostty-spm. Same path is why a bundle installed
   from a worktree stops working once that worktree is removed: install from
   the checkout, or rebuild after removal.
-- Ghostty engine's path untested, its zsh chain checked only against a
-  stand-in bootstrap. Click-to-move works there and nowhere else, and not on
-  the later lines of a multi-line buffer.
-- Linux never compiled, locally or in CI.
-- Notifications settings page never seen on screen: the toggles, the caption
-  under them, the six-tab band in a 560pt window. SettingsPageSizeTests holds
-  this page's height under the window's own, so what is left is how it reads
-  rather than whether it runs off the bottom. The band is measurable by
-  nothing, SwiftUI drawing it outside the AppKit hierarchy; if it clips, raise
-  the width in SettingsView. Caption and the help behind each (i) are strings
-  in NotificationSettings.
 - Agent settings is the one page nothing holds: its `onAppear` refresh reads
   the machine, so the page is as tall as whatever is installed and a test
   would be measuring a laptop. Measured headlessly with the refresh taken
@@ -30,11 +22,6 @@ What is unverified or unbuilt, with the fallback where there is one.
   this developer can produce. A sixth supported agent would put it over
   again, and nothing would say so; fix then = the hooks rows want their own
   scroll.
-- The 600pt settings window has not been seen on screen. It is the height
-  the tallest page needs, so General shows 159pt of rows above 441pt of
-  nothing, and whether that reads as roomy or as broken is a question for
-  the screen. Fix if it reads badly = the tall pages scroll and the window
-  goes back to about 480.
 - Project settings' Hooks tab wants 973pt in a 600pt window, so its last
   editors are below the fold with nothing saying so. Six monospaced editors
   were never going to fit a window the other pages can share, and
@@ -46,6 +33,49 @@ What is unverified or unbuilt, with the fallback where there is one.
   paths' checks run off it.
 - A file list a new worktree is given has no timeout, unlike a hook: runs
   until done or the pane's Cancel, which lands between paths.
+- A scrolled tab strip does not auto-scroll while a tab is dragged near its
+  end, so a tab cannot be dragged past the visible tabs: reordering reaches
+  only what is on screen, and a tab off the end cannot be dropped on.
+  Auto-scroll needs the drop's own pointer position, a repeating step, and the
+  strip's `ScrollViewProxy` reaching the drop delegate.
+- While the Agents board is up, what acts on a pane does nothing, but Open in
+  Editor and New Worktree still act on the selected worktree, and no sidebar
+  row draws as selected then, so those two have nothing on screen naming their
+  subject. Left because neither is destructive; fix = route them through
+  `worktreeInView` as the pane commands are.
+- Sidebar keyboard navigation and a shortcut to focus the filter are not
+  built. No view tests, and the accessibility labels have not been read with
+  VoiceOver.
+- Existing-branch picker lists local branches only, so a remote-only branch is
+  created as a new one based on its remote. A decision, not a defect.
+- `.multishell.json` is read from the project path, which for a bare
+  repository holds no checkout.
+- The placeholders an agent's flags may use are documented nowhere a user can
+  reach: the settings rows name `{{branch}}` as an example, and the rest live
+  in `AgentPlaceholder` waiting for a documentation site.
+
+## Unconfirmed behaviour
+
+- Ghostty engine's path untested, its zsh chain checked only against a
+  stand-in bootstrap. Click-to-move works there and nowhere else, and not on
+  the later lines of a multi-line buffer. Whether the embedding reads
+  `~/.config/ghostty` is unverified either way: nothing here passes a config
+  path, and `GhosttyTerminalHost` sets colours, font and keybinds through
+  `setTheme`, so a user's own config arrives from libghostty or not at all.
+  If it does load, its keybinds are the ones this build unbinds by name.
+- Linux never compiled, locally or in CI.
+- Notifications settings page never seen on screen: the toggles, the caption
+  under them, the six-tab band in a 560pt window. SettingsPageSizeTests holds
+  this page's height under the window's own, so what is left is how it reads
+  rather than whether it runs off the bottom. The band is measurable by
+  nothing, SwiftUI drawing it outside the AppKit hierarchy; if it clips, raise
+  the width in SettingsView. Caption and the help behind each (i) are strings
+  in NotificationSettings.
+- The 600pt settings window has not been seen on screen. It is the height
+  the tallest page needs, so General shows 159pt of rows above 441pt of
+  nothing, and whether that reads as roomy or as broken is a question for
+  the screen. Fix if it reads badly = the tall pages scroll and the window
+  goes back to about 480.
 - Drops reach SurfaceFrame because AppKit walks up from an unregistered engine
   surface to the frame that is registered: documented for the registration,
   undocumented for the search order, so if either engine ever registers a
@@ -66,11 +96,6 @@ What is unverified or unbuilt, with the fallback where there is one.
   drawn that way, and now the unfocused-pane fade too. If neither appears,
   both are silent rather than wrong, and the fade would have to become a view
   inside SurfaceFrame the way its drop highlight is.
-- A scrolled tab strip does not auto-scroll while a tab is dragged near its
-  end, so a tab cannot be dragged past the visible tabs: reordering reaches
-  only what is on screen, and a tab off the end cannot be dropped on.
-  Auto-scroll needs the drop's own pointer position, a repeating step, and the
-  strip's `ScrollViewProxy` reaching the drop delegate.
 - Reordering inside one column happens as the pointer passes each tab, not on
   release; see TabShuffle and `AppModel.shuffleTab`. Unverified at the edges: a
   strip whose tabs differ widely in width could in principle move a tab back
@@ -88,23 +113,8 @@ What is unverified or unbuilt, with the fallback where there is one.
   hugging their cards, which is what lets each scroll on its own; and the View
   menu item's position within that menu is AppKit's to decide, being added to
   the standard group.
-- While the Agents board is up, what acts on a pane does nothing, but Open in
-  Editor and New Worktree still act on the selected worktree, and no sidebar
-  row draws as selected then, so those two have nothing on screen naming their
-  subject. Left because neither is destructive; fix = route them through
-  `worktreeInView` as the pane commands are.
-- Sidebar keyboard navigation and a shortcut to focus the filter are not
-  built. No view tests, and the accessibility labels have not been read with
-  VoiceOver.
-- Existing-branch picker lists local branches only, so a remote-only branch is
-  created as a new one based on its remote. A decision, not a defect.
-- `.multishell.json` is read from the project path, which for a bare
-  repository holds no checkout.
 - Neither agent-flags row has been seen on screen: the CLI Flags field under
   the agent picker in Settings > Agents, and the CLI Flags override in a
   project's Agent tab. The value they write and the command line it builds are
   tested; the rows' width, and how an empty one reads with no prompt text in
   it, are not.
-- The placeholders an agent's flags may use are documented nowhere a user can
-  reach: the settings rows name `{{branch}}` as an example, and the rest live
-  in `AgentPlaceholder` waiting for a documentation site.
