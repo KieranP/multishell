@@ -1,10 +1,7 @@
 import Foundation
 
-/// A git repository the user has added to the sidebar.
-///
-/// Identity is the repository path, not a generated id: adding the same
-/// directory twice is the same project, and a persisted project still
-/// resolves after the app forgets its in-memory state.
+/// A git repository the user has added to the sidebar. Identity is the path;
+/// see docs/design/architecture.md.
 public struct Project: Identifiable, Codable, Hashable, Sendable {
   /// Always the normalised form from `directory`, so `id` can read it
   /// directly rather than standardise again on every comparison.
@@ -14,10 +11,8 @@ public struct Project: Identifiable, Codable, Hashable, Sendable {
 
   public var id: String { path.path }
 
-  /// The folder name, less a bare repository's `.git` suffix. A bare
-  /// repository kept hidden beside its worktrees (`proj/.bare`, `proj/.git`)
-  /// takes the name of the folder holding it, which is what that layout is
-  /// known by.
+  /// The folder name, less a bare repository's `.git` suffix. One hidden
+  /// beside its worktrees takes the name of the folder holding it.
   public var name: String {
     let folder = path.lastPathComponent
     let base = folder.hasSuffix(".git") ? String(folder.dropLast(4)) : folder
@@ -33,10 +28,8 @@ public struct Project: Identifiable, Codable, Hashable, Sendable {
     self.settings = settings
   }
 
-  /// A directory URL whether or not the directory exists right now.
-  /// `URL(fileURLWithPath:)` alone asks the filesystem, and a relative
-  /// worktree path resolved against a project URL that Foundation took for a
-  /// file lands in the parent directory instead.
+  /// A directory URL whether or not it exists now: `URL(fileURLWithPath:)`
+  /// asks the filesystem, and a missing one resolves as a file.
   static func directory(_ url: URL) -> URL {
     URL(fileURLWithPath: url.path, isDirectory: true).standardizedFileURL
   }

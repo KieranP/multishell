@@ -4,14 +4,8 @@ import MultishellCore
 /// Which branches have already landed on their project's default branch,
 /// and what that branch is.
 extension WorktreeCoordinator {
-  /// Where the project's default branch points, what every local branch is,
-  /// and when each was last committed to, in one process: `origin/HEAD` is
-  /// a ref like any other, so the ref list carries it. See `BranchScan`.
-  ///
-  /// `override` is the project's `defaultBranch` setting, `nil` to detect.
-  ///
-  /// `nil` where the ref read failed, which is not a repository with no
-  /// branches; see `WorktreeService.branchRefs`.
+  /// The default branch, every local branch and each last commit, in one
+  /// process. `nil` is a failed read, not a repository with no branches.
   public func scanBranches(
     of project: Project, defaultBranch override: String?
   ) async
@@ -21,18 +15,8 @@ extension WorktreeCoordinator {
     return BranchScan(refs: refs, defaultBranch: override)
   }
 
-  /// Whether each of `branches` has already landed on `scan.base`.
-  ///
-  /// One `git branch --merged` answers the merge-commit and fast-forward
-  /// cases for all of them at once, though a branch it names still has to
-  /// be told from one that has never left; see `hasLanded`. The branches it
-  /// does not name get a `git cherry` for the rebase case, and only those
-  /// still unaccounted for fall back to the upstream the scan already read.
-  /// At most `maxConcurrentStatuses` run together, for the reason
-  /// `statuses` bounds itself.
-  ///
-  /// The caller passes only the branches whose tips have moved since it
-  /// last asked; a branch absent from the result keeps whatever it had.
+  /// Whether each of `branches` has landed, in the order of reads
+  /// docs/design/merged-branch.md sets out. One absent keeps what it had.
   public func mergeStates(
     of branches: [String], in project: Project, scan: MergeScan
   ) async -> [String: WorktreeMergeState] {
@@ -78,17 +62,8 @@ extension WorktreeCoordinator {
     else { return nil }
     if equivalent { return .merged(.patchEquivalent, into: base) }
 
-    // A gone upstream is not enough on its own, for two reasons.
-    //
-    // `branch.<name>` config outlives the branch it names, so a branch cut
-    // under a name used before starts life tracking a remote branch this
-    // clone has never had, and git calls that `[gone]` too; work that landed
-    // on the base left a commit there, so a branch the base has nothing to
-    // add to has landed nothing.
-    //
-    // And the badge hides while a worktree holds work that is only there,
-    // which for a gone upstream `git status` cannot see: there is no
-    // upstream left to be ahead of. So the content is asked for instead.
+    // A gone upstream is not enough alone; see docs/design/merged-branch.md.
+    // `branch.<name>` config outlives its branch.
     guard scan.upstreamIsGone(branch) else { return .unmerged }
     guard let behind = await service.isBehind(branch, of: base, in: project) else { return nil }
     guard behind else { return .unmerged }
@@ -97,24 +72,8 @@ extension WorktreeCoordinator {
     return landed ? .merged(.upstreamGone, into: base) : .unmerged
   }
 
-  /// A branch the base can already reach has either landed or never left.
-  /// `git worktree add -b` points a new branch at the commit it starts
-  /// from, which makes it an ancestor of the trunk from the moment it
-  /// exists, and a `git pull` in a worktree cut before the trunk moved
-  /// fast-forwards it onto commits it was handed and leaves it one. So
-  /// ancestry alone would badge both. What the branch's reflog says was done
-  /// to it is what separates them; see `ReflogWorkParser`.
-  ///
-  /// Where there is no reflog to ask, nothing separates the two, so nothing
-  /// is claimed. A bare repository logs no branch creation, so its worktrees
-  /// fall in here until their first commit, which it does log; guessing from
-  /// the tips instead badges every one of them that was cut from anywhere but
-  /// the trunk's own tip. The cost is a branch whose reflog has expired losing
-  /// a badge it had earned, which is a badge not drawn rather than a worktree
-  /// wrongly said to be finished with.
-  ///
-  /// `nil` only where the read itself failed, which is not that answer: git
-  /// says "no reflog" with an empty answer and a success.
+  /// A branch the base can reach has landed or never left, the reflog
+  /// separating them. `nil` only where the read failed.
   private func hasLanded(_ branch: String, in project: Project) async -> Bool? {
     await service.hasWorkOfItsOwn(branch, in: project)
   }

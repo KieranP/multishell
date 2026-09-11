@@ -49,8 +49,7 @@ public struct ProcessRunner: Sendable {
   }
 
   /// Returns the exit status instead of throwing. A child still running at
-  /// `timeout`, or when `stopper.stop()` is called, is ended the way
-  /// `ProcessStopper` does it and reported with `stop` set.
+  /// `timeout`, or stopped, is ended and reported with `stop` set.
   public func capture(
     _ executable: URL,
     _ arguments: [String],
@@ -74,16 +73,8 @@ public struct ProcessRunner: Sendable {
   }
 }
 
-/// Starts the child and calls `completion` once it has exited and both pipes
-/// have hit EOF, or a moment after the exit if EOF never comes. Nothing
-/// blocks: the pipes are drained by readability handlers and the exit by the
-/// termination handler.
-///
-/// The blocking form deadlocked under load. A wait inside a `Task` holds a
-/// cooperative-pool thread, one per core, and the pipe readers it waited on
-/// were GCD blocks; with enough concurrent children GCD ran out of threads for
-/// the readers, the children blocked on full pipes, and the waits never
-/// returned.
+/// Starts the child and calls `completion` at exit and EOF. Nothing blocks:
+/// the blocking form deadlocked, waits and pipe readers starving each other.
 private func launch(
   _ executable: URL,
   _ arguments: [String],
@@ -108,21 +99,15 @@ private func launch(
   // A child that reads stdin would otherwise wait on the app's, forever.
   process.standardInput = FileHandle.nullDevice
 
-  // Both pipes drain concurrently: whichever is read second could otherwise
-  // fill its 64 KiB buffer and block the child forever. Each buffer is
-  // written only from its own handle's serial handler queue, and the group
-  // orders those writes before the read in `notify`.
+  // Both pipes drain concurrently, whichever was read second otherwise
+  // filling its 64 KiB buffer and blocking the child forever.
   let group = DispatchGroup()
   let out = PipeBuffer(outPipe.reading, group: group)
   let err = PipeBuffer(errPipe.reading, group: group)
   group.enter()
   process.terminationHandler = { [weak out, weak err] _ in
-    // A descendant that inherited the pipes (`server &` in a hook) holds them
-    // open after the child is gone, so EOF would arrive when the server
-    // stops. Everything the child wrote is in the kernel's buffer by now and
-    // the readers take it within milliseconds; after that, stop waiting.
-    // Weak, so on the usual path the pipes close with the completion rather
-    // than a second later.
+    // A descendant that inherited the pipes holds them open after the child
+    // is gone, so EOF may never come; the buffer is already drained.
     DispatchQueue.global().asyncAfter(deadline: .now() + eofGraceAfterExit) {
       [weak out, weak err] in
       out?.finish()
@@ -134,10 +119,8 @@ private func launch(
   do {
     try process.run()
   } catch {
-    // A missing executable or working directory fails here, every five
-    // seconds for an unreachable worktree. The handlers hold their buffers,
-    // which hold the group, which nothing else releases; and the pipes stay
-    // open waiting for an EOF no child will send.
+    // A missing executable or directory fails here. The handlers hold the
+    // group, and the pipes wait for an EOF no child will send.
     out.cancel()
     err.cancel()
     try? outPipe.writing.close()
@@ -174,12 +157,8 @@ private func launch(
 /// one readability callback takes it. The margin is for a loaded machine.
 private let eofGraceAfterExit: TimeInterval = 1
 
-/// Both ends of a new pipe, or `PipeUnavailable`.
-///
-/// Not `Pipe()`: it cannot fail, so at the descriptor limit it returns two
-/// handles on descriptor 0. The child then writes to the app's stdin, the
-/// reader sees stdin's EOF at once, and `git worktree list` seems to say the
-/// project has no worktrees, which would drop every one of its tabs.
+/// Both ends of a new pipe, or `PipeUnavailable`. Not `Pipe()`, which cannot
+/// fail and so returns two handles on descriptor 0 at the limit.
 private func makePipe() throws -> (reading: FileHandle, writing: FileHandle) {
   var descriptors: [Int32] = [-1, -1]
   guard pipe(&descriptors) == 0 else { throw PipeUnavailable(code: errno) }
@@ -221,9 +200,8 @@ private final class PipeBuffer: @unchecked Sendable {
     }
   }
 
-  /// Stops reading and counts the pipe as drained. Reached at EOF, when the
-  /// child has exited and something else still holds the pipe, or when the
-  /// child never started; only the first call does anything.
+  /// Stops reading and counts the pipe as drained. Only the first call does
+  /// anything.
   func finish() {
     let first = lock.withLock {
       defer { finished = true }

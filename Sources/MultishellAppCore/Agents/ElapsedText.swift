@@ -1,19 +1,14 @@
 import Foundation
 import MultishellCore
 
-/// How long, in the two lengths the board needs.
-///
-/// A card's corner says how long the pane has been in its column, where the
-/// figure is read at a glance and a second's precision is noise; its message
-/// line says how long a finished command took, where the seconds are the
-/// point. Both take the interval, so nothing here reads a clock.
+/// How long, in the two lengths the board needs: a glance for the corner,
+/// seconds for the message line. Both take the interval, reading no clock.
 public enum ElapsedText {
   private static let minute = 60.0
   private static let hour = 3600.0
 
-  /// A glance: `41s`, `12m`, `1h 05m`. Negative and non-finite intervals
-  /// read as nothing rather than as a wrong number, a clock that moved
-  /// backwards being the usual cause.
+  /// A glance: `41s`, `12m`, `1h 05m`. A negative interval reads as nothing
+  /// rather than a wrong number.
   public static func short(_ interval: TimeInterval) -> String? {
     guard interval.isFinite, interval >= 0 else { return nil }
     if interval < minute { return t("elapsed.seconds", Int(interval)) }
@@ -28,9 +23,8 @@ public enum ElapsedText {
     return short(now.timeIntervalSince(since))
   }
 
-  /// A command's runtime: `0.4s`, `9s`, `1m 12s`, `1h 05m`. Under ten
-  /// seconds it keeps a decimal, which is where the difference between a
-  /// prompt and a build is.
+  /// A command's runtime: `0.4s`, `9s`, `1m 12s`. Under ten seconds it keeps
+  /// a decimal, where a prompt and a build differ.
   public static func precise(_ interval: TimeInterval) -> String? {
     guard interval.isFinite, interval >= 0 else { return nil }
     if interval < 10 { return t("elapsed.seconds-precise", interval) }

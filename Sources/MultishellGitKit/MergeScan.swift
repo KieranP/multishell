@@ -1,10 +1,7 @@
 import Foundation
 
-/// The two cheap reads a merge check starts from: where a project's default
-/// branch points, and every local branch's tip and upstream.
-///
-/// Two processes for a whole repository, whatever it holds. What follows
-/// costs a process only for the branches this says have moved.
+/// The two cheap reads a merge check starts from: the default branch, and
+/// every local branch's tip and upstream. Two processes per repository.
 public struct MergeScan: Hashable, Sendable {
   public let base: DefaultBranch
   /// Local branches by name; remote-tracking refs are dropped once the

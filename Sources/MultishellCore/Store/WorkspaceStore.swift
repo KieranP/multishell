@@ -1,16 +1,8 @@
 import Foundation
 import Observation
 
-/// The single place workspace state changes.
-///
-/// Views observe and call these methods; they never mutate `workspace`
-/// directly and never touch a process. That is what lets a second GUI reuse
-/// this unchanged.
-///
-/// One file, long as it is, and not an extension per collection: `private`
-/// in Swift reaches the whole file and no further, so the setters have to
-/// sit beside the property to write it. Splitting them out means widening
-/// that to `internal(set)`, which is the guarantee above given up.
+/// The single place workspace state changes; see docs/design/architecture.md.
+/// One file, not an extension per collection: `private` reaches no further.
 @Observable
 @MainActor
 public final class WorkspaceStore {
@@ -94,12 +86,8 @@ extension WorkspaceStore {
 // MARK: - Worktrees
 
 extension WorkspaceStore {
-  /// Replaces a project's worktrees with what git just reported, dropping
-  /// tabs whose worktree no longer exists.
-  ///
-  /// Refreshes are asynchronous, so one can land after its project was
-  /// removed; that must not resurrect the worktrees. An unchanged list is
-  /// left alone so a watcher tick does not trigger a save and a re-render.
+  /// Replaces a project's worktrees with what git just reported. A refresh
+  /// landing after its project was removed must not resurrect them.
   public func replaceWorktrees(_ discovered: [Worktree], forProject id: Project.ID) {
     guard workspace.project(id) != nil else { return }
     let fresh = discovered.map(keepingKnownCreationDate)
@@ -112,13 +100,8 @@ extension WorkspaceStore {
     workspace.worktrees.append(contentsOf: fresh)
   }
 
-  /// A creation date once read is not forgotten because a later stat could
-  /// not answer. A directory on a volume that blinked would otherwise flip
-  /// to undated, which is a change: it costs a save and a re-render, and
-  /// moves the row to the end of the sidebar's created order and back.
-  ///
-  /// Only where the fresh listing has no date, so a worktree genuinely
-  /// recreated at the same path takes the new one.
+  /// A date once read survives a stat that could not answer, or a blinking
+  /// volume moves the row to the end of the created order and back.
   private func keepingKnownCreationDate(_ worktree: Worktree) -> Worktree {
     guard worktree.createdAt == nil, let known = workspace.worktree(worktree.id)?.createdAt
     else { return worktree }
@@ -190,14 +173,8 @@ extension WorkspaceStore {
     removeTab(at: index)
   }
 
-  /// Moves a tab to sit just before or just after `target`, which may be in
-  /// another column of the same worktree. `tabs` is one flat array whose
-  /// order is display order, so placing the tab next to its anchor puts it
-  /// in the right place in the anchor's column with nothing to rewrite.
-  ///
-  /// A move that changes column activates the tab there, since a tab
-  /// dragged somewhere is the one being worked in; a reorder inside one
-  /// column leaves the active tab alone.
+  /// Moves a tab beside `target`, possibly in another column of the same
+  /// worktree; see docs/design/tabs-and-columns.md.
   public func moveTab(
     _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, _ target: TerminalTab.ID
   ) {
@@ -221,9 +198,8 @@ extension WorkspaceStore {
     activateTab(id)
   }
 
-  /// A tab dropped on a column's strip past its last tab, or on its New Tab
-  /// button: it lands last there. A drop on a tab answers with a placement
-  /// instead, there being a tab to be before or after.
+  /// A tab dropped on a strip past its last tab, or on its New Tab button:
+  /// it lands last there. A drop on a tab answers with a placement instead.
   @discardableResult
   public func moveTab(_ id: TerminalTab.ID, toEndOf groupID: TabGroup.ID) -> Bool {
     guard
@@ -242,18 +218,8 @@ extension WorkspaceStore {
     return true
   }
 
-  /// Moves a tab, panes and all, to another worktree.
-  ///
-  /// The shells keep running; nothing is typed at their prompts and nothing
-  /// is restarted. What moves is the tab's own place: its worktree, and the
-  /// directory its panes start in, which the destination decides from now
-  /// on. The two are kept together because both are read at launch, and a
-  /// tab that opened one project's shell in another project's directory
-  /// would be neither.
-  ///
-  /// It lands last in the destination's focused column and takes the active
-  /// slot there, since a tab dragged somewhere is the one being worked in.
-  /// The column it left falls back to its last remaining tab, or goes.
+  /// Moves a tab, panes and all, to another worktree. The shells keep
+  /// running; see docs/design/tabs-and-columns.md.
   @discardableResult
   public func moveTab(_ id: TerminalTab.ID, to worktreeID: Worktree.ID) -> Bool {
     guard
@@ -311,14 +277,7 @@ extension WorkspaceStore {
 
 extension WorkspaceStore {
   /// Moves a tab into a column of its own beside `neighbour`, which gives up
-  /// half its width the way splitting a pane halves the pane.
-  ///
-  /// `nil` when nothing moved, so a drag springs back rather than appearing
-  /// to do something: an unknown tab or column, one belonging to another
-  /// worktree, or the only tab of the very column it would land beside,
-  /// which would leave that column and go straight back into a new one at
-  /// the same place. Its only tab landing beside a *different* column is a
-  /// real move, and allowed.
+  /// half its width. `nil` when nothing moved, so the drag springs back.
   @discardableResult
   public func moveTabToNewGroup(
     _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, of neighbour: TabGroup.ID
@@ -366,8 +325,7 @@ extension WorkspaceStore {
   }
 
   /// The column an operation acts on: the one named, the worktree's focused
-  /// one, or a first column made for it. `nil` for a worktree that does not
-  /// exist, or a column that is not one of its own.
+  /// one, or a first column made for it.
   private func resolvedGroup(_ id: TabGroup.ID?, in worktreeID: Worktree.ID) -> TabGroup.ID? {
     guard workspace.worktree(worktreeID) != nil else { return nil }
     if let id {
@@ -385,12 +343,8 @@ extension WorkspaceStore {
     workspace.tabGroups[index].activeTabID = id
   }
 
-  /// A column after a tab left it: another of its own tabs showing, or the
-  /// column itself gone, since a column never stands empty.
-  ///
-  /// The focus then goes to the column that slid into its place, or to the
-  /// last one where it was the rightmost — the answer a tab strip gives when
-  /// the active tab closes, one level out.
+  /// A column after a tab left it: another of its tabs showing, or the column
+  /// gone. See docs/design/tabs-and-columns.md for where the focus lands.
   private func settle(group groupID: TabGroup.ID) {
     guard let index = workspace.tabGroups.firstIndex(where: { $0.id == groupID }) else { return }
     let worktreeID = workspace.tabGroups[index].worktreeID
@@ -528,12 +482,8 @@ extension WorkspaceStore {
     workspace.customAgentCommand = command
   }
 
-  /// An empty line removes the entry rather than storing one: the
-  /// dictionary is keyed by catalogue id, and an agent the user tried and
-  /// cleared would otherwise sit in the state file for good. Emptiness is
-  /// the test, not blankness: a field bound to this is written on every
-  /// keystroke, and trimming would swallow the space between two flags as
-  /// it was typed.
+  /// An empty line removes the entry. Emptiness, not blankness: this is
+  /// written per keystroke, and trimming eats the space between two flags.
   public func setAgentFlags(_ flags: String, for id: String) {
     workspace.agentFlags[id] = flags.isEmpty ? nil : flags
   }

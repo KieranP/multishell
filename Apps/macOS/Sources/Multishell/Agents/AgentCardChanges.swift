@@ -1,9 +1,8 @@
 import MultishellCore
 import SwiftUI
 
-/// The worktree's git badge on a card, drawn the way the sidebar row draws
-/// it: the theme's yellow dot with the count, then the unpushed and unpulled
-/// arrows.
+/// The worktree's git badge on a card, as the sidebar row draws it: the
+/// theme's yellow dot with the count, then the two arrows.
 struct AgentCardChanges: View {
   let status: WorktreeStatus
   let theme: Theme

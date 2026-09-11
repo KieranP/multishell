@@ -2,10 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// What the detail pane shows while a create or remove runs on the selected
-/// worktree: the stage, what happens here when it ends, and a Cancel for a
-/// stage that can be ended early. After a failure, what the stage said and
-/// a Dismiss.
+/// What the detail pane shows while a create or remove runs: the stage, a
+/// Cancel where one can end early, and after a failure what it said.
 struct WorktreeOperationView: View {
   let operation: WorktreeOperation
   let theme: Theme

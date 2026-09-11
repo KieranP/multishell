@@ -2,9 +2,8 @@ import Foundation
 import MultishellCore
 import MultishellGitKit
 
-/// What the New Worktree sheet decides, apart from the view so the rules are
-/// testable: when Create is allowed, what git is asked for, and what a
-/// project switch or a mode switch does to the fields.
+/// What the New Worktree sheet decides: when Create is allowed, what git is
+/// asked for, and what a project or mode switch does to the fields.
 public struct NewWorktreeDraft: Equatable, Sendable {
   public var projectID: Project.ID?
   public var branch = ""
@@ -15,13 +14,11 @@ public struct NewWorktreeDraft: Equatable, Sendable {
   public var hasCommits = true
   public var isCreating = false
   /// What was typed in new-branch mode, kept across a visit to the
-  /// existing-branch picker so coming back restores it, even while a load
-  /// is still running and there are no branches to compare against.
+  /// existing-branch picker so coming back restores it.
   private var typedBranch = ""
 
-  /// The project whose branches are the ones on screen. Create waits for it
-  /// to match the picker, so a load still running, or one that was cancelled
-  /// by a switch, can never enable it against the wrong project's lists.
+  /// The project whose branches are on screen. Create waits for it to match
+  /// the picker, so a stale load cannot enable it.
   public private(set) var loadedProjectID: Project.ID?
 
   public init(projectID: Project.ID?) {
@@ -38,9 +35,8 @@ public struct NewWorktreeDraft: Equatable, Sendable {
     loadedProjectID = nil
   }
 
-  /// What git said about `id`. Ignored when the picker has moved on since
-  /// the read began. `checkedOut` is the branches the project's worktrees
-  /// already have, which the existing-branch list must not offer.
+  /// What git said about `id`, ignored once the picker has moved on.
+  /// `checkedOut` is what the existing-branch list must not offer.
   public mutating func finishLoading(
     _ id: Project.ID,
     hasCommits: Bool,
@@ -68,9 +64,8 @@ public struct NewWorktreeDraft: Equatable, Sendable {
     return branches.filter { !checkedOut.contains($0) }
   }
 
-  /// The field and the picker share `branch`. Leaving new-branch mode puts
-  /// the typed name aside and picks an existing branch; coming back restores
-  /// what was typed, never what was picked, which would be a duplicate.
+  /// The field and the picker share `branch`. Coming back restores what was
+  /// typed, never what was picked, which would be a duplicate.
   public mutating func modeChanged(checkedOut: Set<String>) {
     if createBranch {
       branch = typedBranch
@@ -102,9 +97,8 @@ public struct NewWorktreeDraft: Equatable, Sendable {
     createBranch && !baseBranch.isEmpty ? baseBranch : nil
   }
 
-  /// What the sheet says beside its spinner while a create runs. A hook can
-  /// take a minute, and without a name for the stage the sheet looked hung.
-  /// `nil` is the tail after the hooks: the refresh and the select.
+  /// What the sheet says beside its spinner while a create runs, a hook
+  /// taking a minute. `nil` is the tail: the refresh and the select.
   public static func progressText(for step: WorktreeCreationStep?) -> String {
     switch step {
     case .preCreateHook: t("step.pre-create-hook")

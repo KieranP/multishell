@@ -7,14 +7,11 @@ public struct AgentDescriptor: Identifiable, Hashable, Sendable {
   /// Looked up on the login shell's PATH.
   public let executable: String
   public let launchArguments: [String]
-  /// How to pick the last conversation up again when a saved agent tab
-  /// comes back after a relaunch. `nil` means the agent has no such flag
-  /// and the tab comes back as a plain shell.
+  /// How to resume the last conversation when a saved agent tab comes back.
+  /// `nil` means the tab returns as a plain shell.
   public let resumeArguments: [String]?
-  /// How this agent is told about a file at its prompt: `@` for one that
-  /// reads mentions. `nil` means it is told nothing special, and a file
-  /// dropped on its tab arrives as a plain path, which any agent can read.
-  /// Only set it for an agent whose prompt is known to resolve them.
+  /// How this agent is told about a file: `@` for one that reads mentions,
+  /// `nil` for a plain path. Only set where the prompt is known to resolve.
   public let fileMentionPrefix: String?
 
   public init(

@@ -2,11 +2,8 @@ import Foundation
 import MultishellCore
 import MultishellProcess
 
-/// Which shells this machine has, and how the dropdown lists them.
-///
-/// `/etc/shells` is the system's list, and Homebrew installs do not always
-/// register there, so the login shell's PATH is searched for the usual
-/// names as well.
+/// Which shells this machine has. `/etc/shells` is the system's list, and
+/// the PATH is searched too, Homebrew not always registering there.
 public struct ShellDetection: Equatable, Sendable {
   /// Paths of the shells found, sorted by name then path.
   public let installed: [String]

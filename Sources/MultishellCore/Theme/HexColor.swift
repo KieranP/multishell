@@ -1,14 +1,10 @@
 import Foundation
 
-/// Parses the hex strings themes are written in.
-///
-/// Lives in the core rather than in a GUI so both frontends, and both terminal
-/// backends, share one interpretation of a theme file.
+/// Parses the hex strings themes are written in. In the core so both
+/// frontends and both terminal backends read a theme file the same way.
 public enum HexColor {
-  /// Accepts `#rgb`, `#rrggbb`, and either without the leading `#`. A
-  /// trailing alpha (`#rgba`, `#rrggbbaa`), which themes exported from other
-  /// tools often carry, is read and ignored: a terminal cell has no alpha,
-  /// and grey for the slot would be the wrong colour rather than a warning.
+  /// Accepts `#rgb`, `#rrggbb`, and either without the `#`. A trailing alpha
+  /// is read and ignored: a terminal cell has none.
   public static func parse(_ text: String) -> RGB? {
     // Hand-edited theme files pick up stray spaces; grey for the whole
     // palette would be a harsh price for one.
@@ -60,13 +56,8 @@ extension Theme {
     HexColor.parse(selectionBackground) ?? RGB(red: 64, green: 96, blue: 144)
   }
 
-  /// The line round the focused pane, or `nil` for no line.
-  ///
-  /// The three spellings of the key: a colour is that colour, an empty
-  /// string is no ring, and the key left out is the selection colour, which
-  /// is what the app drew before the key existed. A colour that will not
-  /// parse reads as the key left out and not as no ring, so a typo costs
-  /// the colour rather than silently removing the thing it was setting.
+  /// The line round the focused pane: a colour, `""` for none, absent for
+  /// the selection colour. A typo reads as absent, not as none.
   public var focusRingRGB: RGB? {
     guard let focusRing else { return selectionRGB }
     let text = focusRing.trimmingCharacters(in: .whitespaces)

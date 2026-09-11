@@ -2,16 +2,11 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// App-wide preferences, under Multishell > Settings (Cmd+,).
-/// Per-project settings live behind the cog on each sidebar row. Help sits
-/// behind each row's (i); captions are kept for values computed live.
+/// App-wide preferences, under Multishell > Settings. Help sits behind each
+/// row's (i); captions are kept for values computed live.
 struct SettingsView: View {
-  /// Fixed: a settings window sized to its tallest tab would resize as the
-  /// user moved between them. So it is the tallest page's height and every
-  /// shorter page carries the empty space, which at 159pt for General is
-  /// most of the window. 600 is Project General's 581.5 with room for the
-  /// couple of points a measurement moves between machines;
-  /// SettingsPageSizeTests holds every page to it.
+  /// Fixed, or the window would resize as the user moved between tabs. 600
+  /// is the tallest page plus slack; SettingsPageSizeTests holds it.
   static let windowSize = CGSize(width: 560, height: 600)
 
   let model: AppModel

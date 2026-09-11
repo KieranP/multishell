@@ -1,13 +1,7 @@
 import Foundation
 
-/// One tab in a worktree's terminal pane.
-///
-/// A tab owns a pane tree rather than a single terminal, so splits are a
-/// change to `root` rather than a change to this type. It also names the
-/// column it sits in: the worktree is kept beside it rather than read
-/// through the group, because it is what decides where the tab's shells
-/// start and which shell they run, and a tab dragged to another worktree
-/// changes both at once.
+/// One tab in a worktree's terminal pane, owning a pane tree and naming its
+/// column. The worktree sits beside it, deciding where its shells start.
 public struct TerminalTab: Identifiable, Codable, Hashable, Sendable {
   public let id: UUID
   public var worktreeID: Worktree.ID
@@ -41,12 +35,8 @@ public struct TerminalTab: Identifiable, Codable, Hashable, Sendable {
       focusedSessionID: session)
   }
 
-  /// Everything but the group is required, as it was before groups existed:
-  /// a tab with no tree is not a tab, and tabs decode element by element so
-  /// a broken one costs itself alone. A tab with no group is what every tab
-  /// in a state file written before this feature looks like, and
-  /// `Workspace.adoptUngroupedTabs` gives each worktree's tabs the one
-  /// column they were saved as.
+  /// Everything but the group is required, a tab with no tree being no tab.
+  /// A tab with no group is one saved before columns existed.
   public init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     self.id = try container.decode(UUID.self, forKey: .id)

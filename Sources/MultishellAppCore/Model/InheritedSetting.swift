@@ -1,15 +1,8 @@
 import Foundation
 import MultishellCore
 
-/// What a project settings form shows for a setting the project does not
-/// override: the value actually in force, and the sentence saying where it
-/// comes from.
-///
-/// The global is not the only answer any more, since the repository's
-/// `.multishell.json` may say what a worktree here opens and what order its
-/// rows come in. A form that showed the global would tell the user the
-/// opposite of what the app does, and turning the override on would seed it
-/// with a value nobody was using.
+/// What a settings form shows for a setting the project does not override:
+/// the value in force and where it came from; see docs/design/settings.md.
 public struct InheritedSetting<Value: Equatable & Sendable>: Equatable, Sendable {
   public let value: Value
   /// The repository's file supplies it, rather than the user's global.
@@ -21,8 +14,7 @@ public struct InheritedSetting<Value: Equatable & Sendable>: Equatable, Sendable
   }
 
   /// The caption under the row while the override is off. `shown` is the
-  /// value as the row itself writes it, so one sentence serves every kind
-  /// of setting and none of them can word it differently.
+  /// value as the row writes it, so one sentence serves every setting.
   public func caption(_ shown: String) -> String {
     isFromRepository
       ? t("inherited.from-repository", SharedProjectSettings.fileName, shown)

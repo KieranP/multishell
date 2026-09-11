@@ -2,17 +2,8 @@ import MultishellCore
 import MultishellGitKit
 import MultishellProcess
 
-/// How a failed stage of a worktree removal is shown, decided apart from the
-/// model so the cases are tested.
-///
-/// A pre-delete veto leaves the worktree and its terminals in place, so the
-/// pane says why until dismissed; so does a pre-delete hook that ran past
-/// the timeout. A pre-delete hook the user stopped is not a failure at all:
-/// the worktree stays and nothing is said. Everything else is an alert: a
-/// directory that could be neither trashed nor deleted, or git failing to
-/// unlock or prune, keeps the worktree; a post-delete hook that failed, timed out or was stopped, or a
-/// branch that would not go, leaves the worktree gone and, when the branch
-/// was to be deleted, says it was kept.
+/// How a failed stage of a worktree removal is shown: a pre-delete veto in
+/// the pane, a stop silently, everything else an alert.
 public enum RemovalFailure: Equatable, Sendable {
   public enum Retry: Equatable, Sendable {
     /// `git branch -D` on a branch `-d` refused. The alert's title already

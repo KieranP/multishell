@@ -2,11 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// One pane's card: who is at the prompt, how long it has been there, what
-/// the tab is called, where it is, and the last thing it said.
-///
-/// No line of terminal output: neither engine hands scrollback to the core,
-/// so there is none to draw.
+/// One pane's card: who is at the prompt, for how long, the tab's name, where
+/// it is, and the last thing it said. No output; neither engine hands any.
 struct AgentCardView: View {
   let model: AppModel
   let card: AgentBoardCard
@@ -49,9 +46,8 @@ struct AgentCardView: View {
     .accessibilityAddTraits(.isButton)
   }
 
-  /// The dot, who is at the prompt, and how long they have been in this
-  /// column. A shell names itself in the monospaced face an agent does not,
-  /// so a glance separates the two without a second badge.
+  /// The dot, who is at the prompt, and how long in this column. A shell
+  /// names itself monospaced, so a glance separates the two.
   private var top: some View {
     HStack(spacing: 6) {
       Circle()
@@ -75,11 +71,8 @@ struct AgentCardView: View {
     }
   }
 
-  /// Where the pane is, and on the same line's right edge what git makes of
-  /// it. The badge rides here rather than on a line of its own so the card
-  /// has one right-hand rail, the time above it and the counts below; a
-  /// clean worktree leaves the line as it was. The name gives way first when
-  /// the column is narrow, the badge being a few fixed characters.
+  /// Where the pane is, with git's verdict on the same line's right edge, so
+  /// the card has one right-hand rail. The name gives way first.
   private var place: some View {
     HStack(spacing: 4) {
       Text(card.projectName)

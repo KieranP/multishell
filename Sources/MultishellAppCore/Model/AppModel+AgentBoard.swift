@@ -4,9 +4,8 @@ import MultishellCore
 // MARK: - What the board is made of
 
 extension AppModel {
-  /// Every live pane, flattened into a card. Rebuilt on each read rather
-  /// than cached: it is derived from observed state, and a cache would be
-  /// one more thing that can disagree with the sidebar.
+  /// Every live pane, flattened into a card. Rebuilt each read, a cache
+  /// being one more thing that can disagree with the sidebar.
   public var agentBoardCards: [AgentBoardCard] {
     let projectNames = Dictionary(
       workspace.projects.map { ($0.id, $0.name) }, uniquingKeysWith: { first, _ in first })
@@ -39,25 +38,14 @@ extension AppModel {
     AgentBoard(cards: agentBoardCards, showsShells: showsAllTerminals)
   }
 
-  /// Whether an agent is at this pane's prompt: one reported there, or the
-  /// tab was opened to run one. The report wins, because an agent is usually
-  /// started by hand in a plain shell tab and a tab opened for one keeps its
-  /// `agentID` long after the agent has quit; see `ReportedAgent`, and
-  /// `updatePIDWatch`, which takes an entry away once its process has gone.
-  ///
-  /// The board and the counts beside it both ask this, so the sidebar entry
-  /// can never disagree with the columns it is summarising.
+  /// Whether an agent is at this pane's prompt, the report winning over the
+  /// tab's own id. Asked by the board and its counts alike.
   public func isAgentPane(_ session: TerminalSession) -> Bool {
     reportedAgents[session.id] != nil || session.agentID != nil
   }
 
-  /// How many cards each column holds, without building one.
-  ///
-  /// The sidebar entry and the Dock badge read this rather than the board:
-  /// a card carries a pane's title and its worktree's git status, and a
-  /// sidebar that read those would re-render every time a shell reported a
-  /// new prompt, which is the whole reason titles are kept out of the
-  /// workspace.
+  /// How many cards each column holds, without building one: a card carries
+  /// a title, and the sidebar would re-render on every prompt.
   public var agentLaneCounts: [AgentBoardLane: Int] {
     var counts: [AgentBoardLane: Int] = [:]
     for session in workspace.sessions
@@ -86,9 +74,8 @@ extension AppModel {
       URL(fileURLWithPath: shellPath(forWorktree: session.worktreeID)).lastPathComponent)
   }
 
-  /// The pane's own title, not its tab's: a split holds several panes under
-  /// one strip, and each card is about one of them. What the shell reports
-  /// wins, since for a shell running a command that is the command.
+  /// The pane's own title, not its tab's, a split holding several. What the
+  /// shell reports wins, being the command for a shell running one.
   private func paneTitle(of session: TerminalSession, in tab: TerminalTab) -> String {
     sessionTitles[session.id] ?? tab.customTitle ?? session.title
   }

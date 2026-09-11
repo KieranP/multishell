@@ -75,9 +75,8 @@ struct NewWorktreeSheet: View {
             .lineLimit(1)
         }
         Spacer()
-        // While a create runs, Cancel stops its pre-create hook and the
-        // sheet closes when the create returns; nothing is created. Once
-        // git itself is running there is nothing to stop, so no button.
+        // While a create runs, Cancel stops its pre-create hook. Once git
+        // itself is running there is nothing to stop, so no button.
         Button(t("action.cancel"), role: .cancel) {
           if draft.isCreating { model.cancelWorktreeCreation() } else { dismiss() }
         }
@@ -91,10 +90,8 @@ struct NewWorktreeSheet: View {
     }
     .padding(20)
     .frame(width: 520)
-    // Re-read for each project the picker lands on. Picking another project
-    // cancels this task but not the git call it is inside, so each result
-    // is checked against the picker before it is used; the draft checks
-    // again.
+    // Re-read per project. A switch cancels this task but not the git call
+    // inside it, so each result is checked against the picker.
     .task(id: draft.projectID) {
       draft.beginLoading()
       guard let project else { return }

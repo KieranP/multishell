@@ -1,10 +1,8 @@
 import Foundation
 import MultishellCore
 
-/// Where an arrow key moves in the icon palette, kept apart from the view so
-/// it can be tested. The palette is a grid per group, so a group always
-/// starts a new row and its last row is usually short: walking one flat list
-/// of every symbol instead drifts a column at each of those boundaries.
+/// Where an arrow key moves in the icon palette. A grid per group, so one
+/// flat list would drift a column at every short last row.
 public enum IconGridWalk {
   public enum Step: Sendable {
     case left, right, up, down
@@ -20,11 +18,8 @@ public enum IconGridWalk {
     }
   }
 
-  /// The symbol `step` lands on from `highlighted`, or `nil` when there is
-  /// nowhere to go. Left and right run on through the rows; up and down hold
-  /// the column, taking the last of a shorter row. With nothing highlighted,
-  /// or one a search has dropped, the first key lands on the first symbol
-  /// rather than a step past it.
+  /// The symbol `step` lands on, `nil` where there is nowhere to go. Up and
+  /// down hold the column; with nothing highlighted the first key lands first.
   public static func destination(
     from highlighted: String?, step: Step, in rows: [[String]]
   ) -> String? {

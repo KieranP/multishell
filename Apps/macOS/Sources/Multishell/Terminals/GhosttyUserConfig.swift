@@ -1,20 +1,11 @@
 import Foundation
 import GhosttyTerminal
 
-/// The user's own Ghostty configuration, as the base a surface is configured
-/// from.
-///
-/// libghostty loads no config of its own here, so the files are read and
-/// handed over as text. They are read once, when the engine's host is
-/// created, so an edit reaches terminals at the next launch.
+/// The user's own Ghostty configuration, read as text and handed over as the
+/// base a surface is configured from. Read once, at host creation.
 enum GhosttyUserConfig {
-  /// Both places Ghostty reads on a Mac, in the order it reads them: the XDG
-  /// path first, the app-support file second, so the app-support file has the
-  /// later word where a user keeps both. Measured rather than assumed, a key
-  /// set in each and `ghostty +show-config` asked which survived.
-  /// `XDG_CONFIG_HOME` is not read: an app launched from Finder is not given
-  /// it, so honouring it would make a terminal's config depend on how the app
-  /// was started.
+  /// Both places Ghostty reads on a Mac, in its own order, measured with
+  /// `ghostty +show-config`. `XDG_CONFIG_HOME` is not read.
   static let fileURLs: [URL] = {
     let home = FileManager.default.homeDirectoryForCurrentUser
     return [
@@ -24,9 +15,8 @@ enum GhosttyUserConfig {
     ]
   }()
 
-  /// What this app asks for before the user's files are read, so a key in
-  /// both is the user's. Colours, font and the unbound shortcuts are rendered
-  /// after them instead and win; see `GhosttyTerminalHost`.
+  /// What this app asks for before the user's files, so a key in both is the
+  /// user's. Colours, font and unbound shortcuts are rendered after and win.
   static let defaults = TerminalConfiguration(startingFrom: .default) { builder in
     builder.withWindowPaddingX(8)
     builder.withWindowPaddingY(6)
@@ -40,42 +30,16 @@ enum GhosttyUserConfig {
     ([defaults.rendered] + userContents.map(usable)).joined(separator: "\n")
   }
 
-  /// What a user's file may set: everything else in it, comments included,
-  /// is dropped before libghostty sees it.
-  ///
-  /// A list of what to refuse would have to grow with Ghostty, and the keys
-  /// worth refusing are the ones a new release is likeliest to add to, being
-  /// the ones about what runs and what a window is. `command`,
-  /// `initial-command` and `input` reach the child, the first two in place of
-  /// the session's shell and the third typed into it. `working-directory` is
-  /// the worktree, `title` is the name the tab reads from escape sequences,
-  /// `shell-integration` is the prompt marks that click-to-move and a
-  /// command's exit code come from, and `wait-after-command` holds a surface
-  /// open after its shell has gone. None of those is on this list, and nor is
-  /// whatever is added beside them next.
-  ///
-  /// `theme` is left off for its own reason: it names a file in a themes
-  /// directory this embedding does not ship, so it is the one complaint
-  /// carrying no line number for `repair` to place, and the whole file would
-  /// go with it. Nothing is lost, the app painting its own theme here.
-  ///
-  /// Prefixes where the whole family is about drawing or driving a surface.
-  /// A family is also what carries a rename across a version: Ghostty split
-  /// `scrollback-limit` into `scrollback-limit-bytes` and `-lines`, and
-  /// `scrollback-` keeps every spelling of it whichever build is pinned.
-  /// A member this libghostty has not got is `repair`'s to drop.
+  /// What a user's file may set; everything else is dropped. An allow list,
+  /// a deny list having to grow with Ghostty; see terminals.md.
   private static let allowedPrefixes = [
     "adjust-", "background", "bell-", "clipboard-", "cursor-", "font-", "link",
     "mouse-", "palette", "resize-overlay", "scrollback-", "search-", "selection-",
     "window-padding-",
   ]
 
-  /// The rest, one at a time. `macos-option-as-alt` is the only `macos-` key
-  /// a surface reads; the others are a window's or the app's, as every
-  /// `gtk-`, `quick-terminal-` and `window-` key but padding is. `env` is
-  /// left off deliberately: the app gives each child the variables that name
-  /// its session, and a file that set one of those would break the reports a
-  /// tab's state is read from.
+  /// The rest, one at a time. `env` is left off deliberately: a file setting
+  /// one of the variables naming a session would break its reports.
   private static let allowedKeys: Set<String> = [
     "abnormal-command-exit-runtime", "alpha-blending", "bold-color", "click-repeat-interval",
     "copy-on-select", "custom-shader", "custom-shader-animation", "enquiry-response",
@@ -87,12 +51,8 @@ enum GhosttyUserConfig {
     "window-vsync",
   ]
 
-  /// libghostty refuses a config file whole over any one complaint, where
-  /// Ghostty itself names the line, skips it and carries on. Do what Ghostty
-  /// does: blank the lines it named and offer the rest again. A complaint
-  /// naming no line, or a file still refused after a few passes, falls back
-  /// to the app's defaults, which is what libghostty would have fallen back
-  /// to on its own.
+  /// libghostty refuses a file whole over one complaint, where Ghostty names
+  /// the line and carries on. Blank the named lines and offer the rest again.
   @MainActor
   static func repair(_ controller: TerminalController, base: String, passes: Int = 3) {
     var lines = base.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
@@ -109,10 +69,8 @@ enum GhosttyUserConfig {
     controller.updateConfigSource(.generated(defaults.rendered))
   }
 
-  /// Diagnostics arrive as one string, each `<path>:<line>:<key>: <message>`
-  /// and joined by `" | "`. Only that text says which line, so a wrapper that
-  /// words them differently costs the repair rather than the terminal: no
-  /// line named is the fallback above.
+  /// Diagnostics arrive as one `" | "`-joined string. Only that text says
+  /// which line, so a reworded wrapper costs the repair, not the terminal.
   private static func refusedLines(in issue: String) -> [Int] {
     issue.components(separatedBy: " | ").compactMap { part in
       guard let range = part.range(of: #"\.conf:\d+:"#, options: .regularExpression) else {

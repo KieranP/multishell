@@ -1,8 +1,7 @@
 import MultishellCore
 
-/// A close waiting on the confirmation dialog, because the pane or tab has
-/// an agent that reported Working. Cmd+W on a working agent is a mistake
-/// often enough to ask, the way worktree removal does.
+/// A close waiting on its dialog, the pane or tab holding an agent that
+/// reported Working. Cmd+W on one is a mistake often enough to ask.
 public enum PendingClose: Identifiable, Equatable, Sendable {
   case pane(TerminalSession.ID)
   case tab(TerminalTab.ID)

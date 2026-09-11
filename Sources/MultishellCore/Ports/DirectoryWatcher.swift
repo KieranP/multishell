@@ -1,10 +1,7 @@
 import Foundation
 
-/// Tells the core when a set of directories changes.
-///
-/// File watching has no portable API (kqueue on Darwin, inotify on Linux),
-/// so each platform supplies one. Implementations coalesce bursts; the core
-/// only wants "look again".
+/// Tells the core when a set of directories changes. No portable API, so
+/// each platform supplies one; implementations coalesce bursts.
 @MainActor
 public protocol DirectoryWatcher: AnyObject {
   var onChange: (@MainActor () -> Void)? { get set }

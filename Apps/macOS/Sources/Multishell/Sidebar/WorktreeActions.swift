@@ -1,9 +1,8 @@
 import MultishellCore
 import SwiftUI
 
-/// The items that act on one worktree, shared by the detail header's menu,
-/// the sidebar's context menu and any other place a worktree is shown, so a
-/// new action appears in all of them at once.
+/// The items that act on one worktree, shared by every menu that shows one,
+/// so a new action appears in all of them at once.
 struct WorktreeActions: View {
   let model: AppModel
   let worktree: Worktree
@@ -21,10 +20,8 @@ struct WorktreeActions: View {
     Button(t("actions.copy-path")) { model.copyToClipboard(worktree.path.path) }
     Button(t("actions.copy-branch")) { model.copyToClipboard(worktree.name) }
     Divider()
-    // Selected first, so the menu opens the tab where it was asked for
-    // whichever worktree the detail view is showing, and without the first
-    // tab a select would add. Always a shell: the agent has its own item,
-    // so auto-start does not apply here.
+    // Selected first, so the tab opens where it was asked for. Always a
+    // shell: the agent has its own item, so auto-start does not apply.
     Button(t("menu.new-shell-tab")) {
       if model.select(worktree, openingFirstTab: .never) { model.newShellTab() }
     }

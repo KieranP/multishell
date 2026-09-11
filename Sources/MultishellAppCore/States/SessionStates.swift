@@ -1,24 +1,8 @@
 import Foundation
 import MultishellCore
 
-/// What each live terminal, and each worktree reported on from outside a
-/// tab, is doing right now, with the rules for who clears what.
-///
-/// Runtime only, beside the live sessions; a prompt must not save or
-/// re-render the workspace. Done is about the user and clears when the tab
-/// has been seen. Working and Waiting are about the process: they stay while
-/// the user looks, and clear when the source reports again, the process is
-/// gone, or the user clears them by hand. Failed takes the look half of that
-/// and not the process half: a failure is something to act on and a glance
-/// is not acting, but it has outlived the thing that failed, so only a new
-/// report or the user's own clear takes it. Pure, so the rules are tested
-/// without a view or an engine.
-///
-/// Seen is one notion throughout, and the same one a banner is raised
-/// against: the pane on screen and the app frontmost. On screen alone is not
-/// it, a pane being the shown one while the user is in another app entirely,
-/// and it is `NotificationPolicy` that would then disagree, saying they had
-/// not seen the very thing this had just cleared.
+/// What each live terminal is doing, and who clears what. Runtime only; see
+/// docs/design/agents.md.
 public struct SessionStates: Equatable, Sendable {
   public enum Key: Hashable, Sendable {
     case session(TerminalSession.ID)
@@ -30,10 +14,8 @@ public struct SessionStates: Equatable, Sendable {
   public private(set) var states: [Key: SessionState] = [:]
   /// The process behind a Working or Waiting state, when the report said.
   public private(set) var pids: [Key: Int32] = [:]
-  /// When each key's state last changed, going back to nothing included, so
-  /// the board can say how long a pane has been in the column it is in. The
-  /// one time in this value, and it is handed in rather than read from a
-  /// clock; see `stampChanges`.
+  /// When each key's state last changed, so the board can say how long a pane
+  /// has been in its column. Handed in, never read from a clock.
   public private(set) var since: [Key: Date] = [:]
   /// What the last report about each key said beyond its state.
   public private(set) var notes: [Key: SessionNote] = [:]
@@ -45,8 +27,7 @@ public struct SessionStates: Equatable, Sendable {
   // MARK: - Sources
 
   /// A report over the channel. `isSeen` means the user is looking at the
-  /// tab, or at the worktree for a worktree-level report, with the app in
-  /// front of them.
+  /// tab, or the worktree, with the app in front of them.
   public mutating func report(
     _ state: SessionState, pid: Int32?, message: String? = nil, duration: Double? = nil,
     for key: Key, isSeen: Bool
@@ -69,18 +50,15 @@ public struct SessionStates: Equatable, Sendable {
   }
 
   /// A bell or a title from the engine: something happened, not what. It
-  /// never downgrades a state the occupant reported; an agent retitles the
-  /// tab on every step while it works.
+  /// never downgrades a state the occupant reported.
   public mutating func noteActivity(in id: TerminalSession.ID, isSeen: Bool) {
     let key = Key.session(id)
     guard states[key] == nil, !isSeen else { return }
     states[key] = .done
   }
 
-  /// The shell's foreground command returned, so whatever was Working or
-  /// Waiting in it has exited. The one engine signal that outranks a report.
-  /// A non-zero exit is Failed, and a failure is not covered by an earlier
-  /// Done the user has not seen yet.
+  /// The shell's foreground command returned: the one engine signal that
+  /// outranks a report. A non-zero exit is Failed, and covers a Done.
   public mutating func noteCommandFinished(
     in id: TerminalSession.ID, exitCode: Int32?, isSeen: Bool
   ) {
@@ -100,8 +78,7 @@ public struct SessionStates: Equatable, Sendable {
   // MARK: - Clearing
 
   /// The shown tab and the selected worktree have been seen. Done goes;
-  /// Failed stays, along with Working and Waiting, until something other
-  /// than a look deals with it.
+  /// the rest stay until something other than a look deals with them.
   public mutating func markSeen(sessions: [TerminalSession.ID], worktree: Worktree.ID?) {
     var keys = sessions.map(Key.session)
     if let worktree { keys.append(.worktree(worktree)) }
@@ -136,9 +113,8 @@ public struct SessionStates: Equatable, Sendable {
     notes = notes.filter { keep($0.key) }
   }
 
-  /// The process a state was about has left the table. Working and Waiting
-  /// were claims about it and go; Done and Failed are about the user and
-  /// stay.
+  /// The process a state was about has gone. Working and Waiting were claims
+  /// about it and go; Done and Failed are about the user and stay.
   public mutating func processGone(_ pid: Int32) {
     for (key, tracked) in pids where tracked == pid {
       if states[key]?.isFinished != true { states[key] = nil }
@@ -148,11 +124,8 @@ public struct SessionStates: Equatable, Sendable {
 
   // MARK: - Time in state
 
-  /// Records when each key's state changed, measured against what this value
-  /// held before the change. Called once per mutation by the model, which is
-  /// the only place a clock is read; a key whose state did not move keeps the
-  /// time it has, so an agent reporting Working on every tool call does not
-  /// keep resetting how long it has been working.
+  /// Records when each key's state changed, once per mutation. A key that did
+  /// not move keeps its time, so repeated Working reports do not reset it.
   public mutating func stampChanges(against previous: SessionStates, at now: Date) {
     for key in Set(states.keys).union(previous.states.keys)
     where states[key] != previous.states[key] {

@@ -2,9 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// The glyph and tint the sidebar draws for the project. One palette sets
-/// the glyph. The controls show what is drawn, the repository's icon
-/// included, and a change writes the user's own settings over it.
+/// The glyph and tint the sidebar draws. The controls show what is drawn, the
+/// repository's icon included, and a change writes the user's over it.
 struct ProjectIconSection: View {
   let model: AppModel
   let project: Project
@@ -14,10 +13,8 @@ struct ProjectIconSection: View {
     let settings = model.effectiveSettings(for: model.current(project))
     let kind = ProjectIcon.kind(of: settings.iconGlyph)
     let shared = model.sharedSettings[project.id]
-    // Read the same way `ProjectSettings.layered` does, or the caption and
-    // the icon disagree: a glyph that is not a symbol name is a gap on
-    // either side, so a leftover emoji of the user's does not stop the
-    // file's icon being the one in force, and one in the file is not it.
+    // Read as `ProjectSettings.layered` does, or the caption and the icon
+    // disagree: a glyph that is not a symbol name is a gap on either side.
     let fromFile =
       (ProjectIcon.symbolName(own.iconGlyph) == nil
         && ProjectIcon.symbolName(shared?.iconGlyph) != nil)

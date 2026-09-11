@@ -2,13 +2,8 @@
   import Foundation
   import MultishellCore
 
-  /// `DirectoryWatcher` on kqueue via `DispatchSource`. Darwin only: the
-  /// vnode source and `O_EVTONLY` have no Linux counterpart, where a
-  /// frontend supplies an inotify watcher behind the same port.
-  ///
-  /// A directory source fires when its direct children change, not deeper,
-  /// so callers pass every level they care about. Events are coalesced for
-  /// 400 ms because git touches several files per operation.
+  /// `DirectoryWatcher` on kqueue, Darwin only. Fires on direct children
+  /// alone, so callers pass every level; coalesced for 400 ms.
   @MainActor
   public final class DispatchDirectoryWatcher: DirectoryWatcher {
     public var onChange: (@MainActor () -> Void)?

@@ -1,9 +1,7 @@
 import Foundation
 
-/// What `git status` says about a worktree right now.
-///
-/// Runtime state, not persisted: it is re-read from git, never stored, so the
-/// sidebar can never show a stale badge from a previous launch.
+/// What `git status` says about a worktree right now. Runtime only, so no
+/// stale badge survives a relaunch.
 public struct WorktreeStatus: Hashable, Sendable {
   public var staged = 0
   public var unstaged = 0

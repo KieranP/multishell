@@ -1,9 +1,7 @@
 import Foundation
 
-/// Who ran us. A hook's helper reports the pid of the program behind the
-/// state, so the app can notice it is gone; that program is the nearest
-/// ancestor that is not a shell, however many `sh -c` layers the agent
-/// put between itself and the command.
+/// Who ran us: the nearest ancestor that is not a shell, so a hook's helper
+/// reports the agent rather than the `sh -c` layers between.
 public enum ProcessAncestry {
   /// Shells an agent might run a hook through. `login` is what a terminal
   /// puts under itself.

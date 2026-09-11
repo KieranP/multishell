@@ -1,10 +1,7 @@
 import Foundation
 
-/// The built-in themes plus any `*.json` the user drops in the themes folder.
-///
-/// A user file with the same id as a built-in replaces it, so a theme can be
-/// tweaked by copying it out and editing. Unreadable files are skipped and
-/// reported, never fatal.
+/// The built-in themes plus any `*.json` in the themes folder. A user file
+/// with a built-in's id replaces it; unreadable ones are skipped.
 public struct ThemeCatalog: Sendable {
   public let themes: [Theme]
   public let problems: [String]
@@ -55,9 +52,7 @@ public struct ThemeCatalog: Sendable {
   }
 
   /// An earlier build wrote its examples at the top level, where they loaded
-  /// as duplicates of the built-ins. Runs on every load so the picker is
-  /// right at launch, not only after the folder button is pressed. Moves,
-  /// never deletes; failures are ignored because the load must go on.
+  /// as duplicates. Moves, never deletes; failures let the load go on.
   private static func relocateStrayExamples(in directory: URL) {
     let examples = directory.appendingPathComponent("examples", isDirectory: true)
     for theme in Theme.builtins {

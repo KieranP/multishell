@@ -3,12 +3,8 @@ import Foundation
 import MultishellCore
 import UniformTypeIdentifiers
 
-/// A tab on the drag pasteboard.
-///
-/// Its own type rather than the plain text a project is dragged as: one type
-/// for both would offer every target to both drags, and a worktree row would
-/// light up for a project it cannot take and swallow the drop meant to
-/// reorder the sidebar.
+/// A tab on the drag pasteboard, with a type of its own: one type for this
+/// and a project would offer every target to both drags.
 struct TabTransfer: Codable, Transferable {
   let id: TerminalTab.ID
 
@@ -20,11 +16,8 @@ struct TabTransfer: Codable, Transferable {
     CodableRepresentation(contentType: contentType)
   }
 
-  /// What the drag hands over. `.draggable` would build this, but the strip
-  /// draws its insertion line from the tab that is moving, and only
-  /// `.onDrag` says which tab that is as the drag starts. The bytes are the
-  /// same JSON `transferRepresentation` reads, so the sidebar's drop still
-  /// decodes it. Own-process only: the drag never leaves the app.
+  /// What the drag hands over. `.onDrag` rather than `.draggable`, which
+  /// would not say which tab is moving as the drag starts.
   func itemProvider() -> NSItemProvider {
     let provider = NSItemProvider()
     provider.registerDataRepresentation(

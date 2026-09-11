@@ -7,9 +7,8 @@ extension RGB {
   }
 }
 
-/// Every chrome colour derives from the theme, so the window follows the
-/// theme rather than the system appearance and a light terminal gets a light
-/// sidebar.
+/// Every chrome colour derives from the theme, so the window follows it
+/// rather than the system appearance; see docs/design/appearance.md.
 extension Theme {
   var backgroundColor: Color { backgroundRGB.color }
   var foregroundColor: Color { foregroundRGB.color }
@@ -18,9 +17,8 @@ extension Theme {
   var sidebarColor: Color { lifted(0.09) }
   var chromeColor: Color { lifted(0.045) }
 
-  /// A board column, and a card on it: two more steps away from the
-  /// terminal, drawn from the same lift the sidebar and toolbar are so a
-  /// light theme gets a light board.
+  /// A board column and a card on it: two more steps from the terminal,
+  /// drawn from the same lift the sidebar and toolbar are.
   var columnColor: Color { lifted(0.03) }
   var cardColor: Color { lifted(0.07) }
 
@@ -32,10 +30,8 @@ extension Theme {
 
   var colorScheme: ColorScheme { isDark ? .dark : .light }
 
-  /// Working is the theme's yellow, Waiting its blue, Done its green, Failed
-  /// its red, and nothing running a grey. The sidebar's dirty-files dot is
-  /// the same yellow, so the state dot sits on the left where the icon was,
-  /// never beside it.
+  /// Working yellow, Waiting blue, Done green, Failed red, idle grey. The
+  /// dirty-files dot is the same yellow, so the two never sit together.
   func color(for state: SessionState) -> Color {
     switch state {
     case .running: ansiRGB[3].color

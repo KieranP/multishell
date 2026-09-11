@@ -16,14 +16,8 @@ extension AppModel {
     mergeBases[project.id]
   }
 
-  /// Whether each worktree's branch has already landed, for every project.
-  ///
-  /// On the status poll rather than the watcher: a commit moves
-  /// `refs/heads/<branch>`, which no file the watcher compares mentions, so
-  /// nothing else would see the last change of a branch land. What it costs
-  /// on a tick where nothing moved is two `for-each-ref`-shaped reads per
-  /// project, next to the `git status` the same tick already runs per
-  /// worktree.
+  /// Whether each worktree's branch has landed. On the status poll, not the
+  /// watcher: a commit moves a ref no watched file mentions.
   public func refreshMergeStates() async {
     for project in workspace.projects where !missingProjects.contains(project.id) {
       await refreshMergeStates(of: project)
@@ -40,14 +34,12 @@ extension AppModel {
     // A ref read that failed is not a repository with no branches: the
     // badges and the commit dates stand until one answers.
     guard let branches else { return }
-    // Before the base is resolved, and whether or not it can be: the
-    // sidebar orders by these, and a repository with no trunk still has
-    // branches that were committed to.
+    // Before the base is resolved, and whether or not it can be: a
+    // repository with no trunk still has branches to order.
     note(branches.lastCommits, asLastCommitsOf: project.id)
     guard let scan = branches.merges else {
-      // No branch to measure against, or one the user named that is not
-      // there: drop the badges rather than leave them saying something
-      // about a base that no longer applies.
+      // No branch to measure against: drop the badges rather than leave
+      // them about a base that no longer applies.
       forgetMergeStates(of: project.id)
       note(nil, asMergeBaseOf: project.id)
       return
@@ -82,25 +74,21 @@ extension AppModel {
       guard let check = checks[worktree.id], check.branch == worktree.branch,
         let state = fresh[check.branch]
       else { continue }
-      // Only an answer settles the question. A read that failed brings
-      // none, and stamping the check for it would pin the verdict it could
-      // not replace to the new tip, never to be asked about again.
+      // Only an answer settles it: stamping the check for a failed read
+      // pins the old verdict to the new tip for good.
       if mergeStates[worktree.id] != state { mergeStates[worktree.id] = state }
       mergeChecks[worktree.id] = check
     }
   }
 
-  /// Every write here lands on the status poll, so each one is made only
-  /// where it changes something: putting a dictionary entry back unchanged
-  /// still tells every view watching it to draw again, and the sidebar
-  /// would redraw every five seconds for nothing.
+  /// Written only where something changed: these land on the status poll,
+  /// and an unchanged entry still redraws every view watching it.
   private func note(_ base: DefaultBranch?, asMergeBaseOf id: Project.ID) {
     if mergeBases[id] != base { mergeBases[id] = base }
   }
 
-  /// The scan answers by branch; the sidebar asks by worktree. Written back
-  /// only when something moved, so a tick where nobody committed does not
-  /// re-render the sidebar.
+  /// The scan answers by branch, the sidebar asks by worktree. Written back
+  /// only when something moved.
   private func note(_ dates: [String: Date], asLastCommitsOf id: Project.ID) {
     var fresh = lastCommits
     for worktree in workspace.worktrees(of: id) {
@@ -114,14 +102,8 @@ extension AppModel {
     for id in ids where mergeChecks[id] != nil { mergeChecks[id] = nil }
   }
 
-  /// What a refresh found gone: a worktree removed in a terminal, or a
-  /// directory deleted by hand. Every writer here only ever answers for a
-  /// worktree the workspace has, so nothing else drops these.
-  ///
-  /// Paths are ids. A worktree created at a path one was removed from would
-  /// otherwise inherit its badge and its commit date until the next merge
-  /// scan answered, which is a merged badge on a branch that has never
-  /// landed. `refreshStatuses` filters for the same reason.
+  /// What a refresh found gone. Paths are ids, so a worktree made where one
+  /// was removed would otherwise inherit its badge and its date.
   func forgetVanishedWorktrees() {
     let known = Set(workspace.worktrees.map(\.id))
     let states = mergeStates.filter { known.contains($0.key) }
@@ -142,15 +124,8 @@ extension AppModel {
     fetchingProjects.contains(project.id)
   }
 
-  /// The menus' Fetch: brings the remote-tracking branches up to date so the
-  /// merged badges answer for the remote as it is now, and prunes the
-  /// upstreams deleted on a merge. The one git call this app makes that
-  /// talks to a network, and only ever on a click.
-  ///
-  /// A network call is the one thing here that can take long enough to look
-  /// broken, so the project is marked for the whole of it, the re-reads that
-  /// follow included: the badges are what the user clicked for, and the
-  /// fetch alone would stop spinning before they changed.
+  /// The menus' Fetch, the one git call that talks to a network and only on
+  /// a click. Marked for the whole of it, re-reads included.
   public func fetch(_ project: Project) async {
     guard let worktrees, fetchingProjects.insert(project.id).inserted else { return }
     defer { fetchingProjects.remove(project.id) }
@@ -166,18 +141,8 @@ extension AppModel {
   }
 }
 
-/// What one worktree's merge verdict was computed from, so a refresh that
-/// finds all of it where it was asks git nothing more.
-///
-/// The branch is part of it, not only its tip: `git checkout -b copy` leaves
-/// two branches on the same commit, and only one of them may have an
-/// upstream that has gone.
-///
-/// So is whether that upstream was gone, which is the one thing a verdict is
-/// drawn from that neither tip records: a first push puts an upstream back
-/// under a branch that had none, and a prune takes one away, both without
-/// moving either. Left out, the badge that the missing upstream earned would
-/// stand until the branch or the trunk next moved.
+/// What a worktree's merge verdict was computed from, so a refresh finding
+/// it unmoved asks git nothing. The branch and its gone upstream are in it.
 struct MergeCheck: Equatable, Sendable {
   let base: String
   let baseTip: String

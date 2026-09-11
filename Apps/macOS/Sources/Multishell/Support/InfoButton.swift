@@ -1,9 +1,7 @@
 import SwiftUI
 
-/// The (i) beside a settings row, holding the help that used to sit under
-/// it as a caption. Hover shows it as a tooltip; a click opens the same text
-/// as a popover, because a tooltip alone is easy to miss and answers no
-/// click.
+/// The (i) beside a settings row, holding its help. Hover shows a tooltip and
+/// a click the same text as a popover, a tooltip alone being easy to miss.
 struct InfoButton: View {
   let text: String
 

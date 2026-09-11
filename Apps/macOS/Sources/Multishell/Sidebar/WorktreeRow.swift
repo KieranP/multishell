@@ -35,10 +35,8 @@ struct WorktreeRow: View {
 
   var body: some View {
     HStack(spacing: 7) {
-      // Always a dot, grey when nothing is running: the row's one glance
-      // answers "is anything happening here". It keeps its real colour when
-      // the row is selected, which is why selection is an outline rather
-      // than a fill that would tint the dot.
+      // Always a dot, grey when nothing is running, and keeping its colour
+      // when selected, which is why selection is an outline.
       Circle()
         .fill(theme.color(for: state ?? .idle))
         .frame(width: 7, height: 7)
@@ -71,9 +69,8 @@ struct WorktreeRow: View {
           .foregroundStyle(theme.textTertiary)
           .help(t("sidebar.locked"))
       }
-      // Never beside the yellow changes dot or an unpushed count: work
-      // that is only here hides the badge, so the two never meet. See
-      // `WorktreeMergeState.showsBadge`.
+      // Never beside the changes dot or an unpushed count: work that is only
+      // here hides the badge. See `WorktreeMergeState.showsBadge`.
       if mergeState.showsBadge(with: status) {
         Image(systemName: "arrow.triangle.merge")
           .font(.system(size: metrics.badge))
@@ -105,9 +102,8 @@ struct WorktreeRow: View {
       isSelected || isDropTarget ? Color.accentColor.opacity(0.12) : .clear,
       in: RoundedRectangle(cornerRadius: 6)
     )
-    // A dashed border for a tab hovering over the row, since the solid one
-    // already means selected and a row can be both at once: dashed reads as
-    // "lands here", which is what the drag is asking.
+    // A dashed border for a hovering tab, the solid one meaning selected and
+    // a row being able to be both at once.
     .overlay {
       if isDropTarget {
         RoundedRectangle(cornerRadius: 6)
@@ -128,9 +124,8 @@ struct WorktreeRow: View {
     .accessibilityAction(named: t("action.rename-spoken"), beginRename)
   }
 
-  /// The user's name over the branch it stands for, or the branch alone
-  /// where they gave no name. The branch never disappears: it is what every
-  /// git command in this directory acts on.
+  /// The user's name over the branch, or the branch alone. The branch never
+  /// disappears, being what every git command here acts on.
   @ViewBuilder
   private var names: some View {
     if let customName {
@@ -156,9 +151,8 @@ struct WorktreeRow: View {
     }
   }
 
-  /// An empty name clears the custom one, so the branch takes the row back;
-  /// `InlineNameField` has the keyboard contract. The branch stays under the
-  /// field: it is what says which worktree is being named.
+  /// An empty name clears the custom one; `InlineNameField` has the keyboard
+  /// contract. The branch stays under the field, naming the worktree.
   private var nameField: some View {
     VStack(alignment: .leading, spacing: 0) {
       InlineNameField(

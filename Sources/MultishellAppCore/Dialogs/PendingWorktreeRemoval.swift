@@ -1,13 +1,7 @@
 import MultishellCore
 
-/// A worktree removal waiting on the confirmation dialog, and what that
-/// dialog says and offers about the branch.
-///
-/// Two global settings shape the request: whether removal asks at all, and
-/// whether the branch always goes with the worktree. When the branch is not
-/// decided by a setting the dialog asks, even for a person who turned the
-/// confirmation off: deleting a branch is the one part that cannot be undone
-/// from the sidebar.
+/// A worktree removal waiting on its dialog. The branch question is asked
+/// even where confirmation is off, being the one part with no undo.
 public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
   public enum BranchChoice: Equatable, Sendable {
     /// Settled before the dialog: the worktree is detached, or the setting
@@ -38,9 +32,8 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
   public let branch: BranchChoice
   /// The name the user gave this worktree, or `nil` for none.
   public let customName: String?
-  /// Whether the branch has already landed on the project's default branch,
-  /// which decides which button the dialog leads with and adds a line to
-  /// what it says.
+  /// Whether the branch has landed, which decides the button the dialog
+  /// leads with and adds a line to what it says.
   public let mergeState: WorktreeMergeState
 
   public init(
@@ -70,13 +63,8 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
 
   public var removeWithBranchLabel: String { t("worktree-removal.remove-with-branch") }
 
-  /// The remove buttons in the order the dialog shows them; the first is
-  /// the one it leads with.
-  ///
-  /// A branch already merged leads with deleting it, since by then keeping
-  /// it is the unusual choice. Only on evidence that is proof: an upstream
-  /// that has gone is left the same way by a pull request closed without
-  /// merging, and that branch is the only copy of the work.
+  /// The remove buttons in the order the dialog shows them. A merged branch
+  /// leads with deleting it, and only on evidence that is proof.
   public var choices: [Choice] {
     switch branch {
     case .decided(let deletes):
@@ -123,10 +111,8 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
     return notes.joined(separator: "\n\n")
   }
 
-  /// What the confirmation warns about beyond the removal itself: the
-  /// uncommitted files the status badge counted, which go to the Trash with
-  /// the directory, and the shells still running there. `nil` when there is
-  /// nothing to add.
+  /// What the confirmation warns about beyond the removal: uncommitted files
+  /// bound for the Trash, and the shells still running there.
   public static func warning(changedFiles: Int, liveTerminals: Int) -> String? {
     var notes: [String] = []
     if changedFiles > 0 {

@@ -1,11 +1,5 @@
-/// What comes above what inside a column.
-///
-/// Most recently entered that state at the top, so the freshest thing in a
-/// column is the one read first. The cost is that an arriving card pushes
-/// the rest down a place, which is why the last two rules exist: a pane that
-/// has never reported has no time to sort on and goes last, and the title
-/// then the id break every remaining tie, so a render never reorders cards
-/// that have not moved.
+/// What comes above what inside a column: most recently entered at the top,
+/// then title and id, so a render never reorders cards that have not moved.
 public enum AgentBoardOrder {
   public static func precedes(_ lhs: AgentBoardCard, _ rhs: AgentBoardCard) -> Bool {
     switch (lhs.since, rhs.since) {

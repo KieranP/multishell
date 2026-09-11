@@ -1,13 +1,8 @@
 import Foundation
 import MultishellCore
 
-/// One open pane, as everything the board needs to know about it.
-///
-/// The model gathers these from the workspace, the states and the registry;
-/// `AgentBoard` decides the arrangement and `AgentBoardOrder` the order.
-/// Flattening a pane to this is what keeps both testable without a
-/// workspace, a host or a clock: the time a card shows is derived from
-/// `since` and a `now` handed in, never read here.
+/// One open pane, as everything the board needs of it. Flattened so the
+/// arrangement is testable without a workspace, a host or a clock.
 public struct AgentBoardCard: Identifiable, Equatable, Sendable {
   /// What is at the pane's prompt. An agent is named by the catalogue; a
   /// shell by its own file name, which is all a shell has to say for itself.
@@ -45,9 +40,8 @@ public struct AgentBoardCard: Identifiable, Equatable, Sendable {
 
   public var lane: AgentBoardLane { AgentBoardLane.of(state) }
 
-  /// The line under the place: what the occupant last said about itself, or
-  /// what a finished command amounted to. Absent for a pane that has said
-  /// nothing, which is most of Working and all of Idle.
+  /// What the occupant last said about itself, or what a finished command
+  /// amounted to. Absent for a pane that has said nothing.
   public var message: String? {
     guard let note = note?.describing(state) else { return nil }
     if let message = note.message, !message.isEmpty { return message }
@@ -59,13 +53,8 @@ public struct AgentBoardCard: Identifiable, Equatable, Sendable {
     }
   }
 
-  /// How long it has been in its column, spelled for the card's corner.
-  ///
-  /// `now` is the board's held clock and lags by up to its tick, so a pane
-  /// that entered its column since the last one has a `since` in the future.
-  /// Clamped rather than passed on: `ElapsedText` reads a negative interval
-  /// as a clock moved backwards and gives nothing back, which would blank
-  /// the corner of the one card that just changed until the next tick.
+  /// How long it has been in its column. Clamped, the board's clock lagging
+  /// by up to a tick, which `ElapsedText` would read as a clock run back.
   public func elapsed(at now: Date) -> String? {
     guard let since else { return nil }
     return ElapsedText.short(since: since, now: max(now, since))

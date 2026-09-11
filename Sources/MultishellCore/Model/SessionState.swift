@@ -1,26 +1,20 @@
 import Foundation
 
-/// What a terminal's occupant last said about itself.
-///
-/// Runtime only, kept in the GUI beside the live sessions; a state describes
-/// a process, and the workspace describes what should exist. `idle` is the
-/// absence of a state and is never stored, only reported to clear one.
+/// What a terminal's occupant last said about itself. Runtime only; `idle`
+/// is the absence of a state, reported only to clear one.
 public enum SessionState: String, Codable, Hashable, Sendable, CaseIterable {
   case idle
   /// An agent or a command is working. About the process: stays while the
   /// tab is shown, clears on the next report or when the process is gone.
   case running
-  /// Waiting for the user: a permission prompt, a question. About the
-  /// agent: a question the user has seen but not answered is still waiting,
+  /// Waiting for the user. A question seen but unanswered is still waiting,
   /// so only the source clears it.
   case attention
   /// Finished since the tab was last shown. About the user: showing the tab
   /// clears it, as the activity dot always has.
   case done
-  /// Finished badly since the tab was last shown: a command that exited
-  /// non-zero, a turn that failed. Unlike Done it survives being looked at,
-  /// and clears the way Waiting does: a failure is something to act on, and
-  /// a glance is not acting.
+  /// Finished badly since the tab was last shown. Unlike Done it survives
+  /// being looked at: a glance is not acting.
   case error
 
   /// A tab or worktree with several sessions shows the most urgent.
@@ -56,14 +50,8 @@ public enum SessionState: String, Codable, Hashable, Sendable, CaseIterable {
     self == .done || self == .error
   }
 
-  /// Whether looking is enough to clear it. Done alone: it says a thing
-  /// happened, and seeing it is the whole of what the user owes it. Failed
-  /// asks to be dealt with, so it keeps the dot red until the source reports
-  /// again or the user clears it by hand. Not quite Waiting's rule, which it
-  /// borrows the look half of: a dead process takes a Waiting dot with it
-  /// and leaves a Failed one standing, a failure having outlived the thing
-  /// that failed. The banner goes either way, an interruption being spent
-  /// once it has interrupted.
+  /// Whether looking is enough to clear it: Done alone. See
+  /// docs/design/agents.md for how Failed and Waiting part on a dead process.
   public var clearsWhenSeen: Bool { self == .done }
 
   /// What a foreground command's exit code says. A code above 128 is a

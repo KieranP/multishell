@@ -1,12 +1,8 @@
 import Foundation
 import MultishellCore
 
-/// The font families the terminal picker offers, from the list the platform
-/// hands over: the system monospace face first, then the monospaced
-/// families, then every other family after a divider, since some
-/// programming fonts are not marked fixed-pitch and would otherwise be
-/// missing. A stored name the machine no longer has is listed marked as
-/// such, so the picker never shows blank; see `DetectionOption`.
+/// The font families the picker offers: system monospace, the monospaced
+/// families, then the rest, some programming fonts not being fixed-pitch.
 public struct FontDetection: Equatable, Sendable {
   /// The id of the "System monospace" entry, the `nil` font name.
   public static let systemID = ""

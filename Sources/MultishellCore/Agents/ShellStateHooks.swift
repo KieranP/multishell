@@ -1,32 +1,14 @@
 import Foundation
 
-/// The command-status hooks a shell runs so the dots follow every command,
-/// and the generated startup files that carry them into this app's terminals.
-///
-/// A `preexec`/`precmd` pair calls the helper's `command-started` and
-/// `command-finished --exit $?`; the helper maps the code. Injected per
-/// session, silently: zsh through a `ZDOTDIR` that chains to the user's own
-/// files, bash through `--init-file`. Nothing is written to a file the user
-/// owns, and the hooks do nothing outside a Multishell terminal
-/// (`MULTISHELL_SESSION` unset) or when the helper is missing.
-///
-/// The zsh script also tells Ghostty a click in its prompt may move the
-/// cursor; see `hooks.zsh`. Ghostty's own zsh files are entered before these,
-/// through the pair `SessionEnvironment.zshIntegration` sets.
-///
-/// The scripts themselves are `Resources/hooks.zsh` and `Resources/init.bash`,
-/// plain shell files with `__MULTISHELL_HELPER__` where the helper's path
-/// goes, so they read and lint as shell rather than as escaped Swift.
+/// The command-status hooks a shell runs, and the generated startup files
+/// carrying them into this app's terminals; see docs/design/terminals.md.
 public enum ShellStateHooks {
   static let helperPlaceholder = "__MULTISHELL_HELPER__"
 
   // MARK: - Per-session injection (zsh)
 
-  /// The zsh startup files to place in a directory this app sets as a
-  /// session's `ZDOTDIR`. Each chains to the user's own file first, so their
-  /// config loads unchanged, then `.zshrc` adds the command-status hooks and
-  /// hands `ZDOTDIR` back so nested shells are untouched. This is how the
-  /// hooks reach a terminal without editing any file the user owns.
+  /// The zsh startup files placed in the directory set as a session's
+  /// `ZDOTDIR`. Each chains to the user's own first, editing no file of theirs.
   public static func zshIntegrationFiles(
     helper: String = AgentHooks.helperReference
   )
@@ -42,13 +24,8 @@ public enum ShellStateHooks {
     ]
   }
 
-  /// Sources the user's `file`, with `ZDOTDIR` pointed at the user's own
-  /// directory while it runs. `restoreToSelf` keeps our directory in force
-  /// for the next startup file; the last one instead hands `ZDOTDIR` back to
-  /// the user so a nested shell does not re-enter this chain.
-  /// `capturesUserZdotdir`: the user's `.zshenv` may itself relocate
-  /// `ZDOTDIR`; the directory it leaves is where their `.zprofile` and
-  /// `.zshrc` live, so it is recorded for the later files to chain to.
+  /// Sources the user's `file` under their own `ZDOTDIR`. The last file hands
+  /// it back so nested shells skip the chain; `.zshenv` may relocate it.
   private static func zshChain(
     userFile: String, restoreToSelf: Bool, capturesUserZdotdir: Bool = false,
     appending extra: String?
@@ -85,10 +62,8 @@ public enum ShellStateHooks {
 
   // MARK: - Per-session injection (bash)
 
-  /// A bash init file to launch with `--init-file`. Interactive bash reads
-  /// it instead of `~/.bashrc` and, since it is not a login shell, would skip
-  /// the profile chain, so this reproduces that chain first, then the user's
-  /// `.bashrc`, then adds the hooks. Nothing is written to the user's files.
+  /// A bash init file for `--init-file`, which is read instead of `.bashrc`
+  /// and skips the profile chain, so this reproduces that chain first.
   public static func bashInitFile(helper: String = AgentHooks.helperReference) -> String {
     script("init", extension: "bash", helper: helper) + "\n"
   }

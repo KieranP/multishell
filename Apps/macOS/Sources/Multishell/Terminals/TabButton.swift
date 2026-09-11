@@ -2,25 +2,21 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// One tab in a column's strip: what it shows, what a click on each part of
-/// it does, and both ends of dragging it. `TabBar` places these and decides
-/// how wide they are.
+/// One tab in a column's strip: what it shows, what a click on each part does,
+/// and both ends of dragging it. `TabBar` places and sizes them.
 struct TabButton: View {
   let model: AppModel
   /// The column this tab sits in, which its own moves are measured against.
   let group: TabGroup
   let tab: TerminalTab
-  /// Whether this column is the one the keystrokes go to. Only the focused
-  /// column's active tab reads at full strength and carries the close
-  /// button; another column's active tab still fills, since it is on screen.
+  /// Whether this column takes the keystrokes. Only its active tab reads at
+  /// full strength; another column's still fills, being on screen.
   let isFocused: Bool
   /// Whether the column has another tab, so this one leaving it would be a
   /// move rather than the same layout under a new id.
   let canLeaveColumn: Bool
-  /// Whether the tab in the air belongs to this column, so it is moving
-  /// along this strip as the pointer goes; the strip works it out once. A
-  /// tab from another column has not moved yet, and the line is where it
-  /// would land.
+  /// Whether the tab in the air is this column's, so it moves as the pointer
+  /// goes. One from another column has not moved, and the line says where.
   let isShuffling: Bool
   /// Exactly this wide, so the drop can tell which half of it the pointer
   /// is in without measuring; see `TabStripLayout`.
@@ -48,14 +44,8 @@ struct TabButton: View {
         drag.begin(tab.id)
         return TabTransfer(id: tab.id).itemProvider()
       } preview: {
-        // A drag with no image of its own. AppKit draws the preview itself,
-        // as an elevated card, and holds it on screen for the best part of a
-        // second after the mouse comes up, wherever the tab landed; nothing
-        // in SwiftUI's drag API reaches that disposal, so the only way not
-        // to see it is to give it nothing to draw. The tab itself is the
-        // preview instead: along its own strip it moves with the pointer
-        // while its neighbours make room, and on its way somewhere else it
-        // stays put and fades, with the destination lighting up.
+        // A drag with no image of its own: AppKit holds its preview card
+        // for most of a second after the drop, so the tab is the preview.
         Color.clear.frame(width: 1, height: 1)
       }
       .onDrop(
@@ -73,9 +63,8 @@ struct TabButton: View {
         ))
   }
 
-  /// Where the dragged tab will land, on the tab the pointer is over: its
-  /// leading edge for before, its trailing edge for after. The sidebar draws
-  /// the same line lying down when projects are reordered.
+  /// Where the dragged tab will land, on the tab the pointer is over. The
+  /// sidebar draws the same line lying down.
   @ViewBuilder
   private var insertionLine: some View {
     if drag.isDragging, !isShuffling, let insertion = drag.insertion, insertion.tabID == tab.id {
@@ -114,23 +103,18 @@ struct TabButton: View {
     .overlay(alignment: .trailing) {
       if !isActive { theme.hairline.frame(width: 0.5).padding(.vertical, 8) }
     }
-    // The tab in the air. Read from the drop targets rather than from the
-    // drag having begun, so a drag let go where nothing saw it cannot leave
-    // a tab marked for good. Half there while it slides along its own strip,
-    // since it is the thing being carried; fainter once it is waiting to
-    // leave for another column or another worktree.
+    // The tab in the air, read from the drop targets rather than the drag
+    // beginning, so one let go unseen cannot mark a tab for good.
     .opacity(isInTheAir ? (isShuffling ? 0.55 : 0.3) : 1)
     .contentShape(.rect)
-    // Simultaneous, not sequential: a plain double-tap recognizer makes
-    // SwiftUI hold the single tap until it is sure no second is coming,
-    // and tab switching should not lag by that timeout.
+    // Simultaneous, not sequential: a plain double-tap makes SwiftUI hold
+    // the single tap, and switching should not lag by that timeout.
     .onTapGesture { model.activate(tab) }
     .simultaneousGesture(TapGesture(count: 2).onEnded { beginEditing() })
     // Every tab strip closes on a middle click, the active one or not.
     .onMiddleClick { model.closeTab(tab.id) }
-    // The buttons inside keep their own labels; the row's label describes
-    // the tab. `.contain` rather than `.combine`, which would read the
-    // close button's label into the tab's.
+    // The buttons inside keep their own labels. `.contain`, not `.combine`,
+    // which would read the close button's into the tab's.
     .accessibilityElement(children: .contain)
     .accessibilityLabel(
       AccessibilityText.tab(
@@ -142,8 +126,7 @@ struct TabButton: View {
   }
 
   /// The state dot where there is one, else the tab's kind. A button, so a
-  /// click on the dot clears a Working state whose agent is long gone
-  /// without activating the tab first.
+  /// click clears a stale Working state without activating the tab.
   @ViewBuilder
   private func leadingGlyph(_ state: SessionState?, text: Color) -> some View {
     if let state {
@@ -165,8 +148,7 @@ struct TabButton: View {
   }
 
   /// Names its own tab, like the middle click. `closeActiveTab` is for the
-  /// keystroke, which has no target of its own and so has to ask which
-  /// window is key first; a click on this X has already answered both.
+  /// keystroke, which has to ask which window is key first.
   private var closeButton: some View {
     Button {
       model.closeTab(tab.id)
@@ -192,20 +174,15 @@ struct TabButton: View {
       Button(t("actions.clear-status")) { model.clearState(of: tab) }
     }
     Divider()
-    // The keyboard-only way to the layout the edge bands offer a drag.
-    // Offered on the tab it names rather than on the active one, and only
-    // where it would do something: the sole tab of a column moving out of
-    // it is the same layout under a new id.
+    // The keyboard-only way to the layout the edge bands offer a drag, and
+    // only where it would do something.
     Button(t("tab.move-to-new-group")) {
       model.moveTab(tab.id, .after, toNewGroupOf: group.id)
     }
     .disabled(!canLeaveColumn)
     Divider()
-    // The one way to close a tab that is not the active one without a
-    // mouse: the X is drawn on the active tab alone, and the middle click
-    // and the keystrokes each want one. Not destructive-red: closing a tab
-    // is what a tab strip is for, and a working agent is asked about
-    // whichever way the close was asked for.
+    // The one way to close an inactive tab without a mouse, the X being
+    // drawn on the active one alone. Not destructive-red.
     Button(t("tab.close")) { model.closeTab(tab.id) }
   }
 

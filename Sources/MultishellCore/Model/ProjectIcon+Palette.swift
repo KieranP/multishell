@@ -3,9 +3,8 @@ import Foundation
 /// The curated palette: every symbol the picker offers, and the words that
 /// find one whose name does not say what it is for.
 extension ProjectIcon {
-  /// What a symbol is used for, where its name does not say. An SF Symbol is
-  /// named for the picture, so a search for the thing a project is about
-  /// ("database", "git", "docker") finds nothing without these.
+  /// What a symbol is used for, where its name does not say: an SF Symbol is
+  /// named for the picture. English; see docs/design/translation.md.
   static let searchWords: [String: String] = [
     "cylinder": "database db sql store",
     "cylinder.fill": "database db sql store",
@@ -116,9 +115,8 @@ extension ProjectIcon {
     "ant": "small worker swarm",
   ]
 
-  /// Symbols that read at sidebar size and exist on macOS 14, which is what
-  /// the deployment target makes the floor. `folderSymbol` is first, so the
-  /// cell that goes back to no glyph is the one the eye lands on.
+  /// Symbols that read at sidebar size and exist on macOS 14, the floor.
+  /// `folderSymbol` is first, being the way back to no glyph.
   public static let symbolGroups: [Group] = [
     Group(
       name: t("icon-group.files"),
@@ -260,9 +258,8 @@ extension ProjectIcon {
       ]),
   ]
 
-  /// Every symbol the picker offers, which is what a stored glyph is checked
-  /// against. The set is what `kind(of:)` reads, a project's icon being drawn
-  /// far more often than the palette is opened.
+  /// Every symbol the picker offers, as a set: `kind(of:)` reads it far more
+  /// often than the palette is opened.
   public static let symbols: [String] = symbolGroups.flatMap(\.glyphs)
 
   static let offered = Set(symbols)

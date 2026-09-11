@@ -2,30 +2,18 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// The Agents board: every open pane as a card, in the column its state puts
-/// it in.
-///
-/// It decides nothing. `AgentBoard` arranges the cards, `AgentBoardLayout`
-/// says how wide a column is and whether the board scrolls, and this draws
-/// the answer.
+/// The Agents board: every open pane as a card. It decides nothing;
+/// `AgentBoard` and `AgentBoardLayout` do, and this draws the answer.
 struct AgentBoardView: View {
   let model: AppModel
   let theme: Theme
 
-  /// One clock for every card's corner. Ten seconds: the shortest step a
-  /// card's text can take past its first minute, so a faster tick would
-  /// redraw the board for nothing.
+  /// One clock for every card's corner. Ten seconds, the shortest step a
+  /// card's text takes past its first minute.
   private static let tick: TimeInterval = 10
 
   /// The clock the cards read, held rather than taken from a `TimelineView`,
-  /// which stood still. The board's body reads the titles, states and
-  /// statuses of panes that keep running behind it, so it is re-evaluated
-  /// several times a second, and the likely cause is that each of those
-  /// rebuilt the schedule from a later `.now`; that part is reasoning, not
-  /// something anyone watched. What was watched, through a temporary log in
-  /// this task, is that a held clock ticks on time and starts once, so no
-  /// identity churn restarts it. Writing this invalidates the view whatever
-  /// the body does, which is why it does not rest on the diagnosis.
+  /// which stood still under a body re-evaluated several times a second.
   @State private var now = Date()
 
   var body: some View {
@@ -33,9 +21,8 @@ struct AgentBoardView: View {
     let board = model.agentBoard
     VStack(spacing: 0) {
       AgentBoardHeader(model: model, board: board, theme: theme, metrics: metrics)
-      // Always the columns, empty or not: four labelled columns say what the
-      // board is for, where a page in their place says only that it is not
-      // working.
+      // Always the columns, empty or not: labelled columns say what the
+      // board is for, where a page says only that it is not working.
       scrollingColumns(board, metrics: metrics)
       if board.isEmpty {
         AgentBoardHint(theme: theme, metrics: metrics)

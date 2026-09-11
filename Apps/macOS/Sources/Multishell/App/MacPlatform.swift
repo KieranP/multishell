@@ -11,8 +11,7 @@ final class MacPlatform: Platform {
   weak var mainWindow: NSWindow?
   var onDidBecomeActive: (@MainActor () -> Void)?
 
-  /// The bundle identifier `make-app.sh` writes, which is what
-  /// `log show --predicate 'subsystem == "io.multishell.app"'` matches on.
+  /// The bundle identifier `make-app.sh` writes, which `log show` matches on.
   /// Named rather than left a literal so a test can hold the two together.
   nonisolated static let loggingSubsystem = "io.multishell.app"
 
@@ -79,8 +78,7 @@ final class MacPlatform: Platform {
   }
 
   /// Links `/usr/local/bin/multishell` to the stable link, through an
-  /// administrator prompt. To the link rather than the bundle, so the tool
-  /// survives the app moving.
+  /// administrator prompt, so the tool survives the app moving.
   func installCommandLineTool() throws {
     let target = ShellQuoting.quote(Paths.helperLink.path)
     let link = ShellQuoting.quote(HelperLink.commandLineToolLink.path)

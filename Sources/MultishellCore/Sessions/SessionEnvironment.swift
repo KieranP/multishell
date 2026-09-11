@@ -27,16 +27,8 @@ public enum SessionEnvironment {
     return variables
   }
 
-  /// When the app has generated the zsh integration directory and the tab's
-  /// shell is zsh, point the session at it and pass the user's own `ZDOTDIR`
-  /// along so the generated files can chain to it. Absent otherwise, so a
-  /// disabled setting or a non-zsh shell adds nothing.
-  ///
-  /// libghostty applies a surface's variables after it has set up its own
-  /// shell integration, so a `ZDOTDIR` given here replaces the one it set and
-  /// its integration never loads. When the engine has a bootstrap, this sets
-  /// the pair it would have: `ZDOTDIR` at the bootstrap, and ours where the
-  /// bootstrap looks for the directory it displaced.
+  /// Points a zsh session's `ZDOTDIR` at the generated directory. Under
+  /// Ghostty it sets the pair the engine would have; see terminals.md.
   static func zshIntegration(
     shellPath: String,
     environment: [String: String] = ProcessInfo.processInfo.environment,

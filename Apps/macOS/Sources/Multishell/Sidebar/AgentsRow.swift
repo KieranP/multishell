@@ -2,11 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// The entry above Projects that opens the board, with the whole summary on
-/// it: how many panes are waiting, working and done.
-///
-/// Selected is the same outline the worktree rows use, so the sidebar has
-/// one way of saying "this is what the detail area is showing".
+/// The entry above Projects that opens the board, carrying the waiting,
+/// working and done counts. Selected is the worktree rows' own outline.
 struct AgentsRow: View {
   let counts: [(lane: AgentBoardLane, count: Int)]
   let isSelected: Bool

@@ -2,16 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// The curated symbols as a palette: a button showing what is drawn now,
-/// opening a grid under a heading per group. Names in one popup menu were
-/// read line by line, which held the list to sixty; a grid is read by
-/// shape, so it carries hundreds, with a field to narrow it by name and a
-/// row of jumps along the foot. The folder is the first cell and clears the
-/// glyph.
-///
-/// The menu it replaced could be driven from the keyboard, so this can too:
-/// the field takes what is typed, Tab or Down moves into the grid, the
-/// arrows walk it and Return picks.
+/// The curated symbols as a palette: a grid read by shape carries hundreds
+/// where a popup menu held sixty. Keyboard-driven throughout.
 struct IconPicker: View {
   let kind: ProjectIcon.Kind
   let tint: Color
@@ -72,9 +64,8 @@ struct IconPicker: View {
       }
       .onAppear {
         highlighted = chosen
-        // A frame later: the grid is lazy, and neither the cell to scroll
-        // to nor the field to focus exists while the first pass is still
-        // being laid out.
+        // A frame later: the grid is lazy, so neither the cell nor the
+        // field exists during the first layout pass.
         Task {
           focus = .search
           proxy.scrollTo(chosen, anchor: .center)
@@ -169,8 +160,7 @@ struct IconPicker: View {
   }
 
   /// One button per group, its first symbol standing for it, as the emoji
-  /// picker's categories do. Fifty rows of scrolling is otherwise the only
-  /// way from Files to Symbols.
+  /// picker's categories do.
   private func jumps(_ groups: [ProjectIcon.Group], proxy: ScrollViewProxy) -> some View {
     VStack(spacing: 0) {
       Divider()

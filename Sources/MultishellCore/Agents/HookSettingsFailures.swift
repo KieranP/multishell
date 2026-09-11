@@ -1,8 +1,7 @@
 import Foundation
 
 /// The file's top level is not a JSON object, so there is nowhere to put a
-/// `hooks` key. Refused rather than replaced: whatever is there is the
-/// user's.
+/// `hooks` key. Refused rather than replaced.
 public struct UnexpectedSettingsShape: Error, CustomStringConvertible {
   public let file: URL
 
@@ -13,9 +12,8 @@ public struct UnexpectedSettingsShape: Error, CustomStringConvertible {
   }
 }
 
-/// One event holds something other than the list of hooks the agent
-/// documents. Ours is not written over it, since whatever is there is the
-/// user's and this cannot put it back.
+/// One event holds something other than the documented list of hooks. Not
+/// written over, this being unable to put it back.
 public struct UnreadableHookEntries: Error, CustomStringConvertible {
   public let file: URL
   public let event: String
@@ -30,9 +28,8 @@ public struct UnreadableHookEntries: Error, CustomStringConvertible {
   }
 }
 
-/// Not JSON this can read at all, a comment or a trailing comma being the
-/// usual reason. Refused rather than parsed loosely and written back
-/// strictly, which would take the comments with it.
+/// Not JSON this can read, a comment or trailing comma being the usual
+/// reason. Parsing loosely and writing back strictly would lose them.
 public struct UnparsableSettingsFile: Error, CustomStringConvertible {
   public let file: URL
 

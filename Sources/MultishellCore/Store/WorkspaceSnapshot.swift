@@ -1,9 +1,7 @@
 import Foundation
 
-/// Reads and writes a `Workspace` as JSON.
-///
-/// Running processes are deliberately not persisted; only the shape of the
-/// sidebar and which tabs should exist survive a relaunch.
+/// Reads and writes a `Workspace` as JSON. Running processes are not
+/// persisted; only the sidebar's shape and which tabs should exist.
 public struct WorkspaceSnapshot: Sendable {
   private let fileURL: URL
 
@@ -11,9 +9,8 @@ public struct WorkspaceSnapshot: Sendable {
     self.fileURL = fileURL
   }
 
-  /// A file that exists but will not decode is moved aside, never
-  /// overwritten: the next save would otherwise destroy the user's sidebar
-  /// to fix a bug in ours.
+  /// A file that will not decode is moved aside, never overwritten; see
+  /// docs/design/state-and-store.md.
   public func load() throws -> Workspace {
     guard FileManager.default.fileExists(atPath: fileURL.path) else { return Workspace() }
     let data = try Data(contentsOf: fileURL)

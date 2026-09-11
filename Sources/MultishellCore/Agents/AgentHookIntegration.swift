@@ -1,23 +1,13 @@
 import Foundation
 
 /// How one agent is asked to say what it is doing, and where that is
-/// written.
-///
-/// Claude Code, Codex, Gemini CLI and Copilot CLI all run a command at each
-/// lifecycle event and hand it the same payload, so one hook line and one
-/// parser serve all four; they differ in the file, in what they call each
-/// event, and in how that file spells one hook. OpenCode runs no such
-/// command, and is given a plugin that calls the helper itself.
+/// written; see docs/design/agents.md.
 public struct AgentHookIntegration: Identifiable, Sendable {
   /// How a file spells the hooks, and whether it is the user's or ours.
   public enum Format: Sendable {
-    /// `event: [{ "hooks": [{ "type": "command", "command": …, "timeout": N }] }]`
-    /// under `hooks`, in a file the user keeps their own settings in: ours
-    /// are merged in and taken back out again, and everything else in the
-    /// file is left as it was. Gemini counts the timeout in milliseconds,
-    /// Claude Code and Codex in seconds.
+    /// `hooks` in a file the user keeps their own settings in, ours merged
+    /// in and back out. Gemini counts the timeout in milliseconds.
     case sharedSettings(millisecondTimeout: Bool)
-    /// `{ "version": 1, "hooks": { event: [{ "type": "command", … }] } }`.
     /// Copilot reads every JSON file in its hooks directory, so ours is a
     /// file of its own: written whole, deleted to remove it.
     case ownHookFile
@@ -67,10 +57,8 @@ public struct AgentHookIntegration: Identifiable, Sendable {
     return false
   }
 
-  /// Which of the events asked for one payload is, or nothing where it
-  /// says nothing about whether the agent is waiting: an unknown event, one
-  /// this does not ask for, or one the mode has made meaningless. The hook
-  /// exits quietly on nothing.
+  /// Which asked-for event a payload is, or nothing where it says nothing
+  /// about waiting. The hook exits quietly on nothing.
   public func event(for payload: AgentHookPayload) -> AgentHookEvent? {
     guard let event = events.first(where: { $0.reported == payload.eventName }) else { return nil }
     if event.onlyWhenPrompting, !payload.promptsForPermission { return nil }

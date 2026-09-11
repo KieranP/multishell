@@ -7,10 +7,8 @@ struct ProjectDropTarget: Equatable {
   let edge: VerticalEdge
 }
 
-/// Tracks the pointer over a project block so the sidebar can draw the
-/// insertion line, and performs the move on release. The dragged id lives in
-/// the sidebar's state, set when the drag starts, so no item provider has to
-/// be decoded asynchronously here.
+/// Tracks the pointer over a project block for the insertion line, and moves
+/// on release. The dragged id lives in the sidebar's state.
 struct ProjectDropDelegate: DropDelegate {
   let projectID: Project.ID
   let blockHeight: CGFloat

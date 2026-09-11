@@ -103,9 +103,8 @@ public enum EditorCatalogue {
     return id
   }
 
-  /// The user's template with `{path}` filled in, quoted for the shell. A
-  /// template without the placeholder gets the path appended, which is what
-  /// most editors' command lines take.
+  /// The user's template with `{path}` filled in, quoted for the shell. One
+  /// without the placeholder gets the path appended.
   public static func customCommandLine(_ template: String, path: URL) -> String? {
     let trimmed = template.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !trimmed.isEmpty else { return nil }

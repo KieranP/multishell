@@ -20,10 +20,8 @@ struct UIMetrics {
   /// text where `rowHeight` holds one, so the branch is not clipped.
   var namedRowHeight: Double { (body * 3.2).rounded() }
 
-  /// How tall a worktree's row is. Asked here rather than worked out at
-  /// each call site: the row draws itself this tall and the sidebar counts
-  /// a project's block off it to place the drop indicator, and the two
-  /// disagreeing puts the indicator in the wrong half.
+  /// How tall a worktree's row is. Asked here, the row and the sidebar's
+  /// block height disagreeing putting the drop indicator in the wrong half.
   func worktreeRowHeight(isNamed: Bool, isRenaming: Bool) -> Double {
     isNamed || isRenaming ? namedRowHeight : rowHeight
   }
@@ -31,42 +29,29 @@ struct UIMetrics {
   var tabHeight: Double { (body * 2.6).rounded() }
   /// What a tab is drawn at when the strip has room for it.
   var tabMaxWidth: Double { (body * 14.6).rounded() }
-  /// And the least it is ever drawn: below this the icon, the title and the
-  /// close button have nowhere to go, and the strip scrolls instead. See
-  /// `TabStripLayout`.
+  /// And the least it is ever drawn: below this the icon, title and close
+  /// button have nowhere to go. See `TabStripLayout`.
   var tabMinWidth: Double { (body * 7.5).rounded() }
   /// The New Tab button at the end of a strip, which never scrolls away.
   var newTabWidth: Double { (body * 2.6).rounded() }
-  /// The arrow at either end of a strip that has more tabs that way. Its
-  /// room is kept whether the arrow is drawn or not, so the tabs do not
-  /// shift under the pointer as one end runs out.
+  /// The arrow at either end of a strip with more tabs that way. Its room is
+  /// kept either way, so the tabs do not shift under the pointer.
   var tabArrowWidth: Double { (body * 1.7).rounded() }
   var indent: Double { (body * 2).rounded() }
 
-  /// The narrowest a board column is drawn. Below this a card's two split
-  /// rows run into themselves: the dot, the occupant's name and the time in
-  /// state above, the project, the worktree and the git badge below. The
-  /// board scrolls sideways instead; see `AgentBoardLayout`.
+  /// The narrowest a board column is drawn, below which a card's two split
+  /// rows run into themselves. See `AgentBoardLayout`.
   var boardColumnMinWidth: Double { (body * 16).rounded() }
-  /// Between two board columns, and round the lot of them. Both are taken
-  /// off the room before a column width is asked for, so nothing measures
-  /// itself.
+  /// Between two board columns, and round the lot of them, taken off before
+  /// a column width is asked for so nothing measures itself.
   var boardGap: Double { (body * 0.8).rounded() }
   var boardPadding: Double { (body * 0.9).rounded() }
 
-  /// How wide the band down each edge of a column's terminal area is while
-  /// a tab is being dragged; see `TabGroupBands`. Wide enough to aim at
-  /// without covering enough of the terminal to hide what is under it.
+  /// How wide a drop band down a column's edge is; see `TabGroupBands`. Wide
+  /// enough to aim at without hiding what is under it.
   static let dropBandWidth: Double = 74
 
-  /// The sidebar and detail headers. The one size here that does not scale
-  /// with the font, so it is a constant and sits apart from the rest.
-  ///
-  /// Not smaller: a window with a hidden title bar and a unified-compact
-  /// toolbar keeps a 40 pt title-bar band at the top, and anything but the
-  /// header that reaches into it (the tab strip, a surface) makes AppKit
-  /// paint the band's backdrop over the header. Measured with
-  /// `NSWindow.contentLayoutRect`; 32 without a toolbar, 52 for the
-  /// unified style.
+  /// The sidebar and detail headers, the one size that does not scale with
+  /// the font. Not smaller: a hidden title bar still keeps a 40 pt band.
   static let headerHeight: Double = 40
 }

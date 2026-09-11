@@ -2,15 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// The two drop bands down the edges of one column's terminal area, drawn
-/// while a dragged tab is over that area.
-///
-/// Dropping on one gives the tab a column of its own on that side. The space
-/// between them takes the drop and does nothing with it: the strip above is
-/// where a tab goes to join a column, and a second way to do that, live over
-/// every terminal in the window, would be a lot of highlight for it. That
-/// drop is not wasted though, since it is what ends a drag released over a
-/// terminal.
+/// The two drop bands down a column's terminal area, drawn while a tab is
+/// over it: dropping on one gives the tab a column of its own that side.
 struct TabGroupBands: View {
   let model: AppModel
   let group: TabGroup
@@ -24,9 +17,8 @@ struct TabGroupBands: View {
         Double(proxy.size.width), minimumPane: Double(SplitMetrics.minimumPane),
         divider: Double(SplitMetrics.dividerThickness))
       ZStack {
-        // Under the bands, and the whole area: what tells them the pointer
-        // has arrived, and, more to the point, that it has gone. A drop
-        // between the bands joins this column.
+        // Under the bands and the whole area: what tells them the pointer
+        // has arrived and, more to the point, that it has gone.
         Color.clear
           .contentShape(.rect)
           .onDrop(

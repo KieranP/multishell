@@ -1,11 +1,7 @@
 import Foundation
 
-/// Whether a worktree's branch has already landed on its project's default
-/// branch, and on what evidence.
-///
-/// Runtime state, not persisted, like `WorktreeStatus`: it is recomputed
-/// from git, so a badge can never come off disk describing a branch that has
-/// moved since.
+/// Whether a worktree's branch has landed, and on what evidence. Runtime
+/// only, so no badge comes off disk; see docs/design/merged-branch.md.
 public enum WorktreeMergeState: Hashable, Sendable {
   /// Nothing has been asked yet, or the project has no default branch to
   /// measure against.
@@ -23,20 +19,8 @@ public enum WorktreeMergeState: Hashable, Sendable {
     /// The base has an equivalent patch for every commit on the branch:
     /// how a rebase-merge or a run of cherry-picks lands.
     case patchEquivalent
-    /// The branch tracked a remote branch that is no longer there, and the
-    /// base has moved on without it. What "delete branch on merge" leaves
-    /// behind, and the only trace a squash merge leaves that can be read
-    /// without writing to the object database. Not proof: a pull request
-    /// closed without merging leaves exactly the same thing.
-    ///
-    /// What is asked beside the gone upstream is not decoration. The base
-    /// having moved on, because a branch cut under a name used before
-    /// inherits the old branch's `branch.<name>` config and so tracks an
-    /// upstream that was never there, which git reports as gone in the very
-    /// same words. And the branch's changes reading the same on the base,
-    /// because a branch whose upstream is gone is ahead of nothing, so work
-    /// committed here after the squash landed is work `showsBadge` cannot
-    /// see to hide the badge for.
+    /// Upstream gone and the base moved on: what a squash merge leaves.
+    /// Not proof; see docs/design/merged-branch.md for what else is asked.
     case upstreamGone
   }
 
@@ -52,9 +36,8 @@ public enum WorktreeMergeState: Hashable, Sendable {
     return evidence != .upstreamGone
   }
 
-  /// The fact on its own, for a screen reader and as the first half of the
-  /// row's tooltip. Empty for a branch that has not landed, which shows
-  /// nothing at all.
+  /// The fact on its own, for a screen reader and the row's tooltip. Empty
+  /// for a branch that has not landed.
   public var summary: String {
     guard case .merged(let evidence, let base) = self else { return "" }
     switch evidence {
@@ -64,14 +47,8 @@ public enum WorktreeMergeState: Hashable, Sendable {
     }
   }
 
-  /// Whether the row draws the badge at all, given what `git status` says
-  /// about the same worktree.
-  ///
-  /// Uncommitted files and commits the upstream has not got hide it. Both
-  /// are work that would go to the Trash with the directory, and telling
-  /// someone a worktree can go while their work is still only in it is the
-  /// one thing this badge must never do. A status not yet read shows the
-  /// badge: the first poll is a moment away, and it will hide it.
+  /// Whether the row draws the badge, given `git status`. Uncommitted work
+  /// hides it; see docs/design/merged-branch.md.
   public func showsBadge(with status: WorktreeStatus?) -> Bool {
     guard isMerged else { return false }
     guard let status else { return true }
@@ -97,10 +74,8 @@ public enum WorktreeMergeState: Hashable, Sendable {
     }
   }
 
-  /// Whether a badge could ever apply to this worktree, `base` being the
-  /// branch name the project's default ref points at. The trunk is not
-  /// merged into itself, a bare repository has no checkout, a detached HEAD
-  /// has no branch to delete, and the main worktree cannot be removed.
+  /// Whether a badge could ever apply: not the trunk, a bare repository, a
+  /// detached HEAD, or the main worktree.
   public static func applies(to worktree: Worktree, base: String?) -> Bool {
     guard !worktree.isBare, !worktree.isPrimary, let own = worktree.branch else { return false }
     return own != base

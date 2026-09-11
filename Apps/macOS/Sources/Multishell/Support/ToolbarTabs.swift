@@ -1,12 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// Tabs in the toolbar-icon style the Settings scene uses.
-///
-/// SwiftUI gives that look only to `Settings`; an ordinary `TabView` in a
-/// window draws the classic bordered tabs. `NSTabViewController` with
-/// `.toolbar` is the same control the Settings scene wraps, so a project
-/// window built on it matches the app-wide one exactly.
+/// Tabs in the toolbar-icon style the Settings scene uses, which SwiftUI
+/// gives only to `Settings`. The same `NSTabViewController` it wraps.
 struct ToolbarTabs: NSViewControllerRepresentable {
   struct Tab {
     let title: String
@@ -21,11 +17,8 @@ struct ToolbarTabs: NSViewControllerRepresentable {
   }
 
   let tabs: [Tab]
-  /// A value never seen before sends the window back to its first tab. The
-  /// controller owns the live selection, so a binding holding an index would
-  /// go stale the moment the user clicked a tab and writing the old one back
-  /// would read as no change. A caller mints a token rather than counting,
-  /// so that asking for a reset never has to read state back.
+  /// A value never seen before sends the window back to its first tab: the
+  /// controller owns the live selection, so an index binding goes stale.
   let firstTabToken: UUID
 
   func makeCoordinator() -> Coordinator { Coordinator() }

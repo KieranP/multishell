@@ -1,12 +1,7 @@
 import Foundation
 
-/// An array whose elements decode one at a time, keeping the ones that
-/// decode and dropping the rest.
-///
-/// A synthesized `[Element]` fails whole on its first bad element, and a
-/// failed `Workspace` decode costs the user every project. A tab from a newer
-/// build with a pane kind this one does not know, or one hand-edited id,
-/// should cost that tab and nothing else.
+/// An array whose elements decode one at a time, the rest dropped: a
+/// synthesized `[Element]` fails whole on its first bad element.
 struct LossyArray<Element: Decodable>: Decodable {
   let elements: [Element]
 

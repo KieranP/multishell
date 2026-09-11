@@ -29,9 +29,8 @@ struct AgentBoardHeader: View {
     .titleBarDoubleClick()
   }
 
-  /// The board's one control. It decides membership and nothing else: a
-  /// shell it lets in lands in the column its state says, exactly as an
-  /// agent does.
+  /// The board's one control, deciding membership and nothing else: a shell
+  /// it lets in lands where its state says, as an agent does.
   private var allTerminalsToggle: some View {
     Toggle(
       t("board.show-all-terminals"),

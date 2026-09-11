@@ -3,9 +3,8 @@ import MultishellCore
 import MultishellGitKit
 import MultishellProcess
 
-/// What the alert shows. Built from the error types the app actually
-/// produces, so git's stderr appears as the message rather than buried inside
-/// a Swift description of a struct.
+/// What the alert shows, built from the error types the app produces so
+/// git's stderr is the message rather than a struct's description.
 public struct PresentedError: Identifiable {
   public let id = UUID()
   public let title: String
@@ -22,9 +21,8 @@ public struct PresentedError: Identifiable {
   public init(_ error: any Error) {
     switch error {
     case let failure as HookFailure:
-      // A pre hook's failure stopped the operation; a post hook's came after
-      // it succeeded. The title has to say which, and whether the hook
-      // failed on its own or was ended from here.
+      // A pre hook's failure stopped the operation, a post hook's came
+      // after it. The title says which, and who ended the hook.
       let ending =
         switch failure.stop {
         case .none: t("error.hook-failed")
@@ -57,9 +55,8 @@ public struct PresentedError: Identifiable {
       title = t("error.no-commits-title")
       message = t("error.no-commits-message")
     case let failure as ProcessFailure where failure.arguments.first == "fetch":
-      // The app runs fetch with no terminal to answer on, so a repository
-      // that wants a password waits until the timeout rather than asking.
-      // That is the likeliest way this ends, and the message has to say so.
+      // Fetch runs with no terminal to answer on, so a repository wanting a
+      // password waits out the timeout: the likeliest way this ends.
       switch failure.stop {
       case .timedOut:
         title = t("error.fetch-timed-out-title")
@@ -105,11 +102,8 @@ public struct PresentedError: Identifiable {
     }
   }
 
-  /// A hook's own words where it had any, its stdout and stderr with the
-  /// shell's startup noise cut away, then the exit status on its own line:
-  /// a hook that only echoes before it fails has nothing else to say about
-  /// why. Never the command line it ran as. A hook ended from here gets the
-  /// reason in place of the status, which is only the signal's.
+  /// A hook's own words, startup noise cut away, then its exit status.
+  /// Never the command line it ran as; a stop gives its reason instead.
   private static func describe(_ error: any Error) -> String {
     if let failure = error as? ProcessFailure {
       let ending =

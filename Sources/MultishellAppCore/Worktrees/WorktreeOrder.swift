@@ -1,17 +1,11 @@
 import Foundation
 import MultishellCore
 
-/// The order a project's worktree rows are drawn in.
-///
-/// The main worktree, and the one sitting on the project's trunk, keep the
-/// top whatever the sort says: they are the rows every other worktree is
-/// read against, and a list that moved them would read as a different
-/// project. Pure, so the rules are tested without a sidebar; the runtime
-/// state behind "active" is asked of the caller.
+/// The order a project's worktree rows are drawn in. The main worktree and
+/// the trunk keep the top whatever the sort says; see worktrees.md.
 public struct WorktreeOrder: Equatable, Sendable {
-  /// Taken for the trunk while the project has resolved no default branch:
-  /// nothing has told us which branch it is, and these two are the guess
-  /// git itself makes.
+  /// Taken for the trunk while no default branch is resolved: these two are
+  /// the guess git itself makes.
   public static let fallbackTrunkNames = ["main", "master"]
 
   public let order: WorktreeSortOrder
@@ -37,10 +31,8 @@ public struct WorktreeOrder: Equatable, Sendable {
     case other
   }
 
-  /// `displayName` is what the row shows, `isActive` whether anything is
-  /// going on in the worktree, and `lastCommit` when its branch was last
-  /// committed to. Each is asked once per worktree: they read runtime state,
-  /// which the caller holds.
+  /// `displayName`, `isActive` and `lastCommit` are asked once per worktree:
+  /// they read runtime state, which the caller holds.
   public func sort(
     _ worktrees: [Worktree],
     displayName: (Worktree) -> String,
@@ -104,12 +96,8 @@ public struct WorktreeOrder: Equatable, Sendable {
     return a.worktree.id < b.worktree.id
   }
 
-  /// `nil` where the dates cannot separate the two, so the name decides.
-  ///
-  /// A date nobody knows sorts after every date we have, in both
-  /// directions: "oldest first" is not a claim that an undated worktree is
-  /// the oldest, and neither is "recently committed last" about a branch that
-  /// carried no date at all.
+  /// `nil` where the dates cannot separate the two, so the name decides. A
+  /// date nobody knows sorts last in both directions.
   private static func compare(_ a: Date?, _ b: Date?, newestFirst: Bool) -> Bool? {
     if (a == nil) != (b == nil) { return b == nil }
     guard let a, let b, a != b else { return nil }

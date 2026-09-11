@@ -3,9 +3,8 @@ import MultishellCore
 
 // MARK: - Tab groups
 
-/// A worktree's terminal area is one or more columns of tabs; see `TabGroup`.
-/// Everything here is layout, so unlike opening a tab none of it asks
-/// whether a shell could start: no directory is read and no process begins.
+/// A worktree's terminal area is one or more columns of tabs. All layout, so
+/// none of it asks whether a shell could start.
 extension AppModel {
   /// The column the keystrokes go to, which is what the menu items and the
   /// tab-strip chrome are drawn from.
@@ -20,11 +19,12 @@ extension AppModel {
     sync()
   }
 
-  public func focusNextGroup() { focusGroup(offset: 1) }
-  public func focusPreviousGroup() { focusGroup(offset: -1) }
+  public func focusNextGroup() { focusGroup(.after) }
+  public func focusPreviousGroup() { focusGroup(.before) }
 
-  /// Wraps at either end, the way `selectTab` walks a strip.
-  private func focusGroup(offset: Int) {
+  /// Wraps at either end, the way `selectTab` walks a strip, and takes its
+  /// backwards step forwards for the same reason `Workspace.neighbour` does.
+  private func focusGroup(_ direction: TerminalTab.Placement) {
     guard
       let worktree = worktreeInView?.id,
       let current = workspace.focusedGroup(in: worktree)
@@ -33,7 +33,8 @@ extension AppModel {
     guard columns.count > 1, let index = columns.firstIndex(where: { $0.id == current.id }) else {
       return
     }
-    focusGroup(columns[(index + offset + columns.count) % columns.count].id)
+    let step = direction == .after ? 1 : columns.count - 1
+    focusGroup(columns[(index + step) % columns.count].id)
   }
 
   /// Move Tab to New Group: the tab in front of the user gets a column of
@@ -43,10 +44,8 @@ extension AppModel {
     moveTab(tab.id, .after, toNewGroupOf: group.id)
   }
 
-  /// A tab dropped on the band down one edge of a column's terminal area,
-  /// or the menu item above. `false` when nothing moved, so a drag springs
-  /// back rather than looking like it did something; `WorkspaceStore` has
-  /// the cases.
+  /// A tab dropped on the band down a column's edge, or the menu item above.
+  /// `false` when nothing moved, so the drag springs back.
   @discardableResult
   public func moveTab(
     _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, toNewGroupOf group: TabGroup.ID
@@ -70,17 +69,8 @@ extension AppModel {
     store.setGroupWeights(weights, in: worktree)
   }
 
-  /// A tab dragged along its own strip, moved as the pointer passes each of
-  /// its neighbours: the tabs slide out of the way, and the tab being
-  /// dragged is where it will land rather than waiting to jump there.
-  ///
-  /// Only inside one column. A tab crossing into another column, or onto
-  /// another worktree's row, waits for the drop: a column emptied by the
-  /// move closes, and closing one under the pointer takes the layout out
-  /// from under the drag that is still going on.
-  ///
-  /// No `sync` and no session touched — this is one column's order and
-  /// nothing else, and it runs on every few pixels of a drag.
+  /// A tab dragged along its own strip, moved as the pointer passes each
+  /// neighbour. Only inside one column, and no `sync`; see tabs-and-columns.md.
   public func shuffleTab(
     _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, past anchor: TerminalTab.ID
   ) {

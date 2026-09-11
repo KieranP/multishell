@@ -5,16 +5,8 @@ import MultishellGitKit
 // MARK: - The worktree in view, its name, and the operation running on it
 
 extension AppModel {
-  /// A worktree with no tabs gets one, unless the setting for why it is
-  /// being shown says to leave the first shell to Cmd+T or the actions
-  /// menu; see `TabOpening`. Returns false when the directory is gone and
-  /// nothing was selected, so that caller does not act on whatever was
-  /// selected.
-  ///
-  /// Selecting is where the question about the repository's shared hooks is
-  /// asked; `byUser: false` is for the selection that follows a create,
-  /// which lands while the sheet is still going away and would lose the
-  /// dialog under it.
+  /// A worktree with no tabs gets one unless `TabOpening` says otherwise, and
+  /// this is where the shared-hooks question is asked.
   @discardableResult
   public func select(
     _ worktree: Worktree, openingFirstTab: TabOpening = .onSelect, byUser: Bool = true
@@ -22,9 +14,8 @@ extension AppModel {
     -> Bool
   {
     guard requireDirectory(of: worktree) else { return false }
-    // Before anything else: the panes are what fills the detail area from
-    // here, and `isShown` has to agree with that for the rest of this. The
-    // seen-clearing is left to the `sync` at the end.
+    // Before anything else, `isShown` having to agree that panes fill the
+    // detail area. The seen-clearing is left to the `sync` at the end.
     leaveAgentBoard()
     store.selectWorktree(worktree.id)
     warmWorktrees.insert(worktree.id)
@@ -49,19 +40,16 @@ extension AppModel {
     workspace.displayName(of: worktree)
   }
 
-  /// The menus' Rename: the sidebar row swaps its name for a field. The
-  /// project is opened first, since the item is also in the detail header's
-  /// menu, where a collapsed project would leave no row to type into.
-  /// Nothing for a worktree that has gone since the menu opened.
+  /// The menus' Rename: the row swaps its name for a field. The project is
+  /// opened first, a collapsed one leaving no row to type into.
   public func beginRenaming(_ worktree: Worktree) {
     guard workspace.worktree(worktree.id) != nil else { return }
     store.setExpanded(true, forProject: worktree.projectID)
     renamingWorktreeID = worktree.id
   }
 
-  /// The field's Return, or the focus leaving it. Ignored once the rename
-  /// has ended, so the Escape that cancels is not undone by the commit that
-  /// losing focus would otherwise trigger.
+  /// The field's Return, or the focus leaving it. Ignored once the rename has
+  /// ended, so an Escape is not undone by the commit losing focus triggers.
   public func commitRename(of id: Worktree.ID, to name: String) {
     guard renamingWorktreeID == id else { return }
     renamingWorktreeID = nil
@@ -80,10 +68,8 @@ extension AppModel {
     store.setCustomName(name, forWorktree: id)
   }
 
-  /// A create or remove is running on the worktree, or has failed and not
-  /// been dismissed. Nothing starts a shell there until then: a post-create
-  /// hook is still installing, the worktree is about to go, or the pane is
-  /// saying what went wrong.
+  /// A create or remove is running there, or has failed and not been
+  /// dismissed. Nothing starts a shell until then.
   public func isBusy(_ id: Worktree.ID) -> Bool {
     worktreeOperations.isBusy(id)
   }
@@ -95,10 +81,8 @@ extension AppModel {
     if operation.step.isCreation { openHeldBackTab(of: worktree) }
   }
 
-  /// The pane's Cancel: ends the stage running on the worktree, a hook by
-  /// signal and a file list at its next path, which then reports itself
-  /// stopped. What follows depends on the stage; see `prepareWorktree`,
-  /// `runPostCreateHook` and `removeWorktree`.
+  /// The pane's Cancel: ends the stage running there, a hook by signal and a
+  /// file list at its next path. What follows depends on the stage.
   public func cancelStage(of worktree: Worktree) {
     stageStoppers[worktree.id]?.stop()
   }
@@ -107,11 +91,8 @@ extension AppModel {
     store.setHookTimeoutSeconds(seconds)
   }
 
-  /// Checked before anything that starts a shell: selecting, a new tab, a
-  /// split. A missing directory is refused, not worked around.
-  ///
-  /// Named for the demand rather than the question, because it raises the
-  /// alert itself: a caller reading `directoryExists` would not expect one.
+  /// Checked before anything that starts a shell, a missing directory being
+  /// refused. Named for the demand, since it raises the alert itself.
   public func requireDirectory(of worktree: Worktree) -> Bool {
     if FileManager.default.fileExists(atPath: worktree.path.path) { return true }
     presentedError = .worktreeDirectoryMissing(worktree.path.path)

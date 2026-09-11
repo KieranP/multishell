@@ -13,32 +13,22 @@ extension AppModel {
     return workspace.projects.count == 1 ? workspace.projects.first : nil
   }
 
-  /// The worktree whose terminals are actually on screen, which is the
-  /// selected one unless the Agents board is covering them.
-  ///
-  /// Everything a keystroke does to "the tab in front of the user" asks this
-  /// first. Without it Cmd+W with the board up ends a shell in a pane nobody
-  /// can see, and Cmd+T opens a tab that appears only once the board is
-  /// left.
+  /// The worktree whose terminals are on screen: the selected one unless the
+  /// board covers them. Everything acting on the tab in front asks here.
   var worktreeInView: Worktree? {
     showsAgentBoard ? nil : workspace.selectedWorktree
   }
 
-  /// The worktree in view, when a shell may start in it: no create or
-  /// remove is running there and its directory exists. `nil` otherwise, the
-  /// missing-directory alert already raised.
+  /// The worktree in view when a shell may start in it. `nil` otherwise,
+  /// the missing-directory alert already raised.
   func worktreeReadyForShell() -> Worktree? {
     guard let worktree = worktreeInView, !isBusy(worktree.id), requireDirectory(of: worktree)
     else { return nil }
     return worktree
   }
 
-  /// Cmd+T: the preferred agent when auto-start is on for this project,
-  /// else a plain shell.
-  ///
-  /// The New Tab button in a column's strip names that column, so a click
-  /// in one column never opens a tab in another; the keystroke names none
-  /// and opens in the focused column.
+  /// Cmd+T: the preferred agent where auto-start is on, else a plain shell.
+  /// A strip's button names its column; the keystroke names none.
   public func newTab(in group: TabGroup.ID? = nil) {
     guard let worktree = worktreeReadyForShell() else { return }
     openFirstOrNewTab(in: worktree, on: .byUser, group: group)
@@ -53,9 +43,8 @@ extension AppModel {
     sync()
   }
 
-  /// What a new tab is by default here: the agent if the project
-  /// auto-starts one for this occasion, a shell otherwise. Also the first
-  /// tab a worktree gets when it is selected or created.
+  /// What a new tab is by default here, and the first tab a worktree gets
+  /// when selected or created.
   func openFirstOrNewTab(in worktree: Worktree, on opening: TabOpening, group: TabGroup.ID? = nil) {
     if let project = project(of: worktree),
       autoStartsAgent(in: project, on: opening),
@@ -68,10 +57,8 @@ extension AppModel {
     }
   }
 
-  /// Whether a worktree with no tabs gets one for this reason: always when
-  /// the tab was asked for, the create setting after a create, the select
-  /// setting when the user turned to it. A worktree whose project has gone
-  /// follows the global.
+  /// Whether a worktree with no tabs gets one for this reason. A worktree
+  /// whose project has gone follows the global.
   func opensTab(in worktree: Worktree, on opening: TabOpening) -> Bool {
     switch opening {
     case .byUser: true
@@ -91,17 +78,14 @@ extension AppModel {
     }
   }
 
-  /// The worktree's project with the repository's `.multishell.json`
-  /// layered in, which is what these settings are read from: the file may
-  /// say what a worktree here opens, and reading `project.settings` would
-  /// pass over it.
+  /// The worktree's project with the repository's file layered in: reading
+  /// `project.settings` would pass over what the file says.
   private func project(of worktree: Worktree) -> Project? {
     workspace.project(worktree.projectID).map { resolved($0) }
   }
 
-  /// Whether that tab runs the agent rather than a shell. Only a create
-  /// asks the create setting; a tab opened any other way, including the
-  /// first tab of a worktree turned to, follows auto-start on tab open.
+  /// Whether that tab runs the agent. Only a create asks the create setting;
+  /// everything else follows auto-start on tab open.
   private func autoStartsAgent(in project: Project, on opening: TabOpening) -> Bool {
     switch opening {
     case .onCreate: workspace.autoStartsAgentOnCreate(for: project)
@@ -119,9 +103,8 @@ extension AppModel {
     closeInShownTab { .tab($0.id) }
   }
 
-  /// A middle click on a tab in the strip, which closes that tab whether or
-  /// not it is the active one. No key-window dance as the keystrokes do: the
-  /// click landed on this tab, so this window is the one being acted in.
+  /// A middle click on a tab, closing it active or not. No key-window dance:
+  /// the click landed here, so this window is the one being acted in.
   public func closeTab(_ id: TerminalTab.ID) {
     guard let tab = workspace.tab(id) else { return }
     requestClose(.tab(id), in: tab)
@@ -134,11 +117,8 @@ extension AppModel {
     perform(pending)
   }
 
-  /// A close whose tab or pane has gone since it was asked about has nothing
-  /// left to ask. It goes with its worktree, or with its project, and the
-  /// dialog would otherwise stand over a subject that is not there; run from
-  /// `sync`, so every path that takes one away is covered rather than the
-  /// removals alone.
+  /// A close whose subject has gone has nothing left to ask. Run from
+  /// `sync`, so every path that takes one away is covered.
   func prunePendingClose() {
     switch pendingClose {
     case .pane(let id) where workspace.session(id) == nil: pendingClose = nil
@@ -147,9 +127,8 @@ extension AppModel {
     }
   }
 
-  // The three entry points above meet here. Both keystrokes come through
-  // `closeInShownTab`, which has to find the tab first; the click already
-  // knows its own.
+  // The three entry points above meet here, the keystrokes through
+  // `closeInShownTab`, which has to find the tab first.
 
   /// Both keystrokes. One issued in a settings window closes that window
   /// instead, and nothing happens with no tab on screen.
@@ -183,13 +162,8 @@ extension AppModel {
     sync()
   }
 
-  /// Moves `id` to sit just before or just after `target`, which may be a
-  /// tab in another column of the same worktree.
-  ///
-  /// A move that would leave the strip reading the same writes nothing.
-  /// Reordering inside a column happens as the pointer passes each tab, so
-  /// by the time the tab is let go the move has usually already been made,
-  /// and doing it again costs a save and a re-render for no change.
+  /// Moves `id` beside `target`, possibly in another column. A move leaving
+  /// the strip reading the same writes nothing, the shuffle having done it.
   public func moveTab(
     _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, _ target: TerminalTab.ID
   ) {
@@ -210,22 +184,8 @@ extension AppModel {
       id, placement, of: target, in: workspace.tabs(in: moving.groupID).map(\.id))
   }
 
-  /// A tab dragged onto a worktree's row in the sidebar. Its shells come
-  /// with it, still running, and the worktree it landed in is what its
-  /// panes start in and take their shell from from now on.
-  ///
-  /// The destination is turned to, so the tab is still in front of the user
-  /// who dragged it, and so the worktree is warm: a tab whose shells are
-  /// live must not land in a worktree the next reconcile would close them
-  /// for.
-  ///
-  /// `false` when the move cannot happen, so the drag springs back rather
-  /// than the tab appearing to vanish: the worktree it is already in, either
-  /// end busy with a create or a remove, or a destination whose directory
-  /// has gone, which raises the same alert every other way of starting a
-  /// shell there does. A worktree on its way out is refused at both ends:
-  /// a tab dragged clear of a removal would be the one thing left running
-  /// in a directory about to be in the Trash.
+  /// A tab dragged onto a worktree's row, shells and all, the destination
+  /// turned to. `false` where the move cannot happen; see tabs-and-columns.md.
   @discardableResult
   public func moveTab(_ id: TerminalTab.ID, to worktreeID: Worktree.ID) -> Bool {
     guard
@@ -233,9 +193,8 @@ extension AppModel {
       let worktree = workspace.worktree(worktreeID), !isBusy(worktreeID),
       requireDirectory(of: worktree), store.moveTab(id, to: worktreeID)
     else { return false }
-    // Warmed here rather than left to the selection to do: the tab's shells
-    // are live, and a destination a refused selection left cold is one the
-    // next reconcile would close them for.
+    // Warmed here, not left to the selection: the shells are live, and a
+    // cold destination is one the next reconcile would close them for.
     warmWorktrees.insert(worktreeID)
     select(worktree)
     return true
@@ -256,15 +215,15 @@ extension AppModel {
     store.setSplitWeights(weights, at: path, ofTab: tabID)
   }
 
-  public func selectNextTab() { selectTab(offset: 1) }
-  public func selectPreviousTab() { selectTab(offset: -1) }
+  public func selectNextTab() { selectTab(.after) }
+  public func selectPreviousTab() { selectTab(.before) }
 
-  /// The tab `offset` places along the strip, wrapping at either end.
-  func selectTab(offset: Int) {
+  /// The tab one place along the strip, wrapping at either end.
+  func selectTab(_ direction: TerminalTab.Placement) {
     guard
       let worktree = worktreeInView?.id,
       let current = workspace.activeTab(in: worktree),
-      let next = offset > 0
+      let next = direction == .after
         ? workspace.tab(after: current.id) : workspace.tab(before: current.id)
     else { return }
     activate(next)

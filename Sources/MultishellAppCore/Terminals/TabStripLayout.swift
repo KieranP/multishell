@@ -1,17 +1,8 @@
 import Foundation
 import MultishellCore
 
-/// How wide a tab strip draws its tabs, and when it has to scroll instead.
-///
-/// Tabs share the strip up to a cap and shrink together as more arrive, but
-/// they stop at a floor. Below it the icon, the title and the close button
-/// have nowhere to go and run into each other and into the next tab, which
-/// is what a strip with no overflow behaviour looks like: narrow enough and
-/// it reads as a pile rather than a row. Past the floor the strip scrolls.
-///
-/// A column's own minimum width is not the answer to that, because it would
-/// have to grow with the number of tabs, and a worktree with eight tabs
-/// would stop being something you can put beside another.
+/// How wide a tab strip draws its tabs, and when it scrolls instead: they
+/// shrink between a cap and a floor. See docs/design/tabs-and-columns.md.
 public struct TabStripLayout: Equatable, Sendable {
   /// What every tab is drawn, exactly. Uniform, so a drop can tell which
   /// half of a tab the pointer is in from this alone.
@@ -32,10 +23,8 @@ public struct TabStripLayout: Equatable, Sendable {
       self.scrolls = false
       return
     }
-    // A strip with no room at all, which a window dragged narrow enough
-    // reaches: the tabs cannot fit by any measure, so it scrolls and clips.
-    // Reading this as "no scrolling" would put a full-width tab in a strip
-    // a few points wide and spill it over the column beside it.
+    // A strip with no room at all: reading this as "no scrolling" spills a
+    // full-width tab over the column beside it.
     guard available > 0 else {
       self.tabWidth = floor
       self.scrolls = true
@@ -50,22 +39,18 @@ public struct TabStripLayout: Equatable, Sendable {
 }
 
 extension TabStripLayout {
-  /// Which ends of a scrolled strip have tabs past them, so it can say so:
-  /// a strip that scrolls and does not show it is a strip with tabs nobody
-  /// knows are there.
+  /// Which ends of a scrolled strip have tabs past them: one that scrolls
+  /// without showing it has tabs nobody knows are there.
   public struct Edges: Equatable, Sendable {
     public let leading: Bool
     public let trailing: Bool
 
     /// Half a point, so a strip scrolled to either end reads as having
-    /// nothing further that way rather than fading against a rounding
-    /// error nobody can see.
+    /// nothing further rather than fading against a rounding error.
     static let tolerance = 0.5
 
-    /// `offset` is how far the strip has been scrolled from its leading
-    /// edge, `viewport` the room the tabs are seen through, and `content`
-    /// what they add up to. See `TabStripLayout.stepTarget`, which answers
-    /// where an arrow at either end scrolls to.
+    /// `offset` is how far the strip is scrolled, `viewport` the room the
+    /// tabs are seen through, `content` what they add up to.
     public init(offset: Double, viewport: Double, content: Double) {
       guard offset.isFinite, viewport.isFinite, content.isFinite else {
         self.leading = false
@@ -81,14 +66,8 @@ extension TabStripLayout {
 }
 
 extension TabStripLayout {
-  /// Which tab the arrow at one end of a scrolled strip brings into view:
-  /// the first one past that end, as an index into the strip's own tabs.
-  /// `nil` where there is nothing further that way, which is also when the
-  /// arrow is not drawn.
-  ///
-  /// A tab is counted as seen if any of it is, so the arrow always moves on
-  /// by one whole tab rather than finishing an edge the eye had already
-  /// half read.
+  /// Which tab an end arrow brings into view: the first past that end, `nil`
+  /// where there is none. A tab counts as seen if any of it is.
   public func stepTarget(
     towards placement: TerminalTab.Placement, offset: Double, viewport: Double, count: Int
   ) -> Int? {

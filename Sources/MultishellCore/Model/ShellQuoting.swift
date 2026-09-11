@@ -1,10 +1,7 @@
 import Foundation
 
-/// Turns an argument list into one POSIX shell command line.
-///
-/// libghostty takes a surface's command as a single string it hands to the
-/// shell, so an argument with a space, a quote or a `$` has to be quoted the
-/// way that shell will unquote it.
+/// Turns an argument list into one POSIX shell command line: libghostty takes
+/// a surface's command as a single string it hands to the shell.
 public enum ShellQuoting {
   public static func commandLine(_ arguments: [String]) -> String {
     arguments.map(quote).joined(separator: " ")

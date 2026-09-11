@@ -4,10 +4,8 @@ import MultishellCore
 // MARK: - What order a project's worktree rows come in
 
 extension AppModel {
-  /// Orders a project's rows as its settings ask.
-  ///
-  /// Takes the worktrees rather than reading them, so the filtered list the
-  /// sidebar draws is ordered the same way a whole one is.
+  /// Orders a project's rows as its settings ask. Takes the worktrees rather
+  /// than reading them, so a filtered list orders like a whole one.
   public func ordered(_ worktrees: [Worktree], in project: Project) -> [Worktree] {
     worktreeOrder(for: project).sort(
       worktrees,
@@ -16,12 +14,8 @@ extension AppModel {
       lastCommit: { self.lastCommits[$0.id] })
   }
 
-  /// The rule in force for a project: its own choices where it made them,
-  /// the global otherwise, measured against the trunk the merge badges use.
-  ///
-  /// The record is looked up again rather than read off the value handed in:
-  /// the settings window is its own scene, so the order can change while a
-  /// caller still holds the project as it was when it drew.
+  /// The rule in force for a project, measured against the merge badges'
+  /// trunk. Looked up again, the settings window being its own scene.
   public func worktreeOrder(for project: Project) -> WorktreeOrder {
     let resolved = resolved(workspace.project(project.id) ?? project)
     return WorktreeOrder(

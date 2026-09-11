@@ -2,12 +2,8 @@ import Foundation
 import MultishellCore
 import MultishellProcess
 
-/// Which catalogue editors this machine has, and how the dropdown lists them.
-///
-/// Editors are mostly applications, not PATH binaries, so each is looked up
-/// by its platform identifier through `applicationLookup` (`NSWorkspace` on
-/// the Mac, a table in tests) and, failing that, by its command line shim on
-/// the login shell's PATH. Terminal editors are PATH binaries only.
+/// Which catalogue editors this machine has. Mostly applications, so each is
+/// looked up by platform identifier and then by its shim on the PATH.
 public struct EditorDetection: Equatable, Sendable {
   public struct Found: Equatable, Sendable {
     public let application: URL?

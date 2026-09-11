@@ -1,19 +1,15 @@
 import MultishellCore
 
-/// A column of the board, and the rule that puts a pane in one.
-///
-/// Left to right, most urgent first. Failed goes with Waiting rather than
-/// with Done: a failure wants the user, which is what that column means, and
-/// it leaves Done meaning one thing so its name can say so.
+/// A column of the board, most urgent first. Failed goes with Waiting; see
+/// docs/design/agents.md.
 public enum AgentBoardLane: String, CaseIterable, Sendable {
   case waiting
   case working
   case done
   case idle
 
-  /// `inSentence` is the same name mid-sentence, for the screen reader's
-  /// line; a language that capitalises its nouns cannot get one from the
-  /// other by lowercasing.
+  /// `inSentence` is the same name mid-sentence, for the screen reader; see
+  /// docs/design/translation.md.
   public func title(inSentence: Bool = false) -> String {
     switch self {
     case .waiting: inSentence ? t("lane.waiting-in-sentence") : t("lane.waiting")
@@ -23,9 +19,8 @@ public enum AgentBoardLane: String, CaseIterable, Sendable {
     }
   }
 
-  /// The state whose colour the column header wears. Waiting wears the
-  /// question's blue though it also holds failures: the column is named for
-  /// what it asks of the user, not for how a card came to be in it.
+  /// The state whose colour the column header wears. Waiting wears blue
+  /// though it holds failures, being named for what it asks.
   public var headerState: SessionState {
     switch self {
     case .waiting: .attention
@@ -35,9 +30,8 @@ public enum AgentBoardLane: String, CaseIterable, Sendable {
     }
   }
 
-  /// The lanes the sidebar entry carries a count for. Idle is left off: it
-  /// is where most cards rest, so its number says nothing about whether the
-  /// board is worth opening.
+  /// The lanes the sidebar entry counts. Idle is left off, being where most
+  /// cards rest.
   public static let summarised: [AgentBoardLane] = [.waiting, .working, .done]
 
   public static func of(_ state: SessionState?) -> AgentBoardLane {

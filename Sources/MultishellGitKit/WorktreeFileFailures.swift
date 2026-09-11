@@ -29,15 +29,13 @@ public struct WorktreeFileFailure: Error, CustomStringConvertible {
 }
 
 /// Raised when the user stopped a list part way through. What was placed
-/// before the stop stays: it is in the worktree the user is being given,
-/// as the work a stopped hook had already done is.
+/// before the stop stays, as a stopped hook's work does.
 public struct WorktreeFilesStopped: Error {
   public init() {}
 }
 
-/// A listed path that leads out of the repository or the worktree, by
-/// `..` or through a folder that is a symlink. `LocalizedError`, so it
-/// reads as a sentence in the alert beside the file system's own reasons.
+/// A listed path leading out of the repository or worktree, by `..` or a
+/// symlinked folder. `LocalizedError`, to read as a sentence in the alert.
 public struct WorktreeFileEscape: LocalizedError {
   public init() {}
 

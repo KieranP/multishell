@@ -1,8 +1,5 @@
-/// What the platform's notification centre has been told about this app.
-///
-/// A refusal is worth showing: the settings page would otherwise offer
-/// three toggles that do nothing, with the reason on the other side of a
-/// system dialog answered months ago.
+/// What the platform's notification centre has been told about this app. A
+/// refusal is worth showing, the toggles doing nothing until it is lifted.
 public enum NotificationAuthorization: Hashable, Sendable {
   /// Nobody has been asked yet, so turning a state on will ask.
   case notAsked

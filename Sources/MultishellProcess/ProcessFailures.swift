@@ -1,8 +1,7 @@
 import Foundation
 
-/// A child that exited non-zero, from `ProcessRunner.run`. `message` is its
-/// stderr, so git's own words reach the alert rather than a description of
-/// this struct.
+/// A child that exited non-zero. `message` is its stderr, so git's own words
+/// reach the alert rather than a description of this struct.
 public struct ProcessFailure: Error, CustomStringConvertible {
   public let executable: String
   public let arguments: [String]

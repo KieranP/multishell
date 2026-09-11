@@ -1,10 +1,7 @@
 import Foundation
 
-/// A colour scheme for terminals and app chrome.
-///
-/// Colours are hex strings rather than a platform colour type so this stays
-/// portable and Codable; each GUI converts once at the edge. That is also what
-/// makes user-supplied theme files a drop-in later.
+/// A colour scheme for terminals and app chrome. Hex strings, not a platform
+/// colour type, so this stays portable; see docs/design/appearance.md.
 public struct Theme: Identifiable, Codable, Hashable, Sendable {
   public var id: String
   public var name: String
@@ -18,10 +15,8 @@ public struct Theme: Identifiable, Codable, Hashable, Sendable {
   /// The 16 ANSI colours, normal 0-7 then bright 8-15.
   public var ansi: [String]
 
-  /// The line round the pane keystrokes go to. An empty string is no line
-  /// at all; `nil` follows `selectionBackground`, which is what the app
-  /// drew before this key existed, so no theme file already written changes
-  /// appearance. See `focusRingRGB`, which reads the three spellings.
+  /// The line round the pane keystrokes go to. `""` is no line, `nil`
+  /// follows `selectionBackground`; see `focusRingRGB`.
   public var focusRing: String?
   /// What every pane but the focused one draws at, faded towards the
   /// theme's own background. `1` fades nothing.
@@ -61,14 +56,8 @@ public struct Theme: Identifiable, Codable, Hashable, Sendable {
     return min(max(value, minimumInactivePaneOpacity), 1)
   }
 
-  /// Synthesized decoding would skip the precondition above, and the GUI
-  /// indexes `ansi` directly, so a user theme file with the wrong number of
-  /// colours is refused here and reported by `ThemeCatalog` rather than
-  /// crashing the first view that draws with it.
-  ///
-  /// The focus ring and the fade are read with `try?`, so a file that spells
-  /// either as the wrong type costs that key and not the theme. Both have a
-  /// default that draws what the app drew before they existed.
+  /// Synthesized decoding skips the precondition, and the GUI indexes `ansi`
+  /// directly, so a wrong count is refused here rather than crashing a view.
   public init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     let ansi = try container.decode([String].self, forKey: .ansi)
@@ -94,10 +83,8 @@ public struct Theme: Identifiable, Codable, Hashable, Sendable {
 }
 
 extension Theme {
-  /// What each `ansi` slot is called, where a setting lets one be picked.
-  /// The slot's name, not the colour's: a theme may put anything in slot 1,
-  /// and a project tinted from it follows whatever the current theme has
-  /// there.
+  /// What each `ansi` slot is called. The slot's name, not the colour's: a
+  /// project tinted from it follows whatever the current theme has there.
   public static var ansiSlotNames: [String] {
     [
       t("ansi.black"), t("ansi.red"), t("ansi.green"), t("ansi.yellow"),

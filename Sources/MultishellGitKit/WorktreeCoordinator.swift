@@ -38,14 +38,8 @@ public struct WorktreeCoordinator: Sendable {
     try await service.currentBranch(project)
   }
 
-  /// Statuses for many worktrees at once. A worktree whose status could not
-  /// be read (deleted directory, git error) is simply absent from the result,
-  /// and a bare repository, which has no working tree to ask about, is not
-  /// asked.
-  ///
-  /// At most `maxConcurrentStatuses` run together. `git status` walks the
-  /// working tree; thirty at once on a large checkout thrash the disk and
-  /// take longer in total than a few at a time.
+  /// Statuses for many worktrees at once, one that could not be read simply
+  /// absent. At most `maxConcurrentStatuses` run together.
   public func statuses(of worktrees: [Worktree]) async -> [Worktree.ID: WorktreeStatus] {
     await withTaskGroup(of: (Worktree.ID, WorktreeStatus?).self) { group in
       var pending = worktrees.filter { !$0.isBare }.makeIterator()
@@ -75,22 +69,14 @@ public struct WorktreeCoordinator: Sendable {
     try await service.remoteBranches(project)
   }
 
-  /// Stable for the life of a project, so callers ask once and read the
-  /// directories to watch and `WorktreeRecords` off it, with no process
-  /// spawn per watcher tick.
+  /// Stable for the life of a project, so the watcher and the records check
+  /// run off it with no process spawn per tick.
   public func commonGitDirectory(_ project: Project) async throws -> URL {
     try await service.commonGitDirectory(project)
   }
 
-  /// Directories whose contents change when worktrees are added, removed or
-  /// switch branch: `.git/worktrees/` and each entry in it (where a linked
-  /// worktree's `HEAD` lives). Until the first worktree exists that folder
-  /// does not, so the common `.git` itself is watched for its creation.
-  ///
-  /// Never the common `.git` once `worktrees/` exists: `git status` rewrites
-  /// `.git/index`, so watching the root turns every status poll into a
-  /// spurious refresh. The main worktree's own branch switches are caught by
-  /// the status poll instead.
+  /// Directories that change when worktrees do. Never the common `.git` once
+  /// `worktrees/` exists; see docs/design/worktrees.md.
   public static func directoriesToWatch(in common: URL) -> [URL] {
     let worktrees = common.appendingPathComponent("worktrees", isDirectory: true)
     guard FileManager.default.fileExists(atPath: worktrees.path) else { return [common] }
@@ -104,16 +90,14 @@ public struct WorktreeCoordinator: Sendable {
     await service.isRepository(url)
   }
 
-  /// The directory a project should be identified by when the user picks
-  /// `url`: the main worktree, so a subdirectory or a linked worktree does
-  /// not become a second project listing the same worktrees.
+  /// The directory a project is identified by: the main worktree, so a
+  /// subdirectory does not become a second project.
   public func repositoryRoot(containing url: URL) async throws -> URL {
     try await service.mainWorktree(containing: url)
   }
 
-  /// Where `create` would put a worktree for this branch, so the settings
-  /// panel and the new-worktree sheet can show it before committing.
-  /// `settings` is the project's effective value, defaults already applied.
+  /// Where `create` would put a worktree for this branch, so the sheet can
+  /// show it first. `settings` is the project's effective value.
   public func plannedPath(
     forBranch branch: String, createBranch: Bool = true, in project: Project,
     settings: WorktreeSettings
@@ -123,9 +107,8 @@ public struct WorktreeCoordinator: Sendable {
       in: project)
   }
 
-  /// The prefix is a naming convention for branches this app creates. An
-  /// existing branch already has its name; prefixing it would ask git for a
-  /// branch that does not exist.
+  /// The prefix names branches this app creates. An existing branch has its
+  /// name already, and prefixing it would ask git for one that is not there.
   public static func branchName(
     _ raw: String, createBranch: Bool, settings: WorktreeSettings
   ) -> String {
@@ -133,16 +116,8 @@ public struct WorktreeCoordinator: Sendable {
       ? settings.qualifiedBranch(raw) : raw.trimmingCharacters(in: .whitespaces)
   }
 
-  /// The pre-create hook and `git worktree add`. The post-create hook is
-  /// `runPostCreate`, called separately so the app can show the worktree,
-  /// and let the user move on, while a slow hook runs.
-  ///
-  /// A `HookFailure` here means nothing was created; one from `runPostCreate`
-  /// means the worktree exists and only the hook went wrong. `shellPath` is
-  /// the project's shell for its hooks, or `nil` for `$SHELL`. `onStep` is
-  /// told as each stage starts, so a sheet can say which hook it is waiting
-  /// on; a hook with no script is skipped without a step. `timeout` and
-  /// `stopper` apply to the hooks, never to git; see `WorktreeHooks`.
+  /// The pre-create hook and `git worktree add`, `runPostCreate` being
+  /// separate so a slow hook does not hold the sheet. See hooks.md.
   @discardableResult
   public func add(
     branch rawBranch: String,
@@ -177,12 +152,8 @@ public struct WorktreeCoordinator: Sendable {
     return path
   }
 
-  /// Links or copies the project's listed files into a worktree git has
-  /// just made, before the post-create hook runs, so a hook and the first
-  /// terminal both find them. Throws `WorktreeFileFailure` for what it
-  /// could not place, or `WorktreeFilesStopped` if `stopper` was used part
-  /// way through; the worktree is created either way. Returns at once when
-  /// that list is blank.
+  /// Links or copies the project's listed files in before the post-create
+  /// hook, so the hook and the first terminal both find them.
   public func placeFiles(
     _ placement: WorktreePlacement, for project: Project, into worktreePath: URL,
     stopper: ProcessStopper? = nil
@@ -202,26 +173,8 @@ public struct WorktreeCoordinator: Sendable {
       timeout: timeout, stopper: stopper)
   }
 
-  /// Runs the pre-delete hook, hands the worktree directory to `trash`,
-  /// prunes its record, then runs the post-delete hook. The pre hook runs
-  /// before every attempt and its veto stands.
-  ///
-  /// `trash` is the platform's Trash, so a worktree with uncommitted work
-  /// is recoverable rather than unlinked; the directory is only pruned once
-  /// it has taken the directory, and a `trash` that throws is a
-  /// `TrashFailure` with nothing pruned. A directory already gone is only
-  /// pruned. A locked worktree is unlocked first, since prune skips locked
-  /// records.
-  ///
-  /// `deletingBranch` deletes the worktree's branch last, after the post
-  /// hook, so a hook that pushes it still finds it, and a hook that fails
-  /// keeps it. `git branch -d` refuses a branch with commits nothing else
-  /// has; that is reported as a `BranchDeletionFailure`, with the worktree
-  /// already gone, for the caller to offer `deleteBranch(force:)`.
-  ///
-  /// `onStep` is told as each stage starts, hook stages only when the hook
-  /// has a script, so the detail pane can say what the worktree is waiting
-  /// on. `timeout` and `stopper` apply to the hooks.
+  /// Pre-delete hook, the directory to `trash`, prune, post-delete hook, the
+  /// branch last. See docs/design/worktrees.md and docs/design/hooks.md.
   public func remove(
     _ worktree: Worktree, deletingBranch: Bool = false, in project: Project,
     shellPath: String? = nil, trash: @Sendable (URL) async throws -> Void,

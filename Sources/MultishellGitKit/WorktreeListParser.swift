@@ -1,14 +1,11 @@
 import Foundation
 import MultishellCore
 
-/// Parses `git worktree list --porcelain`.
-///
-/// Kept free of any process or filesystem access so the format is testable
-/// against fixture text alone.
+/// Parses `git worktree list --porcelain`, free of any process or filesystem
+/// access so the format is testable against fixture text alone.
 public enum WorktreeListParser {
-  /// Records are blank-line separated. Each begins with `worktree <path>`,
-  /// then `HEAD <sha>` and either `branch <ref>` or `detached`, plus
-  /// optional `bare`, `locked` and `prunable` markers.
+  /// Blank-line separated records of `worktree <path>`, `HEAD <sha>` and
+  /// either `branch <ref>` or `detached`, plus optional markers.
   public static func parse(_ porcelain: String, projectID: Project.ID) -> [Worktree] {
     var worktrees: [Worktree] = []
     var fields: [String: String] = [:]
@@ -30,9 +27,8 @@ public enum WorktreeListParser {
       )
     }
 
-    // Split on `isNewline`, not on "\n": git under Windows emits CRLF, and
-    // Swift treats \r\n as one grapheme, so a Character separator of "\n"
-    // matches nothing and the whole output parses as a single line.
+    // Split on `isNewline`, not "\n": Swift reads CRLF as one grapheme, so
+    // a Character separator matches nothing and the output is one line.
     for line in porcelain.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline) {
       if line.isEmpty {
         flush()

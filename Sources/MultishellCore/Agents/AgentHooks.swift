@@ -1,19 +1,14 @@
 import Foundation
 
-/// The agents whose hooks Multishell knows how to write, and the one line
-/// they all run.
-///
-/// Every event runs the helper, through the stable link under the state
-/// directory, so a moved app bundle does not break the hooks. The command
-/// exits 0 when the helper is missing, so an uninstalled Multishell costs
-/// the agent nothing.
+/// The agents whose hooks Multishell knows how to write, and the one line they
+/// all run. See docs/design/agents.md for why each event was chosen.
 public enum AgentHooks {
   public static let subcommand = "agent-hook"
-  /// What every hook line and every file of ours names, and how one is
-  /// told from a hook of the user's own.
+  /// What every hook line and every file of ours names, and how one is told
+  /// from a hook of the user's own.
   public static let helperName = "multishell"
-  /// What builds before this one wrote into a settings file. Those lines
-  /// are still there after an update, and still work.
+  /// What builds before this one wrote into a settings file. Those lines are
+  /// still there after an update, and still work.
   public static let claudeSubcommand = "claude-hook"
   /// An agent kills a hook that runs longer than this. The helper connects,
   /// writes one line and exits; anything longer means the app is wedged.
@@ -28,19 +23,8 @@ public enum AgentHooks {
     return "$HOME" + link.dropFirst(home.count)
   }
 
-  /// The shell outlives the helper and exits 0 whatever became of it. Not
-  /// `exec`, which would make the helper's own end the hook's answer:
-  /// Copilot denies a tool call on any non-zero exit from a `preToolUse`
-  /// hook, and Claude blocks one on exit 2, so a helper killed by Gatekeeper
-  /// or dying on a signal would stop the agent working rather than stop the
-  /// dots moving. One extra short-lived shell is the price, and the pid the
-  /// report carries is unaffected: `ProcessAncestry` walks past shells to
-  /// find the agent either way.
-  ///
-  /// No variable assignment: the line must parse in fish as well as sh,
-  /// since which shell an agent runs its hooks through is not ours to
-  /// choose. `id` goes in unquoted because the only ids that reach here are
-  /// the catalogue's own.
+  /// Runs the helper rather than `exec`ing it, and exits 0 whatever became of
+  /// it; parses in fish as well as sh. See docs/design/agents.md.
   public static func command(agent id: String, helper: String = helperReference) -> String {
     "[ -x \"\(helper)\" ] && \"\(helper)\" \(subcommand) --agent \(id); exit 0"
   }
@@ -62,47 +46,15 @@ public enum AgentHooks {
     claude, codex, gemini, copilot, openCode,
   ]
 
-  /// Which of Claude's notifications is someone being asked something.
-  /// Sorted out from the payload rather than asked for by matcher, which
-  /// the event does take: a matcher lives in the settings file, so it
-  /// would reach only the installs made after this build, and a Claude
-  /// old enough to send no `notification_type` would match none of them
-  /// and lose the banner it has now.
+  /// Which of Claude's fourteen notification types is someone being asked
+  /// something. Sorted from the payload, not by matcher; see agents.md.
   public static let claudeQuestions: Set<String> = [
     "permission_prompt", "worker_permission_prompt", "elicitation_dialog",
     "elicitation_url_dialog", "agent_needs_input",
   ]
 
-  /// Claude Code: `~/.claude/settings.json`. `StopFailure` is the only
-  /// event any of these agents has for a turn that ended badly.
-  ///
-  /// It is the one agent asked for both a permission request and a
-  /// notification, and a standing prompt fires both. Claude raises the
-  /// notification six seconds after the prompt goes up and cancels it if
-  /// the user answers first, so on that event alone a prompt answered
-  /// quickly never moves the dot and a slower one moves it six seconds
-  /// late. `PermissionRequest` fires as the call reaches the prompt, and
-  /// like Codex's it is also consulted where nobody will be asked, so it
-  /// counts as waiting only in a mode that stops for the user.
-  /// `Notification` stays for what it alone says: a question from an MCP
-  /// server, a worker's prompt, and it is the one of the two that raises
-  /// the banner: the dot goes blue at once, and the six seconds Claude
-  /// waits before its notification are as good a rule as any for when a
-  /// prompt is worth interrupting the user for. Two banners for one
-  /// prompt would be the cost of taking both.
-  ///
-  /// Narrowed to the types that ask a person something. The event carries
-  /// every notification Claude raises, most of which announce rather than
-  /// ask: a finished login, a quota resumed, and above all the idle prompt
-  /// a minute after a turn ends, which arrived as "Waiting for input" on
-  /// top of the Done the same turn's `Stop` had already reported.
-  ///
-  /// Nothing reports the answer. Allowing fires nothing until the tool
-  /// returns, refusing fires nothing at all, and `PermissionDenied` is not
-  /// it: that one is only for a call the auto mode's classifier turned
-  /// down, which is a mode this does not report waiting in anyway. So an
-  /// allowed call that takes two minutes holds the dot blue for two
-  /// minutes, and a prompt escaped holds it until the next prompt.
+  /// Claude Code: `~/.claude/settings.json`. The one agent asked for both a
+  /// permission request and a notification; see docs/design/agents.md.
   public static let claude = AgentHookIntegration(
     id: AgentCatalogue.claudeID,
     name: "Claude Code",
@@ -121,13 +73,8 @@ public enum AgentHooks {
     ],
     format: .sharedSettings(millisecondTimeout: false))
 
-  /// Codex: `~/.codex/hooks.json`, the JSON half of a file it also accepts
-  /// as `[hooks]` in `config.toml`, which is not ours to rewrite. Its
-  /// permission request is the nearest thing it has to a notification, but
-  /// it fires before Codex decides whether anyone need answer, so it counts
-  /// as waiting only in a mode that stops for the user. An interrupt ends
-  /// the turn without a `Stop`, and clears Working rather than claiming the
-  /// turn finished.
+  /// Codex: `~/.codex/hooks.json`, the JSON half of a file it also accepts as
+  /// `[hooks]` in `config.toml`, which is not ours to rewrite.
   public static let codex = AgentHookIntegration(
     id: "codex",
     name: "Codex",
@@ -167,11 +114,7 @@ public enum AgentHooks {
     format: .sharedSettings(millisecondTimeout: true))
 
   /// Copilot CLI reads every JSON file in `~/.copilot/hooks`, so ours is a
-  /// file of its own. The event names are its Visual Studio Code spelling,
-  /// the one whose payload names the event the way the other three do;
-  /// `notification` has no such spelling but reports itself as one. It is
-  /// also the one notification here that is not always about waiting — a
-  /// background shell finishing raises it too — so it is asked for by type.
+  /// file of its own. Event names are its Visual Studio Code spelling.
   public static let copilot = AgentHookIntegration(
     id: "copilot",
     name: "Copilot CLI",
@@ -190,8 +133,8 @@ public enum AgentHooks {
     ],
     format: .ownHookFile)
 
-  /// OpenCode has no hooks in its settings: what a session is doing shows
-  /// only to a plugin, so it is given one.
+  /// OpenCode has no hooks in its settings: what a session is doing shows only
+  /// to a plugin, so it is given one.
   public static let openCode = AgentHookIntegration(
     id: "opencode",
     name: "OpenCode",

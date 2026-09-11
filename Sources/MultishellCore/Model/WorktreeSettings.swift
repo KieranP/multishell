@@ -1,11 +1,7 @@
 import Foundation
 
-/// Where worktrees go and how their branches are named.
-///
-/// One value type serves two roles: the app-wide defaults in
-/// `Workspace.worktreeDefaults`, and the effective settings for a project after
-/// its overrides are applied. Every path and branch decision reads from an
-/// instance of this, never from `ProjectSettings` directly.
+/// Where worktrees go and how their branches are named: both the app-wide
+/// defaults and a project's effective settings. Never read `ProjectSettings`.
 public struct WorktreeSettings: Codable, Hashable, Sendable {
   /// Directory that will hold a project's worktrees. Absolute, or relative
   /// to the repository root. `~` and `{project}` are expanded.
@@ -42,9 +38,8 @@ extension WorktreeSettings {
     return branchPrefix + trimmed
   }
 
-  /// The directory new worktrees are created in. Blank means the default:
-  /// an empty path would resolve to the repository itself, and a worktree
-  /// inside the main checkout is never what anyone meant.
+  /// The directory new worktrees are created in. Blank is the default: an
+  /// empty path resolves to the repository itself.
   public func worktreeContainer(for project: Project) -> URL {
     let text = worktreeDirectory.trimmingCharacters(in: .whitespaces)
     let expanded =
@@ -56,12 +51,8 @@ extension WorktreeSettings {
     .standardizedFileURL
   }
 
-  /// Where a branch's worktree goes: the container, plus a slug of the
-  /// branch name so `feat/tabs` cannot try to nest a directory.
-  ///
-  /// The result is always strictly inside the container. git refuses `.`
-  /// and `..` as branch names, but this path is shown, and its parent
-  /// created, before git is asked.
+  /// Where a branch's worktree goes: the container plus a slug, always
+  /// strictly inside it, this path being shown before git is asked.
   public func worktreePath(forBranch branch: String, in project: Project) -> URL {
     var slug =
       branch

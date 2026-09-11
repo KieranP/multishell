@@ -1,19 +1,12 @@
 import SwiftUI
 
-/// A keyboard shortcut the app owns, in both spellings it needs.
-///
-/// SwiftUI's, for the menu item, and Ghostty's, for the `keybind=…=unbind`
-/// that usually has to accompany it: Ghostty's defaults bind most of these
-/// to actions this embedding cannot perform, and the surface consumes the
-/// keystroke before the menu bar sees it. Declared once so the two cannot
-/// drift — a menu item whose combination nobody unbound is a shortcut that
-/// does nothing in a Ghostty pane and works everywhere else.
+/// A keyboard shortcut the app owns, in SwiftUI's spelling and Ghostty's,
+/// declared once: a combination nobody unbound is dead in a Ghostty pane.
 struct AppShortcut {
   let key: KeyEquivalent
   let modifiers: EventModifiers
-  /// Whether the surface keeps its own binding for this combination rather
-  /// than giving it up to the menu bar. True only where Ghostty's action is
-  /// the terminal-local one and is what the user wants in a pane.
+  /// Whether the surface keeps its own binding rather than giving it up to
+  /// the menu bar. True only where Ghostty's action is what a pane wants.
   let surfaceKeeps: Bool
 
   init(_ key: KeyEquivalent, _ extra: EventModifiers = [], surfaceKeeps: Bool = false) {
@@ -33,9 +26,8 @@ struct AppShortcut {
     self.surfaceKeeps = surfaceKeeps
   }
 
-  /// The same combination as Ghostty spells it. Modifier order is the one
-  /// its own docs use; its parser takes any, but a stable order keeps this
-  /// diffable against a config.
+  /// The same combination as Ghostty spells it, in the modifier order its
+  /// own docs use, so this stays diffable against a config.
   var ghosttyCombo: String {
     var parts: [String] = []
     if modifiers.contains(.command) { parts.append("super") }
@@ -46,9 +38,8 @@ struct AppShortcut {
     return parts.joined(separator: "+")
   }
 
-  /// Ghostty names a few keys rather than taking their character. The
-  /// arrows arrive as the private-use scalars AppKit gives them, which is
-  /// what `KeyEquivalent.leftArrow` and its siblings hold.
+  /// Ghostty names a few keys rather than taking their character. The arrows
+  /// arrive as the private-use scalars AppKit gives them.
   private static func ghosttyName(of key: KeyEquivalent) -> String {
     switch key.character {
     case "\t": "tab"
@@ -72,8 +63,7 @@ extension View {
 }
 
 /// Every keystroke this app's menus claim, and the ones the system claims
-/// over a window of ours. `GhosttyTerminalHost` unbinds what this says to;
-/// `MultishellCommands` builds its items from the same values.
+/// over our windows. The host unbinds and the commands build from these.
 enum AppShortcuts {
   static let newTab = AppShortcut("t")
   static let newShellTab = AppShortcut("t", .shift)
@@ -85,9 +75,8 @@ enum AppShortcuts {
   static let closeTab = AppShortcut("w", .shift)
   static let splitRight = AppShortcut("d")
   static let splitDown = AppShortcut("d", .shift)
-  /// Not Cmd+Option+D, which reads as the third of the split family but is
-  /// the system's own toggle for hiding the Dock: the WindowServer takes it
-  /// before a menu bar sees it, so the item would never fire.
+  /// Not Cmd+Option+D, the system's own toggle for hiding the Dock: the
+  /// WindowServer takes it before a menu bar sees it.
   static let moveTabToNewGroup = AppShortcut("g", .option)
   /// Alt and an arrow is word movement in a terminal, which stays bound;
   /// these carry Command as well, so nothing in a pane wants them.
@@ -101,22 +90,15 @@ enum AppShortcuts {
   static let nextTab = AppShortcut.control(.tab)
   static let previousTab = AppShortcut.control(.tab, .shift)
 
-  /// Copy, paste, cut and select-all. The menu carries them, and the
-  /// surface keeps them: in a pane these are Ghostty's own clipboard
-  /// actions on the terminal's selection, which is what the user means by
-  /// Cmd+C there. Unbound, Cmd+C would reach a menu item that sends
-  /// `NSText.copy(_:)` to a responder with no selection to give.
+  /// Copy, paste, cut and select-all. The menu carries them and the surface
+  /// keeps them, a pane's Cmd+C being Ghostty's own clipboard action.
   static let cut = AppShortcut("x", surfaceKeeps: true)
   static let copy = AppShortcut("c", surfaceKeeps: true)
   static let paste = AppShortcut("v", surfaceKeeps: true)
   static let selectAll = AppShortcut("a", surfaceKeeps: true)
 
-  /// In declaration order, so `unbound` reads the way the config did.
-  ///
-  /// The one step still done by hand: a shortcut declared above but left
-  /// out here is unbound nowhere, and works everywhere but a Ghostty pane.
-  /// Nothing can check it — Swift cannot enumerate an enum's static members
-  /// and SwiftUI cannot be asked what its menus bound.
+  /// In declaration order, so `unbound` reads the way the config did. The one
+  /// step done by hand: nothing can check a shortcut left out of this list.
   static let all: [AppShortcut] = [
     newTab, newShellTab, newAgentTab, closePane, closeTab, newWorktree,
     addProject, openInEditor, splitRight, splitDown,
@@ -125,10 +107,8 @@ enum AppShortcuts {
     cut, copy, paste, selectAll,
   ]
 
-  /// Combinations the system owns over one of our windows: New Window,
-  /// Settings, Quit, the fullscreen shortcut and the one that enters it
-  /// from a split. No menu item of ours carries these, and the surface must
-  /// still give them up.
+  /// Combinations the system owns over one of our windows. No menu item of
+  /// ours carries these, and the surface must still give them up.
   static let systemOwned = [
     "super+shift+n", "super+comma", "super+q", "super+ctrl+f", "super+enter",
     // Hides the Dock. Listed so nothing here claims it, and so the reason

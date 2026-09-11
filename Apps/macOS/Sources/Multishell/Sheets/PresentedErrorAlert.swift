@@ -3,10 +3,8 @@ import MultishellCore
 import SwiftUI
 
 extension View {
-  /// Every error the model raises. The retry, where the error carries one,
-  /// is destructive: the only one so far deletes a branch git refused to
-  /// delete safely, so it is offered beside a Cancel rather than on its own.
-  /// An error with no retry gets the single dismiss button SwiftUI supplies.
+  /// Every error the model raises. A retry is destructive and offered beside
+  /// a Cancel; an error with no retry gets SwiftUI's single dismiss.
   func presentedErrorAlert(model: AppModel) -> some View {
     alert(
       model.presentedError?.title ?? "",

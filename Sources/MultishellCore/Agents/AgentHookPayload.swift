@@ -1,13 +1,7 @@
 import Foundation
 
-/// The JSON an agent writes to a hook command's stdin, reduced to what a
-/// state report needs.
-///
-/// Claude Code, Codex, Gemini CLI and Copilot CLI all spell these three the
-/// same way, so one parser serves them: the event that fired, the directory
-/// the agent is working in, and the text of a notification. Everything else
-/// in the payload is the agent's own business. Which state an event stands
-/// for is the agent's, and lives in its `AgentHookIntegration`.
+/// The JSON an agent writes to a hook command's stdin, reduced to the three
+/// fields all four spell alike; see docs/design/agents.md.
 public struct AgentHookPayload: Hashable, Sendable {
   public var eventName: String
   public var cwd: String?
@@ -15,9 +9,8 @@ public struct AgentHookPayload: Hashable, Sendable {
   /// The approval mode the agent is in, where it says: `default`,
   /// `dontAsk` and the rest. Claude Code and Codex are the ones that say.
   public var permissionMode: String?
-  /// Which kind of notification this is, where the event is one and the
-  /// agent says: `permission_prompt`, `idle_prompt` and the rest. Claude
-  /// Code is the one that says.
+  /// Which kind of notification this is, where the agent says. Claude Code
+  /// is the one that does.
   public var notificationType: String?
 
   public init(
@@ -43,9 +36,8 @@ public struct AgentHookPayload: Hashable, Sendable {
     self.notificationType = object["notification_type"] as? String
   }
 
-  /// Whether the mode the payload names is one that stops for the user. A
-  /// mode this build has not heard of is taken to prompt: a dot that goes
-  /// blue when it need not costs less than one that never does.
+  /// Whether the payload's mode stops for the user. An unknown one is taken
+  /// to prompt: a needless blue dot costs less than a missing one.
   public var promptsForPermission: Bool {
     switch permissionMode {
     // Claude's `auto` has a classifier answer the request, so it is one

@@ -1,15 +1,11 @@
-/// Posts a system notification about a session, and reports a click on it.
-///
-/// A port: each platform has its own notification centre, so the GUI
-/// implements this and the model only decides what to say
-/// (`NotificationPolicy`).
+/// Posts a system notification about a session and reports a click on it. A
+/// port; the model only decides what to say, in `NotificationPolicy`.
 @MainActor
 public protocol SessionNotifier: AnyObject {
   var onActivate: (@MainActor (SessionStates.Key) -> Void)? { get set }
   func notify(title: String, body: String, about key: SessionStates.Key)
-  /// Takes back the banner about a key, where one is still on screen. Sent
-  /// when what it said has stopped being true: the state moved on, or the
-  /// user brought the pane up and has seen it.
+  /// Takes back the banner about a key, where one is still on screen and
+  /// what it said has stopped being true.
   func withdraw(about key: SessionStates.Key)
   /// What the notification centre has been told, without asking for
   /// anything: the settings page reads this to show a refusal.

@@ -3,11 +3,8 @@ import MultishellAppCore
 import MultishellCore
 @preconcurrency import UserNotifications
 
-/// `SessionNotifier` on `UNUserNotificationCenter`, which needs a bundle: a
-/// bare binary from `swift run` has none, and asking the center there
-/// crashes, so this does nothing outside an app bundle. Authorization is
-/// asked for when a notification is first turned on in Settings, and again
-/// here if a report arrives before anyone has been asked.
+/// `SessionNotifier` on `UNUserNotificationCenter`, which needs a bundle and
+/// crashes without one, so this does nothing outside an app bundle.
 @MainActor
 final class UserNotificationNotifier: NSObject, SessionNotifier {
   var onActivate: (@MainActor (SessionStates.Key) -> Void)?
@@ -15,13 +12,8 @@ final class UserNotificationNotifier: NSObject, SessionNotifier {
   private let center: UNUserNotificationCenter?
   /// The last answer, so a settled permission costs no hop before posting.
   private var known = NotificationAuthorization.notAsked
-  /// The request each identifier is waiting to add once the permission
-  /// dialog is answered. A banner is taken back by removing it from the
-  /// centre, which does nothing to one not added yet, so a withdrawal drops
-  /// the entry and the waiting task finds it gone and adds nothing. Keyed
-  /// by identifier and holding the newest, so a pane reporting twice while
-  /// the dialog is up shows what it last said rather than what it said
-  /// first. An entry lives only while its task does.
+  /// The request each identifier is waiting to add once the permission dialog
+  /// is answered. A withdrawal drops the entry; the newest wins.
   private var pendingAdds: [String: UNNotificationRequest] = [:]
 
   override init() {
@@ -30,10 +22,8 @@ final class UserNotificationNotifier: NSObject, SessionNotifier {
     center?.delegate = self
   }
 
-  /// One live banner per pane: the request carries the key as its
-  /// identifier, so a second report about the same terminal replaces the
-  /// first rather than stacking beside it. A pane's dot holds one state, and
-  /// its row in Notification Centre now says that same one.
+  /// One live banner per pane, the request carrying the key as its
+  /// identifier, so a second report replaces the first rather than stacking.
   func notify(title: String, body: String, about key: SessionStates.Key) {
     guard let center else { return }
     let content = UNMutableNotificationContent()
@@ -90,9 +80,8 @@ final class UserNotificationNotifier: NSObject, SessionNotifier {
     }
   }
 
-  /// Stable for the life of a pane, and distinct across the two kinds of
-  /// key: a worktree's id is a path, which no UUID can collide with, but the
-  /// prefix says which is meant without relying on that.
+  /// Stable for the life of a pane and distinct across the two kinds of key,
+  /// the prefix saying which without relying on a path never being a UUID.
   nonisolated static func identifier(for key: SessionStates.Key) -> String {
     switch key {
     case .session(let id): "session:\(id.uuidString)"

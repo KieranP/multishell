@@ -1,10 +1,7 @@
 import Foundation
 
-/// A linked checkout belonging to a `Project`.
-///
-/// Like `Project`, identity is the path. Worktrees are rediscovered from
-/// `git worktree list` on every refresh, so any id we minted ourselves would
-/// change out from under persisted selection state.
+/// A linked checkout belonging to a `Project`. Identity is the path, these
+/// being rediscovered from `git worktree list` on every refresh.
 public struct Worktree: Identifiable, Codable, Hashable, Sendable {
   /// Normalised by `Project.directory` in both initialisers; see `Project`.
   public private(set) var path: URL
@@ -16,12 +13,8 @@ public struct Worktree: Identifiable, Codable, Hashable, Sendable {
   /// The repository itself in a bare layout: listed first by git, with no
   /// checkout to show a status for.
   public var isBare: Bool
-  /// When the directory was made, read off the filesystem at discovery;
-  /// `nil` where it could not be. git records no creation time for a
-  /// worktree, and the directory `git worktree add` makes is the closest
-  /// thing there is. A worktree whose directory was copied in, or one on a
-  /// filesystem that keeps no birth time, has none, and the date orders
-  /// sort it last rather than pretend it is the oldest.
+  /// When the directory was made, git recording no creation time. `nil` for
+  /// a copied directory or a filesystem with no birth time, sorted last.
   public var createdAt: Date?
 
   /// Synthesized decoding would keep whatever URL was written, so the
@@ -35,10 +28,8 @@ public struct Worktree: Identifiable, Codable, Hashable, Sendable {
     self.isPrimary = try container.decode(Bool.self, forKey: .isPrimary, or: false)
     self.isLocked = try container.decode(Bool.self, forKey: .isLocked, or: false)
     self.isBare = try container.decode(Bool.self, forKey: .isBare, or: false)
-    // Tolerated, as `ProjectSettings` does for its tint: a date a newer
-    // build wrote in another shape costs the date, not the worktree.
-    // Worktrees decode lossily, so throwing here would drop the row, and
-    // the tabs saved under it, until the next refresh.
+    // Tolerated: a date in a shape a newer build wrote costs the date, not
+    // the worktree and the tabs saved under it.
     self.createdAt = container.decodeTolerantly(Date.self, forKey: .createdAt)
   }
 

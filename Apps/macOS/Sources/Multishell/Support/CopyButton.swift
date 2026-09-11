@@ -2,9 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// The copy icon beside a value meant to be pasted somewhere else, so it
-/// need not be typed out. The tick is there because the clipboard gives no
-/// other sign it took.
+/// The copy icon beside a value meant to be pasted elsewhere. The tick is
+/// there because the clipboard gives no other sign it took.
 struct CopyButton: View {
   let model: AppModel
   let text: String

@@ -1,12 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// Makes a view respond to a double-click the way a title bar does.
-///
-/// The window's title bar is hidden and the header rows stand in for it, so
-/// they take on its double-click behaviour. The action follows the system
-/// setting (System Settings > Desktop & Dock > "Double-click a window's title
-/// bar to"), not a hard-coded zoom.
+/// Makes a view respond to a double-click the way a title bar does, the
+/// header rows standing in for a hidden one. Follows the system setting.
 struct TitleBarDoubleClick: ViewModifier {
   func body(content: Content) -> some View {
     content

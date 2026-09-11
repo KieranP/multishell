@@ -1,12 +1,8 @@
 import Foundation
 import MultishellCore
 
-/// One agent's line in Settings > Agents: whether its hooks are in place,
-/// and what the row says about them.
-///
-/// An agent is listed once it is on the login shell's PATH, and stays
-/// listed while its hooks are installed, so hooks left behind by an agent
-/// since uninstalled can still be taken out.
+/// One agent's line in Settings > Agents. Listed once it is on the PATH, and
+/// while its hooks are installed, so leftovers can still be taken out.
 public struct AgentHooksRow: Identifiable, Equatable, Sendable {
   public let id: String
   public let name: String

@@ -7,18 +7,13 @@ public enum NotificationPolicy {
   /// `ls` and a build alike, and only the build should be heard from.
   public static let minimumNotifiedDuration: Double = 10
 
-  /// A tab the user has seen needs no banner; the same tab with the app in
-  /// the background does, since the user is elsewhere. Seen is the pane on
-  /// screen and the app frontmost, which is the same notion `SessionStates`
-  /// clears a Done against: one of them raising a banner while the other
-  /// decided the user had already looked left the dot and the banner
-  /// contradicting each other.
+  /// A tab the user has seen needs no banner. Seen is the pane on screen and
+  /// the app frontmost, the same notion `SessionStates` clears a Done against.
   public static func shouldNotify(
     _ state: SessionState, preference: NotificationPreference, isSeen: Bool,
     duration: Double? = nil, silent: Bool = false
   ) -> Bool {
-    // Two reports stand for one permission prompt, the immediate one and
-    // the agent's own notification six seconds later. The dot moves on the
+    // Two reports stand for one permission prompt: the dot moves on the
     // first, the banner comes with the second.
     guard !silent, preference[state] else { return false }
     if state.isFinished, let duration, duration < minimumNotifiedDuration { return false }

@@ -16,13 +16,8 @@ private struct MiddleClickCatcher: NSViewRepresentable {
   func updateNSView(_ view: MiddleClickView, context: Context) { view.action = action }
 }
 
-/// Answers `hitTest` only while a middle-button event is being routed, so
-/// the taps, the drag and the buttons SwiftUI draws underneath all keep
-/// their own clicks. It registers no dragged types either, so a drop passes
-/// it by.
-///
-/// The action runs on mouse up inside the view, the way every tab strip
-/// closes: pressing and dragging off the tab is not a close.
+/// Answers `hitTest` only while a middle-button event is routed, so what is
+/// drawn underneath keeps its clicks. The action runs on mouse up inside.
 private final class MiddleClickView: NSView {
   var action: (() -> Void)?
 

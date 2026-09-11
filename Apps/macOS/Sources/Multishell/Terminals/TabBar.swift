@@ -3,9 +3,7 @@ import MultishellCore
 import SwiftUI
 
 /// One column's tab strip: how wide its tabs are, whether it scrolls, and
-/// what a drop that misses every tab means. A worktree with two columns
-/// draws two of these; `TabGroupsView` places them, and `TabButton` is one
-/// tab in one of them.
+/// what a drop missing every tab means. `TabButton` is one tab in one.
 struct TabBar: View {
   let model: AppModel
   let group: TabGroup
@@ -20,10 +18,8 @@ struct TabBar: View {
 
   @State private var editingTabID: TerminalTab.ID?
 
-  /// Whether the tab in the air is one of this column's, in which case it is
-  /// moving along this strip as the pointer goes and needs no line drawn for
-  /// it. Answered from the tabs the strip already holds, once for the strip:
-  /// asking per tab would scan every tab in the workspace for each of them.
+  /// Whether the tab in the air is this column's, in which case it moves as
+  /// the pointer goes and needs no line. Once for the strip, not per tab.
   private var isShuffling: Bool {
     guard let dragged = drag.tabID else { return false }
     return tabs.contains { $0.id == dragged }
@@ -34,8 +30,7 @@ struct TabBar: View {
   }
 
   /// A worktree with one column has nothing to tell apart, so its strip is
-  /// not made a container a screen reader has to step into. See
-  /// `AccessibilityText.tabGroup`, which is empty in that case.
+  /// no container a screen reader must step into.
   @ViewBuilder
   private func named(_ strip: some View) -> some View {
     if columnLabel.isEmpty {
@@ -49,10 +44,8 @@ struct TabBar: View {
 
   private var strip: some View {
     GeometryReader { proxy in
-      // What the tabs have to share, the New Tab button's own width taken
-      // off, and from it the width of every tab: one width for all of them,
-      // so a drop can tell which half of one the pointer is in without
-      // measuring. See `TabStripLayout`.
+      // What the tabs share, the New Tab button taken off, and from it one
+      // width for all of them, so a drop needs no measuring.
       let available = Double(proxy.size.width) - model.metrics.newTabWidth
       let layout = TabStripLayout(
         available: available,
@@ -62,9 +55,7 @@ struct TabBar: View {
       HStack(spacing: 0) {
         if layout.scrolls {
           // The scroller takes the whole strip and the button is pinned
-          // after it. Not a `Spacer` beside them: a scroller and a spacer
-          // are both infinitely flexible, and the stack would divide the
-          // strip between the two.
+          // after it. Not a `Spacer`, which would halve the strip.
           ScrollingTabStrip(
             model: model,
             theme: theme,
@@ -88,14 +79,11 @@ struct TabBar: View {
     .background(theme.chromeColor)
     .overlay(alignment: .top) { theme.hairline.frame(height: 0.5) }
     .contentShape(.rect)
-    // The strip past its last tab, which is otherwise the one part of a
-    // column a click does nothing in. The tabs and the New Tab button are
-    // hit first and keep their own actions.
+    // The strip past its last tab, otherwise the one part of a column a
+    // click does nothing in. The tabs are hit first.
     .onTapGesture { if !isFocused { model.focusGroup(group.id) } }
-    // A drop that misses every tab, on the new-tab button or the empty
-    // space beyond, moves the tab to the end of this column. It also ends
-    // the drag, as every drop path must: a line left behind would be drawn
-    // over the next render.
+    // A drop missing every tab moves it to the end of this column, and ends
+    // the drag, as every drop path must.
     .onDrop(
       of: [TabTransfer.contentType],
       delegate: TabStripDropDelegate(
@@ -121,10 +109,8 @@ struct TabBar: View {
     }
   }
 
-  /// New tab sits with the tabs and names this column, so a click in one
-  /// column never opens a tab in another. Outside the scroller, so a full
-  /// strip cannot push it out of reach. With no tabs there is no strip, and
-  /// the header's actions menu or Cmd+T takes over.
+  /// New Tab names this column, so a click in one never opens a tab in
+  /// another. Outside the scroller, so a full strip cannot hide it.
   private var newTabButton: some View {
     Button {
       model.newTab(in: group.id)

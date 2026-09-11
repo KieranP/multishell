@@ -5,9 +5,8 @@ import MultishellProcess
 // MARK: - Login shell environment
 
 extension AppModel {
-  /// Asks the user's login shell for its environment once, off the main
-  /// thread, and re-runs detection against its PATH. The Refresh in the
-  /// agent dropdown calls it again.
+  /// Asks the login shell for its environment once, off the main thread, and
+  /// re-runs detection against its PATH.
   public func refreshLoginEnvironment() async {
     let environment = await LoginShellEnvironment.capture()
     if case .processFallback(let reason) = environment.source {
@@ -77,11 +76,8 @@ extension AppModel {
     sync()
   }
 
-  /// What the registry opens for a session: the shell in force for its
-  /// project, or the agent's command line with that shell taking over after
-  /// it. A session that was saved by an earlier run resumes where the
-  /// catalogue knows how, and is otherwise a plain shell with the agent's
-  /// title; four saved agent tabs must not start four agents.
+  /// What the registry opens for a session: its shell, or the agent's command
+  /// line. A restored tab resumes where it can, four not starting four agents.
   public func prepared(_ session: TerminalSession) -> TerminalSession {
     var prepared = session
     prepared.shell = shellPath(forWorktree: session.worktreeID)
@@ -92,10 +88,8 @@ extension AppModel {
     return prepared
   }
 
-  /// `shell` is the tab's shell, the one that takes over when the agent
-  /// quits; the agent itself runs through the login shell for its PATH.
-  /// The worktree is what the flag line's placeholders are resolved
-  /// against, so `--name={{branch}}` says which branch this tab is on.
+  /// `shell` takes over when the agent quits; the agent runs through the
+  /// login shell. The worktree resolves the flag line's placeholders.
   public func agentCommand(
     _ id: String, resume: Bool, shell tabShell: String, in worktreeID: Worktree.ID
   ) -> [String]? {
@@ -129,9 +123,8 @@ extension AppModel {
     return workspace.agentFlags(for: project, agent: id)
   }
 
-  /// What `{{branch}}` and the rest stand for in this worktree. Empty where
-  /// the worktree has gone, which leaves every placeholder as typed rather
-  /// than expanding it to nothing.
+  /// What `{{branch}}` and the rest stand for here. Empty where the worktree
+  /// has gone, leaving each placeholder as typed.
   private func placeholderValues(in worktreeID: Worktree.ID) -> [AgentPlaceholder: String] {
     guard let worktree = workspace.worktree(worktreeID),
       let project = project(owning: worktreeID)

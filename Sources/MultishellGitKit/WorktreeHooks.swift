@@ -2,9 +2,8 @@ import Foundation
 import MultishellCore
 import MultishellProcess
 
-/// Raised when a hook fails. A pre hook's failure means the git operation
-/// was never asked for; a post hook's means it has already succeeded, so
-/// callers report those without rolling anything back.
+/// Raised when a hook fails. A pre hook's failure means the operation was
+/// never asked for; a post hook's means it has already succeeded.
 public struct HookFailure: Error, CustomStringConvertible {
   public enum Stage: String, Sendable {
     case preCreate
@@ -37,15 +36,8 @@ public struct HookFailure: Error, CustomStringConvertible {
   }
 }
 
-/// Runs the per-project hooks from `ProjectSettings`.
-///
-/// Hooks receive their context through the environment rather than as
-/// arguments, so a hook is a plain script with nothing to quote. Each runs
-/// as one script through the project's shell, the one its tabs get, as an
-/// interactive login shell, stopping at its first failing line where the
-/// shell can be told to (`ShellCommand.runScript`). `shellPath` nil means
-/// `$SHELL`. A hook still running at `timeout`, or when the `stopper` is
-/// used, is ended and fails with the reason on its `ProcessFailure`.
+/// Runs the per-project hooks from `ProjectSettings`, context through the
+/// environment so a hook is a plain script; see docs/design/hooks.md.
 public struct WorktreeHooks: Sendable {
   private let shell: ShellCommand
 

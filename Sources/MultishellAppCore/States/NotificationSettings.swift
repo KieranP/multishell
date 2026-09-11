@@ -1,12 +1,8 @@
 import Foundation
 import MultishellCore
 
-/// Everything Settings > Notifications says: a row per state a notification
-/// can be asked for, and the note under them.
-///
-/// One row per state, since the states are wanted separately: a build
-/// finishing is worth hearing about to someone who never wants a word about
-/// a question.
+/// Everything Settings > Notifications says, a row per state: they are wanted
+/// separately, a finished build by someone who wants no word of a question.
 public enum NotificationSettings {
   /// One state's toggle, and what its (i) says about the reports behind it.
   public struct Row: Identifiable, Equatable, Sendable {
@@ -22,14 +18,8 @@ public enum NotificationSettings {
       Row(state: state, title: state.displayName, info: info(for: state))
     }
 
-  /// The caption at the foot of the page. What holds whichever toggles are
-  /// on is said once here rather than behind each row's (i); a refusal
-  /// replaces it, since the toggles above do nothing until it is lifted.
-  ///
-  /// `settingsLocation` is the desktop's own name for where permission is
-  /// granted, from `Platform`, and no desktop is named here: the permission
-  /// is a Mac's to ask for and a Linux notification daemon may never ask at
-  /// all, which is what `unavailable` and `notAsked` tell this apart by.
+  /// The caption at the foot of the page, said once rather than behind each
+  /// row's (i). A refusal replaces it; no desktop is named here.
   public static func note(
     for authorization: NotificationAuthorization, settingsLocation: String?
   ) -> String {
@@ -47,10 +37,8 @@ public enum NotificationSettings {
     }
   }
 
-  /// True however the permission went, and the only thing left to say once
-  /// it has been settled. The tail is what "frontmost" means to the person
-  /// reading it, and it is not droppable: that same tab does notify once
-  /// the user is off in another app.
+  /// True however the permission went. The tail is what "frontmost" means to
+  /// the reader, and is not droppable.
   private static var shownTabNote: String { t("notifications.shown-tab") }
 
   private static func info(for state: SessionState) -> String {

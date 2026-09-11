@@ -2,10 +2,8 @@ import AppKit
 import MultishellCore
 import SwiftTerm
 
-/// A `TerminalHost` backed by SwiftTerm.
-///
-/// SwiftTerm owns the pty but hands us the view, so this type maps session ids
-/// to views and forwards SwiftTerm's callbacks to the core's delegate.
+/// A `TerminalHost` backed by SwiftTerm, which owns the pty but hands us the
+/// view: this maps session ids to views and forwards the callbacks.
 @MainActor
 final class SwiftTermTerminalHost: NSObject, TerminalHost {
   weak var delegate: (any TerminalHostDelegate)?
@@ -13,9 +11,8 @@ final class SwiftTermTerminalHost: NSObject, TerminalHost {
   private var views: [TerminalSession.ID: LocalProcessTerminalView] = [:]
   private var clickMonitor: Any?
   private var sessionIDs: [ObjectIdentifier: TerminalSession.ID] = [:]
-  /// Sessions whose child has already exited. SwiftTerm keeps the pid after
-  /// reaping it, so `terminate` would signal a number the kernel may have
-  /// handed to some other process by now.
+  /// Sessions whose child has exited. SwiftTerm keeps the pid after reaping,
+  /// so `terminate` would signal a number since handed elsewhere.
   private var exited: Set<TerminalSession.ID> = []
   /// How long a shell gets to act on SIGTERM before SIGKILL. Settable so a
   /// test does not wait the full time.
@@ -59,10 +56,8 @@ final class SwiftTermTerminalHost: NSObject, TerminalHost {
     view.removeFromSuperview()
   }
 
-  /// SwiftTerm's `terminate` sends SIGTERM and then cancels the exit monitor
-  /// that would have called `waitpid`, so every closed tab left a zombie
-  /// until the app quit. Collect the child here, and kill it if it has not
-  /// gone by the deadline; the pid stays the shell's until it is collected.
+  /// SwiftTerm's `terminate` cancels the monitor that would have called
+  /// `waitpid`, leaving a zombie, so the child is collected here.
   nonisolated private static func reap(_ pid: pid_t, killAfter grace: Duration) {
     guard pid > 0 else { return }
     Task.detached(priority: .utility) {
@@ -79,10 +74,8 @@ final class SwiftTermTerminalHost: NSObject, TerminalHost {
     views[id]
   }
 
-  /// SwiftTerm's own paste is not public, so the framing is done here: a
-  /// program that asked for bracketed paste sees one paste rather than a run
-  /// of keystrokes. A session whose child has gone is left alone; its view
-  /// still holds a pty nobody reads.
+  /// SwiftTerm's own paste is not public, so the bracketing is done here. A
+  /// session whose child has gone is left alone.
   @discardableResult
   func paste(_ text: String, into id: TerminalSession.ID) -> Bool {
     guard !text.isEmpty, let view = views[id], !exited.contains(id) else { return false }
@@ -106,9 +99,8 @@ final class SwiftTermTerminalHost: NSObject, TerminalHost {
     views.values.forEach(style)
   }
 
-  /// SwiftTerm has no focus callback and `becomeFirstResponder` is not
-  /// overridable, so clicks are watched at the window level and mapped back
-  /// to the surface they landed in.
+  /// SwiftTerm has no focus callback and `becomeFirstResponder` cannot be
+  /// overridden, so clicks are watched at the window level.
   private func installClickMonitorIfNeeded() {
     guard clickMonitor == nil else { return }
     clickMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { [weak self] event in
@@ -177,10 +169,8 @@ final class SwiftTermTerminalHost: NSObject, TerminalHost {
   }
 }
 
-// SwiftTerm declares this protocol nonisolated but only ever calls it from the
-// main thread, so each method asserts that rather than hopping and losing
-// ordering against the store. `LocalProcessTerminalView` consumes the bell
-// itself, so title changes are the only activity this engine can report.
+// SwiftTerm declares this nonisolated but only calls it from the main thread,
+// so each method asserts rather than hopping and losing ordering.
 extension SwiftTermTerminalHost: LocalProcessTerminalViewDelegate {
   nonisolated func setTerminalTitle(source: LocalProcessTerminalView, title: String) {
     MainActor.assumeIsolated {
@@ -197,9 +187,8 @@ extension SwiftTermTerminalHost: LocalProcessTerminalViewDelegate {
     }
   }
 
-  /// SwiftTerm passes `waitpid`'s raw status on one of its paths, so an exit
-  /// of 3 arrives as 768. A real exit code fits in a byte; a multiple of 256
-  /// above that is the shifted form.
+  /// SwiftTerm passes `waitpid`'s raw status on one path, so an exit of 3
+  /// arrives as 768. A real code fits in a byte.
   static func exitStatus(_ reported: Int32?) -> Int32 {
     guard let reported else { return 0 }
     return reported > 255 && reported & 0xFF == 0 ? reported >> 8 : reported

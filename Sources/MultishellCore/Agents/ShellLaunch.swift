@@ -1,14 +1,7 @@
 import Foundation
 
-/// How to launch a plain login shell so the command-status hooks are injected
-/// for that session only.
-///
-/// zsh carries its hooks through `ZDOTDIR` in the environment (see
-/// `SessionEnvironment`), so its arguments are the plain login form. bash has
-/// no such variable, so it is launched with `--init-file` pointing at the
-/// generated init; the shell is then interactive but not login, and the init
-/// reproduces the login startup. Any other shell is launched plainly, with no
-/// hooks.
+/// How to launch a login shell so the command-status hooks reach that session
+/// only. zsh rides `ZDOTDIR`, bash `--init-file`; see docs/design/terminals.md.
 public enum ShellLaunch {
   /// Arguments for launching `shellPath` as the tab's shell, for a host that
   /// builds the whole argv itself (SwiftTerm).
@@ -25,18 +18,8 @@ public enum ShellLaunch {
     }
   }
 
-  /// The shell that takes over when an agent tab's agent quits, as a command
-  /// fragment: `exec` plus the same integration a fresh tab gets. Our `.zshrc`
-  /// hands `ZDOTDIR` back to the user, so it is set again here; bash gets its
-  /// init file. `.exec` alone otherwise.
-  ///
-  /// Under Ghostty the engine's own zsh bootstrap is entered first, with ours
-  /// where it looks for the directory it displaced, the pair a fresh tab gets
-  /// from `SessionEnvironment`. The engine's resources are found through the
-  /// variable it leaves in every child's environment; a tab in another engine
-  /// has none, and enters ours directly. That test is POSIX, and the line it
-  /// ends is run by the user's login shell, which may be fish or csh, so it
-  /// runs under `/bin/sh`.
+  /// The shell taking over when an agent tab's agent quits: `exec` plus the
+  /// integration a fresh tab gets. Runs under `/bin/sh`; see terminals.md.
   public static func execCommandLine(
     forShell shellPath: String,
     zshIntegration: URL = Paths.zshIntegrationDirectory,
@@ -59,20 +42,8 @@ public enum ShellLaunch {
     }
   }
 
-  /// A full command line to run in place of the engine's default shell, for a
-  /// host that takes one command string (Ghostty). `nil` means "leave the
-  /// default", which is right for zsh (its hooks ride in on `ZDOTDIR`) and
-  /// for a shell with no integration, when that shell is `$SHELL`. A chosen
-  /// shell that is not `$SHELL` is named outright as a login shell.
-  ///
-  /// bash goes through `/bin/sh -c 'exec bash …'`. Ghostty keys its own bash
-  /// injection on the command's first word: given `bash --init-file X` it
-  /// swallows the init into `GHOSTTY_BASH_RCFILE`, adds `--posix` and points
-  /// `ENV` at its bootstrap, and macOS's bash 3.2 in that mode reads neither,
-  /// so no hooks at all attach. `sh` gets no injection and hands bash our
-  /// init intact. Ghostty writes no OSC 133 marks for bash whichever way it is
-  /// launched, since it refuses Apple's bash 3.2 outright, so the init writes
-  /// the ones a prompt click needs itself.
+  /// A command line replacing the engine's default shell, `nil` to leave it.
+  /// bash goes through `/bin/sh -c`; see docs/design/terminals.md.
   public static func overrideCommand(
     forShell shellPath: String,
     loginShell: String = ShellCatalogue.loginShellPath(),

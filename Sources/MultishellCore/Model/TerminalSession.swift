@@ -1,10 +1,7 @@
 import Foundation
 
-/// One terminal tab. Unlike projects and worktrees this has no natural key,
-/// so it carries a generated id.
-///
-/// This describes what a terminal *should* be, not a running process. The
-/// process lives behind `TerminalHost` in the GUI layer.
+/// What a terminal should be, not a running process, which lives behind
+/// `TerminalHost`. No natural key, so it carries a generated id.
 public struct TerminalSession: Identifiable, Codable, Hashable, Sendable {
   public let id: UUID
   public var worktreeID: Worktree.ID
@@ -12,14 +9,11 @@ public struct TerminalSession: Identifiable, Codable, Hashable, Sendable {
   public var title: String
   /// `nil` runs the user's login shell.
   public var command: [String]?
-  /// The agent this tab was opened for, by catalogue id. The command line is
-  /// built when the shell starts, from the setting in force and the login
-  /// shell's PATH, so a saved tab resumes rather than starting afresh and a
-  /// newly installed agent applies without touching saved state.
+  /// The agent this tab was opened for. The command line is built when the
+  /// shell starts, so a saved tab resumes and a new install applies.
   public var agentID: String?
-  /// The shell to run when `command` is nil, resolved from the settings in
-  /// force when the shell starts. Runtime only, never saved: a relaunched
-  /// tab reads the setting again.
+  /// The shell to run when `command` is nil. Runtime only, never saved: a
+  /// relaunched tab reads the setting again.
   public var shell: String?
 
   public init(

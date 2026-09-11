@@ -1,9 +1,8 @@
 import Foundation
 import MultishellCore
 
-/// The New Worktree sheet, asked for. The project may be unknown: the menu
-/// item with several projects and nothing selected used to do nothing, and
-/// now opens the sheet with its project picker blank.
+/// The New Worktree sheet, asked for. The project may be unknown, the sheet
+/// then opening with its picker blank.
 public struct NewWorktreeRequest: Identifiable, Sendable {
   public let id = UUID()
   public let projectID: Project.ID?

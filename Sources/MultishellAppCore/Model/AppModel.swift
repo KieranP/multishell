@@ -4,20 +4,13 @@ import MultishellGitKit
 import MultishellProcess
 import Observation
 
-/// Wires the core to a GUI: owns the store, the terminal host and the git
-/// coordinator, and turns view actions into store mutations.
-///
-/// Views read `workspace` and call these methods. They never touch the host,
-/// the registry or git directly. `Surface` is the platform's view type, the
-/// one thing about a frontend the model has to name; everything else it
-/// needs from the desktop comes through `Platform`.
+/// Wires the core to a GUI and turns view actions into store mutations;
+/// see docs/design/architecture.md.
 @Observable
 @MainActor
 public final class AppModel<Surface> {
-  // Grouped in the same concerns the extensions are split into, and each
-  // property left its own: bundling the observed ones into structs would
-  // coarsen what `@Observable` tracks, so writing a last-commit date would
-  // invalidate every view that reads only a status.
+  // Each property left its own: bundling the observed ones into structs
+  // coarsens what `@Observable` tracks.
 
   // MARK: - Dependencies
 
@@ -48,24 +41,17 @@ public final class AppModel<Surface> {
   public var pendingClose: PendingClose?
   /// Which project the settings window shows.
   public var settingsProjectID: Project.ID?
-  /// The worktree whose sidebar row is showing its name field, or `nil`
-  /// when none is. Runtime state, so the menu that starts a rename and the
-  /// row that draws the field need not know about each other.
+  /// The worktree showing its name field. Runtime state, so the menu that
+  /// starts a rename and the row that draws it need not know each other.
   public var renamingWorktreeID: Worktree.ID?
 
   // MARK: - The Agents board
 
-  /// Whether the board fills the detail area in place of the selected
-  /// worktree's terminals. Runtime state: which of the two the user is
-  /// looking at is about this moment, not about the workspace. Set through
-  /// `showAgentBoard` and `hideAgentBoard`, which have the seen-clearing to
-  /// do with it.
+  /// Whether the board fills the detail area. Runtime state; set through
+  /// `showAgentBoard` and `hideAgentBoard`, which do the seen-clearing.
   public internal(set) var showsAgentBoard = false
-  /// Whether the board shows every terminal or only the panes with an agent
-  /// at the prompt. Here rather than in the view, because the Dock badge
-  /// counts what the Waiting column shows and so has to read the same
-  /// filter. Cost: it is off again after a relaunch. Set through
-  /// `setShowsAllTerminals`.
+  /// Whether the board shows every terminal or only agent panes. Here and not
+  /// in the view, the Dock badge reading the same filter.
   public internal(set) var showsAllTerminals = false
   /// What the badge was last set to, so it is written only when it changes.
   @ObservationIgnored var badgedWaitingCount = 0
@@ -75,9 +61,8 @@ public final class AppModel<Surface> {
   /// Which stage a create is in while the sheet still waits on it: the
   /// pre-create hook and `git worktree add`. `nil` when none is running.
   public var worktreeCreationStep: WorktreeCreationStep?
-  /// The create or remove running on each worktree, shown in its detail
-  /// pane in place of the terminals; see `WorktreeOperations` for who owns
-  /// an entry.
+  /// The create or remove running on each worktree, shown in its detail pane;
+  /// see `WorktreeOperations` for who owns an entry.
   public var worktreeOperations = WorktreeOperations()
   /// The file lists and post-create hook still running on each worktree,
   /// as one task, so a test can await it.
@@ -99,18 +84,14 @@ public final class AppModel<Surface> {
   /// What each live terminal is doing, from the engine and from reports over
   /// the socket; see `SessionStates` for who clears what.
   public var sessionStates = SessionStates()
-  /// Which agent last reported in each session; see `ReportedAgent`. What
-  /// a file dropped on a pane is written as reads this, so an agent started
-  /// by hand is addressed as itself, and what the Agents board reads to tell
-  /// an agent's pane from a plain shell. Runtime state, like the titles
-  /// above, and observed because a card is drawn from it.
+  /// Which agent last reported in each session, so a dropped file and the
+  /// board both know who is at the prompt; see `ReportedAgent`.
   public internal(set) var reportedAgents: [TerminalSession.ID: ReportedAgent] = [:]
   /// Keys whose banner may still be on screen, so one is taken back only
   /// where there is one to take back. A key leaves as its banner does.
   @ObservationIgnored var notifiedKeys: Set<SessionStates.Key> = []
   /// Worktrees whose saved tabs have been given live shells. Empty at launch,
-  /// so relaunching with many saved tabs starts nothing; grows as worktrees
-  /// are visited and never shrinks while the app runs.
+  /// so a relaunch starts nothing; never shrinks while the app runs.
   @ObservationIgnored var warmWorktrees: Set<Worktree.ID> = []
   @ObservationIgnored var pidWatch: Task<Void, Never>?
   /// How often a Working state's pid is checked. Settable so a test does
@@ -132,10 +113,8 @@ public final class AppModel<Surface> {
   /// demand by `refreshAgentStatus`, not observed.
   public var installedAgentHooks: Set<String> = []
   public var commandLineToolInstalled = false
-  /// What the notification centre has been told about this app. Runtime
-  /// state: the answer is the system's, not the workspace's, and it can be
-  /// changed in System Settings while the app runs. Read by the settings
-  /// page, which asks `refreshNotificationAuthorization` for it.
+  /// What the notification centre has been told about this app. The system's
+  /// answer, not the workspace's, and changeable while the app runs.
   public internal(set) var notificationAuthorization = NotificationAuthorization.notAsked
   public var themes: [Theme] = Theme.builtins
   @ObservationIgnored var reportedMissingAgents: Set<String> = []
@@ -150,11 +129,8 @@ public final class AppModel<Surface> {
   /// The branch each project's merges are measured against, `origin/main`
   /// and the like. Absent for a project with none to measure against.
   public var mergeBases: [Project.ID: DefaultBranch] = [:]
-  /// When each worktree's branch was last committed to, for the sidebar's
-  /// last-commit orders. Runtime only, and for the same reason as the
-  /// merge states beside it: a commit moves it, and the workspace must not
-  /// be rewritten because someone committed. Absent for a worktree that is
-  /// detached or bare, which has no branch to date.
+  /// When each worktree's branch was last committed to. Runtime only: the
+  /// workspace must not be rewritten because someone committed.
   public var lastCommits: [Worktree.ID: Date] = [:]
   /// Projects with a `git fetch` running, which the sidebar shows and a
   /// second Fetch waits for. Runtime state, like the statuses beside it.
@@ -190,9 +166,8 @@ public final class AppModel<Surface> {
 
   public var workspace: Workspace { store.workspace }
 
-  /// Dependencies are passed in so tests can run the whole model against
-  /// recording engines, a fake watcher, a fake channel, a bare desktop and
-  /// no git. The platform GUI passes its real ones.
+  /// Dependencies are passed in so tests run the whole model against fakes.
+  /// The platform GUI passes its real ones.
   public init(
     store: WorkspaceStore,
     host: MultiEngineHost<Surface>,
@@ -225,10 +200,8 @@ public final class AppModel<Surface> {
     // a worktree. Saved tabs stay saved and open with that first click.
     store.selectWorktree(nil)
 
-    // Statuses only poll while frontmost, so coming back from another app
-    // would otherwise show badges up to five seconds stale. The permission
-    // is read back for the same reason: the return from System Settings is
-    // where a notification refusal is lifted.
+    // Statuses poll only while frontmost, so a return would show badges five
+    // seconds stale. The permission is read back for the same reason.
     platform.onDidBecomeActive = { [weak self] in
       Task { await self?.refreshAll() }
       self?.refreshNotificationAuthorization()
@@ -247,9 +220,8 @@ public final class AppModel<Surface> {
       let live = registry.liveSessionIDs
       if live != liveSessions { liveSessions = live }
       sessionTitles = sessionTitles.filter { live.contains($0.key) }
-      // Assigned only when it actually drops one: the board and the sidebar
-      // entry are drawn from this now, and a write with nothing in it is a
-      // render of both for no change.
+      // Assigned only when it drops one: the board and the sidebar entry are
+      // drawn from this, and an idle write renders both.
       let remaining = reportedAgents.filter { live.contains($0.key) }
       if remaining.count != reportedAgents.count { reportedAgents = remaining }
       pruneStates()
@@ -263,9 +235,8 @@ public final class AppModel<Surface> {
     observeForAutosave()
   }
 
-  /// The view a session draws into, from whichever engine opened it. The
-  /// one thing a view takes from the host, so the host itself stays out of
-  /// the views' reach.
+  /// The view a session draws into, from whichever engine opened it: the one
+  /// thing a view takes from the host.
   public func surface(for id: TerminalSession.ID) -> Surface? {
     host.view(for: id)
   }
@@ -297,9 +268,8 @@ public final class AppModel<Surface> {
     } catch {
       report(error)
     }
-    // Outside the refreshes, which throw: the sweep is all that bounds the
-    // drops directory, and a machine whose integration cannot be written is
-    // the last one that should also keep every file ever dropped.
+    // Outside the refreshes, which throw: this sweep is all that bounds the
+    // drops directory.
     DroppedFiles.sweep()
     await refreshAll()
     sync()
@@ -313,15 +283,8 @@ public final class AppModel<Surface> {
     await refreshMergeStates()
   }
 
-  /// What a watcher tick and a return to the foreground run. The watched
-  /// directories also hold each linked worktree's `index`, which `git status`
-  /// rewrites, so most ticks mean nothing; comparing the files `git worktree
-  /// list` is derived from tells those apart from a real change without
-  /// spawning git. A project with no records yet, or none git can find, is
-  /// refreshed in full; that path also notices a repository that has gone.
-  /// A tick where nothing moved still stats each `.multishell.json`, since
-  /// a full refresh is the only other thing that reads one and a file
-  /// edited by hand moves no record.
+  /// What a watcher tick and a return to the foreground run. Most ticks mean
+  /// nothing, so the worktree records are compared before git is spawned.
   public func refreshWorktreesIfRecordsChanged() async {
     for project in workspace.projects {
       if let common = await commonGitDirectory(of: project),

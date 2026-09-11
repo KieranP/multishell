@@ -1,12 +1,7 @@
 import Foundation
 
-/// Listens on a Unix socket and hands each newline-terminated line to
-/// `onLine`, from whatever connection it arrived on.
-///
-/// Handler-driven: accepts and reads happen in `DispatchSource` handlers on
-/// `queue`, so no thread waits. The socket file is created mode 0600 and
-/// belongs to the user; anything that can write to it could already run
-/// commands as them, and the lines it accepts change a dot and nothing else.
+/// Listens on a Unix socket and hands each line to `onLine`. Handler-driven,
+/// so no thread waits; the file is mode 0600 and its lines move a dot.
 public final class UnixSocketServer: @unchecked Sendable {
   public var onLine: (@Sendable (String) -> Void)?
 
@@ -27,10 +22,8 @@ public final class UnixSocketServer: @unchecked Sendable {
 
   deinit { stop() }
 
-  /// A socket file left by an instance that crashed is unlinked first, but
-  /// only after a connect to it is refused: one that answers belongs to a
-  /// running instance, and stealing its path would leave that instance deaf
-  /// without anyone knowing.
+  /// A crashed instance's socket file is unlinked, but only after a connect
+  /// is refused: one that answers belongs to a running instance.
   public func start() throws {
     try probeAndUnlinkStale()
     try FileManager.default.createDirectory(

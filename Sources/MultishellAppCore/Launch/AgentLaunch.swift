@@ -1,14 +1,8 @@
 import Foundation
 import MultishellCore
 
-/// The command line an agent tab runs, built at the moment the shell starts.
-///
-/// Through the user's interactive login shell, for two reasons: the agent
-/// is found on the PATH a terminal has rather than a launched app's, and when
-/// the agent quits the tab would close with its scrollback, so a login shell
-/// takes over instead. The shell that runs `-c` is the one hooks use
-/// (`ShellCommand.shell`); `exec` is the fragment that starts the shell that
-/// follows, from `ShellLaunch.execCommandLine`, integration included.
+/// The command line an agent tab runs, built as the shell starts. Through the
+/// login shell, for its PATH and so a shell takes over when the agent quits.
 public enum AgentLaunch {
   public static func command(
     agent arguments: [String],

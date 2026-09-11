@@ -2,13 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// A worktree's columns of tabs, side by side.
-///
-/// Columns are only ever left to right, so this is a `WeightedSplit` on one
-/// axis rather than a tree: a tab that wants a pane below it splits, which
-/// `PaneTreeView` draws inside whichever column the tab is in. Divider drags
-/// are written back to the groups' weights the way a split's are, so a
-/// layout survives relaunch.
+/// A worktree's columns of tabs, side by side: a one-axis `WeightedSplit`,
+/// columns only ever running left to right. Divider drags are written back.
 struct TabGroupsView: View {
   let model: AppModel
   let worktree: Worktree

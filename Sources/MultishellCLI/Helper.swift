@@ -2,12 +2,8 @@ import Foundation
 import MultishellCore
 import MultishellProcess
 
-/// The `multishell` command: reports a session's state to the running app
-/// over its socket, and installs the agent hooks that do so.
-///
-/// Small enough to hand-parse. Every failure to reach the app is silent
-/// from a hook and loud from the terminal: a hook fires with or without
-/// Multishell running and must never make an agent show an error for it.
+/// The `multishell` command: reports a session's state over the socket and
+/// installs the agent hooks. Silent from a hook, loud from the terminal.
 enum Helper {
   static let usage = """
     usage:
@@ -55,12 +51,8 @@ enum Helper {
         return report(
           SessionState.finished(exitCode: options.int32("exit")), environment: environment,
           duration: options.double("duration"))
-      // `claude-hook` stays, and is not the `install-claude-hooks` kind of
-      // alias those two were: it is written into `~/.claude/settings.json`
-      // by builds before the rename, so those files are on disk now and
-      // run this line. Removing it exits 2 on every hook an older install
-      // wrote and takes that user's state dots with it, silently.
-      // `AgentHooks.isMultishellHook` matches it for the same reason.
+      // `claude-hook` stays: builds before the rename wrote it into
+      // settings files that are on disk now and run this line.
       case "agent-hook", "claude-hook":
         agentHook(agentID(in: arguments), environment: environment, input: standardInput)
         return 0
@@ -137,10 +129,8 @@ enum Helper {
     try? send(report, environment: environment)
   }
 
-  /// A state with no message, for the shell hooks: the session and cwd come
-  /// from the environment the app set. The pid, when given, is the shell's:
-  /// a command's own pid is not known in a preexec hook, and the shell's is
-  /// what lets the app clear Working when `exit` ends it without a prompt.
+  /// A state with no message, for the shell hooks. The pid, when given, is
+  /// the shell's, a command's not being known in a preexec hook.
   private static func report(
     _ state: SessionState, environment: [String: String], pid: Int32? = nil,
     duration: Double? = nil
@@ -169,10 +159,8 @@ enum Helper {
 
   // MARK: - hooks
 
-  /// Which agent the line names. Claude Code when it names none: its hooks
-  /// were installed before there was a flag, and those lines are still in
-  /// the settings files that install wrote. Read by hand rather than
-  /// through `Options`, since a hook must never fail over an argument.
+  /// Which agent the line names, Claude Code when it names none. Read by
+  /// hand, since a hook must never fail over an argument.
   private static func agentID(in arguments: [String]) -> String {
     guard let flag = arguments.firstIndex(of: "--agent"), flag + 1 < arguments.count else {
       return AgentCatalogue.claudeID

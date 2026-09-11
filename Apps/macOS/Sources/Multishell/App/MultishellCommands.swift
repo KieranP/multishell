@@ -6,9 +6,8 @@ struct MultishellCommands: Commands {
   let model: AppModel
 
   var body: some Commands {
-    // No `.disabled` here: Commands are not re-evaluated reliably when the
-    // model changes, so a disabled item can stay disabled. Each action is
-    // a no-op when it does not apply.
+    // No `.disabled` here: Commands are not re-evaluated reliably, so each
+    // action is a no-op when it does not apply.
     CommandGroup(replacing: .newItem) {
       Button(t("menu.new-tab")) { model.newTab() }
         .keyboardShortcut(AppShortcuts.newTab)
@@ -24,10 +23,8 @@ struct MultishellCommands: Commands {
         .keyboardShortcut(AppShortcuts.openInEditor)
     }
 
-    // SwiftUI's stock Edit items decide their own enablement on its update
-    // cycle, which can lag the responder chain by seconds. These send the
-    // standard selectors to the first responder, the way AppKit menus do, and
-    // stay enabled; a terminal with nothing selected simply ignores copy:.
+    // SwiftUI's stock Edit items decide enablement on its update cycle, which
+    // lags the responder chain. These send the selectors and stay enabled.
     CommandGroup(replacing: .pasteboard) {
       Button(t("menu.cut")) { NSApp.sendAction(#selector(NSText.cut(_:)), to: nil, from: nil) }
         .keyboardShortcut(AppShortcuts.cut)
@@ -41,15 +38,8 @@ struct MultishellCommands: Commands {
       .keyboardShortcut(AppShortcuts.selectAll)
     }
 
-    // The focused responder's own manager, not the key window's: a text field
-    // edits in the window's field editor, which keeps a manager of its own
-    // that the window's never sees. A `TextEditor`'s manager is the window's,
-    // so asking the responder covers both. A terminal surface has none and
-    // the walk up ends at the window's, which holds nothing only while no
-    // `TextEditor` shares that window; one beside a pane would undo into it
-    // from a prompt. `NSApp.sendAction` is no use: `undo:` and `redo:`, what
-    // the stock items send, are undeclared, and `NSWindow` answers them from
-    // its own manager.
+    // The focused responder's own manager, not the key window's: a field
+    // editor keeps one the window never sees, and asking covers both.
     CommandGroup(replacing: .undoRedo) {
       Button(t("menu.undo")) {
         guard let manager = Self.focusedUndoManager, manager.canUndo else { return }
@@ -74,10 +64,8 @@ struct MultishellCommands: Commands {
         .keyboardShortcut(AppShortcuts.closeTab)
     }
 
-    // Into the standard View menu rather than a `CommandMenu("View")` of our
-    // own, which would sit beside the one AppKit adds for the toolbar rather
-    // than in it. The board is a place to go, not something done to the
-    // focused pane, so it does not belong in Terminal.
+    // Into the standard View menu, a `CommandMenu` of our own sitting beside
+    // AppKit's rather than in it. The board is a place to go, not an action.
     CommandGroup(after: .toolbar) {
       Button(t("label.agents")) { model.toggleAgentBoard() }
         .keyboardShortcut(AppShortcuts.showAgents)

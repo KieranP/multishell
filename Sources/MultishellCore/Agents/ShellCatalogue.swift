@@ -1,8 +1,7 @@
 import Foundation
 
-/// How a chosen shell is stored and resolved. The value is the shell's path;
-/// the login shell has no path of its own because it is whatever `$SHELL`
-/// says on the machine the state file is opened on.
+/// How a chosen shell is stored and resolved. The value is its path; the
+/// login shell has none, being whatever `$SHELL` says on that machine.
 public enum ShellCatalogue {
   /// A project override that means "the login shell here" while the global
   /// names another. A global value of `nil` means the same.
@@ -15,9 +14,8 @@ public enum ShellCatalogue {
   /// which Homebrew installs do not always register.
   public static let searched = ["zsh", "bash", "fish", "nu"]
 
-  /// The path in force for a project, or `nil` for `$SHELL`, whichever side
-  /// said so. `customID` resolves to `customPath`; blank, that is `$SHELL`
-  /// too.
+  /// The path in force for a project, or `nil` for `$SHELL`. `customID`
+  /// resolves to `customPath`, and blank is `$SHELL` too.
   public static func effectivePath(
     global: String?, override: String?, customPath: String = ""
   ) -> String? {

@@ -1,11 +1,7 @@
 import MultishellCore
 
-/// What the last report about a key said beyond its state.
-///
-/// It carries the state it arrived with, so a note is shown only while it
-/// still describes what the pane is doing: an engine signal can move a pane
-/// from Waiting to Done without a report, and "Permission to run rm -rf" on
-/// a finished pane would be a lie no later report has corrected yet.
+/// What the last report about a key said beyond its state. It carries the
+/// state it arrived with, so a note outlives no engine signal that moves it.
 public struct SessionNote: Equatable, Sendable {
   public let state: SessionState
   public let message: String?

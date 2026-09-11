@@ -3,9 +3,8 @@ import MultishellCore
 import SwiftUI
 
 extension View {
-  /// The confirmation that removing a project asks for. Each window that
-  /// can ask attaches this with its own `source`, and only the window the
-  /// request came from presents it.
+  /// The confirmation removing a project asks for. Each window attaches this
+  /// with its own `source`, and only the asking one presents.
   func projectRemovalDialog(model: AppModel, source: PendingProjectRemoval.Source) -> some View {
     confirmationDialog(
       model.pendingProjectRemoval?.title ?? "",

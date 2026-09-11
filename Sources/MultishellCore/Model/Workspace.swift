@@ -1,9 +1,7 @@
 import Foundation
 
 /// The whole sidebar, every open tab, and the current look, as one value.
-///
-/// Collections are flat and joined by id rather than nested, so a change to
-/// one worktree does not rewrite its project. Array order is display order.
+/// Collections are flat and joined by id; array order is display order.
 public struct Workspace: Codable, Hashable, Sendable {
   public var projects: [Project] = []
   public var worktrees: [Worktree] = []
@@ -14,16 +12,11 @@ public struct Workspace: Codable, Hashable, Sendable {
   public var tabGroups: [TabGroup] = []
 
   public var selectedWorktreeID: Worktree.ID?
-  /// Which column a worktree's keystrokes go to: the one whose active tab
-  /// `activeTab(in:)` answers with, and the one a new tab opens in. Kept
-  /// here rather than on `Worktree` for the same reason `worktreeNames` is,
-  /// git's list replacing those records wholesale on every refresh.
+  /// Which column a worktree's keystrokes go to. Here and not on `Worktree`
+  /// for the same reason `worktreeNames` is.
   public var focusedGroupByWorktree: [Worktree.ID: TabGroup.ID] = [:]
-  /// The user's own name for a worktree, where they gave one. Kept here
-  /// rather than on `Worktree` because git's list replaces those wholesale
-  /// on every refresh, and a name the user typed must outlive that. An
-  /// entry goes when its worktree does, so a removed worktree leaves
-  /// nothing behind in the state file.
+  /// The user's own name for a worktree. Here and not on `Worktree`, whose
+  /// records git replaces wholesale on every refresh.
   public var worktreeNames: [Worktree.ID: String] = [:]
 
   public var appearance = Appearance()
@@ -35,22 +28,17 @@ public struct Workspace: Codable, Hashable, Sendable {
   public var preferredAgentID: String?
   /// What `AgentCatalogue.customID` runs, as the user typed it.
   public var customAgentCommand = ""
-  /// Extra arguments each agent is started with, by catalogue id, as the
-  /// user typed them; see `AgentFlags`. Kept per agent rather than as one
-  /// line, so flags written for one agent are not handed to another when
-  /// the choice changes or a project overrides it. Projects may override
-  /// the line in `ProjectSettings`.
+  /// Extra arguments each agent is started with, by catalogue id, as typed.
+  /// Per agent, not one line; see docs/design/agents.md.
   public var agentFlags: [String: String] = [:]
   /// New Tab, and the first tab of a worktree turned to, start the
   /// preferred agent rather than a plain shell. Projects may override it.
   public var autoStartAgent = false
-  /// The same for the tab a newly created worktree opens, asked about
-  /// separately: a worktree is often made for an agent to work in by
-  /// someone whose own tabs are shells. Projects may override it.
+  /// The same for the tab a newly created worktree opens, asked separately:
+  /// a worktree is often made for an agent by someone whose tabs are shells.
   public var autoStartAgentOnCreate = false
-  /// Path of the shell new tabs run, `ShellCatalogue.customID` for the path
-  /// typed in `customShellPath`, or `nil` for `$SHELL`. Projects may
-  /// override it in `ProjectSettings`.
+  /// Path of the shell new tabs run, `ShellCatalogue.customID` for the one
+  /// typed in `customShellPath`, or `nil` for `$SHELL`.
   public var defaultShell: String?
   /// What `ShellCatalogue.customID` runs, as the user typed it.
   public var customShellPath = ""
@@ -61,22 +49,17 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// Selecting a worktree with no tabs opens one. Off, Cmd+T or the
   /// actions menu does.
   public var opensTerminalOnSelect = true
-  /// A worktree just created opens its first terminal. Asked separately
-  /// from `opensTerminalOnSelect`, since a create is a worktree asked for
-  /// rather than one looked at. Projects may override it in
-  /// `ProjectSettings`.
+  /// A worktree just created opens its first terminal. Asked separately from
+  /// `opensTerminalOnSelect`: a create is asked for, not looked at.
   public var opensTerminalOnCreate = true
   /// The order worktree rows are listed in under their project. Projects
   /// may override it in `ProjectSettings`.
   public var worktreeSortOrder = WorktreeSortOrder.default
-  /// Worktrees with a terminal open or a state reported are listed above
-  /// the rest, each group then in `worktreeSortOrder`. Projects may
-  /// override it. Off by default: a list that reorders itself as agents
-  /// report in is a surprise until it is asked for.
+  /// Busy worktrees listed above the rest, each group then in
+  /// `worktreeSortOrder`. Off by default: self-reordering lists surprise.
   public var showsActiveWorktreesFirst = false
   /// Ask before `git worktree remove`. Off is for people who remove
-  /// worktrees all day and trust themselves; the default protects everyone
-  /// else.
+  /// worktrees all day; the default protects everyone else.
   public var confirmsWorktreeRemoval = true
   /// Delete a worktree's branch along with it every time. Off, the removal
   /// asks whether the branch goes too.
@@ -89,16 +72,8 @@ public struct Workspace: Codable, Hashable, Sendable {
 
   public init() {}
 
-  /// Every field has a default, so a state file written before a field
-  /// existed still loads. Without this, adding a property here would make
-  /// the app forget every project on the next launch.
-  ///
-  /// Worktrees, sessions, tabs and groups drop a broken element rather than
-  /// failing the file: worktrees are re-read from git on the first refresh
-  /// and a tab is a fresh shell either way. Projects stay strict, because
-  /// dropping one silently is what the `.broken.json` backup exists to
-  /// prevent. `repairReferences` then removes what pointed at a dropped
-  /// element.
+  /// Every field defaults, and every collection but projects is lossy;
+  /// see docs/design/state-and-store.md.
   public init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     projects = try container.decode([Project].self, forKey: .projects, or: [])
@@ -134,9 +109,8 @@ public struct Workspace: Codable, Hashable, Sendable {
     customEditorCommand = try container.decode(String.self, forKey: .customEditorCommand, or: "")
     opensTerminalOnSelect = try container.decode(
       Bool.self, forKey: .opensTerminalOnSelect, or: true)
-    // Before the two were split a create opened its terminal by going
-    // through the selection that follows it, so state that predates the
-    // field keeps what it said about selecting.
+    // Before the two were split a create opened its terminal through the
+    // selection that follows it, so older state keeps what it said.
     opensTerminalOnCreate = try container.decode(
       Bool.self, forKey: .opensTerminalOnCreate, or: opensTerminalOnSelect)
     // Tolerated: a state file from a newer build may name an order this
@@ -152,12 +126,8 @@ public struct Workspace: Codable, Hashable, Sendable {
     hookTimeoutSeconds = try container.decode(
       Int.self, forKey: .hookTimeoutSeconds, or: Self.defaultHookTimeoutSeconds)
 
-    // A file written before tabs sat in columns names no group and says
-    // which tab each worktree had active. Read here rather than left to
-    // `repairReferences`, which takes no arguments and would have to fall
-    // back to the last tab: what the user was looking at is theirs, and an
-    // upgrade quietly changing it is the sort of loss the lossy decode
-    // exists to prevent.
+    // A file written before columns names no group but says which tab was
+    // active. Read here, or `repairReferences` falls back to the last tab.
     let legacy = try? decoder.container(keyedBy: LegacyKeys.self)
     let wasActive = legacy?.decodeTolerantly(
       [Worktree.ID: TerminalTab.ID].self, forKey: .activeTabByWorktree)
@@ -195,22 +165,25 @@ extension Workspace {
   }
 
   public func tab(before tab: TerminalTab.ID) -> TerminalTab? {
-    neighbour(of: tab, offset: -1)
+    neighbour(of: tab, .before)
   }
 
   public func tab(after tab: TerminalTab.ID) -> TerminalTab? {
-    neighbour(of: tab, offset: 1)
+    neighbour(of: tab, .after)
   }
 
-  /// Cycling stays inside the tab's own column, so a group of two tabs is a
-  /// two-tab cycle rather than a walk through every tab in the worktree.
-  private func neighbour(of id: TerminalTab.ID, offset: Int) -> TerminalTab? {
+  /// Cycling stays inside the tab's own column. Backwards is a step of
+  /// `count - 1` forwards, keeping the sum positive for Swift's `%`.
+  private func neighbour(
+    of id: TerminalTab.ID, _ direction: TerminalTab.Placement
+  ) -> TerminalTab? {
     guard let current = tab(id) else { return nil }
     let siblings = tabs(in: current.groupID)
     guard let index = siblings.firstIndex(where: { $0.id == id }), siblings.count > 1 else {
       return nil
     }
-    return siblings[(index + offset + siblings.count) % siblings.count]
+    let step = direction == .after ? 1 : siblings.count - 1
+    return siblings[(index + step) % siblings.count]
   }
 
   /// The name the user gave this worktree, or `nil` where they gave none.
@@ -233,9 +206,8 @@ extension Workspace {
     tabs.filter { $0.worktreeID == worktree }
   }
 
-  /// One column's tabs, in strip order. `tabs` is one flat array and its
-  /// order is display order, so a tab moved between columns is placed
-  /// beside the tab it was dropped on rather than reordered here.
+  /// One column's tabs, in strip order. `tabs` is one flat array whose
+  /// order is display order, so a move places rather than reorders.
   public func tabs(in group: TabGroup.ID) -> [TerminalTab] {
     tabs.filter { $0.groupID == group }
   }
@@ -249,10 +221,8 @@ extension Workspace {
     self.tab(tab).flatMap { group($0.groupID) }
   }
 
-  /// The column a worktree's keystrokes go to. Falls back to the first
-  /// column where the entry is missing or names a group that has gone, so a
-  /// hand-edited file still shows a strip; `repairReferences` writes the
-  /// entry back.
+  /// The column a worktree's keystrokes go to, falling back to its first so
+  /// a hand-edited file still shows a strip.
   public func focusedGroup(in worktree: Worktree.ID) -> TabGroup? {
     let columns = groups(in: worktree)
     if let id = focusedGroupByWorktree[worktree], let group = columns.first(where: { $0.id == id })
@@ -266,9 +236,8 @@ extension Workspace {
     sessions.filter { $0.worktreeID == worktree }
   }
 
-  /// The user's name for a tab if they gave one, else the focused pane's
-  /// starting title ("Shell", or the command's name). The title a running
-  /// shell reports is runtime state the GUI layers on top.
+  /// The user's name for a tab, else the focused pane's starting title. What
+  /// a running shell reports is runtime state the GUI layers on top.
   public func title(of tab: TerminalTab) -> String {
     if let custom = tab.customTitle { return custom }
     return session(tab.focusedSessionID)?.title ?? t("tab.shell")
@@ -293,10 +262,8 @@ extension Workspace {
     focusedGroup(in: worktree).flatMap { activeTab(in: $0) }
   }
 
-  /// Every tab on screen for a worktree, one per column. Several tabs are
-  /// visible at once now, so anything that means "the user can see this" —
-  /// a Done state clearing, a notification suppressed — asks this rather
-  /// than `activeTab`.
+  /// Every tab on screen for a worktree, one per column. Anything meaning
+  /// "the user can see this" asks here, not `activeTab`.
   public func shownTabs(in worktree: Worktree.ID) -> [TerminalTab] {
     groups(in: worktree).compactMap { activeTab(in: $0) }
   }
@@ -305,10 +272,8 @@ extension Workspace {
     appearance.theme()
   }
 
-  // Every resolution below reads `project.settings`, so the project handed
-  // to it must be the one the model resolved (`AppModel.resolved`): a
-  // repository's `.multishell.json` may supply any of these, and the record
-  // straight out of `workspace.projects` has not been layered with it.
+  // These read `project.settings`, so the project must be the one the model
+  // resolved (`AppModel.resolved`), not one out of `workspace.projects`.
 
   public func worktreeSettings(for project: Project) -> WorktreeSettings {
     project.settings.effective(defaults: worktreeDefaults)
@@ -320,10 +285,8 @@ extension Workspace {
       global: preferredAgentID, override: project.settings.preferredAgentID)
   }
 
-  /// The extra arguments this project's agent is started with: the
-  /// project's line when it overrides, else the global one for that agent.
-  /// A blank override is the way a project says "none here" under a global
-  /// that has flags; see `ProjectSettings.agentFlags`.
+  /// The project's flag line where it overrides, else the global one for
+  /// that agent. Blank is the override to none; see settings.md.
   public func agentFlags(for project: Project, agent id: String) -> String {
     project.settings.agentFlags ?? agentFlags[id] ?? ""
   }

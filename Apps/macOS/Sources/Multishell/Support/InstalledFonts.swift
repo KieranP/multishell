@@ -1,9 +1,8 @@
 import AppKit
 import MultishellAppCore
 
-/// The font families this Mac has, sorted into the shape the terminal font
-/// picker wants. AppKit's list, so it lives beside the view; the ordering
-/// and the "not installed" row are `FontDetection`'s and are tested there.
+/// The font families this Mac has, in the shape the picker wants. AppKit's
+/// list; the ordering is `FontDetection`'s and is tested there.
 enum InstalledFonts {
   static func detect() -> FontDetection {
     let manager = NSFontManager.shared

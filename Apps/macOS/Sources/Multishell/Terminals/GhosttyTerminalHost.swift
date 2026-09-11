@@ -2,15 +2,8 @@ import AppKit
 import GhosttyTerminal
 import MultishellCore
 
-/// A `TerminalHost` backed by libghostty.
-///
-/// libghostty owns the pty, the renderer and the config, so this type is
-/// thin: it creates surfaces, routes their callbacks back to the core, and
-/// translates a `Theme` into ghostty config.
-///
-/// Config is three layers: this app's terminal defaults, then the user's own
-/// Ghostty config over them, then the theme over both. See
-/// `GhosttyUserConfig`, which also settles what libghostty will not take.
+/// A `TerminalHost` backed by libghostty, which owns the pty, renderer and
+/// config. Three config layers; see docs/design/terminals.md.
 @MainActor
 final class GhosttyTerminalHost: NSObject, TerminalHost {
   weak var delegate: (any TerminalHostDelegate)?
@@ -25,8 +18,7 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
   }
 
   /// `MULTISHELL_TERMINAL_DEBUG=1` makes libghostty's wrapper report what it
-  /// hands the surface — keys, mouse, and whether the surface consumed each
-  /// one — on stderr. The engine's own path has no test that can see this.
+  /// hands the surface on stderr. No test can see the engine's own path.
   private static let debugLogging: Void = {
     guard ProcessInfo.processInfo.environment["MULTISHELL_TERMINAL_DEBUG"] != nil else { return }
     TerminalDebugLog.isEnabled = true
@@ -67,10 +59,8 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
   private static let zshBootstrap: URL? = GhosttyRuntimeResources.directoryURL?
     .appendingPathComponent("shell-integration/zsh", isDirectory: true)
 
-  /// A tab's command, or an override that names a chosen shell or injects
-  /// the hooks into an otherwise-default one. zsh as `$SHELL` needs none: its
-  /// hooks ride in on `ZDOTDIR` from the environment, so its command stays
-  /// the engine default (`nil`).
+  /// A tab's command, or an override naming a chosen shell. zsh as `$SHELL`
+  /// needs none, its hooks riding in on `ZDOTDIR`.
   private static func command(for session: TerminalSession) -> String? {
     if let command = session.command { return ShellQuoting.commandLine(command) }
     return ShellLaunch.overrideCommand(forShell: session.shellPath).map(ShellQuoting.commandLine)
@@ -79,12 +69,8 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
   func close(_ id: TerminalSession.ID) {
     observers[id] = nil
     containers.removeValue(forKey: id)?.removeFromSuperview()
-    // Detaching the controller tears the surface down, which closes the pty
-    // and ends the shell. The view's deallocation would do the same, but only
-    // once every SwiftUI frame that adopted it has let go, and a shell is not
-    // something to leave running on a layout detail. Next turn, not now: on
-    // a process exit this runs inside libghostty's own close callback, and
-    // freeing the surface there would free the object mid-call.
+    // Detaching the controller closes the pty rather than waiting on SwiftUI
+    // to let the view go. Next turn: this runs inside a close callback.
     guard let view = surfaces.removeValue(forKey: id) else { return }
     DispatchQueue.main.async { view.controller = nil }
   }
@@ -93,9 +79,8 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
     containers[id]
   }
 
-  /// libghostty frames this as a paste itself, bracketed where the program
-  /// asked for it. `false` back means the surface is not created yet, which
-  /// a session with no shell running is.
+  /// libghostty frames this as a paste itself. `false` means the surface is
+  /// not created yet, which a session with no shell running is.
   @discardableResult
   func paste(_ text: String, into id: TerminalSession.ID) -> Bool {
     guard !text.isEmpty, let view = surfaces[id] else { return false }
@@ -129,16 +114,8 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
       }
       builder.withFontSize(Float(appearance.fontSize))
 
-      // Ghostty's defaults bind the app's shortcuts (super+t, super+w,
-      // super+d, ctrl+tab, ...) to actions this embedding cannot
-      // perform, and the surface consumes the keystroke before the menu
-      // bar sees it. Unbind exactly those. `clear` would also drop the
-      // bindings that make a Mac terminal feel right: alt+arrow word
-      // movement, super+backspace, super+left/right.
-      //
-      // The list is `AppShortcuts`, which the menu builds from too, so a
-      // shortcut added to one is not missing from the other. The clipboard
-      // combinations are deliberately not in it; see `AppShortcuts.copy`.
+      // Ghostty's defaults bind our shortcuts to actions this embedding
+      // cannot perform, so unbind exactly those, from `AppShortcuts`.
       for combo in AppShortcuts.unbound {
         builder.withCustom("keybind", "\(combo)=unbind")
       }

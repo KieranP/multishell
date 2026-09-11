@@ -2,13 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Settings > Notifications: which reported states post a system
-/// notification for a tab the user is not looking at, one toggle each.
-///
-/// The rows, their help and the note under them are `NotificationSettings`,
-/// which also decides what that note says when macOS has refused: the page
-/// asks for permission as the first toggle goes on, so a refusal has to be
-/// shown here or the toggles above it are three switches that do nothing.
+/// Settings > Notifications, one toggle per reported state. The rows and the
+/// note are `NotificationSettings`, which also words a refusal.
 struct NotificationSettingsTab: View {
   let model: AppModel
 

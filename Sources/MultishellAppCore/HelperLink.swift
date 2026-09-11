@@ -1,13 +1,8 @@
 import Foundation
 import MultishellCore
 
-/// Keeps the helper reachable from outside the bundle.
-///
-/// The hook lines in `~/.claude/settings.json` reference a stable path under
-/// the state directory; this refreshes that link at launch so a moved or
-/// updated bundle still answers. The optional link on the default PATH is for
-/// people writing their own hooks, the way editors install their CLI; the
-/// platform makes that one, since it needs a privilege prompt.
+/// Keeps the helper reachable from outside the bundle: hook lines name a
+/// stable path, refreshed at launch. The PATH link is the platform's.
 public enum HelperLink {
   public static let commandLineToolLink = URL(fileURLWithPath: "/usr/local/bin/multishell")
 

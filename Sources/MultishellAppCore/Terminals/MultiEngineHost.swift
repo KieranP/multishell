@@ -1,11 +1,7 @@
 import MultishellCore
 
-/// One host that fronts every engine.
-///
-/// A session belongs to the engine that opened it for its whole life, so
-/// changing the engine in Settings affects the next tab, not the shells that
-/// are already running. Engines are created on first use; a user who never
-/// picks SwiftTerm never pays for it.
+/// One host that fronts every engine. A session keeps the engine that opened
+/// it for life, and engines are created on first use.
 @MainActor
 public final class MultiEngineHost<Surface>: TerminalSurfaceHost {
   /// Engine for sessions opened from now on.
@@ -33,9 +29,11 @@ public final class MultiEngineHost<Surface>: TerminalSurfaceHost {
     hosts.values.reduce(into: []) { $0.formUnion($1.openSessionIDs) }
   }
 
+  /// Ownership is recorded before the open and left there if it throws, or
+  /// `close` could not reach a surface the engine registered before failing.
   public func open(_ session: TerminalSession) throws {
-    try host(for: engine).open(session)
     owner[session.id] = engine
+    try host(for: engine).open(session)
   }
 
   public func close(_ id: TerminalSession.ID) {

@@ -1,10 +1,7 @@
 import Foundation
 
-/// What the model needs from the desktop it runs on, and nothing more.
-///
-/// Each GUI implements this once: AppKit on the Mac, GTK or Qt on Linux.
-/// The model never names a window, a pasteboard or a workspace API, so it
-/// compiles and is tested without any of them.
+/// What the model needs from the desktop and nothing more, so it compiles
+/// and is tested without a window, a pasteboard or a workspace API.
 @MainActor
 public protocol Platform: AnyObject {
   /// Whether the app is frontmost. Status polling pauses while it is not,
@@ -12,9 +9,8 @@ public protocol Platform: AnyObject {
   var isActive: Bool { get }
   /// Called when the app comes back to the front, so stale badges refresh.
   var onDidBecomeActive: (@MainActor () -> Void)? { get set }
-  /// Whether a keyboard command should act on the workspace. In any other
-  /// window (Settings, Project Settings) Cmd+W must close that window
-  /// instead of a pane the user cannot see.
+  /// Whether a keyboard command should act on the workspace: in any other
+  /// window Cmd+W closes that window, not a pane nobody can see.
   var workspaceWindowIsKey: Bool { get }
   func closeKeyWindow()
 
@@ -24,15 +20,12 @@ public protocol Platform: AnyObject {
   func revealInFileBrowser(_ url: URL)
   func copyToClipboard(_ text: String)
 
-  /// Moves a removed worktree's directory to the platform's Trash, where
-  /// the user can get it back. Throws when it will not take it; the model
-  /// then deletes the directory instead. A platform with no Trash deletes
-  /// outright, as `NullPlatform` does.
+  /// Moves a removed worktree's directory to the Trash, throwing where it
+  /// will not take it. A platform with no Trash deletes outright.
   func moveToTrash(_ url: URL) throws
 
-  /// Where an installed application lives, by the identifier in
-  /// `EditorDescriptor.bundleIdentifier`, or `nil` when the platform has
-  /// no such lookup or the application is absent.
+  /// Where an installed application lives, by bundle identifier, or `nil`
+  /// where the platform has no such lookup.
   func applicationURL(forIdentifier identifier: String) -> URL?
   /// Hands a directory to an application found by `applicationURL`.
   func open(_ directory: URL, withApplication application: URL) async throws
@@ -44,15 +37,12 @@ public protocol Platform: AnyObject {
   /// privilege prompt the platform needs.
   func installCommandLineTool() throws
 
-  /// The count on the app's icon, or `nil` for no badge at all. The Agents
-  /// board's Waiting column is what it counts. A platform with no such place
-  /// does nothing, as `NullPlatform` does.
+  /// The count on the app's icon, `nil` for no badge: the Agents board's
+  /// Waiting column. A platform with no such place does nothing.
   func setBadgeCount(_ count: Int?)
 
-  /// Where the desktop grants notification permission, as the user would
-  /// find it: "System Settings > Notifications" on the Mac. `nil` where
-  /// there is no such place, and the settings page then says a refusal
-  /// without saying where to lift it.
+  /// Where the desktop grants notification permission, as the user would find
+  /// it. `nil` where there is no such place to name.
   var notificationSettingsLocation: String? { get }
 
   /// A line for the platform's log, for what is worth a note but not an

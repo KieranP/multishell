@@ -1,22 +1,11 @@
 import Foundation
 import MultishellCore
 
-/// Whether a tab being dragged along its own strip should move now.
-///
-/// Tab strips move their tabs out of the way as the pointer passes them,
-/// rather than leaving everything to jump when it is let go, and this is the
-/// question that asks: given where the pointer is, would the strip read
-/// differently? Kept apart from the view because it is index arithmetic that
-/// has to match `WorkspaceStore.moveTab` exactly — a disagreement between
-/// the two is a tab that moves on every mouse event and never settles.
+/// Whether a tab dragged along its own strip should move now. Index arithmetic
+/// matching `WorkspaceStore.moveTab`, a disagreement never settling.
 public enum TabShuffle {
-  /// Whether moving `moving` to `placement` of `anchor` changes the order of
-  /// `order`, which is one column's tabs as the strip draws them.
-  ///
-  /// `false` where the drag is over its own tab, which is where the pointer
-  /// ends up after each move: the tab that just slid under the pointer is
-  /// not an anchor to move it past, and reading it as one is how a shuffle
-  /// starts oscillating.
+  /// Whether that move changes the order of `order`, one column's tabs as
+  /// drawn. `false` over its own tab, which is how a shuffle oscillates.
   public static func reorders(
     _ moving: TerminalTab.ID,
     _ placement: TerminalTab.Placement,

@@ -1,11 +1,8 @@
 import MultishellAppCore
 import SwiftUI
 
-/// The dropdown both settings windows use for an agent, a shell or an
-/// editor: what the machine has, the stored value marked when it is not
-/// installed, the custom entry, and a Refresh. `options` is the detection's
-/// `options(selected:)`, so a stale choice stays listed rather than making
-/// the picker go blank.
+/// The dropdown both settings windows use for an agent, shell or editor.
+/// `options(selected:)` keeps a stale choice listed rather than blank.
 struct DetectionPicker: View {
   let label: String
   @Binding var selection: String

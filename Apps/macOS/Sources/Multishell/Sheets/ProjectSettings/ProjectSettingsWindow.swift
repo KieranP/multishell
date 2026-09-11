@@ -2,9 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Per-project settings, as a window that matches Multishell > Settings:
-/// icon tabs in the toolbar, changes applied as they are made, closed with
-/// the window's own close button. One file per tab beside this one.
+/// Per-project settings, as a window matching Multishell > Settings: icon
+/// tabs, changes applied as made. One file per tab beside this one.
 struct ProjectSettingsWindow: View {
   static let windowID = "project-settings"
 

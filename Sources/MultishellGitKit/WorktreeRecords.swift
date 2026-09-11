@@ -1,13 +1,7 @@
 import Foundation
 
-/// The files under the common `.git` that decide what `git worktree list`
-/// reports: the main `HEAD`, and each linked worktree's `HEAD`, `gitdir` and
-/// `locked`. Read directly, no process.
-///
-/// The watcher covers the directories these live in, but so does every
-/// linked worktree's `index`, which `git status` rewrites. Comparing records
-/// before and after a tick tells a real change from an index write without
-/// spawning git.
+/// The files under the common `.git` deciding what `git worktree list` says.
+/// Comparing them across a tick tells a change from an index write.
 public struct WorktreeRecords: Hashable, Sendable {
   public let files: [String: String]
 

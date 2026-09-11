@@ -1,11 +1,8 @@
 import Foundation
 import MultishellCore
 
-/// Parses `git status --porcelain=v1 --branch`.
-///
-/// The first line is `## <branch>...<upstream> [ahead N, behind M]`; every
-/// other line is `XY <path>`, where X is the index state and Y the working
-/// tree state. Pure, so the format is tested against fixture text.
+/// Parses `git status --porcelain=v1 --branch`: a `## <branch>...` line,
+/// then `XY <path>` for the index state and the working tree state.
 public enum WorktreeStatusParser {
   public static func parse(_ output: String) -> WorktreeStatus {
     var status = WorktreeStatus()

@@ -2,13 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Settings > Agents: the preferred agent, and the hooks that feed the
-/// state dots, one row per agent this machine has.
-///
-/// What detection found and nothing else. No agent is named here, none is
-/// recommended, and none is offered an installer: a machine with none
-/// installed gets an empty picker, which says the same thing without
-/// pointing anywhere.
+/// Settings > Agents: the preferred agent and the hooks that feed the dots,
+/// one row per agent found. None is named, recommended or installed here.
 struct AgentSettingsTab: View {
   let model: AppModel
 

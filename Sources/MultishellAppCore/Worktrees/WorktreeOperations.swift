@@ -1,15 +1,8 @@
 import MultishellCore
 import MultishellGitKit
 
-/// The create or remove running on each worktree, with the rules for who
-/// owns an entry. Runtime only, beside the live sessions.
-///
-/// Two operations can meet on one worktree: a post-create hook is still
-/// running when the user asks for a removal. The removal takes the entry,
-/// and the hook's later result, success or failure, is dropped rather than
-/// putting a pane over a removal that is under way. A failed entry stays
-/// until the user dismisses it and ignores later stage reports. Pure, so the
-/// rules are tested without git or a model.
+/// The create or remove running on each worktree, and who owns an entry where
+/// two meet: the removal takes it, and the hook's later result is dropped.
 public struct WorktreeOperations: Equatable, Sendable {
   public private(set) var operations: [Worktree.ID: WorktreeOperation] = [:]
 
@@ -38,9 +31,8 @@ public struct WorktreeOperations: Equatable, Sendable {
     operations[id] = WorktreeOperation(step)
   }
 
-  /// The stage `step` failed with the worktree still there, so the pane
-  /// shows `message` until dismissed. Recorded only while that stage is the
-  /// one running; returns whether it was.
+  /// The stage failed with the worktree still there, so the pane shows
+  /// `message` until dismissed. Returns whether that stage was running.
   @discardableResult
   public mutating func fail(
     _ step: WorktreeOperation.Step, on id: Worktree.ID, message: String, timedOut: Bool = false

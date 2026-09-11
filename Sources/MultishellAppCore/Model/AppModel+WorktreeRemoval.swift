@@ -14,9 +14,8 @@ extension AppModel {
     store.setDeletesBranchWithWorktree(enabled)
   }
 
-  /// Entry point from the UI. Asks first unless the settings have settled
-  /// both the removal and the branch; see `PendingWorktreeRemoval.decide`.
-  /// Nothing while a create or remove is already running there.
+  /// Entry point from the UI, asking first unless the settings have settled
+  /// both questions. Nothing while an operation is already running there.
   public func requestRemoval(of worktree: Worktree) {
     guard !isBusy(worktree.id) else { return }
     switch PendingWorktreeRemoval.decide(
@@ -39,11 +38,8 @@ extension AppModel {
       liveTerminals: liveTerminalCount(in: worktree.id))
   }
 
-  /// The pane shows each stage while this runs: the pre-delete hook, the
-  /// directory to the Trash and `git worktree prune`, the post-delete hook,
-  /// the branch. What a failed stage does to the pane and the alert is
-  /// `RemovalFailure`'s decision; this attaches the retry it names and puts
-  /// the worktree back if it is still there.
+  /// The pane shows each stage while this runs. What a failed stage does is
+  /// `RemovalFailure`'s decision; this attaches the retry it names.
   public func removeWorktree(_ worktree: Worktree, deletingBranch: Bool = false) async {
     guard let worktrees, let project = workspace.project(worktree.projectID) else { return }
     if renamingWorktreeID == worktree.id { renamingWorktreeID = nil }
@@ -98,10 +94,8 @@ extension AppModel {
     sync()
   }
 
-  /// The Trash where it takes the directory; deletion where it will not, a
-  /// volume without a `.Trashes` being the usual reason. The removal was
-  /// confirmed either way, and the alternative is a worktree that cannot be
-  /// removed from the app at all.
+  /// The Trash where it takes the directory, deletion where it will not: the
+  /// removal was confirmed either way; see docs/design/worktrees.md.
   func moveToTrash(_ url: URL) throws {
     do {
       try platform.moveToTrash(url)

@@ -2,12 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// The project tree, drawn by hand.
-///
-/// macOS 26 renders `NavigationSplitView` sidebars as a floating glass panel
-/// inset from the window, which is not the edge-to-edge look this app has.
-/// A `List` inside a plain container still brings that styling with it, so
-/// the rows are plain views and selection is painted here.
+/// The project tree, drawn by hand: macOS 26 renders a `NavigationSplitView`
+/// sidebar as a floating glass panel, and a `List` brings that styling too.
 struct SidebarView: View {
   let model: AppModel
 
@@ -46,7 +42,9 @@ struct SidebarView: View {
             .padding(.bottom, 2)
 
           ForEach(visibleProjects, id: \.project.id) { entry in
-            projectRows(entry.project, worktrees: rows(of: entry), theme: theme)
+            projectRows(
+              entry.project, worktrees: rows(of: entry), forcedOpen: entry.forcedOpen,
+              theme: theme)
           }
         }
         .padding(.horizontal, 8)
@@ -63,9 +61,8 @@ struct SidebarView: View {
             .foregroundStyle(theme.textTertiary)
         }
       }
-      // A drop that misses every project block still ends the drag, so
-      // the indicator and the dragged id are cleared here rather than
-      // left over for the next render.
+      // A drop that misses every project block still ends the drag, so the
+      // indicator and the dragged id are cleared here.
       .onDrop(of: [.text], isTargeted: nil) { _ in
         endDrag()
         return false
@@ -122,9 +119,8 @@ struct SidebarView: View {
     .padding(.bottom, 10)
   }
 
-  /// Leaves room for the traffic lights; the title bar is hidden. The
-  /// folder-plus, not a bare plus: the project row's + is New Worktree and
-  /// the tab strip's is New Tab, and three identical glyphs read as one.
+  /// Leaves room for the traffic lights, the title bar being hidden. The
+  /// folder-plus, three identical glyphs otherwise reading as one.
   private func header(_ theme: Theme) -> some View {
     HStack {
       Spacer()
@@ -163,9 +159,11 @@ struct SidebarView: View {
 
   /// A project and its worktrees move as one block, so the drop indicator
   /// spans the block: upper half means "before", lower half "after".
-  private func projectRows(_ project: Project, worktrees: [Worktree], theme: Theme) -> some View {
+  private func projectRows(
+    _ project: Project, worktrees: [Worktree], forcedOpen: Bool, theme: Theme
+  ) -> some View {
     let metrics = model.metrics
-    let expanded = project.isExpanded || isFiltering
+    let expanded = project.isExpanded || forcedOpen
     let visible = expanded ? worktrees : []
 
     return VStack(spacing: Self.rowSpacing) {
@@ -196,12 +194,8 @@ struct SidebarView: View {
       ))
   }
 
-  /// How tall a project's whole block is, which is what the drop delegate
-  /// halves to decide before from after. Counted off the same
-  /// `worktreeRowHeight` the rows draw themselves at, and asking each
-  /// worktree rather than multiplying: a named or renaming row is two lines
-  /// tall, and a block measured as if every row were one puts the indicator
-  /// in the wrong half.
+  /// How tall a project's block is, which the drop delegate halves. Asked of
+  /// each worktree, a named or renaming row being two lines tall.
   private func blockHeight(of visible: [Worktree], metrics: UIMetrics) -> CGFloat {
     visible.reduce(metrics.rowHeight) { total, worktree in
       total + Self.rowSpacing
@@ -258,22 +252,16 @@ struct SidebarView: View {
     .onTapGesture { model.select(worktree) }
     .contextMenu { WorktreeActions(model: model, worktree: worktree) }
     // A tab dragged from the strip lands here. The type is the tab's own,
-    // so a project being dragged past on its way to a new place in the
-    // sidebar is not offered this row at all.
+    // so a project dragged past is not offered this row.
     .dropDestination(for: TabTransfer.self) { dropped, _ in
       tabDropTarget = nil
-      // Refused here, and only here, so the drag springs back where the
-      // answer is plainly no: an unknown tab, or the row it already sits
-      // under. The rest of what can stop a move — either end busy with a
-      // create or a remove, a directory that has gone — says so with an
-      // alert of its own rather than a silent spring-back.
+      // Refused here only where the answer is plainly no. The rest of what
+      // can stop a move says so with an alert of its own.
       guard let moving = dropped.first?.id, let tab = model.workspace.tab(moving),
         tab.worktreeID != worktree.id
       else { return false }
-      // A turn later, so the drag is over before the tab leaves the strip
-      // it was dragged from; see `TabDropDelegate`. This drop moves the
-      // selection too, so it is the one where the preview had furthest to
-      // hunt for a view that had gone.
+      // A turn later, so the drag is over before the tab leaves the strip;
+      // see `TabDropDelegate`. This drop moves the selection too.
       Task { @MainActor in model.moveTab(moving, to: worktree.id) }
       return true
     } isTargeted: { isTargeted in

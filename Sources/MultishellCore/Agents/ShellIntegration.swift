@@ -1,14 +1,7 @@
 import Foundation
 
-/// Writes the generated shell-integration files that carry the command-status
-/// hooks into this app's terminals.
-///
-/// zsh sessions point `ZDOTDIR` at `integration/zsh` (see
-/// `SessionEnvironment`); bash sessions are launched with
-/// `integration/bash/init.bash` (see `ShellLaunch`). The hooks therefore
-/// exist only inside the app's terminals, and nothing is written to the
-/// user's `~/.zshrc` or `~/.bashrc`. Rewritten each launch so a moved
-/// bundle's helper path stays current.
+/// Writes the shell-integration files, rewritten each launch so a moved
+/// bundle's helper path stays current; see docs/design/terminals.md.
 public enum ShellIntegration {
   public static func refresh(
     zshDirectory: URL = Paths.zshIntegrationDirectory,

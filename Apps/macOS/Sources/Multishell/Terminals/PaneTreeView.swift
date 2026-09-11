@@ -2,9 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Renders a tab's `PaneNode`. A leaf is a surface; a split is a
-/// `WeightedSplit` that lays children out by the model's weights and writes
-/// divider drags back, so proportions are exact and persist.
+/// Renders a tab's `PaneNode`: a leaf is a surface, a split a `WeightedSplit`
+/// laying children out by the model's weights and writing drags back.
 struct PaneTreeView: View {
   let model: AppModel
   let tabID: TerminalTab.ID
@@ -23,9 +22,7 @@ struct PaneTreeView: View {
     switch node {
     case .terminal(let id):
       // One pane in the window asks for the keyboard, not one per column:
-      // a surface given focus reports it back, which focuses its column, so
-      // two panes asking would leave the columns trading the focus between
-      // renders.
+      // a surface reports focus back, so two would trade it between renders.
       let isActive = isFocusedColumn && id == focusedSessionID
       SurfaceView(
         model: model,
@@ -70,14 +67,8 @@ struct PaneTreeView: View {
     }
   }
 
-  /// Every pane but the focused one fades towards the theme's own
-  /// background by `inactivePaneOpacity`.
-  ///
-  /// A scrim rather than `.opacity` on the surface: the panes are
-  /// `NSView`s, one of them Metal-backed, and view opacity is not something
-  /// both engines honour the same way. Hit testing is off, so a click still
-  /// reaches the terminal underneath and focuses it, which is what undims
-  /// it.
+  /// Every pane but the focused one fades towards the theme's background. A
+  /// scrim, not `.opacity`, which the two engines honour differently.
   @ViewBuilder
   private func fade(isActive: Bool) -> some View {
     let opacity = theme.inactivePaneOpacity

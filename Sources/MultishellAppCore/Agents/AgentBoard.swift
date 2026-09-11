@@ -1,14 +1,10 @@
-/// Every open pane, in the column its state puts it in.
-///
-/// A roster, not a queue: a pane has exactly one card for as long as it is
-/// open, and the card moves between columns as the pane's state moves. State
-/// picks the column; it never decides whether a card exists.
+/// Every open pane, in the column its state puts it in. A roster, not a
+/// queue; see docs/design/agents.md.
 public struct AgentBoard: Equatable, Sendable {
   public let columns: [AgentBoardColumn]
 
-  /// `showsShells` is the board's one filter, and it decides membership
-  /// alone: a shell it lets in lands in the column its state says, exactly
-  /// as an agent does.
+  /// `showsShells` is the board's one filter and decides membership alone: a
+  /// shell it lets in lands where its state says, as an agent does.
   public init(cards: [AgentBoardCard], showsShells: Bool) {
     let shown = (showsShells ? cards : cards.filter { $0.occupant.isAgent })
       .sorted(by: AgentBoardOrder.precedes)

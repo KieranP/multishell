@@ -2,9 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// One column of a worktree: its tab strip, the pane tree of the tab it
-/// shows, and while a tab is being dragged the two bands down its edges
-/// that would give that tab a column of its own.
+/// One column of a worktree: its tab strip, the shown tab's pane tree, and
+/// the two drop bands down its edges while a tab is dragged.
 struct TabColumnView: View {
   let model: AppModel
   let group: TabGroup
@@ -37,9 +36,8 @@ struct TabColumnView: View {
     }
   }
 
-  /// The tab's panes, with the drop bands over them. `.id(tab.id)` so
-  /// switching tabs builds a fresh tree rather than rebinding this one's
-  /// surfaces, which is what keeps a shell with the tab it belongs to.
+  /// The tab's panes, with the drop bands over them. `.id(tab.id)` so a
+  /// switch builds a fresh tree rather than rebinding these surfaces.
   private func panes(of tab: TerminalTab) -> some View {
     PaneTreeView(
       model: model,

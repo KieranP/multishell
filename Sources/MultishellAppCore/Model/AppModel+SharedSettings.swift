@@ -4,9 +4,8 @@ import MultishellCore
 // MARK: - The repository's own settings
 
 extension AppModel {
-  /// The project's settings with its repository's `.multishell.json`
-  /// filling the gaps; see `ProjectSettings.layered`. What every path,
-  /// hook and icon decision reads.
+  /// The project's settings with its repository's file filling the gaps, and
+  /// what every path, hook and icon decision reads.
   public func effectiveSettings(for project: Project) -> ProjectSettings {
     project.settings.layered(over: sharedSettings[project.id])
   }
@@ -25,10 +24,8 @@ extension AppModel {
     effectiveSettings(for: project).effective(defaults: workspace.worktreeDefaults)
   }
 
-  /// The value in force for a flag this project does not override, and
-  /// where it comes from: the repository's file where it says, else the
-  /// user's global. What the project settings forms show and seed an
-  /// override with.
+  /// The value in force where this project does not override, and where it
+  /// came from. What the settings forms show and seed an override with.
   public func inherited<Value: Equatable & Sendable>(
     _ keyPath: KeyPath<SharedProjectSettings, Value?>, global: Value, for project: Project
   ) -> InheritedSetting<Value> {
@@ -44,9 +41,8 @@ extension AppModel {
     return project.settings.trustsHooks(of: shared)
   }
 
-  /// The file and the date it had when it was read. The date is taken
-  /// first, so a write landing during the read is caught by the next tick
-  /// rather than passed over as the version just read.
+  /// The file and the date it had when read, the date taken first so a write
+  /// landing mid-read is caught by the next tick.
   nonisolated static func readSharedSettings(
     from repository: URL
   ) -> (
@@ -63,25 +59,16 @@ extension AppModel {
       ?? .distantPast
   }
 
-  /// Every project's file, re-read where its date has moved. On the status
-  /// poll because nothing else would see it: the watcher watches `.git`,
-  /// and a poll's `git status` carries `--no-optional-locks` so that it
-  /// writes no index for the watcher to notice. An edit made with the app
-  /// frontmost would otherwise wait for a worktree to come or go.
-  /// A project whose repository is unreachable is left alone: its stat is
-  /// the one that would block on a dead mount, and its hooks cannot run
-  /// while it is gone. The refresh that finds it again reads the file.
+  /// Every project's file, re-read where its date moved. On the status poll,
+  /// the watcher watching only `.git`; an unreachable repository is skipped.
   func refreshChangedSharedSettings() async {
     for project in workspace.projects where !missingProjects.contains(project.id) {
       await refreshSharedSettingsIfChanged(project)
     }
   }
 
-  /// A tick's check for a file edited while the app is up. `refresh` reads
-  /// it, but runs only when the worktree records change, so an edited hook
-  /// would otherwise stay the version this run started with until a
-  /// worktree came or went. One stat per project per tick is what it costs;
-  /// only a file whose date has moved is read.
+  /// A tick's check for a file edited while the app is up, `refresh` running
+  /// only when the records change. One stat per project per tick.
   func refreshSharedSettingsIfChanged(_ project: Project) async {
     let path = project.path
     let stamp = await Self.offMain {
@@ -93,14 +80,8 @@ extension AppModel {
     noteSharedSettings(read.result, stamp: read.stamp, for: project)
   }
 
-  /// What a refresh read from the repository. A file that will not parse
-  /// costs the shared settings, not the project; the Hooks tab says why.
-  ///
-  /// Hooks that change under the project the user is looking at are asked
-  /// about here rather than waiting for the next selection by hand: the
-  /// next thing they do may be the create the hook was edited for, and an
-  /// untrusted hook does not run. The first read of a project says nothing,
-  /// so a launch still opens without a queue of questions.
+  /// What a refresh read, a file that will not parse costing the shared
+  /// settings and not the project. Hooks changed under the user are asked here.
   func noteSharedSettings(
     _ result: Result<SharedProjectSettings?, any Error>, stamp: Date, for project: Project
   ) {
@@ -108,9 +89,8 @@ extension AppModel {
     switch result {
     case .success(let shared):
       guard sharedSettings.note(shared, stamp: stamp, for: project.id) else { return }
-      // A question already up for this project is about a file the disk no
-      // longer has, and trusting it would store an answer for bytes nobody
-      // committed. It gives way to one about what the file says now.
+      // A question already up is about a file the disk no longer has, and
+      // trusting it would store an answer for bytes nobody committed.
       let wasAsking = pendingSharedHooksTrust?.projectID == project.id
       if wasAsking, pendingSharedHooksTrust?.digest != shared?.digest {
         pendingSharedHooksTrust = nil
@@ -119,10 +99,8 @@ extension AppModel {
         askAboutSharedHooksIfNeeded(for: project.id)
       }
     case .failure(let error):
-      // A question up for this project names hooks the app no longer has,
-      // and nothing it ran would come from the file it was asked about, so
-      // it goes the way a deleted file's does. It comes back if the file
-      // parses again.
+      // A question up names hooks the app no longer has, so it goes the way
+      // a deleted file's does, and returns if the file parses again.
       if pendingSharedHooksTrust?.projectID == project.id { pendingSharedHooksTrust = nil }
       let problem = "\(SharedProjectSettings.fileName) could not be read: \(error)"
       if sharedSettings.note(problem: problem, stamp: stamp, for: project.id) {
@@ -131,15 +109,11 @@ extension AppModel {
     }
   }
 
-  /// Asked when the user turns to the project, by selecting one of its
-  /// worktrees, not when a refresh finds the file: a launch with several
-  /// projects would otherwise open with a queue of questions about
-  /// repositories nobody is looking at. Nothing for hooks already decided
-  /// about, and nothing over a question already up.
+  /// Asked when the user turns to the project, not when a refresh finds the
+  /// file: a launch would otherwise open with a queue of questions.
   func askAboutSharedHooksIfNeeded(for id: Project.ID) {
-    // Never over the new-worktree sheet or the create it starts: a dialog
-    // and a sheet on the same window fight, and the sheet is the one the
-    // user is answering. The question comes back on the next selection.
+    // Never over the new-worktree sheet or its create: two on one window
+    // fight, and the question returns on the next selection.
     guard newWorktreeRequest == nil, worktreeCreationStep == nil else { return }
     guard pendingSharedHooksTrust == nil, let project = workspace.project(id),
       let shared = sharedSettings[id], let hooks = shared.hooksText, let digest = shared.digest,
@@ -149,11 +123,8 @@ extension AppModel {
       projectID: id, projectName: project.name, hooks: hooks, digest: digest)
   }
 
-  /// Stores an answer against the sha256 of the file it was about; see
-  /// `ProjectSettings.sharedHooks`. The project is read again rather than
-  /// taken from the caller: a settings window outlives the refresh that
-  /// replaced the record it was opened with. Who takes down the question
-  /// still up is the caller's, since the three of them do not agree on it.
+  /// Stores an answer against the file's sha256. The project is read again,
+  /// a settings window outliving the refresh that replaced its record.
   private func recordSharedHooks(file digest: String, trusted: Bool, for id: Project.ID) {
     guard var settings = workspace.project(id)?.settings else { return }
     settings.recordSharedHooks(file: digest, trusted: trusted)
@@ -169,10 +140,8 @@ extension AppModel {
     if pendingSharedHooksTrust == pending { pendingSharedHooksTrust = nil }
   }
 
-  /// Export from the General tab: writes the project's settings as they are
-  /// in effect, the user's own over the file's, to the repository's
-  /// `.multishell.json`, for the team to commit. The hooks are the user's
-  /// own words, so they are trusted without asking.
+  /// Export from the General tab: the settings in effect, written to the
+  /// repository's file. The hooks are the user's own words, so trusted.
   public func exportSharedSettings(for project: Project) {
     guard let current = workspace.project(project.id) else { return }
     let shared: SharedProjectSettings

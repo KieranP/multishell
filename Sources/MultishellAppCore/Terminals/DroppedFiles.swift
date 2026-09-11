@@ -1,39 +1,15 @@
 import Foundation
 import MultishellCore
 
-/// The copies kept for files a drag promised rather than handed over.
-///
-/// The app is given the promised file in a directory macOS opens to it
-/// alone, so a path pasted from there is one the pane's own shell cannot
-/// open. The copy is taken into a directory of the app's own, one per drag
-/// so two screenshots of the same name cannot collide and the name the user
-/// saw is the name the agent reads.
-///
-/// The copies are the user's now: a drop is read at the prompt minutes
-/// later, and a mention that outlives the session should still resolve. Old
-/// drags are swept at launch instead, since nothing else would ever remove
-/// them.
+/// The copies kept for files a drag promised rather than handed over, macOS
+/// materialising one the pane's shell cannot read; see terminals.md.
 public enum DroppedFiles {
-  /// How long a drag's copies are kept. Long enough that a prompt written
-  /// today still resolves next week, short enough that the directory is not
-  /// an album.
+  /// How long a drag's copies are kept: long enough that a prompt written
+  /// today still resolves next week.
   public static let keep: TimeInterval = 7 * 24 * 60 * 60
 
-  /// Whether a dragged path is a copy macOS made for this drop rather than a
-  /// file the user has.
-  ///
-  /// Which way a drag is taken turns on this. A copy only the receiving app
-  /// may read has to be asked for again through its promise; a file the user
-  /// has must keep its own path, or an agent told to edit what was dropped
-  /// would edit a copy that is swept in a week and never the file.
-  ///
-  /// Reading the file cannot tell the two apart — the app can read both, and
-  /// that is the whole trap — so the marks the copy carries are read instead:
-  /// it is put under the per-user temporary directory's `TemporaryItems`, in
-  /// a directory named for whoever promised it (`NSIRD_screencaptureui_…`).
-  /// Either mark is enough, since a copy put somewhere else still carries its
-  /// name, and a directory of the user's own called `TemporaryItems` is not
-  /// under the temporary directory.
+  /// Whether a dragged path is a copy macOS made for this drop, read off the
+  /// `TemporaryItems` and `NSIRD_` marks it carries; see terminals.md.
   public static func isTemporaryCopy(_ url: URL) -> Bool {
     let components = url.standardizedFileURL.pathComponents
     if components.contains(where: { $0.hasPrefix("NSIRD_") }) { return true }
@@ -44,21 +20,14 @@ public enum DroppedFiles {
     return components.dropFirst(temporary.count).dropLast().contains("TemporaryItems")
   }
 
-  /// Whether a drag's own paths are enough, or its promise has to be asked
-  /// for as well.
-  ///
-  /// A drag offering no path at all is one whose files are not written yet,
-  /// and there is nothing but the promise to ask; a drag whose paths are all
-  /// the user's own needs nothing more. Anything else carries at least one
-  /// copy, which only the promise can turn into a file the pane can open.
+  /// Whether a drag's own paths are enough, or its promise must be asked
+  /// too. Anything carrying a copy needs the promise.
   public static func needsPromise(for urls: [URL]) -> Bool {
     urls.isEmpty || urls.contains { isTemporaryCopy($0) }
   }
 
-  /// The files in a drag that are the user's own, which keep the path they
-  /// are at. The rest are copies, and are asked for again through the drag's
-  /// promise; a drag of both at once pastes these and then those, rather than
-  /// letting the ones nobody promised go missing.
+  /// The files in a drag that are the user's own and keep their path. The
+  /// rest are copies, asked for again through the promise.
   public static func own(among urls: [URL]) -> [URL] {
     urls.filter { !isTemporaryCopy($0) }
   }
@@ -71,9 +40,8 @@ public enum DroppedFiles {
     return directory
   }
 
-  /// Drops older than `keep` removed. Reads the directory's own timestamps
-  /// rather than a record of its own, which would be one more thing to keep
-  /// true; a drop whose files were read yesterday is not swept for it.
+  /// Drops older than `keep` removed, off the directory's own timestamps
+  /// rather than a record this would have to keep true.
   public static func sweep(
     in parent: URL = Paths.dropsDirectory, keeping keep: TimeInterval = keep, now: Date = Date()
   ) {

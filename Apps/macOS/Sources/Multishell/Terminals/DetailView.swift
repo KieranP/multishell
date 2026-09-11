@@ -9,8 +9,7 @@ struct DetailView: View {
     let theme = model.currentTheme
     VStack(spacing: 0) {
       // The board first: it fills the detail area in place of the selected
-      // worktree's terminals, and the selection is left alone behind it so
-      // those shells stay live.
+      // worktree's terminals, whose shells stay live behind it.
       if model.showsAgentBoard {
         AgentBoardView(model: model, theme: theme)
       } else if let worktree = model.workspace.selectedWorktree {
@@ -38,10 +37,8 @@ struct DetailView: View {
     .background(theme.backgroundColor)
   }
 
-  /// One line: project › name, the branch under a renamed one, then the
-  /// path, then the actions menu. The
-  /// path gives way first when the window is narrow; the names never do.
-  /// As tall as the title-bar band; see `UIMetrics.headerHeight`.
+  /// One line: project › name, the branch under a renamed one, the path, the
+  /// actions menu. The path gives way first; the names never do.
   private func toolbar(_ worktree: Worktree, theme: Theme) -> some View {
     let project = model.workspace.project(worktree.projectID)
     return HStack(spacing: 6) {

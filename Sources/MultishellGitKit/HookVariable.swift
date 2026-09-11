@@ -1,11 +1,8 @@
 import Foundation
 import MultishellCore
 
-/// What a project hook is told about the worktree it surrounds, and what a
-/// settings panel calls each variable.
-///
-/// One list for both, so a variable cannot reach a hook without the Hooks
-/// tab naming it: adding a case here forces its meaning and its value.
+/// What a project hook is told, and what the settings panel calls each
+/// variable. One list, so neither can gain a case without the other.
 public enum HookVariable: String, CaseIterable, Sendable {
   case projectPath = "MULTISHELL_PROJECT_PATH"
   case projectName = "MULTISHELL_PROJECT_NAME"

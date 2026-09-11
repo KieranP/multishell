@@ -5,9 +5,8 @@ import MultishellProcess
 // MARK: - Session state
 
 extension AppModel {
-  /// Opens the inbound channel. A failure is reported once and the app runs
-  /// without reports: a second instance holding the socket is the usual
-  /// cause, and its dots are the ones that will move.
+  /// Opens the inbound channel, a failure reported once. A second instance
+  /// holding the socket is the usual cause.
   public func startStateSource() {
     do {
       try stateSource.start()
@@ -23,10 +22,8 @@ extension AppModel {
     stateSource.stop()
   }
 
-  /// A report names a live session, or only a directory. One with a session
-  /// the app does not know is dropped, not matched by its directory: the
-  /// channel is trusted to change a dot, and no further than the tab it
-  /// can prove it belongs to.
+  /// A report names a live session, or only a directory. One naming an
+  /// unknown session is dropped, never matched by directory.
   public func apply(_ report: SessionStateReport) {
     if let id = report.sessionID {
       guard liveSessions.contains(id), let session = workspace.session(id) else { return }
@@ -43,9 +40,8 @@ extension AppModel {
       }
       notifyIfNeeded(report, key: .session(id), worktreeID: session.worktreeID, isSeen: seen)
     } else if let cwd = report.cwd, let worktree = worktree(atPath: cwd) {
-      // Gated on the board for the same reason `isShown` is: the worktree is
-      // selected, but nothing of it is on screen. And on frontmost for the
-      // reason `hasBeenSeen` is.
+      // Gated on the board as `isShown` is, the worktree being selected
+      // with nothing of it on screen; and on frontmost as `hasBeenSeen`.
       let seen =
         !showsAgentBoard && workspace.selectedWorktreeID == worktree.id && platform.isActive
       mutateStates {
@@ -58,24 +54,17 @@ extension AppModel {
     updatePIDWatch()
   }
 
-  /// Seen: on screen and the app in front of the user. The one notion a
-  /// Done clears against and a banner is raised against, so the dot and the
-  /// banner can never disagree about whether anyone looked. A pane can be
-  /// the shown one for hours with its window behind another app.
+  /// Seen: on screen and the app in front. One notion for clearing a Done
+  /// and raising a banner, so the two can never disagree.
   public func hasBeenSeen(_ id: TerminalSession.ID) -> Bool {
     isShown(id) && platform.isActive
   }
 
-  /// The pane is on screen: its worktree is selected and its tab is the one
-  /// its column shows. A worktree can have several columns, so this asks
-  /// every one of them rather than the focused column alone — a pane in the
-  /// next column over is on screen too. Half of `hasBeenSeen`, and on its
-  /// own it says nothing about whether the user is at the machine.
+  /// The pane is on screen: its worktree selected and its tab shown, asked
+  /// of every column. Half of `hasBeenSeen`, saying nothing about the user.
   public func isShown(_ id: TerminalSession.ID) -> Bool {
-    // The board fills the detail area, so no pane is on screen behind it.
-    // Without this the selected worktree's Done states clear the moment the
-    // board opens and their cards sit in Idle having never passed through
-    // Done, so nothing would ever say that a pane had finished.
+    // The board fills the detail area, so no pane is on screen behind it,
+    // and a card would reach Idle having never passed through Done.
     guard !showsAgentBoard, let worktree = workspace.selectedWorktreeID else { return false }
     return workspace.shownTabs(in: worktree).contains { $0.root.contains(id) }
   }
@@ -101,9 +90,8 @@ extension AppModel {
       let worktree = workspace.worktree(worktreeID)
     else { return }
     let project = workspace.project(worktree.projectID)?.name ?? ""
-    // The name the user gave the worktree, where they gave one: a
-    // notification arrives with the app off screen, and the sidebar they
-    // are picturing says that, not the branch.
+    // The name the user gave the worktree: a notification arrives with the
+    // app off screen, and the sidebar they picture says that.
     let place = workspace.displayName(of: worktree)
     let subject: String
     if case .session(let id) = key, let tab = workspace.tabOwning(id) {
@@ -118,10 +106,8 @@ extension AppModel {
     notifiedKeys.insert(key)
   }
 
-  /// Takes a banner back, where the key has one. Called where what it said
-  /// has stopped being true: the state moved on, or the user brought the
-  /// pane up. A pane's dot is not touched, a question the user has seen but
-  /// not answered still being a question; what goes is the interruption.
+  /// Takes a banner back where what it said has stopped being true. The dot
+  /// is not touched; what goes is the interruption.
   func withdrawNotification(about key: SessionStates.Key) {
     guard notifiedKeys.remove(key) != nil else { return }
     notifier.withdraw(about: key)
@@ -150,11 +136,8 @@ extension AppModel {
     updatePIDWatch()
   }
 
-  /// Keys stay a subset of the live shells and the known worktrees. The
-  /// banner keys need no sweep of their own: a key is only ever notified
-  /// about while it holds a state, `sessionStates` is assigned in one place,
-  /// and that place takes the banner back for any key whose state moved, so
-  /// dropping the state here drops the banner with it.
+  /// Keys stay a subset of the live shells and known worktrees. The banners
+  /// need no sweep: dropping a state here drops its banner with it.
   func pruneStates() {
     let worktrees = Set(workspace.worktrees.map(\.id))
     mutateStates { $0.retain(sessions: liveSessions, worktrees: worktrees) }
@@ -170,8 +153,7 @@ extension AppModel {
     changed.stampChanges(against: sessionStates, at: Date())
     guard changed != sessionStates else { return }
     // Before the assignment, so the comparison is against what the banners
-    // were posted about. A report that moves a key on is followed by its own
-    // notify where the new state deserves one.
+    // were posted about.
     let moved = notifiedKeys.filter { changed[$0] != sessionStates[$0] }
     sessionStates = changed
     for key in moved { withdrawNotification(about: key) }
@@ -202,8 +184,7 @@ extension AppModel {
   }
 
   /// One pane's own dot, for a card whose agent is long gone. The worktree's
-  /// clear beside it in the same menu takes every pane at once; this takes
-  /// the one the card is about.
+  /// clear beside it takes every pane at once.
   public func clearState(ofSession id: TerminalSession.ID) {
     mutateStates { $0.clear(.session(id)) }
     updatePIDWatch()
@@ -216,10 +197,8 @@ extension AppModel {
 
   // MARK: Stale Working
 
-  /// An agent killed with Ctrl+C sends no Stop hook. The app cannot see it
-  /// exit, so while any state names a pid the pid is checked on a timer and
-  /// its state dropped once the process is gone. No timeout: a long task is
-  /// not a stale one.
+  /// An agent killed with Ctrl+C sends no Stop hook, so a named pid is
+  /// polled and its state dropped once gone. No timeout.
   func updatePIDWatch() {
     guard !watchedPIDs.isEmpty else {
       pidWatch?.cancel()
@@ -241,16 +220,8 @@ extension AppModel {
     }
   }
 
-  /// The pids worth a poll.
-  ///
-  /// The ones a state is about, always: a Working dot must not outlive its
-  /// process wherever the user happens to be looking. The ones an agent
-  /// reported itself under, only while the board is up, which is the one
-  /// place a quit agent shows as anything — a file dropped on a pane asks
-  /// `ReportedAgent.isAtThePrompt` at the moment of the drop instead. The
-  /// board sweeps once as it opens, so its first frame is not stale. Cost
-  /// avoided: a two-second timer running for as long as any agent has ever
-  /// reported, rather than while anything is being said about one.
+  /// The pids worth a poll: those a state is about always, and those an
+  /// agent reported under only while the board is up; see agents.md.
   var watchedPIDs: Set<Int32> {
     guard showsAgentBoard else { return sessionStates.trackedPIDs }
     return sessionStates.trackedPIDs.union(reportedAgents.values.compactMap(\.pid))

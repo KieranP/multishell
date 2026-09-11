@@ -3,12 +3,8 @@ import MultishellCore
 import MultishellGitKit
 import SwiftUI
 
-/// Four scripts and the two lists of files a new worktree is given, grouped
-/// by the operation they surround. Each is a small monospaced editor, since
-/// a hook of any substance has more than one line.
-/// Where the repository's `.multishell.json` has a hook and the user's is
-/// blank, the editor shows the repository's in grey, and a section above
-/// says whether those hooks are trusted.
+/// Four scripts and the two file lists, grouped by the operation they
+/// surround. An inherited hook shows in grey, with its trust above.
 struct ProjectHooksTab: View {
   let model: AppModel
   let project: Project
@@ -99,13 +95,8 @@ struct ProjectHooksTab: View {
 
 }
 
-/// One multi-line monospaced field: a hook's script, or one of the file
-/// lists.
-///
-/// The only placeholder passed is what the repository ships, so grey text
-/// means that and nothing else. No example scripts: an example drawn the
-/// same way as an inherited one left no way to tell a suggestion from what
-/// would really run.
+/// One multi-line monospaced field: a hook's script, or a file list. The only
+/// placeholder is what the repository ships, so grey means that alone.
 private struct MonospacedEditor: View {
   let title: String
   let info: String

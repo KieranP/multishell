@@ -2,19 +2,8 @@ import MultishellCore
 import MultishellGitKit
 import MultishellProcess
 
-/// A create or remove running on a worktree, and the stage it is in. Shown
-/// in the detail pane in place of the terminals and as a spinner on the
-/// sidebar row, so neither the sheet nor the dialog has to stay up while a
-/// slow hook runs, and another worktree can be created meanwhile.
-///
-/// Only the pre-create hook and `git worktree add` still run under the
-/// sheet: until they finish there is no worktree to show.
-///
-/// A stage that fails while the worktree is still there, a file list, the
-/// post-create hook or a pre-delete veto, leaves the entry with `failure`:
-/// the pane shows what went wrong until the user dismisses it. An alert
-/// would go up over whatever the user had moved on to, or be lost under the
-/// sheet's own dismissal when the hook fails at once.
+/// A create or remove running on a worktree, shown in its detail pane so no
+/// sheet stays up for a slow hook. A failed stage leaves `failure`.
 public struct WorktreeOperation: Equatable, Sendable {
   public enum Step: Equatable, Sendable {
     case linkingFiles
@@ -47,11 +36,8 @@ public struct WorktreeOperation: Equatable, Sendable {
       self == .linkingFiles || self == .copyingFiles || self == .postCreateHook
     }
 
-    /// What the pane's Cancel does at this stage, and `nil` for a stage
-    /// that has none: git's own are quick and are left to finish. One
-    /// property, so a stage cannot offer the button and say nothing about
-    /// it; the word on it is the same everywhere, and what it means is
-    /// not, a hook being ended and a list being given up on.
+    /// What the pane's Cancel does at this stage, `nil` where it has none.
+    /// One property, so a stage cannot offer the button and say nothing.
     public var cancelHelp: String? {
       switch self {
       case .linkingFiles, .copyingFiles: return t("step.cancel-files-help")
@@ -65,9 +51,8 @@ public struct WorktreeOperation: Equatable, Sendable {
   /// What the hook or git said, once the stage has failed. `nil` while it
   /// runs.
   public var failure: String?
-  /// The stage failed because the hook ran past the timeout and was
-  /// stopped, so the title says it did not finish rather than that it
-  /// refused.
+  /// The stage failed on the timeout, so the title says it did not finish
+  /// rather than that it refused.
   public var timedOut = false
 
   public init(_ step: Step, failure: String? = nil, timedOut: Bool = false) {

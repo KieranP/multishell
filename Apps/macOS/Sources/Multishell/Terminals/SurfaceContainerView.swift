@@ -22,9 +22,8 @@ final class SurfaceContainerView: NSView {
     surface.fitToSize()
   }
 
-  /// A click anywhere in the container is a click on the terminal. Without
-  /// this, a click that lands on the SwiftUI hosting layer leaves focus there
-  /// and the Edit menu stays disabled until some later update moves it.
+  /// A click anywhere in the container is a click on the terminal, or one on
+  /// the hosting layer leaves focus there and the Edit menu disabled.
   override func mouseDown(with event: NSEvent) {
     surface.takeFirstResponder()
     super.mouseDown(with: event)

@@ -1,8 +1,7 @@
 import MultishellCore
 
-/// What a screen reader says for the rows and tabs the sidebar and tab strip
-/// draw by hand, since neither is a system list that would describe itself.
-/// Plain functions of what the row shows, so the wording is tested here.
+/// What a screen reader says for the rows and tabs drawn by hand, neither
+/// being a system list that would describe itself.
 public enum AccessibilityText {
   /// A project row: the name, whether it is open, and the dot it carries
   /// while collapsed.
@@ -21,9 +20,8 @@ public enum AccessibilityText {
     return parts.joined(separator: ", ")
   }
 
-  /// A worktree row: everything its glyphs mean, in the order they are
-  /// drawn. A renamed row reads its name first and its branch after, the
-  /// two lines it shows.
+  /// A worktree row: what its glyphs mean, in drawing order. A renamed row
+  /// reads its name first and its branch after, the two lines it shows.
   public static func worktree(
     _ worktree: Worktree, customName: String? = nil, state: SessionState?,
     status: WorktreeStatus?, operation: WorktreeOperation?, terminalCount: Int, isSelected: Bool,
@@ -46,10 +44,8 @@ public enum AccessibilityText {
     return parts.joined(separator: ", ")
   }
 
-  /// "Main worktree", "Linked worktree", "Bare repository", or the SHA for
-  /// a detached one. Also the tooltip on the row's dot. `inSentence` is the
-  /// same fact mid-sentence, which a language that capitalises its nouns
-  /// cannot get by lowercasing the other.
+  /// What kind of worktree, also the tooltip on the row's dot. `inSentence`
+  /// is the same fact mid-sentence; see docs/design/translation.md.
   public static func kind(of worktree: Worktree, inSentence: Bool = false) -> String {
     if worktree.isBare {
       return inSentence ? t("kind.bare-in-sentence") : t("kind.bare")
@@ -79,9 +75,8 @@ public enum AccessibilityText {
     return parts.joined(separator: ", ")
   }
 
-  /// One column of tabs, said before its tabs are. Empty for a worktree
-  /// with a single column: there is nothing to tell apart, and "group 1 of
-  /// 1" in front of every tab is noise.
+  /// One column of tabs, said before its tabs are. Empty for a worktree with
+  /// one column, "group 1 of 1" before every tab being noise.
   public static func tabGroup(position: Int, of count: Int, isFocused: Bool) -> String {
     guard count > 1 else { return "" }
     var text = t("spoken.tab-group", position, count)

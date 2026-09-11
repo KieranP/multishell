@@ -1,15 +1,7 @@
 import Foundation
 
-/// How wide the board draws its columns, and when it has to scroll instead.
-///
-/// Columns share the room and shrink together as the window narrows, but
-/// they stop at a floor, below which a card's own contents run into each
-/// other. Past it the board scrolls sideways and a partial column at the
-/// edge says there is more.
-///
-/// Simpler than `TabStripLayout` in one respect: a floor but no cap. A tab
-/// holds a fixed icon, title and close button, so capping its width is
-/// right; a card's message line uses whatever width it is given.
+/// How wide the board draws its columns, and when it scrolls instead. A
+/// floor but no cap, a card's message line using what width it is given.
 public struct AgentBoardLayout: Equatable, Sendable {
   /// What every column is drawn, exactly.
   public let columnWidth: Double
@@ -28,9 +20,8 @@ public struct AgentBoardLayout: Equatable, Sendable {
       self.scrolls = false
       return
     }
-    // A board with no room at all, which a window dragged narrow enough
-    // reaches. Reading this as "no scrolling" would draw a full column in a
-    // space a few points wide and spill it over the sidebar.
+    // A board with no room at all. Reading this as "no scrolling" spills a
+    // full column over the sidebar.
     guard available > 0 else {
       self.columnWidth = floor
       self.scrolls = true
@@ -43,9 +34,8 @@ public struct AgentBoardLayout: Equatable, Sendable {
     self.scrolls = share < floor
   }
 
-  /// The room the columns themselves have, once the gaps between them and
-  /// the padding round them are taken off. Asked here rather than worked out
-  /// at the call site, so the view measures nothing.
+  /// The room the columns have, gaps and padding taken off. Asked here so
+  /// the view measures nothing.
   public static func available(
     width: Double, count: Int, gap: Double, padding: Double
   ) -> Double {

@@ -1,9 +1,7 @@
 import SwiftUI
 
-/// A form row with its (i) right after the label, in the form's label
-/// column; the control keeps the content column to itself. Wrapping a
-/// labelled control in a plain `HStack` would pull its label out of that
-/// column.
+/// A form row with its (i) after the label, in the form's label column: a
+/// plain `HStack` would pull the label out of that column.
 struct InfoRow<Content: View>: View {
   let label: String
   let info: String

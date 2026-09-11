@@ -2,12 +2,8 @@ import Foundation
 import MultishellCore
 import MultishellProcess
 
-/// `SessionStateSource` over the Unix socket in the state directory, for any
-/// platform that has one.
-///
-/// The server's handlers run on the main queue, so a line arrives in the
-/// order it was sent and lands on the main actor without a hop. A line that
-/// is not a report is dropped here.
+/// `SessionStateSource` over the Unix socket in the state directory. Handlers
+/// run on the main queue, so lines arrive in order and without a hop.
 @MainActor
 public final class SocketStateSource: SessionStateSource {
   public var onReport: (@MainActor (SessionStateReport) -> Void)?

@@ -1,18 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// Opens a settings window centred on the workspace window's screen, on its
-/// first tab and scrolled to the top, however the user left it last time.
-///
-/// The placing happens on four occasions, because no one of them is enough.
-/// SwiftUI may keep a settings scene's window alive across a close and show
-/// that same window again, so a close places it while nothing is on screen
-/// to jump; the attach pass covers the first open of a launch, whose frame
-/// the system restores from disk; becoming key is the first point that knows
-/// which screen the workspace is on; and a resize is the window settling to
-/// its content after all of those, which moves it off centre again. Each
-/// pass after the first normally finds the window already where it wants it
-/// and moves nothing.
+/// Opens a settings window centred on the workspace's screen, first tab, top
+/// of the page. Placed on four occasions because none alone is enough.
 struct SettingsWindowReset: ViewModifier {
   let workspaceScreen: () -> NSScreen?
   let showFirstTab: () -> Void
@@ -42,9 +32,8 @@ private struct SettingsWindowPlacer: NSViewRepresentable {
     return view
   }
 
-  /// Refreshed rather than left as the pair handed over at make time: these
-  /// reach into the view's own state, and a captured copy of it read back
-  /// later is not guaranteed to be the live one.
+  /// Refreshed rather than captured at make time: these reach into the view's
+  /// own state, and a captured copy may not be the live one.
   func updateNSView(_ view: Placer, context: Context) {
     view.workspaceScreen = workspaceScreen
     view.showFirstTab = showFirstTab
@@ -64,9 +53,8 @@ private struct SettingsWindowPlacer: NSViewRepresentable {
       stopObserving()
       isOpen = false
       guard let window else { return }
-      // Placing but not resetting the tab: a write to the view's state in a
-      // layout pass is a write during a SwiftUI update. The key pass that
-      // follows this one does the tab.
+      // Placing but not resetting the tab, a write to the view's state here
+      // being a write during a SwiftUI update. The key pass does the tab.
       centre(window)
       observe(NSWindow.didBecomeKeyNotification, from: window) { [weak self] window in
         guard let self, !isOpen else { return }
@@ -78,10 +66,8 @@ private struct SettingsWindowPlacer: NSViewRepresentable {
         isOpen = false
         reset(window)
       }
-      // A settings window is sized by its content and cannot be resized by
-      // the user, so every resize is AppKit settling that layout: a toolbar's
-      // tab band lands after the first pass and grows the frame, leaving a
-      // window placed before it half that growth off centre.
+      // The user cannot resize a settings window, so every resize is AppKit
+      // settling: the tab band lands late and grows the frame.
       observe(NSWindow.didResizeNotification, from: window) { [weak self] window in
         self?.centre(window)
       }
@@ -93,10 +79,8 @@ private struct SettingsWindowPlacer: NSViewRepresentable {
       window.contentView?.scrollDescendantsToTop()
     }
 
-    /// The workspace's screen, not the window's own: a settings window left
-    /// on a second display would otherwise keep reopening there, away from
-    /// the app. Its own screen is the fallback for a workspace window that
-    /// is on none, such as a minimised one.
+    /// The workspace's screen, not the window's own, or a settings window on
+    /// a second display keeps reopening there. Its own is the fallback.
     private func centre(_ window: NSWindow) {
       guard let screen = workspaceScreen?() ?? window.screen ?? NSScreen.main else { return }
       let area = screen.visibleFrame

@@ -148,7 +148,9 @@ struct MultiEngineHostTests {
     #expect(delegate.events == ["retitle vim", "activity", "focus", "finished 3"])
   }
 
-  @Test func aFailedOpenLeavesNoOwnership() {
+  /// Ownership is now recorded before the open and deliberately left behind,
+  /// so what a failed open must not leave is a session the composite reports.
+  @Test func aFailedOpenLeavesNoOpenSessionAndNoSurface() {
     let (host, engine) = makeHost()
     engine(.ghostty).failNextOpen = true
     let s = session()

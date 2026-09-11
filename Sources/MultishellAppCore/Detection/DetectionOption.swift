@@ -1,11 +1,8 @@
 import Foundation
 import MultishellCore
 
-/// One row of a settings dropdown that lists what a machine has.
-///
-/// A picker whose selection is not in its list shows blank, so a stored id
-/// that is no longer installed is listed, marked as such, rather than
-/// dropped; `isInstalled` is false for that row only.
+/// One row of a settings dropdown listing what a machine has. A picker whose
+/// selection is missing shows blank, so an uninstalled id is listed, marked.
 public struct DetectionOption: Identifiable, Equatable, Sendable {
   public let id: String
   public let label: String
@@ -19,10 +16,8 @@ public struct DetectionOption: Identifiable, Equatable, Sendable {
 }
 
 extension DetectionOption {
-  /// The shape the agent and editor dropdowns share: None, the installed
-  /// entries in catalogue order, the selected one if it is not installed,
-  /// an id the catalogue does not know at all (a newer build's), then
-  /// Custom.
+  /// The shape the agent and editor dropdowns share: None, what is installed,
+  /// the selected one if it is not, an unknown id, then Custom.
   static func catalogue(
     _ entries: [(id: String, name: String)],
     installed: (String) -> Bool,

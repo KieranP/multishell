@@ -2,11 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// One column: a header that stays put and its cards under it.
-///
-/// The cards scroll inside the column rather than the board scrolling as a
-/// whole, so a column with twenty cards does not push the other three
-/// headers off the top of the window.
+/// One column: a header that stays put and its cards under it, scrolling
+/// inside the column so twenty cards do not push the other headers off.
 struct AgentBoardColumnView: View {
   let model: AppModel
   let column: AgentBoardColumn
@@ -28,9 +25,8 @@ struct AgentBoardColumnView: View {
       }
       .scrollBounceBehavior(.basedOnSize)
     }
-    // No spacer under the cards: the scroll view and a spacer are both
-    // fully flexible, so a VStack would split the column between them and
-    // leave the cards half a column to live in.
+    // No spacer under the cards: both are fully flexible, so a VStack
+    // would leave the cards half a column to live in.
     .padding(8)
     .frame(width: width)
     .background(theme.columnColor, in: RoundedRectangle(cornerRadius: 8))

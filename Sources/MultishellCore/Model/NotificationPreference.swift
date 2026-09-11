@@ -1,8 +1,7 @@
 import Foundation
 
-/// Which reported states post a system notification for a tab the user is
-/// not looking at. Running and idle are not among them: a banner about
-/// every tool call would be noise.
+/// Which reported states post a notification for a tab nobody is looking at.
+/// Not running or idle: a banner per tool call would be noise.
 public struct NotificationPreference: Codable, Hashable, Sendable {
   /// The states a banner can be asked for, in the order the settings tab
   /// lists them, most urgent first.
@@ -12,9 +11,7 @@ public struct NotificationPreference: Codable, Hashable, Sendable {
   public var error: Bool
   public var done: Bool
 
-  /// Off until asked for: a banner about a tab is welcome once expected and
-  /// startling before, and turning one on is where the permission prompt
-  /// belongs.
+  /// Off until asked for, which is also where the permission prompt belongs.
   public static let off = NotificationPreference()
   public static let `default` = NotificationPreference.off
 
@@ -51,10 +48,8 @@ public struct NotificationPreference: Codable, Hashable, Sendable {
     case done
   }
 
-  /// Also reads the three-way picker these toggles replaced, so a state
-  /// file written before them keeps what it was set to. A name from a
-  /// build that knew a fourth setting reads as off, like anything else
-  /// unrecognised.
+  /// Also reads the three-way picker these toggles replaced. An unknown
+  /// name reads as off, like anything else unrecognised.
   public init(from decoder: any Decoder) throws {
     if let legacy = try? decoder.singleValueContainer().decode(String.self) {
       switch legacy {

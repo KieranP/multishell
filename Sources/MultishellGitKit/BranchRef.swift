@@ -1,11 +1,7 @@
 import Foundation
 
-/// One row of `git for-each-ref` over `refs/heads` and `refs/remotes`: a
-/// branch, where it points, and for a local branch the upstream it tracks.
-///
-/// The whole repository comes back in one process, which is what a merge
-/// check starts from: without it every branch would cost a `rev-parse` of
-/// its own before anything had been decided.
+/// One row of `git for-each-ref` over `refs/heads` and `refs/remotes`. The
+/// whole repository in one process, which is what a merge check starts from.
 public struct BranchRef: Hashable, Sendable {
   /// `refs/heads/feat`, `refs/remotes/origin/main`.
   public let fullName: String
@@ -15,15 +11,11 @@ public struct BranchRef: Hashable, Sendable {
   public let upstream: String?
   /// The upstream is configured and no longer there: `git`'s `[gone]`.
   public let isUpstreamGone: Bool
-  /// What this ref points at when it is symbolic, as
-  /// `refs/remotes/origin/HEAD` is. Read here so the clone's own default
-  /// branch costs no process of its own.
+  /// What this ref points at when symbolic, as `refs/remotes/origin/HEAD`
+  /// is. Read here so the default branch costs no process of its own.
   public let symref: String?
-  /// When the commit this ref points at was committed, which is what the
-  /// sidebar's last-commit orders go by; `nil` where the row carried
-  /// no date. Read here for the same reason as `symref`: the ref list is
-  /// already being asked for, and a date per branch would otherwise cost a
-  /// process each.
+  /// When the commit this ref points at was committed, for the sidebar's
+  /// last-commit orders. Read here for the same reason as `symref`.
   public let committedAt: Date?
 
   public init(
@@ -54,13 +46,8 @@ public struct BranchRef: Hashable, Sendable {
     return fullName
   }
 
-  /// The branch this ref stands for with no remote in front of it: both
-  /// `refs/heads/main` and `refs/remotes/origin/main` are `main`. What a
-  /// worktree sitting on the trunk has as its own branch, so the trunk's
-  /// checkout is not badged as merged into itself.
-  ///
-  /// A branch name may hold slashes of its own, so only the remote's own
-  /// first component is dropped, never more.
+  /// The branch with no remote in front of it, so the trunk's own checkout
+  /// is not badged. Only the remote's first component is dropped.
   public var branchName: String {
     guard isRemote else { return shortName }
     let short = shortName

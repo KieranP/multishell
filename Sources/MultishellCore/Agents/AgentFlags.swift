@@ -1,10 +1,7 @@
 import Foundation
 
-/// What a flag line may stand in for, written `{{branch}}`.
-///
-/// The whole list, and the only place one is spelled: the settings rows name
-/// an example rather than all five, so what a case means is written for the
-/// reader here and for the user in the documentation.
+/// What a flag line may stand in for, written `{{branch}}`. The whole list,
+/// and the only place one is spelled; see docs/design/agents.md.
 public enum AgentPlaceholder: String, CaseIterable, Sendable {
   /// The branch, or the short SHA when detached.
   case branch
@@ -40,15 +37,11 @@ public enum AgentPlaceholder: String, CaseIterable, Sendable {
   }
 }
 
-/// The extra arguments an agent is started with, as the user typed them.
-///
-/// Split into words here rather than handed to the shell as text, so a
-/// branch with a space in it stays one argument: the words are quoted again
-/// by `AgentLaunch` on the way to the command line.
+/// The extra arguments an agent is started with, as typed. Split into words
+/// here rather than handed to a shell; see docs/design/agents.md.
 public enum AgentFlags {
-  /// The line as an argument list, placeholders resolved. A placeholder the
-  /// list above does not name is left as typed, where the tab's scrollback
-  /// shows it rather than an argument quietly going missing.
+  /// The line as an argument list, placeholders resolved. An unknown one is
+  /// left as typed, so the mistake shows in the tab.
   public static func arguments(
     _ line: String, values: [AgentPlaceholder: String]
   ) -> [String] {
@@ -75,10 +68,8 @@ public enum AgentFlags {
     return expanded
   }
 
-  /// Words the way a shell reads them: whitespace separates, `'` and `"`
-  /// group, `\` passes the next character through. A quote left open takes
-  /// the rest of the line, which is what a shell would report an error for
-  /// and nothing here can ask about.
+  /// Words the way a shell reads them. A quote left open takes the rest of
+  /// the line, there being nobody here to ask.
   static func split(_ line: String) -> [String] {
     var words: [String] = []
     var word = ""
@@ -87,28 +78,22 @@ public enum AgentFlags {
     var escaping = false
     for character in line {
       if escaping {
-        // Inside double quotes a backslash guards only these four and is
-        // otherwise a character of its own, so `"\d+"` keeps its backslash
-        // where `\d` outside quotes loses it. A regex or a Windows path
-        // typed into the field is the case that notices.
+        // Inside double quotes a backslash guards only these four, so
+        // `"\d+"` keeps its backslash where `\d` outside quotes loses it.
         if quote == "\"", !#"\"$`"#.contains(character) { word.append("\\") }
         word.append(character)
         hasWord = true
         escaping = false
       } else if character == "\\", quote != "'" {
-        // A word starts on the escaped character, not on the backslash: a
-        // line ending in one is an escape nothing completed, and counting
-        // it would end the line with an empty argument the agent has to
-        // make sense of.
+        // A word starts on the escaped character, not the backslash: a
+        // trailing one would otherwise pass an empty final argument.
         escaping = true
       } else if let open = quote {
         if character == open { quote = nil } else { word.append(character) }
         hasWord = true
       } else if character == "'" || character == "\"" {
-        // As with the escape above, the word starts on what the quote
-        // carries or on its closing mark, never on the opening one: a line
-        // ending in a quote nobody closed is half a flag being typed, and
-        // counting it would pass the agent an empty argument.
+        // As with the escape, the word starts on what the quote carries,
+        // never the opening mark: half a flag being typed passes nothing.
         quote = character
       } else if character.isWhitespace {
         if hasWord { words.append(word) }

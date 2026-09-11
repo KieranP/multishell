@@ -1,45 +1,33 @@
 import Foundation
 
-/// Per-project preferences, edited in the project's settings panel.
-///
-/// The worktree fields are overrides: `nil` means "use the app-wide value in
-/// `Workspace.worktreeDefaults`". Hooks are per-project only.
+/// Per-project preferences, edited in the project's settings panel. Worktree
+/// fields are overrides, `nil` following the global; see docs/design/settings.md.
 public struct ProjectSettings: Codable, Hashable, Sendable {
   public var worktreeDirectory: String?
   public var branchPrefix: String?
-  /// The branch this project's work is merged into, for the sidebar's
-  /// merged badge. `nil` detects it: `origin/HEAD`, then `origin/main`,
-  /// `origin/master`, `main`, `master`. A name typed here is looked for on
-  /// `origin` before it is looked for locally.
+  /// The branch merges are measured against. `nil` detects it: `origin/HEAD`,
+  /// then `origin/main`, `origin/master`, `main`, `master`.
   public var defaultBranch: String?
 
-  /// Scripts run through the user's login shell around `git worktree add`
-  /// and `git worktree remove`. Empty means no hook. A pre hook that fails
-  /// stops the operation; a post hook that fails is reported after it.
+  /// Scripts run through the user's login shell around `git worktree add` and
+  /// `remove`. Empty means no hook; see docs/design/hooks.md.
   public var preCreateHook: String
   public var postCreateHook: String
   public var preDeleteHook: String
   public var postDeleteHook: String
 
-  /// Files and folders each new worktree is given a symlink to, pointing
-  /// back at the repository's own, one path per line, for what a worktree
-  /// can share rather than hold twice: `node_modules`, a build cache.
-  /// Blank means nothing is linked.
+  /// Paths each new worktree is symlinked back to the repository's own, one
+  /// per line: `node_modules`, a build cache. Blank links nothing.
   public var linkedPaths: String
-  /// Files and folders copied from the repository into each new worktree,
-  /// one path per line, for what git does not carry and a worktree wants
-  /// its own of: `.env`, a local config. Blank means nothing is copied.
+  /// Paths copied from the repository into each new worktree, one per line,
+  /// for what git does not carry: `.env`, a local config.
   public var copiedPaths: String
 
-  /// Agent override by catalogue id. `nil` follows the global choice;
+  /// Agent override by catalogue id. `nil` follows the global;
   /// `AgentCatalogue.noneID` opts this project out of it.
   public var preferredAgentID: String?
-  /// Extra arguments the agent is started with here, overriding the global
-  /// line for whichever agent this project runs. `nil` follows the global;
-  /// `""` is the override to no flags at all, the only spelling this field
-  /// has for it. `SharedProjectSettings` has no such key on purpose: a flag
-  /// is an argument to a program, and a repository's file is trusted for
-  /// what is drawn, not for what runs.
+  /// Extra arguments the agent is started with here. `""` is the override to
+  /// no flags at all; see docs/design/agents.md for why a repo file cannot say this.
   public var agentFlags: String?
   /// Whether new tabs here start the agent. `nil` follows the global.
   public var autoStartAgent: Bool?
@@ -62,7 +50,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   /// any post-create hook, is done. `nil` follows the global.
   public var opensTerminalOnCreate: Bool?
 
-  /// Shell override by path. `nil` follows the global choice;
+  /// Shell override by path. `nil` follows the global;
   /// `ShellCatalogue.loginShellID` means `$SHELL` here whatever it says.
   public var defaultShell: String?
 
@@ -73,21 +61,11 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   /// own text colour. Applies to symbols and the folder alike.
   public var iconTint: Int?
 
-  /// What the user said about the hooks in the repository's
-  /// `.multishell.json`, one answer per file they were asked about, held
-  /// against the sha256 of its bytes, the most recent first. Empty until
-  /// asked; a file with no answer here asks.
-  ///
-  /// A list rather than the one last answer, because the file is tracked
-  /// and so differs between branches: two branches shipping different
-  /// hooks asked again on every switch between them, and each answer
-  /// forgot the other. The oldest is dropped past
-  /// `rememberedSharedHooks`, so a file edited on a loop cannot grow the
-  /// state without bound.
+  /// One answer per `.multishell.json` the user was asked about, against the
+  /// sha256 of its bytes, newest first; see docs/design/settings.md.
   public var sharedHooks: [SharedHooksDecision]
 
-  /// How many files a project remembers an answer for: enough for the
-  /// branches someone moves between, and for a file edited a few times.
+  /// How many files a project remembers an answer for.
   public static let rememberedSharedHooks = 16
 
   public init(
@@ -136,34 +114,8 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     self.sharedHooks = sharedHooks
   }
 
-  /// An empty string is the override to "none" for the three worktree
-  /// fields, and noise for a field that spells its own "none" some other
-  /// way.
-  ///
-  /// The worktree fields have no other spelling for it: blank is how a
-  /// project pins itself to the built-in directory, to no prefix while the
-  /// global has one, or to detecting its default branch while the
-  /// repository's file names one. Coercing those to `nil` sent them back to
-  /// following the global on the next load, losing the very thing the
-  /// settings form's help offers. `preferredAgentID` and `defaultShell`
-  /// have `AgentCatalogue.noneID` and `ShellCatalogue.loginShellID` for it,
-  /// and a blank `iconGlyph` draws the same folder `nil` does, so `""`
-  /// there says nothing an absent key does not. `agentFlags` is the fourth
-  /// field with no other spelling: blank is how a project runs its agent
-  /// bare under a global that passes flags.
-  ///
-  /// `SharedProjectSettings` deliberately does the opposite for these same
-  /// three, and says why: a `""` someone committed must not read as the team
-  /// asking for "none". A choice the user made in the form and a stray key
-  /// in a tracked file are not the same claim. The cost is that an export
-  /// cannot carry a blank override, and drops it back to following the
-  /// global for whoever reads the file.
-  ///
-  /// State from before this repository's first commit stored `""` for "no
-  /// prefix"; that loads as the override now. For the prefix it is the
-  /// behaviour those projects already had. For `worktreeDirectory` it is
-  /// not quite: blank resolves to the built-in `../{project}-worktrees`
-  /// rather than to a global the user has since set.
+  /// `""` overrides to "none" for the four fields with no other spelling for
+  /// it, and is noise elsewhere; see docs/design/settings.md.
   public init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     worktreeDirectory = try container.decodeIfPresent(String.self, forKey: .worktreeDirectory)
@@ -177,20 +129,16 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     copiedPaths = try container.decode(String.self, forKey: .copiedPaths, or: "")
     preferredAgentID = Self.override(
       try container.decodeIfPresent(String.self, forKey: .preferredAgentID))
-    // No `override(_:)`: `""` is this field's only way to say "no flags
-    // here" under a global that has some, as blank is for the three
-    // worktree fields above.
+    // No `override(_:)`: `""` is this field's only way to say "no flags here".
     agentFlags = try container.decodeIfPresent(String.self, forKey: .agentFlags)
     autoStartAgent = try container.decodeIfPresent(Bool.self, forKey: .autoStartAgent)
-    // Absent is "follow the global", not "what `autoStartAgent` says": a
-    // nil override is written as an absent key, so seeding it from the
-    // other one would turn the global back into an override on every load.
+    // Absent is "follow the global", not "what `autoStartAgent` says": seeding
+    // it from the other turns the global into an override on every load.
     autoStartAgentOnCreate = try container.decodeIfPresent(
       Bool.self, forKey: .autoStartAgentOnCreate)
     opensTerminalOnSelect = try container.decodeIfPresent(Bool.self, forKey: .opensTerminalOnSelect)
     opensTerminalOnCreate = try container.decodeIfPresent(Bool.self, forKey: .opensTerminalOnCreate)
-    // Tolerated: an order a newer build named is not an override this one
-    // can honour, and following the global beats losing the project.
+    // Tolerated: an order a newer build named costs the override, not the project.
     worktreeSortOrder = container.decodeTolerantly(
       WorktreeSortOrder.self, forKey: .worktreeSortOrder)
     showsActiveWorktreesFirst = try container.decodeIfPresent(
@@ -200,10 +148,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     // Tolerated: a tint that is not a number costs the tint, not the file.
     iconTint = ProjectIcon.validTint(container.decodeTolerantly(Int.self, forKey: .iconTint))
     // Lossy: an answer that will not decode costs that answer and not the
-    // project's others, and its hooks are asked about again. What builds
-    // before the digest wrote is a whole such value, one decision holding
-    // the hook text it was answered about, which no digest can be had
-    // from; it reads as no answers, and asks once more.
+    // project's others, and its hooks are asked about again.
     sharedHooks = container.decodeLossy(SharedHooksDecision.self, forKey: .sharedHooks)
   }
 
@@ -212,9 +157,8 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     return value
   }
 
-  /// Stores the answer for the file with digest `digest`, replacing any
-  /// earlier answer about those same bytes and moving it to the front, so
-  /// what falls off the end is the file longest unanswered-about.
+  /// Stores the answer for `digest`, replacing any earlier one about those
+  /// bytes and moving it to the front, so the longest unasked-about falls off.
   public mutating func recordSharedHooks(file digest: String, trusted: Bool) {
     sharedHooks.removeAll { $0.digest == digest }
     sharedHooks.insert(SharedHooksDecision(digest: digest, trusted: trusted), at: 0)
@@ -229,10 +173,8 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     sharedHooks.first { $0.digest == digest }
   }
 
-  /// Whether the hooks in `shared` are hooks the user trusted: the file it
-  /// was read from is one they said yes to. A file edited to bytes nobody
-  /// answered about is not trusted until asked; one changed back to bytes
-  /// they trusted is. Settings that came from no file trust nothing.
+  /// Whether the hooks in `shared` came from a file the user said yes to.
+  /// Settings that came from no file trust nothing.
   public func trustsHooks(of shared: SharedProjectSettings) -> Bool {
     guard shared.hasHooks, let digest = shared.digest else { return false }
     return decision(aboutFile: digest)?.trusted == true
@@ -245,16 +187,11 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     return decision(aboutFile: digest) == nil
   }
 
-  /// These settings with the repository's own filling the gaps: a path or
-  /// prefix the user left following the global, what a worktree here opens
-  /// where they said nothing, the order its rows come in, an icon they did
-  /// not set, the files a new worktree is linked to or given, and a hook
-  /// they left blank, the last only once its file is trusted. A
-  /// whitespace-only hook, or file list, is the user's "none" and stays.
+  /// These settings with the repository's own filling only the gaps the user
+  /// left, and its hooks only once trusted; see docs/design/settings.md.
   public func layered(over shared: SharedProjectSettings?) -> ProjectSettings {
-    // Whatever is stored, what the app reads is a symbol name or nothing,
-    // with or without a file to fall through to. Normalising on only one of
-    // those paths left the two disagreeing over the same stored value.
+    // Normalised on both paths, with or without a file to fall through to, or
+    // the two disagree over the same stored value.
     var result = self
     result.iconGlyph = ProjectIcon.symbolName(iconGlyph)
     guard let shared else { return result }

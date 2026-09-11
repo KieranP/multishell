@@ -1,11 +1,7 @@
 import MultishellCore
 
-/// A project removal waiting on the confirmation dialog. Removing a project
-/// closes every live terminal in its worktrees and there is no undo, so it
-/// asks first, the way worktree removal does.
-///
-/// The settings window is its own window, so the dialog has to be shown
-/// there when the request came from it; `source` says which window presents.
+/// A project removal waiting on its dialog: it closes every live terminal in
+/// the project and has no undo. `source` says which window presents.
 public struct PendingProjectRemoval: Identifiable, Equatable, Sendable {
   public enum Source: Equatable, Sendable {
     case workspace

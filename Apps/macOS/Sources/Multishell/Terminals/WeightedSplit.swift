@@ -3,10 +3,7 @@ import MultishellCore
 import SwiftUI
 
 /// Children sized by weight along one axis, with draggable dividers.
-///
-/// `HSplitView` and `VSplitView` decide sizes themselves and expose nothing,
-/// which is how a second split ended up 90/5/5. This one takes the weights as
-/// truth and reports the new ones when a divider moves.
+/// `HSplitView` decides sizes itself and exposes nothing; this does not.
 struct WeightedSplit<Content: View>: View {
   let axis: SplitAxis
   let weights: [Double]
@@ -64,13 +61,11 @@ struct WeightedSplit<Content: View>: View {
   }
 }
 
-/// The one place the divider's thickness and a pane's minimum width live:
-/// `WeightedSplit` lays out to them, and `TabGroupBands` refuses a drop
-/// that would leave a column under the minimum.
+/// The one place the divider's thickness and a pane's minimum width live,
+/// read by the layout and by the drop that would make a column.
 enum SplitMetrics {
-  /// Layout space the divider occupies. Wider than the visible line because
-  /// the panes are NSViews, which take mouse events before any SwiftUI
-  /// overlay that spills onto them; the grab area has to be its own strip.
+  /// Layout space the divider occupies, wider than the visible line: the
+  /// panes are NSViews and take mouse events before a SwiftUI overlay.
   static let dividerThickness: CGFloat = 6
   static let lineThickness: CGFloat = 1
   static let minimumPane: CGFloat = 80

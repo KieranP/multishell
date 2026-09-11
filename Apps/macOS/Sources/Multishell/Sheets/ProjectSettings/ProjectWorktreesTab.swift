@@ -64,10 +64,8 @@ struct ProjectWorktreesTab: View {
     .formStyle(.grouped)
   }
 
-  /// What the field shows while the override is off: the branch the model
-  /// resolved, which already carries what the repository's file says, and
-  /// without the remote it was found on, so turning the override on seeds
-  /// `main` rather than `origin/main`.
+  /// What the field shows while the override is off: the resolved branch,
+  /// without its remote, so the override seeds `main` not `origin/main`.
   private var detected: String {
     model.mergeBase(of: project)?.branch ?? "main"
   }

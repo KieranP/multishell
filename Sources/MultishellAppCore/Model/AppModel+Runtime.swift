@@ -21,22 +21,8 @@ extension AppModel {
     markShownTabSeen()
   }
 
-  /// What has now been seen: the panes of every column's active tab, and
-  /// the selected worktree's own entry. Done clears, and the banners go.
-  ///
-  /// Two guards, and the same pair `hasBeenSeen` applies to a report as it
-  /// arrives. Nothing is on screen while the Agents board covers the detail
-  /// area; without that one an unrelated shell closing would clear the Done
-  /// of a pane the user has not looked at, and its card would jump from Done
-  /// to Idle under them. Nothing has been seen while the app is behind
-  /// another either, and this runs from every `sync` and from a shell
-  /// exiting, both of which happen while the user is elsewhere; without that
-  /// one a shell ending in some other worktree would clear the dot and
-  /// retract the banner for the pane they were away from.
-  ///
-  /// So coming back to the app is itself a reason to run this, and the
-  /// banners go further than `markSeen`: a Waiting state survives being
-  /// seen, its question still standing, and only its banner is spent.
+  /// What has now been seen: every column's active tab and the selected
+  /// worktree. Guarded on the board and on frontmost, as `hasBeenSeen` is.
   func markShownTabSeen() {
     guard platform.isActive, !showsAgentBoard, let worktree = workspace.selectedWorktreeID
     else { return }
@@ -54,11 +40,8 @@ extension AppModel {
 // MARK: - Filesystem
 
 extension AppModel {
-  /// For the reads the polling paths make: whether a project directory is
-  /// there, the record files under `.git`, the directories to watch. On a
-  /// local disk each is microseconds; on a network volume that has gone
-  /// away each blocks until the mount times out, which must not be on the
-  /// main thread every five seconds.
+  /// For the reads the polling paths make. Microseconds on a local disk; on
+  /// a dead mount each blocks until it times out.
   nonisolated static func offMain<T: Sendable>(_ work: @Sendable @escaping () -> T) async -> T {
     await Task.detached(priority: .utility) { work() }.value
   }
@@ -67,9 +50,8 @@ extension AppModel {
 // MARK: - Git status
 
 extension AppModel {
-  /// Working-tree edits do not touch `.git`, so the watcher cannot see them.
-  /// Poll instead, but only while the app is frontmost; a background app
-  /// running `git status` across every worktree every few seconds is noise.
+  /// Working-tree edits do not touch `.git`, so poll instead, and only while
+  /// frontmost: a background app running `git status` is noise.
   public func startStatusPolling() {
     statusPolling?.cancel()
     statusPolling = Task { @MainActor [weak self] in
@@ -96,9 +78,8 @@ extension AppModel {
     await refreshProjectsWhoseBranchMoved(fresh)
   }
 
-  /// A `git checkout` in the main worktree touches `.git/HEAD`, which the
-  /// watcher deliberately does not watch. The status poll sees the new
-  /// branch name; when it disagrees with the sidebar, re-read that project.
+  /// A `git checkout` in the main worktree touches `.git/HEAD`, which is not
+  /// watched. Where the poll's branch disagrees, re-read that project.
   func refreshProjectsWhoseBranchMoved(_ fresh: [Worktree.ID: WorktreeStatus]) async {
     var drifted: Set<Project.ID> = []
     for worktree in workspace.worktrees {
@@ -134,9 +115,8 @@ extension AppModel {
     mutateStates { $0.noteActivity(in: id, isSeen: hasBeenSeen(id)) }
   }
 
-  /// One command at a prompt raises several events in a row (title before,
-  /// command finished, title after), and each would otherwise spawn its own
-  /// `git status`. The burst becomes one run, shortly after the last event.
+  /// One command at a prompt raises several events in a row, each of which
+  /// would spawn a `git status`. The burst becomes one run.
   func scheduleStatusRefresh(of worktreeID: Worktree.ID) {
     pendingStatusRefreshes[worktreeID]?.cancel()
     pendingStatusRefreshes[worktreeID] = Task { @MainActor [weak self] in

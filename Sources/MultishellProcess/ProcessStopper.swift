@@ -8,21 +8,8 @@ public enum ProcessStop: Equatable, Sendable {
   case stopped
 }
 
-/// A handle the caller keeps to end a running child: `stop()` sends SIGHUP,
-/// then SIGKILL a few seconds later if it is still there. Made before the
-/// child starts and handed to `ProcessRunner`, so the layers between the
-/// user's button and the process need not know each other.
-///
-/// SIGHUP, not SIGTERM: hooks run through an interactive login shell, and
-/// bash and zsh ignore SIGTERM when interactive, so `Process.terminate()`
-/// did nothing to them. Sent to the child's process group, not the child:
-/// `Process` makes each child a group leader, and a shell with no terminal
-/// exits on SIGHUP without passing it to the `sleep` or `npm` it was
-/// running, which would otherwise live on as an orphan.
-///
-/// A stop that arrives before a child is attached is kept and applied to
-/// the next one, so a click that lands between two hook stages still stops
-/// the hook that follows.
+/// A handle to end a running child: SIGHUP then SIGKILL, to the process
+/// group. Not SIGTERM, which an interactive bash or zsh ignores.
 public final class ProcessStopper: @unchecked Sendable {
   private let lock = NSLock()
   private var process: Process?
@@ -41,10 +28,8 @@ public final class ProcessStopper: @unchecked Sendable {
     lock.withLock { applied }
   }
 
-  /// Whether a stop has been asked for at all, whether or not there was a
-  /// child to receive it. Work with no process to signal reads this to end
-  /// itself, so one handle behind a pane's button covers a stage that runs
-  /// a hook and a stage that only touches files.
+  /// Whether a stop has been asked for, child or no child: work with no
+  /// process to signal reads this to end itself.
   public var isStopped: Bool {
     lock.withLock { pending != nil || applied != nil }
   }
@@ -82,9 +67,8 @@ public final class ProcessStopper: @unchecked Sendable {
     guard process.isRunning else { return }
     let pid = process.processIdentifier
     if kill(-pid, SIGHUP) != 0 { kill(pid, SIGHUP) }
-    // The group only, no fallback to the pid: by now the leader may have
-    // exited and the number gone to an unrelated process. A group id is
-    // never reused while a member is alive.
+    // The group only, no fallback to the pid, whose number may have gone to
+    // an unrelated process. A group id is not reused while a member lives.
     DispatchQueue.global().asyncAfter(deadline: .now() + killGrace) {
       kill(-pid, SIGKILL)
     }

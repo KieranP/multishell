@@ -2,9 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// One line under the columns while there is nothing on them, saying what
-/// would put something there. The wording is the board's; see
-/// `AgentBoard.emptyHint`.
+/// One line under the columns while there is nothing on them. The wording is
+/// the board's; see `AgentBoard.emptyHint`.
 struct AgentBoardHint: View {
   let theme: Theme
   let metrics: UIMetrics

@@ -1,10 +1,7 @@
 import Foundation
 
 /// The ref a project's merges are measured against, and where it points now.
-///
-/// The tip travels with the ref because a merge check is memoised on it: a
-/// refresh that finds the trunk and a branch where it left them asks git
-/// nothing further.
+/// The tip travels with it because a merge check is memoised on it.
 public struct DefaultBranch: Hashable, Sendable {
   /// As git would print it short: `origin/main`, `main`, `upstream/trunk`.
   public let ref: String
@@ -19,17 +16,8 @@ public struct DefaultBranch: Hashable, Sendable {
     self.tip = tip
   }
 
-  /// The refs to try, in order, for a project.
-  ///
-  /// A remote-tracking ref is preferred over a local branch of the same
-  /// name: a local `main` is stale until someone pulls, and what a branch
-  /// has been merged into is a question about the remote. An `override` the
-  /// user typed is tried on the remote first, then locally, then as a
-  /// remote-qualified name they may have typed in full; nothing falls back
-  /// to the defaults after it, since a name that resolves to nothing should
-  /// say so rather than quietly measure against something else.
-  ///
-  /// `originHead` is the full ref `refs/remotes/origin/HEAD` points at.
+  /// The refs to try, in order. A remote-tracking ref beats a local branch
+  /// of the same name; an override falls back to no default at all.
   public static func candidateRefs(override: String?, originHead: String?) -> [String] {
     var refs: [String] = []
     func add(_ ref: String) {
@@ -51,10 +39,8 @@ public struct DefaultBranch: Hashable, Sendable {
     return refs
   }
 
-  /// The first candidate `refs` actually holds, or `nil` for a repository
-  /// with none: a fresh `git init` on a branch named something else, or an
-  /// override naming a branch that is not there. No default branch means no
-  /// badge, rather than a badge measured against a guess.
+  /// The first candidate `refs` holds, or `nil`. No default branch means no
+  /// badge, rather than one measured against a guess.
   public static func resolve(from refs: [BranchRef], override: String?) -> DefaultBranch? {
     let byName = Dictionary(refs.map { ($0.fullName, $0) }, uniquingKeysWith: { first, _ in first })
     let originHead = byName[BranchRef.originHead]?.symref

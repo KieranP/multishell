@@ -1,10 +1,8 @@
 import MultishellCore
 import SwiftUI
 
-/// A one-symbol button for the settings windows, where a word beside a
-/// dropdown or a path pushed rows onto two lines. The symbol and the help
-/// text are decided in one place per meaning, so every refresh and every
-/// reveal reads the same.
+/// A one-symbol button for the settings windows, a word beside a dropdown
+/// pushing rows onto two lines. One symbol and help per meaning.
 struct IconButton: View {
   let symbol: String
   let help: String

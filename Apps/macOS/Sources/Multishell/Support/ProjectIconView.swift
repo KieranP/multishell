@@ -1,11 +1,8 @@
 import MultishellCore
 import SwiftUI
 
-/// A project's glyph as the sidebar, the header and the project picker draw
-/// it: the folder, or a symbol from the curated list, tinted from the
-/// theme's ANSI slots where a tint is set. A missing project is dimmed
-/// and badged rather than swapped for another symbol, so the user's choice
-/// survives an unmounted drive.
+/// A project's glyph as the sidebar, header and picker draw it, tinted from
+/// the theme's ANSI slots. A missing project is dimmed, not swapped.
 struct ProjectIconView: View {
   let settings: ProjectSettings
   let isMissing: Bool

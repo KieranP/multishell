@@ -1,13 +1,7 @@
 import Foundation
 
-/// The environment a terminal in this app has, captured once.
-///
-/// An app launched from the Finder has PATH set to the system directories,
-/// and every agent people install lives under Homebrew, npm or a version
-/// manager. Asking the user's interactive login shell for `env -0` once, off
-/// the main thread, gives agent detection and agent tabs the same answer a
-/// terminal would. A shell that fails or takes too long yields the process's
-/// own environment, and `source` says which happened.
+/// The environment a terminal here has, from one `env -0` through the login
+/// shell: from the Finder, PATH is the system directories alone.
 public struct LoginShellEnvironment: Sendable, Equatable {
   public enum Source: Sendable, Equatable {
     case loginShell(URL)

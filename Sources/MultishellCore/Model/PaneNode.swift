@@ -5,11 +5,8 @@ public enum SplitAxis: String, Codable, Hashable, Sendable {
   case vertical
 }
 
-/// The arrangement of terminals inside one tab.
-///
-/// Today every tab is a single `.terminal`, because the MVP has no splits.
-/// Modelling the tree now means adding them later touches the renderer and one
-/// store method rather than the shape of persisted state.
+/// The arrangement of terminals inside one tab: a leaf per terminal, a split
+/// per divider, with the weights a divider drag writes back.
 public indirect enum PaneNode: Codable, Hashable, Sendable {
   case terminal(TerminalSession.ID)
   case split(axis: SplitAxis, children: [PaneNode], weights: [Double])
@@ -37,11 +34,8 @@ extension PaneNode {
     case weights
   }
 
-  /// Reads the synthesized shape (`{"terminal": {"_0": id}}` or
-  /// `{"split": {"axis", "children", "weights"}}`) but tolerates weights that
-  /// are missing or do not line up with the children: those fall back to
-  /// equal shares. `removing` zips children with weights, so a mismatch would
-  /// silently drop panes.
+  /// Reads the synthesized shape, tolerating weights that are missing or do
+  /// not line up: `removing` zips them, so a mismatch would drop panes.
   public init(from decoder: any Decoder) throws {
     let root = try decoder.container(keyedBy: RootKeys.self)
     if root.contains(.terminal) {
@@ -88,11 +82,8 @@ extension PaneNode {
     pruning { $0 == id }
   }
 
-  /// Drops every terminal `shouldDrop` says to, visiting leaves in display
-  /// order, and tidies what remains: a split left with one child becomes
-  /// that child, one left with none disappears, and weights that do not line
-  /// up with the children become equal shares rather than dropping a pane.
-  /// Returns `nil` when nothing is left.
+  /// Drops every terminal `shouldDrop` names, in display order, collapsing
+  /// the splits that leaves. `nil` when nothing is left.
   public func pruning(_ shouldDrop: (TerminalSession.ID) -> Bool) -> PaneNode? {
     switch self {
     case .terminal(let id):
@@ -116,11 +107,8 @@ extension PaneNode {
     }
   }
 
-  /// Splits the terminal `id` in half to make room for `newSession`.
-  ///
-  /// Splitting along the axis of the enclosing split adds a sibling rather
-  /// than nesting, the way tmux and iTerm do: the pane's share is halved and
-  /// the new pane takes the other half. A different axis nests.
+  /// Splits the terminal `id` in half for `newSession`. The enclosing
+  /// split's own axis adds a sibling, as tmux does; another axis nests.
   public func splitting(
     _ id: TerminalSession.ID,
     with newSession: TerminalSession.ID,

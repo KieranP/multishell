@@ -2,9 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// The workspace window: sidebar, draggable divider, detail. Every dialog
-/// the workspace can raise is attached here, each as its own modifier
-/// beside this file.
+/// The workspace window: sidebar, draggable divider, detail. Every dialog it
+/// can raise is attached here, each as its own modifier.
 struct RootView: View {
   let model: AppModel
   let platform: MacPlatform

@@ -1,10 +1,7 @@
 import Foundation
 
-/// Writing an agent's hooks into its file, and taking them out again.
-///
-/// A file the user keeps their own settings in is read, merged and written
-/// back, with a copy kept the first time; a file of ours alone is written
-/// whole and deleted to remove it.
+/// Writing an agent's hooks into its file and taking them out again; see
+/// docs/design/agents.md.
 extension AgentHookIntegration {
   // MARK: - Merging into a file of the user's
 
@@ -18,10 +15,8 @@ extension AgentHookIntegration {
     }
   }
 
-  /// Every event gets one entry of ours; entries already there, ours or
-  /// anyone else's, are left as they are, and an event holding something
-  /// this cannot read is left alone entirely. `install` refuses such a file
-  /// rather than leaving that event without its hook in silence.
+  /// One entry of ours per event, everything already there left alone.
+  /// `install` refuses a file it cannot read rather than skipping an event.
   public func adding(
     to settings: [String: Any], helper: String = AgentHooks.helperReference
   )
@@ -40,10 +35,8 @@ extension AgentHookIntegration {
     return result
   }
 
-  /// Removes our entries from every event, leaving other hooks; an event
-  /// with none of them left is dropped rather than left as `[]`. An event
-  /// this cannot read held nothing of ours, so it is left where it is:
-  /// Remove takes back what Add put in and nothing else.
+  /// Removes our entries, leaving other hooks and dropping an event left
+  /// empty. Remove takes back what Add put in and nothing else.
   public func removing(from settings: [String: Any]) -> [String: Any] {
     var result = settings
     guard var hooks = settings["hooks"] as? [String: Any] else { return result }
@@ -57,10 +50,8 @@ extension AgentHookIntegration {
     return result
   }
 
-  /// What one event holds, or `nil` when the file has something there this
-  /// cannot read: a string, an object, a shape a later version of the agent
-  /// takes. Absent reads as the empty list, which is a list we can add to;
-  /// unreadable is not, and nothing in it was ever ours.
+  /// What one event holds, `nil` where the file has a shape this cannot
+  /// read. Absent reads as an empty list to add to; unreadable does not.
   private func groups(_ value: Any?) -> [[String: Any]]? {
     guard let value else { return [] }
     return value as? [[String: Any]]

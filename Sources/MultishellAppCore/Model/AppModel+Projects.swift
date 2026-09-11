@@ -35,26 +35,18 @@ extension AppModel {
   }
 
   public func removeProject(_ project: Project) {
-    // A file list or post-create hook still running in one of these
-    // worktrees is ended the way the pane's Cancel ends it, by signal: the
-    // user has just said the project goes, and the alternative is their own
-    // script running on against a worktree nothing shows any more. The
-    // entry goes with it, so the setup task that unwinds later finds
-    // nothing to finish and opens no tab in a project that has left.
+    // A file list or hook still running here is ended by signal, as the
+    // pane's Cancel ends it: the project has just been told to go.
     for worktree in workspace.worktrees(of: project.id) {
       cancelStage(of: worktree)
       worktreeOperations.clear(worktree.id)
-      // A half-finished rename goes with its row. `refresh` clears one whose
-      // worktree git no longer lists, but no refresh runs for a project that
-      // has left, and re-adding it would list that path again and open the
-      // field unbidden.
+      // A half-finished rename goes with its row: no refresh runs for a
+      // project that has left, and re-adding it would open the field.
       if renamingWorktreeID == worktree.id { renamingWorktreeID = nil }
     }
     forgetMergeStates(of: project.id)
-    // Not part of `forgetMergeStates`: that also runs for a project whose
-    // default branch went away, which must keep its commit dates. Cleared
-    // here so re-adding the project does not order its rows by dates read
-    // before it left; paths are ids, so the entries would still match.
+    // Not in `forgetMergeStates`, which also runs for a project whose trunk
+    // went away and must keep its dates. Paths are ids, so these would match.
     for worktree in workspace.worktrees(of: project.id) { lastCommits[worktree.id] = nil }
     mergeBases[project.id] = nil
     // Or a project re-added while git still cannot read it would be dimmed
@@ -67,11 +59,8 @@ extension AppModel {
     // Or the settings window's fallback to the current project never fires:
     // a stale id wins over it, and the window opens only to dismiss itself.
     if settingsProjectID == project.id { settingsProjectID = nil }
-    // The dialogs this project's own windows left standing. A removal can be
-    // confirmed in the settings window, which is its own scene, so a sheet
-    // on the workspace window is not in the way of one and outlives it. The
-    // sheet matters most: its Create would run `git worktree add` for real
-    // and leave a directory the sidebar never shows.
+    // The dialogs this project's windows left standing, the settings window
+    // being its own scene. A stale sheet's Create would add a real worktree.
     if newWorktreeRequest?.projectID == project.id { newWorktreeRequest = nil }
     if pendingRemoval?.worktree.projectID == project.id { pendingRemoval = nil }
     store.removeProject(project.id)
@@ -130,9 +119,8 @@ extension AppModel {
       }
       store.replaceWorktrees(discovered, forProject: project.id)
       forgetVanishedWorktrees()
-      // A worktree removed here or by hand takes its half-finished rename
-      // with it; a stale id would otherwise open a field unbidden if git
-      // ever listed that path again.
+      // A removed worktree takes its half-finished rename with it, a stale
+      // id opening a field if git ever lists that path again.
       if let renaming = renamingWorktreeID, workspace.worktree(renaming) == nil {
         renamingWorktreeID = nil
       }
@@ -140,9 +128,8 @@ extension AppModel {
       missingProjects.remove(project.id)
       noteSharedSettings(shared.result, stamp: shared.stamp, for: project)
     } catch {
-      // Every watcher tick and every return to the foreground refreshes a
-      // project git cannot read, so the alert goes up on the first failure
-      // only; the row stays dimmed until a refresh succeeds.
+      // Every tick and every return to the front refreshes a project git
+      // cannot read, so the alert goes up once; the row stays dimmed.
       if missingProjects.insert(project.id).inserted { report(error) }
     }
   }

@@ -20,15 +20,12 @@ public final class SessionRegistry {
   /// the GUI can clear a Working state the engine has evidence against.
   public var onCommandFinished: (@MainActor (TerminalSession.ID, Int32?) -> Void)?
 
-  /// The title the shell reports through OSC. Runtime, like activity: shells
-  /// change it on every prompt, and a relaunched tab gets a fresh shell that
-  /// reports its own, so writing it into the workspace would only churn
-  /// observers and the autosave with state that is stale on arrival.
+  /// The title the shell reports through OSC. Runtime, like activity: a
+  /// prompt would otherwise schedule a save per keystroke.
   public var onRetitle: (@MainActor (TerminalSession.ID, String) -> Void)?
 
-  /// Fired whenever the set of live sessions may have changed: after a
-  /// reconcile and after a process exit. The host is not observable, so the
-  /// GUI mirrors `liveSessionIDs` from here.
+  /// Fired whenever the live session set may have changed. The host is not
+  /// observable, so the GUI mirrors `liveSessionIDs` from here.
   public var onLiveSessionsChanged: (@MainActor () -> Void)?
 
   public init(store: WorkspaceStore, host: any TerminalHost) {
@@ -41,15 +38,7 @@ public final class SessionRegistry {
   public var liveSessionIDs: Set<TerminalSession.ID> { host.openSessionIDs }
 
   /// Opens sessions the host is missing and closes ones it should not have.
-  /// `shouldBeLive` lets the caller keep some sessions cold: a restored
-  /// workspace with thirty tabs should not spawn thirty shells at launch.
-  /// Returns the sessions that failed to open; they stay in the store so the
-  /// caller can decide whether to retry or drop them.
-  ///
-  /// `prepare` is the last word on what a shell runs: the store records an
-  /// agent by id, and the caller turns that into a command line at the
-  /// moment the shell starts, when it knows the PATH and whether this is a
-  /// relaunch.
+  /// `shouldBeLive` keeps restored tabs cold; failures stay in the store.
   @discardableResult
   public func reconcile(
     shouldBeLive: (TerminalSession) -> Bool = { _ in true },
