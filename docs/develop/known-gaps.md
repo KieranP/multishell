@@ -22,24 +22,25 @@ What is unverified or unbuilt, with the fallback where there is one.
   nothing, SwiftUI drawing it outside the AppKit hierarchy; if it clips, raise
   the width in SettingsView. Caption and the help behind each (i) are strings
   in NotificationSettings.
-- Agent settings outgrows its window once four of the five supported agents
-  have hooks installed: 260pt with none, 357 with one, 481.5 with four, 550.5
-  with five, against a 480pt window, so the Command line tool section below
-  them goes under the fold with nothing saying so. Measured headlessly with
-  the page's `onAppear` refresh taken out; with it in, the page is as tall as
-  whatever the machine has, which is also why SettingsPageSizeTests leaves
-  this page alone and nothing holds it. Fix = the hooks rows want their own
-  scroll, or the window is taller than the rest need.
-- Project settings' General tab wants 581pt in a 480pt window, so its last
-  rows are below the fold with nothing saying so. Nobody has ruled on whether
-  that is wanted; SettingsPageSizeTests records it as deliberate so the next
-  page to overflow is not lost in it. Hooks overflows too, at 973pt, and that
-  one is six editors and could never have fitted.
-- Whether a headless layout test runs on CI's macOS runner: it needs a window
-  server, which is a session rather than a permission, and no such test has
-  been through CI yet. If SettingsPageSizeTests fails there and passes on a
-  laptop, that is why, and the fallback is to skip it when
-  `NSScreen.screens.isEmpty`.
+- Agent settings is the one page nothing holds: its `onAppear` refresh reads
+  the machine, so the page is as tall as whatever is installed and a test
+  would be measuring a laptop. Measured headlessly with the refresh taken
+  out, it is 260pt with no agent's hooks installed, 357 with one, 481.5 with
+  four and 550.5 with all five, so the 600pt window now covers every case
+  this developer can produce. A sixth supported agent would put it over
+  again, and nothing would say so; fix then = the hooks rows want their own
+  scroll.
+- The 600pt settings window has not been seen on screen. It is the height
+  the tallest page needs, so General shows 159pt of rows above 441pt of
+  nothing, and whether that reads as roomy or as broken is a question for
+  the screen. Fix if it reads badly = the tall pages scroll and the window
+  goes back to about 480.
+- Project settings' Hooks tab wants 973pt in a 600pt window, so its last
+  editors are below the fold with nothing saying so. Six monospaced editors
+  were never going to fit a window the other pages can share, and
+  SettingsPageSizeTests records this one as deliberate so the next page to
+  overflow is not lost in it. Every other page fits, Project General closest
+  at 581.5.
 - Directory check before a click starts a shell runs on the main thread, so a
   network volume that has gone away blocks until the mount times out. Polling
   paths' checks run off it.

@@ -40,7 +40,9 @@ struct LoginShellEnvironmentTests {
       timeout: .milliseconds(300))
     let elapsed = ContinuousClock.now - started
     #expect(!output.succeeded)
-    #expect(elapsed < .seconds(5), "took \(elapsed)")
+    // Ten against the child's thirty: the two answers are the timeout
+    // firing and it not firing at all, and no runner is between them.
+    #expect(elapsed < .seconds(10), "took \(elapsed)")
   }
 
   @Test func executableLookupWalksTheGivenPathNotTheProcessOne() throws {

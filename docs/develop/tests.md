@@ -39,12 +39,13 @@ What each test catches, and the conventions a new one follows.
   prompt does not re-render the sidebar, and the two ways of counting can part.
 - A settings page outgrowing its fixed window: SettingsPageSizeTests lays the
   pages of both settings windows out at 560 in an NSHostingView in an NSWindow
-  never ordered in, and holds each to 480. No screen and no permission: what
-  macOS gates is reading another process, not your own. Three pages are left
-  out and say why: two scroll on purpose, and Agent settings reads the machine
-  on appear, so its height is the developer's rather than anyone's. Width is
-  not checkable at all, a minimum-size measurement reporting where text stops
-  wrapping rather than where a control is cut off.
+  never ordered in, and holds each to 600. No screen and no permission: what
+  macOS gates is reading another process, not your own, and CI's runner has
+  the window server this needs. Two pages are left out and say why: Hooks
+  scrolls on purpose, and Agent settings reads the machine on appear, so its
+  height is the developer's rather than anyone's. Width is not checkable at
+  all, a minimum-size measurement reporting where text stops wrapping rather
+  than where a control is cut off.
 - Foundation-only imports: checked by hand in a `swift:6.0` container, Linux
   being out of CI. Views untested, but a value a view reads is.
 
@@ -52,10 +53,21 @@ What each test catches, and the conventions a new one follows.
 
 - Git behaviour goes against a real repository with RepositoryFixture, never
   mocks. Parsers get fixture text, odd lines included.
-- Timing bounds are sized for a single-core CI runner, many times a laptop's
-  figure. Keep that headroom when you add one. `make test` holds a lock across
-  worktrees for the same reason; a bare `swift test` does not, so two of those
-  at once is the one way left to fail a bound on a fast machine.
+- Prefer evidence to a clock. Concurrency is read off what the children
+  recorded about each other, not off how long the batch took; a call that
+  returned before a hook finished is read off the state it returned in. Both
+  were wall-clock bounds first, and both flaked.
+- A bound that is left tells one outcome from another, not a fast machine
+  from a slow one: the child sleeps thirty seconds and the bound is ten, so
+  what fails it is the stop never arriving. Sizing a bound to a measured
+  figure plus headroom is what to avoid; it is the runner's mood that decides
+  it. `make test` holds a lock across worktrees for the same reason; a bare
+  `swift test` does not, so two of those at once is the one way left to fail
+  a bound on a fast machine.
+- A test that reads something process-wide, the open descriptor count being
+  the one so far, is reading the other suites too: they run beside it in the
+  same process. Take the lowest of several seconds of samples rather than one
+  reading, and expect to revisit it when a test that spawns in bulk arrives.
 - Real git comes from a fixture, whose runner carries `commit.gpgsign=false`:
   a developer whose global config signs would be asked for the key once per
   fixture commit. It rides on the runner, so a clone a new test adds needs no

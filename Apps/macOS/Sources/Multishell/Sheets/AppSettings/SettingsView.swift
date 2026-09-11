@@ -6,8 +6,12 @@ import SwiftUI
 /// behind each row's (i); captions are kept for values computed live.
 struct SettingsView: View {
   /// Fixed: a settings window sized to its tallest tab would resize as the
-  /// user moved between them. SettingsPageSizeTests holds the pages to it.
-  static let windowSize = CGSize(width: 560, height: 480)
+  /// user moved between them. So it is the tallest page's height and every
+  /// shorter page carries the empty space, which at 159pt for General is
+  /// most of the window. 600 is Project General's 581.5 with room for the
+  /// couple of points a measurement moves between machines;
+  /// SettingsPageSizeTests holds every page to it.
+  static let windowSize = CGSize(width: 560, height: 600)
 
   let model: AppModel
   let platform: MacPlatform

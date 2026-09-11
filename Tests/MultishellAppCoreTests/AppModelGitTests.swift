@@ -111,14 +111,13 @@ struct AppModelGitTests {
     defer { h.tearDown() }
     h.model.updateSettings(ProjectSettings(postCreateHook: "sleep 3"), for: h.project)
 
-    let started = ContinuousClock.now
     await h.model.createWorktree(branch: "slow", basedOn: nil, createBranch: true, in: h.project)
-    let returned = ContinuousClock.now - started
 
     let created = try #require(h.worktree(onBranch: "slow"))
-    // Two git spawns and a refresh: well under a second here, and a slow
-    // runner still cannot stretch it to the hook's three.
-    #expect(returned < .seconds(2), "came back before the hook could: \(returned)")
+    // The state is the evidence that the call came back first, and it needs
+    // no clock: a create that had waited out the hook would leave the
+    // operation finished and the first tab open, which is what the next
+    // three read.
     #expect(h.model.workspace.selectedWorktreeID == created.id)
     #expect(h.model.worktreeOperations[created.id]?.step == .postCreateHook)
     #expect(h.model.isBusy(created.id))

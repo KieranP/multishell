@@ -48,29 +48,41 @@ struct ProcessRunnerTests {
   }
 
   /// Blocking waits inside a `Task` occupy the cooperative pool, one thread
-  /// per core, so ninety-six of them run in rounds of as many as the machine
-  /// has cores: twenty-four seconds on the single-core CI runner. Without a
-  /// blocked thread they overlap and take the quarter second plus what the
-  /// launches cost, and on one core the launches are nearly all of it, three
-  /// seconds of the measured three and a tenth. Eight is that with room for
-  /// a runner having a worse day, and a third of what starving costs it.
+  /// per core, so ninety-six of them starved would run in rounds of as many
+  /// as the machine has cores. Each child says how many others were running
+  /// when it started, so what is read is the overlap itself rather than how
+  /// long the lot took: a wall-clock bound here was the runner's mood, and
+  /// the figure that had headroom over three seconds of launches on one core
+  /// could not also catch a twelve-core laptop starving in two.
   ///
-  /// The bound holds on the runner, not on a laptop, where twelve cores
-  /// starve to two seconds and the eight would not notice. That is the trade:
-  /// a figure with headroom over three seconds of launches cannot also catch
-  /// a machine that starves in two.
+  /// The pool is the yardstick. Starved, no more than a thread per core is
+  /// ever inside a run, so anything past twice the cores says the waits let
+  /// their threads go; unstarved it is tens, the hold being long against
+  /// what a launch costs.
   @Test func manyConcurrentProcessesDoNotStarveEachOther() async throws {
-    let started = ContinuousClock.now
-    try await withThrowingTaskGroup(of: String.self) { group in
+    let running = cwd.appendingPathComponent("ms-overlap-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: running, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: running) }
+    let script = """
+      : > "\(running.path)/$$"
+      ls "\(running.path)" | wc -l
+      sleep 1
+      rm "\(running.path)/$$"
+      """
+
+    let peaks = try await withThrowingTaskGroup(of: Int.self) { group in
       for _ in 0..<96 {
-        group.addTask { try await runner.run(sh, ["-c", "sleep 0.25; printf done"], in: cwd) }
+        group.addTask {
+          let seen = try await runner.run(sh, ["-c", script], in: cwd)
+          return Int(seen.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0
+        }
       }
-      for try await output in group {
-        #expect(output == "done")
-      }
+      return try await group.reduce(into: [Int]()) { $0.append($1) }
     }
-    let elapsed = ContinuousClock.now - started
-    #expect(elapsed < .seconds(8), "took \(elapsed)")
+
+    let cores = ProcessInfo.processInfo.activeProcessorCount
+    #expect(peaks.count == 96, "every run reported")
+    #expect(peaks.max() ?? 0 > cores * 2, "\(cores) cores, and at most \(peaks.max() ?? 0) ran")
   }
 
   @Test func extraEnvironmentIsMergedOverTheParents() async throws {
@@ -135,30 +147,37 @@ struct ProcessRunnerFailureTests {
   /// unmounted drive; each failure used to keep six descriptors open forever.
   ///
   /// The count is process-wide and other suites open hundreds of descriptors
-  /// while this runs, so each side is the lowest of several readings: the
+  /// while this runs, so each side is the lowest reading over seconds: the
   /// noise is transient, the leak is not.
   @Test func failedLaunchesDoNotLeakFileDescriptors() async throws {
     let runner = ProcessRunner()
-    func lowestDescriptorCount(over samples: Int) async throws -> Int {
-      var lowest = Int.max
-      for _ in 0..<samples {
-        lowest = min(lowest, try FileManager.default.contentsOfDirectory(atPath: "/dev/fd").count)
-        try await Task.sleep(for: .milliseconds(40))
-      }
-      return lowest
-    }
     func failToLaunch() async {
       _ = try? await runner.run(
         URL(fileURLWithPath: "/bin/sh"), ["-c", "true"], in: URL(fileURLWithPath: "/no/such/dir"))
     }
 
     for _ in 0..<5 { await failToLaunch() }
-    let before = try await lowestDescriptorCount(over: 5)
+    let before = try await lowestDescriptorCount(over: .seconds(2))
     for _ in 0..<100 { await failToLaunch() }
-    let after = try await lowestDescriptorCount(over: 10)
+    let after = try await lowestDescriptorCount(over: .seconds(4))
 
     #expect(after - before < 300, "before \(before), after \(after); the leak was 600")
   }
+}
+
+/// The lowest `/dev/fd` reading over `window`, sampled every tenth of a
+/// second. The count is the whole process's and the other suites run beside
+/// this one, ninety-six children with two pipes each among them, so a short
+/// window can sit entirely inside somebody else's burst and read as a leak.
+/// The lowest over a long one is the floor those bursts return to.
+private func lowestDescriptorCount(over window: Duration) async throws -> Int {
+  var lowest = Int.max
+  let deadline = ContinuousClock.now + window
+  repeat {
+    lowest = min(lowest, try FileManager.default.contentsOfDirectory(atPath: "/dev/fd").count)
+    try await Task.sleep(for: .milliseconds(100))
+  } while ContinuousClock.now < deadline
+  return lowest
 }
 
 @Suite
@@ -170,15 +189,20 @@ struct ProcessRunnerCompletionTests {
   /// A hook like `npm run dev &` exits at once but its child inherits the
   /// pipes, so EOF never comes while the server runs. The call must return
   /// when the process the caller started exits, not when its descendants do.
+  ///
+  /// The grandchild outlives the bound by fifty seconds, so the two answers
+  /// are a moment and a minute and no loaded runner is anywhere between
+  /// them. It is orphaned when the test ends and sleeps out its minute
+  /// against nothing.
   @Test func aChildThatExitsWithABackgroundGrandchildStillCompletes() async throws {
     let started = ContinuousClock.now
     let output = try await runner.capture(
-      sh, ["-c", "printf before; sleep 4 & exit 0"], in: cwd)
+      sh, ["-c", "printf before; sleep 60 & exit 0"], in: cwd)
     let elapsed = ContinuousClock.now - started
 
     #expect(output.succeeded)
     #expect(output.standardOutput == "before")
-    #expect(elapsed < .seconds(3), "waited on the grandchild: \(elapsed)")
+    #expect(elapsed < .seconds(10), "waited on the grandchild: \(elapsed)")
   }
 
   /// Output written right before exit sits in the pipe when the exit is
@@ -196,18 +220,10 @@ struct ProcessRunnerCompletionTests {
   /// per worktree every five seconds, so a leak here would exhaust the
   /// process within the hour.
   @Test func successfulRunsDoNotLeakFileDescriptors() async throws {
-    func lowestDescriptorCount(over samples: Int) async throws -> Int {
-      var lowest = Int.max
-      for _ in 0..<samples {
-        lowest = min(lowest, try FileManager.default.contentsOfDirectory(atPath: "/dev/fd").count)
-        try await Task.sleep(for: .milliseconds(40))
-      }
-      return lowest
-    }
     for _ in 0..<5 { _ = try await runner.run(sh, ["-c", "printf x"], in: cwd) }
-    let before = try await lowestDescriptorCount(over: 5)
+    let before = try await lowestDescriptorCount(over: .seconds(2))
     for _ in 0..<100 { _ = try await runner.run(sh, ["-c", "printf x; printf y >&2"], in: cwd) }
-    let after = try await lowestDescriptorCount(over: 10)
+    let after = try await lowestDescriptorCount(over: .seconds(4))
 
     #expect(after - before < 100, "before \(before), after \(after); a leak would be 400")
   }
@@ -474,7 +490,9 @@ struct ProcessStopTests {
       let elapsed = ContinuousClock.now - started
       #expect(output.stop == .timedOut(after: .milliseconds(500)), "\(shell)")
       #expect(!output.succeeded, "\(shell)")
-      #expect(elapsed < .seconds(8), "\(shell) took \(elapsed) to be ended")
+      // The child sleeps thirty, so twelve tells a stop from no stop
+      // rather than a fast runner from a slow one.
+      #expect(elapsed < .seconds(12), "\(shell) took \(elapsed) to be ended")
       let child = try #require(sleepPID(in: output.standardOutput), "\(shell)")
       #expect(await hasEnded(child), "\(shell) left its sleep running as pid \(child)")
     }
@@ -490,7 +508,7 @@ struct ProcessStopTests {
     let output = try await runner.capture(
       URL(fileURLWithPath: "/bin/sh"), ["-c", "sleep 30"], in: cwd, stopper: stopper)
     #expect(output.stop == .stopped)
-    #expect(ContinuousClock.now - started < .seconds(8))
+    #expect(ContinuousClock.now - started < .seconds(12), "the child sleeps thirty")
   }
 
   @Test func aStopAskedBeforeTheChildStartsAppliesToIt() async throws {

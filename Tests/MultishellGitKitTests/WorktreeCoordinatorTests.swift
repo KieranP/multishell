@@ -486,16 +486,20 @@ struct WorktreeServiceGuardTests {
 struct StatusConcurrencyTests {
   /// Thirty `git status` at once thrash the disk; the coordinator promises at
   /// most eight. Each fake run notes how many others are running when it
-  /// starts, then holds its slot for a moment. The hold is long enough that
-  /// spawning twenty shells, which on a loaded runner costs seconds, cannot
-  /// carry the total past the bound on its own.
+  /// starts, then holds its slot for a second, so the peak it records says
+  /// both that the cap holds and that the runs overlapped at all. Nothing
+  /// here is timed: a wall-clock bound on twenty shells is the runner's
+  /// mood, and it flaked as one. The hold is a second rather than the half
+  /// it was because the peak is the evidence now: at half a second a runner
+  /// that spends longer than that spawning the next eight shells sees the
+  /// last of a wave leave before the next arrives, and reads as serial.
   @Test func statusesRunAtMostEightAtATimeAndStillOverlap() async throws {
     let fake = try FakeGit.make(
       """
       mkdir -p "$SCRATCH/running" "$SCRATCH/peaks"
       : > "$SCRATCH/running/$$"
       ls "$SCRATCH/running" | wc -l > "$SCRATCH/peaks/$$"
-      sleep 0.5
+      sleep 1
       rm "$SCRATCH/running/$$"
       printf '## main\\n'
       """)
@@ -506,9 +510,7 @@ struct StatusConcurrencyTests {
     // Same directory, so ids collide; the count comes from the script.
     let coordinator = WorktreeCoordinator(service: WorktreeService(git: fake.runner))
 
-    let started = ContinuousClock.now
     let statuses = await coordinator.statuses(of: worktrees)
-    let elapsed = ContinuousClock.now - started
 
     #expect(statuses.values.allSatisfy { $0.branch == "main" })
     let peaks = try FileManager.default.contentsOfDirectory(
@@ -521,9 +523,6 @@ struct StatusConcurrencyTests {
     #expect(peaks.count == 20, "every run recorded a peak")
     #expect(peaks.max() ?? 0 <= WorktreeCoordinator.maxConcurrentStatuses, "\(peaks)")
     #expect(peaks.max() ?? 0 >= 4, "runs did not overlap: \(peaks)")
-    // Twenty runs of 0.5 s: ten seconds of sleeping serially, under two in
-    // threes.
-    #expect(elapsed < .seconds(8), "took \(elapsed)")
   }
 }
 

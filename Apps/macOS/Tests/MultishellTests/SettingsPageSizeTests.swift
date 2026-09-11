@@ -11,23 +11,26 @@ import Testing
 /// Both settings windows are fixed at `SettingsView.windowSize`, so a page
 /// taller than that is reachable only by scrolling a form the user has no
 /// reason to think scrolls. Adding rows is how that happens, and adding rows
-/// is cheap. The two pages that already scroll say so below, which is what
+/// is cheap. The one page that already scrolls says so below, which is what
 /// makes this catch the next one.
 ///
 /// The full height is the page's to use: measured here, the tab content is
-/// given the whole 480 and the band takes none of it. That was worth
+/// given the whole window and the band takes none of it. That was worth
 /// checking, since the band is invisible to everything else in this file.
 ///
 /// Agent settings is left out, not fixed: its `onAppear` refresh reads the
 /// machine, so the page is as tall as this developer has agents, and a test
-/// that measured it would be measuring a laptop. It also overflows, which is
-/// in known-gaps.md. Appearance stays in: its font list is the machine's too,
-/// but a picker is one row however many fonts are in it.
+/// that measured it would be measuring a laptop. Appearance stays in: its
+/// font list is the machine's too, but a picker is one row however many
+/// fonts are in it.
 ///
-/// The bound is absolute rather than a margin, and three of the project
-/// pages sit within 70pt of it. So this is likely the first test to fail on
-/// a macOS that grows a grouped form's rows, and that failure would be
-/// correct: the window is fixed, so the page really would overflow.
+/// The bound is absolute rather than a margin, and Project General sits
+/// 18.5pt under it. So this is likely the first test to fail on a macOS that
+/// grows a grouped form's rows, and that failure would be correct: the
+/// window is fixed, so the page really would overflow. A page is worth a
+/// point or two more on one machine than another: Project Agents measured
+/// 541 here and 539 on the CI runner, which does have the window server this
+/// needs.
 ///
 /// Two things this cannot see. The tab band itself: SwiftUI draws it outside
 /// the AppKit hierarchy, absent from both a rendered bitmap and a measured
@@ -66,10 +69,8 @@ struct SettingsPageSizeTests {
       Page(name: "Terminal", view: AnyView(TerminalSettingsTab(model: model))),
       Page(name: "Notifications", view: AnyView(NotificationSettingsTab(model: model))),
       Page(name: "Appearance", view: AnyView(AppearanceSettingsTab(model: model))),
-      // Overflows by about 100pt. Whether that is wanted is in known-gaps.md.
       Page(
-        name: "Project General", view: AnyView(ProjectGeneralTab(model: model, project: project)),
-        scrolls: true),
+        name: "Project General", view: AnyView(ProjectGeneralTab(model: model, project: project))),
       Page(
         name: "Project Worktrees",
         view: AnyView(ProjectWorktreesTab(model: model, project: project))),
