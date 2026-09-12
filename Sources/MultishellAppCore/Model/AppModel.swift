@@ -50,6 +50,10 @@ public final class AppModel<Surface> {
   /// above has one: a commit arriving after the edit ended must be ignored.
   public var renamingTabID: TerminalTab.ID?
 
+  /// What a tab drag is doing. Here, not in the column tree that draws it,
+  /// because a sidebar row takes a drop too and could not reach a `@State`.
+  public var tabDrag = TabDragState()
+
   // MARK: - The Agents board
 
   /// Whether the board fills the detail area. Runtime state; set through

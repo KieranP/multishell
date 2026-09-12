@@ -41,6 +41,15 @@ Ghostty bash goes through `/bin/sh -c 'exec bash ...'`, Ghostty keying its own
 injection on the command's first word and adding `--posix`, under which macOS's
 bash 3.2 reads neither file.
 
+`--init-file` is read in place of `.bashrc`, so the generated file reproduces a
+login shell's chain itself: `/etc/profile`, then the first of `.bash_profile`,
+`.bash_login`, `.profile`. `.bashrc` only where that found nothing, as a login
+shell does -> whether one runs is the profile's business, and reading it here
+as well ran it twice for everyone whose profile ends by sourcing it. A user
+whose profile does not source it sees no `.bashrc` here, which is what they
+already see in any login shell. Its DEBUG trap and `PROMPT_COMMAND` are chained
+to, never replaced, both being installed by the time ours are.
+
 ## A click in the prompt moves the cursor, because the prompt claims it
 
 Ghostty answers a click only for a shell whose OSC 133 A mark carries
@@ -52,6 +61,25 @@ the whole set and prints its A, else readline edits at the wrong column. No D:
 the exit code is the socket's. Only when `TERM_PROGRAM` names ghostty, half a
 set opening a prompt that never ends. Cost: no click-to-move under SwiftTerm,
 none on the later lines of a multi-line buffer.
+
+Why the zsh claim rides in PS1 rather than being printed: libghostty ships an
+MIT rewrite of the integration, not Ghostty's own GPLv3 one, and it claims
+nothing while printing a plain A from a precmd registered after ours, which
+would withdraw ours. PS1 is expanded once every precmd has run, and again on
+every redraw -> riding it is what makes ours the last A the terminal sees. Both
+halves put an input mark on the end of PS1 and each sees the other's. Output
+start is printed by both, harmlessly twice; it earns its place where that
+integration is absent, the claim otherwise standing for the whole session and
+every click in a program's own screen being taken as one in a prompt.
+
+bash's A is printed instead, because it moves to a fresh line where a command
+left the cursor mid-line, and inside PS1 that would be a line readline had been
+told cost nothing. Its input mark rides the end of PS1, put back after any
+framework has rebuilt it from a `PROMPT_COMMAND`, which is why the marks run
+last of all. Ghostty writes none of this for bash itself: it refuses Apple's
+3.2 outright, and the launch through `sh` hides the rest. C comes off the same
+DEBUG trap as the hooks, a prompt marked without it answering a click while a
+program is still running.
 
 ## Files dropped on a terminal are pasted, never run
 

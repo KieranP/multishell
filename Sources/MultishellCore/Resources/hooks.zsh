@@ -1,25 +1,5 @@
-# Ghostty moves the cursor to a click in the prompt only for a shell that
-# names the sequences it takes back. The integration libghostty ships is not
-# Ghostty's own — it is an MIT rewrite, Ghostty's being GPLv3 — and it names
-# none, so the claim has to come from here. `cl=line` is one arrow per cell,
-# which zsh's line editor honours.
-#
-# It rides at the front of PS1 rather than being printed, because it has to be
-# the last prompt-start mark the terminal sees: that integration prints a plain
-# one from a precmd of its own, registered after ours and so run after it, and
-# a plain mark is how a terminal is told the shell claims nothing. PS1 is
-# expanded once every precmd has run, and again on every redraw.
-#
-# The input mark goes on the end of PS1 with it, where that integration also
-# puts one when it is loaded; either sees the other's. A claim over text no
-# mark calls input is worse than no claim: Ghostty takes the click, counts no
-# cells to cross, and answers with nothing, so the click is swallowed.
-#
-# Output start is printed, and goes with them. That integration writes this
-# mark too, and writing it twice changes nothing; it matters where the
-# integration is not loaded, when the claim would otherwise stand for the whole
-# session and Ghostty would take every click as one in a prompt, including the
-# clicks a program drawing in the same screen is waiting for.
+# The OSC 133 marks that let a click in the prompt move the cursor: `cl=line`
+# is one arrow per cell. Why each is placed as it is -> docs/design/terminals.md.
 if [ "${TERM_PROGRAM-}" = ghostty ]; then
   typeset -g _multishell_prompt_mark=$'%{\e]133;A;cl=line\a%}'
   typeset -g _multishell_input_mark=$'%{\e]133;B\a%}'

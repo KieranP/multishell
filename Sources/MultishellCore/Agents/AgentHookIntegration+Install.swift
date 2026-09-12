@@ -9,7 +9,7 @@ extension AgentHookIntegration {
     // An agent with no events has no hooks in any file; without this every
     // settings object would satisfy an empty list.
     guard !events.isEmpty else { return false }
-    let hooks = settings["hooks"] as? [String: Any] ?? [:]
+    let hooks = hooksSection(settings) ?? [:]
     return events.allSatisfy { event in
       groups(hooks[event.name])?.contains(where: isMultishellGroup) ?? false
     }
@@ -18,7 +18,7 @@ extension AgentHookIntegration {
   /// Whether any hook of ours is in there at all. Not `isInstalled`, which
   /// wants one under every event and so answers no to a half-written file.
   func holdsAnyOfOurs(_ settings: [String: Any]) -> Bool {
-    let hooks = settings["hooks"] as? [String: Any] ?? [:]
+    let hooks = hooksSection(settings) ?? [:]
     return events.contains { event in
       groups(hooks[event.name])?.contains(where: isMultishellGroup) ?? false
     }
@@ -32,7 +32,9 @@ extension AgentHookIntegration {
     -> [String: Any]
   {
     var result = settings
-    var hooks = settings["hooks"] as? [String: Any] ?? [:]
+    // Left alone where it holds a shape this cannot put back; `install`
+    // refuses such a file rather than reaching here.
+    guard var hooks = hooksSection(settings) else { return result }
     for event in events {
       guard var existing = groups(hooks[event.name]) else { continue }
       if !existing.contains(where: isMultishellGroup) {
@@ -78,8 +80,15 @@ extension AgentHookIntegration {
   /// The events this would have to write over to install. Empty is the
   /// answer for every file the agents themselves write.
   func unreadableEvents(in settings: [String: Any]) -> [String] {
-    let hooks = settings["hooks"] as? [String: Any] ?? [:]
+    let hooks = hooksSection(settings) ?? [:]
     return events.filter { groups(hooks[$0.name]) == nil }.map(\.name)
+  }
+
+  /// The file's `hooks`, `nil` where it is not an object of events. Absent
+  /// reads as empty, and so does `null`, that being the key spelled out.
+  private func hooksSection(_ settings: [String: Any]) -> [String: Any]? {
+    guard let value = settings["hooks"], !(value is NSNull) else { return [:] }
+    return value as? [String: Any]
   }
 
   /// One entry of the file, whichever of the two shapes it is in: a group
@@ -124,6 +133,7 @@ extension AgentHookIntegration {
       try HookSettingsFile.writeOurs(snippet(helper: helper), to: file)
     } else {
       let settings = try HookSettingsFile.read(file)
+      guard hooksSection(settings) != nil else { throw UnreadableHookSection(file: file) }
       if let event = unreadableEvents(in: settings).first {
         throw UnreadableHookEntries(file: file, event: event)
       }

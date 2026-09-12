@@ -38,6 +38,16 @@ does.
   only what is on screen, and a tab off the end cannot be dropped on.
   Auto-scroll needs the drop's own pointer position, a repeating step, and the
   strip's `ScrollViewProxy` reaching the drop delegate.
+- A tab drag released where nothing takes it, outside the window or over a
+  part of the sidebar that is not a worktree row, never ends: `.onDrag` has no
+  cancellation callback, and only a drop clears `AppModel.tabDrag`. The five
+  drop paths do clear it, the sidebar row included, so what is left is the
+  abandoned drag. `TabDragState.isDragging` then stays true and every column
+  keeps `TabGroupBands` mounted over its pane: the bands stay hidden, being
+  drawn from `overColumn` and `band` which the pointer leaving does clear, so
+  the cost is a `Color.clear` drop target and its accessibility label over the
+  terminal area until the next drag begins, which resets the state. Not seen
+  on screen. Fix would want a gesture that reports its own end.
 - While the Agents board is up, what acts on a pane does nothing, but Open in
   Editor and New Worktree still act on the selected worktree, and no sidebar
   row draws as selected then, so those two have nothing on screen naming their

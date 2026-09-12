@@ -66,6 +66,18 @@ is waiting":
   adds later raises a dot instead of falling silently out; the cost the other
   way is that an announcing type added later raises one too, which is the
   trade taken deliberately.
+- Claude's Stop is its main assistant loop stopping, not the turn ending: a
+  subagent launched in the background outlives it, and its tool calls keep
+  reporting Working afterwards -> the pane went Done, back to Working, then
+  Done again, once per wave, each with a banner. So `SubagentStart` and
+  `SubagentStop` are asked for too, purely to count what is out: a Stop with
+  any outstanding is held as Working, and the last worker to end pays the Done
+  the agent was owed. The count is the app's, a hook being a fresh process
+  with nothing to remember; it rides the channel as `subagents`, +1 or -1, and
+  `SessionStates.settling` keeps it. An agent that reports no workers never
+  enters that arm, so Codex and Copilot keep Stop meaning Done outright. A
+  count stuck above zero costs the Done banner and nothing else, and Idle,
+  Failed or the process going clears it.
 - Gemini needed neither: its Notification has one type, a tool permission.
 
 Claude asked for that request beside its notification, not instead: the

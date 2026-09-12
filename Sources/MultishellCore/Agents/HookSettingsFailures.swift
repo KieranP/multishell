@@ -28,6 +28,18 @@ public struct UnreadableHookEntries: Error, CustomStringConvertible {
   }
 }
 
+/// `hooks` holds something other than an object of events: a list, or a
+/// string. Refused rather than replaced, this being unable to put it back.
+public struct UnreadableHookSection: Error, CustomStringConvertible {
+  public let file: URL
+
+  public init(file: URL) { self.file = file }
+
+  public var description: String {
+    "\(file.path) holds something under hooks that Multishell does not recognise."
+  }
+}
+
 /// Not JSON this can read, a comment or trailing comma being the usual
 /// reason. Parsing loosely and writing back strictly would lose them.
 public struct UnparsableSettingsFile: Error, CustomStringConvertible {

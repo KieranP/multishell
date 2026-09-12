@@ -24,8 +24,16 @@ struct AgentHookPayloadTests {
     #expect(state(claude, "StopFailure") == .error)
     #expect(state(claude, "SessionEnd") == .idle)
     #expect(state(claude, "SessionStart") == .idle)
-    #expect(state(claude, "SubagentStop") == nil, "the agent is still working")
-    #expect(state(claude, "SubagentStart") == nil, "the tool call already said working")
+    // Asked for so the two can be counted: `Stop` is the main loop stopping,
+    // which happens while these are still going. Neither moves the dot on
+    // its own; what they move is the count that holds Done back.
+    #expect(state(claude, "SubagentStart") == .running)
+    #expect(state(claude, "SubagentStop") == .running, "the agent is still working")
+    #expect(claude.events.first { $0.name == "SubagentStart" }?.subagents == 1)
+    #expect(claude.events.first { $0.name == "SubagentStop" }?.subagents == -1)
+    #expect(
+      claude.events.filter { $0.subagents != 0 }.count == 2,
+      "one event each way, or the count never comes back to nothing")
     #expect(state(claude, "PostToolUseFailure") == nil, "a tool failing is not a turn failing")
     #expect(state(claude, "PreCompact") == nil)
     #expect(state(claude, "PostCompact") == nil, "it fires when the compaction is over")
@@ -428,6 +436,85 @@ struct AgentHooksTests {
     #expect(try String(contentsOf: file, encoding: .utf8) == original, "not a byte written")
     #expect(!AgentHooks.claude.isInstalled(in: file))
     #expect(AgentHooks.claude.unreadableEvents(in: try HookSettingsFile.read(file)) == ["Stop"])
+  }
+
+  /// The field the count rides on. Both directions, since an older helper and
+  /// an older app each have to meet a newer one.
+  @Test func theSubagentCountSurvivesTheWireBothWays() throws {
+    let sent = SessionStateReport(state: .running, agent: "claude", subagents: -1)
+    let line = try sent.encodedLine()
+    #expect(line.contains("\"subagents\":-1"))
+    #expect(try #require(SessionStateReport.parse(line)) == sent)
+
+    let quiet = try SessionStateReport(state: .done).encodedLine()
+    #expect(!quiet.contains("subagents"), "a report that is not about them says nothing")
+    #expect(SessionStateReport.parse(quiet)?.subagents == nil)
+
+    // What an older helper writes, and what an older app would be handed.
+    let old = #"{"v":1,"state":"done","agent":"claude"}"#
+    #expect(SessionStateReport.parse(old)?.subagents == nil, "absent reads as no change")
+    let newer = #"{"v":1,"state":"running","subagents":1,"somethingLater":true}"#
+    #expect(SessionStateReport.parse(newer)?.subagents == 1)
+  }
+
+  /// Every existing install predates the two counting events, so Add has to
+  /// top them up without doubling the seven that are already there.
+  @Test func addingOverAnOlderInstallFillsOnlyWhatIsMissing() throws {
+    let directory = temporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let file = directory.appendingPathComponent("settings.json")
+
+    // The file as a build before the counting events left it.
+    let older = AgentHookIntegration(
+      id: AgentCatalogue.claudeID, name: "Claude Code", file: file, displayPath: "x",
+      events: AgentHooks.claude.events.filter { $0.subagents == 0 },
+      format: .sharedSettings(millisecondTimeout: false))
+    try older.install(into: file, helper: helper)
+    #expect(older.isInstalled(in: file))
+    #expect(!AgentHooks.claude.isInstalled(in: file), "so the row offers Add again")
+
+    try AgentHooks.claude.install(into: file, helper: helper)
+
+    #expect(AgentHooks.claude.isInstalled(in: file))
+    let hooks = try #require(try HookSettingsFile.read(file)["hooks"] as? [String: Any])
+    for event in AgentHooks.claude.events {
+      let groups = try #require(hooks[event.name] as? [[String: Any]], "\(event.name)")
+      #expect(groups.count == 1, "\(event.name) gained a second copy of ours")
+    }
+  }
+
+  /// A list or a string under `hooks` is something this cannot put back, so
+  /// the install refuses it rather than writing over it.
+  @Test func installingRefusesAFileWhoseHooksAreNotAnObject() throws {
+    let directory = temporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let file = directory.appendingPathComponent("settings.json")
+    let original = #"{"hooks":["Stop"]}"#
+    try original.write(to: file, atomically: true, encoding: .utf8)
+
+    #expect(throws: UnreadableHookSection.self) {
+      try AgentHooks.claude.install(into: file, helper: helper)
+    }
+    #expect(try String(contentsOf: file, encoding: .utf8) == original, "not a byte written")
+    #expect(!AgentHooks.claude.isInstalled(in: file))
+  }
+
+  /// An explicit `null` is not a shape to preserve, it is the key being
+  /// absent spelled out, so the install goes ahead as for a file without it.
+  @Test func installingTreatsANullHooksKeyAsNoHooksAtAll() throws {
+    let directory = temporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let file = directory.appendingPathComponent("settings.json")
+    try #"{"hooks":null,"model":"opus"}"#.write(to: file, atomically: true, encoding: .utf8)
+
+    try AgentHooks.claude.install(into: file, helper: helper)
+
+    #expect(AgentHooks.claude.isInstalled(in: file))
+    let settings = try HookSettingsFile.read(file)
+    #expect(settings["model"] as? String == "opus", "the rest of the file is kept")
   }
 
   @Test func installingIntoAFileCreatesItKeepsABackupAndIsIdempotent() throws {

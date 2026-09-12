@@ -28,6 +28,9 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   /// Set where the report moves a dot and another about the same thing will
   /// raise the banner. Absent keeps an older helper's banners.
   public var silent: Bool?
+  /// What this does to the count of background workers outstanding: `1`
+  /// started, `-1` ended. The app counts; see docs/design/agents.md.
+  public var subagents: Int?
 
   enum CodingKeys: String, CodingKey {
     case version = "v"
@@ -39,6 +42,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     case duration
     case agent
     case silent
+    case subagents
   }
 
   public init(
@@ -49,7 +53,8 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     message: String? = nil,
     duration: Double? = nil,
     agent: String? = nil,
-    silent: Bool? = nil
+    silent: Bool? = nil,
+    subagents: Int? = nil
   ) {
     self.version = Self.protocolVersion
     self.state = state
@@ -60,6 +65,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     self.duration = duration
     self.agent = agent
     self.silent = silent
+    self.subagents = subagents
   }
 
   public init(from decoder: any Decoder) throws {
@@ -75,6 +81,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     duration = try container.decodeIfPresent(Double.self, forKey: .duration)
     agent = try container.decodeIfPresent(String.self, forKey: .agent)
     silent = try container.decodeIfPresent(Bool.self, forKey: .silent)
+    subagents = try container.decodeIfPresent(Int.self, forKey: .subagents)
   }
 
   private static func trimmed(_ message: String?) -> String? {

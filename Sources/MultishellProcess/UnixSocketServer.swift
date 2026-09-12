@@ -132,9 +132,8 @@ public final class UnixSocketServer: @unchecked Sendable {
     }
   }
 
-  /// Suspends the listener and brings it back once. Every suspend and resume
-  /// is under the lock: releasing a suspended source traps, and so does one
-  /// resume too many, so `stop` has to see this state and undo it.
+  /// Suspends the listener and brings it back once, all under the lock:
+  /// releasing a suspended source traps, and so does one resume too many.
   private func standDown() {
     let suspended = lock.withLock { () -> Bool in
       guard !standingDown, let source = listener else { return false }

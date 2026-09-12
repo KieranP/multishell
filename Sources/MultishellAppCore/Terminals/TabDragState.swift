@@ -35,7 +35,8 @@ public struct TabDragState: Equatable, Sendable {
     tabID = id
   }
 
-  /// Every drop path ends here, the ones that moved nothing included.
+  /// Every drop path ends here, the ones that moved nothing included: the
+  /// four in `TabDrops` and the sidebar row, which is why `AppModel` holds it.
   public mutating func end() {
     self = TabDragState()
   }

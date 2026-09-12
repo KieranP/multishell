@@ -255,6 +255,9 @@ struct SidebarView: View {
     // so a project dragged past is not offered this row.
     .dropDestination(for: TabTransfer.self) { dropped, _ in
       tabDropTarget = nil
+      // A fifth drop path, so it ends the drag as the four in `TabDrops` do:
+      // a drag left open keeps an overlay over every pane.
+      model.tabDrag.end()
       // Refused here only where the answer is plainly no. The rest of what
       // can stop a move says so with an alert of its own.
       guard let moving = dropped.first?.id, let tab = model.workspace.tab(moving),

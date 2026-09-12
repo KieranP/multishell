@@ -46,9 +46,8 @@ public enum AgentHooks {
     claude, codex, gemini, copilot, openCode,
   ]
 
-  /// Which of Claude's fourteen notification types announces rather than
-  /// asks. A deny list, so a type a later Claude adds is taken to ask; see
-  /// docs/design/agents.md. Sorted from the payload, not by matcher.
+  /// Which of Claude's fourteen notification types announces rather than asks.
+  /// A deny list, sorted from the payload; see docs/design/agents.md.
   public static let claudeAnnouncements: Set<String> = [
     "idle_prompt", "agent_completed", "auth_success", "quota_auto_resume_fired",
   ]
@@ -67,6 +66,10 @@ public enum AgentHooks {
       AgentHookEvent("PostToolUse", .running),
       AgentHookEvent("PermissionRequest", .attention, onlyWhenPrompting: true, silent: true),
       AgentHookEvent("Notification", .attention, ignoredNotificationTypes: claudeAnnouncements),
+      // Counted so Done waits for the last one out, `Stop` being the main
+      // loop stopping; see docs/design/agents.md.
+      AgentHookEvent("SubagentStart", .running, subagents: 1),
+      AgentHookEvent("SubagentStop", .running, subagents: -1),
       AgentHookEvent("Stop", .done),
       AgentHookEvent("StopFailure", .error),
       AgentHookEvent("SessionEnd", .idle),

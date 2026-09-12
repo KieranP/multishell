@@ -196,14 +196,16 @@ extension WorkspaceStore {
 
     let source = workspace.tabs[movingIndex].groupID
     let destination = workspace.tabs[anchorIndex].groupID
+    let vacated = slot(of: id)
     var tab = workspace.tabs.remove(at: movingIndex)
     tab.groupID = destination
     // Taking the tab out shifts the anchor down by one where it sat after it.
-    let slot = anchorIndex > movingIndex ? anchorIndex - 1 : anchorIndex
-    workspace.tabs.insert(tab, at: placement == .before ? slot : slot + 1)
+    // Not `slot`, which is the method above and a place in a column, not here.
+    let landing = anchorIndex > movingIndex ? anchorIndex - 1 : anchorIndex
+    workspace.tabs.insert(tab, at: placement == .before ? landing : landing + 1)
 
     guard source != destination else { return }
-    settle(group: source)
+    settle(group: source, vacating: vacated)
     activateTab(id)
   }
 
@@ -218,11 +220,12 @@ extension WorkspaceStore {
       workspace.tabs[index].groupID != groupID
     else { return false }
 
+    let vacated = slot(of: id)
     var tab = workspace.tabs.remove(at: index)
     let source = tab.groupID
     tab.groupID = groupID
     workspace.tabs.append(tab)
-    settle(group: source)
+    settle(group: source, vacating: vacated)
     activateTab(id)
     return true
   }
@@ -238,6 +241,7 @@ extension WorkspaceStore {
       let column = resolvedGroup(nil, in: worktreeID)
     else { return false }
 
+    let vacated = slot(of: id)
     var tab = workspace.tabs.remove(at: index)
     let source = tab.groupID
     tab.worktreeID = worktreeID
@@ -251,7 +255,7 @@ extension WorkspaceStore {
       workspace.sessions[index].workingDirectory = destination.path
     }
 
-    settle(group: source)
+    settle(group: source, vacating: vacated)
     setActiveTab(id, ofGroup: column)
     workspace.focusedGroupByWorktree[worktreeID] = column
     return true
@@ -275,10 +279,11 @@ extension WorkspaceStore {
 
   private func removeTab(at index: Int) {
     let tab = workspace.tabs[index]
+    let vacated = slot(of: tab.id)
     let closing = Set(tab.sessionIDs)
     workspace.sessions.removeAll { closing.contains($0.id) }
     workspace.tabs.remove(at: index)
-    settle(group: tab.groupID)
+    settle(group: tab.groupID, vacating: vacated)
   }
 }
 
@@ -299,6 +304,7 @@ extension WorkspaceStore {
     else { return nil }
 
     let source = workspace.tabs[tabIndex].groupID
+    let vacated = slot(of: id)
     let worktreeID = workspace.tabGroups[groupIndex].worktreeID
     let share = TabGroup.usableWeight(workspace.tabGroups[groupIndex].weight / 2)
     workspace.tabGroups[groupIndex].weight = share
@@ -307,7 +313,7 @@ extension WorkspaceStore {
     // it on screen; a group of another worktree in between changes nothing.
     workspace.tabGroups.insert(group, at: placement == .before ? groupIndex : groupIndex + 1)
     workspace.tabs[tabIndex].groupID = group.id
-    settle(group: source)
+    settle(group: source, vacating: vacated)
     workspace.focusedGroupByWorktree[worktreeID] = group.id
     return group
   }
@@ -352,9 +358,16 @@ extension WorkspaceStore {
     workspace.tabGroups[index].activeTabID = id
   }
 
-  /// A column after a tab left it: another of its tabs showing, or the column
-  /// gone. See docs/design/tabs-and-columns.md for where the focus lands.
-  private func settle(group groupID: TabGroup.ID) {
+  /// Where in its column a tab sits, read before it is taken out so `settle`
+  /// knows which tab slid into its place.
+  private func slot(of id: TerminalTab.ID) -> Int? {
+    guard let tab = workspace.tab(id) else { return nil }
+    return workspace.tabs(in: tab.groupID).firstIndex { $0.id == id }
+  }
+
+  /// A column after a tab left it: another showing, or the column gone, with
+  /// `vacating` the place it held. See docs/design/tabs-and-columns.md.
+  private func settle(group groupID: TabGroup.ID, vacating slot: Int? = nil) {
     guard let index = workspace.tabGroups.firstIndex(where: { $0.id == groupID }) else { return }
     let worktreeID = workspace.tabGroups[index].worktreeID
     let remaining = workspace.tabs(in: groupID)
@@ -365,7 +378,10 @@ extension WorkspaceStore {
       {
         return
       }
-      workspace.tabGroups[index].activeTabID = remaining.last?.id
+      // The tab that slid into the vacated place, which is the one to its
+      // right; the last where the tab that left was itself last.
+      workspace.tabGroups[index].activeTabID =
+        remaining[min(slot ?? remaining.count - 1, remaining.count - 1)].id
       return
     }
 

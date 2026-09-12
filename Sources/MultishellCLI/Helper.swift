@@ -125,7 +125,8 @@ enum Helper {
       pid: ProcessAncestry.reportingProcess(),
       message: payload.message,
       agent: id,
-      silent: event.silent ? true : nil)
+      silent: event.silent ? true : nil,
+      subagents: event.subagents == 0 ? nil : event.subagents)
     try? send(report, environment: environment)
   }
 

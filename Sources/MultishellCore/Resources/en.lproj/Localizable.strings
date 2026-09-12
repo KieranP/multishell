@@ -1,11 +1,5 @@
-/* Every word the libraries show, in the language it was written in. A
-   translation is this file again under another language code; see
-   docs/design/translation.md. Sorted by key, which groups it by the part
-   of the app the words are in. Read through `t("the.key")`, which in a
-   file of these targets reaches this catalogue alone; a frontend's own
-   words are in its own. TranslationTests fails a key the code asks for
-   and this file has not got, and an entry nothing asks for. Counted forms
-   are in Localizable.stringsdict. */
+/* Every word the libraries show, sorted by key and read through
+   `t("the.key")`; see docs/design/translation.md. */
 
 "action.add-project" = "Add Project";
 "agent-hooks.codex-trust" = "Codex runs no hook it has not been told to trust: run /hooks in Codex once and trust this one.";
@@ -87,6 +81,7 @@
 "error.theme-unreadable-title" = "A theme file could not be read";
 "error.trash-refused" = "Worktree not removed: the directory could not be moved to the Trash or deleted";
 "error.unknown-hooks-message" = "%1$@ holds something under hooks.%2$@ that is not the list of hooks the agent documents, and writing ours there would lose it. Use Show JSON beside the agent and add the entries yourself.";
+"error.unknown-hooks-section-message" = "%@ holds something under hooks that is not the object of events the agent documents, and writing ours there would lose it. Use Show JSON beside the agent and add the entries yourself.";
 "error.unknown-hooks-title" = "That settings file has hooks Multishell does not recognise";
 "error.unmoved-state-message" = "It could not be moved aside either, so it is still at %1$@ and Multishell started empty. Nothing will be saved over it until it is readable or moved away.\n\n%2$@";
 "error.unparsable-settings-message" = "%@ has something in it Multishell cannot read back — a comment or a trailing comma will do it — and rewriting the file would lose it. Use Show JSON beside the agent and add the entries yourself.";

@@ -18,9 +18,10 @@ public enum SplitMath {
 
     let perPoint = total / available
     let pair = weights[index] + weights[index + 1]
-    // Two panes narrower than the minimum would clamp to a negative share,
-    // which SwiftUI refuses and which would be saved as the layout.
-    let minimum = min(minimumPane * perPoint, pair / 2)
+    let minimum = minimumPane * perPoint
+    // A pair with no room for two minimums has nothing to trade: clamping it
+    // anyway forces the midpoint, and that is saved as the layout.
+    guard pair >= minimum * 2 else { return weights }
 
     var first = weights[index] + translation * perPoint
     first = min(max(first, minimum), pair - minimum)

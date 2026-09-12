@@ -27,32 +27,35 @@ extension AppModel {
   public func apply(_ report: SessionStateReport) {
     if let id = report.sessionID {
       guard liveSessions.contains(id), let session = workspace.session(id) else { return }
-      // Who is at that prompt, for a drop on it to be written as that agent
-      // reads a file. A dot is all this changes about the pane itself.
-      // Assigned only when it moves, as the sweep beside it is: an agent
-      // reports twice per tool call, and an idle write renders both.
+      // Who is at that prompt, so a drop is written as that agent reads a
+      // file. Assigned only when it moves: an idle write renders the pane.
       if let agent = report.agent {
         let reported = ReportedAgent(agentID: agent, pid: report.pid)
         if reportedAgents[id] != reported { reportedAgents[id] = reported }
       }
       let seen = hasBeenSeen(id)
+      // What it was taken to mean, not what it said: see `SessionStates`.
+      var meant = report.state
       mutateStates {
-        $0.report(
+        meant = $0.report(
           report.state, pid: report.pid, message: report.message, duration: report.duration,
-          for: .session(id), isSeen: seen)
+          subagents: report.subagents ?? 0, for: .session(id), isSeen: seen)
       }
-      notifyIfNeeded(report, key: .session(id), worktreeID: session.worktreeID, isSeen: seen)
+      notifyIfNeeded(
+        report, as: meant, key: .session(id), worktreeID: session.worktreeID, isSeen: seen)
     } else if let cwd = report.cwd, let worktree = worktree(atPath: cwd) {
       // Gated on the board as `isShown` is, the worktree being selected
       // with nothing of it on screen; and on frontmost as `hasBeenSeen`.
       let seen =
         !showsAgentBoard && workspace.selectedWorktreeID == worktree.id && platform.isActive
+      var meant = report.state
       mutateStates {
-        $0.report(
+        meant = $0.report(
           report.state, pid: report.pid, message: report.message, duration: report.duration,
-          for: .worktree(worktree.id), isSeen: seen)
+          subagents: report.subagents ?? 0, for: .worktree(worktree.id), isSeen: seen)
       }
-      notifyIfNeeded(report, key: .worktree(worktree.id), worktreeID: worktree.id, isSeen: seen)
+      notifyIfNeeded(
+        report, as: meant, key: .worktree(worktree.id), worktreeID: worktree.id, isSeen: seen)
     }
     updatePIDWatch()
   }
@@ -83,12 +86,15 @@ extension AppModel {
     }
   }
 
+  /// `state` is what the report meant, not what it said: a Done held back for
+  /// background workers raises no banner, and the one releasing it does.
   private func notifyIfNeeded(
-    _ report: SessionStateReport, key: SessionStates.Key, worktreeID: Worktree.ID, isSeen: Bool
+    _ report: SessionStateReport, as state: SessionState, key: SessionStates.Key,
+    worktreeID: Worktree.ID, isSeen: Bool
   ) {
     guard
       NotificationPolicy.shouldNotify(
-        report.state, preference: workspace.notifications, isSeen: isSeen,
+        state, preference: workspace.notifications, isSeen: isSeen,
         duration: report.duration, silent: report.silent == true),
       let worktree = workspace.worktree(worktreeID)
     else { return }
@@ -104,7 +110,7 @@ extension AppModel {
     }
     notifier.notify(
       title: NotificationPolicy.title(subject: subject, project: project, worktree: place),
-      body: NotificationPolicy.body(for: report.state, message: report.message),
+      body: NotificationPolicy.body(for: state, message: report.message),
       about: key)
     notifiedKeys.insert(key)
   }

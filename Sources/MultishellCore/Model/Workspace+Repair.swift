@@ -86,8 +86,8 @@ extension Workspace {
       if let active = tabGroups[index].activeTabID, tabsHere.contains(where: { $0.id == active }) {
         continue
       }
-      // The last tab, where the strip's own fallbacks land: a closed tab
-      // hands the column to its neighbour on the right.
+      // Any of them will do, nothing on disk saying which the column showed:
+      // unlike `settle`, there is no vacated place to hand on.
       tabGroups[index].activeTabID = tabsHere.last?.id
     }
 

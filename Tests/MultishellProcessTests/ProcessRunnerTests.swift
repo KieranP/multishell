@@ -534,6 +534,56 @@ struct ProcessStopTests {
     #expect(stopper.reason == nil)
   }
 
+  /// `WorktreeCoordinator.remove` hands one stopper to the pre-delete and
+  /// post-delete hooks in turn. A Cancel landing between them used to poison
+  /// it: the second hook ran unsignalled while the run was reported stopped.
+  @Test func aStopBetweenTwoChildrenCarriesToTheSecondRatherThanPoisoning() async throws {
+    let stopper = ProcessStopper()
+    let first = try await runner.capture(
+      URL(fileURLWithPath: "/bin/sh"), ["-c", "printf ok"], in: cwd, stopper: stopper)
+    #expect(first.succeeded)
+
+    stopper.stop()
+    #expect(stopper.reason == nil, "nothing was signalled: the first child had already exited")
+    #expect(stopper.isStopped, "but the ask stands for whatever runs next")
+
+    let started = ContinuousClock.now
+    let second = try await runner.capture(
+      URL(fileURLWithPath: "/bin/sh"), ["-c", "sleep 30"], in: cwd, stopper: stopper)
+    #expect(second.stop == .stopped, "the second hook is the one the Cancel was for")
+    #expect(ContinuousClock.now - started < .seconds(12), "it slept its thirty")
+  }
+
+  /// The timer is armed per child, so one that exits just as its timeout
+  /// fires has nothing to stop. Carrying that forward would end the next hook
+  /// the stopper is given, which is a live child nobody asked to stop.
+  @Test func aTimeoutThatMissesItsChildDoesNotEndTheNextOne() async throws {
+    let stopper = ProcessStopper()
+    let first = try await runner.capture(
+      URL(fileURLWithPath: "/bin/sh"), ["-c", "printf ok"], in: cwd, stopper: stopper)
+    #expect(first.succeeded)
+
+    // The race, run outright: the child is gone, and its timer fires anyway.
+    stopper.stop(.timedOut(after: .milliseconds(1)))
+    #expect(stopper.reason == nil)
+    #expect(!stopper.isStopped, "a timeout dies with the run that armed it")
+
+    let second = try await runner.capture(
+      URL(fileURLWithPath: "/bin/sh"), ["-c", "printf two"], in: cwd, stopper: stopper)
+    #expect(second.stop == nil && second.standardOutput == "two")
+  }
+
+  /// SIGHUP reaches the group, so the shell goes at once and the guard on it
+  /// let a grandchild that traps SIGHUP run until the user logged out.
+  @Test func aGrandchildThatTrapsSIGHUPIsKilledThoughTheShellWentAtOnce() async throws {
+    let output = try await runner.capture(
+      URL(fileURLWithPath: "/bin/sh"),
+      ["-c", "/bin/sh -c \"trap '' HUP; sleep 30\" & echo $!; wait"], in: cwd,
+      timeout: .milliseconds(200))
+    let child = try #require(sleepPID(in: output.standardOutput))
+    #expect(await hasEnded(child), "left running as pid \(child)")
+  }
+
   @Test func aStoppedScriptIsAFailureThatSaysSo() async throws {
     do {
       _ = try await ShellCommand().runScript("sleep 30", in: cwd, timeout: .milliseconds(300))

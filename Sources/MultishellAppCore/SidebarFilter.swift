@@ -2,8 +2,7 @@ import Foundation
 import MultishellCore
 
 /// What the sidebar shows for a filter string. A project matching keeps all
-/// its worktrees; matching folds case and accents, never by the reader's
-/// alphabet, branch and directory names not being their language.
+/// its worktrees; matching folds case and accents, never by one alphabet.
 public struct SidebarFilter: Sendable {
   public struct Entry: Equatable, Sendable {
     public let project: Project

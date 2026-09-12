@@ -33,20 +33,20 @@ public enum WorktreeStatusParser {
   }
 
   /// `## main...origin/main [ahead 1]`, `## main`, `## HEAD (no branch)`,
-  /// `## No commits yet on main`.
+  /// `## No commits yet on main`, `## No commits yet on main...origin/main`.
   private static func parseBranchLine(_ line: Substring, into status: inout WorktreeStatus) {
     var head = line.dropFirst(3)
     if let bracket = head.firstIndex(of: "[") { head = head[..<bracket] }
-    let name = head.trimmingCharacters(in: .whitespaces)
+    var name = head.trimmingCharacters(in: .whitespaces)
     if name.hasPrefix("HEAD (") {
       status.branch = nil
-    } else if let range = name.range(of: "No commits yet on ")
-      ?? name.range(of: "Initial commit on ")
-    {
-      status.branch = String(name[range.upperBound...])
-    } else if let dots = name.range(of: "...") {
-      status.branch = String(name[..<dots.lowerBound])
     } else {
+      // The upstream goes first: a clone of an empty repository has one from
+      // clone time, and reads `No commits yet on main...origin/main`.
+      if let dots = name.range(of: "...") { name = String(name[..<dots.lowerBound]) }
+      if let prefix = unbornPrefixes.first(where: name.hasPrefix) {
+        name = String(name.dropFirst(prefix.count))
+      }
       status.branch = name.isEmpty ? nil : name
     }
 
@@ -62,4 +62,8 @@ public enum WorktreeStatusParser {
       }
     }
   }
+
+  /// How git says a branch has no commits yet; the second is its wording
+  /// before 2.19. English in `--porcelain` whatever the locale, checked on 2.55.
+  private static let unbornPrefixes = ["No commits yet on ", "Initial commit on "]
 }

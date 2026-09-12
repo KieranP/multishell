@@ -32,9 +32,14 @@ struct PromptMarkTests {
       text.contains("]133;C"),
       "output start, or a click would answer with arrows while a program runs")
     #expect(text.contains("133;D") == false, "the exit code is the socket's to report, not both")
+    // Separated by a newline, not `; `: a user's own PROMPT_COMMAND ending
+    // in a separator composed to `;;` and bash refused the whole string.
     #expect(
-      text.range(of: "_multishell_prompt_marks; _multishell_arm") != nil,
+      text.range(of: "_multishell_prompt_marks\n_multishell_arm") != nil,
       "put back last, after a framework has rebuilt PS1 from a PROMPT_COMMAND of its own")
+    #expect(
+      text.range(of: "_multishell_prompt_marks; _multishell_arm") == nil,
+      "a separator of its own is what a trailing one in theirs doubles")
   }
 
   /// The claims are only worth something if a real shell writes them at a
@@ -93,6 +98,41 @@ struct PromptMarkTests {
     for mark in [Marks.claim, Marks.input, Marks.output] {
       #expect(plain.contains(mark) == false, "a terminal that is not Ghostty is told nothing")
     }
+  }
+
+  /// What the generated bash file has to survive: the user's own startup
+  /// files, which it sources before adding anything of its own.
+  @Test func aRealBashKeepsWhatTheUsersOwnStartupFilesSetUp() throws {
+    let bash = "/bin/bash"
+    guard FileManager.default.isExecutableFile(atPath: bash) else { return }
+    let files = try GeneratedIntegration(helper: "/bin/echo")
+    defer { files.remove() }
+    // A trailing `;` composed to `;;`, which bash refuses, and a bare
+    // `trap ... DEBUG` replaced theirs: Atuin and bash-preexec go silent.
+    try files.writeHomeFile(
+      ".bashrc",
+      """
+      PS1='> '
+      MARKER_PATH="/opt/marker:$MARKER_PATH"
+      theirs() { echo "[theirs]"; }
+      trap 'theirs' DEBUG
+      PROMPT_COMMAND='history -a;'
+
+      """)
+    try files.writeHomeFile(".bash_profile", "[ -f ~/.bashrc ] && . ~/.bashrc\n")
+
+    var environment = files.environment(termProgram: "ghostty")
+    environment[SessionEnvironment.sessionKey] = "user-files"
+    let output = try interactiveShell(
+      bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment,
+      input:
+        "echo \"COUNT=$(printf %s \"$MARKER_PATH\" | tr ':' '\\n' | grep -c '^/opt/marker$')\"\nexit\n"
+    )
+
+    #expect(output.contains("syntax error") == false, "a PROMPT_COMMAND ending in `;` made `;;`")
+    #expect(output.contains("[theirs]"), "their DEBUG trap still fires, chained ahead of ours")
+    #expect(output.contains("COUNT=1"), ".bashrc was sourced twice, so PATH gained it twice")
+    #expect(output.contains(Marks.claim), "and our own hooks still reach the prompt")
   }
 
   /// `%{` opens a zero-width span, so a PS1 ending in a bare `%` would take

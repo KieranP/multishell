@@ -13,9 +13,8 @@ struct ProjectDropDelegate: DropDelegate {
   let projectID: Project.ID
   let blockHeight: CGFloat
   @Binding var target: ProjectDropTarget?
-  /// Takes the id out of the drop rather than out of the sidebar's state:
-  /// `.onDrag` has no cancellation callback, so a drag abandoned outside the
-  /// scroll view leaves that state set and the next text drop would move it.
+  /// From the drop, not the sidebar's state: `.onDrag` has no cancellation,
+  /// so an abandoned drag would leave that set and the next drop would move it.
   let perform: (Project.ID?, VerticalEdge) -> Void
 
   func validateDrop(info: DropInfo) -> Bool {

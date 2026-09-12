@@ -5,12 +5,9 @@ import SwiftUI
 /// A worktree's columns of tabs, side by side: a one-axis `WeightedSplit`,
 /// columns only ever running left to right. Divider drags are written back.
 struct TabGroupsView: View {
-  let model: AppModel
+  @Bindable var model: AppModel
   let worktree: Worktree
   let theme: Theme
-
-  /// One value for every column; see `TabDragState`.
-  @State private var drag = TabDragState()
 
   var body: some View {
     let groups = model.workspace.groups(in: worktree.id)
@@ -44,7 +41,7 @@ struct TabGroupsView: View {
       position: position,
       columnCount: count,
       theme: theme,
-      drag: $drag
+      drag: $model.tabDrag
     )
   }
 }

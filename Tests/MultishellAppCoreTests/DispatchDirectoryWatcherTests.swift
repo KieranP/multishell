@@ -57,6 +57,35 @@
       #expect(await changed.arrived())
     }
 
+    /// `git worktree remove foo` then `git worktree add ... foo` inside one
+    /// coalesce window: the path stays wanted, but the descriptor is left on
+    /// the unlinked inode and never fires again.
+    @Test func aDirectoryDeletedAndRemadeAtOnePathIsWatchedAgain() async throws {
+      let parent = try scratch()
+      defer { try? FileManager.default.removeItem(at: parent) }
+      let dir = parent.appendingPathComponent("worktree", isDirectory: true)
+      try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+
+      let watcher = DispatchDirectoryWatcher()
+      watcher.watch([dir])
+      defer { watcher.stop() }
+
+      try FileManager.default.removeItem(at: dir)
+      try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+      // The rearm the app does once its own watch fires; the path is still
+      // wanted, so nothing here asks for a new source outright.
+      watcher.watch([dir])
+      // The unlink fires the old source, and that callback is what this test
+      // counted at first: it arrived and said nothing about the new directory.
+      // Waited out against a nil handler, so what is counted next is the file.
+      try? await Task.sleep(for: .milliseconds(900))
+
+      let changed = changes(of: watcher)
+      try "x".write(to: dir.appendingPathComponent("new.txt"), atomically: true, encoding: .utf8)
+
+      #expect(await changed.arrived(), "the source is still on the unlinked inode")
+    }
+
     @Test func burstsAreCoalescedIntoOneCallback() async throws {
       let dir = try scratch()
       defer { try? FileManager.default.removeItem(at: dir) }

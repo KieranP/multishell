@@ -275,3 +275,84 @@ struct NotificationPolicyTests {
     #expect(NotificationPolicy.body(for: .done, message: nil) == "Finished.")
   }
 }
+
+/// Claude Code's `Stop` is its main assistant loop stopping, which happens
+/// while subagents launched in the background are still working; their own
+/// end is a separate event. See docs/design/agents.md.
+@Suite
+struct BackgroundWorkerTests {
+  private let a = UUID()
+
+  private func report(
+    _ states: inout SessionStates, _ state: SessionState, subagents: Int = 0
+  ) -> SessionState {
+    states.report(state, pid: 99, subagents: subagents, for: .session(a), isSeen: false)
+  }
+
+  @Test func doneWaitsForTheLastWorkerOutRatherThanTheMainLoopStopping() {
+    var states = SessionStates()
+    _ = report(&states, .running, subagents: 1)
+    _ = report(&states, .running, subagents: 1)
+
+    #expect(report(&states, .done) == .running, "two are still working")
+    #expect(states[.session(a)] == .running)
+
+    #expect(report(&states, .running, subagents: -1) == .running, "one to go")
+    #expect(report(&states, .running, subagents: -1) == .done, "the last one out pays it")
+    #expect(states[.session(a)] == .done)
+  }
+
+  /// The banner rides on what the report was taken to mean, so it fires once,
+  /// at the end, rather than once per wave of workers.
+  @Test func aTurnWithWorkersMeansDoneExactlyOnce() {
+    var states = SessionStates()
+    _ = report(&states, .running, subagents: 1)
+    let atStop = report(&states, .done)
+    let atLastWorker = report(&states, .running, subagents: -1)
+
+    #expect(atStop == .running, "the main loop stopping is not the banner's moment")
+    #expect(atLastWorker == .done, "the last worker out is")
+    #expect([atStop, atLastWorker].filter { $0 == .done }.count == 1)
+  }
+
+  @Test func anAgentThatReportsNoWorkersIsUnaffected() {
+    var states = SessionStates()
+    #expect(report(&states, .running) == .running)
+    #expect(report(&states, .done) == .done, "no count, so Done is Done as it always was")
+    #expect(states[.session(a)] == .done)
+  }
+
+  @Test func aSessionEndingOrFailingSettlesTheTurnWhateverIsStillOut() {
+    for ending in [SessionState.idle, .error] {
+      var states = SessionStates()
+      _ = report(&states, .running, subagents: 1)
+      _ = report(&states, .done)
+      #expect(report(&states, ending) == ending)
+      // Nothing is owed now, so a worker ending later pays nothing.
+      #expect(report(&states, .running, subagents: -1) == .running, "\(ending)")
+    }
+  }
+
+  @Test func aStopWithNoWorkerOutIsStillDoneAfterAWorkerHasComeAndGone() {
+    var states = SessionStates()
+    _ = report(&states, .running, subagents: 1)
+    _ = report(&states, .running, subagents: -1)
+    #expect(report(&states, .done) == .done)
+  }
+
+  /// A worker ending with none counted cannot drive the count below zero, or
+  /// the next turn's Done would be owed forever.
+  @Test func aStrayWorkerEndingLeavesNothingOwed() {
+    var states = SessionStates()
+    #expect(report(&states, .running, subagents: -1) == .running)
+    #expect(report(&states, .done) == .done)
+  }
+
+  @Test func anAgentWhoseProcessIsGoneOwesNothing() {
+    var states = SessionStates()
+    _ = report(&states, .running, subagents: 1)
+    _ = report(&states, .done)
+    states.processGone(99)
+    #expect(report(&states, .done) == .done, "the held Done went with the process")
+  }
+}

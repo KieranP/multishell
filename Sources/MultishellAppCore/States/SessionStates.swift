@@ -19,6 +19,12 @@ public struct SessionStates: Equatable, Sendable {
   public private(set) var since: [Key: Date] = [:]
   /// What the last report about each key said beyond its state.
   public private(set) var notes: [Key: SessionNote] = [:]
+  /// Background workers an agent still has out, by key. Only an agent that
+  /// reports them has an entry; see docs/design/agents.md.
+  private var background: [Key: Int] = [:]
+  /// Keys whose agent said it had finished while workers were still out. The
+  /// Done is owed, and the last worker to end pays it.
+  private var owedDone: Set<Key> = []
 
   public init() {}
 
@@ -26,12 +32,14 @@ public struct SessionStates: Equatable, Sendable {
 
   // MARK: - Sources
 
-  /// A report over the channel. `isSeen` means the user is looking at the
-  /// tab, or the worktree, with the app in front of them.
+  /// A report over the channel; `isSeen` means the user is looking at it.
+  /// Returns what it meant, which `settling` may move.
+  @discardableResult
   public mutating func report(
     _ state: SessionState, pid: Int32?, message: String? = nil, duration: Double? = nil,
-    for key: Key, isSeen: Bool
-  ) {
+    subagents: Int = 0, for key: Key, isSeen: Bool
+  ) -> SessionState {
+    let state = settling(state, subagents: subagents, for: key)
     switch state {
     case .idle:
       clear(key)
@@ -46,6 +54,34 @@ public struct SessionStates: Equatable, Sendable {
     // looking at leaves nothing to say something about.
     if states[key] != nil {
       notes[key] = SessionNote(state: state, message: message, duration: duration)
+    }
+    return state
+  }
+
+  /// What a report means once background workers are counted. An agent
+  /// reporting none keeps the state it gave; see docs/design/agents.md.
+  private mutating func settling(
+    _ state: SessionState, subagents: Int, for key: Key
+  ) -> SessionState {
+    guard subagents == 0 else {
+      let count = max(0, (background[key] ?? 0) + subagents)
+      background[key] = count == 0 ? nil : count
+      // The last one out pays the Done its agent reported while they ran.
+      return count == 0 && owedDone.remove(key) != nil ? .done : state
+    }
+    switch state {
+    case .done where background[key] != nil:
+      // The main loop stopping is not the turn finishing: a banner here fires
+      // at the wrong moment, and the next worker's report undoes the dot.
+      owedDone.insert(key)
+      return .running
+    case .idle, .error:
+      // A session ending, or failing, settles the whole turn.
+      background[key] = nil
+      owedDone.remove(key)
+      return state
+    default:
+      return state
     }
   }
 
@@ -90,6 +126,8 @@ public struct SessionStates: Equatable, Sendable {
   public mutating func clear(_ key: Key) {
     states[key] = nil
     pids[key] = nil
+    background[key] = nil
+    owedDone.remove(key)
   }
 
   /// The user's own clear, for a Working dot whose agent is long gone.
@@ -111,6 +149,8 @@ public struct SessionStates: Equatable, Sendable {
     pids = pids.filter { keep($0.key) }
     since = since.filter { keep($0.key) }
     notes = notes.filter { keep($0.key) }
+    background = background.filter { keep($0.key) }
+    owedDone = owedDone.filter(keep)
   }
 
   /// The process a state was about has gone. Working and Waiting were claims
@@ -119,6 +159,9 @@ public struct SessionStates: Equatable, Sendable {
     for (key, tracked) in pids where tracked == pid {
       if states[key]?.isFinished != true { states[key] = nil }
       pids[key] = nil
+      // Its workers went with it, so nothing is owed and nothing is out.
+      background[key] = nil
+      owedDone.remove(key)
     }
   }
 

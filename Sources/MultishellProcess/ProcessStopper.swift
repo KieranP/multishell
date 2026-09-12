@@ -41,6 +41,12 @@ public final class ProcessStopper: @unchecked Sendable {
         pending = reason
         return nil
       }
+      // A child already gone was not stopped by this: a timeout dies with the
+      // run that armed it, the user's ask carries to the next child.
+      guard process.isRunning else {
+        if reason == .stopped { pending = reason }
+        return nil
+      }
       applied = reason
       return process
     }
@@ -66,11 +72,18 @@ public final class ProcessStopper: @unchecked Sendable {
   private static func end(_ process: Process) {
     guard process.isRunning else { return }
     let pid = process.processIdentifier
-    if kill(-pid, SIGHUP) != 0 { kill(pid, SIGHUP) }
-    // The group only, and only while the child lives: a group id is not reused
-    // until its last member goes, after which the number could be anyone's.
+    // The group where the child leads one, which is how `Process` spawns it;
+    // the child alone where the signal says it does not.
+    let leadsGroup = kill(-pid, SIGHUP) == 0
+    if !leadsGroup { kill(pid, SIGHUP) }
     DispatchQueue.global().asyncAfter(deadline: .now() + killGrace) {
-      guard process.isRunning else { return }
+      guard leadsGroup else {
+        if process.isRunning { kill(pid, SIGKILL) }
+        return
+      }
+      // The group, not the shell: a grandchild trapping SIGHUP outlives it.
+      // An empty group answers ESRCH, so what answers here is ours.
+      guard kill(-pid, 0) == 0 else { return }
       kill(-pid, SIGKILL)
     }
   }

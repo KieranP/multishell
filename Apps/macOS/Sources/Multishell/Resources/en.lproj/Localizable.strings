@@ -1,12 +1,5 @@
-/* Every word this frontend shows, in the language it was written in. A
-   translation is this file again under another language code; see
-   docs/design/translation.md. Sorted by key, which groups it by the part
-   of the app the words are in. Read through `t("the.key")`, which in a
-   file of this target is the Mac app's own and reaches this catalogue
-   alone: a word the libraries also say is written here again, so that
-   another frontend can word it its own way. TranslationTests fails a key
-   the code asks for and this file has not got, and an entry nothing asks
-   for. Counted forms are in Localizable.stringsdict. */
+/* Every word this frontend shows, sorted by key and read through
+   `t("the.key")`; see docs/design/translation.md. */
 
 "action.add" = "Add";
 "action.cancel" = "Cancel";
@@ -160,8 +153,8 @@
 "project.path-label" = "Path:";
 "project.preferred-agent" = "Preferred agent";
 "project.preferred-agent-info" = "New Agent Tab (⌥⌘T) in this project's worktrees starts this agent instead of the global one. None opts the project out. The custom command is the global one.";
-"project.prefix-example" = "Typing tabs creates %1$@ at %2$@";
-"project.prefix-example-shared" = "Typing tabs creates %1$@ at %2$@ The prefix comes from %3$@.";
+"project.prefix-example" = "Typing tabs creates %1$@ at %2$@.";
+"project.prefix-example-shared" = "Typing tabs creates %1$@ at %2$@. The prefix comes from %3$@.";
 "project.prefix-label" = "Prefix:";
 "project.refresh-from-git" = "Refresh from git";
 "project.remove-info" = "Takes the project out of the sidebar and closes its terminals, after asking. Nothing on disk is touched.";

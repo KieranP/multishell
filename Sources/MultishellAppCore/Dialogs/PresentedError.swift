@@ -85,6 +85,9 @@ public struct PresentedError: Identifiable {
     case let entries as UnreadableHookEntries:
       title = t("error.unknown-hooks-title")
       message = t("error.unknown-hooks-message", entries.file.path, entries.event)
+    case let section as UnreadableHookSection:
+      title = t("error.unknown-hooks-title")
+      message = t("error.unknown-hooks-section-message", section.file.path)
     case let unparsable as UnparsableSettingsFile:
       title = t("error.unparsable-settings-title")
       message = t("error.unparsable-settings-message", unparsable.file.path)

@@ -80,4 +80,14 @@ struct WorktreeStatusParserTests {
     #expect(WorktreeStatusParser.parse("## HEAD (no branch)\n").branch == nil)
     #expect(WorktreeStatusParser.parse("## No commits yet on trunk\n").branch == "trunk")
   }
+
+  /// What a clone of an empty repository reports: git writes the upstream at
+  /// clone time, so the unborn branch has one before the first commit.
+  @Test func anUnbornBranchWithAnUpstreamIsNamedWithoutIt() {
+    #expect(
+      WorktreeStatusParser.parse("## No commits yet on main...origin/main [gone]\n").branch
+        == "main")
+    #expect(
+      WorktreeStatusParser.parse("## Initial commit on main...origin/main\n").branch == "main")
+  }
 }

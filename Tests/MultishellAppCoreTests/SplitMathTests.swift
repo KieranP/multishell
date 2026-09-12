@@ -48,6 +48,22 @@ struct SplitMathTests {
     #expect(after[0] == 1 && after[1] == 1, "no room to move, so nothing moves")
   }
 
+  /// The pair that cannot hold two minimums is left alone rather than forced
+  /// to its midpoint: the clamp used to jump both panes to equal widths and
+  /// `WeightedSplit` wrote that to disk.
+  @Test func aPairTooSmallToMoveKeepsItsOwnWidthsRatherThanLevelling() {
+    // 382 points shared by [1, 0.5, 0.25, 0.25]: the middle pair is 0.75,
+    // which is 143 points, and two 80-point minimums do not fit.
+    let weights = [1.0, 0.5, 0.25, 0.25]
+    let after = SplitMath.transferring(
+      1, acrossDividerAfter: 1, in: weights, available: 382, minimumPane: 80)
+    #expect(after == weights, "a drag of one point rewrote them to [1, 0.375, 0.375, 0.25]")
+    #expect(
+      SplitMath.transferring(
+        -400, acrossDividerAfter: 1, in: weights, available: 382, minimumPane: 80) == weights,
+      "and nor does dragging it the other way")
+  }
+
   @Test func invalidInputIsReturnedUnchanged() {
     #expect(drag(50, weights: [1, 1], index: 1) == [1, 1], "no pane after the last divider")
     #expect(drag(50, weights: [1, 1], index: -1) == [1, 1])

@@ -12,6 +12,15 @@ public enum OpenCodePlugin {
 
     const helper = \(javaScriptPath(helper))
 
+    // What is being asked for, from v2's PermissionRequest. Its predecessor
+    // carried a `title`, which this read for a while and never found.
+    const asked = (properties) => {
+      if (!properties) return undefined
+      const patterns = properties.patterns
+      const detail = Array.isArray(patterns) ? patterns.join(" ") : patterns
+      return [properties.tool, detail].filter(Boolean).join(" ") || undefined
+    }
+
     export const MultishellPlugin = async ({ directory, worktree }) => {
       const cwd = worktree || directory
       const report = (state, message) => {
@@ -32,7 +41,7 @@ public enum OpenCodePlugin {
         event: async ({ event }) => {
           if (event.type === "session.idle") report("done")
           else if (event.type === "session.error") report("error")
-          else if (event.type === "permission.asked") report("attention", event.properties?.title)
+          else if (event.type === "permission.asked") report("attention", asked(event.properties))
           else if (event.type === "permission.replied") report("running")
         },
       }

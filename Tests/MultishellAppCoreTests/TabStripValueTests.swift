@@ -237,12 +237,22 @@ struct TabStripStepTests {
     #expect(target(.before, at: 200) == 1)
   }
 
-  /// A tab counts as seen if any of it is, so an arrow moves on by a whole
-  /// tab rather than finishing an edge the eye had already half read.
-  @Test func aHalfShownTabCountsAsSeen() {
+  /// A clipped tab is what its arrow finishes. The arrow is drawn from the
+  /// same half point, so answering in whole tabs left it dead here.
+  @Test func aHalfShownTabIsWhatItsOwnArrowFinishes() {
     // Scrolled by half a tab: 0 is half in view, then 1, 2, and half of 3.
-    #expect(target(.after, at: 50) == 4)
-    #expect(target(.before, at: 50) == nil, "tab 0 is still partly there")
+    #expect(target(.before, at: 50) == 0, "half of tab 0 is cut off at the left")
+    #expect(target(.after, at: 50) == 3, "and half of tab 3 at the right")
+  }
+
+  /// The pair that drew a chevron answering nothing: whatever end `Edges`
+  /// fades, `stepTarget` has somewhere to go.
+  @Test func everyEndThatFadesCanBeSteppedFrom() {
+    for offset in stride(from: 0.0, through: 400, by: 7) {
+      let edges = TabStripLayout.Edges(offset: offset, viewport: 300, content: 700)
+      #expect(edges.leading == (target(.before, at: offset) != nil), "at \(offset)")
+      #expect(edges.trailing == (target(.after, at: offset) != nil), "at \(offset)")
+    }
   }
 
   @Test func theEndOfTheTravelOffersNothingFurther() {
