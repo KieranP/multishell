@@ -74,6 +74,11 @@ does.
   it stays until the tab is closed. Fix if it matters = store the default
   as absent and translate it where it is drawn, which is a change to a
   persisted field.
+- A git older than 2.36 cannot list worktrees at all now, `-z` being unknown
+  to it there. Nothing checks the version or falls back to the plain
+  porcelain: the read fails, the row says so and names the option. Left
+  because the supported macOS ships 2.39 and the call site is one line either
+  way; fix if it bites = retry without `-z` on that one failure.
 - A tag named exactly like a local trunk still decides the base: the worktree's
   branch goes to git as a refname now, the base does not, `DefaultBranch.ref`
   being the short print form. Every merge read for that project would then be

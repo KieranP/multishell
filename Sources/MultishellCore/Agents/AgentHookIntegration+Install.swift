@@ -15,6 +15,15 @@ extension AgentHookIntegration {
     }
   }
 
+  /// Whether any hook of ours is in there at all. Not `isInstalled`, which
+  /// wants one under every event and so answers no to a half-written file.
+  func holdsAnyOfOurs(_ settings: [String: Any]) -> Bool {
+    let hooks = settings["hooks"] as? [String: Any] ?? [:]
+    return events.contains { event in
+      groups(hooks[event.name])?.contains(where: isMultishellGroup) ?? false
+    }
+  }
+
   /// One entry of ours per event, everything already there left alone.
   /// `install` refuses a file it cannot read rather than skipping an event.
   public func adding(
@@ -131,7 +140,11 @@ extension AgentHookIntegration {
       guard isInstalled(in: file) else { return }
       try FileManager.default.removeItem(at: file)
     } else {
-      try HookSettingsFile.write(removing(from: try HookSettingsFile.read(file)), to: file)
+      // Nothing of ours in it: the write would sort its keys, re-indent it and
+      // leave a backup beside it, all for an edit that changes nothing.
+      let settings = try HookSettingsFile.read(file)
+      guard holdsAnyOfOurs(settings) else { return }
+      try HookSettingsFile.write(removing(from: settings), to: file)
     }
   }
 }

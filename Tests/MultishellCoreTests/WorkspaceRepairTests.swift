@@ -452,6 +452,26 @@ struct WorkspaceRepairShapeTests {
 /// New Worktree picker's labels are a dictionary that traps on a repeat.
 @Suite
 struct WorkspaceRepairDuplicateTests {
+  /// The same as the tab case below, one collection up: the dead copy is the
+  /// one kept, the prune then drops it, and its tabs and sessions go too.
+  @Test func aWorktreeIdListedTwiceKeepsTheCopyWhoseProjectIsStillThere() throws {
+    var ws = try JSONDecoder().decode(
+      Workspace.self,
+      from: Data(
+        #"""
+        { "projects": [ { "path": "file:///repos/demo/" } ],
+          "worktrees": [
+            { "path": "file:///repos/demo/", "projectID": "/repos/gone", "head": "a", "branch": "dead" },
+            { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "a", "branch": "live" } ] }
+        """#.utf8))
+    #expect(ws.worktrees.count == 2, "decoding keeps both; repair is where they meet")
+
+    ws.repairReferences()
+
+    WorkspaceInvariants.check(ws, "duplicate worktree")
+    #expect(ws.worktrees.map(\.branch) == ["live"], "the dead copy was kept and then pruned")
+  }
+
   /// First entry wins, so deduping before the dangling prune can keep the
   /// copy naming a worktree that has gone and lose the live one with it.
   @Test func aTabIdListedTwiceKeepsTheCopyWhoseWorktreeIsStillThere() throws {

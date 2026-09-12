@@ -94,3 +94,12 @@ busy. That worktree then opens no shell, refuses removal, and shows a Cancel
 whose stopper was already cleared, until the app is relaunched. So a failure
 with the worktree gone clears the entry and raises an alert instead, there
 being no pane left to put the message on.
+
+## The worktree list is read NUL-terminated
+
+`git worktree list --porcelain -z`, and the parser splits on NUL with an empty
+field for the end of a record. git's own documentation calls the plain
+porcelain unsafe for a path holding a newline, and it is: the second half of
+one reads as another attribute, so the row carried a directory that does not
+exist, its status read failed, and the path being the identity meant selection
+and the tab store keyed off something git never reported.

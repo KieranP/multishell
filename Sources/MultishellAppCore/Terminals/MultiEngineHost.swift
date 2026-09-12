@@ -29,11 +29,17 @@ public final class MultiEngineHost<Surface>: TerminalSurfaceHost {
     hosts.values.reduce(into: []) { $0.formUnion($1.openSessionIDs) }
   }
 
-  /// Ownership is recorded before the open and left there if it throws, or
-  /// `close` could not reach a surface the engine registered before failing.
+  /// An engine that threw is told to let go: it may have registered the
+  /// surface first, and a retry on another engine would take the entry.
   public func open(_ session: TerminalSession) throws {
     owner[session.id] = engine
-    try host(for: engine).open(session)
+    do {
+      try host(for: engine).open(session)
+    } catch {
+      host(for: engine).close(session.id)
+      owner[session.id] = nil
+      throw error
+    }
   }
 
   public func close(_ id: TerminalSession.ID) {

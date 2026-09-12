@@ -7,18 +7,19 @@ extension Workspace {
     // A file can hold one identity twice where the store cannot, and a
     // repeat traps the first dictionary built from it. First entry wins.
     projects = projects.uniqued(by: \.id)
-    worktrees = worktrees.uniqued(by: \.id)
     sessions = sessions.uniqued(by: \.id)
-    tabGroups = tabGroups.uniqued(by: \.id)
 
+    // Each dedup follows its own prune, never precedes it: first entry wins,
+    // so a dead copy listed first is kept and the live one goes with it.
     let projectIDs = Set(projects.map(\.id))
     worktrees.removeAll { !projectIDs.contains($0.projectID) }
+    worktrees = worktrees.uniqued(by: \.id)
+
     let worktreeIDs = Set(worktrees.map(\.id))
     tabs.removeAll { !worktreeIDs.contains($0.worktreeID) }
-    // After the prune, not before: first entry wins, so a dead copy listed
-    // ahead of a live one would be the one kept and then dropped.
     tabs = tabs.uniqued(by: \.id)
     tabGroups.removeAll { !worktreeIDs.contains($0.worktreeID) }
+    tabGroups = tabGroups.uniqued(by: \.id)
 
     // One pass in display order drops missing and repeated sessions and
     // collapses the splits that leaves: one shell, two views, otherwise.

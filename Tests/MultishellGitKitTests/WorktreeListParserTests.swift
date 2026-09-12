@@ -4,6 +4,12 @@ import Testing
 
 @testable import MultishellGitKit
 
+/// The fixtures read as `git worktree list --porcelain` prints them, one
+/// attribute per line; `-z` is the same with NUL where the newline was.
+private func zeroTerminated(_ text: String) -> String {
+  text.replacingOccurrences(of: "\n", with: "\u{0}")
+}
+
 @Suite
 struct WorktreeListParserTests {
   private let porcelain = """
@@ -23,35 +29,37 @@ struct WorktreeListParserTests {
     """
 
   @Test func everyRecordBecomesAWorktree() {
-    let worktrees = WorktreeListParser.parse(porcelain, projectID: "/repo")
+    let worktrees = WorktreeListParser.parse(zeroTerminated(porcelain), projectID: "/repo")
     #expect(worktrees.count == 3)
   }
 
   @Test func theFirstRecordIsThePrimaryWorktree() {
-    let worktrees = WorktreeListParser.parse(porcelain, projectID: "/repo")
+    let worktrees = WorktreeListParser.parse(zeroTerminated(porcelain), projectID: "/repo")
     #expect(worktrees[0].isPrimary)
     #expect(!worktrees[1].isPrimary)
   }
 
   @Test func branchRefsAreShortened() {
-    let worktrees = WorktreeListParser.parse(porcelain, projectID: "/repo")
+    let worktrees = WorktreeListParser.parse(zeroTerminated(porcelain), projectID: "/repo")
     #expect(worktrees[0].branch == "main")
     #expect(worktrees[1].branch == "feat/tabs")
   }
 
   @Test func detachedWorktreesHaveNoBranchAndFallBackToTheShortSHA() {
-    let detached = WorktreeListParser.parse(porcelain, projectID: "/repo")[2]
+    let detached = WorktreeListParser.parse(zeroTerminated(porcelain), projectID: "/repo")[2]
     #expect(detached.branch == nil)
     #expect(detached.isDetached)
     #expect(detached.name == "1a2e5c9")
     #expect(detached.isLocked)
   }
 
-  @Test func windowsLineEndingsParseIdentically() {
-    let crlf = porcelain.replacingOccurrences(of: "\n", with: "\r\n")
-    #expect(
-      WorktreeListParser.parse(crlf, projectID: "/repo")
-        == WorktreeListParser.parse(porcelain, projectID: "/repo"))
+  /// The reason for `-z`: with NUL between attributes, a newline in a path
+  /// is part of the path rather than the start of another attribute.
+  @Test func aNewlineInsideAPathIsPartOfIt() {
+    let output = "worktree /Users/dev/my\nrepo\u{0}HEAD 7777777\u{0}branch refs/heads/odd\u{0}"
+    let worktrees = WorktreeListParser.parse(output, projectID: "/p")
+    #expect(worktrees.map(\.path.path) == ["/Users/dev/my\nrepo"])
+    #expect(worktrees[0].branch == "odd")
   }
 
   @Test func emptyOutputYieldsNothing() {
@@ -77,7 +85,7 @@ struct WorktreeListParserEdgeTests {
       branch refs/heads/busy
       locked reason with spaces
       """
-    let worktrees = WorktreeListParser.parse(output, projectID: "/p")
+    let worktrees = WorktreeListParser.parse(zeroTerminated(output), projectID: "/p")
     #expect(worktrees.count == 3)
     #expect(worktrees[1].branch == "gone")
     #expect(!worktrees[1].isLocked)
@@ -94,7 +102,7 @@ struct WorktreeListParserEdgeTests {
       HEAD 4444444444444444444444444444444444444444
       branch refs/heads/main
       """
-    let worktrees = WorktreeListParser.parse(output, projectID: "/p")
+    let worktrees = WorktreeListParser.parse(zeroTerminated(output), projectID: "/p")
     #expect(worktrees[0].isPrimary && worktrees[0].branch == nil)
     #expect(worktrees[0].isBare && !worktrees[0].isDetached)
     #expect(worktrees[0].name == "repo.git")
@@ -107,7 +115,7 @@ struct WorktreeListParserEdgeTests {
       HEAD 6666666666666666666666666666666666666666
       branch refs/heads/main
       """
-    let worktrees = WorktreeListParser.parse(output, projectID: "/p")
+    let worktrees = WorktreeListParser.parse(zeroTerminated(output), projectID: "/p")
     #expect(worktrees.map(\.path.path) == ["/Users/dev/My Projects/demo app"])
     #expect(worktrees[0].branch == "main")
   }
@@ -119,7 +127,7 @@ struct WorktreeListParserEdgeTests {
       HEAD 0000000000000000000000000000000000000000
       branch refs/heads/main
       """
-    let worktrees = WorktreeListParser.parse(output, projectID: "/p")
+    let worktrees = WorktreeListParser.parse(zeroTerminated(output), projectID: "/p")
     #expect(worktrees[0].branch == "main")
     #expect(worktrees[0].name == "main")
   }
@@ -130,16 +138,17 @@ struct WorktreeListParserEdgeTests {
       "worktree /a\nworktree /b", "\u{1F600}", "worktree /a\nHEAD\nbranch refs/heads/",
     ]
     for output in awkward {
-      let worktrees = WorktreeListParser.parse(output, projectID: "/p")
+      let worktrees = WorktreeListParser.parse(zeroTerminated(output), projectID: "/p")
       #expect(worktrees.allSatisfy { !$0.path.path.isEmpty }, "\(output)")
     }
     #expect(
-      WorktreeListParser.parse("worktree \n", projectID: "/p").isEmpty,
+      WorktreeListParser.parse(zeroTerminated("worktree \n"), projectID: "/p").isEmpty,
       "an empty path would resolve to the current directory")
   }
 
   @Test func missingTrailingBlankLineIsFine() {
     let output = "worktree /a\nHEAD 5555555\nbranch refs/heads/x"
-    #expect(WorktreeListParser.parse(output, projectID: "/p").map(\.branch) == ["x"])
+    #expect(
+      WorktreeListParser.parse(zeroTerminated(output), projectID: "/p").map(\.branch) == ["x"])
   }
 }

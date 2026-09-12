@@ -31,7 +31,7 @@ public struct WorktreeService: Sendable {
   /// Every repository has at least its main worktree, so an empty list is
   /// git failing quietly; taken as a result it drops every tab.
   public func list(_ project: Project) async throws -> [Worktree] {
-    let output = try await git.run(["worktree", "list", "--porcelain"], in: project.path)
+    let output = try await git.run(["worktree", "list", "--porcelain", "-z"], in: project.path)
     let worktrees = WorktreeListParser.parse(output, projectID: project.id)
     guard !worktrees.isEmpty else {
       throw ProcessFailure(
@@ -52,7 +52,7 @@ public struct WorktreeService: Sendable {
   /// The main worktree of the repository `url` is in, wherever in it `url`
   /// is: `git worktree list` puts that one first from anywhere.
   public func mainWorktree(containing url: URL) async throws -> URL {
-    let output = try await git.run(["worktree", "list", "--porcelain"], in: url)
+    let output = try await git.run(["worktree", "list", "--porcelain", "-z"], in: url)
     guard let main = WorktreeListParser.parse(output, projectID: "").first else {
       throw ProcessFailure(
         executable: "git", arguments: ["worktree", "list"], status: 0,

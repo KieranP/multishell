@@ -344,6 +344,48 @@ struct HelperTests {
   /// The generated bash init, as `--init-file` would read it: the user's own
   /// .bashrc still loads, and the injected hooks report running then done
   /// and failed.
+  /// The fraction was cut at a dot only. Apple's bash 3.2 has no
+  /// `EPOCHREALTIME`, which is what lets a test set one by hand.
+  @Test func aCommaDecimalLocaleStillGivesBashASaneDuration() async throws {
+    let path = socketPath()
+    let server = UnixSocketServer(path: path)
+    defer { server.stop() }
+    let recorder = LineRecorder()
+    server.onLine = { recorder.record($0) }
+    try server.start()
+
+    let home = URL(fileURLWithPath: "/tmp")
+      .appendingPathComponent("ms-bashloc-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: home, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: home) }
+    let initFile = home.appendingPathComponent("init.bash")
+    try ShellStateHooks.bashInitFile(helper: Self.helper.path)
+      .write(to: initFile, atomically: true, encoding: .utf8)
+
+    var env = ProcessInfo.processInfo.environment
+    env["HOME"] = home.path
+    env["MULTISHELL_SOCKET"] = path.path
+    env["MULTISHELL_SESSION"] = UUID().uuidString
+    env["MULTISHELL_WORKTREE"] = "/w/repo"
+    let script = """
+      EPOCHREALTIME='1700000000,250000'
+      _multishell_command_started
+      EPOCHREALTIME='1700000004,750000'
+      _multishell_precmd
+      wait
+      """
+    _ = try await ProcessRunner().capture(
+      URL(fileURLWithPath: "/bin/bash"), ["--init-file", initFile.path, "-i", "-c", script],
+      in: home, environment: env)
+
+    try await waitUntil { recorder.received.count >= 2 }
+    let finished = recorder.received.compactMap(SessionStateReport.parse).filter {
+      $0.state == .done
+    }
+    #expect(finished.count == 1, "got: \(recorder.received)")
+    #expect(finished.first?.duration == 4, "the seconds between the two, not the whole string")
+  }
+
   @Test func bashInitLoadsUserConfigAndReportsThroughInjectedHooks() async throws {
     let path = socketPath()
     let server = UnixSocketServer(path: path)

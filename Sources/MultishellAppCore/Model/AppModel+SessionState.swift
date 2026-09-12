@@ -29,8 +29,11 @@ extension AppModel {
       guard liveSessions.contains(id), let session = workspace.session(id) else { return }
       // Who is at that prompt, for a drop on it to be written as that agent
       // reads a file. A dot is all this changes about the pane itself.
+      // Assigned only when it moves, as the sweep beside it is: an agent
+      // reports twice per tool call, and an idle write renders both.
       if let agent = report.agent {
-        reportedAgents[id] = ReportedAgent(agentID: agent, pid: report.pid)
+        let reported = ReportedAgent(agentID: agent, pid: report.pid)
+        if reportedAgents[id] != reported { reportedAgents[id] = reported }
       }
       let seen = hasBeenSeen(id)
       mutateStates {

@@ -7,7 +7,9 @@ import SwiftUI
 struct AppearanceSettingsTab: View {
   let model: AppModel
 
-  @State private var fonts = InstalledFonts.detect()
+  /// The cached list, so building this view is not a walk over every family
+  /// on the machine; Refresh asks again for someone who just installed one.
+  @State private var fonts = InstalledFonts.all
 
   var body: some View {
     Form {
@@ -30,7 +32,7 @@ struct AppearanceSettingsTab: View {
           label: t("appearance.terminal-font"),
           selection: fontName,
           options: fonts.options(selected:),
-          refresh: { fonts = InstalledFonts.detect() },
+          refresh: { fonts = InstalledFonts.reload() },
           info: t("appearance.font-info")
         )
         sizeRow(

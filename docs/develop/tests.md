@@ -101,6 +101,17 @@ What each test catches, and the conventions a new one follows.
   tab rename is not undone by the commit that follows it: AppModelTests, both
   against the model rather than the field, which is why the editing tab moved
   out of the strip's own state.
+- A worktree path holding a newline is one worktree: WorktreePathTests
+  against real git, and the parser's own fixtures are NUL-separated through a
+  converter so they stay readable.
+- A comma-decimal locale gives bash a sane duration: HelperTests sets
+  `EPOCHREALTIME` by hand, which Apple's bash 3.2 leaves unset.
+- Remove writes nothing to a file holding none of ours, and still takes back a
+  half-written install: AgentHooksTests.
+- A repeat agent report writes nothing observable: SessionStateModelTests,
+  through `withObservationTracking`.
+- An engine that registered a surface and then threw is told to let go:
+  MultiEngineHostTests.
 - Foundation-only imports: checked by hand in a `swift:6.0` container, Linux
   being out of CI. Views untested, but a value a view reads is.
 

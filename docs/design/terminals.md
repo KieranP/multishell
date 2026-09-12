@@ -161,8 +161,6 @@ on the printf, zsh setting its locale once at startup and `LC_ALL` outranking
 `LC_NUMERIC` in any case. Clamped at zero for the same reason the separator
 matters: `%03d` of a negative prints its sign, so `0.-234` after a clock
 stepped back over a sleeping laptop would break the line exactly as a comma
-did. The bash half is not there yet: `EPOCHREALTIME`
-carries the same separator, and the arithmetic that strips its fraction matches
-a dot only, so on bash 5 in a comma region the duration is wrong rather than
-unparseable. It reaches the helper as an argv and not as JSON, so the report
-still arrives; see BUGS.md.
+did. bash's `EPOCHREALTIME` carries the same separator, so the
+fraction there is cut at either one: matching a dot alone left the whole
+string in the arithmetic and reported a duration of six figures.

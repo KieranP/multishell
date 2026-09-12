@@ -3,7 +3,20 @@ import MultishellAppCore
 
 /// The font families this Mac has, in the shape the picker wants. AppKit's
 /// list; the ordering is `FontDetection`'s and is tested there.
+@MainActor
 enum InstalledFonts {
+  /// Enumerated once and kept: a `@State` default is an ordinary expression,
+  /// run whenever the `View` is built, which is every settings tab switch.
+  private(set) static var all = detect()
+
+  /// Replaces the cache, which Refresh must: the default above reads it
+  /// again each time the window opens.
+  @discardableResult
+  static func reload() -> FontDetection {
+    all = detect()
+    return all
+  }
+
   static func detect() -> FontDetection {
     let manager = NSFontManager.shared
     var monospaced: [String] = []

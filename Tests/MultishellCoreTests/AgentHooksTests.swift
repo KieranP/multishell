@@ -355,6 +355,35 @@ struct AgentHooksTests {
     #expect(!AgentHooks.claude.isInstalled(in: removed))
   }
 
+  /// Remove on a file that has none of ours rewrites nothing: the write
+  /// sorts keys and re-indents, and takes a backup copy nobody asked for.
+  @Test func removingNothingLeavesTheFileAndMakesNoBackup() throws {
+    let directory = try Scratch.directory("hooks")
+    defer { Scratch.remove(directory) }
+    let file = directory.appendingPathComponent("settings.json")
+    let theirs = #"{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"echo bye"}]}]},"z":1}"#
+    try theirs.write(to: file, atomically: true, encoding: .utf8)
+
+    try AgentHooks.claude.remove(from: file)
+
+    #expect(try String(contentsOf: file, encoding: .utf8) == theirs, "rewritten for nothing")
+    let beside = try FileManager.default.contentsOfDirectory(atPath: directory.path)
+    #expect(beside == ["settings.json"], "a backup of a file we did not change: \(beside)")
+
+    // Half of ours, under one event only: still ours to take back. The check
+    // cannot be `isInstalled`, which wants one under every event.
+    let half = AgentHooks.claude.adding(to: [:], helper: helper)
+    var hooks = try #require(half["hooks"] as? [String: Any])
+    let one = try #require(hooks["Stop"])
+    hooks = ["Stop": one]
+    try HookSettingsFile.write(["hooks": hooks], to: file)
+    #expect(!AgentHooks.claude.isInstalled(in: file), "not by that measure")
+
+    try AgentHooks.claude.remove(from: file)
+    let left = try HookSettingsFile.read(file)
+    #expect(left["hooks"] == nil, "our one entry was still ours to remove")
+  }
+
   /// Whatever is under an event this cannot read is the user's: a string
   /// where a list of hooks goes, an object, a shape a later version of the
   /// agent takes. Remove must not carry it off, and Add must not write over

@@ -125,13 +125,7 @@ private struct SplitRoot: _VariadicView_MultiViewRoot {
         )
       }
       .contentShape(.rect)
-      .onHover { inside in
-        if inside {
-          (axis == .horizontal ? NSCursor.resizeLeftRight : NSCursor.resizeUpDown).push()
-        } else {
-          NSCursor.pop()
-        }
-      }
+      .cursorPush(axis == .horizontal ? .resizeLeftRight : .resizeUpDown)
       .gesture(
         DragGesture(minimumDistance: 1, coordinateSpace: .global)
           .onChanged { value in

@@ -471,8 +471,9 @@ struct WorktreeServiceGuardTests {
   }
 
   @Test func aListWithTheMainWorktreeIsFine() async throws {
+    // `-z`, as the real one is asked: NUL where the newline was.
     let fake = try FakeGit.make(
-      "printf 'worktree /repos/demo\\nHEAD 1111111\\nbranch refs/heads/main\\n'")
+      "printf 'worktree /repos/demo\\0HEAD 1111111\\0branch refs/heads/main\\0'")
     defer { fake.tearDown() }
 
     let listed = try await WorktreeService(git: fake.runner).list(Project(path: fake.directory))

@@ -39,8 +39,13 @@ if [ -n "${MULTISHELL_SESSION-}" ] && [ -x "__MULTISHELL_HELPER__" ]; then
     if [ "$_multishell_ran" = 1 ]; then
       _multishell_ran=0
       # bash 3.2 has no EPOCHREALTIME; SECONDS is whole seconds, enough.
+      # The fraction is cut at either separator: EPOCHREALTIME writes the
+      # locale's, so a comma region left the whole string in the arithmetic.
       local now=${EPOCHREALTIME:-$SECONDS}
-      local d=$(( ${now%.*} - ${_multishell_started%.*} ))
+      now=${now%%[.,]*}
+      local began=${_multishell_started%%[.,]*}
+      local d=$(( now - began ))
+      [ "$d" -ge 0 ] || d=0
       "$_multishell_bin" command-finished --exit "$e" --duration "$d" >/dev/null 2>&1
     fi
   }

@@ -104,6 +104,9 @@ enum PromisedDrop {
       guard !delivered else { return }
       delivered = true
       giveUpTimer?.cancel()
+      // The queue holds the reader, which holds this, so a source that never
+      // writes would leave all three standing. Nothing needs it after here.
+      queue = nil
       deliver(files.flatMap { $0 })
     }
   }

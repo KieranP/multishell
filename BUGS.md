@@ -2,154 +2,16 @@
 
 Open findings from a whole-repo review on 2026-09-12, against commit 9209231.
 
-Every Critical and High is fixed, and every Medium but one; their entries are
-taken out. 10 is the exception and is not a defect to patch: reporting Done
-only once a turn's background subagents have ended needs `SubagentStart` and
-`SubagentStop` written into the user's settings file and a count carried over
-the socket, which is a change to the protocol and to what Add installs.
+One is left. It is not a defect to patch: reporting Done only once a turn's
+background subagents have ended needs `SubagentStart` and `SubagentStop`
+written into the user's settings file and a count carried over the socket,
+which is a change to the protocol and to what Add installs.
 
-Numbers are never reused: the ones that remain keep what they were given,
-which is why they have gaps, and a number in a message always means the same
-bug.
-
-A finding says where it is, what goes wrong, and how far it was verified.
-Confirmed means traced end to end or reproduced; plausible names the gap that
-is left. Entries already in `docs/develop/known-gaps.md` are not repeated
-here.
-
-Each label is what the bug does to the user when it fires, not how often it
-fires. Medium: wrong behaviour the user meets and has to work around. Low:
-churn, cost, or a wrong detail that costs nothing to live with.
+Numbers are never reused, which is why the one that remains is 10.
 
 | # | Effect | What |
 | --- | --- | --- |
 | 10 | Medium | Done is reported while background subagents are still running |
-| 2 | Low | The same locale gives bash a wrong duration |
-| 7 | Low | A comment documents a hazard that does not exist |
-| 9 | Low | Recording engine ownership before the open trades one leak for its mirror |
-| 16 | Low | Every agent report redraws the sidebar and the board |
-| 19 | Low | Remove rewrites an agent settings file even when it removed nothing |
-| 24 | Low | Every font family is enumerated on each settings tab switch |
-| 25 | Low | The resize cursor is pushed with no matching pop |
-| 33 | Low | A worktree path containing a newline is mis-parsed |
-
-## Shell integration
-
-### 2. Low. The same locale gives bash a wrong duration
-
-`Sources/MultishellCore/Resources/init.bash:41`. `${now%.*}` strips a
-fractional part written with a dot and not one written with a comma, so the
-subtraction runs on the whole string and yields a wrong duration. It stays
-valid, being an argv to the helper rather than JSON, so the report survives
-with a bad number.
-
-Plausible: reachable only on bash 5, which has `EPOCHREALTIME`, and this
-machine carries Apple's 3.2 only, so it is read rather than reproduced.
-
-## MultishellCore
-
-### 7. Low. A comment documents a hazard that does not exist
-
-`Sources/MultishellCore/Model/Workspace.swift:176` and
-`Sources/MultishellAppCore/Model/AppModel+TabGroups.swift:35`. Both say the
-`count - 1` step keeps the sum positive for Swift's `%`. Neither call site can
-go negative: `neighbour` is reached only with ±1 and guards `siblings.count > 1`,
-and `focusGroup` guards `columns.count > 1` the same way. The rewrite preserved
-behaviour and the comment now misleads, which costs more here than elsewhere
-because comments are the reasoning of record.
-
-Confirmed; no other modulo-wrapping site remains.
-
-### 19. Low. Remove rewrites an agent settings file even when it removed nothing
-
-`Sources/MultishellCore/Agents/AgentHookIntegration+Install.swift:137`. For a
-shared-settings agent, `remove(from:)` always calls `HookSettingsFile.write`
-with no check that `removing(from:)` changed anything.
-
-A user with a hand-written `~/.gemini/settings.json` who has never installed the
-hooks, or who clicks Remove twice, gets a `settings.json.before-multishell`
-copy they never asked for and their file rewritten with sorted keys and
-two-space indentation. No content is lost, since a file with comments is
-refused upstream, but the file is churned for an operation that did nothing.
-
-Confirmed.
-
-## MultishellAppCore
-
-### 9. Low. Recording engine ownership before the open trades one leak for its mirror
-
-`Sources/MultishellAppCore/Terminals/MultiEngineHost.swift:35`. `SessionRegistry.reconcile`
-retries a session whose open threw, since it never reached `openSessionIDs`. If
-the engine changes between the failure and the retry, `owner[id]` is overwritten
-and a surface the first engine registered before throwing can never be closed,
-which is the defect the change was meant to close. The failed entry is never
-cleared either, only `close` removes one.
-
-Confirmed in the code, unreachable in shipping builds: `GhosttyTerminalHost.open`
-and `SwiftTermTerminalHost.open` are declared `throws` and contain no `throw`,
-so only `RecordingEngine.failNextOpen` exercises it. Which leak to prefer is a
-judgement call, not an obvious fix. A second reviewer read the same line
-and called the current order correct, so settle which leak is wanted before
-touching it.
-
-### 16. Low. Every agent report redraws the sidebar and the board
-
-`Sources/MultishellAppCore/Model/AppModel+SessionState.swift:32`.
-`reportedAgents[id]` is assigned unconditionally, and the Observation macro
-fires on every set regardless of equality. Claude Code sends `PreToolUse` and
-`PostToolUse` per tool call, so a fifty-call turn writes the same
-`ReportedAgent` a hundred times and invalidates the sidebar's Agents row and
-every board card each time. The sibling code at `AppModel.swift:223` guards
-against exactly this, and so do `noteTitle`, `note(_:asMergeBaseOf:)` and
-`refreshStatuses`.
-
-Confirmed.
-
-## MultishellGitKit, Process and CLI
-
-### 33. Low. A worktree path containing a newline is mis-parsed
-
-`Sources/MultishellGitKit/WorktreeService.swift:34` and `:55`. git marks the
-non-`-z` porcelain format unsafe for paths with newlines. A directory named
-`my\nrepo` produces `worktree /Users/dev/my` then `repo`;
-`WorktreeListParser.split` turns the second into a key with an empty value and
-`flush()` emits a worktree whose path is `/Users/dev/my`, which does not exist.
-Its status read fails so the row shows no status, and since the path is the
-worktree's identity, selection and the tab store key off a path git never
-reported.
-
-`--porcelain -z` with a NUL record split fixes it, and the parser's structure
-survives the change.
-
-## macOS app
-
-### 24. Low. Every font family is enumerated on each settings tab switch
-
-`Apps/macOS/Sources/Multishell/Sheets/AppSettings/AppearanceSettingsTab.swift:10`.
-`@State private var fonts = InstalledFonts.detect()` is an ordinary initializer
-expression, evaluated whenever the View value is constructed; SwiftUI keeps the
-first box and discards the rest. The tab is constructed inside `SettingsView.body`,
-which re-runs on every tab switch, and `detect` walks
-`availableFontFamilies`, calling `availableMembers` and instantiating an
-`NSFont` per family.
-
-Clicking between the five settings tabs enumerates and instantiates several
-hundred fonts synchronously on the main thread each time, for a result thrown
-away. `.task` or a lazy store gives the same picker for one pass.
-
-Confirmed.
-
-### 25. Low. The resize cursor is pushed with no matching pop
-
-`Apps/macOS/Sources/Multishell/Terminals/WeightedSplit.swift:128` and
-`App/RootView.swift:44`. `NSCursor.push()` in `onHover` has no `pop()` for a
-view removed under the pointer, and `onHover(false)` cannot fire for a view that
-is gone. Hover a divider so the resize cursor is pushed, then Cmd+W a pane: the
-handle disappears and the cursor stack keeps the resize cursor on top.
-
-Confirmed in the code; the visible effect is plausible, since AppKit resets from
-cursor rects on the next mouse-move and how long the wrong cursor shows depends
-on what the pointer crosses.
 
 ## Agents
 

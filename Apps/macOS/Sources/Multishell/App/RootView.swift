@@ -41,9 +41,7 @@ struct RootView: View {
         Color.clear
           .frame(width: 8)
           .contentShape(.rect)
-          .onHover { inside in
-            if inside { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() }
-          }
+          .cursorPush(.resizeLeftRight)
           .gesture(
             DragGesture(minimumDistance: 1, coordinateSpace: .global)
               .onChanged { value in

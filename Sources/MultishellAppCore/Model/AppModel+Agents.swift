@@ -44,16 +44,25 @@ extension AppModel {
       // listed nothing; the sidebar stays empty until something asks again.
       await refreshAll()
     }
-    refreshAgentStatus()
+    note(await Self.offMain { Self.agentStatus() })
   }
 
-  /// What the Agent settings show: whose hooks and whether the command-line
-  /// tool are installed. Read from disk on demand, not observed.
+  /// Whose hooks and whether the command-line tool are installed. Six files,
+  /// read here on the main actor: the settings rows ask after writing one.
   public func refreshAgentStatus() {
-    let hooks = Set(AgentHooks.integrations.filter { $0.isInstalled() }.map(\.id))
-    if hooks != installedAgentHooks { installedAgentHooks = hooks }
-    let tool = HelperLink.isCommandLineToolInstalled
-    if tool != commandLineToolInstalled { commandLineToolInstalled = tool }
+    note(Self.agentStatus())
+  }
+
+  nonisolated static func agentStatus() -> (hooks: Set<String>, tool: Bool) {
+    (
+      Set(AgentHooks.integrations.filter { $0.isInstalled() }.map(\.id)),
+      HelperLink.isCommandLineToolInstalled
+    )
+  }
+
+  private func note(_ status: (hooks: Set<String>, tool: Bool)) {
+    if status.hooks != installedAgentHooks { installedAgentHooks = status.hooks }
+    if status.tool != commandLineToolInstalled { commandLineToolInstalled = status.tool }
   }
 }
 

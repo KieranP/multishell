@@ -11,6 +11,9 @@ private final class RecordingEngine: TerminalSurfaceHost {
   var openSessionIDs: Set<TerminalSession.ID> = []
   var log: [String] = []
   var failNextOpen = false
+  /// Registers the surface and then throws, as one failing partway would;
+  /// `failNextOpen` alone throws before registering anything.
+  var registersBeforeFailing = false
   var appliedThemes: [Theme.ID] = []
   weak var delegate: (any TerminalHostDelegate)?
 
@@ -19,6 +22,7 @@ private final class RecordingEngine: TerminalSurfaceHost {
   func open(_ session: TerminalSession) throws {
     if failNextOpen {
       failNextOpen = false
+      if registersBeforeFailing { openSessionIDs.insert(session.id) }
       throw NSError(domain: "test", code: 1)
     }
     openSessionIDs.insert(session.id)
@@ -156,6 +160,21 @@ struct MultiEngineHostTests {
     let s = session()
 
     #expect(throws: (any Error).self) { try host.open(s) }
+    #expect(host.openSessionIDs.isEmpty)
+    #expect(host.view(for: s.id) == nil)
+  }
+
+  /// An engine that registered the surface before throwing kept it, and a
+  /// retry elsewhere overwrites the owner, so nothing can close that one.
+  @Test func anOpenThatRegistersAndThenThrowsStrandsNothing() {
+    let (host, engine) = makeHost()
+    engine(.ghostty).failNextOpen = true
+    engine(.ghostty).registersBeforeFailing = true
+    let s = session()
+
+    #expect(throws: (any Error).self) { try host.open(s) }
+
+    #expect(engine(.ghostty).openSessionIDs.isEmpty, "the engine was not told to let go")
     #expect(host.openSessionIDs.isEmpty)
     #expect(host.view(for: s.id) == nil)
   }
