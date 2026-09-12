@@ -14,11 +14,25 @@ extension AppModel {
       platform.log("login shell environment unavailable, using the process's own: \(reason)")
     }
     loginEnvironment = environment
-    agentDetection = AgentDetection(path: environment.path)
-    shellDetection = ShellDetection(path: environment.path)
-    editorDetection = EditorDetection(path: environment.path) {
-      platform.applicationURL(forIdentifier: $0)
+    // The bundle lookups answer from LaunchServices' own database and need
+    // the platform, so they stay; it is the PATH that has to be left.
+    let applications = EditorCatalogue.editors.reduce(into: [String: URL]()) { found, editor in
+      guard let id = editor.bundleIdentifier, let url = platform.applicationURL(forIdentifier: id)
+      else { return }
+      found[id] = url
     }
+    // A stat per PATH directory per catalogue entry, and every one of them
+    // blocks for the timeout on a mount that has gone; see architecture.md.
+    let path = environment.path
+    let detected = await Self.offMain {
+      (
+        agents: AgentDetection(path: path), shells: ShellDetection(path: path),
+        editors: EditorDetection(path: path) { applications[$0] }
+      )
+    }
+    agentDetection = detected.agents
+    shellDetection = detected.shells
+    editorDetection = detected.editors
     // git on the login shell's PATH like every other tool, which launch could
     // not reach. Finding it here takes back what launch reported.
     if worktrees == nil, let found = try? WorktreeCoordinator(path: environment.path) {

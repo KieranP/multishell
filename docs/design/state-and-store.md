@@ -37,3 +37,11 @@ failed load having already said it: every change schedules a save and would
 raise the same alert again. Cost: a session's work is discarded at quit after
 one warning at launch, and the check is made once at restore, so permissions
 fixed while the app runs are not noticed until relaunch.
+
+## Duplicates are dropped after the prune, not before
+
+`uniqued(by:)` is first entry wins, so a tab id written twice by hand, once
+naming a worktree that has gone and once a live one, kept the dead copy and
+lost the live one to the dangling prune a few lines later, sessions and all.
+Tabs are deduped after that prune for exactly this; the collections with no
+prune of their own stay where they were.

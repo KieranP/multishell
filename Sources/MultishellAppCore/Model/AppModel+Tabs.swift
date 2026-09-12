@@ -125,6 +125,8 @@ extension AppModel {
     case .tab(let id) where workspace.tab(id) == nil: pendingClose = nil
     default: break
     }
+    // A name field whose tab has gone, as a renamed worktree drops its own.
+    if let renaming = renamingTabID, workspace.tab(renaming) == nil { renamingTabID = nil }
   }
 
   // The three entry points above meet here, the keystrokes through
@@ -205,6 +207,25 @@ extension AppModel {
 
   public func renameTab(_ id: TerminalTab.ID, to title: String?) {
     store.setCustomTitle(title, forTab: id)
+  }
+
+  /// A double click on a tab: its title swaps for a field.
+  public func beginRenamingTab(_ id: TerminalTab.ID) {
+    guard workspace.tab(id) != nil else { return }
+    renamingTabID = id
+  }
+
+  /// The field's Return, or the focus leaving it. Ignored once the edit has
+  /// ended, so an Escape is not undone by the commit losing focus triggers.
+  public func commitTabRename(of id: TerminalTab.ID, to title: String?) {
+    guard renamingTabID == id else { return }
+    renamingTabID = nil
+    store.setCustomTitle(title, forTab: id)
+  }
+
+  /// The field's Escape: the title stays as it was.
+  public func cancelRenamingTab() {
+    renamingTabID = nil
   }
 
   public func splitActivePane(_ axis: SplitAxis) {

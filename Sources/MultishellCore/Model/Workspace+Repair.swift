@@ -10,14 +10,14 @@ extension Workspace {
     worktrees = worktrees.uniqued(by: \.id)
     sessions = sessions.uniqued(by: \.id)
     tabGroups = tabGroups.uniqued(by: \.id)
-    // Tabs too: the pane pass below misses two tabs that share an id while
-    // naming different sessions, and a strip would draw one id twice.
-    tabs = tabs.uniqued(by: \.id)
 
     let projectIDs = Set(projects.map(\.id))
     worktrees.removeAll { !projectIDs.contains($0.projectID) }
     let worktreeIDs = Set(worktrees.map(\.id))
     tabs.removeAll { !worktreeIDs.contains($0.worktreeID) }
+    // After the prune, not before: first entry wins, so a dead copy listed
+    // ahead of a live one would be the one kept and then dropped.
+    tabs = tabs.uniqued(by: \.id)
     tabGroups.removeAll { !worktreeIDs.contains($0.worktreeID) }
 
     // One pass in display order drops missing and repeated sessions and

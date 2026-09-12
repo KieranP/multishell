@@ -46,11 +46,11 @@ public enum AgentHooks {
     claude, codex, gemini, copilot, openCode,
   ]
 
-  /// Which of Claude's fourteen notification types is someone being asked
-  /// something. Sorted from the payload, not by matcher; see agents.md.
-  public static let claudeQuestions: Set<String> = [
-    "permission_prompt", "worker_permission_prompt", "elicitation_dialog",
-    "elicitation_url_dialog", "agent_needs_input",
+  /// Which of Claude's fourteen notification types announces rather than
+  /// asks. A deny list, so a type a later Claude adds is taken to ask; see
+  /// docs/design/agents.md. Sorted from the payload, not by matcher.
+  public static let claudeAnnouncements: Set<String> = [
+    "idle_prompt", "agent_completed", "auth_success", "quota_auto_resume_fired",
   ]
 
   /// Claude Code: `~/.claude/settings.json`. The one agent asked for both a
@@ -66,7 +66,7 @@ public enum AgentHooks {
       AgentHookEvent("PreToolUse", .running),
       AgentHookEvent("PostToolUse", .running),
       AgentHookEvent("PermissionRequest", .attention, onlyWhenPrompting: true, silent: true),
-      AgentHookEvent("Notification", .attention, notificationTypes: claudeQuestions),
+      AgentHookEvent("Notification", .attention, ignoredNotificationTypes: claudeAnnouncements),
       AgentHookEvent("Stop", .done),
       AgentHookEvent("StopFailure", .error),
       AgentHookEvent("SessionEnd", .idle),

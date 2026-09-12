@@ -24,10 +24,9 @@ struct TabButton: View {
   let theme: Theme
   @Binding var drag: TabDragState
   /// Which tab in the strip is showing its name field, so only one ever is.
-  @Binding var editingTabID: TerminalTab.ID?
 
   private var isActive: Bool { tab.id == group.activeTabID }
-  private var isEditing: Bool { editingTabID == tab.id }
+  private var isEditing: Bool { model.renamingTabID == tab.id }
 
   private var isInTheAir: Bool {
     drag.tabID == tab.id && drag.isEngaged
@@ -194,14 +193,11 @@ struct TabButton: View {
       prompt: t("tab.name-prompt"),
       font: .system(size: model.metrics.secondary, weight: .medium),
       color: theme.textPrimary,
-      commit: { title in
-        model.renameTab(tab.id, to: title)
-        editingTabID = nil
-      },
-      cancel: { editingTabID = nil })
+      commit: { model.commitTabRename(of: tab.id, to: $0) },
+      cancel: { model.cancelRenamingTab() })
   }
 
   private func beginEditing() {
-    editingTabID = tab.id
+    model.beginRenamingTab(tab.id)
   }
 }

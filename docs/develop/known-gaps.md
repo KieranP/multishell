@@ -74,11 +74,6 @@ does.
   it stays until the tab is closed. Fix if it matters = store the default
   as absent and translate it where it is drawn, which is a change to a
   persisted field.
-- `ProjectIcon.searchWords` is English. In another language the icon picker
-  matches the group names, which are translated, and the SF Symbol names,
-  which are not, so a search for the local word for "database" finds
-  nothing. Fix = the words move into the catalogue, one key per word,
-  which is another 107 entries for a search box.
 - A tag named exactly like a local trunk still decides the base: the worktree's
   branch goes to git as a refname now, the base does not, `DefaultBranch.ref`
   being the short print form. Every merge read for that project would then be
@@ -193,17 +188,16 @@ does.
   tested; the rows' width, and how an empty one reads with no prompt text in
   it, are not.
 - Claude's fourteen notification types were read out of the 2.1.268 binary's
-  own list, not watched arriving on the hook, and which five ask a person
-  something was decided from their names. What was checked is the helper's
+  own list, not watched arriving on the hook, and which four only announce was
+  decided from their names. What was checked is the helper's
   end: synthetic payloads through the built helper report `attention` for
   `permission_prompt`, `worker_permission_prompt` and a payload naming no
   type, and send nothing for `idle_prompt`, `agent_completed`, `auth_success`
-  and `quota_auto_resume_fired`. So a question type Claude adds or renames
-  later falls out of the list and nothing says so: no blue dot, no banner.
-  Fallback = `PermissionRequest` still moves the dot for a tool permission,
-  leaving only a question that is not one, an MCP elicitation or a worker's
-  prompt. Fix if that bites = take the types this does not know as questions
-  and name the announcing ones instead, which is the trade the other way.
+  and `quota_auto_resume_fired`. Those four are the list, everything else
+  counting as a question, so what a new type costs now is a banner too many
+  rather than a prompt nobody is told about. Nothing says which way it went:
+  an announcing type Claude adds later reads as waiting until someone
+  notices and names it.
 - Which type raised the banner that prompted the narrowing is unestablished.
   It followed the turn's Done by about ten seconds, and Claude's idle prompt
   is its own timer of sixty seconds from the turn ending

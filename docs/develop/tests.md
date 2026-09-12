@@ -88,6 +88,19 @@ What each test catches, and the conventions a new one follows.
   directory, or the chain reaches the developer's own `.zshrc`, whose locale
   decides the test instead; it skips where the locale is absent rather than
   failing on its absence.
+- The sidebar filter is not folded by the reader's alphabet:
+  SidebarFilterTests reads the source, `Locale.current` being process-wide and
+  so not movable for one suite while the others run beside it.
+- A tab id written twice keeps the copy whose worktree is still there:
+  WorkspaceRepairTests, the dead one listed first.
+- A notification type no build has heard of is taken to ask: AgentHooksTests.
+- What a failed `accept` means: AcceptOutcomeTests, the classification only.
+  A real descriptor shortage is DescriptorExhaustionTests' territory and the
+  spin it used to cause is not staged.
+- Open in Editor leaves the board and refuses a busy worktree, and an Escaped
+  tab rename is not undone by the commit that follows it: AppModelTests, both
+  against the model rather than the field, which is why the editing tab moved
+  out of the strip's own state.
 - Foundation-only imports: checked by hand in a `swift:6.0` container, Linux
   being out of CI. Views untested, but a value a view reads is.
 

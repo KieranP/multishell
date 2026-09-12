@@ -16,8 +16,6 @@ struct TabBar: View {
   let theme: Theme
   @Binding var drag: TabDragState
 
-  @State private var editingTabID: TerminalTab.ID?
-
   /// Whether the tab in the air is this column's, in which case it moves as
   /// the pointer goes and needs no line. Once for the strip, not per tab.
   private var isShuffling: Bool {
@@ -104,8 +102,7 @@ struct TabBar: View {
         isShuffling: isShuffling,
         width: layout.tabWidth,
         theme: theme,
-        drag: $drag,
-        editingTabID: $editingTabID)
+        drag: $drag)
     }
   }
 

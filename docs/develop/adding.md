@@ -97,11 +97,9 @@ does not resolve draws nothing at all rather than failing. Check
 whose `year_to_release` maps the year beside each symbol to the macOS it
 shipped in. ProjectIconSymbolTests then resolves every name through AppKit,
 catching a typo but not a symbol too new for the target, the test machine
-being newer. Add a line in `ProjectIcon.searchWords` where the name does not
-say what it is for: an SF Symbol is named for the picture, so `cylinder` is
-what a search for "database" must find. Those words are lowercase, and a test
-fails on a key that no longer names a symbol. Also: no more than twice as wide
-as tall, the sidebar drawing it in a square SwiftUI does not clip;
+being newer. The picker has no search, so a symbol is found by eye: put it in
+the group someone would look in. Also: no more than twice as wide as tall,
+the sidebar drawing it in a square SwiftUI does not clip;
 ProjectIconSymbolTests measures every one through AppKit.
 
 **A way of ordering worktree rows.** A case in `WorktreeSortOrder` with its

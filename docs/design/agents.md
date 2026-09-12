@@ -57,12 +57,15 @@ is waiting":
 - Claude's notification carries fourteen types on one event and most announce
   rather than ask: a login done, a quota resumed, and the idle prompt a minute
   after a turn ends, which landed as "Waiting for input" on top of the Done
-  that turn's Stop had just reported -> counts as waiting for the five types
-  that ask a person something. Sorted from the payload's `notification_type`,
-  not the matcher the event does take: a matcher is written into the settings
-  file, so it would reach only the installs made after the build that adds it,
-  and a Claude old enough to send no type would match none of them and lose
-  the banner. A type we have not heard of is taken to ask.
+  that turn's Stop had just reported -> the four that announce are named and
+  everything else counts as waiting. Sorted from the payload's
+  `notification_type`, not the matcher the event does take: a matcher is
+  written into the settings file, so it would reach only the installs made
+  after the build that adds it, and a Claude old enough to send no type would
+  match none of them and lose the banner. A deny list, so a question Claude
+  adds later raises a dot instead of falling silently out; the cost the other
+  way is that an announcing type added later raises one too, which is the
+  trade taken deliberately.
 - Gemini needed neither: its Notification has one type, a tool permission.
 
 Claude asked for that request beside its notification, not instead: the

@@ -185,10 +185,10 @@ struct SidebarView: View {
         projectID: project.id,
         blockHeight: blockHeight(of: visible, metrics: metrics),
         target: $dropTarget,
-        perform: { edge in
-          if let moving = draggingProject {
-            model.moveProject(moving, edge == .top ? .above : .below, project.id)
-          }
+        perform: { moving, edge in
+          // `moveProject` looks the id up, so a drop carrying anything but a
+          // project of ours moves nothing.
+          if let moving { model.moveProject(moving, edge == .top ? .above : .below, project.id) }
           endDrag()
         }
       ))

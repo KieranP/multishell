@@ -46,6 +46,9 @@ public final class AppModel<Surface> {
   /// The worktree showing its name field. Runtime state, so the menu that
   /// starts a rename and the row that draws it need not know each other.
   public var renamingWorktreeID: Worktree.ID?
+  /// The tab whose strip shows a name field, for the same reason the worktree
+  /// above has one: a commit arriving after the edit ended must be ignored.
+  public var renamingTabID: TerminalTab.ID?
 
   // MARK: - The Agents board
 

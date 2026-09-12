@@ -10,7 +10,6 @@
 
 "action.add" = "Add";
 "action.cancel" = "Cancel";
-"action.clear" = "Clear";
 "action.copy" = "Copy";
 "action.copy-value" = "Copy %@";
 "action.dismiss" = "Dismiss";
@@ -109,10 +108,7 @@
 "hooks.shared-run" = "Its hooks run where yours are blank.";
 "hooks.stop-trusting" = "Stop Trusting";
 "hooks.trust" = "Trust Hooks";
-"icon-picker.clear-search" = "Clear the search";
 "icon-picker.folder" = "Folder";
-"icon-picker.no-match" = "No symbol called that";
-"icon-picker.search" = "Search";
 "label.agents" = "Agents";
 "menu.add-project" = "Add Project…";
 "menu.cut" = "Cut";

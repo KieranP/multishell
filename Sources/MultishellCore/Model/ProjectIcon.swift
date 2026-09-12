@@ -55,19 +55,4 @@ public enum ProjectIcon {
       self.glyphs = glyphs
     }
   }
-
-  /// Groups matching the typed text, others cut to their matching symbols.
-  /// `localizedStandardContains`, so translated group names fold accents.
-  public static func symbolGroups(matching query: String) -> [Group] {
-    let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !needle.isEmpty else { return symbolGroups }
-    return symbolGroups.compactMap { group in
-      if group.name.localizedStandardContains(needle) { return group }
-      let matches = group.glyphs.filter {
-        $0.localizedStandardContains(needle)
-          || searchWords[$0]?.localizedStandardContains(needle) == true
-      }
-      return matches.isEmpty ? nil : Group(name: group.name, glyphs: matches)
-    }
-  }
 }

@@ -2,10 +2,15 @@
 
 Open findings from a whole-repo review on 2026-09-12, against commit 9209231.
 
-Every Critical and High has been fixed and its entry taken out, so what is
-left here is Medium and Low. Numbers are never reused: the ones that remain
-keep what they were given, which is why they have gaps, and a number in a
-message always means the same bug.
+Every Critical and High is fixed, and every Medium but one; their entries are
+taken out. 10 is the exception and is not a defect to patch: reporting Done
+only once a turn's background subagents have ended needs `SubagentStart` and
+`SubagentStop` written into the user's settings file and a count carried over
+the socket, which is a change to the protocol and to what Add installs.
+
+Numbers are never reused: the ones that remain keep what they were given,
+which is why they have gaps, and a number in a message always means the same
+bug.
 
 A finding says where it is, what goes wrong, and how far it was verified.
 Confirmed means traced end to end or reproduced; plausible names the gap that
@@ -13,28 +18,13 @@ is left. Entries already in `docs/develop/known-gaps.md` are not repeated
 here.
 
 Each label is what the bug does to the user when it fires, not how often it
-fires.
-
-- Medium: wrong behaviour the user meets and has to work around.
-- Low: churn, cost, or a wrong detail that costs nothing to live with.
-
-Worst first, then by number:
+fires. Medium: wrong behaviour the user meets and has to work around. Low:
+churn, cost, or a wrong detail that costs nothing to live with.
 
 | # | Effect | What |
 | --- | --- | --- |
-| 5 | Medium | The icon picker searches in the reader's locale |
-| 6 | Medium | Tab dedup runs before the dangling prune, and can keep the dead copy |
-| 8 | Medium | The sidebar filter folds case in the reader's locale |
 | 10 | Medium | Done is reported while background subagents are still running |
-| 14 | Medium | Open in Editor acts while the Agents board is up, and skips the busy check |
-| 15 | Medium | Launch-time detection blocks the main actor on every PATH entry |
-| 18 | Medium | An unknown Claude notification type is dropped, and two docs disagree about that |
-| 21 | Medium | An abandoned project drag makes the next text drop move that project |
-| 23 | Medium | Escape on a tab's name field can still commit the abandoned draft |
-| 26 | Medium | The promise reader's queue is a local that goes out of scope |
-| 29 | Medium | A non-transient accept failure spins the socket queue |
 | 2 | Low | The same locale gives bash a wrong duration |
-| 3 | Low | CI never builds the app bundle |
 | 7 | Low | A comment documents a hazard that does not exist |
 | 9 | Low | Recording engine ownership before the open trades one leak for its mirror |
 | 16 | Low | Every agent report redraws the sidebar and the board |
@@ -56,46 +46,7 @@ with a bad number.
 Plausible: reachable only on bash 5, which has `EPOCHREALTIME`, and this
 machine carries Apple's 3.2 only, so it is read rather than reproduced.
 
-## Build and CI
-
-### 3. Low. CI never builds the app bundle
-
-`.github/workflows/ci.yml`. All three jobs run `swift build` and `swift test`;
-none runs `Scripts/make-app.sh`, so bundling, the generated Info.plist and
-signing can all break with CI green. The Makefile's opening comment says "CI
-and the Makefile cannot drift", which holds for the test half and not for
-this one.
-
-Confirmed by reading both files.
-
 ## MultishellCore
-
-### 5. Medium. The icon picker searches in the reader's locale
-
-`Sources/MultishellCore/Model/ProjectIcon.swift:67`. `localizedStandardContains`
-folds case with `Locale.current`, but the words it matches are English
-constants and the SF Symbol names are ASCII. Under `tr_TR` the dotted and
-dotless I stop folding together, so typing `DISK` matches nothing and the
-palette comes back empty. `Locale.current` follows the system, not the app's
-`en.lproj`, so shipping English only does not protect it. The old
-`lowercased().contains` was locale-independent.
-
-Confirmed by the first review against `tr_TR`. Distinct from the known gap
-about `searchWords` being English, which is about translated words rather
-than ASCII folding. Fix = fold with `lowercased()`, or pass
-`Locale(identifier: "en_US_POSIX")`.
-
-### 6. Medium. Tab dedup runs before the dangling prune, and can keep the dead copy
-
-`Sources/MultishellCore/Model/Workspace+Repair.swift:15`. `tabs.uniqued(by: \.id)`
-is first-entry-wins and runs before the `worktreeIDs` prune on line 19. A file
-holding tab id `X` twice, the first naming a worktree that is gone and the
-second a live one, keeps the dead copy; the prune then deletes it, and the
-valid tab goes with it, its sessions losing their owner at line 45. The old
-order kept the live copy.
-
-Confirmed. Narrow: duplicate ids come from a hand-edited file, which is the
-case the comment cites. Fix = move the dedup below the prune.
 
 ### 7. Low. A comment documents a hazard that does not exist
 
@@ -108,31 +59,6 @@ behaviour and the comment now misleads, which costs more here than elsewhere
 because comments are the reasoning of record.
 
 Confirmed; no other modulo-wrapping site remains.
-
-### 18. Medium. An unknown Claude notification type is dropped, and two docs disagree about that
-
-`Sources/MultishellCore/Agents/AgentHookIntegration.swift:65`. The check is an
-allow list of the five names in `AgentHooks.claudeQuestions`, so a
-`notification_type` the build has not heard of returns nil, the helper writes
-nothing to the socket, and the pane's dot stays green while the agent sits at a
-prompt.
-
-`docs/design/agents.md:65` ends that bullet with "A type we have not heard of is
-taken to ask", which the code contradicts. The sentence before it covers the
-no-type case, which the `let type =` binding already handles separately, so the
-last sentence is about an unrecognised type. It also runs against the pattern
-beside it: `AgentHookPayload.promptsForPermission` takes an unknown mode as
-prompting, and merged-branch.md chose a deny list for the same reason.
-
-`docs/develop/known-gaps.md` records the opposite as settled, saying a type
-Claude adds later falls out of the list and naming the flip as the fix if it
-bites. So the two docs disagree and the code follows known-gaps. Decide which
-doc is right before changing code.
-
-Confirmed as a divergence; I read agents.md:65. The doc line landed in
-`fc89bd8`, the same commit as the code.
-`claudeOnlyWaitsOnANotificationThatAsksSomething` pins the nine known types and
-the nil type, never an unknown one. Related to 10.
 
 ### 19. Low. Remove rewrites an agent settings file even when it removed nothing
 
@@ -150,15 +76,6 @@ Confirmed.
 
 ## MultishellAppCore
 
-### 8. Medium. The sidebar filter folds case in the reader's locale
-
-`Sources/MultishellAppCore/SidebarFilter.swift:31`. Same cause as 5, reached
-from user data instead of English constants: under `tr_TR` an uppercase `I`
-stops matching a branch holding a lowercase `i`, so `kieran/rate-limits` drops
-out of the list for a filter of `I`.
-
-Confirmed. Lower than 5 because branch names vary. Same fix.
-
 ### 9. Low. Recording engine ownership before the open trades one leak for its mirror
 
 `Sources/MultishellAppCore/Terminals/MultiEngineHost.swift:35`. `SessionRegistry.reconcile`
@@ -175,42 +92,6 @@ judgement call, not an obvious fix. A second reviewer read the same line
 and called the current order correct, so settle which leak is wanted before
 touching it.
 
-### 14. Medium. Open in Editor acts while the Agents board is up, and skips the busy check
-
-`Sources/MultishellAppCore/Model/AppModel+Editor.swift:58`. The `.openTab`
-branch calls `store.openTab` and `store.selectWorktree` directly rather than
-going through `select(_:)`, so `leaveAgentBoard()` never runs and `isBusy` is
-never checked. agents.md says nothing acting on the tab in front of the user
-acts at all while the board is up.
-
-With a terminal editor set and the board showing, Cmd+Shift+O starts a live
-shell running the editor in a pane the board covers, and Cmd+W will not close
-it because `closeInShownTab` returns early on a nil `worktreeInView`. Separately,
-the missing `isBusy` check starts a shell in a directory whose pre-delete hook
-is already running, which `requestRemoval`, `newTab` and `splitActivePane` all
-refuse.
-
-Confirmed. Related to the known gap about Open in Editor and New Worktree
-acting on the selected worktree while the board is up, but that gap says
-neither is destructive; this adds that one of them opens a shell where a
-removal is in flight.
-
-### 15. Medium. Launch-time detection blocks the main actor on every PATH entry
-
-`Sources/MultishellAppCore/Model/AppModel+Agents.swift:17`.
-`refreshLoginEnvironment` awaits the environment capture off-main, then builds
-`AgentDetection`, `ShellDetection` and `EditorDetection` synchronously on the
-main actor. Each `ExecutableLookup.find` stats every PATH directory,
-`ShellDetection` reads and stats every line of `/etc/shells`, `EditorDetection`
-runs a LaunchServices lookup per editor, and `refreshAgentStatus` parses five
-settings files. None goes through `Self.offMain`.
-
-A stale network mount on PATH makes each stat block for the mount's timeout
-with the main actor held, which is the hazard `offMain`'s own comment
-describes; it is used on the polling paths and not here.
-
-Plausible: read from the code, no stall measured.
-
 ### 16. Low. Every agent report redraws the sidebar and the board
 
 `Sources/MultishellAppCore/Model/AppModel+SessionState.swift:32`.
@@ -225,20 +106,6 @@ against exactly this, and so do `noteTitle`, `note(_:asMergeBaseOf:)` and
 Confirmed.
 
 ## MultishellGitKit, Process and CLI
-
-### 29. Medium. A non-transient accept failure spins the socket queue
-
-`Sources/MultishellProcess/UnixSocketServer.swift:87`. `guard client >= 0 else
-{ return }` returns on every error alike. On `EMFILE` or `ENFILE` the pending
-connection stays in the listen backlog, and the read source on a listening
-socket is level-triggered, so the handler fires again at once: a tight
-accept-and-fail loop holding a core until a descriptor frees, which is when the
-app can least afford it.
-
-Plausible on the spin rate rather than confirmed, since `DescriptorLimit.raise()`
-lifts the soft limit to `OPEN_MAX` and reaching `EMFILE` needs a real leak or
-`ENFILE`. The unguarded path is the confirmed part. Fix = treat
-`EAGAIN`/`EWOULDBLOCK` as done and back off on `EMFILE`/`ENFILE`.
 
 ### 33. Low. A worktree path containing a newline is mis-parsed
 
@@ -255,46 +122,6 @@ reported.
 survives the change.
 
 ## macOS app
-
-### 21. Medium. An abandoned project drag makes the next text drop move that project
-
-`Apps/macOS/Sources/Multishell/Sidebar/SidebarView.swift:226` with
-`Sidebar/ProjectDropDelegate.swift:35`. `.onDrag` sets `draggingProject` and
-nothing clears it on cancellation: `endDrag()` runs only from `performDrop` and
-from the catch-all `.onDrop(of: [.text])` on the ScrollView, which covers the
-scroll area alone. SwiftUI gives `.onDrag` no cancellation callback.
-
-Drag project A's row and release it over the terminal area, the sidebar header
-or another app, so `draggingProject` stays A. Later drag a text selection out of
-Safari onto project B's row. `validateDrop` accepts anything conforming to
-`.text` and `performDrop` never inspects the item, so `moveProject(A, .above, B)`
-runs and A silently changes position, with a save scheduled. Before the drop the
-blue insertion capsule also draws, because line 379 tests `draggingProject != nil`
-rather than the item's contents, so the sidebar advertises the wrong move during
-any text drag.
-
-Confirmed for the code path. Gap: whether AppKit delivers `performDrop` for
-every external text flavour, though `public.utf8-plain-text` conforms to
-`public.text` so the type check passes.
-
-### 23. Medium. Escape on a tab's name field can still commit the abandoned draft
-
-`Apps/macOS/Sources/Multishell/Terminals/TabButton.swift:197` with
-`Support/InlineNameField.swift:30`. The field commits on blur, and Escape sets
-`editingTabID = nil`, which removes the field and drops its focus.
-`TabButton`'s commit closure calls `model.renameTab` with no check that the edit
-is still current. The worktree path guards exactly this:
-`AppModel.commitRename` starts with `guard renamingWorktreeID == id`.
-
-Double-click a tab, type `scratch`, press Escape, and the tab is renamed and the
-persisted `customTitle` written. The same ordering makes commit's second half
-wipe a rename just started on another tab: double-click A, type, double-click B,
-and B's field opens and closes immediately because A's blur-commit reset
-`editingTabID`.
-
-Plausible; the gap is whether SwiftUI delivers the focus change to a view being
-removed in the same update. The asymmetry with `commitRename` is the argument
-that it does.
 
 ### 24. Low. Every font family is enumerated on each settings tab switch
 
@@ -323,22 +150,6 @@ handle disappears and the cursor stack keeps the resize cursor on top.
 Confirmed in the code; the visible effect is plausible, since AppKit resets from
 cursor rects on the next mouse-move and how long the wrong cursor shows depends
 on what the pointer crosses.
-
-### 26. Medium. The promise reader's queue is a local that goes out of scope
-
-`Apps/macOS/Sources/Multishell/Terminals/PromisedDrop.swift:38`. The
-`OperationQueue` passed to `receivePromisedFiles` is a local released when
-`receive` returns. The call is not documented to retain it, and Apple's sample
-keeps it as a stored property.
-
-Drag a screenshot preview onto a pane. If the queue is released before the
-source writes the file, the reader never runs, the `Collector` waits out its
-120-second patience and delivers nothing, so the file is never pasted and the
-drop directory is swept a week later.
-
-Plausible, and untestable here by the suite's own admission
-(`PromisedDropTests.swift:16`, the drag cannot be staged). One stored property
-removes the question.
 
 ## Agents
 

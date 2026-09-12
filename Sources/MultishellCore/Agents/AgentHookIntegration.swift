@@ -62,9 +62,7 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   public func event(for payload: AgentHookPayload) -> AgentHookEvent? {
     guard let event = events.first(where: { $0.reported == payload.eventName }) else { return nil }
     if event.onlyWhenPrompting, !payload.promptsForPermission { return nil }
-    if !event.notificationTypes.isEmpty, let type = payload.notificationType,
-      !event.notificationTypes.contains(type)
-    {
+    if let type = payload.notificationType, event.ignoredNotificationTypes.contains(type) {
       return nil
     }
     return event

@@ -2,7 +2,8 @@ import Foundation
 import MultishellCore
 
 /// What the sidebar shows for a filter string. A project matching keeps all
-/// its worktrees; matching is `localizedStandardContains`, so accents fold.
+/// its worktrees; matching folds case and accents, never by the reader's
+/// alphabet, branch and directory names not being their language.
 public struct SidebarFilter: Sendable {
   public struct Entry: Equatable, Sendable {
     public let project: Project
@@ -24,12 +25,11 @@ public struct SidebarFilter: Sendable {
       guard isActive else {
         return Entry(project: project, worktrees: worktrees, forcedOpen: false)
       }
-      if project.name.localizedStandardContains(needle) {
+      if project.name.foldedContains(needle) {
         return Entry(project: project, worktrees: worktrees, forcedOpen: true)
       }
       let matching = worktrees.filter {
-        $0.name.localizedStandardContains(needle)
-          || workspace.displayName(of: $0).localizedStandardContains(needle)
+        $0.name.foldedContains(needle) || workspace.displayName(of: $0).foldedContains(needle)
       }
       return matching.isEmpty ? nil : Entry(project: project, worktrees: matching, forcedOpen: true)
     }

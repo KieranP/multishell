@@ -14,6 +14,8 @@ public final class UnixSocketServer: @unchecked Sendable {
   private let lock = NSLock()
   private var listener: (any DispatchSourceRead)?
   private var connections: [Int32: Connection] = [:]
+  /// Whether the listener is suspended waiting for a descriptor to free.
+  private var standingDown = false
 
   public init(path: URL, queue: DispatchQueue = DispatchQueue(label: "multishell.socket")) {
     self.path = path.path
@@ -58,7 +60,11 @@ public final class UnixSocketServer: @unchecked Sendable {
       defer {
         self.listener = nil
         self.connections.removeAll()
+        self.standingDown = false
       }
+      // Put back before it goes: a source released while suspended traps,
+      // and its cancel handler, which closes the descriptor, never runs.
+      if standingDown { self.listener?.resume() }
       return (self.listener, Array(self.connections.values))
     }
     guard listener != nil else { return }
@@ -82,10 +88,40 @@ public final class UnixSocketServer: @unchecked Sendable {
     }
   }
 
+  /// What a failed `accept` means. Every case but `drained` leaves the
+  /// connection in the backlog, and the read source fires again on it.
+  enum AcceptOutcome: Equatable {
+    case drained
+    case again
+    case outOfDescriptors
+
+    init(errno code: Int32) {
+      switch code {
+      case EINTR, ECONNABORTED, EPROTO: self = .again
+      case EMFILE, ENFILE, ENOBUFS, ENOMEM: self = .outOfDescriptors
+      default: self = .drained
+      }
+    }
+  }
+
+  /// How long the listener stands down for when there is no descriptor to
+  /// accept with. Long enough that the queue is not the thing holding one.
+  private static let descriptorBackoff: DispatchTimeInterval = .milliseconds(250)
+
   private func acceptPending(on descriptor: Int32) {
     while true {
       let client = accept(descriptor, nil, nil)
-      guard client >= 0 else { return }
+      guard client >= 0 else {
+        switch AcceptOutcome(errno: errno) {
+        case .drained: return
+        case .again: continue
+        case .outOfDescriptors:
+          // The pending connection stays in the backlog and the source is
+          // level-triggered, so returning here burns a core until one frees.
+          standDown()
+          return
+        }
+      }
       UnixSocketAddress.setNonBlocking(client)
       let source = DispatchSource.makeReadSource(fileDescriptor: client, queue: queue)
       let connection = Connection(source: source)
@@ -93,6 +129,27 @@ public final class UnixSocketServer: @unchecked Sendable {
       source.setCancelHandler { close(client) }
       lock.withLock { connections[client] = connection }
       source.resume()
+    }
+  }
+
+  /// Suspends the listener and brings it back once. Every suspend and resume
+  /// is under the lock: releasing a suspended source traps, and so does one
+  /// resume too many, so `stop` has to see this state and undo it.
+  private func standDown() {
+    let suspended = lock.withLock { () -> Bool in
+      guard !standingDown, let source = listener else { return false }
+      standingDown = true
+      source.suspend()
+      return true
+    }
+    guard suspended else { return }
+    queue.asyncAfter(deadline: .now() + Self.descriptorBackoff) { [weak self] in
+      guard let self else { return }
+      self.lock.withLock {
+        guard self.standingDown, let source = self.listener else { return }
+        self.standingDown = false
+        source.resume()
+      }
     }
   }
 

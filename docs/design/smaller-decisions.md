@@ -57,9 +57,11 @@ Newest at the bottom.
   a theme change keeps it in step with the terminal.
 - Project icon picked from a grouped palette read by shape, not a popup menu of
   names read line by line: the menu is what held the list to sixty, where the
-  palette carries close to four hundred. Still keyboard-drivable, and its search
-  covers a word for what each symbol is used for as well as its name, an SF
-  Symbol being named for its picture rather than for a database or a git branch.
+  palette carries close to four hundred. Still keyboard-drivable. It had a
+  search over English words for what each symbol is used for, an SF Symbol
+  being named for its picture; taken out rather than translated, since it made
+  every other language search words it could not see, for a palette small
+  enough to read by eye.
   Emoji, which a field beside the menu once set, are gone: they looked out of
   place, and a glyph is now a symbol name or nothing, one rule read the same way
   everywhere, so a leftover emoji neither masks the icon a repo's shared file

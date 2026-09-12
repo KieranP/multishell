@@ -45,6 +45,34 @@ struct SidebarFilterTests {
     #expect(entries[0].forcedOpen)
   }
 
+  /// Branch and directory names are not the reader's language, so folding
+  /// them by the reader's alphabet drops a row they can see on screen.
+  @Test func theFilterDoesNotFoldBySomebodyElsesAlphabet() {
+    let turkish = Locale(identifier: "tr_TR")
+    #expect(
+      "kieran/rate-limits".range(of: "LIMITS", options: [.caseInsensitive], locale: turkish) == nil,
+      "the dotless I is what breaks it; this is the form that must not be used")
+
+    let entries = SidebarFilter("LIMITS").apply(to: workspace)
+    #expect(entries.map(\.project.name) == ["acme-api"])
+    #expect(entries.first?.worktrees.map(\.name) == ["kieran/rate-limits"])
+    #expect("Crème".foldedContains("creme"), "accents still fold")
+  }
+
+  /// Locale.current cannot be moved for one test without moving it for every
+  /// suite running beside it, so the guard is on the source instead.
+  @Test func theFilterNeverReachesForTheLocaleSensitiveForm() throws {
+    let file = URL(fileURLWithPath: #filePath)
+      .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+      .appendingPathComponent("Sources/MultishellAppCore/SidebarFilter.swift")
+    let text = try String(contentsOf: file, encoding: .utf8)
+    let matching = text.split(whereSeparator: \.isNewline).filter {
+      $0.contains("localizedStandardContains") || $0.contains("localizedCaseInsensitiveContains")
+    }
+    #expect(matching.isEmpty, "folds by the reader's locale: \(matching)")
+    #expect(text.contains("foldedContains"), "does not match at all")
+  }
+
   @Test func aBranchSharedByBothProjectsShowsBoth() {
     let entries = SidebarFilter("main").apply(to: workspace)
     #expect(entries.count == 2)

@@ -9,22 +9,15 @@ struct IconPicker: View {
   let tint: Color
   let choose: (String?) -> Void
 
-  private enum Field: Hashable {
-    case search
-    case grid
-  }
-
   @State private var isPresented = false
-  @State private var query = ""
   @State private var highlighted: String?
-  @FocusState private var focus: Field?
+  @FocusState private var gridFocused: Bool
 
   private static let columns = 10
   private static let cellSize: Double = 26
 
   var body: some View {
     Button {
-      query = ""
       highlighted = chosen
       isPresented = true
     } label: {
@@ -49,85 +42,23 @@ struct IconPicker: View {
   }
 
   private var palette: some View {
-    let groups = ProjectIcon.symbolGroups(matching: query)
+    let groups = ProjectIcon.symbolGroups
     return ScrollViewReader { proxy in
       VStack(spacing: 6) {
-        search(groups, proxy: proxy)
-        if groups.isEmpty {
-          Spacer()
-          Text(t("icon-picker.no-match")).font(.system(size: 11)).foregroundStyle(.secondary)
-          Spacer()
-        } else {
-          grid(groups, proxy: proxy)
-          if query.isEmpty { jumps(groups, proxy: proxy) }
-        }
+        grid(groups, proxy: proxy)
+        jumps(groups, proxy: proxy)
       }
       .onAppear {
         highlighted = chosen
         // A frame later: the grid is lazy, so neither the cell nor the
-        // field exists during the first layout pass.
+        // ring's own row exists during the first layout pass.
         Task {
-          focus = .search
+          gridFocused = true
           proxy.scrollTo(chosen, anchor: .center)
         }
       }
     }
     .frame(width: Double(Self.columns) * (Self.cellSize + 2) + 22, height: 360)
-  }
-
-  private func search(_ groups: [ProjectIcon.Group], proxy: ScrollViewProxy) -> some View {
-    HStack(spacing: 4) {
-      Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-      TextField(t("icon-picker.search"), text: $query)
-        .textFieldStyle(.plain)
-        .focused($focus, equals: .search)
-        .onKeyPress(.escape) {
-          // A search field's Escape clears the search. Only once there is
-          // nothing left to clear does it reach the popover and close it.
-          guard !query.isEmpty else { return .ignored }
-          query = ""
-          return .handled
-        }
-        .onKeyPress(.downArrow) {
-          focus = .grid
-          // Whatever is about to take the ring is usually off screen, so
-          // moving into the grid looks like nothing happening.
-          if let highlighted { proxy.scrollTo(highlighted, anchor: .center) }
-          return .handled
-        }
-        .onKeyPress(.return) { pickHighlighted() }
-      if !query.isEmpty {
-        Button {
-          query = ""
-          focus = .search
-        } label: {
-          Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
-        }
-        .buttonStyle(.plain)
-        .help(t("action.clear"))
-        .accessibilityLabel(t("icon-picker.clear-search"))
-      }
-    }
-    .font(.system(size: 11))
-    .padding(.horizontal, 8)
-    .padding(.top, 8)
-    .onChange(of: query) {
-      // Nothing matched: drop the ring, or Return picks a symbol the filter
-      // has taken off the screen.
-      guard let first = groups.first else {
-        highlighted = nil
-        return
-      }
-      // A cleared search goes back to what the project is set to, not to the
-      // top of the palette, which is where it was before the search.
-      if query.isEmpty {
-        highlighted = chosen
-        proxy.scrollTo(chosen, anchor: .center)
-      } else {
-        highlighted = first.glyphs.first
-        proxy.scrollTo(Self.headerID(first.name), anchor: .top)
-      }
-    }
   }
 
   private func grid(_ groups: [ProjectIcon.Group], proxy: ScrollViewProxy) -> some View {
@@ -147,11 +78,13 @@ struct IconPicker: View {
         }
       }
       .padding(.horizontal, 8)
-      .padding(.bottom, 8)
+      // The search field used to carry the top of the popover; the grid does
+      // now, or the first row of symbols sits against its edge.
+      .padding(.vertical, 8)
     }
     .focusable()
     .focusEffectDisabled()
-    .focused($focus, equals: .grid)
+    .focused($gridFocused)
     .onKeyPress(.leftArrow) { walk(.left, through: groups, proxy: proxy) }
     .onKeyPress(.rightArrow) { walk(.right, through: groups, proxy: proxy) }
     .onKeyPress(.upArrow) { walk(.up, through: groups, proxy: proxy) }
@@ -210,7 +143,7 @@ struct IconPicker: View {
         .frame(width: Self.cellSize, height: Self.cellSize)
         .background(selected ? Color.accentColor : .clear, in: RoundedRectangle(cornerRadius: 5))
         .overlay {
-          if highlighted == name && focus == .grid {
+          if highlighted == name, gridFocused {
             RoundedRectangle(cornerRadius: 5).strokeBorder(Color.accentColor, lineWidth: 2)
           }
         }

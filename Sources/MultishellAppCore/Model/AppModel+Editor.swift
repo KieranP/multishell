@@ -30,7 +30,10 @@ extension AppModel {
       presentedError = .noEditorChosen
       return
     }
-    guard requireDirectory(of: worktree), let shell = ShellCommand.shell else { return }
+    // Busy means a removal's hook is running in that directory, which every
+    // other way of starting something there already refuses.
+    guard !isBusy(worktree.id), requireDirectory(of: worktree), let shell = ShellCommand.shell
+    else { return }
     let action = EditorLaunch.action(
       editorID: editorID,
       found: editorDetection.found[editorID],
@@ -56,6 +59,9 @@ extension AppModel {
         }
       }
     case .openTab(let title, let command):
+      // Or the editor runs in a pane the board covers, which Cmd+W cannot
+      // reach either: nothing acts on the tab in front while it is up.
+      leaveAgentBoard()
       store.openTab(in: worktree.id, title: title, command: command)
       store.selectWorktree(worktree.id)
       warmWorktrees.insert(worktree.id)

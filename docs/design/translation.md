@@ -129,10 +129,8 @@ reads worse than none. It also must not start: the helper is its own
 which is an absolute path into this build directory and traps everywhere
 else. Nothing in `MultishellCLI` reaches the catalogue today.
 
-Proper names: the engines, the agents, the built-in themes.
-`ProjectIcon.searchWords`, the words that make a search for "database" find
-`cylinder`, are lowercase English and stay so -> a picker in another language
-matches the group names and the SF Symbol names, and nothing else.
+Proper names: the engines, the agents, the built-in themes. The icon picker
+has no search to translate; its group names are the only words in it.
 
 The permission strings macOS shows, which are in the Info.plist rather than
 the catalogue. A translation of them is an `InfoPlist.strings` beside the
@@ -155,3 +153,18 @@ being built: adding a language there adds it to the menu with no second
 edit. The libraries' half has to keep pace, and nothing checks that it
 has — a language listed with no `Sources` half draws its windows
 translated and says what the model says in English.
+
+## Only the reader's own words are folded by the reader's alphabet
+
+`foldedContains` matches case and accents by Unicode's rules with no locale,
+and it is what searches data that is not the reader's language: branch and
+directory names in the sidebar filter. `localizedStandardContains` reads
+`Locale.current`, and under `tr_TR` the dotted and dotless I stop folding
+together, so an uppercase `I` typed into the filter stopped matching a branch
+holding a lowercase one. Shipping English only is no protection:
+`Locale.current` follows the system, not the bundle.
+
+The icon picker had a search over English words for symbols named after the
+picture, and it is gone rather than translated: 107 more catalogue entries to
+find a glyph in a palette small enough to read by eye, and every locale but
+English searching words it could not see.

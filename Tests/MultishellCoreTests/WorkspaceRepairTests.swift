@@ -452,6 +452,37 @@ struct WorkspaceRepairShapeTests {
 /// New Worktree picker's labels are a dictionary that traps on a repeat.
 @Suite
 struct WorkspaceRepairDuplicateTests {
+  /// First entry wins, so deduping before the dangling prune can keep the
+  /// copy naming a worktree that has gone and lose the live one with it.
+  @Test func aTabIdListedTwiceKeepsTheCopyWhoseWorktreeIsStillThere() throws {
+    let tab = UUID().uuidString
+    let dead = UUID().uuidString
+    let live = UUID().uuidString
+    var ws = try JSONDecoder().decode(
+      Workspace.self,
+      from: Data(
+        #"""
+        { "projects": [ { "path": "file:///repos/demo/" } ],
+          "worktrees": [
+            { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "a", "branch": "main" } ],
+          "tabs": [
+            { "id": "\#(tab)", "worktreeID": "/repos/gone",
+              "root": { "terminal": { "_0": "\#(dead)" } }, "focusedSessionID": "\#(dead)" },
+            { "id": "\#(tab)", "worktreeID": "/repos/demo",
+              "root": { "terminal": { "_0": "\#(live)" } }, "focusedSessionID": "\#(live)" } ],
+          "sessions": [
+            { "id": "\#(live)", "worktreeID": "/repos/demo",
+              "workingDirectory": "file:///repos/demo/", "title": "Shell" } ] }
+        """#.utf8))
+    #expect(ws.tabs.count == 2, "decoding keeps both; repair is where they meet")
+
+    ws.repairReferences()
+
+    WorkspaceInvariants.check(ws, "duplicate tab")
+    #expect(ws.tabs.map(\.worktreeID) == ["/repos/demo"], "the dead copy was kept and then pruned")
+    #expect(ws.sessions.map(\.id.uuidString) == [live], "its session went with it")
+  }
+
   @Test func aProjectListedTwiceKeepsItsFirstEntryAndItsWorktrees() throws {
     var ws = try JSONDecoder().decode(
       Workspace.self,

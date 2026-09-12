@@ -36,6 +36,7 @@ enum PromisedDrop {
       deliver(urls)
     }
     let queue = OperationQueue()
+    collector.queue = queue
     for (index, receiver) in receivers.enumerated() {
       receiver.receivePromisedFiles(
         atDestination: directory, options: [:], operationQueue: queue,
@@ -74,6 +75,10 @@ enum PromisedDrop {
     /// Cancelled the moment the drop is answered, so a drag that finished
     /// does not keep a timer running behind it.
     var giveUpTimer: Task<Void, Never>?
+
+    /// Held, because `receivePromisedFiles` is not documented to keep the
+    /// queue it is handed and a released one never calls the reader.
+    var queue: OperationQueue?
 
     var isDelivered: Bool { delivered }
 

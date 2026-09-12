@@ -108,14 +108,17 @@ struct AgentHookPayloadTests {
     #expect(state("quota_auto_resume_fired") == nil)
     #expect(state(nil) == .attention, "a Claude from before the field keeps its banner")
     #expect(
+      state("plan_approval_prompt") == .attention,
+      "a type this build has not heard of is taken to ask; see docs/design/agents.md")
+    #expect(
       claude.event(for: AgentHookPayload(eventName: "Stop", notificationType: "idle_prompt"))?
         .state == .done, "the types govern that event only")
     #expect(
-      claude.events.allSatisfy { $0.state == .attention || $0.notificationTypes.isEmpty },
+      claude.events.allSatisfy { $0.state == .attention || $0.ignoredNotificationTypes.isEmpty },
       "no event but a question is filtered by type")
     #expect(
       AgentHooks.integrations.filter { $0.id != AgentCatalogue.claudeID }
-        .allSatisfy { $0.events.allSatisfy(\.notificationTypes.isEmpty) },
+        .allSatisfy { $0.events.allSatisfy(\.ignoredNotificationTypes.isEmpty) },
       "Claude is the only agent whose payload names a type")
   }
 

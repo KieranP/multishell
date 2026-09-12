@@ -43,6 +43,10 @@ than fixed lives in `docs/develop/known-gaps.md`.
   tab. Only the plugin has this: every other agent's hook runs in the
   session's own process.
 
+- CI builds and tests both packages but never runs `Scripts/make-app.sh`, so
+  bundling, the generated Info.plist and the signing can all break with it
+  green. Nothing notices until someone runs `make build`.
+
 ## Packaging
 
 - The bundle runs only where it was built: libghostty's `Bundle.module`
