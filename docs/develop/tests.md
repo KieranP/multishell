@@ -112,6 +112,37 @@ What each test catches, and the conventions a new one follows.
   through `withObservationTracking`.
 - An engine that registered a surface and then threw is told to let go:
   MultiEngineHostTests.
+- A counting tick leaves a Waiting alone: SessionStatesTests, both directions,
+  and the owed Done still paid at the last worker out.
+- Export keeps a hook the user refused and does not trust it into the
+  bargain: AppModelHookControlTests, against the real file on disk.
+- bash keeps its DEBUG trap against one installed at the first prompt, chains
+  to that one and to the `.bashrc` one, and hands `$?` on: HelperTests, real
+  bash driven through a pipe so `PROMPT_COMMAND` runs between the two, a
+  `bash -c` script never prompting. What says the chain really runs is a
+  firing after the trap came back, not the one at the prompt it arrived at,
+  and a body naming a path it cannot reach: run as one word, bash says so
+  once per command.
+- git's own children are looked up on the login PATH: GitRunnerTests, through
+  an alias that runs a helper on a PATH of the test's own; the same runner
+  without it fails, which is what makes the pass mean something.
+- A launched command is given no pipes, so a shim that holds the editor open
+  holds no descriptors: ProcessRunnerTests asks the shell whether its own
+  stdout is a pipe, counting them in a process this busy being hopeless.
+- A frame handed another session's surface asks that session for focus:
+  SurfaceFrameTests, in a window never ordered in.
+- A duration no clock could have produced is dropped coming off the channel
+  and renders as nothing: SessionStateReportTests and ElapsedTextTests, the
+  trap being `Int(_: Double)` outside its range.
+- A branch name git will reject is refused before the pre-create hook:
+  AppModelHookControlTests; the rules themselves are held against real
+  `git check-ref-format` over a table in GitRefNameTests.
+- A placeholder inside a value is not expanded again: AgentFlagsTests.
+- An item promising two files is not delivered on the first: PromisedDropTests.
+- A live socket whose accept backlog is full is not taken for a dead one:
+  UnixSocketTests, the server's queue blocked and the backlog filled by hand.
+- Removing the main worktree is refused before the hook and the Trash:
+  AppModelHookControlTests. Without the guard that test bins the fixture.
 - Foundation-only imports: checked by hand in a `swift:6.0` container, Linux
   being out of CI. Views untested, but a value a view reads is.
 

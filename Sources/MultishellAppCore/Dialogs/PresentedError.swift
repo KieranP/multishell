@@ -73,6 +73,12 @@ public struct PresentedError: Identifiable {
         failure.executable, failure.arguments.prefix(2).joined(separator: " "))
       message =
         failure.message.isEmpty ? t("error.exit-status", failure.status) : failure.message
+    case let invalid as InvalidBranchName:
+      title = t("error.invalid-branch-title")
+      message = invalid.errorDescription ?? ""
+    case let repository as NotAWorktree:
+      title = t("error.not-a-worktree-title")
+      message = repository.errorDescription ?? ""
     case is GitUnavailable:
       title = t("error.git-not-found-title")
       message = t("error.git-not-found-message")

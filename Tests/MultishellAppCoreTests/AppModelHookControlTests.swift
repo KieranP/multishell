@@ -363,6 +363,42 @@ struct AppModelHookControlTests {
     #expect(h.model.worktreeCreationStep == nil)
   }
 
+  /// git rejects the name at the end of a create, by which time the hook
+  /// has run and the container directory is there.
+  @Test func aBranchNameGitWillRefuseRunsNoHookAndMakesNoDirectory() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let marker = h.root.appendingPathComponent("hook-ran")
+    h.model.updateSettings(
+      ProjectSettings(preCreateHook: "touch \(marker.path)"), for: h.project)
+
+    await h.model.createWorktree(
+      branch: "my branch", basedOn: nil, createBranch: true, in: h.project)
+
+    #expect(!FileManager.default.fileExists(atPath: marker.path), "the hook did not run")
+    #expect(h.model.presentedError != nil, "and the sheet says why")
+    #expect(h.worktree(onBranch: "my branch") == nil)
+  }
+
+  /// The main worktree is the repository. Only a sidebar condition three
+  /// modules away kept it off this call, and the trash step would bin `.git`.
+  @Test func removingTheMainWorktreeIsRefusedBeforeAnythingRuns() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let marker = h.root.appendingPathComponent("delete-hook-ran")
+    h.model.updateSettings(
+      ProjectSettings(preDeleteHook: "touch \(marker.path)"), for: h.project)
+    let main = try #require(h.worktree(onBranch: "main"))
+    #expect(main.isPrimary)
+
+    await h.model.removeWorktree(main)
+
+    #expect(!FileManager.default.fileExists(atPath: marker.path), "the hook did not run")
+    #expect(h.platform.trashed.isEmpty, "and nothing went to the Trash")
+    #expect(FileManager.default.fileExists(atPath: main.path.path))
+    #expect(h.model.presentedError != nil)
+  }
+
   @Test func aLockedWorktreeIsUnlockedSoThePruneTakesIt() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
@@ -653,6 +689,49 @@ struct AppModelHookControlTests {
     let text = try String(
       contentsOf: SharedProjectSettings.file(in: h.project.path), encoding: .utf8)
     #expect(text.hasPrefix("{\n  \"branchPrefix\""), "sorted and indented for a diff")
+  }
+
+  /// Export writes the settings in force, and a refused hook is not in force,
+  /// so it is the file's word rather than the user's to drop.
+  @Test func exportKeepsAHookTheUserRefusedToTrust() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let file = SharedProjectSettings.file(in: h.project.path)
+    try #"{ "postCreateHook": "npm ci" }"#.write(to: file, atomically: true, encoding: .utf8)
+    await h.model.refresh(h.project)
+    h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
+    let asked = try #require(h.model.pendingSharedHooksTrust)
+    h.model.decideSharedHooks(asked, trusted: false)
+    h.model.updateSettings(ProjectSettings(branchPrefix: "mine/"), for: h.project)
+
+    h.model.exportSharedSettings(for: h.project)
+
+    let written = try #require(try SharedProjectSettings.load(from: h.project.path))
+    #expect(written.branchPrefix == "mine/", "what the user did set is exported")
+    #expect(written.postCreateHook == "npm ci", "what they refused is still the file's")
+    #expect(
+      !h.model.trustsSharedHooks(of: h.model.workspace.project(h.project.id)!),
+      "and exporting is not a way to trust it")
+  }
+
+  /// A hook the user wrote themselves still replaces the file's, and that
+  /// file is theirs, so it is trusted as before.
+  @Test func exportOverwritesAHookWithTheUsersOwn() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let file = SharedProjectSettings.file(in: h.project.path)
+    try #"{ "postCreateHook": "npm ci" }"#.write(to: file, atomically: true, encoding: .utf8)
+    await h.model.refresh(h.project)
+    h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
+    let asked = try #require(h.model.pendingSharedHooksTrust)
+    h.model.decideSharedHooks(asked, trusted: false)
+    h.model.updateSettings(ProjectSettings(postCreateHook: "make setup"), for: h.project)
+
+    h.model.exportSharedSettings(for: h.project)
+
+    let written = try #require(try SharedProjectSettings.load(from: h.project.path))
+    #expect(written.postCreateHook == "make setup")
+    #expect(h.model.trustsSharedHooks(of: h.model.workspace.project(h.project.id)!))
   }
 }
 

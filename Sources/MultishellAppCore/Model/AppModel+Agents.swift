@@ -33,16 +33,19 @@ extension AppModel {
     agentDetection = detected.agents
     shellDetection = detected.shells
     editorDetection = detected.editors
-    // git on the login shell's PATH like every other tool, which launch could
-    // not reach. Finding it here takes back what launch reported.
-    if worktrees == nil, let found = try? WorktreeCoordinator(path: environment.path) {
+    // Rebuilt even where launch found git: that PATH is what git's own
+    // children are looked up on; see docs/design/architecture.md.
+    let hadGit = worktrees != nil
+    if let found = try? WorktreeCoordinator(path: environment.path) {
       worktrees = found
-      if presentedError?.title == PresentedError(GitUnavailable()).title {
-        presentedError = nil
+      if !hadGit {
+        if presentedError?.title == PresentedError(GitUnavailable()).title {
+          presentedError = nil
+        }
+        // `start` refreshed before this ran and found no git, so every project
+        // listed nothing; the sidebar stays empty until something asks again.
+        await refreshAll()
       }
-      // `start` refreshed before this ran and found no git, so every project
-      // listed nothing; the sidebar stays empty until something asks again.
-      await refreshAll()
     }
     note(await Self.offMain { Self.agentStatus() })
   }

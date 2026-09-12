@@ -68,6 +68,22 @@ repo, but it always asks about the branch, the one part the sidebar cannot
 undo. Branch goes last, after the post-delete hook, so a hook that pushes it
 still finds it.
 
+The main worktree and a bare repository are refused by the coordinator, not
+only by the sidebar condition that hides the menu item: the call is public,
+the step that trashes the directory would take `.git` with it, and this is the
+operation with no way back.
+
+## A branch name git will reject is refused before anything runs
+
+Nothing between the sheet and `git worktree add` used to judge the name, so
+`my branch` or `feat.lock` ran the pre-create hook and made the container
+directory before git refused at the end of it. `GitRefName` is
+`check-ref-format`'s rules in Swift, since the sheet asks on every keystroke
+and a process per keystroke is not worth it; a test holds it against real git
+over a table of names. Create is off for a name it refuses and the sheet says
+why, and `WorktreeCoordinator.add` throws before the hook for a caller that
+did not ask.
+
 ## A bare repository is a project
 
 `--is-inside-work-tree` prints `false` for one, `--git-dir` succeeds anywhere

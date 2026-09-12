@@ -11,7 +11,8 @@ public struct GitUnavailable: Error, CustomStringConvertible {
 public struct GitRunner: Sendable {
   private let executable: URL
   private let runner: ProcessRunner
-  /// `GIT_CONFIG_*`, which git reads as config of the highest precedence.
+  /// `GIT_CONFIG_*`, which git reads as config of the highest precedence,
+  /// and the login shell's PATH where one was captured.
   private let configEnvironment: [String: String]
 
   /// Set on every runner: signature lines read as reflog work, and untracked
@@ -23,9 +24,11 @@ public struct GitRunner: Sendable {
 
   /// `configuration` overrides git's own and beats `isolation`. Through the
   /// environment, not `-c`, which a failure would report in its arguments.
+  /// `path` is the login shell's PATH, which git's own children need: a
+  /// filter, credential helper or diff driver is looked up on it.
   public init(
     executable: URL? = ExecutableLookup.find("git"), runner: ProcessRunner = ProcessRunner(),
-    configuration: [String: String] = [:]
+    path: String? = nil, configuration: [String: String] = [:]
   ) throws {
     guard let executable else { throw GitUnavailable() }
     self.executable = executable
@@ -37,6 +40,7 @@ public struct GitRunner: Sendable {
       overrides["GIT_CONFIG_KEY_\(index)"] = entry.key
       overrides["GIT_CONFIG_VALUE_\(index)"] = entry.value
     }
+    if let path { overrides["PATH"] = path }
     self.configEnvironment = overrides
   }
 

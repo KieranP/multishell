@@ -7,6 +7,9 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   /// More than a notification banner shows, and far inside what the channel
   /// carries.
   public static let maximumMessageLength = 500
+  /// A week. Longer than any command the board is asked to time, and short
+  /// of what `Int(_:)` cannot hold.
+  public static let maximumDuration: Double = 7 * 24 * 60 * 60
 
   public var version: Int
   public var state: SessionState
@@ -62,7 +65,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     self.cwd = cwd
     self.pid = pid
     self.message = Self.trimmed(message)
-    self.duration = duration
+    self.duration = Self.bounded(duration)
     self.agent = agent
     self.silent = silent
     self.subagents = subagents
@@ -78,10 +81,18 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     // Trimmed on the way in as well as out: any process of the user's may
     // write a line, so the cap is the reader's rule.
     message = Self.trimmed(try container.decodeIfPresent(String.self, forKey: .message))
-    duration = try container.decodeIfPresent(Double.self, forKey: .duration)
+    duration = Self.bounded(try container.decodeIfPresent(Double.self, forKey: .duration))
     agent = try container.decodeIfPresent(String.self, forKey: .agent)
     silent = try container.decodeIfPresent(Bool.self, forKey: .silent)
     subagents = try container.decodeIfPresent(Int.self, forKey: .subagents)
+  }
+
+  /// A duration outside what a command could have taken is a writer's
+  /// number rather than a clock's, and is dropped as the message is capped.
+  private static func bounded(_ duration: Double?) -> Double? {
+    guard let duration, duration.isFinite, duration >= 0, duration <= maximumDuration
+    else { return nil }
+    return duration
   }
 
   private static func trimmed(_ message: String?) -> String? {

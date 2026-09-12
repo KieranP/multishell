@@ -47,6 +47,12 @@ environment lands, which takes the launch report back if it finds git. Cost: a
 user with no git at all sees the alert a moment before it is confirmed, and the
 second lookup stats the PATH on the main actor beside the other detections.
 
+That PATH rides on the runner as well, so every git child is looked up on it
+too: a checkout runs `git-lfs`, a fetch runs a credential helper, a diff runs
+a driver, and from the Finder none of those is on the app's own PATH. So the
+coordinator is rebuilt when the login environment lands even where launch
+already found git; only a first find refreshes the sidebar.
+
 ## Nothing in the core blocks a thread
 
 Waits inside `Task`s held one cooperative-pool thread per core until GCD ran

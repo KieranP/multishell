@@ -9,6 +9,8 @@ public struct ShellCommand: Sendable {
     self.runner = runner
   }
 
+  /// One command line, its output captured. `launch` is the one to reach for
+  /// where the command may not return.
   public func run(
     _ commandLine: String,
     in directory: URL,
@@ -17,6 +19,50 @@ public struct ShellCommand: Sendable {
     guard let shell = Self.shell else { throw ShellUnavailable() }
     return try await runner.run(
       shell.executable, shell.arguments + [commandLine], in: directory, environment: environment)
+  }
+
+  /// Starts a command with nothing captured and waits only to hear how it
+  /// ended. For a launcher that may not return: an editor shim holding the
+  /// file open holds this too, so it must cost no pipes, and a timeout that
+  /// ended it would be ending the editor the user just asked for.
+  public func launch(
+    _ commandLine: String,
+    in directory: URL,
+    environment: [String: String] = [:]
+  ) async throws {
+    guard let shell = Self.shell else { throw ShellUnavailable() }
+    let arguments = shell.arguments + [commandLine]
+    let process = Process()
+    process.executableURL = shell.executable
+    process.arguments = arguments
+    process.currentDirectoryURL = directory
+    if !environment.isEmpty {
+      process.environment = ProcessInfo.processInfo.environment.merging(environment) { _, new in
+        new
+      }
+    }
+    // Nothing to drain and nothing to fill: a child that writes has it go
+    // nowhere rather than into a buffer this side must keep reading.
+    process.standardInput = FileHandle.nullDevice
+    process.standardOutput = FileHandle.nullDevice
+    process.standardError = FileHandle.nullDevice
+
+    let status = try await withCheckedThrowingContinuation { continuation in
+      // Set before the start: a child that exits first would otherwise find
+      // no handler, and nothing would ever resume this.
+      process.terminationHandler = { continuation.resume(returning: $0.terminationStatus) }
+      do {
+        try process.run()
+      } catch {
+        process.terminationHandler = nil
+        continuation.resume(throwing: error)
+      }
+    }
+    guard status == 0 else {
+      throw ProcessFailure(
+        executable: shell.executable.lastPathComponent, arguments: arguments, status: status,
+        message: "")
+    }
   }
 
   /// A multi-line script whose first failing line ends it, through an

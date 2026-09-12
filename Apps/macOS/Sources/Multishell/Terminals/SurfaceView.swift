@@ -16,13 +16,13 @@ struct SurfaceView: NSViewRepresentable {
   func makeNSView(context: Context) -> SurfaceFrame { SurfaceFrame() }
 
   func updateNSView(_ frame: SurfaceFrame, context: Context) {
-    frame.adopt(model.surface(for: sessionID))
-    frame.requestFocus = { [model] in model.focusSurface(sessionID) }
     frame.acceptsDrop = { [model] in model.acceptsFileDrop(into: sessionID) }
     frame.receiveDrop = { [model] urls, focus in
       model.dropFiles(urls, into: sessionID, takingFocus: focus)
     }
-    frame.wantsFocus = isFocused
+    frame.show(model.surface(for: sessionID), focused: isFocused) { [model] in
+      model.focusSurface(sessionID)
+    }
   }
 }
 
@@ -30,18 +30,10 @@ struct SurfaceView: NSViewRepresentable {
 /// attaches surfaces a pass late, so the frame remembers and acts later.
 @MainActor
 final class SurfaceFrame: NSView {
-  var requestFocus: (() -> Void)?
   var acceptsDrop: (() -> Bool)?
   var receiveDrop: (([URL], Bool) -> Bool)?
-  /// Guarded: `updateNSView` assigns this every pass, and taking first
-  /// responder each time pulls focus out of whatever the user is typing in.
-  var wantsFocus = false {
-    didSet {
-      guard wantsFocus != oldValue else { return }
-      focusIfReady()
-    }
-  }
-
+  private var requestFocus: (() -> Void)?
+  private var wantsFocus = false
   private var surface: NSView?
   private var highlight: NSView?
 
@@ -55,7 +47,21 @@ final class SurfaceFrame: NSView {
   @available(*, unavailable)
   required init?(coder: NSCoder) { nil }
 
-  func adopt(_ view: NSView?) {
+  /// The surface, whether this pane has the keyboard and how to ask for it,
+  /// in one call: a frame `ForEach` hands to another session must never
+  /// focus with the closure or the flag of the one it held.
+  func show(_ view: NSView?, focused: Bool, requestFocus: @escaping () -> Void) {
+    self.requestFocus = requestFocus
+    let adopted = surface !== view
+    // Taking first responder on every pass pulls focus out of whatever the
+    // user is typing in, so only a new surface or a new claim asks.
+    let claimed = focused && !wantsFocus
+    wantsFocus = focused
+    adopt(view)
+    if adopted || claimed { focusIfReady() }
+  }
+
+  private func adopt(_ view: NSView?) {
     guard surface !== view else { return }
     // Only detach a surface this frame still holds: collapsing panes can
     // hand a sibling's over before the sibling is torn down.
@@ -70,7 +76,6 @@ final class SurfaceFrame: NSView {
       // drawing over it.
       addSubview(view, positioned: .below, relativeTo: highlight)
     }
-    focusIfReady()
   }
 
   override func viewDidMoveToWindow() {

@@ -140,6 +140,30 @@ struct WorktreeFilesTests {
     #expect(!FileManager.default.fileExists(atPath: worktree.appending(".env.test").path))
   }
 
+  /// Cancel excuses what it stopped, not what had already gone wrong: the
+  /// stage used to be reported finished with the failures thrown away.
+  @Test func aStopCarriesTheFailuresItAlreadyHad() throws {
+    let (repository, worktree) = try directories()
+    try FileManager.default.createDirectory(
+      at: repository.appending("vendor"), withIntermediateDirectories: true)
+    try "dep".write(to: repository.appending("vendor/dep"), atomically: true, encoding: .utf8)
+    try "two".write(to: repository.appending("after.txt"), atomically: true, encoding: .utf8)
+    let files = WorktreeFiles()
+    // A folder linked into the worktree, so writing through it is refused.
+    try files.place("vendor", as: .link, from: repository, to: worktree)
+
+    // The stop lands after the first path, which is the one that failed.
+    let seen = Counter()
+    let stopped = #expect(throws: WorktreeFilesStopped.self) {
+      try files.place(
+        "vendor/dep\nafter.txt", as: .copy, from: repository, to: worktree,
+        isStopped: { seen.next() > 0 })
+    }
+
+    #expect(stopped?.failures.map(\.path) == ["vendor/dep"])
+    #expect(!FileManager.default.fileExists(atPath: worktree.appending("after.txt").path))
+  }
+
   /// A leading `/` or `~` is not a way out: it lands under the repository,
   /// where there is nothing to copy, so it needs no rule of its own.
   @Test func anAbsolutePathOrATildeLandsInsideAndFindsNothing() throws {
@@ -314,5 +338,19 @@ struct WorktreeFilesTests {
 extension URL {
   fileprivate func appending(_ path: String) -> URL {
     appendingPathComponent(path)
+  }
+}
+
+/// A `@Sendable` counter, `isStopped` being called from a closure that
+/// cannot capture a mutable local.
+private final class Counter: @unchecked Sendable {
+  private let lock = NSLock()
+  private var value = 0
+
+  func next() -> Int {
+    lock.withLock {
+      defer { value += 1 }
+      return value
+    }
   }
 }

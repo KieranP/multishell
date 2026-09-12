@@ -133,4 +133,17 @@ struct SessionStateReportTests {
       message.count == SessionStateReport.maximumMessageLength + 1, "trimmed, with an ellipsis")
     #expect(message.hasSuffix("…"))
   }
+
+  /// The same rule for the duration: the board renders it, and a value no
+  /// clock could have produced is a writer's, not a command's.
+  @Test func aDurationNoCommandCouldHaveTakenIsDroppedComingOffTheChannel() throws {
+    for written in ["1e300", "-4", "1e9"] {
+      let report = try #require(
+        SessionStateReport.parse(#"{"v":1,"state":"done","duration":\#(written)}"#))
+      #expect(report.duration == nil, "\(written)")
+    }
+    let real = try #require(
+      SessionStateReport.parse(#"{"v":1,"state":"done","duration":41.5}"#))
+    #expect(real.duration == 41.5, "what a command actually took is kept")
+  }
 }

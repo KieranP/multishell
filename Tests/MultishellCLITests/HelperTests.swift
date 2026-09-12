@@ -434,6 +434,133 @@ struct HelperTests {
     #expect(durations.count == 2 && durations.allSatisfy { $0 >= 0 }, "\(durations)")
   }
 
+  /// bash-preexec, which Atuin's bash install ships, replaces the DEBUG trap
+  /// at the first prompt. Ours is taken back at each prompt and chains to it.
+  @Test func bashKeepsItsDebugTrapAgainstOneInstalledAfterTheInit() async throws {
+    let path = socketPath()
+    let server = UnixSocketServer(path: path)
+    defer { server.stop() }
+    let recorder = LineRecorder()
+    server.onLine = { recorder.record($0) }
+    try server.start()
+
+    let home = URL(fileURLWithPath: "/tmp")
+      .appendingPathComponent("ms-bashtrap-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: home, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: home) }
+    let initFile = home.appendingPathComponent("init.bash")
+    try ShellStateHooks.bashInitFile(helper: Self.helper.path)
+      .write(to: initFile, atomically: true, encoding: .utf8)
+
+    var env = ProcessInfo.processInfo.environment
+    env["HOME"] = home.path
+    env["MULTISHELL_SOCKET"] = path.path
+    env["MULTISHELL_SESSION"] = UUID().uuidString
+    env["MULTISHELL_WORKTREE"] = "/w/repo"
+    // Read from a pipe rather than `-c`, so PROMPT_COMMAND runs between the
+    // late installer and the command, as it would at a real prompt.
+    let script = home.appendingPathComponent("drive.sh")
+    try """
+    trap 'printf "theirs\\n"' DEBUG
+    uname
+    printf 'last\\n'
+    wait
+    """.write(to: script, atomically: true, encoding: .utf8)
+    let output = try await ProcessRunner().capture(
+      URL(fileURLWithPath: "/bin/sh"),
+      [
+        "-c",
+        "exec /bin/bash --init-file \(ShellQuoting.quote(initFile.path)) -i < \(ShellQuoting.quote(script.path))",
+      ],
+      in: home, environment: env)
+
+    // The line installing their trap is itself reported, ours still standing
+    // when it runs; what the claim decides is whether `uname` is reported too.
+    try await waitUntil { recorder.received.count >= 2 }
+    let states = recorder.received.compactMap { SessionStateReport.parse($0)?.state }
+    #expect(states.filter { $0 == .running }.count >= 2, "\(recorder.received)")
+    // Theirs runs before each command, so what shows it is still being called
+    // is a firing after the reclaim, not the one at the prompt it arrived at.
+    let printed = output.standardOutput
+    let afterOurs = printed.range(of: "Darwin").map { String(printed[$0.upperBound...]) } ?? ""
+    #expect(afterOurs.contains("theirs"), "theirs stopped when ours came back: \(printed)")
+    #expect(afterOurs.contains("last"), "and the script ran on")
+  }
+
+  /// The trap `.bashrc` installed before ours is chained to, which needs its
+  /// quotes taken off the way the shell would: `trap -p` prints the body
+  /// quoted for re-input, and eval ran all of it as one word.
+  @Test func bashChainsToATrapItsUserInstalledFirst() async throws {
+    let home = URL(fileURLWithPath: "/tmp")
+      .appendingPathComponent("ms-bashprior-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: home, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: home) }
+    let initFile = home.appendingPathComponent("init.bash")
+    try ShellStateHooks.bashInitFile(helper: Self.helper.path)
+      .write(to: initFile, atomically: true, encoding: .utf8)
+    let marks = home.appendingPathComponent("theirs.txt")
+    // Several words, as every real one is: bash-preexec's is
+    // `__bp_preexec_invoke_exec "$_"`.
+    try "trap 'printf x >> \(marks.path)' DEBUG\n".write(
+      to: home.appendingPathComponent(".bashrc"), atomically: true, encoding: .utf8)
+
+    var env = ProcessInfo.processInfo.environment
+    env["HOME"] = home.path
+    env["MULTISHELL_SOCKET"] = home.appendingPathComponent("nowhere.sock").path
+    env["MULTISHELL_SESSION"] = UUID().uuidString
+    env["MULTISHELL_WORKTREE"] = "/w/repo"
+    let script = home.appendingPathComponent("drive.sh")
+    try "uname\n".write(to: script, atomically: true, encoding: .utf8)
+    let output = try await ProcessRunner().capture(
+      URL(fileURLWithPath: "/bin/sh"),
+      [
+        "-c",
+        "exec /bin/bash --init-file \(ShellQuoting.quote(initFile.path)) -i "
+          + "< \(ShellQuoting.quote(script.path))",
+      ], in: home, environment: env)
+
+    let theirs = (try? String(contentsOf: marks, encoding: .utf8)) ?? ""
+    #expect(!theirs.isEmpty, "the user's own trap never ran: \(output.standardError)")
+    // Run as one word, bash names the whole body in the complaint, and does
+    // it once per command for the life of the session.
+    #expect(
+      !output.standardError.contains(marks.path),
+      "their trap was run as one word: \(output.standardError)")
+  }
+
+  /// bash does not restore `$?` between PROMPT_COMMAND entries, so a prompt
+  /// that shows the last exit code reads whatever ours left behind.
+  @Test func bashPrecmdHandsOnTheStatusItWasGiven() async throws {
+    let home = URL(fileURLWithPath: "/tmp")
+      .appendingPathComponent("ms-bashstatus-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: home, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: home) }
+    let initFile = home.appendingPathComponent("init.bash")
+    try ShellStateHooks.bashInitFile(helper: Self.helper.path)
+      .write(to: initFile, atomically: true, encoding: .utf8)
+
+    var env = ProcessInfo.processInfo.environment
+    env["HOME"] = home.path
+    env["MULTISHELL_SOCKET"] = home.appendingPathComponent("nowhere.sock").path
+    env["MULTISHELL_SESSION"] = UUID().uuidString
+    env["MULTISHELL_WORKTREE"] = "/w/repo"
+    let script = """
+      _multishell_command_started
+      false
+      _multishell_precmd
+      printf 'ran=%s\\n' "$?"
+      true
+      _multishell_precmd
+      printf 'quiet=%s\\n' "$?"
+      """
+    let output = try await ProcessRunner().capture(
+      URL(fileURLWithPath: "/bin/bash"), ["--init-file", initFile.path, "-i", "-c", script],
+      in: home, environment: env)
+
+    #expect(output.standardOutput.contains("ran=1"), "\(output.standardOutput)")
+    #expect(output.standardOutput.contains("quiet=0"), "\(output.standardOutput)")
+  }
+
   /// A user whose ~/.zshenv sets ZDOTDIR keeps their config: the chain
   /// follows the directory their .zshenv leaves, not $HOME.
   @Test func zshIntegrationFollowsAZdotdirSetByTheUsersZshenv() async throws {

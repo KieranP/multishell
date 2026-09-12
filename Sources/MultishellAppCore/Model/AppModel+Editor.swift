@@ -53,7 +53,7 @@ extension AppModel {
     case .runInBackground(let line):
       Task { [weak self] in
         do {
-          _ = try await ShellCommand().run(line, in: worktree.path)
+          try await ShellCommand().launch(line, in: worktree.path)
         } catch {
           self?.report(error)
         }

@@ -66,6 +66,96 @@ struct UnixSocketServerTests {
     #expect(!FileManager.default.fileExists(atPath: path.path), "stop unlinks")
   }
 
+  /// Why a refused connect is not proof that nobody is there: a live
+  /// instance whose accept backlog is full refuses one exactly as a dead
+  /// instance's socket file does, and the second launch used to read that as
+  /// nobody being behind it.
+  @Test func aLiveServerWhoseBacklogIsFullRefusesConnectsLikeADeadOne() throws {
+    let path = socketPath()
+    let blocked = DispatchQueue(label: "ms-test-blocked")
+    let server = UnixSocketServer(path: path, queue: blocked)
+    defer { server.stop() }
+    try server.start()
+
+    // Up but unable to accept: its queue is busy, as a wedged main thread
+    // would be. The backlog fills and the next connect is refused.
+    let release = DispatchSemaphore(value: 0)
+    blocked.async { release.wait() }
+    defer { release.signal() }
+    var pending: [Int32] = []
+    defer { for descriptor in pending { close(descriptor) } }
+    var refused = false
+    while pending.count < 64, !refused {
+      let descriptor = try UnixSocketAddress.newSocket(path: path.path)
+      do {
+        try UnixSocketAddress.connectSocket(descriptor, to: path.path)
+        pending.append(descriptor)
+      } catch {
+        close(descriptor)
+        refused = true
+      }
+    }
+    #expect(refused, "the backlog never filled, so nothing is being tested")
+  }
+
+  /// So the claim decides instead. Held by another process for as long as it
+  /// listens: a socket file beside a held claim has a live owner, whatever
+  /// the connect said, and taking it would leave that instance deaf for good.
+  @Test func aSocketWhoseClaimAnotherProcessHoldsIsNotTakenOver() throws {
+    guard FileManager.default.isExecutableFile(atPath: "/usr/bin/python3") else { return }
+    let path = socketPath()
+    let server = UnixSocketServer(path: path)
+    defer { server.stop() }
+    // A socket file with nothing listening: what a crashed instance leaves,
+    // and what a live one with a full backlog is indistinguishable from.
+    let dead = socket(AF_UNIX, UnixSocketAddress.streamType, 0)
+    try UnixSocketAddress.bindSocket(dead, to: path.path)
+    close(dead)
+
+    let holder = Process()
+    holder.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
+    holder.arguments = [
+      "-c",
+      """
+      import fcntl, sys, time
+      handle = open(sys.argv[1], 'w')
+      fcntl.lockf(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+      print('held', flush=True)
+      time.sleep(60)
+      """, server.claimPath,
+    ]
+    let output = Pipe()
+    holder.standardOutput = output
+    try holder.run()
+    defer { holder.terminate() }
+    let announced = String(
+      decoding: output.fileHandleForReading.readData(ofLength: 5), as: UTF8.self)
+    #expect(announced.hasPrefix("held"), "the holder did not take the claim: \(announced)")
+
+    do {
+      try server.start()
+      Issue.record("took a socket whose owner is alive")
+    } catch let failure as SocketFailure {
+      #expect(failure.kind == .inUse)
+    }
+    #expect(FileManager.default.fileExists(atPath: path.path), "and left it where it was")
+  }
+
+  /// Under a permissive umask the socket still ends up private. The window
+  /// between bind and chmod is what the umask around the bind closes, and
+  /// that window is not observable from here.
+  @Test func theSocketIsPrivateWhateverTheUmask() throws {
+    let path = socketPath()
+    let previous = umask(0)
+    defer { umask(previous) }
+    let server = UnixSocketServer(path: path)
+    defer { server.stop() }
+    try server.start()
+
+    let mode = try FileManager.default.attributesOfItem(atPath: path.path)[.posixPermissions]
+    #expect(mode as? Int == 0o600)
+  }
+
   @Test func aPathTooLongForTheAddressIsRefusedUpFront() {
     let long = URL(fileURLWithPath: "/tmp/" + String(repeating: "x", count: 120) + ".sock")
     let server = UnixSocketServer(path: long)
@@ -76,6 +166,27 @@ struct UnixSocketServerTests {
       #expect(failure.kind == .pathTooLong)
     } catch {
       Issue.record("wrong error: \(error)")
+    }
+  }
+
+  /// A start that fails after taking the claim has to let it go: `flock`
+  /// refuses a second description of a file even to the process holding it,
+  /// so a retry would otherwise read its own lock as another instance.
+  @Test func aFailedStartLetsItsClaimGoSoARetrySaysWhatIsWrong() {
+    let long = URL(fileURLWithPath: "/tmp/" + String(repeating: "y", count: 120) + ".sock")
+    // Two instances, both kept: what the second must not meet is the first's
+    // abandoned lock, read as another copy of the app.
+    let servers = [UnixSocketServer(path: long), UnixSocketServer(path: long)]
+    defer { for server in servers { server.stop() } }
+    for (attempt, server) in servers.enumerated() {
+      do {
+        try server.start()
+        Issue.record("bound a path that cannot fit sun_path")
+      } catch let failure as SocketFailure {
+        #expect(failure.kind == .pathTooLong, "attempt \(attempt)")
+      } catch {
+        Issue.record("wrong error: \(error)")
+      }
     }
   }
 

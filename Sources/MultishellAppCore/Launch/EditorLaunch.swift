@@ -8,7 +8,9 @@ public enum EditorLaunch {
     /// Hand the directory to the application.
     case openApplication(URL)
     /// Run the editor's command line shim through the login shell, in the
-    /// background: the application it starts is what the user sees.
+    /// background: the application it starts is what the user sees. Nothing
+    /// is captured and nothing times it out, a shim that stays up for as
+    /// long as the file is open not being something to cut short.
     case runInBackground(String)
     /// A terminal editor, or the custom command: a new tab in the worktree
     /// running it, with a shell taking over when it exits.

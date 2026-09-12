@@ -26,7 +26,10 @@ final class FakeEngine: TerminalSurfaceHost {
   /// What the registry asked for, command line included.
   var opened: [TerminalSession] = []
   weak var delegate: (any TerminalHostDelegate)?
+  /// Every open throws, standing in for a machine out of descriptors.
+  var refusesToOpen = false
   func open(_ session: TerminalSession) throws {
+    if refusesToOpen { throw OpenRefused() }
     openSessionIDs.insert(session.id)
     opened.append(session)
   }
@@ -77,6 +80,8 @@ final class FakeNotifier: SessionNotifier {
 }
 
 struct TrashRefused: Error {}
+
+struct OpenRefused: Error {}
 
 /// Stands in for the platform's view type; the model never looks inside.
 final class FakeSurface {}

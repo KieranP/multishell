@@ -8,6 +8,10 @@ public struct ShellDetection: Equatable, Sendable {
   /// Paths of the shells found, sorted by name then path.
   public let installed: [String]
   public let loginShell: String
+  /// Whether `$SHELL` points at something. Every other row is checked, and a
+  /// tab on a shell that is not there dies the moment it opens. Read once
+  /// here, not per row: a stat on a dead mount blocks for its timeout.
+  public let loginShellExists: Bool
 
   public static let empty = ShellDetection(
     installed: [], loginShell: ShellCatalogue.loginShellPath())
@@ -15,6 +19,7 @@ public struct ShellDetection: Equatable, Sendable {
   public init(installed: [String], loginShell: String) {
     self.installed = installed
     self.loginShell = loginShell
+    self.loginShellExists = FileManager.default.isExecutableFile(atPath: loginShell)
   }
 
   public init(
@@ -51,8 +56,8 @@ public struct ShellDetection: Equatable, Sendable {
   }
 
   public func isInstalled(_ path: String) -> Bool {
-    path == ShellCatalogue.loginShellID || path == ShellCatalogue.customID
-      || installed.contains(path)
+    path == ShellCatalogue.loginShellID
+      ? loginShellExists : path == ShellCatalogue.customID || installed.contains(path)
   }
 
   /// The login shell first, then every installed shell, then the selected
@@ -61,7 +66,7 @@ public struct ShellDetection: Equatable, Sendable {
     var options = [
       DetectionOption(
         id: ShellCatalogue.loginShellID, label: t("option.login-shell", loginShell),
-        isInstalled: true)
+        isInstalled: loginShellExists)
     ]
     for path in installed {
       options.append(

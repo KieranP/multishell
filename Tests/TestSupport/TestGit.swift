@@ -8,8 +8,11 @@ public enum TestGit {
   /// per fixture commit. The override rides on the runner rather than on
   /// each repository's config, so a clone or a bare repository a later test
   /// adds is covered without being told.
-  public static func build(configuration: [String: String] = [:]) throws -> GitRunner {
+  public static func build(
+    path: String? = nil, configuration: [String: String] = [:]
+  ) throws -> GitRunner {
     try GitRunner(
+      path: path,
       configuration: ["commit.gpgsign": "false"].merging(configuration) { _, added in added })
   }
 }

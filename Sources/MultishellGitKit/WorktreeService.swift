@@ -13,7 +13,7 @@ public struct WorktreeService: Sendable {
   }
 
   public init(path: String? = nil) throws {
-    self.git = try GitRunner(executable: ExecutableLookup.find("git", path: path))
+    self.git = try GitRunner(executable: ExecutableLookup.find("git", path: path), path: path)
   }
 
   /// `--git-dir`, not `--is-inside-work-tree`, which prints `false` for a

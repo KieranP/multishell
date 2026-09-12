@@ -28,13 +28,33 @@ if [ -n "${MULTISHELL_SESSION-}" ] && [ -x "__MULTISHELL_HELPER__" ]; then
   }
   # A bare `trap ... DEBUG` replaces the one .bashrc installed, silencing
   # Atuin and bash-preexec. Theirs is kept, quoted as `trap -p` prints it.
-  _multishell_prior_debug="$(trap -p DEBUG)"
-  case "$_multishell_prior_debug" in
-    "trap -- "*" DEBUG")
-      _multishell_prior_debug="${_multishell_prior_debug#trap -- }"
-      _multishell_prior_debug="${_multishell_prior_debug% DEBUG}" ;;
-    *) _multishell_prior_debug="" ;;
-  esac
+  _multishell_capture_debug() {
+    local body
+    case "$1" in
+      "trap -- "*" DEBUG")
+        body="${1#trap -- }"
+        body="${body% DEBUG}"
+        # `trap -p` prints the body quoted for re-input. The quotes come off
+        # here, or `eval` runs the whole of it as one word and finds nothing.
+        eval "_multishell_prior_debug=$body" ;;
+      *) _multishell_prior_debug="" ;;
+    esac
+  }
+  # bash-preexec, which Atuin ships, installs its trap at the first prompt,
+  # long after this file ran. Whether ours still stands is asked at each one.
+  _multishell_owns_debug() {
+    case "$_multishell_seen_debug" in
+      *_multishell_debug*) return 0 ;;
+    esac
+    _multishell_capture_debug "$_multishell_seen_debug"
+    return 1
+  }
+  # Both halves at the top level of PROMPT_COMMAND: inside a function bash
+  # reports no DEBUG trap and puts back the one set, functrace being off.
+  _multishell_claim_debug='_multishell_seen_debug="$(trap -p DEBUG)"
+_multishell_owns_debug || trap "_multishell_debug" DEBUG'
+  _multishell_seen_debug=""
+  _multishell_capture_debug "$(trap -p DEBUG)"
   _multishell_debug() {
     # Before theirs is called, so their trap never sees our own prompt
     # functions: without us it would not have.
@@ -58,6 +78,9 @@ if [ -n "${MULTISHELL_SESSION-}" ] && [ -x "__MULTISHELL_HELPER__" ]; then
       [ "$d" -ge 0 ] || d=0
       "$_multishell_bin" command-finished --exit "$e" --duration "$d" >/dev/null 2>&1
     fi
+    # bash does not restore $? between PROMPT_COMMAND entries, and a prompt
+    # showing the last exit code reads whatever we left.
+    return $e
   }
   _multishell_arm() { _multishell_armed=1; }
   # Prompt start printed, input start on the end of PS1, which is why this
@@ -77,12 +100,14 @@ if [ -n "${MULTISHELL_SESSION-}" ] && [ -x "__MULTISHELL_HELPER__" ]; then
     *)
       if [[ "$(declare -p PROMPT_COMMAND 2>/dev/null)" == "declare -a"* ]]; then
         PROMPT_COMMAND=(
-          _multishell_precmd "${PROMPT_COMMAND[@]}" _multishell_prompt_marks _multishell_arm)
+          _multishell_precmd "${PROMPT_COMMAND[@]}" "$_multishell_claim_debug"
+          _multishell_prompt_marks _multishell_arm)
       else
         # Newlines, not `;`: a user value ending in a separator composed to
         # `;;`, which bash refuses, so none of the three ran.
         PROMPT_COMMAND="_multishell_precmd
 ${PROMPT_COMMAND-}
+$_multishell_claim_debug
 _multishell_prompt_marks
 _multishell_arm"
       fi ;;

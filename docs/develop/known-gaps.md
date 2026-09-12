@@ -140,6 +140,27 @@ does.
   actually firing is unknown. The guard is right either way and costs nothing;
   what a screen would settle is whether the keyboard was being pulled out of
   the sidebar filter in practice or only in principle.
+- `SurfaceFrame.show` now asks for focus whenever the surface it holds
+  changes, which is what closing a pane does to the frame that keeps its
+  index. That a frame really is reused across sessions is read off
+  `ForEach(children.indices, id: \.self)` rather than watched: what
+  SurfaceFrameTests pins is the frame's own behaviour, in a window nothing
+  ordered in. Whether three panes minus the focused one leaves the keyboard
+  in the right place is still a question for a screen.
+- The DEBUG-trap claim is spliced into `PROMPT_COMMAND` as `owns || trap`,
+  which needs bash to parse each entry as a command rather than as a bare
+  argv. That is what bash does for the string form, tested here against
+  Apple's 3.2. The array form arrived in bash 5.1 and this machine has no
+  bash 5, so the array half is read off bash's source rather than run: if it
+  turns out wrong, the words appear at every prompt as a command not found,
+  and the fix is to give the array its own single-word entry.
+- A promised drop now waits for as many reader calls as the item's
+  `fileNames` promised, which is what `NSFilePromiseReceiver` documents. If a
+  source instead reports once for an item it promised several files for, the
+  drop waits out the two-minute patience rather than pasting early. A real
+  promise drag cannot be staged in a test (PromisedDropTests says why), so
+  this is read off the documented contract rather than watched. The fallback
+  if it turns out wrong: retire an item on its first failing report.
 - Linux never compiled, locally or in CI. The counted phrases are the part
   of the catalogue to look at first when it is: `Localizable.strings` is
   plain enough that corelibs-foundation reads it, and whether its

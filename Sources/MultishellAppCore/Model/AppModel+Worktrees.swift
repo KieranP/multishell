@@ -13,7 +13,11 @@ extension AppModel {
   )
     -> Bool
   {
-    guard requireDirectory(of: worktree) else { return false }
+    // A row git no longer lists is refused by the store, so ask first: the
+    // board closing and a tab opening are not things to do for nothing.
+    guard workspace.worktree(worktree.id) != nil, requireDirectory(of: worktree) else {
+      return false
+    }
     // Before anything else, `isShown` having to agree that panes fill the
     // detail area. The seen-clearing is left to the `sync` at the end.
     leaveAgentBoard()

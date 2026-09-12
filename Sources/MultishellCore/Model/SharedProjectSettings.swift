@@ -114,6 +114,19 @@ public struct SharedProjectSettings: Equatable, Sendable {
       iconTint: settings.iconTint)
   }
 
+  /// These settings with `existing`'s hooks where they have none. Export
+  /// writes what is in force, and a hook the user refused is the file's word
+  /// rather than theirs to drop; see docs/design/settings.md.
+  public func keepingHooks(of existing: SharedProjectSettings?) -> SharedProjectSettings {
+    guard let existing else { return self }
+    var kept = self
+    kept.preCreateHook = preCreateHook ?? existing.preCreateHook
+    kept.postCreateHook = postCreateHook ?? existing.postCreateHook
+    kept.preDeleteHook = preDeleteHook ?? existing.preDeleteHook
+    kept.postDeleteHook = postDeleteHook ?? existing.postDeleteHook
+    return kept
+  }
+
   /// Writes the file, sorted and indented so a diff reads well. Returns it
   /// with the digest set, so the writer need not read the file back.
   @discardableResult public func write(to repository: URL) throws -> SharedProjectSettings {

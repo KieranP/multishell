@@ -111,6 +111,33 @@ struct ShellCommandTests {
       environment: ["MULTISHELL_BRANCH": "feat"])
     #expect(out.trimmingCharacters(in: .whitespacesAndNewlines) == "FEAT")
   }
+
+  @Test func aLaunchedCommandSaysHowItEnded() async throws {
+    let directory = URL(fileURLWithPath: NSTemporaryDirectory())
+    try await ShellCommand().launch("true", in: directory)
+    await #expect(throws: ProcessFailure.self) {
+      try await ShellCommand().launch("exit 3", in: directory)
+    }
+    await #expect(throws: (any Error).self) {
+      try await ShellCommand().launch("true", in: URL(fileURLWithPath: "/no/such/dir"))
+    }
+  }
+  /// An editor shim that holds the editor open for as long as the file is
+  /// open holds this call with it, so it must cost no pipes: it used to keep
+  /// two descriptors and a login shell per click, for the life of the app.
+  /// A shell can see the difference, where counting descriptors in a process
+  /// this busy cannot.
+  @Test func aLaunchedCommandIsGivenNoPipes() async throws {
+    let directory = URL(fileURLWithPath: NSTemporaryDirectory())
+    for stream in ["1", "2"] {
+      await #expect(throws: ProcessFailure.self, "stream \(stream)") {
+        try await ShellCommand().launch("test -p /dev/fd/\(stream)", in: directory)
+      }
+      let captured = try await ShellCommand().run(
+        "test -p /dev/fd/\(stream) && printf pipe", in: directory)
+      #expect(captured == "pipe", "which is what `run` gives it, for the contrast")
+    }
+  }
 }
 
 @Suite

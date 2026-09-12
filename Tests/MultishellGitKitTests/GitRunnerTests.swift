@@ -53,6 +53,33 @@ struct GitRunnerConfigurationTests {
       "a caller asking for it still wins")
   }
 
+  /// A repository with LFS, a credential helper or a diff driver has git
+  /// exec a program off PATH. From the Finder the app's own is the system
+  /// directories alone, so the login shell's has to travel with the runner.
+  @Test func gitsOwnChildrenAreLookedUpOnTheLoginPath() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let bin = URL(fileURLWithPath: NSTemporaryDirectory())
+      .appendingPathComponent("ms-gitpath-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: bin, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: bin) }
+    let helper = bin.appendingPathComponent("ms-test-helper")
+    try "#!/bin/sh\nprintf 'found the helper\\n'\n".write(
+      to: helper, atomically: true, encoding: .utf8)
+    try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: helper.path)
+
+    // An alias git runs through a shell, which is how a filter or credential
+    // helper is reached: it is found only on the PATH the runner carries.
+    let git = try TestGit.build(path: bin.path, configuration: ["alias.helped": "!ms-test-helper"])
+    let output = try await git.run(["helped"], in: fixture.project.path)
+    #expect(output.contains("found the helper"))
+
+    let blind = try TestGit.build(configuration: ["alias.helped": "!ms-test-helper"])
+    await #expect(throws: (any Error).self) {
+      try await blind.run(["helped"], in: fixture.project.path)
+    }
+  }
+
   /// A worktree holding nothing but untracked work read as clean, so the
   /// badge went over it and the removal dialog offered to trash it.
   @Test func aWorktreeWhoseWorkIsAllUntrackedReadsDirty() async throws {

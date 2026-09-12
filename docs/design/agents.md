@@ -77,7 +77,15 @@ is waiting":
   `SessionStates.settling` keeps it. An agent that reports no workers never
   enters that arm, so Codex and Copilot keep Stop meaning Done outright. A
   count stuck above zero costs the Done banner and nothing else, and Idle,
-  Failed or the process going clears it.
+  Failed or the process going clears it. Both counting events carry Working,
+  having no state worth sending, so the tick is bookkeeping and not news: it
+  leaves a Waiting where it is. Otherwise a background worker ending while a
+  permission prompt was up withdrew the banner and moved the card out of
+  Waiting, with the prompt still on screen and nothing to put it back. Such a
+  tick reports nothing at all back to the model, `report` answering `nil`: it
+  carries no message, so keeping its state while letting it through would
+  have replaced the prompt's words on the card and posted the banner again
+  under the same key, which on macOS replaces the one already there.
 - Gemini needed neither: its Notification has one type, a tool permission.
 
 Claude asked for that request beside its notification, not instead: the
@@ -227,7 +235,10 @@ settings rows name `{{branch}}` as an example and stop there: five of them
 behind an (i) is a reference page in a tooltip, and the documentation is where
 that belongs. So unlike `HookVariable`, the list is not drawn anywhere, and a
 new case has to reach the docs by hand. An unknown placeholder is left as typed
--> the mistake shows in the tab rather than an argument going missing.
+-> the mistake shows in the tab rather than an argument going missing. One
+pass over what was typed, so a value holding a token of its own is text: a
+branch named `feat/{{project}}` used to have its own name expanded again by
+the placeholders that come later in the list.
 `{{branch}}` on a detached worktree is the short SHA, never blank: `--name=`
 reads as an error the agent reports, where a wrong name does not.
 

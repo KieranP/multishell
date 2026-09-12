@@ -106,6 +106,8 @@ extension AppModel {
   /// was removed would otherwise inherit its badge and its date.
   func forgetVanishedWorktrees() {
     let known = Set(workspace.worktrees.map(\.id))
+    let readings = statuses.filter { known.contains($0.key) }
+    if readings.count != statuses.count { statuses = readings }
     let states = mergeStates.filter { known.contains($0.key) }
     if states.count != mergeStates.count { mergeStates = states }
     let dates = lastCommits.filter { known.contains($0.key) }

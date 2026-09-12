@@ -54,18 +54,26 @@ public enum AgentFlags {
     expanded(line, values: values, quoting: true)
   }
 
+  /// One pass over what was typed. A token appearing in a value is text the
+  /// user named something, not a placeholder; see docs/design/agents.md.
   private static func expanded(
     _ text: String, values: [AgentPlaceholder: String], quoting: Bool
   ) -> String {
-    var expanded = text
-    // `allCases` rather than the dictionary, whose order is arbitrary: two
-    // runs must expand the same line the same way.
-    for placeholder in AgentPlaceholder.allCases {
-      guard let value = values[placeholder] else { continue }
-      expanded = expanded.replacingOccurrences(
-        of: placeholder.token, with: quoting ? ShellQuoting.quote(value) : value)
+    var result = ""
+    var rest = Substring(text)
+    while let open = rest.range(of: "{{"),
+      let close = rest.range(of: "}}", range: open.upperBound..<rest.endIndex)
+    {
+      result += rest[..<open.lowerBound]
+      let name = String(rest[open.upperBound..<close.lowerBound])
+      if let placeholder = AgentPlaceholder(rawValue: name), let value = values[placeholder] {
+        result += quoting ? ShellQuoting.quote(value) : value
+      } else {
+        result += rest[open.lowerBound..<close.upperBound]
+      }
+      rest = rest[close.upperBound...]
     }
-    return expanded
+    return result + rest
   }
 
   /// Words the way a shell reads them. A quote left open takes the rest of

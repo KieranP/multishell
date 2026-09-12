@@ -185,6 +185,7 @@
 "sheet.based-on" = "Based on:";
 "sheet.branch" = "Branch:";
 "sheet.branch-prompt" = "feat/tabs";
+"sheet.branch-refused" = "git will not take that as a branch name.";
 "sheet.choose-project" = "Choose a project";
 "sheet.create-worktree" = "Create Worktree";
 "sheet.creates-from" = "Creates a linked checkout of %@.";

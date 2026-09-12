@@ -206,6 +206,56 @@ extension AppModelGitTests {
     #expect(flaky.statuses.isEmpty, "a worktree that is gone loses its badge")
   }
 
+  /// Identity is the path, so a worktree made where one was removed takes
+  /// its id, and with it whatever badge and removal warning were left over.
+  @Test func aWorktreeRemadeAtTheSamePathDoesNotInheritTheOldOnesBadge() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let path = h.root.appendingPathComponent("demo-feature", isDirectory: true)
+    _ = try await h.git.run(
+      ["worktree", "add", "-b", "feature", path.path], in: h.project.path)
+    await h.model.refresh(h.project)
+    let feature = try #require(h.worktree(onBranch: "feature"))
+    try "work\n".write(
+      to: path.appendingPathComponent("a.txt"), atomically: true, encoding: .utf8)
+    await h.model.refreshStatuses()
+    #expect(h.model.statuses[feature.id]?.changedFiles == 1)
+
+    _ = try await h.git.run(["worktree", "remove", "--force", path.path], in: h.project.path)
+    await h.model.refresh(h.project)
+
+    #expect(h.model.statuses[feature.id] == nil, "the reading went with the worktree")
+  }
+
+  /// The reads run while the app carries on, so a worktree can be removed
+  /// between asking git and hearing back. What comes back about it is a
+  /// reading of something that has no row any more.
+  @Test func aWorktreeRemovedWhileGitRanGetsNoBadgeFromThatRound() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let path = h.root.appendingPathComponent("demo-gone", isDirectory: true)
+    _ = try await h.git.run(["worktree", "add", "-b", "gone", path.path], in: h.project.path)
+    await h.model.refresh(h.project)
+    let doomed = try #require(h.worktree(onBranch: "gone"))
+    let main = try #require(h.worktree(onBranch: "main"))
+    // A git slow enough that the removal lands while the round is inside it.
+    let slow = try h.modelOnFakeGit(
+      """
+      while [ "${1#--}" != "$1" ]; do shift; done
+      case "$1" in
+        status) sleep 1; printf '## main\\n M a.txt\\n' ;;
+      esac
+      """)
+
+    let round = Task { await slow.refreshStatuses() }
+    try await Task.sleep(for: .milliseconds(200))
+    h.store.replaceWorktrees([main], forProject: h.project.id)
+    await round.value
+
+    #expect(slow.statuses[main.id] != nil, "the round landed, so there is something to judge")
+    #expect(slow.statuses[doomed.id] == nil, "a row that has gone keeps no reading")
+  }
+
   @Test func aProjectWhoseDirectoryVanishesIsDimmedNotDropped() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }

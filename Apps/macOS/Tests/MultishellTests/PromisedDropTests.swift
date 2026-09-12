@@ -64,7 +64,7 @@ struct PromisedDropTests {
   /// operation queue has to reach the main actor rather than trap on the way.
   @Test func aFileReportedOffTheMainActorIsDelivered() async throws {
     let delivery = Delivery()
-    let collector = PromisedDrop.Collector(expecting: 1) { delivery.answer($0) }
+    let collector = PromisedDrop.Collector(expecting: [1]) { delivery.answer($0) }
     let shot = file("Screenshot.png")
 
     report([(0, shot)], to: collector)
@@ -77,7 +77,7 @@ struct PromisedDropTests {
   @Test func theFilesArriveInTheDragsOrderWhateverOrderTheyLandIn() async throws {
     let delivery = Delivery()
     let files = (0..<8).map { file("shot-\($0).png") }
-    let collector = PromisedDrop.Collector(expecting: files.count) { delivery.answer($0) }
+    let collector = PromisedDrop.Collector(expecting: files.map { _ in 1 }) { delivery.answer($0) }
 
     report(files.enumerated().map { (index: $0.offset, url: $0.element) }.shuffled(), to: collector)
 
@@ -89,7 +89,7 @@ struct PromisedDropTests {
   @Test func aFileTheSourceRefusesIsLeftOutAndTheRestArrive() async throws {
     let delivery = Delivery()
     let written = file("written.png")
-    let collector = PromisedDrop.Collector(expecting: 2) { delivery.answer($0) }
+    let collector = PromisedDrop.Collector(expecting: [1, 1]) { delivery.answer($0) }
 
     report([(0, nil), (1, written)], to: collector)
 
@@ -100,7 +100,7 @@ struct PromisedDropTests {
   /// where never answering would leave the drag unanswered.
   @Test func aDragWhoseFilesAllFailDeliversNothing() async throws {
     let delivery = Delivery()
-    let collector = PromisedDrop.Collector(expecting: 2) { delivery.answer($0) }
+    let collector = PromisedDrop.Collector(expecting: [1, 1]) { delivery.answer($0) }
 
     report([(0, nil), (1, nil)], to: collector)
 
@@ -115,7 +115,7 @@ struct PromisedDropTests {
     let first = file("first.png")
     let second = file("second.png")
     let late = file("late.png")
-    let collector = PromisedDrop.Collector(expecting: 2) { delivery.answer($0) }
+    let collector = PromisedDrop.Collector(expecting: [1, 1]) { delivery.answer($0) }
 
     collector.received(first, from: 0)
     collector.received(second, from: 0)
@@ -123,6 +123,24 @@ struct PromisedDropTests {
     collector.received(late, from: 1)
 
     #expect(try await awaitDelivery(delivery) == [first, second, late])
+  }
+
+  /// One item can promise several files, and AppKit calls the reader once
+  /// per name. Counting items delivered on the first, and the rest were
+  /// written into the drop directory and never pasted.
+  @Test func anItemPromisingTwoFilesIsNotDeliveredOnTheFirst() async throws {
+    let delivery = Delivery()
+    let first = file("one.png")
+    let second = file("two.png")
+    let other = file("other.png")
+    let collector = PromisedDrop.Collector(expecting: [2, 1]) { delivery.answer($0) }
+
+    collector.received(first, from: 0)
+    collector.received(other, from: 1)
+    #expect(delivery.urls == nil, "the first item has another file coming")
+    collector.received(second, from: 0)
+
+    #expect(try await awaitDelivery(delivery) == [first, second, other])
   }
 
   /// A drag carrying no promise at all is answered at once rather than left,
@@ -166,7 +184,7 @@ struct PromisedDropTests {
   @Test func aSourceThatNeverAnswersDoesNotHoldTheDropForGood() {
     let delivery = Delivery()
     let arrived = file("arrived.png")
-    let collector = PromisedDrop.Collector(expecting: 2) { delivery.answer($0) }
+    let collector = PromisedDrop.Collector(expecting: [1, 1]) { delivery.answer($0) }
 
     collector.received(arrived, from: 0)
     #expect(delivery.urls == nil, "the second source has not answered")
@@ -179,7 +197,7 @@ struct PromisedDropTests {
   /// given up on must not paste a second time.
   @Test func aSourceReportingAfterTheDropWasGivenUpOnPastesNothingMore() async throws {
     let delivery = Delivery()
-    let collector = PromisedDrop.Collector(expecting: 2) { delivery.answer($0) }
+    let collector = PromisedDrop.Collector(expecting: [1, 1]) { delivery.answer($0) }
 
     collector.giveUp()
     #expect(delivery.answers == 1)

@@ -29,9 +29,14 @@ public struct WorktreeFileFailure: Error, CustomStringConvertible {
 }
 
 /// Raised when the user stopped a list part way through. What was placed
-/// before the stop stays, as a stopped hook's work does.
+/// before the stop stays, as a stopped hook's work does. `failures` is what
+/// had already gone wrong, which the Cancel does not excuse.
 public struct WorktreeFilesStopped: Error {
-  public init() {}
+  public let failures: [WorktreeFileFailure.Item]
+
+  public init(failures: [WorktreeFileFailure.Item] = []) {
+    self.failures = failures
+  }
 }
 
 /// A listed path leading out of the repository or worktree, by `..` or a

@@ -26,6 +26,7 @@
 "ansi.yellow" = "Yellow";
 "board.empty-hint" = "A pane appears here once an agent reports from it. Agent hooks are installed under Settings › Agents.";
 "board.summary" = "%1$@ · %2$@";
+"branch-name.invalid" = "git will not take %@ as a branch name.";
 "card.done" = "Done · %@";
 "card.failed" = "Failed · %@";
 "close.pane-button" = "Close Pane";
@@ -55,6 +56,7 @@
 "error.hook-did-not-finish" = "did not finish";
 "error.hook-failed" = "failed";
 "error.hook-was-stopped" = "was stopped";
+"error.invalid-branch-title" = "Worktree not created";
 "error.no-agent-message" = "Pick a preferred agent in Settings > Agents, or in this project's settings.";
 "error.no-agent-title" = "No agent chosen";
 "error.no-commits-message" = "A worktree needs a commit to start from. Make the first commit, then try again.";
@@ -65,6 +67,7 @@
 "error.no-editor-title" = "No editor chosen";
 "error.not-a-repository-message" = "%@ is not inside a repository and is not a bare one, or git could not read it.";
 "error.not-a-repository-title" = "Not a git repository";
+"error.not-a-worktree-title" = "Not a worktree";
 "error.not-installed-title" = "%@ is not installed";
 "error.post-create-hook" = "Worktree created, but its hook %@";
 "error.post-delete-hook" = "Worktree removed, but its hook %@";
@@ -238,6 +241,7 @@
 "step.worktree-not-removed" = "The worktree could not be removed";
 "tab.editor" = "Editor";
 "tab.shell" = "Shell";
+"worktree.not-removable" = "%@ is the repository itself, not a worktree that can be removed.";
 "worktree-file.escape" = "It leads outside the repository or the worktree.";
 "worktree-removal.branch-asked" = "The branch %@ is kept unless you remove it too.";
 "worktree-removal.branch-deleted" = "The branch %@ is deleted with it.";

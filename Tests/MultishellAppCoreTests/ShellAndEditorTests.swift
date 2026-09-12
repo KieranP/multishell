@@ -52,6 +52,18 @@ struct ShellDetectionTests {
     #expect(detection.isInstalled(ShellCatalogue.customID))
   }
 
+  /// Every other row is checked against the disk. `$SHELL` pointing at an
+  /// uninstalled fish showed an unmarked row, and each new tab died silently.
+  @Test func aLoginShellThatIsNotThereIsMarkedLikeAnyOtherMissingOne() {
+    let gone = ShellDetection(installed: ["/bin/zsh"], loginShell: "/opt/gone/fish")
+    #expect(!gone.isInstalled(ShellCatalogue.loginShellID))
+    #expect(gone.options(selected: nil)[0].isInstalled == false)
+
+    let there = ShellDetection(installed: ["/bin/zsh"], loginShell: "/bin/sh")
+    #expect(there.isInstalled(ShellCatalogue.loginShellID))
+    #expect(there.options(selected: nil)[0].isInstalled)
+  }
+
   @Test func aMissingSystemListIsNotAnError() {
     let detection = ShellDetection(
       path: "/nowhere", systemList: URL(fileURLWithPath: "/no/such/shells"), loginShell: "/bin/sh")

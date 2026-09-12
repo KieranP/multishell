@@ -205,4 +205,25 @@ struct NewWorktreeDraftTests {
     draft.isCreating = true
     #expect(!draft.canCreate(checkedOut: ["main"]))
   }
+  /// Create used to take any non-empty name, so the hook ran and git then
+  /// refused it.
+  @Test func createIsOffForANameGitWillNotTake() {
+    let project = "/w/repo"
+    var draft = NewWorktreeDraft(projectID: project)
+    draft.finishLoading(
+      project, hasCommits: true, branches: ["main"], remoteBranches: [],
+      currentBranch: "main", checkedOut: [])
+
+    for refused in ["my branch", "foo..bar", "feat.lock", "-leading", "a~b"] {
+      draft.branch = refused
+      #expect(!draft.canCreate(checkedOut: []), "\(refused)")
+      #expect(draft.branchNameIsRefused, "\(refused)")
+    }
+    draft.branch = "feat/tabs"
+    #expect(draft.canCreate(checkedOut: []))
+    #expect(!draft.branchNameIsRefused)
+    draft.branch = "  "
+    #expect(!draft.canCreate(checkedOut: []))
+    #expect(!draft.branchNameIsRefused, "an empty field is not yet wrong")
+  }
 }

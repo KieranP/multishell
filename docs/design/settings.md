@@ -31,6 +31,13 @@ asked again on every switch. Asked of the model as `model.effectiveSettings(for:
 Costs: layering must be asked of the model, never `project.settings`; a trust question can arrive without a click; editing any
 other key re-asks; a yes outlives the file.
 
+Export writes the settings in force back over the repository's file, and a
+hook the user refused is not in force -> exporting would have dropped a
+teammate's committed hook silently. So export keeps the file's own hooks where
+the user wrote none, and records trust only where every hook written is the
+user's own words; a refused hook stays refused against the new digest, so
+nothing asks again about a decision already made.
+
 Grey in a hook editor = inherited, nothing else. Odd shapes, each from a bug:
 no prefix on an existing branch; blank worktree directory = the default; `.`,
 `..` and an empty slug -> `_`; whitespace-only hook = "none".

@@ -48,7 +48,30 @@ shell does -> whether one runs is the profile's business, and reading it here
 as well ran it twice for everyone whose profile ends by sourcing it. A user
 whose profile does not source it sees no `.bashrc` here, which is what they
 already see in any login shell. Its DEBUG trap and `PROMPT_COMMAND` are chained
-to, never replaced, both being installed by the time ours are.
+to, never replaced.
+
+The trap is taken back at every prompt rather than captured once: bash-preexec,
+which Atuin's bash install ships, installs its own at the first prompt, long
+after `.bashrc` has returned, and its own saved trap was read before ours
+existed -> ours was replaced and nothing was reported for the rest of the
+session, with no sign of it. Both halves of the claim are spliced into
+`PROMPT_COMMAND` as text rather than called from a function: inside an
+untraced function bash reports no DEBUG trap and puts back the one set, so a
+function could neither see theirs nor install ours. Cost: one `trap -p`
+subshell per prompt.
+
+Theirs is unquoted before it is kept, `trap -p` printing a body quoted for
+re-input: eval of a body still wearing its quotes runs the whole of it as one
+word, which for
+every real trap body is a line of shell complaint per command rather than the
+call it was meant to be. That held for the `.bashrc` trap this has always
+chained to, not just for a later one.
+
+`_multishell_precmd` ends by returning the status it was given: bash does not
+restore `$?` between `PROMPT_COMMAND` entries, so a prompt of the user's that
+opens with `local ret=$?` read ours instead and every command looked
+successful. zsh needs none of this, restoring `lastval` around each
+`precmd_functions` entry.
 
 ## A click in the prompt moves the cursor, because the prompt claims it
 

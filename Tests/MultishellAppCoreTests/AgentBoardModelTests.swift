@@ -132,6 +132,20 @@ struct AgentBoardModelTests {
     #expect(!harness.model.showsAgentBoard)
   }
 
+  /// Clicking a row git no longer lists selects nothing, so it must not
+  /// close the board either: the user would be left looking at a worktree
+  /// they did not pick.
+  @Test func aRowTheStoreNoLongerHasLeavesTheBoardUp() {
+    let harness = Harness()
+    let stale = harness.feature
+    harness.store.replaceWorktrees([harness.main], forProject: harness.project.id)
+    harness.model.showAgentBoard()
+
+    #expect(!harness.model.select(stale))
+    #expect(harness.model.showsAgentBoard)
+    #expect(harness.model.workspace.selectedWorktreeID != stale.id)
+  }
+
   /// The sidebar entry and the badge count without building a card, so a
   /// shell reporting a new prompt does not re-render the sidebar. Two paths,
   /// one answer.

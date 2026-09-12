@@ -72,6 +72,28 @@ struct SessionStateModelTests {
     #expect(h.notifier.posted.first?.title.contains("feature") == false, "not the branch")
   }
 
+  /// A background worker starting or ending while a prompt is up is
+  /// bookkeeping: the banner already on screen is the prompt's, and posting
+  /// again under the same key replaces it with a body that says less.
+  @Test func aWorkerTickRaisesNoSecondBannerForAPromptAlreadyUp() {
+    let h = Harness()
+    h.model.setNotifications(NotificationPreference(attention: true, error: true, done: true))
+    h.model.select(h.main)
+    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    h.model.newTab()
+    let session = tab.focusedSessionID
+    h.source.send(SessionStateReport(state: .running, sessionID: session, subagents: 1))
+    h.source.send(
+      SessionStateReport(state: .attention, sessionID: session, message: "Needs Bash"))
+    #expect(h.notifier.posted.count == 1)
+
+    h.source.send(SessionStateReport(state: .running, sessionID: session, subagents: -1))
+
+    #expect(h.notifier.posted.count == 1, "the prompt's banner is the only one")
+    #expect(h.notifier.posted.first?.body == "Needs Bash")
+    #expect(h.notifier.withdrawn.isEmpty, "and it was not taken back either")
+  }
+
   @Test func notificationsFollowThePreferenceAndTheShownTab() {
     let h = Harness()
     h.source.send(SessionStateReport(state: .attention, cwd: h.main.path.path))
@@ -525,6 +547,44 @@ private final class Flag: @unchecked Sendable {
   private var value = false
   var raised: Bool { lock.withLock { value } }
   func raise() { lock.withLock { value = true } }
+}
+
+@Suite @MainActor
+struct NotificationClickTests {
+  /// A banner outlives the worktree it was about: a network volume unmounts
+  /// between the report and the click. `select` refuses, and what follows it
+  /// would otherwise rewrite the active tab of a worktree nobody can reach.
+  @Test func aClickOnAWorktreeThatHasGoneActivatesNothing() throws {
+    let h = Harness()
+    h.model.select(h.feature)
+    let first = try #require(h.model.workspace.activeTab(in: h.feature.id))
+    h.model.newTab()
+    let second = try #require(h.model.workspace.activeTab(in: h.feature.id))
+    #expect(second.id != first.id)
+    h.model.select(h.main)
+    let selected = h.model.workspace.selectedWorktreeID
+
+    try FileManager.default.removeItem(at: h.feature.path)
+    h.model.reveal(.session(first.focusedSessionID))
+
+    #expect(h.model.presentedError?.title == PresentedError.worktreeDirectoryMissing("").title)
+    #expect(h.model.workspace.selectedWorktreeID == selected, "the selection stands")
+    #expect(
+      h.model.workspace.activeTab(in: h.feature.id)?.id == second.id,
+      "and the refused worktree's own strip is left as it was")
+  }
+
+  @Test func aClickOnAWorktreeThatIsStillThereBringsItsTabUp() throws {
+    let h = Harness()
+    h.model.select(h.feature)
+    let tab = try #require(h.model.workspace.activeTab(in: h.feature.id))
+    h.model.select(h.main)
+
+    h.model.reveal(.session(tab.focusedSessionID))
+
+    #expect(h.model.workspace.selectedWorktreeID == h.feature.id)
+    #expect(h.model.workspace.activeTab(in: h.feature.id)?.id == tab.id)
+  }
 }
 
 @Suite @MainActor

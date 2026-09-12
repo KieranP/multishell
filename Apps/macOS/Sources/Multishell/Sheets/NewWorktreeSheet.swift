@@ -144,6 +144,14 @@ struct NewWorktreeSheet: View {
             .labelsHidden()
         }
       }
+      if draft.branchNameIsRefused {
+        Label {
+          Text(t("sheet.branch-refused"))
+            .font(.system(size: 12))
+        } icon: {
+          Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.yellow)
+        }
+      }
       Picker(t("sheet.based-on"), selection: $draft.baseBranch) {
         ForEach(draft.branches, id: \.self, content: Text.init)
         if !draft.remoteBranches.isEmpty {

@@ -127,10 +127,16 @@ extension AppModel {
           placement, into: worktree.path, for: project, stopper: stopper)
       else { continue }
       endSetup(of: worktree, stopper: stopper)
-      // The user's Cancel: the worktree is theirs to use, as after a
-      // stopped hook, with what was placed before it left where it is.
-      if failure is WorktreeFilesStopped {
-        finishStage(stage, of: worktree)
+      // The user's Cancel: the worktree is theirs, as after a stopped hook.
+      // What had already failed is still said, Cancel excusing only the rest.
+      if let stopped = failure as? WorktreeFilesStopped {
+        if stopped.failures.isEmpty {
+          finishStage(stage, of: worktree)
+        } else {
+          failStage(
+            stage, of: worktree,
+            WorktreeFileFailure(placement: placement, items: stopped.failures))
+        }
       } else {
         failStage(stage, of: worktree, failure)
       }

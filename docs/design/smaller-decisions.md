@@ -72,6 +72,10 @@ Newest at the bottom.
   card carries a Clear Status of its own for the pane and two unlabelled ones
   would read as the same thing. A terminal editor opens as a tab, one run in the
   background failing silently with no tty; cost: a relaunch reopens the editor.
+  That background launch captures nothing and is never timed out: a shim can
+  hold the editor open for as long as the file is, so a bound would end the
+  editor the user just asked for, and pipes held alongside it were two
+  descriptors per click for the life of the app.
 - New Worktree always opens, even with nothing selected, and its decisions are a
   tested value because a cancelled branch load once re-enabled Create against
   the wrong project. Its branch picker offers local branches only.

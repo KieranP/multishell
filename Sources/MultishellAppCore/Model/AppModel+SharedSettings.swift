@@ -141,22 +141,24 @@ extension AppModel {
   }
 
   /// Export from the General tab: the settings in effect, written to the
-  /// repository's file. The hooks are the user's own words, so trusted.
+  /// repository's file. A hook the user wrote is their own words, so trusted;
+  /// one the file already held and they refused is kept and stays refused.
   public func exportSharedSettings(for project: Project) {
     guard let current = workspace.project(project.id) else { return }
+    let mine = SharedProjectSettings(exporting: effectiveSettings(for: current))
+    let kept = mine.keepingHooks(of: sharedSettings[current.id])
     let shared: SharedProjectSettings
     do {
       // What was written, digest and all, so nothing turns on reading the
       // file back and finding the bytes this run put there.
-      shared = try SharedProjectSettings(exporting: effectiveSettings(for: current))
-        .write(to: current.path)
+      shared = try kept.write(to: current.path)
     } catch {
       report(error)
       return
     }
     let stamp = Self.modificationDate(of: SharedProjectSettings.file(in: current.path))
     if shared.hasHooks, let digest = shared.digest {
-      recordSharedHooks(file: digest, trusted: true, for: current.id)
+      recordSharedHooks(file: digest, trusted: kept.hooksText == mine.hooksText, for: current.id)
     }
     noteSharedSettings(.success(shared), stamp: stamp, for: current)
   }

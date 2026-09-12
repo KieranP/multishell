@@ -34,28 +34,33 @@ extension AppModel {
         if reportedAgents[id] != reported { reportedAgents[id] = reported }
       }
       let seen = hasBeenSeen(id)
-      // What it was taken to mean, not what it said: see `SessionStates`.
-      var meant = report.state
+      // What it was taken to mean, not what it said, and nothing at all for a
+      // counting tick: see `SessionStates`.
+      var meant: SessionState?
       mutateStates {
         meant = $0.report(
           report.state, pid: report.pid, message: report.message, duration: report.duration,
           subagents: report.subagents ?? 0, for: .session(id), isSeen: seen)
       }
-      notifyIfNeeded(
-        report, as: meant, key: .session(id), worktreeID: session.worktreeID, isSeen: seen)
+      if let meant {
+        notifyIfNeeded(
+          report, as: meant, key: .session(id), worktreeID: session.worktreeID, isSeen: seen)
+      }
     } else if let cwd = report.cwd, let worktree = worktree(atPath: cwd) {
       // Gated on the board as `isShown` is, the worktree being selected
       // with nothing of it on screen; and on frontmost as `hasBeenSeen`.
       let seen =
         !showsAgentBoard && workspace.selectedWorktreeID == worktree.id && platform.isActive
-      var meant = report.state
+      var meant: SessionState?
       mutateStates {
         meant = $0.report(
           report.state, pid: report.pid, message: report.message, duration: report.duration,
           subagents: report.subagents ?? 0, for: .worktree(worktree.id), isSeen: seen)
       }
-      notifyIfNeeded(
-        report, as: meant, key: .worktree(worktree.id), worktreeID: worktree.id, isSeen: seen)
+      if let meant {
+        notifyIfNeeded(
+          report, as: meant, key: .worktree(worktree.id), worktreeID: worktree.id, isSeen: seen)
+      }
     }
     updatePIDWatch()
   }
@@ -128,7 +133,9 @@ extension AppModel {
     case .session(let id):
       guard let tab = workspace.tabOwning(id), let worktree = workspace.worktree(tab.worktreeID)
       else { return }
-      select(worktree)
+      // A worktree whose directory has gone is not selected, and activating
+      // a tab in it would rewrite what the selected worktree shows.
+      guard select(worktree) else { return }
       activate(tab)
     case .worktree(let id):
       if let worktree = workspace.worktree(id) { select(worktree) }

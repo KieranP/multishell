@@ -19,8 +19,14 @@ extension AppModel {
     let warm = warmWorktrees
     let failures = registry.reconcile(
       shouldBeLive: { warm.contains($0.worktreeID) }, prepare: { prepared($0) })
-    for failure in failures {
-      report(failure.error)
+    for (index, failure) in failures.enumerated() {
+      // One alert slot: four sessions failing at once would otherwise leave
+      // one message about the last of them and nothing about the rest.
+      if index == 0 {
+        report(failure.error)
+      } else {
+        platform.log("a session could not be opened: \(failure.error)")
+      }
       store.closeSession(failure.sessionID)
     }
     pruneStates()
@@ -76,10 +82,12 @@ extension AppModel {
   /// than blinking off for five seconds; one whose worktree is gone loses it.
   public func refreshStatuses() async {
     guard let worktrees else { return }
-    let known = Set(workspace.worktrees.map(\.id))
     let fresh = await worktrees.statuses(of: workspace.worktrees)
+    // Read after the await, and applied to what git returned as well as to
+    // what was there: a worktree removed while git ran has no row to badge.
+    let known = Set(workspace.worktrees.map(\.id))
     var merged = statuses.filter { known.contains($0.key) }
-    merged.merge(fresh) { _, new in new }
+    merged.merge(fresh.filter { known.contains($0.key) }) { _, new in new }
     if merged != statuses { statuses = merged }
     await refreshProjectsWhoseBranchMoved(fresh)
   }

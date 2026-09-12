@@ -283,9 +283,10 @@ struct NotificationPolicyTests {
 struct BackgroundWorkerTests {
   private let a = UUID()
 
+  /// `nil` where the report was only bookkeeping.
   private func report(
     _ states: inout SessionStates, _ state: SessionState, subagents: Int = 0
-  ) -> SessionState {
+  ) -> SessionState? {
     states.report(state, pid: 99, subagents: subagents, for: .session(a), isSeen: false)
   }
 
@@ -346,6 +347,45 @@ struct BackgroundWorkerTests {
     var states = SessionStates()
     #expect(report(&states, .running, subagents: -1) == .running)
     #expect(report(&states, .done) == .done)
+  }
+
+  /// The counting events carry `.running` because they have no state worth
+  /// having. Only the source clears a Waiting, so the tick keeps it.
+  @Test func aWorkerStartingOrEndingLeavesAWaitingAlone() {
+    for tick in [1, -1] {
+      var states = SessionStates()
+      _ = report(&states, .running, subagents: 1)
+      _ = report(&states, .attention)
+      #expect(states[.session(a)] == .attention)
+
+      #expect(report(&states, .running, subagents: tick) == nil, "\(tick): no news")
+      #expect(states[.session(a)] == .attention, "the prompt is still on screen")
+    }
+  }
+
+  /// The card's message line comes from the note, so a tick that leaves the
+  /// Waiting alone has to leave what it says alone too.
+  @Test func aWorkerTickKeepsWhatTheWaitingSaid() {
+    var states = SessionStates()
+    _ = report(&states, .running, subagents: 1)
+    states.report(
+      .attention, pid: 99, message: "Needs Bash", for: .session(a), isSeen: false)
+    #expect(states.notes[.session(a)]?.message == "Needs Bash")
+
+    _ = report(&states, .running, subagents: -1)
+
+    #expect(states[.session(a)] == .attention)
+    #expect(states.notes[.session(a)]?.message == "Needs Bash", "the prompt is still the news")
+  }
+
+  /// The Done its agent owed is still paid at the last worker out, a Waiting
+  /// being about the turn that has now ended.
+  @Test func theOwedDoneOutranksAWaitingLeftOver() {
+    var states = SessionStates()
+    _ = report(&states, .running, subagents: 1)
+    _ = report(&states, .done)
+    _ = report(&states, .attention)
+    #expect(report(&states, .running, subagents: -1) == .done)
   }
 
   @Test func anAgentWhoseProcessIsGoneOwesNothing() {

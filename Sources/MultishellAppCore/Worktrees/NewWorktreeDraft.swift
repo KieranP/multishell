@@ -87,8 +87,16 @@ public struct NewWorktreeDraft: Equatable, Sendable {
       return false
     }
     return createBranch
-      ? !branch.trimmingCharacters(in: .whitespaces).isEmpty
+      ? GitRefName.isValidBranch(branch)
       : availableBranches(checkedOut: checkedOut).contains(branch)
+  }
+
+  /// Whether what is typed is a name git would refuse, for the sheet to say
+  /// so. An empty field is not yet wrong.
+  public var branchNameIsRefused: Bool {
+    guard createBranch else { return false }
+    let typed = branch.trimmingCharacters(in: .whitespaces)
+    return !typed.isEmpty && !GitRefName.isValidBranch(typed)
   }
 
   /// What the new branch starts from; `nil` lets git use HEAD. Never the

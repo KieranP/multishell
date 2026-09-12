@@ -30,7 +30,16 @@ see which one a running copy has.
   decode. Where the move itself failed the original is still at `state.json`
   and nothing saves over it; see docs/design/state-and-store.md.
 - `themes/*.json`, `themes/examples/` not loaded.
-- `multishell.sock`, mode 0600.
+- `multishell.sock`, mode 0600. Bound at `multishell.sock.b` and renamed into
+  place, so it is never briefly world-readable: the mode comes from the umask
+  at bind, and umask is process-wide.
+- `multishell.sock.lock`, empty, never removed. A running instance holds an
+  exclusive `fcntl` record lock on it for as long as it listens, which is what
+  tells a second launch that the socket has a live owner. Not `flock`: a child
+  forked while one is held keeps it until it execs, and this process spawns
+  freely. A connect alone cannot: a
+  listener whose accept backlog is full refuses one exactly as a dead
+  socket does.
 - `bin/multishell`: symlink to the helper in the current bundle, refreshed at
   launch. Hook lines reference this path.
 - `integration/`: generated at launch.

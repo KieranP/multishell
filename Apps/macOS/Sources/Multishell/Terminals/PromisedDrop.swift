@@ -31,7 +31,7 @@ enum PromisedDrop {
     guard let directory = destination else { return deliver([]) }
     // The directory is made before the sources are asked, so one nothing
     // arrives in would linger until the sweep. It is this drag's own.
-    let collector = Collector(expecting: receivers.count) { urls in
+    let collector = Collector(expecting: receivers.map { max(1, $0.fileNames.count) }) { urls in
       if urls.isEmpty { try? FileManager.default.removeItem(at: directory) }
       deliver(urls)
     }
@@ -64,10 +64,12 @@ enum PromisedDrop {
   }
 
   /// Keeps the drag's order while files land in whatever order sources write
-  /// them. A second report for one item is kept but does not count again.
+  /// them. An item retires once its own files are in, the reader being called
+  /// once per promised name; a report past that is kept but does not count.
   @MainActor
   final class Collector {
     private var files: [[URL]]
+    private var outstanding: [Int]
     private var waiting: Set<Int>
     private let deliver: ([URL]) -> Void
     private var delivered = false
@@ -82,15 +84,19 @@ enum PromisedDrop {
 
     var isDelivered: Bool { delivered }
 
-    init(expecting count: Int, deliver: @escaping ([URL]) -> Void) {
-      files = Array(repeating: [], count: count)
-      waiting = Set(0..<count)
+    /// `counts` is how many files each item promised, in the drag's order.
+    init(expecting counts: [Int], deliver: @escaping ([URL]) -> Void) {
+      files = Array(repeating: [], count: counts.count)
+      outstanding = counts
+      waiting = Set(counts.indices.filter { counts[$0] > 0 })
       self.deliver = deliver
-      if count == 0 { answer() }
+      if waiting.isEmpty { answer() }
     }
 
     func received(_ url: URL?, from index: Int) {
       if let url { files[index].append(url) }
+      outstanding[index] -= 1
+      guard outstanding[index] <= 0 else { return }
       guard waiting.remove(index) != nil, waiting.isEmpty else { return }
       answer()
     }

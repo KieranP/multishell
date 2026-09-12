@@ -65,6 +65,22 @@ struct AgentFlagsTests {
     #expect(AgentFlags.arguments("--name={{nonsense}}", values: values) == ["--name={{nonsense}}"])
   }
 
+  /// Substituted text is text. A branch named after a placeholder was being
+  /// scanned again by the placeholders that come after it in the list.
+  @Test func aValueHoldingAPlaceholderIsNotExpandedAgain() {
+    let odd = Worktree(
+      path: URL(fileURLWithPath: "/Users/dev/Work/multishell-worktrees/odd"),
+      projectID: project.id, head: "abc1234", branch: "feat/{{project}}")
+    let values = AgentPlaceholder.values(project: project, worktree: odd, name: "{{project_path}}")
+
+    #expect(
+      AgentFlags.arguments("--name={{branch}}", values: values) == ["--name=feat/{{project}}"])
+    #expect(AgentFlags.arguments("--w={{worktree}}", values: values) == ["--w={{project_path}}"])
+    #expect(
+      AgentFlags.expand("run --name={{branch}}", values: values)
+        == "run --name='feat/{{project}}'")
+  }
+
   @Test func everyPlaceholderHasAValue() {
     let values = self.values
     #expect(values[.branch] == "kieran/fix")

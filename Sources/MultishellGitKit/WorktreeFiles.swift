@@ -28,7 +28,7 @@ public struct WorktreeFiles: Sendable {
     var failures: [WorktreeFileFailure.Item] = []
 
     for path in Self.paths(in: list).flatMap({ Self.expand($0, in: repository) }) {
-      guard !isStopped() else { throw WorktreeFilesStopped() }
+      guard !isStopped() else { throw WorktreeFilesStopped(failures: failures) }
       let source = repository.appendingPathComponent(path)
       let destination = worktree.appendingPathComponent(path)
       // A path the repository does not have is the quiet case and comes

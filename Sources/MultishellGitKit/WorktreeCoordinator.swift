@@ -133,6 +133,11 @@ public struct WorktreeCoordinator: Sendable {
     onStep: (@Sendable (WorktreeCreationStep) -> Void)? = nil
   ) async throws -> URL {
     let branch = Self.branchName(rawBranch, createBranch: createBranch, settings: settings)
+    // Before the hook and the container directory: git rejects the name at
+    // the end of all that, and the hook's work is done by then.
+    guard !createBranch || GitRefName.isValidBranch(branch) else {
+      throw InvalidBranchName(branch)
+    }
     let path = settings.worktreePath(forBranch: branch, in: project)
 
     if WorktreeHooks.hasScript(project.settings.preCreateHook) { onStep?(.preCreateHook) }
@@ -183,6 +188,11 @@ public struct WorktreeCoordinator: Sendable {
     timeout: Duration? = nil, stopper: ProcessStopper? = nil,
     onStep: (@Sendable (WorktreeRemovalStep) -> Void)? = nil
   ) async throws {
+    // The main worktree is the repository, `.git` and all, and the trash
+    // step would bin it. Nothing below this guard checks.
+    guard !worktree.isPrimary, !worktree.isBare else {
+      throw NotAWorktree(path: worktree.path)
+    }
     let path = worktree.path
     let branch = worktree.branch ?? worktree.head
     if WorktreeHooks.hasScript(project.settings.preDeleteHook) { onStep?(.preDeleteHook) }

@@ -180,6 +180,15 @@ struct ElapsedTextTests {
     #expect(ElapsedText.short(.infinity) == nil)
   }
 
+  /// `Int(_: Double)` traps outside its range, and the board draws whatever
+  /// duration a report carried.
+  @Test func aDurationTooLargeToRenderSaysNothingRatherThanTrapping() {
+    #expect(ElapsedText.short(1e300) == nil)
+    #expect(ElapsedText.precise(1e300) == nil)
+    #expect(ElapsedText.short(.nan) == nil)
+    #expect(ElapsedText.short(Double(Int.max)) == nil, "the first value it cannot hold")
+  }
+
   @Test func aCommandsRuntimeKeepsItsSeconds() {
     #expect(ElapsedText.precise(0.42) == "0.4s")
     #expect(ElapsedText.precise(9.5) == "9.5s")

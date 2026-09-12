@@ -33,13 +33,18 @@ public struct SessionStates: Equatable, Sendable {
   // MARK: - Sources
 
   /// A report over the channel; `isSeen` means the user is looking at it.
-  /// Returns what it meant, which `settling` may move.
+  /// Returns what it meant, which `settling` may move, and `nil` where it
+  /// was only bookkeeping: a counting tick is not news to announce.
   @discardableResult
   public mutating func report(
     _ state: SessionState, pid: Int32?, message: String? = nil, duration: Double? = nil,
     subagents: Int = 0, for key: Key, isSeen: Bool
-  ) -> SessionState {
-    let state = settling(state, subagents: subagents, for: key)
+  ) -> SessionState? {
+    let settled = settling(state, subagents: subagents, for: key)
+    // A counting tick that kept the Waiting already there. It carries no
+    // message of its own, and the prompt's is what the card should say.
+    let isBookkeeping = settled == .attention && state == .running
+    let state = settled
     switch state {
     case .idle:
       clear(key)
@@ -52,10 +57,10 @@ public struct SessionStates: Equatable, Sendable {
     }
     // Only where a state survived the report: a Done about a tab the user is
     // looking at leaves nothing to say something about.
-    if states[key] != nil {
+    if states[key] != nil, !isBookkeeping {
       notes[key] = SessionNote(state: state, message: message, duration: duration)
     }
-    return state
+    return isBookkeeping ? nil : state
   }
 
   /// What a report means once background workers are counted. An agent
@@ -67,7 +72,11 @@ public struct SessionStates: Equatable, Sendable {
       let count = max(0, (background[key] ?? 0) + subagents)
       background[key] = count == 0 ? nil : count
       // The last one out pays the Done its agent reported while they ran.
-      return count == 0 && owedDone.remove(key) != nil ? .done : state
+      if count == 0, owedDone.remove(key) != nil { return .done }
+      // Counting events carry `.running` for want of anything to say, so a
+      // tick is not news: only the source clears a Waiting.
+      if state == .running, states[key] == .attention { return .attention }
+      return state
     }
     switch state {
     case .done where background[key] != nil:

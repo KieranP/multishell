@@ -11,6 +11,21 @@ import Testing
 /// message that carries git's own words.
 @Suite
 struct PresentedErrorTests {
+  /// A `LocalizedError` reaching the default arm is printed by
+  /// `String(describing:)`, which gives the struct's fields rather than its
+  /// sentence, so each one needs a case of its own.
+  @Test func theGitKitErrorsReadAsSentencesRatherThanSwiftValues() {
+    let branch = PresentedError(InvalidBranchName("my branch"))
+    #expect(branch.message == "git will not take my branch as a branch name.")
+    #expect(!branch.message.contains("InvalidBranchName"))
+    #expect(!branch.title.isEmpty)
+
+    let main = PresentedError(NotAWorktree(path: URL(fileURLWithPath: "/w/repo")))
+    #expect(main.message.hasPrefix("/w/repo is the repository itself"))
+    #expect(!main.message.contains("NotAWorktree"))
+    #expect(!main.title.isEmpty)
+  }
+
   @Test func gitFailuresShowStderrAsTheMessage() {
     let failure = ProcessFailure(
       executable: "git", arguments: ["worktree", "add", "-b", "x"], status: 128,
@@ -148,5 +163,26 @@ struct PresentedErrorTests {
     #expect(presented.retryLabel == nil && presented.retry == nil)
     presented.retryLabel = "Delete Branch Anyway"
     #expect(presented.retryLabel == "Delete Branch Anyway")
+  }
+}
+
+/// The model has one alert slot, so what happens when several things fail at
+/// once has to be decided rather than left to whichever wrote last.
+@Suite @MainActor
+struct SeveralFailuresAtOnceTests {
+  @Test func onlyTheFirstFailedSessionTakesTheAlertAndTheRestAreLogged() {
+    let h = Harness()
+    h.model.select(h.main)
+    for _ in 0..<3 { h.model.newTab() }
+    #expect(h.model.liveTerminalCount == 4)
+    h.engine.refusesToOpen = true
+    for id in h.engine.openSessionIDs { h.engine.close(id) }
+    h.model.presentedError = nil
+    h.platform.logged.removeAll()
+
+    h.model.reconcileSessions()
+
+    #expect(h.model.presentedError != nil, "the user is told once")
+    #expect(h.platform.logged.count == 3, "and the rest are in the log: \(h.platform.logged)")
   }
 }
