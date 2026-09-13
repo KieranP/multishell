@@ -4,6 +4,8 @@ The queue, most pressing first within each heading. A decision that gets
 made moves to the right file under `docs/design/`; a gap that is documented rather
 than fixed lives in `docs/develop/known-gaps.md`.
 
+* Change subagents count to actually track state, so worktree shows in progress whebn any subagent is still working
+
 ## Features
 
 - "Locate…" on a missing project, rebinding it to a chosen directory.
