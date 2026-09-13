@@ -33,17 +33,18 @@ struct DebugPathsTests {
     #expect(Paths.debugVariant(named: "") == ".debug", "make-app.sh writes the key empty")
   }
 
-  /// The name lands in a socket path, and `sun_path` holds 104 bytes: this
-  /// directory plus `multishell.debug-.sock` already spends about 75, so an
-  /// uncut branch name would make the socket unbindable.
+  /// The name lands in a socket path, and `sun_path` holds 103 bytes plus
+  /// the terminator, two of them spent on the `.b` the socket is bound
+  /// under: this directory plus `multishell.debug-.sock` already spends
+  /// about 75, so an uncut branch name would make the socket unbindable.
   @Test func aLongOrOddWorktreeNameIsCutAndSpelledSafely() {
     let longest = Paths.debugVariant(named: String(repeating: "\u{1F600}", count: 40))
-    #expect(longest == ".debug-" + String(repeating: "-", count: 16))
-    #expect(Paths.debugVariant(named: "feat.two words/x") == ".debug-feat-two-words-x")
+    #expect(longest == ".debug-" + String(repeating: "-", count: 14))
+    #expect(Paths.debugVariant(named: "feat.two wds/x") == ".debug-feat-two-wds-x")
     let socket =
       "/Users/averylongusername/Library/Application Support/Multishell"
       + "/multishell\(longest).sock"
-    #expect(socket.utf8.count < 104, "\(socket.utf8.count) bytes: \(socket)")
+    #expect(socket.utf8.count + ".b".utf8.count <= 103, "\(socket.utf8.count) bytes: \(socket)")
   }
 }
 

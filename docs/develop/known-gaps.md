@@ -263,3 +263,10 @@ does.
   request is taken out of `pendingAdds` and the `add` that follows it lands
   a banner nothing will retract. Microseconds wide, and only on the path
   where the permission dialog has not been answered yet.
+- `multishell state` at a prompt in one of the app's own tabs is meant to
+  name the shell, the helper's walk stopping at `MULTISHELL_APP_PID`. Checked
+  against a real shell chain under the test process, not under either engine:
+  whether libghostty or SwiftTerm puts anything unlisted between the shell and
+  the app is unwatched. If one does, the walk ends there instead and the dot
+  outlives the shell, as it did before; a pid equal to the app's own is
+  dropped either way.

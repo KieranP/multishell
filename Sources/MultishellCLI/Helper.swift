@@ -11,10 +11,11 @@ enum Helper {
                        [--pid PID] [--message TEXT] [--agent ID]
           Report a state for the terminal this runs in. Defaults come from the
           environment the app sets: MULTISHELL_SESSION, MULTISHELL_WORKTREE,
-          MULTISHELL_SOCKET. The pid defaults to the nearest ancestor that is
-          not a shell: the program that ran this. --agent names the agent at
-          the prompt, by catalogue id, so the app can tell an agent's pane
-          from a plain shell; the agents' own hooks set it.
+          MULTISHELL_SOCKET, MULTISHELL_APP_PID. The pid defaults to the
+          nearest ancestor that is not a shell: the program that ran this, or
+          the shell itself when the next ancestor is the app. --agent names
+          the agent at the prompt, by catalogue id, so the app can tell an
+          agent's pane from a plain shell; the agents' own hooks set it.
       multishell command-started [--pid N]
           Report that a foreground command has started (running). For a shell
           preexec hook; pass the shell's pid so the state clears if the shell
@@ -93,7 +94,7 @@ enum Helper {
       },
       cwd: options["cwd"] ?? environment[SessionEnvironment.worktreeKey]
         ?? FileManager.default.currentDirectoryPath,
-      pid: options.int32("pid") ?? ProcessAncestry.reportingProcess(),
+      pid: options.int32("pid") ?? reportingProcess(environment),
       message: options["message"],
       agent: options["agent"])
     do {
@@ -122,7 +123,7 @@ enum Helper {
       state: event.state,
       sessionID: environment[SessionEnvironment.sessionKey].flatMap { UUID(uuidString: $0) },
       cwd: payload.cwd ?? environment[SessionEnvironment.worktreeKey],
-      pid: ProcessAncestry.reportingProcess(),
+      pid: reportingProcess(environment),
       message: payload.message,
       agent: id,
       silent: event.silent ? true : nil,
@@ -149,6 +150,13 @@ enum Helper {
       // A shell hook must never make the prompt print an error.
       return 0
     }
+  }
+
+  /// The program that ran this, the walk stopping short of the app itself:
+  /// from a prompt in one of its tabs that leaves the shell, whose exit clears.
+  private static func reportingProcess(_ environment: [String: String]) -> Int32 {
+    ProcessAncestry.reportingProcess(
+      stoppingAt: environment[SessionEnvironment.appPIDKey].flatMap { Int32($0) })
   }
 
   private static func send(_ report: SessionStateReport, environment: [String: String]) throws {

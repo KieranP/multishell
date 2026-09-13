@@ -40,11 +40,7 @@ public struct SessionStates: Equatable, Sendable {
     _ state: SessionState, pid: Int32?, message: String? = nil, duration: Double? = nil,
     subagents: Int = 0, for key: Key, isSeen: Bool
   ) -> SessionState? {
-    let settled = settling(state, subagents: subagents, for: key)
-    // A counting tick that kept the Waiting already there. It carries no
-    // message of its own, and the prompt's is what the card should say.
-    let isBookkeeping = settled == .attention && state == .running
-    let state = settled
+    guard let state = settling(state, subagents: subagents, for: key) else { return nil }
     switch state {
     case .idle:
       clear(key)
@@ -57,25 +53,25 @@ public struct SessionStates: Equatable, Sendable {
     }
     // Only where a state survived the report: a Done about a tab the user is
     // looking at leaves nothing to say something about.
-    if states[key] != nil, !isBookkeeping {
+    if states[key] != nil {
       notes[key] = SessionNote(state: state, message: message, duration: duration)
     }
-    return isBookkeeping ? nil : state
+    return state
   }
 
-  /// What a report means once background workers are counted. An agent
-  /// reporting none keeps the state it gave; see docs/design/agents.md.
+  /// What a report means once background workers are counted, `nil` for a
+  /// tick that moves nothing. See docs/design/agents.md.
   private mutating func settling(
     _ state: SessionState, subagents: Int, for key: Key
-  ) -> SessionState {
+  ) -> SessionState? {
     guard subagents == 0 else {
       let count = max(0, (background[key] ?? 0) + subagents)
       background[key] = count == 0 ? nil : count
       // The last one out pays the Done its agent reported while they ran.
       if count == 0, owedDone.remove(key) != nil { return .done }
       // Counting events carry `.running` for want of anything to say, so a
-      // tick is not news: only the source clears a Waiting.
-      if state == .running, states[key] == .attention { return .attention }
+      // tick is not news: it carries no message, and what is there stands.
+      if state == .running, let current = states[key], current != .running { return nil }
       return state
     }
     switch state {

@@ -6,6 +6,9 @@ public enum SessionEnvironment {
   public static let sessionKey = "MULTISHELL_SESSION"
   public static let worktreeKey = "MULTISHELL_WORKTREE"
   public static let socketKey = "MULTISHELL_SOCKET"
+  /// The app's own pid, where the helper's walk up from a prompt stops; see
+  /// docs/design/agents.md.
+  public static let appPIDKey = "MULTISHELL_APP_PID"
 
   /// The variable Ghostty's zsh bootstrap reads to find the `ZDOTDIR` it
   /// displaced, and hands `ZDOTDIR` back to before the first startup file.
@@ -20,6 +23,7 @@ public enum SessionEnvironment {
       sessionKey: session.id.uuidString,
       worktreeKey: session.workingDirectory.path,
       socketKey: socket.path,
+      appPIDKey: String(ProcessInfo.processInfo.processIdentifier),
     ]
     variables.merge(
       zshIntegration(shellPath: session.shellPath, engineBootstrap: engineZshBootstrap)

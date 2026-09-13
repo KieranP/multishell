@@ -8,7 +8,18 @@ Newest at the bottom.
 Socket, not a URL scheme, which would activate the app dozens of times a
 minute. Helper, not `nc`: quoting, a stable protocol, one place for each
 agent's mapping. Fields only ever added. A report naming an unknown session is
-dropped, not matched by directory.
+dropped, not matched by directory. One naming only a directory marks the
+deepest worktree containing it: Claude Code started from
+`<worktree>/packages/api` says that directory, and a worktree nested in
+another is the one meant.
+
+The pid a report names is what the app polls to clear a Working the agent
+never took back. From a prompt in one of the app's own tabs the helper's walk
+past the shells reaches the app itself, whose pid never goes while it looks ->
+the app hands each session its pid as `MULTISHELL_APP_PID`, the walk stops
+short of it and names the shell underneath, whose exit clears the dot. A report
+naming the app's pid anyway, from a helper older than the variable, is taken as
+naming none.
 
 Carries only what the app cannot see itself: state, pid, message, a duration so
 a millisecond command posts no banner, and `agent`, a pane's agent usually
@@ -79,9 +90,12 @@ is waiting":
   count stuck above zero costs the Done banner and nothing else, and Idle,
   Failed or the process going clears it. Both counting events carry Working,
   having no state worth sending, so the tick is bookkeeping and not news: it
-  leaves a Waiting where it is. Otherwise a background worker ending while a
-  permission prompt was up withdrew the banner and moved the card out of
-  Waiting, with the prompt still on screen and nothing to put it back. Such a
+  leaves a Waiting, a Done or a Failed where it is. Otherwise a background
+  worker ending while a permission prompt was up withdrew the banner and moved
+  the card out of Waiting, with the prompt still on screen and nothing to put
+  it back; and one whose start went uncounted, the app or the hooks arriving
+  after it, ended after the Stop and put a Done pane back to Working with
+  nothing due to move it on. Only a real Working report moves those. Such a
   tick reports nothing at all back to the model, `report` answering `nil`: it
   carries no message, so keeping its state while letting it through would
   have replaced the prompt's words on the card and posted the banner again

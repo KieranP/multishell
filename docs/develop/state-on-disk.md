@@ -11,9 +11,9 @@ helper link are shared. A debug build made in a git worktree adds that
 worktree's name, `state.debug-fix1.json` and so on, so two of them can run at
 once: `make-app.sh` writes the name into `MultishellVariant` in the bundle's
 `Info.plist`, `open` passing no environment to what it launches. The name is
-cut to 16 characters and spelled `[A-Za-z0-9_-]`, a socket path having 104
-bytes to fit in. Settings > General prints the state file, which is how you
-see which one a running copy has.
+cut to 14 characters and spelled `[A-Za-z0-9_-]`, a socket path having 103
+bytes to fit in, two of them the `.b` it is bound under. Settings > General
+prints the state file, which is how you see which one a running copy has.
 
 - `state.json`: sidebar, tabs, the columns they sit in with each column's
   width and active tab, pane trees, worktree names, each worktree's directory
@@ -32,7 +32,9 @@ see which one a running copy has.
 - `themes/*.json`, `themes/examples/` not loaded.
 - `multishell.sock`, mode 0600. Bound at `multishell.sock.b` and renamed into
   place, so it is never briefly world-readable: the mode comes from the umask
-  at bind, and umask is process-wide.
+  at bind, and umask is process-wide. So the longest path that binds is 101
+  bytes, not `sun_path`'s 103, and the refusal names the socket, the staging
+  file being no concern of the user's.
 - `multishell.sock.lock`, empty, never removed. A running instance holds an
   exclusive `fcntl` record lock on it for as long as it listens, which is what
   tells a second launch that the socket has a live owner. Not `flock`: a child

@@ -25,12 +25,15 @@ extension AppModel {
   /// A report names a live session, or only a directory. One naming an
   /// unknown session is dropped, never matched by directory.
   public func apply(_ report: SessionStateReport) {
+    // An older helper's walk from a prompt ends at this process, whose pid
+    // never goes while it is looking; see docs/design/agents.md.
+    let pid = report.pid == ProcessInfo.processInfo.processIdentifier ? nil : report.pid
     if let id = report.sessionID {
       guard liveSessions.contains(id), let session = workspace.session(id) else { return }
       // Who is at that prompt, so a drop is written as that agent reads a
       // file. Assigned only when it moves: an idle write renders the pane.
       if let agent = report.agent {
-        let reported = ReportedAgent(agentID: agent, pid: report.pid)
+        let reported = ReportedAgent(agentID: agent, pid: pid)
         if reportedAgents[id] != reported { reportedAgents[id] = reported }
       }
       let seen = hasBeenSeen(id)
@@ -39,7 +42,7 @@ extension AppModel {
       var meant: SessionState?
       mutateStates {
         meant = $0.report(
-          report.state, pid: report.pid, message: report.message, duration: report.duration,
+          report.state, pid: pid, message: report.message, duration: report.duration,
           subagents: report.subagents ?? 0, for: .session(id), isSeen: seen)
       }
       if let meant {
@@ -54,7 +57,7 @@ extension AppModel {
       var meant: SessionState?
       mutateStates {
         meant = $0.report(
-          report.state, pid: report.pid, message: report.message, duration: report.duration,
+          report.state, pid: pid, message: report.message, duration: report.duration,
           subagents: report.subagents ?? 0, for: .worktree(worktree.id), isSeen: seen)
       }
       if let meant {
@@ -80,15 +83,20 @@ extension AppModel {
     return workspace.shownTabs(in: worktree).contains { $0.root.contains(id) }
   }
 
-  /// A hook's `cwd` may be the resolved path where the worktree was added
-  /// through a symlink, so both spellings are tried.
+  /// The deepest worktree holding the directory. A hook's `cwd` may be the
+  /// resolved path of one added through a symlink, so both spellings are tried.
   public func worktree(atPath path: String) -> Worktree? {
     let url = URL(fileURLWithPath: path, isDirectory: true)
-    let candidates = Set([url.standardizedFileURL.path, url.resolvingSymlinksInPath().path])
-    return workspace.worktrees.first { worktree in
-      candidates.contains(worktree.path.path)
-        || candidates.contains(worktree.path.resolvingSymlinksInPath().path)
+    let spellings = [url.standardizedFileURL, url.resolvingSymlinksInPath()].map(\.pathComponents)
+    // Depth is the matching root's, not the written path's: a symlink chain
+    // can spell a shallow worktree long.
+    let matches = workspace.worktrees.compactMap { worktree -> (Worktree, Int)? in
+      let depth = [worktree.path, worktree.path.resolvingSymlinksInPath()].map(\.pathComponents)
+        .filter { root in spellings.contains { $0.starts(with: root) } }
+        .map(\.count).max()
+      return depth.map { (worktree, $0) }
     }
+    return matches.max { $0.1 < $1.1 }?.0
   }
 
   /// `state` is what the report meant, not what it said: a Done held back for

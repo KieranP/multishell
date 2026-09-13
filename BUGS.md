@@ -2,7 +2,7 @@
 
 Open findings from a whole-repo review on 2026-09-13, against commit 7fa714f.
 
-Eleven defects stand, none High. Each was read a second time by a verifier
+Six defects stand, none High. Each was read a second time by a verifier
 working from the code as it is, and the git-behaviour ones were reproduced in
 a scratch repository.
 
@@ -18,15 +18,10 @@ taken out rather than kept.
 | # | Effect | What |
 | --- | --- | --- |
 | 36 | Medium | Export drops the keys of `.multishell.json` this build does not know |
-| 37 | Medium | `multishell state` at a prompt pins the dot to the app's own pid, forever |
-| 39 | Medium | A subagent ending after an uncounted start flips Done back to Working |
 | 40 | Medium | The Agents board closes by itself when a post-create stage ends |
-| 41 | Medium | A report from a subdirectory of a worktree is dropped without a word |
 | 45 | Low | An agent tab opened during the launch scan says the agent is not installed |
 | 46 | Low | A late `git status` writes against a worktree that may have been replaced |
 | 47 | Low | The signing script deletes the spaces inside the keychain path |
-| 48 | Low | A second `start()` on a live socket server drops its own claim |
-| 49 | Low | A socket path of 102 or 103 bytes passes the check and fails to bind |
 | 50 | Low | Ghostty focus writes into the store from inside a SwiftUI update |
 | 53 | Perf | The status poll runs `git status` for missing projects' worktrees |
 | 54 | Perf | Every split-divider drag frame writes the workspace and re-arms autosave |
@@ -98,61 +93,6 @@ alongside the decoded fields, and have `write` merge the export over it.
 
 ## Agents and session state
 
-### 37. Medium. `multishell state` at a prompt pins the dot to the app's own pid, forever
-
-`Sources/MultishellCLI/Helper.swift:96`, `pid: options.int32("pid") ?? ProcessAncestry.reportingProcess()`.
-Without `--pid`, the helper walks up from its parent while the process name is
-a shell. From a prompt in a tab the parent is `zsh`, then either the app
-directly (SwiftTerm forks in-process) or `login`, which is in the shell list,
-then the app. `Multishell` is not a shell, so the walk returns the app's pid.
-`SessionStates.report` stores it for Running and Waiting, and `sweepGonePIDs`
-asks `isGone(pid)` every two seconds, which for the app's own live pid is
-never true. The Working dot, the board card and the Cmd+W confirmation stay
-until another report or a manual Clear Status. With `--agent`,
-`ReportedAgent.isAtThePrompt` stays true as well.
-
-This is the documented use of the helper (README.md:68). The shell hooks pass
-`--pid $$` and are unaffected. No guard anywhere compares a reported pid to
-`ProcessInfo.processInfo.processIdentifier`. Fix = export the app's pid to
-sessions and have `reportingProcess` stop when the next parent equals it,
-returning the last shell visited so the state clears when that shell exits;
-and have `apply` treat a pid equal to its own as absent.
-
-### 39. Medium. A subagent ending after an uncounted start flips Done back to Working
-
-`Sources/MultishellAppCore/States/SessionStates.swift:79`, `return state` in `settling`.
-With `states[key] == .done` and `background[key] == nil`, a `SubagentStop`
-tick of `-1` gives `count = 0`, `owedDone.remove` finds nothing, the
-`.attention` guard on line 78 does not match Done, so the tick returns
-`.running`. In `report`, `isBookkeeping` is false, lines 55 and 56 write
-Working with Claude's live pid, and line 61 replaces the Done note. The pid is
-live, so `processGone` never fires; only the next turn's Stop moves it.
-
-The uncounted start is reachable: the app launched or hooks installed after
-`SubagentStart`, a Clear Status which drops `background`, or an idle or error
-report at line 89 while workers were out, then Stop, then `SubagentStop`.
-agents.md:80 says a counting tick is bookkeeping and not news, but the code
-makes it so only for Waiting. `SessionStatesTests.swift:346` covers the stray
-tick from nil and line 354 from Waiting, not from Done. Fix = when a tick pays
-no owed Done, return the key's current state and have `report` treat that as
-bookkeeping, so only a real Working report moves a Done.
-
-### 41. Medium. A report from a subdirectory of a worktree is dropped without a word
-
-`Sources/MultishellAppCore/Model/AppModel+SessionState.swift:88`, `worktree(atPath:)`.
-The lookup builds two spellings of the cwd and asks whether either equals a
-worktree's path. Claude Code started in an outside terminal from
-`<worktree>/packages/api` sends `payload.cwd` as that subdirectory with no
-session id; `multishell state` from outside a pane falls back to the current
-directory the same way. Neither matches, `apply` drops the report at line 49,
-and nothing is logged: no dot, no banner, no card.
-
-`SessionStateModelTests.swift:44` pins exact path and trailing slash only.
-agents.md decides that an unknown session id is not matched by directory;
-nothing decides subdirectories. Fix = match the worktree whose path is a
-path-component prefix of the cwd, taking the longest so a nested worktree wins
-over the one containing it.
-
 ### 45. Low. An agent tab opened during the launch scan says the agent is not installed
 
 `Sources/MultishellAppCore/Model/AppModel+Agents.swift:16`, `loginEnvironment = environment`.
@@ -208,39 +148,6 @@ No symptom has been seen on screen. Fix = hop one runloop turn in
 `SurfaceObserver.terminalDidChangeFocus` before reporting, or defer
 `requestFocus` in `focusIfReady`; and have `focusSession` skip writes that
 change nothing.
-
-## Process and sockets
-
-### 48. Low. A second `start()` on a live socket server drops its own claim
-
-`Sources/MultishellProcess/UnixSocketServer.swift:40`.
-`claimOrRefuse` returns without error when the claim is already held, then
-`probeAndUnlinkStale` connects to this process's own listener and throws
-`.inUse`. The catch at line 41 calls `releaseClaim`, closing the descriptor
-and with it the `fcntl` lock, while `listener` keeps accepting. The claim is
-what stops a second launch from unlinking a live socket whose backlog is full,
-so after this the server runs unguarded. No caller does it today: `start()`
-runs once from `startStateSource`, and `stop()` then `start()` is fine because
-`stop()` releases the claim. Fix = make `start()` idempotent with a guard on
-`listener == nil`, or have `claimOrRefuse` report that the claim was already
-held so the catch does not release it.
-
-### 49. Low. A socket path of 102 or 103 bytes passes the check and fails to bind
-
-`Sources/MultishellProcess/UnixSocketServer.swift:59`.
-Line 55 checks `UnixSocketAddress.make(path)` against the real path, then line
-59 binds `path + ".b"`, and `bindSocket` calls `make(staging)`, which throws
-`.pathTooLong` naming the staging file. Proved with a Swift probe doing a real
-bind: 102 and 103 bytes pass the first and fail the second, while a direct
-bind of the real path succeeds. The alert reads `.../multishell.sock.b is too
-long`, contradicting the comment on line 53, and the app has no socket though
-the real path would fit. With the variant cut to its full 16 characters
-(Paths.swift:58), the debug path is 85 bytes plus the short username, so a 17
-or 18 character username lands in the window. The existing test uses a
-130-byte path.
-
-Fix = check the length of `staging` up front, so the limit is honestly 101
-bytes, and update the comment and the `debugVariant` cut in Paths.swift.
 
 ## Scripts
 
@@ -487,7 +394,7 @@ clears `notes` but not `background` or `owedDone` for a key whose state went
 nil; bounded, since `report` cannot set Done while a count is held, but
 `noteCommandFinished` can and `markSeen` then nils the state, leaving the
 count until `retain`, `processGone` or the next idle or error report, which
-delays the next turn's Done, the same class as 39. Two facts constrain the
+delays the next turn's Done, a stuck count of the kind agents.md describes. Two facts constrain the
 struct: `since` deliberately outlives a nil state (line 184 stamps the
 transition), and `clear(_:)` deliberately leaves `since` and `notes` for
 `stampChanges`, so a clear is not a plain removal for every field.

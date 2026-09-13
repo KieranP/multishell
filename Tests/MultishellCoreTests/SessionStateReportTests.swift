@@ -98,6 +98,9 @@ struct SessionStateReportTests {
     #expect(variables["MULTISHELL_SESSION"] == session.id.uuidString)
     #expect(variables["MULTISHELL_WORKTREE"] == "/w/repo")
     #expect(variables["MULTISHELL_SOCKET"] == "/state/multishell.sock")
+    #expect(
+      variables["MULTISHELL_APP_PID"] == String(ProcessInfo.processInfo.processIdentifier),
+      "so the helper's walk up from a prompt knows where to stop")
   }
 
   /// The channel drops a line over 64 KB as not speaking the protocol, so a

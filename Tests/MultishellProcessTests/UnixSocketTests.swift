@@ -190,6 +190,76 @@ struct UnixSocketServerTests {
     }
   }
 
+  /// A second `start()` on a live server is a no-op, claim included. The
+  /// probe finds this instance answering, and letting the claim go on that
+  /// would leave the socket unguarded while the listener kept accepting.
+  @Test func startingALiveServerAgainKeepsItsClaim() async throws {
+    guard FileManager.default.isExecutableFile(atPath: "/usr/bin/python3") else { return }
+    let path = socketPath()
+    let server = UnixSocketServer(path: path)
+    defer { server.stop() }
+    let recorder = LineRecorder()
+    server.onLine = { recorder.record($0) }
+    try server.start()
+    try server.start()
+
+    // Another process is the only honest reader: a process's own record
+    // locks never conflict with each other, so `F_GETLK` here says unlocked.
+    let taker = Process()
+    taker.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
+    taker.arguments = [
+      "-c",
+      """
+      import fcntl, sys
+      handle = open(sys.argv[1], 'w')
+      try:
+          fcntl.lockf(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+          print('took', flush=True)
+      except OSError:
+          print('refused', flush=True)
+      """, server.claimPath,
+    ]
+    let output = Pipe()
+    taker.standardOutput = output
+    try taker.run()
+    taker.waitUntilExit()
+    let answer = String(decoding: output.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+    #expect(answer.hasPrefix("refused"), "the claim was let go: \(answer)")
+
+    try UnixSocketClient.send("still here\n", to: path)
+    try await waitUntil { !recorder.received.isEmpty }
+    #expect(recorder.received == ["still here"])
+  }
+
+  /// Bound at `path + ".b"` and renamed in, so the limit is two bytes short
+  /// of `sun_path`, and the refusal names the socket, not the staging file.
+  @Test func aPathThatFitsOnlyWithoutItsStagingSuffixIsRefusedByItsOwnName() {
+    for count in [102, 103] {
+      let long = URL(fileURLWithPath: "/tmp/" + String(repeating: "z", count: count - 10) + ".sock")
+      #expect(long.path.utf8.count == count)
+      let server = UnixSocketServer(path: long)
+      defer { server.stop() }
+      do {
+        try server.start()
+        Issue.record("bound \(count) bytes, whose staging name cannot fit")
+      } catch let failure as SocketFailure {
+        #expect(failure.kind == .pathTooLong, "\(count)")
+        #expect(failure.path == long.path, "\(count): named \(failure.path)")
+      } catch {
+        Issue.record("wrong error: \(error)")
+      }
+    }
+  }
+
+  @Test func aPathThatFitsWithItsStagingSuffixStarts() throws {
+    let path = URL(fileURLWithPath: "/tmp/" + String(repeating: "w", count: 91) + ".sock")
+    #expect(path.path.utf8.count == 101)
+    let server = UnixSocketServer(path: path)
+    defer { server.stop() }
+    try server.start()
+    #expect(FileManager.default.fileExists(atPath: path.path))
+  }
+
   @Test func aClientWithNobodyListeningGetsAnErrorNotAHang() {
     let path = socketPath()
     do {

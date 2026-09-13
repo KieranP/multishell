@@ -30,6 +30,9 @@ public final class UnixSocketServer: @unchecked Sendable {
   /// A crashed instance's socket file is unlinked, but only once nothing
   /// holds the claim beside it and a connect is refused.
   public func start() throws {
+    // Already listening. The probe would find this instance answering, read
+    // it as another, and the failure path would let go of a claim still needed.
+    guard lock.withLock({ listener == nil }) else { return }
     try FileManager.default.createDirectory(
       at: URL(fileURLWithPath: path).deletingLastPathComponent(),
       withIntermediateDirectories: true)
@@ -50,9 +53,11 @@ public final class UnixSocketServer: @unchecked Sendable {
     // Bound beside the socket and renamed in, so the path is never briefly
     // world-readable: the mode is the umask's, and umask is process-wide.
     let staging = path + ".b"
-    // Against the real path, so a path near the address limit is refused
-    // for its own length rather than for the staging name's.
-    _ = try UnixSocketAddress.make(path)
+    // The staging name is what binds, so its length is the limit. The alert
+    // names the socket; see docs/develop/state-on-disk.md for the two bytes.
+    guard staging.utf8.count <= UnixSocketAddress.capacity else {
+      throw SocketFailure(kind: .pathTooLong, path: path)
+    }
     let descriptor = try UnixSocketAddress.newSocket(path: staging)
     do {
       unlink(staging)

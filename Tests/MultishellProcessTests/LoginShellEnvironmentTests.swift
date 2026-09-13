@@ -79,4 +79,19 @@ struct ProcessAncestryTests {
     let me = ProcessInfo.processInfo.processIdentifier
     #expect(ProcessAncestry.reportingProcess(startingAt: me) == me)
   }
+
+  /// From a prompt in one of the app's own tabs nothing between the shell
+  /// and the app is a program, and the app is not what the state is about.
+  @Test func theWalkStopsShortOfTheAppAndNamesTheShellUnderIt() throws {
+    let shell = Process()
+    shell.executableURL = URL(fileURLWithPath: "/bin/sh")
+    shell.arguments = ["-c", "read line"]
+    shell.standardInput = Pipe()
+    try shell.run()
+    defer { shell.terminate() }
+    let me = ProcessInfo.processInfo.processIdentifier
+    let under = shell.processIdentifier
+    #expect(ProcessAncestry.reportingProcess(startingAt: under) == me, "the walk as it was")
+    #expect(ProcessAncestry.reportingProcess(startingAt: under, stoppingAt: me) == under)
+  }
 }

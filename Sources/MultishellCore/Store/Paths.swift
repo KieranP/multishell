@@ -52,10 +52,10 @@ public enum Paths {
   }()
 
   /// Split from `variant` so a test can name the value without a bundle. Cut
-  /// to 16 of `[A-Za-z0-9_-]` for `sun_path`; see state-on-disk.md.
+  /// to 14 of `[A-Za-z0-9_-]` for `sun_path` and its `.b`; see state-on-disk.md.
   static func debugVariant(named name: String?) -> String {
     guard let name, !name.isEmpty else { return ".debug" }
-    let safe = name.prefix(16).map { character -> Character in
+    let safe = name.prefix(14).map { character -> Character in
       character.isASCII && (character.isLetter || character.isNumber)
         || character == "-" || character == "_" ? character : "-"
     }

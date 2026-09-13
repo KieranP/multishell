@@ -58,6 +58,68 @@ struct SessionStateModelTests {
     #expect(h.model.sessionStates.isEmpty)
   }
 
+  /// Claude Code started in an outside terminal from a package directory
+  /// says that directory, and the worktree containing it is the one meant.
+  /// The harness nests `feature` inside `main`, so the deeper one must win.
+  @Test func aReportFromInsideAWorktreeMarksTheWorktreeContainingIt() {
+    let h = Harness()
+    h.model.select(h.main)
+
+    h.source.send(
+      SessionStateReport(
+        state: .attention, cwd: h.feature.path.appendingPathComponent("packages/api").path))
+    #expect(h.model.state(ofWorktree: h.feature.id) == .attention)
+    #expect(h.model.state(ofWorktree: h.main.id) == nil, "the deepest worktree, not the first")
+
+    h.source.send(
+      SessionStateReport(state: .error, cwd: h.main.path.appendingPathComponent("featurette").path))
+    #expect(h.model.state(ofWorktree: h.main.id) == .error, "a sibling by name is not inside")
+    #expect(h.model.state(ofWorktree: h.feature.id) == .attention)
+  }
+
+  /// Which worktree is deepest is decided where the match was made: a
+  /// worktree added through a symlink chain has a long written path and a
+  /// short real one, and a worktree nested inside its real path is deeper.
+  @Test func depthIsMeasuredOnTheSpellingThatMatched() throws {
+    let h = Harness()
+    let files = FileManager.default
+    let real = h.main.path.appendingPathComponent("real")
+    let inner = real.appendingPathComponent("wt/inner")
+    try files.createDirectory(at: inner, withIntermediateDirectories: true)
+    let chain = h.main.path.appendingPathComponent("a/b/c")
+    try files.createDirectory(at: chain, withIntermediateDirectories: true)
+    let link = chain.appendingPathComponent("d")
+    try files.createSymbolicLink(at: link, withDestinationURL: real)
+    let outer = Worktree(
+      path: link.appendingPathComponent("wt"), projectID: h.project.id, head: "c", branch: "outer")
+    let nested = Worktree(path: inner, projectID: h.project.id, head: "d", branch: "nested")
+    h.store.replaceWorktrees([h.main, outer, nested], forProject: h.project.id)
+
+    let report = inner.appendingPathComponent("src").path
+    #expect(h.model.worktree(atPath: report)?.id == nested.id, "the real path is the deeper one")
+    #expect(
+      h.model.worktree(atPath: real.appendingPathComponent("wt/lib").path)?.id == outer.id,
+      "and the outer one is still found through its real path")
+  }
+
+  /// `multishell state` typed at a prompt in one of our own tabs walks up
+  /// to the app itself. A claim about our own pid would never clear.
+  @Test func aReportNamingTheAppsOwnPidIsTakenAsNamingNone() {
+    let h = Harness()
+    h.model.select(h.main)
+    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    let me = ProcessInfo.processInfo.processIdentifier
+
+    h.source.send(
+      SessionStateReport(
+        state: .running, sessionID: tab.focusedSessionID, pid: me, agent: AgentCatalogue.claudeID))
+
+    #expect(h.model.state(of: tab) == .running)
+    #expect(h.model.sessionStates.trackedPIDs.isEmpty, "the app is not what is working")
+    #expect(h.model.reportedAgents[tab.focusedSessionID]?.agentID == AgentCatalogue.claudeID)
+    #expect(h.model.reportedAgents[tab.focusedSessionID]?.pid == nil)
+  }
+
   /// A banner arrives with the app off screen, so it must name the worktree
   /// the way the sidebar the user is picturing does.
   @Test func aRenamedWorktreeIsNamedByItsNameInABanner() {

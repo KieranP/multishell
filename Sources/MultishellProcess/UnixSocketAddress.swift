@@ -29,9 +29,11 @@ public struct SocketFailure: Error, CustomStringConvertible, Sendable {
 
 /// `sockaddr_un` for a path, and the constants that differ by libc.
 enum UnixSocketAddress {
+  /// Bytes a path may have: `sun_path` less its terminator.
+  static let capacity = MemoryLayout.size(ofValue: sockaddr_un().sun_path) - 1
+
   static func make(_ path: String) throws -> sockaddr_un {
     var address = sockaddr_un()
-    let capacity = MemoryLayout.size(ofValue: address.sun_path) - 1
     let bytes = Array(path.utf8)
     guard bytes.count <= capacity else {
       throw SocketFailure(kind: .pathTooLong, path: path)

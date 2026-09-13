@@ -329,8 +329,10 @@ struct BackgroundWorkerTests {
       _ = report(&states, .running, subagents: 1)
       _ = report(&states, .done)
       #expect(report(&states, ending) == ending)
-      // Nothing is owed now, so a worker ending later pays nothing.
-      #expect(report(&states, .running, subagents: -1) == .running, "\(ending)")
+      // Nothing is owed now, so a worker ending later pays nothing: an ended
+      // session is Working again, and a failure stands.
+      #expect(report(&states, .running, subagents: -1) != .done, "\(ending)")
+      #expect(states[.session(a)] == (ending == .error ? .error : .running), "\(ending)")
     }
   }
 
@@ -386,6 +388,22 @@ struct BackgroundWorkerTests {
     _ = report(&states, .done)
     _ = report(&states, .attention)
     #expect(report(&states, .running, subagents: -1) == .done)
+  }
+
+  /// A worker whose start went uncounted, the app or its hooks arriving
+  /// after it: its ending pays nothing and moves nothing. Only a real
+  /// Working report moves a Done or a Failed.
+  @Test func aWorkerEndingAfterAnUncountedStartLeavesADoneOrAFailureAlone() {
+    for finished in [SessionState.done, .error] {
+      var states = SessionStates()
+      _ = report(&states, .running)
+      states.report(finished, pid: 99, message: "all green", for: .session(a), isSeen: false)
+
+      #expect(report(&states, .running, subagents: -1) == nil, "\(finished): no news")
+      #expect(states[.session(a)] == finished)
+      #expect(states.notes[.session(a)]?.message == "all green", "and the card still says so")
+      #expect(states.pids[.session(a)] == nil, "a finished state is about the user, not a pid")
+    }
   }
 
   @Test func anAgentWhoseProcessIsGoneOwesNothing() {

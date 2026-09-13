@@ -112,8 +112,9 @@ What each test catches, and the conventions a new one follows.
   through `withObservationTracking`.
 - An engine that registered a surface and then threw is told to let go:
   MultiEngineHostTests.
-- A counting tick leaves a Waiting alone: SessionStatesTests, both directions,
-  and the owed Done still paid at the last worker out.
+- A counting tick leaves a Waiting, a Done or a Failed alone:
+  SessionStatesTests, both directions, and the owed Done still paid at the
+  last worker out.
 - Export keeps a hook the user refused and does not trust it into the
   bargain: AppModelHookControlTests, against the real file on disk.
 - bash keeps its DEBUG trap against one installed at the first prompt, chains
@@ -146,6 +147,16 @@ What each test catches, and the conventions a new one follows.
 - An item promising two files is not delivered on the first: PromisedDropTests.
 - A live socket whose accept backlog is full is not taken for a dead one:
   UnixSocketTests, the server's queue blocked and the backlog filled by hand.
+  The same suite starts a live server twice and has a second process try the
+  claim, a process's own record locks never conflicting with each other, and
+  holds the path limit to the staging name's, 102 and 103 bytes refused under
+  the socket's own name where 101 binds.
+- The pid the helper reports stops short of the app: HelperTests, two real
+  `sh -c` layers under the test process posing as the app, the report naming
+  the outer shell; ProcessAncestryTests has the walk on its own. The model's
+  half, a report naming the app's pid tracking none, is SessionStateModelTests,
+  beside a report from a subdirectory marking the deepest worktree containing
+  it, the harness nesting one worktree inside the other.
 - Removing the main worktree is refused before the hook and the Trash:
   AppModelHookControlTests. Without the guard that test bins the fixture.
 - Removing one worktree leaves the record of another whose directory is away,

@@ -199,6 +199,32 @@ struct HelperTests {
     #expect(report?.pid == ProcessInfo.processInfo.processIdentifier)
   }
 
+  /// At a prompt in one of the app's own tabs the first non-shell ancestor
+  /// is the app, whose pid never goes while it is looking. Told the app's
+  /// pid, the walk stops short of it and names the shell underneath.
+  @Test func thePidReportedStopsShortOfTheAppItself() async throws {
+    let path = socketPath()
+    let server = UnixSocketServer(path: path)
+    defer { server.stop() }
+    let recorder = LineRecorder()
+    server.onLine = { recorder.record($0) }
+    try server.start()
+
+    let me = ProcessInfo.processInfo.processIdentifier
+    let inner = "\(ShellQuoting.quote(Self.helper.path)) state running"
+    let output = try await run(
+      ["-c", "echo $$; /bin/sh -c \(ShellQuoting.quote(inner))"],
+      environment: ["MULTISHELL_SOCKET": path.path, "MULTISHELL_APP_PID": String(me)],
+      via: URL(fileURLWithPath: "/bin/sh"))
+    #expect(output.succeeded, "\(output.standardError)")
+    let outer = Int32(output.standardOutput.trimmingCharacters(in: .whitespacesAndNewlines))
+
+    try await waitUntil { !recorder.received.isEmpty }
+    let report = SessionStateReport.parse(recorder.received.first ?? "")
+    #expect(report?.pid == outer, "the shell nearest the app")
+    #expect(report?.pid != me)
+  }
+
   @Test func commandStartedAndFinishedMapToRunningDoneAndFailed() async throws {
     let path = socketPath()
     let server = UnixSocketServer(path: path)
