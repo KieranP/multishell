@@ -136,7 +136,12 @@ What each test catches, and the conventions a new one follows.
   trap being `Int(_: Double)` outside its range.
 - A branch name git will reject is refused before the pre-create hook:
   AppModelHookControlTests; the rules themselves are held against real
-  `git check-ref-format` over a table in GitRefNameTests.
+  `git check-ref-format` over a table in GitRefNameTests. The existing-branch
+  path is held to it as well: WorktreeCreationTests, an empty, blank, spaced
+  and `HEAD` name each against a hook that leaves a marker.
+- A bare `git rebase` that replayed nothing is not a landing:
+  WorktreeMergeTests against real git, beside the fast-forward case it
+  mirrors, and MergeParserTests for the finish wording old and new.
 - A placeholder inside a value is not expanded again: AgentFlagsTests.
 - An item promising two files is not delivered on the first: PromisedDropTests.
 - A live socket whose accept backlog is full is not taken for a dead one:

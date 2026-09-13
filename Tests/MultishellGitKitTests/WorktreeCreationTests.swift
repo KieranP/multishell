@@ -143,6 +143,26 @@ struct WorktreeCreationTests {
       !FileManager.default.fileExists(atPath: project.path.appendingPathComponent("hook-ran").path))
   }
 
+  /// The sheet cannot send these, Create being off for a name not in the
+  /// list; an API caller can, and the hook used to run before git refused.
+  @Test func anExistingBranchNameGitWillRefuseRunsNoHook() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    var project = repo.project
+    project.settings = ProjectSettings(
+      preCreateHook: "touch \"$MULTISHELL_PROJECT_PATH/hook-ran\"")
+    let marker = project.path.appendingPathComponent("hook-ran")
+
+    for name in ["", "  ", "my branch", "HEAD"] {
+      await #expect(throws: InvalidBranchName.self, "\(name.debugDescription)") {
+        try await repo.coordinator.create(
+          branch: name, createBranch: false, in: project, settings: repo.trees)
+      }
+      #expect(!FileManager.default.fileExists(atPath: marker.path), "the hook did not run")
+    }
+    #expect(try await repo.coordinator.refresh(project).count == 1, "nothing was created")
+  }
+
   @Test func aBranchCheckedOutElsewhereCannotBeCheckedOutAgain() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }

@@ -94,7 +94,11 @@ end of it. `GitRefName` is
 and a process per keystroke is not worth it; a test holds it against real git
 over a table of names. Create is off for a name it refuses and the sheet says
 why, and `WorktreeCoordinator.add` throws before the hook for a caller that
-did not ask.
+did not ask. An existing branch is held to the same rules: the check used to
+run only when a branch was being created, so an API caller passing an empty
+or malformed name ran the pre-create hook with `MULTISHELL_BRANCH` empty and
+was refused by git after. Cost: `HEAD` or a remote ref, which git would have
+checked out detached, is refused too; the path is for a branch that exists.
 
 ## A bare repository is a project
 

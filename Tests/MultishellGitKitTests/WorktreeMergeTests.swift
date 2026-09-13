@@ -122,6 +122,25 @@ struct WorktreeMergeTests {
     #expect(states["behind"] == .unmerged, "moved is not landed")
   }
 
+  /// The same worktree brought up with a bare `git rebase main`: the reflog
+  /// reads `rebase (finish)`, as after a replay, and the tip is the trunk's.
+  @Test func aBranchRebasedOntoTheTrunkWithNothingOfItsOwnHasNotLanded() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let path = fixture.project.path
+    let tree = fixture.root.appendingPathComponent("trees/rebased", isDirectory: true)
+    _ = try await fixture.git.run(
+      ["worktree", "add", "-q", "-b", "rebased", tree.path, "HEAD"], in: path)
+    try await fixture.commit("trunk moves on", file: "trunk.txt", content: "a\n")
+    _ = try await fixture.git.run(["rebase", "-q", "main"], in: tree)
+
+    let scan = try await scan(fixture)
+    #expect(scan.tip(of: "rebased") == scan.base.tip, "carried up to the trunk")
+    let states = await fixture.coordinator.mergeStates(
+      of: ["rebased"], in: fixture.project, scan: scan)
+    #expect(states["rebased"] == .unmerged, "moved is not landed")
+  }
+
   /// `git cherry` skips merge commits, so a worktree that has merged the
   /// trunk in and written nothing of its own prints no lines at all. Read as
   /// "every commit landed", that badges a branch that has landed nothing.

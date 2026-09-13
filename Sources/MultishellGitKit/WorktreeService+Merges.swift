@@ -22,11 +22,11 @@ extension WorktreeService {
   /// Whether `branch` has ever had work of its own. `nil` is a read that
   /// failed, not an empty reflog; see `ReflogWorkParser`.
   public func hasWorkOfItsOwn(_ branch: String, in project: Project) async -> Bool? {
-    // `--`, or a branch sharing a name with a path is "both revision and
-    // filename" and the read fails rather than answers.
+    // `%H` beside the subject: a rebase's finish is judged by where the
+    // branch came to rest. `--`, or a branch named like a path fails the read.
     guard
       let output = await git.output(
-        ["log", "-g", "--format=%gs", Self.ref(branch), "--"], in: project.path)
+        ["log", "-g", "--format=%H %gs", Self.ref(branch), "--"], in: project.path)
     else { return nil }
     return ReflogWorkParser.parse(output)
   }

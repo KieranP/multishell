@@ -2,7 +2,7 @@
 
 Open findings from a whole-repo review on 2026-09-13, against commit 7fa714f.
 
-Thirteen defects stand, none High. Each was read a second time by a verifier
+Eleven defects stand, none High. Each was read a second time by a verifier
 working from the code as it is, and the git-behaviour ones were reproduced in
 a scratch repository.
 
@@ -17,7 +17,6 @@ taken out rather than kept.
 
 | # | Effect | What |
 | --- | --- | --- |
-| 35 | Medium | A branch brought up with a bare `git rebase` is badged merged with certainty |
 | 36 | Medium | Export drops the keys of `.multishell.json` this build does not know |
 | 37 | Medium | `multishell state` at a prompt pins the dot to the app's own pid, forever |
 | 39 | Medium | A subagent ending after an uncounted start flips Done back to Working |
@@ -29,7 +28,6 @@ taken out rather than kept.
 | 48 | Low | A second `start()` on a live socket server drops its own claim |
 | 49 | Low | A socket path of 102 or 103 bytes passes the check and fails to bind |
 | 50 | Low | Ghostty focus writes into the store from inside a SwiftUI update |
-| 51 | Low | The existing-branch path runs the hook before git rejects the name |
 | 53 | Perf | The status poll runs `git status` for missing projects' worktrees |
 | 54 | Perf | Every split-divider drag frame writes the workspace and re-arms autosave |
 | 55 | Perf | The sidebar scans every session four times per worktree per render |
@@ -63,32 +61,6 @@ taken out rather than kept.
 
 ## Worktrees
 
-### 35. Medium. A branch brought up with a bare `git rebase` is badged merged with certainty
-
-`Sources/MultishellGitKit/ReflogWorkParser.swift:22`.
-A branch cut from an old trunk, with no commits of its own, brought up with
-`git rebase main` gets the reflog entry `rebase (finish): refs/heads/feat onto
-<sha>`, the same wording as a rebase that replayed commits. The parser treats
-every `(finish)` as work, `git branch --merged` lists the branch since its tip
-now equals the trunk, and the verdict is `.merged(.ancestor)`, which is
-certain. The sidebar badge goes green and the removal dialog leads with Delete
-branch, for a branch that never began. merged-branch.md:10 says a branch
-carried up must not badge, and its list of arrivals at lines 15-17 (branch,
-reset, clone, fetch, a merge or pull fast-forward) names a rebase's `(finish)`
-as work of its own, so the doc endorses the current reading and rests on the
-same wrong premise.
-
-Reproduced with git 2.55. `git pull --rebase` on the same setup wrote `pull
-... : Fast-forward`, which is handled; only a bare `git rebase`, or a pull
-configured to run a real rebase, hits this. No data is lost since the tip
-equals the trunk, but the wording is wrong for the case the design singles
-out. `MergeParserTests.swift:127` asserts that `(finish)` implies own commits,
-which git does not guarantee.
-
-Fix = read the reflog as `%H %gs` and treat a `rebase (finish): <ref> onto
-<sha>` whose new value equals `<sha>` as an arrival; keep any other `(finish)`
-as work. Update the test.
-
 ### 46. Low. A late `git status` writes against a worktree that may have been replaced
 
 `Sources/MultishellAppCore/Model/AppModel+Runtime.swift:113`.
@@ -104,23 +76,6 @@ Plausible rather than confirmed: the visible effect needs a remove and a
 re-add inside one status run, about 250 ms plus git's time, which the UI's own
 remove and create cannot do. Fix = after the await, guard that the worktree
 still exists and is the same value before assigning.
-
-### 51. Low. The existing-branch path runs the hook before git rejects the name
-
-`Sources/MultishellGitKit/WorktreeCoordinator.swift:138`, `guard !createBranch || GitRefName.isValidBranch(branch)`.
-The name is validated only when a branch is being created. With `createBranch:
-false` and an empty or malformed name, the pre-create hook runs with
-`MULTISHELL_BRANCH` empty, and only then `git worktree add` fails with an
-invalid reference. worktrees.md:84 says the
-opposite: `add` throws before the hook for a caller that did not ask.
-
-The sheet cannot reach it, Create being disabled unless the name is in
-`availableBranches`. Only an API caller does. Skipping the check for an
-existing branch is not explained anywhere; if the reason is to allow a
-commit-ish like `HEAD` or `origin/main`, which `isValidBranch` rejects, that
-wants writing down. Fix = refuse an empty name before the hook regardless of
-`createBranch`, and either validate the existing-branch name too or record in
-worktrees.md that this path takes any commit-ish and is not guarded.
 
 ## Shared settings
 

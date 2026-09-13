@@ -12,14 +12,23 @@ a branch at its start commit, nor from "was carried up", a `git pull` in a
 worktree cut before the trunk moved fast-forwarding it onto commits it was
 handed.
 
-Sign 1, the branch's reflog. Arrivals: creation, reset, clone, fetch, and a
-merge or pull that fast-forwarded. Work of its own: everything else, a
-`commit:`, a rebase's `(finish)`, a merge that made a commit. A deny list,
-because the arrivals are the closed set and a message a later git invents reads
-as work, which is what counting entries assumed of every entry anyway. Names
-given to git whole with `--` after, else a branch sharing a name with a path in
-the repo is "both revision and filename" and the read fails instead of
-answering.
+Sign 1, the branch's reflog. Arrivals: creation, reset, clone, fetch, a
+merge or pull that fast-forwarded, and a rebase that replayed nothing. Work of
+its own: everything else, a `commit:`, a rebase's `(finish)` that moved the
+branch past the commit it was rebased onto, a merge that made a commit. A deny
+list, because the arrivals are the closed set and a message a later git
+invents reads as work, which is what counting entries assumed of every entry
+anyway. Names given to git whole with `--` after, else a branch sharing a name
+with a path in the repo is "both revision and filename" and the read fails
+instead of answering.
+
+A bare `git rebase main` in a worktree with no commits of its own writes
+`rebase (finish): refs/heads/feat onto <sha>`, the same words as a rebase that
+replayed commits, and `git branch --merged` then lists the branch. Reproduced
+with git 2.55. So the reflog is read as `%H %gs`, and a finish whose new value
+is the `<sha>` it names is an arrival; a finish that names no commit, or one
+the branch rested past, stays work. `git pull --rebase` on the same setup
+writes `Fast-forward` instead and was already an arrival.
 
 No reflog at all -> nothing claimed. A bare repo logs no branch creation, so
 guessing from the tips instead badges every worktree it holds that was cut from

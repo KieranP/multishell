@@ -133,11 +133,9 @@ public struct WorktreeCoordinator: Sendable {
     onStep: (@Sendable (WorktreeCreationStep) -> Void)? = nil
   ) async throws -> URL {
     let branch = Self.branchName(rawBranch, createBranch: createBranch, settings: settings)
-    // Before the hook: git rejects the name at the end of it, and the hook's
-    // work is done by then.
-    guard !createBranch || GitRefName.isValidBranch(branch) else {
-      throw InvalidBranchName(branch)
-    }
+    // Before the hook, for an existing branch too: git rejects the name at
+    // the end of it, and the hook's work is done by then.
+    guard GitRefName.isValidBranch(branch) else { throw InvalidBranchName(branch) }
     let path = settings.worktreePath(forBranch: branch, in: project)
 
     if WorktreeHooks.hasScript(project.settings.preCreateHook) { onStep?(.preCreateHook) }
