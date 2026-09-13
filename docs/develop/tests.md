@@ -153,6 +153,13 @@ What each test catches, and the conventions a new one follows.
   branch name taken and the worktree directory three levels deep.
 - The Trash is asked off the main thread: AppModelHookControlTests, the fake
   Trash recording the thread of each call.
+- A worktree path holding a control character still reports from zsh:
+  HelperTests, real zsh with a tab, a newline, a quote and a backslash in the
+  path, and every line the socket received must parse. bash is not exercised,
+  going through the helper, which encodes.
+- A `ZDOTDIR` the user's `.zprofile` sets is followed: HelperTests, a login
+  interactive zsh under a fake home, beside the `.zshenv` case it was modelled
+  on. Only a login shell reads the profile, so the `-l` is what the test is.
 - Foundation-only imports: checked by hand in a `swift:6.0` container, Linux
   being out of CI. Views untested, but a value a view reads is.
 

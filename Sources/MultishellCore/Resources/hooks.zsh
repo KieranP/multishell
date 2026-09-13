@@ -37,10 +37,21 @@ if [ -n "${MULTISHELL_SESSION-}" ] && [ -n "${MULTISHELL_SOCKET-}" ]; then
       "$_multishell_bin" "$@" >/dev/null 2>&1
     fi
   }
+  # The path as a JSON string, once. Control characters as \u00XX: git allows
+  # one in a parent directory, and a raw tab or newline lost every line.
+  _multishell_json_cwd() {
+    local s="${MULTISHELL_WORKTREE//\\/\\\\}" c
+    s="${s//\"/\\\"}"
+    typeset -g _multishell_cwd=""
+    if [[ "$s" != *[[:cntrl:]]* ]]; then _multishell_cwd="$s"; return; fi
+    for c in "${(@s::)s}"; do
+      [[ "$c" == [[:cntrl:]] ]] && printf -v c '\\u%04x' $(( #c ))
+      _multishell_cwd+="$c"
+    done
+  }
+  _multishell_json_cwd
   _multishell_json() {
-    local cwd="${MULTISHELL_WORKTREE//\\/\\\\}"
-    cwd="${cwd//\"/\\\"}"
-    print -r -- "{\"v\":1,\"state\":\"$1\",\"session\":\"$MULTISHELL_SESSION\",\"cwd\":\"$cwd\"$2}"
+    print -r -- "{\"v\":1,\"state\":\"$1\",\"session\":\"$MULTISHELL_SESSION\",\"cwd\":\"$_multishell_cwd\"$2}"
   }
   # Both reports run inline: a fast command's finished must not overtake
   # its started, and a fast close must not skip either.

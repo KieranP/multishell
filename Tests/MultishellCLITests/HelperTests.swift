@@ -614,6 +614,88 @@ struct HelperTests {
     #expect(SessionStateReport.parse(recorder.received.first ?? "")?.state == .running)
   }
 
+  /// A user whose ~/.zprofile sets ZDOTDIR, which only a login shell reads,
+  /// keeps their config too: the profile chain captures what it left.
+  @Test func zshIntegrationFollowsAZdotdirSetByTheUsersZprofile() async throws {
+    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
+    let root = URL(fileURLWithPath: "/tmp")
+      .appendingPathComponent("ms-profile-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let integration = root.appendingPathComponent("integration", isDirectory: true)
+    let home = root.appendingPathComponent("home", isDirectory: true)
+    let relocated = home.appendingPathComponent(".config/zsh", isDirectory: true)
+    for dir in [integration, relocated] {
+      try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    }
+    for (name, contents) in ShellStateHooks.zshIntegrationFiles(helper: Self.helper.path) {
+      try contents.write(
+        to: integration.appendingPathComponent(name), atomically: true, encoding: .utf8)
+    }
+    try "export ZDOTDIR=\"$HOME/.config/zsh\"\n".write(
+      to: home.appendingPathComponent(".zprofile"), atomically: true, encoding: .utf8)
+    try "export MULTISHELL_USER_RC_LOADED=relocated\n".write(
+      to: relocated.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
+
+    var env = ProcessInfo.processInfo.environment
+    env["HOME"] = home.path
+    env["ZDOTDIR"] = integration.path
+    env.removeValue(forKey: "MULTISHELL_USER_ZDOTDIR")
+    let output = try await ProcessRunner().capture(
+      URL(fileURLWithPath: "/bin/zsh"),
+      ["-l", "-i", "-c", "printf '%s|%s' \"$MULTISHELL_USER_RC_LOADED\" \"$ZDOTDIR\""],
+      in: root, environment: env)
+
+    let fields = output.standardOutput.split(separator: "|", omittingEmptySubsequences: false)
+    #expect(
+      fields.first == "relocated", "the relocated .zshrc did not run: \(output.standardOutput)")
+    #expect(
+      fields.count == 2 && fields[1] == relocated.path,
+      "ZDOTDIR handed back to the relocated dir: \(output.standardOutput)")
+  }
+
+  /// git refuses a control character in a branch name, but a parent directory
+  /// may carry one, and the zsh line escaped only backslash and quote.
+  @Test func aWorktreePathHoldingAControlCharacterStillReportsFromZsh() async throws {
+    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
+    let path = socketPath()
+    let server = UnixSocketServer(path: path)
+    defer { server.stop() }
+    let recorder = LineRecorder()
+    server.onLine = { recorder.record($0) }
+    try server.start()
+
+    let root = URL(fileURLWithPath: "/tmp")
+      .appendingPathComponent("ms-cntrl-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let integration = root.appendingPathComponent("integration", isDirectory: true)
+    let userZdotdir = root.appendingPathComponent("user", isDirectory: true)
+    try FileManager.default.createDirectory(at: integration, withIntermediateDirectories: true)
+    try FileManager.default.createDirectory(at: userZdotdir, withIntermediateDirectories: true)
+    for (name, contents) in ShellStateHooks.zshIntegrationFiles(helper: Self.helper.path) {
+      try contents.write(
+        to: integration.appendingPathComponent(name), atomically: true, encoding: .utf8)
+    }
+
+    let worktree = "/w/re\tpo\nsit\"or\\y"
+    var env = ProcessInfo.processInfo.environment
+    env["ZDOTDIR"] = integration.path
+    env["MULTISHELL_USER_ZDOTDIR"] = userZdotdir.path
+    env["MULTISHELL_SOCKET"] = path.path
+    env["MULTISHELL_SESSION"] = UUID().uuidString
+    env["MULTISHELL_WORKTREE"] = worktree
+    _ = try await ProcessRunner().capture(
+      URL(fileURLWithPath: "/bin/zsh"),
+      ["-i", "-c", "_multishell_preexec; true; _multishell_precmd; wait"], in: root,
+      environment: env)
+
+    try await waitUntil { recorder.received.count >= 2 }
+    let received = recorder.received
+    let reports = received.compactMap(SessionStateReport.parse)
+    #expect(reports.count == received.count, "unparsed: \(received)")
+    #expect(Set(reports.map(\.state)).isSuperset(of: [.running, .done]), "\(reports.map(\.state))")
+    #expect(reports.allSatisfy { $0.cwd == worktree }, "\(reports.map(\.cwd))")
+  }
+
   @Test func stateWithNobodyListeningFailsLoudly() async throws {
     let output = try await run(
       ["state", "done"], environment: ["MULTISHELL_SOCKET": "/tmp/ms-nobody.sock"])

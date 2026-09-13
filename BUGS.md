@@ -2,7 +2,7 @@
 
 Open findings from a whole-repo review on 2026-09-13, against commit 7fa714f.
 
-Fourteen defects stand, none High. Each was read a second time by a verifier
+Thirteen defects stand, none High. Each was read a second time by a verifier
 working from the code as it is, and the git-behaviour ones were reproduced in
 a scratch repository.
 
@@ -23,7 +23,6 @@ taken out rather than kept.
 | 39 | Medium | A subagent ending after an uncounted start flips Done back to Working |
 | 40 | Medium | The Agents board closes by itself when a post-create stage ends |
 | 41 | Medium | A report from a subdirectory of a worktree is dropped without a word |
-| 42 | Medium | A control character in a worktree path kills every zsh report from it |
 | 45 | Low | An agent tab opened during the launch scan says the agent is not installed |
 | 46 | Low | A late `git status` writes against a worktree that may have been replaced |
 | 47 | Low | The signing script deletes the spaces inside the keychain path |
@@ -31,7 +30,6 @@ taken out rather than kept.
 | 49 | Low | A socket path of 102 or 103 bytes passes the check and fails to bind |
 | 50 | Low | Ghostty focus writes into the store from inside a SwiftUI update |
 | 51 | Low | The existing-branch path runs the hook before git rejects the name |
-| 52 | Low | ZDOTDIR is read from the app's environment, not the login shell's |
 | 53 | Perf | The status poll runs `git status` for missing projects' worktrees |
 | 54 | Perf | Every split-divider drag frame writes the workspace and re-arms autosave |
 | 55 | Perf | The sidebar scans every session four times per worktree per render |
@@ -200,25 +198,6 @@ nothing decides subdirectories. Fix = match the worktree whose path is a
 path-component prefix of the cwd, taking the longest so a nested worktree wins
 over the one containing it.
 
-### 42. Medium. A control character in a worktree path kills every zsh report from it
-
-`Sources/MultishellCore/Resources/hooks.zsh:43`, `_multishell_json`.
-The zsh fast path builds the JSON line by hand and escapes only backslash and
-double quote in `MULTISHELL_WORKTREE`. A tab or newline in the path goes in
-raw, `SessionStateReport.parse` returns nil from `try? JSONDecoder()`, and
-`SocketStateSource` drops the line with no log. Because the `zsocket` branch
-is taken whenever `zsh/net/socket` loads, which it does on stock macOS zsh,
-the helper binary, which encodes cwd correctly, is never reached. Every
-command-started, command-finished and idle report from that tab is lost.
-
-Ran the function with a tab in the path: `od -c` shows the raw byte and
-`json.loads` rejects it. bash always goes through the helper and is fine.
-worktrees.md reads the worktree list with `-z` so that such a path is
-supported. Rare, since git refuses control characters in a branch name, so
-only a parent directory carries one. Fix = omit `cwd` from the zsh-built line
-when the path holds a control character, every shell report carrying the
-session id, or escape the 0x00 to 0x1f range as `\uXXXX`.
-
 ### 45. Low. An agent tab opened during the launch scan says the agent is not installed
 
 `Sources/MultishellAppCore/Model/AppModel+Agents.swift:16`, `loginEnvironment = environment`.
@@ -307,24 +286,6 @@ or 18 character username lands in the window. The existing test uses a
 
 Fix = check the length of `staging` up front, so the limit is honestly 101
 bytes, and update the comment and the `debugVariant` cut in Paths.swift.
-
-## Terminals
-
-### 52. Low. ZDOTDIR is read from the app's environment, not the login shell's
-
-`Sources/MultishellCore/Sessions/SessionEnvironment.swift:49`, `environment["ZDOTDIR"]`.
-Both hosts call `SessionEnvironment.variables` with no environment, so the
-default `ProcessInfo.processInfo.environment` is read, and `loginEnvironment`
-on the model, which holds the full `env -0` of a login interactive shell, is
-never handed over. A ZDOTDIR set in `~/.zshenv` is re-captured by the
-generated chain, so the common case works. One set in `~/.zprofile` or
-`/etc/zprofile` is not: the `.zprofile` chain sources the user's with
-`capturesUserZdotdir` false and restores ours, so the `.zshrc` chain sources
-`$HOME/.zshrc` while Terminal.app would read `$ZDOTDIR/.zshrc`.
-
-Plausible rather than confirmed: not traced against a live shell. Fix = pass
-`loginEnvironment?.variables` into `SessionEnvironment.variables` from both
-hosts, and set `capturesUserZdotdir: true` on the `.zprofile` chain too.
 
 ## Scripts
 

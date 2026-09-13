@@ -17,7 +17,8 @@ public enum ShellStateHooks {
     [
       ".zshenv": zshChain(
         userFile: ".zshenv", restoreToSelf: true, capturesUserZdotdir: true, appending: nil),
-      ".zprofile": zshChain(userFile: ".zprofile", restoreToSelf: true, appending: nil),
+      ".zprofile": zshChain(
+        userFile: ".zprofile", restoreToSelf: true, capturesUserZdotdir: true, appending: nil),
       ".zshrc": zshChain(
         userFile: ".zshrc", restoreToSelf: false,
         appending: script("hooks", extension: "zsh", helper: helper)),
@@ -25,7 +26,7 @@ public enum ShellStateHooks {
   }
 
   /// Sources the user's `file` under their own `ZDOTDIR`. The last file hands
-  /// it back so nested shells skip the chain; `.zshenv` may relocate it.
+  /// it back so nested shells skip the chain; the first two may relocate it.
   private static func zshChain(
     userFile: String, restoreToSelf: Bool, capturesUserZdotdir: Bool = false,
     appending extra: String?

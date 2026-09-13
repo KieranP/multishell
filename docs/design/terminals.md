@@ -41,6 +41,16 @@ Ghostty bash goes through `/bin/sh -c 'exec bash ...'`, Ghostty keying its own
 injection on the command's first word and adding `--posix`, under which macOS's
 bash 3.2 reads neither file.
 
+A session starts as Terminal.app's does, with no `ZDOTDIR` of the user's, and
+the chain picks up one their own files set: `.zshenv` and `.zprofile` each
+capture what they left, `.zshrc` hands it back. The login shell's captured
+environment is not handed in as the user's, though it would carry a
+`ZDOTDIR` set in either file: our `.zshenv` would then source
+`$ZDOTDIR/.zshenv` in place of `~/.zshenv`, skipping the file that set it and
+whatever else it exported, for everyone on the documented route. Cost: a
+`ZDOTDIR` set in `/etc/zprofile` redirects zsh past our remaining files, as it
+would past any, and that tab has no hooks.
+
 `--init-file` is read in place of `.bashrc`, so the generated file reproduces a
 login shell's chain itself: `/etc/profile`, then the first of `.bash_profile`,
 `.bash_login`, `.profile`. `.bashrc` only where that found nothing, as a login
@@ -215,3 +225,11 @@ stepped back over a sleeping laptop would break the line exactly as a comma
 did. bash's `EPOCHREALTIME` carries the same separator, so the
 fraction there is cut at either one: matching a dot alone left the whole
 string in the arithmetic and reported a duration of six figures.
+
+The worktree path goes onto the zsh-built line with its control characters
+written as `\u00XX`, and is built once at startup rather than per report.
+git refuses one in a branch name but not in a parent directory, which the
+worktree list is read with `-z` to allow, and a raw tab or newline made every
+line from that tab unparseable: the reader dropped them all in silence, and
+the zsocket path being taken on any stock zsh, the helper that encodes
+correctly was never reached. bash always goes through the helper.

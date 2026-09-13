@@ -26,6 +26,11 @@ struct ZshIntegrationTests {
       zshrc.contains("add-zsh-hook zshexit _multishell_zshexit") && zshrc.contains("state idle"),
       "exit runs preexec but no precmd, so it clears on the way out")
     #expect(files[".zshenv"]?.contains("command-started") == false, "hooks only in .zshrc")
+    let capture = "export MULTISHELL_USER_ZDOTDIR=\"$ZDOTDIR\""
+    for name in [".zshenv", ".zprofile"] {
+      #expect(files[name]?.contains(capture) == true, "\(name) may relocate ZDOTDIR")
+    }
+    #expect(zshrc.contains(capture) == false, "the last file hands it back instead")
   }
 
   @Test func theSessionGetsZDOTDIROnlyWhenGeneratedAndTheShellIsZsh() throws {

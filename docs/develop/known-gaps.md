@@ -22,6 +22,13 @@ does.
   this developer can produce. A sixth supported agent would put it over
   again, and nothing would say so; fix then = the hooks rows want their own
   scroll.
+- A `ZDOTDIR` set in `/etc/zprofile` leaves the tab without hooks: zsh reads
+  `$ZDOTDIR/.zprofile` and `.zshrc` from wherever the variable points at that
+  moment, so a system file relocating it after our `.zshenv` steers the rest
+  of the chain past our files, as it would past any user's. The user's own
+  `.zshenv` and `.zprofile` relocating it are followed; terminals.md. No
+  fallback short of the helper hooks being appended to that directory's
+  `.zshrc`, which the design refuses.
 - Project settings' Hooks tab wants 973pt in a 600pt window, so its last
   editors are below the fold with nothing saying so. Six monospaced editors
   were never going to fit a window the other pages can share, and
