@@ -13,4 +13,9 @@ requirement, and an ad-hoc one is a bare cdhash, so every build asked again for
 everything and a box already ticked denied in silence. Disclaiming the child
 instead would mean owning the pty spawn, and the name would then be an unsigned
 binary, which TCC refuses rather than asks about. Cost: a setup step before the
-first build, a certificate nothing else trusts.
+first build, `make signing-identity`, and a certificate nothing else trusts.
+
+The identity is `Multishell Dev`, or `MULTISHELL_SIGN_IDENTITY`. Where it is
+missing `make-app.sh` signs ad hoc and says so, a fresh clone still having to
+build; where signing with it fails it says why before falling back, a silent
+fall back being what the certificate exists to avoid.

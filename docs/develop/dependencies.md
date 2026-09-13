@@ -1,9 +1,5 @@
 # Dependencies
 
-The three worth knowing about.
-
-## Dependencies worth knowing about
-
 - libghostty via `Lakr233/libghostty-spm`, pinned to an exact tag, the
   embedding API not being stable. Third-party prebuilt with patches; build
   from source with its `Script/build.sh` before distributing.
@@ -15,11 +11,10 @@ The three worth knowing about.
     from.
 - SwiftTerm, pure Swift, no binary.
 - `WeightedSplit` uses `_VariadicView`, an underscored SwiftUI API.
-
-git itself, 2.36 or newer. `git worktree list --porcelain -z` is the only call
-that needs it, and it is what keeps a path holding a newline from being read as
-two records; see docs/design/worktrees.md. The floor is comfortably under what
-the supported macOS ships, Sonoma's own being 2.39, but git is looked up on the
-login shell's PATH, so a version manager pinning something older is the way to
-meet it. An older one fails the read outright and the project's row says so,
-naming the option.
+- git, 2.36 or newer. `git worktree list --porcelain -z` is the only call
+  that needs it, and `-z` is what keeps a path holding a newline from being
+  read as two records; see docs/design/worktrees.md. The floor is under what
+  the supported macOS ships, Sonoma's own being 2.39, but git is looked up on
+  the login shell's PATH, so a version manager pinning an older git is the
+  way to fall under it. An older one fails the read outright and the
+  project's row says so, naming the option.

@@ -23,11 +23,13 @@
 
 Requires macOS with Xcode 26 and `git` on your `PATH`.
 
-    git clone https://github.com/KieranP/multishell.git
-    cd multishell
-    sudo xcode-select -s /Applications/Xcode.app   # once, if only the command line tools are active
-    make signing-identity                          # once per machine, so privacy grants survive a rebuild
-    make install                                   # release build into /Applications
+```sh
+git clone https://github.com/KieranP/multishell.git
+cd multishell
+sudo xcode-select -s /Applications/Xcode.app   # once, if only the command line tools are active
+make signing-identity                          # once per machine, so privacy grants survive a rebuild
+make install                                   # release build into /Applications
+```
 
 `make run` builds and opens a debug copy that keeps its own state, so it
 sits beside an installed one. The first build downloads libghostty, about
@@ -35,16 +37,15 @@ sits beside an installed one. The first build downloads libghostty, about
 sidebar, or Cmd+O.
 
 **Agent hooks.** For the state dots to follow an agent, it has to report
-through its hooks. Open Settings > Agents, where every agent on your PATH
-that has them — Claude Code, Codex, Gemini CLI, Copilot CLI and OpenCode —
-gets a row with Add. Where the file is the agent's own, Multishell appends
-one entry per event, leaves the rest of it as it is, keeps a copy beside it
-the first time, and Remove takes only its own entries out again; where the
-agent reads a directory of hook files, or a plugin, it writes a file of its
-own and deletes it again. Codex asks you to trust a new hook once, with
-`/hooks`. Plain shell commands report without any of this. Until an agent's
-hooks are in, nothing it does reaches the app, so its dots never move and the
-Agents board stays empty.
+through its hooks. Open Settings > Agents: every agent on your PATH that has
+them gets a row with Add, for Claude Code, Codex, Gemini CLI, Copilot CLI and
+OpenCode. Where the file is the agent's own, Multishell appends one entry per
+event, leaves the rest as it is, keeps a copy beside it the first time, and
+Remove takes only its own entries out again. Where the agent reads a directory
+of hook files, or a plugin, Multishell writes a file of its own and deletes it
+again. Codex asks you to trust a new hook once, with `/hooks`. Plain shell
+commands report without any of this. Until an agent's hooks are in, its dots
+never move and the Agents board stays empty.
 
 To work on it, start with [AGENTS.md](AGENTS.md), which indexes
 `docs/develop/` for the build, the tests and the rules, and `docs/design/`
@@ -52,74 +53,37 @@ for why things are the way they are.
 
 ## Features
 
-- Projects in a sidebar, every git worktree under them, terminal tabs and
-  splits per worktree. Drag a tab to the edge of the terminal area and it
-  gets a column of its own, so two agents in one worktree are watched side by
-  side. Terminals keep running while you look elsewhere, and a tab dragged
-  onto another worktree's row moves there without restarting.
-- Create a worktree and its branch in one step, where the project says, and
-  it opens with a terminal, or your agent, already running. Removing one
-  moves it to the Trash, so a wrong click is recoverable.
-- Give a new worktree the files git does not carry: one list of paths copied
-  into it, another symlinked back to the repository, so `.env` comes along
-  and `node_modules` is shared instead of installed again.
-- A state dot on every tab and worktree: working, waiting for input, done,
-  failed. Five agents report through their hooks; zsh and bash report plain
-  commands with no setup; any tool can through `multishell state`, which
-  also takes `--agent` to say which agent is at that pane's prompt.
-- An Agents entry above the projects, opening a board of every terminal with
-  an agent at its prompt: one card each, in a column for what it is doing —
-  waiting for you, working, done, idle — carrying the project and worktree it
-  is in, how long it has been there and the last thing it said. Click a card
-  to land in that pane. A Dock badge counts the ones waiting, and a toggle
-  brings in plain shells, which report through the same columns.
-- Pick a preferred agent and open it in a tab with one shortcut, or have
-  every new tab start it. Give it a line of CLI flags, per agent and
-  overridable per project, where `{{branch}}` and four others stand for the
-  worktree it is opening in. System notifications for a tab you are not
-  looking at, with a toggle for each of waiting for input, failed and done, so
-  you hear about a finished build and nothing else if that is all you want.
-- Drop files from Finder onto a terminal: an agent whose prompt reads
-  mentions gets them as `@` mentions relative to the worktree, a shell gets
-  quoted paths. Nothing is run — you press Return.
-- Dirty-file badges, ahead/behind counts, and a badge when a branch has
-  landed, from git calls that never take the index lock and never fetch on
-  a timer.
-- Sort worktree rows by name, creation or last commit, busy ones first if
-  you like, with the trunk pinned to the top; filter them, and name one
-  yourself over the branch it still is.
-- Pre- and post-create and delete hooks per project, run through your own
-  shell, with a timeout and a Cancel button in the pane rather than a
-  blocking sheet.
-- A `.multishell.json` a repository can commit with its path, prefix, file
-  lists, hooks and icon. Hooks from someone else's run only after you have
-  said yes; the lists, which run nothing, apply straight away.
-- Bare clones with worktrees beside them work as projects.
-- Ghostty or SwiftTerm as the terminal, themes as plain JSON that colour the
-  whole window, a font picker, Open in Editor, and a click in the prompt
-  that moves the cursor (Ghostty only). A Ghostty terminal starts from your
-  own `~/.config/ghostty/config`, less the keys that would decide what runs
-  in the pane; the theme and the font size stay the app's.
-- Nothing written to your shell's rc files, and state that survives an
-  older or newer build.
+- Projects in a sidebar, every worktree under them, bare clones included.
+- Tabs, splits and side-by-side columns per worktree; drag a tab to another.
+- Terminals keep running while you look elsewhere.
+- New worktree and branch in one step, with a terminal or agent already open.
+- Removing a worktree moves it to the Trash.
+- Copy or symlink `.env`, `node_modules` and the like into every new worktree.
+- A state dot per tab and worktree: working, waiting, done, failed.
+- Hooks for five agents; zsh and bash need no setup; anything else can call
+  `multishell state`.
+- An Agents board of every running agent, and a Dock badge for those waiting.
+- A preferred agent one shortcut away, with flags per agent and per project.
+- Notifications for tabs you are not looking at, a toggle each for state.
+- Drop files from Finder onto a terminal as `@` mentions or quoted paths.
+- Dirty, ahead/behind and landed badges on rows; sort, filter, rename.
+- Pre and post hooks for create and delete, shareable in `.multishell.json`.
+- Ghostty or SwiftTerm engine, JSON themes, Open in Editor, and no changes to
+  your shell's rc files.
 
 ## Status
 
-Early and unshipped. A build signs itself with a self-signed local
-certificate, so the permissions you grant it survive a rebuild, but nothing
-is notarised and the bundle runs only on the machine that built it until the
-libghostty resource lookup is fixed (see `docs/develop/known-gaps.md`). Only
-macOS has a GUI, and only macOS is built in CI; the core keeps to Foundation
-so another frontend can use it, but nothing compiles it without one. Every
-word on screen comes from a string catalogue, but English is the only one
-written, so no layout has been seen in another language.
+Builds and runs from source on macOS, and the permissions you grant survive
+a rebuild thanks to the local certificate. There is no notarised release yet,
+so build it yourself. The bundle runs on the machine that built it; see
+[docs/develop/known-gaps.md](docs/develop/known-gaps.md). Currently only
+supports macOS. Currently available in English only.
 
-Every line of code in this repository was written by an AI (Claude), under
-direction from a human who set the requirements, reviewed the results in the
-running app, and sent it back when something was wrong. The design decisions
-under `docs/design/` were argued out in that conversation, and the tests were written
-to pin behaviour the human had actually exercised. It is not vibe-coded: the
-architecture, the trade-offs and what shipped were human calls.
+Every line of code was written by an AI (Claude), under direction from a
+human who set the requirements and reviewed the results in the running app.
+The design decisions under `docs/design/` were argued out in that
+conversation. The architecture, the trade-offs and what shipped were human
+calls.
 
 ## License
 

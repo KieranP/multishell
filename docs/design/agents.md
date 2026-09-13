@@ -90,16 +90,16 @@ is waiting":
   count stuck above zero costs the Done banner and nothing else, and Idle,
   Failed or the process going clears it. Both counting events carry Working,
   having no state worth sending, so the tick is bookkeeping and not news: it
-  leaves a Waiting, a Done or a Failed where it is. Otherwise a background
-  worker ending while a permission prompt was up withdrew the banner and moved
-  the card out of Waiting, with the prompt still on screen and nothing to put
-  it back; and one whose start went uncounted, the app or the hooks arriving
-  after it, ended after the Stop and put a Done pane back to Working with
-  nothing due to move it on. Only a real Working report moves those. Such a
-  tick reports nothing at all back to the model, `report` answering `nil`: it
-  carries no message, so keeping its state while letting it through would
-  have replaced the prompt's words on the card and posted the banner again
-  under the same key, which on macOS replaces the one already there.
+  leaves a Waiting, a Done or a Failed where it is; only a real Working report
+  moves those. Otherwise a background worker ending while a permission prompt
+  was up withdrew the banner and moved the card out of Waiting, with the
+  prompt still on screen and nothing to put it back; and one whose start went
+  uncounted, the app or the hooks arriving after it, ended after the Stop and
+  put a Done pane back to Working with nothing due to move it on. Such a tick
+  reports nothing back to the model, `report` answering `nil`: it carries no
+  message, so letting it through would have replaced the prompt's words on the
+  card and posted the banner again under the same key, which on macOS replaces
+  the one already there.
 - Gemini needed neither: its Notification has one type, a tool permission.
 
 Claude asked for that request beside its notification, not instead: the
@@ -111,12 +111,11 @@ land on top. Both timings measured from a session against this build, not read
 off a page.
 
 So a prompt reports twice, only the second heard from: request moves the dot,
-no banner; notification raises it. Six seconds is as good a rule as any for
-when a prompt is worth interrupting someone for, it is the agent's own rule,
-and the notification carries the wording, the request having no message at all.
-Without that, one prompt meant two banners six seconds apart. `silent` is the
-general form: move a dot where another report about the same thing will do the
-talking.
+no banner; notification raises it. Six seconds is the agent's own rule for
+when a prompt is worth interrupting someone for, and the notification carries
+the wording, the request having no message at all. Without that, one prompt
+meant two banners six seconds apart. `silent` is the general form: move a dot
+where another report about the same thing will do the talking.
 
 Nothing reports the answer -> dot stays blue until the next tool call or the
 end of the turn: an approved call taking two minutes holds it two minutes, a
@@ -150,8 +149,7 @@ file their next `git status` has to explain.
 Nothing under an event is written over. Absent = an empty list to add ours to.
 A string, an object, or a shape a later agent version takes = something of the
 user's this cannot put back -> Add refuses and names the event, Remove steps
-over it. Remove takes back what Add put in and nothing else, the whole of what
-it promises.
+over it. Remove takes back what Add put in and nothing else.
 
 That holds inside a group as well as between them. Add only ever appends a
 group of its own, so a group carrying one of ours beside one of theirs was
@@ -184,11 +182,10 @@ other case: an agent whose process has gone leaves a plain shell behind, which
 the filter hides.
 
 Failed waits with Waiting, not in Done: a failure wants the user, which is what
-that column means, and it leaves Done meaning one thing. One rule about being seen in
-that column now, where a glance used to clear the failure and not the
-question and the cards sat under two for no reason either could state. They
-still part on a dead process: a question was a claim about that process and
-goes with it, a failure outlived the thing that failed and stays.
+that column means, and it leaves Done meaning one thing. One rule about being
+seen for that column, where a glance used to clear the failure and not the
+question. They still part on a dead process: a question was a claim about that
+process and goes with it, a failure outlived the thing that failed and stays.
 
 The filter is the one control and decides membership alone: a shell it lets in
 lands where its state says, exactly as an agent does, the zsh and bash
@@ -204,8 +201,7 @@ Cmd+W would end a shell in a pane nobody can see, Cmd+T open a tab appearing
 only once the board is left. One `worktreeInView` answers for all of them.
 Showing the board also means no pane is shown: `isShown` and
 `markShownTabSeen` answer false, else the selected worktree's Done states
-clear as it opens and their cards reach Idle having never passed
-through Done.
+clear as it opens and their cards reach Idle having never passed through Done.
 
 An agent's pid is polled only while the board is up, one sweep as it opens:
 nowhere else shows a quit agent (a dropped file asks at the moment of the
@@ -252,9 +248,9 @@ new case has to reach the docs by hand. An unknown placeholder is left as typed
 -> the mistake shows in the tab rather than an argument going missing. One
 pass over what was typed, so a value holding a token of its own is text: a
 branch named `feat/{{project}}` used to have its own name expanded again by
-the placeholders that come later in the list.
-`{{branch}}` on a detached worktree is the short SHA, never blank: `--name=`
-reads as an error the agent reports, where a wrong name does not.
+the placeholders that come later in the list. `{{branch}}` on a detached
+worktree is the short SHA, never blank: `--name=` reads as an error the agent
+reports, where a wrong name does not.
 
 Appended on resume too. A tab that comes back as `claude --continue` is the
 same tab, and the flags said how that tab is meant to run.
@@ -266,14 +262,13 @@ random values over quotes, backslashes, `$`, a backtick, `;&|()*~!#`, a space
 and a newline, on both paths: every one arrived as the one argument meant and
 none of them ran. The values are not only branches, which git keeps tame, but a
 worktree name the user typed and paths that are whatever the directories are
-called. The
-same quoting is why `$HOME`, `~` and `*` in a flag line are literal too, which
-is the cost: someone wanting a path there uses `{{project_path}}` or the custom
-command, which is raw shell by definition. In that custom line a placeholder
-the user has already wrapped in quotes (`--name="{{branch}}"`) ends up
-double-quoted, its value carrying the quotes; `EditorCatalogue`'s `{path}` has
-always behaved that way, and the flags field does not, having split the line
-first.
+called. The same quoting is why `$HOME`, `~` and `*` in a flag line are literal
+too, which is the cost: someone wanting a path there uses `{{project_path}}` or
+the custom command, which is raw shell by definition. In that custom line a
+placeholder the user has already wrapped in quotes (`--name="{{branch}}"`) ends
+up double-quoted, its value carrying the quotes; `EditorCatalogue`'s `{path}`
+has always behaved that way, and the flags field does not, having split the
+line first.
 
 Neither flags field carries prompt text. A greyed `--name={{branch}}` in an
 empty field reads as what the agent is already being started with, and the

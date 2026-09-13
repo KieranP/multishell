@@ -1,9 +1,5 @@
 # State on disk
 
-Where state lives and what is in it.
-
-## State on disk
-
 `~/Library/Application Support/Multishell/` on macOS,
 `$XDG_CONFIG_HOME/multishell/` on Linux. Debug build uses `state.debug.json`,
 `multishell.debug.sock`, `integration.debug/`, `drops.debug/`; themes and the
@@ -39,11 +35,10 @@ prints the state file, which is how you see which one a running copy has.
   exclusive `fcntl` record lock on it for as long as it listens, which is what
   tells a second launch that the socket has a live owner. Not `flock`: a child
   forked while one is held keeps it until it execs, and this process spawns
-  freely. A connect alone cannot: a
-  listener whose accept backlog is full refuses one exactly as a dead
-  socket does.
+  freely. A connect alone cannot tell: a listener whose accept backlog is full
+  refuses one exactly as a dead socket does.
 - `bin/multishell`: symlink to the helper in the current bundle, refreshed at
-  launch. Hook lines reference this path.
+  launch. Hook lines reference this path, through `$HOME`.
 - `integration/`: generated at launch.
 - `drops/<uuid>/`: files a drag promised rather than handed over, swept at
   launch once a week old.

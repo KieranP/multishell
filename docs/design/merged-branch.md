@@ -55,8 +55,8 @@ alone being three different stories:
   here, a branch whose upstream is gone being ahead of nothing. Two `git diff
   --name-only`: paths the branch changed since it forked against paths where
   the two differ now, nothing in both. A path the base changed since counts as
-  differing -> errs towards no badge. Four reads, paid only by branches whose
-  upstream is gone.
+  differing -> errs towards no badge. Three reads beyond the `cherry`, paid
+  only by branches whose upstream is gone.
 
 Sign 3 is inference, a PR closed unmerged leaving it too -> `isCertain`
 separates the three. All three badge; only the two that are proof get a removal
@@ -75,14 +75,14 @@ with a repo override. A remote-tracking ref beats a local branch of the same
 name. An override resolving to nothing = no badges rather than a guess.
 Fetching on a timer is out, being network, credentials and the one git call
 here that can hang -> a badge is only as fresh as the last fetch, and Fetch is a
-menu item with a timeout and the only sidebar spinner.
+menu item with a timeout and a spinner on the project row.
 
 The check rides the status poll, not the watcher: a commit moves a ref no
-watched file mentions. Each verdict memoised on base tip, branch, branch tip and
-whether its upstream was gone: the branch because two branches may sit on one
-commit with only one gone upstream, the upstream because a first push puts one
-back without moving either tip. Nothing observable written unless it changed,
-else the sidebar redraws every five seconds.
+watched file mentions. Each verdict memoised on base, base tip, branch, branch
+tip and whether its upstream was gone: the branch because two branches may sit
+on one commit with only one gone upstream, the upstream because a first push
+puts one back without moving either tip. Nothing observable written unless it
+changed, else the sidebar redraws every five seconds.
 
 Never badged: main worktree, bare repo, detached HEAD, the trunk's own checkout.
 

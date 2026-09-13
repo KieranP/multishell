@@ -1,10 +1,9 @@
 # Layout, layering and style
 
-Which package holds what, what may import what, how a file is written.
-
 ## Layout
 
 Root package, four Foundation-only libraries:
+
 - MultishellCore: model, store, theme, ports, and `t(_:_:)`, which reads
   the libraries' string catalogue
 - MultishellProcess: processes, sockets
@@ -17,10 +16,10 @@ engine hosts, MacPlatform, and a `t(_:_:)` of its own.
 
 Each half's words are a `Resources/en.lproj` inside the target that says
 them: `Sources/MultishellCore/Resources` for the libraries, with the
-shell-integration scripts, and `Sources/Multishell/Resources` for the Mac
-app. A second frontend is a third of these. `Apps/macOS/Resources` is not
-one of them: that is the icon, which the bundling script copies and SwiftPM
-never sees.
+shell-integration scripts, and `Apps/macOS/Sources/Multishell/Resources` for
+the Mac app. A second frontend is a third of these. `Apps/macOS/Resources` is
+not one of them: that is the icon, which the bundling script copies and
+SwiftPM never sees.
 
 What the suites share sits in plain targets, since a test target cannot be
 depended on. Two of them, split by what they drag in: `Tests/TestScratch`
@@ -28,7 +27,7 @@ depended on. Two of them, split by what they drag in: `Tests/TestScratch`
 or Process suite can have a temp directory without linking the git layer;
 `Tests/TestSupport` (`TestGit`, `TestRepository`) needs MultishellGitKit and
 is for the two suites that touch a real repository. `Apps/macOS` is its own
-package and reaches neither, so its harness keeps its own.
+package and reaches neither, so its harness keeps its own (`ModelHarness`).
 
 ## Style
 
@@ -40,8 +39,8 @@ a `View` extension in a file named for it, attached by the scene that asked.
 
 ## Layering rules
 
-- Four root libraries: Foundation only. `Paths.swift` = the only core file
-  allowed `#if os(...)`. Platform code behind `Ports/`.
+- Four root libraries: Foundation only. `Paths.swift` = the only
+  MultishellCore file allowed `#if os(...)`. Platform code behind `Ports/`.
 - `Apps/macOS` = views and AppKit. Everything else in MultishellAppCore,
   including a plain value beside a view unless it names AppKit or a Mac
   measurement. What the model needs from the desktop goes through the

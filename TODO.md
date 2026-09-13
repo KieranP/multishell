@@ -2,7 +2,7 @@
 
 The queue, most pressing first within each heading. A decision that gets
 made moves to the right file under `docs/design/`; a gap that is documented rather
-than fixed lives in `docs/develop/known-gaps.md`.
+than fixed lives in `docs/develop/known-gaps.md`; a defect goes to `BUGS.md`.
 
 * Change subagents count to actually track state, so worktree shows in progress whebn any subagent is still working
 
@@ -19,35 +19,6 @@ than fixed lives in `docs/develop/known-gaps.md`.
 - `os.Logger` for process runs, hooks, refreshes and decode failures; only
   `MacPlatform` logs today. A Help menu with the repository and issue
   tracker, and "Copy diagnostics".
-
-## Issues
-
-- Status polling on a monorepo: every five seconds, a `git status` per
-  worktree eight at a time, and after the last of them a ref scan per
-  project, one project after another. Only while the app is frontmost, so
-  it costs nothing in the background, but a large checkout keeps the disk
-  busy for as long as it is in front. A per-project toggle or a longer
-  interval, hiding the badge rather than showing it stale.
-- Two copies of one build both autosave and the last writer wins. The
-  second already sees the first's socket; make it activate the first or
-  refuse to start.
-- The four hook files are written from each agent's documented shape, and only
-  Claude Code's has been watched moving a dot in a real session. Run each agent
-  once: check its events fire, that the pid reported is the agent and not a
-  wrapper outliving the hook, and that Codex's `/hooks` trust holds. The
-  OpenCode plugin's logic has been driven against a stub helper; unproven is
-  that OpenCode loads a plugin exporting a function rather than a default
-  `{ id, setup }`, its loader having two generations of that contract, and
-  that the two permission events arrive under the names the plugin now
-  listens for, with the title where it reads it.
-- An OpenCode server started from one pane and reused by another reports
-  that first pane's `MULTISHELL_SESSION`, so the dot lands on the wrong
-  tab. Only the plugin has this: every other agent's hook runs in the
-  session's own process.
-
-- CI builds and tests both packages but never runs `Scripts/make-app.sh`, so
-  bundling, the generated Info.plist and the signing can all break with it
-  green. Nothing notices until someone runs `make build`.
 
 ## Packaging
 

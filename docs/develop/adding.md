@@ -1,18 +1,18 @@
 # Adding a thing
 
-What each addition needs, beyond the code itself.
+What each addition needs beyond the code itself.
 
 ## Adding things
 
 **A theme.** A `.json` in the themes folder (Settings > Appearance > Open
 Folder), in `Theme`'s Codable shape. `examples/` is not loaded, and an example
-already written is not rewritten, so keys added since appear only in a folder
-seeded after them. Two keys are not colours the terminal draws: `focusRing` =
-the line round the focused pane, a colour, `""` for no line, or omitted for
-the theme's `selectionBackground`, which an unparsable colour also falls back
-to; `inactivePaneOpacity` fades every other pane towards the theme background,
-`1` fading nothing, under `0.25` clamping. Both drawn per pane by
-`PaneTreeView`; see `Theme.focusRingRGB`.
+already written is not rewritten, so a key added since appears only in a
+folder seeded after it. Two keys are not colours the terminal draws:
+`focusRing` = the line round the focused pane, a colour, `""` for no line, or
+omitted for the theme's `selectionBackground`, which an unparsable colour also
+falls back to; `inactivePaneOpacity` fades every other pane towards the theme
+background, `1` fading nothing, anything under `0.25` clamped to it. Both
+drawn per pane by `PaneTreeView`; see `Theme.focusRingRGB`.
 
 **A terminal engine.** Implement `TerminalSurfaceHost`, add a case to
 `TerminalEngine`, return it from `makeHost()`. Pass
@@ -25,7 +25,7 @@ paste where it can.
 
 **A hook stage.** A case in `HookFailure.Stage`, run from WorktreeCoordinator
 in order, a `PresentedError` title saying whether the operation happened, an
-editor in ProjectHooksTab, a step value with its text.
+editor in ProjectHooksTab, a `WorktreeOperation.Step` with its text.
 
 **A list of files a new worktree is given.** A case in `WorktreePlacement`
 with the settings field it reads, a `WorktreeOperation.Step` with its titles
@@ -47,9 +47,10 @@ An agent with no hooks at all needs a `.plugin`, as OpenCode has.
 the environment and draws the Hooks tab's table.
 
 **A placeholder an agent's flags may use.** A case in `AgentPlaceholder` with
-its value, and a line in the documentation: the settings rows name one example
-rather than the list, so nothing in the app tells anyone the new one exists.
-Flags are stored per agent id and split into words by `AgentFlags`.
+its value, and a line in the documentation: the settings rows name
+`{{branch}}` as an example rather than the list, so nothing in the app tells
+anyone the new one exists. Flags are stored per agent id and split into words
+by `AgentFlags`.
 
 **A tab strip measurement.** `UIMetrics.tabMinWidth` and `tabMaxWidth` bound
 what a tab is drawn at; `TabStripLayout` divides the strip by them.
@@ -57,15 +58,16 @@ UIMetricsTests, in MetricsAndColourTests.swift, checks across the font-size
 range that the floor leaves room for side padding, dot or icon, gap and close
 button with something over for the title, and that `tabArrowWidth` holds its
 own glyph with two gutters still leaving room for a tab.
-`TabStripLayout.Edges` = which end has more past
-it; `stepTarget` = which tab its arrow scrolls to. `newTabWidth` and both
-gutters come off the room first, so nothing measures itself.
+`TabStripLayout.Edges` = which end has more past it; `stepTarget` = which tab
+its arrow scrolls to. `newTabWidth` and both gutters come off the room first,
+so nothing measures itself.
 
 **A column on the Agents board.** A case in `AgentBoardLane`, in draw order,
-with its title, the state whose colour its header wears, and a line in
-`AgentBoardLane.of`, total over `SessionState` so a state with no column is a
-compile error. Four columns already need ~1135pt of window against a 720
-minimum; a fifth pushes that to ~1355.
+with its title, the state whose colour its header wears (`headerState`), and a
+line in `AgentBoardLane.of`, total over `SessionState` so a state with no
+column is a compile error. `summarised` = the lanes the sidebar count covers;
+Idle is left off it. Four columns already need ~1135pt of window against a
+720 minimum; a fifth pushes that to ~1355.
 
 **A fact on a board card.** A field on `AgentBoardCard`, filled in
 `AppModel.agentBoardCards`, a line in AgentCardView and in
@@ -95,12 +97,12 @@ group. Must exist as far back as macOS 14, the deployment target; a name that
 does not resolve draws nothing at all rather than failing. Check
 `/System/Library/CoreServices/CoreGlyphs.bundle/Contents/Resources/name_availability.plist`,
 whose `year_to_release` maps the year beside each symbol to the macOS it
-shipped in. ProjectIconSymbolTests then resolves every name through AppKit,
+shipped in. ProjectIconSymbolTests resolves every name through AppKit,
 catching a typo but not a symbol too new for the target, the test machine
 being newer. The picker has no search, so a symbol is found by eye: put it in
-the group someone would look in. Also: no more than twice as wide as tall,
-the sidebar drawing it in a square SwiftUI does not clip;
-ProjectIconSymbolTests measures every one through AppKit.
+the group someone would look in. Width: the sidebar draws a symbol in a
+17-point square SwiftUI does not clip, so the same test holds every name to
+22 points wide at 11-point size, the widest the app shipped with.
 
 **A way of ordering worktree rows.** A case in `WorktreeSortOrder` with its
 display name, a comparison in `WorktreeOrder.precedes`, a case in
@@ -119,8 +121,9 @@ SessionEnvironment if carried by a variable, as zsh's `ZDOTDIR` is). It calls
 --duration S`, and does nothing when `MULTISHELL_SESSION` is unset. Add it to
 `ShellCatalogue.searched` if Homebrew leaves it out of `/etc/shells`.
 
-**A platform GUI.** Depend on the four libraries, fix `AppModel<Surface>` to
-the platform's view type once, implement `Platform`, `TerminalSurfaceHost`,
+**A platform GUI.** Depend on the library products as
+`Apps/macOS/Package.swift` does, fix `AppModel<Surface>` to the platform's
+view type once, implement `Platform`, `TerminalSurfaceHost`,
 `DirectoryWatcher` (inotify on Linux) and `SessionNotifier`. `moveToTrash` may
 delete outright until the platform has a Trash. A notifier posting without
 anyone's permission answers `unavailable` to both authorization questions, and
@@ -165,28 +168,28 @@ elsewhere. An override is an `OverrideSection`, naming the key path once. Help
 goes behind an `InfoButton`; a `SettingsCaption` is only for a value computed
 live.
 
-**A user-visible string.** A line in the catalogue of the half that says
-it, in key order, and `t("the.key")` where the words are wanted. A word in
-a view goes in
-`Apps/macOS/Sources/Multishell/Resources/en.lproj/Localizable.strings`; one
-in a library goes in
-`Sources/MultishellCore/Resources/en.lproj/Localizable.strings`; a word
-both say is written in both, and app code never reads the libraries'
-catalogue.
+**A user-visible string.** A line in the catalogue of the half that says it,
+in key order, and `t("the.key")` where the words are wanted. A word in a view
+goes in `Apps/macOS/Sources/Multishell/Resources/en.lproj/Localizable.strings`;
+one in a library goes in
+`Sources/MultishellCore/Resources/en.lproj/Localizable.strings`; a word both
+say is written in both, and app code never reads the libraries' catalogue.
 TranslationTests, one per half, fails a key its catalogue has not got, an
-entry nothing asks for, and a call that passes the wrong number of
-arguments. A form whose wording turns on a number goes in
-`Localizable.stringsdict` instead, with `one` and `other`, and takes the
-number like any other argument; two or more arguments have to be numbered,
-`%1$@ %2$@`. Views say `Text(t("the.key"))`, never a literal.
+entry nothing asks for, and a call that passes the wrong number of arguments.
+A form whose wording turns on a number goes in `Localizable.stringsdict`
+instead, with `one` and `other`, and takes the number like any other
+argument; two or more arguments have to be numbered, `%1$@ %2$@`. Views say
+`Text(t("the.key"))`, never a literal.
 
 **A language.** A `<code>.lproj` beside `en.lproj` in both halves, each with
 both files translated, and a `.process` line for it in each half's manifest,
-`Package.swift` and `Apps/macOS/Package.swift`; `make-app.sh` puts the
-code in `CFBundleLocalizations` from the folder alone, which is what makes
-it pickable in System Settings. The permission strings macOS shows are not
-in the catalogue: they are an `InfoPlist.strings` under
-`Apps/macOS/Resources/<code>.lproj`.
+`Package.swift` and `Apps/macOS/Package.swift`; `make-app.sh` puts the code in
+`CFBundleLocalizations` from the folder alone, which is what makes it pickable
+in System Settings. The permission strings macOS shows are not in the
+catalogue: they are an `InfoPlist.strings` beside the app half's
+`Localizable.strings`, which `make-app.sh` copies on its own into
+`Contents/Resources/<code>.lproj`, the one file there macOS reads through
+`Bundle.main`.
 
 **A notified state.** A toggle in `NotificationPreference`, whose subscript
 answers for every state so a caller can hand it whatever was reported.

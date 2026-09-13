@@ -19,16 +19,16 @@ Every refresh replaces a project's whole worktree list -> a name written onto
 workspace, cleared wherever the store forgets a worktree.
 
 Branch never replaced, only demoted: every git command in that directory acts
-on the branch, so a row that hid it would lie. Removal dialog names branch and
-path in its body, where what cannot be undone belongs.
+on the branch, so a row that hid it would lie. The removal dialog names branch
+and path in its body, where what cannot be undone belongs.
 
 ## The trunk row holds the top, whatever the sort says
 
 WorktreeOrder sorts in bands before sorting within one: git's main worktree,
 then a linked worktree checked out on the trunk, then the busy ones if the user
-asked, then the rest. The trunk row is what every other worktree is read
-against. Two bands, because in a bare clone with its worktrees beside it the
-trunk is a linked worktree.
+asked, then the rest. The trunk is what every other row is read against. Two
+bands because in a bare clone with its worktrees beside it the trunk is a
+linked worktree.
 
 Trunk = `DefaultBranch.branch`, the answer the badges use, falling back to
 `main` then `master` until the first scan resolves one. Cost: a `develop`
@@ -43,8 +43,8 @@ Last commit is runtime state instead, the workspace not being rewritten because
 someone committed. The orders are named for the commit because that is what
 they measure: a week of uncommitted work does not move a row. Rides the
 `for-each-ref` the badges already run, as `%(committerdate:unix)`; git fails a
-whole query on an unknown format atom -> `branchRefs` asks again without it when
-the first call fails, else an old git would cost every badge.
+whole query on an unknown format atom -> `branchRefs` asks again without it,
+else an old git would cost every badge.
 
 A worktree with no date sorts last in *both* directions: "oldest created first"
 is not a claim that an undated worktree is the oldest. Name breaks ties, and is
@@ -65,15 +65,17 @@ the main actor: a share with no `.Trashes` walks a `node_modules` for as long
 as it takes, and the window stood still for it.
 
 Once the directory has gone, `git worktree remove --force --force <path>`
-forgets that one record, lock and all; with nothing left to unlink that is all
-it can do, and the coordinator checks the directory is gone before asking, a
-Trash that returned with it in place being a failed removal. It was `git worktree prune`, which forgets every record whose
-directory is away at that moment, an unmounted drive's included: the drive
-came back to a `.git` file naming a gitdir that was gone, and `worktree
-repair` did not bring it back. Prune stays as the fallback for a path git
-cannot match to a record, the one case it is the only way. The lock is never
-taken off before the trash, so a Trash that refuses leaves the worktree as it
-was, reason and all.
+forgets that one record, lock and all. The coordinator checks the directory is
+gone before asking: with it still there the forget would unlink it, so a Trash
+that returned with it in place is a failed removal. The lock is never taken
+off before the trash, so a Trash that refuses leaves the worktree as it was,
+reason and all.
+
+It was `git worktree prune`, which forgets every record whose directory is
+away at that moment, an unmounted drive's included: the drive came back to a
+`.git` file naming a gitdir that was gone, and `worktree repair` did not bring
+it back. Prune stays as the fallback for a path git cannot match to a record,
+the one case it is the only way.
 
 Whether a removal asks at all is a global setting, about the person and not the
 repo, but it always asks about the branch, the one part the sidebar cannot
@@ -89,16 +91,16 @@ operation with no way back.
 
 Nothing between the sheet and `git worktree add` used to judge the name, so
 `my branch` or `feat.lock` ran the pre-create hook before git refused at the
-end of it. `GitRefName` is
-`check-ref-format`'s rules in Swift, since the sheet asks on every keystroke
-and a process per keystroke is not worth it; a test holds it against real git
-over a table of names. Create is off for a name it refuses and the sheet says
-why, and `WorktreeCoordinator.add` throws before the hook for a caller that
-did not ask. An existing branch is held to the same rules: the check used to
-run only when a branch was being created, so an API caller passing an empty
-or malformed name ran the pre-create hook with `MULTISHELL_BRANCH` empty and
-was refused by git after. Cost: `HEAD` or a remote ref, which git would have
-checked out detached, is refused too; the path is for a branch that exists.
+end of it. `GitRefName` is `check-ref-format`'s rules in Swift, the sheet
+asking on every keystroke and a process per keystroke not being worth it; a
+test holds it against real git over a table of names. Create is off for a name
+it refuses and the sheet says why, and `WorktreeCoordinator.add` throws before
+the hook for a caller that did not ask. An existing branch is held to the same
+rules: the check used to run only when a branch was being created, so an API
+caller passing an empty or malformed name ran the pre-create hook with
+`MULTISHELL_BRANCH` empty and was refused by git after. Cost: `HEAD` or a
+remote ref, which git would have checked out detached, is refused too; the
+path is for a branch that exists.
 
 ## A bare repository is a project
 
@@ -122,10 +124,10 @@ The create and remove stages are keyed by worktree, and a worktree is its path,
 so an entry outlives the row it belonged to: a worktree made again at the same
 path inherits it. A stage that finishes clears its entry either way, but one
 that fails had nowhere to say so and left the entry running, which reads as
-busy. That worktree then opens no shell, refuses removal, and shows a Cancel
-whose stopper was already cleared, until the app is relaunched. So a failure
-with the worktree gone clears the entry and raises an alert instead, there
-being no pane left to put the message on.
+busy: no shell opens there, removal is refused, and Cancel finds a stopper
+already cleared, until relaunch. So a failure with the worktree gone ends its
+own entry and raises an alert instead, there being no pane left to put the
+message on. Its own: a removal that has since taken the entry keeps it.
 
 ## The worktree list is read NUL-terminated
 

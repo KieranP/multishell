@@ -8,19 +8,20 @@ Newest at the bottom.
 Neither engine can say a command is running -> engine activity means only what
 Terminal.app's dot means, something happened here. Working and Waiting come
 from reports alone. Exit code above 128 = a signal, usually Ctrl+C, not a
-failure. Done is about the user -> being seen clears it, which is the tab on screen
-and the app in front, one notion shared with the banner so the dot and the
-notification cannot disagree about whether anyone looked; a pane can be the
-shown one for hours with the window behind another app. Working and Waiting
-are about the process -> they stay while the user looks. Failed takes half
-of each: a failure is something to act on and a glance is not acting -> it
-survives being seen as Working and Waiting do, and survives the process
-dying as Done does, the thing that failed being gone by definition. Red
-until the source reports again or the user clears it by hand. Cost: a
-failure nobody deals with holds its dot until the shell is closed, which is
-the point. The banner goes on the look either way, an interruption being
-spent once it has interrupted.
-Ctrl+C sends no Stop -> reports carry a pid the app watches. No timeout, a long
+failure. Done is about the user -> being seen clears it, which is the tab on
+screen and the app in front, one notion shared with the banner so the dot and
+the notification cannot disagree about whether anyone looked; a pane can be
+the shown one for hours with the window behind another app. Working and
+Waiting are about the process -> they stay while the user looks. Failed takes
+half of each: a failure is something to act on and a glance is not acting ->
+it survives being seen as Working and Waiting do, and survives the process
+dying as Done does, the thing that failed being gone by definition. Red until
+the source reports again or the user clears it by hand. Cost: a failure nobody
+deals with holds its dot until the shell is closed, which is the point. The
+banner goes on the look either way, an interruption being spent once it has
+interrupted.
+
+Ctrl+C sends no Stop -> reports carry a pid the app polls. No timeout, a long
 task not being a stale one. Cost: Cmd+W on a Working pane asks first.
 
 ## A closed tab ends its shell, next turn
@@ -28,28 +29,29 @@ task not being a stale one. Cost: Cmd+W on a Working pane asks first.
 libghostty no longer frees a surface in the view's `deinit`, the view outlives
 any SwiftUI frame that adopted it, and on a process exit `close` runs inside
 libghostty's own callback, where freeing the surface would free the object
-mid-call. SwiftTerm cancels the monitor that would have reaped the child -> the
-host reaps with `waitpid` itself. No signal to a child that already exited: the
-pid may have been reissued.
+mid-call. SwiftTerm's `terminate` cancels the monitor that would have reaped
+the child -> the host reaps with `waitpid` itself, `SIGKILL` after a grace.
+No signal to a child that already exited: the pid may have been reissued.
 
 ## Shell integration is injected, never written to a user's file
 
-Generated per session, reached through `ZDOTDIR` or `--init-file`, helper behind
-a symlink refreshed at launch so a moved bundle breaks no hook line. An agent's
+Written at launch into the app's own directory, one `ZDOTDIR` and one
+`--init-file` every session is pointed at; the helper sits behind a symlink
+refreshed at the same time, so a moved bundle breaks no hook line. An agent's
 hooks are the one exception: appended on the user's click, copy kept. Under
-Ghostty bash goes through `/bin/sh -c 'exec bash ...'`, Ghostty keying its own
-injection on the command's first word and adding `--posix`, under which macOS's
-bash 3.2 reads neither file.
+Ghostty bash goes through `/bin/sh -c 'exec bash ...'`, Ghostty keying its
+own injection on the command's first word and adding `--posix`, under which
+macOS's bash 3.2 reads neither file.
 
 A session starts as Terminal.app's does, with no `ZDOTDIR` of the user's, and
 the chain picks up one their own files set: `.zshenv` and `.zprofile` each
 capture what they left, `.zshrc` hands it back. The login shell's captured
-environment is not handed in as the user's, though it would carry a
-`ZDOTDIR` set in either file: our `.zshenv` would then source
-`$ZDOTDIR/.zshenv` in place of `~/.zshenv`, skipping the file that set it and
-whatever else it exported, for everyone on the documented route. Cost: a
-`ZDOTDIR` set in `/etc/zprofile` redirects zsh past our remaining files, as it
-would past any, and that tab has no hooks.
+environment is not handed in as the user's, though it would carry a `ZDOTDIR`
+set in either file: our `.zshenv` would then source `$ZDOTDIR/.zshenv` in
+place of `~/.zshenv`, skipping the file that set it and whatever else it
+exported, for everyone on the documented route. Cost: a `ZDOTDIR` set in
+`/etc/zprofile` redirects zsh past our remaining files, as it would past any,
+and that tab has no hooks.
 
 `--init-file` is read in place of `.bashrc`, so the generated file reproduces a
 login shell's chain itself: `/etc/profile`, then the first of `.bash_profile`,
@@ -72,10 +74,9 @@ subshell per prompt.
 
 Theirs is unquoted before it is kept, `trap -p` printing a body quoted for
 re-input: eval of a body still wearing its quotes runs the whole of it as one
-word, which for
-every real trap body is a line of shell complaint per command rather than the
-call it was meant to be. That held for the `.bashrc` trap this has always
-chained to, not just for a later one.
+word, which for every real trap body is a line of shell complaint per command
+rather than the call it was meant to be. That held for the `.bashrc` trap this
+has always chained to, not just for a later one.
 
 `_multishell_precmd` ends by returning the status it was given: bash does not
 restore `$?` between `PROMPT_COMMAND` entries, so a prompt of the user's that
@@ -129,9 +130,10 @@ Pane takes focus only if still on screen when the files land, since focus
 switches and saves the worktree's tab.
 
 A copy macOS made for this app is asked for again through its promise, into a
-directory of ours swept once a week, because such a copy can sit somewhere the
-app can read and the pane's shell cannot. Only a copy is refused, a copy not
-being the file, recognised by the marks it carries rather than by reading it.
+directory of ours swept of drops older than a week, because such a copy can
+sit somewhere the app can read and the pane's shell cannot. Only a copy is
+refused, a copy not being the file, recognised by the `TemporaryItems` and
+`NSIRD_` marks it carries rather than by reading it.
 
 Costs: a promised drop cannot be refused back to the drag; a copy macOS stops
 marking is pasted as a path again; a file whose name a terminal would act on
@@ -141,11 +143,12 @@ must be typed.
 
 Ids are strings -> a newer build's agent loads harmlessly on an older one, and
 a custom shell is an id rather than a typed path, which would show as "not
-installed" whether it exists or not. An agent launches as `agent; exec <shell>
--l`, so it is found on the terminal's PATH and a shell remains with the
-scrollback. A session off disk resumes rather than starts: four saved agent tabs
-must not start four agents. Cost: a shell without `-l -i -c` (nu, xonsh) still
-gets `/bin/sh` for hooks.
+installed" whether it exists or not. An agent launches through the login
+shell, `-l -i -c 'agent; exec <shell>'`, the exec carrying the integration a
+fresh tab gets: the agent is found on the terminal's PATH and a shell remains
+with the scrollback. A session off disk resumes rather than starts: four saved
+agent tabs must not start four agents. Cost: a shell without `-l -i -c` (nu,
+xonsh) still gets `/bin/sh` for hooks.
 
 Agents live under Homebrew, npm or a version manager, none of which a
 Finder-launched app has on PATH -> one login-shell environment captured at
@@ -192,7 +195,7 @@ Not a list of what to refuse. The keys worth refusing are the ones about what
 runs and what a window is, and those are the keys a Ghostty release is
 likeliest to add another of -> a refusal list is one release behind, an
 allowance list is only ever missing a nicety. 117 of Ghostty 1.3.2's 207 keys
-are let through: whole families that can only draw or drive a surface
+are let through: fourteen families that can only draw or drive a surface
 (`font-`, `adjust-`, `cursor-`, `mouse-`, `selection-`, `palette`,
 `clipboard-`, `background`, `scrollback-`, `search-`, `bell-`, `link`,
 `resize-overlay`, `window-padding-`) which carry 86 between them, and
@@ -228,9 +231,9 @@ on the printf, zsh setting its locale once at startup and `LC_ALL` outranking
 `LC_NUMERIC` in any case. Clamped at zero for the same reason the separator
 matters: `%03d` of a negative prints its sign, so `0.-234` after a clock
 stepped back over a sleeping laptop would break the line exactly as a comma
-did. bash's `EPOCHREALTIME` carries the same separator, so the
-fraction there is cut at either one: matching a dot alone left the whole
-string in the arithmetic and reported a duration of six figures.
+did. bash's `EPOCHREALTIME` carries the same separator, so the fraction there
+is cut at either one: matching a dot alone left the whole string in the
+arithmetic and reported a duration of six figures.
 
 The worktree path goes onto the zsh-built line with its control characters
 written as `\u00XX`, and is built once at startup rather than per report.

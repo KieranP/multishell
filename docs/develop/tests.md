@@ -41,7 +41,7 @@ What each test catches, and the conventions a new one follows.
   pages of both settings windows out at 560 in an NSHostingView in an NSWindow
   never ordered in, and holds each to 600. No screen and no permission: what
   macOS gates is reading another process, not your own, and CI's runner has
-  the window server this needs. Two pages are left out and say why: Hooks
+  the window server this needs. Two pages are exempt and say why: Hooks
   scrolls on purpose, and Agent settings reads the machine on appear, so its
   height is the developer's rather than anyone's. Width is not checkable at
   all, a minimum-size measurement reporting where text stops wrapping rather
@@ -52,32 +52,32 @@ What each test catches, and the conventions a new one follows.
   `Localizable.stringsdict` both ways. One per catalogue, each over its own
   half: `Tests/MultishellCoreTests` over `Sources`, `Apps/macOS/Tests` over
   that app's. The app's also pins the shadowing the split rests on, that a
-  view's `t(_:_:)` is the app's own and answers from the app's catalogue,
-  and that the handful of words written in both catalogues still read the
-  same in both, which is the app's to check because the libraries do not
-  know a frontend exists. It also counts each call's arguments
-  against the placeholders in its phrase, which is what the compiler would
-  have done had the keys been an enum, fails a phrase taking several
-  arguments that does not number them, and refuses a `%s`, which takes a C
-  string and would be a crash rather than a wrong word. Every counted form
-  is rendered at one and at many, since a stringsdict whose format key does
-  not name its own sub-dictionary answers with the raw format and only two
-  of the ten were exercised by what they say. It expects to find over a hundred
-  call sites, so a scan that has lost the source tree fails rather than
-  passes, and it reads the file as text as well as parsed, to catch an
-  entry written twice, which loads as one without a word, and one left
-  blank, which every other check here passes and shows nothing. The keys come off the source and the words out of the built
-  bundle, which can be a copy made before the edit: one check compares the
-  two files byte for byte, so `swift test --skip-build` after changing the
-  catalogue says so instead of passing on what is no longer there.
+  view's `t(_:_:)` is the app's own and answers from the app's catalogue, and
+  that the words written in both catalogues read the same in both, which is
+  the app's to check because the libraries do not know a frontend exists.
+  Each counts a call's arguments against the placeholders in its phrase, as
+  the compiler would have had the keys been an enum, fails a phrase taking
+  several arguments that does not number them, and refuses a `%s`, which
+  takes a C string and would be a crash rather than a wrong word. Every
+  counted form is rendered at one and at many, since a stringsdict whose
+  format key does not name its own sub-dictionary answers with the raw format
+  and only two of the ten were exercised by what they say. It expects over a
+  hundred call sites, so a scan that has lost the source tree fails rather
+  than passes, and it reads the file as text as well as parsed, to catch an
+  entry written twice, which loads as one without a word, and one left blank,
+  which every other check passes and shows nothing. The keys come off the
+  source and the words out of the built bundle, which can be a copy made
+  before the edit: one check compares the two files byte for byte, so `swift
+  test --skip-build` after changing the catalogue says so instead of passing
+  on what is no longer there.
 - State that will not open, not just will not decode, is moved aside, and a
   file that cannot be moved either is never saved over: PersistenceTests, one
   unreadable file and one in a directory that takes no rename.
 - The user's git config cannot change what a read means, and a tag sharing a
-  branch's name decides nothing: GitRunnerTests reads the two isolated keys
-  back through `git config --get` and watches an all-untracked worktree read
-  dirty; WorktreeMergeTests ties a tag to a merged branch. That fixture merges
-  by refname, or git takes the tag and nothing lands.
+  branch's name decides nothing: GitRunnerConfigurationTests reads the two
+  isolated keys back through `git config --get` and watches an all-untracked
+  worktree read dirty; WorktreeMergeTests ties a tag to a merged branch. That
+  fixture merges by refname, or git takes the tag and nothing lands.
 - Remove leaves a hook the user put in our own group: AgentHooksTests.
 - A poll reconciles without taking the keyboard, and a cross-column drop takes
   it with the tab: AppModelGitTests removes a worktree behind the app's back,
@@ -144,9 +144,10 @@ What each test catches, and the conventions a new one follows.
   firing after the trap came back, not the one at the prompt it arrived at,
   and a body naming a path it cannot reach: run as one word, bash says so
   once per command.
-- git's own children are looked up on the login PATH: GitRunnerTests, through
-  an alias that runs a helper on a PATH of the test's own; the same runner
-  without it fails, which is what makes the pass mean something.
+- git's own children are looked up on the login PATH:
+  GitRunnerConfigurationTests, through an alias that runs a helper on a PATH
+  of the test's own; the same runner without it fails, which is what makes
+  the pass mean something.
 - A launched command is given no pipes, so a shim that holds the editor open
   holds no descriptors: ProcessRunnerTests asks the shell whether its own
   stdout is a pipe, counting them in a process this busy being hopeless.
@@ -166,11 +167,11 @@ What each test catches, and the conventions a new one follows.
 - A placeholder inside a value is not expanded again: AgentFlagsTests.
 - An item promising two files is not delivered on the first: PromisedDropTests.
 - A live socket whose accept backlog is full is not taken for a dead one:
-  UnixSocketTests, the server's queue blocked and the backlog filled by hand.
-  The same suite starts a live server twice and has a second process try the
-  claim, a process's own record locks never conflicting with each other, and
-  holds the path limit to the staging name's, 102 and 103 bytes refused under
-  the socket's own name where 101 binds.
+  UnixSocketServerTests, the server's queue blocked and the backlog filled by
+  hand. The same suite starts a live server twice and has a second process
+  try the claim, a process's own record locks never conflicting with each
+  other, and holds the path limit to the staging name's, 102 and 103 bytes
+  refused under the socket's own name where 101 binds.
 - The pid the helper reports stops short of the app: HelperTests, two real
   `sh -c` layers under the test process posing as the app, the report naming
   the outer shell; ProcessAncestryTests has the walk on its own. The model's
@@ -208,12 +209,11 @@ What each test catches, and the conventions a new one follows.
   returned before a hook finished is read off the state it returned in. Both
   were wall-clock bounds first, and both flaked.
 - A bound that is left tells one outcome from another, not a fast machine
-  from a slow one: the child sleeps thirty seconds and the bound is ten, so
-  what fails it is the stop never arriving. Sizing a bound to a measured
-  figure plus headroom is what to avoid; it is the runner's mood that decides
-  it. `make test` holds a lock across worktrees for the same reason; a bare
-  `swift test` does not, so two of those at once is the one way left to fail
-  a bound on a fast machine.
+  from a slow one: the child sleeps thirty seconds and the bound is twelve, so
+  what fails it is the stop never arriving. Do not size a bound to a measured
+  figure plus headroom; the runner's mood decides that. `make test` holds a
+  lock across worktrees for the same reason; a bare `swift test` does not, so
+  two of those at once is the one way left to fail a bound on a fast machine.
 - A test that reads something process-wide, the open descriptor count being
   the one so far, is reading the other suites too: they run beside it in the
   same process. Take the lowest of several seconds of samples rather than one

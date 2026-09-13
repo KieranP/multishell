@@ -17,16 +17,17 @@ One path for tab open, tab close, worktree removed, project removed, process
 exited, relaunch. Cost: a session that fails to open is removed after, not
 prevented.
 
-One function with a `takingFocus` flag, because a poll reaches this too.
+One function, `reconcileSessions(takingFocus:)`, because a poll reaches it too.
 Without focus it brings the surfaces in line and leaves the keyboard alone;
 with it, it also focuses the active session and marks what is shown as seen,
 and only a user's own action passes it. It was two functions, `sync` and
-`reconcileSessions`, and the name said nothing about which took the keyboard. A refresh runs from the watcher and from any branch moving, so
-focusing there takes first responder off whatever the user is typing in, the
-sidebar filter included, every few seconds. A refresh still has to reconcile: a
-worktree removed outside the app loses its tabs and sessions in the store, and
-without it the host keeps the surfaces and the shells run on with nothing able
-to reach them.
+`reconcileSessions`, and the names said nothing about which took the keyboard.
+A refresh runs from the watcher and from any branch moving, so focusing there
+takes first responder off whatever the user is typing in, the sidebar filter
+included, every few seconds. A refresh still has to reconcile: a worktree
+removed outside the app loses its tabs and sessions in the store, and without
+it the host keeps the surfaces and the shells run on with nothing able to reach
+them.
 
 ## Identity is the path
 
@@ -46,7 +47,8 @@ someone whose terminals all have one. That PATH arrives after the coordinator
 is built, so the lookup is made twice: once at launch, and again when the login
 environment lands, which takes the launch report back if it finds git. Cost: a
 user with no git at all sees the alert a moment before it is confirmed, and the
-second lookup stats the PATH on the main actor beside the other detections.
+second lookup stats the PATH on the main actor, the other detections having
+moved off it.
 
 That PATH rides on the runner as well, so every git child is looked up on it
 too: a checkout runs `git-lfs`, a fetch runs a credential helper, a diff runs

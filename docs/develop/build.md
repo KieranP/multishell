@@ -1,7 +1,5 @@
 # Building, running, verifying
 
-How to build and test, and the limit of what an agent can check.
-
 ## Requirements
 
 Xcode 26 with Swift 6 (`sudo xcode-select -s /Applications/Xcode.app` if only
@@ -9,20 +7,25 @@ the command line tools are active). `git` on PATH.
 
 ## Build, test, run
 
-    make signing-identity  # once per machine, before the first build
-    make test              # libraries and model, then the Mac hosts
-    make test-app          # compile the macOS app without bundling
-    make build             # -> build/Multishell.app; CONFIG=release for optimised
-    make run               # build and open it
-    make install           # release build to /Applications (INSTALL_DIR= to change)
-    make format            # rewrite to project style; run before reading a diff
-    make lint              # what CI runs, --strict: a warning fails
+```sh
+make signing-identity  # once per machine, before the first build
+make test              # libraries and model, then the Mac hosts
+make test-app          # compile the macOS app without bundling
+make build             # -> build/Multishell.app; CONFIG=release for optimised
+make release           # the same, optimised
+make run               # build and open it
+make install           # release build to /Applications (INSTALL_DIR= to change)
+make format            # rewrite to project style; run before reading a diff
+make lint              # what CI runs, --strict: a warning fails
+```
 
-`Scripts/make-app.sh`: wraps the SwiftPM binary in a bundle, copies SwiftPM
+`Scripts/make-app.sh` wraps the SwiftPM binary in a bundle, copies SwiftPM
 resource bundles into `Contents/Resources` (libghostty's terminfo must be
-there), builds the helper into `Contents/Helpers`, signs both. Version written
-= the commit built from, `-dirty` for a modified tree. First app build
-downloads the libghostty xcframework, ~80 MB.
+there), builds the helper into `Contents/Helpers`, writes the Info.plist and
+signs both. `CFBundleShortVersionString` = `<commit date>-<short sha>`,
+`-dirty` for a modified tree; `CFBundleVersion` = the commit count, that key
+taking digits and dots only. First app build downloads the libghostty
+xcframework, ~80 MB.
 
 `make signing-identity` creates the self-signed `Multishell Dev` certificate;
 without it the build signs ad hoc and says so. Not for distribution: it is so
@@ -35,16 +38,17 @@ several of their bounds being wall-clock. So `make test` compiles with
 `--build-tests`, unguarded, then runs with `--skip-build` under `lockf` on
 `~/Library/Caches/multishell-test.lock`: a second worktree compiles alongside
 the first and waits, without saying so, only for its turn to run. A bare
-`swift test` takes no lock. Nothing caps the compiler's own parallelism
-either, so three full builds at once still oversubscribe the machine; `-j` if
-that bites.
+`swift test` takes no lock. Nothing caps the compiler's own parallelism, so
+three full builds at once still oversubscribe the machine; `-j` if that bites.
 
 A debug bundle built in a worktree names that worktree in its state file and
 socket (`state-on-disk.md`), so two of them can run at once. It still reads
 its resources from that worktree, which the build says as it finishes
 (`known-gaps.md` has why).
 
-CI: builds and tests libraries and app on macOS, then `make lint`.
+CI: three jobs on `macos-15`, in parallel: `swift build` and `swift test` for
+the root package, the same for `Apps/macOS`, and `make lint`. CI runs
+`swift test` directly, so it takes no lock.
 
 ## Before you say something works
 

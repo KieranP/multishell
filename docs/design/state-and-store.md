@@ -28,8 +28,8 @@ with the decode, so a file that exists and will not open, root-owned after a
 restore under `sudo`, is moved to `.broken.json` and named in the alert. It is
 the move that frees the path to be written, and `.atomic` renames over the
 destination on the directory's permission rather than the file's, so without it
-the first autosave, which a mutation in `AppModel.init` alone is enough to
-schedule, replaces the user's projects with an empty workspace and no copy.
+the first autosave replaces the user's projects with an empty workspace and no
+copy.
 
 Where even the move fails the state is still where a save would land, so
 `WorkspaceStore.refusesToSave` turns saving off for the session. Silent, the

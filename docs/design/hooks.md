@@ -8,11 +8,11 @@ Newest at the bottom.
 Context in env vars -> nothing needs quoting. Shell is login *and* interactive,
 or a Finder-launched app's bare PATH fails `npm install` for anyone on Homebrew
 or a version manager; `set -e` inside the script, after the rc files. A running
-hook shows in the pane, not a modal, which would hold the window. Stopped through ProcessStopper, never
-`Process.terminate()`: SIGHUP to the child's process group then SIGKILL,
-interactive shells ignoring SIGTERM and a shell with no terminal not passing
-SIGHUP to its job. Cost: startup time, stderr noise from rc files under `-i`, a failed
-hook holds its worktree until Dismiss.
+hook shows in the pane, not a modal, which would hold the window. Stopped
+through ProcessStopper, never `Process.terminate()`: SIGHUP to the child's
+process group then SIGKILL, interactive shells ignoring SIGTERM and a shell
+with no terminal not passing SIGHUP to its job. Cost: startup time, stderr
+noise from rc files under `-i`, a failed hook holds its worktree until Dismiss.
 
 ## A new worktree is given files by a list, not a hook
 

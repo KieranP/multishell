@@ -45,8 +45,8 @@ Newest at the bottom.
   in the core: where to lift a refusal comes from `Platform`, and one that never
   asks answers `unavailable`, which keeps the page from promising a dialog
   nobody will see.
-- Debug builds keep their own state file, socket and integration directory, so
-  `make run` beside the installed app touches neither.
+- Debug builds keep their own state file, socket, integration and drops
+  directories, so `make run` beside the installed app touches none of them.
 - The app package names its path dependency rather than only pointing at it.
   SwiftPM identifies a local package by its directory, which is `multishell` in
   a checkout and the branch's name in a worktree -> the unnamed form built from
@@ -61,12 +61,12 @@ Newest at the bottom.
   search over English words for what each symbol is used for, an SF Symbol
   being named for its picture; taken out rather than translated, since it made
   every other language search words it could not see, for a palette small
-  enough to read by eye.
-  Emoji, which a field beside the menu once set, are gone: they looked out of
-  place, and a glyph is now a symbol name or nothing, one rule read the same way
-  everywhere, so a leftover emoji neither masks the icon a repo's shared file
-  names nor is written back into it. Cost: a project that had one draws the
-  folder. What a new name must satisfy is in `docs/develop/adding.md`.
+  enough to read by eye. Emoji, which a field beside the menu once set, are
+  gone: they looked out of place, and a glyph is now a symbol name or nothing,
+  one rule read the same way everywhere, so a leftover emoji neither masks the
+  icon a repo's shared file names nor is written back into it. Cost: a project
+  that had one draws the folder. What a new name must satisfy is in
+  `docs/develop/adding.md`.
 - One WorktreeActions menu serves the detail header, the sidebar's context menu
   and a board card's, the last under a heading naming the worktree, since the
   card carries a Clear Status of its own for the pane and two unlabelled ones
@@ -85,19 +85,19 @@ Newest at the bottom.
   one pane described the same pane four times, three of them wrong by the
   time they were read. The `identifier` and not `threadIdentifier`, which
   groups rows without retiring stale ones. A banner is also taken back when
-  what it said stops being true, which is either the key's state moving on
-  or the user reaching the pane: Waiting survives being looked at, its
-  question still standing, but the interruption has been answered by the
-  arrival. Reaching it is `isSeen`, the pane on screen and the app in front,
-  which is now the only notion of seen there is: `shouldNotify` took a
-  shown flag and an active flag and the state rules took the shown one
-  alone, so a turn ending in the shown pane while the user was in another
-  app raised a banner and cleared the dot in the same breath, each of them
-  right by its own rule. One flag, computed once per report. Coming back to
-  the app is therefore a look, alongside selecting, activating and closing
-  the board, and a shell exiting while the user is elsewhere is not. Only
-  Done clears on the look: Failed keeps its dot, so the banner and the dot
-  say different things about one pane on purpose, the interruption spent and
-  the thing to deal with still there. The model keeps the keys it has posted about so nothing is taken
-  back that was never there. Cost: a Done nobody looked at disappears when
-  the next state lands, the dot being the thing that persists.
+  what it said stops being true: the key's state moving on, or the user
+  reaching the pane. Waiting survives being looked at, its question still
+  standing, but the interruption has been answered by the arrival. Reaching
+  it is `isSeen`, the pane on screen and the app in front, the only notion of
+  seen there is: `shouldNotify` once took a shown flag and an active flag and
+  the state rules took the shown one alone, so a turn ending in the shown pane
+  while the user was in another app raised a banner and cleared the dot in the
+  same breath, each right by its own rule. One flag, computed once per report.
+  Coming back to the app is therefore a look, alongside selecting, activating
+  and closing the board; a shell exiting while the user is elsewhere is not.
+  Only Done clears on the look: Failed keeps its dot, so the banner and the
+  dot say different things about one pane on purpose, the interruption spent
+  and the thing to deal with still there. The model keeps the keys it has
+  posted about, so nothing is taken back that was never there. Cost: a Done
+  nobody looked at disappears when the next state lands, the dot being the
+  thing that persists.

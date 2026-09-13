@@ -6,7 +6,8 @@ Newest at the bottom.
 ## Tabs own a pane tree, from day one
 
 -> splits, added later, were a renderer change with no schema change. Same-axis
-split adds a sibling and halves the focused pane, as tmux and iTerm do.
+split adds a sibling and halves the focused pane, as tmux and iTerm do; another
+axis nests.
 
 ## A tab dragged to a worktree moves, does not re-open
 
@@ -15,9 +16,9 @@ which shell = the destination's to decide, else next launch opens one project's
 shell in another's checkout. Live tab turned to on landing -> destination stays
 warm. Own pasteboard type, TabTransfer, spelled both in that file and in the
 `Info.plist` `make-app.sh` writes, since projects drag as text to reorder and
-one type for both would offer each drag the other's targets. Costs: shell stays in its
-old directory until the user cds -> a dropped file writes against the tab's new
-worktree; a worktree left with no tabs loses what was on screen.
+one type for both would offer each drag the other's targets. Costs: shell stays
+in its old directory until the user cds -> a dropped file writes against the
+tab's new worktree; a worktree left with no tabs loses what was on screen.
 
 ## A worktree's tabs sit in columns, a column only ever beside another
 
@@ -40,12 +41,15 @@ focus to the column that slid into its place, which is what a strip does when
 the active tab closes. Weights are relative -> the rest come back in proportion,
 nothing to renormalise.
 
-Only the edges of a terminal area take a tab. A band down each side makes a
-column on that side; the space between offers nothing, the strip above being
-where a tab goes to join a column, and a target over every terminal in the
-window would be a second way to do that, drawn over everything. A band refuses
-where halving the column would put either half under the minimum a pane already
-has -> the drag springs back rather than making two columns nobody can read.
+Only a band down each edge of a terminal area is drawn as a target; a drop on
+one makes a column on that side. The area between takes a drop too, the tab
+landing last in that column as it does on the strip clear of its tabs, but
+lights nothing: a release that reaches no target of ours leaves a highlight on
+screen with no drag behind it, so a target has to be there, and a lit one over
+every terminal in the window would be a second way to do what the strip does.
+A band refuses where halving the column would put either half under the
+minimum a pane already has -> the drag springs back rather than making two
+columns nobody can read.
 
 `activeTab(in: worktree)` is the focused column's, which is what a keystroke,
 a split and a rename act on; `shownTabs(in:)` is every column's, which is what
@@ -55,14 +59,14 @@ One pane in the window asks for the keyboard, not one per column: a surface
 given focus reports it back, which focuses its column, so two panes asking
 would leave the columns trading focus between renders.
 
-Costs: `activeTabByWorktree` has left the state file -> an older build reading a
-newer one forgets which tab each worktree had active. A tab written before
-columns existed names no group -> `repairReferences` gathers a worktree's
-ungrouped tabs into the one column they were saved as, and a hand edit that
-loses a column is repaired the same way rather than by dropping tabs. And
-everything meaning "the tab on screen" had to become "the tab on screen in this
-column": `isShown`, the Done state that clears when seen, the notification
-not raised because it was.
+Costs: `activeTabByWorktree` has left the state file, read now only as a legacy
+key -> an older build reading a newer one forgets which tab each worktree had
+active. A tab written before columns existed names no group ->
+`adoptUngroupedTabs` gathers a worktree's ungrouped tabs into the one column
+they were saved as, and a hand edit that loses a column is repaired the same
+way rather than by dropping tabs. And everything meaning "the tab on screen"
+had to become "the tab on screen in this column": `isShown`, the Done state
+that clears when seen, the notification not raised because it was.
 
 ## A dragged tab is its own preview
 
@@ -110,10 +114,12 @@ another. The floor belongs to the tab.
 The end with tabs past it carries an arrow, in a gutter of its own outside the
 scroller. An arrow over the tabs would either take the click meant for the tab
 under it or sit there looking like a button and doing nothing; a gutter costs
-the room an arrow needs and buys a control that actually scrolls, moving on by
-the first whole tab past that end, a tab counting as seen if any of it is. It
-was a fade at first, on the argument that a fade cannot be mistaken for a
-control, and the fade turned out too quiet to read as anything at all.
+the room an arrow needs and buys a control that actually scrolls, finishing the
+tab that end clips, else moving on to the first whole tab past it. Counting in
+whole tabs left the arrow dead over a half-shown tab, since the arrow is drawn
+from the same half point. It was a fade at first, on the argument that a fade
+cannot be mistaken for a control, and the fade turned out too quiet to read as
+anything at all.
 
 Both gutters keep their room whether an arrow is drawn or not -> tabs do not
 shift under the pointer as one end runs out, and that reserved room is what the
@@ -137,7 +143,7 @@ one shape where the shuffle could in principle cross a boundary twice.
 The drop activates the moved tab in the column it lands in, so whatever that
 column was showing goes behind it. Focus has to follow, or the first responder
 is a surface nobody can see and every keystroke after the drop goes into it.
-This is the one move that crossed columns without reconciling afterwards; the
+This was the one move that crossed columns without reconciling afterwards; the
 same pass is what marks the newly shown tab seen in the column the tab left,
 which otherwise keeps a Done dot and its banner over a tab that is now on
 screen.

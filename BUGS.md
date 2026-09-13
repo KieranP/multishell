@@ -2,12 +2,17 @@
 
 Open findings from a whole-repo review on 2026-09-13, against commit 7fa714f.
 
-No defects stand. The review found six, none High, each read a second time
-by a verifier working from the code as it is; all six have since been fixed
-and taken out.
+The review found six defects, none High, each read a second time by a
+verifier working from the code as it is; all six have since been fixed and
+taken out.
 
-What remains is thirty findings that are not defects: Perf, Design, Simplify,
-Reuse and Style. Those are one finder's reading each, kept as written and not
+Three defects stand, 84, 86 and 87, moved here from TODO.md's Issues list on
+2026-09-13. Those were written from use and from reading the code, not
+reproduced and not read by a second verifier. Beside them is 85, not a defect
+but behaviour nobody has watched happen.
+
+Then thirty-one findings that are not defects: Perf, Design, Simplify, Reuse
+and Style. Those are one finder's reading each, kept as written and not
 checked by a second, so read the code before acting on one. The Style entries
 are breaches of the repo's own rules on comment length and one type per file;
 whether the MARK banners are one is for the owner to say.
@@ -17,12 +22,16 @@ taken out rather than kept.
 
 | # | Effect | What |
 | --- | --- | --- |
+| 84 | Medium | Two copies of one build both autosave and the last writer wins |
+| 86 | Low | An OpenCode server reused by a second pane lands the dot on the first pane's tab |
+| 87 | Low | CI never runs `make-app.sh`, so bundling and signing can break with it green |
 | 53 | Perf | The status poll runs `git status` for missing projects' worktrees |
 | 54 | Perf | Every split-divider drag frame writes the workspace and re-arms autosave |
 | 55 | Perf | The sidebar scans every session four times per worktree per render |
 | 56 | Perf | Every watcher tick re-reads every project's records and re-arms every watch |
 | 57 | Perf | Autosave encodes and writes the workspace on the main actor |
 | 58 | Perf | The Agents board does a linear worktree scan per session on every render |
+| 83 | Perf | The status poll keeps a large checkout's disk busy for as long as the app is in front |
 | 59 | Design | The launch alert is identified by comparing its translated title |
 | 60 | Design | Per-worktree runtime state is pruned at five sites in four files |
 | 61 | Design | `settle(group:vacating:)` relies on every caller precomputing the slot |
@@ -47,6 +56,58 @@ taken out rather than kept.
 | 80 | Style | A four-line doc comment on an `EditorLaunch` case |
 | 81 | Style | `TabDrops.swift` declares four types and is named for none |
 | 82 | Style | MARK section banners across four packages |
+| 85 | Unproven | Three of the four agents' hook files have never been watched moving a dot |
+
+## Launch
+
+### 84. Medium. Two copies of one build both autosave and the last writer wins
+
+`Sources/MultishellAppCore/Model/AppModel+SessionState.swift:10`.
+`startStateSource` catches the `SocketFailure` of kind `.inUse` that
+`UnixSocketServer.start()` throws when the first copy holds the claim
+(UnixSocketServer.swift:136 and 156), reports it, and carries on. Both copies
+then load the same workspace file, both autosave 300 ms after each change
+(AppModel+Persistence.swift:14-33), and whichever wrote last decides what the
+next launch opens. Every tab, split and project added in the other copy is
+gone. The second copy already knows the first is there, since the refusal is
+what told it, so the fix is to activate the first copy and quit, or to refuse
+to start, rather than to report and continue.
+
+## Agents and session state
+
+### 85. Unproven. Three of the four agents' hook files have never been watched moving a dot
+
+`Sources/MultishellCore/Agents/AgentHooks.swift`.
+The four hook files are written from each agent's documented shape, and only
+Claude Code's has been watched moving a dot in a real session. Run each agent
+once: check its events fire, that the pid reported is the agent and not a
+wrapper outliving the hook, and that Codex's `/hooks` trust holds. The
+OpenCode plugin (OpenCodePlugin.swift) has been driven against a stub helper;
+unproven is that OpenCode loads a plugin exporting a function rather than a
+default `{ id, setup }`, its loader having two generations of that contract,
+and that the two permission events arrive under the names the plugin now
+listens for, with the title where it reads it.
+
+### 86. Low. An OpenCode server reused by a second pane lands the dot on the first pane's tab
+
+`Sources/MultishellCore/Agents/OpenCodePlugin.swift:31`.
+The plugin spawns the helper from the OpenCode server's process, and the
+helper reads `MULTISHELL_SESSION` from its environment (Helper.swift:13). An
+OpenCode server started from one pane and reused by another therefore reports
+that first pane's session, so the dot lands on the wrong tab. Only the plugin
+has this: every other agent's hook runs in the session's own process.
+
+## Scripts
+
+### 87. Low. CI never runs `make-app.sh`, so bundling and signing can break with it green
+
+`.github/workflows/ci.yml:12`.
+CI runs `swift build` and `swift test` for both packages and nothing else,
+while `make build` goes on to `Scripts/make-app.sh` (Makefile:26), which
+writes the generated Info.plist (make-app.sh:98) and signs the bundle
+(make-app.sh:172). A change that breaks any of those passes CI, and nothing
+notices until someone runs `make build`. The Makefile's own header at line 2
+says the two are meant not to drift.
 
 ## Performance
 
@@ -71,8 +132,8 @@ the siblings. The finder's further suggestion, polling only visible or live
 worktrees, would break `refreshProjectsWhoseBranchMoved` at lines 97-107,
 which uses the fresh status of every worktree to notice a checkout in one
 whose HEAD is not watched (worktrees.md:8); a collapsed project's checkout
-would go unseen until expanded. TODO.md:25 already records the general polling
-cost; the missing-project angle is new.
+would go unseen until expanded. 83 records the general polling cost;
+the missing-project angle is new.
 
 ### 54. Perf. Every split-divider drag frame writes the workspace and re-arms autosave
 
@@ -164,7 +225,7 @@ not a sync. Two conditions on the remedy: writes must be serialised, one in
 flight and the latest wins, or two saves 300 ms apart on a slow volume can
 land out of order; and `saveNow()` at quit (`shutDown`, from `willTerminate`)
 must stay synchronous or the process exits before the write lands.
-known-gaps.md:31 records the analogous case for reads only.
+known-gaps.md:37 records the analogous case for reads only.
 
 ### 58. Perf. The Agents board does a linear worktree scan per session on every render
 
@@ -187,6 +248,16 @@ title differs (Runtime.swift:145); a prompt only when it changes a state, as
 in 55. AppModel+AgentBoard.swift:7 records the choice not to cache: a cache is
 one more thing that can disagree with the sidebar. The dictionary is not a
 cache across reads, so it does not cross that.
+
+### 83. Perf. The status poll keeps a large checkout's disk busy for as long as the app is in front
+
+`Sources/MultishellAppCore/Model/AppModel+Runtime.swift:85`.
+Every five seconds while the app is frontmost, a `git status` per worktree
+eight at a time, and after the last of them a ref scan per project, one
+project after another. It costs nothing in the background, but on a monorepo
+a large checkout keeps the disk busy for as long as the app is in front. A
+per-project toggle or a longer interval, hiding the badge rather than showing
+it stale. 53 is the missing-project corner of the same poll.
 
 ## Design
 
@@ -257,7 +328,7 @@ rightmost tab rather than the neighbour, per `remaining[min(slot ??
 remaining.count - 1, remaining.count - 1)].id` at 383.
 `Workspace+Repair.swift:91` also takes `last`, but by choice: its comment at
 89-90 says nothing on disk records which tab the column showed, so there is no
-vacated place to hand on. tabs-and-columns.md:38 records the behaviour, not
+vacated place to hand on. tabs-and-columns.md:39 records the behaviour, not
 the shape.
 
 ### 62. Design. `SessionStates` keeps six parallel per-key collections
@@ -281,7 +352,7 @@ delays the next turn's Done, a stuck count of the kind agents.md describes. Two 
 struct: `since` deliberately outlives a nil state (line 184 stamps the
 transition), and `clear(_:)` deliberately leaves `since` and `notes` for
 `stampChanges`, so a clear is not a plain removal for every field.
-agents.md:73 records that a stuck count costs the Done banner and nothing
+agents.md:90 records that a stuck count costs the Done banner and nothing
 else; TODO.md:7 asks for the count to track state.
 
 ### 63. Design. The shell-start precondition is spelled differently at three entry points
@@ -325,7 +396,7 @@ file, `isPrimary` being encoded on every save. The board card is not a second
 spelling; AgentCardActions.swift:18 embeds the same view. No keyboard shortcut
 or command calls `requestRemoval` today, WorktreeActions.swift:42 being its
 only caller, and if one were added the coordinator turns it into a
-`NotAWorktree` alert rather than damage. worktrees.md:71 records why the
+`NotAWorktree` alert rather than damage. worktrees.md:68 records why the
 coordinator refuses on its own; the duplication is the cost of that.
 
 ## Simplification
@@ -554,7 +625,7 @@ the other two Codable writers use it. All four live in MultishellCore, so a
 shared encoder factory is placeable. It is behaviour-neutral only if it keeps
 `[.prettyPrinted, .sortedKeys]`: adding `.withoutEscapingSlashes` changes the
 bytes of `.multishell.json`, and `SharedProjectSettings.digest` (lines 90 and
-138) is the SHA-256 of those bytes that settings.md:37 keys hook trust on, so
+138) is the SHA-256 of those bytes that settings.md:39 keys hook trust on, so
 a re-export would yield a new digest. Decide that separately. HookSettingsFile
 round-trips `[String: Any]` and cannot share a JSONEncoder.
 
@@ -611,7 +682,7 @@ check-ref-format" / "/// --branch` answers this, but the sheet asks on every
 keystroke and a" / "/// process per keystroke is not worth it, so the rules
 are here." / "///" / "/// The rules are `git-check-ref-format(1)`'s, less the
 ones about slashes" / "/// that only apply to a full refname." The
-why-not-shell-out half is already in docs/design/worktrees.md:80, so only the
+why-not-shell-out half is already in docs/design/worktrees.md:82, so only the
 pointer is missing; the second half, the rules less the full-refname slash
 rules, is not written down anywhere else.
 
