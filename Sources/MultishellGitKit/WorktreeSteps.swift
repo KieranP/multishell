@@ -12,7 +12,7 @@ public enum WorktreeCreationStep: Sendable, Equatable {
 /// hook has a script; the branch stage only when the branch is to go.
 public enum WorktreeRemovalStep: Sendable, Equatable {
   case preDeleteHook
-  /// The directory to the Trash, then `git worktree prune`.
+  /// The directory to the Trash, then its record forgotten.
   case removingWorktree
   case postDeleteHook
   case deletingBranch

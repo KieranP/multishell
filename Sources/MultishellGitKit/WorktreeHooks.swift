@@ -81,7 +81,7 @@ public struct WorktreeHooks: Sendable {
   }
 
   /// Runs in the worktree while it is still there; in the repository when
-  /// the directory is already gone and only the record is being pruned.
+  /// the directory is already gone and only the record is being forgotten.
   public func runPreDelete(
     for project: Project, worktreePath: URL, branch: String, shellPath: String? = nil,
     timeout: Duration? = nil, stopper: ProcessStopper? = nil

@@ -246,7 +246,7 @@
 "worktree-removal.branch-asked" = "The branch %@ is kept unless you remove it too.";
 "worktree-removal.branch-deleted" = "The branch %@ is deleted with it.";
 "worktree-removal.branch-kept" = "The branch %@ is kept.";
-"worktree-removal.moves" = "Moves %@ to the Trash and prunes it from git.";
+"worktree-removal.moves" = "Moves %@ to the Trash and removes it from git.";
 "worktree-removal.remove" = "Remove Worktree";
 "worktree-removal.remove-with-branch" = "Remove Worktree and Branch";
 "worktree-removal.title" = "Remove worktree %@?";

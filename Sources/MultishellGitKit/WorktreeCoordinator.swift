@@ -133,8 +133,8 @@ public struct WorktreeCoordinator: Sendable {
     onStep: (@Sendable (WorktreeCreationStep) -> Void)? = nil
   ) async throws -> URL {
     let branch = Self.branchName(rawBranch, createBranch: createBranch, settings: settings)
-    // Before the hook and the container directory: git rejects the name at
-    // the end of all that, and the hook's work is done by then.
+    // Before the hook: git rejects the name at the end of it, and the hook's
+    // work is done by then.
     guard !createBranch || GitRefName.isValidBranch(branch) else {
       throw InvalidBranchName(branch)
     }
@@ -145,10 +145,8 @@ public struct WorktreeCoordinator: Sendable {
       for: project, worktreePath: path, branch: branch, shellPath: shellPath, timeout: timeout,
       stopper: stopper)
     onStep?(.addingWorktree)
-    try FileManager.default.createDirectory(
-      at: path.deletingLastPathComponent(),
-      withIntermediateDirectories: true
-    )
+    // No container directory made here: `git worktree add` makes the leading
+    // directories itself, and a refused add then leaves none behind.
     try await service.add(
       branch: branch,
       at: path,
@@ -180,8 +178,8 @@ public struct WorktreeCoordinator: Sendable {
       timeout: timeout, stopper: stopper)
   }
 
-  /// Pre-delete hook, the directory to `trash`, prune, post-delete hook, the
-  /// branch last. See docs/design/worktrees.md and docs/design/hooks.md.
+  /// Pre-delete hook, the directory to `trash`, the record forgotten,
+  /// post-delete hook, the branch last. See worktrees.md and hooks.md.
   public func remove(
     _ worktree: Worktree, deletingBranch: Bool = false, in project: Project,
     shellPath: String? = nil, trash: @Sendable (URL) async throws -> Void,
@@ -200,15 +198,18 @@ public struct WorktreeCoordinator: Sendable {
       for: project, worktreePath: path, branch: branch, shellPath: shellPath, timeout: timeout,
       stopper: stopper)
     onStep?(.removingWorktree)
-    if worktree.isLocked { try await service.unlock(worktree, in: project) }
     if FileManager.default.fileExists(atPath: path.path) {
       do {
         try await trash(path)
       } catch {
         throw TrashFailure(path: path, underlying: error)
       }
+      // `forget` would unlink a directory still here; only the Trash may take it.
+      guard !FileManager.default.fileExists(atPath: path.path) else {
+        throw TrashFailure(path: path, underlying: TrashTookNothing())
+      }
     }
-    try await service.prune(project)
+    try await service.forget(worktree, in: project)
     if WorktreeHooks.hasScript(project.settings.postDeleteHook) { onStep?(.postDeleteHook) }
     try await hooks.runPostDelete(
       for: project, worktreePath: path, branch: branch, shellPath: shellPath, timeout: timeout,

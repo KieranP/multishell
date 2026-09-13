@@ -143,6 +143,16 @@ What each test catches, and the conventions a new one follows.
   UnixSocketTests, the server's queue blocked and the backlog filled by hand.
 - Removing the main worktree is refused before the hook and the Trash:
   AppModelHookControlTests. Without the guard that test bins the fixture.
+- Removing one worktree leaves the record of another whose directory is away,
+  and a Trash that refuses leaves a lock and its reason in place:
+  WorktreeForgetScopeTests, against real git. The same suite hands the
+  coordinator a Trash that takes nothing and expects the removal to stop
+  there, the forget being a `remove --force --force` that would unlink a
+  directory still in place.
+- A refused create leaves no container directory: WorktreeCreationTests, the
+  branch name taken and the worktree directory three levels deep.
+- The Trash is asked off the main thread: AppModelHookControlTests, the fake
+  Trash recording the thread of each call.
 - Foundation-only imports: checked by hand in a `swift:6.0` container, Linux
   being out of CI. Views untested, but a value a view reads is.
 

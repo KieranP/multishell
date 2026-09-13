@@ -554,3 +554,84 @@ struct StatusLockTests {
         atPath: repo.project.path.appendingPathComponent(".git/index.lock").path))
   }
 }
+
+@Suite(.serialized)
+struct WorktreeForgetScopeTests {
+  /// A repository-wide prune after the trash would also forget a worktree
+  /// whose drive is unmounted at that moment; see docs/design/worktrees.md.
+  @Test func removingOneWorktreeKeepsAnotherWhoseDirectoryIsAway() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    try await repo.coordinator.create(branch: "gone", in: repo.project, settings: repo.trees)
+    let away = try await repo.coordinator.create(
+      branch: "away", in: repo.project, settings: repo.trees)
+    let aside = away.deletingLastPathComponent().appendingPathComponent("away-aside")
+    try FileManager.default.moveItem(at: away, to: aside)
+    let gone = try #require(
+      try await repo.coordinator.refresh(repo.project).first { $0.branch == "gone" })
+
+    try await repo.coordinator.remove(gone, in: repo.project)
+
+    let listed = try await repo.coordinator.refresh(repo.project)
+    #expect(listed.map(\.branch) == ["main", "away"], "the away worktree is still on record")
+    try FileManager.default.moveItem(at: aside, to: away)
+    #expect(try await repo.head(of: away) == repo.head(of: repo.project.path), "and works again")
+  }
+
+  @Test func aLockedWorktreeWhoseTrashRefusesStaysLocked() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    let path = try await repo.coordinator.create(
+      branch: "pinned", in: repo.project, settings: repo.trees)
+    _ = try await repo.git.run(
+      ["worktree", "lock", "--reason", "external drive", path.path], in: repo.project.path)
+    let pinned = try #require(
+      try await repo.coordinator.refresh(repo.project).first { $0.branch == "pinned" })
+    #expect(pinned.isLocked)
+
+    await #expect(throws: TrashFailure.self) {
+      try await repo.coordinator.remove(
+        pinned, in: repo.project, trash: { _ in throw CocoaError(.fileWriteNoPermission) })
+    }
+
+    let after = try #require(
+      try await repo.coordinator.refresh(repo.project).first { $0.branch == "pinned" })
+    #expect(after.isLocked, "the lock and its reason are the user's")
+    let listed = try await repo.git.run(["worktree", "list", "--porcelain"], in: repo.project.path)
+    #expect(listed.contains("locked external drive"))
+  }
+
+  /// `remove --force --force` on a directory still in place would unlink it,
+  /// so a Trash that returned without taking it must stop the removal.
+  @Test func aTrashThatTookNothingStopsBeforeGitIsAsked() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    let path = try await repo.coordinator.create(
+      branch: "untouched", in: repo.project, settings: repo.trees)
+    try "work\n".write(
+      to: path.appendingPathComponent("wip.txt"), atomically: true, encoding: .utf8)
+    let worktree = try #require(
+      try await repo.coordinator.refresh(repo.project).first { $0.branch == "untouched" })
+
+    await #expect(throws: TrashFailure.self) {
+      try await repo.coordinator.remove(worktree, in: repo.project, trash: { _ in })
+    }
+
+    #expect(FileManager.default.fileExists(atPath: path.appendingPathComponent("wip.txt").path))
+    #expect(try await repo.coordinator.refresh(repo.project).count == 2, "still on record")
+  }
+
+  @Test func aLockedWorktreeIsRemovedLockAndAll() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    let path = try await repo.coordinator.create(
+      branch: "locked", in: repo.project, settings: repo.trees)
+    _ = try await repo.git.run(["worktree", "lock", path.path], in: repo.project.path)
+    let locked = try #require(
+      try await repo.coordinator.refresh(repo.project).first { $0.branch == "locked" })
+
+    try await repo.coordinator.remove(locked, in: repo.project)
+
+    #expect(try await repo.coordinator.refresh(repo.project).map(\.branch) == ["main"])
+  }
+}

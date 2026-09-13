@@ -16,6 +16,13 @@ public struct TrashFailure: Error, CustomStringConvertible {
   }
 }
 
+/// The Trash reported success with the directory still in place, so the
+/// removal stopped rather than let git unlink it.
+public struct TrashTookNothing: Error, CustomStringConvertible {
+  public init() {}
+  public var description: String { "the directory is still there" }
+}
+
 /// The worktree is gone but its branch is not: git refused to delete it,
 /// usually because it has commits no other branch has.
 public struct BranchDeletionFailure: Error, CustomStringConvertible {

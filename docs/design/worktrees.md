@@ -59,9 +59,21 @@ seeds from `InheritedSetting`, what is actually in force, not the user's global.
 
 `git worktree remove` refuses a dirty tree, and its `--force` unlinks the
 files; the one time someone removes the wrong worktree is the time that
-matters. A locked worktree is unlocked first, prune skipping locked records. A
-Trash that refuses falls back to deletion; cost: on such a volume the recovery
-the Trash promised is not there.
+matters. A Trash that refuses falls back to deletion; cost: on such a volume
+the recovery the Trash promised is not there. Trash and fallback both run off
+the main actor: a share with no `.Trashes` walks a `node_modules` for as long
+as it takes, and the window stood still for it.
+
+Once the directory has gone, `git worktree remove --force --force <path>`
+forgets that one record, lock and all; with nothing left to unlink that is all
+it can do, and the coordinator checks the directory is gone before asking, a
+Trash that returned with it in place being a failed removal. It was `git worktree prune`, which forgets every record whose
+directory is away at that moment, an unmounted drive's included: the drive
+came back to a `.git` file naming a gitdir that was gone, and `worktree
+repair` did not bring it back. Prune stays as the fallback for a path git
+cannot match to a record, the one case it is the only way. The lock is never
+taken off before the trash, so a Trash that refuses leaves the worktree as it
+was, reason and all.
 
 Whether a removal asks at all is a global setting, about the person and not the
 repo, but it always asks about the branch, the one part the sidebar cannot
@@ -76,8 +88,8 @@ operation with no way back.
 ## A branch name git will reject is refused before anything runs
 
 Nothing between the sheet and `git worktree add` used to judge the name, so
-`my branch` or `feat.lock` ran the pre-create hook and made the container
-directory before git refused at the end of it. `GitRefName` is
+`my branch` or `feat.lock` ran the pre-create hook before git refused at the
+end of it. `GitRefName` is
 `check-ref-format`'s rules in Swift, since the sheet asks on every keystroke
 and a process per keystroke is not worth it; a test holds it against real git
 over a table of names. Create is off for a name it refuses and the sheet says
@@ -119,3 +131,9 @@ porcelain unsafe for a path holding a newline, and it is: the second half of
 one reads as another attribute, so the row carried a directory that does not
 exist, its status read failed, and the path being the identity meant selection
 and the tab store keyed off something git never reported.
+
+## The container directory is git's to make
+
+`git worktree add` makes every leading directory of its path, and a refused
+add makes none. The app used to `createDirectory` first, so a taken branch
+name left an empty chain under a nested `worktreeDirectory`.

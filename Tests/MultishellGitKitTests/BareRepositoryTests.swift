@@ -63,7 +63,7 @@ struct BareRepositoryTests {
 /// git.
 @Suite(.serialized)
 struct RemovalDisposalTests {
-  @Test func aTrashedWorktreeIsHandedOverThenPrunedAndTheHooksStillRun() async throws {
+  @Test func aTrashedWorktreeIsHandedOverThenForgottenAndTheHooksStillRun() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
     var project = repo.project
@@ -85,7 +85,7 @@ struct RemovalDisposalTests {
       onStep: { steps.add($0) })
 
     #expect(steps.steps == [.removingWorktree, .postDeleteHook])
-    #expect(try await repo.coordinator.refresh(project).count == 1, "pruned")
+    #expect(try await repo.coordinator.refresh(project).count == 1, "forgotten")
     #expect(
       FileManager.default.fileExists(atPath: bin.appendingPathComponent("dirty/wip.txt").path),
       "the work is where the Trash put it")

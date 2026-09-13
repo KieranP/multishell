@@ -57,7 +57,7 @@ final class MacPlatform: Platform {
     NSPasteboard.general.setString(text, forType: .string)
   }
 
-  func moveToTrash(_ url: URL) throws {
+  nonisolated func moveToTrash(_ url: URL) throws {
     try FileManager.default.trashItem(at: url, resultingItemURL: nil)
   }
 

@@ -54,8 +54,8 @@ public enum RemovalFailure: Equatable, Sendable {
         title: presented.title, message: presented.message,
         retry: .deleteBranchAnyway(failure.branch), worktreeRemoved: true)
     default:
-      // The Trash refused, or git could not unlock or prune. Nothing moved
-      // or was pruned, so the worktree and its terminals come back.
+      // The Trash refused, or git could not forget the record. Nothing moved
+      // or was forgotten, so the worktree and its terminals come back.
       let presented = PresentedError(error)
       return .alert(
         title: presented.title, message: presented.message, retry: nil, worktreeRemoved: false)

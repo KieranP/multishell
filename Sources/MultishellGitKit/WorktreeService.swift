@@ -153,15 +153,18 @@ public struct WorktreeService: Sendable {
     _ = try await git.run(arguments, in: project.path)
   }
 
-  /// `git worktree prune` leaves a locked record alone, so a locked worktree
-  /// is unlocked before its directory goes.
-  public func unlock(_ worktree: Worktree, in project: Project) async throws {
-    _ = try await git.run(["worktree", "unlock", worktree.path.path], in: project.path)
-  }
-
-  /// Forgets every record whose directory is gone.
-  public func prune(_ project: Project) async throws {
-    _ = try await git.run(["worktree", "prune"], in: project.path)
+  /// Forgets one record whose directory has already gone, a lock included.
+  /// Only after the trash: with the directory there it would unlink it.
+  public func forget(_ worktree: Worktree, in project: Project) async throws {
+    do {
+      // One --force for a tree git cannot inspect, the second for a lock,
+      // which stays on the record until this moment rather than being unlocked.
+      _ = try await git.run(
+        ["worktree", "remove", "--force", "--force", worktree.path.path], in: project.path)
+    } catch {
+      // A record git cannot match to the path; see docs/design/worktrees.md.
+      _ = try await git.run(["worktree", "prune"], in: project.path)
+    }
   }
 
   /// `git branch -d`, which refuses a branch with commits no other branch

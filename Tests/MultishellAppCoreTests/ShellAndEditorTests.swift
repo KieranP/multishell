@@ -258,7 +258,7 @@ struct PendingWorktreeRemovalTests {
     let asks = PendingWorktreeRemoval(worktree: branched, branch: .asks)
     #expect(
       asks.message(warning: "2 open terminals will be closed.")
-        == "Moves /trees/feat to the Trash and prunes it from git.\n\nThe branch feat is kept unless you remove it too.\n\n2 open terminals will be closed."
+        == "Moves /trees/feat to the Trash and removes it from git.\n\nThe branch feat is kept unless you remove it too.\n\n2 open terminals will be closed."
     )
     let deletes = PendingWorktreeRemoval(worktree: branched, branch: .decided(deletes: true))
     #expect(deletes.message(warning: nil).hasSuffix("The branch feat is deleted with it."))

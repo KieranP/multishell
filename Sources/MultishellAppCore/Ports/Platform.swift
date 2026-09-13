@@ -3,7 +3,7 @@ import Foundation
 /// What the model needs from the desktop and nothing more, so it compiles
 /// and is tested without a window, a pasteboard or a workspace API.
 @MainActor
-public protocol Platform: AnyObject {
+public protocol Platform: AnyObject, Sendable {
   /// Whether the app is frontmost. Status polling pauses while it is not,
   /// and a report about the shown tab still earns a banner then.
   var isActive: Bool { get }
@@ -21,8 +21,8 @@ public protocol Platform: AnyObject {
   func copyToClipboard(_ text: String)
 
   /// Moves a removed worktree's directory to the Trash, throwing where it
-  /// will not take it. A platform with no Trash deletes outright.
-  func moveToTrash(_ url: URL) throws
+  /// will not take it. Off the main actor: a large tree is walked here.
+  nonisolated func moveToTrash(_ url: URL) throws
 
   /// Where an installed application lives, by bundle identifier, or `nil`
   /// where the platform has no such lookup.
@@ -62,7 +62,9 @@ public final class NullPlatform: Platform {
   public func revealInFileBrowser(_ url: URL) {}
   public func copyToClipboard(_ text: String) {}
   /// No Trash here, so the directory is deleted.
-  public func moveToTrash(_ url: URL) throws { try FileManager.default.removeItem(at: url) }
+  nonisolated public func moveToTrash(_ url: URL) throws {
+    try FileManager.default.removeItem(at: url)
+  }
   public func applicationURL(forIdentifier identifier: String) -> URL? { nil }
   public func open(_ directory: URL, withApplication application: URL) async throws {}
   public var bundledHelper: URL? { nil }

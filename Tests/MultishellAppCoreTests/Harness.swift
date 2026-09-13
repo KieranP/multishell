@@ -103,19 +103,26 @@ final class FakePlatform: Platform {
   var logged: [String] = []
   /// Where `moveToTrash` puts things, standing in for the Trash; `nil`
   /// makes it refuse.
-  var trash: URL? = Scratch.path("trash")
-  var trashed: [URL] = []
+  var trash: URL? {
+    get { trashRecord.destination }
+    set { trashRecord.destination = newValue }
+  }
+  var trashed: [URL] { trashRecord.trashed }
+  /// Per call, whether it came on the main thread, which it must not.
+  var trashCallsOnMainThread: [Bool] { trashRecord.onMainThread }
+  nonisolated let trashRecord = TrashRecord()
 
   func closeKeyWindow() { closedKeyWindows += 1 }
   func chooseDirectory(prompt: String) async -> URL? { directoryToChoose }
   func revealInFileBrowser(_ url: URL) { revealed.append(url) }
   func copyToClipboard(_ text: String) { clipboard.append(text) }
-  func moveToTrash(_ url: URL) throws {
-    guard let trash else { throw TrashRefused() }
+  nonisolated func moveToTrash(_ url: URL) throws {
+    trashRecord.onMainThread.append(Thread.isMainThread)
+    guard let trash = trashRecord.destination else { throw TrashRefused() }
     try FileManager.default.createDirectory(at: trash, withIntermediateDirectories: true)
     try FileManager.default.moveItem(
       at: url, to: trash.appendingPathComponent(url.lastPathComponent))
-    trashed.append(url)
+    trashRecord.trashed.append(url)
   }
   func applicationURL(forIdentifier identifier: String) -> URL? { applications[identifier] }
   func open(_ directory: URL, withApplication application: URL) async throws {
@@ -128,6 +135,27 @@ final class FakePlatform: Platform {
   func setBadgeCount(_ count: Int?) { badges.append(count) }
   var notificationSettingsLocation: String? = "System Settings > Notifications"
   func log(_ message: String) { logged.append(message) }
+}
+
+/// What the fake Trash was asked, written from whatever thread asked.
+final class TrashRecord: @unchecked Sendable {
+  private let lock = NSLock()
+  private var _destination: URL? = Scratch.path("trash")
+  private var _trashed: [URL] = []
+  private var _onMainThread: [Bool] = []
+
+  var destination: URL? {
+    get { lock.withLock { _destination } }
+    set { lock.withLock { _destination = newValue } }
+  }
+  var trashed: [URL] {
+    get { lock.withLock { _trashed } }
+    set { lock.withLock { _trashed = newValue } }
+  }
+  var onMainThread: [Bool] {
+    get { lock.withLock { _onMainThread } }
+    set { lock.withLock { _onMainThread = newValue } }
+  }
 }
 
 @MainActor

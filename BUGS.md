@@ -2,7 +2,7 @@
 
 Open findings from a whole-repo review on 2026-09-13, against commit 7fa714f.
 
-Eighteen defects stand, none High. Each was read a second time by a verifier
+Fourteen defects stand, none High. Each was read a second time by a verifier
 working from the code as it is, and the git-behaviour ones were reproduced in
 a scratch repository.
 
@@ -17,17 +17,13 @@ taken out rather than kept.
 
 | # | Effect | What |
 | --- | --- | --- |
-| 34 | Medium | Removing one worktree makes git forget every other whose directory is away |
 | 35 | Medium | A branch brought up with a bare `git rebase` is badged merged with certainty |
 | 36 | Medium | Export drops the keys of `.multishell.json` this build does not know |
 | 37 | Medium | `multishell state` at a prompt pins the dot to the app's own pid, forever |
-| 38 | Medium | A removal whose Trash refuses deletes the tree on the main thread |
 | 39 | Medium | A subagent ending after an uncounted start flips Done back to Working |
 | 40 | Medium | The Agents board closes by itself when a post-create stage ends |
 | 41 | Medium | A report from a subdirectory of a worktree is dropped without a word |
 | 42 | Medium | A control character in a worktree path kills every zsh report from it |
-| 43 | Low | A failed Trash leaves a locked worktree unlocked |
-| 44 | Low | The container directory is made by hand, so a refused create leaves it |
 | 45 | Low | An agent tab opened during the launch scan says the agent is not installed |
 | 46 | Low | A late `git status` writes against a worktree that may have been replaced |
 | 47 | Low | The signing script deletes the spaces inside the keychain path |
@@ -69,25 +65,6 @@ taken out rather than kept.
 
 ## Worktrees
 
-### 34. Medium. Removing one worktree makes git forget every other whose directory is away
-
-`Sources/MultishellGitKit/WorktreeCoordinator.swift:211`, `try await service.prune(project)`.
-Removal trashes one directory then runs a repository-wide `git worktree
-prune`, which drops the record of every worktree whose directory is missing at
-that moment, not only the one just trashed. A worktree on an unmounted
-external drive is the case: its record goes, and when the drive returns the
-directory's `.git` file points at a gitdir that no longer exists.
-
-Reproduced with git 2.55: two linked worktrees, one moved aside, the other
-deleted, then `prune`. Only the main worktree remained. Moving the first back
-gave `fatal: not a git repository` and `git worktree repair` did not bring it
-back. A lock protects a record from prune, but that depends on the user having
-set one. `git worktree remove --force <path>` on the already deleted directory
-exited 0 and left the other worktree listed as prunable.
-
-Fix = scope the forget to the worktree just trashed with `git worktree remove
---force <path>`, falling back to `prune` only if that fails.
-
 ### 35. Medium. A branch brought up with a bare `git rebase` is badged merged with certainty
 
 `Sources/MultishellGitKit/ReflogWorkParser.swift:22`.
@@ -114,37 +91,6 @@ Fix = read the reflog as `%H %gs` and treat a `rebase (finish): <ref> onto
 <sha>` whose new value equals `<sha>` as an arrival; keep any other `(finish)`
 as work. Update the test.
 
-### 43. Low. A failed Trash leaves a locked worktree unlocked
-
-`Sources/MultishellGitKit/WorktreeCoordinator.swift:203`.
-The unlock runs before the Trash step. When the Trash refuses, `TrashFailure`
-is thrown at line 208 and nothing re-locks, so the worktree stays on disk
-without the lock the user set, and the reason they gave is gone. Reaching it
-needs both `moveToTrash` and the `removeItem` fallback to fail, so a read-only
-or permission-refusing volume. The lock is consulted only by prune and gc, so
-the loss bites when that volume is later unmounted while another removal
-prunes.
-
-`git worktree unlock` succeeds on a record whose directory has already been
-deleted, checked in a scratch repository, so the unlock can move after the
-trash. Fix = unlock after the trash succeeds, or re-lock in the catch.
-
-### 44. Low. The container directory is made by hand, so a refused create leaves it
-
-`Sources/MultishellGitKit/WorktreeCoordinator.swift:148`.
-`createDirectory(at: path.deletingLastPathComponent(),
-withIntermediateDirectories: true)` runs before `service.add`, and nothing
-removes it when git refuses. A new-branch name that already exists reaches
-this from the sheet: `canCreate` checks only `GitRefName.isValidBranch` and
-never whether the name is taken, so `git worktree add -b feat` fails after the
-folder exists. With a nested setting like
-`~/wt/{project}/{project}-worktrees`, a chain of empty folders is left.
-
-The call is unnecessary. In a scratch repository `git worktree add -b ok
-../deep/er/proj-worktrees/ok` created every leading directory itself, and both
-rejected adds left none. Fix = delete the `createDirectory` call. The sheet
-could also refuse a new-branch name that already exists.
-
 ### 46. Low. A late `git status` writes against a worktree that may have been replaced
 
 `Sources/MultishellAppCore/Model/AppModel+Runtime.swift:113`.
@@ -166,8 +112,8 @@ still exists and is the same value before assigning.
 `Sources/MultishellGitKit/WorktreeCoordinator.swift:138`, `guard !createBranch || GitRefName.isValidBranch(branch)`.
 The name is validated only when a branch is being created. With `createBranch:
 false` and an empty or malformed name, the pre-create hook runs with
-`MULTISHELL_BRANCH` empty, the container directory is made (44), and only then
-`git worktree add` fails with an invalid reference. worktrees.md:84 says the
+`MULTISHELL_BRANCH` empty, and only then `git worktree add` fails with an
+invalid reference. worktrees.md:84 says the
 opposite: `add` throws before the hook for a caller that did not ask.
 
 The sheet cannot reach it, Create being disabled unless the name is in
@@ -291,23 +237,6 @@ the detections after the scan returns, or gate the check on the detection
 having been filled.
 
 ## Board and tabs
-
-### 38. Medium. A removal whose Trash refuses deletes the tree on the main thread
-
-`Sources/MultishellAppCore/Model/AppModel+WorktreeRemoval.swift:104`, `try FileManager.default.removeItem(at: url)`.
-`AppModel` is `@MainActor`. The coordinator's `trash` closure hops to it and
-runs `platform.moveToTrash`, which is `trashItem(at:)`, synchronously, and on
-any error the fallback unlinks the whole tree in the same call. Neither goes
-through `offMain`, which the file placement two files over does use. On a
-network share or a volume with no `.Trashes`, a multi-gigabyte `node_modules`
-is walked on the main thread: socket reports, delivered on `.main`, queue; the
-two-second pid sweep and the status poll stall; the window does not respond.
-`cancelHelp` is nil for `.removingWorktree`, so the pane offers no Cancel.
-
-Distinct from the known gap about the directory check before a click.
-worktrees.md:63 records the fallback to deletion, not where it runs. Fix = run
-both the trash and the fallback through `offMain` inside `moveToTrash`,
-keeping the log call on the main actor.
 
 ### 40. Medium. The Agents board closes by itself when a post-create stage ends
 
@@ -519,10 +448,9 @@ detached utility task, keeping only the failure report on the main actor.
 
 The finder called this the one disk write in the model that does not go
 through `offMain`; it is not. Export's `write(to:)`
-(AppModel+SharedSettings.swift:154), the Trash fallback (38), and
-`HelperLink.refresh`, `ShellIntegration.refresh` and `DroppedFiles.sweep` in
-`start()` are on the main actor too, as is the staleness stat in
-`DispatchDirectoryWatcher.watch`. On a home directory on a network volume or a
+(AppModel+SharedSettings.swift:154), and `HelperLink.refresh`,
+`ShellIntegration.refresh` and `DroppedFiles.sweep` in `start()` are on the
+main actor too, as is the staleness stat in `DispatchDirectoryWatcher.watch`. On a home directory on a network volume or a
 stalled disk, every debounced save, each divider drag, tab move, rename or
 selection change, blocks the UI for the write. `Data.write(options: .atomic)`
 writes a temp file and renames without an fsync, so the stall is the volume's,
@@ -1061,12 +989,14 @@ Not bugs, recorded so nobody spends the time again.
   never sleeps, so nothing interrupts it, and no signal handler is installed
   anywhere in the app or in SwiftTerm. A `-1` there is ECHILD after
   SwiftTerm's own monitor reaped first, and ending the loop is right.
-- A create failing synchronously at the container directory does not leave
+- A create that throws right after an `onStep` does not leave
   `worktreeCreationStep` stuck. `WorktreeCoordinator.add` is a nonisolated
   async method on a struct, so it runs off the main executor and `onStep`'s
   main-actor Task is enqueued before the throw's return hop. Proven with a
-  scratch program of the same shape over 200 runs. The same program compiled
-  with `NonisolatedNonsendingByDefault` sticks on the first run, so when that
+  scratch program of the same shape over 200 runs, when the container
+  directory was still made by hand there; that step is gone and every throw
+  after an `onStep` now follows an await. The same program compiled with
+  `NonisolatedNonsendingByDefault` stuck on the first run, so when that
   becomes the default the closure wants to check `creationStopper === stopper`
   before writing.
 - A tab drag let go where nothing takes it is already recorded in

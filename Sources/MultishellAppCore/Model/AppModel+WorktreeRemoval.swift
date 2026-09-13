@@ -96,13 +96,12 @@ extension AppModel {
 
   /// The Trash where it takes the directory, deletion where it will not: the
   /// removal was confirmed either way; see docs/design/worktrees.md.
-  func moveToTrash(_ url: URL) throws {
-    do {
-      try platform.moveToTrash(url)
-    } catch {
-      platform.log("\(url.path) could not be moved to the Trash (\(error)); deleting it")
-      try FileManager.default.removeItem(at: url)
-    }
+  func moveToTrash(_ url: URL) async throws {
+    let platform = self.platform
+    let trashed = await Self.offMain { Result { try platform.moveToTrash(url) } }
+    guard case .failure(let error) = trashed else { return }
+    platform.log("\(url.path) could not be moved to the Trash (\(error)); deleting it")
+    try await Self.offMain { Result { try FileManager.default.removeItem(at: url) } }.get()
   }
 
   /// The branch alone, after a removal that left it behind.

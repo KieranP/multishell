@@ -399,7 +399,7 @@ struct AppModelHookControlTests {
     #expect(h.model.presentedError != nil)
   }
 
-  @Test func aLockedWorktreeIsUnlockedSoThePruneTakesIt() async throws {
+  @Test func aLockedWorktreeIsForgottenLockAndAll() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
     await h.model.createWorktree(branch: "locked", basedOn: nil, createBranch: true, in: h.project)
@@ -429,6 +429,21 @@ struct AppModelHookControlTests {
     #expect(h.worktree(onBranch: "stuck") == nil)
     #expect(!FileManager.default.fileExists(atPath: worktree.path.path), "deleted outright")
     #expect(h.platform.logged.count == 1, "the fallback leaves a line in the log")
+  }
+
+  /// The model is on the main actor and a Trash on a network share walks the
+  /// whole tree, so the walk must not be where the window's events are.
+  @Test func theTrashAndItsFallbackRunOffTheMainThread() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    await h.model.createWorktree(branch: "heavy", basedOn: nil, createBranch: true, in: h.project)
+    let worktree = try #require(h.worktree(onBranch: "heavy"))
+    h.platform.trash = nil
+
+    await h.model.removeWorktree(worktree)
+
+    #expect(h.platform.trashCallsOnMainThread == [false], "the Trash was asked off the main thread")
+    #expect(!FileManager.default.fileExists(atPath: worktree.path.path))
   }
 
   @Test func aDirectoryThatCanBeNeitherTrashedNorDeletedKeepsTheWorktree() async throws {

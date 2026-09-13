@@ -100,6 +100,21 @@ struct WorktreeCreationTests {
     #expect(FileManager.default.fileExists(atPath: path.appendingPathComponent("README.md").path))
   }
 
+  @Test func aRefusedCreateLeavesNoContainerDirectory() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    _ = try await repo.git.run(["branch", "taken"], in: repo.project.path)
+    let settings = WorktreeSettings(worktreeDirectory: "../deep/er/trees")
+
+    await #expect(throws: ProcessFailure.self) {
+      try await repo.coordinator.create(branch: "taken", in: repo.project, settings: settings)
+    }
+
+    let deep = repo.root.appendingPathComponent("deep", isDirectory: true)
+    #expect(
+      !FileManager.default.fileExists(atPath: deep.path), "git made nothing, so nothing is left")
+  }
+
   @Test func aBranchThatAlreadyExistsIsAGitErrorNotACrash() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
