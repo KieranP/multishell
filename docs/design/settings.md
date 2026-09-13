@@ -41,3 +41,10 @@ nothing asks again about a decision already made.
 Grey in a hook editor = inherited, nothing else. Odd shapes, each from a bug:
 no prefix on an existing branch; blank worktree directory = the default; `.`,
 `..` and an empty slug -> `_`; whitespace-only hook = "none".
+
+Export writes back what it could not read as it was: a key this build has no
+field for, a `$schema` line, an order a newer build named, a value of the
+wrong type. A teammate committed it and this build has no opinion -> the
+fields are put over the file's own keys, never the file rebuilt from the
+fields. Cost: a wrong-typed value stays in the file until someone who can
+read it changes it, and a blank hook the file held is written back blank.

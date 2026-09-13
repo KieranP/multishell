@@ -32,6 +32,9 @@ public struct SharedProjectSettings: Equatable, Sendable {
   /// The sha256 a hook trust decision is stored against; `nil` trusts
   /// nothing. Set only by `load` and `write`, since it decides whether hooks run.
   public private(set) var digest: String?
+  /// The file's keys the fields would not write back: ones this build has no
+  /// field for, and values it could not read. Export keeps them; see settings.md.
+  public private(set) var unread: [String: JSONValue] = [:]
 
   public static let fileName = ".multishell.json"
 
@@ -114,16 +117,16 @@ public struct SharedProjectSettings: Equatable, Sendable {
       iconTint: settings.iconTint)
   }
 
-  /// These settings with `existing`'s hooks where they have none. Export
-  /// writes what is in force, and a hook the user refused is the file's word
-  /// rather than theirs to drop; see docs/design/settings.md.
-  public func keepingHooks(of existing: SharedProjectSettings?) -> SharedProjectSettings {
+  /// These settings over `existing`'s hooks and the keys this build could not
+  /// read, neither being the user's to drop on export; see docs/design/settings.md.
+  public func keeping(from existing: SharedProjectSettings?) -> SharedProjectSettings {
     guard let existing else { return self }
     var kept = self
     kept.preCreateHook = preCreateHook ?? existing.preCreateHook
     kept.postCreateHook = postCreateHook ?? existing.postCreateHook
     kept.preDeleteHook = preDeleteHook ?? existing.preDeleteHook
     kept.postDeleteHook = postDeleteHook ?? existing.postDeleteHook
+    kept.unread = existing.unread
     return kept
   }
 
@@ -132,11 +135,19 @@ public struct SharedProjectSettings: Equatable, Sendable {
   @discardableResult public func write(to repository: URL) throws -> SharedProjectSettings {
     let encoder = JSONEncoder()
     encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-    let data = try encoder.encode(self)
+    let fields = try fields()
+    let kept = unread.filter { fields[$0.key] == nil }
+    let data = try encoder.encode(kept.merging(fields) { _, field in field })
     try data.write(to: Self.file(in: repository), options: .atomic)
     var written = self
+    written.unread = kept
     written.digest = FileDigest.sha256(of: data)
     return written
+  }
+
+  /// The fields as the file would carry them, blanks and unknowns left out.
+  private func fields() throws -> [String: JSONValue] {
+    try JSONDecoder().decode([String: JSONValue].self, from: JSONEncoder().encode(self))
   }
 
   /// The four hooks as one text, what the trust question shows. For reading,
@@ -222,6 +233,11 @@ extension SharedProjectSettings: Codable {
       showsActiveWorktreesFirst: flag(.showsActiveWorktreesFirst),
       iconGlyph: string(.iconGlyph),
       iconTint: container.decodeTolerantly(Int.self, forKey: .iconTint))
+    let file = try decoder.container(keyedBy: RawCodingKey.self)
+    let written = Set(try fields().keys)
+    for key in file.allKeys where !written.contains(key.stringValue) {
+      unread[key.stringValue] = try file.decode(JSONValue.self, forKey: key)
+    }
   }
 }
 

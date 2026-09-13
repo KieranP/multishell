@@ -330,6 +330,42 @@ struct SharedProjectSettingsTests {
       "the file longest unanswered-about is the one dropped")
   }
 
+  /// A teammate on a newer build commits a key this one has no field for, a
+  /// `$schema` line, or a value this build cannot read. Export writes the
+  /// whole file back, so what it could not read goes back as it was.
+  @Test func exportKeepsTheKeysThisBuildCannotRead() throws {
+    let root = try Scratch.directory("shared")
+    defer { try? FileManager.default.removeItem(at: root) }
+    let file = SharedProjectSettings.file(in: root)
+    try #"""
+    { "$schema": "https://example.test/multishell.json",
+      "branchPrefix": "team/",
+      "worktreeSortOrder": "byMergeState",
+      "autoStartAgent": "yes",
+      "iconTint": "blue",
+      "reviewers": { "default": ["meg", 3, true, null, 1.5] } }
+    """#.write(to: file, atomically: true, encoding: .utf8)
+    let existing = try #require(try SharedProjectSettings.load(from: root))
+    #expect(existing.worktreeSortOrder == nil && existing.iconTint == nil)
+
+    let inForce = ProjectSettings(iconTint: 2).layered(over: existing)
+    let written = try SharedProjectSettings(exporting: inForce).keeping(from: existing).write(
+      to: root)
+
+    let json = try #require(
+      try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+    #expect(json["$schema"] as? String == "https://example.test/multishell.json")
+    #expect(json["branchPrefix"] as? String == "team/", "read, so in force, so exported")
+    #expect(json["worktreeSortOrder"] as? String == "byMergeState", "an order a newer build named")
+    #expect(json["autoStartAgent"] as? String == "yes", "a value this build could not read")
+    #expect(json["iconTint"] as? Int == 2, "the export's value wins where it has one")
+    let reviewers = json["reviewers"] as? [String: Any]
+    #expect(reviewers?["default"] as? NSArray == ["meg", 3, true, NSNull(), 1.5] as NSArray)
+    let text = try String(contentsOf: file, encoding: .utf8)
+    #expect(text.contains("true") && text.contains("null"), "a bool stays a bool")
+    #expect(try SharedProjectSettings.load(from: root) == written, "what write returns is the file")
+  }
+
   @Test func aWhitespaceOnlyHookOfTheUsersTurnsTheFilesOff() throws {
     let shared = try asRead(SharedProjectSettings(postCreateHook: "npm ci"))
     let optedOut = ProjectSettings(

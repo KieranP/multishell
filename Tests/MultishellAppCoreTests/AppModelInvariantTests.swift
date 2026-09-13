@@ -126,11 +126,11 @@ struct AppModelInvariantTests {
               }, in: group.worktreeID)
         }
       default:
-        // A refresh that lost or found a worktree, then the sync every
+        // A refresh that lost or found a worktree, then the reconcile every
         // model action ends with.
         let kept = worktrees.filter { _ in Bool.random(using: &rng) }
         h.store.replaceWorktrees(kept.isEmpty ? worktrees : kept, forProject: h.project.id)
-        h.model.sync()
+        h.model.reconcileSessions(takingFocus: true)
       }
       check(h, "seed \(seed) step \(step)")
     }

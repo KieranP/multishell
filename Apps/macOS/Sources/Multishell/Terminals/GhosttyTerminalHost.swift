@@ -139,8 +139,19 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
       self, didFinishCommandIn: id, exitCode: exitCode.flatMap { Int32(exactly: $0) })
   }
 
+  /// A turn later, and only while still true: a frame raises this inside
+  /// SwiftUI's own update, where a store write is undefined behaviour.
   fileprivate func focused(_ id: TerminalSession.ID) {
-    delegate?.terminalHost(self, didFocus: id)
+    Task { @MainActor [weak self] in
+      guard let self, let view = surfaces[id], Self.hasKeyboard(view) else { return }
+      delegate?.terminalHost(self, didFocus: id)
+    }
+  }
+
+  /// libghostty may make an inner view the responder, so descendants count.
+  private static func hasKeyboard(_ view: NSView) -> Bool {
+    guard let responder = view.window?.firstResponder as? NSView else { return false }
+    return responder === view || responder.isDescendant(of: view)
   }
 }
 

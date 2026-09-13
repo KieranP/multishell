@@ -51,9 +51,9 @@ extension AppModel {
     guard select(worktree) else { return }
     store.activateTab(tab.id)
     store.focusSession(card.id)
-    // `sync` hands the keyboard to the active tab's focused pane, which the
+    // The reconcile hands the keyboard to the active tab's focused pane, which the
     // line above just made this one; nothing further is needed to land in it.
-    sync()
+    reconcileSessions(takingFocus: true)
   }
 
   /// The count on the app's icon: what the Waiting column shows. Pushed, the

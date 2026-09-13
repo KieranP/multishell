@@ -19,7 +19,7 @@ extension AppModel {
       return false
     }
     // Before anything else, `isShown` having to agree that panes fill the
-    // detail area. The seen-clearing is left to the `sync` at the end.
+    // detail area. The seen-clearing is left to the reconcile at the end.
     leaveAgentBoard()
     store.selectWorktree(worktree.id)
     warmWorktrees.insert(worktree.id)
@@ -29,7 +29,7 @@ extension AppModel {
     {
       openFirstOrNewTab(in: worktree, on: openingFirstTab)
     }
-    sync()
+    reconcileSessions(takingFocus: true)
     return true
   }
 

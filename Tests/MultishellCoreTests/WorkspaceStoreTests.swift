@@ -333,6 +333,21 @@ struct WorkspaceStoreEdgeTests {
     #expect(store.workspace.activeTab(in: worktree.id)?.id == first.id)
   }
 
+  /// The engine reports focus on every click and every showing, the Ghostty
+  /// one from inside a SwiftUI update, and every write re-runs the views
+  /// and re-arms autosave. One that changes nothing must not write.
+  @Test func focusingTheSessionAlreadyFocusedWritesNothing() {
+    let (store, _, worktree) = demoStore()
+    let first = store.openTab(in: worktree.id)!
+    store.openTab(in: worktree.id)
+    store.focusSession(first.focusedSessionID)
+
+    let counter = ChangeCounter(store)
+    store.focusSession(first.focusedSessionID)
+    store.activateTab(first.id)
+    #expect(counter.changes == 0)
+  }
+
   @Test func unknownIDsAreIgnored() {
     let (store, _, worktree) = demoStore()
     store.openTab(in: worktree.id)

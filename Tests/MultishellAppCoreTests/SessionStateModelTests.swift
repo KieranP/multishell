@@ -248,7 +248,7 @@ struct SessionStateModelTests {
     #expect(h.notifier.posted.count == 1, "shown, but nobody is looking")
     #expect(h.model.sessionStates[.session(session)] == .done, "and the dot says so too")
 
-    h.model.sync()
+    h.model.reconcileSessions(takingFocus: true)
     #expect(h.notifier.withdrawn.isEmpty, "still away")
     #expect(h.model.sessionStates[.session(session)] == .done, "a shell exiting is not a look")
 
@@ -386,7 +386,7 @@ struct SessionStateModelTests {
 
   /// The question goes when its subject does, whichever way that happens.
   /// A project removal is one way; this is the other, and it is why the
-  /// prune lives in `sync` rather than beside a removal.
+  /// prune lives in the reconcile rather than beside a removal.
   @Test func aCloseWaitingOnAConfirmationGoesWithTheProjectItAskedAbout() {
     let h = Harness()
     h.model.select(h.main)
@@ -590,6 +590,18 @@ struct AgentTabTests {
     h.model.newAgentTab()
     #expect(h.engine.opened.last?.command?.last?.hasPrefix("my-agent --fast; ") == true)
     #expect(h.model.title(of: h.model.workspace.activeTab(in: h.main.id)!) == "Custom command")
+  }
+
+  /// The sidebar is up while the login shell answers and its PATH is
+  /// scanned. A saved agent tab clicked in that window must not be told the
+  /// agent is missing, so the environment and what was found on it land together.
+  @Test func theEnvironmentIsNotKnownBeforeItsPathHasBeenScanned() async {
+    let h = Harness()
+    let refresh = Task { await h.model.refreshLoginEnvironment() }
+    while h.model.loginEnvironment == nil { try? await Task.sleep(for: .milliseconds(1)) }
+    #expect(h.model.shellDetection != .empty, "/etc/shells alone fills this")
+    #expect(h.model.agentDetection == AgentDetection(path: h.model.loginEnvironment?.path))
+    await refresh.value
   }
 
   @Test func theLoginEnvironmentFeedsDetection() async {

@@ -91,7 +91,7 @@ extension AppModel {
     worktreeOperations.clear(worktree.id)
     await refresh(project)
     await rearmWatcher()
-    sync()
+    reconcileSessions(takingFocus: true)
   }
 
   /// The Trash where it takes the directory, deletion where it will not: the

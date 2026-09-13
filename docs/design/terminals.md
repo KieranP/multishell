@@ -152,7 +152,13 @@ Finder-launched app has on PATH -> one login-shell environment captured at
 launch, with an eight second limit past which a poorer PATH beats empty
 dropdowns. Auto-start opens the agent where a shell would have, held back until
 the post-create hook ends. New Shell Tab always opens a shell, so one stays
-reachable.
+reachable. The hook ending is what opens that tab, wherever the user is
+looking: out of view or under the Agents board the shell starts and the
+keyboard stays put, the way every other background tab runs; in view it takes
+the keyboard as a new tab does. The alternative, waiting for the next visit,
+went through `select`, which reads the select pair of settings and closed the
+board by itself, so a team that opens a terminal on create and not on select
+got nothing.
 
 ## A user's Ghostty config is the middle of three layers
 

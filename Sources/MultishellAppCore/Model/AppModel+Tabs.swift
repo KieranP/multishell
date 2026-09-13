@@ -32,7 +32,7 @@ extension AppModel {
   public func newTab(in group: TabGroup.ID? = nil) {
     guard let worktree = worktreeReadyForShell() else { return }
     openFirstOrNewTab(in: worktree, on: .byUser, group: group)
-    sync()
+    reconcileSessions(takingFocus: true)
   }
 
   /// Cmd+Shift+T: always a plain shell, so one stays reachable when every
@@ -40,7 +40,7 @@ extension AppModel {
   public func newShellTab() {
     guard let worktree = worktreeReadyForShell() else { return }
     store.openTab(in: worktree.id)
-    sync()
+    reconcileSessions(takingFocus: true)
   }
 
   /// What a new tab is by default here, and the first tab a worktree gets
@@ -118,7 +118,7 @@ extension AppModel {
   }
 
   /// A close whose subject has gone has nothing left to ask. Run from
-  /// `sync`, so every path that takes one away is covered.
+  /// the reconcile, so every path that takes one away is covered.
   func prunePendingClose() {
     switch pendingClose {
     case .pane(let id) where workspace.session(id) == nil: pendingClose = nil
@@ -156,12 +156,12 @@ extension AppModel {
     case .pane(let id): store.closeSession(id)
     case .tab(let id): store.closeTab(id)
     }
-    sync()
+    reconcileSessions(takingFocus: true)
   }
 
   public func activate(_ tab: TerminalTab) {
     store.activateTab(tab.id)
-    sync()
+    reconcileSessions(takingFocus: true)
   }
 
   /// Moves `id` beside `target`, possibly in another column. A move leaving
@@ -173,7 +173,7 @@ extension AppModel {
     store.moveTab(id, placement, target)
     // The drop activates the tab in its new column, so without this the engine
     // keeps focus on the one now hidden behind it.
-    sync()
+    reconcileSessions(takingFocus: true)
   }
 
   /// A tab landing in another column always changes something, if only
@@ -232,7 +232,7 @@ extension AppModel {
     guard let worktree = worktreeReadyForShell(), let tab = workspace.activeTab(in: worktree.id)
     else { return }
     store.splitFocusedPane(of: tab.id, axis: axis)
-    sync()
+    reconcileSessions(takingFocus: true)
   }
 
   public func setSplitWeights(_ weights: [Double], at path: [Int], ofTab tabID: TerminalTab.ID) {

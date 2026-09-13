@@ -180,7 +180,7 @@ struct SeveralFailuresAtOnceTests {
     h.model.presentedError = nil
     h.platform.logged.removeAll()
 
-    h.model.reconcileSessions()
+    h.model.reconcileSessions(takingFocus: false)
 
     #expect(h.model.presentedError != nil, "the user is told once")
     #expect(h.platform.logged.count == 3, "and the rest are in the log: \(h.platform.logged)")

@@ -2,11 +2,11 @@
 
 Open findings from a whole-repo review on 2026-09-13, against commit 7fa714f.
 
-Six defects stand, none High. Each was read a second time by a verifier
-working from the code as it is, and the git-behaviour ones were reproduced in
-a scratch repository.
+No defects stand. The review found six, none High, each read a second time
+by a verifier working from the code as it is; all six have since been fixed
+and taken out.
 
-After them, thirty findings that are not defects: Perf, Design, Simplify,
+What remains is thirty findings that are not defects: Perf, Design, Simplify,
 Reuse and Style. Those are one finder's reading each, kept as written and not
 checked by a second, so read the code before acting on one. The Style entries
 are breaches of the repo's own rules on comment length and one type per file;
@@ -17,12 +17,6 @@ taken out rather than kept.
 
 | # | Effect | What |
 | --- | --- | --- |
-| 36 | Medium | Export drops the keys of `.multishell.json` this build does not know |
-| 40 | Medium | The Agents board closes by itself when a post-create stage ends |
-| 45 | Low | An agent tab opened during the launch scan says the agent is not installed |
-| 46 | Low | A late `git status` writes against a worktree that may have been replaced |
-| 47 | Low | The signing script deletes the spaces inside the keychain path |
-| 50 | Low | Ghostty focus writes into the store from inside a SwiftUI update |
 | 53 | Perf | The status poll runs `git status` for missing projects' worktrees |
 | 54 | Perf | Every split-divider drag frame writes the workspace and re-arms autosave |
 | 55 | Perf | The sidebar scans every session four times per worktree per render |
@@ -53,117 +47,6 @@ taken out rather than kept.
 | 80 | Style | A four-line doc comment on an `EditorLaunch` case |
 | 81 | Style | `TabDrops.swift` declares four types and is named for none |
 | 82 | Style | MARK section banners across four packages |
-
-## Worktrees
-
-### 46. Low. A late `git status` writes against a worktree that may have been replaced
-
-`Sources/MultishellAppCore/Model/AppModel+Runtime.swift:113`.
-`refreshStatus(of:)` writes `statuses[worktreeID]` after its await, guarded at
-line 112 only by the value having changed and not by the worktree still
-existing, while `refreshStatuses` at line 89 re-reads `known` after its await
-and filters. Nothing cancels `pendingStatusRefreshes` on removal, and
-`forgetVanishedWorktrees` runs at `replaceWorktrees`, before the late write
-lands. Paths being ids, a worktree removed and re-created at the same path
-inherits the old checkout's changed-files badge until the next frontmost poll.
-
-Plausible rather than confirmed: the visible effect needs a remove and a
-re-add inside one status run, about 250 ms plus git's time, which the UI's own
-remove and create cannot do. Fix = after the await, guard that the worktree
-still exists and is the same value before assigning.
-
-## Shared settings
-
-### 36. Medium. Export drops the keys of `.multishell.json` this build does not know
-
-`Sources/MultishellCore/Model/SharedProjectSettings.swift:135`.
-`load` decodes through a fixed `CodingKeys` container at line 195, which drops
-an unknown key, and `decodeTolerantly` at lines 199, 202, 220 and 224 drops a
-known key of the wrong type; the comment at 218 says as much. Export builds
-from `effectiveSettings`, keeps only the four hooks through
-`keepingHooks(of:)`, and `write` encodes `self`, which emits only the
-seventeen keys, then replaces the file atomically. A teammate on a newer build
-who committed a key this build lacks, or a `$schema` line, loses it from the
-repository on the user's next commit. Nothing in the app shows the loss; only
-`git diff` would.
-
-settings.md:34 covers hooks only: export keeps the file's own hooks where the
-user wrote none. Fix = have `load` keep the file's raw top-level dictionary
-alongside the decoded fields, and have `write` merge the export over it.
-
-## Agents and session state
-
-### 45. Low. An agent tab opened during the launch scan says the agent is not installed
-
-`Sources/MultishellAppCore/Model/AppModel+Agents.swift:16`, `loginEnvironment = environment`.
-`loginEnvironment` is set, then the model awaits the `offMain` PATH scan
-before `agentDetection` is filled at line 33. `start()` has already shown the
-sidebar, so a click on a worktree with a saved agent tab in that window
-reaches `agentCommand`, where line 148 reads `loginEnvironment != nil` and
-`!agentDetection.isInstalled(id)` as true for the empty detection. The "not
-installed" alert is raised, `reportMissingAgentOnce` then suppresses any real
-report for that agent this run, and the tab opens as a plain shell. The window
-is the scan's duration: milliseconds normally, seconds per PATH entry on a
-dead mount.
-
-Traced in code, not on screen. Fix = assign `loginEnvironment` together with
-the detections after the scan returns, or gate the check on the detection
-having been filled.
-
-## Board and tabs
-
-### 40. Medium. The Agents board closes by itself when a post-create stage ends
-
-`Sources/MultishellAppCore/Model/AppModel+WorktreeCreation.swift:231`, `select(current, openingFirstTab: .onCreate, byUser: false)`.
-`openHeldBackTab` guards only on the new worktree still being selected, and
-`showAgentBoard` leaves the selection alone, so the guard holds while the
-board is up. `select` then calls `leaveAgentBoard` unconditionally and `sync`,
-which moves first responder to a terminal. It is reached from `finishStage`,
-which the post-create hook and the file-list stages call from the setup task
-with no user action. agents.md:189 says that while the board is up nothing
-acting on the pane acts at all and that `worktreeInView` answers for them;
-`openHeldBackTab` does not go through it.
-
-No test covers a stage ending with the board shown. Fix = add
-`!showsAgentBoard` to the guard so the held-back tab opens on the next visit,
-which the comment at line 227 already promises.
-
-### 50. Low. Ghostty focus writes into the store from inside a SwiftUI update
-
-`Apps/macOS/Sources/Multishell/Terminals/SurfaceView.swift:23`, `frame.show(...)` in `updateNSView`.
-When the frame is already in a window, `show` calls `requestFocus`
-synchronously, and the chain runs inline: `focusSurface`, `host.focus`,
-`takeFirstResponder`, libghostty's `becomeFirstResponder` calling
-`core.setFocus(true)`, `TerminalSurfaceCoordinator.setFocus` calling
-`terminalDidChangeFocus` on its delegate, `SurfaceObserver`, `host.focused`,
-`SessionRegistry.terminalHost(didFocus:)`, `store.focusSession`, which writes
-`focusedSessionID`, `activeTabID` and `focusedGroupByWorktree`
-unconditionally. That is an `@Observable` mutation and an autosave schedule
-from inside `updateNSView`, which SwiftUI flags as undefined behaviour. The
-wrapper's own `TerminalViewState` defers exactly this callback for exactly
-this reason; `SurfaceObserver` does not. SwiftTerm is unaffected, having no
-focus callback.
-
-No symptom has been seen on screen. Fix = hop one runloop turn in
-`SurfaceObserver.terminalDidChangeFocus` before reporting, or defer
-`requestFocus` in `focusIfReady`; and have `focusSession` skip writes that
-change nothing.
-
-## Scripts
-
-### 47. Low. The signing script deletes the spaces inside the keychain path
-
-`Scripts/make-signing-identity.sh:18`, `tr -d ' "'`.
-`security login-keychain` prints four leading spaces and a quoted path, and
-the `tr` meant to strip those also removes every space inside the path. Fed
-`"/Users/Shared Dev/Library/Keychains/login.keychain-db"` it gives
-`/Users/SharedDev/...`. Line 62 passes that to `security import -k` outside
-the `run` wrapper, so under `set -e` the script exits after openssl has made
-the certificate, which the trap then deletes. `make-app.sh` finds no
-`Multishell Dev` certificate and signs ad hoc, the state the script exists to
-avoid. Narrow: a short name cannot hold a space, so only a relocated home or a
-volume with a space in its name reaches it. Fix = strip only leading
-whitespace and the surrounding quotes with `sed`.
 
 ## Performance
 

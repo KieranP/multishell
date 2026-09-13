@@ -105,7 +105,7 @@ struct AppModelDropTests {
     let h = Harness()
     h.model.select(h.main)
     h.store.openTab(in: h.main.id, title: "Claude Code", agentID: AgentCatalogue.claudeID)
-    h.model.sync()
+    h.model.reconcileSessions(takingFocus: true)
     guard let session = h.model.workspace.sessions(in: h.main.id).last else {
       return #expect(Bool(false), "the agent tab has a session")
     }

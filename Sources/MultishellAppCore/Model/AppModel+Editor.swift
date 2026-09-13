@@ -65,7 +65,7 @@ extension AppModel {
       store.openTab(in: worktree.id, title: title, command: command)
       store.selectWorktree(worktree.id)
       warmWorktrees.insert(worktree.id)
-      sync()
+      reconcileSessions(takingFocus: true)
     case nil:
       presentedError =
         editorID == EditorCatalogue.customID

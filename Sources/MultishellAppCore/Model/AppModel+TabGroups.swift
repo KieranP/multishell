@@ -13,10 +13,10 @@ extension AppModel {
   }
 
   /// A click anywhere in a column's strip. The pane keeps whatever focus it
-  /// had inside the tab, and `sync` hands the keyboard to it.
+  /// had inside the tab, and the reconcile hands the keyboard to it.
   public func focusGroup(_ id: TabGroup.ID) {
     store.focusGroup(id)
-    sync()
+    reconcileSessions(takingFocus: true)
   }
 
   public func focusNextGroup() { focusGroup(.after) }
@@ -51,7 +51,7 @@ extension AppModel {
     _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, toNewGroupOf group: TabGroup.ID
   ) -> Bool {
     guard store.moveTabToNewGroup(id, placement, of: group) != nil else { return false }
-    sync()
+    reconcileSessions(takingFocus: true)
     return true
   }
 
@@ -60,7 +60,7 @@ extension AppModel {
   @discardableResult
   public func moveTab(_ id: TerminalTab.ID, toEndOf group: TabGroup.ID) -> Bool {
     guard store.moveTab(id, toEndOf: group) else { return false }
-    sync()
+    reconcileSessions(takingFocus: true)
     return true
   }
 
@@ -70,7 +70,7 @@ extension AppModel {
   }
 
   /// A tab dragged along its own strip, moved as the pointer passes each
-  /// neighbour. Only inside one column, and no `sync`; see tabs-and-columns.md.
+  /// neighbour. Only inside one column, and no reconcile; see tabs-and-columns.md.
   public func shuffleTab(
     _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, past anchor: TerminalTab.ID
   ) {

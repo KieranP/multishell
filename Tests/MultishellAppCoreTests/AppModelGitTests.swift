@@ -162,25 +162,6 @@ struct AppModelGitTests {
     #expect(h.model.liveTerminalCount == 1)
   }
 
-  @Test func aHookThatEndsWhileAnotherWorktreeIsShownLeavesTheFirstTabToTheNextVisit()
-    async throws
-  {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    h.model.updateSettings(ProjectSettings(postCreateHook: "sleep 0.5"), for: h.project)
-    await h.model.createWorktree(branch: "later", basedOn: nil, createBranch: true, in: h.project)
-    let created = try #require(h.worktree(onBranch: "later"))
-    let main = try #require(h.worktree(onBranch: "main"))
-    h.model.select(main)
-
-    await h.model.worktreeSetups[created.id]?.value
-
-    #expect(h.model.workspace.tabs(in: created.id).isEmpty, "not opened behind the user's back")
-    #expect(h.model.workspace.selectedWorktreeID == main.id)
-    h.model.select(created)
-    #expect(h.model.workspace.tabs(in: created.id).count == 1)
-  }
-
   /// The two ends of the matrix a create and a selection are asked about
   /// separately: nothing, a shell, or an agent, for each.
   @Test func whatACreatedWorktreeOpensIsAskedApartFromWhatASelectedOneDoes() async throws {

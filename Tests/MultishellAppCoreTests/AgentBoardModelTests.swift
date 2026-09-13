@@ -242,7 +242,7 @@ struct AgentBoardModelTests {
     #expect(harness.platform.badges.last != 1)
   }
 
-  /// `markShownTabSeen` runs from every `sync` and from a shell exiting, so
+  /// `markShownTabSeen` runs from every focus-taking reconcile and a shell exiting, so
   /// without its own guard a close anywhere would clear a Done in the
   /// selected worktree — a pane the board is covering — and its card would
   /// jump to Idle under the user.

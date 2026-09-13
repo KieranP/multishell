@@ -21,6 +21,25 @@ extension AppModelGitTests {
     #expect(h.watcher.watched.map(\.lastPathComponent).sorted() == ["outside", "worktrees"])
   }
 
+  /// A prompt's status refresh is in flight when the worktree goes. Its
+  /// answer must not badge a row that is not there, or one re-made at the
+  /// same path, paths being ids.
+  @Test func aStatusThatArrivesAfterTheWorktreeWentBadgesNothing() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let main = h.model.workspace.worktrees(of: h.project.id)[0]
+    try "x".write(
+      to: main.path.appendingPathComponent("dirty.txt"), atomically: true, encoding: .utf8)
+
+    let refresh = Task { await h.model.refreshStatus(of: main.id) }
+    // One turn: the refresh has asked git and is waiting on the answer.
+    await Task.yield()
+    h.store.replaceWorktrees([], forProject: h.project.id)
+    await refresh.value
+
+    #expect(h.model.statuses[main.id] == nil)
+  }
+
   @Test func aBranchSwitchInTheMainWorktreeIsCaughtByTheStatusPoll() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }

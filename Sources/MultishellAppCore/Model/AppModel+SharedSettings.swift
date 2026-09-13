@@ -146,7 +146,7 @@ extension AppModel {
   public func exportSharedSettings(for project: Project) {
     guard let current = workspace.project(project.id) else { return }
     let mine = SharedProjectSettings(exporting: effectiveSettings(for: current))
-    let kept = mine.keepingHooks(of: sharedSettings[current.id])
+    let kept = mine.keeping(from: sharedSettings[current.id])
     let shared: SharedProjectSettings
     do {
       // What was written, digest and all, so nothing turns on reading the

@@ -5,17 +5,18 @@ import MultishellGitKit
 // MARK: - Reconciliation
 
 extension AppModel {
-  /// Brings the host in line with the store and focuses what should be
-  /// focused. Every action that changes which terminals exist ends here.
-  public func sync() {
-    reconcileSessions()
+  /// Brings the host in line with the store. Every action that changes which
+  /// terminals exist ends here; only a user's own action takes the keyboard.
+  public func reconcileSessions(takingFocus: Bool) {
+    reconcile()
+    guard takingFocus else { return }
     registry.focusActiveSession()
     markShownTabSeen()
   }
 
-  /// Surfaces brought in line with the workspace, keyboard left alone. What a
-  /// poll calls: `sync` would take focus off a field the user is typing in.
-  func reconcileSessions() {
+  /// Surfaces brought in line with the workspace, the keyboard left alone: a
+  /// poll reaches this too, and focusing would take it off a field being typed in.
+  private func reconcile() {
     let warm = warmWorktrees
     let failures = registry.reconcile(
       shouldBeLive: { warm.contains($0.worktreeID) }, prepare: { prepared($0) })
@@ -109,6 +110,9 @@ extension AppModel {
   public func refreshStatus(of worktreeID: Worktree.ID) async {
     guard let worktrees, let worktree = workspace.worktree(worktreeID) else { return }
     let fresh = await worktrees.statuses(of: [worktree])
+    // Gone while git ran: paths are ids, so a worktree re-made at this path
+    // would otherwise wear the old checkout's badge until the next poll.
+    guard workspace.worktree(worktreeID) != nil else { return }
     if let status = fresh[worktreeID], status != statuses[worktreeID] {
       statuses[worktreeID] = status
     }

@@ -13,7 +13,6 @@ extension AppModel {
     if case .processFallback(let reason) = environment.source {
       platform.log("login shell environment unavailable, using the process's own: \(reason)")
     }
-    loginEnvironment = environment
     // The bundle lookups answer from LaunchServices' own database and need
     // the platform, so they stay; it is the PATH that has to be left.
     let applications = EditorCatalogue.editors.reduce(into: [String: URL]()) { found, editor in
@@ -30,6 +29,9 @@ extension AppModel {
         editors: EditorDetection(path: path) { applications[$0] }
       )
     }
+    // Together, after the scan: `agentCommand` reads a set environment as
+    // "detection has answered", and the sidebar is already up.
+    loginEnvironment = environment
     agentDetection = detected.agents
     shellDetection = detected.shells
     editorDetection = detected.editors
@@ -111,7 +113,7 @@ extension AppModel {
       return
     }
     store.openTab(in: worktree.id, title: agentDisplayName(agentID), agentID: agentID)
-    sync()
+    reconcileSessions(takingFocus: true)
   }
 
   /// What the registry opens for a session: its shell, or the agent's command

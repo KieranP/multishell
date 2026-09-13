@@ -17,10 +17,11 @@ One path for tab open, tab close, worktree removed, project removed, process
 exited, relaunch. Cost: a session that fails to open is removed after, not
 prevented.
 
-Two halves, because a poll reaches this too. `reconcileSessions` brings the
-surfaces in line and leaves the keyboard alone; `sync` is that plus focusing
-the active session and marking what is shown as seen, and only a user's own
-action calls it. A refresh runs from the watcher and from any branch moving, so
+One function with a `takingFocus` flag, because a poll reaches this too.
+Without focus it brings the surfaces in line and leaves the keyboard alone;
+with it, it also focuses the active session and marks what is shown as seen,
+and only a user's own action passes it. It was two functions, `sync` and
+`reconcileSessions`, and the name said nothing about which took the keyboard. A refresh runs from the watcher and from any branch moving, so
 focusing there takes first responder off whatever the user is typing in, the
 sidebar filter included, every few seconds. A refresh still has to reconcile: a
 worktree removed outside the app loses its tabs and sessions in the store, and

@@ -119,6 +119,17 @@ does.
 
 ## Unconfirmed behaviour
 
+- Ghostty's focus report reaches the store a turn after libghostty raises
+  it, because a frame showing a surface already in a window raised it from
+  inside `updateNSView`, where a store write is undefined. Before it writes,
+  the host checks the surface still holds the window's first responder, so a
+  report cannot land for a pane the keyboard has since left. The store's half
+  is tested; the hop and the check are not, Ghostty's path needing a window
+  and Metal. The wrapper's `AppTerminalView` makes itself first responder
+  and calls `setFocus` from `becomeFirstResponder`, so the check is exact;
+  a descendant is accepted too in case a later wrapper adds one. If a
+  click's focus is ever seen to lag or go missing, fallback = report
+  synchronously again and defer `requestFocus` in `SurfaceFrame.focusIfReady`.
 - Ghostty engine's path untested, its zsh chain checked only against a
   stand-in bootstrap. Click-to-move works there and nowhere else, and not on
   the later lines of a multi-line buffer.

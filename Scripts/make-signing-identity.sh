@@ -13,9 +13,9 @@
 set -euo pipefail
 
 name="${1:-Multishell Dev}"
-# Asked for rather than assumed: the login keychain is `login.keychain` on an
-# account old enough, and `login.keychain-db` since Sierra.
-keychain="$(security login-keychain | tr -d ' "')"
+# Asked for, since it is `login.keychain` on an account old enough. Printed
+# indented and quoted; only that is stripped, a home being free to hold spaces.
+keychain="$(security login-keychain | sed -e 's/^[[:space:]]*//' -e 's/^"\(.*\)"$/\1/')"
 
 if security find-certificate -c "$name" >/dev/null 2>&1; then
     echo "already present: $name"

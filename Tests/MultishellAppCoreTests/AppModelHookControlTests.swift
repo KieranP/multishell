@@ -272,6 +272,64 @@ struct AppModelHookControlTests {
       h.model.workspace.tabs(in: created.id).count == 1, "the first tab opens as after a finish")
   }
 
+  /// The board is up while the hook runs, the user reading the roster. The
+  /// stage ending is not the user turning back to the pane: the first tab
+  /// opens behind the board and its card joins the roster.
+  @Test func aStageEndingUnderTheAgentsBoardLeavesTheBoardUpAndStartsTheTabBehindIt()
+    async throws
+  {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    h.model.setOpensTerminalOnSelect(false)
+    h.model.setOpensTerminalOnCreate(true)
+    h.model.updateSettings(ProjectSettings(postCreateHook: "sleep 30"), for: h.project)
+
+    await h.model.createWorktree(branch: "roster", basedOn: nil, createBranch: true, in: h.project)
+    let created = try #require(h.worktree(onBranch: "roster"))
+    h.model.showAgentBoard()
+    h.model.cancelStage(of: created)
+    await h.model.worktreeSetups[created.id]?.value
+
+    #expect(h.model.showsAgentBoard, "nothing the user did")
+    let tabs = h.model.workspace.tabs(in: created.id)
+    #expect(tabs.count == 1, "owed by the create, not the select")
+    #expect(h.engine.openSessionIDs.contains(tabs[0].focusedSessionID), "and running already")
+    #expect(h.engine.focused.isEmpty, "the keyboard is left where it was")
+  }
+
+  /// The user turned to another worktree while the hook ran. The first tab
+  /// is the create's, so it opens where they are not looking, under the
+  /// create settings, agent included, and the shell starts without taking
+  /// the keyboard from where they are.
+  @Test func aCreateFinishedOutOfViewStartsItsFirstTabInTheBackground() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    h.model.setOpensTerminalOnSelect(false)
+    h.model.setOpensTerminalOnCreate(true)
+    h.model.setAutoStartAgentOnCreate(true)
+    h.model.setPreferredAgent("claude")
+    h.model.updateSettings(ProjectSettings(postCreateHook: "sleep 30"), for: h.project)
+    let main = h.model.workspace.worktrees(of: h.project.id)[0]
+
+    await h.model.createWorktree(branch: "owed", basedOn: nil, createBranch: true, in: h.project)
+    let created = try #require(h.worktree(onBranch: "owed"))
+    h.model.select(main)
+    let focusedBefore = h.engine.focused.count
+    h.model.cancelStage(of: created)
+    await h.model.worktreeSetups[created.id]?.value
+
+    let tabs = h.model.workspace.tabs(in: created.id)
+    #expect(tabs.count == 1)
+    #expect(
+      h.model.workspace.session(tabs[0].focusedSessionID)?.agentID == "claude",
+      "the create pair of settings, not the select pair")
+    #expect(h.engine.openSessionIDs.contains(tabs[0].focusedSessionID), "started in the background")
+    #expect(h.model.workspace.selectedWorktreeID == main.id, "the user was not moved")
+    #expect(h.engine.focused.count == focusedBefore, "nor was the keyboard")
+    h.model.select(created)
+    #expect(h.model.workspace.tabs(in: created.id).count == 1, "nothing more on the visit")
+  }
+
   /// Removing the project is a decision about everything in it, hooks
   /// included. Left alone, the user's script ran on against a worktree the
   /// sidebar no longer shows; the `sleep 30` is what proves it is signalled,
@@ -664,6 +722,28 @@ struct AppModelHookControlTests {
     try FileManager.default.removeItem(at: file)
     await h.model.refreshChangedSharedSettings()
     #expect(h.model.pendingSharedHooksTrust == nil)
+  }
+
+  /// A key from a teammate's newer build is not the user's to drop, and
+  /// nothing but `git diff` would show it gone.
+  @Test func exportKeepsAKeyThisBuildDoesNotKnow() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let file = SharedProjectSettings.file(in: h.project.path)
+    try #"{ "$schema": "https://example.test/multishell.json", "branchPrefix": "team/" }"#
+      .write(to: file, atomically: true, encoding: .utf8)
+    await h.model.refresh(h.project)
+    h.model.updateSettings(ProjectSettings(iconTint: 3), for: h.project)
+
+    h.model.exportSharedSettings(for: h.project)
+
+    let json = try #require(
+      try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+    #expect(json["$schema"] as? String == "https://example.test/multishell.json")
+    #expect(json["branchPrefix"] as? String == "team/" && json["iconTint"] as? Int == 3)
+    #expect(
+      h.model.sharedSettings[h.project.id] == (try SharedProjectSettings.load(from: h.project.path))
+    )
   }
 
   @Test func exportLeavesOutAGlyphNoBuildCanDraw() async throws {

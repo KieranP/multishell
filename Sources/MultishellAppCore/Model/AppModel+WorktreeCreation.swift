@@ -224,11 +224,17 @@ extension AppModel {
     finishStage(.postCreateHook, of: worktree)
   }
 
-  /// The first tab, held back while the hook ran, opens now if the worktree
-  /// is still in view and the create setting says so, else on the next visit.
+  /// The first tab held back while the hook ran opens now under the create
+  /// settings, and its shell starts even out of view; see terminals.md.
   func openHeldBackTab(of worktree: Worktree) {
-    if workspace.selectedWorktreeID == worktree.id, let current = workspace.worktree(worktree.id) {
-      select(current, openingFirstTab: .onCreate, byUser: false)
-    }
+    guard let current = workspace.worktree(worktree.id), !isBusy(current.id),
+      workspace.tabs(in: current.id).isEmpty, opensTab(in: current, on: .onCreate),
+      requireDirectory(of: current)
+    else { return }
+    openFirstOrNewTab(in: current, on: .onCreate)
+    warmWorktrees.insert(current.id)
+    // The keyboard moves into the new pane only where the user is looking at
+    // it; anywhere else the shell starts and the keyboard stays put.
+    reconcileSessions(takingFocus: !showsAgentBoard && workspace.selectedWorktreeID == current.id)
   }
 }

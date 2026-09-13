@@ -110,7 +110,7 @@ public final class AppModel<Surface> {
   // MARK: - What the machine has
 
   /// The environment of the user's interactive login shell, once captured.
-  /// `nil` until the shell has answered.
+  /// `nil` until the shell has answered and its PATH has been scanned.
   public var loginEnvironment: LoginShellEnvironment?
   /// Which catalogue agents that environment's PATH has.
   public var agentDetection = AgentDetection.empty
@@ -283,7 +283,7 @@ public final class AppModel<Surface> {
     // drops directory.
     DroppedFiles.sweep()
     await refreshAll()
-    sync()
+    reconcileSessions(takingFocus: true)
     startStatusPolling()
     await refreshLoginEnvironment()
   }

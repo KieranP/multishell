@@ -274,7 +274,9 @@ extension WorkspaceStore {
   public func activateTab(_ id: TerminalTab.ID) {
     guard let tab = workspace.tab(id) else { return }
     setActiveTab(id, ofGroup: tab.groupID)
-    workspace.focusedGroupByWorktree[tab.worktreeID] = tab.groupID
+    if workspace.focusedGroupByWorktree[tab.worktreeID] != tab.groupID {
+      workspace.focusedGroupByWorktree[tab.worktreeID] = tab.groupID
+    }
   }
 
   private func removeTab(at index: Int) {
@@ -354,7 +356,9 @@ extension WorkspaceStore {
   }
 
   private func setActiveTab(_ id: TerminalTab.ID?, ofGroup groupID: TabGroup.ID) {
-    guard let index = workspace.tabGroups.firstIndex(where: { $0.id == groupID }) else { return }
+    guard let index = workspace.tabGroups.firstIndex(where: { $0.id == groupID }),
+      workspace.tabGroups[index].activeTabID != id
+    else { return }
     workspace.tabGroups[index].activeTabID = id
   }
 
@@ -417,7 +421,9 @@ extension WorkspaceStore {
   /// focus, and its tab and column take it with it.
   public func focusSession(_ id: TerminalSession.ID) {
     guard let index = workspace.tabs.firstIndex(where: { $0.root.contains(id) }) else { return }
-    workspace.tabs[index].focusedSessionID = id
+    // Guarded, here and below: the engine reports focus on every click and
+    // every showing, and each write re-runs the views and re-arms autosave.
+    if workspace.tabs[index].focusedSessionID != id { workspace.tabs[index].focusedSessionID = id }
     activateTab(workspace.tabs[index].id)
   }
 

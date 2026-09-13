@@ -116,7 +116,27 @@ What each test catches, and the conventions a new one follows.
   SessionStatesTests, both directions, and the owed Done still paid at the
   last worker out.
 - Export keeps a hook the user refused and does not trust it into the
-  bargain: AppModelHookControlTests, against the real file on disk.
+  bargain: AppModelHookControlTests, against the real file on disk. The same
+  suite exports over a file holding a `$schema` line, and
+  SharedProjectSettingsTests holds the whole rule: an unknown key, a nested
+  one, an order no build names and a wrong-typed flag all come back as they
+  were, and what `write` returns equals a fresh load.
+- A stage ending while the Agents board is up leaves it up, and the first
+  tab opens and starts under the create settings wherever the user is
+  looking, agent included, without moving the selection or the keyboard:
+  AppModelHookControlTests, the hook cancelled under the board and with
+  another worktree selected, opening on select turned off so only the create
+  pair can explain the tab, and the fake engine's opens and focus read back.
+- The login environment is not known before its PATH has been scanned:
+  SessionStateModelTests polls for the environment and reads the detections
+  in the same turn, `/etc/shells` being what makes the check independent of
+  which agents the machine has.
+- A `git status` answering after its worktree went badges nothing:
+  AppModelGitTests, real git, the store emptied between the ask and the
+  answer, one yield being what puts the refresh at its await.
+- A focus report that changes nothing writes nothing to the workspace:
+  WorkspaceStoreTests, through `withObservationTracking`, the same session
+  focused twice and its tab activated again.
 - bash keeps its DEBUG trap against one installed at the first prompt, chains
   to that one and to the `.bashrc` one, and hands `$?` on: HelperTests, real
   bash driven through a pipe so `PROMPT_COMMAND` runs between the two, a
