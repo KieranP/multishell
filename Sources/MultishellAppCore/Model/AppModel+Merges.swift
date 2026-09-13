@@ -50,7 +50,11 @@ extension AppModel {
     var asking: Set<String> = []
     var unbadgeable: [Worktree.ID] = []
     for worktree in workspace.worktrees(of: project.id) {
-      guard WorktreeMergeState.applies(to: worktree, base: scan.base.branch),
+      // A stage keeps what it earned and is asked nothing; a claimed path
+      // forgets, the last checkout there being gone. See worktrees.md.
+      if worktreeOperations.isUnderWay(worktree.id) { continue }
+      guard creatingWorktreeClaims[worktree.id] == nil,
+        WorktreeMergeState.applies(to: worktree, base: scan.base.branch),
         let branch = worktree.branch, let tip = scan.tip(of: branch)
       else {
         unbadgeable.append(worktree.id)
@@ -72,7 +76,7 @@ extension AppModel {
     // is still there and still on that branch is kept.
     for worktree in workspace.worktrees(of: project.id) {
       guard let check = checks[worktree.id], check.branch == worktree.branch,
-        let state = fresh[check.branch]
+        let state = fresh[check.branch], !isUnderConstruction(worktree.id)
       else { continue }
       // Only an answer settles it: stamping the check for a failed read
       // pins the old verdict to the new tip for good.

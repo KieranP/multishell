@@ -19,6 +19,10 @@ What each test catches, and the conventions a new one follows.
 - Closed tab's shell ends and is collected: SwiftTermHostTests, real shells.
   Ghostty's path uncovered: its surface needs a window and Metal.
 - Git on a timer reads only: StatusLockTests.
+- A tree still being built wears no badge, and a stage on a listed worktree
+  keeps the one it earned: the `Badged` tests in AppModelGitTests+Refresh and
+  `aWorktreeStillBeingBuiltDoesNotWearTheMergedBadge` in +Merges, on real
+  git with a gated hook where the window matters.
 - Git against real repositories, bare clone with worktrees beside it included:
   RepositoryFixture. FakeGit only for what real git cannot do on demand.
   Parsers get fixture text, CRLF and malformed lines included.

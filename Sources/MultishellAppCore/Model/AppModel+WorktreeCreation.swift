@@ -53,15 +53,21 @@ extension AppModel {
     // The workspace, not the value handed in: a sheet held open across a
     // removal would add a worktree nothing in the app lists.
     guard let worktrees, workspace.project(project.id) != nil else { return }
+    let resolved = resolved(project)
+    let settings = worktreeSettings(for: project)
+    let shell = workspace.defaultShell(for: project)
+    // The row can arrive mid-checkout: git writes its record before the
+    // first file, and that directory is watched. See worktrees.md.
+    let claimed = claimConstruction(
+      of: worktrees.plannedPath(
+        forBranch: branch, createBranch: createBranch, in: resolved, settings: settings))
     let stopper = ProcessStopper()
     creationStopper = stopper
     defer {
       worktreeCreationStep = nil
       creationStopper = nil
+      if let claimed { endConstruction(of: claimed, in: project) }
     }
-    let resolved = resolved(project)
-    let settings = worktreeSettings(for: project)
-    let shell = workspace.defaultShell(for: project)
     let path: URL
     do {
       path = try await worktrees.add(
@@ -156,6 +162,38 @@ extension AppModel {
   private func endSetup(of worktree: Worktree, stopper: ProcessStopper) {
     worktreeSetups[worktree.id] = nil
     if stageStoppers[worktree.id] === stopper { stageStoppers[worktree.id] = nil }
+    readBadges(of: worktree.id, in: worktree.projectID)
+  }
+
+  /// A path already listed is someone's row, and a doomed create must not
+  /// blank it. Returns what was claimed, for `endConstruction`.
+  func claimConstruction(of planned: URL) -> Worktree.ID? {
+    let id = planned.standardizedFileURL.path
+    guard workspace.worktree(id) == nil else { return nil }
+    creatingWorktreeClaims[id, default: 0] += 1
+    return id
+  }
+
+  /// One claim let go, not the path: another create may still hold it.
+  /// A stage that has begun reads when it ends instead.
+  func endConstruction(of id: Worktree.ID, in project: Project) {
+    if let count = creatingWorktreeClaims[id], count > 1 {
+      creatingWorktreeClaims[id] = count - 1
+    } else {
+      creatingWorktreeClaims[id] = nil
+    }
+    if !worktreeOperations.isUnderWay(id) { readBadges(of: id, in: project.id) }
+  }
+
+  /// Nothing writes there now, so read rather than wait out the poll. Judged
+  /// when the read runs: `endSetup` is called before a file list's entry clears.
+  private func readBadges(of id: Worktree.ID, in projectID: Project.ID) {
+    scheduleStatusRefresh(of: id)
+    Task { @MainActor [weak self] in
+      guard let self, !isUnderConstruction(id), let project = workspace.project(projectID)
+      else { return }
+      await refreshMergeStates(of: project)
+    }
   }
 
   /// The stage ended, so the first tab held back while it ran opens now.

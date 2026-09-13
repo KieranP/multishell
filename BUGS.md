@@ -9,7 +9,8 @@ taken out.
 Three defects stand, 84, 86 and 87, moved here from TODO.md's Issues list on
 2026-09-13. Those were written from use and from reading the code, not
 reproduced and not read by a second verifier. Beside them is 85, not a defect
-but behaviour nobody has watched happen.
+but behaviour nobody has watched happen. 88, reported from use on 2026-09-14,
+has since been fixed and taken out.
 
 Then thirty-one findings that are not defects: Perf, Design, Simplify, Reuse
 and Style. Those are one finder's reading each, kept as written and not

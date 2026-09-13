@@ -81,6 +81,9 @@ public final class AppModel<Surface> {
   @ObservationIgnored var stageStoppers: [Worktree.ID: ProcessStopper] = [:]
   /// The stop handle for the pre-create hook under the sheet.
   @ObservationIgnored var creationStopper: ProcessStopper?
+  /// Where each running `git worktree add` is checking out, counted: two
+  /// creates can name one path; see worktrees.md.
+  @ObservationIgnored var creatingWorktreeClaims: [Worktree.ID: Int] = [:]
 
   // MARK: - Terminals
 

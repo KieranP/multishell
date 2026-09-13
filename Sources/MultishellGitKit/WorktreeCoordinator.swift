@@ -136,7 +136,10 @@ public struct WorktreeCoordinator: Sendable {
     // Before the hook, for an existing branch too: git rejects the name at
     // the end of it, and the hook's work is done by then.
     guard GitRefName.isValidBranch(branch) else { throw InvalidBranchName(branch) }
-    let path = settings.worktreePath(forBranch: branch, in: project)
+    // The one place the path is derived, so what the sheet showed and what
+    // the model holds back from `git status` cannot part from what is made.
+    let path = plannedPath(
+      forBranch: rawBranch, createBranch: createBranch, in: project, settings: settings)
 
     if WorktreeHooks.hasScript(project.settings.preCreateHook) { onStep?(.preCreateHook) }
     try await hooks.runPreCreate(

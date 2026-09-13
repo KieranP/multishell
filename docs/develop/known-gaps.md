@@ -108,6 +108,23 @@ does.
   unmovable, and the check is made once at restore. Permissions fixed while the
   app runs are not noticed until relaunch, and the session's work goes at quit
   with only the launch alert having said so.
+- A worktree is held back from `git status` while the app is making it, by
+  the path `git worktree add` was given and by the stage running on it, so
+  two ways past remain. One: `git worktree add` run in a terminal, where the
+  app learns of the row from the watcher and knows nothing of a checkout in
+  progress. Two: a symlinked volume, where git's resolved path and the
+  planned one differ and the comparison misses. Either shows the row's
+  changed count reading the half-made tree until the next poll after it
+  settles. Fix = read git's own mark: mid-add the porcelain list says
+  `locked initializing` and `.git/worktrees/<name>/` holds `locked` with no
+  `index`; match the files, the reason being localised, and a plain
+  `isLocked` would blank a worktree the user locked. See
+  docs/design/worktrees.md.
+- `creationStopper` and `worktreeCreationStep` are one slot each, so with two
+  creates overlapping, Cmd+N reopening the sheet while the last one runs, the
+  first to end nils both: the second sheet's Cancel greys out and its
+  pre-create hook cannot be stopped. The row hold-back is counted per create
+  and is not affected.
 
 ## Unconfirmed behaviour
 

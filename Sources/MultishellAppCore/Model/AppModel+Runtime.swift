@@ -83,10 +83,11 @@ extension AppModel {
   /// than blinking off for five seconds; one whose worktree is gone loses it.
   public func refreshStatuses() async {
     guard let worktrees else { return }
-    let fresh = await worktrees.statuses(of: workspace.worktrees)
+    let fresh = await worktrees.statuses(
+      of: workspace.worktrees.filter { !isUnderConstruction($0.id) })
     // Read after the await, and applied to what git returned as well as to
-    // what was there: a worktree removed while git ran has no row to badge.
-    let known = Set(workspace.worktrees.map(\.id))
+    // what was there: a removed row keeps no badge; see worktrees.md.
+    let known = Set(workspace.worktrees.map(\.id).filter { creatingWorktreeClaims[$0] == nil })
     var merged = statuses.filter { known.contains($0.key) }
     merged.merge(fresh.filter { known.contains($0.key) }) { _, new in new }
     if merged != statuses { statuses = merged }
@@ -108,11 +109,13 @@ extension AppModel {
   }
 
   public func refreshStatus(of worktreeID: Worktree.ID) async {
-    guard let worktrees, let worktree = workspace.worktree(worktreeID) else { return }
+    guard let worktrees, let worktree = workspace.worktree(worktreeID),
+      !isUnderConstruction(worktreeID)
+    else { return }
     let fresh = await worktrees.statuses(of: [worktree])
     // Gone while git ran: paths are ids, so a worktree re-made at this path
     // would otherwise wear the old checkout's badge until the next poll.
-    guard workspace.worktree(worktreeID) != nil else { return }
+    guard workspace.worktree(worktreeID) != nil, !isUnderConstruction(worktreeID) else { return }
     if let status = fresh[worktreeID], status != statuses[worktreeID] {
       statuses[worktreeID] = status
     }

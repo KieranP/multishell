@@ -143,3 +143,40 @@ and the tab store keyed off something git never reported.
 `git worktree add` makes every leading directory of its path, and a refused
 add makes none. The app used to `createDirectory` first, so a taken branch
 name left an empty chain under a nested `worktreeDirectory`.
+
+## A tree still being built wears no badge
+
+`git worktree add` writes `.git/worktrees/<name>` before it checks a file out,
+and that directory is watched -> a tick lands the row mid-checkout, where `git
+status` counts every file not there yet. The file lists and the post-create
+hook write into the tree after that. Either way a branch a second old read as
+thousands of changes.
+
+So `git status` is skipped while `isUnderConstruction`: every path a running
+`git worktree add` was given, and any worktree with a stage running. A failed
+stage is not one, nothing writing there until the Dismiss.
+
+The two halves treat what was already known differently. A claimed path
+forgets its status and its merged badge: the last checkout there is gone, and
+paths are ids. A stage on a listed worktree keeps both and is asked nothing
+new, as a failed read is kept, or a removal would blank the very count and
+"branch landed" note its dialog asks about. `refreshMergeStates` rechecks
+after its await as `refreshStatus` does, a stage able to start under a git
+call. The end of the add and of each stage schedule the status read and one
+merge scan, the poll's own work once over, rather than waiting it out.
+
+The claim is counted, not a set: two creates can name one path, the sheet
+reopening under Cmd+N while the last one still runs, and the first to end
+must not let go of what the other is checking out into. A path already
+listed is not claimed at all, a doomed create otherwise blanking someone's
+row for the length of its pre-create hook. `WorktreeCoordinator.add` takes
+its path from `plannedPath`, the one derivation, so what the sheet shows,
+what is held back and what is made cannot part. `creationStopper` and
+`worktreeCreationStep` are still single slots, so under that overlap the
+second create's Cancel is lost; recorded in known-gaps.md.
+
+Cost: the planned path is what is compared, not git's answer, so on a
+symlinked volume where the two differ the row is badged mid-checkout as before.
+Git itself marks the window, `locked initializing` in the porcelain list and
+no `index` beside the `locked` file; reading that would cover a terminal-run
+add too, and is the fix named in known-gaps.md.

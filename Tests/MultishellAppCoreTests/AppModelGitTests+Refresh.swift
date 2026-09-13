@@ -288,4 +288,212 @@ extension AppModelGitTests {
     #expect(h.model.missingProjects == [project.id])
     #expect(h.model.workspace.worktrees(of: project.id).count == 1, "kept as last seen")
   }
+
+  /// A worktree still being set up is a building site: the file lists and
+  /// the post-create hook are writing into it. See worktrees.md.
+  @Test func aWorktreeWithAStageRunningIsNotBadged() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let main = try #require(h.worktree(onBranch: "main"))
+    try "x".write(
+      to: main.path.appendingPathComponent("dirty.txt"), atomically: true, encoding: .utf8)
+    h.model.worktreeOperations.begin(.copyingFiles, on: main.id)
+
+    await h.model.refreshStatuses()
+    #expect(h.model.statuses[main.id] == nil, "nothing while the stage writes")
+
+    h.model.worktreeOperations.finish(.copyingFiles, on: main.id)
+    await h.model.refreshStatuses()
+    #expect(h.model.statuses[main.id]?.changedFiles == 1, "and the real count once it is done")
+  }
+
+  /// A removal's stages run on a worktree that already earned its badge, and
+  /// the count is real until the directory goes. Only a create claims a path
+  /// whose last checkout left a reading worth nothing.
+  @Test func aStageOnAWorktreeThatAlreadyHasABadgeDoesNotBlinkItOff() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let main = try #require(h.worktree(onBranch: "main"))
+    try "x".write(
+      to: main.path.appendingPathComponent("dirty.txt"), atomically: true, encoding: .utf8)
+    await h.model.refreshStatuses()
+    #expect(h.model.statuses[main.id]?.changedFiles == 1, "earned before the stage")
+
+    h.model.worktreeOperations.begin(.removingWorktree, on: main.id)
+    await h.model.refreshStatuses()
+
+    #expect(h.model.statuses[main.id]?.changedFiles == 1, "kept, as a failed read is kept")
+  }
+
+  /// A stage that failed is not still writing, and the pane's Dismiss is the
+  /// user's to click: the row says what the tree holds meanwhile.
+  @Test func aWorktreeWhoseStageFailedIsBadgedWithoutWaitingForTheDismiss() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let main = try #require(h.worktree(onBranch: "main"))
+    try "x".write(
+      to: main.path.appendingPathComponent("dirty.txt"), atomically: true, encoding: .utf8)
+    h.model.worktreeOperations.begin(.postCreateHook, on: main.id)
+    h.model.worktreeOperations.fail(.postCreateHook, on: main.id, message: "no")
+
+    await h.model.refreshStatuses()
+
+    #expect(h.model.isBusy(main.id), "still held against a shell")
+    #expect(h.model.statuses[main.id]?.changedFiles == 1)
+  }
+
+  /// `git worktree add` writes its record before it checks a file out, and
+  /// that directory is watched, so a tick lands the row mid-checkout.
+  @Test func aWorktreeHalfwayThroughItsAddIsNotBadged() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let main = try #require(h.worktree(onBranch: "main"))
+    try "x".write(
+      to: main.path.appendingPathComponent("dirty.txt"), atomically: true, encoding: .utf8)
+    var stale = WorktreeStatus()
+    stale.changedFiles = 9
+    h.model.statuses[main.id] = stale
+    h.model.creatingWorktreeClaims[main.id] = 1
+
+    await h.model.refreshStatuses()
+    #expect(h.model.statuses[main.id] == nil, "and the last checkout at this path leaves nothing")
+
+    await h.model.refreshStatus(of: main.id)
+    #expect(h.model.statuses[main.id] == nil, "a prompt's refresh reads no earlier")
+  }
+
+  /// The plain create, no file lists and no hook: nothing but the `defer`
+  /// lets go of the path, and a row never let go of is never badged again.
+  @Test func aCreateWithNoStagesAfterItLetsGoOfTheRow() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+
+    await h.model.createWorktree(branch: "plain", basedOn: nil, createBranch: true, in: h.project)
+
+    let created = try #require(h.worktree(onBranch: "plain"))
+    #expect(h.model.creatingWorktreeClaims.isEmpty)
+    try "x".write(
+      to: created.path.appendingPathComponent("dirty.txt"), atomically: true, encoding: .utf8)
+
+    await h.model.refreshStatuses()
+
+    #expect(h.model.statuses[created.id]?.changedFiles == 1)
+  }
+
+  /// Nothing in the model stops two creates overlapping, so each holds its
+  /// own row: one slot would leave whichever started first badged mid-add.
+  @Test func twoCreatesAtOnceEachHoldTheirOwnRow() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let gate = h.root.appendingPathComponent("go")
+    h.model.updateSettings(
+      ProjectSettings(preCreateHook: "while [ ! -f \"\(gate.path)\" ]; do sleep 0.02; done"),
+      for: h.project)
+
+    let first = Task {
+      await h.model.createWorktree(branch: "one", basedOn: nil, createBranch: true, in: h.project)
+    }
+    let second = Task {
+      await h.model.createWorktree(branch: "two", basedOn: nil, createBranch: true, in: h.project)
+    }
+    for _ in 0..<250 where h.model.creatingWorktreeClaims.count < 2 {
+      try await Task.sleep(for: .milliseconds(20))
+    }
+    let held = Set(h.model.creatingWorktreeClaims.keys)
+    #expect(held.count == 2, "both, not just the later one")
+
+    try Data().write(to: gate)
+    await first.value
+    await second.value
+
+    #expect(h.model.creatingWorktreeClaims.isEmpty, "and each let go of its own")
+    let one = try #require(h.worktree(onBranch: "one"))
+    let two = try #require(h.worktree(onBranch: "two"))
+    #expect(held == [one.id, two.id], "what was held is what git then listed")
+  }
+
+  /// The planned path is claimed before git has agreed to it, so a create
+  /// bound to fail must not blank the row already at that path.
+  @Test func aCreateAimedAtAnExistingRowLeavesItsBadgeAlone() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let main = try #require(h.worktree(onBranch: "main"))
+    try "x".write(
+      to: main.path.appendingPathComponent("dirty.txt"), atomically: true, encoding: .utf8)
+    await h.model.refreshStatuses()
+
+    #expect(h.model.claimConstruction(of: main.path) == nil)
+    #expect(!h.model.isUnderConstruction(main.id))
+    await h.model.refreshStatuses()
+    #expect(h.model.statuses[main.id]?.changedFiles == 1)
+  }
+
+  /// Two creates naming one path, one of them doomed: the first to end
+  /// must not let go of a path the other is still checking out into.
+  @Test func twoCreatesOnOnePathHoldItUntilTheLastLetsGo() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let planned = h.root.appendingPathComponent("twice", isDirectory: true)
+    let id = try #require(h.model.claimConstruction(of: planned))
+    #expect(h.model.claimConstruction(of: planned) == id)
+
+    h.model.endConstruction(of: id, in: h.project)
+    #expect(h.model.isUnderConstruction(id), "one still holds it")
+
+    h.model.endConstruction(of: id, in: h.project)
+    #expect(!h.model.isUnderConstruction(id))
+  }
+
+  /// A file list is the one stage whose `endSetup` runs before its entry is
+  /// cleared, so the read it schedules must judge the row later, not then.
+  @Test func aCreateWithOnlyAFileListGetsItsBadgeWithoutWaitingForThePoll() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    try "secret".write(
+      to: h.project.path.appendingPathComponent(".env"), atomically: true, encoding: .utf8)
+    h.model.updateSettings(ProjectSettings(copiedPaths: ".env"), for: h.project)
+
+    await h.model.createWorktree(branch: "listed", basedOn: nil, createBranch: true, in: h.project)
+    let created = try #require(h.worktree(onBranch: "listed"))
+    await h.model.worktreeSetups[created.id]?.value
+    #expect(h.model.worktreeOperations.isEmpty, "the copy is done")
+
+    for _ in 0..<100 where h.model.statuses[created.id] == nil {
+      try await Task.sleep(for: .milliseconds(20))
+    }
+
+    #expect(h.model.statuses[created.id]?.changedFiles == 1, "the copied .env, read at once")
+  }
+
+  /// The whole of what was reported: a post-create hook writing a build
+  /// directory used to badge the row with what it had written so far.
+  @Test func aPostCreateHookStillWritingDoesNotBadgeTheRow() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let gate = h.root.appendingPathComponent("go")
+    h.model.updateSettings(
+      ProjectSettings(
+        postCreateHook: """
+          mkdir -p build && echo x > build/one && echo x > build/two
+          while [ ! -f "\(gate.path)" ]; do sleep 0.02; done
+          """), for: h.project)
+
+    await h.model.createWorktree(branch: "slow", basedOn: nil, createBranch: true, in: h.project)
+    let created = try #require(h.worktree(onBranch: "slow"))
+    for _ in 0..<200
+    where !FileManager.default.fileExists(
+      atPath: created.path.appendingPathComponent("build/two").path)
+    {
+      try await Task.sleep(for: .milliseconds(20))
+    }
+
+    await h.model.refreshStatuses()
+    #expect(h.model.statuses[created.id] == nil, "nothing while the hook writes")
+
+    try Data().write(to: gate)
+    await h.model.worktreeSetups[created.id]?.value
+    await h.model.refreshStatuses()
+
+    #expect(h.model.statuses[created.id]?.changedFiles == 1, "the one untracked directory, after")
+  }
 }

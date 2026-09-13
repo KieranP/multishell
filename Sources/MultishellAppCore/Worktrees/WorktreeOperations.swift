@@ -18,6 +18,12 @@ public struct WorktreeOperations: Equatable, Sendable {
     operations[id] != nil
   }
 
+  /// A stage is writing there now. A failed one is not: nothing writes
+  /// until the Dismiss.
+  public func isUnderWay(_ id: Worktree.ID) -> Bool {
+    operations[id]?.isRunning == true
+  }
+
   /// A stage starts. Whatever was there gives way: the newer operation owns
   /// the entry from here on.
   public mutating func begin(_ step: WorktreeOperation.Step, on id: Worktree.ID) {

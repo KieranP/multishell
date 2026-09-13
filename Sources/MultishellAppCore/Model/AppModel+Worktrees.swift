@@ -78,6 +78,12 @@ extension AppModel {
     worktreeOperations.isBusy(id)
   }
 
+  /// The checkout, the file lists or the post-create hook are still
+  /// filling it, so git reads a half-made tree; see worktrees.md.
+  public func isUnderConstruction(_ id: Worktree.ID) -> Bool {
+    creatingWorktreeClaims[id] != nil || worktreeOperations.isUnderWay(id)
+  }
+
   /// The pane's Dismiss after a failed stage. A dismissed create stage
   /// hands over the way a finished one does: the first tab opens.
   public func dismissOperationFailure(of worktree: Worktree) {

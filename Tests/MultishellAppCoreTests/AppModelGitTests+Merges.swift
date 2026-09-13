@@ -33,6 +33,39 @@ extension AppModelGitTests {
     #expect(h.model.presentedError == nil)
   }
 
+  /// The badge reads "safe to remove". A path a create has claimed forgets
+  /// what the last checkout there earned; a stage on a worktree hides it and
+  /// asks nothing new, so a removal's own badge stands while its hook runs.
+  @Test func aWorktreeStillBeingBuiltDoesNotWearTheMergedBadge() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    await h.model.createWorktree(branch: "feat", basedOn: nil, createBranch: true, in: h.project)
+    let feat = try #require(h.worktree(onBranch: "feat"))
+    _ = try await h.git.run(["commit", "-q", "--allow-empty", "-m", "work"], in: feat.path)
+    _ = try await h.git.run(["merge", "-q", "--no-ff", "-m", "merge", "feat"], in: h.project.path)
+    await h.model.refreshMergeStates()
+    #expect(h.model.mergeState(of: feat) == .merged(.ancestor, into: "main"))
+
+    h.model.creatingWorktreeClaims[feat.id] = 1
+    await h.model.refreshMergeStates()
+    #expect(h.model.mergeState(of: feat) == .unknown, "a claimed path forgets")
+
+    h.model.creatingWorktreeClaims[feat.id] = nil
+    h.model.worktreeOperations.begin(.postCreateHook, on: feat.id)
+    await h.model.refreshMergeStates()
+    #expect(h.model.mergeState(of: feat) == .unknown, "and a stage computes nothing new")
+
+    h.model.worktreeOperations.finish(.postCreateHook, on: feat.id)
+    await h.model.refreshMergeStates()
+    #expect(h.model.mergeState(of: feat) == .merged(.ancestor, into: "main"), "and back after")
+
+    h.model.worktreeOperations.begin(.preDeleteHook, on: feat.id)
+    await h.model.refreshMergeStates()
+    #expect(
+      h.model.mergeState(of: feat) == .merged(.ancestor, into: "main"),
+      "a removal keeps the badge it is asking about")
+  }
+
   /// The check runs on the status poll, so a pass that finds nothing moved
   /// must not touch the observable state: writing a dictionary entry back
   /// unchanged still tells every view watching it to draw again, and this
