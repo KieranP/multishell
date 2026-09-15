@@ -14,6 +14,13 @@ extension AppModel {
     markShownTabSeen()
   }
 
+  /// For a control that is leaving, such as the sidebar filter on Escape: the
+  /// keyboard would otherwise fall to the window and type into nothing.
+  public func focusActivePane() {
+    guard !showsAgentBoard else { return }
+    registry.focusActiveSession()
+  }
+
   /// Surfaces brought in line with the workspace, the keyboard left alone: a
   /// poll reaches this too, and focusing would take it off a field being typed in.
   private func reconcile() {

@@ -544,6 +544,28 @@ struct AppModelTests {
       "b is what the column shows now; a is behind it")
   }
 
+  @Test func focusingTheActivePaneHandsTheKeyboardToTheActiveTabsFocusedSession() throws {
+    let h = Harness()
+    h.model.select(h.main)
+    let tab = try #require(h.model.workspace.activeTab(in: h.main.id))
+    h.engine.focused.removeAll()
+
+    h.model.focusActivePane()
+
+    #expect(h.engine.focused == [tab.focusedSessionID])
+  }
+
+  @Test func focusingTheActivePaneDoesNothingWhileTheBoardCoversThePanes() {
+    let h = Harness()
+    h.model.select(h.main)
+    h.model.showAgentBoard()
+    h.engine.focused.removeAll()
+
+    h.model.focusActivePane()
+
+    #expect(h.engine.focused.isEmpty)
+  }
+
   /// The field commits when focus leaves it, and Escape takes the field away,
   /// so the commit can arrive after the edit was abandoned. The worktree
   /// rename has guarded this since it was written; the tab's had not.

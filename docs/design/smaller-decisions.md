@@ -108,5 +108,8 @@ Newest at the bottom.
   project list, costing a row of height in every session to a control reached
   in few of them. Closing it clears the text, so rows are never missing with
   nothing on screen saying why, and Escape in the field closes rather than
-  just empties. Cost: the filter is one click further away, and with no
-  keyboard route to it (known-gaps.md) the mouse is the only way in.
+  just empties. Closing hands the keyboard to the active pane through
+  `focusActivePane`: the focused field leaving would otherwise drop first
+  responder to the window, and typing would reach nothing. Cost: the filter
+  is one click further away, and with no keyboard route to it
+  (known-gaps.md) the mouse is the only way in.

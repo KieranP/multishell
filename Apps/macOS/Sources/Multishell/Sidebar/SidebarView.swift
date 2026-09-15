@@ -92,11 +92,13 @@ struct SidebarView: View {
     model.ordered(entry.worktrees, in: entry.project)
   }
 
-  /// Closing clears the filter: a field folded away cannot say why rows are
-  /// missing.
+  /// Closing clears the filter, a field folded away being unable to say why
+  /// rows are missing, and hands the keyboard back rather than dropping it.
   private func setFiltering(_ wanted: Bool) {
     isFiltering = wanted
-    if !wanted { filter = "" }
+    guard !wanted else { return }
+    filter = ""
+    model.focusActivePane()
   }
 
   private func filterField(_ theme: Theme, metrics: UIMetrics) -> some View {
