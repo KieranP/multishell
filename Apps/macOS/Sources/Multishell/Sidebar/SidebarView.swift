@@ -12,16 +12,21 @@ struct SidebarView: View {
   /// The worktree a dragged tab is hovering over, drawn on its row.
   @State private var tabDropTarget: Worktree.ID?
   @State private var filter = ""
+  /// The filter field is folded away until asked for; it is wanted rarely.
+  @State private var isFiltering = false
+  @FocusState private var filterFocused: Bool
   @Environment(\.openWindow) private var openWindow
 
   private static let rowSpacing: CGFloat = 1
+  /// Above the first row, so the gap holds whether or not the filter is shown.
+  private static let listGap: CGFloat = 10
 
   var body: some View {
     let theme = model.currentTheme
     let metrics = model.metrics
     VStack(spacing: 0) {
       header(theme)
-      filterField(theme, metrics: metrics)
+      if isFiltering { filterField(theme, metrics: metrics) }
       ScrollView {
         LazyVStack(spacing: 1) {
           AgentsRow(
@@ -48,6 +53,7 @@ struct SidebarView: View {
           }
         }
         .padding(.horizontal, 8)
+        .padding(.top, Self.listGap)
         .padding(.bottom, 12)
       }
       .overlay {
@@ -86,23 +92,28 @@ struct SidebarView: View {
     model.ordered(entry.worktrees, in: entry.project)
   }
 
-  private var isFiltering: Bool {
-    SidebarFilter(filter).isActive
+  /// Closing clears the filter: a field folded away cannot say why rows are
+  /// missing.
+  private func setFiltering(_ wanted: Bool) {
+    isFiltering = wanted
+    if !wanted { filter = "" }
   }
 
   private func filterField(_ theme: Theme, metrics: UIMetrics) -> some View {
     HStack(spacing: 6) {
-      Image(systemName: "magnifyingglass")
-        .font(.system(size: metrics.icon, weight: .semibold))
-        .foregroundStyle(theme.textTertiary)
       TextField(t("sidebar.filter"), text: $filter)
         .textFieldStyle(.plain)
         .font(.system(size: metrics.secondary))
         .foregroundStyle(theme.textPrimary)
-        .onExitCommand { filter = "" }
-      if isFiltering {
+        .focused($filterFocused)
+        // A turn later: focus does not take on a field the hierarchy has not
+        // installed yet.
+        .task { filterFocused = true }
+        .onExitCommand { setFiltering(false) }
+      if SidebarFilter(filter).isActive {
         Button {
           filter = ""
+          filterFocused = true
         } label: {
           Image(systemName: "xmark.circle.fill")
             .font(.system(size: metrics.icon))
@@ -116,14 +127,24 @@ struct SidebarView: View {
     .frame(height: (metrics.body * 1.85).rounded())
     .background(theme.rowHover, in: RoundedRectangle(cornerRadius: 6))
     .padding(.horizontal, 8)
-    .padding(.bottom, 10)
   }
 
   /// Leaves room for the traffic lights, the title bar being hidden. The
   /// folder-plus, three identical glyphs otherwise reading as one.
   private func header(_ theme: Theme) -> some View {
-    HStack {
+    HStack(spacing: 2) {
       Spacer()
+      Button {
+        setFiltering(!isFiltering)
+      } label: {
+        Image(systemName: "magnifyingglass")
+          .font(.system(size: 13, weight: .medium))
+          .frame(width: 28, height: 28)
+          .contentShape(.rect)
+      }
+      .buttonStyle(.plain)
+      .foregroundStyle(isFiltering ? theme.textPrimary : theme.textSecondary)
+      .help(t("sidebar.filter-projects"))
       Button {
         Task { await model.chooseProject() }
       } label: {

@@ -103,3 +103,10 @@ Newest at the bottom.
   nothing to fall back to, the unfocused fade is a scrim rather than
   `.opacity`, and nothing tests the host against a real shell, the surface
   needing a window and a GPU (known-gaps.md).
+- The sidebar filter is folded behind a magnifying glass in the sidebar
+  header, next to the folder-plus. It was a field standing open above the
+  project list, costing a row of height in every session to a control reached
+  in few of them. Closing it clears the text, so rows are never missing with
+  nothing on screen saying why, and Escape in the field closes rather than
+  just empties. Cost: the filter is one click further away, and with no
+  keyboard route to it (known-gaps.md) the mouse is the only way in.

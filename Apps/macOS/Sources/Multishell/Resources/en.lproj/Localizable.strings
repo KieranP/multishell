@@ -206,6 +206,7 @@
 "sidebar.expand" = "Expand";
 "sidebar.fetching" = "Fetching from the remote";
 "sidebar.filter" = "Filter";
+"sidebar.filter-projects" = "Filter Projects";
 "sidebar.kind-and-state" = "%1$@ · %2$@";
 "sidebar.locked" = "Locked worktree";
 "sidebar.name-prompt" = "Name";

@@ -31,10 +31,10 @@ there is no catalogue.
 Two, and a third the day there is a second frontend:
 
     Sources/MultishellCore/Resources/en.lproj/         the libraries', 257 keys
-    Apps/macOS/Sources/Multishell/Resources/en.lproj/  the Mac app's,   261 keys
+    Apps/macOS/Sources/Multishell/Resources/en.lproj/  the Mac app's,   265 keys
 
 Each folder is a `Localizable.strings` and a `Localizable.stringsdict`, and
-those counts are both files: 249 + 8 counted forms, and 259 + 2.
+those counts are both files: 249 + 8 counted forms, and 263 + 2.
 
 Each inside the target that declares it, which is the only place SwiftPM
 promises a resource may be. A manifest can reach out of its target and both
@@ -42,8 +42,8 @@ did for a while, but then `../../Resources` in the app's manifest and the
 same string in the root's meant two different folders, and neither was
 where it looked.
 
-The split falls almost exactly where the code does. Of 505 keys, 256 are
-asked for only by `Apps/macOS/Sources` and 246 only by `Sources`; three are
+The split falls almost exactly where the code does. Of 517 keys, 260 are
+asked for only by `Apps/macOS/Sources` and 252 only by `Sources`; five are
 wanted by both. So it is not an arbitrary line through a translator's
 file, it is the line between what any frontend needs and what these
 windows need.
@@ -63,10 +63,10 @@ calling `t("state.done")` gets the libraries'. Nothing at a call site says
 which, and nothing needs to. Only a module importing both sees two: the app
 test target does, and says `Multishell.t` or `MultishellCore.t`.
 
-App code never reads the libraries' catalogue. The three words both halves
+App code never reads the libraries' catalogue. The five words both halves
 say are written in both files. Duplicated on purpose: the alternative is
 `MultishellCore.t(...)` in a view, which makes a frontend's words depend on
-the model's and is exactly what the split is for. Cost is three strings
+the model's and is exactly what the split is for. Cost is five strings
 translated twice, and that they can drift; the app's TranslationTests fails
 a pair that has.
 

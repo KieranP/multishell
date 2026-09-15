@@ -60,8 +60,9 @@ does.
   subject. Left because neither is destructive; fix = route them through
   `worktreeInView` as the pane commands are.
 - Sidebar keyboard navigation and a shortcut to focus the filter are not
-  built. No view tests, and the accessibility labels have not been read with
-  VoiceOver.
+  built, and the filter is now behind the header's magnifying glass, so the
+  mouse is the only way to it. No view tests, and the accessibility labels
+  have not been read with VoiceOver.
 - Existing-branch picker lists local branches only, so a remote-only branch is
   created as a new one based on its remote. A decision, not a defect.
 - `.multishell.json` is read from the project path, which for a bare

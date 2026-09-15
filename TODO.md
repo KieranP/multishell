@@ -13,7 +13,6 @@ than fixed lives in `docs/develop/known-gaps.md`; a defect goes to `BUGS.md`.
 
 ## Refinements
 
-- Hide sidebar search behind a Search icon (not used often)
 - On Agents Dashboard, order agents in the same order as Projects, and group agents from same project
 - Make the + on the tab row a dropdown with "New Shell Tab" and "New [agent] Tab" (listing each detected agent).
 - Change tab icon and agents dashboard tile to show icon for the agent running
