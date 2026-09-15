@@ -164,6 +164,38 @@ Costs: no auto-scroll while a tab is dragged near an end -> a reorder reaches
 only the tabs on screen; and a strip whose tabs differ widely in width is the
 one shape where the shuffle could in principle cross a boundary twice.
 
+## A wheel over the strip scrolls it sideways
+
+A horizontal scroll already reaches the scroller, so a trackpad moved the strip
+from the start and a mouse, which turns one way, did nothing: a horizontal
+scroller is handed nothing by a vertical event, measured at 0 points against
+the 30 the same event moves it once turned on its side.
+
+So the turn is turned rather than counted. A catcher answers `hitTest` only for
+a scroll whose vertical beats its horizontal, the pattern `MiddleClick` uses,
+then copies the event, adds its vertical deltas to the horizontal ones and
+hands it to the strip's scroller -> clicks, drags and a sideways scroll reach
+the tabs and the arrows untouched, and the pixels, the momentum and the rubber
+band are AppKit's, which is what the trackpad already felt like. Copied rather
+than built, so the phase, the momentum and the precision it arrived with are
+kept. A turn that goes sideways partway through is passed on unchanged, a
+scroll being routed to the view its first event hit.
+
+Two halves, because neither placement can do the job alone. The catcher is
+outside the scroller: inside, it is hit-tested and then never called, a
+scroller taking every scroll over its own content before a view in there is
+offered one. Watched in the running app, which is the only place it shows.
+But outside it cannot find the scroller either, SwiftUI flattening the tree so
+that the catcher lands beside the whole hosting view with nothing of the strip
+above it; looking for the nearest scroller from there climbed to the window and
+took the sidebar's, so the wheel scrolled the sidebar and the tabs never moved.
+So a marker inside the content, which is the one place `enclosingScrollView` is
+exact, hands the scroller over in a `ScrollerHandle` the catcher holds.
+
+Stepping whole tabs came first, one per notch, sharing `stepTarget` with the
+arrows. It read as jumpy: an arrow is a click and can move a tab at a time, a
+wheel is a continuous thing and cannot.
+
 ## A tab dropped in another column takes the keyboard with it
 
 The drop activates the moved tab in the column it lands in, so whatever that

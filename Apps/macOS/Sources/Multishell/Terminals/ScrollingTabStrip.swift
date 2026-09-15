@@ -25,6 +25,9 @@ struct ScrollingTabStrip<Tabs: View>: View {
   /// How far it has been scrolled, deciding which end carries an arrow and
   /// where it jumps to; see `TabStripLayout.Edges`.
   @State private var scrollOffset = 0.0
+  /// The scroller a wheel's turns are handed to, named from inside it and
+  /// caught from outside it; see `ScrollerHandle`.
+  @State private var scrollerHandle = ScrollerHandle()
 
   /// No gutters in a strip without room for them and a tab besides, or two
   /// arrows would draw over the column beside it. The trackpad still works.
@@ -49,10 +52,12 @@ struct ScrollingTabStrip<Tabs: View>: View {
           HStack(spacing: 0) { tabs() }
             .frame(height: model.metrics.tabHeight)
             .background { offsetReader }
+            .marksScroller(scrollerHandle)
         }
         .coordinateSpace(.named(scrollSpace))
         arrow(.after, shown: edges.trailing, scroller: scroller)
       }
+      .wheelScrollsSideways(scrollerHandle)
       // Unwrapped, both: `scrollTo` takes anything hashable, so a
       // `TerminalTab.ID?` compiles and matches nothing.
       .onAppear {

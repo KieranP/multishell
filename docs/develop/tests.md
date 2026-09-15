@@ -48,6 +48,16 @@ What each test catches, and the conventions a new one follows.
   height is the developer's rather than anyone's. Width is not checkable at
   all, a minimum-size measurement reporting where text stops wrapping rather
   than where a control is cut off.
+- A tab strip that stops answering the mouse wheel: SidewaysWheelTests sends
+  a synthesized vertical scroll to the overlay over a real scroller and reads
+  the offset back a run loop turn later, since a scroller answers on its own
+  schedule. The control is the same event handed straight to the scroller,
+  which moves it by nothing: that is why the catcher exists. One test needs
+  the window server SettingsPageSizeTests does, and holds both halves of the
+  regression: a sidebar that scrolls laid out beside a strip that does, the
+  marked scroller having to be the strip's rather than the sidebar's, and the
+  catcher having to be outside the scroller, since a scroller never calls a
+  catcher inside its own content.
 - A word on screen with no translation, or a translation nothing shows:
   TranslationTests reads every `t("…")` off the source, from its own
   `#filePath`, and checks the keys against `Localizable.strings` and

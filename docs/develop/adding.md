@@ -62,7 +62,9 @@ range that the floor leaves room for side padding, dot or icon, gap and close
 button with something over for the title, and that `tabArrowWidth` holds its
 own glyph with two gutters still leaving room for a tab.
 `TabStripLayout.Edges` = which end has more past it; `stepTarget` = which tab
-its arrow scrolls to. `stripButtonsWidth` (New Tab and the two splits, each
+its arrow scrolls to; a scroll wheel is not counted in tabs at all, the strip
+being handed the turn sideways (`wheelScrollsSideways` outside the scroller,
+`marksScroller` inside it, one `ScrollerHandle` between them). `stripButtonsWidth` (New Tab and the two splits, each
 `newTabWidth` wide) and both gutters come off the room first, so nothing
 measures itself.
 
