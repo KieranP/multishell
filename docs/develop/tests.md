@@ -16,8 +16,6 @@ What each test catches, and the conventions a new one follows.
 - No blocking in the core: ProcessRunnerTests runs 96 children under a
   wall-clock bound. DescriptorExhaustionTests lowers the process-wide limit,
   so it needs `MULTISHELL_EXHAUST_DESCRIPTORS=1` and a `--filter`.
-- Closed tab's shell ends and is collected: SwiftTermHostTests, real shells.
-  Ghostty's path uncovered: its surface needs a window and Metal.
 - Git on a timer reads only: StatusLockTests.
 - A tree still being built wears no badge, and a stage on a listed worktree
   keeps the one it earned: the `Badged` tests in AppModelGitTests+Refresh and
@@ -114,8 +112,6 @@ What each test catches, and the conventions a new one follows.
   half-written install: AgentHooksTests.
 - A repeat agent report writes nothing observable: SessionStateModelTests,
   through `withObservationTracking`.
-- An engine that registered a surface and then threw is told to let go:
-  MultiEngineHostTests.
 - A counting tick leaves a Waiting, a Done or a Failed alone:
   SessionStatesTests, both directions, and the owed Done still paid at the
   last worker out.

@@ -1,5 +1,6 @@
 import AppKit
 import GhosttyTerminal
+import MultishellAppCore
 import MultishellCore
 
 /// A `TerminalHost` backed by libghostty, which owns the pty, renderer and
@@ -154,6 +155,8 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
     return responder === view || responder.isDescendant(of: view)
   }
 }
+
+extension GhosttyTerminalHost: TerminalSurfaceHost {}
 
 /// libghostty's callbacks do not identify the surface that raised them, so one
 /// observer is bound to each session.

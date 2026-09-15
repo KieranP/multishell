@@ -39,7 +39,7 @@ final class SurfaceFrame: NSView {
 
   init() {
     super.init(frame: .zero)
-    // Neither engine registers a dragged type, so a drop walks up to this
+    // The engine registers no dragged type, so a drop walks up to this
     // frame. Promises too, a drag with no file URL offering nothing else.
     registerForDraggedTypes([.fileURL] + PromisedDrop.draggedTypes)
   }

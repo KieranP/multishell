@@ -489,10 +489,6 @@ extension WorkspaceStore {
     workspace.appearance.uiFontSize = size
   }
 
-  public func setTerminalEngine(_ engine: TerminalEngine) {
-    workspace.terminalEngine = engine
-  }
-
   public func setWorktreeDefaults(_ defaults: WorktreeSettings) {
     workspace.worktreeDefaults = defaults
   }

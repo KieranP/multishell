@@ -230,9 +230,6 @@
 "tab.use-shell-title" = "Use Shell Title";
 "terminal.default-shell" = "Default shell:";
 "terminal.default-shell-info" = "What new tabs run, and what project hooks run through. Terminals already running keep their shell. zsh and bash get the command-status hooks; another shell is launched plainly. Any project can override this. Refresh after installing one, or pick Custom path for one the list does not find.";
-"terminal.engine" = "Terminal engine:";
-"terminal.engine-info" = "Used for every terminal opened from now on. Terminals already running keep the engine that started them.";
-"terminal.engine-info-swift-term" = "Used for every terminal opened from now on. Terminals already running keep the engine that started them. SwiftTerm has no shell integration and swallows the bell, so under it the state dots come from agent hooks alone.";
 "terminal.open-on-create" = "Open a terminal when a worktree is created";
 "terminal.open-on-create-info" = "On, a worktree gets its first shell as soon as it is created, or once its post-create hook has finished, whatever selecting a worktree does. Off, the new worktree is shown empty. Any project can override this.";
 "terminal.open-on-select" = "Open a terminal when a worktree is selected";

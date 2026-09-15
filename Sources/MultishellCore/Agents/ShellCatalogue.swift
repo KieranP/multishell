@@ -27,7 +27,7 @@ public enum ShellCatalogue {
   }
 
   /// `$SHELL`, or `/bin/zsh` where the environment has none, which is what
-  /// both engines assumed before shells could be chosen.
+  /// was assumed before shells could be chosen.
   public static func loginShellPath(
     environment: [String: String] = ProcessInfo.processInfo.environment
   ) -> String {

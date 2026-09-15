@@ -3,7 +3,7 @@ import MultishellCore
 import SwiftUI
 
 /// One pane's card: who is at the prompt, for how long, the tab's name, where
-/// it is, and the last thing it said. No output; neither engine hands any.
+/// it is, and the last thing it said. No output; the engine hands none.
 struct AgentCardView: View {
   let model: AppModel
   let card: AgentBoardCard

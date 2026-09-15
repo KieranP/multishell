@@ -9,7 +9,6 @@
     the pinned build alone, which took 206 of 207. `--docs` on the same
     command says what a key does, and is what the allowed list was decided
     from.
-- SwiftTerm, pure Swift, no binary.
 - `WeightedSplit` uses `_VariadicView`, an underscored SwiftUI API.
 - git, 2.36 or newer. `git worktree list --porcelain -z` is the only call
   that needs it, and `-z` is what keeps a path holding a newline from being

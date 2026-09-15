@@ -7,13 +7,13 @@ import MultishellGitKit
 typealias AppModel = MultishellAppCore.AppModel<NSView>
 
 extension AppModel {
-  /// The real dependencies: both engines behind one host, the kqueue watcher,
-  /// the socket, the notification centre, and AppKit through `platform`.
+  /// The real dependencies: the libghostty host, the kqueue watcher, the
+  /// socket, the notification centre, and AppKit through `platform`.
   convenience init(platform: MacPlatform) {
     let (store, loadError) = WorkspaceStore.restored()
     self.init(
       store: store,
-      host: MultiEngineHost(engine: store.workspace.terminalEngine) { $0.makeHost() },
+      host: GhosttyTerminalHost(),
       worktrees: try? WorktreeCoordinator(),
       watcher: DispatchDirectoryWatcher(),
       platform: platform,

@@ -177,13 +177,12 @@ struct DecodingDefaultsTests {
     #expect(tab.sessionIDs == [session])
   }
 
-  @Test func anEngineThisBuildDoesNotKnowFallsBackRatherThanFailingTheFile() throws {
-    // Written by a newer build with a third engine. Losing the engine choice
-    // is fine; losing every project is not.
+  @Test func aKeyNoFieldAnswersToDoesNotFailTheFile() throws {
+    // Written by a build whose settings this one does not have. Losing the
+    // key is fine; losing every project is not.
     let workspace = try decode(
       Workspace.self,
-      #"{ "terminalEngine": "wezterm", "projects": [ { "path": "file:///repos/demo/" } ] }"#)
-    #expect(workspace.terminalEngine == .ghostty)
+      #"{ "retiredSetting": "holodeck", "projects": [ { "path": "file:///repos/demo/" } ] }"#)
     #expect(workspace.projects.map(\.name) == ["demo"])
   }
 
@@ -679,14 +678,9 @@ struct NewerFieldDefaultsTests {
     }
   }
 
-  /// Both `decodeTolerantly` reads take the default for a value this build
+  /// A `decodeTolerantly` read takes the default for a value this build
   /// cannot read, and the rest of the file loads around it.
   @Test func theTolerantReadKeepsTheRestOfTheFile() throws {
-    let engine = try decode(
-      Workspace.self, #"{ "terminalEngine": "holodeck", "customShellPath": "/bin/fish" }"#)
-    #expect(engine.terminalEngine == .ghostty, "an engine this build does not have")
-    #expect(engine.customShellPath == "/bin/fish", "and the rest still loads")
-
     let order = try decode(
       Workspace.self, #"{ "worktreeSortOrder": 12, "customShellPath": "/bin/fish" }"#)
     #expect(order.worktreeSortOrder == WorktreeSortOrder.default)

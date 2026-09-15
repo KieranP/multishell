@@ -30,10 +30,9 @@ struct GitHarness {
 
     store = WorkspaceStore(
       snapshot: WorkspaceSnapshot(fileURL: root.appendingPathComponent("state.json")))
-    let engine = self.engine
     model = AppModel(
       store: store,
-      host: MultiEngineHost(engine: .ghostty) { _ in engine },
+      host: self.engine,
       worktrees: WorktreeCoordinator(service: WorktreeService(git: git)),
       watcher: watcher, platform: platform)
     await model.addProject(at: repository)
@@ -60,10 +59,9 @@ struct GitHarness {
       echo "$*" >> "$SCRATCH/calls"
       \(body)
       """, at: script)
-    let engine = self.engine
     let model = AppModel(
       store: store,
-      host: MultiEngineHost(engine: .ghostty) { _ in engine },
+      host: self.engine,
       worktrees: WorktreeCoordinator(
         service: WorktreeService(git: try GitRunner(executable: script))),
       watcher: watcher)

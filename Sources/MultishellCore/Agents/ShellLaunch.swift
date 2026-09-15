@@ -3,21 +3,6 @@ import Foundation
 /// How to launch a login shell so the command-status hooks reach that session
 /// only. zsh rides `ZDOTDIR`, bash `--init-file`; see docs/design/terminals.md.
 public enum ShellLaunch {
-  /// Arguments for launching `shellPath` as the tab's shell, for a host that
-  /// builds the whole argv itself (SwiftTerm).
-  public static func arguments(
-    forShell shellPath: String, bashInit: URL = Paths.bashInitFile
-  ) -> [String] {
-    switch URL(fileURLWithPath: shellPath).lastPathComponent {
-    case "bash" where FileManager.default.fileExists(atPath: bashInit.path):
-      // Interactive, reading our init in place of ~/.bashrc; not login, so
-      // the init reproduces the profile chain.
-      return ["--init-file", bashInit.path, "-i"]
-    default:
-      return ["-l"]
-    }
-  }
-
   /// The shell taking over when an agent tab's agent quits: `exec` plus the
   /// integration a fresh tab gets. Runs under `/bin/sh`; see terminals.md.
   public static func execCommandLine(

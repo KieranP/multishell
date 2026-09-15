@@ -7,11 +7,6 @@ Newest at the bottom.
   launch. Selecting a worktree opens a terminal unless told not to; a create is
   asked about separately, a worktree asked for and a worktree looked at not
   being the same event. Cost: four settings where there were two.
-- Engines coexist, "next launch" being a poor answer to an engine change. Cost:
-  two renderers the theme conversion must keep identical, and a command reaches
-  libghostty as one quoted line but SwiftTerm as an array. Both behind a
-  protocol with a recording fake, which is how they are tested without a
-  terminal.
 - Ghostty keybinds unbound by name, not `keybind = clear`, which also removes
   alt+arrow word movement and super+backspace. Names and menu items come from
   one AppShortcuts table, a shortcut in only one list having been a keystroke
@@ -101,3 +96,10 @@ Newest at the bottom.
   posted about, so nothing is taken back that was never there. Cost: a Done
   nobody looked at disappears when the next state lands, the dot being the
   thing that persists.
+- One terminal engine, libghostty, embedded and named outright by `AppModel`.
+  It owns the pty, the renderer and the config, so the core never sees a
+  descriptor and a pane's surface is Metal-backed. Nothing chooses it and no
+  setting offers an alternative. Cost: a pinned build that misbehaves has
+  nothing to fall back to, the unfocused fade is a scrim rather than
+  `.opacity`, and nothing tests the host against a real shell, the surface
+  needing a window and a GPU (known-gaps.md).

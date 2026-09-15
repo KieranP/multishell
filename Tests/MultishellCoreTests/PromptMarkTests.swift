@@ -21,7 +21,7 @@ struct PromptMarkTests {
       "and output start, so the claim does not stand while a program runs")
     #expect(
       zshrc.contains("[ \"${TERM_PROGRAM-}\" = ghostty ]"),
-      "a SwiftTerm tab has no other marks, so a lone one would open a prompt it never ends")
+      "elsewhere there are no other marks, so a lone one would open a prompt it never ends")
   }
 
   @Test func theBashPromptCarriesEveryMarkItself() {

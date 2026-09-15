@@ -237,7 +237,7 @@ struct AppModelTests {
     let (store, _) = WorkspaceStore.restored(from: WorkspaceSnapshot(fileURL: file))
     let engine = FakeEngine()
     let after = AppModel(
-      store: store, host: MultiEngineHost(engine: .ghostty) { _ in engine }, worktrees: nil,
+      store: store, host: engine, worktrees: nil,
       watcher: FakeWatcher())
     after.select(before.main)
 
@@ -479,15 +479,6 @@ struct AppModelTests {
 
     #expect(h.model.workspace.tabs(in: h.main.id).isEmpty)
     #expect(h.model.liveTerminalCount == 0)
-  }
-
-  @Test func switchingEngineAffectsOnlyNewTabs() {
-    let h = Harness()
-    h.model.select(h.main)
-    h.model.setTerminalEngine(.swiftTerm)
-    #expect(h.model.workspace.terminalEngine == .swiftTerm)
-    #expect(h.model.host.engine == .swiftTerm)
-    #expect(h.model.liveTerminalCount == 1, "the running shell was not restarted")
   }
 
   @Test func activeProjectFollowsSelectionOrTheOnlyProject() {
@@ -823,7 +814,7 @@ struct RelaunchTests {
     #expect(error == nil)
     let engine = FakeEngine()
     let after = AppModel(
-      store: store, host: MultiEngineHost(engine: .ghostty) { _ in engine },
+      store: store, host: engine,
       worktrees: nil, watcher: FakeWatcher())
 
     #expect(after.workspace == expected, "everything but the selection, which a launch clears")

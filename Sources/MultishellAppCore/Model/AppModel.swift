@@ -14,7 +14,7 @@ public final class AppModel<Surface> {
 
   // MARK: - Dependencies
 
-  let host: MultiEngineHost<Surface>
+  let host: any TerminalSurfaceHost<Surface>
   public let platform: any Platform
   @ObservationIgnored let store: WorkspaceStore
   @ObservationIgnored let registry: SessionRegistry
@@ -182,7 +182,7 @@ public final class AppModel<Surface> {
   /// The platform GUI passes its real ones.
   public init(
     store: WorkspaceStore,
-    host: MultiEngineHost<Surface>,
+    host: any TerminalSurfaceHost<Surface>,
     worktrees: WorktreeCoordinator?,
     watcher: any DirectoryWatcher,
     platform: any Platform = NullPlatform(),

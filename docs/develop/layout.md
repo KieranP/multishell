@@ -11,8 +11,8 @@ Root package, four Foundation-only libraries:
 - MultishellAppCore: AppModel, detections, dialogs, error mapping, every
   decision a view makes
 
-MultishellCLI = the helper. `Apps/macOS` = its own package: views, the two
-engine hosts, MacPlatform, and a `t(_:_:)` of its own.
+MultishellCLI = the helper. `Apps/macOS` = its own package: views, the
+engine host, MacPlatform, and a `t(_:_:)` of its own.
 
 Each half's words are a `Resources/en.lproj` inside the target that says
 them: `Sources/MultishellCore/Resources` for the libraries, with the

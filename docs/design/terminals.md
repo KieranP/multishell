@@ -5,7 +5,7 @@ Newest at the bottom.
 
 ## A terminal's state comes from what runs in it
 
-Neither engine can say a command is running -> engine activity means only what
+libghostty cannot say a command is running -> engine activity means only what
 Terminal.app's dot means, something happened here. Working and Waiting come
 from reports alone. Exit code above 128 = a signal, usually Ctrl+C, not a
 failure. Done is about the user -> being seen clears it, which is the tab on
@@ -29,9 +29,7 @@ task not being a stale one. Cost: Cmd+W on a Working pane asks first.
 libghostty no longer frees a surface in the view's `deinit`, the view outlives
 any SwiftUI frame that adopted it, and on a process exit `close` runs inside
 libghostty's own callback, where freeing the surface would free the object
-mid-call. SwiftTerm's `terminate` cancels the monitor that would have reaped
-the child -> the host reaps with `waitpid` itself, `SIGKILL` after a grace.
-No signal to a child that already exited: the pid may have been reissued.
+mid-call.
 
 ## Shell integration is injected, never written to a user's file
 
@@ -93,8 +91,8 @@ claims -> a zsh session names both, ours in `GHOSTTY_ZSH_ZDOTDIR`. The zsh claim
 rides at the front of PS1, a plain A printed later withdrawing it; bash writes
 the whole set and prints its A, else readline edits at the wrong column. No D:
 the exit code is the socket's. Only when `TERM_PROGRAM` names ghostty, half a
-set opening a prompt that never ends. Cost: no click-to-move under SwiftTerm,
-none on the later lines of a multi-line buffer.
+set opening a prompt that never ends. Cost: no click-to-move on the later
+lines of a multi-line buffer.
 
 Why the zsh claim rides in PS1 rather than being printed: libghostty ships an
 MIT rewrite of the integration, not Ghostty's own GPLv3 one, and it claims
@@ -173,8 +171,7 @@ own combinations, unbound by name as before -> a binding the user puts over a
 menu item is theirs. Both the places Ghostty reads on a Mac,
 `~/.config/ghostty/config` then the app-support file, which is the one
 Ghostty writes and so has the later word. `XDG_CONFIG_HOME` is not read, an
-app Finder launched not being given it. Read once, when the first Ghostty tab
-creates the host. SwiftTerm reads none of it.
+app Finder launched not being given it. Read once, when the host is created.
 
 ## A line libghostty refuses costs that line, not the file
 

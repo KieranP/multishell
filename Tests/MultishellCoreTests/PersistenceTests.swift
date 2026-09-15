@@ -69,7 +69,6 @@ struct PersistenceTests {
     let workspace = try WorkspaceSnapshot(fileURL: file).load()
 
     #expect(workspace.projects.map(\.name) == ["demo"])
-    #expect(workspace.terminalEngine == .ghostty)
     #expect(workspace.appearance.themeID == Theme.multishellDark.id)
   }
 
@@ -259,7 +258,6 @@ struct PersistenceTests {
         path: URL(fileURLWithPath: "/repos/demo"), settings: ProjectSettings(branchPrefix: "k/"))
     ]
     workspace.worktreeNames = ["/repos/demo": "trunk"]
-    workspace.terminalEngine = .swiftTerm
     workspace.appearance.themeID = "multishell.light"
     workspace.appearance.fontName = "Menlo"
     workspace.appearance.fontSize = 15

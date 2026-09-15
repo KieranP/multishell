@@ -427,7 +427,7 @@ struct SessionStateModelTests {
     store.replaceWorktrees([main], forProject: project.id)
     let engine = FakeEngine()
     let model = AppModel(
-      store: store, host: MultiEngineHost(engine: .ghostty) { _ in engine }, worktrees: nil,
+      store: store, host: engine, worktrees: nil,
       watcher: FakeWatcher(), stateSource: source)
     model.startStateSource()
     model.select(main)
@@ -497,7 +497,7 @@ struct AgentTabTests {
     let (store, _) = WorkspaceStore.restored(from: WorkspaceSnapshot(fileURL: file))
     let engine = FakeEngine()
     let after = AppModel(
-      store: store, host: MultiEngineHost(engine: .ghostty) { _ in engine }, worktrees: nil,
+      store: store, host: engine, worktrees: nil,
       watcher: FakeWatcher())
     after.select(before.main)
 

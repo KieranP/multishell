@@ -130,7 +130,7 @@ reads worse than none. It also must not start: the helper is its own
 which is an absolute path into this build directory and traps everywhere
 else. Nothing in `MultishellCLI` reaches the catalogue today.
 
-Proper names: the engines, the agents, the built-in themes. The icon picker
+Proper names: the engine, the agents, the built-in themes. The icon picker
 has no search to translate; its group names are the only words in it.
 
 The permission strings macOS shows, which are in the Info.plist rather than

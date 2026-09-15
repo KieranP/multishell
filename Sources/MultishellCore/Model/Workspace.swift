@@ -20,7 +20,6 @@ public struct Workspace: Codable, Hashable, Sendable {
   public var worktreeNames: [Worktree.ID: String] = [:]
 
   public var appearance = Appearance()
-  public var terminalEngine: TerminalEngine = .ghostty
   public var worktreeDefaults = WorktreeSettings()
   public var notifications = NotificationPreference.default
   /// Catalogue id of the agent New Agent Tab starts, or `nil` for none.
@@ -88,10 +87,6 @@ public struct Workspace: Codable, Hashable, Sendable {
     worktreeNames = try container.decode(
       [Worktree.ID: String].self, forKey: .worktreeNames, or: [:])
     appearance = try container.decode(Appearance.self, forKey: .appearance, or: Appearance())
-    // Tolerated, not thrown on: a state file from a newer build may name an
-    // engine this build does not have, and that must not cost the sidebar.
-    terminalEngine = container.decodeTolerantly(
-      TerminalEngine.self, forKey: .terminalEngine, or: .ghostty)
     worktreeDefaults = try container.decode(
       WorktreeSettings.self, forKey: .worktreeDefaults, or: WorktreeSettings())
     notifications = container.decodeTolerantly(

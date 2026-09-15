@@ -121,7 +121,6 @@ struct ShellLaunchTests {
   @Test func zshLaunchesPlainlyAndCarriesHooksThroughTheEnvironment() throws {
     let bashInit = try bashInitThatExists()
     defer { try? FileManager.default.removeItem(at: bashInit) }
-    #expect(ShellLaunch.arguments(forShell: "/bin/zsh", bashInit: bashInit) == ["-l"])
     #expect(
       ShellLaunch.overrideCommand(forShell: "/bin/zsh", loginShell: "/bin/zsh", bashInit: bashInit)
         == nil)
@@ -148,9 +147,6 @@ struct ShellLaunchTests {
     let bashInit = try bashInitThatExists()
     defer { try? FileManager.default.removeItem(at: bashInit) }
     #expect(
-      ShellLaunch.arguments(forShell: "/opt/homebrew/bin/bash", bashInit: bashInit)
-        == ["--init-file", bashInit.path, "-i"])
-    #expect(
       ShellLaunch.overrideCommand(forShell: "/bin/bash", bashInit: bashInit)
         == ["/bin/sh", "-c", "exec /bin/bash --init-file \(ShellQuoting.quote(bashInit.path)) -i"],
       "through sh, so Ghostty applies no bash injection of its own")
@@ -158,7 +154,6 @@ struct ShellLaunchTests {
 
   @Test func bashWithoutAGeneratedInitFallsBackToAPlainLogin() {
     let missing = URL(fileURLWithPath: "/no/such/init.bash")
-    #expect(ShellLaunch.arguments(forShell: "/bin/bash", bashInit: missing) == ["-l"])
     #expect(
       ShellLaunch.overrideCommand(forShell: "/bin/bash", loginShell: "/bin/bash", bashInit: missing)
         == nil)
@@ -167,7 +162,6 @@ struct ShellLaunchTests {
   @Test func anUnknownShellIsLaunchedPlainly() throws {
     let bashInit = try bashInitThatExists()
     defer { try? FileManager.default.removeItem(at: bashInit) }
-    #expect(ShellLaunch.arguments(forShell: "/usr/local/bin/fish", bashInit: bashInit) == ["-l"])
     #expect(
       ShellLaunch.overrideCommand(
         forShell: "/usr/local/bin/fish", loginShell: "/usr/local/bin/fish", bashInit: bashInit)

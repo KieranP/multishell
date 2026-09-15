@@ -782,10 +782,6 @@ banners out.
 
 Not bugs, recorded so nobody spends the time again.
 
-- The SwiftTerm reap loop cannot exit early on EINTR. `waitpid` with `WNOHANG`
-  never sleeps, so nothing interrupts it, and no signal handler is installed
-  anywhere in the app or in SwiftTerm. A `-1` there is ECHILD after
-  SwiftTerm's own monitor reaped first, and ending the loop is right.
 - A create that throws right after an `onStep` does not leave
   `worktreeCreationStep` stuck. `WorktreeCoordinator.add` is a nonisolated
   async method on a struct, so it runs off the main executor and `onStep`'s

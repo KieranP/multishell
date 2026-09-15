@@ -68,7 +68,7 @@ struct PaneTreeView: View {
   }
 
   /// Every pane but the focused one fades towards the theme's background. A
-  /// scrim, not `.opacity`, which the two engines honour differently.
+  /// scrim, not `.opacity`, which a Metal-backed surface may ignore.
   @ViewBuilder
   private func fade(isActive: Bool) -> some View {
     let opacity = theme.inactivePaneOpacity

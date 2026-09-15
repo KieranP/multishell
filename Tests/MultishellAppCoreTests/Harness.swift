@@ -186,10 +186,8 @@ struct Harness {
     store.replaceWorktrees([main, feature], forProject: project.id)
     if savedSelection { store.selectWorktree(main.id) }
 
-    let engine = self.engine
-    let host = MultiEngineHost(engine: .ghostty) { _ in engine }
     model = AppModel(
-      store: store, host: host, worktrees: nil, watcher: watcher, platform: platform,
+      store: store, host: engine, worktrees: nil, watcher: watcher, platform: platform,
       stateSource: source, notifier: notifier)
   }
 

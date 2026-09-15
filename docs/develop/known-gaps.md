@@ -85,9 +85,9 @@ does.
 - A tab's title is a persisted field, and a plain shell's starts as the
   translated word for Shell, so tabs made before a language change keep the
   old one. It corrects itself under zsh and bash, whose integration retitles
-  the tab on the next command; under SwiftTerm with another shell it stays
-  until the tab is closed. Fix if it matters = store the default as absent
-  and translate it where it is drawn, which is a change to a persisted field.
+  the tab on the next command; with another shell it stays until the tab is
+  closed. Fix if it matters = store the default as absent and translate it
+  where it is drawn, which is a change to a persisted field.
 - A git older than 2.36 cannot list worktrees at all, `-z` being unknown to
   it there. Nothing checks the version or falls back to the plain porcelain:
   the read fails, the row says so and names the option. Left because the
@@ -139,9 +139,15 @@ does.
   a descendant is accepted too in case a later wrapper adds one. If a
   click's focus is ever seen to lag or go missing, fallback = report
   synchronously again and defer `requestFocus` in `SurfaceFrame.focusIfReady`.
-- Ghostty engine's path untested, its zsh chain checked only against a
-  stand-in bootstrap. Click-to-move works there and nowhere else, and not on
-  the later lines of a multi-line buffer.
+- The engine's path untested, its zsh chain checked only against a stand-in
+  bootstrap. Click-to-move does not work on the later lines of a multi-line
+  buffer.
+- Nothing drives a `TerminalHost` against a real child. Untested: a closed
+  tab's shell ending and being collected, a title from OSC reaching the
+  delegate, an exit code arriving, a `close` after it being safe. libghostty's
+  surface needs a window and a GPU, which the tests cannot give it; see
+  build.md. `FakeEngine` covers the core's half of the seam and none of the
+  host's. Fix = a host test under a window server.
 - The user's Ghostty config is read and handed to libghostty as the base
   config, but only the text that is sent has been tested, and against
   libghostty rather than a surface: whether a font, keybind or cursor from it
@@ -210,7 +216,7 @@ does.
   goes back to about 480.
 - Drops reach SurfaceFrame because AppKit walks up from an unregistered engine
   surface to the frame that is registered: documented for the registration,
-  undocumented for the search order, so if either engine ever registers a
+  undocumented for the search order, so if the engine ever registers a
   dragged type the frame stops seeing drops. Checked only by hand. Same walk
   carries a dragged tab past a surface to the SwiftUI band over it,
   SurfaceFrame being registered for files and promises and not for
@@ -223,8 +229,8 @@ does.
   as "more tabs this way" better than the fade they replaced. Store, model and
   wording tested; drawing not. Cost of drawing only from what the pointer is
   over: bands are not on screen until the tab reaches a terminal.
-- Whether a SwiftUI overlay composites above an engine's surface is unverified
-  for Ghostty, whose surface is Metal-backed: the focus ring has always been
+- Whether a SwiftUI overlay composites above the engine's surface is
+  unverified, libghostty's being Metal-backed: the focus ring has always been
   drawn that way, and now the unfocused-pane fade too. If neither appears,
   both are silent rather than wrong, and the fade would have to become a view
   inside SurfaceFrame the way its drop highlight is.
@@ -285,8 +291,8 @@ does.
   dialog has not been answered yet.
 - `multishell state` at a prompt in one of the app's own tabs is meant to
   name the shell, the helper's walk stopping at `MULTISHELL_APP_PID`. Checked
-  against a real shell chain under the test process, not under either engine:
-  whether libghostty or SwiftTerm puts anything unlisted between the shell and
-  the app is unwatched. If one does, the walk ends there instead and the dot
-  outlives the shell, as it did before; a pid equal to the app's own is
-  dropped either way.
+  against a real shell chain under the test process, not under the engine:
+  whether libghostty puts anything unlisted between the shell and the app is
+  unwatched. If it does, the walk ends there instead and the dot outlives the
+  shell, as it did before; a pid equal to the app's own is dropped either
+  way.

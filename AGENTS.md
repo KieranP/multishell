@@ -20,7 +20,7 @@ Three rules live here. The rest are in the files below.
 | [docs/develop/tests.md](docs/develop/tests.md) | Which test catches which breach, and the conventions a new one follows. |
 | [docs/develop/state-on-disk.md](docs/develop/state-on-disk.md) | What is written where, the debug build's own files, the socket and its lock, where each agent's hooks go, a repository's `.multishell.json`. |
 | [docs/develop/permissions.md](docs/develop/permissions.md) | What macOS prompts for, what it only denies, how to read the TCC log. |
-| [docs/develop/dependencies.md](docs/develop/dependencies.md) | libghostty and what moving its pin costs, SwiftTerm, the one underscored SwiftUI API, the git version floor. |
+| [docs/develop/dependencies.md](docs/develop/dependencies.md) | libghostty and what moving its pin costs, the one underscored SwiftUI API, the git version floor. |
 | [docs/develop/known-gaps.md](docs/develop/known-gaps.md) | What is unverified or unbuilt, with the fallback where there is one. Settled behaviour under Known issues, what nobody has watched happen under Unconfirmed behaviour. Add to it when you leave a gap. |
 | [BUGS.md](BUGS.md) | Open findings from the whole-repo review and the issues once queued in TODO.md, numbered and labelled by what each does to the user. Numbers are never reused, so they have gaps; a fixed entry is taken out rather than kept. |
 | [TODO.md](TODO.md) | Queued work. Finishing something moves its note: a decision to the right file under `docs/design/`, a gap left rather than fixed to known-gaps.md. |
@@ -43,4 +43,4 @@ Telegraphic notes, one file per subject. Newest at the bottom within each.
 | [docs/design/appearance.md](docs/design/appearance.md) | Hex themes, the focused pane's ring and the fade, hand-drawn window chrome, one workspace window, the header and row heights, a board card's three lines. |
 | [docs/design/translation.md](docs/design/translation.md) | A catalogue per frontend and one for the libraries, why a view holds no literal, counted forms, what stays in English, no language picker. |
 | [docs/design/signing.md](docs/design/signing.md) | Why a local build carries a dev certificate rather than signing ad hoc, and what happens without one. |
-| [docs/design/smaller-decisions.md](docs/design/smaller-decisions.md) | Seventeen one-liners: warm-up, both engines, keybinds, error mapping, help behind an (i), notification toggles, the icon palette, one banner per pane, the rest. |
+| [docs/design/smaller-decisions.md](docs/design/smaller-decisions.md) | Seventeen one-liners: warm-up, keybinds, error mapping, help behind an (i), notification toggles, the icon palette, one banner per pane, one engine, the rest. |

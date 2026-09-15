@@ -220,7 +220,7 @@ to a floor and the board scrolls past it, a partial column at the edge saying
 there is more. No end arrows, which the tab strip needs because a tab scrolled
 out of sight is one you forget exists; the board has four fixed columns and
 half of one showing says which way the rest are. No line of output on a card:
-neither engine hands scrollback to the core.
+the engine hands no scrollback to the core.
 
 ## Flags are per agent, placeholders are one list
 

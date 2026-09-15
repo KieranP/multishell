@@ -10,14 +10,6 @@ struct TerminalSettingsTab: View {
   var body: some View {
     Form {
       Section {
-        InfoRow(t("terminal.engine"), info: engineInfo) {
-          Picker(
-            t("terminal.engine"),
-            selection: model.setting(\.terminalEngine, write: model.setTerminalEngine)
-          ) {
-            ForEach(TerminalEngine.allCases, id: \.self) { Text($0.displayName).tag($0) }
-          }
-        }
         DetectionPicker(
           label: t("terminal.default-shell"),
           selection: model.setting(
@@ -46,10 +38,5 @@ struct TerminalSettingsTab: View {
       }
     }
     .formStyle(.grouped)
-  }
-
-  private var engineInfo: String {
-    model.workspace.terminalEngine == .swiftTerm
-      ? t("terminal.engine-info-swift-term") : t("terminal.engine-info")
   }
 }

@@ -34,13 +34,6 @@ extension AppModel {
     platform.revealInFileBrowser(Paths.themesDirectory)
   }
 
-  /// Applies to the next terminal opened. Running ones keep the engine that
-  /// started them, so nothing is killed by changing this.
-  public func setTerminalEngine(_ engine: TerminalEngine) {
-    store.setTerminalEngine(engine)
-    host.engine = engine
-  }
-
   public func setWorktreeDefaults(_ defaults: WorktreeSettings) {
     store.setWorktreeDefaults(defaults)
   }

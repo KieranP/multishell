@@ -14,11 +14,14 @@ falls back to; `inactivePaneOpacity` fades every other pane towards the theme
 background, `1` fading nothing, anything under `0.25` clamped to it. Both
 drawn per pane by `PaneTreeView`; see `Theme.focusRingRGB`.
 
-**A terminal engine.** Implement `TerminalSurfaceHost`, add a case to
-`TerminalEngine`, return it from `makeHost()`. Pass
-`SessionEnvironment.variables` to the child. Report a finished command through
-`didFinishCommandIn` if the engine can tell. Frame `paste` as a bracketed
-paste where it can.
+**A terminal engine.** There is one, libghostty, and `AppModel` names its host
+outright; see smaller-decisions.md. A replacement implements
+`TerminalSurfaceHost` and is passed to `AppModel` in `AppModel+Mac.swift`.
+Pass `SessionEnvironment.variables` to the child. Report a finished command
+through `didFinishCommandIn` if the engine can tell. Frame `paste` as a
+bracketed paste where it can. Two at once needs a multiplexer between them and
+`AppModel`: one host per kind and a map from session to kind, so a running
+terminal keeps the engine that opened it.
 
 **An agent or editor.** A row in `AgentCatalogue.agents` or
 `EditorCatalogue.editors`; detection and the dropdowns follow.

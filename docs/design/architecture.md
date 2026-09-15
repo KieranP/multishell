@@ -5,11 +5,11 @@ Newest at the bottom.
 
 ## Core decides what exists, GUI how it appears
 
-Engines disagree on pty ownership -> core never sees a descriptor, byte stream
-or view. AppModel holds the runtime state the core refuses, in a library not
-the Mac app, so a Linux frontend need not copy it out. Windows same way, never
-built. Cost: `public` on every moved type, one `Platform` conformance per
-frontend.
+The engine owns the pty and a replacement need not -> core never sees a
+descriptor, byte stream or view. AppModel holds the runtime state the core
+refuses, in a library not the Mac app, so a Linux frontend need not copy it
+out. Windows same way, never built. Cost: `public` on every moved type, one
+`Platform` conformance per frontend.
 
 ## Reconcile, don't command
 

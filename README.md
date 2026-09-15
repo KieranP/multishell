@@ -21,12 +21,14 @@
 
 ## Install
 
-Requires macOS with Xcode 26 and `git` on your `PATH`.
+Requires macOS with Xcode 26 or later and `git` on your `PATH`.
 
 ```sh
 git clone https://github.com/KieranP/multishell.git
 cd multishell
 sudo xcode-select -s /Applications/Xcode.app   # once, if only the command line tools are active
+sudo xcodebuild -license                       # once per Xcode install, accept the agreement
+sudo xcodebuild -runFirstLaunch                # once per Xcode install
 make signing-identity                          # once per machine, so privacy grants survive a rebuild
 make install                                   # release build into /Applications
 ```
@@ -68,7 +70,7 @@ for why things are the way they are.
 - Drop files from Finder onto a terminal as `@` mentions or quoted paths.
 - Dirty, ahead/behind and landed badges on rows; sort, filter, rename.
 - Pre and post hooks for create and delete, shareable in `.multishell.json`.
-- Ghostty or SwiftTerm engine, JSON themes, Open in Editor, and no changes to
+- libghostty for the terminals, JSON themes, Open in Editor, and no changes to
   your shell's rc files.
 
 ## Status

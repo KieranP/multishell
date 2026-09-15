@@ -53,11 +53,11 @@ setting. The fade clamps at a quarter, below which a pane looks broken rather
 than unfocused.
 
 The fade is a scrim in the theme's background colour laid over the pane, not
-`.opacity` on the surface: panes are `NSView`s, one Metal-backed, and view
-opacity is not something both engines honour the same way. Hit testing off, so
-a click still reaches the terminal and focuses it, which is what undims it.
-Cost: a light theme fades towards white, a wash rather than a dimming, and a
-theme that turns both off has nothing left to say where the keyboard is.
+`.opacity` on the surface: a pane's surface is Metal-backed, and view opacity
+on one is not something to rely on. Hit testing off, so a click still reaches
+the terminal and focuses it, which is what undims it. Cost: a light theme
+fades towards white, a wash rather than a dimming, and a theme that turns both
+off has nothing left to say where the keyboard is.
 
 ## A board card's own lines are a fixed three
 

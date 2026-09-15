@@ -19,10 +19,9 @@ struct ModelHarness {
     let store = WorkspaceStore(
       snapshot: WorkspaceSnapshot(fileURL: directory.appendingPathComponent("state.json")))
     project = store.addProject(at: directory)
-    let engine = NoEngine()
-    model = AppModel(
+    model = Multishell.AppModel(
       store: store,
-      host: MultiEngineHost(engine: .ghostty) { _ in engine },
+      host: NoEngine(),
       worktrees: nil,
       watcher: NoWatcher())
   }
