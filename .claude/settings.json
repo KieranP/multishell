@@ -1,0 +1,57 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk *)",
+      "Bash(bundle *)",
+      "Bash(cat *)",
+      "Bash(diff *)",
+      "Bash(echo *)",
+      "Bash(find *)",
+      "Bash(git diff *)",
+      "Bash(git grep *)",
+      "Bash(git log *)",
+      "Bash(git merge-base *)",
+      "Bash(git rev-parse *)",
+      "Bash(git show *)",
+      "Bash(git status *)",
+      "Bash(grep *)",
+      "Bash(head *)",
+      "Bash(jq *)",
+      "Bash(ls *)",
+      "Bash(pnpm *)",
+      "Bash(pwd *)",
+      "Bash(rg *)",
+      "Bash(sed *)",
+      "Bash(sort *)",
+      "Bash(tail *)",
+      "Bash(time *)",
+      "Bash(tree *)",
+      "Bash(uniq *)",
+      "Bash(wc *)",
+      "Bash(which *)",
+      "Bash(xargs awk *)",
+      "Bash(xargs cat *)",
+      "Bash(xargs diff *)",
+      "Bash(xargs find *)",
+      "Bash(xargs grep *)",
+      "Bash(xargs head *)",
+      "Bash(xargs ls *)",
+      "Bash(xargs rg *)",
+      "Bash(xargs sed *)",
+      "Bash(xargs sort *)",
+      "Bash(xargs tail *)",
+      "Bash(xargs uniq *)",
+      "Bash(xargs wc *)"
+    ],
+    "deny": ["Bash(git stash*)"],
+    "defaultMode": "auto"
+  },
+  "spellcheck": {
+    "enabled": true,
+    "language": "en"
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/statusline.sh"
+  }
+}
