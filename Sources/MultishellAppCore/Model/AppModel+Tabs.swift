@@ -228,11 +228,27 @@ extension AppModel {
     renamingTabID = nil
   }
 
-  public func splitActivePane(_ axis: SplitAxis) {
-    guard let worktree = worktreeReadyForShell(), let tab = workspace.activeTab(in: worktree.id)
+  /// The menu items name no column and split the focused one's active tab;
+  /// a strip's own buttons name theirs, as New Tab does, and focus it.
+  public func splitActivePane(_ axis: SplitAxis, in group: TabGroup.ID? = nil) {
+    guard let worktree = worktreeReadyForShell(), let tab = tabToSplit(in: group, of: worktree)
     else { return }
     store.splitFocusedPane(of: tab.id, axis: axis)
+    // The new pane takes the focus inside its tab, so the column it is in
+    // has to take it too, else the keyboard stays in another column. Asked
+    // first: an unguarded write re-arms the autosave for nothing.
+    if workspace.focusedGroup(in: worktree.id)?.id != tab.groupID {
+      store.focusGroup(tab.groupID)
+    }
     reconcileSessions(takingFocus: true)
+  }
+
+  /// A column named by a strip's own button, which has to be one of this
+  /// worktree's, or the focused column's tab where none is named.
+  private func tabToSplit(in group: TabGroup.ID?, of worktree: Worktree) -> TerminalTab? {
+    guard let group else { return workspace.activeTab(in: worktree.id) }
+    guard let column = workspace.group(group), column.worktreeID == worktree.id else { return nil }
+    return workspace.activeTab(in: column)
   }
 
   public func setSplitWeights(_ weights: [Double], at path: [Int], ofTab tabID: TerminalTab.ID) {

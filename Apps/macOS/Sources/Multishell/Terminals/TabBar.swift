@@ -42,9 +42,14 @@ struct TabBar: View {
 
   private var strip: some View {
     GeometryReader { proxy in
-      // What the tabs share, the New Tab button taken off, and from it one
-      // width for all of them, so a drop needs no measuring.
-      let available = Double(proxy.size.width) - model.metrics.newTabWidth
+      // What the tabs share, the strip's buttons taken off, and from it one
+      // width for all of them, so a drop needs no measuring. The splits go
+      // where they would leave no room for a tab, so both halves of this
+      // read the width the same way.
+      let width = Double(proxy.size.width)
+      let showsSplits = model.metrics.stripShowsSplits(in: width)
+      let available =
+        width - (showsSplits ? model.metrics.stripButtonsWidth : model.metrics.newTabWidth)
       let layout = TabStripLayout(
         available: available,
         count: tabs.count,
@@ -52,7 +57,7 @@ struct TabBar: View {
         maximum: model.metrics.tabMaxWidth)
       HStack(spacing: 0) {
         if layout.scrolls {
-          // The scroller takes the whole strip and the button is pinned
+          // The scroller takes the whole strip and the buttons are pinned
           // after it. Not a `Spacer`, which would halve the strip.
           ScrollingTabStrip(
             model: model,
@@ -64,10 +69,10 @@ struct TabBar: View {
           ) {
             tabViews(layout)
           }
-          newTabButton
+          stripButtons(showsSplits)
         } else {
           HStack(spacing: 0) { tabViews(layout) }
-          newTabButton
+          stripButtons(showsSplits)
           Spacer(minLength: 0)
         }
       }
@@ -106,22 +111,61 @@ struct TabBar: View {
     }
   }
 
-  /// New Tab names this column, so a click in one never opens a tab in
-  /// another. Outside the scroller, so a full strip cannot hide it.
+  /// New Tab and the two splits, each naming this column, so a click in one
+  /// never acts in another. Outside the scroller, so a full strip cannot
+  /// hide them.
+  private func stripButtons(_ showsSplits: Bool) -> some View {
+    HStack(spacing: 0) {
+      newTabButton
+      if showsSplits {
+        // The same family the tab's own icon uses for a split tab.
+        splitButton(.horizontal, symbol: "rectangle.split.2x1")
+        splitButton(.vertical, symbol: "rectangle.split.1x2")
+      }
+    }
+  }
+
   private var newTabButton: some View {
     Button {
       model.newTab(in: group.id)
     } label: {
-      Image(systemName: "plus")
-        .font(.system(size: model.metrics.icon, weight: .medium))
-        .foregroundStyle(theme.textSecondary)
-        .frame(width: model.metrics.newTabWidth, height: model.metrics.tabHeight)
-        .contentShape(.rect)
+      stripIcon("plus")
     }
     .buttonStyle(.plain)
     // The keystroke opens in the focused column, so only that column's
     // button is the thing ⌘T does.
     .help(isFocused ? t("tab.new-here") : t("tab.new-in-group"))
     .accessibilityLabel(t("tab.new"))
+  }
+
+  /// Splits the tab this column shows, whichever column the keyboard is in.
+  private func splitButton(_ axis: SplitAxis, symbol: String) -> some View {
+    Button {
+      model.splitActivePane(axis, in: group.id)
+    } label: {
+      stripIcon(symbol)
+    }
+    .buttonStyle(.plain)
+    .help(help(for: axis))
+    .accessibilityLabel(axis == .horizontal ? t("tab.split-right") : t("tab.split-down"))
+  }
+
+  /// The keystrokes split the focused column, so only that column's buttons
+  /// are what they do.
+  private func help(for axis: SplitAxis) -> String {
+    switch (axis, isFocused) {
+    case (.horizontal, true): t("tab.split-right-here")
+    case (.horizontal, false): t("tab.split-right-in-group")
+    case (.vertical, true): t("tab.split-down-here")
+    case (.vertical, false): t("tab.split-down-in-group")
+    }
+  }
+
+  private func stripIcon(_ symbol: String) -> some View {
+    Image(systemName: symbol)
+      .font(.system(size: model.metrics.icon, weight: .medium))
+      .foregroundStyle(theme.textSecondary)
+      .frame(width: model.metrics.newTabWidth, height: model.metrics.tabHeight)
+      .contentShape(.rect)
   }
 }

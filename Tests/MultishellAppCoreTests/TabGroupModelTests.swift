@@ -129,6 +129,20 @@ struct TabGroupModelTests {
     #expect(h.model.workspace.activeTab(in: columns.second)?.isSplit == false)
   }
 
+  /// A strip's own split button names its column, so it splits what that
+  /// column shows and hands the keyboard to it.
+  @Test func aSplitNamingAColumnActsInItAndFocusesIt() {
+    let h = Harness()
+    let columns = twoColumns(h)
+    h.model.focusGroup(columns.first.id)
+
+    h.model.splitActivePane(.horizontal, in: columns.second.id)
+
+    #expect(h.model.workspace.activeTab(in: columns.second)?.isSplit == true)
+    #expect(h.model.workspace.activeTab(in: columns.first)?.isSplit == false)
+    #expect(h.model.focusedGroup?.id == columns.second.id)
+  }
+
   /// A Done state in another column clears when it lands, because that
   /// pane is on screen; `SessionStates` is asked with `isShown`.
   @Test func aFinishedCommandInAnotherColumnIsSeenAtOnce() {

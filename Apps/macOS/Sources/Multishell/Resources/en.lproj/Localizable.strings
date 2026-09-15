@@ -225,6 +225,12 @@
 "tab.new-in-group" = "New Tab in This Group";
 "tab.scroll-left" = "Scroll tabs left";
 "tab.scroll-right" = "Scroll tabs right";
+"tab.split-down" = "Split Down";
+"tab.split-down-here" = "Split Down (⇧⌘D)";
+"tab.split-down-in-group" = "Split Down in This Group";
+"tab.split-right" = "Split Right";
+"tab.split-right-here" = "Split Right (⌘D)";
+"tab.split-right-in-group" = "Split Right in This Group";
 "tab.state-clear-status" = "%@. Clear status";
 "tab.state-click-to-clear" = "%@. Click to clear.";
 "tab.use-shell-title" = "Use Shell Title";

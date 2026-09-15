@@ -11,8 +11,8 @@ public struct TabStripLayout: Equatable, Sendable {
   /// clips rather than squeezing them further.
   public let scrolls: Bool
 
-  /// `available` is the room the tabs have, the New Tab button's own width
-  /// already taken off.
+  /// `available` is the room the tabs have, the buttons at the end of the
+  /// strip already taken off.
   public init(available: Double, count: Int, minimum: Double, maximum: Double) {
     let floor = max(minimum, 1)
     let ceiling = max(maximum, floor)

@@ -34,6 +34,17 @@ struct UIMetrics {
   var tabMinWidth: Double { (body * 7.5).rounded() }
   /// The New Tab button at the end of a strip, which never scrolls away.
   var newTabWidth: Double { (body * 2.6).rounded() }
+  /// New Tab and the two splits beside it, all drawn at that width. Comes
+  /// off the strip before a tab is measured, so nothing measures itself.
+  var stripButtonsWidth: Double { newTabWidth * 3 }
+  /// Whether a strip that wide carries the splits at all. They go where they
+  /// cost neither a whole tab nor the strip's arrows: a column dragged to
+  /// `SplitMetrics.minimumPane` has less room than the three buttons take,
+  /// and a narrower answer than this one buys the splits by scrolling a
+  /// strip with nothing saying so. See docs/design/tabs-and-columns.md.
+  func stripShowsSplits(in width: Double) -> Bool {
+    width.isFinite && width >= stripButtonsWidth + 2 * tabArrowWidth + tabMinWidth
+  }
   /// The arrow at either end of a strip with more tabs that way. Its room is
   /// kept either way, so the tabs do not shift under the pointer.
   var tabArrowWidth: Double { (body * 1.7).rounded() }

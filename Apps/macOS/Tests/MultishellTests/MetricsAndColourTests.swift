@@ -41,6 +41,22 @@ struct UIMetricsTests {
       #expect(metrics.tabMinWidth < metrics.tabMaxWidth, "size \(size)")
       #expect(metrics.newTabWidth >= metrics.icon * 2, "the plus needs a target at \(size)")
       #expect(
+        metrics.stripButtonsWidth == metrics.newTabWidth * 3,
+        "New Tab and the two splits are all taken off the strip at \(size)")
+      #expect(
+        !metrics.stripShowsSplits(in: Double(SplitMetrics.minimumPane)),
+        "a column at its floor has no room for the splits at \(size)")
+      // The width they first show at has to leave the scroller its gutters,
+      // else the splits are bought by scrolling a strip with no arrows.
+      let showsAt = metrics.stripButtonsWidth + 2 * metrics.tabArrowWidth + metrics.tabMinWidth
+      #expect(metrics.stripShowsSplits(in: showsAt), "the splits never show at \(size)")
+      #expect(
+        !metrics.stripShowsSplits(in: showsAt - 1),
+        "the splits show a point early at \(size)")
+      #expect(
+        showsAt - metrics.stripButtonsWidth >= 2 * metrics.tabArrowWidth + metrics.tabMinWidth,
+        "the splits cost the strip its arrows at \(size)")
+      #expect(
         metrics.tabArrowWidth >= metrics.body,
         "the scroll arrow's own glyph does not fit at \(size)")
       #expect(

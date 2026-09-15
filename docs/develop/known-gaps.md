@@ -128,6 +128,17 @@ does.
 
 ## Unconfirmed behaviour
 
+- The tab strip's two split buttons have never been watched on a screen.
+  Every number behind them is held by UIMetricsTests: a column at
+  `SplitMetrics.minimumPane` drops them at every font size, the threshold
+  runs 187pt at 10-point to 338pt at 18, and a width of zero or NaN reads as
+  "no splits", so a first frame degrades to New Tab alone. What a screen
+  would settle is what a measurement cannot: that the buttons sit where the
+  plus does rather than under the scroll gutter, that the collapse is not
+  seen as a flicker while a column divider is dragged across the threshold,
+  and that the split lands in the column clicked rather than the focused one.
+  Fallback if the collapse reads badly: the threshold is
+  `UIMetrics.stripShowsSplits` alone.
 - Ghostty's focus report reaches the store a turn after libghostty raises
   it, because a frame showing a surface already in a window raised it from
   inside `updateNSView`, where a store write is undefined. Before it writes,

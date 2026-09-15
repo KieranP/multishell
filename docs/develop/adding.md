@@ -62,8 +62,9 @@ range that the floor leaves room for side padding, dot or icon, gap and close
 button with something over for the title, and that `tabArrowWidth` holds its
 own glyph with two gutters still leaving room for a tab.
 `TabStripLayout.Edges` = which end has more past it; `stepTarget` = which tab
-its arrow scrolls to. `newTabWidth` and both gutters come off the room first,
-so nothing measures itself.
+its arrow scrolls to. `stripButtonsWidth` (New Tab and the two splits, each
+`newTabWidth` wide) and both gutters come off the room first, so nothing
+measures itself.
 
 **A column on the Agents board.** A case in `AgentBoardLane`, in draw order,
 with its title, the state whose colour its header wears (`headerState`), and a

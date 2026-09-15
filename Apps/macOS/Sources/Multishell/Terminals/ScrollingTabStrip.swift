@@ -14,7 +14,7 @@ struct ScrollingTabStrip<Tabs: View>: View {
   /// How wide each tab is drawn, and the floor it stopped at; see
   /// `TabStripLayout`.
   let layout: TabStripLayout
-  /// The room the strip has, the New Tab button's width already taken off.
+  /// The room the strip has, the buttons at its end already taken off.
   let available: Double
   /// In strip order, for the arrows to scroll by one and for the count.
   let tabIDs: [TerminalTab.ID]

@@ -7,7 +7,6 @@ than fixed lives in `docs/develop/known-gaps.md`; a defect goes to `BUGS.md`.
 ## Features
 
 - Terminal: find.
-- On Tab bar row, next to new tab button, add split vertically/horizontal buttons
 - File tree and git changes files and diff right hand panel
 - Subagents tracking/display
 - "Locate…" on a missing project, rebinding it to a chosen directory.

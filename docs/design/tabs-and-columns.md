@@ -134,6 +134,32 @@ strip would otherwise open a tab nobody can see. Neither is laid out beside a
 spacer: a scroller and a spacer are both infinitely flexible, and the stack
 would divide the strip between the two.
 
+Beside it, the two splits, in the same gutter and the same width apiece ->
+`stripButtonsWidth`. On the strip rather than in the pane, where a button over
+a terminal would take a click meant for the shell, and per column, because that
+is what the strip already is: each button names its own column, splits the tab
+that column shows, and focuses it, since the new pane takes the focus inside
+its tab and the keyboard would otherwise stay where it was. The menu items name
+no column and go on splitting the focused one.
+
+A column can be dragged down to `SplitMetrics.minimumPane`, which is less than
+the three buttons take, so a narrow strip keeps New Tab alone ->
+`stripShowsSplits`. What it asks for is room for the buttons, both scroll
+gutters and a whole tab besides: the gutters come off `available`, which the
+buttons have already been taken out of, so a threshold counting only a tab
+buys the splits by leaving a scrolling strip with no arrows, which is the one
+thing arrows are there to prevent. 244pt at 13-point, 187 at 10 and 338 at 18.
+Asked of the width unconditionally rather than of whether the strip scrolls:
+scrolling is decided from `available`, which this decides, and the two would
+chase each other. The strip reads its width once and both the buttons drawn
+and the room taken off come from that answer, for the same reason the gutters
+are reserved whether an arrow is drawn or not.
+
+Costs: three buttons of gutter rather than one, so a strip shows a whole tab
+later than it did; and a column under the threshold offers the splits on its
+menu and keystrokes alone, including one wide enough to draw them that is not
+scrolling and would not have wanted the gutters.
+
 Costs: no auto-scroll while a tab is dragged near an end -> a reorder reaches
 only the tabs on screen; and a strip whose tabs differ widely in width is the
 one shape where the shuffle could in principle cross a boundary twice.
