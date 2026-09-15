@@ -4,15 +4,23 @@ The queue, most pressing first within each heading. A decision that gets
 made moves to the right file under `docs/design/`; a gap that is documented rather
 than fixed lives in `docs/develop/known-gaps.md`; a defect goes to `BUGS.md`.
 
-* Change subagents count to actually track state, so worktree shows in progress whebn any subagent is still working
-
 ## Features
 
-- "Locate…" on a missing project, rebinding it to a chosen directory.
 - Terminal: find.
+- On Tab bar row, next to new tab button, add split vertically/horizontal buttons
+- File tree and git changes files and diff right hand panel
+- Subagents tracking/display
+- "Locate…" on a missing project, rebinding it to a chosen directory.
 
 ## Refinements
 
+- Hide sidebar search behind a Search icon (not used often)
+- On Agents Dashboard, order agents in the same order as Projects, and group agents from same project
+- Make the + on the tab row a dropdown with "New Shell Tab" and "New [agent] Tab" (listing each detected agent).
+- Change tab icon and agents dashboard tile to show icon for the agent running
+- Pin worktrees in the sidebar
+- Rename worktree using default agent?
+- Move sidebar sorting settings to a sort icon on the sidebar
 - Keyboard: Cmd+1 to 9 for tabs, next and previous worktree, focus between
   panes, focus the sidebar filter. Each is an `AppShortcut` in
   `AppShortcuts.all`.
@@ -42,6 +50,9 @@ than fixed lives in `docs/develop/known-gaps.md`; a defect goes to `BUGS.md`.
 
 ## Future
 
+- Remote Hosts: group projects under another remote host, adding projects /
+  worktrees spins them up on the remote host, and any terminals opened are
+  ssh/tmux sessions
 - Linux support: a GUI, an inotify `DirectoryWatcher`, and an XDG Trash for
   its `Platform` (removal deletes outright until then). The core is already
   Foundation-only and never compiled on Linux, locally or in CI.

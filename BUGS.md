@@ -10,7 +10,8 @@ Three defects stand, 84, 86 and 87, moved here from TODO.md's Issues list on
 2026-09-13. Those were written from use and from reading the code, not
 reproduced and not read by a second verifier. Beside them is 85, not a defect
 but behaviour nobody has watched happen. 88, reported from use on 2026-09-14,
-has since been fixed and taken out.
+has since been fixed and taken out. 89 was reported from use on 2026-09-15,
+not yet reproduced against the code.
 
 Then thirty-one findings that are not defects: Perf, Design, Simplify, Reuse
 and Style. Those are one finder's reading each, kept as written and not
@@ -26,6 +27,7 @@ taken out rather than kept.
 | 84 | Medium | Two copies of one build both autosave and the last writer wins |
 | 86 | Low | An OpenCode server reused by a second pane lands the dot on the first pane's tab |
 | 87 | Low | CI never runs `make-app.sh`, so bundling and signing can break with it green |
+| 89 | Medium | Claude Code's voice prompt gets no microphone prompt and no microphone |
 | 53 | Perf | The status poll runs `git status` for missing projects' worktrees |
 | 54 | Perf | Every split-divider drag frame writes the workspace and re-arms autosave |
 | 55 | Perf | The sidebar scans every session four times per worktree per render |
@@ -97,6 +99,23 @@ helper reads `MULTISHELL_SESSION` from its environment (Helper.swift:13). An
 OpenCode server started from one pane and reused by another therefore reports
 that first pane's session, so the dot lands on the wrong tab. Only the plugin
 has this: every other agent's hook runs in the session's own process.
+
+## Permissions
+
+### 89. Medium. Claude Code's voice prompt gets no microphone prompt and no microphone
+
+`Scripts/make-app.sh:123`.
+Claude Code's voice prompt records from the microphone. macOS charges that
+to the app that spawned the process, so the request is Multishell's, and the
+generated Info.plist declares no `NSMicrophoneUsageDescription`. Without the
+string macOS neither shows the permission alert nor grants access, so the
+user sees no prompt, Multishell never appears under Microphone in Privacy &
+Security, and voice input in Claude Code fails silently. The same happens in
+any other program that records from a Multishell terminal. The fix is a
+usage string beside the eight that are there, in the same voice; check
+afterwards that the alert appears on first use and that the grant survives a
+rebuild, since the signing identity is what macOS keys it on
+(docs/develop/permissions.md).
 
 ## Scripts
 
