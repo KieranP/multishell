@@ -5,8 +5,9 @@ import UniformTypeIdentifiers
 
 @testable import Multishell
 
-/// The identifiers this app spells twice: once in Swift, once in the
-/// `Info.plist` that `Scripts/make-app.sh` writes.
+/// The identifiers this app spells twice, once in Swift and once in the
+/// `Info.plist` that `Scripts/make-app.sh` writes, and the permission strings
+/// that plist alone declares.
 ///
 /// Nothing at build time joins the two, and nothing at run time notices they
 /// have parted. Every other test on either side reads the same constant on
@@ -62,6 +63,23 @@ struct BundleDeclarationTests {
       """
       make-app.sh does not write \(Paths.variantKey), so Paths.variant finds nothing and \
       every worktree's debug build shares one state file and one socket again.
+      """)
+  }
+
+  /// A pane records through this app, so without this key TCC kills the
+  /// asking process rather than showing an alert; permissions.md. The words
+  /// are matched too: an empty string is a key TCC does not count.
+  @Test func theMicrophoneUsageStringIsDeclaredInTheBundleTheScriptWrites() throws {
+    let isDeclared =
+      try makeAppScript().range(
+        of: #"<key>NSMicrophoneUsageDescription</key>\s*<string>[^<]+</string>"#,
+        options: .regularExpression) != nil
+    #expect(
+      isDeclared,
+      """
+      make-app.sh writes no NSMicrophoneUsageDescription with words in it, so TCC kills \
+      anything that asks for the microphone in a terminal instead of showing the alert, and \
+      Multishell never appears under Microphone in Privacy & Security.
       """)
   }
 

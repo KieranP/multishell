@@ -119,7 +119,8 @@ $localizations    </array>
          terminal reaches these places because a command run in one did, and
          the alert names this app rather than that command: macOS holds the
          app that spawned a process responsible for what the process reads.
-         Without a string here the alert offers the user no reason at all. -->
+         A missing string costs a folder its reason and the microphone the
+         asking process, which TCC kills; permissions.md. -->
     <key>NSNetworkVolumesUsageDescription</key>
     <string>A command you ran in a Multishell terminal is reading files on a network volume.</string>
     <key>NSRemovableVolumesUsageDescription</key>
@@ -134,6 +135,8 @@ $localizations    </array>
     <string>A command you ran in a Multishell terminal is reading your photo library.</string>
     <key>NSAppleMusicUsageDescription</key>
     <string>A command you ran in a Multishell terminal is reading your media library.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>A command you ran in a Multishell terminal is recording from your microphone.</string>
     <key>NSAppleEventsUsageDescription</key>
     <string>Multishell asks the system to install its command line tool, which needs an administrator.</string>
     <!-- The pasteboard type a dragged tab carries. Declared so macOS knows

@@ -5,6 +5,11 @@ spawning app responsible. The usage strings in `make-app.sh`'s Info.plist are
 the only place that can say otherwise; extend them when a pane reaches
 somewhere new.
 
+What a missing string costs depends on the service: a folder is denied and
+the alert names no reason, while the microphone and the other device services
+kill the process that asked, aborting it with
+`__TCC_CRASHING_DUE_TO_PRIVACY_VIOLATION__` and showing nothing.
+
 A grant is keyed to the signature's designated requirement, so an ad-hoc
 build's bare cdhash loses every permission at each rebuild. What a build will
 be remembered by, and which command actually asked:
