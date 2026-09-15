@@ -4,11 +4,8 @@ import Testing
 
 @testable import Multishell
 
-/// The two halves a scrolling tab strip wears: a marker inside the scroller
-/// that says where it is, and a catcher outside that hands it the turns. A
-/// mouse turns one way, and a horizontal scroller is handed nothing by a
-/// vertical scroll, so what happens here is AppKit's behaviour rather than
-/// arithmetic and is checked against a real scroller.
+/// What a turn does to the strip is AppKit's behaviour rather than
+/// arithmetic, so each is checked against a real scroller.
 @Suite @MainActor
 struct SidewaysWheelTests {
   private func wheel(vertical: Double, horizontal: Double = 0) -> NSEvent {
@@ -81,6 +78,36 @@ struct SidewaysWheelTests {
     withExtendedLifetime([nearWindow, farWindow]) {}
   }
 
+  @Test func aDiagonalTurnMovesAsFarAsItsVerticalAlone() {
+    let (straightWindow, straight, straightCatcher) = strip()
+    let (diagonalWindow, diagonal, diagonalCatcher) = strip()
+    straightCatcher.scrollWheel(with: wheel(vertical: -40))
+    diagonalCatcher.scrollWheel(with: wheel(vertical: -40, horizontal: 30))
+    settle()
+    #expect(scrolled(diagonal) == scrolled(straight))
+    withExtendedLifetime([straightWindow, diagonalWindow]) {}
+  }
+
+  /// The three delta fields of an axis are coupled: writing lines derives
+  /// fixed, so adding to fixed afterwards counted the turn twice.
+  @Test func aNotchOfAPlainWheelIsNotCountedTwice() {
+    let (turnedWindow, turned, catcher) = strip()
+    let (controlWindow, control, _) = strip()
+    catcher.scrollWheel(with: notch(vertical: -3))
+    control.scrollWheel(with: notch(horizontal: -3))
+    settle()
+    #expect(scrolled(turned) > 0)
+    #expect(scrolled(turned) == scrolled(control))
+    withExtendedLifetime([turnedWindow, controlWindow]) {}
+  }
+
+  private func notch(vertical: Int32 = 0, horizontal: Int32 = 0) -> NSEvent {
+    let event = CGEvent(
+      scrollWheelEvent2Source: nil, units: .line, wheelCount: 2, wheel1: vertical,
+      wheel2: horizontal, wheel3: 0)!
+    return NSEvent(cgEvent: event)!
+  }
+
   /// A sideways turn is the scroller's own, and a click, a drag or a drop is
   /// the tabs': the catcher answers for none of them.
   @Test func onlyAVerticalScrollIsTakenFromWhatIsUnderneath() {
@@ -98,15 +125,8 @@ struct SidewaysWheelTests {
     withExtendedLifetime(window) {}
   }
 
-  /// The regression, twice over. SwiftUI flattens a strip's view tree, so a
-  /// catcher outside the scroller cannot find it by looking: looking climbed
-  /// to the window and took the sidebar's, which is why the marker hands it
-  /// over instead. And a catcher moved inside the scroller to fix that is
-  /// hit-tested and then never called, a scroller taking every scroll over
-  /// its own content first. The shape below is the workspace's: a sidebar
-  /// that scrolls, then a strip in a GeometryReader with a gutter either
-  /// side. Needs the window server SettingsPageSizeTests does; the window is
-  /// never ordered in.
+  /// The workspace's shape: a sidebar that scrolls beside a strip that does.
+  /// Needs the window server SettingsPageSizeTests does.
   @Test func theMarkedScrollerIsTheStripsAndTheCatcherStaysOutsideIt() {
     let handle = ScrollerHandle()
     let workspace = HStack(spacing: 0) {

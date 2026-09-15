@@ -1,9 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// How the two halves of a sideways wheel find each other. SwiftUI flattens
-/// the view tree, so the catcher outside a scroller has no way to it: the
-/// marker inside hands it over. See docs/design/tabs-and-columns.md.
+/// How the two halves of a sideways wheel find each other; SwiftUI flattens
+/// the tree, so the catcher cannot look. See docs/design/tabs-and-columns.md.
 final class ScrollerHandle {
   weak var scroller: NSScrollView?
 }
@@ -15,14 +14,8 @@ extension View {
     background { ScrollerMarker(handle: handle) }
   }
 
-  /// Turns a wheel's vertical scrolling into sideways scrolling of the
-  /// marked scroller: a mouse turns one way, and a horizontal scroller is
-  /// handed nothing by a plain vertical event. Measured: without this such a
-  /// scroller moves by 0.
-  ///
-  /// Goes outside the scroller, over it. A scroller takes every scroll event
-  /// over its own content before a view inside it is offered one, so a
-  /// catcher in there is hit-tested and then never called.
+  /// Turns a wheel's vertical scrolling sideways for the marked scroller. Goes
+  /// outside the scroller, over it; see docs/design/tabs-and-columns.md.
   func wheelScrollsSideways(_ handle: ScrollerHandle) -> some View {
     overlay { SidewaysWheel(handle: handle) }
   }
@@ -73,9 +66,7 @@ struct SidewaysWheel: NSViewRepresentable {
 }
 
 /// Answers `hitTest` only while a vertical scroll is routed, so clicks, drags
-/// and a sideways scroll reach what is underneath untouched. What it does
-/// take, it hands to the marked scroller with the axes swapped, so the
-/// scrolling is AppKit's: the pixels, the momentum and the rubber band.
+/// and a sideways scroll reach what is underneath untouched.
 final class SidewaysWheelView: NSView {
   var handle: ScrollerHandle?
 
@@ -105,8 +96,8 @@ final class SidewaysWheelView: NSView {
     event.type == .scrollWheel && abs(event.scrollingDeltaY) > abs(event.scrollingDeltaX)
   }
 
-  /// The same event turned on its side. Copied rather than built, so the
-  /// phase, the momentum and the precision it arrived with are kept.
+  /// The same event turned on its side, copied so phase and precision are
+  /// kept. Each field is written once, lines first: they are coupled, see the doc.
   private func sideways(_ event: NSEvent) -> NSEvent? {
     guard let swapped = event.cgEvent?.copy() else { return nil }
     let lines = swapped.getIntegerValueField(.scrollWheelEventDeltaAxis1)
@@ -115,15 +106,9 @@ final class SidewaysWheelView: NSView {
     swapped.setIntegerValueField(.scrollWheelEventDeltaAxis1, value: 0)
     swapped.setDoubleValueField(.scrollWheelEventPointDeltaAxis1, value: 0)
     swapped.setDoubleValueField(.scrollWheelEventFixedPtDeltaAxis1, value: 0)
-    swapped.setIntegerValueField(
-      .scrollWheelEventDeltaAxis2,
-      value: swapped.getIntegerValueField(.scrollWheelEventDeltaAxis2) + lines)
-    swapped.setDoubleValueField(
-      .scrollWheelEventPointDeltaAxis2,
-      value: swapped.getDoubleValueField(.scrollWheelEventPointDeltaAxis2) + points)
-    swapped.setDoubleValueField(
-      .scrollWheelEventFixedPtDeltaAxis2,
-      value: swapped.getDoubleValueField(.scrollWheelEventFixedPtDeltaAxis2) + fixed)
+    swapped.setIntegerValueField(.scrollWheelEventDeltaAxis2, value: lines)
+    swapped.setDoubleValueField(.scrollWheelEventPointDeltaAxis2, value: points)
+    swapped.setDoubleValueField(.scrollWheelEventFixedPtDeltaAxis2, value: fixed)
     return NSEvent(cgEvent: swapped)
   }
 }

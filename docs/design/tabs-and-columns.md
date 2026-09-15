@@ -181,6 +181,15 @@ than built, so the phase, the momentum and the precision it arrived with are
 kept. A turn that goes sideways partway through is passed on unchanged, a
 scroll being routed to the view its first event hit.
 
+The swap writes each of an axis's three delta fields once, from the vertical
+alone, lines first. Measured: the fields are coupled, so writing the line
+delta makes CGEvent derive the fixed-point one, and a copy that read each
+horizontal field and added the vertical to it counted a plain wheel's notch
+twice, 6 lines for 3, while a trackpad's points survived only because the
+line write had wiped them first. A diagonal turn therefore moves the strip by
+its vertical alone; the horizontal, the smaller of the two on that branch, is
+dropped rather than mixed in.
+
 Two halves, because neither placement can do the job alone. The catcher is
 outside the scroller: inside, it is hit-tested and then never called, a
 scroller taking every scroll over its own content before a view in there is

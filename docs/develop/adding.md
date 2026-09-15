@@ -64,9 +64,9 @@ own glyph with two gutters still leaving room for a tab.
 `TabStripLayout.Edges` = which end has more past it; `stepTarget` = which tab
 its arrow scrolls to; a scroll wheel is not counted in tabs at all, the strip
 being handed the turn sideways (`wheelScrollsSideways` outside the scroller,
-`marksScroller` inside it, one `ScrollerHandle` between them). `stripButtonsWidth` (New Tab and the two splits, each
-`newTabWidth` wide) and both gutters come off the room first, so nothing
-measures itself.
+`marksScroller` inside it, one `ScrollerHandle` between them).
+`stripButtonsWidth` (New Tab and the two splits, each `newTabWidth` wide) and
+both gutters come off the room first, so nothing measures itself.
 
 **A column on the Agents board.** A case in `AgentBoardLane`, in draw order,
 with its title, the state whose colour its header wears (`headerState`), and a

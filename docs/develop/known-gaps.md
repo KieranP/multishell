@@ -129,14 +129,30 @@ does.
 
 ## Unconfirmed behaviour
 
+- The tab strip's two split buttons have never been watched on a screen.
+  Every number behind them is held by UIMetricsTests: a column at
+  `SplitMetrics.minimumPane` drops them at every font size, the threshold
+  runs 187pt at 10-point to 338pt at 18, and a width of zero or NaN reads as
+  "no splits", so a first frame degrades to New Tab alone. What a screen
+  would settle is what a measurement cannot: that the buttons sit where the
+  plus does rather than under the scroll gutter, that the collapse is not
+  seen as a flicker while a column divider is dragged across the threshold,
+  and that the split lands in the column clicked rather than the focused one.
+  Fallback if the collapse reads badly: the threshold is
+  `UIMetrics.stripShowsSplits` alone.
 - A scroll wheel over a scrolling tab strip works, watched on a screen with a
   mouse whose turns arrive as points. A wheel that sends lines instead has
-  not been: AppKit's own rate is around 10 points a line, so a notch may read
-  as slow across a tab of 100 to 190 points. Fallback: scale the swapped
-  deltas before handing them on. Known and not fixed: the two arrow gutters
-  are outside the strip's scroller but under the catcher, so a turn with the
-  pointer over an arrow scrolls the tabs, which is the behaviour wanted, but
-  a turn with the pointer over the New Tab or split buttons does nothing.
+  not been: SidewaysWheelTests holds its rate to the scroller's own, 10
+  points a line, so a notch may read as slow across a tab of 100 to 190
+  points. Fallback: scale the swapped deltas before handing them on. A
+  trackpad's vertical turn has not been watched either: its gesture opens
+  with a `mayBegin` event whose deltas are both zero, which the catcher does
+  not answer for, and if AppKit routes the whole gesture by that first event
+  the strip never moves. Not a regression, a trackpad scrolling it sideways
+  as before. Known and not fixed: the two arrow gutters are outside the
+  strip's scroller but under the catcher, so a turn with the pointer over an
+  arrow scrolls the tabs, which is the behaviour wanted, but a turn with the
+  pointer over the New Tab or split buttons does nothing.
 - Ghostty's focus report reaches the store a turn after libghostty raises
   it, because a frame showing a surface already in a window raised it from
   inside `updateNSView`, where a store write is undefined. Before it writes,
