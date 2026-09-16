@@ -321,3 +321,10 @@ does.
   unwatched. If it does, the walk ends there instead and the dot outlives the
   shell, as it did before; a pid equal to the app's own is dropped either
   way.
+- The tab strip's + is a `Menu` in `.button` style under
+  `.buttonStyle(.plain)`. The `.borderlessButton` version drew no chevron and
+  put the plus in a corner, seen on screen; the plain button draws the label
+  as written, also seen. Its label paints `chromeColor` over the whole
+  `newTabMenuWidth` frame and carries a `contentShape(.rect)`; that a click
+  on the blank part of that frame opens the menu is not yet confirmed. Its
+  items and what each opens are tested on the model, not through the view.

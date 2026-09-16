@@ -222,8 +222,9 @@
 "tab.move-to-this-group" = "Move tab to this group";
 "tab.name-prompt" = "Tab name";
 "tab.new" = "New Tab";
-"tab.new-here" = "New Tab (⌘T)";
+"tab.new-custom-agent" = "New Custom Command Tab";
 "tab.new-in-group" = "New Tab in This Group";
+"tab.new-named-agent" = "New %@ Tab";
 "tab.scroll-left" = "Scroll tabs left";
 "tab.scroll-right" = "Scroll tabs right";
 "tab.split-down" = "Split Down";

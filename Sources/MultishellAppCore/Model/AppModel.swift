@@ -116,7 +116,12 @@ public final class AppModel<Surface> {
   /// `nil` until the shell has answered and its PATH has been scanned.
   public var loginEnvironment: LoginShellEnvironment?
   /// Which catalogue agents that environment's PATH has.
-  public var agentDetection = AgentDetection.empty
+  public var agentDetection = AgentDetection.empty {
+    didSet { refreshInstalledAgents() }
+  }
+  /// The agents a New Tab menu lists, held rather than worked out: a strip's
+  /// body reads it on every render. Rebuilt by `refreshInstalledAgents`.
+  public internal(set) var installedAgentIDs: [String] = []
   /// Which shells the machine has, from `/etc/shells` and that PATH.
   public var shellDetection = ShellDetection.empty
   /// Which catalogue editors are installed, by application id or shim.
@@ -201,6 +206,7 @@ public final class AppModel<Surface> {
     self.restoredSessionIDs = Set(store.workspace.sessions.map(\.id))
 
     reloadThemes()
+    refreshInstalledAgents()
     host.apply(currentTheme, appearance: store.workspace.appearance)
     // Said on the process's PATH alone. `refreshLoginEnvironment` looks again
     // on the login shell's and takes this back if it finds git there.

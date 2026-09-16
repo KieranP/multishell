@@ -214,3 +214,38 @@ This was the one move that crossed columns without reconciling afterwards; the
 same pass is what marks the newly shown tab seen in the column the tab left,
 which otherwise keeps a Done dot and its banner over a tab that is now on
 screen.
+
+## The strip's + is a menu
+
+A click on it opens New Shell Tab and a New Tab item per agent found on the
+login shell's PATH, named after the agent, the custom command among them once
+one is typed. Every item says what it starts, which the plain + could not: it
+ran Cmd+T, whose answer turns on the project's auto-start setting, so the same
+click started a shell in one project and an agent in the next. Cmd+T itself is
+unchanged, and is the only way left to the auto-start answer.
+
+The items open in the column the menu sits in, as the split buttons do, so a
+click never acts in the column the keyboard happens to be in.
+
+The list is held on the model and rebuilt when detection answers or the custom
+command is edited, not worked out in the strip's body: a menu's content is
+built with the view around it, and every column has one. Before the login
+shell has answered, the menu offers the shell alone rather than a catalogue of
+agents the machine may not have; it fills in when the scan lands.
+
+The + draws its own chevron, at six tenths of the icon size so it reads as a
+mark on the plus rather than a second glyph, and is wider than the split
+buttons beside it by the chevron less one gap (`newTabMenuWidth`, in the
+strip's budget in place of a third `newTabWidth`). The plus sits at a split
+glyph's inset from the left; the right inset is shorter by two gaps. Equal
+insets looked unequal: a chevron's ink is narrower than its box and a split
+symbol's is wider, so the gap to the first split read as larger than the gap
+between the splits. AppKit's own indicator is hidden: it sits where this one's
+spacing cannot reach it. The glyphs sit on a painted `chromeColor` frame, a
+menu being hit-tested by what its label draws.
+
+The menu is the `.button` style under `.buttonStyle(.plain)`, not the
+`.borderlessButton` the header's ellipsis menu uses. That one is an AppKit
+button, which takes a single image from its label and draws it at the leading
+edge: the chevron vanished and the + sat in the corner of a wide blank. The
+plain button draws the label view as written.

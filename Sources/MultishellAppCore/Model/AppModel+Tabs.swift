@@ -36,10 +36,10 @@ extension AppModel {
   }
 
   /// Cmd+Shift+T: always a plain shell, so one stays reachable when every
-  /// New Tab starts an agent.
-  public func newShellTab() {
+  /// New Tab starts an agent. A strip's menu names its column.
+  public func newShellTab(in group: TabGroup.ID? = nil) {
     guard let worktree = worktreeReadyForShell() else { return }
-    store.openTab(in: worktree.id)
+    store.openTab(in: worktree.id, group: group)
     reconcileSessions(takingFocus: true)
   }
 

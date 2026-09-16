@@ -32,11 +32,22 @@ struct UIMetrics {
   /// And the least it is ever drawn: below this the icon, title and close
   /// button have nowhere to go. See `TabStripLayout`.
   var tabMinWidth: Double { (body * 7.5).rounded() }
-  /// The New Tab button at the end of a strip, which never scrolls away.
+  /// A split button at the end of a strip, which never scrolls away.
   var newTabWidth: Double { (body * 2.6).rounded() }
-  /// New Tab and the two splits beside it, all drawn at that width. Comes
-  /// off the strip before a tab is measured, so nothing measures itself.
-  var stripButtonsWidth: Double { newTabWidth * 3 }
+  /// The chevron after the New Tab menu's plus, small enough to read as a
+  /// mark on the plus rather than a second glyph.
+  var menuChevron: Double { (icon * 0.6).rounded() }
+  var menuChevronGap: Double { 2 }
+  /// The New Tab menu beside them: a split's width plus the chevron, less
+  /// one gap. Its glyphs sit at a split's inset; the right side is shorter
+  /// by two gaps, the chevron's ink being narrower than its box and a
+  /// split's wider. See docs/design/tabs-and-columns.md.
+  var newTabMenuWidth: Double { newTabWidth + menuChevron - menuChevronGap }
+  /// A split glyph's inset, which the menu's plus shares.
+  var stripGlyphInset: Double { (newTabWidth - icon) / 2 }
+  /// The New Tab menu and the two splits. Comes off the strip before a tab
+  /// is measured, so nothing measures itself.
+  var stripButtonsWidth: Double { newTabMenuWidth + newTabWidth * 2 }
   /// Whether a strip that wide carries the splits at all. They go where they
   /// cost neither a whole tab nor the strip's arrows: a column dragged to
   /// `SplitMetrics.minimumPane` has less room than the three buttons take,

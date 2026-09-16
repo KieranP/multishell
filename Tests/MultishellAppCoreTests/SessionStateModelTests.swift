@@ -604,6 +604,65 @@ struct AgentTabTests {
     await refresh.value
   }
 
+  @Test func theNewTabMenuListsWhatWasFoundAndTheCustomCommandOnlyWhenTyped() throws {
+    let bin = try fakeBin(["codex", "claude"])
+    defer { try? FileManager.default.removeItem(at: bin) }
+    let h = Harness()
+    h.model.agentDetection = AgentDetection(path: bin.path)
+
+    #expect(h.model.installedAgentIDs == ["claude", "codex"], "catalogue order")
+
+    h.model.setCustomAgentCommand("  ")
+    #expect(h.model.installedAgentIDs == ["claude", "codex"], "a blank line is no agent")
+
+    h.model.setCustomAgentCommand("my-agent --fast")
+    #expect(h.model.installedAgentIDs == ["claude", "codex", "custom"])
+
+    // Its own store: a second model over the harness's would deselect the
+    // worktree under it, `init` clearing the selection.
+    let saved = WorkspaceStore(
+      snapshot: WorkspaceSnapshot(
+        fileURL: Scratch.path("relaunch").appendingPathComponent("state.json")))
+    saved.setCustomAgentCommand("my-agent --fast")
+    let relaunched = AppModel(
+      store: saved, host: FakeEngine(), worktrees: nil, watcher: FakeWatcher())
+    #expect(relaunched.installedAgentIDs == ["custom"], "the saved command, before any PATH scan")
+  }
+
+  @Test func aNamedAgentTabNeedsNoPreferredAgentAndOpensInTheColumnGiven() {
+    let h = Harness()
+    h.model.select(h.main)
+    h.model.newTab()
+    h.model.moveActiveTabToNewGroup()
+    let columns = h.model.workspace.groups(in: h.main.id)
+    #expect(h.model.preferredAgentID(for: h.main) == nil)
+    h.model.presentedError = nil
+
+    h.model.newAgentTab("aider", in: columns[0].id)
+
+    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    #expect(tab.groupID == columns[0].id)
+    #expect(h.model.workspace.session(tab.focusedSessionID)?.agentID == "aider")
+    #expect(h.model.title(of: tab) == "Aider")
+    #expect(h.model.presentedError == nil, "the strip named the agent, so none was chosen for it")
+  }
+
+  @Test func theNewTabMenusShellTabOpensInTheColumnGiven() {
+    let h = Harness()
+    h.model.select(h.main)
+    h.model.setPreferredAgent("claude")
+    h.model.setAutoStartAgent(true)
+    h.model.newTab()
+    h.model.moveActiveTabToNewGroup()
+    let columns = h.model.workspace.groups(in: h.main.id)
+
+    h.model.newShellTab(in: columns[0].id)
+
+    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    #expect(tab.groupID == columns[0].id)
+    #expect(h.model.workspace.session(tab.focusedSessionID)?.agentID == nil)
+  }
+
   @Test func theLoginEnvironmentFeedsDetection() async {
     let h = Harness()
     #expect(h.model.loginEnvironment == nil)

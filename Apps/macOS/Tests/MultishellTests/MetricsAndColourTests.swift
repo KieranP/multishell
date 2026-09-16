@@ -39,10 +39,15 @@ struct UIMetricsTests {
         metrics.tabMinWidth >= furniture + metrics.body * 2,
         "no room for a title at \(size)")
       #expect(metrics.tabMinWidth < metrics.tabMaxWidth, "size \(size)")
-      #expect(metrics.newTabWidth >= metrics.icon * 2, "the plus needs a target at \(size)")
+      #expect(metrics.newTabWidth >= metrics.icon * 2, "a split needs a target at \(size)")
       #expect(
-        metrics.stripButtonsWidth == metrics.newTabWidth * 3,
-        "New Tab and the two splits are all taken off the strip at \(size)")
+        metrics.newTabMenuWidth
+          >= metrics.stripGlyphInset + metrics.icon + metrics.menuChevronGap + metrics.menuChevron,
+        "the plus and its chevron overrun the menu at \(size)")
+      #expect(metrics.menuChevron < metrics.icon, "the chevron reads as a mark at \(size)")
+      #expect(
+        metrics.stripButtonsWidth == metrics.newTabMenuWidth + metrics.newTabWidth * 2,
+        "the New Tab menu and the two splits are taken off the strip at \(size)")
       #expect(
         !metrics.stripShowsSplits(in: Double(SplitMetrics.minimumPane)),
         "a column at its floor has no room for the splits at \(size)")

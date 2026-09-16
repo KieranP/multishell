@@ -80,6 +80,7 @@ extension AppModel {
 
   public func setCustomAgentCommand(_ command: String) {
     store.setCustomAgentCommand(command)
+    refreshInstalledAgents()
   }
 
   public func setAgentFlags(_ flags: String, for id: String) {
@@ -112,8 +113,31 @@ extension AppModel {
       presentedError = .noAgentChosen
       return
     }
-    store.openTab(in: worktree.id, title: agentDisplayName(agentID), agentID: agentID)
+    openAgentTab(agentID, in: worktree, group: nil)
+  }
+
+  /// A strip's New Tab menu, which names the agent, so what the project
+  /// prefers does not come into it.
+  public func newAgentTab(_ agentID: String, in group: TabGroup.ID? = nil) {
+    guard let worktree = worktreeReadyForShell() else { return }
+    openAgentTab(agentID, in: worktree, group: group)
+  }
+
+  private func openAgentTab(_ agentID: String, in worktree: Worktree, group: TabGroup.ID?) {
+    store.openTab(
+      in: worktree.id, group: group, title: agentDisplayName(agentID), agentID: agentID)
     reconcileSessions(takingFocus: true)
+  }
+
+  /// What a New Tab menu offers: what the PATH scan found, in catalogue
+  /// order, and the custom command once one is typed. Run when either
+  /// changes, never from a view.
+  func refreshInstalledAgents() {
+    var ids = AgentCatalogue.agents.map(\.id).filter { agentDetection.found[$0] != nil }
+    if !workspace.customAgentCommand.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+      ids.append(AgentCatalogue.customID)
+    }
+    if ids != installedAgentIDs { installedAgentIDs = ids }
   }
 
   /// What the registry opens for a session: its shell, or the agent's command

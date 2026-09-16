@@ -49,7 +49,7 @@ struct TabBar: View {
       let width = Double(proxy.size.width)
       let showsSplits = model.metrics.stripShowsSplits(in: width)
       let available =
-        width - (showsSplits ? model.metrics.stripButtonsWidth : model.metrics.newTabWidth)
+        width - (showsSplits ? model.metrics.stripButtonsWidth : model.metrics.newTabMenuWidth)
       let layout = TabStripLayout(
         available: available,
         count: tabs.count,
@@ -116,7 +116,7 @@ struct TabBar: View {
   /// hide them.
   private func stripButtons(_ showsSplits: Bool) -> some View {
     HStack(spacing: 0) {
-      newTabButton
+      newTabMenu
       if showsSplits {
         // The same family the tab's own icon uses for a split tab.
         splitButton(.horizontal, symbol: "rectangle.split.2x1")
@@ -125,17 +125,53 @@ struct TabBar: View {
     }
   }
 
-  private var newTabButton: some View {
-    Button {
-      model.newTab(in: group.id)
+  /// A shell, then every agent found on the PATH. What ⌘T does, which turns
+  /// on auto-start, is not among them: each item here says what it starts.
+  private var newTabMenu: some View {
+    Menu {
+      Button(t("menu.new-shell-tab")) { model.newShellTab(in: group.id) }
+      ForEach(model.installedAgentIDs, id: \.self) { id in
+        Button(itemTitle(id)) { model.newAgentTab(id, in: group.id) }
+      }
     } label: {
-      stripIcon("plus")
+      newTabLabel
     }
+    // Not `.borderlessButton`: that one is an AppKit button, which keeps one
+    // image of the label and drops the chevron. See docs/design/tabs-and-columns.md.
+    .menuStyle(.button)
     .buttonStyle(.plain)
-    // The keystroke opens in the focused column, so only that column's
-    // button is the thing ⌘T does.
-    .help(isFocused ? t("tab.new-here") : t("tab.new-in-group"))
+    .menuIndicator(.hidden)
+    .frame(width: model.metrics.newTabMenuWidth, height: model.metrics.tabHeight)
+    // Every item opens in this column. Only the focused one need not say so,
+    // being where the keyboard already is.
+    .help(isFocused ? t("tab.new") : t("tab.new-in-group"))
     .accessibilityLabel(t("tab.new"))
+  }
+
+  /// The plus and the chevron that says it opens a menu. Painted, not a
+  /// `contentShape`: a menu is hit-tested by what its label draws, so a
+  /// clear frame around the glyphs would not be part of the target.
+  private var newTabLabel: some View {
+    HStack(spacing: model.metrics.menuChevronGap) {
+      Image(systemName: "plus")
+        .font(.system(size: model.metrics.icon, weight: .medium))
+      Image(systemName: "chevron.down")
+        .font(.system(size: model.metrics.menuChevron, weight: .bold))
+    }
+    .foregroundStyle(theme.textSecondary)
+    .padding(.leading, model.metrics.stripGlyphInset)
+    .frame(
+      width: model.metrics.newTabMenuWidth, height: model.metrics.tabHeight, alignment: .leading
+    )
+    .background(theme.chromeColor)
+    .contentShape(.rect)
+  }
+
+  /// "New Claude Code Tab", and the typed command by its own name rather
+  /// than as "New Custom command Tab".
+  private func itemTitle(_ id: String) -> String {
+    id == AgentCatalogue.customID
+      ? t("tab.new-custom-agent") : t("tab.new-named-agent", model.agentDisplayName(id))
   }
 
   /// Splits the tab this column shows, whichever column the keyboard is in.
