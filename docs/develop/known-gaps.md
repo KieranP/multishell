@@ -7,13 +7,6 @@ does.
 
 ## Known issues
 
-- Release bundle runs only on the machine that built it: libghostty finds its
-  terminfo through `Bundle.module`, which looks at the app root then an
-  absolute path inside `Apps/macOS/.build`, never `Contents/Resources`, so
-  elsewhere `TerminalController()` traps on the first terminal. Fix = build
-  with Xcode or a patched libghostty-spm. Same path is why a bundle installed
-  from a worktree stops working once that worktree is removed: install from
-  the checkout, or rebuild after removal.
 - Agent settings is the one page nothing holds: its `onAppear` refresh reads
   the machine, so the page is as tall as whatever is installed and a test
   would be measuring a laptop. Measured headlessly with the refresh taken
@@ -129,6 +122,13 @@ does.
 
 ## Unconfirmed behaviour
 
+- `make-app.sh` has run through `xcodebuild` only under Xcode 27, where
+  `swift build` had already stopped writing the build path it was switched
+  away from (build.md). That Xcode 26's xcodebuild writes none either rests
+  on its accessor having looked in `Contents/Resources` since packages
+  could carry resources, not on a run. If the build's own check fires there,
+  the binary carries the path and the install would break at the next build;
+  fallback = upgrade to Xcode 27, whose `swift build` passes the check.
 - The tab strip's two split buttons have never been watched on a screen.
   Every number behind them is held by UIMetricsTests: a column at
   `SplitMetrics.minimumPane` drops them at every font size, the threshold

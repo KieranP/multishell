@@ -8,8 +8,14 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 config="${1:-debug}"
 package="$root/Apps/macOS"
-build="$package/.build/$config"
 app="$root/build/Multishell.app"
+case "$config" in
+    debug) configuration=Debug ;;
+    release) configuration=Release ;;
+    *) echo "error: config is debug or release, not '$config'" >&2; exit 1 ;;
+esac
+derived="$package/.build/xcode"
+build="$derived/Build/Products/$configuration"
 
 # The version names the commit, so a bug report identifies what was installed.
 # CFBundleVersion takes only digits and dots, hence the commit count there and
@@ -43,7 +49,17 @@ if [ "$config" != "release" ]; then
     variant="$worktree"
 fi
 
-swift build --package-path "$package" -c "$config"
+# xcodebuild rather than swift build, logged rather than -quiet, coverage and
+# its own signing off: build.md, "Why the app is built through xcodebuild".
+xcodebuild_log="$derived/xcodebuild-$configuration.log"
+mkdir -p "$derived"
+if ! (cd "$package" && xcodebuild -scheme Multishell -configuration "$configuration" \
+    -destination "platform=macOS,arch=$(uname -m)" -derivedDataPath "$derived" \
+    CODE_SIGNING_ALLOWED=NO CLANG_COVERAGE_MAPPING=NO build > "$xcodebuild_log" 2>&1); then
+    cat "$xcodebuild_log" >&2
+    exit 1
+fi
+grep -E ': (warning|error): ' "$xcodebuild_log" >&2 || true
 # The helper is a product of the root package, which the app depends on but
 # cannot list as a dependency (an executable product is not linkable).
 swift build --package-path "$root" -c "$config" --product multishell
@@ -52,6 +68,26 @@ rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$app/Contents/Helpers"
 cp "$build/Multishell" "$app/Contents/MacOS/Multishell"
 cp "$root/.build/$config/multishell" "$app/Contents/Helpers/multishell"
+
+# A swift build binary carries this path and an installed app then loses its
+# terminfo at the next build, which is what the xcodebuild above avoids.
+if strings "$app/Contents/MacOS/Multishell" | grep -q '\.build/.*\.bundle$'; then
+    echo "error: the binary looks for its resource bundles under $package/.build," >&2
+    echo "       so the installed app would stop working at the next build there." >&2
+    echo "       It must come from xcodebuild, not swift build; see docs/develop/build.md." >&2
+    exit 1
+fi
+if otool -l "$app/Contents/MacOS/Multishell" | grep -q __llvm_prf; then
+    echo "error: the binary is instrumented for code coverage, which slows it and" >&2
+    echo "       writes profile files at exit; xcodebuild ignored CLANG_COVERAGE_MAPPING=NO." >&2
+    exit 1
+fi
+# The destination also matches Mac Catalyst, and xcodebuild takes the first.
+if ! otool -l "$app/Contents/MacOS/Multishell" | grep -A2 LC_BUILD_VERSION | grep -q 'platform 1$'; then
+    echo "error: the binary was not built for macOS itself; xcodebuild took another" >&2
+    echo "       variant of the destination. See docs/develop/build.md." >&2
+    exit 1
+fi
 
 # GhosttyTerminal ships terminfo and config as SPM resource bundles; without
 # them libghostty starts with no terminfo and every child process misbehaves.
@@ -190,16 +226,5 @@ sign() {
 sign "$app/Contents/Helpers/multishell"
 sign "$app"
 codesign --verify "$app" || echo "warning: $app is not validly signed" >&2
-
-# SwiftPM writes this tree's own .build path into the binary as the only place
-# Bundle.module looks that exists (the other is the app root, where codesign
-# refuses to let the bundles live). From a worktree that path is the worktree,
-# which is the one directory the user is expected to throw away.
-if [ -n "$worktree" ]; then
-    echo "note: built from a git worktree, so the bundle reads its resources from" >&2
-    echo "      $root/Apps/macOS/.build" >&2
-    echo "      and stops working once that worktree is removed. Build from the" >&2
-    echo "      main checkout before 'make install'." >&2
-fi
 
 echo "built $app ($version)"

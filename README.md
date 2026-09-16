@@ -77,9 +77,8 @@ for why things are the way they are.
 
 Builds and runs from source on macOS, and the permissions you grant survive
 a rebuild thanks to the local certificate. There is no notarised release yet,
-so build it yourself. The bundle runs on the machine that built it; see
-[docs/develop/known-gaps.md](docs/develop/known-gaps.md). Currently only
-supports macOS. Currently available in English only.
+so build it yourself. Currently only supports macOS. Currently available in
+English only.
 
 Every line of code was written by an AI (Claude), under direction from a
 human who set the requirements and reviewed the results in the running app.

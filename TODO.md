@@ -27,9 +27,6 @@ than fixed lives in `docs/develop/known-gaps.md`; a defect goes to `BUGS.md`.
 
 ## Packaging
 
-- The bundle runs only where it was built: libghostty's `Bundle.module`
-  never looks in `Contents/Resources`. Build with Xcode or patch
-  libghostty-spm. See `docs/develop/known-gaps.md`.
 - Developer ID signing and notarisation, so another machine will run it; the
   local certificate buys privacy grants and nothing towards distribution.
   Check whether libghostty needs an entitlement under the hardened runtime.

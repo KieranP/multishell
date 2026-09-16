@@ -75,11 +75,13 @@ every lookup answers with its own key. Checked against the toolchain, not
 assumed. `.strings` and `.stringsdict` it is, which `genstrings` and every
 translation tool already read.
 
-`Bundle.module` looks beside the executable and in the build directory,
-never `Contents/Resources` where `make-app.sh` puts the resource bundles,
-so both lookups go through `PackageBundle`, which tries there first and
-takes the bundle's name as an argument because there are now two. Same
-workaround the shell-integration scripts already needed.
+`Bundle.module` from `swift build` looks beside the executable and in the
+build directory, never `Contents/Resources` where `make-app.sh` puts the
+resource bundles, so both lookups go through `PackageBundle`, which tries
+there first and takes the bundle's name as an argument because there are now
+two. The app binary now comes from `xcodebuild`, whose accessor looks there
+itself (build.md); the wrapper stays for the helper and the tests, which
+`swift build` compiles.
 
 ## A new key when in doubt, not a shared one
 
