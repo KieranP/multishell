@@ -14,8 +14,8 @@ extension AppModel {
   func observeForAutosave() {
     withObservationTracking {
       _ = store.workspace
-    } onChange: {
-      Task { @MainActor [weak self] in
+    } onChange: { [weak self] in
+      Task { @MainActor in
         self?.scheduleSave()
         self?.observeForAutosave()
       }
