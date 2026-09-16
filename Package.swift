@@ -62,6 +62,6 @@ let package = Package(
     // the binary exists before the test does.
     .testTarget(
       name: "MultishellCLITests",
-      dependencies: ["MultishellCLI", "MultishellCore", "MultishellProcess"]),
+      dependencies: ["MultishellCLI", "MultishellCore", "MultishellProcess", "TestScratch"]),
   ]
 )

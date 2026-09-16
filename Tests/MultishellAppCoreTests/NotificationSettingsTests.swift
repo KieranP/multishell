@@ -109,11 +109,7 @@ struct NotificationAuthorizationTests {
     h.model.setNotifications(NotificationPreference(done: true))
     await h.settled()
     #expect(h.model.notificationAuthorization == .refused)
-    #expect(
-      NotificationSettings.note(
-        for: h.model.notificationAuthorization,
-        settingsLocation: h.platform.notificationSettingsLocation
-      ).contains("System Settings"))
+    #expect(h.model.notificationSettingsNote.contains("System Settings"))
 
     h.model.setNotifications(NotificationPreference(attention: true, done: true))
     await h.settled()

@@ -40,10 +40,6 @@ public struct WorktreeCoordinator: Sendable {
     try await service.currentBranch(project)
   }
 
-  public func statuses(of worktrees: [Worktree]) async -> [Worktree.ID: WorktreeStatus] {
-    await readStatuses(of: worktrees).mapValues(\.status)
-  }
-
   /// Statuses for many worktrees at once, each with how long git took, one
   /// that could not be read simply absent. At most `maxConcurrentStatuses` run together.
   public func readStatuses(of worktrees: [Worktree]) async -> [Worktree.ID: StatusReading] {
@@ -163,7 +159,8 @@ public struct WorktreeCoordinator: Sendable {
       at: path,
       basedOn: startPoint,
       createBranch: createBranch,
-      in: project
+      in: project,
+      stopper: stopper
     )
     return path
   }

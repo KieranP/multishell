@@ -235,7 +235,7 @@ struct WorktreeCreationTests {
     let worktrees = try await repo.coordinator.refresh(repo.project)
     try FileManager.default.removeItem(at: path)
 
-    let statuses = await repo.coordinator.statuses(of: worktrees)
+    let statuses = await repo.coordinator.readStatuses(of: worktrees).mapValues(\.status)
 
     #expect(statuses.keys.sorted() == [repo.project.id])
   }

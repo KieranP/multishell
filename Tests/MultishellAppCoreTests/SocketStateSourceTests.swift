@@ -1,6 +1,7 @@
 import Foundation
 import MultishellCore
 import MultishellProcess
+import TestScratch
 import Testing
 
 @testable import MultishellAppCore
@@ -9,21 +10,13 @@ import Testing
 /// on the main actor parsed; anything else on the line is dropped there.
 @Suite(.serialized) @MainActor
 struct SocketStateSourceTests {
-  private func socketPath() -> URL {
-    // `$TMPDIR` on macOS is long; `sun_path` allows 104 bytes.
-    URL(fileURLWithPath: "/tmp/ms-src-\(UUID().uuidString.prefix(8)).sock")
-  }
-
-  private func waitUntil(_ condition: () -> Bool, seconds: Double = 8) async throws {
-    for _ in 0..<Int(seconds * 20) where !condition() {
-      try await Task.sleep(for: .milliseconds(50))
-    }
-  }
-
   @Test func aReportOnTheSocketReachesTheHandlerAndAStrayLineDoesNot() async throws {
-    let path = socketPath()
+    let path = Scratch.socketPath("src")
     let source = SocketStateSource(path: path)
-    defer { source.stop() }
+    defer {
+      source.stop()
+      Scratch.removeSocket(path)
+    }
     var received: [SessionStateReport] = []
     source.onReport = { received.append($0) }
     try source.start()
@@ -45,7 +38,8 @@ struct SocketStateSourceTests {
   }
 
   @Test func stopUnlinksTheSocketSoTheNextLaunchNeedNotProbeIt() throws {
-    let path = socketPath()
+    let path = Scratch.socketPath("src")
+    defer { Scratch.removeSocket(path) }
     let source = SocketStateSource(path: path)
     try source.start()
     #expect(FileManager.default.fileExists(atPath: path.path))

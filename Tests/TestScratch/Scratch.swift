@@ -33,6 +33,17 @@ public enum Scratch {
     return url
   }
 
+  /// A socket path under `/tmp`, not `$TMPDIR`: `sun_path` allows 104 bytes
+  /// and the macOS temp directory alone is near that.
+  public static func socketPath(_ tag: String) -> URL {
+    URL(fileURLWithPath: "/tmp/ms-\(tag)-\(UUID().uuidString.prefix(8)).sock")
+  }
+
+  /// A socket and the claim file beside it, which the server keeps on purpose.
+  public static func removeSocket(_ url: URL) {
+    for path in [url.path, url.path + ".lock"] { try? FileManager.default.removeItem(atPath: path) }
+  }
+
   /// Removes a path if it is there, for a `defer` or a `tearDown`.
   public static func remove(_ url: URL) {
     try? FileManager.default.removeItem(at: url)

@@ -13,7 +13,10 @@ INSTALL_DIR ?= /Applications
 # silently, until the first has run. Where there is no lockf, Linux included,
 # the suites run unguarded.
 TEST_LOCK_FILE ?= $(HOME)/Library/Caches/multishell-test.lock
-LOCK := $(shell command -v lockf >/dev/null 2>&1 && echo lockf -k $(TEST_LOCK_FILE))
+LOCKF := $(shell command -v lockf 2>/dev/null)
+ifneq ($(LOCKF),)
+LOCK = $(LOCKF) -k "$(TEST_LOCK_FILE)"
+endif
 
 .PHONY: build release test test-app lint format install run clean signing-identity
 

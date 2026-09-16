@@ -21,6 +21,7 @@ struct InlineNameField: View {
       .font(font)
       .foregroundStyle(color)
       .focused($isFocused)
+      .accessibilityLabel(prompt)
       .onSubmit { commit(draft) }
       .onExitCommand(perform: cancel)
       .onAppear {

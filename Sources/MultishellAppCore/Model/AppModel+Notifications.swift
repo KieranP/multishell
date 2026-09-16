@@ -17,4 +17,11 @@ extension AppModel {
   public func refreshNotificationAuthorization() {
     Task { notificationAuthorization = await notifier.authorization() }
   }
+
+  /// The caption under the toggles. Here rather than in the view because it
+  /// names where the desktop keeps its settings, which is the port's to say.
+  public var notificationSettingsNote: String {
+    NotificationSettings.note(
+      for: notificationAuthorization, settingsLocation: platform.notificationSettingsLocation)
+  }
 }

@@ -46,6 +46,12 @@ public enum RemovalFailure: Equatable, Sendable {
       return .alert(
         title: presented.title, message: presented.message + kept, retry: nil,
         worktreeRemoved: true)
+    case let failure as WorktreeForgetFailure:
+      // The directory is in the Trash, so there is nothing to restore; the
+      // refresh shows the record git kept, directory missing.
+      let presented = PresentedError(failure)
+      return .alert(
+        title: presented.title, message: presented.message, retry: nil, worktreeRemoved: true)
     case let failure as BranchDeletionFailure:
       // The worktree is gone; only the branch stayed, because it has
       // commits nothing else has. Offer the forced form.
@@ -54,8 +60,8 @@ public enum RemovalFailure: Equatable, Sendable {
         title: presented.title, message: presented.message,
         retry: .deleteBranchAnyway(failure.branch), worktreeRemoved: true)
     default:
-      // The Trash refused, or git could not forget the record. Nothing moved
-      // or was forgotten, so the worktree and its terminals come back.
+      // The Trash refused, so nothing moved and the worktree and its
+      // terminals come back.
       let presented = PresentedError(error)
       return .alert(
         title: presented.title, message: presented.message, retry: nil, worktreeRemoved: false)

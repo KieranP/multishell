@@ -7,7 +7,7 @@ extension AppModel {
   /// Asks the login shell for its environment once, off the main thread, and
   /// re-runs detection against its PATH.
   public func refreshLoginEnvironment() async {
-    let environment = await LoginShellEnvironment.capture()
+    let environment = await captureLoginEnvironment()
     if case .processFallback(let reason) = environment.source {
       platform.log("login shell environment unavailable, using the process's own: \(reason)")
     }
@@ -123,9 +123,8 @@ extension AppModel {
     reconcileSessions(takingFocus: true)
   }
 
-  /// What a New Tab menu offers: what the PATH scan found, in catalogue
-  /// order, and the custom command once one is typed. Run when either
-  /// changes, never from a view.
+  /// What a New Tab menu offers: the PATH scan's finds in catalogue order,
+  /// then the custom command once typed. Run on either changing, never from a view.
   func refreshInstalledAgents() {
     var ids = AgentCatalogue.agents.map(\.id).filter { agentDetection.found[$0] != nil }
     if !workspace.customAgentCommand.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

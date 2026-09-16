@@ -417,8 +417,12 @@ struct SessionStateModelTests {
   @Test func reportsOverARealSocketReachTheModel() async throws {
     let path = URL(fileURLWithPath: "/tmp/ms-model-\(UUID().uuidString.prefix(8)).sock")
     let source = SocketStateSource(path: path)
-    defer { source.stop() }
+    defer {
+      source.stop()
+      Scratch.removeSocket(path)
+    }
     let tmp = try Scratch.directory("socket")
+    defer { Scratch.remove(tmp) }
     let store = WorkspaceStore(
       snapshot: WorkspaceSnapshot(fileURL: tmp.appendingPathComponent("state.json")))
     let project = store.addProject(at: tmp)
@@ -663,23 +667,15 @@ struct AgentTabTests {
     #expect(h.model.workspace.session(tab.focusedSessionID)?.agentID == nil)
   }
 
-  @Test func theLoginEnvironmentFeedsDetection() async {
+  @Test func theLoginEnvironmentFeedsDetection() async throws {
     let h = Harness()
+    try h.installFakeAgent("claude")
     #expect(h.model.loginEnvironment == nil)
     await h.model.refreshLoginEnvironment()
     #expect(h.model.loginEnvironment?.path != nil)
-    // Whatever this machine has installed, the answer came from that PATH.
+    #expect(h.model.agentDetection.found[AgentCatalogue.claudeID] != nil, "found on that PATH")
     #expect(h.model.agentDetection == AgentDetection(path: h.model.loginEnvironment?.path))
   }
-}
-
-/// `withObservationTracking`'s handler is `@Sendable`, so the flag it sets
-/// cannot be a captured `var`.
-private final class Flag: @unchecked Sendable {
-  private let lock = NSLock()
-  private var value = false
-  var raised: Bool { lock.withLock { value } }
-  func raise() { lock.withLock { value = true } }
 }
 
 @Suite @MainActor

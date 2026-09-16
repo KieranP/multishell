@@ -23,9 +23,10 @@ not one of them: that is the icon, which the bundling script copies and
 SwiftPM never sees.
 
 What the suites share sits in plain targets, since a test target cannot be
-depended on. Two of them, split by what they drag in: `Tests/TestScratch`
-(`Scratch`, throwaway paths and shell shims) has no dependencies, so a Core
-or Process suite can have a temp directory without linking the git layer;
+depended on. Two of them, split by what they drag in. `Tests/TestScratch` has
+no dependencies, so every root suite, the helper's included, reaches it:
+`Scratch` for throwaway paths, sockets and shell shims, `waitUntil`,
+`lowestDescriptorCount`, `Flag`, `LineRecorder` and `SeededGenerator`.
 `Tests/TestSupport` (`TestGit`, `TestRepository`) needs MultishellGitKit and
 is for the two suites that touch a real repository. `Apps/macOS` is its own
 package and reaches neither, so its harness keeps its own (`ModelHarness`).

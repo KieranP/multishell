@@ -1,6 +1,7 @@
 import Foundation
 import MultishellCore
 import MultishellGitKit
+import TestScratch
 import Testing
 
 @testable import MultishellAppCore
@@ -68,6 +69,29 @@ extension AppModelGitTests {
     #expect(h.model.worktreeRecords[project.id] == nil)
     #expect(h.model.commonGitDirectories[project.id] == nil)
     #expect(h.model.missingProjects.isEmpty)
+  }
+
+  /// The same with git failing: the failure lands on a project that has
+  /// gone, and must neither dim a stale id nor alert about it.
+  @Test func aFailingRefreshLandingAfterTheProjectWasRemovedLeavesNoTrace() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let project = h.project
+    let failing = try h.modelOnFakeGit(
+      """
+      case "$1 $2" in
+        "worktree list") while [ ! -e "$SCRATCH/go" ]; do sleep 0.02; done; exit 128 ;;
+      esac
+      """)
+
+    let refresh = Task { await failing.refresh(project) }
+    try await waitUntil { h.gitCalls().contains { $0.hasPrefix("worktree list") } }
+    failing.removeProject(project)
+    try "".write(to: h.root.appendingPathComponent("go"), atomically: true, encoding: .utf8)
+    await refresh.value
+
+    #expect(failing.missingProjects.isEmpty)
+    #expect(failing.presentedError == nil)
   }
 
   /// A worktree removed in a terminal rather than in the app: paths are ids,

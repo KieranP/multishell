@@ -45,7 +45,7 @@ extension PaneNode {
     let axis = split.decodeTolerantly(SplitAxis.self, forKey: .axis, or: .horizontal)
     let children = try split.decode([PaneNode].self, forKey: .children)
     let weights = try split.decode([Double].self, forKey: .weights, or: [])
-    guard weights.count == children.count, weights.allSatisfy({ $0.isFinite && $0 >= 0 }) else {
+    guard weights.count == children.count, weights.allSatisfy({ $0.isFinite && $0 > 0 }) else {
       self = .split(axis: axis, children: children)
       return
     }

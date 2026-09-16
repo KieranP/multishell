@@ -1,20 +1,9 @@
 import Foundation
 import MultishellCore
+import TestScratch
 import Testing
 
 @testable import MultishellAppCore
-
-/// Deterministic, so a failing sequence can be replayed from its seed.
-private struct SeededGenerator: RandomNumberGenerator {
-  private var state: UInt64
-  init(seed: UInt64) { state = seed == 0 ? 0x9E37_79B9_7F4A_7C15 : seed }
-  mutating func next() -> UInt64 {
-    state ^= state << 13
-    state ^= state >> 7
-    state ^= state << 17
-    return state
-  }
-}
 
 /// Random user actions and engine events, in any order. After each, what the
 /// views read must agree with what the engine has: the same live set, every
@@ -42,7 +31,7 @@ struct AppModelInvariantTests {
       case 7: Bool.random(using: &rng) ? h.model.selectNextTab() : h.model.selectPreviousTab()
       case 8:
         if let id = live.randomElement(using: &rng) {
-          h.engine.delegate?.terminalHost(h.engine, didExit: id, code: 0)
+          h.engine.delegate?.terminalHost(h.engine, didExit: id)
         }
       case 9:
         if let id = live.randomElement(using: &rng) {

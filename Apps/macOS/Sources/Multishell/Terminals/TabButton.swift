@@ -23,7 +23,6 @@ struct TabButton: View {
   let width: Double
   let theme: Theme
   @Binding var drag: TabDragState
-  /// Which tab in the strip is showing its name field, so only one ever is.
 
   private var isActive: Bool { tab.id == group.activeTabID }
   private var isEditing: Bool { model.renamingTabID == tab.id }

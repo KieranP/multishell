@@ -53,9 +53,8 @@ public struct SessionStates: Equatable, Sendable {
     entries[key] = entry.isEmpty ? nil : entry
   }
 
-  /// A report over the channel; `isSeen` means the user is looking at it.
-  /// Returns what it meant, which `settling` may move, and `nil` where it
-  /// was only bookkeeping: a counting tick is not news to announce.
+  /// A report over the channel, `isSeen` the user looking at it. Returns what
+  /// it meant once `settling` has counted workers, `nil` for a bookkeeping tick.
   @discardableResult
   public mutating func report(
     _ state: SessionState, pid: Int32?, message: String? = nil, duration: Double? = nil,
@@ -139,6 +138,12 @@ public struct SessionStates: Equatable, Sendable {
   ) {
     let key = Key.session(id)
     let finished = SessionState.finished(exitCode: exitCode)
+    // An agent killed with a worker counted sends no SubagentStop; the command
+    // it was has returned, so nothing is out and nothing is owed.
+    update(key) {
+      $0.background = 0
+      $0.owesDone = false
+    }
     switch entries[key]?.state {
     case .running, .attention, nil:
       update(key) {

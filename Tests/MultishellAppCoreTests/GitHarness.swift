@@ -80,13 +80,10 @@ struct GitHarness {
     model.workspace.worktrees(of: project.id).first { $0.branch == branch }
   }
 
+  /// The autosave debounce would otherwise land 300 ms later and re-make
+  /// the directory around its state file.
   func tearDown() {
+    model.saveNow()
     Scratch.remove(root)
   }
-}
-
-/// A box for `withObservationTracking`, whose callback may not capture a
-/// mutable local.
-final class Fired: @unchecked Sendable {
-  var value = false
 }

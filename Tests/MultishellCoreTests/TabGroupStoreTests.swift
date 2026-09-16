@@ -3,17 +3,6 @@ import Testing
 
 @testable import MultishellCore
 
-@MainActor
-private func demoStore() -> (store: WorkspaceStore, project: Project, worktree: Worktree) {
-  let store = WorkspaceStore()
-  let project = store.addProject(at: URL(fileURLWithPath: "/repos/demo"))
-  let worktree = Worktree(
-    path: URL(fileURLWithPath: "/repos/demo"), projectID: project.id, head: "abc1234",
-    branch: "main", isPrimary: true)
-  store.replaceWorktrees([worktree], forProject: project.id)
-  return (store, project, worktree)
-}
-
 /// A worktree's tabs sit in columns side by side; see `TabGroup`. Every test
 /// here is one of the moves a drag or a menu item makes, and each must leave
 /// the workspace consistent.

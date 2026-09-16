@@ -19,7 +19,7 @@ struct GitRefNameTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     for name in Self.names {
-      let accepted = await Self.gitAccepts(name, in: fixture.project.path)
+      let accepted = await Self.gitAccepts(name, in: fixture.project.path, using: fixture.git)
       #expect(GitRefName.isValidBranch(name) == accepted, "\(name)")
     }
   }
@@ -28,30 +28,13 @@ struct GitRefNameTests {
   /// `HEAD` and `@` as shorthands for the current branch, where creating a
   /// branch is what these names are checked for. So the oracle is the real
   /// thing, in the fixture's own repository.
-  private static func gitAccepts(_ name: String, in repository: URL) async -> Bool {
+  private static func gitAccepts(
+    _ name: String, in repository: URL, using git: GitRunner
+  ) async -> Bool {
     let trimmed = name.trimmingCharacters(in: .whitespaces)
     guard !trimmed.isEmpty else { return false }
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-    process.currentDirectoryURL = repository
-    process.arguments = ["git", "branch", "--", trimmed]
-    process.standardOutput = FileHandle.nullDevice
-    process.standardError = FileHandle.nullDevice
-    do {
-      try process.run()
-    } catch {
-      return false
-    }
-    process.waitUntilExit()
-    guard process.terminationStatus == 0 else { return false }
-    let cleanup = Process()
-    cleanup.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-    cleanup.currentDirectoryURL = repository
-    cleanup.arguments = ["git", "branch", "-D", "--", trimmed]
-    cleanup.standardOutput = FileHandle.nullDevice
-    cleanup.standardError = FileHandle.nullDevice
-    try? cleanup.run()
-    cleanup.waitUntilExit()
+    guard await git.succeeds(["branch", "--", trimmed], in: repository) else { return false }
+    _ = try? await git.run(["branch", "-D", "--", trimmed], in: repository)
     return true
   }
 }

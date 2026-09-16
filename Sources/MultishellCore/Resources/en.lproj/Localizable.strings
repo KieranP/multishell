@@ -83,6 +83,8 @@
 "error.stopped-by-you" = "Stopped by you";
 "error.theme-unreadable-title" = "A theme file could not be read";
 "error.trash-refused" = "Worktree not removed: the directory could not be moved to the Trash or deleted";
+"error.forget-refused" = "Worktree in the Trash, but git still lists it";
+"error.shared-settings-unreadable" = "%1$@ could not be read: %2$@";
 "error.unknown-hooks-message" = "%1$@ holds something under hooks.%2$@ that is not the list of hooks the agent documents, and writing ours there would lose it. Use Show JSON beside the agent and add the entries yourself.";
 "error.unknown-hooks-section-message" = "%@ holds something under hooks that is not the object of events the agent documents, and writing ours there would lose it. Use Show JSON beside the agent and add the entries yourself.";
 "error.unknown-hooks-title" = "That settings file has hooks Multishell does not recognise";

@@ -12,10 +12,17 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
   private let controller: TerminalController
 
   override init() {
+    Self.removeGeneratedConfigs()
     let base = GhosttyUserConfig.base()
     controller = TerminalController(configSource: .generated(base))
     super.init()
     GhosttyUserConfig.repair(controller, base: base)
+  }
+
+  /// At launch and at quit: the wrapper removes a generated config file only
+  /// when replacing it, so the last one outlives the process; see terminals.md.
+  static func removeGeneratedConfigs() {
+    try? FileManager.default.removeItem(at: TerminalController.managedConfigDirectory)
   }
 
   /// `MULTISHELL_TERMINAL_DEBUG=1` makes libghostty's wrapper report what it
@@ -128,7 +135,7 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
   }
 
   fileprivate func surfaceClosed(_ id: TerminalSession.ID) {
-    delegate?.terminalHost(self, didExit: id, code: 0)
+    delegate?.terminalHost(self, didExit: id)
   }
 
   fileprivate func activity(in id: TerminalSession.ID) {

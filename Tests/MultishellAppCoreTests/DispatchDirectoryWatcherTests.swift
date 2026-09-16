@@ -132,18 +132,10 @@
       defer {
         for dir in dirs { try? FileManager.default.removeItem(at: dir) }
       }
-      func lowestDescriptorCount(over samples: Int) async throws -> Int {
-        var lowest = Int.max
-        for _ in 0..<samples {
-          lowest = min(
-            lowest, try FileManager.default.contentsOfDirectory(atPath: "/dev/fd").count)
-          try await Task.sleep(for: .milliseconds(30))
-        }
-        return lowest
-      }
       let watcher = DispatchDirectoryWatcher()
       watcher.watch(dirs)
-      let before = try await lowestDescriptorCount(over: 4)
+      let before = try await lowestDescriptorCount(
+        over: .milliseconds(120), every: .milliseconds(30))
 
       for round in 0..<200 {
         // Alternate between the full set, a subset, and a set with a missing
@@ -156,7 +148,8 @@
       }
       watcher.watch(dirs)
 
-      let after = try await lowestDescriptorCount(over: 8)
+      let after = try await lowestDescriptorCount(
+        over: .milliseconds(240), every: .milliseconds(30))
       #expect(
         after - before < 20, "before \(before), after \(after); each round moved 2 to 4 sources")
       watcher.stop()

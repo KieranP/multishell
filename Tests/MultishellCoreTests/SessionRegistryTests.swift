@@ -67,7 +67,7 @@ struct SessionRegistryTests {
     registry.reconcile()
     host.log.removeAll()
 
-    host.delegate?.terminalHost(host, didExit: second.focusedSessionID, code: 0)
+    host.delegate?.terminalHost(host, didExit: second.focusedSessionID)
 
     #expect(store.workspace.tabs.map(\.id) == [first.id])
     #expect(!host.openSessionIDs.contains(second.focusedSessionID))

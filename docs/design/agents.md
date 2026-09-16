@@ -83,23 +83,26 @@ is waiting":
   Done again, once per wave, each with a banner. So `SubagentStart` and
   `SubagentStop` are asked for too, purely to count what is out: a Stop with
   any outstanding is held as Working, and the last worker to end pays the Done
-  the agent was owed. The count is the app's, a hook being a fresh process
-  with nothing to remember; it rides the channel as `subagents`, +1 or -1, and
+  the agent was owed. The count is the app's, a hook being a fresh process with
+  nothing to remember; it rides the channel as `subagents`, +1 or -1, and
   `SessionStates.settling` keeps it. An agent that reports no workers never
   enters that arm, so Codex and Copilot keep Stop meaning Done outright. A
   count stuck above zero costs the Done banner and nothing else, and Idle,
-  Failed or the process going clears it. Both counting events carry Working,
-  having no state worth sending, so the tick is bookkeeping and not news: it
-  leaves a Waiting, a Done or a Failed where it is; only a real Working report
-  moves those. Otherwise a background worker ending while a permission prompt
-  was up withdrew the banner and moved the card out of Waiting, with the
-  prompt still on screen and nothing to put it back; and one whose start went
-  uncounted, the app or the hooks arriving after it, ended after the Stop and
-  put a Done pane back to Working with nothing due to move it on. Such a tick
-  reports nothing back to the model, `report` answering `nil`: it carries no
-  message, so letting it through would have replaced the prompt's words on the
-  card and posted the banner again under the same key, which on macOS replaces
-  the one already there.
+  Failed, the process going or the shell's own command returning clears it: the
+  agent was that command, so an agent killed with a worker counted, which sends
+  no SubagentStop, held its pane on Working at a bare prompt until the engine's
+  end-of-command was allowed to settle the count. Both counting events carry
+  Working, having no state worth sending, so the tick is bookkeeping and not
+  news: it leaves a Waiting, a Done or a Failed where it is; only a real
+  Working report moves those. Otherwise a background worker ending while a
+  permission prompt was up withdrew the banner and moved the card out of
+  Waiting, with the prompt still on screen and nothing to put it back; and one
+  whose start went uncounted, the app or the hooks arriving after it, ended
+  after the Stop and put a Done pane back to Working with nothing due to move
+  it on. Such a tick reports nothing back to the model, `report` answering
+  `nil`: it carries no message, so letting it through would have replaced the
+  prompt's words on the card and posted the banner again under the same key,
+  which on macOS replaces the one already there.
 - Gemini needed neither: its Notification has one type, a tool permission.
 
 Claude asked for that request beside its notification, not instead: the
@@ -159,6 +162,16 @@ nothing of the user's is left in it. Dropping at group granularity read as
 Remove working, the agent's file even shrinking, while an audit hook someone
 had added to our entry went with it.
 
+Numbers in a settings file are written back as the user spelled them. Parsed
+to doubles, `0.1` came back as `0.10000000000000001` and `1.0` as `1`. Each
+literal is turned into a string carrying it behind a marker before the parse
+and turned back after the render, `NumberLiteral`, so nothing here reads one as
+a number; nothing needs to. The marker is U+0001 and a token drawn once per
+process, so a string of the user's cannot be taken for a number on the way out.
+Only a literal JSON's grammar allows is marked; `01` or `1-2` is left for the
+parser to refuse as before, and the bytes are decoded strictly first, a lossy
+decode having written U+FFFD over a Latin-1 byte of the user's.
+
 A settings file that will not read back as plain JSON is refused, not parsed
 loosely: Gemini's takes comments and keeps them when it writes the file itself,
 and a re-serialisation here would take them out. Cost: those users add the
@@ -206,7 +219,11 @@ clear as it opens and their cards reach Idle having never passed through Done.
 An agent's pid is polled only while the board is up, one sweep as it opens:
 nowhere else shows a quit agent (a dropped file asks at the moment of the
 drop), and watching always would leave a two-second timer running for as long
-as any agent had ever reported.
+as any agent had ever reported. The shell's own word that its foreground
+command returned drops the agent at that prompt too, the agent having been
+that command: the Dock badge is read with the board closed, where no pid is
+polled, and a shell's failure after its agent quit counted as an agent
+waiting until the board was opened.
 
 Four columns always drawn, empty or not: labelled columns say what the board is
 for, where a page in their place says only that it is not working. Empty board

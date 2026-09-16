@@ -16,10 +16,7 @@ struct NotificationSettingsTab: View {
       } header: {
         Text(t("notifications.header"))
       } footer: {
-        SettingsCaption(
-          NotificationSettings.note(
-            for: model.notificationAuthorization,
-            settingsLocation: model.platform.notificationSettingsLocation))
+        SettingsCaption(model.notificationSettingsNote)
       }
     }
     .formStyle(.grouped)

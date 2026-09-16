@@ -406,6 +406,23 @@ struct BackgroundWorkerTests {
     }
   }
 
+  /// The agent died with a worker counted, so no SubagentStop or SessionEnd
+  /// arrives to settle it; the shell's own end of that command has to.
+  @Test func theShellsCommandEndingSettlesWorkersItsDeadAgentLeftOut() {
+    var engineFirst = SessionStates()
+    _ = report(&engineFirst, .running, subagents: 1)
+    engineFirst.noteCommandFinished(in: a, exitCode: 0, isSeen: false)
+    #expect(report(&engineFirst, .done) == .done, "the shell's own done is not held for a worker")
+    #expect(engineFirst[.session(a)] == .done)
+
+    var socketFirst = SessionStates()
+    _ = report(&socketFirst, .running, subagents: 1)
+    _ = report(&socketFirst, .done)
+    socketFirst.noteCommandFinished(in: a, exitCode: 0, isSeen: false)
+    _ = report(&socketFirst, .running)
+    #expect(report(&socketFirst, .done) == .done, "the next session owes nothing from the last")
+  }
+
   @Test func anAgentWhoseProcessIsGoneOwesNothing() {
     var states = SessionStates()
     _ = report(&states, .running, subagents: 1)

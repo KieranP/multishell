@@ -52,6 +52,22 @@ public struct TrashTookNothing: Error, CustomStringConvertible {
   public var description: String { "the directory is still there" }
 }
 
+/// The directory is in the Trash and git still lists the worktree: neither
+/// `worktree remove` nor `prune` would let go of the record.
+public struct WorktreeForgetFailure: Error, CustomStringConvertible {
+  public let path: URL
+  public let underlying: any Error
+
+  public init(path: URL, underlying: any Error) {
+    self.path = path
+    self.underlying = underlying
+  }
+
+  public var description: String {
+    "\(path.path) is in the Trash but git still lists it: \(underlying)"
+  }
+}
+
 /// The worktree is gone but its branch is not: git refused to delete it,
 /// usually because it has commits no other branch has.
 public struct BranchDeletionFailure: Error, CustomStringConvertible {

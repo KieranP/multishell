@@ -28,7 +28,7 @@ struct BareRepositoryTests {
     #expect(listed[0].isPrimary && listed[0].name == "repo.git")
     #expect(listed[1].branch == "main")
 
-    let statuses = await repo.coordinator.statuses(of: listed)
+    let statuses = await repo.coordinator.readStatuses(of: listed).mapValues(\.status)
     #expect(statuses.keys.sorted() == [listed[1].id], "git status has no work tree to read there")
   }
 

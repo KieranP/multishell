@@ -492,7 +492,7 @@ struct AppModelTests {
     h.engine.delegate?.terminalHost(h.engine, didSeeActivityIn: first.focusedSessionID)
     #expect(h.model.state(ofWorktree: h.main.id) == .done)
 
-    h.engine.delegate?.terminalHost(h.engine, didExit: first.focusedSessionID, code: 0)
+    h.engine.delegate?.terminalHost(h.engine, didExit: first.focusedSessionID)
 
     #expect(h.model.sessionStates.isEmpty, "nothing left to look at")
   }
@@ -502,7 +502,7 @@ struct AppModelTests {
     h.model.select(h.main)
     let tab = h.model.workspace.activeTab(in: h.main.id)!
 
-    h.engine.delegate?.terminalHost(h.engine, didExit: tab.focusedSessionID, code: 0)
+    h.engine.delegate?.terminalHost(h.engine, didExit: tab.focusedSessionID)
 
     #expect(h.model.workspace.tabs(in: h.main.id).isEmpty)
     #expect(h.model.liveTerminalCount == 0)
@@ -532,7 +532,7 @@ struct AppModelTests {
     h.model.renameTab(tab.id, to: nil)
     #expect(h.model.title(of: h.model.workspace.tab(tab.id)!) == "vim")
 
-    h.engine.delegate?.terminalHost(h.engine, didExit: tab.focusedSessionID, code: 0)
+    h.engine.delegate?.terminalHost(h.engine, didExit: tab.focusedSessionID)
     #expect(h.model.sessionTitles.isEmpty, "titles of dead shells are not kept")
   }
 
@@ -754,7 +754,7 @@ struct AttentionDotTests {
     h.engine.delegate?.terminalHost(h.engine, didSeeActivityIn: first.focusedSessionID)
     #expect(h.model.state(of: first) == .done)
 
-    h.engine.delegate?.terminalHost(h.engine, didExit: second.focusedSessionID, code: 0)
+    h.engine.delegate?.terminalHost(h.engine, didExit: second.focusedSessionID)
 
     #expect(h.model.workspace.activeTab(in: h.main.id)?.id == first.id)
     #expect(h.model.state(of: first) == nil)

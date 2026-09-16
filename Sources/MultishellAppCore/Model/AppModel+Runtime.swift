@@ -86,6 +86,9 @@ extension AppModel {
     mergeChecks = mergeChecks.filter { !gone.contains($0.key) }
     statusReads = statusReads.filter { !gone.contains($0.key) }
     for id in ids {
+      // A stage still running has no pane left to Cancel from, so it is ended
+      // as that Cancel would end it; its task lets go of these as it returns.
+      stageStoppers[id]?.stop()
       worktreeOperations.clear(id)
       pendingStatusRefreshes[id]?.cancel()
       pendingStatusRefreshes[id] = nil
@@ -112,10 +115,8 @@ extension AppModel {
     }
   }
 
-  /// A worktree whose read failed this round keeps its last badge rather
-  /// than blinking off for five seconds; one whose worktree is gone loses it.
-  /// A missing project's worktrees are not asked, nor a slow one before its
-  /// turn; see `StatusPollPace`.
+  /// A read that failed keeps its last badge rather than blinking off; a gone
+  /// worktree loses it. Missing and slow projects are skipped; see `StatusPollPace`.
   public func refreshStatuses() async {
     guard let worktrees else { return }
     let now = ContinuousClock.now

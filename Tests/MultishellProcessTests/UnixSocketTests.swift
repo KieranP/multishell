@@ -1,33 +1,18 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellProcess
 
-/// A server on a temp path with a recorder for the lines it receives.
-private final class LineRecorder: @unchecked Sendable {
-  private let lock = NSLock()
-  private var lines: [String] = []
-  func record(_ line: String) { lock.withLock { lines.append(line) } }
-  var received: [String] { lock.withLock { lines } }
-}
-
-private func socketPath() -> URL {
-  // `$TMPDIR` on macOS is long; `sun_path` allows 104 bytes.
-  URL(fileURLWithPath: "/tmp/ms-\(UUID().uuidString.prefix(8)).sock")
-}
-
-private func waitUntil(_ condition: @escaping () -> Bool, seconds: Double = 8) async throws {
-  for _ in 0..<Int(seconds * 20) where !condition() {
-    try await Task.sleep(for: .milliseconds(50))
-  }
-}
-
 @Suite(.serialized)
 struct UnixSocketServerTests {
   @Test func linesFromSeveralClientsArriveWholeAndTheFileIsPrivate() async throws {
-    let path = socketPath()
+    let path = Scratch.socketPath("srv")
     let server = UnixSocketServer(path: path)
-    defer { server.stop() }
+    defer {
+      server.stop()
+      Scratch.removeSocket(path)
+    }
     let recorder = LineRecorder()
     server.onLine = { recorder.record($0) }
     try server.start()
@@ -45,7 +30,8 @@ struct UnixSocketServerTests {
   }
 
   @Test func aStaleSocketFileIsReplacedButALiveOneIsNot() throws {
-    let path = socketPath()
+    let path = Scratch.socketPath("srv")
+    defer { Scratch.removeSocket(path) }
     let first = UnixSocketServer(path: path)
     try first.start()
 
@@ -71,10 +57,13 @@ struct UnixSocketServerTests {
   /// instance's socket file does, and the second launch used to read that as
   /// nobody being behind it.
   @Test func aLiveServerWhoseBacklogIsFullRefusesConnectsLikeADeadOne() throws {
-    let path = socketPath()
+    let path = Scratch.socketPath("srv")
     let blocked = DispatchQueue(label: "ms-test-blocked")
     let server = UnixSocketServer(path: path, queue: blocked)
-    defer { server.stop() }
+    defer {
+      server.stop()
+      Scratch.removeSocket(path)
+    }
     try server.start()
 
     // Up but unable to accept: its queue is busy, as a wedged main thread
@@ -103,14 +92,19 @@ struct UnixSocketServerTests {
   /// the connect said, and taking it would leave that instance deaf for good.
   @Test func aSocketWhoseClaimAnotherProcessHoldsIsNotTakenOver() throws {
     guard FileManager.default.isExecutableFile(atPath: "/usr/bin/python3") else { return }
-    let path = socketPath()
+    let path = Scratch.socketPath("srv")
     let server = UnixSocketServer(path: path)
-    defer { server.stop() }
+    defer {
+      server.stop()
+      Scratch.removeSocket(path)
+    }
     // A socket file with nothing listening: what a crashed instance leaves,
     // and what a live one with a full backlog is indistinguishable from.
     let dead = socket(AF_UNIX, UnixSocketAddress.streamType, 0)
     try UnixSocketAddress.bindSocket(dead, to: path.path)
     close(dead)
+    // A server that never started unlinks nothing.
+    defer { unlink(path.path) }
 
     let holder = Process()
     holder.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
@@ -145,11 +139,14 @@ struct UnixSocketServerTests {
   /// between bind and chmod is what the umask around the bind closes, and
   /// that window is not observable from here.
   @Test func theSocketIsPrivateWhateverTheUmask() throws {
-    let path = socketPath()
+    let path = Scratch.socketPath("srv")
     let previous = umask(0)
     defer { umask(previous) }
     let server = UnixSocketServer(path: path)
-    defer { server.stop() }
+    defer {
+      server.stop()
+      Scratch.removeSocket(path)
+    }
     try server.start()
 
     let mode = try FileManager.default.attributesOfItem(atPath: path.path)[.posixPermissions]
@@ -195,9 +192,12 @@ struct UnixSocketServerTests {
   /// would leave the socket unguarded while the listener kept accepting.
   @Test func startingALiveServerAgainKeepsItsClaim() async throws {
     guard FileManager.default.isExecutableFile(atPath: "/usr/bin/python3") else { return }
-    let path = socketPath()
+    let path = Scratch.socketPath("srv")
     let server = UnixSocketServer(path: path)
-    defer { server.stop() }
+    defer {
+      server.stop()
+      Scratch.removeSocket(path)
+    }
     let recorder = LineRecorder()
     server.onLine = { recorder.record($0) }
     try server.start()
@@ -238,7 +238,10 @@ struct UnixSocketServerTests {
       let long = URL(fileURLWithPath: "/tmp/" + String(repeating: "z", count: count - 10) + ".sock")
       #expect(long.path.utf8.count == count)
       let server = UnixSocketServer(path: long)
-      defer { server.stop() }
+      defer {
+        server.stop()
+        Scratch.removeSocket(long)
+      }
       do {
         try server.start()
         Issue.record("bound \(count) bytes, whose staging name cannot fit")
@@ -255,13 +258,16 @@ struct UnixSocketServerTests {
     let path = URL(fileURLWithPath: "/tmp/" + String(repeating: "w", count: 91) + ".sock")
     #expect(path.path.utf8.count == 101)
     let server = UnixSocketServer(path: path)
-    defer { server.stop() }
+    defer {
+      server.stop()
+      Scratch.removeSocket(path)
+    }
     try server.start()
     #expect(FileManager.default.fileExists(atPath: path.path))
   }
 
   @Test func aClientWithNobodyListeningGetsAnErrorNotAHang() {
-    let path = socketPath()
+    let path = Scratch.socketPath("srv")
     do {
       try UnixSocketClient.send("hello\n", to: path)
       Issue.record("sent to nobody")
@@ -277,9 +283,12 @@ struct UnixSocketServerTests {
   }
 
   @Test func aClientThatNeverSendsANewlineIsDroppedAtTheCap() async throws {
-    let path = socketPath()
+    let path = Scratch.socketPath("srv")
     let server = UnixSocketServer(path: path)
-    defer { server.stop() }
+    defer {
+      server.stop()
+      Scratch.removeSocket(path)
+    }
     let recorder = LineRecorder()
     server.onLine = { recorder.record($0) }
     try server.start()

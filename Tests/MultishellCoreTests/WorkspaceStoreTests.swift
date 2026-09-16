@@ -22,32 +22,38 @@ struct OrderedSaveTests {
   }
 }
 
-@MainActor
-private func demoStore() -> (store: WorkspaceStore, project: Project, worktree: Worktree) {
-  let store = WorkspaceStore()
-  let project = store.addProject(at: URL(fileURLWithPath: "/repos/demo"))
-  let worktree = Worktree(
-    path: URL(fileURLWithPath: "/repos/demo"),
-    projectID: project.id,
-    head: "abc1234",
-    branch: "main",
-    isPrimary: true
-  )
-  store.replaceWorktrees([worktree], forProject: project.id)
-  return (store, project, worktree)
-}
-
-/// Counts how often the workspace changes, the way autosave and the views
-/// see it. The callback fires synchronously on the mutating actor.
+/// Counts the store operations that notified observers, as autosave and the
+/// views are notified. One operation may write `workspace` more than once,
+/// `replaceWorktrees` removing then appending, so the firings between two
+/// reads of `changes` count as one; a write of an equal value still fires.
 @MainActor
 private final class ChangeCounter {
-  private(set) var changes = 0
+  private var counted = 0
+  private var firings = 0
+  private let store: WorkspaceStore
 
   init(_ store: WorkspaceStore) {
+    self.store = store
+    arm()
+  }
+
+  var changes: Int {
+    if firings > 0 {
+      counted += 1
+      firings = 0
+    }
+    return counted
+  }
+
+  /// One registration answers one write, so it is made again from each.
+  private func arm() {
     withObservationTracking {
       _ = store.workspace
     } onChange: {
-      MainActor.assumeIsolated { self.changes += 1 }
+      MainActor.assumeIsolated {
+        self.firings += 1
+        self.arm()
+      }
     }
   }
 }
@@ -305,6 +311,9 @@ struct WorkspaceStoreEdgeTests {
     moved.head = "moved"
     store.replaceWorktrees([moved], forProject: project.id)
     #expect(counter.changes == 1)
+    moved.head = "moved again"
+    store.replaceWorktrees([moved], forProject: project.id)
+    #expect(counter.changes == 2, "a second change is counted, not folded into the first")
   }
 
   @Test func selectingAWorktreeThatIsGoneIsIgnored() {
@@ -340,6 +349,24 @@ struct WorkspaceStoreEdgeTests {
       return
     }
     #expect(weights == [3, 1])
+  }
+
+  /// The same refusal `setGroupWeights` makes: a zero or a NaN is a pane
+  /// nothing can be laid out in, and the one writer never sends one.
+  @Test func splitWeightsThatCannotLayOutAPaneAreRefused() {
+    let (store, _, worktree) = demoStore()
+    let tab = store.openTab(in: worktree.id)!
+    store.splitFocusedPane(of: tab.id, axis: .horizontal)
+    store.setSplitWeights([3, 1], at: [], ofTab: tab.id)
+
+    for refused in [[0, 1], [1, .nan], [1, .infinity], [-1, 2]] as [[Double]] {
+      store.setSplitWeights(refused, at: [], ofTab: tab.id)
+      guard case .split(_, _, let weights)? = store.workspace.tab(tab.id)?.root else {
+        Issue.record("expected a split")
+        return
+      }
+      #expect(weights == [3, 1], "\(refused)")
+    }
   }
 
   @Test func focusingASessionActivatesItsTab() {

@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import TestScratch
 import Testing
 
 @testable import MultishellAppCore
@@ -203,9 +204,31 @@ struct AgentBoardModelTests {
     #expect(harness.platform.badges.last == 1)
   }
 
+  /// With the board closed no pid is polled, so the shell's own word that its
+  /// command returned is what says the agent typed at that prompt has gone.
+  @Test func aShellFailingAfterItsAgentQuitIsNotAnAgentWaitingOnTheBadge() {
+    let (harness, session) = harnessWithOnePane()
+    let model = harness.model
+    model.select(harness.feature)
+    harness.platform.badges.removeAll()
+
+    harness.source.send(
+      SessionStateReport(state: .running, sessionID: session.id, pid: 1, agent: "claude"))
+    harness.source.send(SessionStateReport(state: .idle, sessionID: session.id, agent: "claude"))
+    harness.engine.delegate?.terminalHost(
+      harness.engine, didFinishCommandIn: session.id, exitCode: 0)
+    #expect(model.reportedAgents[session.id] == nil, "the agent was the command that returned")
+
+    harness.engine.delegate?.terminalHost(
+      harness.engine, didFinishCommandIn: session.id, exitCode: 1)
+    #expect(model.sessionStates[.session(session.id)] == .error)
+    #expect(model.agentLaneCounts[.waiting] ?? 0 == 0, "a shell's failure, and shells are hidden")
+    #expect(harness.platform.badges.last != 1)
+  }
+
   /// An agent killed with Ctrl+C sends no Stop. Once its process is gone the
   /// pane is a plain shell again, and with the filter off its card leaves.
-  @Test func aGoneAgentTakesItsCardWithIt() async {
+  @Test func aGoneAgentTakesItsCardWithIt() async throws {
     let (harness, session) = harnessWithOnePane()
     let model = harness.model
     model.pidPollInterval = .milliseconds(10)
@@ -216,7 +239,7 @@ struct AgentBoardModelTests {
     #expect(model.agentBoard.count(of: .working) == 1)
     #expect(model.watchedPIDs.contains(gone))
 
-    try? await Task.sleep(for: .seconds(2))
+    try await waitUntil { model.agentBoard.isEmpty }
     #expect(model.agentBoard.isEmpty, "the pane is a shell again")
     #expect(model.reportedAgents[session.id] == nil)
   }

@@ -12,8 +12,8 @@ public final class UnixSocketServer: @unchecked Sendable {
   private let path: String
   private let queue: DispatchQueue
   private let lock = NSLock()
-  /// Held for as long as this instance listens. `flock` goes with the
-  /// process, so holding it is what says the owner of the socket is alive.
+  /// Held for as long as this instance listens. An `fcntl` record lock dies
+  /// with the process, so holding it is what says the socket's owner is alive.
   private var claim: Int32 = -1
   private var listener: (any DispatchSourceRead)?
   private var connections: [Int32: Connection] = [:]

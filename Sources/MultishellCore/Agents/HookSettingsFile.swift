@@ -3,13 +3,16 @@ import Foundation
 /// Reading and rewriting a JSON file an agent keeps its settings in. The
 /// file is the user's: anything not plain JSON is refused; see agents.md.
 public enum HookSettingsFile {
-  /// An empty object for a missing or blank file; anything else it cannot
-  /// read back is an error, rewriting having to destroy what it missed.
+  /// An empty object for a missing or blank file; anything else it cannot read
+  /// back is an error. Numbers come back as `NumberLiteral` strings; see agents.md.
   public static func read(_ file: URL) throws -> [String: Any] {
     guard FileManager.default.fileExists(atPath: file.path) else { return [:] }
     let data = try Data(contentsOf: file)
     guard data.contains(where: { !" \t\r\n".utf8.contains($0) }) else { return [:] }
-    guard let object = try? JSONSerialization.jsonObject(with: data) else {
+    // Strict: a lossy decode would write U+FFFD over bytes that were the user's.
+    guard let text = String(data: data, encoding: .utf8),
+      let object = try? JSONSerialization.jsonObject(with: Data(NumberLiteral.marking(text).utf8))
+    else {
       throw UnparsableSettingsFile(file: file)
     }
     guard let settings = object as? [String: Any] else {
@@ -45,7 +48,7 @@ public enum HookSettingsFile {
       (try? JSONSerialization.data(
         withJSONObject: object, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]))
       ?? Data()
-    return String(decoding: data, as: UTF8.self) + "\n"
+    return NumberLiteral.unmarking(String(decoding: data, as: UTF8.self)) + "\n"
   }
 
   /// The file as it was before Multishell first touched it, held by contents

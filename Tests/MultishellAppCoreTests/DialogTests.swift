@@ -79,6 +79,23 @@ struct RemovalFailureTests {
     #expect(retry == nil && !removed)
   }
 
+  /// The directory is in the Trash by then, so the row cannot come back as
+  /// it was; the model refreshes and shows what git still lists.
+  @Test func aRecordGitWillNotForgetAfterTheTrashIsAnAlertThatRefreshes() {
+    let error = WorktreeForgetFailure(
+      path: URL(fileURLWithPath: "/trees/x"), underlying: pruneFailed)
+    guard
+      case .alert(let title, let message, let retry, let removed) = RemovalFailure.describe(
+        error, deletingBranch: nil)
+    else {
+      Issue.record("expected an alert")
+      return
+    }
+    #expect(title == "Worktree in the Trash, but git still lists it")
+    #expect(message.hasPrefix("/trees/x"))
+    #expect(retry == nil && removed)
+  }
+
   @Test func aGitFailureBeforeTheDirectoryIsGoneKeepsTheWorktree() {
     let failure = RemovalFailure.describe(pruneFailed, deletingBranch: nil)
     guard case .alert(let title, let message, let retry, let removed) = failure else {

@@ -6,7 +6,11 @@ import Testing
 
 /// The two file lists a project gives each new worktree.
 @Suite
-struct WorktreeFilesTests {
+final class WorktreeFilesTests {
+  private let root = Scratch.path("files")
+
+  deinit { Scratch.remove(root) }
+
   @Test func theListIsOnePathPerLineWithoutBlanksCommentsOrRepeats() {
     let list = """
       .env
@@ -325,7 +329,6 @@ struct WorktreeFilesTests {
   }
 
   private func directories() throws -> (repository: URL, worktree: URL) {
-    let root = Scratch.path("files")
     let repository = root.appending("repo")
     let worktree = root.appending("tree")
     for url in [repository, worktree] {

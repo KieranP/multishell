@@ -24,12 +24,25 @@ struct LoginShellEnvironmentTests {
     #expect(parsed.count == 2)
   }
 
-  @Test func theUsersShellAnswersWithAPath() async {
-    let environment = await LoginShellEnvironment.capture()
-    #expect(environment.path?.isEmpty == false)
-    if case .processFallback(let reason) = environment.source {
-      Issue.record("fell back to the process environment: \(reason)")
-    }
+  @Test func aGreetingHoldingAnEqualsSignStillLeavesTheFirstEntryItsKey() {
+    let text = "==== welcome ====\nPATH=/bin\0HOME=/Users/dev\0"
+    let parsed = LoginShellEnvironment.parse(nulSeparated: text)
+    #expect(parsed["PATH"] == "/bin", "the first `=` is the banner's, the key is after the newline")
+    #expect(parsed["HOME"] == "/Users/dev")
+    #expect(parsed.count == 2)
+  }
+
+  @Test func aLoginShellAnswersWithThePathItsOwnRcFilesBuilt() async throws {
+    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
+    let home = try Scratch.directory("home")
+    defer { Scratch.remove(home) }
+    try "export PATH=/opt/marker/bin:$PATH\n".write(
+      to: home.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
+
+    let environment = await LoginShellEnvironment.capture(shellPath: "/bin/zsh", home: home)
+
+    #expect(environment.path?.hasPrefix("/opt/marker/bin:") == true, "\(environment)")
+    #expect(environment.source == .loginShell(URL(fileURLWithPath: "/bin/zsh")))
   }
 
   @Test func aShellThatHangsFallsBackWithinTheTimeout() async throws {

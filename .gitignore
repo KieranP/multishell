@@ -5,5 +5,4 @@
 .swiftpm/
 .worktrees/
 build/
-Vendor/libghostty/build/
 xcuserdata/

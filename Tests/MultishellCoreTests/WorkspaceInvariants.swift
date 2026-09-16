@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellCore
@@ -90,19 +91,5 @@ enum WorkspaceInvariants {
       return children.count == weights.count && children.count >= 2
         && children.allSatisfy(weightsAligned)
     }
-  }
-}
-
-/// Deterministic, so a failing sequence can be replayed from its seed.
-struct SeededGenerator: RandomNumberGenerator {
-  private var state: UInt64
-
-  init(seed: UInt64) { state = seed == 0 ? 0x9E37_79B9_7F4A_7C15 : seed }
-
-  mutating func next() -> UInt64 {
-    state ^= state << 13
-    state ^= state >> 7
-    state ^= state << 17
-    return state
   }
 }

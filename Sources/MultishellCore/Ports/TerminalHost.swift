@@ -26,7 +26,7 @@ public protocol TerminalHost: AnyObject {
 @MainActor
 public protocol TerminalHostDelegate: AnyObject {
   func terminalHost(_ host: any TerminalHost, didRetitle id: TerminalSession.ID, to title: String)
-  func terminalHost(_ host: any TerminalHost, didExit id: TerminalSession.ID, code: Int32)
+  func terminalHost(_ host: any TerminalHost, didExit id: TerminalSession.ID)
   /// Something happened the user may want to see. The engine cannot report
   /// "a command is running", so this is the honest signal for a dot.
   func terminalHost(_ host: any TerminalHost, didSeeActivityIn id: TerminalSession.ID)

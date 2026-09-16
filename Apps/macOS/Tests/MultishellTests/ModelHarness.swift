@@ -8,13 +8,15 @@ import MultishellCore
 /// For tests that read and write settings or lay a view out, none of the
 /// three is ever reached.
 @MainActor
-struct ModelHarness {
+final class ModelHarness {
   let model: Multishell.AppModel
   let project: Project
+  private let directory: URL
 
   init() {
     let directory = URL(fileURLWithPath: NSTemporaryDirectory())
       .appendingPathComponent("multishell-harness-\(UUID().uuidString)", isDirectory: true)
+    self.directory = directory
     try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     let store = WorkspaceStore(
       snapshot: WorkspaceSnapshot(fileURL: directory.appendingPathComponent("state.json")))
@@ -25,6 +27,8 @@ struct ModelHarness {
       worktrees: nil,
       watcher: NoWatcher())
   }
+
+  deinit { try? FileManager.default.removeItem(at: directory) }
 
   /// The project's own settings, the repository's not layered in, which is
   /// what the settings forms edit.

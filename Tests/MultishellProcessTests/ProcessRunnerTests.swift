@@ -58,8 +58,9 @@ struct ProcessRunnerTests {
   ///
   /// The pool is the yardstick. Starved, no more than a thread per core is
   /// ever inside a run, so anything past twice the cores says the waits let
-  /// their threads go; unstarved it is tens, the hold being long against
-  /// what a launch costs.
+  /// their threads go; unstarved it is nearly all of them, the hold being long
+  /// against what a launch costs. Four children per core, so the bound stays
+  /// half the batch on a machine with more cores than the batch had children.
   @Test func manyConcurrentProcessesDoNotStarveEachOther() async throws {
     let running = cwd.appendingPathComponent("ms-overlap-\(UUID().uuidString)", isDirectory: true)
     try FileManager.default.createDirectory(at: running, withIntermediateDirectories: true)
@@ -71,8 +72,10 @@ struct ProcessRunnerTests {
       rm "\(running.path)/$$"
       """
 
+    let cores = ProcessInfo.processInfo.activeProcessorCount
+    let children = max(96, cores * 4)
     let peaks = try await withThrowingTaskGroup(of: Int.self) { group in
-      for _ in 0..<96 {
+      for _ in 0..<children {
         group.addTask {
           let seen = try await runner.run(sh, ["-c", script], in: cwd)
           return Int(seen.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0
@@ -81,8 +84,7 @@ struct ProcessRunnerTests {
       return try await group.reduce(into: [Int]()) { $0.append($1) }
     }
 
-    let cores = ProcessInfo.processInfo.activeProcessorCount
-    #expect(peaks.count == 96, "every run reported")
+    #expect(peaks.count == children, "every run reported")
     #expect(peaks.max() ?? 0 > cores * 2, "\(cores) cores, and at most \(peaks.max() ?? 0) ran")
   }
 
@@ -106,7 +108,7 @@ struct ProcessRunnerTests {
 @Suite
 struct ShellCommandTests {
   @Test func runsACommandLineThroughTheShellWithEnvironment() async throws {
-    let out = try await ShellCommand().run(
+    let out = try await ShellCommand().runScript(
       "echo $MULTISHELL_BRANCH | tr a-z A-Z", in: URL(fileURLWithPath: NSTemporaryDirectory()),
       environment: ["MULTISHELL_BRANCH": "feat"])
     #expect(out.trimmingCharacters(in: .whitespacesAndNewlines) == "FEAT")
@@ -133,9 +135,9 @@ struct ShellCommandTests {
       await #expect(throws: ProcessFailure.self, "stream \(stream)") {
         try await ShellCommand().launch("test -p /dev/fd/\(stream)", in: directory)
       }
-      let captured = try await ShellCommand().run(
+      let captured = try await ShellCommand().runScript(
         "test -p /dev/fd/\(stream) && printf pipe", in: directory)
-      #expect(captured == "pipe", "which is what `run` gives it, for the contrast")
+      #expect(captured == "pipe", "which is what `runScript` gives it, for the contrast")
     }
   }
 }
@@ -191,21 +193,6 @@ struct ProcessRunnerFailureTests {
 
     #expect(after - before < 300, "before \(before), after \(after); the leak was 600")
   }
-}
-
-/// The lowest `/dev/fd` reading over `window`, sampled every tenth of a
-/// second. The count is the whole process's and the other suites run beside
-/// this one, ninety-six children with two pipes each among them, so a short
-/// window can sit entirely inside somebody else's burst and read as a leak.
-/// The lowest over a long one is the floor those bursts return to.
-private func lowestDescriptorCount(over window: Duration) async throws -> Int {
-  var lowest = Int.max
-  let deadline = ContinuousClock.now + window
-  repeat {
-    lowest = min(lowest, try FileManager.default.contentsOfDirectory(atPath: "/dev/fd").count)
-    try await Task.sleep(for: .milliseconds(100))
-  } while ContinuousClock.now < deadline
-  return lowest
 }
 
 @Suite
@@ -316,11 +303,10 @@ struct DescriptorExhaustionTests {
 
 @Suite
 struct HookShellTests {
-  /// Hooks must see the PATH a terminal sees. The shell's rc files under a
-  /// substitute home each export a marker; whichever shell `$SHELL` is, the
-  /// hook must see one of them. Written for zsh, bash and sh; another shell
-  /// only has to run the command.
-  @Test func aHookRunsInTheUsersInteractiveLoginShell() async throws {
+  /// Hooks must see the PATH a terminal sees: a login, interactive shell
+  /// reads its rc files, each of which exports a marker under this home.
+  @Test func aHookRunsInAnInteractiveLoginShellThatReadsItsRcFiles() async throws {
+    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
     let home = try Scratch.directory("home")
     defer { try? FileManager.default.removeItem(at: home) }
     for (file, marker) in [
@@ -331,14 +317,11 @@ struct HookShellTests {
         to: home.appendingPathComponent(file), atomically: true, encoding: .utf8)
     }
 
-    let out = try await ShellCommand().run(
-      "printf '%s' \"$MULTISHELL_RC\"", in: home, environment: ["HOME": home.path])
+    let out = try await ShellCommand().runScript(
+      "printf '%s' \"$MULTISHELL_RC\"", in: home,
+      environment: ["HOME": home.path, "ZDOTDIR": home.path], shellPath: "/bin/zsh")
 
-    let shell = URL(fileURLWithPath: ProcessInfo.processInfo.environment["SHELL"] ?? "")
-      .lastPathComponent
-    if ["zsh", "bash", "sh"].contains(shell) {
-      #expect(!out.isEmpty, "a hook under \(shell) saw none of the rc files")
-    }
+    #expect(out == "zshrc", ".zprofile then .zshrc, as a login interactive zsh reads them")
   }
 
   @Test func aChildThatReadsStdinGetsEOFNotTheApps() async throws {

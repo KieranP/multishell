@@ -137,20 +137,21 @@ public struct WorktreeService: Sendable {
       .trimmingCharacters(in: .whitespacesAndNewlines)
   }
 
-  /// `git worktree add [-b <branch>] <path> <start point>`.
-  /// Pass `createBranch: false` to check out a branch that already exists.
+  /// `git worktree add [-b <branch>] <path> <start point>`; `createBranch: false`
+  /// checks out an existing branch. No timeout, only `stopper`; see worktrees.md.
   public func add(
     branch: String,
     at path: URL,
     basedOn startPoint: String? = nil,
     createBranch: Bool = true,
-    in project: Project
+    in project: Project,
+    stopper: ProcessStopper? = nil
   ) async throws {
     var arguments = ["worktree", "add"]
     if createBranch { arguments += ["-b", branch] }
     arguments.append(path.path)
     arguments.append(createBranch ? (startPoint ?? "HEAD") : branch)
-    _ = try await git.run(arguments, in: project.path)
+    _ = try await git.run(arguments, in: project.path, stopper: stopper)
   }
 
   /// Forgets one record whose directory has already gone, a lock included.
@@ -163,7 +164,11 @@ public struct WorktreeService: Sendable {
         ["worktree", "remove", "--force", "--force", worktree.path.path], in: project.path)
     } catch {
       // A record git cannot match to the path; see docs/design/worktrees.md.
-      _ = try await git.run(["worktree", "prune"], in: project.path)
+      do {
+        _ = try await git.run(["worktree", "prune"], in: project.path)
+      } catch {
+        throw WorktreeForgetFailure(path: worktree.path, underlying: error)
+      }
     }
   }
 

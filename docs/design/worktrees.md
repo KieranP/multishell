@@ -76,7 +76,12 @@ only on the override.
 `git worktree remove` refuses a dirty tree, and its `--force` unlinks the
 files; the one time someone removes the wrong worktree is the time that
 matters. A Trash that refuses falls back to deletion; cost: on such a volume
-the recovery the Trash promised is not there. Trash and fallback both run off
+the recovery the Trash promised is not there. The record is forgotten only
+after the Trash has the directory, and a record git will then neither remove
+nor prune is its own failure, `WorktreeForgetFailure`: the row cannot come
+back as it was, so the alert says the directory is in the Trash and the
+refresh shows what git kept. Untyped, it read as the Trash refusing, and the
+row came back over a directory that had gone. Trash and fallback both run off
 the main actor: a share with no `.Trashes` walks a `node_modules` for as long
 as it takes, and the window stood still for it.
 
@@ -109,6 +114,9 @@ menu, `requestRemoval` and the coordinator all read, so the two cannot part.
 A shell spawned in a missing directory silently lands in `$HOME`. A project
 whose directory is gone stays dimmed rather than dropped, an unmounted drive
 not being reason to delete someone's setup, and the failure is reported once.
+Both ends of a refresh check the project is still listed before dimming it:
+the success path always did, and a project removed while its git call was
+failing was dimmed under a stale id and alerted about after it had left.
 
 ## A stage that ends with its worktree gone takes its entry with it
 
@@ -121,7 +129,10 @@ already cleared, until relaunch. So a failure with the worktree gone ends its
 own entry and raises an alert instead, there being no pane left to put the
 message on. Its own: a removal that has since taken the entry keeps it. The
 store's discard now drops the entry as well, through `forgetWorktrees` below;
-the guard stays for a result landing after that.
+the guard stays for a result landing after that. The discard also stops the
+stage itself, as the pane's Cancel would: a hook left running in a directory
+removed in a terminal had no pane to cancel it from and ran to its timeout,
+then alerted about a worktree that was not there.
 
 ## The worktree list is read NUL-terminated
 
@@ -137,6 +148,12 @@ and the tab store keyed off something git never reported.
 `git worktree add` makes every leading directory of its path, and a refused
 add makes none. The app used to `createDirectory` first, so a taken branch
 name left an empty chain under a nested `worktreeDirectory`.
+
+The add runs with no timeout: a checkout takes as long as the repository is,
+and a bound sized for one would cut off another. What ends one that hangs, an
+LFS smudge or a credential helper on a dead network, is the sheet's Cancel,
+which goes to git through the same stopper the pre-create hook has. Nothing
+here undoes what git had made by then; the next refresh lists it or not.
 
 ## A tree still being built wears no badge
 

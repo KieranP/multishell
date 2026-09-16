@@ -29,7 +29,7 @@ public struct TabGroup: Identifiable, Codable, Hashable, Sendable {
   }
 
   /// A weight of zero, or one that is not a number, is a column nothing can
-  /// be laid out in; `PaneNode` makes the same substitution for a split's.
+  /// be laid out in; `PaneNode` resets a split's whole list over one.
   static func usableWeight(_ weight: Double) -> Double {
     weight.isFinite && weight > 0 ? weight : 1
   }

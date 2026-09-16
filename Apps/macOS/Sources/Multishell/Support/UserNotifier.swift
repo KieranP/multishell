@@ -52,6 +52,9 @@ final class UserNotificationNotifier: NSObject, SessionNotifier {
   func withdraw(about key: SessionStates.Key) {
     let identifier = Self.identifier(for: key)
     pendingAdds.removeValue(forKey: identifier)
+    // `add` delivers a moment after it returns; in that moment the request is
+    // pending, and a banner taken back as delivered only would still land.
+    center?.removePendingNotificationRequests(withIdentifiers: [identifier])
     center?.removeDeliveredNotifications(withIdentifiers: [identifier])
   }
 

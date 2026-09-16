@@ -4,7 +4,8 @@
 
 Xcode 26 with Swift 6 (`sudo xcode-select -s /Applications/Xcode.app` if only
 the command line tools are active; the app build runs `xcodebuild`, which the
-command line tools alone do not have). `git` on PATH.
+command line tools alone do not have), and Xcode 27 for `make build` and
+`make release`, for the reason under the helper below. `git` on PATH.
 
 ## Build, test, run
 
@@ -58,7 +59,19 @@ and a relaunch trapped on the first terminal. Xcode's own build of the same
 package generates an accessor that looks in `Contents/Resources` first and
 writes no path, under Xcode 26 and 27 alike, so `make-app.sh` runs
 `xcodebuild` for the app binary and refuses one that carries a build path.
-Xcode 27's `swift build` writes no path either, but the floor stays at 26.
+Xcode 27's `swift build` writes no path either, but the floor for the tests
+stays at 26. The helper is built with `swift build` and checked the same way,
+since it reads MultishellCore's catalogue on every hook: under Xcode 26 it
+would carry the path and `make build` be refused at that check, rather than
+installing a helper whose every hook traps after the next `make clean`. So
+the app build needs 27 until the helper too comes from `xcodebuild`; only 27
+has run it.
+
+The refusal, and the two checks after it, pipe into `grep -c` rather than
+`grep -q`: under `pipefail` a `-q` that quits at its first match leaves
+`strings` writing into a closed pipe, SIGPIPE makes the pipeline's status 141,
+and the `if` reads a match as a miss. With 1.3 MB of strings against a 64 KB
+pipe buffer, the check could only ever fire on a match in the last 64 KB.
 
 Two things the auto-generated package scheme does that the script undoes.
 It signs, ad hoc, which the script does itself afterwards with the
@@ -100,9 +113,8 @@ What you can do instead: lay a view out in-process. An NSHostingView inside
 an NSWindow that is never ordered in measures and renders, asking for nothing,
 and `sizingOptions = [.minSize, .intrinsicContentSize]` then gives the size
 SwiftUI would refuse to go below. SettingsPageSizeTests is the pattern. It
-still needs a window server, which is not a permission but is a session: it
-passes on a developer's machine, and whether CI's runner has one is unchecked
-as of the first such test.
+still needs a window server, which is not a permission but is a session; CI's
+`macos-15` runner has one, the page tests passing there.
 
 Four limits found doing it. A TabView's band is drawn outside the AppKit
 hierarchy: it is in no bitmap and in no measured size, so a band that clips

@@ -114,7 +114,9 @@ struct WorktreeRow: View {
       }
     }
     .contentShape(.rect)
-    .accessibilityElement(children: .ignore)
+    // `.contain` while renaming, or the field the Rename action opened would
+    // sit inside an ignored subtree where VoiceOver cannot reach it.
+    .accessibilityElement(children: isRenaming ? .contain : .ignore)
     .accessibilityLabel(
       AccessibilityText.worktree(
         worktree, customName: customName, state: state, status: status, operation: operation,

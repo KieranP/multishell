@@ -8,8 +8,8 @@ rather than fixed lives in `docs/develop/known-gaps.md`; a defect goes to
 ## Features
 
 - Terminal: find.
-- File tree and git changes files and diff right hand panel
 - Subagents tracking/display
+- File tree and git changes files and diff right hand panel
 - "Locate…" on a missing project, rebinding it to a chosen directory.
 
 ## Refinements

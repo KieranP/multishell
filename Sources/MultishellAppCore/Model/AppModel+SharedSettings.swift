@@ -100,7 +100,9 @@ extension AppModel {
       // A question up names hooks the app no longer has, so it goes the way
       // a deleted file's does, and returns if the file parses again.
       if pendingSharedHooksTrust?.projectID == project.id { pendingSharedHooksTrust = nil }
-      let problem = "\(SharedProjectSettings.fileName) could not be read: \(error)"
+      let problem = t(
+        "error.shared-settings-unreadable", SharedProjectSettings.fileName,
+        String(describing: error))
       if sharedSettings.note(problem: problem, stamp: stamp, for: project.id) {
         platform.log("\(project.name): \(problem)")
       }
@@ -139,8 +141,7 @@ extension AppModel {
   }
 
   /// Export from the General tab: the settings in effect, written to the
-  /// repository's file. A hook the user wrote is their own words, so trusted;
-  /// one the file already held and they refused is kept and stays refused.
+  /// repository's file. A refused hook the file held is kept, and stays refused.
   public func exportSharedSettings(for project: Project) {
     guard let current = workspace.project(project.id) else { return }
     let mine = SharedProjectSettings(exporting: effectiveSettings(for: current))

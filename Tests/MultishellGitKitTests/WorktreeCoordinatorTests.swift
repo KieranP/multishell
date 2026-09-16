@@ -430,6 +430,21 @@ struct GitIntegrationTests {
     #expect(try await coordinator.refresh(project).count == 1)
   }
 
+  /// Both fail: the directory is in the Trash by then, so the caller has to
+  /// be able to tell this from a Trash that refused.
+  @Test func aRecordNeitherRemoveNorPruneLetsGoOfIsItsOwnFailure() async throws {
+    let fake = try FakeGit.make("exit 128")
+    defer { fake.tearDown() }
+    let project = Project(path: fake.directory)
+    let worktree = Worktree(
+      path: fake.directory.appendingPathComponent("gone"), projectID: project.id, head: "a",
+      branch: "gone")
+
+    await #expect(throws: WorktreeForgetFailure.self) {
+      try await WorktreeService(git: fake.runner).forget(worktree, in: project)
+    }
+  }
+
   @Test func hasCommitsIsFalseUntilTheFirstCommit() async throws {
     let repo = try await RepositoryFixture.make(commit: false)
     defer { repo.tearDown() }
@@ -510,7 +525,7 @@ struct StatusConcurrencyTests {
     // Same directory, so ids collide; the count comes from the script.
     let coordinator = WorktreeCoordinator(service: WorktreeService(git: fake.runner))
 
-    let statuses = await coordinator.statuses(of: worktrees)
+    let statuses = await coordinator.readStatuses(of: worktrees).mapValues(\.status)
 
     #expect(statuses.values.allSatisfy { $0.branch == "main" })
     let peaks = try FileManager.default.contentsOfDirectory(

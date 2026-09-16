@@ -13,9 +13,13 @@ What each test catches, and the conventions a new one follows.
   build replaced with toggles.
 - WorkspaceInvariants and `repairReferences`: WorkspaceStoreInvariantTests,
   AppModelInvariantTests, random operations, printing failing seed and step.
-- No blocking in the core: ProcessRunnerTests runs 96 children under a
-  wall-clock bound. DescriptorExhaustionTests lowers the process-wide limit,
-  so it needs `MULTISHELL_EXHAUST_DESCRIPTORS=1` and a `--filter`.
+- No blocking in the core: ProcessRunnerTests runs four one-second children
+  per core, 96 at least, and reads off what each saw running beside it that
+  more than twice the cores were alive at once; starved, a thread per core
+  is the ceiling. Four per core so the bound stays half the batch on a
+  machine with more cores than the batch had children. DescriptorExhaustionTests
+  lowers the process-wide limit, so it needs `MULTISHELL_EXHAUST_DESCRIPTORS=1`
+  and a `--filter`.
 - Git on a timer reads only: StatusLockTests.
 - A tree still being built wears no badge, and a stage on a listed worktree
   keeps the one it earned: the `Badged` tests in AppModelGitTests+Refresh and
@@ -207,6 +211,36 @@ What each test catches, and the conventions a new one follows.
 - A `ZDOTDIR` the user's `.zprofile` sets is followed: HelperTests, a login
   interactive zsh under a fake home, beside the `.zshenv` case it was modelled
   on. Only a login shell reads the profile, so the `-l` is what the test is.
+  The session and socket variables are blanked in its environment: the runner
+  merges over the process's own, and run from a Multishell tab the hooks
+  reported to the developer's live app, shown with a listener standing in.
+- An empty Enter under a user's `PROMPT_COMMAND` starts no command:
+  PromptMarkTests, real bash with `history -a`, a logging stand-in for the
+  helper and `\n\ntrue\n\nexit`, counting the started lines.
+- A dead agent with a worker counted no longer holds Working, and its shell's
+  later failure is not an agent waiting on the badge: BackgroundWorkerTests
+  pairs a subagent tick with the engine's command end in both orders;
+  AgentBoardModelTests reads the badge with the board closed.
+- A hook still running when its worktree is removed in a terminal is ended:
+  AppModelHookControlTests, a `sleep 30; exit 1` hook, the row removed with
+  real git and refreshed, held under twelve seconds with no alert. The same
+  suite cancels a `git worktree add` a fake git holds open, and drops a step
+  reported after its create ended.
+- A failing refresh landing after its project was removed dims nothing:
+  AppModelGitTests, a fake git that waits for a file before failing, the
+  project removed between.
+- A record git will neither remove nor prune after the Trash took the
+  directory is `WorktreeForgetFailure` and an alert that refreshes:
+  WorktreeCoordinatorTests on a fake git, RemovalFailureTests for the mapping.
+- A greeting holding `=` does not cost the login shell its first variable:
+  LoginShellEnvironmentTests, on the parser alone.
+- Numbers in an agent's settings file come back as written, and a literal
+  JSON refuses or bytes that are not UTF-8 are still refused untouched:
+  AgentHooksTests, install and remove over `1.0`, `0.1`, a 23-digit integer,
+  `1e-7`, then `01`, `1-2`, `1.e5` and a Latin-1 byte.
+- A zero or non-finite split weight is refused on decode and on write:
+  DecodingDefaultsTests and WorkspaceStoreTests, whose change counter counts
+  store operations rather than writes, `replaceWorktrees` making two.
 - Foundation-only imports: checked by hand in a `swift:6.0` container, Linux
   being out of CI. Views untested, but a value a view reads is.
 - A removal dialog left up for a worktree git no longer lists, and Remove
@@ -237,7 +271,16 @@ What each test catches, and the conventions a new one follows.
 - Prefer evidence to a clock. Concurrency is read off what the children
   recorded about each other, not off how long the batch took; a call that
   returned before a hook finished is read off the state it returned in. Both
-  were wall-clock bounds first, and both flaked.
+  were wall-clock bounds first, and both flaked. Waiting for a state is
+  `waitUntil` from TestScratch, eight seconds at most, with the assertion
+  after it; a fixed sleep fails on a loaded runner and wastes time on a quiet
+  one.
+- Never the developer's machine: a shell runs against a home the test wrote,
+  `LoginShellEnvironment.capture(shellPath:home:)` and `runScript(shellPath:)`
+  naming `/bin/zsh`; the model's login environment comes from the harness's
+  `captureLoginEnvironment`; git is the fixture's runner, never the PATH's.
+  Every scratch directory and socket is removed by the test or its harness's
+  `deinit`, and `Scratch.removeSocket` takes the claim file the server keeps.
 - A bound that is left tells one outcome from another, not a fast machine
   from a slow one: the child sleeps thirty seconds and the bound is twelve, so
   what fails it is the stop never arriving. Do not size a bound to a measured
@@ -247,7 +290,8 @@ What each test catches, and the conventions a new one follows.
 - A test that reads something process-wide, the open descriptor count being
   the one so far, is reading the other suites too: they run beside it in the
   same process. Take the lowest of several seconds of samples rather than one
-  reading, and expect to revisit it when a test that spawns in bulk arrives.
+  reading, `lowestDescriptorCount` in TestScratch, and expect to revisit it
+  when a test that spawns in bulk arrives.
 - Real git comes from a fixture, whose runner carries `commit.gpgsign=false`:
   a developer whose global config signs would be asked for the key once per
   fixture commit. It rides on the runner, so a clone a new test adds needs no

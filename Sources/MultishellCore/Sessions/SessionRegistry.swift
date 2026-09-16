@@ -97,7 +97,7 @@ extension SessionRegistry: TerminalHostDelegate {
 
   /// The process is already gone, so the surface must go too; leaving it
   /// until the next reconcile shows a dead terminal under a missing tab.
-  public func terminalHost(_ host: any TerminalHost, didExit id: TerminalSession.ID, code: Int32) {
+  public func terminalHost(_ host: any TerminalHost, didExit id: TerminalSession.ID) {
     store.closeSession(id)
     host.close(id)
     focusActiveSession()

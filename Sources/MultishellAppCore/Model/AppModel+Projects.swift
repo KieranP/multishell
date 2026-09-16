@@ -35,9 +35,6 @@ extension AppModel {
   }
 
   public func removeProject(_ project: Project) {
-    // A file list or hook still running here is ended by signal, as the
-    // pane's Cancel ends it: the project has just been told to go.
-    for worktree in workspace.worktrees(of: project.id) { cancelStage(of: worktree) }
     mergeBases[project.id] = nil
     // Or a project re-added while git still cannot read it would be dimmed
     // with no alert: the first failure is what reports one.
@@ -88,7 +85,7 @@ extension AppModel {
     guard let worktrees else { return }
     let path = project.path
     guard await Self.offMain({ FileManager.default.fileExists(atPath: path.path) }) else {
-      missingProjects.insert(project.id)
+      if workspace.project(project.id) != nil { missingProjects.insert(project.id) }
       return
     }
     // Read before the list so a change landing in between is caught by the
@@ -114,6 +111,11 @@ extension AppModel {
       // and without this the host keeps their surfaces and the shells run on.
       reconcileSessions(takingFocus: false)
     } catch {
+      // Removed while git ran: the same as above, and nothing to dim.
+      guard workspace.project(project.id) != nil else {
+        commonGitDirectories[project.id] = nil
+        return
+      }
       // Every tick and every return to the front refreshes a project git
       // cannot read, so the alert goes up once; the row stays dimmed.
       if missingProjects.insert(project.id).inserted { report(error) }

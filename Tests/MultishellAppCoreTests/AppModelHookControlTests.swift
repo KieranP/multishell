@@ -1,6 +1,8 @@
 import Foundation
 import MultishellCore
 import MultishellGitKit
+import MultishellProcess
+import TestScratch
 import Testing
 
 @testable import MultishellAppCore
@@ -359,6 +361,72 @@ struct AppModelHookControlTests {
       "and no first tab opens in a worktree whose project has gone")
   }
 
+  /// The worktree goes in a terminal instead: the tick drops the row, and
+  /// the hook running there has no pane left to Cancel from, so it is ended.
+  @Test func aWorktreeRemovedOutsideTheAppEndsTheHookStillRunningInIt() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    h.model.updateSettings(ProjectSettings(postCreateHook: "sleep 30; exit 1"), for: h.project)
+
+    await h.model.createWorktree(branch: "setup", basedOn: nil, createBranch: true, in: h.project)
+    let created = try #require(h.worktree(onBranch: "setup"))
+    #expect(h.model.worktreeOperations[created.id]?.isRunning == true)
+    let setup = h.model.worktreeSetups[created.id]
+    let began = ContinuousClock.now
+
+    _ = try await h.git.run(
+      ["worktree", "remove", "--force", created.path.path], in: h.project.path)
+    await h.model.refresh(h.project)
+    #expect(h.worktree(onBranch: "setup") == nil, "git no longer lists it")
+    await setup?.value
+
+    #expect(h.model.worktreeOperations[created.id] == nil)
+    #expect(h.model.worktreeSetups[created.id] == nil)
+    #expect(h.model.stageStoppers[created.id] == nil)
+    #expect(ContinuousClock.now - began < .seconds(12), "signalled, not waited out")
+    #expect(h.model.presentedError == nil, "a worktree that is not there has nothing to report")
+  }
+
+  /// A checkout held by an LFS smudge or a credential helper on a dead
+  /// network: the sheet's Cancel has to end git as it ends the hook before it.
+  @Test func cancelWhileGitAddsTheWorktreeEndsItAndReportsNothing() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let slow = try h.modelOnFakeGit(
+      """
+      case "$1 $2" in
+        "worktree add") sleep 30 ;;
+      esac
+      """)
+    let began = ContinuousClock.now
+
+    let create = Task {
+      await slow.createWorktree(branch: "held", basedOn: nil, createBranch: true, in: h.project)
+    }
+    try await waitUntil { slow.worktreeCreationStep == .addingWorktree }
+    #expect(slow.worktreeCreationStep == .addingWorktree)
+    slow.cancelWorktreeCreation()
+    await create.value
+
+    #expect(ContinuousClock.now - began < .seconds(12), "signalled, not waited out")
+    #expect(slow.presentedError == nil, "the user's own Cancel is nothing to report")
+    #expect(slow.worktreeCreationStep == nil)
+  }
+
+  /// The coordinator reports steps through a hop to the main actor, and the
+  /// create clears the slot as it returns; a step landing after that belongs
+  /// to a create that has ended and must not fill the slot again.
+  @Test func aStepReportedAfterItsCreateEndedIsDropped() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    await h.model.createWorktree(branch: "done", basedOn: nil, createBranch: true, in: h.project)
+    #expect(h.model.worktreeCreationStep == nil)
+
+    h.model.noteCreationStep(.addingWorktree, of: ProcessStopper())
+
+    #expect(h.model.worktreeCreationStep == nil, "no create owns that stopper any more")
+  }
+
   /// The settings window is its own scene, so a New Worktree sheet on the
   /// workspace window is not in the way of a project removal confirmed
   /// there, and outlives it. Its Create used to run `git worktree add` for
@@ -393,7 +461,7 @@ struct AppModelHookControlTests {
     h.model.setDeletesBranchWithWorktree(true)
 
     h.model.requestRemoval(of: worktree)
-    try await Task.sleep(for: .milliseconds(300))
+    try await waitUntil { h.model.worktreeOperations[worktree.id]?.step == .preDeleteHook }
     #expect(h.model.worktreeOperations[worktree.id]?.step == .preDeleteHook)
     h.model.cancelStage(of: worktree)
     await h.awaitOperationEnd(on: worktree.id)
@@ -410,7 +478,7 @@ struct AppModelHookControlTests {
     let create = Task {
       await h.model.createWorktree(branch: "never", basedOn: nil, createBranch: true, in: h.project)
     }
-    try await Task.sleep(for: .milliseconds(300))
+    try await waitUntil { h.model.worktreeCreationStep == .preCreateHook }
     #expect(h.model.worktreeCreationStep == .preCreateHook)
 
     h.model.cancelWorktreeCreation()

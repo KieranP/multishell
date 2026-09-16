@@ -9,18 +9,6 @@ public struct ShellCommand: Sendable {
     self.runner = runner
   }
 
-  /// One command line, its output captured. `launch` is the one to reach for
-  /// where the command may not return.
-  public func run(
-    _ commandLine: String,
-    in directory: URL,
-    environment: [String: String] = [:]
-  ) async throws -> String {
-    guard let shell = Self.shell else { throw ShellUnavailable() }
-    return try await runner.run(
-      shell.executable, shell.arguments + [commandLine], in: directory, environment: environment)
-  }
-
   /// Starts a command with no pipes and no timeout, waiting only to hear how
   /// it ended: an editor shim may hold this open; see smaller-decisions.md.
   public func launch(

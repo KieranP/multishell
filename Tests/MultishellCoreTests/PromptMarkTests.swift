@@ -135,6 +135,32 @@ struct PromptMarkTests {
     #expect(output.contains(Marks.claim), "and our own hooks still reach the prompt")
   }
 
+  /// An empty Enter runs nothing, so the arm lived on into the next
+  /// PROMPT_COMMAND, where the user's own entry was reported as a command.
+  @Test func anEmptyEnterUnderTheUsersPromptCommandStartsNoCommand() throws {
+    let bash = "/bin/bash"
+    guard FileManager.default.isExecutableFile(atPath: bash) else { return }
+    let scratch = try Scratch.directory("marks-helper")
+    defer { Scratch.remove(scratch) }
+    let log = scratch.appendingPathComponent("log")
+    let helper = try Scratch.script(
+      "printf '%s\\n' \"$1\" >> '\(log.path)'", at: scratch.appendingPathComponent("multishell"))
+    let files = try GeneratedIntegration(helper: helper.path)
+    defer { files.remove() }
+    try files.writeHomeFile(".bashrc", "PS1='> '\nPROMPT_COMMAND='history -a'\n")
+
+    var environment = files.environment(termProgram: nil)
+    environment[SessionEnvironment.sessionKey] = "empty-enter"
+    _ = try interactiveShell(
+      bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment,
+      input: "\n\ntrue\n\nexit\n")
+
+    let lines = try String(contentsOf: log, encoding: .utf8).split(separator: "\n")
+    #expect(
+      lines.filter { $0 == "command-started" }.count == 2, "one for `true` and one for `exit`")
+    #expect(lines.filter { $0 == "command-finished" }.count == 1)
+  }
+
   /// `%{` opens a zero-width span, so a PS1 ending in a bare `%` would take
   /// the mark's brace as a literal percent's and show the rest.
   @Test func aPromptEndingInAPercentKeepsItAndStillGetsTheInputMark() throws {

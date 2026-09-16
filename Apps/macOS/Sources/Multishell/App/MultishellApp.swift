@@ -23,7 +23,10 @@ struct MultishellApp: App {
         .task {
           appDelegate.openTerminalCount = { model.liveTerminalCount }
           appDelegate.workingAgentCount = { model.workingAgentCount }
-          appDelegate.willTerminate = { model.shutDown() }
+          appDelegate.willTerminate = {
+            model.shutDown()
+            GhosttyTerminalHost.removeGeneratedConfigs()
+          }
           await model.start()
         }
     }

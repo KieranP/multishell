@@ -236,9 +236,8 @@ extension AppModel {
     guard let worktree = worktreeReadyForShell(), let tab = tabToSplit(in: group, of: worktree)
     else { return }
     store.splitFocusedPane(of: tab.id, axis: axis)
-    // The new pane takes the focus inside its tab, so the column it is in
-    // has to take it too, else the keyboard stays in another column. Asked
-    // first: an unguarded write re-arms the autosave for nothing.
+    // The new pane takes focus in its tab, so its column must too, else the
+    // keyboard stays in another column. Asked first, or autosave re-arms for nothing.
     if workspace.focusedGroup(in: worktree.id)?.id != tab.groupID {
       store.focusGroup(tab.groupID)
     }

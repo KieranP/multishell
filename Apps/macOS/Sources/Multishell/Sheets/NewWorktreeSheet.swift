@@ -75,13 +75,11 @@ struct NewWorktreeSheet: View {
             .lineLimit(1)
         }
         Spacer()
-        // While a create runs, Cancel stops its pre-create hook. Once git
-        // itself is running there is nothing to stop, so no button.
+        // While a create runs, Cancel ends its pre-create hook or git itself.
         Button(t("action.cancel"), role: .cancel) {
           if draft.isCreating { model.cancelWorktreeCreation() } else { dismiss() }
         }
         .keyboardShortcut(.cancelAction)
-        .disabled(draft.isCreating && model.worktreeCreationStep != .preCreateHook)
         Button(t("sheet.create-worktree"), action: create)
           .keyboardShortcut(.defaultAction)
           .disabled(!draft.canCreate(checkedOut: checkedOut))

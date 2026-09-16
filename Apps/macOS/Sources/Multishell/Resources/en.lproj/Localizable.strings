@@ -142,7 +142,7 @@
 "project.flags-info" = "Added to this project's agent command line instead of the global flags. Blank runs it with none, whatever the global passes.";
 "project.icon" = "Icon";
 "project.icon-from-shared" = "From %@. A choice here replaces it.";
-"project.icon-info" = "Drawn in the sidebar, the header and the project picker in place of the folder. The palette is grouped by what a symbol is of, with jumps to each group along the foot; the field at the top matches both a symbol's name and what it is used for, so \"database\", \"git\" and \"docker\" all find something. Down from the field moves into the grid, the arrows walk it and Return picks. The folder is the first cell and is what a project has until one is picked.";
+"project.icon-info" = "Drawn in the sidebar, the header and the project picker in place of the folder. The palette is grouped by what a symbol is of, with jumps to each group along the foot. The arrows walk the grid and Return picks. The folder is the first cell and is what a project has until one is picked.";
 "project.icon-label" = "Icon:";
 "project.merges-measured" = "Merges are measured against %@.";
 "project.no-merge-base" = "No branch to measure merges against, so no worktree is badged as merged.";

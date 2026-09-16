@@ -68,7 +68,7 @@ struct DecodingDefaultsTests {
     // `removing` zips children with weights; a short list would drop a pane.
     let a = UUID()
     let b = UUID()
-    for weights in ["[1]", "[1, 2, 3]", "[1, -1]"] {
+    for weights in ["[1]", "[1, 2, 3]", "[1, -1]", "[0, 1]"] {
       let node = try decode(
         PaneNode.self,
         #"""
@@ -662,8 +662,6 @@ struct NewerFieldDefaultsTests {
     )
     #expect(legacy.sharedHooks.isEmpty && legacy.branchPrefix == "k/")
   }
-
-  // MARK: - The two reads themselves
 
   /// `decode(_:forKey:or:)` fills in an absent key but still fails on one of
   /// the wrong type, which is what moves a state file aside as `.broken.json`

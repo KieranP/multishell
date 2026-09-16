@@ -51,7 +51,6 @@ extension Theme {
   public var foregroundRGB: RGB {
     HexColor.parse(foreground) ?? RGB(red: 255, green: 255, blue: 255)
   }
-  public var cursorRGB: RGB { HexColor.parse(cursor) ?? foregroundRGB }
   public var selectionRGB: RGB {
     HexColor.parse(selectionBackground) ?? RGB(red: 64, green: 96, blue: 144)
   }

@@ -67,6 +67,9 @@ _multishell_owns_debug || trap "_multishell_debug" DEBUG'
   }
   _multishell_precmd() {
     local e=$?
+    # An empty Enter runs nothing, so the arm would live on into the user's
+    # own PROMPT_COMMAND entry and report it as a command.
+    _multishell_armed=0
     if [ "$_multishell_ran" = 1 ]; then
       _multishell_ran=0
       # bash 3.2 has no EPOCHREALTIME; SECONDS is enough. Cut at either

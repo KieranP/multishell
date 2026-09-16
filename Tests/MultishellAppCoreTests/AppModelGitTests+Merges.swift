@@ -1,6 +1,7 @@
 import Foundation
 import MultishellCore
 import MultishellGitKit
+import TestScratch
 import Testing
 
 @testable import MultishellAppCore
@@ -77,16 +78,16 @@ extension AppModelGitTests {
     await h.model.refreshMergeStates()
 
     let model = h.model
-    let fired = Fired()
+    let fired = Flag()
     withObservationTracking {
       _ = model.mergeStates
       _ = model.mergeBases
     } onChange: {
-      fired.value = true
+      fired.raise()
     }
     await h.model.refreshMergeStates()
 
-    #expect(!fired.value, "nothing moved, so nothing to redraw")
+    #expect(!fired.raised, "nothing moved, so nothing to redraw")
   }
 
   /// A git call that failed is not an answer, and must not be recorded as

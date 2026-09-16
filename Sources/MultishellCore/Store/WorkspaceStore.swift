@@ -449,7 +449,9 @@ extension WorkspaceStore {
 
   /// Written back when a divider is dragged, so a layout survives relaunch.
   public func setSplitWeights(_ weights: [Double], at path: [Int], ofTab tabID: TerminalTab.ID) {
-    guard let index = workspace.tabs.firstIndex(where: { $0.id == tabID }) else { return }
+    guard weights.allSatisfy({ $0.isFinite && $0 > 0 }),
+      let index = workspace.tabs.firstIndex(where: { $0.id == tabID })
+    else { return }
     workspace.tabs[index].root = workspace.tabs[index].root.settingWeights(weights, at: path)
   }
 

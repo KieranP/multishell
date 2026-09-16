@@ -53,6 +53,9 @@ public struct PresentedError: Identifiable {
     case let failure as TrashFailure:
       title = t("error.trash-refused")
       message = "\(failure.path.path)\n\n\(Self.describe(failure.underlying))"
+    case let failure as WorktreeForgetFailure:
+      title = t("error.forget-refused")
+      message = "\(failure.path.path)\n\n\(Self.describe(failure.underlying))"
     case let failure as ProcessFailure where failure.message.contains("invalid reference: HEAD"):
       // An unborn HEAD: the repository has never been committed to.
       title = t("error.no-commits-title")

@@ -155,7 +155,11 @@ extension AppModel {
     if let session = workspace.session(id) {
       scheduleStatusRefresh(of: session.worktreeID)
     }
+    // An agent typed at the prompt was the foreground command, so the pane is
+    // a plain shell again; with the board closed no pid poll would say so.
+    setIfChanged(\.reportedAgents[id], nil)
     mutateStates { $0.noteCommandFinished(in: id, exitCode: exitCode, isSeen: hasBeenSeen(id)) }
+    updateDockBadge()
     updatePIDWatch()
   }
 

@@ -8,9 +8,8 @@ public struct ShellDetection: Equatable, Sendable {
   /// Paths of the shells found, sorted by name then path.
   public let installed: [String]
   public let loginShell: String
-  /// Whether `$SHELL` points at something. Every other row is checked, and a
-  /// tab on a shell that is not there dies the moment it opens. Read once
-  /// here, not per row: a stat on a dead mount blocks for its timeout.
+  /// Whether `$SHELL` points at something, read once here rather than per
+  /// row: a stat on a dead mount blocks for its timeout.
   public let loginShellExists: Bool
 
   public static let empty = ShellDetection(

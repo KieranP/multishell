@@ -30,6 +30,12 @@ terminal keeps the engine that opened it.
 in order, a `PresentedError` title saying whether the operation happened, an
 editor in ProjectHooksTab, a `WorktreeOperation.Step` with its text.
 
+**A way a worktree stage can fail.** A `*Failure` type in
+`WorktreeFailures.swift` naming what is still on disk, a `PresentedError`
+title, and an arm in `RemovalFailure.describe` saying whether the worktree is
+still there, which decides whether the model restores the row or refreshes:
+the untyped default reads as the Trash refusing and restores.
+
 **A list of files a new worktree is given.** A case in `WorktreePlacement`
 with the settings field it reads, a `WorktreeOperation.Step` with its titles
 and the help its Cancel shows, an editor in ProjectHooksTab, and if a

@@ -44,6 +44,11 @@ prints the state file, which is how you see which one a running copy has.
 - `drops/<uuid>/`: files a drag promised rather than handed over, swept at
   launch once a week old.
 
+Outside that directory, `$TMPDIR/io.multishell.app/ghostty-config-<UUID>.conf`
+is the merged Ghostty config libghostty reads once at load, written by the
+wrapper and cleared by the app at launch and at quit; see
+docs/design/terminals.md.
+
 Agent hooks, written only when asked: Claude Code `~/.claude/settings.json`,
 Codex `~/.codex/hooks.json`, Gemini `~/.gemini/settings.json`, each keeping a
 `.before-multishell` copy the first time; Copilot

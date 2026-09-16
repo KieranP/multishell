@@ -137,8 +137,6 @@ struct TranslationTests {
     #expect(t("no.such.key") == "no.such.key")
   }
 
-  // MARK: - Reading the source and the catalogue
-
   private struct CallSite {
     let key: String
     let arguments: Int

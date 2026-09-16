@@ -22,7 +22,10 @@ banner goes on the look either way, an interruption being spent once it has
 interrupted.
 
 Ctrl+C sends no Stop -> reports carry a pid the app polls. No timeout, a long
-task not being a stale one. Cost: Cmd+W on a Working pane asks first.
+task not being a stale one. Cost: Cmd+W on a Working pane asks first. The
+shell's own end-of-command is the one engine signal that outranks a report:
+it settles background workers, the owed Done and which agent is at the
+prompt, since whatever was in the foreground has returned; see agents.md.
 
 ## A closed tab ends its shell, next turn
 
@@ -81,6 +84,14 @@ restore `$?` between `PROMPT_COMMAND` entries, so a prompt of the user's that
 opens with `local ret=$?` read ours instead and every command looked
 successful. zsh needs none of this, restoring `lastval` around each
 `precmd_functions` entry.
+
+It also disarms the trap before anything else runs at the prompt. The arm is
+set last in `PROMPT_COMMAND` and consumed by the next command's DEBUG firing;
+an empty Enter runs no command, so the arm lived on into the next prompt,
+where the user's own entry (`history -a`, starship, direnv) fired first and
+was reported as a command starting. The dot read Working until the next Enter,
+whose precmd reported it finished with the whole idle time as duration. zsh
+has no preexec for an empty line and never had this.
 
 ## A click in the prompt moves the cursor, because the prompt claims it
 
@@ -151,9 +162,14 @@ xonsh) still gets `/bin/sh` for hooks.
 Agents live under Homebrew, npm or a version manager, none of which a
 Finder-launched app has on PATH -> one login-shell environment captured at
 launch, with an eight second limit past which a poorer PATH beats empty
-dropdowns. Auto-start opens the agent where a shell would have, held back until
-the post-create hook ends. New Shell Tab always opens a shell, so one stays
-reachable. The hook ending is what opens that tab, wherever the user is
+dropdowns. Its `env -0` output is read from the first line shaped `KEY=`: an rc
+file's greeting lands in front of the first entry, and cutting at the first `=`
+gave a banner of `====` an empty key and lost that entry, PATH when the shell
+exported it first, so git fell back to the Finder's PATH and a Homebrew git was
+not found. A greeting line itself shaped `word=word` is still not told apart
+(known-gaps.md). Auto-start opens the agent where a shell would have, held back
+until the post-create hook ends. New Shell Tab always opens a shell, so one
+stays reachable. The hook ending is what opens that tab, wherever the user is
 looking: out of view or under the Agents board the shell starts and the
 keyboard stays put, the way every other background tab runs; in view it takes
 the keyboard as a new tab does. The alternative, waiting for the next visit,
@@ -172,6 +188,13 @@ menu item is theirs. Both the places Ghostty reads on a Mac,
 `~/.config/ghostty/config` then the app-support file, which is the one
 Ghostty writes and so has the later word. `XDG_CONFIG_HOME` is not read, an
 app Finder launched not being given it. Read once, when the host is created.
+
+The merged text goes to libghostty through a file the wrapper writes under the
+temp directory, named for the bundle. The wrapper removes that file when it
+replaces it and never otherwise, so the host clears the directory as it is
+created and again at quit. A second copy of the app running at the time loses
+its file too, which costs nothing: a controller reads its file once, at load,
+and any later change writes a new one.
 
 ## A line libghostty refuses costs that line, not the file
 

@@ -31,7 +31,13 @@ does.
   network volume that has gone away blocks until the mount times out. Polling
   paths' checks run off it.
 - A file list a new worktree is given has no timeout, unlike a hook: runs
-  until done or the pane's Cancel, which lands between paths.
+  until done or the pane's Cancel, which lands between paths. Nor has `git
+  worktree add`, by decision (worktrees.md): the sheet's Cancel ends it.
+- The login shell's `env -0` output is read from the first line shaped
+  `KEY=`, so a greeting an rc file prints ahead of it is skipped, but a
+  greeting line that itself reads `word=word` is taken for the first
+  variable and swallows the real one, PATH where the shell exports it first.
+  Not decidable from the text; the fallback is the process's own PATH.
 - A scrolled tab strip does not auto-scroll while a tab is dragged near its
   end, so a tab cannot be dragged past the visible tabs: reordering reaches
   only what is on screen, and a tab off the end cannot be dropped on.
@@ -116,9 +122,10 @@ does.
   docs/design/worktrees.md.
 - `creationStopper` and `worktreeCreationStep` are one slot each, so with two
   creates overlapping, Cmd+N reopening the sheet while the last one runs, the
-  first to end nils both: the second sheet's Cancel greys out and its
-  pre-create hook cannot be stopped. The row hold-back is counted per create
-  and is not affected.
+  first to end nils both: the second sheet's Cancel then does nothing, its
+  hook and its `git worktree add` cannot be stopped, and its later steps are
+  dropped as belonging to a create that has ended. The row hold-back is
+  counted per create and is not affected.
 
 ## Unconfirmed behaviour
 
@@ -126,15 +133,30 @@ does.
   `swift build` had already stopped writing the build path it was switched
   away from (build.md). That Xcode 26's xcodebuild writes none either rests
   on its accessor having looked in `Contents/Resources` since packages
-  could carry resources, not on a run. If the build's own check fires there,
-  the binary carries the path and the install would break at the next build;
-  fallback = upgrade to Xcode 27, whose `swift build` passes the check.
+  could carry resources, not on a run. The helper is checked too and is
+  built with `swift build`, so under 26 the build is expected to be refused
+  at that check rather than install a helper that breaks at the next `make
+  clean`; neither outcome has been watched there. Fallback = Xcode 27.
+- The sheet's Cancel ending a running `git worktree add` is tested against a
+  fake git that sleeps, not against a real checkout held by an LFS smudge or
+  a credential helper; what git leaves behind when signalled mid-checkout,
+  and whether the next refresh lists it, has not been watched.
+- The generated Ghostty config directory is cleared at launch and at quit;
+  the quit half runs from `applicationWillTerminate` and nobody has looked in
+  `$TMPDIR/io.multishell.app` after one. If a file survives, macOS's temp
+  purge takes it within three days.
+- The worktree row's rename field is inside an accessibility container only
+  while renaming; whether VoiceOver lands on it once the Rename action opens
+  it has not been read, the labels never having been.
 - The tab strip's two split buttons have never been watched on a screen.
 - A split or column divider drag now holds its weights in the view and writes
   the model once when the drag ends, the end read off the gesture state
   resetting so a drag the system cancels commits too rather than snapping
   back. Nobody has watched a cancelled drag; if it snaps back instead, the
-  fallback is the model's last saved weights.
+  fallback is the model's last saved weights. The sidebar divider reads its
+  start width off gesture state for the same reason, and the same is
+  unwatched: a drag Cmd+Tab interrupts used to leave the next one jumping to
+  where the last began.
   Every number behind them is held by UIMetricsTests: a column at
   `SplitMetrics.minimumPane` drops them at every font size, the threshold
   runs 187pt at 10-point to 338pt at 18, and a width of zero or NaN reads as
@@ -314,11 +336,12 @@ does.
   What is tested is the model's half: which key is posted about, which is
   taken back, that a key is taken back once rather than on every report
   after, that being away from the app is not being shown the banner, and
-  that closing a tab takes its banner with it. One hole left in the notifier:
-  a withdrawal between the moment a waiting request is taken out of
-  `pendingAdds` and the `add` that follows it lands a banner nothing will
-  retract. Microseconds wide, and only on the path where the permission
-  dialog has not been answered yet.
+  that closing a tab takes its banner with it. A withdrawal takes back the
+  pending request as well as the delivered one, `add` delivering a moment
+  after it returns. One hole left in the notifier: a withdrawal between the
+  moment a waiting request is taken out of `pendingAdds` and the `add` that
+  follows it lands a banner nothing will retract. Microseconds wide, and only
+  on the path where the permission dialog has not been answered yet.
 - `multishell state` at a prompt in one of the app's own tabs is meant to
   name the shell, the helper's walk stopping at `MULTISHELL_APP_PID`. Checked
   against a real shell chain under the test process, not under the engine:

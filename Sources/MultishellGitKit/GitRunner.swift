@@ -22,10 +22,8 @@ public struct GitRunner: Sendable {
     "status.showUntrackedFiles": "normal",
   ]
 
-  /// `configuration` overrides git's own and beats `isolation`. Through the
-  /// environment, not `-c`, which a failure would report in its arguments.
-  /// `path` is the login shell's PATH, which git's own children need: a
-  /// filter, credential helper or diff driver is looked up on it.
+  /// `configuration` beats `isolation` and git's own. Through the environment,
+  /// not `-c`, which a failure would report in its arguments; see architecture.md.
   public init(
     executable: URL? = ExecutableLookup.find("git"), runner: ProcessRunner = ProcessRunner(),
     path: String? = nil, configuration: [String: String] = [:]
@@ -44,16 +42,16 @@ public struct GitRunner: Sendable {
     self.configEnvironment = overrides
   }
 
-  /// `environment` and `timeout` are for the one call that talks to a
-  /// network; see `WorktreeService.fetch`.
+  /// `environment` and `timeout` are for the one call that talks to a network,
+  /// `WorktreeService.fetch`; `stopper` for the checkout a user may end, `add`.
   public func run(
     _ arguments: [String], in directory: URL, environment: [String: String] = [:],
-    timeout: Duration? = nil
+    timeout: Duration? = nil, stopper: ProcessStopper? = nil
   ) async throws -> String {
     try await runner.run(
       executable, arguments, in: directory,
       environment: configEnvironment.merging(environment) { _, callers in callers },
-      timeout: timeout)
+      timeout: timeout, stopper: stopper)
   }
 
   public func succeeds(_ arguments: [String], in directory: URL) async -> Bool {

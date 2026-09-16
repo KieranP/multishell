@@ -35,9 +35,17 @@ extension AppModel {
     (try? await worktrees?.currentBranch(project)) ?? "HEAD"
   }
 
-  /// The sheet's Cancel while the pre-create hook runs: nothing is created.
+  /// The sheet's Cancel while the pre-create hook or git runs. A stopped
+  /// add leaves what git had made; the next refresh lists it or not.
   public func cancelWorktreeCreation() {
     creationStopper?.stop()
+  }
+
+  /// A step reported by the create `stopper` belongs to, and dropped once
+  /// that create has ended: a late one would silence the shared-hooks question.
+  func noteCreationStep(_ step: WorktreeCreationStep, of stopper: ProcessStopper) {
+    guard creationStopper === stopper else { return }
+    worktreeCreationStep = step
   }
 
   /// Returns once the worktree exists and is selected, or the create failed.
@@ -77,11 +85,14 @@ extension AppModel {
         shellPath: shell,
         timeout: workspace.hookTimeout,
         stopper: stopper,
-        onStep: { [weak self] step in Task { @MainActor in self?.worktreeCreationStep = step } }
+        onStep: { [weak self] step in
+          Task { @MainActor in self?.noteCreationStep(step, of: stopper) }
+        }
       )
     } catch {
-      // The user's Cancel: nothing to report, nothing was created.
-      if (error as? HookFailure)?.stop != .stopped { report(error) }
+      // The user's Cancel, of the hook or of git itself: nothing to report.
+      let stop = (error as? HookFailure)?.stop ?? (error as? ProcessFailure)?.stop
+      if stop != .stopped { report(error) }
       return
     }
     await refresh(project)

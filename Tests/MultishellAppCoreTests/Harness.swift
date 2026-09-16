@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import MultishellProcess
 import TestScratch
 import Testing
 
@@ -151,6 +152,10 @@ final class TrashRecord: @unchecked Sendable {
   private var _trashed: [URL] = []
   private var _onMainThread: [Bool] = []
 
+  deinit {
+    if let _destination { Scratch.remove(_destination) }
+  }
+
   var destination: URL? {
     get { lock.withLock { _destination } }
     set { lock.withLock { _destination = newValue } }
@@ -166,7 +171,7 @@ final class TrashRecord: @unchecked Sendable {
 }
 
 @MainActor
-struct Harness {
+final class Harness {
   let model: AppModel<FakeSurface>
   let store: WorkspaceStore
   let engine = FakeEngine()
@@ -177,9 +182,11 @@ struct Harness {
   let project: Project
   let main: Worktree
   let feature: Worktree
+  let root: URL
 
   init(savedSelection: Bool = false, stateFile: URL? = nil) {
     let tmp = Scratch.path("appmodel")
+    root = tmp
     try? FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
     store = WorkspaceStore(
       snapshot: WorkspaceSnapshot(
@@ -197,7 +204,23 @@ struct Harness {
       store: store, host: engine, worktrees: nil, watcher: watcher, platform: platform,
       stateSource: source, notifier: notifier)
     model.statusPace = .unpaced
+    let path = tmp.appendingPathComponent("bin").path
+    model.captureLoginEnvironment = {
+      LoginShellEnvironment(
+        variables: ["PATH": path, "HOME": tmp.path],
+        source: .loginShell(URL(fileURLWithPath: "/bin/zsh")))
+    }
   }
+
+  /// A test's own agent on a PATH nothing else has, so detection reads the
+  /// scratch directory and not the machine.
+  func installFakeAgent(_ name: String) throws {
+    let bin = root.appendingPathComponent("bin", isDirectory: true)
+    try FileManager.default.createDirectory(at: bin, withIntermediateDirectories: true)
+    try Scratch.script("exit 0", at: bin.appendingPathComponent(name))
+  }
+
+  deinit { Scratch.remove(root) }
 
   /// Lets the model's own tasks finish. They are `@MainActor`, so yielding
   /// hands them the actor this test holds; a handful of turns covers one

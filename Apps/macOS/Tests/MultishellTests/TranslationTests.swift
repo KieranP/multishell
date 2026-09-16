@@ -168,8 +168,6 @@ struct TranslationTests {
     }
   }
 
-  // MARK: - Reading the source and the catalogue
-
   private struct CallSite {
     let key: String
     let arguments: Int

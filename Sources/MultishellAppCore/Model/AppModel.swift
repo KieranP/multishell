@@ -99,6 +99,11 @@ public final class AppModel<Surface> {
   /// How often a Working state's pid is checked. Settable so a test does
   /// not wait the full interval.
   @ObservationIgnored public var pidPollInterval: Duration = .seconds(2)
+  /// Runs the user's login shell for its environment. Settable so a test
+  /// hands in a PATH of its own rather than reading the developer's machine.
+  @ObservationIgnored var captureLoginEnvironment: @Sendable () async -> LoginShellEnvironment = {
+    await LoginShellEnvironment.capture()
+  }
 
   /// The environment of the user's interactive login shell, once captured.
   /// `nil` until the shell has answered and its PATH has been scanned.
@@ -294,11 +299,8 @@ public final class AppModel<Surface> {
     await refreshMergeStates()
   }
 
-  /// What a watcher tick and a return to the foreground run. Most ticks mean
-  /// nothing, so the worktree records are compared before git is spawned.
-  /// `changed` narrows a tick to the projects whose directories fired; empty
-  /// is every project. Re-armed only after a refresh: a tick that compared
-  /// equal changed no directory worth watching.
+  /// A watcher tick or a return to the front. The records are compared before
+  /// git is spawned; `changed` narrows it to the projects that fired, empty is all.
   public func refreshWorktreesIfRecordsChanged(under changed: [URL] = []) async {
     var refreshed = false
     for project in workspace.projects {

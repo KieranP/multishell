@@ -10,7 +10,9 @@ struct RootView: View {
 
   /// Remembered per machine, not in the workspace: it is about this screen.
   @AppStorage("sidebarWidth") private var sidebarWidth = 248.0
-  @State private var dragStartWidth: Double?
+  /// Gesture state, not `@State`: a drag the system cancels never reaches
+  /// `onEnded`, and this resets either way; see `SplitHandle`.
+  @GestureState private var dragStartWidth: Double?
 
   private static let sidebarRange = 180.0...440.0
 
@@ -44,13 +46,14 @@ struct RootView: View {
           .cursorPush(.resizeLeftRight)
           .gesture(
             DragGesture(minimumDistance: 1, coordinateSpace: .global)
+              .updating($dragStartWidth) { _, start, _ in
+                if start == nil { start = sidebarWidth }
+              }
               .onChanged { value in
                 let start = dragStartWidth ?? sidebarWidth
-                dragStartWidth = start
                 sidebarWidth = (start + value.translation.width)
                   .clamped(to: Self.sidebarRange)
               }
-              .onEnded { _ in dragStartWidth = nil }
           )
       }
   }

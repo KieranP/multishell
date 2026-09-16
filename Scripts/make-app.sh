@@ -59,7 +59,8 @@ if ! (cd "$package" && xcodebuild -scheme Multishell -configuration "$configurat
     cat "$xcodebuild_log" >&2
     exit 1
 fi
-grep -E ': (warning|error): ' "$xcodebuild_log" >&2 || true
+# xcodebuild repeats a warning per compile step and again in its summary.
+grep -E ': (warning|error): ' "$xcodebuild_log" | sort -u >&2 || true
 # The helper is a product of the root package, which the app depends on but
 # cannot list as a dependency (an executable product is not linkable).
 swift build --package-path "$root" -c "$config" --product multishell
@@ -69,21 +70,23 @@ mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$app/Contents/Helpers"
 cp "$build/Multishell" "$app/Contents/MacOS/Multishell"
 cp "$root/.build/$config/multishell" "$app/Contents/Helpers/multishell"
 
-# A swift build binary carries this path and an installed app then loses its
-# terminfo at the next build, which is what the xcodebuild above avoids.
-if strings "$app/Contents/MacOS/Multishell" | grep -q '\.build/.*\.bundle$'; then
-    echo "error: the binary looks for its resource bundles under $package/.build," >&2
-    echo "       so the installed app would stop working at the next build there." >&2
-    echo "       It must come from xcodebuild, not swift build; see docs/develop/build.md." >&2
-    exit 1
-fi
-if otool -l "$app/Contents/MacOS/Multishell" | grep -q __llvm_prf; then
+# A swift build binary carries this path; see docs/develop/build.md. grep -c,
+# not -q: under pipefail an early quit kills strings and the match reads as a miss.
+for binary in "$app/Contents/MacOS/Multishell" "$app/Contents/Helpers/multishell"; do
+    if strings "$binary" | grep -c '\.build/.*\.bundle$' >/dev/null; then
+        echo "error: $binary looks for its resource bundles under a .build directory," >&2
+        echo "       so the installed app would stop working at the next build there." >&2
+        echo "       See docs/develop/build.md." >&2
+        exit 1
+    fi
+done
+if otool -l "$app/Contents/MacOS/Multishell" | grep -c __llvm_prf >/dev/null; then
     echo "error: the binary is instrumented for code coverage, which slows it and" >&2
     echo "       writes profile files at exit; xcodebuild ignored CLANG_COVERAGE_MAPPING=NO." >&2
     exit 1
 fi
 # The destination also matches Mac Catalyst, and xcodebuild takes the first.
-if ! otool -l "$app/Contents/MacOS/Multishell" | grep -A2 LC_BUILD_VERSION | grep -q 'platform 1$'; then
+if ! otool -l "$app/Contents/MacOS/Multishell" | grep -A2 LC_BUILD_VERSION | grep -c 'platform 1$' >/dev/null; then
     echo "error: the binary was not built for macOS itself; xcodebuild took another" >&2
     echo "       variant of the destination. See docs/develop/build.md." >&2
     exit 1

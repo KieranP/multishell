@@ -26,6 +26,7 @@ struct ProjectRemovalTraceTests {
 
   @Test func removingAProjectLeavesNoRuntimeTraceOfIt() async throws {
     let h = try await GitHarness()
+    defer { h.tearDown() }
     let project = h.project
 
     // Give the repository a `.multishell.json` and a second worktree, so the
