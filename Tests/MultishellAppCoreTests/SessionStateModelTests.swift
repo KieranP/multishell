@@ -429,7 +429,7 @@ struct SessionStateModelTests {
     let model = AppModel(
       store: store, host: engine, worktrees: nil,
       watcher: FakeWatcher(), stateSource: source)
-    model.startStateSource()
+    _ = model.startStateSource()
     model.select(main)
     let tab = model.workspace.activeTab(in: main.id)!
     model.newTab()

@@ -18,8 +18,12 @@ struct WeightedSplit<Content: View>: View {
   private var minimumPane: CGFloat { SplitMetrics.minimumPane }
 
   @State private var dragStartWeights: [Double]?
+  /// The weights as the drag has them, handed to the model once at its end:
+  /// each frame written through re-rendered every reader and re-armed autosave.
+  @State private var liveWeights: [Double]?
 
   var body: some View {
+    let weights = liveWeights ?? weights
     GeometryReader { geometry in
       let length = axis == .horizontal ? geometry.size.width : geometry.size.height
       let available = max(length - CGFloat(weights.count - 1) * dividerThickness, 0)
@@ -30,6 +34,7 @@ struct WeightedSplit<Content: View>: View {
 
       layout(sizes: sizes, available: available, total: total)
     }
+    .onChange(of: self.weights) { liveWeights = nil }
   }
 
   @ViewBuilder
@@ -41,7 +46,9 @@ struct WeightedSplit<Content: View>: View {
       ) { index, translation in
         resize(dividerAfter: index, by: translation, available: available)
       } onDragEnded: {
+        if let live = liveWeights, live != weights { onWeightsChange(live) }
         dragStartWeights = nil
+        liveWeights = nil
       }
     ) {
       content()
@@ -57,7 +64,7 @@ struct WeightedSplit<Content: View>: View {
     let updated = SplitMath.transferring(
       Double(translation), acrossDividerAfter: index, in: start,
       available: Double(available), minimumPane: Double(minimumPane))
-    if updated != start { onWeightsChange(updated) }
+    if updated != (liveWeights ?? start) { liveWeights = updated }
   }
 }
 
@@ -114,6 +121,25 @@ private struct SplitRoot: _VariadicView_MultiViewRoot {
   }
 
   private func handle(after index: Int) -> some View {
+    SplitHandle(
+      axis: axis, thickness: thickness, divider: divider, background: background,
+      onDrag: { onDrag(index, $0) }, onDragEnded: onDragEnded)
+  }
+}
+
+/// One divider. The end of a drag is read off the gesture state resetting,
+/// which a cancelled gesture does too where `onEnded` would stay silent.
+private struct SplitHandle: View {
+  let axis: SplitAxis
+  let thickness: CGFloat
+  let divider: Color
+  let background: Color
+  let onDrag: (CGFloat) -> Void
+  let onDragEnded: () -> Void
+
+  @GestureState private var isDragging = false
+
+  var body: some View {
     background
       .frame(
         width: axis == .horizontal ? thickness : nil, height: axis == .vertical ? thickness : nil
@@ -128,10 +154,13 @@ private struct SplitRoot: _VariadicView_MultiViewRoot {
       .cursorPush(axis == .horizontal ? .resizeLeftRight : .resizeUpDown)
       .gesture(
         DragGesture(minimumDistance: 1, coordinateSpace: .global)
+          .updating($isDragging) { _, dragging, _ in dragging = true }
           .onChanged { value in
-            onDrag(index, axis == .horizontal ? value.translation.width : value.translation.height)
+            onDrag(axis == .horizontal ? value.translation.width : value.translation.height)
           }
-          .onEnded { _ in onDragEnded() }
       )
+      .onChange(of: isDragging) { _, dragging in
+        if !dragging { onDragEnded() }
+      }
   }
 }

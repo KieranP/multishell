@@ -1,8 +1,6 @@
 import Foundation
 import MultishellCore
 
-// MARK: - Tab groups
-
 /// A worktree's terminal area is one or more columns of tabs. All layout, so
 /// none of it asks whether a shell could start.
 extension AppModel {
@@ -22,19 +20,14 @@ extension AppModel {
   public func focusNextGroup() { focusGroup(.after) }
   public func focusPreviousGroup() { focusGroup(.before) }
 
-  /// Wraps at either end, the way `selectTab` walks a strip, and takes its
-  /// backwards step forwards for the same reason `Workspace.neighbour` does.
+  /// Wraps at either end, the way `selectTab` walks a strip.
   private func focusGroup(_ direction: TerminalTab.Placement) {
     guard
       let worktree = worktreeInView?.id,
-      let current = workspace.focusedGroup(in: worktree)
+      let current = workspace.focusedGroup(in: worktree),
+      let next = workspace.groups(in: worktree).neighbour(of: current.id, direction)
     else { return }
-    let columns = workspace.groups(in: worktree)
-    guard columns.count > 1, let index = columns.firstIndex(where: { $0.id == current.id }) else {
-      return
-    }
-    let step = direction == .after ? 1 : columns.count - 1
-    focusGroup(columns[(index + step) % columns.count].id)
+    focusGroup(next.id)
   }
 
   /// Move Tab to New Group: the tab in front of the user gets a column of

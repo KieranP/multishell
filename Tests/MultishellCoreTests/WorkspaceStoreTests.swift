@@ -1,7 +1,26 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellCore
+
+@Suite @MainActor
+struct OrderedSaveTests {
+  @Test func aSavePreparedEarlierNeverLandsOverOnePreparedLater() throws {
+    let file = Scratch.path("ordered-save").appendingPathComponent("state.json")
+    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+    let store = WorkspaceStore(snapshot: WorkspaceSnapshot(fileURL: file))
+    store.addProject(at: URL(fileURLWithPath: "/repos/a"))
+    let first = try #require(store.prepareSave())
+    store.addProject(at: URL(fileURLWithPath: "/repos/b"))
+    let second = try #require(store.prepareSave())
+
+    try second.run()
+    try first.run()
+
+    #expect(try WorkspaceSnapshot(fileURL: file).load().projects.count == 2)
+  }
+}
 
 @MainActor
 private func demoStore() -> (store: WorkspaceStore, project: Project, worktree: Worktree) {

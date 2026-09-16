@@ -11,26 +11,47 @@ public struct SessionStates: Equatable, Sendable {
     case worktree(Worktree.ID)
   }
 
-  public private(set) var states: [Key: SessionState] = [:]
-  /// The process behind a Working or Waiting state, when the report said.
-  public private(set) var pids: [Key: Int32] = [:]
-  /// When each key's state last changed, so the board can say how long a pane
-  /// has been in its column. Handed in, never read from a clock.
-  public private(set) var since: [Key: Date] = [:]
-  /// What the last report about each key said beyond its state.
-  public private(set) var notes: [Key: SessionNote] = [:]
-  /// Background workers an agent still has out, by key. Only an agent that
-  /// reports them has an entry; see docs/design/agents.md.
-  private var background: [Key: Int] = [:]
-  /// Keys whose agent said it had finished while workers were still out. The
-  /// Done is owed, and the last worker to end pays it.
-  private var owedDone: Set<Key> = []
+  /// Everything known about one key, so a prune is one dictionary operation.
+  /// `since` and `note` outlive a state that went nil: `stampChanges` owns them.
+  struct Entry: Equatable, Sendable {
+    var state: SessionState?
+    /// The process behind a Working or Waiting state, when the report said.
+    var pid: Int32?
+    /// When the state last changed. Handed in, never read from a clock.
+    var since: Date?
+    /// What the last report said beyond its state.
+    var note: SessionNote?
+    /// Background workers the agent still has out; see docs/design/agents.md.
+    var background = 0
+    /// The agent said it had finished while workers were still out, so the
+    /// Done is owed, and the last worker to end pays it.
+    var owesDone = false
+
+    var isEmpty: Bool {
+      state == nil && pid == nil && since == nil && note == nil && background == 0 && !owesDone
+    }
+  }
+
+  private var entries: [Key: Entry] = [:]
 
   public init() {}
 
-  public subscript(key: Key) -> SessionState? { states[key] }
+  public subscript(key: Key) -> SessionState? { entries[key]?.state }
 
-  // MARK: - Sources
+  public func since(_ key: Key) -> Date? { entries[key]?.since }
+  public func note(_ key: Key) -> SessionNote? { entries[key]?.note }
+
+  public var states: [Key: SessionState] { entries.compactMapValues(\.state) }
+  public var pids: [Key: Int32] { entries.compactMapValues(\.pid) }
+  public var since: [Key: Date] { entries.compactMapValues(\.since) }
+  public var notes: [Key: SessionNote] { entries.compactMapValues(\.note) }
+
+  /// An entry with nothing left in it goes, so `isEmpty` and `==` read true.
+  private mutating func update(_ key: Key, _ change: (inout Entry) -> Void) {
+    var entry = entries[key] ?? Entry()
+    change(&entry)
+    entries[key] = entry.isEmpty ? nil : entry
+  }
 
   /// A report over the channel; `isSeen` means the user is looking at it.
   /// Returns what it meant, which `settling` may move, and `nil` where it
@@ -45,16 +66,20 @@ public struct SessionStates: Equatable, Sendable {
     case .idle:
       clear(key)
     case .done, .error:
-      states[key] = isSeen && state.clearsWhenSeen ? nil : state
-      pids[key] = nil
+      update(key) {
+        $0.state = isSeen && state.clearsWhenSeen ? nil : state
+        $0.pid = nil
+      }
     case .running, .attention:
-      states[key] = state
-      if let pid { pids[key] = pid }
+      update(key) {
+        $0.state = state
+        if let pid { $0.pid = pid }
+      }
     }
     // Only where a state survived the report: a Done about a tab the user is
     // looking at leaves nothing to say something about.
-    if states[key] != nil {
-      notes[key] = SessionNote(state: state, message: message, duration: duration)
+    if entries[key]?.state != nil {
+      update(key) { $0.note = SessionNote(state: state, message: message, duration: duration) }
     }
     return state
   }
@@ -65,25 +90,34 @@ public struct SessionStates: Equatable, Sendable {
     _ state: SessionState, subagents: Int, for key: Key
   ) -> SessionState? {
     guard subagents == 0 else {
-      let count = max(0, (background[key] ?? 0) + subagents)
-      background[key] = count == 0 ? nil : count
+      let count = max(0, (entries[key]?.background ?? 0) + subagents)
       // The last one out pays the Done its agent reported while they ran.
-      if count == 0, owedDone.remove(key) != nil { return .done }
+      var paysDone = false
+      update(key) {
+        $0.background = count
+        if count == 0, $0.owesDone {
+          $0.owesDone = false
+          paysDone = true
+        }
+      }
+      if paysDone { return .done }
       // Counting events carry `.running` for want of anything to say, so a
       // tick is not news: it carries no message, and what is there stands.
-      if state == .running, let current = states[key], current != .running { return nil }
+      if state == .running, let current = entries[key]?.state, current != .running { return nil }
       return state
     }
     switch state {
-    case .done where background[key] != nil:
+    case .done where (entries[key]?.background ?? 0) > 0:
       // The main loop stopping is not the turn finishing: a banner here fires
       // at the wrong moment, and the next worker's report undoes the dot.
-      owedDone.insert(key)
+      update(key) { $0.owesDone = true }
       return .running
     case .idle, .error:
       // A session ending, or failing, settles the whole turn.
-      background[key] = nil
-      owedDone.remove(key)
+      update(key) {
+        $0.background = 0
+        $0.owesDone = false
+      }
       return state
     default:
       return state
@@ -94,8 +128,8 @@ public struct SessionStates: Equatable, Sendable {
   /// never downgrades a state the occupant reported.
   public mutating func noteActivity(in id: TerminalSession.ID, isSeen: Bool) {
     let key = Key.session(id)
-    guard states[key] == nil, !isSeen else { return }
-    states[key] = .done
+    guard entries[key]?.state == nil, !isSeen else { return }
+    update(key) { $0.state = .done }
   }
 
   /// The shell's foreground command returned: the one engine signal that
@@ -105,34 +139,38 @@ public struct SessionStates: Equatable, Sendable {
   ) {
     let key = Key.session(id)
     let finished = SessionState.finished(exitCode: exitCode)
-    switch states[key] {
+    switch entries[key]?.state {
     case .running, .attention, nil:
-      states[key] = isSeen && finished.clearsWhenSeen ? nil : finished
-      pids[key] = nil
+      update(key) {
+        $0.state = isSeen && finished.clearsWhenSeen ? nil : finished
+        $0.pid = nil
+      }
     case .done:
-      if finished == .error { states[key] = .error }
+      if finished == .error { update(key) { $0.state = .error } }
     case .error, .idle:
       break
     }
   }
-
-  // MARK: - Clearing
 
   /// The shown tab and the selected worktree have been seen. Done goes;
   /// the rest stay until something other than a look deals with them.
   public mutating func markSeen(sessions: [TerminalSession.ID], worktree: Worktree.ID?) {
     var keys = sessions.map(Key.session)
     if let worktree { keys.append(.worktree(worktree)) }
-    for key in keys where states[key]?.clearsWhenSeen == true {
-      states[key] = nil
+    for key in keys where entries[key]?.state?.clearsWhenSeen == true {
+      update(key) { $0.state = nil }
     }
   }
 
+  /// The state and what it claimed go; the stamp and the note are left for
+  /// `stampChanges`, which reads the transition.
   public mutating func clear(_ key: Key) {
-    states[key] = nil
-    pids[key] = nil
-    background[key] = nil
-    owedDone.remove(key)
+    update(key) {
+      $0.state = nil
+      $0.pid = nil
+      $0.background = 0
+      $0.owesDone = false
+    }
   }
 
   /// The user's own clear, for a Working dot whose agent is long gone.
@@ -144,65 +182,59 @@ public struct SessionStates: Equatable, Sendable {
   /// Keeps the keys a subset of what exists: live shells and known
   /// worktrees. Done for a dead shell is nothing to look at.
   public mutating func retain(sessions: Set<TerminalSession.ID>, worktrees: Set<Worktree.ID>) {
-    let keep: (Key) -> Bool = { key in
-      switch key {
+    entries = entries.filter { entry in
+      switch entry.key {
       case .session(let id): sessions.contains(id)
       case .worktree(let id): worktrees.contains(id)
       }
     }
-    states = states.filter { keep($0.key) }
-    pids = pids.filter { keep($0.key) }
-    since = since.filter { keep($0.key) }
-    notes = notes.filter { keep($0.key) }
-    background = background.filter { keep($0.key) }
-    owedDone = owedDone.filter(keep)
   }
 
   /// The process a state was about has gone. Working and Waiting were claims
   /// about it and go; Done and Failed are about the user and stay.
   public mutating func processGone(_ pid: Int32) {
-    for (key, tracked) in pids where tracked == pid {
-      if states[key]?.isFinished != true { states[key] = nil }
-      pids[key] = nil
-      // Its workers went with it, so nothing is owed and nothing is out.
-      background[key] = nil
-      owedDone.remove(key)
+    for (key, entry) in entries where entry.pid == pid {
+      update(key) {
+        if $0.state?.isFinished != true { $0.state = nil }
+        $0.pid = nil
+        // Its workers went with it, so nothing is owed and nothing is out.
+        $0.background = 0
+        $0.owesDone = false
+      }
     }
   }
-
-  // MARK: - Time in state
 
   /// Records when each key's state changed, once per mutation. A key that did
   /// not move keeps its time, so repeated Working reports do not reset it.
   public mutating func stampChanges(against previous: SessionStates, at now: Date) {
-    for key in Set(states.keys).union(previous.states.keys)
-    where states[key] != previous.states[key] {
-      since[key] = now
-      if states[key] == nil { notes[key] = nil }
+    for key in Set(entries.keys).union(previous.entries.keys)
+    where entries[key]?.state != previous.entries[key]?.state {
+      update(key) {
+        $0.since = now
+        if $0.state == nil { $0.note = nil }
+      }
     }
   }
 
-  // MARK: - Queries
-
-  public var trackedPIDs: Set<Int32> { Set(pids.values) }
+  public var trackedPIDs: Set<Int32> { Set(entries.values.compactMap(\.pid)) }
 
   public func state(ofSessions ids: [TerminalSession.ID]) -> SessionState? {
-    SessionState.mostUrgent(ids.compactMap { states[.session($0)] })
+    SessionState.mostUrgent(ids.compactMap { self[.session($0)] })
   }
 
   public func state(ofWorktree id: Worktree.ID, sessions: [TerminalSession.ID]) -> SessionState? {
-    var candidates = sessions.compactMap { states[.session($0)] }
-    if let own = states[.worktree(id)] { candidates.append(own) }
+    var candidates = sessions.compactMap { self[.session($0)] }
+    if let own = self[.worktree(id)] { candidates.append(own) }
     return SessionState.mostUrgent(candidates)
   }
 
   /// Shells whose agent reported Working, for the quit guard.
   public var workingSessionCount: Int {
-    states.filter { key, state in
-      if case .session = key { return state == .running }
+    entries.filter { key, entry in
+      if case .session = key { return entry.state == .running }
       return false
     }.count
   }
 
-  public var isEmpty: Bool { states.isEmpty }
+  public var isEmpty: Bool { !entries.values.contains { $0.state != nil } }
 }

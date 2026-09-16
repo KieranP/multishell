@@ -3,7 +3,6 @@ import Foundation
 /// Writing an agent's hooks into its file and taking them out again; see
 /// docs/design/agents.md.
 extension AgentHookIntegration {
-  // MARK: - Merging into a file of the user's
 
   public func isInstalled(in settings: [String: Any]) -> Bool {
     // An agent with no events has no hooks in any file; without this every
@@ -114,8 +113,6 @@ extension AgentHookIntegration {
     trimmed["hooks"] = kept
     return trimmed
   }
-
-  // MARK: - Files
 
   public func isInstalled(in file: URL? = nil) -> Bool {
     let file = file ?? self.file

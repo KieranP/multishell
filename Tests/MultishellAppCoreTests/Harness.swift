@@ -8,7 +8,7 @@ import Testing
 /// A watcher that records what it was asked to watch and can be poked.
 @MainActor
 final class FakeWatcher: DirectoryWatcher {
-  var onChange: (@MainActor () -> Void)?
+  var onChange: (@MainActor ([URL]) -> Void)?
   var watched: [URL] = []
   var stopped = false
   func watch(_ directories: [URL]) { watched = directories }
@@ -52,7 +52,12 @@ final class FakeEngine: TerminalSurfaceHost {
 final class FakeStateSource: SessionStateSource {
   var onReport: (@MainActor (SessionStateReport) -> Void)?
   var started = false
-  func start() throws { started = true }
+  /// Thrown by `start`, standing in for a socket another copy holds.
+  var startError: (any Error)?
+  func start() throws {
+    if let startError { throw startError }
+    started = true
+  }
   func stop() { started = false }
   func send(_ report: SessionStateReport) { onReport?(report) }
 }
@@ -100,6 +105,7 @@ final class FakePlatform: Platform {
   var opened: [(directory: URL, application: URL)] = []
   var bundledHelper: URL?
   var installedCommandLineTool = false
+  var handedOverToRunningInstance = false
   var logged: [String] = []
   /// Where `moveToTrash` puts things, standing in for the Trash; `nil`
   /// makes it refuse.
@@ -129,6 +135,7 @@ final class FakePlatform: Platform {
     opened.append((directory, application))
   }
   func installCommandLineTool() throws { installedCommandLineTool = true }
+  func handOverToRunningInstance() { handedOverToRunningInstance = true }
   /// Every value the badge has been set to, in order, so a test can see it
   /// clear as well as count.
   var badges: [Int?] = []
@@ -189,6 +196,7 @@ struct Harness {
     model = AppModel(
       store: store, host: engine, worktrees: nil, watcher: watcher, platform: platform,
       stateSource: source, notifier: notifier)
+    model.statusPace = .unpaced
   }
 
   /// Lets the model's own tasks finish. They are `@MainActor`, so yielding
@@ -196,5 +204,14 @@ struct Harness {
   /// that awaits a port on the way.
   func settled(turns: Int = 10) async {
     for _ in 0..<turns { await Task.yield() }
+  }
+
+  /// The alert a save that ran off the main actor raised, waiting up to a
+  /// second for the write to come back; `nil` where none did.
+  func presentedErrorArrives() async -> PresentedError? {
+    for _ in 0..<100 where model.presentedError == nil {
+      try? await Task.sleep(for: .milliseconds(10))
+    }
+    return model.presentedError
   }
 }

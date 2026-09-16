@@ -5,7 +5,8 @@
 Root package, four Foundation-only libraries:
 
 - MultishellCore: model, store, theme, ports, and `t(_:_:)`, which reads
-  the libraries' string catalogue
+  the libraries' string catalogue; `Support/` holds the small extensions
+  every other library reaches for, `clamped(to:)` and the path helpers
 - MultishellProcess: processes, sockets
 - MultishellGitKit: worktree operations, parsers, hooks
 - MultishellAppCore: AppModel, detections, dialogs, error mapping, every
@@ -34,8 +35,12 @@ package and reaches neither, so its harness keeps its own (`ModelHarness`).
 `swift-format` from the toolchain with the root `.swift-format`: 2-space
 indent, 100 columns. One type per file, named for the type;
 `Type+Concern.swift` for an extension, `*Failures.swift` for a group of error
-types. Tests are swift-testing, named as sentences about behaviour. A dialog =
-a `View` extension in a file named for it, attached by the scene that asked.
+types. Two exceptions: an error type thrown from one file alone may sit at the
+bottom of that file, and several small types of one shape that are only ever
+read together may share a file named for what they are (`TabDrops.swift`,
+`WorktreeSteps.swift`). No `MARK` banners: a file is the grouping. Tests are
+swift-testing, named as sentences about behaviour. A dialog = a `View`
+extension in a file named for it, attached by the scene that asked.
 
 ## Layering rules
 

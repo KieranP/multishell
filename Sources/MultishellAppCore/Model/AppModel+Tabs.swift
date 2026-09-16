@@ -1,8 +1,6 @@
 import Foundation
 import MultishellCore
 
-// MARK: - Tabs
-
 extension AppModel {
   /// The project a worktree-scoped command should act on: the selected
   /// worktree's project, or the only project when nothing is selected yet.
@@ -22,9 +20,13 @@ extension AppModel {
   /// The worktree in view when a shell may start in it. `nil` otherwise,
   /// the missing-directory alert already raised.
   func worktreeReadyForShell() -> Worktree? {
-    guard let worktree = worktreeInView, !isBusy(worktree.id), requireDirectory(of: worktree)
-    else { return nil }
-    return worktree
+    worktreeInView.flatMap { readyForShell($0) ? $0 : nil }
+  }
+
+  /// Whether a shell may start in `worktree`: no create or remove running or
+  /// failed there, and its directory present. Every way of starting one asks.
+  func readyForShell(_ worktree: Worktree) -> Bool {
+    !isBusy(worktree.id) && requireDirectory(of: worktree)
   }
 
   /// Cmd+T: the preferred agent where auto-start is on, else a plain shell.
@@ -195,8 +197,8 @@ extension AppModel {
   public func moveTab(_ id: TerminalTab.ID, to worktreeID: Worktree.ID) -> Bool {
     guard
       let source = workspace.tab(id)?.worktreeID, source != worktreeID, !isBusy(source),
-      let worktree = workspace.worktree(worktreeID), !isBusy(worktreeID),
-      requireDirectory(of: worktree), store.moveTab(id, to: worktreeID)
+      let worktree = workspace.worktree(worktreeID), readyForShell(worktree),
+      store.moveTab(id, to: worktreeID)
     else { return false }
     // Warmed here, not left to the selection: the shells are live, and a
     // cold destination is one the next reconcile would close them for.

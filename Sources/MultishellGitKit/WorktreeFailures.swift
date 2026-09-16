@@ -1,4 +1,33 @@
 import Foundation
+import MultishellCore
+
+/// The repository itself, handed to a call that removes a worktree. The
+/// only guard was a view three modules away; see docs/design/worktrees.md.
+public struct NotAWorktree: LocalizedError {
+  public let path: URL
+
+  public init(path: URL) {
+    self.path = path
+  }
+
+  public var errorDescription: String? {
+    t("worktree.not-removable", path.path)
+  }
+}
+
+/// A branch name git would refuse. Raised before the pre-create hook runs,
+/// so a name that could never become a worktree runs nothing.
+public struct InvalidBranchName: LocalizedError {
+  public let branch: String
+
+  public init(_ branch: String) {
+    self.branch = branch
+  }
+
+  public var errorDescription: String? {
+    t("branch-name.invalid", branch)
+  }
+}
 
 /// The platform could not move the worktree directory to the Trash. The
 /// worktree is still there and still registered.

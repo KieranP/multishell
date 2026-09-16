@@ -158,6 +158,12 @@ struct PresentedErrorTests {
     #expect(shape.message.contains("Show JSON"))
   }
 
+  @Test func onlyTheMissingGitAlertSaysGitIsMissing() {
+    #expect(PresentedError(GitUnavailable()).saysGitIsMissing)
+    #expect(!PresentedError(InvalidBranchName("x")).saysGitIsMissing)
+    #expect(!PresentedError(title: "git not found", message: "").saysGitIsMissing)
+  }
+
   @Test func retryIsAbsentUnlessAdded() {
     var presented = PresentedError(GitUnavailable())
     #expect(presented.retryLabel == nil && presented.retry == nil)

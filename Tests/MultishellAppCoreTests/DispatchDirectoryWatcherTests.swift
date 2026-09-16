@@ -23,7 +23,7 @@
     /// cost a whole test run on a runner where the callback won the race.
     private func changes(of watcher: DispatchDirectoryWatcher) -> Changes {
       let changes = Changes()
-      watcher.onChange = { changes.count += 1 }
+      watcher.onChange = { _ in changes.count += 1 }
       return changes
     }
 

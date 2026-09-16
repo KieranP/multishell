@@ -7,10 +7,12 @@ Newest at the bottom.
 
 Never the `.git` root once `worktrees/` exists: `git status` rewrites
 `.git/index` -> every poll would be a refresh. Status polled instead:
-frontmost only, eight at a time, coalesced 250 ms after terminal activity, each
-tick comparing records before running git. Timer git reads only, and `git
-status` carries `--no-optional-locks`, else it takes `index.lock` and fails the
-user's own commit. Cost: a change git makes elsewhere waits for a tick.
+frontmost only, eight at a time, coalesced 250 ms after terminal activity, a
+slow checkout asked less often, each watcher tick comparing the records of the
+project whose directory fired before running git. Timer git reads only, and
+`git status` carries `--no-optional-locks`, else it takes `index.lock` and
+fails the user's own commit. Cost: a change git makes elsewhere waits for a
+tick. The pacing and the narrowing are at the bottom of this file.
 
 ## A worktree's name is the user's, kept beside the worktrees
 
@@ -99,32 +101,8 @@ still finds it.
 The main worktree and a bare repository are refused by the coordinator, not
 only by the sidebar condition that hides the menu item: the call is public,
 the step that trashes the directory would take `.git` with it, and this is the
-operation with no way back.
-
-## A branch name git will reject is refused before anything runs
-
-Nothing between the sheet and `git worktree add` used to judge the name, so
-`my branch` or `feat.lock` ran the pre-create hook before git refused at the
-end of it. `GitRefName` is `check-ref-format`'s rules in Swift, the sheet
-asking on every keystroke and a process per keystroke not being worth it; a
-test holds it against real git over a table of names. Create is off for a name
-it refuses and the sheet says why, and `WorktreeCoordinator.add` throws before
-the hook for a caller that did not ask. An existing branch is held to the same
-rules: the check used to run only when a branch was being created, so an API
-caller passing an empty or malformed name ran the pre-create hook with
-`MULTISHELL_BRANCH` empty and was refused by git after. Cost: `HEAD` or a
-remote ref, which git would have checked out detached, is refused too; the
-path is for a branch that exists.
-
-## A bare repository is a project
-
-`--is-inside-work-tree` prints `false` for one, `--git-dir` succeeds anywhere
-inside. A repo hidden as `proj/.bare` takes the name of the folder holding it;
-cost: the default `../{project}-worktrees` then lands inside `proj/`.
-
-A project is the main worktree whatever was picked, a linked worktree listing
-the same worktrees -> two rows would select together and share tabs. Cost: the
-sidebar shows the repo's name, not the folder picked.
+operation with no way back. One predicate, `Worktree.isRemovable`, is what the
+menu, `requestRemoval` and the coordinator all read, so the two cannot part.
 
 ## A missing directory is refused, not worked around
 
@@ -141,7 +119,9 @@ that fails had nowhere to say so and left the entry running, which reads as
 busy: no shell opens there, removal is refused, and Cancel finds a stopper
 already cleared, until relaunch. So a failure with the worktree gone ends its
 own entry and raises an alert instead, there being no pane left to put the
-message on. Its own: a removal that has since taken the entry keeps it.
+message on. Its own: a removal that has since taken the entry keeps it. The
+store's discard now drops the entry as well, through `forgetWorktrees` below;
+the guard stays for a result landing after that.
 
 ## The worktree list is read NUL-terminated
 
@@ -194,3 +174,64 @@ symlinked volume where the two differ the row is badged mid-checkout as before.
 Git itself marks the window, `locked initializing` in the porcelain list and
 no `index` beside the `locked` file; reading that would cover a terminal-run
 add too, and is the fix named in known-gaps.md.
+
+## A branch name git will reject is refused before anything runs
+
+Nothing between the sheet and `git worktree add` used to judge the name, so
+`my branch` or `feat.lock` ran the pre-create hook before git refused at the
+end of it. `GitRefName` is `check-ref-format`'s rules in Swift, less the ones
+about slashes that apply only to a full refname, the sheet asking on every
+keystroke and a process per keystroke not being worth it; a
+test holds it against real git over a table of names. Create is off for a name
+it refuses and the sheet says why, and `WorktreeCoordinator.add` throws before
+the hook for a caller that did not ask. An existing branch is held to the same
+rules: the check used to run only when a branch was being created, so an API
+caller passing an empty or malformed name ran the pre-create hook with
+`MULTISHELL_BRANCH` empty and was refused by git after. Cost: `HEAD` or a
+remote ref, which git would have checked out detached, is refused too; the
+path is for a branch that exists.
+
+## A bare repository is a project
+
+`--is-inside-work-tree` prints `false` for one, `--git-dir` succeeds anywhere
+inside. A repo hidden as `proj/.bare` takes the name of the folder holding it;
+cost: the default `../{project}-worktrees` then lands inside `proj/`.
+
+A project is the main worktree whatever was picked, a linked worktree listing
+the same worktrees -> two rows would select together and share tabs. Cost: the
+sidebar shows the repo's name, not the folder picked.
+
+## Runtime state about a worktree is dropped in one place
+
+Statuses, merge verdicts, commit dates, a running operation, a rename field
+and the removal dialog are all keyed by worktree path. The store returns what
+`replaceWorktrees` and `removeProject` discarded and `AppModel.forgetWorktrees`
+drops every one of those for it; a collection added later registers there. It
+was pruned at whichever site last bit, and the dialog was the one missed: a
+worktree removed outside the app left its dialog up, and Confirm ran a removal
+on a path git no longer listed.
+
+## A watcher tick names its directories
+
+Every tick re-read every project's records and re-armed every watch, twelve
+detached tasks and a hundred small reads for a comparison that almost always
+came out equal. The watcher now hands over the directories that fired, and the
+records check runs only for the project whose common `.git` holds one of them;
+an empty list, which a return to the foreground sends, is still every project.
+The watches are re-armed only after a project was actually refreshed: a tick
+whose records compared equal added no directory worth watching.
+
+## A slow `git status` is asked for less often
+
+On a monorepo a large checkout kept the disk busy for as long as the app was
+in front, one `git status` every five seconds. `StatusPollPace` remembers how
+long each worktree's last read took and does not ask again until ten times
+that has passed, so the disk spends at most a tenth of its time on a badge; a
+read under half a second is unaffected, ten times it being inside the interval
+anyway. The badge is shown stale for that long rather than hidden, and a
+prompt in the worktree still reads at once. Adaptive rather than a per-project
+toggle, so a small repository beside a large one loses nothing and nobody has
+to find a setting. Tests that read right after a change run `.unpaced`. The
+missing-project corner was a bug of its own: a project whose directory is
+gone had its worktrees polled too, as the two sibling polls already did not.
+

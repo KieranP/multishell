@@ -130,6 +130,11 @@ does.
   the binary carries the path and the install would break at the next build;
   fallback = upgrade to Xcode 27, whose `swift build` passes the check.
 - The tab strip's two split buttons have never been watched on a screen.
+- A split or column divider drag now holds its weights in the view and writes
+  the model once when the drag ends, the end read off the gesture state
+  resetting so a drag the system cancels commits too rather than snapping
+  back. Nobody has watched a cancelled drag; if it snaps back instead, the
+  fallback is the model's last saved weights.
   Every number behind them is held by UIMetricsTests: a column at
   `SplitMetrics.minimumPane` drops them at every font size, the threshold
   runs 187pt at 10-point to 338pt at 18, and a width of zero or NaN reads as

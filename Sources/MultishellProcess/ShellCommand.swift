@@ -21,10 +21,8 @@ public struct ShellCommand: Sendable {
       shell.executable, shell.arguments + [commandLine], in: directory, environment: environment)
   }
 
-  /// Starts a command with nothing captured and waits only to hear how it
-  /// ended. For a launcher that may not return: an editor shim holding the
-  /// file open holds this too, so it must cost no pipes, and a timeout that
-  /// ended it would be ending the editor the user just asked for.
+  /// Starts a command with no pipes and no timeout, waiting only to hear how
+  /// it ended: an editor shim may hold this open; see smaller-decisions.md.
   public func launch(
     _ commandLine: String,
     in directory: URL,

@@ -16,8 +16,6 @@ public indirect enum PaneNode: Codable, Hashable, Sendable {
   }
 }
 
-// MARK: - Decoding
-
 extension PaneNode {
   private enum RootKeys: String, CodingKey {
     case terminal
@@ -54,8 +52,6 @@ extension PaneNode {
     self = .split(axis: axis, children: children, weights: weights)
   }
 }
-
-// MARK: - Traversal
 
 extension PaneNode {
   public var sessionIDs: [TerminalSession.ID] {

@@ -114,9 +114,10 @@ the group someone would look in. Width: the sidebar draws a symbol in a
 display name, a comparison in `WorktreeOrder.precedes`, a case in
 WorktreeOrderTests. Raw values reach repositories through `.multishell.json`,
 so a new case is free but renaming one silently turns a committed order into
-the default. The sidebar's sort menu and the project override follow `allCases`;
-the override's `InfoButton` text does not. Anything not on `Worktree` is passed to `sort` as a closure, as
-`isActive` and `lastCommit` are. Nothing sorts above the trunk row.
+the default. The sidebar's sort menu and the project override follow
+`allCases`; the override's `InfoButton` text does not. Anything not on
+`Worktree` is passed to `sort` as a closure, as `isActive` and `lastCommit`
+are. Nothing sorts above the trunk row.
 
 **A shell with command-status hooks.** A script under
 `Sources/MultishellCore/Resources` with `__MULTISHELL_HELPER__` for the
@@ -131,7 +132,9 @@ SessionEnvironment if carried by a variable, as zsh's `ZDOTDIR` is). It calls
 `Apps/macOS/Package.swift` does, fix `AppModel<Surface>` to the platform's
 view type once, implement `Platform`, `TerminalSurfaceHost`,
 `DirectoryWatcher` (inotify on Linux) and `SessionNotifier`. `moveToTrash` may
-delete outright until the platform has a Trash. A notifier posting without
+delete outright until the platform has a Trash, and `handOverToRunningInstance`
+may return where the desktop cannot bring another copy forward and quit; the
+model then shows the alert and does nothing more. A notifier posting without
 anyone's permission answers `unavailable` to both authorization questions, and
 the notification settings page then neither promises a permission dialog nor
 offers to lift one; `notificationSettingsLocation` = `nil` where the desktop
@@ -160,8 +163,10 @@ line in `ProjectSettings.layered`.
 must leave WorkspaceInvariants true; the seeded random tests find it if not,
 printing the seed and step to replay.
 
-**Runtime state.** On AppModel, never the workspace. SessionStates owns who
-clears what: change it there and in SessionStatesTests, not in a view.
+**Runtime state.** On AppModel, never the workspace. Keyed by worktree, it
+also goes in `AppModel.forgetWorktrees`, or it outlives its row and the next
+worktree at that path inherits it. SessionStates owns who clears what: change
+it there and in SessionStatesTests, not in a view.
 
 **A per-build file.** On the `Paths.variant` pattern, so `make run` never
 touches the installed app's state and two worktrees never touch each other's.

@@ -6,7 +6,7 @@
   /// alone, so callers pass every level; coalesced for 400 ms.
   @MainActor
   public final class DispatchDirectoryWatcher: DirectoryWatcher {
-    public var onChange: (@MainActor () -> Void)?
+    public var onChange: (@MainActor ([URL]) -> Void)?
 
     /// The source watching a path, against the directory it was opened on: a
     /// descriptor follows its inode, never its name.
@@ -37,6 +37,7 @@
 
     private var watches: [URL: Watch] = [:]
     private var pending: Task<Void, Never>?
+    private var fired: Set<URL> = []
 
     public init() {}
 
@@ -81,19 +82,22 @@
         queue: .main
       )
       source.setEventHandler { [weak self] in
-        MainActor.assumeIsolated { self?.coalesce() }
+        MainActor.assumeIsolated { self?.coalesce(url) }
       }
       source.setCancelHandler { close(descriptor) }
       source.resume()
       return Watch(source: source, directory: directory)
     }
 
-    private func coalesce() {
+    private func coalesce(_ url: URL) {
+      fired.insert(url)
       pending?.cancel()
       pending = Task { @MainActor [weak self] in
         try? await Task.sleep(for: .milliseconds(400))
-        guard !Task.isCancelled else { return }
-        self?.onChange?()
+        guard !Task.isCancelled, let self else { return }
+        let changed = Array(fired)
+        fired.removeAll()
+        onChange?(changed)
       }
     }
   }

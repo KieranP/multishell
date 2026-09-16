@@ -34,10 +34,9 @@ public enum FileDrop {
   /// Relative inside the session's directory, absolute otherwise. Both sides
   /// standardized and neither resolved, as the session recorded its own.
   private static func path(of url: URL, relativeTo directory: URL) -> String {
-    let path = url.standardizedFileURL.path
-    let base = directory.standardizedFileURL.path
-    let root = base.hasSuffix("/") ? base : base + "/"
-    guard path.hasPrefix(root), path.count > root.count else { return path }
-    return String(path.dropFirst(root.count))
+    guard let below = url.pathComponents(under: directory), !below.isEmpty else {
+      return url.standardizedFileURL.path
+    }
+    return below.joined(separator: "/")
   }
 }

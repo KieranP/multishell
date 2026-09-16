@@ -1,8 +1,6 @@
 import Foundation
 import MultishellCore
 
-// MARK: - The repository's own settings
-
 extension AppModel {
   /// The project's settings with its repository's file filling the gaps, and
   /// what every path, hook and icon decision reads.

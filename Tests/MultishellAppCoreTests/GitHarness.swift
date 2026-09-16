@@ -35,6 +35,7 @@ struct GitHarness {
       host: self.engine,
       worktrees: WorktreeCoordinator(service: WorktreeService(git: git)),
       watcher: watcher, platform: platform)
+    model.statusPace = .unpaced
     await model.addProject(at: repository)
   }
 
@@ -65,6 +66,7 @@ struct GitHarness {
       worktrees: WorktreeCoordinator(
         service: WorktreeService(git: try GitRunner(executable: script))),
       watcher: watcher)
+    model.statusPace = .unpaced
     model.presentedError = nil
     return model
   }

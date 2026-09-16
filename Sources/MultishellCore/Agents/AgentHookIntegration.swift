@@ -68,8 +68,6 @@ public struct AgentHookIntegration: Identifiable, Sendable {
     return event
   }
 
-  // MARK: - What is written
-
   /// The hooks as the file spells them: the whole file for one of ours, the
   /// object to merge for a file of the user's.
   public func entries(helper: String = AgentHooks.helperReference) -> [String: Any] {

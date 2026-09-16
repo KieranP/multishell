@@ -133,8 +133,7 @@ public struct SharedProjectSettings: Equatable, Sendable {
   /// Writes the file, sorted and indented so a diff reads well. Returns it
   /// with the digest set, so the writer need not read the file back.
   @discardableResult public func write(to repository: URL) throws -> SharedProjectSettings {
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+    let encoder = JSONEncoder.forFile()
     let fields = try fields()
     let kept = unread.filter { fields[$0.key] == nil }
     let data = try encoder.encode(kept.merging(fields) { _, field in field })

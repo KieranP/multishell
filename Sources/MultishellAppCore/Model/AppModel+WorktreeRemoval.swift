@@ -3,8 +3,6 @@ import MultishellCore
 import MultishellGitKit
 import MultishellProcess
 
-// MARK: - Removing a worktree, its directory and its branch
-
 extension AppModel {
   public func setConfirmsWorktreeRemoval(_ enabled: Bool) {
     store.setConfirmsWorktreeRemoval(enabled)
@@ -17,7 +15,7 @@ extension AppModel {
   /// Entry point from the UI, asking first unless the settings have settled
   /// both questions. Nothing while an operation is already running there.
   public func requestRemoval(of worktree: Worktree) {
-    guard !isBusy(worktree.id) else { return }
+    guard worktree.isRemovable, !isBusy(worktree.id) else { return }
     switch PendingWorktreeRemoval.decide(
       worktree, customName: customName(of: worktree),
       confirms: workspace.confirmsWorktreeRemoval,

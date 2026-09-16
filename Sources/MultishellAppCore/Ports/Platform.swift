@@ -48,6 +48,10 @@ public protocol Platform: AnyObject, Sendable {
   /// A line for the platform's log, for what is worth a note but not an
   /// alert.
   func log(_ message: String)
+
+  /// Another copy of this build holds the socket: bring it forward and quit
+  /// this one. A platform with no such notion does nothing and returns.
+  func handOverToRunningInstance()
 }
 
 /// A desktop with nothing on it: for tests, and for a headless run.
@@ -72,4 +76,5 @@ public final class NullPlatform: Platform {
   public func setBadgeCount(_ count: Int?) {}
   public var notificationSettingsLocation: String? { nil }
   public func log(_ message: String) {}
+  public func handOverToRunningInstance() {}
 }

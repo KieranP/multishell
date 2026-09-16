@@ -38,10 +38,7 @@ public struct ShellDetection: Equatable, Sendable {
   /// skipped.
   public static func listed(in file: URL) -> [String] {
     guard let text = try? String(contentsOf: file, encoding: .utf8) else { return [] }
-    return text.split(whereSeparator: \.isNewline)
-      .map { $0.trimmingCharacters(in: .whitespaces) }
-      .filter { !$0.isEmpty && !$0.hasPrefix("#") }
-      .filter { FileManager.default.isExecutableFile(atPath: $0) }
+    return LineList.entries(in: text).filter { FileManager.default.isExecutableFile(atPath: $0) }
   }
 
   private static func sorted(_ paths: Set<String>) -> [String] {

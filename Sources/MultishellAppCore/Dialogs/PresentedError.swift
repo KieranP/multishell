@@ -12,6 +12,9 @@ public struct PresentedError: Identifiable {
   /// Offered when the failure has a stronger form of the same action.
   public var retryLabel: String?
   public var retry: (@MainActor () async -> Void)?
+  /// The launch alert about a missing git, which finding git on the login
+  /// shell's PATH takes down; nothing else is dismissed by the model.
+  public private(set) var saysGitIsMissing = false
 
   public init(title: String, message: String) {
     self.title = title
@@ -82,6 +85,7 @@ public struct PresentedError: Identifiable {
     case is GitUnavailable:
       title = t("error.git-not-found-title")
       message = t("error.git-not-found-message")
+      saysGitIsMissing = true
     case let failure as SocketFailure where failure.kind == .inUse:
       title = t("error.another-app-title")
       message = t("error.another-app-message", failure.path)

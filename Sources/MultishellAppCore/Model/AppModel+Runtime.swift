@@ -2,8 +2,6 @@ import Foundation
 import MultishellCore
 import MultishellGitKit
 
-// MARK: - Reconciliation
-
 extension AppModel {
   /// Brings the host in line with the store. Every action that changes which
   /// terminals exist ends here; only a user's own action takes the keyboard.
@@ -57,17 +55,45 @@ extension AppModel {
   }
 }
 
-// MARK: - Filesystem
-
 extension AppModel {
   /// For the polling paths' reads and the Trash. Microseconds on a local
   /// disk; on a dead mount each blocks until it times out.
   nonisolated static func offMain<T: Sendable>(_ work: @Sendable @escaping () -> T) async -> T {
     await Task.detached(priority: .utility) { work() }.value
   }
-}
 
-// MARK: - Git status
+  /// Writes only where the value differs: an observed write redraws every
+  /// view reading it, and most of these land on a timer. `true` where it wrote.
+  @discardableResult
+  func setIfChanged<T: Equatable>(
+    _ path: ReferenceWritableKeyPath<AppModel, T>, _ value: T
+  )
+    -> Bool
+  {
+    guard self[keyPath: path] != value else { return false }
+    self[keyPath: path] = value
+    return true
+  }
+
+  /// The one place per-worktree runtime state is dropped, fed with what the
+  /// store discarded. Paths are ids, so a worktree re-made there starts clean.
+  func forgetWorktrees(_ ids: [Worktree.ID]) {
+    guard !ids.isEmpty else { return }
+    let gone = Set(ids)
+    setIfChanged(\.statuses, statuses.filter { !gone.contains($0.key) })
+    setIfChanged(\.mergeStates, mergeStates.filter { !gone.contains($0.key) })
+    setIfChanged(\.lastCommits, lastCommits.filter { !gone.contains($0.key) })
+    mergeChecks = mergeChecks.filter { !gone.contains($0.key) }
+    statusReads = statusReads.filter { !gone.contains($0.key) }
+    for id in ids {
+      worktreeOperations.clear(id)
+      pendingStatusRefreshes[id]?.cancel()
+      pendingStatusRefreshes[id] = nil
+    }
+    if let renaming = renamingWorktreeID, gone.contains(renaming) { renamingWorktreeID = nil }
+    if let pending = pendingRemoval, gone.contains(pending.worktree.id) { pendingRemoval = nil }
+  }
+}
 
 extension AppModel {
   /// Working-tree edits do not touch `.git`, so poll instead, and only while
@@ -76,7 +102,7 @@ extension AppModel {
     statusPolling?.cancel()
     statusPolling = Task { @MainActor [weak self] in
       while !Task.isCancelled {
-        try? await Task.sleep(for: .seconds(5))
+        try? await Task.sleep(for: self?.statusPace.interval ?? .seconds(5))
         guard let self else { return }
         guard platform.isActive else { continue }
         await refreshStatuses()
@@ -88,17 +114,35 @@ extension AppModel {
 
   /// A worktree whose read failed this round keeps its last badge rather
   /// than blinking off for five seconds; one whose worktree is gone loses it.
+  /// A missing project's worktrees are not asked, nor a slow one before its
+  /// turn; see `StatusPollPace`.
   public func refreshStatuses() async {
     guard let worktrees else { return }
-    let fresh = await worktrees.statuses(
-      of: workspace.worktrees.filter { !isUnderConstruction($0.id) })
+    let now = ContinuousClock.now
+    let fresh = await readStatuses(
+      of: workspace.worktrees.filter { worktree in
+        !isUnderConstruction(worktree.id) && !missingProjects.contains(worktree.projectID)
+          && statusPace.isDue(
+            lastRead: statusReads[worktree.id]?.at, took: statusReads[worktree.id]?.took, at: now)
+      }, with: worktrees)
     // Read after the await, and applied to what git returned as well as to
     // what was there: a removed row keeps no badge; see worktrees.md.
     let known = Set(workspace.worktrees.map(\.id).filter { creatingWorktreeClaims[$0] == nil })
     var merged = statuses.filter { known.contains($0.key) }
     merged.merge(fresh.filter { known.contains($0.key) }) { _, new in new }
-    if merged != statuses { statuses = merged }
+    setIfChanged(\.statuses, merged)
     await refreshProjectsWhoseBranchMoved(fresh)
+  }
+
+  /// Every read's cost is remembered, so the poll can leave a slow checkout
+  /// alone for a while; a read that failed says nothing about the next.
+  private func readStatuses(
+    of worktrees: [Worktree], with coordinator: WorktreeCoordinator
+  ) async -> [Worktree.ID: WorktreeStatus] {
+    let readings = await coordinator.readStatuses(of: worktrees)
+    let finished = ContinuousClock.now
+    for (id, reading) in readings { statusReads[id] = (finished, reading.took) }
+    return readings.mapValues(\.status)
   }
 
   /// A `git checkout` in the main worktree touches `.git/HEAD`, which is not
@@ -119,17 +163,13 @@ extension AppModel {
     guard let worktrees, let worktree = workspace.worktree(worktreeID),
       !isUnderConstruction(worktreeID)
     else { return }
-    let fresh = await worktrees.statuses(of: [worktree])
+    let fresh = await readStatuses(of: [worktree], with: worktrees)
     // Gone while git ran: paths are ids, so a worktree re-made at this path
     // would otherwise wear the old checkout's badge until the next poll.
     guard workspace.worktree(worktreeID) != nil, !isUnderConstruction(worktreeID) else { return }
-    if let status = fresh[worktreeID], status != statuses[worktreeID] {
-      statuses[worktreeID] = status
-    }
+    if let status = fresh[worktreeID] { setIfChanged(\.statuses[worktreeID], status) }
   }
 }
-
-// MARK: - Activity
 
 extension AppModel {
   /// Activity in the focused tab is being watched; anywhere else it is
@@ -156,7 +196,7 @@ extension AppModel {
   }
 
   func noteTitle(_ title: String, of id: TerminalSession.ID) {
-    if sessionTitles[id] != title { sessionTitles[id] = title }
+    setIfChanged(\.sessionTitles[id], title)
   }
 
   /// What the tab strip shows: the user's name, else what the shell last

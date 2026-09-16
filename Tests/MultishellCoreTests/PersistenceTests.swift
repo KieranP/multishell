@@ -301,19 +301,19 @@ struct OrderingTests {
     return (store, worktree)
   }
 
-  @Test func projectsMoveLikeSwiftUIExpects() {
+  @Test func aProjectMovesToAPlaceCountedInTheListAsItStands() {
     let (store, _) = store()
-    store.moveProjects(from: IndexSet(integer: 0), to: 3)
+    store.moveProject(at: 0, to: 3)
     #expect(store.workspace.projects.map(\.name) == ["b", "c", "a"])
-    store.moveProjects(from: IndexSet(integer: 2), to: 0)
+    store.moveProject(at: 2, to: 0)
     #expect(store.workspace.projects.map(\.name) == ["a", "b", "c"])
   }
 
   @Test func aMoveOutsideTheListIsIgnoredNotACrash() {
     let (store, _) = store()
-    store.moveProjects(from: IndexSet(integer: 0), to: 4)
-    store.moveProjects(from: IndexSet(integer: 7), to: 0)
-    store.moveProjects(from: IndexSet(integer: 1), to: -1)
+    store.moveProject(at: 0, to: 4)
+    store.moveProject(at: 7, to: 0)
+    store.moveProject(at: 1, to: -1)
     #expect(store.workspace.projects.map(\.name) == ["a", "b", "c"])
   }
 

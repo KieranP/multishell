@@ -79,8 +79,6 @@ enum Helper {
     }
   }
 
-  // MARK: - state
-
   private static func state(_ arguments: [String], environment: [String: String]) throws -> Int32 {
     guard let name = arguments.first, let state = SessionState(rawValue: name) else {
       throw UsageError(
@@ -105,8 +103,6 @@ enum Helper {
       return 1
     }
   }
-
-  // MARK: - agent-hook
 
   /// Nothing this prints or returns may disturb the agent: exit 0, no
   /// stdout, and an event that stands for nothing costs one silent process.
@@ -165,8 +161,6 @@ enum Helper {
       ?? Paths.socketFile
     try UnixSocketClient.send(try report.encodedLine(), to: socket)
   }
-
-  // MARK: - hooks
 
   /// Which agent the line names, Claude Code when it names none. Read by
   /// hand, since a hook must never fail over an argument.

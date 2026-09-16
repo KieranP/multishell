@@ -53,7 +53,7 @@ public struct Theme: Identifiable, Codable, Hashable, Sendable {
 
   static func usableOpacity(_ value: Double) -> Double {
     guard value.isFinite else { return 1 }
-    return min(max(value, minimumInactivePaneOpacity), 1)
+    return value.clamped(to: minimumInactivePaneOpacity...1)
   }
 
   /// Synthesized decoding skips the precondition, and the GUI indexes `ansi`

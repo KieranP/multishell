@@ -12,8 +12,6 @@ public final class AppModel<Surface> {
   // Each property left its own: bundling the observed ones into structs
   // coarsens what `@Observable` tracks.
 
-  // MARK: - Dependencies
-
   let host: any TerminalSurfaceHost<Surface>
   public let platform: any Platform
   @ObservationIgnored let store: WorkspaceStore
@@ -27,8 +25,6 @@ public final class AppModel<Surface> {
   /// Sessions that came off disk this run. Their agent tabs resume rather
   /// than start afresh; see `prepared`.
   @ObservationIgnored let restoredSessionIDs: Set<TerminalSession.ID>
-
-  // MARK: - Waiting on the user
 
   public var presentedError: PresentedError?
   public var newWorktreeRequest: NewWorktreeRequest?
@@ -54,8 +50,6 @@ public final class AppModel<Surface> {
   /// because a sidebar row takes a drop too and could not reach a `@State`.
   public var tabDrag = TabDragState()
 
-  // MARK: - The Agents board
-
   /// Whether the board fills the detail area. Runtime state; set through
   /// `showAgentBoard` and `hideAgentBoard`, which do the seen-clearing.
   public internal(set) var showsAgentBoard = false
@@ -64,8 +58,6 @@ public final class AppModel<Surface> {
   public internal(set) var showsAllTerminals = false
   /// What the badge was last set to, so it is written only when it changes.
   @ObservationIgnored var badgedWaitingCount = 0
-
-  // MARK: - Creates and removes under way
 
   /// Which stage a create is in while the sheet still waits on it: the
   /// pre-create hook and `git worktree add`. `nil` when none is running.
@@ -84,8 +76,6 @@ public final class AppModel<Surface> {
   /// Where each running `git worktree add` is checking out, counted: two
   /// creates can name one path; see worktrees.md.
   @ObservationIgnored var creatingWorktreeClaims: [Worktree.ID: Int] = [:]
-
-  // MARK: - Terminals
 
   /// Sessions with a running shell, mirrored from the host after each
   /// reconcile so views can observe it; the host itself is not observable.
@@ -110,8 +100,6 @@ public final class AppModel<Surface> {
   /// not wait the full interval.
   @ObservationIgnored public var pidPollInterval: Duration = .seconds(2)
 
-  // MARK: - What the machine has
-
   /// The environment of the user's interactive login shell, once captured.
   /// `nil` until the shell has answered and its PATH has been scanned.
   public var loginEnvironment: LoginShellEnvironment?
@@ -135,8 +123,6 @@ public final class AppModel<Surface> {
   public internal(set) var notificationAuthorization = NotificationAuthorization.notAsked
   public var themes: [Theme] = Theme.builtins
   @ObservationIgnored var reportedMissingAgents: Set<String> = []
-
-  // MARK: - What git says
 
   /// `git status` per worktree. Runtime only; see `WorktreeStatus`.
   public var statuses: [Worktree.ID: WorktreeStatus] = [:]
@@ -165,18 +151,24 @@ public final class AppModel<Surface> {
   /// `refreshWorktreesIfRecordsChanged`.
   @ObservationIgnored var worktreeRecords: [Project.ID: WorktreeRecords] = [:]
   @ObservationIgnored var statusPolling: Task<Void, Never>?
+  /// How often each worktree's status is read; a test reading right after a
+  /// change sets it to `.unpaced`. See `StatusPollPace`.
+  @ObservationIgnored public var statusPace = StatusPollPace.standard
+  /// When and at what cost each worktree's status was last read.
+  @ObservationIgnored var statusReads:
+    [Worktree.ID: (at: ContinuousClock.Instant, took: Duration)] =
+      [:]
   /// One coalesced status refresh per worktree; see `noteActivity`.
   @ObservationIgnored var pendingStatusRefreshes: [Worktree.ID: Task<Void, Never>] = [:]
-
-  // MARK: - What the repository says
 
   /// What each project's `.multishell.json` says, the date it had when it
   /// was read, and why it would not parse; see `SharedSettingsCache`.
   public var sharedSettings = SharedSettingsCache()
 
-  // MARK: - Saving
-
   @ObservationIgnored var pendingSave: Task<Void, Never>?
+  /// Set where another copy holds the socket: two copies autosaving one file
+  /// leave the last writer's, so this one writes nothing; see state-and-store.md.
+  @ObservationIgnored var yieldingToRunningInstance = false
   /// Set while saves are failing, so the alert is raised once rather than
   /// again after every change until the disk is writable.
   @ObservationIgnored var saveFailureReported = false
@@ -238,12 +230,9 @@ public final class AppModel<Surface> {
     registry.onLiveSessionsChanged = { [weak self] in
       guard let self else { return }
       let live = registry.liveSessionIDs
-      if live != liveSessions { liveSessions = live }
-      sessionTitles = sessionTitles.filter { live.contains($0.key) }
-      // Assigned only when it drops one: the board and the sidebar entry are
-      // drawn from this, and an idle write renders both.
-      let remaining = reportedAgents.filter { live.contains($0.key) }
-      if remaining.count != reportedAgents.count { reportedAgents = remaining }
+      setIfChanged(\.liveSessions, live)
+      setIfChanged(\.sessionTitles, sessionTitles.filter { live.contains($0.key) })
+      setIfChanged(\.reportedAgents, reportedAgents.filter { live.contains($0.key) })
       pruneStates()
       // A shell exiting can bring another tab into view; it is being looked
       // at now, whatever happened in it before.
@@ -251,7 +240,9 @@ public final class AppModel<Surface> {
     }
     stateSource.onReport = { [weak self] report in self?.apply(report) }
     notifier.onActivate = { [weak self] key in self?.reveal(key) }
-    watcher.onChange = { [weak self] in Task { await self?.refreshWorktreesIfRecordsChanged() } }
+    watcher.onChange = { [weak self] changed in
+      Task { await self?.refreshWorktreesIfRecordsChanged(under: changed) }
+    }
     observeForAutosave()
   }
 
@@ -281,7 +272,7 @@ public final class AppModel<Surface> {
   /// Restores the sidebar from disk, then asks git what each project
   /// actually has. Terminals are not restored; only the tree is.
   public func start() async {
-    startStateSource()
+    guard startStateSource() else { return }
     do {
       try HelperLink.refresh(to: platform.bundledHelper)
       try ShellIntegration.refresh()
@@ -305,18 +296,27 @@ public final class AppModel<Surface> {
 
   /// What a watcher tick and a return to the foreground run. Most ticks mean
   /// nothing, so the worktree records are compared before git is spawned.
-  public func refreshWorktreesIfRecordsChanged() async {
+  /// `changed` narrows a tick to the projects whose directories fired; empty
+  /// is every project. Re-armed only after a refresh: a tick that compared
+  /// equal changed no directory worth watching.
+  public func refreshWorktreesIfRecordsChanged(under changed: [URL] = []) async {
+    var refreshed = false
     for project in workspace.projects {
-      if let common = await commonGitDirectory(of: project),
-        let known = worktreeRecords[project.id],
+      let common = await commonGitDirectory(of: project)
+      if !changed.isEmpty {
+        guard let common, changed.contains(where: { $0.pathComponents(under: common) != nil })
+        else { continue }
+      }
+      if let common, let known = worktreeRecords[project.id],
         await Self.offMain({ WorktreeRecords.read(commonDirectory: common) }) == known
       {
         await refreshSharedSettingsIfChanged(project)
         continue
       }
       await refresh(project)
+      refreshed = true
     }
-    await rearmWatcher()
+    if refreshed { await rearmWatcher() }
   }
 
   /// Re-read after every refresh: a new worktree adds a directory that must

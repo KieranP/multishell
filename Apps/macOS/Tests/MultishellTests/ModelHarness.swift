@@ -47,7 +47,7 @@ final class NoEngine: TerminalSurfaceHost {
 
 @MainActor
 final class NoWatcher: DirectoryWatcher {
-  var onChange: (@MainActor () -> Void)?
+  var onChange: (@MainActor ([URL]) -> Void)?
   func watch(_ directories: [URL]) {}
   func stop() {}
 }

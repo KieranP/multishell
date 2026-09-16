@@ -100,9 +100,8 @@ public final class UnixSocketServer: @unchecked Sendable {
       if standingDown { self.listener?.resume() }
       return (self.listener, Array(self.connections.values))
     }
-    // After the socket file has gone, so a launch that takes the claim in
-    // between finds nothing to probe rather than this instance still
-    // answering on its way out.
+    // After the socket file has gone, so a launch taking the claim in between
+    // finds nothing to probe rather than this instance answering on its way out.
     defer { releaseClaim() }
     guard listener != nil else { return }
     listener?.cancel()
@@ -116,12 +115,8 @@ public final class UnixSocketServer: @unchecked Sendable {
   /// socket, and never unlinked: see docs/develop/state-on-disk.md.
   var claimPath: String { path + ".lock" }
 
-  /// Takes the claim, or refuses to start. A running instance whose accept
-  /// backlog is full refuses a connect exactly as a dead one's socket does,
-  /// so the probe alone would unlink a live socket; the claim cannot.
-  ///
-  /// An `fcntl` record lock rather than `flock`: a child forked while an
-  /// `flock` is held keeps it until it execs, and this process spawns freely.
+  /// Takes the claim, or refuses to start: a connect alone cannot tell a live
+  /// listener with a full backlog from a dead socket; see state-on-disk.md.
   private func claimOrRefuse() throws {
     guard lock.withLock({ claim < 0 }) else { return }
     let descriptor = open(claimPath, O_CREAT | O_RDWR | O_CLOEXEC, 0o600)

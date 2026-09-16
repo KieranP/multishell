@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import MultishellProcess
 import TestScratch
 import Testing
 
@@ -372,6 +373,32 @@ struct AppModelTests {
     #expect(h.model.liveTerminalCount == 1)
   }
 
+  @Test func aSecondCopyOfTheAppHandsOverToTheRunningOneAndSavesNothing() async {
+    let file = Scratch.path("second-copy").appendingPathComponent("state.json")
+    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+    let h = Harness(stateFile: file)
+    h.source.startError = SocketFailure(kind: .inUse, path: "/tmp/multishell.sock")
+
+    await h.model.start()
+
+    #expect(h.platform.handedOverToRunningInstance)
+    #expect(h.model.statusPolling == nil, "this copy does nothing more")
+    h.model.select(h.main)
+    try? await Task.sleep(for: .milliseconds(600))
+    #expect(!FileManager.default.fileExists(atPath: file.path), "the debounce is a writer too")
+    h.model.saveNow()
+    #expect(!FileManager.default.fileExists(atPath: file.path), "two writers of one file")
+  }
+
+  @Test func removingTheMainWorktreeIsRefusedBeforeAnyDialog() {
+    let h = Harness()
+    h.model.requestRemoval(of: h.main)
+    #expect(h.model.pendingRemoval == nil)
+    #expect(h.model.worktreeOperations.isEmpty)
+    #expect(!h.main.isRemovable)
+    #expect(h.feature.isRemovable)
+  }
+
   @Test func removalAsksUnlessTheGlobalSettingsSettleBothTheWorktreeAndTheBranch() {
     let h = Harness()
     h.model.requestRemoval(of: h.feature)
@@ -509,18 +536,19 @@ struct AppModelTests {
     #expect(h.model.sessionTitles.isEmpty, "titles of dead shells are not kept")
   }
 
-  @Test func aFailingSaveIsReportedOnceNotAfterEveryChange() {
+  @Test func aFailingSaveIsReportedOnceNotAfterEveryChange() async {
     // A file where a directory is needed: nothing can be created under it.
     let h = Harness(stateFile: URL(fileURLWithPath: "/dev/null/multishell/state.json"))
     h.model.presentedError = nil
 
     h.model.save()
-    let first = h.model.presentedError
+    let first = await h.presentedErrorArrives()
     #expect(first != nil)
 
     h.model.save()
     h.model.save()
-    #expect(h.model.presentedError?.id == first?.id, "the same alert, not a new one each time")
+    h.model.presentedError = nil
+    #expect(await h.presentedErrorArrives() == nil, "the same alert, not a new one each time")
   }
 
   /// The drop activates the tab in the column it lands in, so the tab that

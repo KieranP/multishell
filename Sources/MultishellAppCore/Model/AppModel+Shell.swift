@@ -1,8 +1,6 @@
 import Foundation
 import MultishellCore
 
-// MARK: - Default shell and what selecting does
-
 extension AppModel {
   public func setDefaultShell(_ id: String?) {
     store.setDefaultShell(id == ShellCatalogue.loginShellID ? nil : id)

@@ -37,17 +37,7 @@ extension AppModel {
   public func removeProject(_ project: Project) {
     // A file list or hook still running here is ended by signal, as the
     // pane's Cancel ends it: the project has just been told to go.
-    for worktree in workspace.worktrees(of: project.id) {
-      cancelStage(of: worktree)
-      worktreeOperations.clear(worktree.id)
-      // A half-finished rename goes with its row: no refresh runs for a
-      // project that has left, and re-adding it would open the field.
-      if renamingWorktreeID == worktree.id { renamingWorktreeID = nil }
-    }
-    forgetMergeStates(of: project.id)
-    // Not in `forgetMergeStates`, which also runs for a project whose trunk
-    // went away and must keep its dates. Paths are ids, so these would match.
-    for worktree in workspace.worktrees(of: project.id) { lastCommits[worktree.id] = nil }
+    for worktree in workspace.worktrees(of: project.id) { cancelStage(of: worktree) }
     mergeBases[project.id] = nil
     // Or a project re-added while git still cannot read it would be dimmed
     // with no alert: the first failure is what reports one.
@@ -59,11 +49,10 @@ extension AppModel {
     // Or the settings window's fallback to the current project never fires:
     // a stale id wins over it, and the window opens only to dismiss itself.
     if settingsProjectID == project.id { settingsProjectID = nil }
-    // The dialogs this project's windows left standing, the settings window
+    // The sheet this project's windows left standing, the settings window
     // being its own scene. A stale sheet's Create would add a real worktree.
     if newWorktreeRequest?.projectID == project.id { newWorktreeRequest = nil }
-    if pendingRemoval?.worktree.projectID == project.id { pendingRemoval = nil }
-    store.removeProject(project.id)
+    forgetWorktrees(store.removeProject(project.id))
     reconcileSessions(takingFocus: true)
     Task { await rearmWatcher() }
   }
@@ -77,7 +66,7 @@ extension AppModel {
       from != anchor
     else { return }
     let destination = placement == .above ? anchor : anchor + 1
-    store.moveProjects(from: IndexSet(integer: from), to: destination)
+    store.moveProject(at: from, to: destination)
   }
 
   public func setExpanded(_ expanded: Bool, for project: Project) {
@@ -117,13 +106,7 @@ extension AppModel {
         commonGitDirectories[project.id] = nil
         return
       }
-      store.replaceWorktrees(discovered, forProject: project.id)
-      forgetVanishedWorktrees()
-      // A removed worktree takes its half-finished rename with it, a stale
-      // id opening a field if git ever lists that path again.
-      if let renaming = renamingWorktreeID, workspace.worktree(renaming) == nil {
-        renamingWorktreeID = nil
-      }
+      forgetWorktrees(store.replaceWorktrees(discovered, forProject: project.id))
       worktreeRecords[project.id] = records
       missingProjects.remove(project.id)
       noteSharedSettings(shared.result, stamp: shared.stamp, for: project)

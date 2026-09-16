@@ -15,7 +15,7 @@ public struct RGB: Hashable, Sendable {
 
   /// Mixes towards `other`, where 0 is self and 1 is `other`.
   public func blended(with other: RGB, amount: Double) -> RGB {
-    let ratio = min(max(amount, 0), 1)
+    let ratio = amount.clamped(to: 0...1)
     func mix(_ a: UInt8, _ b: UInt8) -> UInt8 {
       UInt8((Double(a) * (1 - ratio) + Double(b) * ratio).rounded())
     }

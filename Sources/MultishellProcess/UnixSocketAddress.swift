@@ -15,6 +15,11 @@ public struct SocketFailure: Error, CustomStringConvertible, Sendable {
   public let kind: Kind
   public let path: String
 
+  public init(kind: Kind, path: String) {
+    self.kind = kind
+    self.path = path
+  }
+
   public var description: String {
     switch kind {
     case .pathTooLong:

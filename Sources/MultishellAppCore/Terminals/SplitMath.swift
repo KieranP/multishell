@@ -23,8 +23,7 @@ public enum SplitMath {
     // anyway forces the midpoint, and that is saved as the layout.
     guard pair >= minimum * 2 else { return weights }
 
-    var first = weights[index] + translation * perPoint
-    first = min(max(first, minimum), pair - minimum)
+    let first = (weights[index] + translation * perPoint).clamped(to: minimum...(pair - minimum))
 
     var updated = weights
     updated[index] = first

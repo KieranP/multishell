@@ -11,13 +11,12 @@ public enum DroppedFiles {
   /// Whether a dragged path is a copy macOS made for this drop, read off the
   /// `TemporaryItems` and `NSIRD_` marks it carries; see terminals.md.
   public static func isTemporaryCopy(_ url: URL) -> Bool {
-    let components = url.standardizedFileURL.pathComponents
-    if components.contains(where: { $0.hasPrefix("NSIRD_") }) { return true }
+    if url.standardizedFileURL.pathComponents.contains(where: { $0.hasPrefix("NSIRD_") }) {
+      return true
+    }
     let temporary = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-      .standardizedFileURL.pathComponents
-    guard components.count > temporary.count, Array(components.prefix(temporary.count)) == temporary
-    else { return false }
-    return components.dropFirst(temporary.count).dropLast().contains("TemporaryItems")
+    guard let below = url.pathComponents(under: temporary), !below.isEmpty else { return false }
+    return below.dropLast().contains("TemporaryItems")
   }
 
   /// Whether a drag's own paths are enough, or its promise must be asked

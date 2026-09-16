@@ -5,8 +5,6 @@ import Foundation
 public enum ShellStateHooks {
   static let helperPlaceholder = "__MULTISHELL_HELPER__"
 
-  // MARK: - Per-session injection (zsh)
-
   /// The zsh startup files placed in the directory set as a session's
   /// `ZDOTDIR`. Each chains to the user's own first, editing no file of theirs.
   public static func zshIntegrationFiles(
@@ -61,15 +59,11 @@ public enum ShellStateHooks {
     return [header, extra, footer].compactMap { $0 }.joined(separator: "\n") + "\n"
   }
 
-  // MARK: - Per-session injection (bash)
-
   /// A bash init file for `--init-file`, which is read instead of `.bashrc`
   /// and skips the profile chain, so this reproduces that chain first.
   public static func bashInitFile(helper: String = AgentHooks.helperReference) -> String {
     script("init", extension: "bash", helper: helper) + "\n"
   }
-
-  // MARK: - Resources
 
   /// A script from the resource bundle with the helper's path filled in,
   /// without its trailing newline so callers place it in a chain.

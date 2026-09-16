@@ -3,8 +3,6 @@ import MultishellCore
 import MultishellGitKit
 import MultishellProcess
 
-// MARK: - Creating a worktree, and the post-create hook that outlives the sheet
-
 extension AppModel {
   /// Opens the sheet for `project`, or the one being worked in. With several
   /// projects and nothing selected the picker starts blank.
@@ -116,7 +114,7 @@ extension AppModel {
           placements: placements, runningHook: hasHook)
       }
     }
-    select(created, openingFirstTab: .onCreate, byUser: false)
+    select(created, openingFirstTab: .onCreate)
   }
 
   /// What a new worktree gets before its first terminal: the file lists, then

@@ -25,6 +25,10 @@ struct SidebarView: View {
   var body: some View {
     let theme = model.currentTheme
     let metrics = model.metrics
+    // Once per render, not per row: forty rows scanning every session four
+    // times each was most of what a render cost.
+    let sessions = model.worktreeSessions
+    let visible = visibleProjects
     VStack(spacing: 0) {
       header(theme)
       if isFiltering { filterField(theme, metrics: metrics) }
@@ -41,10 +45,10 @@ struct SidebarView: View {
 
           projectsHeader(theme, metrics: metrics)
 
-          ForEach(visibleProjects, id: \.project.id) { entry in
+          ForEach(visible, id: \.project.id) { entry in
             projectRows(
-              entry.project, worktrees: rows(of: entry), forcedOpen: entry.forcedOpen,
-              theme: theme)
+              entry.project, worktrees: rows(of: entry, sessions: sessions),
+              forcedOpen: entry.forcedOpen, sessions: sessions, theme: theme)
           }
         }
         .padding(.horizontal, 8)
@@ -56,7 +60,7 @@ struct SidebarView: View {
           Text(t("sidebar.no-projects"))
             .font(.system(size: metrics.secondary))
             .foregroundStyle(theme.textTertiary)
-        } else if visibleProjects.isEmpty {
+        } else if visible.isEmpty {
           Text(t("sidebar.nothing-matches"))
             .font(.system(size: metrics.secondary))
             .foregroundStyle(theme.textTertiary)
@@ -83,8 +87,8 @@ struct SidebarView: View {
   }
 
   /// The rows of one project's block, in the order its settings ask for.
-  private func rows(of entry: SidebarFilter.Entry) -> [Worktree] {
-    model.ordered(entry.worktrees, in: entry.project)
+  private func rows(of entry: SidebarFilter.Entry, sessions: WorktreeSessions) -> [Worktree] {
+    model.ordered(entry.worktrees, in: entry.project, sessions: sessions)
   }
 
   /// Closing clears the filter, a field folded away being unable to say why
@@ -230,15 +234,18 @@ struct SidebarView: View {
   /// A project and its worktrees move as one block, so the drop indicator
   /// spans the block: upper half means "before", lower half "after".
   private func projectRows(
-    _ project: Project, worktrees: [Worktree], forcedOpen: Bool, theme: Theme
+    _ project: Project, worktrees: [Worktree], forcedOpen: Bool, sessions: WorktreeSessions,
+    theme: Theme
   ) -> some View {
     let metrics = model.metrics
     let expanded = project.isExpanded || forcedOpen
     let visible = expanded ? worktrees : []
 
     return VStack(spacing: Self.rowSpacing) {
-      projectRow(project, worktrees: worktrees, expanded: expanded, theme: theme, metrics: metrics)
-      ForEach(visible) { worktreeRow($0, theme: theme, metrics: metrics) }
+      projectRow(
+        project, worktrees: worktrees, expanded: expanded, sessions: sessions, theme: theme,
+        metrics: metrics)
+      ForEach(visible) { worktreeRow($0, sessions: sessions, theme: theme, metrics: metrics) }
     }
     .overlay(alignment: dropTarget?.edge == .bottom ? .bottom : .top) {
       if draggingProject != nil, let target = dropTarget, target.projectID == project.id {
@@ -276,7 +283,8 @@ struct SidebarView: View {
   }
 
   private func projectRow(
-    _ project: Project, worktrees: [Worktree], expanded: Bool, theme: Theme, metrics: UIMetrics
+    _ project: Project, worktrees: [Worktree], expanded: Bool, sessions: WorktreeSessions,
+    theme: Theme, metrics: UIMetrics
   ) -> some View {
     ProjectRow(
       project: project,
@@ -284,7 +292,7 @@ struct SidebarView: View {
       isMissing: model.missingProjects.contains(project.id),
       // The worktree rows carry the dots while they are visible; the folder
       // stands in for them only once they are folded away.
-      state: expanded ? nil : model.state(ofProject: project.id),
+      state: expanded ? nil : model.state(ofProject: project.id, sessions: sessions),
       worktreeCount: worktrees.count,
       isFetching: model.isFetching(project),
       theme: theme,
@@ -300,14 +308,14 @@ struct SidebarView: View {
   }
 
   private func worktreeRow(
-    _ worktree: Worktree, theme: Theme, metrics: UIMetrics
+    _ worktree: Worktree, sessions: WorktreeSessions, theme: Theme, metrics: UIMetrics
   ) -> some View {
     WorktreeRow(
       worktree: worktree,
       customName: model.customName(of: worktree),
       isRenaming: model.renamingWorktreeID == worktree.id,
-      terminalCount: model.workspace.sessions(in: worktree.id).count,
-      state: model.state(ofWorktree: worktree.id),
+      terminalCount: sessions[worktree.id].count,
+      state: model.state(ofWorktree: worktree.id, sessions: sessions),
       operation: model.worktreeOperations[worktree.id],
       isSelected: !model.showsAgentBoard && model.workspace.selectedWorktreeID == worktree.id,
       isDropTarget: tabDropTarget == worktree.id,

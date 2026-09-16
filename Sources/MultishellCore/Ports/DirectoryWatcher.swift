@@ -4,7 +4,9 @@ import Foundation
 /// each platform supplies one; implementations coalesce bursts.
 @MainActor
 public protocol DirectoryWatcher: AnyObject {
-  var onChange: (@MainActor () -> Void)? { get set }
+  /// The directories that fired since the last call, so the core can read
+  /// only the project they belong to; empty where the watcher cannot say.
+  var onChange: (@MainActor ([URL]) -> Void)? { get set }
 
   /// Replaces the watched set. Paths that do not exist yet are skipped;
   /// call again after they appear.

@@ -2,8 +2,6 @@ import Foundation
 import MultishellCore
 import MultishellProcess
 
-// MARK: - Preferred editor and the worktree actions
-
 extension AppModel {
   public func setPreferredEditor(_ id: String?) {
     store.setPreferredEditor(id == EditorCatalogue.noneID ? nil : id)
@@ -30,10 +28,7 @@ extension AppModel {
       presentedError = .noEditorChosen
       return
     }
-    // Busy means a removal's hook is running in that directory, which every
-    // other way of starting something there already refuses.
-    guard !isBusy(worktree.id), requireDirectory(of: worktree), let shell = ShellCommand.shell
-    else { return }
+    guard readyForShell(worktree), let shell = ShellCommand.shell else { return }
     let action = EditorLaunch.action(
       editorID: editorID,
       found: editorDetection.found[editorID],

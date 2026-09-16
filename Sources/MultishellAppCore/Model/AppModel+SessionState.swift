@@ -2,16 +2,23 @@ import Foundation
 import MultishellCore
 import MultishellProcess
 
-// MARK: - Session state
-
 extension AppModel {
-  /// Opens the inbound channel, a failure reported once. A second instance
-  /// holding the socket is the usual cause.
-  public func startStateSource() {
+  /// Opens the inbound channel. `false` where another copy of this build
+  /// holds it: this one hands over to it and quits; see state-and-store.md.
+  public func startStateSource() -> Bool {
     do {
       try stateSource.start()
+      return true
+    } catch let failure as SocketFailure where failure.kind == .inUse {
+      yieldingToRunningInstance = true
+      pendingSave?.cancel()
+      platform.handOverToRunningInstance()
+      // Still here: the platform could not quit, so say what is wrong.
+      report(failure)
+      return false
     } catch {
       report(error)
+      return true
     }
   }
 
@@ -30,42 +37,36 @@ extension AppModel {
     let pid = report.pid == ProcessInfo.processInfo.processIdentifier ? nil : report.pid
     if let id = report.sessionID {
       guard liveSessions.contains(id), let session = workspace.session(id) else { return }
-      // Who is at that prompt, so a drop is written as that agent reads a
-      // file. Assigned only when it moves: an idle write renders the pane.
+      // Who is at that prompt, so a drop is written as that agent reads a file.
       if let agent = report.agent {
-        let reported = ReportedAgent(agentID: agent, pid: pid)
-        if reportedAgents[id] != reported { reportedAgents[id] = reported }
+        setIfChanged(\.reportedAgents[id], ReportedAgent(agentID: agent, pid: pid))
       }
-      let seen = hasBeenSeen(id)
-      // What it was taken to mean, not what it said, and nothing at all for a
-      // counting tick: see `SessionStates`.
-      var meant: SessionState?
-      mutateStates {
-        meant = $0.report(
-          report.state, pid: pid, message: report.message, duration: report.duration,
-          subagents: report.subagents ?? 0, for: .session(id), isSeen: seen)
-      }
-      if let meant {
-        notifyIfNeeded(
-          report, as: meant, key: .session(id), worktreeID: session.worktreeID, isSeen: seen)
-      }
+      apply(report, pid: pid, to: .session(id), in: session.worktreeID, isSeen: hasBeenSeen(id))
     } else if let cwd = report.cwd, let worktree = worktree(atPath: cwd) {
       // Gated on the board as `isShown` is, the worktree being selected
       // with nothing of it on screen; and on frontmost as `hasBeenSeen`.
       let seen =
         !showsAgentBoard && workspace.selectedWorktreeID == worktree.id && platform.isActive
-      var meant: SessionState?
-      mutateStates {
-        meant = $0.report(
-          report.state, pid: pid, message: report.message, duration: report.duration,
-          subagents: report.subagents ?? 0, for: .worktree(worktree.id), isSeen: seen)
-      }
-      if let meant {
-        notifyIfNeeded(
-          report, as: meant, key: .worktree(worktree.id), worktreeID: worktree.id, isSeen: seen)
-      }
+      apply(report, pid: pid, to: .worktree(worktree.id), in: worktree.id, isSeen: seen)
     }
     updatePIDWatch()
+  }
+
+  /// What the report was taken to mean, not what it said, and nothing at all
+  /// for a counting tick: see `SessionStates`.
+  private func apply(
+    _ report: SessionStateReport, pid: Int32?, to key: SessionStates.Key,
+    in worktreeID: Worktree.ID, isSeen: Bool
+  ) {
+    var meant: SessionState?
+    mutateStates {
+      meant = $0.report(
+        report.state, pid: pid, message: report.message, duration: report.duration,
+        subagents: report.subagents ?? 0, for: key, isSeen: isSeen)
+    }
+    if let meant {
+      notifyIfNeeded(report, as: meant, key: key, worktreeID: worktreeID, isSeen: isSeen)
+    }
   }
 
   /// Seen: on screen and the app in front. One notion for clearing a Done
@@ -150,8 +151,6 @@ extension AppModel {
     }
   }
 
-  // MARK: Engine signals
-
   func noteCommandFinished(in id: TerminalSession.ID, exitCode: Int32?) {
     if let session = workspace.session(id) {
       scheduleStatusRefresh(of: session.worktreeID)
@@ -184,20 +183,27 @@ extension AppModel {
     updateDockBadge()
   }
 
-  // MARK: Queries for views
-
   public func state(of tab: TerminalTab) -> SessionState? {
     sessionStates.state(ofSessions: tab.sessionIDs)
   }
 
   public func state(ofWorktree id: Worktree.ID) -> SessionState? {
-    sessionStates.state(ofWorktree: id, sessions: workspace.sessions(in: id).map(\.id))
+    state(ofWorktree: id, sessions: worktreeSessions)
+  }
+
+  /// The sidebar's form, one grouping serving every row of a render.
+  public func state(ofWorktree id: Worktree.ID, sessions: WorktreeSessions) -> SessionState? {
+    sessionStates.state(ofWorktree: id, sessions: sessions[id])
   }
 
   /// The most urgent of the project's worktrees, for its row while collapsed.
-  public func state(ofProject id: Project.ID) -> SessionState? {
-    SessionState.mostUrgent(workspace.worktrees(of: id).compactMap { state(ofWorktree: $0.id) })
+  public func state(ofProject id: Project.ID, sessions: WorktreeSessions) -> SessionState? {
+    SessionState.mostUrgent(
+      workspace.worktrees(of: id).compactMap { state(ofWorktree: $0.id, sessions: sessions) })
   }
+
+  /// One pass over the sessions, taken at the top of a render.
+  public var worktreeSessions: WorktreeSessions { WorktreeSessions(workspace.sessions) }
 
   /// Agents that reported Working, counted separately by the quit guard.
   public var workingAgentCount: Int { sessionStates.workingSessionCount }
@@ -218,8 +224,6 @@ extension AppModel {
     mutateStates { $0.clear(sessions: workspace.sessions(in: id).map(\.id), worktree: id) }
     updatePIDWatch()
   }
-
-  // MARK: Stale Working
 
   /// An agent killed with Ctrl+C sends no Stop hook, so a named pid is
   /// polled and its state dropped once gone. No timeout.
@@ -261,9 +265,9 @@ extension AppModel {
   }
 
   private func dropReportedAgents(withPID pid: Int32) {
-    let remaining = reportedAgents.filter { $0.value.pid != pid }
-    guard remaining.count != reportedAgents.count else { return }
-    reportedAgents = remaining
+    guard setIfChanged(\.reportedAgents, reportedAgents.filter { $0.value.pid != pid }) else {
+      return
+    }
     updateDockBadge()
   }
 }

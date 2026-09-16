@@ -116,7 +116,7 @@ public struct WorktreeService: Sendable {
       ["for-each-ref", "--format=%(refname)", "refs/remotes"],
       in: project.path
     )
-    let prefix = "refs/remotes/"
+    let prefix = BranchRef.remotePrefix
     return output.split(whereSeparator: \.isNewline)
       .map { $0.trimmingCharacters(in: .whitespaces) }
       .filter { $0.hasPrefix(prefix) && !$0.hasSuffix("/HEAD") }

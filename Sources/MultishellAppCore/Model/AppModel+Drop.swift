@@ -1,8 +1,6 @@
 import Foundation
 import MultishellCore
 
-// MARK: - Files dropped on a terminal
-
 extension AppModel {
   /// Files dropped on a surface, pasted as `FileDrop` decides and taking the
   /// focus. `false` when nothing was pasted, so the drag says so.

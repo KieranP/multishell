@@ -2,8 +2,6 @@ import Foundation
 import MultishellCore
 import MultishellGitKit
 
-// MARK: - Merged branches
-
 extension AppModel {
   /// What the sidebar draws for one worktree.
   public func mergeState(of worktree: Worktree) -> WorktreeMergeState {
@@ -22,7 +20,6 @@ extension AppModel {
     for project in workspace.projects where !missingProjects.contains(project.id) {
       await refreshMergeStates(of: project)
     }
-    forgetVanishedWorktrees()
   }
 
   func refreshMergeStates(of project: Project) async {
@@ -80,46 +77,33 @@ extension AppModel {
       else { continue }
       // Only an answer settles it: stamping the check for a failed read
       // pins the old verdict to the new tip for good.
-      if mergeStates[worktree.id] != state { mergeStates[worktree.id] = state }
+      setIfChanged(\.mergeStates[worktree.id], state)
       mergeChecks[worktree.id] = check
     }
   }
 
-  /// Written only where something changed: these land on the status poll,
-  /// and an unchanged entry still redraws every view watching it.
   private func note(_ base: DefaultBranch?, asMergeBaseOf id: Project.ID) {
-    if mergeBases[id] != base { mergeBases[id] = base }
+    setIfChanged(\.mergeBases[id], base)
   }
 
-  /// The scan answers by branch, the sidebar asks by worktree. Written back
-  /// only when something moved.
+  /// The scan answers by branch, the sidebar asks by worktree.
   private func note(_ dates: [String: Date], asLastCommitsOf id: Project.ID) {
     var fresh = lastCommits
     for worktree in workspace.worktrees(of: id) {
       fresh[worktree.id] = worktree.branch.flatMap { dates[$0] }
     }
-    if fresh != lastCommits { lastCommits = fresh }
+    setIfChanged(\.lastCommits, fresh)
   }
 
   private func forget(_ ids: [Worktree.ID]) {
-    for id in ids where mergeStates[id] != nil { mergeStates[id] = nil }
-    for id in ids where mergeChecks[id] != nil { mergeChecks[id] = nil }
+    for id in ids {
+      setIfChanged(\.mergeStates[id], nil)
+      mergeChecks[id] = nil
+    }
   }
 
-  /// What a refresh found gone. Paths are ids, so a worktree made where one
-  /// was removed would otherwise inherit its badge and its date.
-  func forgetVanishedWorktrees() {
-    let known = Set(workspace.worktrees.map(\.id))
-    let readings = statuses.filter { known.contains($0.key) }
-    if readings.count != statuses.count { statuses = readings }
-    let states = mergeStates.filter { known.contains($0.key) }
-    if states.count != mergeStates.count { mergeStates = states }
-    let dates = lastCommits.filter { known.contains($0.key) }
-    if dates.count != lastCommits.count { lastCommits = dates }
-    mergeChecks = mergeChecks.filter { known.contains($0.key) }
-  }
-
-  /// After a project is removed, and where its default branch has gone.
+  /// Where a project's default branch has gone: its badges are about a base
+  /// that no longer applies. A removed project goes through `forgetWorktrees`.
   func forgetMergeStates(of project: Project.ID) {
     forget(workspace.worktrees(of: project).map(\.id))
   }

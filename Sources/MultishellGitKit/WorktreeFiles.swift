@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 
 /// Puts a project's listed files into each new worktree, for what git does
 /// not carry. One path per line, `*` and `?` allowed; see hooks.md.
@@ -9,11 +10,7 @@ public struct WorktreeFiles: Sendable {
   /// judges what is in reach, against the disk.
   public static func paths(in list: String) -> [String] {
     var seen: Set<String> = []
-    return list.split(whereSeparator: \.isNewline).compactMap { line in
-      let path = line.trimmingCharacters(in: .whitespaces)
-      guard !path.isEmpty, !path.hasPrefix("#") else { return nil }
-      return seen.insert(path).inserted ? path : nil
-    }
+    return LineList.entries(in: list).filter { seen.insert($0).inserted }
   }
 
   /// Links or copies each listed path, placing all it can before throwing.
@@ -128,11 +125,8 @@ public struct WorktreeFiles: Sendable {
   }
 
   /// Whether `url`, symlinks resolved, is `base` or something under it.
-  /// Compared by path component, so `/a/bc` is not under `/a/b`.
   private static func isInside(_ base: URL, _ url: URL) -> Bool {
-    let root = base.standardizedFileURL.pathComponents
-    let leaf = url.resolvingSymlinksInPath().standardizedFileURL.pathComponents
-    return leaf.count >= root.count && Array(leaf.prefix(root.count)) == root
+    url.resolvingSymlinksInPath().pathComponents(under: base) != nil
   }
 
   /// The nearest folder on the way to `url` already there. Resolving `url`

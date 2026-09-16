@@ -1,8 +1,9 @@
 # TODO
 
 The queue, most pressing first within each heading. A decision that gets
-made moves to the right file under `docs/design/`; a gap that is documented rather
-than fixed lives in `docs/develop/known-gaps.md`; a defect goes to `BUGS.md`.
+made moves to the right file under `docs/design/`; a gap that is documented
+rather than fixed lives in `docs/develop/known-gaps.md`; a defect goes to
+`BUGS.md`.
 
 ## Features
 
@@ -13,7 +14,8 @@ than fixed lives in `docs/develop/known-gaps.md`; a defect goes to `BUGS.md`.
 
 ## Refinements
 
-- On Agents Dashboard, order agents in the same order as Projects, and group agents from same project
+- On Agents Dashboard, order agents in the same order as Projects, and group
+  agents from same project
 - Change tab icon and agents dashboard tile to show icon for the agent running
 - Pin worktrees in the sidebar
 - Rename worktree using default agent?

@@ -23,10 +23,10 @@ make lint              # what CI runs, --strict: a warning fails
 `Scripts/make-app.sh` builds the app binary with `xcodebuild` (below), wraps
 it in a bundle, copies the SwiftPM resource bundles into `Contents/Resources`
 (libghostty's terminfo must be there), builds the helper with `swift build`
-into `Contents/Helpers`, writes the Info.plist and signs both. `CFBundleShortVersionString` = `<commit date>-<short sha>`,
-`-dirty` for a modified tree; `CFBundleVersion` = the commit count, that key
-taking digits and dots only. First app build downloads the libghostty
-xcframework, ~80 MB.
+into `Contents/Helpers`, writes the Info.plist and signs both.
+`CFBundleShortVersionString` = `<commit date>-<short sha>`, `-dirty` for a
+modified tree; `CFBundleVersion` = the commit count, that key taking digits
+and dots only. First app build downloads the libghostty xcframework, ~80 MB.
 
 `make signing-identity` creates the self-signed `Multishell Dev` certificate;
 without it the build signs ad hoc and says so. Not for distribution: it is so

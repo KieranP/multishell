@@ -43,9 +43,26 @@ public final class WorkspaceStore {
     guard !refusesToSave else { return }
     try snapshot.save(workspace)
   }
+
+  /// A save to run off the main actor, `nil` where saving is refused. The
+  /// synchronous `save` stays for quit, when there is no later to wait for.
+  public func prepareSave() -> WorkspaceSave? {
+    guard !refusesToSave else { return nil }
+    return WorkspaceSave(workspace: workspace, snapshot: snapshot, ticket: snapshot.ticket())
+  }
 }
 
-// MARK: - Projects
+/// One save, the workspace as a value and where it goes, ready to run on
+/// any thread. Its ticket keeps saves landing in the order they were asked.
+public struct WorkspaceSave: Sendable {
+  let workspace: Workspace
+  let snapshot: WorkspaceSnapshot
+  let ticket: WorkspaceSnapshot.Ticket
+
+  public func run() throws {
+    try snapshot.save(workspace, as: ticket)
+  }
+}
 
 extension WorkspaceStore {
   @discardableResult
@@ -56,26 +73,23 @@ extension WorkspaceStore {
     return project
   }
 
-  public func removeProject(_ id: Project.ID) {
+  /// Returns the worktrees that went with it, for the model's runtime state.
+  @discardableResult
+  public func removeProject(_ id: Project.ID) -> [Worktree.ID] {
     workspace.projects.removeAll { $0.id == id }
-    for worktree in workspace.worktrees(of: id) {
-      discardWorktree(worktree.id)
-    }
+    let discarded = workspace.worktrees(of: id).map(\.id)
+    for id in discarded { discardWorktree(id) }
+    return discarded
   }
 
-  /// Same contract as SwiftUI's `move(fromOffsets:toOffset:)`, which lives in
-  /// SwiftUI rather than the standard library and so is not available here.
-  public func moveProjects(from source: IndexSet, to destination: Int) {
-    guard
-      (0...workspace.projects.count).contains(destination),
-      source.allSatisfy(workspace.projects.indices.contains)
+  /// `destination` is a place in the list as it stands, the way SwiftUI's
+  /// `move(fromOffsets:toOffset:)` counts it. Out of range moves nothing.
+  public func moveProject(at from: Int, to destination: Int) {
+    guard workspace.projects.indices.contains(from),
+      (0...workspace.projects.count).contains(destination)
     else { return }
-    let moving = source.map { workspace.projects[$0] }
-    let shift = source.filter { $0 < destination }.count
-    for index in source.sorted(by: >) {
-      workspace.projects.remove(at: index)
-    }
-    workspace.projects.insert(contentsOf: moving, at: destination - shift)
+    let project = workspace.projects.remove(at: from)
+    workspace.projects.insert(project, at: destination > from ? destination - 1 : destination)
   }
 
   public func setExpanded(_ expanded: Bool, forProject id: Project.ID) {
@@ -92,21 +106,24 @@ extension WorkspaceStore {
   }
 }
 
-// MARK: - Worktrees
-
 extension WorkspaceStore {
-  /// Replaces a project's worktrees with what git just reported. A refresh
-  /// landing after its project was removed must not resurrect them.
-  public func replaceWorktrees(_ discovered: [Worktree], forProject id: Project.ID) {
-    guard workspace.project(id) != nil else { return }
+  /// Replaces a project's worktrees with what git just reported, returning
+  /// the ones that went. A refresh landing after a removal resurrects nothing.
+  @discardableResult
+  public func replaceWorktrees(
+    _ discovered: [Worktree], forProject id: Project.ID
+  )
+    -> [Worktree.ID]
+  {
+    guard workspace.project(id) != nil else { return [] }
     let fresh = discovered.map(keepingKnownCreationDate)
-    guard workspace.worktrees(of: id) != fresh else { return }
+    guard workspace.worktrees(of: id) != fresh else { return [] }
     let survivors = Set(fresh.map(\.id))
-    for worktree in workspace.worktrees(of: id) where !survivors.contains(worktree.id) {
-      discardWorktree(worktree.id)
-    }
+    let discarded = workspace.worktrees(of: id).map(\.id).filter { !survivors.contains($0) }
+    for id in discarded { discardWorktree(id) }
     workspace.worktrees.removeAll { $0.projectID == id }
     workspace.worktrees.append(contentsOf: fresh)
+    return discarded
   }
 
   /// A date once read survives a stat that could not answer, or a blinking
@@ -150,8 +167,6 @@ extension WorkspaceStore {
   }
 }
 
-// MARK: - Tabs
-
 extension WorkspaceStore {
   /// Opens a tab in one column: the one named, else the worktree's focused
   /// column, else a first column made for it.
@@ -194,19 +209,11 @@ extension WorkspaceStore {
       id != target
     else { return }
 
-    let source = workspace.tabs[movingIndex].groupID
-    let destination = workspace.tabs[anchorIndex].groupID
-    let vacated = slot(of: id)
-    var tab = workspace.tabs.remove(at: movingIndex)
-    tab.groupID = destination
     // Taking the tab out shifts the anchor down by one where it sat after it.
-    // Not `slot`, which is the method above and a place in a column, not here.
     let landing = anchorIndex > movingIndex ? anchorIndex - 1 : anchorIndex
-    workspace.tabs.insert(tab, at: placement == .before ? landing : landing + 1)
-
-    guard source != destination else { return }
-    settle(group: source, vacating: vacated)
-    activateTab(id)
+    relocate(
+      id, into: workspace.tabs[anchorIndex].groupID,
+      at: placement == .before ? landing : landing + 1)
   }
 
   /// A tab dropped on a strip past its last tab, or on its New Tab button:
@@ -219,14 +226,7 @@ extension WorkspaceStore {
       workspace.tabs[index].worktreeID == destination.worktreeID,
       workspace.tabs[index].groupID != groupID
     else { return false }
-
-    let vacated = slot(of: id)
-    var tab = workspace.tabs.remove(at: index)
-    let source = tab.groupID
-    tab.groupID = groupID
-    workspace.tabs.append(tab)
-    settle(group: source, vacating: vacated)
-    activateTab(id)
+    relocate(id, into: groupID)
     return true
   }
 
@@ -240,25 +240,31 @@ extension WorkspaceStore {
       workspace.tabs[index].worktreeID != worktreeID,
       let column = resolvedGroup(nil, in: worktreeID)
     else { return false }
-
-    let vacated = slot(of: id)
-    var tab = workspace.tabs.remove(at: index)
-    let source = tab.groupID
-    tab.worktreeID = worktreeID
-    tab.groupID = column
-    // `tabs(in:)` filters in array order, so appending is landing last.
-    workspace.tabs.append(tab)
-
-    let moving = Set(tab.sessionIDs)
+    let moving = Set(workspace.tabs[index].sessionIDs)
+    relocate(id, into: column)
     for index in workspace.sessions.indices where moving.contains(workspace.sessions[index].id) {
       workspace.sessions[index].worktreeID = worktreeID
       workspace.sessions[index].workingDirectory = destination.path
     }
-
-    settle(group: source, vacating: vacated)
-    setActiveTab(id, ofGroup: column)
-    workspace.focusedGroupByWorktree[worktreeID] = column
     return true
+  }
+
+  /// What the three moves share: the tab retagged for `column` and put back
+  /// at `index`, else last; a tab leaving its column settles it and is shown.
+  private func relocate(_ id: TerminalTab.ID, into column: TabGroup.ID, at index: Int? = nil) {
+    guard let movingIndex = workspace.tabs.firstIndex(where: { $0.id == id }),
+      let destination = workspace.group(column)
+    else { return }
+    let vacated = slot(of: id)
+    var tab = workspace.tabs.remove(at: movingIndex)
+    let source = tab.groupID
+    tab.worktreeID = destination.worktreeID
+    tab.groupID = column
+    // `tabs(in:)` filters in array order, so appending is landing last.
+    workspace.tabs.insert(tab, at: index ?? workspace.tabs.endIndex)
+    guard source != column else { return }
+    settle(group: source, vacating: vacated)
+    activateTab(id)
   }
 
   /// Empty or whitespace clears the custom title, so the shell's takes over
@@ -288,8 +294,6 @@ extension WorkspaceStore {
     settle(group: tab.groupID, vacating: vacated)
   }
 }
-
-// MARK: - Tab groups
 
 extension WorkspaceStore {
   /// Moves a tab into a column of its own beside `neighbour`, which gives up
@@ -370,8 +374,8 @@ extension WorkspaceStore {
   }
 
   /// A column after a tab left it: another showing, or the column gone, with
-  /// `vacating` the place it held. See docs/design/tabs-and-columns.md.
-  private func settle(group groupID: TabGroup.ID, vacating slot: Int? = nil) {
+  /// `vacating` the place it held, read first. See docs/design/tabs-and-columns.md.
+  private func settle(group groupID: TabGroup.ID, vacating slot: Int?) {
     guard let index = workspace.tabGroups.firstIndex(where: { $0.id == groupID }) else { return }
     let worktreeID = workspace.tabGroups[index].worktreeID
     let remaining = workspace.tabs(in: groupID)
@@ -397,8 +401,6 @@ extension WorkspaceStore {
       survivors.isEmpty ? nil : survivors[min(slot, survivors.count - 1)].id
   }
 }
-
-// MARK: - Sessions and panes
 
 extension WorkspaceStore {
   /// Closes one terminal. If it was the tab's only pane the tab goes with it;
@@ -473,8 +475,6 @@ extension WorkspaceStore {
   }
 }
 
-// MARK: - Appearance
-
 extension WorkspaceStore {
   public func setTheme(_ id: Theme.ID) {
     workspace.appearance.themeID = id
@@ -497,8 +497,6 @@ extension WorkspaceStore {
     workspace.notifications = preference
   }
 }
-
-// MARK: - Agents
 
 extension WorkspaceStore {
   public func setPreferredAgent(_ id: String?) {
@@ -523,8 +521,6 @@ extension WorkspaceStore {
     workspace.autoStartAgentOnCreate = enabled
   }
 }
-
-// MARK: - Shell, editor and selection
 
 extension WorkspaceStore {
   public func setDefaultShell(_ path: String?) {
@@ -552,8 +548,6 @@ extension WorkspaceStore {
   }
 }
 
-// MARK: - Worktree listing
-
 extension WorkspaceStore {
   public func setWorktreeSortOrder(_ order: WorktreeSortOrder) {
     workspace.worktreeSortOrder = order
@@ -563,8 +557,6 @@ extension WorkspaceStore {
     workspace.showsActiveWorktreesFirst = enabled
   }
 }
-
-// MARK: - Worktree removal
 
 extension WorkspaceStore {
   public func setConfirmsWorktreeRemoval(_ enabled: Bool) {

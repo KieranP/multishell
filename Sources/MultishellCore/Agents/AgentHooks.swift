@@ -17,10 +17,7 @@ public enum AgentHooks {
   /// The helper as a hook should reference it: through `$HOME`, so a synced
   /// dotfile still resolves on another machine.
   public static var helperReference: String {
-    let home = FileManager.default.homeDirectoryForCurrentUser.path
-    let link = Paths.helperLink.path
-    guard link.hasPrefix(home + "/") else { return link }
-    return "$HOME" + link.dropFirst(home.count)
+    Paths.helperLink.path.abbreviatingHomeDirectory(as: "$HOME")
   }
 
   /// Runs the helper rather than `exec`ing it, and exits 0 whatever became of

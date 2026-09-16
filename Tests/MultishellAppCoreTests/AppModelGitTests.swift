@@ -1,6 +1,7 @@
 import Foundation
 import MultishellCore
 import MultishellGitKit
+import TestSupport
 import Testing
 
 @testable import MultishellAppCore
@@ -38,6 +39,75 @@ struct AppModelGitTests {
 
     #expect(h.model.workspace.projects.count == 1)
     #expect(h.model.presentedError?.title == "Not a git repository")
+  }
+
+  @Test func theStatusPollSkipsTheWorktreesOfAMissingProject() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let fake = try h.modelOnFakeGit("exit 0")
+    let project = fake.workspace.projects[0]
+
+    fake.missingProjects.insert(project.id)
+    await fake.refreshStatuses()
+    #expect(!h.gitCalls().contains { $0.contains("status") }, "its directory is gone")
+
+    fake.missingProjects.remove(project.id)
+    await fake.refreshStatuses()
+    #expect(h.gitCalls().contains { $0.contains("status") })
+  }
+
+  @Test func aWorktreeWhoseStatusIsSlowIsNotAskedAgainOnTheNextTick() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let fake = try h.modelOnFakeGit("case \"$*\" in *status*) sleep 0.6;; esac; exit 0")
+    fake.statusPace = .standard
+
+    await fake.refreshStatuses()
+    await fake.refreshStatuses()
+
+    #expect(
+      h.gitCalls().filter { $0.contains("status") }.count == 1,
+      "a read that took 0.6 s is not due again for 6 s")
+  }
+
+  @Test func aTickNamingOneProjectsRecordsLeavesTheOtherProjectUnread() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let second = h.root.appendingPathComponent("other", isDirectory: true)
+    try await TestRepository.initialise(at: second, using: h.git)
+    try await TestRepository.commitInitial(in: second, using: h.git)
+    await h.model.addProject(at: second)
+    let other = try #require(h.model.workspace.projects.first { $0.id != h.project.id })
+    let common = try #require(await h.model.commonGitDirectory(of: h.project))
+    _ = try await h.git.run(
+      ["worktree", "add", "-b", "quiet", h.root.appendingPathComponent("quiet").path], in: second)
+    h.watcher.watched = []
+
+    await h.model.refreshWorktreesIfRecordsChanged(
+      under: [common.appendingPathComponent("worktrees")])
+    #expect(
+      h.model.workspace.worktrees(of: other.id).count == 1, "the other's records were not read")
+    #expect(h.watcher.watched.isEmpty, "nothing changed, so nothing was re-armed")
+
+    await h.model.refreshWorktreesIfRecordsChanged()
+    #expect(h.model.workspace.worktrees(of: other.id).count == 2)
+    #expect(!h.watcher.watched.isEmpty)
+  }
+
+  @Test func aRemovalDialogClosesWhenGitStopsListingItsWorktree() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    await h.model.createWorktree(branch: "asked", basedOn: nil, createBranch: true, in: h.project)
+    let created = try #require(h.worktree(onBranch: "asked"))
+    h.model.requestRemoval(of: created)
+    #expect(h.model.pendingRemoval?.id == created.id)
+
+    _ = try await h.git.run(
+      ["worktree", "remove", "--force", created.path.path], in: h.project.path)
+    await h.model.refresh(h.project)
+
+    #expect(h.model.workspace.worktree(created.id) == nil)
+    #expect(h.model.pendingRemoval == nil, "Confirm would remove a path git no longer lists")
   }
 
   /// A refresh drops the vanished worktree's tabs and sessions, and without

@@ -209,6 +209,26 @@ What each test catches, and the conventions a new one follows.
   on. Only a login shell reads the profile, so the `-l` is what the test is.
 - Foundation-only imports: checked by hand in a `swift:6.0` container, Linux
   being out of CI. Views untested, but a value a view reads is.
+- A removal dialog left up for a worktree git no longer lists, and Remove
+  offered on the main worktree: AppModelGitTests removes the worktree behind
+  the app's back and refreshes; AppModelTests asks to remove the primary and
+  expects no dialog and no operation. Both go through `forgetWorktrees` and
+  `Worktree.isRemovable`, the one place each is decided.
+- A second copy of the app writing the workspace file: AppModelTests hands the
+  fake state source an in-use socket and expects the platform asked to hand
+  over, no poll started, and no file after a change, the debounce and
+  `saveNow` both.
+- Two saves landing out of order: OrderedSaveTests prepares two, runs the
+  later first, and expects the file to hold it.
+- The status poll asking a missing project or a slow checkout: AppModelGitTests
+  on a fake git, once with the project marked missing and once with a `status`
+  that sleeps past the pace's floor, counting the calls; StatusPollPaceTests
+  holds the rule itself. Every other model test runs `.unpaced`, or a read
+  right after a change would be skipped.
+- A watcher tick re-reading every project: AppModelGitTests adds a second
+  repository, adds a worktree to it behind the app's back, and ticks with the
+  first project's directory; the second must stay unread and nothing re-armed
+  until a tick names no directory.
 
 ## Conventions
 

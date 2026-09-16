@@ -36,7 +36,7 @@ struct WorktreeActions: View {
       Divider()
       Button(t("actions.clear-status")) { model.clearState(ofWorktree: worktree.id) }
     }
-    if !worktree.isPrimary {
+    if worktree.isRemovable {
       Divider()
       Button(t("actions.remove-worktree"), role: .destructive) {
         model.requestRemoval(of: worktree)

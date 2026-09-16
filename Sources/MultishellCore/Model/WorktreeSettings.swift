@@ -28,8 +28,6 @@ public struct WorktreeSettings: Codable, Hashable, Sendable {
   }
 }
 
-// MARK: - Resolution
-
 extension WorktreeSettings {
   /// Applies `branchPrefix`, without doubling it if the user typed it.
   public func qualifiedBranch(_ name: String) -> String {

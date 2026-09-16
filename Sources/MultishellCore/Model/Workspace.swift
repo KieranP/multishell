@@ -136,8 +136,6 @@ public struct Workspace: Codable, Hashable, Sendable {
   }
 }
 
-// MARK: - Queries
-
 extension Workspace {
   public func project(_ id: Project.ID) -> Project? {
     projects.first { $0.id == id }
@@ -167,18 +165,12 @@ extension Workspace {
     neighbour(of: tab, .after)
   }
 
-  /// Cycling stays inside the tab's own column. Backwards is a step of
-  /// `count - 1` forwards, keeping the sum positive for Swift's `%`.
+  /// Cycling stays inside the tab's own column.
   private func neighbour(
     of id: TerminalTab.ID, _ direction: TerminalTab.Placement
   ) -> TerminalTab? {
     guard let current = tab(id) else { return nil }
-    let siblings = tabs(in: current.groupID)
-    guard let index = siblings.firstIndex(where: { $0.id == id }), siblings.count > 1 else {
-      return nil
-    }
-    let step = direction == .after ? 1 : siblings.count - 1
-    return siblings[(index + step) % siblings.count]
+    return tabs(in: current.groupID).neighbour(of: id, direction)
   }
 
   /// The name the user gave this worktree, or `nil` where they gave none.

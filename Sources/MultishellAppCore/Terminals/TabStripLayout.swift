@@ -31,7 +31,7 @@ public struct TabStripLayout: Equatable, Sendable {
       return
     }
     let share = available / Double(count)
-    self.tabWidth = min(max(share, floor), ceiling)
+    self.tabWidth = share.clamped(to: floor...ceiling)
     // Asked of the share rather than of the total, which for a strip that
     // divides exactly is a floating-point coin toss.
     self.scrolls = share < floor
@@ -91,6 +91,6 @@ extension TabStripLayout {
   /// A tab index off a measurement, held inside the strip before it becomes
   /// an `Int`: converting a huge one traps.
   private func whole(_ boundary: Double, _ count: Int) -> Int {
-    Int(min(max(boundary, -1), Double(count) + 1))
+    Int(boundary.clamped(to: -1...Double(count) + 1))
   }
 }

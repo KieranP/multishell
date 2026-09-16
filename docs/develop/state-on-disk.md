@@ -33,7 +33,8 @@ prints the state file, which is how you see which one a running copy has.
   file being no concern of the user's.
 - `multishell.sock.lock`, empty, never removed. A running instance holds an
   exclusive `fcntl` record lock on it for as long as it listens, which is what
-  tells a second launch that the socket has a live owner. Not `flock`: a child
+  tells a second launch that the socket has a live owner, so it brings that
+  owner forward and quits; see state-and-store.md. Not `flock`: a child
   forked while one is held keeps it until it execs, and this process spawns
   freely. A connect alone cannot tell: a listener whose accept backlog is full
   refuses one exactly as a dead socket does.

@@ -47,6 +47,6 @@ public enum WorktreeListParser {
   }
 
   private static func shortBranchName(_ ref: String) -> String {
-    ref.hasPrefix("refs/heads/") ? String(ref.dropFirst("refs/heads/".count)) : ref
+    ref.hasPrefix(BranchRef.localPrefix) ? String(ref.dropFirst(BranchRef.localPrefix.count)) : ref
   }
 }

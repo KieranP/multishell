@@ -41,8 +41,7 @@ public struct ThemeCatalog: Sendable {
     let examples = directory.appendingPathComponent("examples", isDirectory: true)
     try FileManager.default.createDirectory(at: examples, withIntermediateDirectories: true)
 
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+    let encoder = JSONEncoder.forFile()
     for theme in Theme.builtins {
       let file = examples.appendingPathComponent("\(theme.id).json")
       if !FileManager.default.fileExists(atPath: file.path) {

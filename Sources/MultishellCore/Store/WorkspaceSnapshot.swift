@@ -4,9 +4,43 @@ import Foundation
 /// persisted; only the sidebar's shape and which tabs should exist.
 public struct WorkspaceSnapshot: Sendable {
   private let fileURL: URL
+  private let order = SaveOrder()
 
   public init(fileURL: URL = Paths.stateFile) {
     self.fileURL = fileURL
+  }
+
+  /// A place in the order of saves, taken where the workspace is read. A
+  /// save whose ticket is older than the last landed is dropped, not written.
+  public struct Ticket: Sendable {
+    fileprivate let number: Int
+  }
+
+  public func ticket() -> Ticket {
+    Ticket(number: order.issue())
+  }
+
+  /// Writes in order and one at a time, whichever thread runs each; see
+  /// docs/design/state-and-store.md.
+  private final class SaveOrder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var issued = 0
+    private var landed = 0
+
+    func issue() -> Int {
+      lock.withLock {
+        issued += 1
+        return issued
+      }
+    }
+
+    func land(_ ticket: Int, _ write: () throws -> Void) throws {
+      try lock.withLock {
+        guard ticket > landed else { return }
+        try write()
+        landed = ticket
+      }
+    }
   }
 
   /// A file that will not read or decode is moved aside, never overwritten.
@@ -40,13 +74,18 @@ public struct WorkspaceSnapshot: Sendable {
   }
 
   public func save(_ workspace: Workspace) throws {
-    try FileManager.default.createDirectory(
-      at: fileURL.deletingLastPathComponent(),
-      withIntermediateDirectories: true
-    )
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-    try encoder.encode(workspace).write(to: fileURL, options: .atomic)
+    try save(workspace, as: ticket())
+  }
+
+  /// The encode is outside the lock, so two saves encode side by side and
+  /// only the writes queue.
+  public func save(_ workspace: Workspace, as ticket: Ticket) throws {
+    let data = try JSONEncoder.forFile().encode(workspace)
+    try order.land(ticket.number) {
+      try FileManager.default.createDirectory(
+        at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+      try data.write(to: fileURL, options: .atomic)
+    }
   }
 }
 

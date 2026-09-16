@@ -2,17 +2,11 @@ import Foundation
 import MultishellCore
 import MultishellGitKit
 
-// MARK: - The worktree in view, its name, and the operation running on it
-
 extension AppModel {
   /// A worktree with no tabs gets one unless `TabOpening` says otherwise, and
-  /// this is where the shared-hooks question is asked.
+  /// this is where the shared-hooks question is asked, a create being asked apart.
   @discardableResult
-  public func select(
-    _ worktree: Worktree, openingFirstTab: TabOpening = .onSelect, byUser: Bool = true
-  )
-    -> Bool
-  {
+  public func select(_ worktree: Worktree, openingFirstTab: TabOpening = .onSelect) -> Bool {
     // A row git no longer lists is refused by the store, so ask first: the
     // board closing and a tab opening are not things to do for nothing.
     guard workspace.worktree(worktree.id) != nil, requireDirectory(of: worktree) else {
@@ -23,7 +17,7 @@ extension AppModel {
     leaveAgentBoard()
     store.selectWorktree(worktree.id)
     warmWorktrees.insert(worktree.id)
-    if byUser { askAboutSharedHooksIfNeeded(for: worktree.projectID) }
+    if openingFirstTab != .onCreate { askAboutSharedHooksIfNeeded(for: worktree.projectID) }
     if !isBusy(worktree.id), workspace.tabs(in: worktree.id).isEmpty,
       opensTab(in: worktree, on: openingFirstTab)
     {

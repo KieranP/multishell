@@ -8,9 +8,9 @@ public struct AgentBoard: Equatable, Sendable {
   public init(cards: [AgentBoardCard], showsShells: Bool) {
     let shown = (showsShells ? cards : cards.filter { $0.occupant.isAgent })
       .sorted(by: AgentBoardOrder.precedes)
-    columns = AgentBoardLane.allCases.map { lane in
-      AgentBoardColumn(lane: lane, cards: shown.filter { $0.lane == lane })
-    }
+    var byLane: [AgentBoardLane: [AgentBoardCard]] = [:]
+    for card in shown { byLane[card.lane, default: []].append(card) }
+    columns = AgentBoardLane.allCases.map { AgentBoardColumn(lane: $0, cards: byLane[$0] ?? []) }
   }
 
   public func column(_ lane: AgentBoardLane) -> AgentBoardColumn {

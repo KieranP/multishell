@@ -40,20 +40,30 @@ public struct WorktreeCoordinator: Sendable {
     try await service.currentBranch(project)
   }
 
-  /// Statuses for many worktrees at once, one that could not be read simply
-  /// absent. At most `maxConcurrentStatuses` run together.
   public func statuses(of worktrees: [Worktree]) async -> [Worktree.ID: WorktreeStatus] {
-    await withTaskGroup(of: (Worktree.ID, WorktreeStatus?).self) { group in
+    await readStatuses(of: worktrees).mapValues(\.status)
+  }
+
+  /// Statuses for many worktrees at once, each with how long git took, one
+  /// that could not be read simply absent. At most `maxConcurrentStatuses` run together.
+  public func readStatuses(of worktrees: [Worktree]) async -> [Worktree.ID: StatusReading] {
+    await withTaskGroup(of: (Worktree.ID, StatusReading?).self) { group in
       var pending = worktrees.filter { !$0.isBare }.makeIterator()
       func startNext() {
         guard let worktree = pending.next() else { return }
-        group.addTask { (worktree.id, try? await service.status(of: worktree)) }
+        group.addTask {
+          let started = ContinuousClock.now
+          guard let status = try? await service.status(of: worktree) else {
+            return (worktree.id, nil)
+          }
+          return (worktree.id, StatusReading(status: status, took: started.duration(to: .now)))
+        }
       }
       for _ in 0..<Self.maxConcurrentStatuses { startNext() }
 
-      var result: [Worktree.ID: WorktreeStatus] = [:]
-      for await (id, status) in group {
-        if let status { result[id] = status }
+      var result: [Worktree.ID: StatusReading] = [:]
+      for await (id, reading) in group {
+        if let reading { result[id] = reading }
         startNext()
       }
       return result
@@ -189,7 +199,7 @@ public struct WorktreeCoordinator: Sendable {
   ) async throws {
     // The main worktree is the repository, `.git` and all, and the trash
     // step would bin it. Nothing below this guard checks.
-    guard !worktree.isPrimary, !worktree.isBare else {
+    guard worktree.isRemovable else {
       throw NotAWorktree(path: worktree.path)
     }
     let path = worktree.path

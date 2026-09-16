@@ -88,9 +88,10 @@ Never badged: main worktree, bare repo, detached HEAD, the trunk's own checkout.
 
 ## The user's git config is not allowed to change what a read means
 
-Every runner sets `log.showSignature=false` and `status.showUntrackedFiles=normal`,
-through `GIT_CONFIG_*` rather than `-c`, which a failure would report in its
-arguments. Both are the deny lists above meeting output they did not expect.
+Every runner sets `log.showSignature=false` and
+`status.showUntrackedFiles=normal`, through `GIT_CONFIG_*` rather than `-c`,
+which a failure would report in its arguments. Both are the deny lists above
+meeting output they did not expect.
 Signature verification prints on stdout ahead of each reflog subject, so
 `Good "git" signature for ...` splits at its first `:` into an action no arrival
 prefix matches and reads as work of its own: every branch just cut then claims

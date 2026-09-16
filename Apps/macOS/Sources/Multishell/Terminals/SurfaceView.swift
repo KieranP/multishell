@@ -89,8 +89,6 @@ final class SurfaceFrame: NSView {
   }
 }
 
-// MARK: - Files dropped on the terminal
-
 extension SurfaceFrame {
   override func draggingEntered(_ sender: any NSDraggingInfo) -> NSDragOperation {
     guard acceptsDrop?() == true, Self.hasFiles(sender) else { return [] }

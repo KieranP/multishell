@@ -1,7 +1,5 @@
 import MultishellCore
 
-// MARK: - Showing the board, and leaving it
-
 extension AppModel {
   /// The board fills the detail area, the selection left alone so its shells
   /// stay live. The sweep makes the first frame honest; see `watchedPIDs`.

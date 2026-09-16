@@ -1,14 +1,14 @@
 import Foundation
 import MultishellCore
 
-// MARK: - What the board is made of
-
 extension AppModel {
   /// Every live pane, flattened into a card. Rebuilt each read, a cache
   /// being one more thing that can disagree with the sidebar.
   public var agentBoardCards: [AgentBoardCard] {
     let projectNames = Dictionary(
       workspace.projects.map { ($0.id, $0.name) }, uniquingKeysWith: { first, _ in first })
+    let worktreesByID = Dictionary(
+      workspace.worktrees.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
     var tabsBySession: [TerminalSession.ID: TerminalTab] = [:]
     for tab in workspace.tabs {
       for id in tab.sessionIDs { tabsBySession[id] = tab }
@@ -16,7 +16,7 @@ extension AppModel {
 
     return workspace.sessions.compactMap { session in
       guard liveSessions.contains(session.id), let tab = tabsBySession[session.id],
-        let worktree = workspace.worktree(session.worktreeID)
+        let worktree = worktreesByID[session.worktreeID]
       else { return nil }
       let key = SessionStates.Key.session(session.id)
       return AgentBoardCard(
@@ -28,8 +28,8 @@ extension AppModel {
         projectName: projectNames[worktree.projectID] ?? "",
         worktreeName: workspace.displayName(of: worktree),
         state: sessionStates[key],
-        since: sessionStates.since[key],
-        note: sessionStates.notes[key],
+        since: sessionStates.since(key),
+        note: sessionStates.note(key),
         status: statuses[worktree.id])
     }
   }

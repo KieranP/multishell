@@ -3,8 +3,6 @@ import MultishellCore
 import MultishellGitKit
 import MultishellProcess
 
-// MARK: - Login shell environment
-
 extension AppModel {
   /// Asks the login shell for its environment once, off the main thread, and
   /// re-runs detection against its PATH.
@@ -41,9 +39,7 @@ extension AppModel {
     if let found = try? WorktreeCoordinator(path: environment.path) {
       worktrees = found
       if !hadGit {
-        if presentedError?.title == PresentedError(GitUnavailable()).title {
-          presentedError = nil
-        }
+        if presentedError?.saysGitIsMissing == true { presentedError = nil }
         // `start` refreshed before this ran and found no git, so every project
         // listed nothing; the sidebar stays empty until something asks again.
         await refreshAll()
@@ -66,12 +62,10 @@ extension AppModel {
   }
 
   private func note(_ status: (hooks: Set<String>, tool: Bool)) {
-    if status.hooks != installedAgentHooks { installedAgentHooks = status.hooks }
-    if status.tool != commandLineToolInstalled { commandLineToolInstalled = status.tool }
+    setIfChanged(\.installedAgentHooks, status.hooks)
+    setIfChanged(\.commandLineToolInstalled, status.tool)
   }
 }
-
-// MARK: - Preferred agent
 
 extension AppModel {
   public func setPreferredAgent(_ id: String?) {
@@ -137,7 +131,7 @@ extension AppModel {
     if !workspace.customAgentCommand.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
       ids.append(AgentCatalogue.customID)
     }
-    if ids != installedAgentIDs { installedAgentIDs = ids }
+    setIfChanged(\.installedAgentIDs, ids)
   }
 
   /// What the registry opens for a session: its shell, or the agent's command
@@ -213,8 +207,6 @@ extension AppModel {
     presentedError = .agentNotInstalled(name)
   }
 }
-
-// MARK: - Agent hooks and the command-line tool
 
 extension AppModel {
   /// The agents Settings > Agents offers hooks for: the ones this machine

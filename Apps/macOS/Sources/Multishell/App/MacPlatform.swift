@@ -105,6 +105,16 @@ final class MacPlatform: Platform {
   func log(_ message: String) {
     logger.notice("\(message, privacy: .public)")
   }
+
+  /// `terminate` exits inside the call once the delegate agrees, which with
+  /// no terminal open yet it does; see docs/design/state-and-store.md.
+  func handOverToRunningInstance() {
+    let identifier = Bundle.main.bundleIdentifier ?? Self.loggingSubsystem
+    NSRunningApplication.runningApplications(withBundleIdentifier: identifier)
+      .first { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier }?
+      .activate()
+    NSApp.terminate(nil)
+  }
 }
 
 struct CommandLineToolInstallFailed: Error, CustomStringConvertible {
