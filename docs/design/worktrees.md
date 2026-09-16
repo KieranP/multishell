@@ -55,6 +55,20 @@ terminal open or a reported state -> with it on, rows move as agents report in.
 Both settings are shippable by a repo and run nothing, and the override form
 seeds from `InheritedSetting`, what is actually in force, not the user's global.
 
+The two global settings are a menu behind a sort glyph at the right of the
+sidebar's Projects header, in the column the rows' + buttons occupy, rather than
+a row in Settings > Worktrees: an order is changed while looking at the rows it
+moves, and a settings window was three clicks away from them. The menu holds the
+five orders as an inline picker and the active-first toggle under a divider; a
+project's override stays in its settings, which is the only place with room for
+the (i) text. The glyph is badge-sized and dimmer than the caption beside it, a
+mark rather than a control. It is the strip's `.button` menu style under
+`.buttonStyle(.plain)`, not the detail header's `.borderlessButton`: that
+AppKit button draws the image at its own size and tint, so the glyph came out
+large and bright whatever the label asked for; see tabs-and-columns.md. Cost:
+the help that named the tie-break and where an undated worktree lands is now
+only on the override.
+
 ## A removed worktree goes to the Trash, not `git worktree remove`
 
 `git worktree remove` refuses a dirty tree, and its `--force` unlinks the

@@ -114,8 +114,8 @@ the group someone would look in. Width: the sidebar draws a symbol in a
 display name, a comparison in `WorktreeOrder.precedes`, a case in
 WorktreeOrderTests. Raw values reach repositories through `.multishell.json`,
 so a new case is free but renaming one silently turns a committed order into
-the default. Picker and project override follow `allCases`; their `InfoButton`
-text does not. Anything not on `Worktree` is passed to `sort` as a closure, as
+the default. The sidebar's sort menu and the project override follow `allCases`;
+the override's `InfoButton` text does not. Anything not on `Worktree` is passed to `sort` as a closure, as
 `isActive` and `lastCommit` are. Nothing sorts above the trunk row.
 
 **A shell with command-status hooks.** A script under

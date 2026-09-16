@@ -17,7 +17,6 @@ than fixed lives in `docs/develop/known-gaps.md`; a defect goes to `BUGS.md`.
 - Change tab icon and agents dashboard tile to show icon for the agent running
 - Pin worktrees in the sidebar
 - Rename worktree using default agent?
-- Move sidebar sorting settings to a sort icon on the sidebar
 - Keyboard: Cmd+1 to 9 for tabs, next and previous worktree, focus between
   panes, focus the sidebar filter. Each is an `AppShortcut` in
   `AppShortcuts.all`.

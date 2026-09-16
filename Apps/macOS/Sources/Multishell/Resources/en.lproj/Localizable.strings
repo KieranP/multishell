@@ -215,6 +215,7 @@
 "sidebar.not-reachable" = "%@ is not reachable right now";
 "sidebar.nothing-matches" = "Nothing matches";
 "sidebar.projects" = "Projects";
+"sidebar.sort-worktrees" = "Sort Worktrees";
 "tab.close" = "Close Tab";
 "tab.more-left" = "More tabs to the left";
 "tab.more-right" = "More tabs to the right";
@@ -249,7 +250,6 @@
 "window.project-settings-empty" = "Right-click a project in the sidebar and choose Project Settings.";
 "window.project-settings-title" = "%@ Settings";
 "worktrees.active-first" = "Show active at the top";
-"worktrees.active-first-info" = "Worktrees with a terminal open, or with a state an agent or a hook reported, are listed above the rest, each group then in the order above. Rows move as terminals open and close and as agents report in. Any project can override it.";
 "worktrees.branch-prefix" = "Branch prefix:";
 "worktrees.branch-prefix-info" = "Prepended to branch names typed in the new-worktree sheet. An existing branch keeps its name. Any project can override it.";
 "worktrees.confirm-removal" = "Ask before removing a worktree";
@@ -264,4 +264,3 @@
 "worktrees.prefix-none" = "none";
 "worktrees.seconds" = "seconds";
 "worktrees.sort" = "Sort worktrees:";
-"worktrees.sort-info" = "The order worktree rows are listed in under their project. Name goes by the name the row shows, which is the one you gave it where you gave one. Created goes by when the worktree's directory was made, Last commit by the last commit on its branch. A worktree with no date either way — a directory copied in rather than created, a detached checkout with no branch — is listed last. The main worktree, and the one on the default branch, stay at the top whichever order is chosen. Any project can override it.";

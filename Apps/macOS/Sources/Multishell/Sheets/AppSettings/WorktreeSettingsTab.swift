@@ -3,7 +3,8 @@ import MultishellCore
 import SwiftUI
 
 /// Settings > Worktrees: where new worktrees go, how their branches are
-/// named, and what a removal asks. Any project can override these.
+/// named, and what a removal asks. Any project can override these. The
+/// order rows are listed in is the sidebar's sort menu, not a row here.
 struct WorktreeSettingsTab: View {
   let model: AppModel
 
@@ -25,21 +26,6 @@ struct WorktreeSettingsTab: View {
         if !defaults.branchPrefix.isEmpty {
           SettingsCaption(t("worktrees.prefix-example", defaults.qualifiedBranch("tabs")))
         }
-      }
-
-      Section {
-        InfoRow(t("worktrees.sort"), info: t("worktrees.sort-info")) {
-          Picker(
-            t("worktrees.sort"),
-            selection: model.setting(\.worktreeSortOrder, write: model.setWorktreeSortOrder)
-          ) {
-            ForEach(WorktreeSortOrder.allCases, id: \.self) { Text($0.displayName).tag($0) }
-          }
-        }
-        InfoToggle(
-          t("worktrees.active-first"), info: t("worktrees.active-first-info"),
-          isOn: model.setting(
-            \.showsActiveWorktreesFirst, write: model.setShowsActiveWorktreesFirst))
       }
 
       Section {

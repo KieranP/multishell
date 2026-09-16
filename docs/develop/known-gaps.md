@@ -328,3 +328,6 @@ does.
   `newTabMenuWidth` frame and carries a `contentShape(.rect)`; that a click
   on the blank part of that frame opens the menu is not yet confirmed. Its
   items and what each opens are tested on the model, not through the view.
+  The sidebar's sort menu, on the Projects header, paints `sidebarColor`
+  over its 24-point frame for the same reason and is unconfirmed the same
+  way; its glyph and items have been seen on screen and work.

@@ -15,6 +15,7 @@ struct SidebarView: View {
   /// The filter field is folded away until asked for; it is wanted rarely.
   @State private var isFiltering = false
   @FocusState private var filterFocused: Bool
+  @State private var sortHovered = false
   @Environment(\.openWindow) private var openWindow
 
   private static let rowSpacing: CGFloat = 1
@@ -38,13 +39,7 @@ struct SidebarView: View {
           )
           .padding(.bottom, 4)
 
-          Text(t("sidebar.projects"))
-            .font(.system(size: metrics.caption, weight: .semibold))
-            .foregroundStyle(theme.textTertiary)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 8)
-            .frame(height: 22)
-            .padding(.bottom, 2)
+          projectsHeader(theme, metrics: metrics)
 
           ForEach(visibleProjects, id: \.project.id) { entry in
             projectRows(
@@ -162,6 +157,58 @@ struct SidebarView: View {
     .padding(.horizontal, 14)
     .frame(height: UIMetrics.headerHeight)
     .titleBarDoubleClick()
+  }
+
+  /// The Projects label, with the sort menu at the + column's edge so the
+  /// setting sits beside the rows it orders. Its width is a row button's.
+  private func projectsHeader(_ theme: Theme, metrics: UIMetrics) -> some View {
+    HStack(spacing: 6) {
+      Text(t("sidebar.projects"))
+        .font(.system(size: metrics.caption, weight: .semibold))
+        .foregroundStyle(theme.textTertiary)
+      Spacer(minLength: 4)
+      sortMenu(theme, metrics: metrics)
+    }
+    .padding(.horizontal, 8)
+    .frame(height: 22)
+    .padding(.bottom, 2)
+  }
+
+  /// The global order and the active-first toggle; a project's override
+  /// stays in its settings. See docs/design/worktrees.md.
+  private func sortMenu(_ theme: Theme, metrics: UIMetrics) -> some View {
+    Menu {
+      Picker(
+        t("sidebar.sort-worktrees"),
+        selection: model.setting(\.worktreeSortOrder, write: model.setWorktreeSortOrder)
+      ) {
+        ForEach(WorktreeSortOrder.allCases, id: \.self) { Text($0.displayName).tag($0) }
+      }
+      .pickerStyle(.inline)
+      Divider()
+      Toggle(
+        t("worktrees.active-first"),
+        isOn: model.setting(
+          \.showsActiveWorktreesFirst, write: model.setShowsActiveWorktreesFirst))
+    } label: {
+      Image(systemName: "arrow.up.arrow.down")
+        .font(.system(size: metrics.badge))
+        .foregroundStyle(sortHovered ? theme.textSecondary : theme.textTertiary.opacity(0.7))
+        .frame(width: 24, height: 22)
+        // Painted: a menu is hit-tested by its label's ink, and the glyph
+        // alone is a small target. As the strip's + does.
+        .background(theme.sidebarColor)
+        .contentShape(.rect)
+    }
+    // Not `.borderlessButton`: that AppKit button draws the image at its own
+    // size and tint, so no font or colour set here reaches it.
+    .menuStyle(.button)
+    .buttonStyle(.plain)
+    .menuIndicator(.hidden)
+    .fixedSize()
+    .onHover { sortHovered = $0 }
+    .help(t("sidebar.sort-worktrees"))
+    .accessibilityLabel(t("sidebar.sort-worktrees"))
   }
 
   private func footer(_ theme: Theme) -> some View {
