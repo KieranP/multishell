@@ -24,16 +24,22 @@ struct AgentHookPayloadTests {
     #expect(state(claude, "StopFailure") == .error)
     #expect(state(claude, "SessionEnd") == .idle)
     #expect(state(claude, "SessionStart") == .idle)
-    // Asked for so the two can be counted: `Stop` is the main loop stopping,
-    // which happens while these are still going. Neither moves the dot on
-    // its own; what they move is the count that holds Done back.
+    // Asked for so the roster can be kept: `Stop` is the main loop stopping,
+    // which happens while these are still going. What they move is the roster.
     #expect(state(claude, "SubagentStart") == .running)
     #expect(state(claude, "SubagentStop") == .running, "the agent is still working")
-    #expect(claude.events.first { $0.name == "SubagentStart" }?.subagents == 1)
-    #expect(claude.events.first { $0.name == "SubagentStop" }?.subagents == -1)
+    #expect(claude.events.first { $0.name == "SubagentStart" }?.subagent == .started)
+    #expect(claude.events.first { $0.name == "SubagentStop" }?.subagent == .ended)
     #expect(
-      claude.events.filter { $0.subagents != 0 }.count == 2,
-      "one event each way, or the count never comes back to nothing")
+      claude.events.filter { $0.subagent != nil }.count == 2,
+      "one event each way, or a worker never leaves the roster")
+    // Ctrl+C fires no hook and the workers it killed send no stop, so the
+    // next prompt is what empties the roster.
+    #expect(claude.events.first { $0.name == "UserPromptSubmit" }?.startsTurn == true)
+    #expect(claude.events.filter(\.startsTurn).count == 1)
+    #expect(AgentHooks.codex.events.first { $0.name == "UserPromptSubmit" }?.startsTurn == true)
+    #expect(AgentHooks.copilot.events.first { $0.name == "UserPromptSubmit" }?.startsTurn == true)
+    #expect(AgentHooks.gemini.events.first { $0.name == "BeforeAgent" }?.startsTurn == true)
     #expect(state(claude, "PostToolUseFailure") == nil, "a tool failing is not a turn failing")
     #expect(state(claude, "PreCompact") == nil)
     #expect(state(claude, "PostCompact") == nil, "it fires when the compaction is over")
@@ -194,6 +200,56 @@ struct AgentHookPayloadTests {
         """#.utf8))
     #expect(copilot?.eventName == "Notification")
     #expect(copilot?.message == "Permission needed")
+  }
+
+  /// Codex spells a subagent as Claude does. Copilot names one at its start and
+  /// adds an id only at its stop, so the name is the key at both ends.
+  @Test func codexAndCopilotNameASubagentInTheirOwnSpelling() throws {
+    let codex = AgentHooks.codex
+    #expect(codex.events.first { $0.name == "SubagentStart" }?.subagent == .started)
+    #expect(codex.events.first { $0.name == "SubagentStop" }?.subagent == .ended)
+    let inCodex = try #require(
+      AgentHookPayload(
+        json: Data(
+          #"{"hook_event_name":"PreToolUse","agent_id":"t2","agent_type":"worker","tool_name":"shell"}"#
+            .utf8)))
+    #expect(
+      codex.event(for: inCodex)?.subagentReport(for: inCodex)
+        == SubagentReport(id: "t2", type: "worker", phase: .working))
+
+    let copilot = AgentHooks.copilot
+    let start = try #require(
+      AgentHookPayload(
+        json: Data(
+          #"""
+          {"hook_event_name":"SubagentStart","sessionId":"s","timestamp":1,"cwd":"/w",
+           "agentName":"code-review","agentDisplayName":"Code Review"}
+          """#.utf8)))
+    #expect(
+      copilot.event(for: start)?.subagentReport(for: start)
+        == SubagentReport(id: "code-review", type: "Code Review", phase: .started))
+    let stop = try #require(
+      AgentHookPayload(
+        json: Data(
+          #"""
+          {"hook_event_name":"SubagentStop","sessionId":"s","timestamp":2,"cwd":"/w",
+           "agentId":"a9","agentType":"custom","agentName":"code-review","stopReason":"end_turn"}
+          """#.utf8)))
+    #expect(
+      copilot.event(for: stop)?.subagentReport(for: stop)?.id == "code-review",
+      "the stop's id was never seen at the start; the name was")
+    #expect(copilot.event(for: stop)?.subagentReport(for: stop)?.phase == .ended)
+    // A session run under --agent may name that agent on every event; a
+    // name on a tool call is not a worker, or the roster never empties.
+    let underAgent = try #require(
+      AgentHookPayload(
+        json: Data(
+          #"{"hook_event_name":"PreToolUse","sessionId":"s","cwd":"/w","agentName":"reviewer"}"#
+            .utf8)))
+    #expect(copilot.event(for: underAgent)?.subagentReport(for: underAgent) == nil)
+    #expect(
+      AgentHooks.gemini.events.allSatisfy { $0.subagent == nil },
+      "Gemini says nothing about a subagent to a hook")
   }
 
   @Test func aPayloadWithoutAnEventNameIsNotAPayload() {
@@ -438,23 +494,108 @@ struct AgentHooksTests {
     #expect(AgentHooks.claude.unreadableEvents(in: try HookSettingsFile.read(file)) == ["Stop"])
   }
 
-  /// The field the count rides on. Both directions, since an older helper and
-  /// an older app each have to meet a newer one.
-  @Test func theSubagentCountSurvivesTheWireBothWays() throws {
-    let sent = SessionStateReport(state: .running, agent: "claude", subagents: -1)
+  /// The field a worker rides on, both directions: an older helper and an older
+  /// app each have to meet a newer one over the shared helper link.
+  @Test func aSubagentSurvivesTheWireBothWays() throws {
+    let worker = SubagentReport(id: "agent_1", type: "Explore", phase: .working)
+    let sent = SessionStateReport(state: .running, agent: "claude", subagent: worker)
     let line = try sent.encodedLine()
-    #expect(line.contains("\"subagents\":-1"))
+    #expect(line.contains(#""subagent":{"id":"agent_1","phase":"working","type":"Explore"}"#))
     #expect(try #require(SessionStateReport.parse(line)) == sent)
+    #expect(SessionStateReport.parse(line)?.subagentChange == worker)
 
     let quiet = try SessionStateReport(state: .done).encodedLine()
-    #expect(!quiet.contains("subagents"), "a report that is not about them says nothing")
-    #expect(SessionStateReport.parse(quiet)?.subagents == nil)
+    #expect(!quiet.contains("subagent"), "a report that is not about them says nothing")
+    #expect(SessionStateReport.parse(quiet)?.subagentChange == nil)
 
-    // What an older helper writes, and what an older app would be handed.
+    // What an older helper writes: a count, read as an unnamed worker.
     let old = #"{"v":1,"state":"done","agent":"claude"}"#
-    #expect(SessionStateReport.parse(old)?.subagents == nil, "absent reads as no change")
-    let newer = #"{"v":1,"state":"running","subagents":1,"somethingLater":true}"#
-    #expect(SessionStateReport.parse(newer)?.subagents == 1)
+    #expect(SessionStateReport.parse(old)?.subagentChange == nil, "absent reads as no change")
+    let counted = #"{"v":1,"state":"running","subagents":1,"somethingLater":true}"#
+    #expect(
+      SessionStateReport.parse(counted)?.subagentChange
+        == SubagentReport(id: SubagentReport.anonymousID, phase: .started))
+    let uncounted = #"{"v":1,"state":"running","subagents":-1}"#
+    #expect(
+      SessionStateReport.parse(uncounted)?.subagentChange
+        == SubagentReport(id: SubagentReport.anonymousID, phase: .ended))
+  }
+
+  /// The other direction: a newer helper writing to an older app, which reads
+  /// the count and ignores the object. A tool call carries no count.
+  @Test func aNewHelpersWorkerIsCountedForAnOlderApp() throws {
+    func line(_ phase: SubagentReport.Phase) throws -> String {
+      try SessionStateReport(
+        state: .running, subagent: SubagentReport(id: "agent_1", type: "Explore", phase: phase)
+      ).encodedLine()
+    }
+    #expect(try line(.started).contains(#""subagents":1"#))
+    #expect(try line(.ended).contains(#""subagents":-1"#))
+    #expect(try !line(.working).contains(#""subagents""#))
+
+    let start = try line(.started)
+    #expect(
+      SessionStateReport.parse(start)?.subagentChange
+        == SubagentReport(id: "agent_1", type: "Explore", phase: .started),
+      "a new app still reads the named worker, not the count")
+  }
+
+  /// Claude names the subagent on every event of its own, so each says which
+  /// worker it is about; an event naming none is the main thread's.
+  @Test func anEventInsideASubagentNamesIt() throws {
+    let claude = AgentHooks.claude
+    func change(_ json: String) -> SubagentReport? {
+      let payload = AgentHookPayload(json: Data(json.utf8))!
+      return claude.event(for: payload)?.subagentReport(for: payload)
+    }
+    #expect(
+      change(#"{"hook_event_name":"SubagentStart","agent_id":"a1","agent_type":"Explore"}"#)
+        == SubagentReport(id: "a1", type: "Explore", phase: .started))
+    #expect(
+      change(#"{"hook_event_name":"SubagentStop","agent_id":"a1","agent_type":"Explore"}"#)
+        == SubagentReport(id: "a1", type: "Explore", phase: .ended))
+    #expect(
+      change(
+        #"{"hook_event_name":"PreToolUse","agent_id":"a1","agent_type":"Explore","tool_name":"Grep"}"#
+      ) == SubagentReport(id: "a1", type: "Explore", phase: .working))
+    #expect(
+      change(#"{"hook_event_name":"UserPromptSubmit","agent_id":"a1"}"#)
+        == SubagentReport(id: "a1", phase: .working),
+      "any event of a worker's keeps it on the roster")
+    let insideWorker = AgentHookPayload(
+      json: Data(#"{"hook_event_name":"UserPromptSubmit","agent_id":"a1"}"#.utf8))!
+    #expect(
+      claude.event(for: insideWorker)?.startsTurn(for: insideWorker) == false,
+      "a prompt inside a worker starts no turn of the agent's")
+    let ownPrompt = AgentHookPayload(json: Data(#"{"hook_event_name":"UserPromptSubmit"}"#.utf8))!
+    #expect(claude.event(for: ownPrompt)?.startsTurn(for: ownPrompt) == true)
+    #expect(change(#"{"hook_event_name":"PreToolUse","tool_name":"Grep"}"#) == nil)
+    #expect(
+      change(#"{"hook_event_name":"Stop","agent_type":"reviewer"}"#) == nil,
+      "a session run under --agent names a type and no worker")
+  }
+
+  /// A start or an end whose payload names nobody still moved the roster by
+  /// one. Read as the agent's own report it would leave a worker on the roster
+  /// for the rest of the turn, and the Done its Stop owes unpaid.
+  @Test func aSubagentEventThatNamesNoWorkerTakesAnUnnamedPlace() {
+    for integration in [AgentHooks.claude, AgentHooks.codex, AgentHooks.copilot] {
+      func change(_ event: String) -> SubagentReport? {
+        let payload = AgentHookPayload(json: Data(#"{"hook_event_name":"\#(event)"}"#.utf8))!
+        return integration.event(for: payload)?.subagentReport(for: payload)
+      }
+      let anonymous = SubagentReport.anonymousID
+      #expect(
+        change("SubagentStart") == SubagentReport(id: anonymous, phase: .started),
+        "\(integration.id) starts")
+      #expect(
+        change("SubagentStop") == SubagentReport(id: anonymous, phase: .ended),
+        "\(integration.id) stops")
+    }
+    // Any other event is the agent's own unless it names a worker, so an
+    // unnamed tool call still puts no phantom on the roster.
+    let call = AgentHookPayload(json: Data(#"{"hook_event_name":"PreToolUse"}"#.utf8))!
+    #expect(AgentHooks.claude.event(for: call)?.subagentReport(for: call) == nil)
   }
 
   /// Every existing install predates the two counting events, so Add has to
@@ -468,7 +609,7 @@ struct AgentHooksTests {
     // The file as a build before the counting events left it.
     let older = AgentHookIntegration(
       id: AgentCatalogue.claudeID, name: "Claude Code", file: file, displayPath: "x",
-      events: AgentHooks.claude.events.filter { $0.subagents == 0 },
+      events: AgentHooks.claude.events.filter { $0.subagent == nil },
       format: .sharedSettings(millisecondTimeout: false))
     try older.install(into: file, helper: helper)
     #expect(older.isInstalled(in: file))
@@ -748,6 +889,29 @@ struct AgentHooksTests {
       #expect(source.contains("report(\"\(state.rawValue)\""), "no \(state.rawValue)")
     }
     #expect(source.contains("session.idle"))
+    // A subagent is a child session: told by `parentID` when it is created,
+    // followed by its own id after, and never reported as the pane's Done.
+    #expect(source.contains("session.created"))
+    #expect(source.contains("info.parentID"))
+    #expect(source.contains("\"--subagent\", worker.id, \"--subagent-phase\", worker.phase"))
+    #expect(source.contains(#"status === "idle""#), "session.idle is deprecated; both end a child")
+    #expect(
+      source.contains(#"} else if (idle) report("done")"#),
+      "the parent's own Done is taken from either spelling too")
+    // A child's id outlives its end, so a late event of its own is not read
+    // as the parent's, and the oldest are dropped rather than held forever.
+    #expect(source.contains("finish(id)"))
+    #expect(source.contains("if (!child) return"))
+    #expect(source.contains("ended.length > 64"), "the cap is on the list, not on the map")
+    #expect(source.contains("ended.indexOf(id)"), "one place per child in it")
+    #expect(source.contains(#""--new-turn", "true""#), "a prompt in the parent starts a turn")
+    // A permission asked inside a child names the child's session, and is a
+    // prompt of that worker's, not a silence.
+    #expect(source.contains(#"report("attention", asked(properties), child)"#))
+    #expect(source.contains(#"report("running", undefined, child)"#))
+    for phase in SubagentReport.Phase.allCases {
+      #expect(source.contains("\"\(phase.rawValue)\""), "no \(phase.rawValue)")
+    }
     #expect(source.contains("permission.asked"), "the hook of that name is never called")
     #expect(source.contains("permission.replied"), "the one agent that says the answer came")
     #expect(

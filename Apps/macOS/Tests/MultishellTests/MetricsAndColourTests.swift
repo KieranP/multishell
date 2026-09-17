@@ -10,7 +10,7 @@ struct UIMetricsTests {
     let large = UIMetrics(fontSize: 16)
     for keyPath in [
       \UIMetrics.body, \.secondary, \.caption, \.badge, \.mono, \.icon, \.rowHeight,
-      \.namedRowHeight, \.tabHeight, \.indent,
+      \.namedRowHeight, \.tabHeight, \.indent, \.paneRowHeight,
     ] {
       #expect(small[keyPath: keyPath] < large[keyPath: keyPath])
     }
@@ -24,6 +24,9 @@ struct UIMetricsTests {
         metrics.namedRowHeight >= metrics.rowHeight + metrics.badge,
         "a named row holds a branch line under the name at \(size)")
       #expect(metrics.badge >= 7, "badge text must stay legible at \(size)")
+      #expect(
+        metrics.paneRowHeight >= metrics.badge * 1.8 && metrics.paneRowHeight < metrics.rowHeight,
+        "a pane's row holds its badge text and sits under a worktree's at \(size)")
     }
   }
 

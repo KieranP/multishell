@@ -245,7 +245,13 @@ struct SidebarView: View {
       projectRow(
         project, worktrees: worktrees, expanded: expanded, sessions: sessions, theme: theme,
         metrics: metrics)
-      ForEach(visible) { worktreeRow($0, sessions: sessions, theme: theme, metrics: metrics) }
+      ForEach(visible) { worktree in
+        worktreeRow(worktree, sessions: sessions, theme: theme, metrics: metrics)
+        // Only the selected worktree's panes, so one set takes room at a time.
+        if isSelected(worktree) {
+          PaneRows(model: model, worktree: worktree, theme: theme, metrics: metrics)
+        }
+      }
     }
     .overlay(alignment: dropTarget?.edge == .bottom ? .bottom : .top) {
       if draggingProject != nil, let target = dropTarget, target.projectID == project.id {
@@ -271,14 +277,22 @@ struct SidebarView: View {
       ))
   }
 
-  /// How tall a project's block is, which the drop delegate halves. Asked of
-  /// each worktree, a named or renaming row being two lines tall.
+  private func isSelected(_ worktree: Worktree) -> Bool {
+    !model.showsAgentBoard && model.workspace.selectedWorktreeID == worktree.id
+  }
+
+  /// How tall a project's block is, which the drop delegate halves: each
+  /// worktree's row, two lines when named, plus the selected one's pane rows.
   private func blockHeight(of visible: [Worktree], metrics: UIMetrics) -> CGFloat {
     visible.reduce(metrics.rowHeight) { total, worktree in
-      total + Self.rowSpacing
+      let panes =
+        isSelected(worktree)
+        ? model.workspace.tabs(in: worktree.id).reduce(0) { $0 + $1.sessionIDs.count } : 0
+      return total + Self.rowSpacing
         + metrics.worktreeRowHeight(
           isNamed: model.customName(of: worktree) != nil,
           isRenaming: model.renamingWorktreeID == worktree.id)
+        + CGFloat(panes) * (metrics.paneRowHeight + Self.rowSpacing)
     }
   }
 
@@ -317,7 +331,7 @@ struct SidebarView: View {
       terminalCount: sessions[worktree.id].count,
       state: model.state(ofWorktree: worktree.id, sessions: sessions),
       operation: model.worktreeOperations[worktree.id],
-      isSelected: !model.showsAgentBoard && model.workspace.selectedWorktreeID == worktree.id,
+      isSelected: isSelected(worktree),
       isDropTarget: tabDropTarget == worktree.id,
       status: model.statuses[worktree.id],
       mergeState: model.mergeState(of: worktree),

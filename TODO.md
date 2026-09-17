@@ -6,12 +6,12 @@ than fixed lives in `docs/develop/known-gaps.md`; a defect goes to `BUGS.md`.
 
 ## Features
 
-- Subagents tracking/display
 - File tree and git changes files and diff right hand panel
 - "Locate…" on a missing project, rebinding it to a chosen directory.
 
 ## Refinements
 
+- Improve the Git Diff indicators in sidebar and agents dashboard
 - On Agents Dashboard, order agents in the same order as Projects, and group
   agents from same project
 - Change tab icon and agents dashboard tile to show icon for the agent running

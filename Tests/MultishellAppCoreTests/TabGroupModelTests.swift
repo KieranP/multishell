@@ -143,18 +143,22 @@ struct TabGroupModelTests {
     #expect(h.model.focusedGroup?.id == columns.second.id)
   }
 
-  /// A Done state in another column clears when it lands, because that
-  /// pane is on screen; `SessionStates` is asked with `isShown`.
-  @Test func aFinishedCommandInAnotherColumnIsSeenAtOnce() {
+  /// A Done in another column is in view, so no banner, but not focused, so
+  /// it stays until that column is: `isFocused` clears, `isShown` holds the banner.
+  @Test func aFinishedCommandInAnotherColumnWaitsForItsFocus() {
     let h = Harness()
+    h.model.setNotifications(NotificationPreference(attention: true, error: true, done: true))
     let columns = twoColumns(h)
     let watched = h.model.workspace.activeTab(in: columns.first)!.focusedSessionID
+    #expect(h.model.focusedGroup?.id == columns.second.id)
 
     h.source.send(SessionStateReport(state: .done, sessionID: watched, cwd: nil, pid: nil))
 
-    #expect(
-      h.model.sessionStates[.session(watched)] == nil,
-      "the user is looking at it, so there is nothing to tell them")
+    #expect(h.model.sessionStates[.session(watched)] == .done, "in view, not looked at")
+    #expect(h.notifier.posted.isEmpty, "in view, so nothing to tell them")
+
+    h.model.focusGroup(columns.first.id)
+    #expect(h.model.sessionStates[.session(watched)] == nil, "focusing it is seeing it")
   }
 
   /// Dragging a tab along its own strip moves it as the pointer passes each

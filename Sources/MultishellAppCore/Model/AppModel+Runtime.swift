@@ -11,7 +11,7 @@ extension AppModel {
     // The keyboard is a pane's now, whatever field held it.
     findFieldPane = nil
     registry.focusActiveSession()
-    markShownTabSeen()
+    markFocusedPaneSeen()
   }
 
   /// For a control that is leaving, such as the sidebar filter on Escape: the
@@ -42,14 +42,19 @@ extension AppModel {
     pruneFind()
   }
 
-  /// What has now been seen: every column's active tab and the selected
-  /// worktree. Guarded on the board and on frontmost, as `hasBeenSeen` is.
-  func markShownTabSeen() {
+  /// The focused pane and the selected worktree are seen; every pane in view
+  /// loses its banner. Guarded on the board and frontmost, as `hasBeenSeen` is.
+  func markFocusedPaneSeen() {
     guard platform.isActive, !showsAgentBoard, let worktree = workspace.selectedWorktreeID
     else { return }
-    let shown = workspace.shownTabs(in: worktree).flatMap(\.sessionIDs)
-    mutateStates { $0.markSeen(sessions: shown, worktree: worktree) }
-    for id in shown { withdrawNotification(about: .session(id)) }
+    let focused = workspace.activeTab(in: worktree).map { [$0.focusedSessionID] } ?? []
+    if sessionStates.hasAnythingToSee(sessions: focused, worktree: worktree) {
+      mutateStates { $0.markSeen(sessions: focused, worktree: worktree) }
+    }
+    guard !notifiedKeys.isEmpty else { return }
+    for id in workspace.shownTabs(in: worktree).flatMap(\.sessionIDs) {
+      withdrawNotification(about: .session(id))
+    }
     withdrawNotification(about: .worktree(worktree))
   }
 
@@ -176,8 +181,8 @@ extension AppModel {
 }
 
 extension AppModel {
-  /// Activity in the focused tab is being watched; anywhere else it is
-  /// remembered until that tab is shown.
+  /// Activity in the pane with the keyboard is being watched; anywhere else,
+  /// a split's other pane included, it is remembered until that pane is focused.
   func noteActivity(in id: TerminalSession.ID) {
     // A prompt or a finished command in this worktree likely changed its
     // status, so look soon rather than waiting for the next poll.
@@ -207,5 +212,11 @@ extension AppModel {
   /// reported, else the tab's starting title.
   public func title(of tab: TerminalTab) -> String {
     tab.customTitle ?? sessionTitles[tab.focusedSessionID] ?? workspace.title(of: tab)
+  }
+
+  /// One pane's, a split holding several: the user's name for the tab, else
+  /// what this pane's shell last reported, else its starting title.
+  public func title(ofPane session: TerminalSession, in tab: TerminalTab) -> String {
+    tab.customTitle ?? sessionTitles[session.id] ?? session.title
   }
 }

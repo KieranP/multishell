@@ -41,42 +41,54 @@ extension AppModel {
       if let agent = report.agent {
         setIfChanged(\.reportedAgents[id], ReportedAgent(agentID: agent, pid: pid))
       }
-      apply(report, pid: pid, to: .session(id), in: session.worktreeID, isSeen: hasBeenSeen(id))
+      apply(
+        report, pid: pid, to: .session(id), in: session.worktreeID, isSeen: hasBeenSeen(id),
+        isOnScreen: isShown(id) && platform.isActive)
     } else if let cwd = report.cwd, let worktree = worktree(atPath: cwd) {
       // Gated on the board as `isShown` is, the worktree being selected
       // with nothing of it on screen; and on frontmost as `hasBeenSeen`.
       let seen =
         !showsAgentBoard && workspace.selectedWorktreeID == worktree.id && platform.isActive
-      apply(report, pid: pid, to: .worktree(worktree.id), in: worktree.id, isSeen: seen)
+      apply(
+        report, pid: pid, to: .worktree(worktree.id), in: worktree.id, isSeen: seen,
+        isOnScreen: seen)
     }
     updatePIDWatch()
   }
 
-  /// What the report was taken to mean, not what it said, and nothing at all
-  /// for a counting tick: see `SessionStates`.
+  /// `isSeen` is the focused pane and clears a Done; `isOnScreen` is any pane
+  /// in view and holds the banner. See docs/design/terminals.md.
   private func apply(
     _ report: SessionStateReport, pid: Int32?, to key: SessionStates.Key,
-    in worktreeID: Worktree.ID, isSeen: Bool
+    in worktreeID: Worktree.ID, isSeen: Bool, isOnScreen: Bool
   ) {
     var meant: SessionState?
     mutateStates {
       meant = $0.report(
         report.state, pid: pid, message: report.message, duration: report.duration,
-        subagents: report.subagents ?? 0, for: key, isSeen: isSeen)
+        subagent: report.subagentChange, startsTurn: report.startsTurn == true, for: key,
+        isSeen: isSeen)
     }
     if let meant {
-      notifyIfNeeded(report, as: meant, key: key, worktreeID: worktreeID, isSeen: isSeen)
+      notifyIfNeeded(report, as: meant, key: key, worktreeID: worktreeID, isSeen: isOnScreen)
     }
   }
 
-  /// Seen: on screen and the app in front. One notion for clearing a Done
-  /// and raising a banner, so the two can never disagree.
+  /// Seen: the pane with the keyboard, and the app in front. A split's other
+  /// pane is in view but not looked at, so its Done waits for its focus.
   public func hasBeenSeen(_ id: TerminalSession.ID) -> Bool {
-    isShown(id) && platform.isActive
+    isFocused(id) && platform.isActive
+  }
+
+  /// The pane the keyboard goes to: the selected worktree's active tab's
+  /// focused pane, with the board hidden. What clears a Done.
+  public func isFocused(_ id: TerminalSession.ID) -> Bool {
+    guard !showsAgentBoard, let worktree = workspace.selectedWorktreeID else { return false }
+    return workspace.activeTab(in: worktree)?.focusedSessionID == id
   }
 
   /// The pane is on screen: its worktree selected and its tab shown, asked
-  /// of every column. Half of `hasBeenSeen`, saying nothing about the user.
+  /// of every column. What holds a banner back, saying nothing about focus.
   public func isShown(_ id: TerminalSession.ID) -> Bool {
     // The board fills the detail area, so no pane is on screen behind it,
     // and a card would reach Idle having never passed through Done.
@@ -198,6 +210,16 @@ extension AppModel {
   /// The sidebar's form, one grouping serving every row of a render.
   public func state(ofWorktree id: Worktree.ID, sessions: WorktreeSessions) -> SessionState? {
     sessionStates.state(ofWorktree: id, sessions: sessions[id])
+  }
+
+  /// One pane's own state, for its sidebar row.
+  public func state(ofPane id: TerminalSession.ID) -> SessionState? {
+    sessionStates[.session(id)]
+  }
+
+  /// The workers out under one pane, for its row's chip. Empty is no chip.
+  public func subagents(ofPane id: TerminalSession.ID) -> [Subagent] {
+    sessionStates.subagents(.session(id))
   }
 
   /// The most urgent of the project's worktrees, for its row while collapsed.

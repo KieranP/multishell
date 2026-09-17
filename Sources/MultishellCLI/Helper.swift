@@ -9,6 +9,8 @@ enum Helper {
     usage:
       multishell state <running|attention|done|error|idle> [--session ID] [--cwd PATH]
                        [--pid PID] [--message TEXT] [--agent ID]
+                       [--subagent ID --subagent-phase <started|working|ended>
+                        [--subagent-type NAME]] [--new-turn true]
           Report a state for the terminal this runs in. Defaults come from the
           environment the app sets: MULTISHELL_SESSION, MULTISHELL_WORKTREE,
           MULTISHELL_SOCKET, MULTISHELL_APP_PID. The pid defaults to the
@@ -16,6 +18,10 @@ enum Helper {
           the shell itself when the next ancestor is the app. --agent names
           the agent at the prompt, by catalogue id, so the app can tell an
           agent's pane from a plain shell; the agents' own hooks set it.
+          --subagent names a worker the agent has out, so the app can list
+          it: started and ended are its ends, working a tool call inside it.
+          --new-turn marks the prompt starting a turn, after which no worker
+          of the last one is still out.
       multishell command-started [--pid N]
           Report that a foreground command has started (running). For a shell
           preexec hook; pass the shell's pid so the state clears if the shell
@@ -94,7 +100,9 @@ enum Helper {
         ?? FileManager.default.currentDirectoryPath,
       pid: options.int32("pid") ?? reportingProcess(environment),
       message: options["message"],
-      agent: options["agent"])
+      agent: options["agent"],
+      subagent: try subagent(options),
+      startsTurn: options["new-turn"] == "true" ? true : nil)
     do {
       try send(report, environment: environment)
       return 0
@@ -102,6 +110,22 @@ enum Helper {
       fail("could not reach Multishell: \(error)")
       return 1
     }
+  }
+
+  private static func subagent(_ options: Options) throws -> SubagentReport? {
+    guard let id = options["subagent"] else {
+      if let orphan = ["subagent-phase", "subagent-type"].first(where: { options[$0] != nil }) {
+        throw UsageError("--\(orphan) needs --subagent")
+      }
+      return nil
+    }
+    guard let phase = options["subagent-phase"].flatMap(SubagentReport.Phase.init(rawValue:))
+    else {
+      throw UsageError(
+        "--subagent needs --subagent-phase, one of: "
+          + SubagentReport.Phase.allCases.map(\.rawValue).joined(separator: ", "))
+    }
+    return SubagentReport(id: id, type: options["subagent-type"], phase: phase)
   }
 
   /// Nothing this prints or returns may disturb the agent: exit 0, no
@@ -123,7 +147,8 @@ enum Helper {
       message: payload.message,
       agent: id,
       silent: event.silent ? true : nil,
-      subagents: event.subagents == 0 ? nil : event.subagents)
+      subagent: event.subagentReport(for: payload),
+      startsTurn: event.startsTurn(for: payload) ? true : nil)
     try? send(report, environment: environment)
   }
 

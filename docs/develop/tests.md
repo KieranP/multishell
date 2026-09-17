@@ -125,9 +125,24 @@ What each test catches, and the conventions a new one follows.
   half-written install: AgentHooksTests.
 - A repeat agent report writes nothing observable: SessionStateModelTests,
   through `withObservationTracking`.
-- A counting tick leaves a Waiting, a Done or a Failed alone:
-  SessionStatesTests, both directions, and the owed Done still paid at the last
-  worker out.
+- A worker's start or end leaves a Waiting or a Failed alone, its tool call
+  clears a Waiting, either lifts a Done or nothing to Working, and the last
+  worker out pays the Done back or clears the lift: BackgroundWorkerTests, with
+  the roster kept by id, an older helper's count read as unnamed workers, and a
+  worker's tool calls leaving the roster as it was, named or unnamed.
+- A held Stop leaves a failure alone whether a worker's prompt covered it or it
+  is still standing, so no failure is paid back as a Done:
+  BackgroundWorkerTests.
+- Each agent names a worker in its own spelling, Codex as Claude and Copilot by
+  name with no id at the start, and a start or a stop naming nobody counted as
+  an unnamed one: AgentHookPayloadTests; the plugin follows a child session:
+  OpenCodePluginRunTests runs the generated JavaScript under node with `spawn`
+  replaced, and reads back what the helper would have been called with, since a
+  source test passes whatever that state machine was rewritten to; the flags a
+  plugin reports one by: HelperTests, half a worker refused with exit 2.
+- The chip reads the same roster on the row and on the card, and a Done gives
+  way to a worker and comes back once: SessionStateModelTests, through the
+  socket, the banner counted.
 - Export keeps a hook the user refused and does not trust it into the bargain:
   AppModelHookControlTests, against the real file on disk. The same suite
   exports over a file holding a `$schema` line, and SharedProjectSettingsTests

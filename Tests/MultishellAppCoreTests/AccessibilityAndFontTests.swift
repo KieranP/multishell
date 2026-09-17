@@ -81,6 +81,32 @@ struct AccessibilityTextTests {
       .contains("failed: The post-create hook failed"))
   }
 
+  /// The chip is read where it is drawn, on a tab row and a card, and the
+  /// chip itself reads the list it hides.
+  @Test func aTabRowAndACardSayHowManyWorkersAreOutAndTheChipSaysWhich() {
+    let out = [
+      Subagent(id: "a", type: "Explore", since: now.addingTimeInterval(-72)),
+      Subagent(id: "b", type: nil, since: now.addingTimeInterval(-34)),
+    ]
+    var withWorkers = card(occupant: .agent("Claude Code"), state: .running, secondsAgo: 60)
+    withWorkers.subagents = out
+    #expect(
+      AccessibilityText.card(withWorkers, at: now)
+        == "Claude Code, agent, Working, for 1m, claude — repairReferences, multishell, "
+        + "agents-view, 2 subagents")
+
+    #expect(AccessibilityText.subagents(out) == "2 subagents, Explore, subagent")
+    #expect(
+      AccessibilityText.pane(
+        title: "claude", position: nil, isActive: false, state: .running, subagentCount: 2)
+        == "claude, tab, Working, 2 subagents")
+    #expect(
+      AccessibilityText.pane(
+        title: "fix tests", position: (2, 2), isActive: true, state: nil, subagentCount: 0)
+        == "fix tests, pane 2 of 2, selected",
+      "a renamed tab names every pane alike, so the position tells them apart")
+  }
+
   /// The green glyph, in the place it is drawn: after the lock, before the
   /// changes. It is read only where it is drawn, so work that is only in
   /// this worktree silences it here too.

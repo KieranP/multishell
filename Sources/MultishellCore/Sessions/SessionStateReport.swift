@@ -31,9 +31,14 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   /// Set where the report moves a dot and another about the same thing will
   /// raise the banner. Absent keeps an older helper's banners.
   public var silent: Bool?
-  /// What this does to the count of background workers outstanding: `1`
-  /// started, `-1` ended. The app counts; see docs/design/agents.md.
+  /// The count a helper from before workers had names wrote: `1` started, `-1`
+  /// ended. Read as an unnamed worker; see docs/design/agents.md.
   public var subagents: Int?
+  /// A subagent starting, calling a tool or ending. The app keeps the
+  /// roster; see docs/design/agents.md.
+  public var subagent: SubagentReport?
+  /// Set on the prompt that starts a turn, which empties the roster.
+  public var startsTurn: Bool?
 
   enum CodingKeys: String, CodingKey {
     case version = "v"
@@ -46,6 +51,8 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     case agent
     case silent
     case subagents
+    case subagent
+    case startsTurn = "turn"
   }
 
   public init(
@@ -57,7 +64,9 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     duration: Double? = nil,
     agent: String? = nil,
     silent: Bool? = nil,
-    subagents: Int? = nil
+    subagents: Int? = nil,
+    subagent: SubagentReport? = nil,
+    startsTurn: Bool? = nil
   ) {
     self.version = Self.protocolVersion
     self.state = state
@@ -68,7 +77,19 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     self.duration = Self.bounded(duration)
     self.agent = agent
     self.silent = silent
-    self.subagents = subagents
+    self.subagents = subagents ?? Self.count(of: subagent)
+    self.subagent = subagent
+    self.startsTurn = startsTurn
+  }
+
+  /// What an app that reads only the count should make of a worker. A tool
+  /// call counts for nothing: each would otherwise add a worker to its roster.
+  private static func count(of subagent: SubagentReport?) -> Int? {
+    switch subagent?.phase {
+    case .started: 1
+    case .ended: -1
+    case .working, nil: nil
+    }
   }
 
   public init(from decoder: any Decoder) throws {
@@ -85,6 +106,22 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     agent = try container.decodeIfPresent(String.self, forKey: .agent)
     silent = try container.decodeIfPresent(Bool.self, forKey: .silent)
     subagents = try container.decodeIfPresent(Int.self, forKey: .subagents)
+    subagent = try container.decodeIfPresent(SubagentReport.self, forKey: .subagent)
+    startsTurn = try container.decodeIfPresent(Bool.self, forKey: .startsTurn)
+  }
+
+  /// The roster change the report carries, an older helper's count read as
+  /// an unnamed worker starting or ending.
+  public var subagentChange: SubagentReport? {
+    if let subagent { return subagent }
+    switch subagents {
+    case .some(let count) where count > 0:
+      return SubagentReport(id: SubagentReport.anonymousID, phase: .started)
+    case .some(let count) where count < 0:
+      return SubagentReport(id: SubagentReport.anonymousID, phase: .ended)
+    default:
+      return nil
+    }
   }
 
   /// A duration outside what a command could have taken is a writer's

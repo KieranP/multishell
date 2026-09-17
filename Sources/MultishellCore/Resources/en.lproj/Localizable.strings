@@ -195,6 +195,7 @@
 "spoken.not-reachable" = "not reachable";
 "spoken.nothing-running" = "nothing running";
 "spoken.operation-failed" = "failed: %@";
+"spoken.pane-position" = "pane %1$d of %2$d";
 "spoken.project" = "%@, project";
 "spoken.selected" = "selected";
 "spoken.shell" = "shell";
@@ -241,6 +242,8 @@
 "step.removal-failed-detail" = "Dismiss to go back to the terminals.";
 "step.removing-worktree" = "Moving the worktree to the Trash…";
 "step.worktree-not-removed" = "The worktree could not be removed";
+"subagent.occurrences" = "×%d";
+"subagent.unnamed" = "subagent";
 "tab.editor" = "Editor";
 "tab.shell" = "Shell";
 "worktree.not-removable" = "%@ is the repository itself, not a worktree that can be removed.";

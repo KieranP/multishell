@@ -22,6 +22,18 @@ public struct AgentBoardCard: Identifiable, Equatable, Sendable {
     }
   }
 
+  /// Which pane of a split this card is. A renamed tab gives both its panes
+  /// one title, so the card says which it is; `nil` for a tab with one pane.
+  public struct Position: Equatable, Sendable {
+    public let index: Int
+    public let count: Int
+
+    public init(index: Int, count: Int) {
+      self.index = index
+      self.count = count
+    }
+  }
+
   public let id: TerminalSession.ID
   public let tabID: TerminalTab.ID
   public let worktreeID: Worktree.ID
@@ -37,6 +49,9 @@ public struct AgentBoardCard: Identifiable, Equatable, Sendable {
   public let since: Date?
   public let note: SessionNote?
   public let status: WorktreeStatus?
+  /// The workers the occupant has out, oldest first. Empty is no chip.
+  public var subagents: [Subagent] = []
+  public var position: Position?
 
   public var lane: AgentBoardLane { AgentBoardLane.of(state) }
 

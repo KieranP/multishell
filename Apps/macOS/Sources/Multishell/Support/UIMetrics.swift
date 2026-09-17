@@ -25,6 +25,9 @@ struct UIMetrics {
   func worktreeRowHeight(isNamed: Bool, isRenaming: Bool) -> Double {
     isNamed || isRenaming ? namedRowHeight : rowHeight
   }
+  /// A pane's row under the selected worktree: one line of badge-sized text,
+  /// shorter than a worktree's so the panes read as its.
+  var paneRowHeight: Double { (body * 1.75).rounded() }
 
   var tabHeight: Double { (body * 2.6).rounded() }
   /// What a tab is drawn at when the strip has room for it.

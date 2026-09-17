@@ -113,3 +113,10 @@ One line each, too small for a section of their own. Newest at the bottom.
   field leaving would otherwise drop first responder to the window, and typing
   would reach nothing. Cost: the filter is one click further away, and with no
   keyboard route to it (known-gaps.md) the mouse is the only way in.
+- A worktree's dot is the most urgent state among its tabs, and a project's
+  among its worktrees, in the order failed, waiting, working, done, idle. Failed
+  above waiting, where it was below: a question answered still leaves the
+  failure, so a row with a failed tab is red whatever the others ask. Done needs
+  one finished tab, not all of them: one you have not looked at is the point of
+  the dot. Idle only when every tab is. A report naming only a directory, from a
+  terminal outside the app, is one more state in the worktree's set.

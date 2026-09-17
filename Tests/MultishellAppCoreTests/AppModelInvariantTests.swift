@@ -147,15 +147,15 @@ struct AppModelInvariantTests {
       Set(h.model.sessionStates.pids.keys).isSubset(of: Set(h.model.sessionStates.states.keys)),
       "\(context): a pid with no state")
     if let selected = ws.selectedWorktreeID {
-      // Failed is not in this: it survives being looked at, as Waiting
-      // does, so a shown pane may hold one for as long as nobody deals
-      // with it.
+      // Failed survives being looked at, as Waiting does, so the focused pane
+      // may hold one. Nor is a Done on another pane in view: it waits for focus.
       #expect(
         h.model.sessionStates[.worktree(selected)] != .done,
         "\(context): unseen Done shown")
-      for id in ws.shownTabs(in: selected).flatMap(\.sessionIDs) {
+      if let focused = ws.activeTab(in: selected)?.focusedSessionID {
         #expect(
-          h.model.sessionStates[.session(id)] != .done, "\(context): unseen Done shown")
+          h.model.sessionStates[.session(focused)] != .done,
+          "\(context): unseen Done in the focused pane")
       }
     }
     #expect(h.model.liveTerminalCount == live.count, "\(context): quit guard count")

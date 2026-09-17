@@ -17,14 +17,15 @@ public enum SessionState: String, Codable, Hashable, Sendable, CaseIterable {
   /// being looked at: a glance is not acting.
   case error
 
-  /// A tab or worktree with several sessions shows the most urgent.
+  /// A tab or worktree with several sessions shows the most urgent. A
+  /// failure above a question: a question answered still leaves the failure.
   public var urgency: Int {
     switch self {
     case .idle: 0
     case .done: 1
     case .running: 2
-    case .error: 3
-    case .attention: 4
+    case .attention: 3
+    case .error: 4
     }
   }
 

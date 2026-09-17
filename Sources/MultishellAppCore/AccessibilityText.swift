@@ -75,6 +75,21 @@ public enum AccessibilityText {
     return parts.joined(separator: ", ")
   }
 
+  /// A pane's row in the sidebar: its title, which pane of a split it is,
+  /// whether it is the one with the keyboard, its state and its workers.
+  public static func pane(
+    title: String, position: (Int, Int)?, isActive: Bool, state: SessionState?,
+    subagentCount: Int
+  ) -> String {
+    // One pane of a split is not a tab, so only a whole tab is read as one.
+    var parts = [position == nil ? t("spoken.tab", title) : title]
+    if let position { parts.append(t("spoken.pane-position", position.0, position.1)) }
+    if isActive { parts.append(t("spoken.selected")) }
+    if let state { parts.append(state.displayName) }
+    if subagentCount > 0 { parts.append(t("count.subagents", subagentCount)) }
+    return parts.joined(separator: ", ")
+  }
+
   /// One column of tabs, said before its tabs are. Empty for a worktree with
   /// one column, "group 1 of 1" before every tab being noise.
   public static func tabGroup(position: Int, of count: Int, isFocused: Bool) -> String {

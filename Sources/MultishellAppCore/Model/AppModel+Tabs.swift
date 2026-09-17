@@ -166,6 +166,21 @@ extension AppModel {
     reconcileSessions(takingFocus: true)
   }
 
+  /// A pane of the selected worktree brought on screen with the keyboard,
+  /// from its sidebar row.
+  public func show(pane id: TerminalSession.ID) {
+    guard let tab = workspace.tabOwning(id) else { return }
+    show(pane: id, in: tab)
+  }
+
+  /// The reconcile hands the keyboard to the active tab's focused pane,
+  /// which is this one now, so nothing more is needed to land in it.
+  func show(pane id: TerminalSession.ID, in tab: TerminalTab) {
+    store.activateTab(tab.id)
+    store.focusSession(id)
+    reconcileSessions(takingFocus: true)
+  }
+
   /// Moves `id` beside `target`, possibly in another column. A move leaving
   /// the strip reading the same writes nothing, the shuffle having done it.
   public func moveTab(

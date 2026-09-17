@@ -135,6 +135,13 @@ goes under Unconfirmed behaviour, and moves up when someone does.
   and its `git worktree add` cannot be stopped, and its later steps are dropped
   as belonging to a create that has ended. The row hold-back is counted per
   create and is not affected.
+- Copilot keys a worker by `agentName` at both ends, so two of one kind out at
+  once share one place on the roster and one raiser. Nothing in the payload
+  separates them, so no report under that place answers a prompt raised there
+  while another worker is still on it: a prompt the asking worker answered stays
+  on the dot until its sibling's next report. The chip counts the workers rather
+  than the places, so the number is right even where the list holds one row for
+  two.
 
 ## Unconfirmed behaviour
 
@@ -385,3 +392,59 @@ goes under Unconfirmed behaviour, and moves up when someone does.
   paints `sidebarColor` over its 24-point frame for the same reason and is
   unconfirmed the same way; its glyph and items have been seen on screen and
   work.
+- The subagent chip's list is a SwiftUI `.popover` opened from `onHover`, held a
+  quarter second after the pointer leaves so it can be crossed onto. Nobody has
+  watched it: whether the popover takes the keyboard from the terminal under it,
+  whether the pointer leaving the chip for the popover keeps it up, and whether
+  one in a sidebar row survives the row's own tap gesture, are all unconfirmed.
+  The fallback is a multi-line `.help` tooltip carrying the same text, which
+  steals nothing and cannot tick.
+- Copilot's subagent events are asked for as `SubagentStart` and `SubagentStop`,
+  the spelling whose payload names the event, on the strength of its other
+  events taking that spelling; its reference documents them as `subagentStart`
+  and `subagentStop`, with `agentName` and `agentDisplayName`. Not seen firing.
+  If it does not, the file needs the camel spelling and the payload no
+  `hook_event_name`, which `AgentHookPayload` refuses today. Its stop is keyed
+  by `agentName`, as its start is; should the stop carry `agent_id` in Claude's
+  spelling, that would win the key, match no name-keyed place and take nothing,
+  and the entry would stand until the next prompt.
+- OpenCode's plugin bridge forwards an event only when its directory matches the
+  plugin's; that a child session's `session.created` and its later
+  `session.status` pass that filter is read from source, not seen.
+- A subagent fan-out interrupted with Ctrl+C keeps its chip until the next
+  prompt is sent: Claude fires no hook on an interrupt and the killed workers
+  send no stop, so the prompt starting the next turn is the first thing that
+  says they are gone. Whether Claude sends anything sooner that could stand in
+  has not been checked against a run.
+- A Done the agent's Stop owes outlives the agent's own later reports, so under
+  a helper too old to send `turn` a worker that outlives its turn pays that Done
+  in the middle of the next one: a Done banner and dot while the agent is
+  working, until its next report. Nothing else says a turn began there. Under a
+  current helper the prompt clears what was owed before its Working lands.
+- Every hook that fires inside a worker carries `agent_id`, and a main-session
+  hook is taken to carry none: `subagentReport(for:)` reads any payload with the
+  field as a worker's tool call, whatever the event. Read from Claude's
+  documented payloads, not watched. Should a main-session `PreToolUse` carry one
+  too, each would put a worker keyed by the session id on the roster and
+  `startsTurn(for:)` would stop clearing it at the next prompt, so the pane
+  would hold Working with a Done owed to a worker that does not exist.
+- A Failed a worker's prompt displaced comes back when that worker ends saying
+  what the failure said, `displaced` carrying its note, but with a fresh age:
+  the stamp moved when the prompt took the dot, and only the state and the note
+  are put back. Needs StopFailure with a worker outliving it, which nobody has
+  seen happen.
+- OpenCode's plugin takes a `chat.message` from a session it has not seen
+  created as the parent's, and a parent's prompt starts a turn: a child's first
+  message arriving before its `session.created` would empty the roster. Bus
+  order is read as creation first; not seen. A message that names no session at
+  all is covered: it reports Working and starts no turn.
+- OpenCode's plugin caps the ended child ids it keeps at 64, and only an ended
+  one can go from the map: more than 64 children live at once, or children whose
+  end events the directory filter drops, grow the map for the life of the
+  process. Deleting a live child's id would be worse, its later events being
+  read as the parent's. Not seen; OpenCode is not known to run that many at
+  once.
+- OpenCode's plugin names a child worker by `info.agent` on `session.created`;
+  if that field is absent from the session info, as it may be, every OpenCode
+  worker shows as "subagent". The kind is also in the child's title, as "(@name
+  subagent)", which the plugin does not parse. Not seen against a run.

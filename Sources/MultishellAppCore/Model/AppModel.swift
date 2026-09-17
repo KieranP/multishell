@@ -237,9 +237,9 @@ public final class AppModel<Surface> {
     platform.onDidBecomeActive = { [weak self] in
       Task { await self?.refreshAll() }
       self?.refreshNotificationAuthorization()
-      // Coming back is seeing what is on screen: a Done raised while the
-      // user was elsewhere clears now, and its banner goes with it.
-      self?.markShownTabSeen()
+      // Coming back is seeing the focused pane: a Done raised there while
+      // the user was elsewhere clears now, and its banner goes with it.
+      self?.markFocusedPaneSeen()
     }
 
     registry.onActivity = { [weak self] id in self?.noteActivity(in: id) }
@@ -247,6 +247,9 @@ public final class AppModel<Surface> {
       self?.noteCommandFinished(in: id, exitCode: code)
     }
     registry.onRetitle = { [weak self] id, title in self?.noteTitle(title, of: id) }
+    // A click into a pane is looking at it: seen is the pane with the
+    // keyboard, and a click is how the keyboard moves without a reconcile.
+    registry.onFocus = { [weak self] _ in self?.markFocusedPaneSeen() }
     registry.onLiveSessionsChanged = { [weak self] in
       guard let self else { return }
       let live = registry.liveSessionIDs
@@ -255,9 +258,9 @@ public final class AppModel<Surface> {
       setIfChanged(\.reportedAgents, reportedAgents.filter { live.contains($0.key) })
       pruneStates()
       pruneFind()
-      // A shell exiting can bring another tab into view; it is being looked
-      // at now, whatever happened in it before.
-      markShownTabSeen()
+      // A shell exiting can bring another pane the keyboard; it is being
+      // looked at now, whatever happened in it before.
+      markFocusedPaneSeen()
     }
     stateSource.onReport = { [weak self] report in self?.apply(report) }
     notifier.onActivate = { [weak self] key in self?.reveal(key) }

@@ -21,7 +21,8 @@ Nothing collapses the sidebar, the traffic lights needing something under them.
 A worktree row is `UIMetrics.worktreeRowHeight`, asked by both the row that
 draws it and the sidebar, which counts a project's block off it to place the
 drop indicator: the two disagreeing puts the indicator in the wrong half of the
-block.
+block. The selected worktree's pane rows, `paneRowHeight` each, are counted the
+same way.
 
 ## One workspace window, `Window` scenes only
 

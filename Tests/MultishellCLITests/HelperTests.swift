@@ -187,6 +187,62 @@ struct HelperTests {
     #expect(SessionStateReport.parse(recorder.received.first ?? "")?.agent == "codex")
   }
 
+  /// OpenCode's plugin has no payload to hand over and names a worker by flags.
+  /// A phase without a worker, or a worker without a phase, is a usage error.
+  @Test func stateCanNameASubagent() async throws {
+    let path = Scratch.socketPath("cli")
+    let server = UnixSocketServer(path: path)
+    defer {
+      server.stop()
+      Scratch.removeSocket(path)
+    }
+    let recorder = LineRecorder()
+    server.onLine = { recorder.record($0) }
+    try server.start()
+
+    let output = try await run(
+      [
+        "state", "running", "--agent", "opencode", "--subagent", "ses_1", "--subagent-phase",
+        "working", "--subagent-type", "explore",
+      ], environment: ["MULTISHELL_SOCKET": path.path])
+    #expect(output.succeeded, "\(output.standardError)")
+    try await waitUntil { !recorder.received.isEmpty }
+    let report = SessionStateReport.parse(recorder.received.first ?? "")
+    #expect(report?.subagent == SubagentReport(id: "ses_1", type: "explore", phase: .working))
+
+    let prompt = try await run(
+      ["state", "running", "--agent", "opencode", "--new-turn", "true"],
+      environment: ["MULTISHELL_SOCKET": path.path])
+    #expect(prompt.succeeded, "\(prompt.standardError)")
+    try await waitUntil { recorder.received.count == 2 }
+    #expect(SessionStateReport.parse(recorder.received.last ?? "")?.startsTurn == true)
+
+    let halfSaid = try await run(
+      ["state", "running", "--subagent", "ses_1"], environment: ["MULTISHELL_SOCKET": path.path])
+    #expect(halfSaid.status == 2)
+    #expect(halfSaid.standardError.contains("--subagent-phase"))
+    let phaseAlone = try await run(
+      ["state", "running", "--subagent-phase", "ended"],
+      environment: ["MULTISHELL_SOCKET": path.path])
+    #expect(phaseAlone.status == 2)
+    let typeAlone = try await run(
+      ["state", "running", "--subagent-type", "explore"],
+      environment: ["MULTISHELL_SOCKET": path.path])
+    #expect(typeAlone.status == 2)
+    #expect(typeAlone.standardError.contains("--subagent"))
+
+    // A report the server has read is the barrier: anything the three usage
+    // errors had sent would be on the line before it.
+    let after = try await run(
+      ["state", "done", "--agent", "opencode"], environment: ["MULTISHELL_SOCKET": path.path])
+    #expect(after.succeeded, "\(after.standardError)")
+    try await waitUntil { recorder.received.count == 3 }
+    #expect(
+      SessionStateReport.parse(recorder.received.last ?? "")?.state == .done,
+      "the barrier is the third line, so nothing the usage errors sent is behind it")
+    #expect(recorder.received.count == 3, "no half-said worker reached the app")
+  }
+
   /// The pid reported is the program that ran the hook, past any shells
   /// between: here the test process, two `sh -c` layers up.
   @Test func thePidReportedIsTheFirstNonShellAncestor() async throws {

@@ -28,6 +28,10 @@ public final class SessionRegistry {
   /// observable, so the GUI mirrors `liveSessionIDs` from here.
   public var onLiveSessionsChanged: (@MainActor () -> Void)?
 
+  /// The engine gave a pane the keyboard, on a click into it. After the
+  /// store has it, so the GUI reads the new focus when it marks it seen.
+  public var onFocus: (@MainActor (TerminalSession.ID) -> Void)?
+
   public init(store: WorkspaceStore, host: any TerminalHost) {
     self.store = store
     self.host = host
@@ -93,6 +97,7 @@ extension SessionRegistry: TerminalHostDelegate {
 
   public func terminalHost(_ host: any TerminalHost, didFocus id: TerminalSession.ID) {
     store.focusSession(id)
+    onFocus?(id)
   }
 
   /// The process is already gone, so the surface must go too; leaving it

@@ -80,28 +80,28 @@ waiting":
   subagent launched in the background outlives it, and its tool calls keep
   reporting Working afterwards -> the pane went Done, back to Working, then Done
   again, once per wave, each with a banner. So `SubagentStart` and
-  `SubagentStop` are asked for too, purely to count what is out: a Stop with any
-  outstanding is held as Working, and the last worker to end pays the Done the
-  agent was owed. The count is the app's, a hook being a fresh process with
-  nothing to remember; it rides the channel as `subagents`, +1 or -1, and
-  `SessionStates.settling` keeps it. An agent that reports no workers never
-  enters that arm, so Codex and Copilot keep Stop meaning Done outright. A count
-  stuck above zero costs the Done banner and nothing else, and Idle, Failed, the
-  process going or the shell's own command returning clears it: the agent was
-  that command, so an agent killed with a worker counted, which sends no
+  `SubagentStop` are asked for too: a Stop with any outstanding is held as
+  Working, and the last worker to end pays the Done the agent was owed. What is
+  outstanding is a roster the app keeps, a hook being a fresh process with
+  nothing to remember; see the section below. An agent that reports no workers
+  never enters that arm, so Gemini keeps Stop meaning Done outright. A worker
+  left on the roster costs the Done banner and nothing else, and Idle, Failed,
+  the process going or the shell's own command returning clears it: the agent
+  was that command, so an agent killed with a worker out, which sends no
   SubagentStop, held its pane on Working at a bare prompt until the engine's
-  end-of-command was allowed to settle the count. Both counting events carry
-  Working, having no state worth sending, so the tick is bookkeeping and not
-  news: it leaves a Waiting, a Done or a Failed where it is; only a real Working
-  report moves those. Otherwise a background worker ending while a permission
-  prompt was up withdrew the banner and moved the card out of Waiting, with the
-  prompt still on screen and nothing to put it back; and one whose start went
-  uncounted, the app or the hooks arriving after it, ended after the Stop and
-  put a Done pane back to Working with nothing due to move it on. Such a tick
-  reports nothing back to the model, `report` answering `nil`: it carries no
-  message, so letting it through would have replaced the prompt's words on the
-  card and posted the banner again under the same key, which on macOS replaces
-  the one already there.
+  end-of-command was allowed to settle the roster. A worker's start and end
+  carry Working, having no state worth sending, so those two are bookkeeping and
+  not news: they leave a Waiting or a Failed where it is. Otherwise a background
+  worker ending while a permission prompt was up withdrew the banner and moved
+  the card out of Waiting, with the prompt still on screen and nothing to put it
+  back. Such a tick reports nothing back to the model, `report` answering `nil`:
+  it carries no message, so letting it through would have replaced the prompt's
+  words on the card and posted the banner again under the same key, which on
+  macOS replaces the one already there. A tool call inside a worker is not a
+  tick: it is work, as the main thread's is, and the prompt a worker's tool
+  raised, which names the worker too, is cleared by that worker's next call and
+  not held until the main thread moves. A Waiting a worker's event carries is a
+  prompt and moves the dot as one.
 - Gemini needed neither: its Notification has one type, a tool permission.
 
 Claude asked for that request beside its notification, not instead: the
@@ -210,9 +210,9 @@ Cost: off again after a relaunch.
 While it is up, nothing acting on "the tab in front of the user" acts at all:
 Cmd+W would end a shell in a pane nobody can see, Cmd+T open a tab appearing
 only once the board is left. One `worktreeInView` answers for all of them.
-Showing the board also means no pane is shown: `isShown` and `markShownTabSeen`
-answer false, else the selected worktree's Done states clear as it opens and
-their cards reach Idle having never passed through Done.
+Showing the board also means no pane is shown: `isShown`, `isFocused` and
+`markFocusedPaneSeen` answer false, else the selected worktree's Done states
+clear as it opens and their cards reach Idle having never passed through Done.
 
 An agent's pid is polled only while the board is up, one sweep as it opens:
 nowhere else shows a quit agent (a dropped file asks at the moment of the drop),
@@ -296,3 +296,158 @@ project runs. Blank is the override to no flags, the only spelling it has for
 that, which makes it the fourth field where `""` is an opinion (see
 settings.md). Nothing in `.multishell.json`: a flag is an argument to a program,
 and a repository's file is trusted for what is drawn, not for what runs.
+
+## Subagents are a roster by id, shown as a chip
+
+Claude's counting events name the worker: `agent_id` and `agent_type` on
+`SubagentStart` and `SubagentStop`, and the same two on every hook that fires
+inside it. So what was a count is a roster, `Subagent` under each key of
+`SessionStates`: a start or a first tool call puts one on, its end takes it off,
+and the count is how many workers those places stand for, which is more than the
+places only where an agent names two workers alike. Each carries its kind and
+when it started, stamped by the model's one clock as a state is. Not the tool it
+is in, though `PreToolUse` says: shown, it changed with every call and made the
+list flash, and carried, it re-rendered the sidebar per call, so a tool call
+from a worker already on the roster changes nothing. No task description:
+nothing on the wire carries one, for any agent. The wire field is `subagent`, an
+object with `id`, `type` and `phase` (`started`, `working`, `ended`); the old
+`subagents` count is still read, each `1` as an unnamed worker and each `-1`
+taking the last of those, because the helper link is shared between builds and
+points at whichever launched last, so an older helper meets a newer app on a
+developer's machine. The same link makes the reverse meeting happen too, so a
+start and an end also write the count beside the object, for an app that reads
+only that; a tool call writes none, or each would put another unnamed worker on
+that app's roster.
+
+Claude fires no hook on Ctrl+C, and the workers it killed send no stop, so an
+interrupted fan-out left its chip standing. Nothing says "interrupted"; what
+says the last turn is over is the prompt that starts the next, so
+`UserPromptSubmit`, and each agent's equivalent, carries `turn` and empties the
+roster, nothing owed and nothing lifted, before its own Working lands. Cost: the
+chip stands from the Ctrl+C to the next prompt, however long that is; the pid
+poll cannot help, the agent being alive at its prompt. And a background worker
+that outlives its turn, which Claude allows, drops off the chip at the next
+prompt until its own next tool call puts it back; its stop still takes it off,
+so nothing is owed for it twice.
+
+A worker out is work, the user's rule: a pane showing Done, or nothing, when a
+worker starts shows Working while any is out. What the worker's report stood
+over is remembered once, `displaced`, and the last worker out puts it back: a
+Done is paid and announced then, so the banner still fires once and at the end,
+provided the worker's start was seen: one first seen at a tool call after the
+Done was announced lifts it and announces it again at its end, the app having no
+way to tell a late worker from a new one; nothing is cleared again; a Failed,
+which only a worker's prompt displaces and mere work leaves standing, comes back
+unannounced, having been announced when it happened. The agent's own Working
+takes the dot back for itself, so the last worker out then leaves it, and it
+gives up that claim even where another thread's prompt holds the dot and its own
+report is not news: else the last worker out puts back what the turn began over,
+a Done firing in the middle of a turn the agent last said it was working
+through. Its own prompt claims a Working put over nothing but not a Done it
+owes. A Done the agent's Stop owes is its own kind of displaced, not the same as
+one a worker stood over: hooks are separate processes over a socket, so a
+main-thread event can land after the Stop it preceded, and the agent's own
+Working would otherwise have thrown the owed Done away and left the pane Working
+over a dead agent until the next prompt. A held Stop leaves a failure alone
+either way, covered by a worker's prompt or still standing, or a failure would
+be paid back as a Done; over one still standing the Stop is not even news, since
+a Working would hide a failure nobody has dealt with.
+
+A Waiting is cleared by the thread that raised it and by nothing less:
+`waitingRaisers` holds each thread asking, the agent or one place on the roster,
+and a thread's next tool call takes its own prompt off; the dot moves on when
+none is left. Otherwise, with two workers out, the second's tool call withdrew
+the first's prompt from the dot and the banner with the prompt still on screen,
+and the main thread's own calls did the same to a background worker's. A worker
+ending with its prompt still up, the user having denied it, takes the prompt
+with it, else nothing the agent did afterwards could. The agent's Stop over a
+worker's prompt is held, the Done owed, and the prompt stays until that worker
+moves or ends. A failure, a new turn and the user's clear still move it, the
+turn being over. Cost: a prompt whose thread never calls a tool again and never
+ends, which nothing documented does, holds the dot until the turn ends. The
+raiser is the roster place the report touched, not the id on the wire, because
+an older helper names no worker: under the wire id every unnamed worker asked as
+`""` and one end answered them all. An unnamed worker's end takes the last that
+is asking before the last that is not, that being the only way an
+interchangeable worker can answer its own prompt. With no unnamed place left it
+takes the oldest of any kind: one worker did end, and a place left over holds
+the agent's Done for the rest of the turn. A start or an end whose payload names
+nobody is read as an unnamed one for the same reason, rather than as the agent's
+own report. Its tool call takes the last unnamed place out rather than minting
+one, which would have put another worker on the roster per call and left the
+chip counting tool calls.
+
+Per agent, from what each says to a hook. Codex spells the two events and their
+fields as Claude does, feature-flagged behind `features.hooks` like the rest of
+its hooks. Copilot's `subagentStart` carries `agentName` and `agentDisplayName`
+and no id, its `subagentStop` an id as well -> the name is the key at both ends,
+so two workers of one kind at once are one entry. That entry counts its starts
+and takes as many ends, the alternative being a Done paid while the second is
+still working; the chip counts those workers rather than the places, so it says
+two where the list holds one row, which carries a `×2`. Nothing says which of
+them a later report came from, so neither a tool call nor an end under a shared
+place answers a prompt raised there while another worker is still on it: the
+prompt stands until the last one out, the alternative being the second worker
+withdrawing the first's prompt from the dot and the banner with it still on
+screen. Cost: a prompt the asking worker answered stays until its sibling's next
+report, one worker short of shared. A duplicate start, which no agent documents,
+would hold the roster place until the turn ends. Its built-in `general-purpose`
+emits neither. Gemini names a subagent to its telemetry and never to a hook, so
+its rows show none. OpenCode runs a subagent as a child session: its plugin
+takes `session.created` with `parentID` as a start, the child's own
+`session.status` busy and `tool.execute.before` as tool calls, its
+`session.idle` or `session.error` as the end, and reports them through
+`state --subagent`; a child's idle is not the pane's Done. `session.idle` is
+deprecated in favour of `session.status`, so both spellings end a child and both
+are the parent's Done: reading only the old one in the parent would have left
+the pane Working for good once OpenCode drops it. An ended child's id is kept,
+its entry marked rather than deleted, so a second end or a late permission of
+its own is not read as the parent's; a busy status is the one thing that puts it
+back, and the oldest ended ids go once the list is over 64, rather than one per
+subagent for the life of the process. Ended ids are kept in their own list,
+oldest first, and the cap is on that list rather than on the map: gated on the
+map a child going busy and idle over and over grew the list without bound, the
+map never crossing 64. One place per child there, so those cycles neither grow
+the list nor push other children out of it, at the price of a scan of at most 64
+ids per end; a child busy again keeps its place until its next end. Where the
+roster has to be pieced together from what an agent reports, and the pieces
+disagree, the pane's dot is what the pieces agree on: a report for a worker not
+on the roster puts it on, an end for one never seen takes nothing, and the
+roster is cleared with everything else that clears.
+
+Drawn as a chip in the Working colour, the count behind a branch glyph, on a
+pane's row in the sidebar and on its board card while that pane has a worker
+out, and on neither when it has none: an empty chip would be one more badge on
+every row. Not on the worktree row, which was tried: the row already carries
+four badges, and the pane rows under the selected worktree say which pane the
+swarm is in, where a count on the worktree could not. A report naming only a
+directory, from a terminal outside the app, keeps its workers under the
+worktree's own key, which moves the worktree's dot and shows on no chip, there
+being no pane to hang one on. Hovering the chip lists them, kind and time, in a
+popover that ticks while it is up; nothing else grows, so a fan-out of eight
+costs the sidebar no rows and the board no height. Chosen over rows under the
+tab, which an eight-agent fan-out would have pushed the next project off screen
+with, and over cards of their own, which broke one card per pane and counted
+things nothing could open. Cost: the list is never on screen unless the pointer
+is on a 20-point target, and VoiceOver gets it as the chip's label rather than
+as rows.
+
+## The selected worktree lists its panes in the sidebar
+
+Under the selected worktree's row, one row per pane, `PaneRows`, a split tab
+giving one per pane rather than one for the tab: the pane's own dot, its own
+title, and a subagent chip of its own while it has workers out, so a glance down
+the sidebar says which pane of the worktree is working, which is done and which
+has a swarm, without reading the strip. A tab was the row first, and a split's
+second pane, which has its own agent and its own dot, was nowhere. A split's
+panes carry a split glyph and their position, since a renamed tab names every
+pane alike and two plain shells both read as the shell. That row drops its
+terminal count, the rows under it being the count. The active tab's focused pane
+is bold, one per worktree and not one per column: with two columns two tabs are
+on screen, and two bold rows read as two selections. A click shows another and
+hands it the keyboard, the way a board card does. Only the selected worktree's,
+so one set takes room at a time and a project with forty panes across its
+worktrees does not become forty rows. Each row is `paneRowHeight`, which the
+sidebar's block height counts off as it counts a named row, or the drop
+indicator lands in the wrong half. Cost: selecting a worktree shifts every row
+under it by its pane count.

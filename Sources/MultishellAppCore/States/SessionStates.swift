@@ -21,14 +21,127 @@ public struct SessionStates: Equatable, Sendable {
     var since: Date?
     /// What the last report said beyond its state.
     var note: SessionNote?
-    /// Background workers the agent still has out; see docs/design/agents.md.
-    var background = 0
-    /// The agent said it had finished while workers were still out, so the
-    /// Done is owed, and the last worker to end pays it.
-    var owesDone = false
+    /// The workers the agent still has out, in the order they started; see
+    /// docs/design/agents.md.
+    var workers: [Subagent] = []
+    /// What a worker's report put the dot over, remembered once, for the
+    /// last worker out to put back; `nil` while the agent's own state shows.
+    var displaced: Displaced?
+    /// Who raised the prompts on screen, since only that thread's next tool
+    /// call, or its end, says its own was answered.
+    var waitingRaisers: Set<Raiser> = []
+
+    enum Displaced: Equatable {
+      case nothing
+      case done
+      /// A Done the agent's own Stop owes, which its later reports do not
+      /// take back: only the last worker out pays it.
+      case stop
+      /// The failure's own note, put back with it: the prompt that covered
+      /// it rewrote the note, and a card reads one only for its own state.
+      case failed(SessionNote?)
+
+      var isFailure: Bool {
+        if case .failed = self { return true }
+        return false
+      }
+    }
+
+    enum Raiser: Hashable {
+      case agent
+      case worker(String)
+    }
+
+    /// A roster place a report touched, and whether more than one worker was
+    /// under it when it did. Copilot names workers alike, so such a place
+    /// gives no way to tell which of them reported.
+    struct Place {
+      var id: String
+      var isShared = false
+    }
 
     var isEmpty: Bool {
-      state == nil && pid == nil && since == nil && note == nil && background == 0 && !owesDone
+      state == nil && pid == nil && since == nil && note == nil && workers.isEmpty
+        && displaced == nil && waitingRaisers.isEmpty
+    }
+
+    /// A start or a tool call puts a worker on the roster, its end takes it off.
+    /// Returns the roster place touched, which is what raises and answers.
+    @discardableResult
+    mutating func keep(_ report: SubagentReport) -> Place {
+      let isAnonymous = report.id == SubagentReport.anonymousID
+      switch report.phase {
+      case .ended:
+        guard let index = endingPlace(for: report) else { return Place(id: report.id) }
+        let place = Place(id: workers[index].id, isShared: workers[index].occurrences > 1)
+        if workers[index].occurrences > 1 {
+          workers[index].occurrences -= 1
+        } else {
+          workers.remove(at: index)
+        }
+        return place
+      case .working where isAnonymous:
+        // A tool call names no worker either, so it is one already out, and
+        // only a start puts another unnamed place on the roster.
+        guard let index = workers.lastIndex(where: \.isAnonymous) else {
+          let id = Subagent.anonymousPrefix + UUID().uuidString
+          workers.append(Subagent(id: id, type: report.type))
+          return Place(id: id)
+        }
+        return Place(id: workers[index].id, isShared: workers[index].occurrences > 1)
+      case .started, .working:
+        let id = isAnonymous ? Subagent.anonymousPrefix + UUID().uuidString : report.id
+        guard let index = workers.firstIndex(where: { $0.id == id }) else {
+          workers.append(Subagent(id: id, type: report.type))
+          return Place(id: id)
+        }
+        // A tool call from one already out says nothing; a second start under
+        // its id is a second worker an agent named without an id.
+        if report.phase == .started { workers[index].occurrences += 1 }
+        return Place(id: id, isShared: workers[index].occurrences > 1)
+      }
+    }
+
+    /// Which place an end takes. A named one takes its own and nothing where
+    /// it is not out. An unnamed end is one worker gone whichever it was, so
+    /// it takes one that is asking before one that is not, and the oldest
+    /// place of any kind rather than nothing: a roster left a worker over
+    /// holds the agent's Done for the rest of the turn.
+    private func endingPlace(for report: SubagentReport) -> Int? {
+      guard report.id == SubagentReport.anonymousID else {
+        return workers.firstIndex { $0.id == report.id }
+      }
+      let asking = workers.lastIndex { $0.isAnonymous && waitingRaisers.contains(.worker($0.id)) }
+      return asking ?? workers.lastIndex(where: \.isAnonymous) ?? workers.indices.first
+    }
+
+    /// Remembers what a worker's report is about to stand over, once. A
+    /// failure is displaced only by a prompt, never by mere work.
+    mutating func rememberDisplaced(byPrompt: Bool) {
+      guard displaced == nil else { return }
+      switch state {
+      case nil: displaced = .nothing
+      case .done: displaced = .done
+      case .error where byPrompt: displaced = .failed(note)
+      default: break
+      }
+    }
+
+    /// The turn is over, however it ended: nothing out, displaced or asked.
+    mutating func settleTurn() {
+      workers = []
+      displaced = nil
+      waitingRaisers = []
+    }
+
+    /// One thread's prompt answered. `true` when no other is still asking,
+    /// so the dot may move on. A report from a place several workers share
+    /// answers nothing: it may be from any of them, and the prompt is still
+    /// on screen. See docs/design/agents.md.
+    mutating func answered(_ raiser: Raiser, sharedPlace: Bool = false) -> Bool {
+      guard !sharedPlace else { return false }
+      waitingRaisers.remove(raiser)
+      return waitingRaisers.isEmpty
     }
   }
 
@@ -46,6 +159,9 @@ public struct SessionStates: Equatable, Sendable {
   public var since: [Key: Date] { entries.compactMapValues(\.since) }
   public var notes: [Key: SessionNote] { entries.compactMapValues(\.note) }
 
+  /// The workers out under one key, oldest first.
+  public func subagents(_ key: Key) -> [Subagent] { entries[key]?.workers ?? [] }
+
   /// An entry with nothing left in it goes, so `isEmpty` and `==` read true.
   private mutating func update(_ key: Key, _ change: (inout Entry) -> Void) {
     var entry = entries[key] ?? Entry()
@@ -54,13 +170,16 @@ public struct SessionStates: Equatable, Sendable {
   }
 
   /// A report over the channel, `isSeen` the user looking at it. Returns what
-  /// it meant once `settling` has counted workers, `nil` for a bookkeeping tick.
+  /// it meant once `settling` has kept the roster, `nil` for a bookkeeping tick.
   @discardableResult
   public mutating func report(
     _ state: SessionState, pid: Int32?, message: String? = nil, duration: Double? = nil,
-    subagents: Int = 0, for key: Key, isSeen: Bool
+    subagent: SubagentReport? = nil, startsTurn: Bool = false, for key: Key, isSeen: Bool
   ) -> SessionState? {
-    guard let state = settling(state, subagents: subagents, for: key) else { return nil }
+    // A prompt starts a turn, so whatever the last one left out is gone: an
+    // agent interrupted fires no hook and its workers send no stop.
+    if startsTurn { update(key) { $0.settleTurn() } }
+    guard let state = settling(state, subagent: subagent, for: key) else { return nil }
     switch state {
     case .idle:
       clear(key)
@@ -83,43 +202,136 @@ public struct SessionStates: Equatable, Sendable {
     return state
   }
 
-  /// What a report means once background workers are counted, `nil` for a
-  /// tick that moves nothing. See docs/design/agents.md.
+  /// What a report means once the roster is kept, `nil` for one that moves
+  /// nothing. See docs/design/agents.md.
   private mutating func settling(
-    _ state: SessionState, subagents: Int, for key: Key
+    _ state: SessionState, subagent: SubagentReport?, for key: Key
   ) -> SessionState? {
-    guard subagents == 0 else {
-      let count = max(0, (entries[key]?.background ?? 0) + subagents)
-      // The last one out pays the Done its agent reported while they ran.
-      var paysDone = false
+    // A Stop, a failure or an end naming a worker, which no agent documents,
+    // is the agent's own and puts no phantom on the roster.
+    guard let subagent, !state.isFinished, state != .idle else {
+      return settlingOwn(state, entry: entries[key] ?? Entry(), for: key)
+    }
+    var place = Entry.Place(id: subagent.id)
+    update(key) { place = $0.keep(subagent) }
+    let entry = entries[key] ?? Entry()
+    let raiser = Entry.Raiser.worker(place.id)
+    switch state {
+    case .attention:
       update(key) {
-        $0.background = count
-        if count == 0, $0.owesDone {
-          $0.owesDone = false
-          paysDone = true
-        }
+        $0.rememberDisplaced(byPrompt: true)
+        $0.waitingRaisers.insert(raiser)
       }
-      if paysDone { return .done }
-      // Counting events carry `.running` for want of anything to say, so a
-      // tick is not news: it carries no message, and what is there stands.
-      if state == .running, let current = entries[key]?.state, current != .running { return nil }
+      return state
+    case .running where subagent.phase == .working:
+      // A failure stands to mere work, and so does another thread's prompt:
+      // only the thread that asked, moving on, says it was answered.
+      if entry.state == .error { return nil }
+      if entry.state == .attention {
+        var answered = false
+        update(key) { answered = $0.answered(raiser, sharedPlace: place.isShared) }
+        guard answered else { return nil }
+      }
+      update(key) { $0.rememberDisplaced(byPrompt: false) }
+      return state
+    case .running:
+      return settlingTick(subagent, place: place, entry: entry, for: key)
+    case .done, .error, .idle:
+      return nil
+    }
+  }
+
+  /// A start or an end carries `.running` for want of anything to say: a
+  /// tick, not news, except over a Done or nothing, and at the last one out.
+  private mutating func settlingTick(
+    _ subagent: SubagentReport, place: Entry.Place, entry: Entry, for key: Key
+  ) -> SessionState? {
+    let raiser = Entry.Raiser.worker(place.id)
+    let outstanding = !entry.workers.isEmpty
+    // A worker ending with its prompt still up, the user having denied it,
+    // takes the prompt with it.
+    if subagent.phase == .ended, entry.state == .attention, entry.waitingRaisers.contains(raiser) {
+      var answered = false
+      update(key) { answered = $0.answered(raiser, sharedPlace: place.isShared) }
+      guard answered else { return nil }
+      if !outstanding, let displaced = entry.displaced { return restore(displaced, for: key) }
+      return .running
+    }
+    if !outstanding, let displaced = entry.displaced { return restore(displaced, for: key) }
+    if outstanding, entry.state == nil || entry.state == .done {
+      update(key) { $0.rememberDisplaced(byPrompt: false) }
+      return .running
+    }
+    guard entry.state == .running else { return nil }
+    return .running
+  }
+
+  /// The agent's own report. Its Working answers its own prompt and takes
+  /// the dot back from a worker; its Stop is held while workers are out.
+  private mutating func settlingOwn(
+    _ state: SessionState, entry: Entry, for key: Key
+  ) -> SessionState? {
+    switch state {
+    case .running:
+      // The claim goes whether or not another thread's prompt still holds the
+      // dot, or the last worker out puts back what the turn began over.
+      update(key) { if $0.displaced != .stop { $0.displaced = nil } }
+      if entry.state == .attention {
+        var answered = false
+        update(key) { answered = $0.answered(.agent) }
+        guard answered else { return nil }
+      }
+      return state
+    case .attention:
+      // The agent asking claims a Working a worker put over nothing; a Done
+      // it owed is still owed.
+      update(key) {
+        if $0.displaced == .nothing { $0.displaced = nil }
+        $0.waitingRaisers.insert(.agent)
+      }
+      return state
+    case .done where !entry.workers.isEmpty:
+      // A failure is left alone whether a worker's prompt covered it or it is
+      // still standing, or the Done would be paid over it.
+      guard entry.state != .error else { return nil }
+      // The main loop stopping is not the turn finishing: the Done is owed to
+      // the last worker out, and a worker's prompt still up stays on the dot.
+      update(key) { if $0.displaced?.isFailure != true { $0.displaced = .stop } }
+      if entry.state == .attention, entry.waitingRaisers.contains(where: { $0 != .agent }) {
+        update(key) { _ = $0.answered(.agent) }
+        return nil
+      }
+      update(key) { $0.waitingRaisers = [] }
+      return .running
+    case .done:
+      update(key) {
+        $0.displaced = nil
+        $0.waitingRaisers = []
+      }
+      return state
+    case .idle, .error:
+      update(key) { $0.settleTurn() }
       return state
     }
-    switch state {
-    case .done where (entries[key]?.background ?? 0) > 0:
-      // The main loop stopping is not the turn finishing: a banner here fires
-      // at the wrong moment, and the next worker's report undoes the dot.
-      update(key) { $0.owesDone = true }
-      return .running
-    case .idle, .error:
-      // A session ending, or failing, settles the whole turn.
+  }
+
+  /// The last worker out puts back what the first displaced: a Done is paid
+  /// and announced, nothing is cleared, a failure was announced when it happened.
+  private mutating func restore(_ displaced: Entry.Displaced, for key: Key) -> SessionState? {
+    update(key) {
+      $0.displaced = nil
+      $0.waitingRaisers = []
+    }
+    switch displaced {
+    case .nothing: return .idle
+    case .done, .stop: return .done
+    case .failed(let note):
       update(key) {
-        $0.background = 0
-        $0.owesDone = false
+        $0.state = .error
+        $0.pid = nil
+        $0.note = note
       }
-      return state
-    default:
-      return state
+      return nil
     }
   }
 
@@ -138,12 +350,9 @@ public struct SessionStates: Equatable, Sendable {
   ) {
     let key = Key.session(id)
     let finished = SessionState.finished(exitCode: exitCode)
-    // An agent killed with a worker counted sends no SubagentStop; the command
+    // An agent killed with a worker out sends no SubagentStop; the command
     // it was has returned, so nothing is out and nothing is owed.
-    update(key) {
-      $0.background = 0
-      $0.owesDone = false
-    }
+    update(key) { $0.settleTurn() }
     switch entries[key]?.state {
     case .running, .attention, nil:
       update(key) {
@@ -160,11 +369,19 @@ public struct SessionStates: Equatable, Sendable {
   /// The shown tab and the selected worktree have been seen. Done goes;
   /// the rest stay until something other than a look deals with them.
   public mutating func markSeen(sessions: [TerminalSession.ID], worktree: Worktree.ID?) {
-    var keys = sessions.map(Key.session)
-    if let worktree { keys.append(.worktree(worktree)) }
-    for key in keys where entries[key]?.state?.clearsWhenSeen == true {
+    for key in keys(sessions, worktree) where entries[key]?.state?.clearsWhenSeen == true {
       update(key) { $0.state = nil }
     }
+  }
+
+  /// Whether `markSeen` would clear anything. Its caller copies the whole
+  /// value to mutate it, and the engine reports focus on every click.
+  public func hasAnythingToSee(sessions: [TerminalSession.ID], worktree: Worktree.ID?) -> Bool {
+    keys(sessions, worktree).contains { entries[$0]?.state?.clearsWhenSeen == true }
+  }
+
+  private func keys(_ sessions: [TerminalSession.ID], _ worktree: Worktree.ID?) -> [Key] {
+    sessions.map(Key.session) + (worktree.map { [Key.worktree($0)] } ?? [])
   }
 
   /// The state and what it claimed go; the stamp and the note are left for
@@ -173,8 +390,7 @@ public struct SessionStates: Equatable, Sendable {
     update(key) {
       $0.state = nil
       $0.pid = nil
-      $0.background = 0
-      $0.owesDone = false
+      $0.settleTurn()
     }
   }
 
@@ -203,20 +419,26 @@ public struct SessionStates: Equatable, Sendable {
         if $0.state?.isFinished != true { $0.state = nil }
         $0.pid = nil
         // Its workers went with it, so nothing is owed and nothing is out.
-        $0.background = 0
-        $0.owesDone = false
+        $0.settleTurn()
       }
     }
   }
 
-  /// Records when each key's state changed, once per mutation. A key that did
-  /// not move keeps its time, so repeated Working reports do not reset it.
+  /// Records when each key's state changed, once per mutation, and stamps a
+  /// worker's start. A key that did not move keeps its time.
   public mutating func stampChanges(against previous: SessionStates, at now: Date) {
     for key in Set(entries.keys).union(previous.entries.keys)
     where entries[key]?.state != previous.entries[key]?.state {
       update(key) {
         $0.since = now
         if $0.state == nil { $0.note = nil }
+      }
+    }
+    for (key, entry) in entries where entry.workers.contains(where: { $0.since == nil }) {
+      update(key) {
+        for index in $0.workers.indices where $0.workers[index].since == nil {
+          $0.workers[index].since = now
+        }
       }
     }
   }
@@ -241,5 +463,9 @@ public struct SessionStates: Equatable, Sendable {
     }.count
   }
 
-  public var isEmpty: Bool { !entries.values.contains { $0.state != nil } }
+  /// Nothing showing and nothing out. A stamp and a note outlive the state
+  /// they were about, so neither counts; a roster does.
+  public var isEmpty: Bool {
+    !entries.values.contains { $0.state != nil || !$0.workers.isEmpty }
+  }
 }

@@ -18,10 +18,15 @@ struct AgentCardView: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 5) {
       top
-      Text(card.title)
-        .font(.system(size: metrics.secondary))
-        .foregroundStyle(theme.textPrimary)
-        .lineLimit(1)
+      HStack(spacing: 4) {
+        if let position = card.position {
+          PanePositionBadge(index: position.index, metrics: metrics, theme: theme)
+        }
+        Text(card.title)
+          .font(.system(size: metrics.secondary))
+          .foregroundStyle(theme.textPrimary)
+          .lineLimit(1)
+      }
       place
       if let message = card.message {
         AgentCardMessage(text: message, theme: theme, metrics: metrics)
@@ -62,6 +67,9 @@ struct AgentCardView: View {
         .foregroundStyle(card.occupant.isAgent ? theme.textPrimary : theme.textSecondary)
         .lineLimit(1)
       Spacer(minLength: 4)
+      if !card.subagents.isEmpty {
+        SubagentChip(subagents: card.subagents, theme: theme, metrics: metrics)
+      }
       if let elapsed = card.elapsed(at: now) {
         Text(elapsed)
           .font(.system(size: metrics.badge, design: .monospaced))

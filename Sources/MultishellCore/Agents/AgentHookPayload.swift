@@ -1,7 +1,7 @@
 import Foundation
 
-/// The JSON an agent writes to a hook command's stdin, reduced to the three
-/// fields all four spell alike; see docs/design/agents.md.
+/// The JSON an agent writes to a hook command's stdin, reduced to the fields
+/// this reads; see docs/design/agents.md.
 public struct AgentHookPayload: Hashable, Sendable {
   public var eventName: String
   public var cwd: String?
@@ -12,16 +12,27 @@ public struct AgentHookPayload: Hashable, Sendable {
   /// Which kind of notification this is, where the agent says. Claude Code
   /// is the one that does.
   public var notificationType: String?
+  /// The subagent the event fired inside, or the one a start or stop names.
+  /// Claude Code and Codex set it on every event of a subagent's.
+  public var agentID: String?
+  public var agentType: String?
+  /// Copilot's name for a subagent, on its start and stop and possibly on a
+  /// session run under `--agent`; read as an id only where an event names one.
+  public var agentName: String?
 
   public init(
     eventName: String, cwd: String? = nil, message: String? = nil, permissionMode: String? = nil,
-    notificationType: String? = nil
+    notificationType: String? = nil, agentID: String? = nil, agentType: String? = nil,
+    agentName: String? = nil
   ) {
     self.eventName = eventName
     self.cwd = cwd
     self.message = message
     self.permissionMode = permissionMode
     self.notificationType = notificationType
+    self.agentID = agentID
+    self.agentType = agentType
+    self.agentName = agentName
   }
 
   public init?(json data: Data) {
@@ -34,6 +45,9 @@ public struct AgentHookPayload: Hashable, Sendable {
     self.message = object["message"] as? String
     self.permissionMode = object["permission_mode"] as? String
     self.notificationType = object["notification_type"] as? String
+    self.agentID = object["agent_id"] as? String
+    self.agentType = object["agent_type"] as? String ?? object["agentDisplayName"] as? String
+    self.agentName = object["agentName"] as? String
   }
 
   /// Whether the payload's mode stops for the user. An unknown one is taken

@@ -44,13 +44,23 @@ ship it, a field on `SharedProjectSettings` plus a line in
 order, before the post-create hook.
 
 **An agent's hooks.** An `AgentHookIntegration` in `AgentHooks.integrations`:
-the file, the events, what each says the session is doing, and which of two
-events standing for one thing is `silent` (moves the dot while the other raises
-the banner). Also a row in `AgentCatalogue.agents`, since the tab offers hooks
-for agents detection found. Four agents hand a command the same payload on
-stdin, read by `AgentHookPayload` and mapped by `agent-hook --agent`; one whose
-file is ours alone is written whole and deleted to remove. An agent with no
-hooks at all needs a `.plugin`, as OpenCode has.
+the file, the events, what each says the session is doing, which of two events
+standing for one thing is `silent` (moves the dot while the other raises the
+banner), which two are a subagent's start and end (`subagent:`), and which one
+is the prompt that starts a turn (`startsTurn:`). Every agent with events has
+one: a Ctrl+C fires no hook and the workers it killed send no stop, so the next
+prompt is the only thing that empties the roster, and without it an interrupted
+fan-out's chip stands until the shell dies. A payload names the worker through
+`agent_id` and `agent_type`, or Copilot's `agentName`; an agent that spells
+those differently needs a line in `AgentHookPayload`. A start or an end that
+names no worker still counts as one, taking an unnamed place. An agent that
+reports through a plugin rather than a payload names one with
+`state --subagent ID --subagent-phase P`, and starts a turn with
+`state running --new-turn true`. Also a row in `AgentCatalogue.agents`, since
+the tab offers hooks for agents detection found. Four agents hand a command the
+same payload on stdin, read by `AgentHookPayload` and mapped by
+`agent-hook --agent`; one whose file is ours alone is written whole and deleted
+to remove. An agent with no hooks at all needs a `.plugin`, as OpenCode has.
 
 **A variable a hook receives.** A case in `HookVariable`, which both builds the
 environment and draws the Hooks tab's table.

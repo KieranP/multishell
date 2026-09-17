@@ -265,10 +265,8 @@ struct AgentBoardModelTests {
     #expect(harness.platform.badges.last != 1)
   }
 
-  /// `markShownTabSeen` runs from every focus-taking reconcile and a shell exiting, so
-  /// without its own guard a close anywhere would clear a Done in the
-  /// selected worktree — a pane the board is covering — and its card would
-  /// jump to Idle under the user.
+  /// `markFocusedPaneSeen` runs from every focus-taking reconcile and a shell
+  /// exiting, so without its own guard a close anywhere clears a covered Done.
   @Test func aCloseElsewhereDoesNotClearADoneTheBoardIsShowing() {
     let harness = Harness()
     let model = harness.model
@@ -291,6 +289,46 @@ struct AgentBoardModelTests {
     // Leaving the board is what clears it.
     model.hideAgentBoard()
     #expect(model.agentBoard.count(of: .done) == 0)
+  }
+
+  /// A tab the user named is named that on every pane of it, in the rows and on
+  /// the cards: the name is theirs, and the shell's own title goes under it.
+  @Test func aPaneInheritsItsTabsCustomNameOverTheShellsTitle() {
+    let harness = Harness()
+    let model = harness.model
+    model.select(harness.main)
+    let tab = model.workspace.activeTab(in: harness.main.id)!
+    let session = model.workspace.session(tab.focusedSessionID)!
+    model.noteTitle("make release", of: session.id)
+    #expect(model.title(ofPane: session, in: tab) == "make release")
+
+    model.renameTab(tab.id, to: "build")
+    let renamed = model.workspace.tab(tab.id)!
+    #expect(model.title(ofPane: session, in: renamed) == "build")
+    #expect(model.title(of: renamed) == "build", "the strip and the rows agree")
+  }
+
+  /// Both panes of a renamed tab carry that one name, so each card says which
+  /// pane it is, as the sidebar row does. Without it the board draws two cards
+  /// nothing tells apart.
+  @Test func eachCardOfASplitSaysWhichPaneItIs() {
+    let harness = Harness()
+    let model = harness.model
+    model.select(harness.main)
+    let tab = model.workspace.activeTab(in: harness.main.id)!
+    #expect(model.agentBoardCards.first { $0.id == tab.focusedSessionID }?.position == nil)
+
+    model.splitActivePane(.horizontal)
+    model.renameTab(tab.id, to: "build")
+    let panes = model.workspace.tab(tab.id)!.sessionIDs
+    #expect(panes.count == 2)
+    let cards = panes.compactMap { id in model.agentBoardCards.first { $0.id == id } }
+    #expect(cards.map(\.title) == ["build", "build"])
+    #expect(
+      cards.map(\.position) == [
+        AgentBoardCard.Position(index: 1, count: 2), AgentBoardCard.Position(index: 2, count: 2),
+      ])
+    #expect(AccessibilityText.card(cards[1], at: .now).contains(t("spoken.pane-position", 2, 2)))
   }
 
   /// An agent that has gone quiet is watched only while the board is up:

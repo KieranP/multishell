@@ -9,13 +9,20 @@ extension AppModel {
       workspace.projects.map { ($0.id, $0.name) }, uniquingKeysWith: { first, _ in first })
     let worktreesByID = Dictionary(
       workspace.worktrees.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-    var tabsBySession: [TerminalSession.ID: TerminalTab] = [:]
+    var tabsBySession:
+      [TerminalSession.ID: (tab: TerminalTab, position: AgentBoardCard.Position?)] =
+        [:]
     for tab in workspace.tabs {
-      for id in tab.sessionIDs { tabsBySession[id] = tab }
+      for (index, id) in tab.sessionIDs.enumerated() {
+        let position =
+          tab.sessionIDs.count > 1
+          ? AgentBoardCard.Position(index: index + 1, count: tab.sessionIDs.count) : nil
+        tabsBySession[id] = (tab, position)
+      }
     }
 
     return workspace.sessions.compactMap { session in
-      guard liveSessions.contains(session.id), let tab = tabsBySession[session.id],
+      guard liveSessions.contains(session.id), let (tab, position) = tabsBySession[session.id],
         let worktree = worktreesByID[session.worktreeID]
       else { return nil }
       let key = SessionStates.Key.session(session.id)
@@ -24,13 +31,15 @@ extension AppModel {
         tabID: tab.id,
         worktreeID: worktree.id,
         occupant: occupant(of: session),
-        title: paneTitle(of: session, in: tab),
+        title: title(ofPane: session, in: tab),
         projectName: projectNames[worktree.projectID] ?? "",
         worktreeName: workspace.displayName(of: worktree),
         state: sessionStates[key],
         since: sessionStates.since(key),
         note: sessionStates.note(key),
-        status: statuses[worktree.id])
+        status: statuses[worktree.id],
+        subagents: sessionStates.subagents(key),
+        position: position)
     }
   }
 
@@ -72,11 +81,5 @@ extension AppModel {
     }
     return .shell(
       URL(fileURLWithPath: shellPath(forWorktree: session.worktreeID)).lastPathComponent)
-  }
-
-  /// The pane's own title, not its tab's, a split holding several. What the
-  /// shell reports wins, being the command for a shell running one.
-  private func paneTitle(of session: TerminalSession, in tab: TerminalTab) -> String {
-    sessionTitles[session.id] ?? tab.customTitle ?? session.title
   }
 }

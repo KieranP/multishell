@@ -144,16 +144,123 @@ struct SessionStateModelTests {
     let tab = h.model.workspace.activeTab(in: h.main.id)!
     h.model.newTab()
     let session = tab.focusedSessionID
-    h.source.send(SessionStateReport(state: .running, sessionID: session, subagents: 1))
+    h.source.send(
+      SessionStateReport(
+        state: .running, sessionID: session,
+        subagent: SubagentReport(id: "w1", type: "Explore", phase: .started)))
     h.source.send(
       SessionStateReport(state: .attention, sessionID: session, message: "Needs Bash"))
     #expect(h.notifier.posted.count == 1)
 
-    h.source.send(SessionStateReport(state: .running, sessionID: session, subagents: -1))
+    h.source.send(
+      SessionStateReport(
+        state: .running, sessionID: session, subagent: SubagentReport(id: "w1", phase: .ended)))
 
     #expect(h.notifier.posted.count == 1, "the prompt's banner is the only one")
     #expect(h.notifier.posted.first?.body == "Needs Bash")
     #expect(h.notifier.withdrawn.isEmpty, "and it was not taken back either")
+  }
+
+  /// The chip on the pane's row and on its card read the same roster: a Done on
+  /// screen gives way to a worker, and the last one out posts the Done banner.
+  @Test func workersShowOnTheRowAndTheCardAndKeepTheWorktreeWorking() {
+    let h = Harness()
+    h.model.setNotifications(NotificationPreference(attention: true, error: true, done: true))
+    h.model.select(h.main)
+    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    h.model.newTab()
+    let session = tab.focusedSessionID
+    h.source.send(SessionStateReport(state: .running, sessionID: session, agent: "claude"))
+    h.source.send(SessionStateReport(state: .done, sessionID: session, agent: "claude"))
+    #expect(h.model.state(ofWorktree: h.main.id) == .done)
+    #expect(h.notifier.posted.count == 1)
+
+    h.source.send(
+      SessionStateReport(
+        state: .running, sessionID: session, agent: "claude",
+        subagent: SubagentReport(id: "w1", type: "Explore", phase: .started)))
+    h.source.send(
+      SessionStateReport(
+        state: .running, cwd: h.main.path.path, agent: "claude",
+        subagent: SubagentReport(id: "w2", type: "Plan", phase: .working)))
+
+    #expect(h.model.state(ofWorktree: h.main.id) == .running, "a worker out is work")
+    #expect(h.model.subagents(ofPane: session).map(\.id) == ["w1"], "the pane's own only")
+    #expect(
+      h.model.subagents(ofPane: h.model.workspace.activeTab(in: h.main.id)!.focusedSessionID)
+        .isEmpty)
+    #expect(h.model.state(ofPane: session) == .running)
+    let card = h.model.agentBoardCards.first { $0.id == session }
+    #expect(card?.subagents.map(\.type) == ["Explore"], "a card has its own pane's only")
+    #expect(card?.subagents.first?.since != nil, "stamped by the model's clock")
+
+    h.source.send(
+      SessionStateReport(
+        state: .running, sessionID: session, agent: "claude",
+        subagent: SubagentReport(id: "w1", phase: .ended)))
+    h.source.send(
+      SessionStateReport(
+        state: .running, cwd: h.main.path.path, agent: "claude",
+        subagent: SubagentReport(id: "w2", phase: .ended)))
+    #expect(h.model.subagents(ofPane: session).isEmpty)
+    #expect(h.model.state(ofWorktree: h.main.id) == .done, "the displaced Done comes back")
+    #expect(h.notifier.posted.count == 2, "and is announced once")
+  }
+
+  /// Seen is the pane with the keyboard, not every pane on screen: a split's
+  /// other pane keeps its Done, and its banner is still not raised.
+  @Test func aDoneInAnUnfocusedPaneOfASplitStaysUntilThatPaneIsFocused() {
+    let h = Harness()
+    h.model.setNotifications(NotificationPreference(attention: true, error: true, done: true))
+    h.model.select(h.main)
+    h.model.splitActivePane(.horizontal)
+    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    let focused = tab.focusedSessionID
+    let other = tab.sessionIDs.first { $0 != focused }!
+
+    h.source.send(SessionStateReport(state: .done, sessionID: other))
+    #expect(h.model.state(ofPane: other) == .done, "on screen, but nobody is in it")
+    #expect(h.notifier.posted.isEmpty, "and on screen, so no banner")
+
+    h.source.send(SessionStateReport(state: .done, sessionID: focused))
+    #expect(h.model.state(ofPane: focused) == nil, "the focused pane's Done is seen at once")
+
+    h.model.show(pane: other)
+    #expect(h.model.state(ofPane: other) == nil, "focusing it is seeing it")
+  }
+
+  /// A bell or a title is activity in a pane nobody is in, whether or not
+  /// that pane is on screen: seen is the pane with the keyboard.
+  @Test func activityInAnUnfocusedPaneOfASplitRaisesItsDot() {
+    let h = Harness()
+    h.model.select(h.main)
+    h.model.splitActivePane(.horizontal)
+    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    let focused = tab.focusedSessionID
+    let other = tab.sessionIDs.first { $0 != focused }!
+
+    h.engine.delegate?.terminalHost(h.engine, didSeeActivityIn: other)
+    #expect(h.model.state(ofPane: other) == .done, "on screen, but nobody is in it")
+
+    h.engine.delegate?.terminalHost(h.engine, didSeeActivityIn: focused)
+    #expect(h.model.state(ofPane: focused) == nil, "the keyboard is in it")
+  }
+
+  /// A click into a pane reaches the model as the engine's focus report,
+  /// not as a store call of its own, so that report has to mark it seen too.
+  @Test func clickingIntoAPaneSeesItsDone() {
+    let h = Harness()
+    h.model.select(h.main)
+    h.model.splitActivePane(.horizontal)
+    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    let other = tab.sessionIDs.first { $0 != tab.focusedSessionID }!
+    h.source.send(SessionStateReport(state: .done, sessionID: other))
+    #expect(h.model.state(ofPane: other) == .done)
+
+    h.engine.delegate?.terminalHost(h.engine, didFocus: other)
+
+    #expect(h.model.workspace.tab(tab.id)?.focusedSessionID == other)
+    #expect(h.model.state(ofPane: other) == nil, "the keyboard is in it now")
   }
 
   @Test func notificationsFollowThePreferenceAndTheShownTab() {

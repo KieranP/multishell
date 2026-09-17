@@ -65,8 +65,9 @@ active. A tab written before columns existed names no group ->
 `adoptUngroupedTabs` gathers a worktree's ungrouped tabs into the one column
 they were saved as, and a hand edit that loses a column is repaired the same way
 rather than by dropping tabs. And everything meaning "the tab on screen" had to
-become "the tab on screen in this column": `isShown`, the Done state that clears
-when seen, the notification not raised because it was.
+become "the tab on screen in this column": `isShown`, and the notification not
+raised because of it. The Done that clears when seen since narrowed further, to
+the focused pane (terminals.md).
 
 ## A dragged tab is its own preview
 
@@ -211,9 +212,9 @@ The drop activates the moved tab in the column it lands in, so whatever that
 column was showing goes behind it. Focus has to follow, or the first responder
 is a surface nobody can see and every keystroke after the drop goes into it.
 This was the one move that crossed columns without reconciling afterwards; the
-same pass is what marks the newly shown tab seen in the column the tab left,
-which otherwise keeps a Done dot and its banner over a tab that is now on
-screen.
+same pass is what withdraws the banner of the newly shown tab in the column the
+tab left, which otherwise keeps one over a tab that is now on screen; its Done
+dot stays until that pane is focused.
 
 ## The strip's + is a menu
 

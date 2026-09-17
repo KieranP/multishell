@@ -58,15 +58,15 @@ public enum AgentHooks {
     displayPath: "~/.claude/settings.json",
     events: [
       AgentHookEvent("SessionStart", .idle),
-      AgentHookEvent("UserPromptSubmit", .running),
+      AgentHookEvent("UserPromptSubmit", .running, startsTurn: true),
       AgentHookEvent("PreToolUse", .running),
       AgentHookEvent("PostToolUse", .running),
       AgentHookEvent("PermissionRequest", .attention, onlyWhenPrompting: true, silent: true),
       AgentHookEvent("Notification", .attention, ignoredNotificationTypes: claudeAnnouncements),
-      // Counted so Done waits for the last one out, `Stop` being the main
-      // loop stopping; see docs/design/agents.md.
-      AgentHookEvent("SubagentStart", .running, subagents: 1),
-      AgentHookEvent("SubagentStop", .running, subagents: -1),
+      // Kept on a roster so Done waits for the last one out, `Stop` being
+      // the main loop stopping; see docs/design/agents.md.
+      AgentHookEvent("SubagentStart", .running, subagent: .started),
+      AgentHookEvent("SubagentStop", .running, subagent: .ended),
       AgentHookEvent("Stop", .done),
       AgentHookEvent("StopFailure", .error),
       AgentHookEvent("SessionEnd", .idle),
@@ -82,10 +82,13 @@ public enum AgentHooks {
     displayPath: "~/.codex/hooks.json",
     events: [
       AgentHookEvent("SessionStart", .idle),
-      AgentHookEvent("UserPromptSubmit", .running),
+      AgentHookEvent("UserPromptSubmit", .running, startsTurn: true),
       AgentHookEvent("PreToolUse", .running),
       AgentHookEvent("PostToolUse", .running),
       AgentHookEvent("PermissionRequest", .attention, onlyWhenPrompting: true, silent: true),
+      // Codex spells its subagent events and their fields as Claude does.
+      AgentHookEvent("SubagentStart", .running, subagent: .started),
+      AgentHookEvent("SubagentStop", .running, subagent: .ended),
       AgentHookEvent("Stop", .done),
       AgentHookEvent("Interrupt", .idle),
       AgentHookEvent("SessionEnd", .idle),
@@ -104,7 +107,7 @@ public enum AgentHooks {
     displayPath: "~/.gemini/settings.json",
     events: [
       AgentHookEvent("SessionStart", .idle),
-      AgentHookEvent("BeforeAgent", .running),
+      AgentHookEvent("BeforeAgent", .running, startsTurn: true),
       AgentHookEvent("BeforeTool", .running),
       AgentHookEvent("AfterTool", .running),
       AgentHookEvent("Notification", .attention),
@@ -122,12 +125,16 @@ public enum AgentHooks {
     displayPath: "~/.copilot/hooks/multishell.json",
     events: [
       AgentHookEvent("SessionStart", .idle),
-      AgentHookEvent("UserPromptSubmit", .running),
+      AgentHookEvent("UserPromptSubmit", .running, startsTurn: true),
       AgentHookEvent("PreToolUse", .running),
       AgentHookEvent("PostToolUse", .running),
       AgentHookEvent(
         "notification", .attention, reported: "Notification",
         matcher: "permission_prompt|elicitation_dialog"),
+      // Copilot names a subagent, not an id, at its start; the roster keys
+      // on the name for it. See docs/design/agents.md.
+      AgentHookEvent("SubagentStart", .running, subagent: .started),
+      AgentHookEvent("SubagentStop", .running, subagent: .ended),
       AgentHookEvent("Stop", .done),
       AgentHookEvent("SessionEnd", .idle),
     ],

@@ -29,6 +29,10 @@ struct WorktreeRow: View {
 
   private var kind: String { AccessibilityText.kind(of: worktree) }
 
+  /// The selected worktree lists its panes under itself, so a count on its
+  /// row would say the same thing twice.
+  private var shownTerminalCount: Int { isSelected ? 0 : terminalCount }
+
   private var height: Double {
     metrics.worktreeRowHeight(isNamed: customName != nil, isRenaming: isRenaming)
   }
@@ -82,15 +86,15 @@ struct WorktreeRow: View {
       if let status, !status.isClean {
         changes(status)
       }
-      if terminalCount > 0 {
-        Text("\(terminalCount)")
+      if shownTerminalCount > 0 {
+        Text("\(shownTerminalCount)")
           .font(.system(size: metrics.badge, weight: .semibold))
           .monospacedDigit()
           .foregroundStyle(theme.textSecondary)
           .padding(.horizontal, 6)
           .padding(.vertical, 1)
           .background(theme.rowHover, in: Capsule())
-          .help(t("count.terminals", terminalCount))
+          .help(t("count.terminals", shownTerminalCount))
       }
     }
     .padding(.leading, metrics.indent)
@@ -120,7 +124,7 @@ struct WorktreeRow: View {
     .accessibilityLabel(
       AccessibilityText.worktree(
         worktree, customName: customName, state: state, status: status, operation: operation,
-        terminalCount: terminalCount, isSelected: isSelected, mergeState: mergeState)
+        terminalCount: shownTerminalCount, isSelected: isSelected, mergeState: mergeState)
     )
     .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     .accessibilityAction(named: t("action.rename-spoken"), beginRename)
