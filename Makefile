@@ -18,7 +18,7 @@ ifneq ($(LOCKF),)
 LOCK = $(LOCKF) -k "$(TEST_LOCK_FILE)"
 endif
 
-.PHONY: build release test test-app lint format install run clean signing-identity
+.PHONY: build release test test-app lint format prettier install run clean signing-identity
 
 ## Once per machine: the certificate that keeps the app's privacy permissions.
 signing-identity:
@@ -56,9 +56,15 @@ install: release
 lint:
 	swift format lint --strict --recursive Sources Tests Apps/macOS/Sources Apps/macOS/Tests Package.swift Apps/macOS/Package.swift
 
-## Rewrite files in place to the project style (.swift-format).
-format:
+## Rewrite files in place to the project style (.swift-format, .prettierrc).
+format: prettier
 	swift format --in-place --recursive Sources Tests Apps/macOS/Sources Apps/macOS/Tests Package.swift Apps/macOS/Package.swift
+	prettier --write --log-level warn '**/*.md'
+
+## Markdown goes through prettier, which the toolchain does not ship and CI
+## does not run.
+prettier:
+	@command -v prettier >/dev/null || { echo "prettier not found: brew install prettier"; exit 1; }
 
 ## Build and launch the debug bundle.
 run: build

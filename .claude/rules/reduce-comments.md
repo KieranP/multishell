@@ -18,10 +18,9 @@ comment repeating the name below it.
     Bad:  // Retry 3 times
     Good: // Concurrent batches trip the API's secondary rate limit.
 
-**Not between the entries of a hash, array, or type body.** A comment inside
-the literal breaks the scan down the keys, and the next edit to the list
-orphans it. Hoist the value into a named constant or variable and comment it
-there.
+**Not between the entries of a hash, array, or type body.** A comment inside the
+literal breaks the scan down the keys, and the next edit to the list orphans it.
+Hoist the value into a named constant or variable and comment it there.
 
     Bad:  options = {
             # The API rejects a page limit over 200
@@ -58,9 +57,9 @@ expectation, so a comment is a third restatement. Rewrite the name instead. The
 exception is what the test cannot state itself: why a stub returns this odd
 shape, which upstream bug the fixture reproduces.
 
-When editing, delete stale or restating comments, but do not strip a
-codebase's conventions or public API docs wholesale, and do not add comments to
-code you merely touched. Project rules in AGENTS.md or CLAUDE.md win.
+When editing, delete stale or restating comments, but do not strip a codebase's
+conventions or public API docs wholesale, and do not add comments to code you
+merely touched. Project rules in AGENTS.md or CLAUDE.md win.
 
 ## "Simplify the comments" means the ones in the diff
 

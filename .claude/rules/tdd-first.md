@@ -1,14 +1,14 @@
 # Failing test first
 
-Before changing code to fix a bug, write a test that reproduces it and run it.
-A test you have not seen fail proves nothing: it may assert something the code
+Before changing code to fix a bug, write a test that reproduces it and run it. A
+test you have not seen fail proves nothing: it may assert something the code
 already did, or never reach the broken path.
 
 Read the failure. If it is not the bug you are chasing, the test is wrong, not
 the code. Then fix, and re-run the file's specs to catch what the fix broke.
 
-Never fix first and backfill a test that passes on the new code; you cannot
-tell whether it would have caught the bug.
+Never fix first and backfill a test that passes on the new code; you cannot tell
+whether it would have caught the bug.
 
 A bug behind a queue, a clock, or an HTTP call still gets a test: use the
 project's seams (`travel_to` in the test body, the inline Sidekiq context,

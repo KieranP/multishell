@@ -1,7 +1,6 @@
 # Smaller decisions
 
-One line each, too small for a section of their own.
-Newest at the bottom.
+One line each, too small for a section of their own. Newest at the bottom.
 
 - Sessions warm up when visited, a saved workspace implying dozens of shells at
   launch. Selecting a worktree opens a terminal unless told not to; a create is
@@ -53,14 +52,14 @@ Newest at the bottom.
 - Project icon picked from a grouped palette read by shape, not a popup menu of
   names read line by line: the menu is what held the list to sixty, where the
   palette carries close to four hundred. Still keyboard-drivable. It had a
-  search over English words for what each symbol is used for, an SF Symbol
-  being named for its picture; taken out rather than translated, since it made
-  every other language search words it could not see, for a palette small
-  enough to read by eye. Emoji, which a field beside the menu once set, are
-  gone: they looked out of place, and a glyph is now a symbol name or nothing,
-  one rule read the same way everywhere, so a leftover emoji neither masks the
-  icon a repo's shared file names nor is written back into it. Cost: a project
-  that had one draws the folder. What a new name must satisfy is in
+  search over English words for what each symbol is used for, an SF Symbol being
+  named for its picture; taken out rather than translated, since it made every
+  other language search words it could not see, for a palette small enough to
+  read by eye. Emoji, which a field beside the menu once set, are gone: they
+  looked out of place, and a glyph is now a symbol name or nothing, one rule
+  read the same way everywhere, so a leftover emoji neither masks the icon a
+  repo's shared file names nor is written back into it. Cost: a project that had
+  one draws the folder. What a new name must satisfy is in
   `docs/develop/adding.md`.
 - One WorktreeActions menu serves the detail header, the sidebar's context menu
   and a board card's, the last under a heading naming the worktree, since the
@@ -87,31 +86,30 @@ Newest at the bottom.
   `shouldNotify` once took a shown flag and an active flag and the state rules
   took the shown one alone, so a turn ending in the shown pane while the user
   was in another app raised a banner and cleared the dot in the same breath,
-  each right by its own rule. One flag, computed once per report. Coming back
-  to the app is therefore a look, alongside selecting, activating and closing
-  the board; a shell exiting while the user is elsewhere is not. Taking back
-  removes the pending request as well as the delivered one, `add` delivering a
-  moment after it returns, in which a look landed and the banner then arrived
-  with nothing left to retract it. Only Done clears on the look: Failed keeps
-  its dot, so the banner and the dot say different things about one pane on
-  purpose, the interruption spent and the thing to deal with still there. The
-  model keeps the keys it has posted about, so nothing is taken back that was
-  never there. Cost: a Done nobody looked at disappears when the next state
-  lands, the dot being the thing that persists.
-- One terminal engine, libghostty, embedded and named outright by `AppModel`.
-  It owns the pty, the renderer and the config, so the core never sees a
-  descriptor and a pane's surface is Metal-backed. Nothing chooses it and no
-  setting offers an alternative. Cost: a pinned build that misbehaves has
-  nothing to fall back to, the unfocused fade is a scrim rather than
-  `.opacity`, and nothing tests the host against a real shell, the surface
-  needing a window and a GPU (known-gaps.md).
-- The sidebar filter is folded behind a magnifying glass in the sidebar
-  header, next to the folder-plus. It was a field standing open above the
-  project list, costing a row of height in every session to a control reached
-  in few of them. Closing it clears the text, so rows are never missing with
-  nothing on screen saying why, and Escape in the field closes rather than
-  just empties. Closing hands the keyboard to the active pane through
-  `focusActivePane`: the focused field leaving would otherwise drop first
-  responder to the window, and typing would reach nothing. Cost: the filter
-  is one click further away, and with no keyboard route to it
-  (known-gaps.md) the mouse is the only way in.
+  each right by its own rule. One flag, computed once per report. Coming back to
+  the app is therefore a look, alongside selecting, activating and closing the
+  board; a shell exiting while the user is elsewhere is not. Taking back removes
+  the pending request as well as the delivered one, `add` delivering a moment
+  after it returns, in which a look landed and the banner then arrived with
+  nothing left to retract it. Only Done clears on the look: Failed keeps its
+  dot, so the banner and the dot say different things about one pane on purpose,
+  the interruption spent and the thing to deal with still there. The model keeps
+  the keys it has posted about, so nothing is taken back that was never there.
+  Cost: a Done nobody looked at disappears when the next state lands, the dot
+  being the thing that persists.
+- One terminal engine, libghostty, embedded and named outright by `AppModel`. It
+  owns the pty, the renderer and the config, so the core never sees a descriptor
+  and a pane's surface is Metal-backed. Nothing chooses it and no setting offers
+  an alternative. Cost: a pinned build that misbehaves has nothing to fall back
+  to, the unfocused fade is a scrim rather than `.opacity`, and nothing tests
+  the host against a real shell, the surface needing a window and a GPU
+  (known-gaps.md).
+- The sidebar filter is folded behind a magnifying glass in the sidebar header,
+  next to the folder-plus. It was a field standing open above the project list,
+  costing a row of height in every session to a control reached in few of them.
+  Closing it clears the text, so rows are never missing with nothing on screen
+  saying why, and Escape in the field closes rather than just empties. Closing
+  hands the keyboard to the active pane through `focusActivePane`: the focused
+  field leaving would otherwise drop first responder to the window, and typing
+  would reach nothing. Cost: the filter is one click further away, and with no
+  keyboard route to it (known-gaps.md) the mouse is the only way in.

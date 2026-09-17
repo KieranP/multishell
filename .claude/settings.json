@@ -1,4 +1,18 @@
 {
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/format-markdown.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
   "permissions": {
     "allow": [
       "Bash(awk *)",

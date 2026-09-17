@@ -7,10 +7,10 @@ yourself first.
 Read the diff as a reviewer who did not write it and expects it to be broken.
 What actually turns up here: a branch or constant dropped while moving code; a
 call site of the thing you changed that you never opened; a test that passes
-only in the order it was written, or asserts on a timer; an empty result
-treated as an error, or an error swallowed into an empty result; an error
-handler widened until it hides the case you were fixing; a read with no writer
-left behind.
+only in the order it was written, or asserts on a timer; an empty result treated
+as an error, or an error swallowed into an empty result; an error handler
+widened until it hides the case you were fixing; a read with no writer left
+behind.
 
 A suspicion is not a finding until you have run something that shows it. If you
 cannot show it, call it unproven rather than fixing on a guess.

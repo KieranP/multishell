@@ -33,25 +33,24 @@ make signing-identity                          # once per machine, so privacy gr
 make install                                   # release build into /Applications
 ```
 
-`make run` builds and opens a debug copy that keeps its own state, so it
-sits beside an installed one. The first build downloads libghostty, about
-80 MB. Then add a repository with the folder button at the top of the
-sidebar, or Cmd+O.
+`make run` builds and opens a debug copy that keeps its own state, so it sits
+beside an installed one. The first build downloads libghostty, about 80 MB. Then
+add a repository with the folder button at the top of the sidebar, or Cmd+O.
 
-**Agent hooks.** For the state dots to follow an agent, it has to report
-through its hooks. Open Settings > Agents: every agent on your PATH that has
-them gets a row with Add, for Claude Code, Codex, Gemini CLI, Copilot CLI and
-OpenCode. Where the file is the agent's own, Multishell appends one entry per
-event, leaves the rest as it is, keeps a copy beside it the first time, and
-Remove takes only its own entries out again. Where the agent reads a directory
-of hook files, or a plugin, Multishell writes a file of its own and deletes it
-again. Codex asks you to trust a new hook once, with `/hooks`. Plain shell
-commands report without any of this. Until an agent's hooks are in, its dots
-never move and the Agents board stays empty.
+**Agent hooks.** For the state dots to follow an agent, it has to report through
+its hooks. Open Settings > Agents: every agent on your PATH that has them gets a
+row with Add, for Claude Code, Codex, Gemini CLI, Copilot CLI and OpenCode.
+Where the file is the agent's own, Multishell appends one entry per event,
+leaves the rest as it is, keeps a copy beside it the first time, and Remove
+takes only its own entries out again. Where the agent reads a directory of hook
+files, or a plugin, Multishell writes a file of its own and deletes it again.
+Codex asks you to trust a new hook once, with `/hooks`. Plain shell commands
+report without any of this. Until an agent's hooks are in, its dots never move
+and the Agents board stays empty.
 
-To work on it, start with [AGENTS.md](AGENTS.md), which indexes
-`docs/develop/` for the build, the tests and the rules, and `docs/design/`
-for why things are the way they are.
+To work on it, start with [AGENTS.md](AGENTS.md), which indexes `docs/develop/`
+for the build, the tests and the rules, and `docs/design/` for why things are
+the way they are.
 
 ## Features
 
@@ -75,16 +74,15 @@ for why things are the way they are.
 
 ## Status
 
-Builds and runs from source on macOS, and the permissions you grant survive
-a rebuild thanks to the local certificate. There is no notarised release yet,
-so build it yourself. Currently only supports macOS. Currently available in
-English only.
+Builds and runs from source on macOS, and the permissions you grant survive a
+rebuild thanks to the local certificate. There is no notarised release yet, so
+build it yourself. Currently only supports macOS. Currently available in English
+only.
 
-Every line of code was written by an AI (Claude), under direction from a
-human who set the requirements and reviewed the results in the running app.
-The design decisions under `docs/design/` were argued out in that
-conversation. The architecture, the trade-offs and what shipped were human
-calls.
+Every line of code was written by an AI (Claude), under direction from a human
+who set the requirements and reviewed the results in the running app. The design
+decisions under `docs/design/` were argued out in that conversation. The
+architecture, the trade-offs and what shipped were human calls.
 
 ## License
 

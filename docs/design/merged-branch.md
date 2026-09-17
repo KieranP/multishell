@@ -12,23 +12,22 @@ a branch at its start commit, nor from "was carried up", a `git pull` in a
 worktree cut before the trunk moved fast-forwarding it onto commits it was
 handed.
 
-Sign 1, the branch's reflog. Arrivals: creation, reset, clone, fetch, a
-merge or pull that fast-forwarded, and a rebase that replayed nothing. Work of
-its own: everything else, a `commit:`, a rebase's `(finish)` that moved the
-branch past the commit it was rebased onto, a merge that made a commit. A deny
-list, because the arrivals are the closed set and a message a later git
-invents reads as work, which is what counting entries assumed of every entry
-anyway. Names given to git whole with `--` after, else a branch sharing a name
-with a path in the repo is "both revision and filename" and the read fails
-instead of answering.
+Sign 1, the branch's reflog. Arrivals: creation, reset, clone, fetch, a merge or
+pull that fast-forwarded, and a rebase that replayed nothing. Work of its own:
+everything else, a `commit:`, a rebase's `(finish)` that moved the branch past
+the commit it was rebased onto, a merge that made a commit. A deny list, because
+the arrivals are the closed set and a message a later git invents reads as work,
+which is what counting entries assumed of every entry anyway. Names given to git
+whole with `--` after, else a branch sharing a name with a path in the repo is
+"both revision and filename" and the read fails instead of answering.
 
 A bare `git rebase main` in a worktree with no commits of its own writes
 `rebase (finish): refs/heads/feat onto <sha>`, the same words as a rebase that
 replayed commits, and `git branch --merged` then lists the branch. Reproduced
 with git 2.55. So the reflog is read as `%H %gs`, and a finish whose new value
-is the `<sha>` it names is an arrival; a finish that names no commit, or one
-the branch rested past, stays work. `git pull --rebase` on the same setup
-writes `Fast-forward` instead and was already an arrival.
+is the `<sha>` it names is an arrival; a finish that names no commit, or one the
+branch rested past, stays work. `git pull --rebase` on the same setup writes
+`Fast-forward` instead and was already an arrival.
 
 No reflog at all -> nothing claimed. A bare repo logs no branch creation, so
 guessing from the tips instead badges every worktree it holds that was cut from
@@ -39,24 +38,25 @@ remove.
 
 Sign 2, patch ids. A rebase-merge or a run of cherry-picks leaves no reachable
 tip -> `git cherry`: at least one `-` and no `+`. Not "no `+`" alone, cherry
-skipping merge commits, so a worktree that merged the trunk in and wrote
-nothing of its own prints nothing at all, and read as "every patch landed" that
-badges a branch that landed nothing.
+skipping merge commits, so a worktree that merged the trunk in and wrote nothing
+of its own prints nothing at all, and read as "every patch landed" that badges a
+branch that landed nothing.
 
 Sign 3, a gone upstream. A squash merge leaves neither of the above, and
 detecting one needs `commit-tree`, a write -> the sign taken is the `[gone]`
 upstream "delete branch on merge" leaves, with two things beside it, `[gone]`
 alone being three different stories:
+
 - A base that has moved on, since `branch.<name>` config outlives the branch it
-  names and a name used before hands its successor an upstream that was never
-  on the remote, spelled `[gone]` in the very same words.
+  names and a name used before hands its successor an upstream that was never on
+  the remote, spelled `[gone]` in the very same words.
 - The branch's own changes reading the same on the base, since the badge hides
   while a worktree holds work only it has, and `git status` cannot see that
-  here, a branch whose upstream is gone being ahead of nothing. Two `git diff
-  --name-only`: paths the branch changed since it forked against paths where
-  the two differ now, nothing in both. A path the base changed since counts as
-  differing -> errs towards no badge. Three reads beyond the `cherry`, paid
-  only by branches whose upstream is gone.
+  here, a branch whose upstream is gone being ahead of nothing. Two
+  `git diff --name-only`: paths the branch changed since it forked against paths
+  where the two differ now, nothing in both. A path the base changed since
+  counts as differing -> errs towards no badge. Three reads beyond the `cherry`,
+  paid only by branches whose upstream is gone.
 
 Sign 3 is inference, a PR closed unmerged leaving it too -> `isCertain`
 separates the three. All three badge; only the two that are proof get a removal
@@ -72,10 +72,10 @@ verdict is recorded, and memoised, only where git answered.
 
 Base = `origin/HEAD`, then `origin/main`, `origin/master`, `main`, `master`,
 with a repo override. A remote-tracking ref beats a local branch of the same
-name. An override resolving to nothing = no badges rather than a guess.
-Fetching on a timer is out, being network, credentials and the one git call
-here that can hang -> a badge is only as fresh as the last fetch, and Fetch is a
-menu item with a timeout and a spinner on the project row.
+name. An override resolving to nothing = no badges rather than a guess. Fetching
+on a timer is out, being network, credentials and the one git call here that can
+hang -> a badge is only as fresh as the last fetch, and Fetch is a menu item
+with a timeout and a spinner on the project row.
 
 The check rides the status poll, not the watcher: a commit moves a ref no
 watched file mentions. Each verdict memoised on base, base tip, branch, branch
@@ -91,15 +91,15 @@ Never badged: main worktree, bare repo, detached HEAD, the trunk's own checkout.
 Every runner sets `log.showSignature=false` and
 `status.showUntrackedFiles=normal`, through `GIT_CONFIG_*` rather than `-c`,
 which a failure would report in its arguments. Both are the deny lists above
-meeting output they did not expect.
-Signature verification prints on stdout ahead of each reflog subject, so
-`Good "git" signature for ...` splits at its first `:` into an action no arrival
-prefix matches and reads as work of its own: every branch just cut then claims
-to have landed, and, being clean and certain, gets the dialog led by the button
-that deletes it. `showUntrackedFiles=no` empties the porcelain for a worktree
-whose work is all untracked, which reads as clean, so the badge goes over
-uncommitted work and the directory is trashed. Neither is a wording difference
-the parsers could absorb; a caller's own entry still wins over both.
+meeting output they did not expect. Signature verification prints on stdout
+ahead of each reflog subject, so `Good "git" signature for ...` splits at its
+first `:` into an action no arrival prefix matches and reads as work of its own:
+every branch just cut then claims to have landed, and, being clean and certain,
+gets the dialog led by the button that deletes it. `showUntrackedFiles=no`
+empties the porcelain for a worktree whose work is all untracked, which reads as
+clean, so the badge goes over uncommitted work and the directory is trashed.
+Neither is a wording difference the parsers could absorb; a caller's own entry
+still wins over both.
 
 ## A branch is named to git by refname, never bare
 

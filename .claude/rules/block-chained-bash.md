@@ -4,8 +4,8 @@ Permission rules match a command prefix, such as `Bash(git diff *)`. A chained
 string like `git status && git diff` is not that prefix, so an allowed command
 prompts anyway. Every extra prompt is an interruption the user did not need.
 
-Send each command as its own Bash call. Independent calls go in one response
-and run in parallel, so this costs no extra round trip.
+Send each command as its own Bash call. Independent calls go in one response and
+run in parallel, so this costs no extra round trip.
 
 Applies to `&&`, `;`, and `||`. Do not swap `&&` for `;` to get around it; the
 problem is the same and you lose the failure guard.

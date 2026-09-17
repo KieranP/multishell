@@ -6,38 +6,38 @@
 helper link are shared. A debug build made in a git worktree adds that
 worktree's name, `state.debug-fix1.json` and so on, so two of them can run at
 once: `make-app.sh` writes the name into `MultishellVariant` in the bundle's
-`Info.plist`, `open` passing no environment to what it launches. The name is
-cut to 14 characters and spelled `[A-Za-z0-9_-]`, a socket path having 103
-bytes to fit in, two of them the `.b` it is bound under. Settings > General
-prints the state file, which is how you see which one a running copy has.
+`Info.plist`, `open` passing no environment to what it launches. The name is cut
+to 14 characters and spelled `[A-Za-z0-9_-]`, a socket path having 103 bytes to
+fit in, two of them the `.b` it is bound under. Settings > General prints the
+state file, which is how you see which one a running copy has.
 
-- `state.json`: sidebar, tabs, the columns they sit in with each column's
-  width and active tab, pane trees, worktree names, each worktree's directory
-  creation date, every setting. Not: processes, shell titles, the shell a tab
-  resolved to, a branch's last commit time. Nor anything about the Agents
-  board: whether it is showing and whether it is filtered to agents are
-  runtime state, so the filter is off after a relaunch, the Dock badge having
-  to read the same flag a view-local `@AppStorage` could not offer it.
-  A file written before columns existed names no group on any tab and carries
-  an `activeTabByWorktree` this build has no property for: `Workspace` reads
-  that key for which tab was active, and `repairReferences` gathers each
-  worktree's ungrouped tabs into the one column they were saved as.
+- `state.json`: sidebar, tabs, the columns they sit in with each column's width
+  and active tab, pane trees, worktree names, each worktree's directory creation
+  date, every setting. Not: processes, shell titles, the shell a tab resolved
+  to, a branch's last commit time. Nor anything about the Agents board: whether
+  it is showing and whether it is filtered to agents are runtime state, so the
+  filter is off after a relaunch, the Dock badge having to read the same flag a
+  view-local `@AppStorage` could not offer it. A file written before columns
+  existed names no group on any tab and carries an `activeTabByWorktree` this
+  build has no property for: `Workspace` reads that key for which tab was
+  active, and `repairReferences` gathers each worktree's ungrouped tabs into the
+  one column they were saved as.
 - `state.<timestamp>.broken.json`: a state file that failed to read or to
-  decode. Where the move itself failed the original is still at `state.json`
-  and nothing saves over it; see docs/design/state-and-store.md.
+  decode. Where the move itself failed the original is still at `state.json` and
+  nothing saves over it; see docs/design/state-and-store.md.
 - `themes/*.json`, `themes/examples/` not loaded.
 - `multishell.sock`, mode 0600. Bound at `multishell.sock.b` and renamed into
-  place, so it is never briefly world-readable: the mode comes from the umask
-  at bind, and umask is process-wide. So the longest path that binds is 101
-  bytes, not `sun_path`'s 103, and the refusal names the socket, the staging
-  file being no concern of the user's.
+  place, so it is never briefly world-readable: the mode comes from the umask at
+  bind, and umask is process-wide. So the longest path that binds is 101 bytes,
+  not `sun_path`'s 103, and the refusal names the socket, the staging file being
+  no concern of the user's.
 - `multishell.sock.lock`, empty, never removed. A running instance holds an
   exclusive `fcntl` record lock on it for as long as it listens, which is what
   tells a second launch that the socket has a live owner, so it brings that
-  owner forward and quits; see state-and-store.md. Not `flock`: a child
-  forked while one is held keeps it until it execs, and this process spawns
-  freely. A connect alone cannot tell: a listener whose accept backlog is full
-  refuses one exactly as a dead socket does.
+  owner forward and quits; see state-and-store.md. Not `flock`: a child forked
+  while one is held keeps it until it execs, and this process spawns freely. A
+  connect alone cannot tell: a listener whose accept backlog is full refuses one
+  exactly as a dead socket does.
 - `bin/multishell`: symlink to the helper in the current bundle, refreshed at
   launch. Hook lines reference this path, through `$HOME`.
 - `integration/`: generated at launch.
@@ -60,13 +60,13 @@ A repository may carry `.multishell.json` at its root, written by Export in
 project settings, same keys as a project's settings. Read at launch, when a
 project's worktree records change, and on any tick where its modification date
 moved. A field it ships fills only a gap the user left, so adding one to
-`SharedProjectSettings` also means a line in `ProjectSettings.layered`, a
-decode that costs the key and not the file, and an `OverrideSection` in the
-tab seeded from `InheritedSetting`.
+`SharedProjectSettings` also means a line in `ProjectSettings.layered`, a decode
+that costs the key and not the file, and an `OverrideSection` in the tab seeded
+from `InheritedSetting`.
 
-Decide what a blank one means: `Self.text` where "none" and "no opinion"
-agree; nothing for worktree path, prefix and default branch, where blank is
-how "none" is spelled. Not cosmetic: a blank hook left uncoerced counts as a
-hook, and the trust question then asks about an empty script. Trust is held
-per file against its sha256 (`FileDigest`, `ProjectSettings.sharedHooks`);
+Decide what a blank one means: `Self.text` where "none" and "no opinion" agree;
+nothing for worktree path, prefix and default branch, where blank is how "none"
+is spelled. Not cosmetic: a blank hook left uncoerced counts as a hook, and the
+trust question then asks about an empty script. Trust is held per file against
+its sha256 (`FileDigest`, `ProjectSettings.sharedHooks`);
 `docs/design/settings.md` has why.

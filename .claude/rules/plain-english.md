@@ -22,11 +22,11 @@ paragraphs that repeat what was just read.
 comprehensive, pivotal, testament, tapestry, landscape, underscore, showcase,
 garner, intricate, foster, vibrant, groundbreaking, delve, effortlessly,
 additionally, furthermore, moreover, scaffolding, bedrock, nexus, paradigm,
-north star, flywheel, ratchet, plus surface and primitive as abstract nouns. Also utilize/leverage → use,
-facilitate → help, numerous → many, in order to → to, due to the fact that →
-because, it is important to note that → cut, ensure → name the check,
-substrate → base, wedge in → add, vector → way, endgame → last phase,
-evacuate → move out, gold-plating → more than needed.
+north star, flywheel, ratchet, plus surface and primitive as abstract nouns.
+Also utilize/leverage → use, facilitate → help, numerous → many, in order to →
+to, due to the fact that → because, it is important to note that → cut, ensure →
+name the check, substrate → base, wedge in → add, vector → way, endgame → last
+phase, evacuate → move out, gold-plating → more than needed.
 
 **Constructions**: serves as / stands as / boasts → is or has. "Not just X, but
 Y." Trailing ", ensuring type safety" tails. Inventing a third item to make
@@ -36,8 +36,8 @@ verbs ("runs quickly" → "is fast", or the number). Stacked hedges.
 ## Still
 
 Have a view and name the flaw. Vary sentence length. Use "I". Be specific, not
-evaluative: not "this is concerning" but "this fires one request per row, and
-a page is fifty".
+evaluative: not "this is concerning" but "this fires one request per row, and a
+page is fifty".
 
 Bold lead-ins must add new information: "**Serial batches.** Concurrent ones
 trip the rate limit", never "**Performance:** Performance improved".

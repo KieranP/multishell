@@ -5,8 +5,8 @@ argument-hint: "[ticket]"
 disable-model-invocation: true
 ---
 
-Invoke the `better-commit-messages` skill and follow it for the message
-itself. An argument is the tag for the subject line: `/gcm TICKET-1234`,
+Invoke the `better-commit-messages` skill and follow it for the message itself.
+An argument is the tag for the subject line: `/gcm TICKET-1234`,
 `/gcm Errors#20902`.
 
 Drafting only. Never stage, commit, or push, however final the message looks,
