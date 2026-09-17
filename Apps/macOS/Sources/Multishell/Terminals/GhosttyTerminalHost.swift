@@ -99,6 +99,27 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
     surfaces[id]?.takeFirstResponder()
   }
 
+  func search(_ command: TerminalSearch, in id: TerminalSession.ID) -> Bool {
+    guard let view = surfaces[id] else { return false }
+    var performed = true
+    for action in Self.bindingActions(for: command) {
+      performed = view.performBindingAction(action) && performed
+    }
+    return performed
+  }
+
+  /// Ghostty's keybind spelling of each step. Its `next` walks newest to oldest,
+  /// up the scrollback, so the directions cross; from nothing it is the newest.
+  nonisolated static func bindingActions(for command: TerminalSearch) -> [String] {
+    switch command {
+    case .find(let needle): ["search:\(needle)"]
+    case .nearest: ["navigate_search:next"]
+    case .next: ["navigate_search:previous"]
+    case .previous: ["navigate_search:next"]
+    case .end: ["end_search"]
+    }
+  }
+
   func apply(_ theme: Theme, appearance: Appearance) {
     let configuration = Self.configuration(theme, appearance)
     // Both slots get the same config: the user picked a theme, so the
@@ -106,7 +127,7 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
     _ = controller.setTheme(TerminalTheme(light: configuration, dark: configuration))
   }
 
-  private static func configuration(
+  static func configuration(
     _ theme: Theme, _ appearance: Appearance
   ) -> TerminalConfiguration {
     TerminalConfiguration { builder in
@@ -117,6 +138,14 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
       for (index, colour) in theme.ansi.enumerated() {
         builder.withPalette(index, color: colour)
       }
+      // Find's matches in the theme's yellow, the selected one in the ring's
+      // colour, their text the darker of the theme's pair; see appearance.md.
+      let selected = theme.focusRingRGB ?? theme.selectionRGB
+      let text = theme.isDark ? theme.backgroundRGB : theme.foregroundRGB
+      builder.withCustom("search-background", theme.ansiRGB[3].hex)
+      builder.withCustom("search-foreground", text.hex)
+      builder.withCustom("search-selected-background", selected.hex)
+      builder.withCustom("search-selected-foreground", text.hex)
       if let name = appearance.fontName {
         builder.withFontFamily(name)
       }

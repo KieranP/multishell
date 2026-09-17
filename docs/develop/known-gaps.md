@@ -120,6 +120,18 @@ does.
   `index`; match the files, the reason being localised, and a plain
   `isLocked` would blank a worktree the user locked. See
   docs/design/worktrees.md.
+- Use Selection for Find, Cmd+E on every other Mac find bar, is not offered:
+  the wrapper's AppKit view keeps its `surface` internal, and the selection
+  is read through it. Ghostty's own Cmd+E stays bound and does nothing here.
+  Fix = a wrapper release exposing `readSelection` on the view.
+- The find bar shows no match count and no "wrapped" mark: the engine sends
+  both through `GHOSTTY_ACTION_SEARCH_TOTAL` and `SEARCH_SELECTED`, which the
+  wrapper's callback bridge logs under its `default` arm and forwards to no
+  delegate, on the pinned tag and on its main branch alike, and its debug
+  sink logs an action's name without its value. Fix = a patch to the bridge
+  forwarding the two, upstreamed and the pin moved at the cost
+  dependencies.md names, or carried as a copy of the wrapper in this repo.
+  Decided against for now: a count is not worth carrying the wrapper.
 - `creationStopper` and `worktreeCreationStep` are one slot each, so with two
   creates overlapping, Cmd+N reopening the sheet while the last one runs, the
   first to end nils both: the second sheet's Cancel then does nothing, its
@@ -283,9 +295,36 @@ does.
   over: bands are not on screen until the tab reaches a terminal.
 - Whether a SwiftUI overlay composites above the engine's surface is
   unverified, libghostty's being Metal-backed: the focus ring has always been
-  drawn that way, and now the unfocused-pane fade too. If neither appears,
-  both are silent rather than wrong, and the fade would have to become a view
-  inside SurfaceFrame the way its drop highlight is.
+  drawn that way, and now the unfocused-pane fade and the find bar too. If
+  none appears, the first two are silent rather than wrong, and the fade
+  would have to become a view inside SurfaceFrame the way its drop highlight
+  is; a find bar that does not appear still searches, its shortcuts reaching
+  the model, and would have to move into SurfaceFrame the same way.
+- The find bar has never been seen on a screen. Unwatched: that the first step
+  after a needle lands on the newest match and scrolls to it, which is the
+  engine's `selectNext` from no selection read off its source; that a bar whose
+  field has the keyboard is the one the menu items act on, the model's half of
+  which is tested and the field's `onChange` of its focus
+  and `onDisappear` not; that
+  Shift+Return steps up, the shift being read off `NSEvent.modifierFlags` at
+  the submit rather than off the event, so a Shift+Return that steps down is
+  the sign, and the fallback is the up arrow or Cmd+Shift+G; that the Find
+  menu's items enable and disable as bars open and close, which rests on a
+  `Commands` body re-evaluating for an `@Observable` read, the doubt the file's
+  own comment records, and whose failure is an item that stays grey or stays
+  black while its action still guards; that Escape in a pane under an open bar
+  reaches the program, `escape=unbind` in the config being what releases
+  Ghostty's own binding, and an Escape that instead takes the highlights down
+  is the sign; that a bar a worktree switch brings back leaves the keyboard in
+  the pane, the model's half of which is tested and the field's `.task` not;
+  and that a 340pt bar reads at every font size over a pane at
+  `SplitMetrics.minimumPane`. Cmd+X, C, V and A in the field are read off the
+  wrapper rather than watched: its `performKeyEquivalent` answers only while
+  the surface itself is first responder, so the field's editor gets them
+  through the Edit menu's `sendAction`. Wrap-around is read off the engine's
+  source on its main branch, `selectNext` and `selectPrev` in
+  `terminal/search/screen.zig`, not watched in the pinned build, and the
+  wrapper's dropped count means nothing on screen would say if it had stopped.
 - Reordering inside one column happens as the pointer passes each tab, not on
   release; see TabShuffle and `AppModel.shuffleTab`. Unverified at the edges: a
   strip whose tabs differ widely in width could in principle move a tab back

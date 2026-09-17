@@ -45,6 +45,21 @@ public final class AppModel<Surface> {
   /// The tab whose strip shows a name field, for the same reason the worktree
   /// above has one: a commit arriving after the edit ended must be ignored.
   public var renamingTabID: TerminalTab.ID?
+  /// The panes with a find bar up, each pane's its own; see `showFind`.
+  /// Runtime state, dropped with the session.
+  public internal(set) var findingSessionIDs: Set<TerminalSession.ID> = []
+  /// Each pane's needle, kept across closes so Cmd+F then Return repeats the
+  /// last search there; read through `findText(of:)`.
+  public internal(set) var findNeedles: [TerminalSession.ID: String] = [:]
+  /// Panes whose bar has a Cmd+F to answer, claimed through `takeFindFieldRequest`;
+  /// a bar a worktree switch brings back has none. See terminals.md.
+  public internal(set) var findFieldRequests: Set<TerminalSession.ID> = []
+  /// Panes whose search has a selected match: a step has gone since the needle.
+  /// The first step after a needle lands nearest the prompt; terminals.md.
+  var findSelections: Set<TerminalSession.ID> = []
+  /// The pane whose bar's field has the keyboard, which the menu's find items
+  /// act on ahead of the focused pane, a field taking no store focus.
+  public internal(set) var findFieldPane: TerminalSession.ID?
 
   /// What a tab drag is doing. Here, not in the column tree that draws it,
   /// because a sidebar row takes a drop too and could not reach a `@State`.
@@ -239,6 +254,7 @@ public final class AppModel<Surface> {
       setIfChanged(\.sessionTitles, sessionTitles.filter { live.contains($0.key) })
       setIfChanged(\.reportedAgents, reportedAgents.filter { live.contains($0.key) })
       pruneStates()
+      pruneFind()
       // A shell exiting can bring another tab into view; it is being looked
       // at now, whatever happened in it before.
       markShownTabSeen()

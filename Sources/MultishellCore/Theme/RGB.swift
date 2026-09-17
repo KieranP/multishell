@@ -13,6 +13,11 @@ public struct RGB: Hashable, Sendable {
     self.blue = blue
   }
 
+  /// `#rrggbb`, the form a theme file and a Ghostty config both take.
+  public var hex: String {
+    String(format: "#%02x%02x%02x", red, green, blue)
+  }
+
   /// Mixes towards `other`, where 0 is self and 1 is `other`.
   public func blended(with other: RGB, amount: Double) -> RGB {
     let ratio = amount.clamped(to: 0...1)

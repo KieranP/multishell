@@ -73,6 +73,10 @@
 "empty.add-project-detail" = "Point Multishell at a git repository. Its worktrees appear in the sidebar, and each one gets its own set of terminals.";
 "empty.select-worktree" = "Select a worktree";
 "empty.select-worktree-detail" = "Pick one in the sidebar and its terminals open here.";
+"find.close" = "Close Find";
+"find.next" = "Next Match";
+"find.previous" = "Previous Match";
+"find.prompt" = "Find";
 "general.editor" = "Editor:";
 "general.editor-command-info" = "Run as a new tab in the worktree through your login shell, with {path} replaced by the worktree's quoted path, or the path appended if {path} is absent. A shell takes over when it exits.";
 "general.editor-command-prompt" = "code-insiders {path}";
@@ -104,7 +108,12 @@
 "icon-picker.folder" = "Folder";
 "label.agents" = "Agents";
 "menu.add-project" = "Add Project…";
+"menu.close-find" = "Close Find";
 "menu.cut" = "Cut";
+"menu.find" = "Find";
+"menu.find-item" = "Find…";
+"menu.find-next" = "Find Next";
+"menu.find-previous" = "Find Previous";
 "menu.focus-next-group" = "Focus Next Group";
 "menu.focus-previous-group" = "Focus Previous Group";
 "menu.move-tab-to-new-group" = "Move Tab to New Group";

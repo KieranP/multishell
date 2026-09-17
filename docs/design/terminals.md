@@ -183,11 +183,12 @@ This app's terminal defaults first, the user's Ghostty config over them, the
 theme over both. So the file decides font family, cursor, scrollback, padding
 and the rest, and cannot decide the colours the chrome is painted to match or
 the font size a settings row owns. Keybinds arrive as written, less the app's
-own combinations, unbound by name as before -> a binding the user puts over a
-menu item is theirs. Both the places Ghostty reads on a Mac,
-`~/.config/ghostty/config` then the app-support file, which is the one
-Ghostty writes and so has the later word. `XDG_CONFIG_HOME` is not read, an
-app Finder launched not being given it. Read once, when the host is created.
+own combinations and the keys it releases (`AppShortcuts.surfaceReleases`,
+Escape so far), unbound by name as before -> a binding the user puts over a
+menu item, or on Escape, is theirs no longer. Both the places Ghostty reads on
+a Mac, `~/.config/ghostty/config` then the app-support file, which is the one
+Ghostty writes and so has the later word. `XDG_CONFIG_HOME` is not read, an app
+Finder launched not being given it. Read once, when the host is created.
 
 The merged text goes to libghostty through a file the wrapper writes under the
 temp directory, named for the bundle. The wrapper removes that file when it
@@ -262,3 +263,80 @@ worktree list is read with `-z` to allow, and a raw tab or newline made every
 line from that tab unparseable: the reader dropped them all in silence, and
 the zsocket path being taken on any stock zsh, the helper that encodes
 correctly was never reached. bash always goes through the helper.
+
+## Find is the engine's search under a bar of ours
+
+libghostty searches its own scrollback and highlights what it finds, driven by
+three keybind actions: `search:<needle>`, `navigate_search:next|previous` and
+`end_search`. The bar is the app's, since the engine's own is a GUI the
+embedding never shows. A bar is a pane's own, keyed by session with its own
+needle, and nothing about one reaches another: a bar left up in one worktree is
+still up, its search still running, when the user comes back, and Cmd+F in
+another worktree opens that pane's own bar, empty, rather than moving the
+first. The first cut had one bar in the window that followed the keystroke, and
+Find Next in a second worktree pulled a search out from under the first. The
+needle is kept per pane across closes, as the Mac's find field is: Cmd+F on a
+bar that is down searches it again so the matches light up. The menu's Find… is
+disabled with no terminal tab in view. Every find keystroke acts on the bar
+whose field has the keyboard, else on the focused pane of the tab in front:
+Cmd+F there asks for that field again rather than opening the focused pane's
+bar, and Find Next, Find Previous and Close Find are disabled while that pane
+has no bar. The field's case is told apart because clicking into a field moves
+the store's focus nowhere: without it, Cmd+G typed in one pane's field stepped
+the other pane's search in a split. A bar's own Return and arrows act on its
+pane whichever pane has the keyboard. Escape in the field, the close and
+Cmd+Shift+F from the pane all take the bar down and hand the keyboard to the
+bar's own pane, as the sidebar filter hands it back: that pane and not the
+focused one, since clicking into a field moves the store's focus nowhere. The
+field takes the keyboard on Cmd+F alone, through a request the bar claims once
+it is on screen; a bar a worktree switch brings back claims nothing, so the
+keyboard stays in the pane the user turned to.
+
+Next walks down the scrollback towards the prompt and Previous up, as
+Terminal.app's do, wrapping at either end in the engine's own index
+arithmetic. Ghostty's own `next` walks the other way, newest to oldest, so
+the host crosses them. Typing highlights the matches and selects none, and
+the first step after a needle, whichever arrow asked, lands on the match
+nearest the prompt, which is the one nearest what is on screen; from there
+Return walks down, wrapping to the oldest, and Shift+Return or the up arrow
+walks up. The model keeps which panes have a selected match, since the
+engine reports nothing back, and a new needle or a reopened bar starts over.
+Cost: typing alone scrolls nowhere, and the first Return after the nearest
+match wraps to the top of the scrollback.
+
+Four of Ghostty's own bindings meet this. Cmd+F, Cmd+G, Cmd+Shift+G and
+Cmd+Shift+F are unbound like every other menu shortcut, the first opening a
+bar this embedding never shows and the last ending a search under a bar of
+ours that stayed up. Escape is released too: Ghostty binds it to end the
+search as a performable key, so while a search ran it ate Escape in the pane
+and ended the search under our bar; released, Escape is a plain key again and
+only the bar ends a search. Cmd+E, Ghostty's search-for-selection, is left
+bound and does nothing here, its whole effect being a start-search action the
+wrapper drops, and the app cannot offer it itself because the wrapper keeps
+the surface's selection internal.
+
+The same needle set again is nothing to the model: the field commits its
+binding on Return as well as on each keystroke, and a repeat taken as a change
+would send the needle again and start the selection over, so Return landed
+nearest the prompt instead of stepping. Before the first step was the model's
+to send it was paired with the needle in the host, and the repeat then made
+Return skip every other match.
+
+Three engine facts decide the shape of that. A needle change highlights the
+matches in view and selects none, nothing scrolling until a navigate arrives.
+A navigate sent with the needle selects nothing either: both go through the
+search thread's one mailbox, which drains both before the thread has matched
+anything, so `selectNext` finds no results and returns false; the first cut
+paired them and typing never jumped, which is why the first step is the
+model's to send and to remember. A needle differing from the last only in
+case is unchanged to the engine, so the selection stands and the step after
+it moves on by one. And an empty needle ends the engine's search outright,
+its thread stopped, so `search:` with nothing after it is what an emptied
+field sends and `end_search` what the bar's close sends, the second also
+telling the engine's own bar, which this embedding has none of.
+
+Cost: no "3 of 12". The engine reports its match count and which is selected
+through two actions the wrapper logs and drops, on its main branch as on the
+pinned tag, so the bar cannot say how many there are or when it has wrapped.
+Only a patch to the wrapper buys it back, and a count was judged not worth
+carrying one; known-gaps.md.

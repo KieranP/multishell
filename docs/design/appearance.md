@@ -70,3 +70,29 @@ The message block below them is still one to three lines and still optional, so
 cards are not all one height; that block is the occupant's words and is the
 one thing on the card worth the room. Cost: a long command is cut off, where
 two lines used to show it.
+
+## The find bar floats, and the matches wear the theme
+
+Drawn as Ghostty draws its own: a rounded panel lifted from the terminal under
+a hairline, the field in a well of the terminal's own background one step back
+inside it, and three glyphs that light on hover so they read as buttons. The
+lift is the sidebar's on a dark theme and a third of it, `columnColor`, on a
+light one: a light theme lifts towards black, and the sidebar's nine per cent
+read as a grey slab over a white terminal. The well on a light theme carries
+its own hairline, three per cent being too little to tell white from. No
+shadow: SwiftUI's `.shadow` shadows every opaque part of the view, so one meant
+to lift the panel off the text also blurred dark around the well inside it, and
+the lift is the hairline's to give. Not a strip across the pane: a strip takes
+a row from every pane it is up in, and a bar that floats over the corner costs
+the terminal nothing. No count beside the field, which Ghostty has, because the
+wrapper drops it (known-gaps.md); an empty slot would read as broken. The
+engine paints the matches, and it would paint them in its own defaults, so the
+theme layer sets its four `search-` colours: matches in the theme's yellow, the
+one selected in the focus ring's colour, both with the darker of the theme's
+background and foreground as their text, since a light theme's background is
+near white and white on yellow cannot be read, so what the bar found is told
+from what the shell printed in the theme's own voice and the selected match
+wears the colour the app already uses for "here". The theme layer sits over the
+user's Ghostty config, so a `search-` colour in their file is read and then
+overridden, as their `background` is; the family stays on the allowed list
+because `search-` carries nothing else a surface reads.

@@ -1,3 +1,5 @@
+import GhosttyTerminal
+import MultishellCore
 import SwiftUI
 import Testing
 
@@ -10,8 +12,8 @@ import Testing
 @Suite
 struct AppShortcutTests {
   /// The combinations the surface is told to give up: the hand-written
-  /// config's own list, plus the tab-group items added since. This is the
-  /// assertion that says the change to one source altered nothing.
+  /// config's own list, plus the tab-group and find items added since. This
+  /// is the assertion that says the change to one source altered nothing.
   @Test func theDerivedUnbindListIsTheOneGhosttyWasAlwaysGiven() {
     #expect(
       Set(AppShortcuts.unbound) == [
@@ -23,8 +25,60 @@ struct AppShortcutTests {
         "super+shift+a",
         "super+alt+d",
         "ctrl+tab", "ctrl+shift+tab",
+        "super+f", "super+g", "super+shift+g", "super+shift+f",
         "super+ctrl+f", "super+enter",
+        "escape",
       ])
+  }
+
+  /// Ghostty binds Cmd+F to its own search, whose bar this embedding cannot
+  /// show; unbound, the keystroke reaches the Edit menu and ours.
+  @Test func theFindShortcutsAreTakenFromTheSurface() {
+    let unbound = Set(AppShortcuts.unbound)
+    for shortcut in [
+      AppShortcuts.find, AppShortcuts.findNext, AppShortcuts.findPrevious, AppShortcuts.closeFind,
+    ] {
+      #expect(unbound.contains(shortcut.ghosttyCombo))
+    }
+    #expect(AppShortcuts.findPrevious.ghosttyCombo == "super+shift+g")
+    #expect(AppShortcuts.closeFind.ghosttyCombo == "super+shift+f")
+  }
+
+  /// One line libghostty cannot parse refuses the whole config, and the unbinds
+  /// ride in the theme's: a key name it lacks would cost every colour and the font.
+  @MainActor
+  @Test func everyUnbindIsALineThePinnedLibghosttyAccepts() {
+    let unbinds = AppShortcuts.unbound.map { "keybind = \($0)=unbind" }.joined(separator: "\n")
+    let controller = TerminalController(
+      configSource: .generated(GhosttyUserConfig.defaults.rendered + "\n" + unbinds))
+    #expect(controller.lastConfigurationIssue == nil, "\(controller.lastConfigurationIssue ?? "")")
+  }
+
+  /// The same for the whole theme layer, which carries the unbinds and now
+  /// the four search colours: every built-in theme, rendered and offered.
+  @MainActor
+  @Test func everyBuiltInThemesConfigurationIsOneThePinnedLibghosttyAccepts() {
+    for theme in Theme.builtins {
+      let rendered = GhosttyTerminalHost.configuration(theme, Appearance()).rendered
+      #expect(rendered.contains("search-background = #"), "\(theme.name)")
+      #expect(rendered.contains("search-selected-background = #"), "\(theme.name)")
+      // Match text is the dark one of the pair: a light theme's background is
+      // near white, and white on yellow cannot be read.
+      let text = (theme.isDark ? theme.backgroundRGB : theme.foregroundRGB).hex
+      #expect(rendered.contains("search-foreground = \(text)"), "\(theme.name)")
+      #expect(rendered.contains("search-selected-foreground = \(text)"), "\(theme.name)")
+      let controller = TerminalController(configSource: .generated(rendered))
+      #expect(
+        controller.lastConfigurationIssue == nil,
+        "\(theme.name): \(controller.lastConfigurationIssue ?? "")")
+    }
+  }
+
+  /// Ghostty's own `esc=end_search` is performable: while a search runs it eats
+  /// Escape in the pane. Released, Escape is a plain key and only the bar ends one.
+  @Test func escapeIsReleasedToTheProgramInThePane() {
+    #expect(AppShortcuts.surfaceReleases == ["escape"])
+    #expect(AppShortcuts.unbound.contains("escape"))
   }
 
   /// The deliberate exception, pinned so it is not "fixed". In a pane these

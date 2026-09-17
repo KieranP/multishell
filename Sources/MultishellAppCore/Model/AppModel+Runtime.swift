@@ -8,6 +8,8 @@ extension AppModel {
   public func reconcileSessions(takingFocus: Bool) {
     reconcile()
     guard takingFocus else { return }
+    // The keyboard is a pane's now, whatever field held it.
+    findFieldPane = nil
     registry.focusActiveSession()
     markShownTabSeen()
   }
@@ -37,6 +39,7 @@ extension AppModel {
     }
     pruneStates()
     prunePendingClose()
+    pruneFind()
   }
 
   /// What has now been seen: every column's active tab and the selected

@@ -24,6 +24,8 @@ final class FakeEngine: TerminalSurfaceHost {
   var closed: [TerminalSession.ID] = []
   /// What was pasted into each session, in order.
   var pasted: [(id: TerminalSession.ID, text: String)] = []
+  /// Every search step, in order, whichever pane it was for.
+  var searched: [(id: TerminalSession.ID, command: TerminalSearch)] = []
   /// What the registry asked for, command line included.
   var opened: [TerminalSession] = []
   weak var delegate: (any TerminalHostDelegate)?
@@ -42,6 +44,11 @@ final class FakeEngine: TerminalSurfaceHost {
   func paste(_ text: String, into id: TerminalSession.ID) -> Bool {
     guard openSessionIDs.contains(id) else { return false }
     pasted.append((id, text))
+    return true
+  }
+  func search(_ command: TerminalSearch, in id: TerminalSession.ID) -> Bool {
+    guard openSessionIDs.contains(id) else { return false }
+    searched.append((id, command))
     return true
   }
   func view(for id: TerminalSession.ID) -> FakeSurface? { nil }

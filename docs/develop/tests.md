@@ -259,6 +259,21 @@ What each test catches, and the conventions a new one follows.
   that sleeps past the pace's floor, counting the calls; StatusPollPaceTests
   holds the rule itself. Every other model test runs `.unpaced`, or a read
   right after a change would be skipped.
+- A find bar is its pane's own and ends with its pane: AppModelFindTests
+  through `FakeEngine`'s recorded searches, Find Next disabled and inert with
+  the bar down or in a second worktree while the first's search is untouched,
+  Close Find taking down the pane in view's bar and no other, a bar's arrows
+  stepping its pane while another has the keyboard, the menu acting on the bar
+  whose field has the keyboard and handed back when that bar closes, Escape
+  handing the keyboard to the bar's pane rather than the focused one, the same
+  needle again sent nowhere since Return recommits the field, the first step
+  after a needle landing nearest the prompt whichever arrow asked, and a bar
+  brought back by a worktree switch asking for no field. The steps' Ghostty
+  spellings, a find as the needle alone and Next crossed to Ghostty's
+  `previous`, are FindBindingActionTests; their shortcuts being taken from the
+  surface, Escape released to the program, and every unbind line accepted by
+  the pinned libghostty, which otherwise refuses the whole theme config, are
+  AppShortcutTests.
 - A watcher tick re-reading every project: AppModelGitTests adds a second
   repository, adds a worktree to it behind the app's back, and ticks with the
   first project's directory; the second must stay unread and nothing re-armed

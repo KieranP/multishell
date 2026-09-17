@@ -103,6 +103,9 @@ scalar Ghostty cannot parse. A combination the system owns goes in
 split family but is the Dock's, taken by the WindowServer before a menu bar
 sees it. Declared but left out of `all` = works everywhere but a pane.
 `surfaceKeeps` = the clipboard combinations, which the terminal keeps.
+`surfaceReleases` = plain keys Ghostty binds that must reach the program
+instead, `escape` so far; a release is a Ghostty key name, not a shortcut,
+since nothing of ours is on the key.
 
 **A project icon.** A name in one of `ProjectIcon.symbolGroups`, or a new
 group. Must exist as far back as macOS 14, the deployment target; a name that

@@ -32,6 +32,11 @@ struct PaneTreeView: View {
       )
       .overlay { fade(isActive: isActive) }
       .overlay { ring(isActive: isActive) }
+      .overlay(alignment: .topTrailing) {
+        if model.findingSessionIDs.contains(id) {
+          FindBar(model: model, sessionID: id, theme: theme)
+        }
+      }
 
     case .split(let axis, let children, let weights):
       WeightedSplit(

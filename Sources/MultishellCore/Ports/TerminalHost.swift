@@ -16,11 +16,22 @@ public protocol TerminalHost: AnyObject {
   /// Applied to every open terminal and to any opened afterwards.
   func apply(_ theme: Theme, appearance: Appearance)
 
+  /// A step of the engine's own search over the session's scrollback.
+  /// `false` where the engine has no such session, or no search at all.
+  @discardableResult
+  func search(_ command: TerminalSearch, in id: TerminalSession.ID) -> Bool
+
   /// Sessions the host currently has open. `SessionRegistry` reconciles
   /// against this rather than keeping its own copy.
   var openSessionIDs: Set<TerminalSession.ID> { get }
 
   var delegate: (any TerminalHostDelegate)? { get set }
+}
+
+extension TerminalHost {
+  /// An engine with no search: the bar's steps land nowhere rather than
+  /// failing the host.
+  public func search(_ command: TerminalSearch, in id: TerminalSession.ID) -> Bool { false }
 }
 
 @MainActor

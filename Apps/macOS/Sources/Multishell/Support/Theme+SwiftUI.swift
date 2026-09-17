@@ -22,6 +22,11 @@ extension Theme {
   var columnColor: Color { lifted(0.03) }
   var cardColor: Color { lifted(0.07) }
 
+  /// The find bar: the sidebar's lift on a dark theme, a third of it on a
+  /// light one, whose well then needs a line of its own; see appearance.md.
+  var findPanelColor: Color { isDark ? sidebarColor : columnColor }
+  var findWellBorder: Color { isDark ? .clear : hairline }
+
   var textPrimary: Color { foregroundColor.opacity(0.92) }
   var textSecondary: Color { foregroundColor.opacity(0.6) }
   var textTertiary: Color { foregroundColor.opacity(0.38) }

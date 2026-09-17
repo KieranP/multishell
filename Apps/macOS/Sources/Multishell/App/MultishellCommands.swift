@@ -6,8 +6,8 @@ struct MultishellCommands: Commands {
   let model: AppModel
 
   var body: some Commands {
-    // No `.disabled` here: Commands are not re-evaluated reliably, so each
-    // action is a no-op when it does not apply.
+    // Only the find items carry `.disabled`: Commands are not re-evaluated
+    // reliably, so every action is also a no-op when it does not apply.
     CommandGroup(replacing: .newItem) {
       Button(t("menu.new-tab")) { model.newTab() }
         .keyboardShortcut(AppShortcuts.newTab)
@@ -53,9 +53,25 @@ struct MultishellCommands: Commands {
       .keyboardShortcut(AppShortcuts.redo)
     }
 
-    // Find, Spelling, Substitutions, Speech: text-editing items with no
-    // meaning in a terminal, and the same lazily-validated kind as above.
-    CommandGroup(replacing: .textEditing) {}
+    // Spelling, Substitutions and Speech have no meaning in a terminal, and
+    // are the same lazily-validated kind as above. Find is the engine's.
+    CommandGroup(replacing: .textEditing) {
+      Menu(t("menu.find")) {
+        Button(t("menu.find-item")) { model.showFind() }
+          .keyboardShortcut(AppShortcuts.find)
+          .disabled(!model.findIsAvailable)
+        Button(t("menu.find-next")) { model.findNext() }
+          .keyboardShortcut(AppShortcuts.findNext)
+          .disabled(!model.findIsOpenInView)
+        Button(t("menu.find-previous")) { model.findPrevious() }
+          .keyboardShortcut(AppShortcuts.findPrevious)
+          .disabled(!model.findIsOpenInView)
+        Divider()
+        Button(t("menu.close-find")) { model.closeFind() }
+          .keyboardShortcut(AppShortcuts.closeFind)
+          .disabled(!model.findIsOpenInView)
+      }
+    }
 
     CommandGroup(replacing: .saveItem) {
       Button(t("close.pane-button")) { model.closeActivePane() }

@@ -89,6 +89,14 @@ enum AppShortcuts {
   static let redo = AppShortcut("z", .shift)
   static let nextTab = AppShortcut.control(.tab)
   static let previousTab = AppShortcut.control(.tab, .shift)
+  /// Ghostty binds Cmd+F to a search bar of its own that an embedding never
+  /// shows; taken from the surface so the keystroke reaches ours.
+  static let find = AppShortcut("f")
+  static let findNext = AppShortcut("g")
+  static let findPrevious = AppShortcut("g", .shift)
+  /// Ghostty's own end-search key, which would otherwise end a search under
+  /// a bar of ours that stayed up.
+  static let closeFind = AppShortcut("f", .shift)
 
   /// Copy, paste, cut and select-all. The menu carries them and the surface
   /// keeps them, a pane's Cmd+C being Ghostty's own clipboard action.
@@ -104,6 +112,7 @@ enum AppShortcuts {
     addProject, openInEditor, splitRight, splitDown,
     moveTabToNewGroup, nextGroup, previousGroup,
     showAgents, undo, redo, nextTab, previousTab,
+    find, findNext, findPrevious, closeFind,
     cut, copy, paste, selectAll,
   ]
 
@@ -116,8 +125,12 @@ enum AppShortcuts {
     "super+alt+d",
   ]
 
+  /// Ghostty bindings on plain keys, released so the key reaches the program:
+  /// its performable `esc=end_search` ate Escape under our bar; terminals.md.
+  static let surfaceReleases = ["escape"]
+
   /// What the terminal surface is told to unbind, or it eats these before
   /// the menu bar sees them.
   static let unbound: [String] =
-    all.filter { !$0.surfaceKeeps }.map(\.ghosttyCombo) + systemOwned
+    all.filter { !$0.surfaceKeeps }.map(\.ghosttyCombo) + systemOwned + surfaceReleases
 }
