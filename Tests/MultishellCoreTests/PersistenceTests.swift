@@ -281,6 +281,7 @@ struct PersistenceTests {
     workspace.confirmsWorktreeRemoval = false
     workspace.deletesBranchWithWorktree = true
     workspace.hookTimeoutSeconds = 5
+    workspace.gitStatusIndicator = .stagedOnly
 
     let snapshot = WorkspaceSnapshot(fileURL: file)
     try snapshot.save(workspace)

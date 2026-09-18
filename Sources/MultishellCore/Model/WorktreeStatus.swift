@@ -14,6 +14,14 @@ public struct WorktreeStatus: Hashable, Sendable {
   /// once, because it is one line of `git status`.
   public var changedFiles = 0
 
+  /// Lines added and removed against HEAD, with an untracked file's whole
+  /// contents counted as added; see docs/design/worktrees.md.
+  public var insertions = 0
+  public var deletions = 0
+  /// Files that changed with no line to show for it: a binary file, a mode
+  /// change, a rename, an untracked file too big or too odd to read.
+  public var unscoredFiles = 0
+
   /// The branch git reports, or nil when detached. Compared against the
   /// sidebar so a checkout made in a terminal shows up without a watcher.
   public var branch: String?
@@ -26,6 +34,8 @@ public struct WorktreeStatus: Hashable, Sendable {
   /// One line for a tooltip: "3 changed · 1 untracked · ↑2".
   public var summary: String {
     var parts: [String] = []
+    if isDirty { parts.append(t("status.lines", insertions, deletions)) }
+    if unscoredFiles > 0 { parts.append(t("status.unscored", unscoredFiles)) }
     if staged > 0 { parts.append(t("status.staged", staged)) }
     if unstaged > 0 { parts.append(t("status.modified", unstaged)) }
     if untracked > 0 { parts.append(t("status.untracked", untracked)) }

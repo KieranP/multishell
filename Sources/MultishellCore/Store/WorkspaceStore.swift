@@ -573,4 +573,8 @@ extension WorkspaceStore {
   public func setHookTimeoutSeconds(_ seconds: Int) {
     workspace.hookTimeoutSeconds = max(0, seconds)
   }
+
+  public func setGitStatusIndicator(_ indicator: GitStatusIndicator) {
+    workspace.gitStatusIndicator = indicator
+  }
 }

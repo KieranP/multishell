@@ -2,9 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Settings > Worktrees: where new worktrees go, how their branches are
-/// named, and what a removal asks. Any project can override these. The
-/// order rows are listed in is the sidebar's sort menu, not a row here.
+/// Settings > Worktrees, every row overridable per project but the git status
+/// indicator. Sort order is not here: the sidebar's own menu holds it.
 struct WorktreeSettingsTab: View {
   let model: AppModel
 
@@ -38,6 +37,18 @@ struct WorktreeSettingsTab: View {
           .frame(width: 60)
           .multilineTextAlignment(.trailing)
           Text(t("worktrees.seconds"))
+        }
+      }
+
+      Section {
+        InfoRow(t("worktrees.indicator"), info: t("worktrees.indicator-info")) {
+          Picker(
+            t("worktrees.indicator"),
+            selection: model.setting(\.gitStatusIndicator, write: model.setGitStatusIndicator)
+          ) {
+            ForEach(GitStatusIndicator.allCases, id: \.self) { Text($0.displayName).tag($0) }
+          }
+          .fixedSize()
         }
       }
 

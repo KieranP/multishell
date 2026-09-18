@@ -66,6 +66,8 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// How long a project hook may run before it is stopped and reported.
   /// Zero is no limit.
   public var hookTimeoutSeconds = Self.defaultHookTimeoutSeconds
+  /// What the git badge on a row and a card counts.
+  public var gitStatusIndicator = GitStatusIndicator.default
 
   public static let defaultHookTimeoutSeconds = 60
 
@@ -120,6 +122,10 @@ public struct Workspace: Codable, Hashable, Sendable {
       Bool.self, forKey: .deletesBranchWithWorktree, or: false)
     hookTimeoutSeconds = try container.decode(
       Int.self, forKey: .hookTimeoutSeconds, or: Self.defaultHookTimeoutSeconds)
+    // Tolerated for the reason `worktreeSortOrder` is: a newer build may
+    // name a kind this one has not got.
+    gitStatusIndicator = container.decodeTolerantly(
+      GitStatusIndicator.self, forKey: .gitStatusIndicator, or: .default)
 
     // A file written before columns names no group but says which tab was
     // active. Read here, or `repairReferences` falls back to the last tab.

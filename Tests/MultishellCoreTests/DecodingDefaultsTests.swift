@@ -385,6 +385,16 @@ struct DecodingDefaultsTests {
     #expect(split.opensTerminalOnCreate, "once said separately, it is its own setting")
   }
 
+  @Test func anUnreadableGitStatusIndicatorFallsBackToCountingEverything() throws {
+    #expect(try decode(Workspace.self, #"{ "projects": [] }"#).gitStatusIndicator == .default)
+    #expect(
+      try decode(Workspace.self, #"{ "gitStatusIndicator": "stagedOnly" }"#).gitStatusIndicator
+        == .stagedOnly)
+    #expect(
+      try decode(Workspace.self, #"{ "gitStatusIndicator": "whateverIsNext" }"#).gitStatusIndicator
+        == .default, "a kind a newer build named costs that value alone")
+  }
+
   @Test func aWorkspaceWithoutTheRemovalFieldsAsksAndKeepsTheBranch() throws {
     let workspace = try decode(Workspace.self, #"{ "projects": [] }"#)
     #expect(workspace.confirmsWorktreeRemoval, "asks until told not to")

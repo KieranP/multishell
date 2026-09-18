@@ -2,8 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// One pane's card: who is at the prompt, for how long, the tab's name, where
-/// it is, and the last thing it said. No output; the engine hands none.
+/// One pane's card, read in the sidebar's order; see docs/design/appearance.md.
+/// No output on it: the engine hands the core no scrollback.
 struct AgentCardView: View {
   let model: AppModel
   let card: AgentBoardCard
@@ -17,17 +17,8 @@ struct AgentCardView: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 5) {
-      top
-      HStack(spacing: 4) {
-        if let position = card.position {
-          PanePositionBadge(index: position.index, metrics: metrics, theme: theme)
-        }
-        Text(card.title)
-          .font(.system(size: metrics.secondary))
-          .foregroundStyle(theme.textPrimary)
-          .lineLimit(1)
-      }
       place
+      title
       if let message = card.message {
         AgentCardMessage(text: message, theme: theme, metrics: metrics)
       }
@@ -51,22 +42,18 @@ struct AgentCardView: View {
     .accessibilityAddTraits(.isButton)
   }
 
-  /// The dot, who is at the prompt, and how long in this column. A shell
-  /// names itself monospaced, so a glance separates the two.
-  private var top: some View {
-    HStack(spacing: 6) {
-      Circle()
-        .fill(theme.color(for: card.state ?? .idle))
-        .frame(width: 7, height: 7)
-      Text(card.occupant.name)
-        .font(
-          card.occupant.isAgent
-            ? .system(size: metrics.caption, weight: .semibold)
-            : .system(size: metrics.badge, design: .monospaced)
-        )
-        .foregroundStyle(card.occupant.isAgent ? theme.textPrimary : theme.textSecondary)
+  /// The tab's name, with how long this pane has been in its column on the
+  /// same right-hand rail the line above ends on.
+  private var title: some View {
+    HStack(spacing: 4) {
+      if let position = card.position {
+        PanePositionBadge(index: position.index, metrics: metrics, theme: theme)
+      }
+      Text(card.title)
+        .font(.system(size: metrics.secondary))
+        .foregroundStyle(theme.textPrimary)
         .lineLimit(1)
-      Spacer(minLength: 4)
+      Spacer(minLength: 6)
       if !card.subagents.isEmpty {
         SubagentChip(subagents: card.subagents, theme: theme, metrics: metrics)
       }
@@ -83,6 +70,9 @@ struct AgentCardView: View {
   /// the card has one right-hand rail. The name gives way first.
   private var place: some View {
     HStack(spacing: 4) {
+      Circle()
+        .fill(theme.color(for: card.state ?? .idle))
+        .frame(width: 7, height: 7)
       Text(card.projectName)
         .foregroundStyle(theme.textSecondary)
         .lineLimit(1)
@@ -97,7 +87,6 @@ struct AgentCardView: View {
       if let status = card.status, !status.isClean {
         Spacer(minLength: 6)
         AgentCardChanges(status: status, theme: theme, metrics: metrics)
-          .fixedSize()
       }
     }
     .font(.system(size: metrics.badge))

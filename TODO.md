@@ -6,17 +6,16 @@ than fixed lives in `docs/develop/known-gaps.md`; a defect goes to `BUGS.md`.
 
 ## Features
 
-- File tree and git changes files and diff right hand panel
-- "Locate…" on a missing project, rebinding it to a chosen directory.
+- File tree and git changes diff right hand panel
 
 ## Refinements
 
-- Improve the Git Diff indicators in sidebar and agents dashboard
+- Change tab icon and agents dashboard tiles to show icons for the agent running
 - On Agents Dashboard, order agents in the same order as Projects, and group
   agents from same project
-- Change tab icon and agents dashboard tile to show icon for the agent running
+- Ability to rename worktree using default agent
 - Pin worktrees in the sidebar
-- Rename worktree using default agent?
+- "Locate…" on a missing project, rebinding it to a chosen directory.
 - Keyboard: Cmd+1 to 9 for tabs, next and previous worktree, focus between
   panes, focus the sidebar filter. Each is an `AppShortcut` in
   `AppShortcuts.all`.

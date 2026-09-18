@@ -178,6 +178,9 @@ public final class AppModel<Surface> {
   @ObservationIgnored var statusReads:
     [Worktree.ID: (at: ContinuousClock.Instant, took: Duration)] =
       [:]
+  /// Bumped where what a status read counts changes, so a read in flight
+  /// under the old setting lands on nothing; see `setGitStatusIndicator`.
+  @ObservationIgnored var statusGeneration = 0
   /// One coalesced status refresh per worktree; see `noteActivity`.
   @ObservationIgnored var pendingStatusRefreshes: [Worktree.ID: Task<Void, Never>] = [:]
 

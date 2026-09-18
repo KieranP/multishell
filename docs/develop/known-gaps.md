@@ -328,6 +328,24 @@ goes under Unconfirmed behaviour, and moves up when someone does.
   strip whose tabs differ widely in width could in principle move a tab back and
   forth across one boundary, the tab landing under the pointer being what stops
   that.
+- The git badge's new width is unverified on screen: `+213 −231 ~2` is several
+  times the dot and count it replaced, and it is `.fixedSize()` so a sidebar or
+  a board column out of room truncates the worktree name instead of the numbers.
+  The yellow count's untracked half is bounded at five hundred, nothing past
+  that being counted; its tracked half is one row of `--numstat` a file, so a
+  branch full of renames or mode changes can still run it into four digits, as
+  the `+` and `−` columns can. Whether a four-digit change leaves a readable
+  name at the 208pt column floor, and whether the yellow `~` reads as a count
+  rather than part of the number before it, nobody has watched. Fallback if it
+  crowds the row: drop `~` to the tooltip alone, which already names those
+  files.
+- The board card's order was rearranged to the sidebar's and the agent's name
+  taken off it; the reordered card, and the Git status indicator picker in
+  Settings > Worktrees, have not been seen drawn. That picker is a fifth Section
+  on the Worktrees page, whose height
+  `SettingsPageSizeTests.noSettingsPageIsTallerThanTheWindowItOpensIn` bounds
+  and which needs a window server to measure, so no run here has checked it;
+  Project General already sits 18.5 pt under the bound.
 - Agents board drawing unverified on screen: whether a card reads at the 208pt
   column floor, where the worktree name and the git badge share a line and the
   name is what gives way, whether a partial column at the edge reads as "more

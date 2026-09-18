@@ -267,11 +267,29 @@ What each test catches, and the conventions a new one follows.
   both.
 - Two saves landing out of order: OrderedSaveTests prepares two, runs the later
   first, and expects the file to hold it.
+- What the git badge counts: DiffStatParserTests and UntrackedLineCounterTests
+  on fixture text and files in a scratch directory, the binary, mode-change and
+  rename rows that carry no line among them, a row whose counts are neither
+  numbers nor both `-`, a symlink that is never followed, a file that would
+  cross the 8 MB budget with a small one after it that still counts, and the
+  files past the five hundredth, which count as nothing rather than as files
+  with no lines; WorktreeCoordinatorTests on real git for the three together,
+  once per `GitStatusIndicator`, plus an untracked directory that is one entry
+  whose lines are still counted and a real merge conflict that is no file with
+  no lines; GitRunnerTests for a repository whose own config says not to look at
+  untracked files, where the lines are counted anyway. Changing the setting
+  reads every badge at once rather than at the next poll: AppModelGitTests, the
+  pace's record emptied and the read that follows waited for, and a read started
+  before the change badges nothing, held open by a fake git until the read that
+  replaced it has landed.
 - The status poll asking a missing project or a slow checkout: AppModelGitTests
   on a fake git, once with the project marked missing and once with a `status`
-  that sleeps past the pace's floor, counting the calls; StatusPollPaceTests
-  holds the rule itself. Every other model test runs `.unpaced`, or a read right
-  after a change would be skipped.
+  that sleeps past the pace's floor, counting the calls, once more for a
+  prompt's own refresh of that slow worktree, which the same pace holds, and
+  once for a read discarded mid-flight because its row went under construction,
+  which must leave the next read due; StatusPollPaceTests holds the rule itself.
+  Every other model test runs `.unpaced`, or a read right after a change would
+  be skipped.
 - A find bar is its pane's own and ends with its pane: AppModelFindTests through
   `FakeEngine`'s recorded searches, Find Next disabled and inert with the bar
   down or in a second worktree while the first's search is untouched, Close Find

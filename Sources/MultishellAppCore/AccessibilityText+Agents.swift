@@ -4,25 +4,24 @@ import MultishellCore
 /// What a screen reader says for the Agents board, which is drawn by hand
 /// like the sidebar rows beside it.
 extension AccessibilityText {
-  /// A card: who is at the prompt, what the pane is doing, where it is, and
-  /// the last thing it said. In the order the card draws them.
+  /// In the order the card draws them, with the occupant after the title,
+  /// which the card itself no longer shows; see docs/design/appearance.md.
   public static func card(_ card: AgentBoardCard, at now: Date) -> String {
-    var parts = [
+    var parts = [(card.state ?? .idle).displayName]
+    parts.append(t("spoken.named", card.projectName, card.worktreeName))
+    if let status = card.status, !status.isClean { parts.append(status.summary) }
+    parts.append(card.title)
+    parts.append(
       t(
         "spoken.named",
         card.occupant.name,
-        card.occupant.isAgent ? t("spoken.agent") : t("spoken.shell")),
-      (card.state ?? .idle).displayName,
-    ]
-    if let elapsed = card.elapsed(at: now) { parts.append(t("spoken.elapsed", elapsed)) }
-    parts.append(card.title)
+        card.occupant.isAgent ? t("spoken.agent") : t("spoken.shell")))
     if let position = card.position {
       parts.append(t("spoken.pane-position", position.index, position.count))
     }
-    parts.append(t("spoken.named", card.projectName, card.worktreeName))
     if !card.subagents.isEmpty { parts.append(t("count.subagents", card.subagents.workerCount)) }
+    if let elapsed = card.elapsed(at: now) { parts.append(t("spoken.elapsed", elapsed)) }
     if let message = card.message { parts.append(message) }
-    if let status = card.status, !status.isClean { parts.append(status.summary) }
     return parts.joined(separator: ", ")
   }
 

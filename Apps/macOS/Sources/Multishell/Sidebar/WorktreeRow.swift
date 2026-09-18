@@ -73,7 +73,7 @@ struct WorktreeRow: View {
           .foregroundStyle(theme.textTertiary)
           .help(t("sidebar.locked"))
       }
-      // Never beside the changes dot or an unpushed count: work that is only
+      // Never beside the line counts or an unpushed count: work that is only
       // here hides the badge. See `WorktreeMergeState.showsBadge`.
       if mergeState.showsBadge(with: status) {
         Image(systemName: "arrow.triangle.merge")
@@ -176,22 +176,7 @@ struct WorktreeRow: View {
     }
   }
 
-  /// A dot in the theme's yellow while files are changed, with the count;
-  /// arrows for commits not yet pushed or pulled. Hover for the breakdown.
   private func changes(_ status: WorktreeStatus) -> some View {
-    HStack(spacing: 3) {
-      if status.isDirty {
-        Circle()
-          .fill(theme.ansiRGB[3].color)
-          .frame(width: 6, height: 6)
-        Text("\(status.changedFiles)")
-      }
-      if status.ahead > 0 { Text("↑\(status.ahead)") }
-      if status.behind > 0 { Text("↓\(status.behind)") }
-    }
-    .font(.system(size: metrics.badge, weight: .medium))
-    .monospacedDigit()
-    .foregroundStyle(theme.textSecondary)
-    .help(status.summary)
+    ChangeCounts(status: status, theme: theme, size: metrics.badge, tint: theme.textSecondary)
   }
 }

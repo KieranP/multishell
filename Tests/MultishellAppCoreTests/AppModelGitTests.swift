@@ -1,6 +1,7 @@
 import Foundation
 import MultishellCore
 import MultishellGitKit
+import TestScratch
 import TestSupport
 import Testing
 
@@ -68,6 +69,87 @@ struct AppModelGitTests {
     #expect(
       h.gitCalls().filter { $0.contains("status") }.count == 1,
       "a read that took 0.6 s is not due again for 6 s")
+  }
+
+  @Test func changingTheGitStatusIndicatorReadsEveryBadgeAtOnce() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    h.model.statusPace = .standard
+
+    await h.model.refreshStatuses()
+    #expect(!h.model.statusReads.isEmpty, "a read the pace would hold the next one back for")
+
+    h.model.setGitStatusIndicator(.stagedOnly)
+    #expect(h.model.statusReads.isEmpty, "nothing left to pace the next read against")
+
+    try await waitUntil { !h.model.statusReads.isEmpty }
+    #expect(!h.model.statusReads.isEmpty, "and the read it asked for has landed")
+    #expect(h.model.workspace.gitStatusIndicator == .stagedOnly)
+  }
+
+  /// A prompt's refresh is unpaced no more than the poll is: before this it
+  /// ran on every burst of terminal output, three git calls a time.
+  @Test func aPromptsRefreshOfASlowWorktreeWaitsForThePaceToo() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let fake = try h.modelOnFakeGit("case \"$*\" in *status*) sleep 0.6;; esac; exit 0")
+    fake.statusPace = .standard
+    let worktree = try #require(fake.workspace.worktrees.first)
+
+    await fake.refreshStatuses()
+    await fake.refreshStatus(of: worktree.id)
+
+    #expect(
+      h.gitCalls().filter { $0.contains("status") }.count == 1,
+      "a read that took 0.6 s is not due again for 6 s, whoever asks")
+  }
+
+  /// Landing last, the read in flight would put the old setting's counts
+  /// back. The fake git sleeps in the diff it uses so that it does land last.
+  @Test func aReadStartedBeforeTheIndicatorChangedBadgesNothing() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let fake = try h.modelOnFakeGit(
+      """
+      case "$*" in
+        *status*) printf '## main\\n M README.md\\n';;
+        *--cached*) ;;
+        *numstat*) sleep 0.5; printf '3\\t0\\tREADME.md\\n';;
+      esac
+      exit 0
+      """)
+    let main = try #require(fake.workspace.worktrees.first)
+
+    let stale = Task { await fake.refreshStatus(of: main.id) }
+    await Task.yield()
+    fake.setGitStatusIndicator(.stagedOnly)
+    await stale.value
+
+    try await waitUntil { fake.statuses[main.id] != nil }
+    #expect(
+      fake.statuses[main.id]?.insertions == 0,
+      "the staged-only read, not the staged-and-unstaged one that was already running")
+  }
+
+  /// A removal or a stage starting mid-read threw the answer away and left
+  /// the badge stale for ten times what that read cost.
+  @Test func aReadDiscardedForARowUnderConstructionPacesNothing() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let fake = try h.modelOnFakeGit("case \"$*\" in *status*) sleep 0.6;; esac; exit 0")
+    fake.statusPace = .standard
+    let main = try #require(fake.workspace.worktrees.first)
+
+    let discarded = Task { await fake.refreshStatus(of: main.id) }
+    await Task.yield()
+    fake.creatingWorktreeClaims[main.id] = 1
+    await discarded.value
+    fake.creatingWorktreeClaims[main.id] = nil
+    await fake.refreshStatus(of: main.id)
+
+    #expect(
+      h.gitCalls().filter { $0.contains("status") }.count == 2,
+      "the second read is due, the first having badged nothing")
   }
 
   @Test func aTickNamingOneProjectsRecordsLeavesTheOtherProjectUnread() async throws {

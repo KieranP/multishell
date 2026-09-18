@@ -29,11 +29,11 @@ is no catalogue.
 
 Two, and a third the day there is a second frontend:
 
-    Sources/MultishellCore/Resources/en.lproj/         the libraries', 259 keys
-    Apps/macOS/Sources/Multishell/Resources/en.lproj/  the Mac app's,   265 keys
+    Sources/MultishellCore/Resources/en.lproj/         the libraries', 267 keys
+    Apps/macOS/Sources/Multishell/Resources/en.lproj/  the Mac app's,   280 keys
 
 Each folder is a `Localizable.strings` and a `Localizable.stringsdict`, and
-those counts are both files: 251 + 8 counted forms, and 263 + 2.
+those counts are both files: 257 + 10 counted forms, and 277 + 3.
 
 Each inside the target that declares it, which is the only place SwiftPM
 promises a resource may be. A manifest can reach out of its target and both did
@@ -41,8 +41,8 @@ for a while, but then `../../Resources` in the app's manifest and the same
 string in the root's meant two different folders, and neither was where it
 looked.
 
-The split falls almost exactly where the code does. Of 519 keys, 260 are asked
-for only by `Apps/macOS/Sources` and 254 only by `Sources`; five are wanted by
+The split falls almost exactly where the code does. Of 541 keys, 274 are asked
+for only by `Apps/macOS/Sources` and 261 only by `Sources`; six are wanted by
 both. So it is not an arbitrary line through a translator's file, it is the line
 between what any frontend needs and what these windows need.
 
@@ -60,12 +60,16 @@ the libraries'. Nothing at a call site says which, and nothing needs to. Only a
 module importing both sees two: the app test target does, and says
 `Multishell.t` or `MultishellCore.t`.
 
-App code never reads the libraries' catalogue. The five words both halves say
-are written in both files. Duplicated on purpose: the alternative is
+App code never reads the libraries' catalogue. The six words both halves say are
+written in both files. Duplicated on purpose: the alternative is
 `MultishellCore.t(...)` in a view, which makes a frontend's words depend on the
-model's and is exactly what the split is for. Cost is five strings translated
+model's and is exactly what the split is for. Cost is six strings translated
 twice, and that they can drift; the app's TranslationTests fails a pair that
-has.
+has. It compares file to file of the same kind, so a key that was a phrase here
+and a counted form there passed it unseen: the badge's `~%d` and the tooltip's
+`%d files with no lines to count` were both `status.unscored`. The badge's is
+`status.unscored-badge` now, and a second check fails any key that is a phrase
+in one half and counted in the other.
 
 Not `.xcstrings`: SwiftPM copies it verbatim rather than compiling it, so every
 lookup answers with its own key. Checked against the toolchain, not assumed.

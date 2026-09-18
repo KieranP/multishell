@@ -225,6 +225,9 @@
 "sidebar.nothing-matches" = "Nothing matches";
 "sidebar.projects" = "Projects";
 "sidebar.sort-worktrees" = "Sort Worktrees";
+"status.deletions" = "−%d";
+"status.insertions" = "+%d";
+"status.unscored-badge" = "~%d";
 "tab.close" = "Close Tab";
 "tab.more-left" = "More tabs to the left";
 "tab.more-right" = "More tabs to the right";
@@ -267,6 +270,8 @@
 "worktrees.delete-branch-info" = "Runs git branch -d after git worktree remove, once the post-delete hook has run. Off, removing a worktree asks whether the branch goes too. A branch with commits nothing else has is refused and offered again with the forced form.";
 "worktrees.hook-timeout" = "Hook timeout:";
 "worktrees.hook-timeout-info" = "How long a project hook may run before it is stopped and reported, in seconds. A hook that hangs would otherwise hold its worktree until relaunch. Cancel on the pane ends one sooner; 0 is no limit.";
+"worktrees.indicator" = "Git status indicator:";
+"worktrees.indicator-info" = "What the badge on a worktree row and a board card counts. Staged & Unstaged counts every line in the working tree, a new file's contents with it; Staged Only counts what git diff --cached shows, so a worktree with nothing added yet reads +0 −0. A file with no lines to count either way, a binary one or a mode change, is counted after a ~ instead.";
 "worktrees.path" = "Worktree path:";
 "worktrees.path-info" = "Where each project's worktrees are created. Absolute, or relative to the repository. {project} is the repository folder name, ~ is home. Default ../{project}-worktrees. Any project can override it.";
 "worktrees.prefix-example" = "Typing tabs creates %@.";

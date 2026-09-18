@@ -63,10 +63,60 @@ public struct WorktreeService: Sendable {
 
   /// `--no-optional-locks`: a plain `git status` takes `index.lock`, and this
   /// polls, so a `git commit` typed at the wrong moment would fail.
-  public func status(of worktree: Worktree) async throws -> WorktreeStatus {
+  public func status(
+    of worktree: Worktree, counting indicator: GitStatusIndicator = .default
+  )
+    async throws -> WorktreeStatus
+  {
     let output = try await git.run(
       ["--no-optional-locks", "status", "--porcelain=v1", "--branch"], in: worktree.path)
-    return WorktreeStatusParser.parse(output)
+    var status = WorktreeStatusParser.parse(output)
+    guard status.isDirty else { return status }
+    let stat = await lineCounts(
+      in: worktree.path, counting: indicator, untracked: status.untracked)
+    status.insertions = stat.insertions
+    status.deletions = stat.deletions
+    status.unscoredFiles = stat.unscored
+    return status
+  }
+
+  /// `--cached` is the index alone, and the fallback wherever the diff
+  /// against HEAD fails, which an unborn HEAD does; see worktrees.md.
+  private func lineCounts(
+    in path: URL, counting indicator: GitStatusIndicator, untracked: Int
+  ) async -> (
+    insertions: Int, deletions: Int, unscored: Int
+  ) {
+    // `--diff-filter=u` drops unmerged paths, which print `0 0` from
+    // `--cached` and read as a file with nothing to count.
+    let numstat = ["--no-optional-locks", "diff", "--numstat", "--diff-filter=u"]
+    var stat = (insertions: 0, deletions: 0, unscored: 0)
+    if indicator == .stagedAndUnstaged,
+      let output = await git.output(numstat + ["HEAD"], in: path)
+    {
+      stat = DiffStatParser.parse(output)
+    } else if let cached = await git.output(numstat + ["--cached"], in: path) {
+      stat = DiffStatParser.parse(cached)
+    }
+    guard indicator == .stagedAndUnstaged, untracked > 0 else { return stat }
+    let loose = await untrackedCounts(in: path)
+    stat.insertions += loose.lines
+    stat.unscored += loose.unscored
+    return stat
+  }
+
+  /// The reads run off the main actor and off the cooperative pool: each
+  /// blocks, and on a dead mount until it times out.
+  private func untrackedCounts(in path: URL) async -> (lines: Int, unscored: Int) {
+    guard
+      let output = await git.output(
+        ["--no-optional-locks", "ls-files", "--others", "--exclude-standard", "-z"], in: path)
+    else { return (0, 0) }
+    let paths = UntrackedLineCounter.paths(from: output)
+    guard !paths.isEmpty else { return (0, 0) }
+    return await Task.detached(priority: .utility) {
+      UntrackedLineCounter.count(paths: paths, in: path)
+    }.value
   }
 
   /// Every branch with its tip, upstream and date, in one process, the date

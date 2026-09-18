@@ -93,9 +93,7 @@ struct TranslationTests {
   @Test func aWordInBothCataloguesReadsTheSameInBoth() throws {
     let mine = try Self.catalogue()
     let libraries = try #require(
-      NSDictionary(
-        contentsOf: Self.checkout.appendingPathComponent(
-          "Sources/MultishellCore/Resources/en.lproj/Localizable.strings")) as? [String: String])
+      NSDictionary(contentsOf: Self.libraryCatalogue("strings")) as? [String: String])
     let shared = Set(mine.keys).intersection(libraries.keys)
     #expect(!shared.isEmpty, "no key is in both, so this is checking nothing")
     for key in shared.sorted() {
@@ -105,6 +103,30 @@ struct TranslationTests {
         \(key) is in both catalogues and they have parted: the app says \(mine[key] ?? "") \
         and the libraries say \(libraries[key] ?? "")
         """)
+    }
+  }
+
+  /// The check above compares like file to like, so `status.unscored` being
+  /// `~%d` here and a counted form in the libraries went through it unseen.
+  @Test func noKeyIsAPhraseInOneHalfAndACountedFormInTheOther() throws {
+    let libraryPhrases = try #require(
+      NSDictionary(contentsOf: Self.libraryCatalogue("strings")) as? [String: String])
+    let libraryCounted = try #require(
+      NSDictionary(contentsOf: Self.libraryCatalogue("stringsdict")) as? [String: Any])
+
+    for key in Set(try Self.catalogue().keys).intersection(libraryCounted.keys).sorted() {
+      Issue.record("\(key) is a phrase here and a counted form in the libraries")
+    }
+    for key in Self.countedForms.intersection(libraryPhrases.keys).sorted() {
+      Issue.record("\(key) is a counted form here and a phrase in the libraries")
+    }
+    let file = try #require(
+      Bundle.appCatalogue.url(forResource: "Localizable", withExtension: "stringsdict"))
+    let ours = try #require(NSDictionary(contentsOf: file) as? [String: Any])
+    for key in Self.countedForms.intersection(libraryCounted.keys).sorted() {
+      #expect(
+        (ours[key] as? NSDictionary) == (libraryCounted[key] as? NSDictionary),
+        "\(key) is counted in both catalogues and the two rules have parted")
     }
   }
 
@@ -218,6 +240,10 @@ struct TranslationTests {
     let all = english.matches(of: /%[0-9]*\$?[0-9.]*[@dfs]/).map { String($0.output) }
     let numbered = Set(all.filter { $0.contains("$") }.map { $0.prefix { $0 != "$" } })
     return numbered.isEmpty ? all : Array(repeating: "%1$@", count: numbered.count)
+  }
+
+  private static func libraryCatalogue(_ kind: String) -> URL {
+    checkout.appendingPathComponent("Sources/MultishellCore/Resources/en.lproj/Localizable.\(kind)")
   }
 
   private static func catalogue() throws -> [String: String] {

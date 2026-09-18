@@ -243,9 +243,80 @@ front, one `git status` every five seconds. `StatusPollPace` remembers how long
 each worktree's last read took and does not ask again until ten times that has
 passed, so the disk spends at most a tenth of its time on a badge; a read under
 half a second is unaffected, ten times it being inside the interval anyway. The
-badge is shown stale for that long rather than hidden, and a prompt in the
-worktree still reads at once. Adaptive rather than a per-project toggle, so a
-small repository beside a large one loses nothing and nobody has to find a
-setting. Tests that read right after a change run `.unpaced`. The
-missing-project corner was a bug of its own: a project whose directory is gone
-had its worktrees polled too, as the two sibling polls already did not.
+badge is shown stale for that long rather than hidden. A prompt in the worktree
+reads at once where the pace has nothing against it, which is every repository
+whose status is quick; the same rule holds a slow one back, terminal output
+arriving in bursts having otherwise armed that read every quarter second, and
+each run is three git calls now rather than one. Only a read that badged a row
+is remembered: one thrown away because its worktree went or a stage started
+under it would otherwise pace the next read out for ten times what it cost,
+which is the stale badge the pace exists to avoid drawing. Adaptive rather than
+a per-project toggle, so a small repository beside a large one loses nothing and
+nobody has to find a setting. Tests that read right after a change run
+`.unpaced`. The missing-project corner was a bug of its own: a project whose
+directory is gone had its worktrees polled too, as the two sibling polls already
+did not.
+
+## The badge counts lines, and only for a dirty worktree
+
+A dot and a file count said something had changed and nothing about how much, so
+the badge reads `+213 −231` in the theme's green and red instead. The counts
+come from `git diff --numstat HEAD`, which covers staged and unstaged together;
+`--cached` is the fallback wherever that call fails, which an unborn HEAD does,
+`HEAD` not being a revision there. An untracked file has no diff at all, so
+`git ls-files --others` lists them and their lines are counted by reading the
+files: without that a deleted file's lines counted and a new file's did not,
+which is the shape of most branches early on. A file over 1 MB, one that is not
+a regular file, one with a NUL in its first 8 KB, and whatever no longer fits in
+8 MB are counted as files with no lines. A symlink is one of those: its own
+bytes are not its target's while the read follows the link, so a short link into
+a 40 MB file passed the per-file cap and then took the whole budget with it. The
+budget is checked against the file's size before the read rather than after, so
+it cannot be overshot, and a small file after one that would not fit is still
+counted. The read is a plain `Data(contentsOf:)`: mapped, a file another process
+truncates under it faults on a page past the end, which is a signal and not an
+error `try?` can catch, and a 1 MB cap made the mapping worth nothing. All of it
+runs only when `git status` already said the worktree is dirty, and is paced by
+the same `StatusPollPace` as the status read it follows. The reads themselves
+are synchronous, so they run on a detached task: eight worktrees are read at
+once, and a dead mount would otherwise hold that many cooperative threads until
+the kernel gave up.
+
+Past the five hundredth path the files are not counted at all, and only those
+five hundred paths become strings. The two numbers come from different git
+calls: `status` collapses an untracked directory to one entry, `ls-files` lists
+every file inside it. Counting the overflow as files with no lines put `~29500`
+on the badge of a worktree whose tooltip said one untracked file, and the only
+way to make the two agree is `--untracked-files=all` on the status read, which
+on thirty thousand unignored files costs 39 ms and a megabyte of pipe against 7
+ms and 25 bytes, per worktree, per poll, and puts the same thirty thousand into
+the removal dialog's "kept in the Trash" count. So the entries stay git's and
+the lines stay a floor: a new directory of source shows its lines, which is the
+shape most branches start as, and a directory nobody gitignored shows the first
+five hundred files' worth and no yellow count. `ls-files` runs only where status
+counted an untracked file, and `GitRunner`'s forced
+`status.showUntrackedFiles=normal` is what keeps a repository's own config from
+talking it out of counting one.
+
+A binary file, a mode change and a pure rename change a file with no line for
+either column, and `+0 −0` on a worktree that had plainly changed read as the
+badge being broken. They are counted as files instead, shown as `~2` in the
+theme's yellow, and an untracked file that was skipped for being binary, empty,
+too big or gone by the time it was read joins them. An unmerged path is not one
+of them: it prints `0 0` from `--numstat --cached`, so a conflict read as a file
+with no lines to count, and `--diff-filter=u` drops it. The tooltip already says
+it is conflicted. Nor is a row whose two counts are neither numbers nor both
+`-`, which is not output git produces; read as zeroes it put a yellow count on
+the badge for a line nobody could parse.
+
+Settings > Worktrees offers Staged Only, which counts `--cached` alone and no
+untracked file: what a reviewer is about to see rather than what the working
+tree holds. Staged & Unstaged is the default, an index that is empty through
+most of a change being a badge that reads zero. Both counts are drawn whenever
+the worktree is dirty, `+0 −0` included: under Staged Only that is most of the
+time, and a badge changing shape as the index fills was read as the indicator
+being broken. Cost: two or three git calls a dirty worktree where there was one,
+and the yellow dot is gone, so which kind of change a file holds lives only in
+the tooltip. Changing the setting bumps `statusGeneration`, and a read already
+in flight under the old one lands on nothing: it counted what the badge no
+longer means, and its cost would pace the read that does out.

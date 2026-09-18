@@ -96,3 +96,15 @@ the app already uses for "here". The theme layer sits over the user's Ghostty
 config, so a `search-` colour in their file is read and then overridden, as
 their `background` is; the family stays on the allowed list because `search-`
 carries nothing else a surface reads.
+
+## A board card now reads in the sidebar's order, in two lines
+
+The card used to open with the agent's name, which the tab title almost always
+repeats, and put where the pane is on its third line. It now reads top down the
+way the sidebar does: the state dot with `project › branch` and the git badge on
+the right, then the tab title with the elapsed time on the same right-hand rail.
+That drops the fixed three of the section above to a fixed two, and the agent's
+name off the card; a pane running an agent under a tab named something else is
+told apart by the tab name, which is what the user wrote. The message block
+under them is unchanged. Cost: nothing on the card says which engine is at the
+prompt, so a tab left with its default name is the only place that shows.

@@ -37,15 +37,16 @@ struct AccessibilityTextTests {
           status: status),
         at: now)
           == """
-          Claude Code, agent, Waiting for input, for 6m, claude — repairReferences, \
-          multishell, agents-view, Permission to run rm -rf .build, 3 modified
+          Waiting for input, multishell, agents-view, +0 −0 · 3 modified, \
+          claude — repairReferences, Claude Code, agent, for 6m, \
+          Permission to run rm -rf .build
           """)
 
     // A shell says so, and a pane with nothing to report says the idle
     // wording rather than nothing at all.
     #expect(
       AccessibilityText.card(card(occupant: .shell("zsh"), state: nil), at: now)
-        == "zsh, shell, Nothing running, claude — repairReferences, multishell, agents-view",
+        == "Nothing running, multishell, agents-view, claude — repairReferences, zsh, shell",
       "no time to give, and nothing said")
   }
 
@@ -68,7 +69,7 @@ struct AccessibilityTextTests {
       AccessibilityText.worktree(
         feature, state: .running, status: status, operation: nil, terminalCount: 3,
         isSelected: true)
-        == "feat, linked worktree, selected, Working, 2 modified · ↑1, 3 terminals")
+        == "feat, linked worktree, selected, Working, +0 −0 · 2 modified · ↑1, 3 terminals")
     #expect(
       AccessibilityText.worktree(
         feature, state: nil, status: WorktreeStatus(), operation: nil, terminalCount: 0,
@@ -92,8 +93,8 @@ struct AccessibilityTextTests {
     withWorkers.subagents = out
     #expect(
       AccessibilityText.card(withWorkers, at: now)
-        == "Claude Code, agent, Working, for 1m, claude — repairReferences, multishell, "
-        + "agents-view, 2 subagents")
+        == "Working, multishell, agents-view, claude — repairReferences, Claude Code, agent, "
+        + "2 subagents, for 1m")
 
     #expect(AccessibilityText.subagents(out) == "2 subagents, Explore, subagent")
     #expect(

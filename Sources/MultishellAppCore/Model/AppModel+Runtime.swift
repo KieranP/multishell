@@ -128,7 +128,7 @@ extension AppModel {
   public func refreshStatuses() async {
     guard let worktrees else { return }
     let now = ContinuousClock.now
-    let fresh = await readStatuses(
+    let readings = await readStatuses(
       of: workspace.worktrees.filter { worktree in
         !isUnderConstruction(worktree.id) && !missingProjects.contains(worktree.projectID)
           && statusPace.isDue(
@@ -137,21 +137,32 @@ extension AppModel {
     // Read after the await, and applied to what git returned as well as to
     // what was there: a removed row keeps no badge; see worktrees.md.
     let known = Set(workspace.worktrees.map(\.id).filter { creatingWorktreeClaims[$0] == nil })
+    let kept = readings.filter { known.contains($0.key) }
+    remember(kept)
+    let fresh = kept.mapValues(\.status)
     var merged = statuses.filter { known.contains($0.key) }
-    merged.merge(fresh.filter { known.contains($0.key) }) { _, new in new }
+    merged.merge(fresh) { _, new in new }
     setIfChanged(\.statuses, merged)
     await refreshProjectsWhoseBranchMoved(fresh)
   }
 
-  /// Every read's cost is remembered, so the poll can leave a slow checkout
-  /// alone for a while; a read that failed says nothing about the next.
   private func readStatuses(
     of worktrees: [Worktree], with coordinator: WorktreeCoordinator
-  ) async -> [Worktree.ID: WorktreeStatus] {
-    let readings = await coordinator.readStatuses(of: worktrees)
+  ) async -> [Worktree.ID: StatusReading] {
+    let generation = statusGeneration
+    let readings = await coordinator.readStatuses(
+      of: worktrees, counting: workspace.gitStatusIndicator)
+    // What it counted is not what the badge means any more, and its cost
+    // would pace the read that does out.
+    guard generation == statusGeneration else { return [:] }
+    return readings
+  }
+
+  /// Every kept read's cost, so the poll can leave a slow checkout alone for
+  /// a while. Only what badged a row: a read thrown away paces nothing.
+  private func remember(_ readings: [Worktree.ID: StatusReading]) {
     let finished = ContinuousClock.now
     for (id, reading) in readings { statusReads[id] = (finished, reading.took) }
-    return readings.mapValues(\.status)
   }
 
   /// A `git checkout` in the main worktree touches `.git/HEAD`, which is not
@@ -168,15 +179,23 @@ extension AppModel {
     }
   }
 
+  /// Paced like the poll: terminal output arriving in bursts armed this
+  /// every quarter second, and each run is three git calls now.
   public func refreshStatus(of worktreeID: Worktree.ID) async {
     guard let worktrees, let worktree = workspace.worktree(worktreeID),
-      !isUnderConstruction(worktreeID)
+      !isUnderConstruction(worktreeID),
+      statusPace.isDue(
+        lastRead: statusReads[worktreeID]?.at, took: statusReads[worktreeID]?.took,
+        at: .now)
     else { return }
-    let fresh = await readStatuses(of: [worktree], with: worktrees)
+    let readings = await readStatuses(of: [worktree], with: worktrees)
     // Gone while git ran: paths are ids, so a worktree re-made at this path
     // would otherwise wear the old checkout's badge until the next poll.
     guard workspace.worktree(worktreeID) != nil, !isUnderConstruction(worktreeID) else { return }
-    if let status = fresh[worktreeID] { setIfChanged(\.statuses[worktreeID], status) }
+    remember(readings)
+    if let reading = readings[worktreeID] {
+      setIfChanged(\.statuses[worktreeID], reading.status)
+    }
   }
 }
 

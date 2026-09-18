@@ -96,6 +96,7 @@ struct GitRunnerConfigurationTests {
 
     #expect(status.untracked == 1)
     #expect(status.isDirty, "the repository's own config said not to look")
+    #expect(status.insertions == 1, "and its line is counted, the badge reading from the same list")
   }
 
   /// From the Finder the process PATH is the system directories alone, so a

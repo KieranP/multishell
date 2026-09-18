@@ -42,14 +42,17 @@ public struct WorktreeCoordinator: Sendable {
 
   /// Statuses for many worktrees at once, each with how long git took, one
   /// that could not be read simply absent. At most `maxConcurrentStatuses` run together.
-  public func readStatuses(of worktrees: [Worktree]) async -> [Worktree.ID: StatusReading] {
+  public func readStatuses(
+    of worktrees: [Worktree], counting indicator: GitStatusIndicator = .default
+  ) async -> [Worktree.ID: StatusReading] {
     await withTaskGroup(of: (Worktree.ID, StatusReading?).self) { group in
       var pending = worktrees.filter { !$0.isBare }.makeIterator()
       func startNext() {
         guard let worktree = pending.next() else { return }
         group.addTask {
           let started = ContinuousClock.now
-          guard let status = try? await service.status(of: worktree) else {
+          guard let status = try? await service.status(of: worktree, counting: indicator)
+          else {
             return (worktree.id, nil)
           }
           return (worktree.id, StatusReading(status: status, took: started.duration(to: .now)))
