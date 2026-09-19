@@ -32,7 +32,7 @@ struct GitRunnerConfigurationTests {
   }
 
   /// Config of the user's that changes what a read means rather than how it
-  /// is worded; see docs/design/merged-branch.md.
+  /// is worded; see Docs/design/merged-branch.md.
   @Test func everyRunnerSilencesTheConfigThatWouldChangeWhatAReadMeans() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }

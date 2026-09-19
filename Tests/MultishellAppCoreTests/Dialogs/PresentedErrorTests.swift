@@ -1,0 +1,243 @@
+import Foundation
+import MultishellCore
+import MultishellGitKit
+import MultishellProcess
+import Testing
+
+@testable import MultishellAppCore
+
+/// The alert is the one place a user learns why something failed, so each
+/// error type must come out with a title that names the situation and a
+/// message that carries git's own words.
+@Suite
+struct PresentedErrorTests {
+  /// A `LocalizedError` reaching the default arm is printed by
+  /// `String(describing:)`, which gives the struct's fields rather than its
+  /// sentence, so each one needs a case of its own.
+  @Test func theGitKitErrorsReadAsSentencesRatherThanSwiftValues() {
+    let branch = PresentedError(InvalidBranchName("my branch"))
+    #expect(branch.message == "git will not take my branch as a branch name.")
+    #expect(!branch.message.contains("InvalidBranchName"))
+    #expect(!branch.title.isEmpty)
+
+    let main = PresentedError(NotAWorktree(path: URL(fileURLWithPath: "/w/repo")))
+    #expect(main.message.hasPrefix("/w/repo is the repository itself"))
+    #expect(!main.message.contains("NotAWorktree"))
+    #expect(!main.title.isEmpty)
+  }
+
+  @Test func gitFailuresShowStderrAsTheMessage() {
+    let failure = ProcessFailure(
+      executable: "git", arguments: ["worktree", "add", "-b", "x"], status: 128,
+      message: "fatal: a branch named 'x' already exists")
+    let presented = PresentedError(failure)
+    #expect(presented.title == "git worktree add failed")
+    #expect(presented.message == "fatal: a branch named 'x' already exists")
+  }
+
+  @Test func anEmptyStderrFallsBackToTheExitStatus() {
+    let presented = PresentedError(
+      ProcessFailure(executable: "git", arguments: ["status"], status: 3, message: ""))
+    #expect(presented.message == "Exit status 3.")
+  }
+
+  @Test func anUnbornHEADIsExplainedInPlainWords() {
+    let failure = ProcessFailure(
+      executable: "git", arguments: ["worktree", "add"], status: 128,
+      message: "fatal: invalid reference: HEAD")
+    let presented = PresentedError(failure)
+    #expect(presented.title == "This repository has no commits yet")
+    #expect(presented.message.contains("first commit"))
+  }
+
+  @Test func hookFailuresSayTheWorktreeStillExists() {
+    let failure = HookFailure(
+      stage: .postCreate,
+      underlying: ProcessFailure(
+        executable: "sh", arguments: ["-c", "npm install"], status: 1, message: "npm ERR!"))
+    let presented = PresentedError(failure)
+    #expect(presented.title == "Worktree created, but its hook failed")
+    #expect(presented.message == "npm ERR!\n\nExited with status 1.")
+  }
+
+  /// The alert for a file list that could not finish, which is only ever
+  /// raised when the pane it belongs to has gone: it names which list it
+  /// was, since a worktree may have had both.
+  @Test func aFileListFailureSaysWhichListItWasAndNamesEachPath() {
+    for (placement, expected) in [
+      (WorktreePlacement.link, "Worktree created, but some of its files were not linked"),
+      (WorktreePlacement.copy, "Worktree created, but some of its files were not copied"),
+    ] {
+      let presented = PresentedError(
+        WorktreeFileFailure(
+          placement: placement,
+          items: [
+            WorktreeFileFailure.Item(path: "../outside/key", underlying: WorktreeFileEscape())
+          ]
+        ))
+      #expect(presented.title == expected)
+      #expect(
+        presented.message
+          == "../outside/key: It leads outside the repository or the worktree.")
+    }
+  }
+
+  @Test func aSilentHookFailureGetsItsStatusNotTheCommandLineItRanAs() {
+    let silent = ProcessFailure(
+      executable: "zsh", arguments: ["-l", "-i", "-c", "set -e\nexit 3"], status: 3, message: "")
+    let presented = PresentedError(HookFailure(stage: .postCreate, underlying: silent))
+    #expect(presented.message == "Exited with status 3 and printed nothing.")
+  }
+
+  @Test func aHookThatOnlyEchoedBeforeFailingGetsItsStatusAfterItsWords() {
+    let echoed = ProcessFailure(
+      executable: "zsh", arguments: ["-l", "-i", "-c", "echo Created\nexit 1"], status: 1,
+      message: "Created")
+    let presented = PresentedError(HookFailure(stage: .postCreate, underlying: echoed))
+    #expect(presented.message == "Created\n\nExited with status 1.")
+  }
+
+  @Test func preHookFailuresSayTheOperationDidNotHappen() {
+    let refused = ProcessFailure(
+      executable: "zsh", arguments: ["-l", "-i", "-c", "exit 1"], status: 1,
+      message: "no ticket number")
+    let create = PresentedError(HookFailure(stage: .preCreate, underlying: refused))
+    #expect(create.title == "Worktree not created: its pre-create hook failed")
+    #expect(create.message == "no ticket number\n\nExited with status 1.")
+    let delete = PresentedError(HookFailure(stage: .preDelete, underlying: refused))
+    #expect(delete.title == "Worktree not removed: its pre-delete hook failed")
+    #expect(
+      PresentedError(HookFailure(stage: .postDelete, underlying: refused)).title
+        == "Worktree removed, but its hook failed")
+  }
+
+  /// The app runs fetch with no terminal to answer on, so the way it fails
+  /// most often is by waiting on a password prompt nobody can see.
+  @Test func aFetchThatRanOutOfTimeSaysWhatToDoAboutIt() {
+    let timedOut = PresentedError(
+      ProcessFailure(
+        executable: "git", arguments: ["fetch", "--prune", "--quiet"], status: 129, message: "",
+        stop: .timedOut(after: .seconds(120))))
+    #expect(timedOut.title == "Fetch did not finish")
+    #expect(timedOut.message.contains("asked for a password"))
+    #expect(timedOut.message.contains("SSH key"))
+
+    let refused = PresentedError(
+      ProcessFailure(
+        executable: "git", arguments: ["fetch", "--prune", "--quiet"], status: 128,
+        message: "fatal: could not read from remote repository"))
+    #expect(refused.title == "Fetch failed")
+    #expect(refused.message == "fatal: could not read from remote repository")
+  }
+
+  @Test func unreadableStateNamesTheBackupFile() {
+    let backup = URL(fileURLWithPath: "/tmp/state.2026.broken.json")
+    let presented = PresentedError(
+      UnreadableState(backup: backup, underlying: CocoaError(.coderReadCorrupt)))
+    #expect(presented.title == "Saved state could not be read")
+    #expect(presented.message.contains("state.2026.broken.json"))
+  }
+
+  @Test func unmovedStateNamesTheFileStillStandingThere() {
+    let file = URL(fileURLWithPath: "/tmp/state.json")
+    let presented = PresentedError(
+      UnmovedState(
+        file: file, underlying: CocoaError(.coderReadCorrupt),
+        move: CocoaError(.fileWriteNoPermission)))
+    #expect(presented.title == "Saved state could not be read")
+    #expect(presented.message.contains("/tmp/state.json"))
+    #expect(presented.message.contains("Nothing will be saved over it"))
+  }
+
+  /// A settings file Multishell will not rewrite has to say which file and
+  /// what to do instead, or the user is left with a JSON parser's words.
+  @Test func aSettingsFileItWillNotRewriteSaysWhichAndWhatToDoInstead() {
+    let file = URL(fileURLWithPath: "/Users/x/.gemini/settings.json")
+    let unparsable = PresentedError(UnparsableSettingsFile(file: file))
+    #expect(unparsable.title == "That settings file is not plain JSON")
+    #expect(unparsable.message.contains("/Users/x/.gemini/settings.json"))
+    #expect(unparsable.message.contains("comment"))
+    #expect(unparsable.message.contains("Show JSON"))
+
+    let entries = PresentedError(UnreadableHookEntries(file: file, event: "BeforeTool"))
+    #expect(entries.title == "That settings file has hooks Multishell does not recognise")
+    #expect(entries.message.contains("hooks.BeforeTool"))
+    #expect(entries.message.contains("Show JSON"))
+
+    let shape = PresentedError(UnexpectedSettingsShape(file: file))
+    #expect(shape.title == "That settings file is not a JSON object")
+    #expect(shape.message.contains("Show JSON"))
+  }
+
+  /// `MultishellProcess` depends on nothing and so has no catalogue to
+  /// reach; the words for its failures live here. See translation.md.
+  @Test func theProcessLayersFailuresAreTranslatedRatherThanPrintedAsWritten() {
+    let noShell = PresentedError(HookFailure(stage: .preCreate, underlying: ShellUnavailable()))
+    #expect(noShell.message == "No shell was found to run it with.")
+
+    let noPipe = PresentedError(PipeUnavailable(code: EMFILE))
+    #expect(noPipe.title == "A command could not be started")
+    #expect(noPipe.message.hasPrefix("A pipe could not be opened:"))
+    #expect(noPipe.message.contains(String(cString: strerror(EMFILE))))
+
+    let tooLong = PresentedError(
+      SocketFailure(kind: .pathTooLong, path: "/very/long/path.sock"))
+    #expect(tooLong.title == "Session state reports are unavailable")
+    #expect(
+      tooLong.message
+        == "Could not listen on the socket: the path /very/long/path.sock "
+        + "is longer than a Unix socket address holds")
+
+    let systemCall = PresentedError(
+      SocketFailure(kind: .system(operation: "bind", code: EACCES), path: "/s.sock"))
+    #expect(
+      systemCall.message
+        == "Could not listen on the socket: bind on /s.sock was refused: "
+        + "\(String(cString: strerror(EACCES))) (\(EACCES))")
+  }
+
+  @Test func aTrashThatTookNothingSaysSoInTheReadersLanguage() {
+    let presented = PresentedError(
+      TrashFailure(path: URL(fileURLWithPath: "/w/feature"), underlying: TrashTookNothing()))
+    #expect(
+      presented.title
+        == "Worktree not removed: the directory could not be moved to the Trash or deleted")
+    #expect(presented.message.contains("/w/feature"))
+    #expect(presented.message.contains("The directory is still there."))
+    #expect(!presented.message.contains("TrashTookNothing"))
+  }
+
+  @Test func onlyTheMissingGitAlertSaysGitIsMissing() {
+    #expect(PresentedError(GitUnavailable()).saysGitIsMissing)
+    #expect(!PresentedError(InvalidBranchName("x")).saysGitIsMissing)
+    #expect(!PresentedError(title: "git not found", message: "").saysGitIsMissing)
+  }
+
+  @Test func retryIsAbsentUnlessAdded() {
+    var presented = PresentedError(GitUnavailable())
+    #expect(presented.retryLabel == nil && presented.retry == nil)
+    presented.retryLabel = "Delete Branch Anyway"
+    #expect(presented.retryLabel == "Delete Branch Anyway")
+  }
+}
+
+/// The model has one alert slot, so what happens when several things fail at
+/// once has to be decided rather than left to whichever wrote last.
+@Suite @MainActor
+struct SeveralFailuresAtOnceTests {
+  @Test func onlyTheFirstFailedSessionTakesTheAlertAndTheRestAreLogged() {
+    let h = Harness()
+    h.model.select(h.main)
+    for _ in 0..<3 { h.model.newTab() }
+    #expect(h.model.liveTerminalCount == 4)
+    h.engine.refusesToOpen = true
+    for id in h.engine.openSessionIDs { h.engine.close(id) }
+    h.model.presentedError = nil
+    h.platform.logged.removeAll()
+
+    h.model.reconcileSessions(takingFocus: false)
+
+    #expect(h.model.presentedError != nil, "the user is told once")
+    #expect(h.platform.logged.count == 3, "and the rest are in the log: \(h.platform.logged)")
+  }
+}

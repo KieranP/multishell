@@ -10,7 +10,7 @@ public enum DroppedFiles {
 
   /// Whether a dragged path is a copy macOS made for this drop, read off the
   /// `TemporaryItems` and `NSIRD_` marks it carries; see terminals.md.
-  public static func isTemporaryCopy(_ url: URL) -> Bool {
+  static func isTemporaryCopy(_ url: URL) -> Bool {
     if url.standardizedFileURL.pathComponents.contains(where: { $0.hasPrefix("NSIRD_") }) {
       return true
     }

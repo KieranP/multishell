@@ -17,7 +17,7 @@ extension AppModel {
 
   /// The rule in force for a project, measured against the merge badges'
   /// trunk. Looked up again, the settings window being its own scene.
-  public func worktreeOrder(for project: Project) -> WorktreeOrder {
+  func worktreeOrder(for project: Project) -> WorktreeOrder {
     let resolved = resolved(workspace.project(project.id) ?? project)
     return WorktreeOrder(
       order: workspace.worktreeSortOrder(for: resolved),
@@ -44,8 +44,7 @@ extension AppModel {
   /// slow checkout paces minutes out: the setting was changed to be seen.
   public func setGitStatusIndicator(_ indicator: GitStatusIndicator) {
     store.setGitStatusIndicator(indicator)
-    statusGeneration += 1
-    statusReads.removeAll()
+    statusReads.invalidate()
     Task { await refreshStatuses() }
   }
 }

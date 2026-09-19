@@ -4,7 +4,7 @@ import MultishellCore
 import SwiftUI
 
 /// The find bar over one pane, in Ghostty's shape: a well for the text and three
-/// glyphs. Its text is the model's, per pane; see docs/design/appearance.md.
+/// glyphs. Its text is the model's, per pane; see Docs/design/appearance.md.
 struct FindBar: View {
   let model: AppModel
   let sessionID: TerminalSession.ID

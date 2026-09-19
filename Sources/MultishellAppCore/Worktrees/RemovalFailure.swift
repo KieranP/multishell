@@ -4,13 +4,13 @@ import MultishellProcess
 
 /// How a failed stage of a worktree removal is shown: a pre-delete veto in
 /// the pane, a stop silently, everything else an alert.
-public enum RemovalFailure: Equatable, Sendable {
-  public enum Retry: Equatable, Sendable {
+enum RemovalFailure: Equatable, Sendable {
+  enum Retry: Equatable, Sendable {
     /// `git branch -D` on a branch `-d` refused. The alert's title already
     /// names the branch, so the button says only what it does.
     case deleteBranchAnyway(String)
 
-    public var label: String {
+    var label: String {
       switch self {
       case .deleteBranchAnyway: t("removal.force-deletion")
       }
@@ -27,7 +27,7 @@ public enum RemovalFailure: Equatable, Sendable {
 
   /// `branch` is the worktree's branch when the removal was to delete it,
   /// `nil` otherwise.
-  public static func describe(
+  static func describe(
     _ error: any Error, deletingBranch branch: String?
   )
     -> RemovalFailure

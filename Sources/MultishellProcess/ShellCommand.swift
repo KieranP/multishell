@@ -52,7 +52,7 @@ public struct ShellCommand: Sendable {
   }
 
   /// A multi-line script whose first failing line ends it, through an
-  /// interactive login shell; see docs/design/hooks.md.
+  /// interactive login shell; see Docs/design/hooks.md.
   public func runScript(
     _ script: String,
     in directory: URL,
@@ -156,5 +156,8 @@ public struct ShellCommand: Sendable {
 }
 
 public struct ShellUnavailable: Error, CustomStringConvertible {
+  public init() {}
+
+  /// The log's form. What the user is shown is `PresentedError`'s.
   public var description: String { "no shell available to run hooks" }
 }

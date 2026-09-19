@@ -4,7 +4,7 @@ import MultishellCore
 extension AppModel {
   /// Writes any pending change now, on this thread: called on quit, when
   /// the autosave debounce would otherwise lose the last few hundred ms.
-  public func saveNow() {
+  func saveNow() {
     pendingSave?.cancel()
     pendingSave = nil
     guard !yieldingToRunningInstance else { return }

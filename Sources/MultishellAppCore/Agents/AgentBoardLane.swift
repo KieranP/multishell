@@ -1,7 +1,7 @@
 import MultishellCore
 
 /// A column of the board, most urgent first. Failed goes with Waiting; see
-/// docs/design/agents.md.
+/// Docs/design/agents.md.
 public enum AgentBoardLane: String, CaseIterable, Sendable {
   case waiting
   case working
@@ -9,7 +9,7 @@ public enum AgentBoardLane: String, CaseIterable, Sendable {
   case idle
 
   /// `inSentence` is the same name mid-sentence, for the screen reader; see
-  /// docs/design/translation.md.
+  /// Docs/design/translation.md.
   public func title(inSentence: Bool = false) -> String {
     switch self {
     case .waiting: inSentence ? t("lane.waiting-in-sentence") : t("lane.waiting")
@@ -32,7 +32,7 @@ public enum AgentBoardLane: String, CaseIterable, Sendable {
 
   /// The lanes the sidebar entry counts. Idle is left off, being where most
   /// cards rest.
-  public static let summarised: [AgentBoardLane] = [.waiting, .working, .done]
+  static let summarised: [AgentBoardLane] = [.waiting, .working, .done]
 
   public static func of(_ state: SessionState?) -> AgentBoardLane {
     switch state {

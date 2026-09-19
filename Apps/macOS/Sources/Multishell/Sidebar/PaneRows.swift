@@ -3,7 +3,7 @@ import MultishellCore
 import SwiftUI
 
 /// The selected worktree's panes, one row each: dot, position in a split,
-/// title, chip. Bold is the one focused pane; see docs/design/agents.md.
+/// title, chip. Bold is the one focused pane; see Docs/design/agents.md.
 struct PaneRows: View {
   let model: AppModel
   let worktree: Worktree

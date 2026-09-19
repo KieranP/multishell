@@ -2,7 +2,7 @@ import Foundation
 import MultishellCore
 
 /// What a settings form shows for a setting the project does not override:
-/// the value in force and where it came from; see docs/design/settings.md.
+/// the value in force and where it came from; see Docs/design/settings.md.
 public struct InheritedSetting<Value: Equatable & Sendable>: Equatable, Sendable {
   public let value: Value
   /// The repository's file supplies it, rather than the user's global.

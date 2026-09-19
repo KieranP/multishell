@@ -7,7 +7,7 @@ public final class UnixSocketServer: @unchecked Sendable {
 
   /// A connection that sends more than this without a newline is not
   /// speaking the protocol and is dropped.
-  public static let maximumLineLength = 64 * 1024
+  static let maximumLineLength = 64 * 1024
 
   private let path: String
   private let queue: DispatchQueue
@@ -54,7 +54,7 @@ public final class UnixSocketServer: @unchecked Sendable {
     // world-readable: the mode is the umask's, and umask is process-wide.
     let staging = path + ".b"
     // The staging name is what binds, so its length is the limit. The alert
-    // names the socket; see docs/develop/state-on-disk.md for the two bytes.
+    // names the socket; see Docs/develop/state-on-disk.md for the two bytes.
     guard staging.utf8.count <= UnixSocketAddress.capacity else {
       throw SocketFailure(kind: .pathTooLong, path: path)
     }
@@ -112,7 +112,7 @@ public final class UnixSocketServer: @unchecked Sendable {
   }
 
   /// The file whose lock says this socket has a live owner. Beside the
-  /// socket, and never unlinked: see docs/develop/state-on-disk.md.
+  /// socket, and never unlinked: see Docs/develop/state-on-disk.md.
   var claimPath: String { path + ".lock" }
 
   /// Takes the claim, or refuses to start: a connect alone cannot tell a live

@@ -137,7 +137,7 @@ struct TabBar: View {
       newTabLabel
     }
     // Not `.borderlessButton`: that one is an AppKit button, which keeps one
-    // image of the label and drops the chevron. See docs/design/tabs-and-columns.md.
+    // image of the label and drops the chevron. See Docs/design/tabs-and-columns.md.
     .menuStyle(.button)
     .buttonStyle(.plain)
     .menuIndicator(.hidden)

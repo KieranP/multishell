@@ -89,7 +89,7 @@ extension WorktreeCoordinator {
     let path = try await add(
       branch: rawBranch, basedOn: startPoint, createBranch: createBranch, in: project,
       settings: settings, shellPath: shellPath, timeout: timeout, stopper: stopper, onStep: onStep)
-    if WorktreeHooks.hasScript(project.settings.postCreateHook) { onStep?(.postCreateHook) }
+    if WorktreeHooks.hasScript(.postCreate, in: project.settings) { onStep?(.postCreateHook) }
     try await runPostCreate(
       for: project, worktreePath: path,
       branch: Self.branchName(rawBranch, createBranch: createBranch, settings: settings),

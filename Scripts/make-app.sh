@@ -70,13 +70,13 @@ mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$app/Contents/Helpers"
 cp "$build/Multishell" "$app/Contents/MacOS/Multishell"
 cp "$root/.build/$config/multishell" "$app/Contents/Helpers/multishell"
 
-# A swift build binary carries this path; see docs/develop/build.md. grep -c,
+# A swift build binary carries this path; see Docs/develop/build.md. grep -c,
 # not -q: under pipefail an early quit kills strings and the match reads as a miss.
 for binary in "$app/Contents/MacOS/Multishell" "$app/Contents/Helpers/multishell"; do
     if strings "$binary" | grep -c '\.build/.*\.bundle$' >/dev/null; then
         echo "error: $binary looks for its resource bundles under a .build directory," >&2
         echo "       so the installed app would stop working at the next build there." >&2
-        echo "       See docs/develop/build.md." >&2
+        echo "       See Docs/develop/build.md." >&2
         exit 1
     fi
 done
@@ -88,7 +88,7 @@ fi
 # The destination also matches Mac Catalyst, and xcodebuild takes the first.
 if ! otool -l "$app/Contents/MacOS/Multishell" | grep -A2 LC_BUILD_VERSION | grep -c 'platform 1$' >/dev/null; then
     echo "error: the binary was not built for macOS itself; xcodebuild took another" >&2
-    echo "       variant of the destination. See docs/develop/build.md." >&2
+    echo "       variant of the destination. See Docs/develop/build.md." >&2
     exit 1
 fi
 

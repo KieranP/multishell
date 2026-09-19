@@ -1,7 +1,7 @@
 import Foundation
 
 /// Per-project preferences, edited in the project's settings panel. Worktree
-/// fields are overrides, `nil` following the global; see docs/design/settings.md.
+/// fields are overrides, `nil` following the global; see Docs/design/settings.md.
 public struct ProjectSettings: Codable, Hashable, Sendable {
   public var worktreeDirectory: String?
   public var branchPrefix: String?
@@ -10,7 +10,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   public var defaultBranch: String?
 
   /// Scripts run through the user's login shell around `git worktree add` and
-  /// `remove`. Empty means no hook; see docs/design/hooks.md.
+  /// `remove`. Empty means no hook; see Docs/design/hooks.md.
   public var preCreateHook: String
   public var postCreateHook: String
   public var preDeleteHook: String
@@ -27,7 +27,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   /// `AgentCatalogue.noneID` opts this project out of it.
   public var preferredAgentID: String?
   /// Extra arguments the agent is started with here. `""` is the override to
-  /// no flags at all; see docs/design/agents.md for why a repo file cannot say this.
+  /// no flags at all; see Docs/design/agents.md for why a repo file cannot say this.
   public var agentFlags: String?
   /// Whether new tabs here start the agent. `nil` follows the global.
   public var autoStartAgent: Bool?
@@ -62,11 +62,11 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   public var iconTint: Int?
 
   /// One answer per `.multishell.json` the user was asked about, against the
-  /// sha256 of its bytes, newest first; see docs/design/settings.md.
-  public var sharedHooks: [SharedHooksDecision]
+  /// sha256 of its bytes, newest first; see Docs/design/settings.md.
+  var sharedHooks: [SharedHooksDecision]
 
   /// How many files a project remembers an answer for.
-  public static let rememberedSharedHooks = 16
+  static let rememberedSharedHooks = 16
 
   public init(
     worktreeDirectory: String? = nil,
@@ -115,7 +115,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   }
 
   /// `""` overrides to "none" for the four fields with no other spelling for
-  /// it, and is noise elsewhere; see docs/design/settings.md.
+  /// it, and is noise elsewhere; see Docs/design/settings.md.
   public init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     worktreeDirectory = try container.decodeIfPresent(String.self, forKey: .worktreeDirectory)
@@ -188,7 +188,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   }
 
   /// These settings with the repository's own filling only the gaps the user
-  /// left, and its hooks only once trusted; see docs/design/settings.md.
+  /// left, and its hooks only once trusted; see Docs/design/settings.md.
   public func layered(over shared: SharedProjectSettings?) -> ProjectSettings {
     // Normalised on both paths, with or without a file to fall through to, or
     // the two disagree over the same stored value.

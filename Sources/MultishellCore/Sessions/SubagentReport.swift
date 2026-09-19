@@ -1,7 +1,7 @@
 import Foundation
 
 /// One subagent's change, riding on a report. The app keeps the roster, a
-/// hook being a fresh process with nothing to remember; see docs/design/agents.md.
+/// hook being a fresh process with nothing to remember; see Docs/design/agents.md.
 public struct SubagentReport: Codable, Hashable, Sendable {
   public enum Phase: String, Codable, Hashable, Sendable, CaseIterable {
     case started

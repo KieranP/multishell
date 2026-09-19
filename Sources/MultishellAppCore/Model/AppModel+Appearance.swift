@@ -17,7 +17,7 @@ extension AppModel {
   }
 
   public func reloadThemes() {
-    let catalogue = ThemeCatalog.load()
+    let catalogue = ThemeCatalogue.load()
     themes = catalogue.themes
     if let problem = catalogue.problems.first {
       presentedError = .themeUnreadable(problem)
@@ -26,7 +26,7 @@ extension AppModel {
 
   public func revealThemesFolder() {
     do {
-      try ThemeCatalog.seedExamples()
+      try ThemeCatalogue.seedExamples()
     } catch {
       report(error)
     }

@@ -1,15 +1,15 @@
 import Foundation
 
 /// One message over the inbound channel, JSON one object per line. Fields
-/// are only ever added; see docs/design/agents.md.
+/// are only ever added; see Docs/design/agents.md.
 public struct SessionStateReport: Codable, Hashable, Sendable {
   public static let protocolVersion = 1
   /// More than a notification banner shows, and far inside what the channel
   /// carries.
-  public static let maximumMessageLength = 500
+  static let maximumMessageLength = 500
   /// A week. Longer than any command the board is asked to time, and short
   /// of what `Int(_:)` cannot hold.
-  public static let maximumDuration: Double = 7 * 24 * 60 * 60
+  static let maximumDuration: Double = 7 * 24 * 60 * 60
 
   public var version: Int
   public var state: SessionState
@@ -32,10 +32,10 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   /// raise the banner. Absent keeps an older helper's banners.
   public var silent: Bool?
   /// The count a helper from before workers had names wrote: `1` started, `-1`
-  /// ended. Read as an unnamed worker; see docs/design/agents.md.
+  /// ended. Read as an unnamed worker; see Docs/design/agents.md.
   public var subagents: Int?
   /// A subagent starting, calling a tool or ending. The app keeps the
-  /// roster; see docs/design/agents.md.
+  /// roster; see Docs/design/agents.md.
   public var subagent: SubagentReport?
   /// Set on the prompt that starts a turn, which empties the roster.
   public var startsTurn: Bool?

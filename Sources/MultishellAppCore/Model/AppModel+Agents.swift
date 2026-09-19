@@ -34,7 +34,7 @@ extension AppModel {
     shellDetection = detected.shells
     editorDetection = detected.editors
     // Rebuilt even where launch found git: that PATH is what git's own
-    // children are looked up on; see docs/design/architecture.md.
+    // children are looked up on; see Docs/design/architecture.md.
     let hadGit = worktrees != nil
     if let found = try? WorktreeCoordinator(path: environment.path) {
       worktrees = found
@@ -147,7 +147,7 @@ extension AppModel {
 
   /// `shell` takes over when the agent quits; the agent runs through the
   /// login shell. The worktree resolves the flag line's placeholders.
-  public func agentCommand(
+  func agentCommand(
     _ id: String, resume: Bool, shell tabShell: String, in worktreeID: Worktree.ID
   ) -> [String]? {
     guard let shell = ShellCommand.shell else { return nil }

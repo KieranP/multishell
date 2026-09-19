@@ -3,10 +3,10 @@ import MultishellCore
 
 /// Whether a tab dragged along its own strip should move now. Index arithmetic
 /// matching `WorkspaceStore.moveTab`, a disagreement never settling.
-public enum TabShuffle {
+enum TabShuffle {
   /// Whether that move changes the order of `order`, one column's tabs as
   /// drawn. `false` over its own tab, which is how a shuffle oscillates.
-  public static func reorders(
+  static func reorders(
     _ moving: TerminalTab.ID,
     _ placement: TerminalTab.Placement,
     of anchor: TerminalTab.ID,

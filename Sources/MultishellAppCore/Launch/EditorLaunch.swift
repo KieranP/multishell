@@ -3,8 +3,8 @@ import MultishellCore
 
 /// What Open in Editor does for the editor in force, decided apart from the
 /// view and the model so it can be tested.
-public enum EditorLaunch {
-  public enum Action: Equatable {
+enum EditorLaunch {
+  enum Action: Equatable {
     /// Hand the directory to the application.
     case openApplication(URL)
     /// Run the editor's command line shim through the login shell, in the
@@ -16,7 +16,7 @@ public enum EditorLaunch {
   }
 
   /// `nil` when the editor is in the catalogue but not installed.
-  public static func action(
+  static func action(
     editorID: String,
     found: EditorDetection.Found?,
     customTemplate: String,

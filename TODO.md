@@ -1,8 +1,8 @@
 # TODO
 
 The queue, most pressing first within each heading. A decision that gets made
-moves to the right file under `docs/design/`; a gap that is documented rather
-than fixed lives in `docs/develop/known-gaps.md`; a defect goes to `BUGS.md`.
+moves to the right file under `Docs/design/`; a gap that is documented rather
+than fixed lives in `Docs/develop/known-gaps.md`; a defect goes to `BUGS.md`.
 
 ## Features
 

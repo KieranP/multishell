@@ -1,7 +1,7 @@
 import Foundation
 
 /// Reads a key that may not be there, the verb saying what a wrong type
-/// costs; see docs/design/state-and-store.md.
+/// costs; see Docs/design/state-and-store.md.
 extension KeyedDecodingContainer {
   /// Absent reads as `fallback`; a wrong type throws. The default for what
   /// the app wrote: failing is what moves the file aside as `.broken.json`.

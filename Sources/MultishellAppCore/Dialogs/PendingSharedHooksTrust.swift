@@ -1,7 +1,7 @@
 import MultishellCore
 
 /// The one-time question about a repository's `.multishell.json` hooks,
-/// remembered against the file's sha256; see docs/design/settings.md.
+/// remembered against the file's sha256; see Docs/design/settings.md.
 public struct PendingSharedHooksTrust: Identifiable, Equatable, Sendable {
   public let projectID: Project.ID
   public let projectName: String
@@ -9,7 +9,7 @@ public struct PendingSharedHooksTrust: Identifiable, Equatable, Sendable {
   public let hooks: String
   /// The sha256 of the file they were read from: what the answer is stored
   /// against, and what says whether the file has moved on.
-  public let digest: String
+  let digest: String
 
   public init(projectID: Project.ID, projectName: String, hooks: String, digest: String) {
     self.projectID = projectID

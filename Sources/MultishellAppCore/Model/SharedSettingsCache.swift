@@ -25,13 +25,13 @@ public struct SharedSettingsCache: Equatable, Sendable {
 
   /// Whether the file's date has moved since it was read, which is what a
   /// tick asks before spending a read. True for a project never read.
-  public func hasMoved(_ stamp: Date, for id: Project.ID) -> Bool {
+  func hasMoved(_ stamp: Date, for id: Project.ID) -> Bool {
     entries[id]?.stamp != stamp
   }
 
   /// Whether this project's file has been read at all this run: a first read
   /// says nothing about hooks, so a launch opens with no queue of questions.
-  public func hasRead(_ id: Project.ID) -> Bool {
+  func hasRead(_ id: Project.ID) -> Bool {
     entries[id] != nil
   }
 

@@ -8,7 +8,7 @@ extension RGB {
 }
 
 /// Every chrome colour derives from the theme, so the window follows it
-/// rather than the system appearance; see docs/design/appearance.md.
+/// rather than the system appearance; see Docs/design/appearance.md.
 extension Theme {
   var backgroundColor: Color { backgroundRGB.color }
   var foregroundColor: Color { foregroundRGB.color }

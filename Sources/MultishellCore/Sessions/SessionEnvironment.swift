@@ -7,12 +7,12 @@ public enum SessionEnvironment {
   public static let worktreeKey = "MULTISHELL_WORKTREE"
   public static let socketKey = "MULTISHELL_SOCKET"
   /// The app's own pid, where the helper's walk up from a prompt stops; see
-  /// docs/design/agents.md.
+  /// Docs/design/agents.md.
   public static let appPIDKey = "MULTISHELL_APP_PID"
 
   /// The variable Ghostty's zsh bootstrap reads to find the `ZDOTDIR` it
   /// displaced, and hands `ZDOTDIR` back to before the first startup file.
-  public static let ghosttyZdotdirKey = "GHOSTTY_ZSH_ZDOTDIR"
+  static let ghosttyZdotdirKey = "GHOSTTY_ZSH_ZDOTDIR"
 
   /// `engineZshBootstrap` is the directory holding the terminal engine's own
   /// zsh startup file, when the engine has one it wants entered first.

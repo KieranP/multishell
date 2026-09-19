@@ -44,7 +44,7 @@ struct UIMetrics {
   /// The New Tab menu beside them: a split's width plus the chevron, less
   /// one gap. Its glyphs sit at a split's inset; the right side is shorter
   /// by two gaps, the chevron's ink being narrower than its box and a
-  /// split's wider. See docs/design/tabs-and-columns.md.
+  /// split's wider. See Docs/design/tabs-and-columns.md.
   var newTabMenuWidth: Double { newTabWidth + menuChevron - menuChevronGap }
   /// A split glyph's inset, which the menu's plus shares.
   var stripGlyphInset: Double { (newTabWidth - icon) / 2 }
@@ -55,7 +55,7 @@ struct UIMetrics {
   /// cost neither a whole tab nor the strip's arrows: a column dragged to
   /// `SplitMetrics.minimumPane` has less room than the three buttons take,
   /// and a narrower answer than this one buys the splits by scrolling a
-  /// strip with nothing saying so. See docs/design/tabs-and-columns.md.
+  /// strip with nothing saying so. See Docs/design/tabs-and-columns.md.
   func stripShowsSplits(in width: Double) -> Bool {
     width.isFinite && width >= stripButtonsWidth + 2 * tabArrowWidth + tabMinWidth
   }

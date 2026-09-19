@@ -5,7 +5,7 @@ import MultishellProcess
 extension AppModel {
   /// Opens the inbound channel. `false` where another copy of this build
   /// holds it: this one hands over to it and quits; see state-and-store.md.
-  public func startStateSource() -> Bool {
+  func startStateSource() -> Bool {
     do {
       try stateSource.start()
       return true
@@ -33,7 +33,7 @@ extension AppModel {
   /// unknown session is dropped, never matched by directory.
   public func apply(_ report: SessionStateReport) {
     // An older helper's walk from a prompt ends at this process, whose pid
-    // never goes while it is looking; see docs/design/agents.md.
+    // never goes while it is looking; see Docs/design/agents.md.
     let pid = report.pid == ProcessInfo.processInfo.processIdentifier ? nil : report.pid
     if let id = report.sessionID {
       guard liveSessions.contains(id), let session = workspace.session(id) else { return }
@@ -57,7 +57,7 @@ extension AppModel {
   }
 
   /// `isSeen` is the focused pane and clears a Done; `isOnScreen` is any pane
-  /// in view and holds the banner. See docs/design/terminals.md.
+  /// in view and holds the banner. See Docs/design/terminals.md.
   private func apply(
     _ report: SessionStateReport, pid: Int32?, to key: SessionStates.Key,
     in worktreeID: Worktree.ID, isSeen: Bool, isOnScreen: Bool
@@ -76,7 +76,7 @@ extension AppModel {
 
   /// Seen: the pane with the keyboard, and the app in front. A split's other
   /// pane is in view but not looked at, so its Done waits for its focus.
-  public func hasBeenSeen(_ id: TerminalSession.ID) -> Bool {
+  func hasBeenSeen(_ id: TerminalSession.ID) -> Bool {
     isFocused(id) && platform.isActive
   }
 
@@ -89,7 +89,7 @@ extension AppModel {
 
   /// The pane is on screen: its worktree selected and its tab shown, asked
   /// of every column. What holds a banner back, saying nothing about focus.
-  public func isShown(_ id: TerminalSession.ID) -> Bool {
+  func isShown(_ id: TerminalSession.ID) -> Bool {
     // The board fills the detail area, so no pane is on screen behind it,
     // and a card would reach Idle having never passed through Done.
     guard !showsAgentBoard, let worktree = workspace.selectedWorktreeID else { return false }

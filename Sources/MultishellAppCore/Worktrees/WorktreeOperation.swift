@@ -32,7 +32,7 @@ public struct WorktreeOperation: Equatable, Sendable {
 
     /// A stage of a create: the worktree is there, and its first terminal
     /// is held back until this ends or its failure is dismissed.
-    public var isCreation: Bool {
+    var isCreation: Bool {
       self == .linkingFiles || self == .copyingFiles || self == .postCreateHook
     }
 

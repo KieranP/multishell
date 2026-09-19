@@ -16,7 +16,7 @@ public struct ReportedAgent: Hashable, Sendable {
 
   /// Whether the agent is still the one at the prompt. A cheap signal
   /// check, not a wait: nothing here blocks.
-  public var isAtThePrompt: Bool {
+  var isAtThePrompt: Bool {
     guard let pid else { return true }
     return !ProcessAncestry.isGone(pid)
   }

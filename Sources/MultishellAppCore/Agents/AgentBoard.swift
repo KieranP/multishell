@@ -1,5 +1,5 @@
 /// Every open pane, in the column its state puts it in. A roster, not a
-/// queue; see docs/design/agents.md.
+/// queue; see Docs/design/agents.md.
 public struct AgentBoard: Equatable, Sendable {
   public let columns: [AgentBoardColumn]
 
@@ -21,7 +21,7 @@ public struct AgentBoard: Equatable, Sendable {
     column(lane).count
   }
 
-  public var cardCount: Int {
+  var cardCount: Int {
     columns.reduce(0) { $0 + $1.count }
   }
 

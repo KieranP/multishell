@@ -74,8 +74,8 @@ extension AppModel {
 
   /// The checkout, the file lists or the post-create hook are still
   /// filling it, so git reads a half-made tree; see worktrees.md.
-  public func isUnderConstruction(_ id: Worktree.ID) -> Bool {
-    creatingWorktreeClaims[id] != nil || worktreeOperations.isUnderWay(id)
+  func isUnderConstruction(_ id: Worktree.ID) -> Bool {
+    workInFlight.isClaimed(id) || worktreeOperations.isUnderWay(id)
   }
 
   /// The pane's Dismiss after a failed stage. A dismissed create stage
@@ -88,7 +88,7 @@ extension AppModel {
   /// The pane's Cancel: ends the stage running there, a hook by signal and a
   /// file list at its next path. What follows depends on the stage.
   public func cancelStage(of worktree: Worktree) {
-    stageStoppers[worktree.id]?.stop()
+    workInFlight.stopStage(of: worktree.id)
   }
 
   public func setHookTimeoutSeconds(_ seconds: Int) {
@@ -97,7 +97,7 @@ extension AppModel {
 
   /// Checked before anything that starts a shell, a missing directory being
   /// refused. Named for the demand, since it raises the alert itself.
-  public func requireDirectory(of worktree: Worktree) -> Bool {
+  func requireDirectory(of worktree: Worktree) -> Bool {
     if FileManager.default.fileExists(atPath: worktree.path.path) { return true }
     presentedError = .worktreeDirectoryMissing(worktree.path.path)
     return false

@@ -1,5 +1,5 @@
 /* Every word this frontend shows, sorted by key and read through
-   `t("the.key")`; see docs/design/translation.md. */
+   `t("the.key")`; see Docs/design/translation.md. */
 
 "action.add" = "Add";
 "action.cancel" = "Cancel";

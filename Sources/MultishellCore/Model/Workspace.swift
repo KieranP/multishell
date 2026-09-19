@@ -14,7 +14,7 @@ public struct Workspace: Codable, Hashable, Sendable {
   public var selectedWorktreeID: Worktree.ID?
   /// Which column a worktree's keystrokes go to. Here and not on `Worktree`
   /// for the same reason `worktreeNames` is.
-  public var focusedGroupByWorktree: [Worktree.ID: TabGroup.ID] = [:]
+  var focusedGroupByWorktree: [Worktree.ID: TabGroup.ID] = [:]
   /// The user's own name for a worktree. Here and not on `Worktree`, whose
   /// records git replaces wholesale on every refresh.
   public var worktreeNames: [Worktree.ID: String] = [:]
@@ -28,7 +28,7 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// What `AgentCatalogue.customID` runs, as the user typed it.
   public var customAgentCommand = ""
   /// Extra arguments each agent is started with, by catalogue id, as typed.
-  /// Per agent, not one line; see docs/design/agents.md.
+  /// Per agent, not one line; see Docs/design/agents.md.
   public var agentFlags: [String: String] = [:]
   /// New Tab, and the first tab of a worktree turned to, start the
   /// preferred agent rather than a plain shell. Projects may override it.
@@ -69,12 +69,12 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// What the git badge on a row and a card counts.
   public var gitStatusIndicator = GitStatusIndicator.default
 
-  public static let defaultHookTimeoutSeconds = 60
+  static let defaultHookTimeoutSeconds = 60
 
   public init() {}
 
   /// Every field defaults, and every collection but projects is lossy;
-  /// see docs/design/state-and-store.md.
+  /// see Docs/design/state-and-store.md.
   public init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     projects = try container.decode([Project].self, forKey: .projects, or: [])

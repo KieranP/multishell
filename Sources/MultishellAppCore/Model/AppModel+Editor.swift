@@ -11,7 +11,7 @@ extension AppModel {
     store.setCustomEditorCommand(command)
   }
 
-  public func editorDisplayName(_ id: String) -> String {
+  func editorDisplayName(_ id: String) -> String {
     EditorCatalogue.displayName(id)
   }
 

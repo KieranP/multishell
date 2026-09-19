@@ -3,7 +3,7 @@ import MultishellCore
 /// A worktree removal waiting on its dialog. The branch question is asked
 /// even where confirmation is off, being the one part with no undo.
 public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
-  public enum BranchChoice: Equatable, Sendable {
+  enum BranchChoice: Equatable, Sendable {
     /// Settled before the dialog: the worktree is detached, or the setting
     /// deletes the branch every time.
     case decided(deletes: Bool)
@@ -29,14 +29,14 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
   }
 
   public let worktree: Worktree
-  public let branch: BranchChoice
+  let branch: BranchChoice
   /// The name the user gave this worktree, or `nil` for none.
   public let customName: String?
   /// Whether the branch has landed, which decides the button the dialog
   /// leads with and adds a line to what it says.
   public let mergeState: WorktreeMergeState
 
-  public init(
+  init(
     worktree: Worktree, branch: BranchChoice, customName: String? = nil,
     mergeState: WorktreeMergeState = .unknown
   ) {
@@ -56,12 +56,12 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
 
   /// The one button when the branch is decided; the keep-branch button when
   /// the dialog asks, beside `removeWithBranchLabel`.
-  public var removeLabel: String {
+  var removeLabel: String {
     if case .decided(deletes: true) = branch { return removeWithBranchLabel }
     return t("worktree-removal.remove")
   }
 
-  public var removeWithBranchLabel: String { t("worktree-removal.remove-with-branch") }
+  var removeWithBranchLabel: String { t("worktree-removal.remove-with-branch") }
 
   /// The remove buttons in the order the dialog shows them. A merged branch
   /// leads with deleting it, and only on evidence that is proof.

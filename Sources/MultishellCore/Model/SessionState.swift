@@ -19,7 +19,7 @@ public enum SessionState: String, Codable, Hashable, Sendable, CaseIterable {
 
   /// A tab or worktree with several sessions shows the most urgent. A
   /// failure above a question: a question answered still leaves the failure.
-  public var urgency: Int {
+  var urgency: Int {
     switch self {
     case .idle: 0
     case .done: 1
@@ -52,7 +52,7 @@ public enum SessionState: String, Codable, Hashable, Sendable, CaseIterable {
   }
 
   /// Whether looking is enough to clear it: Done alone. See
-  /// docs/design/agents.md for how Failed and Waiting part on a dead process.
+  /// Docs/design/agents.md for how Failed and Waiting part on a dead process.
   public var clearsWhenSeen: Bool { self == .done }
 
   /// What a foreground command's exit code says. A code above 128 is a

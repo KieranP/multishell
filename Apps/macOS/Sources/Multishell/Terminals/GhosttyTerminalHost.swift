@@ -4,7 +4,7 @@ import MultishellAppCore
 import MultishellCore
 
 /// A `TerminalHost` backed by libghostty, which owns the pty, renderer and
-/// config. Three config layers; see docs/design/terminals.md.
+/// config. Three config layers; see Docs/design/terminals.md.
 @MainActor
 final class GhosttyTerminalHost: NSObject, TerminalHost {
   weak var delegate: (any TerminalHostDelegate)?

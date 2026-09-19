@@ -5,7 +5,7 @@ import MultishellProcess
 import Observation
 
 /// Wires the core to a GUI and turns view actions into store mutations;
-/// see docs/design/architecture.md.
+/// see Docs/design/architecture.md.
 @Observable
 @MainActor
 public final class AppModel<Surface> {
@@ -50,7 +50,7 @@ public final class AppModel<Surface> {
   public internal(set) var findingSessionIDs: Set<TerminalSession.ID> = []
   /// Each pane's needle, kept across closes so Cmd+F then Return repeats the
   /// last search there; read through `findText(of:)`.
-  public internal(set) var findNeedles: [TerminalSession.ID: String] = [:]
+  var findNeedles: [TerminalSession.ID: String] = [:]
   /// Panes whose bar has a Cmd+F to answer, claimed through `takeFindFieldRequest`;
   /// a bar a worktree switch brings back has none. See terminals.md.
   public internal(set) var findFieldRequests: Set<TerminalSession.ID> = []
@@ -80,27 +80,20 @@ public final class AppModel<Surface> {
   /// The create or remove running on each worktree, shown in its detail pane;
   /// see `WorktreeOperations` for who owns an entry.
   public var worktreeOperations = WorktreeOperations()
-  /// The file lists and post-create hook still running on each worktree,
-  /// as one task, so a test can await it.
-  @ObservationIgnored public var worktreeSetups: [Worktree.ID: Task<Void, Never>] = [:]
-  /// The stop handle for the stage running on each worktree, behind the
-  /// pane's Cancel: a hook by signal, a file list between files.
-  @ObservationIgnored var stageStoppers: [Worktree.ID: ProcessStopper] = [:]
-  /// The stop handle for the pre-create hook under the sheet.
-  @ObservationIgnored var creationStopper: ProcessStopper?
-  /// Where each running `git worktree add` is checking out, counted: two
-  /// creates can name one path; see worktrees.md.
-  @ObservationIgnored var creatingWorktreeClaims: [Worktree.ID: Int] = [:]
+  /// The tasks, stop handles and claimed paths of the work building a
+  /// worktree; see `WorktreeWorkInFlight`. Not observed: the pane draws from
+  /// `worktreeOperations` beside it.
+  @ObservationIgnored public var workInFlight = WorktreeWorkInFlight()
 
   /// Sessions with a running shell, mirrored from the host after each
   /// reconcile so views can observe it; the host itself is not observable.
   public var liveSessions: Set<TerminalSession.ID> = []
   /// What each running shell last said its title was. Kept apart from the
   /// workspace so a prompt does not re-render the sidebar or schedule a save.
-  public var sessionTitles: [TerminalSession.ID: String] = [:]
+  var sessionTitles: [TerminalSession.ID: String] = [:]
   /// What each live terminal is doing, from the engine and from reports over
   /// the socket; see `SessionStates` for who clears what.
-  public var sessionStates = SessionStates()
+  var sessionStates = SessionStates()
   /// Which agent last reported in each session, so a dropped file and the
   /// board both know who is at the prompt; see `ReportedAgent`.
   public internal(set) var reportedAgents: [TerminalSession.ID: ReportedAgent] = [:]
@@ -136,7 +129,7 @@ public final class AppModel<Surface> {
   public var editorDetection = EditorDetection.empty
   /// Which agents' hooks are in place, by catalogue id. Read from disk on
   /// demand by `refreshAgentStatus`, not observed.
-  public var installedAgentHooks: Set<String> = []
+  var installedAgentHooks: Set<String> = []
   public var commandLineToolInstalled = false
   /// What the notification centre has been told about this app. The system's
   /// answer, not the workspace's, and changeable while the app runs.
@@ -148,16 +141,16 @@ public final class AppModel<Surface> {
   public var statuses: [Worktree.ID: WorktreeStatus] = [:]
   /// Whether each worktree's branch has already landed on its project's
   /// default branch. Runtime only; see `WorktreeMergeState`.
-  public var mergeStates: [Worktree.ID: WorktreeMergeState] = [:]
+  var mergeStates: [Worktree.ID: WorktreeMergeState] = [:]
   /// The branch each project's merges are measured against, `origin/main`
   /// and the like. Absent for a project with none to measure against.
-  public var mergeBases: [Project.ID: DefaultBranch] = [:]
+  var mergeBases: [Project.ID: DefaultBranch] = [:]
   /// When each worktree's branch was last committed to. Runtime only: the
   /// workspace must not be rewritten because someone committed.
-  public var lastCommits: [Worktree.ID: Date] = [:]
+  var lastCommits: [Worktree.ID: Date] = [:]
   /// Projects with a `git fetch` running, which the sidebar shows and a
   /// second Fetch waits for. Runtime state, like the statuses beside it.
-  public var fetchingProjects: Set<Project.ID> = []
+  var fetchingProjects: Set<Project.ID> = []
   /// Projects whose directory has gone. Kept in the sidebar, dimmed, rather
   /// than dropped: an unmounted drive should not delete someone's setup.
   public var missingProjects: Set<Project.ID> = []
@@ -171,16 +164,9 @@ public final class AppModel<Surface> {
   /// `refreshWorktreesIfRecordsChanged`.
   @ObservationIgnored var worktreeRecords: [Project.ID: WorktreeRecords] = [:]
   @ObservationIgnored var statusPolling: Task<Void, Never>?
-  /// How often each worktree's status is read; a test reading right after a
-  /// change sets it to `.unpaced`. See `StatusPollPace`.
-  @ObservationIgnored public var statusPace = StatusPollPace.standard
-  /// When and at what cost each worktree's status was last read.
-  @ObservationIgnored var statusReads:
-    [Worktree.ID: (at: ContinuousClock.Instant, took: Duration)] =
-      [:]
-  /// Bumped where what a status read counts changes, so a read in flight
-  /// under the old setting lands on nothing; see `setGitStatusIndicator`.
-  @ObservationIgnored var statusGeneration = 0
+  /// When each worktree's status was last read and how often it is read; a
+  /// test reading right after a change sets `pace` to `.unpaced`.
+  @ObservationIgnored public var statusReads = StatusReadLog()
   /// One coalesced status refresh per worktree; see `noteActivity`.
   @ObservationIgnored var pendingStatusRefreshes: [Worktree.ID: Task<Void, Never>] = [:]
 
@@ -313,53 +299,5 @@ public final class AppModel<Surface> {
     reconcileSessions(takingFocus: true)
     startStatusPolling()
     await refreshLoginEnvironment()
-  }
-
-  public func refreshAll() async {
-    await refreshWorktreesIfRecordsChanged()
-    await refreshStatuses()
-    await refreshMergeStates()
-  }
-
-  /// A watcher tick or a return to the front. The records are compared before
-  /// git is spawned; `changed` narrows it to the projects that fired, empty is all.
-  public func refreshWorktreesIfRecordsChanged(under changed: [URL] = []) async {
-    var refreshed = false
-    for project in workspace.projects {
-      let common = await commonGitDirectory(of: project)
-      if !changed.isEmpty {
-        guard let common, changed.contains(where: { $0.pathComponents(under: common) != nil })
-        else { continue }
-      }
-      if let common, let known = worktreeRecords[project.id],
-        await Self.offMain({ WorktreeRecords.read(commonDirectory: common) }) == known
-      {
-        await refreshSharedSettingsIfChanged(project)
-        continue
-      }
-      await refresh(project)
-      refreshed = true
-    }
-    if refreshed { await rearmWatcher() }
-  }
-
-  /// Re-read after every refresh: a new worktree adds a directory that must
-  /// itself be watched for branch changes.
-  public func rearmWatcher() async {
-    var directories: [URL] = []
-    for project in workspace.projects {
-      guard let common = await commonGitDirectory(of: project) else { continue }
-      directories += await Self.offMain { WorktreeCoordinator.directoriesToWatch(in: common) }
-    }
-    watcher.watch(directories)
-  }
-
-  func commonGitDirectory(of project: Project) async -> URL? {
-    if let cached = commonGitDirectories[project.id] { return cached }
-    guard let worktrees, let common = try? await worktrees.commonGitDirectory(project) else {
-      return nil
-    }
-    commonGitDirectories[project.id] = common
-    return common
   }
 }

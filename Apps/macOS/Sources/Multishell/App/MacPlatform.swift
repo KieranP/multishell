@@ -107,7 +107,7 @@ final class MacPlatform: Platform {
   }
 
   /// `terminate` exits inside the call once the delegate agrees, which with
-  /// no terminal open yet it does; see docs/design/state-and-store.md.
+  /// no terminal open yet it does; see Docs/design/state-and-store.md.
   func handOverToRunningInstance() {
     let identifier = Bundle.main.bundleIdentifier ?? Self.loggingSubsystem
     NSRunningApplication.runningApplications(withBundleIdentifier: identifier)

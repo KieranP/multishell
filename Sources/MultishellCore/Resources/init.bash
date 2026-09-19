@@ -17,7 +17,7 @@ if [ -n "${MULTISHELL_SESSION-}" ] && [ -x "__MULTISHELL_HELPER__" ]; then
   _multishell_armed=0
   _multishell_started=0
   # Ghostty writes no marks for bash, so all three come from here and ride
-  # with the hooks; see docs/design/terminals.md.
+  # with the hooks; see Docs/design/terminals.md.
   if [ "${TERM_PROGRAM-}" = ghostty ]; then _multishell_marks=1; else _multishell_marks=0; fi
   # Inline, not in the background, for the same reasons as the zsh body.
   _multishell_command_started() {
@@ -87,7 +87,7 @@ _multishell_owns_debug || trap "_multishell_debug" DEBUG'
   }
   _multishell_arm() { _multishell_armed=1; }
   # Prompt start printed, input start on the end of PS1, which is why this
-  # runs last of all; see docs/design/terminals.md.
+  # runs last of all; see Docs/design/terminals.md.
   _multishell_prompt_marks() {
     [ "$_multishell_marks" = 1 ] || return 0
     printf '\033]133;A;cl=line\007'

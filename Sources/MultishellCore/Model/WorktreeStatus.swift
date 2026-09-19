@@ -15,7 +15,7 @@ public struct WorktreeStatus: Hashable, Sendable {
   public var changedFiles = 0
 
   /// Lines added and removed against HEAD, with an untracked file's whole
-  /// contents counted as added; see docs/design/worktrees.md.
+  /// contents counted as added; see Docs/design/worktrees.md.
   public var insertions = 0
   public var deletions = 0
   /// Files that changed with no line to show for it: a binary file, a mode

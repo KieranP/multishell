@@ -1,7 +1,7 @@
 import Foundation
 
 /// One column of tabs in a worktree's terminal area, left to right in
-/// `Workspace.tabGroups`; see docs/design/tabs-and-columns.md.
+/// `Workspace.tabGroups`; see Docs/design/tabs-and-columns.md.
 public struct TabGroup: Identifiable, Codable, Hashable, Sendable {
   public let id: UUID
   public var worktreeID: Worktree.ID
@@ -14,7 +14,7 @@ public struct TabGroup: Identifiable, Codable, Hashable, Sendable {
 
   /// The group id a tab written before groups existed carries.
   /// `Workspace.adoptUngroupedTabs` resolves every one into a real group.
-  public static let unassigned = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+  static let unassigned = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
 
   public init(
     id: UUID = UUID(),

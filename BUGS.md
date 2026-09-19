@@ -28,11 +28,11 @@ line 2 says the two are meant not to drift.
 
 ### 85. Unproven. Three of the four agents' hook files have never been watched moving a dot
 
-`Sources/MultishellCore/Agents/AgentHooks.swift`. The four hook files are
-written from each agent's documented shape, and only Claude Code's has been
-watched moving a dot in a real session. Run each agent once: check its events
-fire, that the pid reported is the agent and not a wrapper outliving the hook,
-and that Codex's `/hooks` trust holds. The OpenCode plugin
+`Sources/MultishellCore/Integrations/Agents/AgentHooks.swift`. The four hook
+files are written from each agent's documented shape, and only Claude Code's has
+been watched moving a dot in a real session. Run each agent once: check its
+events fire, that the pid reported is the agent and not a wrapper outliving the
+hook, and that Codex's `/hooks` trust holds. The OpenCode plugin
 (OpenCodePlugin.swift) has been driven against a stub helper; unproven is that
 OpenCode loads a plugin exporting a function rather than a default
 `{ id, setup }`, its loader having two generations of that contract, and that
@@ -41,8 +41,8 @@ with the title where it reads it.
 
 ### 86. Low. An OpenCode server reused by a second pane lands the dot on the first pane's tab
 
-`Sources/MultishellCore/Agents/OpenCodePlugin.swift:31`. The plugin spawns the
-helper from the OpenCode server's process, and the helper reads
+`Sources/MultishellCore/Integrations/Agents/OpenCodePlugin.swift:31`. The plugin
+spawns the helper from the OpenCode server's process, and the helper reads
 `MULTISHELL_SESSION` from its environment (Helper.swift:13). An OpenCode server
 started from one pane and reused by another therefore reports that first pane's
 session, so the dot lands on the wrong tab. Only the plugin has this: every

@@ -7,7 +7,7 @@ public struct GitUnavailable: Error, CustomStringConvertible {
 }
 
 /// Runs git and hands back its standard output. Shelling out rather than
-/// linking libgit2; see docs/design/architecture.md.
+/// linking libgit2; see Docs/design/architecture.md.
 public struct GitRunner: Sendable {
   private let executable: URL
   private let runner: ProcessRunner
@@ -54,7 +54,7 @@ public struct GitRunner: Sendable {
       timeout: timeout, stopper: stopper)
   }
 
-  public func succeeds(_ arguments: [String], in directory: URL) async -> Bool {
+  func succeeds(_ arguments: [String], in directory: URL) async -> Bool {
     let output = try? await runner.capture(
       executable, arguments, in: directory, environment: configEnvironment)
     return output?.succeeded ?? false

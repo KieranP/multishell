@@ -14,8 +14,6 @@ struct SidebarView: View {
   @State private var filter = ""
   /// The filter field is folded away until asked for; it is wanted rarely.
   @State private var isFiltering = false
-  @FocusState private var filterFocused: Bool
-  @State private var sortHovered = false
   @Environment(\.openWindow) private var openWindow
 
   private static let rowSpacing: CGFloat = 1
@@ -30,8 +28,16 @@ struct SidebarView: View {
     let sessions = model.worktreeSessions
     let visible = visibleProjects
     VStack(spacing: 0) {
-      header(theme)
-      if isFiltering { filterField(theme, metrics: metrics) }
+      SidebarHeader(
+        isFiltering: isFiltering,
+        theme: theme,
+        toggleFilter: { setFiltering(!isFiltering) },
+        addProject: { Task { await model.chooseProject() } }
+      )
+      if isFiltering {
+        SidebarFilterField(
+          filter: $filter, theme: theme, metrics: metrics, close: { setFiltering(false) })
+      }
       ScrollView {
         LazyVStack(spacing: 1) {
           AgentsRow(
@@ -43,7 +49,7 @@ struct SidebarView: View {
           )
           .padding(.bottom, 4)
 
-          projectsHeader(theme, metrics: metrics)
+          ProjectsHeader(model: model, theme: theme, metrics: metrics)
 
           ForEach(visible, id: \.project.id) { entry in
             projectRows(
@@ -72,7 +78,12 @@ struct SidebarView: View {
         endDrag()
         return false
       }
-      footer(theme)
+      SidebarFooter(
+        worktreeCount: model.workspace.worktrees.count,
+        sessionCount: model.workspace.sessions.count,
+        theme: theme,
+        metrics: metrics
+      )
     }
     .background(theme.sidebarColor)
   }
@@ -98,137 +109,6 @@ struct SidebarView: View {
     guard !wanted else { return }
     filter = ""
     model.focusActivePane()
-  }
-
-  private func filterField(_ theme: Theme, metrics: UIMetrics) -> some View {
-    HStack(spacing: 6) {
-      TextField(t("sidebar.filter"), text: $filter)
-        .textFieldStyle(.plain)
-        .font(.system(size: metrics.secondary))
-        .foregroundStyle(theme.textPrimary)
-        .focused($filterFocused)
-        // A turn later: focus does not take on a field the hierarchy has not
-        // installed yet.
-        .task { filterFocused = true }
-        .onExitCommand { setFiltering(false) }
-      if SidebarFilter(filter).isActive {
-        Button {
-          filter = ""
-          filterFocused = true
-        } label: {
-          Image(systemName: "xmark.circle.fill")
-            .font(.system(size: metrics.icon))
-            .foregroundStyle(theme.textTertiary)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(t("sidebar.clear-filter"))
-      }
-    }
-    .padding(.horizontal, 8)
-    .frame(height: (metrics.body * 1.85).rounded())
-    .background(theme.rowHover, in: RoundedRectangle(cornerRadius: 6))
-    .padding(.horizontal, 8)
-  }
-
-  /// Leaves room for the traffic lights, the title bar being hidden. The
-  /// folder-plus, three identical glyphs otherwise reading as one.
-  private func header(_ theme: Theme) -> some View {
-    HStack(spacing: 2) {
-      Spacer()
-      Button {
-        setFiltering(!isFiltering)
-      } label: {
-        Image(systemName: "magnifyingglass")
-          .font(.system(size: 13, weight: .medium))
-          .frame(width: 28, height: 28)
-          .contentShape(.rect)
-      }
-      .buttonStyle(.plain)
-      .foregroundStyle(isFiltering ? theme.textPrimary : theme.textSecondary)
-      .help(t("sidebar.filter-projects"))
-      Button {
-        Task { await model.chooseProject() }
-      } label: {
-        Image(systemName: "folder.badge.plus")
-          .font(.system(size: 13, weight: .medium))
-          .frame(width: 28, height: 28)
-          .contentShape(.rect)
-      }
-      .buttonStyle(.plain)
-      .foregroundStyle(theme.textSecondary)
-      .help(t("sidebar.add-project"))
-    }
-    .padding(.horizontal, 14)
-    .frame(height: UIMetrics.headerHeight)
-    .titleBarDoubleClick()
-  }
-
-  /// The Projects label, with the sort menu at the + column's edge so the
-  /// setting sits beside the rows it orders. Its width is a row button's.
-  private func projectsHeader(_ theme: Theme, metrics: UIMetrics) -> some View {
-    HStack(spacing: 6) {
-      Text(t("sidebar.projects"))
-        .font(.system(size: metrics.caption, weight: .semibold))
-        .foregroundStyle(theme.textTertiary)
-      Spacer(minLength: 4)
-      sortMenu(theme, metrics: metrics)
-    }
-    .padding(.horizontal, 8)
-    .frame(height: 22)
-    .padding(.bottom, 2)
-  }
-
-  /// The global order and the active-first toggle; a project's override
-  /// stays in its settings. See docs/design/worktrees.md.
-  private func sortMenu(_ theme: Theme, metrics: UIMetrics) -> some View {
-    Menu {
-      Picker(
-        t("sidebar.sort-worktrees"),
-        selection: model.setting(\.worktreeSortOrder, write: model.setWorktreeSortOrder)
-      ) {
-        ForEach(WorktreeSortOrder.allCases, id: \.self) { Text($0.displayName).tag($0) }
-      }
-      .pickerStyle(.inline)
-      Divider()
-      Toggle(
-        t("worktrees.active-first"),
-        isOn: model.setting(
-          \.showsActiveWorktreesFirst, write: model.setShowsActiveWorktreesFirst))
-    } label: {
-      Image(systemName: "arrow.up.arrow.down")
-        .font(.system(size: metrics.badge))
-        .foregroundStyle(sortHovered ? theme.textSecondary : theme.textTertiary.opacity(0.7))
-        .frame(width: 24, height: 22)
-        // Painted: a menu is hit-tested by its label's ink, and the glyph
-        // alone is a small target. As the strip's + does.
-        .background(theme.sidebarColor)
-        .contentShape(.rect)
-    }
-    // Not `.borderlessButton`: that AppKit button draws the image at its own
-    // size and tint, so no font or colour set here reaches it.
-    .menuStyle(.button)
-    .buttonStyle(.plain)
-    .menuIndicator(.hidden)
-    .fixedSize()
-    .onHover { sortHovered = $0 }
-    .help(t("sidebar.sort-worktrees"))
-    .accessibilityLabel(t("sidebar.sort-worktrees"))
-  }
-
-  private func footer(_ theme: Theme) -> some View {
-    let worktrees = model.workspace.worktrees.count
-    let sessions = model.workspace.sessions.count
-    return HStack {
-      Text(
-        t("sidebar.counts", t("count.worktrees", worktrees), t("count.terminals", sessions))
-      )
-      .font(.system(size: model.metrics.caption))
-      .foregroundStyle(theme.textTertiary)
-      Spacer()
-    }
-    .padding(.horizontal, 14)
-    .frame(height: 30)
-    .overlay(alignment: .top) { theme.hairline.frame(height: 0.5) }
   }
 
   /// A project and its worktrees move as one block, so the drop indicator

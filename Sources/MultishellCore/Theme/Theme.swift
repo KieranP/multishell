@@ -1,7 +1,7 @@
 import Foundation
 
 /// A colour scheme for terminals and app chrome. Hex strings, not a platform
-/// colour type, so this stays portable; see docs/design/appearance.md.
+/// colour type, so this stays portable; see Docs/design/appearance.md.
 public struct Theme: Identifiable, Codable, Hashable, Sendable {
   public var id: String
   public var name: String
@@ -17,14 +17,14 @@ public struct Theme: Identifiable, Codable, Hashable, Sendable {
 
   /// The line round the pane keystrokes go to. `""` is no line, `nil`
   /// follows `selectionBackground`; see `focusRingRGB`.
-  public var focusRing: String?
+  var focusRing: String?
   /// What every pane but the focused one draws at, faded towards the
   /// theme's own background. `1` fades nothing.
   public var inactivePaneOpacity: Double
 
   /// Anything less would be a pane nobody can read, which looks broken
   /// rather than unfocused.
-  public static let minimumInactivePaneOpacity = 0.25
+  static let minimumInactivePaneOpacity = 0.25
 
   public init(
     id: String,

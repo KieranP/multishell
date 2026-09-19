@@ -5,10 +5,19 @@ import SwiftUI
 // The four places a dragged tab can land. One file rather than four: each is
 // a few lines of the same shape, and each answers the drag before it moves.
 
-/// Runs the move a drop asked for on the next turn, so the drag ends against
-/// the view tree it began in. `true` even where the move does nothing.
-private func afterTheDrag(_ move: @escaping @MainActor () -> Void) {
-  Task { @MainActor in move() }
+extension DropInfo {
+  var carriesATab: Bool { hasItemsConforming(to: [TabTransfer.contentType]) }
+}
+
+/// Ends the drag and runs the move on the next turn, against the view tree it
+/// began in. `true` even where the move does nothing.
+private func dropping(
+  _ drag: inout TabDragState, _ move: @escaping @MainActor (TerminalTab.ID) -> Void
+) -> Bool {
+  let moving = drag.tabID
+  drag.end()
+  if let moving { Task { @MainActor in move(moving) } }
+  return true
 }
 
 /// Tracks the pointer over a tab for the insertion line, and moves on release.
@@ -22,9 +31,7 @@ struct TabDropDelegate: DropDelegate {
   /// there and then; see `AppModel.shuffleTab`.
   let shuffle: (TerminalTab.ID, TerminalTab.Placement) -> Void
 
-  func validateDrop(info: DropInfo) -> Bool {
-    info.hasItemsConforming(to: [TabTransfer.contentType])
-  }
+  func validateDrop(info: DropInfo) -> Bool { info.carriesATab }
 
   func dropEntered(info: DropInfo) {
     enter(info)
@@ -42,10 +49,7 @@ struct TabDropDelegate: DropDelegate {
 
   func performDrop(info: DropInfo) -> Bool {
     let placement = placement(for: info)
-    let moving = drag.tabID
-    drag.end()
-    if let moving { afterTheDrag { perform(moving, placement) } }
-    return true
+    return dropping(&drag) { perform($0, placement) }
   }
 
   /// The pointer crossing from a band to a tab can leave the band's exit
@@ -68,20 +72,13 @@ struct TabStripDropDelegate: DropDelegate {
   @Binding var drag: TabDragState
   let perform: (TerminalTab.ID) -> Void
 
-  func validateDrop(info: DropInfo) -> Bool {
-    info.hasItemsConforming(to: [TabTransfer.contentType])
-  }
+  func validateDrop(info: DropInfo) -> Bool { info.carriesATab }
 
   func dropUpdated(info: DropInfo) -> DropProposal? {
     DropProposal(operation: .move)
   }
 
-  func performDrop(info: DropInfo) -> Bool {
-    let moving = drag.tabID
-    drag.end()
-    if let moving { afterTheDrag { perform(moving) } }
-    return true
-  }
+  func performDrop(info: DropInfo) -> Bool { dropping(&drag) { perform($0) } }
 }
 
 /// A column's terminal area, under the bands: it says when the pointer
@@ -91,9 +88,7 @@ struct TabAreaDropDelegate: DropDelegate {
   @Binding var drag: TabDragState
   let perform: (TerminalTab.ID) -> Void
 
-  func validateDrop(info: DropInfo) -> Bool {
-    info.hasItemsConforming(to: [TabTransfer.contentType])
-  }
+  func validateDrop(info: DropInfo) -> Bool { info.carriesATab }
 
   func dropEntered(info: DropInfo) {
     enter()
@@ -108,12 +103,7 @@ struct TabAreaDropDelegate: DropDelegate {
     if drag.overColumn == groupID { drag.overColumn = nil }
   }
 
-  func performDrop(info: DropInfo) -> Bool {
-    let moving = drag.tabID
-    drag.end()
-    if let moving { afterTheDrag { perform(moving) } }
-    return true
-  }
+  func performDrop(info: DropInfo) -> Bool { dropping(&drag) { perform($0) } }
 
   /// Arriving here gives up any line a strip was drawing, the pointer
   /// crossing between targets leaving an exit unreported.
@@ -130,9 +120,7 @@ struct TabBandDropDelegate: DropDelegate {
   @Binding var drag: TabDragState
   let perform: (TerminalTab.ID) -> Void
 
-  func validateDrop(info: DropInfo) -> Bool {
-    info.hasItemsConforming(to: [TabTransfer.contentType])
-  }
+  func validateDrop(info: DropInfo) -> Bool { info.carriesATab }
 
   func dropEntered(info: DropInfo) {
     drag.band = target
@@ -147,10 +135,5 @@ struct TabBandDropDelegate: DropDelegate {
     if drag.band == target { drag.band = nil }
   }
 
-  func performDrop(info: DropInfo) -> Bool {
-    let moving = drag.tabID
-    drag.end()
-    if let moving { afterTheDrag { perform(moving) } }
-    return true
-  }
+  func performDrop(info: DropInfo) -> Bool { dropping(&drag) { perform($0) } }
 }

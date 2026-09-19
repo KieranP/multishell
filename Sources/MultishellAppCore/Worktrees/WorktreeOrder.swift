@@ -3,18 +3,18 @@ import MultishellCore
 
 /// The order a project's worktree rows are drawn in. The main worktree and
 /// the trunk keep the top whatever the sort says; see worktrees.md.
-public struct WorktreeOrder: Equatable, Sendable {
+struct WorktreeOrder: Equatable, Sendable {
   /// Taken for the trunk while no default branch is resolved: these two are
   /// the guess git itself makes.
-  public static let fallbackTrunkNames = ["main", "master"]
+  static let fallbackTrunkNames = ["main", "master"]
 
-  public let order: WorktreeSortOrder
-  public let activeFirst: Bool
+  let order: WorktreeSortOrder
+  let activeFirst: Bool
   /// The project's trunk, as `DefaultBranch.branch` gives it and without
   /// the remote in front of it, or `nil` while none is resolved.
-  public let trunkBranch: String?
+  let trunkBranch: String?
 
-  public init(order: WorktreeSortOrder, activeFirst: Bool, trunkBranch: String? = nil) {
+  init(order: WorktreeSortOrder, activeFirst: Bool, trunkBranch: String? = nil) {
     self.order = order
     self.activeFirst = activeFirst
     self.trunkBranch = trunkBranch
@@ -33,7 +33,7 @@ public struct WorktreeOrder: Equatable, Sendable {
 
   /// `displayName`, `isActive` and `lastCommit` are asked once per worktree:
   /// they read runtime state, which the caller holds.
-  public func sort(
+  func sort(
     _ worktrees: [Worktree],
     displayName: (Worktree) -> String,
     isActive: (Worktree) -> Bool,

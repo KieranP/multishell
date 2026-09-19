@@ -2,7 +2,7 @@ import Foundation
 import MultishellCore
 
 /// One worker an agent has out, as the app knows it from the reports about
-/// it. Runtime only, kept by `SessionStates`; see docs/design/agents.md.
+/// it. Runtime only, kept by `SessionStates`; see Docs/design/agents.md.
 public struct Subagent: Identifiable, Equatable, Sendable {
   public let id: String
   /// What the agent calls the kind, `nil` for a worker an older helper
@@ -11,7 +11,7 @@ public struct Subagent: Identifiable, Equatable, Sendable {
   /// When it started. Handed in by `stampChanges`, never read from a clock.
   public var since: Date?
   /// How many workers share this roster place. Above one only where an agent
-  /// names a worker without an id; see docs/design/agents.md.
+  /// names a worker without an id; see Docs/design/agents.md.
   var occurrences = 1
 
   public init(id: String, type: String?, since: Date? = nil) {

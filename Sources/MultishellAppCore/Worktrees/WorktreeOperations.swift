@@ -20,7 +20,7 @@ public struct WorktreeOperations: Equatable, Sendable {
 
   /// A stage is writing there now. A failed one is not: nothing writes
   /// until the Dismiss.
-  public func isUnderWay(_ id: Worktree.ID) -> Bool {
+  func isUnderWay(_ id: Worktree.ID) -> Bool {
     operations[id]?.isRunning == true
   }
 

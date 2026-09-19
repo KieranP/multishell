@@ -141,11 +141,7 @@ struct WorktreeRow: View {
           .foregroundStyle(theme.textPrimary.opacity(isSelected ? 1 : 0.85))
           .lineLimit(1)
           .truncationMode(.tail)
-        Text(worktree.name)
-          .font(.system(size: metrics.badge, design: .monospaced))
-          .foregroundStyle(theme.textTertiary)
-          .lineLimit(1)
-          .truncationMode(.middle)
+        branchLine
       }
       .help(worktree.name)
     } else {
@@ -168,12 +164,18 @@ struct WorktreeRow: View {
         color: theme.textPrimary,
         commit: commit,
         cancel: cancel)
-      Text(worktree.name)
-        .font(.system(size: metrics.badge, design: .monospaced))
-        .foregroundStyle(theme.textTertiary)
-        .lineLimit(1)
-        .truncationMode(.middle)
+      branchLine
     }
+  }
+
+  /// The branch under a custom name or a name field, in the smaller of the
+  /// two sizes: what the row is called is above it.
+  private var branchLine: some View {
+    Text(worktree.name)
+      .font(.system(size: metrics.badge, design: .monospaced))
+      .foregroundStyle(theme.textTertiary)
+      .lineLimit(1)
+      .truncationMode(.middle)
   }
 
   private func changes(_ status: WorktreeStatus) -> some View {

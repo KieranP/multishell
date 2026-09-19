@@ -63,7 +63,7 @@ extension PaneNode {
     }
   }
 
-  public var isLeaf: Bool {
+  var isLeaf: Bool {
     if case .terminal = self { return true }
     return false
   }
@@ -80,7 +80,7 @@ extension PaneNode {
 
   /// Drops every terminal `shouldDrop` names, in display order, collapsing
   /// the splits that leaves. `nil` when nothing is left.
-  public func pruning(_ shouldDrop: (TerminalSession.ID) -> Bool) -> PaneNode? {
+  func pruning(_ shouldDrop: (TerminalSession.ID) -> Bool) -> PaneNode? {
     switch self {
     case .terminal(let id):
       return shouldDrop(id) ? nil : self
@@ -105,7 +105,7 @@ extension PaneNode {
 
   /// Splits the terminal `id` in half for `newSession`. The enclosing
   /// split's own axis adds a sibling, as tmux does; another axis nests.
-  public func splitting(
+  func splitting(
     _ id: TerminalSession.ID,
     with newSession: TerminalSession.ID,
     axis: SplitAxis
@@ -134,7 +134,7 @@ extension PaneNode {
 
   /// Replaces the weights of the split at `path` (child indices from the
   /// root). Anything else is returned unchanged.
-  public func settingWeights(_ newWeights: [Double], at path: [Int]) -> PaneNode {
+  func settingWeights(_ newWeights: [Double], at path: [Int]) -> PaneNode {
     guard case .split(let axis, let children, let weights) = self else { return self }
     guard let head = path.first else {
       return newWeights.count == children.count

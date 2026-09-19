@@ -3,7 +3,7 @@ import MultishellCore
 import SwiftUI
 
 /// The count of workers an agent has out, in the Working colour, drawn only
-/// while there is one. Hovering it lists them; see docs/design/agents.md.
+/// while there is one. Hovering it lists them; see Docs/design/agents.md.
 struct SubagentChip: View {
   let subagents: [Subagent]
   let theme: Theme

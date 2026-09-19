@@ -10,7 +10,7 @@ public struct ShellDetection: Equatable, Sendable {
   public let loginShell: String
   /// Whether `$SHELL` points at something, read once here rather than per
   /// row: a stat on a dead mount blocks for its timeout.
-  public let loginShellExists: Bool
+  let loginShellExists: Bool
 
   public static let empty = ShellDetection(
     installed: [], loginShell: ShellCatalogue.loginShellPath())

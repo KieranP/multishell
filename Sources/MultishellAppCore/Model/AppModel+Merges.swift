@@ -16,7 +16,7 @@ extension AppModel {
 
   /// Whether each worktree's branch has landed. On the status poll, not the
   /// watcher: a commit moves a ref no watched file mentions.
-  public func refreshMergeStates() async {
+  func refreshMergeStates() async {
     for project in workspace.projects where !missingProjects.contains(project.id) {
       await refreshMergeStates(of: project)
     }
@@ -50,7 +50,7 @@ extension AppModel {
       // A stage keeps what it earned and is asked nothing; a claimed path
       // forgets, the last checkout there being gone. See worktrees.md.
       if worktreeOperations.isUnderWay(worktree.id) { continue }
-      guard creatingWorktreeClaims[worktree.id] == nil,
+      guard !workInFlight.isClaimed(worktree.id),
         WorktreeMergeState.applies(to: worktree, base: scan.base.branch),
         let branch = worktree.branch, let tip = scan.tip(of: branch)
       else {

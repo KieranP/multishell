@@ -34,7 +34,7 @@ public struct SharedProjectSettings: Equatable, Sendable {
   public private(set) var digest: String?
   /// The file's keys the fields would not write back: ones this build has no
   /// field for, and values it could not read. Export keeps them; see settings.md.
-  public private(set) var unread: [String: JSONValue] = [:]
+  private(set) var unread: [String: JSONValue] = [:]
 
   public static let fileName = ".multishell.json"
 
@@ -118,7 +118,7 @@ public struct SharedProjectSettings: Equatable, Sendable {
   }
 
   /// These settings over `existing`'s hooks and the keys this build could not
-  /// read, neither being the user's to drop on export; see docs/design/settings.md.
+  /// read, neither being the user's to drop on export; see Docs/design/settings.md.
   public func keeping(from existing: SharedProjectSettings?) -> SharedProjectSettings {
     guard let existing else { return self }
     var kept = self

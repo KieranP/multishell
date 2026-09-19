@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 
-/// The single place workspace state changes; see docs/design/architecture.md.
+/// The single place workspace state changes; see Docs/design/architecture.md.
 /// One file, not an extension per collection: `private` reaches no further.
 @Observable
 @MainActor
@@ -12,7 +12,7 @@ public final class WorkspaceStore {
   @ObservationIgnored private let snapshot: WorkspaceSnapshot
 
   /// Set where unread state is still on disk: saving the empty workspace over
-  /// it deletes the user's sidebar. See docs/design/state-and-store.md.
+  /// it deletes the user's sidebar. See Docs/design/state-and-store.md.
   @ObservationIgnored public private(set) var refusesToSave = false
 
   public init(workspace: Workspace = Workspace(), snapshot: WorkspaceSnapshot = WorkspaceSnapshot())
@@ -198,7 +198,7 @@ extension WorkspaceStore {
   }
 
   /// Moves a tab beside `target`, possibly in another column of the same
-  /// worktree; see docs/design/tabs-and-columns.md.
+  /// worktree; see Docs/design/tabs-and-columns.md.
   public func moveTab(
     _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, _ target: TerminalTab.ID
   ) {
@@ -231,7 +231,7 @@ extension WorkspaceStore {
   }
 
   /// Moves a tab, panes and all, to another worktree. The shells keep
-  /// running; see docs/design/tabs-and-columns.md.
+  /// running; see Docs/design/tabs-and-columns.md.
   @discardableResult
   public func moveTab(_ id: TerminalTab.ID, to worktreeID: Worktree.ID) -> Bool {
     guard
@@ -374,7 +374,7 @@ extension WorkspaceStore {
   }
 
   /// A column after a tab left it: another showing, or the column gone, with
-  /// `vacating` the place it held, read first. See docs/design/tabs-and-columns.md.
+  /// `vacating` the place it held, read first. See Docs/design/tabs-and-columns.md.
   private func settle(group groupID: TabGroup.ID, vacating slot: Int?) {
     guard let index = workspace.tabGroups.firstIndex(where: { $0.id == groupID }) else { return }
     let worktreeID = workspace.tabGroups[index].worktreeID

@@ -3,7 +3,7 @@ import MultishellCore
 import SwiftUI
 
 /// Under the chip: each worker by kind and how long it has been out, ticking
-/// while the list is up. Not its tool, which flashed; see docs/design/agents.md.
+/// while the list is up. Not its tool, which flashed; see Docs/design/agents.md.
 struct SubagentList: View {
   let subagents: [Subagent]
   let theme: Theme

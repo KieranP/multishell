@@ -3,8 +3,8 @@ import MultishellCore
 
 /// The command line an agent tab runs, built as the shell starts. Through the
 /// login shell, for its PATH and so a shell takes over when the agent quits.
-public enum AgentLaunch {
-  public static func command(
+enum AgentLaunch {
+  static func command(
     agent arguments: [String],
     shell: (executable: URL, arguments: [String]),
     exec: String
@@ -13,7 +13,7 @@ public enum AgentLaunch {
   }
 
   /// The custom entry is a shell line as the user typed it.
-  public static func command(
+  static func command(
     customLine: String,
     shell: (executable: URL, arguments: [String]),
     exec: String
@@ -25,7 +25,7 @@ public enum AgentLaunch {
 
   /// `nil` when a relaunch has nothing to resume with; the tab is then a
   /// plain shell that keeps the agent's title.
-  public static func arguments(for agent: AgentDescriptor, resume: Bool) -> [String]? {
+  static func arguments(for agent: AgentDescriptor, resume: Bool) -> [String]? {
     if resume {
       return agent.resumeArguments.map { [agent.executable] + $0 }
     }

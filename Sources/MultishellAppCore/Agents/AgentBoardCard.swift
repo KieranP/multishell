@@ -16,7 +16,7 @@ public struct AgentBoardCard: Identifiable, Equatable, Sendable {
       }
     }
 
-    public var isAgent: Bool {
+    var isAgent: Bool {
       if case .agent = self { return true }
       return false
     }

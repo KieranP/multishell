@@ -38,7 +38,7 @@ extension AppModel {
 
   /// Which agent a pane holds: the one that reported while its process is up,
   /// else the tab's own. Most panes get theirs typed at a shell prompt.
-  public func agentAtThePrompt(of session: TerminalSession) -> String? {
+  func agentAtThePrompt(of session: TerminalSession) -> String? {
     if let reported = reportedAgents[session.id], reported.isAtThePrompt {
       return reported.agentID
     }

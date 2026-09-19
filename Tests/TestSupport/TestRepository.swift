@@ -10,11 +10,11 @@ import TestScratch
 /// files in two targets.
 public enum TestRepository {
   /// What fixture commits are authored as. Not a real address.
-  public static let committerEmail = "tests@multishell.local"
-  public static let committerName = "Multishell Tests"
+  static let committerEmail = "tests@multishell.local"
+  static let committerName = "Multishell Tests"
   /// Named rather than taken from the machine's `init.defaultBranch`, which
   /// a developer may have set to anything.
-  public static let initialBranch = "main"
+  static let initialBranch = "main"
 
   /// An initialised repository at `url`, with the fixture identity set on the
   /// repository itself so a developer's global config cannot change what the

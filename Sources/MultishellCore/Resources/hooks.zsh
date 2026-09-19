@@ -1,5 +1,5 @@
 # The OSC 133 marks that let a click in the prompt move the cursor: `cl=line`
-# is one arrow per cell. Why each is placed as it is -> docs/design/terminals.md.
+# is one arrow per cell. Why each is placed as it is -> Docs/design/terminals.md.
 if [ "${TERM_PROGRAM-}" = ghostty ]; then
   typeset -g _multishell_prompt_mark=$'%{\e]133;A;cl=line\a%}'
   typeset -g _multishell_input_mark=$'%{\e]133;B\a%}'

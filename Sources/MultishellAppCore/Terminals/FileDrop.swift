@@ -3,8 +3,8 @@ import MultishellCore
 
 /// What a terminal receives when files are dropped: quoted absolute paths for
 /// a shell, relative mentions for an agent. A trailing space, never a newline.
-public enum FileDrop {
-  public static func text(
+enum FileDrop {
+  static func text(
     for urls: [URL], relativeTo directory: URL, mentionPrefix: String? = nil
   ) -> String {
     let words = urls.filter { isTypable($0) }.map { url in

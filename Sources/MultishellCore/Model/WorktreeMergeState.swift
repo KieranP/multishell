@@ -1,7 +1,7 @@
 import Foundation
 
 /// Whether a worktree's branch has landed, and on what evidence. Runtime
-/// only, so no badge comes off disk; see docs/design/merged-branch.md.
+/// only, so no badge comes off disk; see Docs/design/merged-branch.md.
 public enum WorktreeMergeState: Hashable, Sendable {
   /// Nothing has been asked yet, or the project has no default branch to
   /// measure against.
@@ -20,11 +20,11 @@ public enum WorktreeMergeState: Hashable, Sendable {
     /// how a rebase-merge or a run of cherry-picks lands.
     case patchEquivalent
     /// Upstream gone and the base moved on: what a squash merge leaves.
-    /// Not proof; see docs/design/merged-branch.md for what else is asked.
+    /// Not proof; see Docs/design/merged-branch.md for what else is asked.
     case upstreamGone
   }
 
-  public var isMerged: Bool {
+  var isMerged: Bool {
     if case .merged = self { return true }
     return false
   }
@@ -48,7 +48,7 @@ public enum WorktreeMergeState: Hashable, Sendable {
   }
 
   /// Whether the row draws the badge, given `git status`. Uncommitted work
-  /// hides it; see docs/design/merged-branch.md.
+  /// hides it; see Docs/design/merged-branch.md.
   public func showsBadge(with status: WorktreeStatus?) -> Bool {
     guard isMerged else { return false }
     guard let status else { return true }

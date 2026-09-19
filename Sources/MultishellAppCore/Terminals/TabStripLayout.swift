@@ -2,7 +2,7 @@ import Foundation
 import MultishellCore
 
 /// How wide a tab strip draws its tabs, and when it scrolls instead: they
-/// shrink between a cap and a floor. See docs/design/tabs-and-columns.md.
+/// shrink between a cap and a floor. See Docs/design/tabs-and-columns.md.
 public struct TabStripLayout: Equatable, Sendable {
   /// What every tab is drawn, exactly. Uniform, so a drop can tell which
   /// half of a tab the pointer is in from this alone.

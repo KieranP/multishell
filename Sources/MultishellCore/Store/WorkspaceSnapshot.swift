@@ -16,12 +16,12 @@ public struct WorkspaceSnapshot: Sendable {
     fileprivate let number: Int
   }
 
-  public func ticket() -> Ticket {
+  func ticket() -> Ticket {
     Ticket(number: order.issue())
   }
 
   /// Writes in order and one at a time, whichever thread runs each; see
-  /// docs/design/state-and-store.md.
+  /// Docs/design/state-and-store.md.
   private final class SaveOrder: @unchecked Sendable {
     private let lock = NSLock()
     private var issued = 0
@@ -44,7 +44,7 @@ public struct WorkspaceSnapshot: Sendable {
   }
 
   /// A file that will not read or decode is moved aside, never overwritten.
-  /// The read is inside the `do` for that; see docs/design/state-and-store.md.
+  /// The read is inside the `do` for that; see Docs/design/state-and-store.md.
   public func load() throws -> Workspace {
     guard FileManager.default.fileExists(atPath: fileURL.path) else { return Workspace() }
     do {
@@ -64,7 +64,7 @@ public struct WorkspaceSnapshot: Sendable {
 
   /// Whether a file stands where `save` would write. Asked after a failed
   /// load, when what is still there is the user's own state.
-  public var holdsFile: Bool {
+  var holdsFile: Bool {
     FileManager.default.fileExists(atPath: fileURL.path)
   }
 
@@ -89,7 +89,9 @@ public struct WorkspaceSnapshot: Sendable {
   }
 }
 
-public struct UnreadableState: Error, CustomStringConvertible {
+/// The words the user sees are the catalogue's, built by `PresentedError`;
+/// see Docs/design/translation.md.
+public struct UnreadableState: Error {
   public let backup: URL
   public let underlying: any Error
 
@@ -97,15 +99,11 @@ public struct UnreadableState: Error, CustomStringConvertible {
     self.backup = backup
     self.underlying = underlying
   }
-
-  public var description: String {
-    "Saved state could not be read and was moved to \(backup.lastPathComponent). \(underlying)"
-  }
 }
 
 /// Unreadable and unmovable both, so it still stands where a save would land.
 /// Nothing may write that path; see `WorkspaceStore.refusesToSave`.
-public struct UnmovedState: Error, CustomStringConvertible {
+public struct UnmovedState: Error {
   public let file: URL
   public let underlying: any Error
   public let move: any Error
@@ -114,9 +112,5 @@ public struct UnmovedState: Error, CustomStringConvertible {
     self.file = file
     self.underlying = underlying
     self.move = move
-  }
-
-  public var description: String {
-    "Saved state could not be read and was left at \(file.path). \(underlying)"
   }
 }

@@ -2,7 +2,7 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// One pane's card, read in the sidebar's order; see docs/design/appearance.md.
+/// One pane's card, read in the sidebar's order; see Docs/design/appearance.md.
 /// No output on it: the engine hands the core no scrollback.
 struct AgentCardView: View {
   let model: AppModel

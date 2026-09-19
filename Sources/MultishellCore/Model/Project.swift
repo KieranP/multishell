@@ -1,7 +1,7 @@
 import Foundation
 
 /// A git repository the user has added to the sidebar. Identity is the path;
-/// see docs/design/architecture.md.
+/// see Docs/design/architecture.md.
 public struct Project: Identifiable, Codable, Hashable, Sendable {
   /// Always the normalised form from `directory`, so `id` can read it
   /// directly rather than standardise again on every comparison.

@@ -13,6 +13,6 @@ extension AgentBoard {
   }
 
   /// Said under the columns whenever there is nothing on them, and not gated
-  /// on hooks being installed; see docs/design/agents.md.
+  /// on hooks being installed; see Docs/design/agents.md.
   public static var emptyHint: String { t("board.empty-hint") }
 }

@@ -44,10 +44,8 @@ extension AppModel {
     let resolved = resolved(project)
     worktreeOperations.begin(.init(WorktreeRemovalStep.first(for: resolved)), on: worktree.id)
     let stopper = ProcessStopper()
-    stageStoppers[worktree.id] = stopper
-    defer {
-      if stageStoppers[worktree.id] === stopper { stageStoppers[worktree.id] = nil }
-    }
+    workInFlight.arm(stopper, on: worktree.id)
+    defer { workInFlight.disarm(worktree.id, stoppedBy: stopper) }
     do {
       try await worktrees.remove(
         worktree, deletingBranch: deletingBranch, in: resolved,
@@ -93,7 +91,7 @@ extension AppModel {
   }
 
   /// The Trash where it takes the directory, deletion where it will not: the
-  /// removal was confirmed either way; see docs/design/worktrees.md.
+  /// removal was confirmed either way; see Docs/design/worktrees.md.
   func moveToTrash(_ url: URL) async throws {
     let platform = self.platform
     let trashed = await Self.offMain { Result { try platform.moveToTrash(url) } }
@@ -103,7 +101,7 @@ extension AppModel {
   }
 
   /// The branch alone, after a removal that left it behind.
-  public func deleteBranch(_ branch: String, of project: Project, force: Bool) async {
+  func deleteBranch(_ branch: String, of project: Project, force: Bool) async {
     guard let worktrees else { return }
     do {
       try await worktrees.deleteBranch(branch, force: force, in: project)

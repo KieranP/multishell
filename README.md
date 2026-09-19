@@ -15,13 +15,15 @@
 </p>
 
 <p align="center">
-  <img src="docs/screenshot-light.png" width="49%" alt="Multishell in light mode: a project sidebar, a selected worktree, and a Claude Code tab split above a shell">
-  <img src="docs/screenshot-dark.png" width="49%" alt="The same workspace in dark mode">
+  <img src="Docs/screenshot-light.png" width="49%" alt="Multishell in light mode: a project sidebar, a selected worktree, and a Claude Code tab split above a shell">
+  <img src="Docs/screenshot-dark.png" width="49%" alt="The same workspace in dark mode">
 </p>
 
 ## Install
 
-Requires macOS with Xcode 26 or later and `git` on your `PATH`.
+Requires macOS with Xcode 27 and `git` on your `PATH`. Xcode 26 builds and tests
+the libraries, but `make install` below goes through `xcodebuild`, which needs
+27; see [Docs/develop/build.md](Docs/develop/build.md).
 
 ```sh
 git clone https://github.com/KieranP/multishell.git
@@ -48,8 +50,8 @@ Codex asks you to trust a new hook once, with `/hooks`. Plain shell commands
 report without any of this. Until an agent's hooks are in, its dots never move
 and the Agents board stays empty.
 
-To work on it, start with [AGENTS.md](AGENTS.md), which indexes `docs/develop/`
-for the build, the tests and the rules, and `docs/design/` for why things are
+To work on it, start with [AGENTS.md](AGENTS.md), which indexes `Docs/develop/`
+for the build, the tests and the rules, and `Docs/design/` for why things are
 the way they are.
 
 ## Features
@@ -63,11 +65,14 @@ the way they are.
 - A state dot per tab and worktree: working, waiting, done, failed.
 - Hooks for five agents; zsh and bash need no setup; anything else can call
   `multishell state`.
-- An Agents board of every running agent, and a Dock badge for those waiting.
+- An Agents board of every running agent, a chip counting the workers each has
+  out, and a Dock badge for those waiting.
 - A preferred agent one shortcut away, with flags per agent and per project.
 - Notifications for tabs you are not looking at, a toggle each for state.
 - Drop files from Finder onto a terminal as `@` mentions or quoted paths.
-- Dirty, ahead/behind and landed badges on rows; sort, filter, rename.
+- Find in a pane with Cmd+F, through libghostty's own search.
+- Lines added and removed, ahead/behind and landed badges on rows; sort, filter,
+  rename.
 - Pre and post hooks for create and delete, shareable in `.multishell.json`.
 - libghostty for the terminals, JSON themes, Open in Editor, and no changes to
   your shell's rc files.
@@ -81,7 +86,7 @@ only.
 
 Every line of code was written by an AI (Claude), under direction from a human
 who set the requirements and reviewed the results in the running app. The design
-decisions under `docs/design/` were argued out in that conversation. The
+decisions under `Docs/design/` were argued out in that conversation. The
 architecture, the trade-offs and what shipped were human calls.
 
 ## License

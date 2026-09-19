@@ -2,7 +2,7 @@ import Foundation
 
 /// Any JSON, kept as read. For the keys of a committed file this build has
 /// no field for, which an export writes back rather than drops.
-public enum JSONValue: Codable, Hashable, Sendable {
+enum JSONValue: Codable, Hashable, Sendable {
   case null
   case bool(Bool)
   case integer(Int)
@@ -11,7 +11,7 @@ public enum JSONValue: Codable, Hashable, Sendable {
   case array([JSONValue])
   case object([String: JSONValue])
 
-  public init(from decoder: any Decoder) throws {
+  init(from decoder: any Decoder) throws {
     let single = try decoder.singleValueContainer()
     if single.decodeNil() {
       self = .null
@@ -30,7 +30,7 @@ public enum JSONValue: Codable, Hashable, Sendable {
     }
   }
 
-  public func encode(to encoder: any Encoder) throws {
+  func encode(to encoder: any Encoder) throws {
     var single = encoder.singleValueContainer()
     switch self {
     case .null: try single.encodeNil()

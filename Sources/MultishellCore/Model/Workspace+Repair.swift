@@ -2,7 +2,7 @@ import Foundation
 
 extension Workspace {
   /// Restores the invariants the store maintains between its collections
-  /// after state comes off disk; see docs/design/state-and-store.md.
+  /// after state comes off disk; see Docs/design/state-and-store.md.
   public mutating func repairReferences() {
     // A file can hold one identity twice where the store cannot, and a
     // repeat traps the first dictionary built from it. First entry wins.

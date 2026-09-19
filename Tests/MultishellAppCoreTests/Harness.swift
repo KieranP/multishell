@@ -210,7 +210,7 @@ final class Harness {
     model = AppModel(
       store: store, host: engine, worktrees: nil, watcher: watcher, platform: platform,
       stateSource: source, notifier: notifier)
-    model.statusPace = .unpaced
+    model.statusReads.pace = .unpaced
     let path = tmp.appendingPathComponent("bin").path
     model.captureLoginEnvironment = {
       LoginShellEnvironment(

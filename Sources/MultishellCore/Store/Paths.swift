@@ -1,9 +1,9 @@
 import Foundation
 
 /// Where Multishell keeps its state on each platform, and the only OS branch
-/// in the core; see docs/develop/state-on-disk.md.
+/// in the core; see Docs/develop/state-on-disk.md.
 public enum Paths {
-  public static var configDirectory: URL {
+  static var configDirectory: URL {
     #if os(Linux)
       let environment = ProcessInfo.processInfo.environment
       let base =
@@ -22,8 +22,8 @@ public enum Paths {
   public static let variantKey = "MultishellVariant"
 
   /// Debug builds keep their own files, a worktree build naming itself; see
-  /// docs/develop/state-on-disk.md. The name rides in the bundle.
-  public static var variant: String {
+  /// Docs/develop/state-on-disk.md. The name rides in the bundle.
+  static var variant: String {
     #if DEBUG
       debugVariant(named: bundledVariantName)
     #else
@@ -78,7 +78,7 @@ public enum Paths {
 
   /// Where generated shell-integration files live, so the command-status
   /// hooks reach these terminals only and never the user's own rc files.
-  public static var integrationDirectory: URL {
+  static var integrationDirectory: URL {
     configDirectory.appendingPathComponent("integration\(variant)", isDirectory: true)
   }
 

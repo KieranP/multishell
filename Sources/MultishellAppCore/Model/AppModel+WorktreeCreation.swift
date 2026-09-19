@@ -38,13 +38,13 @@ extension AppModel {
   /// The sheet's Cancel while the pre-create hook or git runs. A stopped
   /// add leaves what git had made; the next refresh lists it or not.
   public func cancelWorktreeCreation() {
-    creationStopper?.stop()
+    workInFlight.cancelCreation()
   }
 
   /// A step reported by the create `stopper` belongs to, and dropped once
   /// that create has ended: a late one would silence the shared-hooks question.
   func noteCreationStep(_ step: WorktreeCreationStep, of stopper: ProcessStopper) {
-    guard creationStopper === stopper else { return }
+    guard workInFlight.isCreating(with: stopper) else { return }
     worktreeCreationStep = step
   }
 
@@ -68,10 +68,10 @@ extension AppModel {
       of: worktrees.plannedPath(
         forBranch: branch, createBranch: createBranch, in: resolved, settings: settings))
     let stopper = ProcessStopper()
-    creationStopper = stopper
+    workInFlight.beginCreation(with: stopper)
     defer {
       worktreeCreationStep = nil
-      creationStopper = nil
+      workInFlight.endCreation()
       if let claimed { endConstruction(of: claimed, in: project) }
     }
     let path: URL
@@ -105,27 +105,33 @@ extension AppModel {
       let created = workspace.worktree(path.standardizedFileURL.path)
         ?? workspace.worktrees(of: project.id).first(where: { $0.branch == name })
     else { return }
-    // The file lists and the hook run in the pane, not under the sheet: a
-    // build cache is not worth holding the window for.
-    let placements = WorktreePlacement.allCases.filter {
-      !WorktreeFiles.paths(in: $0.paths(in: resolved.settings)).isEmpty
-    }
-    let hasHook = WorktreeHooks.hasScript(resolved.settings.postCreateHook)
-    let first: WorktreeOperation.Step? =
-      placements.first.map(WorktreeOperation.Step.init) ?? (hasHook ? .postCreateHook : nil)
-    if let first {
-      worktreeOperations.begin(first, on: created.id)
-      // Made here, not in the task: a Cancel clicked before the task has
-      // run would otherwise find nothing to stop.
-      let stopper = ProcessStopper()
-      stageStoppers[created.id] = stopper
-      worktreeSetups[created.id] = Task {
-        await prepareWorktree(
-          created, branch: name, in: resolved, shellPath: shell, stopper: stopper,
-          placements: placements, runningHook: hasHook)
-      }
-    }
+    beginWorktreeSetup(of: created, branch: name, in: resolved, shellPath: shell)
     select(created, openingFirstTab: .onCreate)
+  }
+
+  /// The file lists and the post-create hook run in the pane, not under the
+  /// sheet: a build cache is not worth holding the window for.
+  private func beginWorktreeSetup(
+    of worktree: Worktree, branch: String, in project: Project, shellPath: String?
+  ) {
+    let placements = WorktreePlacement.allCases.filter {
+      !WorktreeFiles.paths(in: $0.paths(in: project.settings)).isEmpty
+    }
+    let runningHook = WorktreeHooks.hasScript(.postCreate, in: project.settings)
+    let first: WorktreeOperation.Step? =
+      placements.first.map(WorktreeOperation.Step.init) ?? (runningHook ? .postCreateHook : nil)
+    guard let first else { return }
+    worktreeOperations.begin(first, on: worktree.id)
+    // Made here, not in the task: a Cancel clicked before the task has run
+    // would otherwise find nothing to stop.
+    let stopper = ProcessStopper()
+    workInFlight.arm(stopper, on: worktree.id)
+    workInFlight.setSetup(
+      Task {
+        await prepareWorktree(
+          worktree, branch: branch, in: project, shellPath: shellPath, stopper: stopper,
+          placements: placements, runningHook: runningHook)
+      }, on: worktree.id)
   }
 
   /// What a new worktree gets before its first terminal: the file lists, then
@@ -169,8 +175,7 @@ extension AppModel {
 
   /// Lets go of the task and its stop handle, whichever stage ended.
   private func endSetup(of worktree: Worktree, stopper: ProcessStopper) {
-    worktreeSetups[worktree.id] = nil
-    if stageStoppers[worktree.id] === stopper { stageStoppers[worktree.id] = nil }
+    workInFlight.end(worktree.id, stoppedBy: stopper)
     readBadges(of: worktree.id, in: worktree.projectID)
   }
 
@@ -179,18 +184,14 @@ extension AppModel {
   func claimConstruction(of planned: URL) -> Worktree.ID? {
     let id = planned.standardizedFileURL.path
     guard workspace.worktree(id) == nil else { return nil }
-    creatingWorktreeClaims[id, default: 0] += 1
+    workInFlight.claim(id)
     return id
   }
 
   /// One claim let go, not the path: another create may still hold it.
   /// A stage that has begun reads when it ends instead.
   func endConstruction(of id: Worktree.ID, in project: Project) {
-    if let count = creatingWorktreeClaims[id], count > 1 {
-      creatingWorktreeClaims[id] = count - 1
-    } else {
-      creatingWorktreeClaims[id] = nil
-    }
+    workInFlight.release(id)
     if !worktreeOperations.isUnderWay(id) { readBadges(of: id, in: project.id) }
   }
 

@@ -89,12 +89,11 @@ public struct PresentedError: Identifiable {
       title = t("error.git-not-found-title")
       message = t("error.git-not-found-message")
       saysGitIsMissing = true
-    case let failure as SocketFailure where failure.kind == .inUse:
-      title = t("error.another-app-title")
-      message = t("error.another-app-message", failure.path)
     case let failure as SocketFailure:
-      title = t("error.socket-title")
-      message = t("error.socket-message", String(describing: failure))
+      (title, message) = Self.socketAlert(failure)
+    case let failure as PipeUnavailable:
+      title = t("error.no-pipe-title")
+      message = Self.pipeMessage(failure)
     case let entries as UnreadableHookEntries:
       title = t("error.unknown-hooks-title")
       message = t("error.unknown-hooks-message", entries.file.path, entries.event)
@@ -126,6 +125,11 @@ public struct PresentedError: Identifiable {
   /// A hook's own words, startup noise cut away, then its exit status.
   /// Never the command line it ran as; a stop gives its reason instead.
   private static func describe(_ error: any Error) -> String {
+    // Each says it in English on itself, two from a target with no
+    // catalogue to reach; see Docs/design/translation.md.
+    if error is ShellUnavailable { return t("error.no-shell") }
+    if error is TrashTookNothing { return t("error.trash-took-nothing") }
+    if let failure = error as? PipeUnavailable { return Self.pipeMessage(failure) }
     if let failure = error as? ProcessFailure {
       let ending =
         switch failure.stop {
@@ -138,6 +142,33 @@ public struct PresentedError: Identifiable {
         : t("error.said-then-ending", failure.message, ending)
     }
     return String(describing: error)
+  }
+
+  private static func pipeMessage(_ failure: PipeUnavailable) -> String {
+    t("error.no-pipe-message", String(cString: strerror(failure.code)), failure.code)
+  }
+
+  /// A second copy holding the socket is its own alert; the rest say what
+  /// the call was. Only `strerror` stays in English, being the system's.
+  private static func socketAlert(_ failure: SocketFailure) -> (title: String, message: String) {
+    switch failure.kind {
+    case .inUse:
+      (t("error.another-app-title"), t("error.another-app-message", failure.path))
+    case .pathTooLong:
+      (
+        t("error.socket-title"),
+        t("error.socket-message", t("error.socket-path-too-long", failure.path))
+      )
+    case .system(let operation, let code):
+      (
+        t("error.socket-title"),
+        t(
+          "error.socket-message",
+          t(
+            "error.socket-call-failed", operation, failure.path,
+            String(cString: strerror(code)), code))
+      )
+    }
   }
 
   private static func seconds(_ duration: Duration) -> Int {
