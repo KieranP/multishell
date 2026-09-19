@@ -6,8 +6,8 @@ import UniformTypeIdentifiers
 @testable import Multishell
 
 /// The identifiers this app spells twice, once in Swift and once in the
-/// `Info.plist` that `Scripts/make-app.sh` writes, and the permission strings
-/// that plist alone declares.
+/// `Info.plist` template `Scripts/make-app.sh` fills in, and the permission
+/// strings that plist alone declares.
 ///
 /// Nothing at build time joins the two, and nothing at run time notices they
 /// have parted. Every other test on either side reads the same constant on
@@ -20,15 +20,15 @@ struct BundleDeclarationTests {
   /// places; this is what catches it not being.
   @Test func theDraggedTabTypeIsDeclaredInTheBundleTheScriptWrites() throws {
     let identifier = TabTransfer.contentType.identifier
-    // The Bool first, not `script.contains(…)` inside the expectation:
+    // The Bool first, not `template.contains(…)` inside the expectation:
     // swift-testing prints the expression it was given, and that one prints
-    // the whole shell script over the message that says what is wrong.
-    let isDeclared = try makeAppScript().contains(
+    // the whole template over the message that says what is wrong.
+    let isDeclared = try infoPlistTemplate().contains(
       "<key>UTTypeIdentifier</key><string>\(identifier)</string>")
     #expect(
       isDeclared,
       """
-      make-app.sh does not declare \(identifier) as an exported type. TabTransfer and the \
+      Info.plist.in does not declare \(identifier) as an exported type. TabTransfer and the \
       Info.plist have to agree, or the drag type the app uses is not the one the bundle exports.
       """)
   }
@@ -38,13 +38,13 @@ struct BundleDeclarationTests {
   /// Docs/develop/permissions.md tells you to run exactly that.
   @Test func theLoggingSubsystemIsTheBundleIdentifier() throws {
     let subsystem = MacPlatform.loggingSubsystem
-    let isBundleIdentifier = try makeAppScript().contains(
+    let isBundleIdentifier = try infoPlistTemplate().contains(
       "<key>CFBundleIdentifier</key><string>\(subsystem)</string>")
     #expect(
       isBundleIdentifier,
       """
-      MacPlatform logs under \(subsystem), which is not the bundle identifier make-app.sh \
-      writes, so the `log show` predicate in Docs/develop/permissions.md finds none of \
+      MacPlatform logs under \(subsystem), which is not the bundle identifier Info.plist.in \
+      carries, so the `log show` predicate in Docs/develop/permissions.md finds none of \
       this app's lines.
       """)
   }
@@ -57,11 +57,11 @@ struct BundleDeclarationTests {
   /// wants anyway, and the two worktrees go back to sharing one state file
   /// and one socket without a word.
   @Test func theWorktreeVariantKeyIsWrittenIntoTheBundleTheScriptWrites() throws {
-    let isWritten = try makeAppScript().contains("<key>\(Paths.variantKey)</key>")
+    let isWritten = try infoPlistTemplate().contains("<key>\(Paths.variantKey)</key>")
     #expect(
       isWritten,
       """
-      make-app.sh does not write \(Paths.variantKey), so Paths.variant finds nothing and \
+      Info.plist.in does not carry \(Paths.variantKey), so Paths.variant finds nothing and \
       every worktree's debug build shares one state file and one socket again.
       """)
   }
@@ -71,13 +71,13 @@ struct BundleDeclarationTests {
   /// are matched too: an empty string is a key TCC does not count.
   @Test func theMicrophoneUsageStringIsDeclaredInTheBundleTheScriptWrites() throws {
     let isDeclared =
-      try makeAppScript().range(
+      try infoPlistTemplate().range(
         of: #"<key>NSMicrophoneUsageDescription</key>\s*<string>[^<]+</string>"#,
         options: .regularExpression) != nil
     #expect(
       isDeclared,
       """
-      make-app.sh writes no NSMicrophoneUsageDescription with words in it, so TCC kills \
+      Info.plist.in carries no NSMicrophoneUsageDescription with words in it, so TCC kills \
       anything that asks for the microphone in a terminal instead of showing the alert, and \
       Multishell never appears under Microphone in Privacy & Security.
       """)
@@ -85,28 +85,26 @@ struct BundleDeclarationTests {
 
   /// Read from the checkout rather than the built bundle: these tests run
   /// against the package, which has no `Info.plist` of its own, and the
-  /// point is to check the source the script generates it from.
-  private func makeAppScript() throws -> String {
+  /// point is to check the source the script fills in.
+  private func infoPlistTemplate() throws -> String {
     // …/Apps/macOS/Tests/MultishellTests/App/<this file>
-    let root = URL(fileURLWithPath: #filePath)
+    let macOS = URL(fileURLWithPath: #filePath)
       .deletingLastPathComponent()  // App
       .deletingLastPathComponent()  // MultishellTests
       .deletingLastPathComponent()  // Tests
       .deletingLastPathComponent()  // macOS
-      .deletingLastPathComponent()  // Apps
-      .deletingLastPathComponent()  // the checkout
-    let script = root.appendingPathComponent("Scripts/make-app.sh")
-    guard FileManager.default.fileExists(atPath: script.path) else {
-      throw ScriptNotFound(path: script.path)
+    let template = macOS.appendingPathComponent("Resources/Info.plist.in")
+    guard FileManager.default.fileExists(atPath: template.path) else {
+      throw TemplateNotFound(path: template.path)
     }
-    return try String(contentsOf: script, encoding: .utf8)
+    return try String(contentsOf: template, encoding: .utf8)
   }
 }
 
 /// Thrown rather than returned empty, so a checkout laid out differently
 /// fails saying where it looked instead of passing on a string with nothing
 /// in it.
-private struct ScriptNotFound: Error, CustomStringConvertible {
+private struct TemplateNotFound: Error, CustomStringConvertible {
   let path: String
-  var description: String { "make-app.sh not found at \(path)" }
+  var description: String { "Info.plist.in not found at \(path)" }
 }

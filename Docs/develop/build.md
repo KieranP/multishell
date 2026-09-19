@@ -4,11 +4,10 @@
 
 Xcode 26 with Swift 6 (`sudo xcode-select -s /Applications/Xcode.app` if only
 the command line tools are active; the app build runs `xcodebuild`, which the
-command line tools alone do not have), and Xcode 27 for `make build` and
-`make release`, for the reason under the helper below. `git` on PATH. `prettier`
-for the Markdown half of `make format`, `brew install prettier`. CI does not run
-it; the Claude Code hook `.claude/hooks/format-markdown.sh` runs it on every
-`.md` the agent writes.
+command line tools alone do not have). `git` on PATH. `prettier` for the
+Markdown half of `make format`, `brew install prettier`. CI does not run it; the
+Claude Code hook `.claude/hooks/format-markdown.sh` runs it on every `.md` the
+agent writes.
 
 ## Build, test, run
 
@@ -26,11 +25,28 @@ make lint              # what CI runs, --strict: a warning fails
 
 `Scripts/make-app.sh` builds the app binary with `xcodebuild` (below), wraps it
 in a bundle, copies the SwiftPM resource bundles into `Contents/Resources`
-(libghostty's terminfo must be there), builds the helper with `swift build` into
+(libghostty's terminfo must be there), builds the CLI the same way into
 `Contents/Helpers`, writes the Info.plist and signs both.
 `CFBundleShortVersionString` = `<commit date>-<short sha>`, `-dirty` for a
 modified tree; `CFBundleVersion` = the commit count, that key taking digits and
 dots only. First app build downloads the libghostty xcframework, ~80 MB.
+
+`Scripts/build-lib.sh` holds the parts that drive xcodebuild and codesign, and
+is sourced, not run. What stays in `make-app.sh` is what is particular to this
+bundle: the paths, the version and the worktree variant. The Info.plist is a
+template, `Apps/macOS/Resources/Info.plist.in`, filled in by placeholder;
+BundleDeclarationTests reads it out of the checkout (tests.md). Substitution is
+bash's own, so a value may hold a newline or an `&` without escaping.
+
+Three things the scripts do that their code cannot say. macOS needs a bundle for
+a Dock icon, activation and the menu bar, and SwiftPM emits an executable
+instead. A worktree's name is spelled down to letters, digits, `_` and `-`
+before it reaches the Info.plist, because an unescaped `&` in a branch name
+makes the whole file unparseable and a bundle whose Info.plist will not parse
+does not launch. And `CFBundleLocalizations` is built from the app half's
+`.lproj` folders alone, which is what makes a language pickable in System
+Settings; the libraries' half has to keep pace, or the app draws its windows
+translated and says the model's words in English.
 
 `make signing-identity` creates the self-signed `Multishell Dev` certificate;
 without it the build signs ad hoc and says so. Not for distribution: it is so
@@ -62,18 +78,17 @@ relaunch trapped on the first terminal. Xcode's own build of the same package
 generates an accessor that looks in `Contents/Resources` first and writes no
 path, under Xcode 26 and 27 alike, so `make-app.sh` runs `xcodebuild` for the
 app binary and refuses one that carries a build path. Xcode 27's `swift build`
-writes no path either, but the floor for the tests stays at 26. The helper is
-built with `swift build` and checked the same way, since it reads
-MultishellCore's catalogue on every hook: under Xcode 26 it would carry the path
-and `make build` be refused at that check, rather than installing a helper whose
-every hook traps after the next `make clean`. So the app build needs 27 until
-the helper too comes from `xcodebuild`; only 27 has run it.
+writes no path either, but the floor stays at 26, which the tests build under.
+The CLI reads MultishellCore's catalogue on every hook, so it would fail the
+same way; it too comes from `xcodebuild`, on the root package's `multishell`
+scheme into `.build/xcode`, and goes through the same three checks as the app
+binary. Only Xcode 27 has run this; nobody has built it under 26.
 
-The refusal, and the two checks after it, pipe into `grep -c` rather than
-`grep -q`: under `pipefail` a `-q` that quits at its first match leaves
-`strings` writing into a closed pipe, SIGPIPE makes the pipeline's status 141,
-and the `if` reads a match as a miss. With 1.3 MB of strings against a 64 KB
-pipe buffer, the check could only ever fire on a match in the last 64 KB.
+The three checks pipe into `grep -c` rather than `grep -q`: under `pipefail` a
+`-q` that quits at its first match leaves `strings` writing into a closed pipe,
+SIGPIPE makes the pipeline's status 141, and the `if` reads a match as a miss.
+With 1.3 MB of strings against a 64 KB pipe buffer, the check could only ever
+fire on a match in the last 64 KB.
 
 Two things the auto-generated package scheme does that the script undoes. It
 signs, ad hoc, which the script does itself afterwards with the certificate, so
@@ -90,11 +105,12 @@ xcodebuild warns that it is using the first, `variant=macOS` is refused, and a
 package build without `-destination` is refused. The first is plain macOS in
 every run so far, and the script checks the binary's `LC_BUILD_VERSION` says so
 rather than trusting the order. And `-quiet` prints "failed with exit code 0"
-for a compile that only warned, so the run is written to
-`Apps/macOS/.build/xcode/xcodebuild-<Configuration>.log` instead, shown whole on
-failure, and on success only its `warning:` and `error:` lines, one each. Cost:
-xcodebuild keeps its own directory under `Apps/macOS/.build/xcode`, so the app
-compiles twice for anyone running both `make test` and `make build`.
+for a compile that only warned, so each run is written to that package's
+`.build/xcode/xcodebuild-<Configuration>.log` instead, shown whole on failure,
+and on success only its `warning:` and `error:` lines, one each. Cost:
+xcodebuild keeps its own directory under each package's `.build/xcode`, so both
+the app and the libraries compile twice for anyone running `make test` and
+`make build`.
 
 CI: three jobs on `macos-15`, in parallel: `swift build` and `swift test` for
 the root package, the same for `Apps/macOS`, and `make lint`. CI runs

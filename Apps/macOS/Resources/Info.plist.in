@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key><string>Multishell</string>
+    <key>CFBundleDisplayName</key><string>Multishell</string>
+    <key>CFBundleIdentifier</key><string>io.multishell.app</string>
+    <key>CFBundleExecutable</key><string>Multishell</string>
+    <key>CFBundlePackageType</key><string>APPL</string>
+    <key>CFBundleShortVersionString</key><string>@VERSION@</string>
+    <key>CFBundleVersion</key><string>@BUILD@</string>
+    <key>CFBundleIconFile</key><string>Multishell</string>
+    <key>MultishellVariant</key><string>@VARIANT@</string>
+    <key>CFBundleDevelopmentRegion</key><string>en</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+@LOCALIZATIONS@
+    </array>
+    <key>LSMinimumSystemVersion</key><string>14.0</string>
+    <key>NSHighResolutionCapable</key><true/>
+    <!-- What macOS puts under its own line in the permission alert; a missing
+         string costs the alert its reason or kills the asker. permissions.md. -->
+    <key>NSNetworkVolumesUsageDescription</key>
+    <string>A command you ran in a Multishell terminal is reading files on a network volume.</string>
+    <key>NSRemovableVolumesUsageDescription</key>
+    <string>A command you ran in a Multishell terminal is reading files on a removable volume.</string>
+    <key>NSDesktopFolderUsageDescription</key>
+    <string>A command you ran in a Multishell terminal is reading files on your Desktop.</string>
+    <key>NSDocumentsFolderUsageDescription</key>
+    <string>A command you ran in a Multishell terminal is reading files in your Documents folder.</string>
+    <key>NSDownloadsFolderUsageDescription</key>
+    <string>A command you ran in a Multishell terminal is reading files in your Downloads folder.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>A command you ran in a Multishell terminal is reading your photo library.</string>
+    <key>NSAppleMusicUsageDescription</key>
+    <string>A command you ran in a Multishell terminal is reading your media library.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>A command you ran in a Multishell terminal is recording from your microphone.</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Multishell asks the system to install its command line tool, which needs an administrator.</string>
+    <!-- The pasteboard type a dragged tab carries. Declared so macOS knows
+         it is ours; see TabTransfer. -->
+    <key>UTExportedTypeDeclarations</key>
+    <array>
+        <dict>
+            <key>UTTypeIdentifier</key><string>io.multishell.tab</string>
+            <key>UTTypeDescription</key><string>Multishell Terminal Tab</string>
+            <key>UTTypeConformsTo</key><array><string>public.data</string></array>
+        </dict>
+    </array>
+</dict>
+</plist>

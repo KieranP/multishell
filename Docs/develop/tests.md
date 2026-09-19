@@ -34,8 +34,8 @@ What each test catches, and the conventions a new one follows.
   AppShortcutTests, pinned against the config Ghostty was given before it was
   derived.
 - Identifiers spelled in both Swift and the generated `Info.plist` still match:
-  BundleDeclarationTests, reading `make-app.sh` out of the checkout. Nothing at
-  build or run time notices these having parted.
+  BundleDeclarationTests, reading `Info.plist.in` out of the checkout. Nothing
+  at build or run time notices these having parted.
 - Each override binds to its own setting: SettingsBindingTests, since
   `hasOverride` and `overrideValue` take the same arguments and return the same
   type.

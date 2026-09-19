@@ -1,9 +1,9 @@
 # Permissions macOS asks for
 
 An alert provoked by a command in a pane names Multishell, macOS holding the
-spawning app responsible. The usage strings in `make-app.sh`'s Info.plist are
-the only place that can say otherwise; extend them when a pane reaches somewhere
-new.
+spawning app responsible. The usage strings in
+`Apps/macOS/Resources/Info.plist.in` are the only place that can say otherwise;
+extend them when a pane reaches somewhere new.
 
 What a missing string costs depends on the service: a folder is denied and the
 alert names no reason, while the microphone and the other device services kill

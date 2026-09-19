@@ -21,9 +21,9 @@
 
 ## Install
 
-Requires macOS with Xcode 27 and `git` on your `PATH`. Xcode 26 builds and tests
-the libraries, but `make install` below goes through `xcodebuild`, which needs
-27; see [Docs/develop/build.md](Docs/develop/build.md).
+Requires macOS with Xcode 26 or later and `git` on your `PATH`. `make install`
+below goes through `xcodebuild`, which the command line tools alone do not have;
+see [Docs/develop/build.md](Docs/develop/build.md).
 
 ```sh
 git clone https://github.com/KieranP/multishell.git

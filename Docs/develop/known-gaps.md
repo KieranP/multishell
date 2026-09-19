@@ -149,10 +149,9 @@ goes under Unconfirmed behaviour, and moves up when someone does.
   `swift build` had already stopped writing the build path it was switched away
   from (build.md). That Xcode 26's xcodebuild writes none either rests on its
   accessor having looked in `Contents/Resources` since packages could carry
-  resources, not on a run. The helper is checked too and is built with
-  `swift build`, so under 26 the build is expected to be refused at that check
-  rather than install a helper that breaks at the next `make clean`; neither
-  outcome has been watched there. Fallback = Xcode 27.
+  resources, not on a run. The helper now comes from `xcodebuild` too, so the
+  same expectation covers it; nobody has watched either under 26. Fallback =
+  Xcode 27.
 - The sheet's Cancel ending a running `git worktree add` is tested against a
   fake git that sleeps, not against a real checkout held by an LFS smudge or a
   credential helper; what git leaves behind when signalled mid-checkout, and

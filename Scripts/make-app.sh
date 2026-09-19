@@ -1,233 +1,57 @@
 #!/bin/bash
-# Wraps the SPM executable into Multishell.app.
-#
-# SwiftPM cannot emit an app bundle, and macOS needs one for a Dock icon,
-# activation, and the menu bar. Xcode replaces this once signing matters.
+# Wraps the SPM executable into Multishell.app, the bundle macOS needs and
+# SwiftPM cannot emit; build.md.
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$root/Scripts/build-lib.sh"
+
 config="${1:-debug}"
-package="$root/Apps/macOS"
-app="$root/build/Multishell.app"
 case "$config" in
     debug) configuration=Debug ;;
     release) configuration=Release ;;
-    *) echo "error: config is debug or release, not '$config'" >&2; exit 1 ;;
+    *) die "error: config is debug or release, not '$config'" ;;
 esac
-derived="$package/.build/xcode"
-build="$derived/Build/Products/$configuration"
 
-# The version names the commit, so a bug report identifies what was installed.
-# CFBundleVersion takes only digits and dots, hence the commit count there and
-# the readable string in CFBundleShortVersionString. A tree with uncommitted
-# work says so: its binary matches no commit.
-commit="$(git -C "$root" rev-parse --short HEAD 2>/dev/null || echo unknown)"
-commits="$(git -C "$root" rev-list --count HEAD 2>/dev/null || echo 0)"
-committed="$(git -C "$root" log -1 --format=%cd --date=format:%Y.%m.%d 2>/dev/null || echo 0.0.0)"
-if [ -n "$(git -C "$root" --no-optional-locks status --porcelain 2>/dev/null)" ]; then
-    commit="$commit-dirty"
-fi
-version="$committed-$commit"
+package="$root/Apps/macOS"
+app="$root/build/Multishell.app"
+resources="$package/Sources/Multishell/Resources"
+app_derived="$package/.build/xcode"
+app_build="$app_derived/Build/Products/$configuration"
+cli_derived="$root/.build/xcode"
+cli_build="$cli_derived/Build/Products/$configuration"
 
-# A debug bundle built from a git worktree names that worktree, and Paths
-# gives it its own state file, socket, integration directory and drops: two
-# worktrees can then both `make run` without the last autosave winning. Empty
-# from the checkout, which keeps the plain `.debug` files, and empty for
-# release, which reads no key at all.
-#
-# Spelled down to a safe set here and not left to Paths, because the name goes
-# into the XML below: an unescaped `&` in a branch name makes the whole
-# Info.plist unparseable, and a bundle whose Info.plist will not parse does
-# not launch.
-worktree=""
-if [ "$(git -C "$root" rev-parse --git-dir 2>/dev/null)" \
-    != "$(git -C "$root" rev-parse --git-common-dir 2>/dev/null)" ]; then
-    worktree="$(printf %s "$(basename "$root")" | tr -c 'A-Za-z0-9_-' '-')"
-fi
-variant=""
-if [ "$config" != "release" ]; then
-    variant="$worktree"
-fi
-
-# xcodebuild rather than swift build, logged rather than -quiet, coverage and
-# its own signing off: build.md, "Why the app is built through xcodebuild".
-xcodebuild_log="$derived/xcodebuild-$configuration.log"
-mkdir -p "$derived"
-if ! (cd "$package" && xcodebuild -scheme Multishell -configuration "$configuration" \
-    -destination "platform=macOS,arch=$(uname -m)" -derivedDataPath "$derived" \
-    CODE_SIGNING_ALLOWED=NO CLANG_COVERAGE_MAPPING=NO build > "$xcodebuild_log" 2>&1); then
-    cat "$xcodebuild_log" >&2
-    exit 1
-fi
-# xcodebuild repeats a warning per compile step and again in its summary.
-grep -E ': (warning|error): ' "$xcodebuild_log" | sort -u >&2 || true
-# The helper is a product of the root package, which the app depends on but
-# cannot list as a dependency (an executable product is not linkable).
-swift build --package-path "$root" -c "$config" --product multishell
+version="$(bundle_version "$root")"
+commits="$(bundle_build_number "$root")"
+variant="$(bundle_variant "$root" "$config")"
 
 rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$app/Contents/Helpers"
-cp "$build/Multishell" "$app/Contents/MacOS/Multishell"
-cp "$root/.build/$config/multishell" "$app/Contents/Helpers/multishell"
 
-# A swift build binary carries this path; see Docs/develop/build.md. grep -c,
-# not -q: under pipefail an early quit kills strings and the match reads as a miss.
-for binary in "$app/Contents/MacOS/Multishell" "$app/Contents/Helpers/multishell"; do
-    if strings "$binary" | grep -c '\.build/.*\.bundle$' >/dev/null; then
-        echo "error: $binary looks for its resource bundles under a .build directory," >&2
-        echo "       so the installed app would stop working at the next build there." >&2
-        echo "       See Docs/develop/build.md." >&2
-        exit 1
-    fi
-done
-if otool -l "$app/Contents/MacOS/Multishell" | grep -c __llvm_prf >/dev/null; then
-    echo "error: the binary is instrumented for code coverage, which slows it and" >&2
-    echo "       writes profile files at exit; xcodebuild ignored CLANG_COVERAGE_MAPPING=NO." >&2
-    exit 1
-fi
-# The destination also matches Mac Catalyst, and xcodebuild takes the first.
-if ! otool -l "$app/Contents/MacOS/Multishell" | grep -A2 LC_BUILD_VERSION | grep -c 'platform 1$' >/dev/null; then
-    echo "error: the binary was not built for macOS itself; xcodebuild took another" >&2
-    echo "       variant of the destination. See Docs/develop/build.md." >&2
-    exit 1
-fi
+# Build, verify, and copy the App
+xcode_build "$package" Multishell "$app_derived" "$configuration"
+verify_binary "$app_build/Multishell"
+cp "$app_build/Multishell" "$app/Contents/MacOS/Multishell"
 
-# GhosttyTerminal ships terminfo and config as SPM resource bundles; without
-# them libghostty starts with no terminfo and every child process misbehaves.
-bundles=0
-for bundle in "$build"/*.bundle; do
-    [ -e "$bundle" ] || continue
-    cp -R "$bundle" "$app/Contents/Resources/"
-    bundles=$((bundles + 1))
-done
-# Counted, because a glob matching nothing is no error to `set -e`: the build
-# used to finish quietly on an app whose terminals all misbehave.
-if [ "$bundles" -eq 0 ]; then
-    echo "error: no resource bundles in $build; libghostty would start with no" >&2
-    echo "       terminfo. Build the package first." >&2
-    exit 1
-fi
+# Build, verify, and copy the CLI
+xcode_build "$root" multishell "$cli_derived" "$configuration"
+verify_binary "$cli_build/multishell"
+cp "$cli_build/multishell" "$app/Contents/Helpers/multishell"
 
+copy_resource_bundles "$app_build" "$app/Contents/Resources"
 cp "$package/Resources/Multishell.icns" "$app/Contents/Resources/Multishell.icns"
+copy_info_plist_strings "$resources" "$app/Contents/Resources"
 
-# InfoPlist.strings alone, which is the one macOS reads through Bundle.main:
-# it translates the permission strings written into the Info.plist below.
-# The app's own words are Localizable.strings in the same folder, and they
-# travel in the target's resource bundle with everything else, so copying
-# the whole folder would put a second copy of them here.
-for lproj in "$package"/Sources/Multishell/Resources/*.lproj; do
-    [ -f "$lproj/InfoPlist.strings" ] || continue
-    mkdir -p "$app/Contents/Resources/$(basename "$lproj")"
-    cp "$lproj/InfoPlist.strings" "$app/Contents/Resources/$(basename "$lproj")/"
-done
+render_template "$package/Resources/Info.plist.in" \
+    @VERSION@ "$version" \
+    @BUILD@ "$commits" \
+    @VARIANT@ "$variant" \
+    @LOCALIZATIONS@ "$(bundle_localizations "$resources")" \
+    > "$app/Contents/Info.plist"
 
-# The languages the app has, taken from this frontend's own catalogue.
-# macOS reads this list for its per-app language setting, and looks for it
-# here rather than in the resource bundle the catalogue travels in. The
-# libraries' catalogue has to keep pace: a language listed here whose
-# Sources half is missing draws its windows translated and says the model's
-# half in English.
-localizations=""
-for lproj in "$package"/Sources/Multishell/Resources/*.lproj; do
-    [ -d "$lproj" ] || continue
-    localizations="$localizations        <string>$(basename "$lproj" .lproj)</string>
-"
-done
-
-cat > "$app/Contents/Info.plist" <<PLIST
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>CFBundleName</key><string>Multishell</string>
-    <key>CFBundleDisplayName</key><string>Multishell</string>
-    <key>CFBundleIdentifier</key><string>io.multishell.app</string>
-    <key>CFBundleExecutable</key><string>Multishell</string>
-    <key>CFBundlePackageType</key><string>APPL</string>
-    <key>CFBundleShortVersionString</key><string>$version</string>
-    <key>CFBundleVersion</key><string>$commits</string>
-    <key>CFBundleIconFile</key><string>Multishell</string>
-    <key>MultishellVariant</key><string>$variant</string>
-    <key>CFBundleDevelopmentRegion</key><string>en</string>
-    <key>CFBundleLocalizations</key>
-    <array>
-$localizations    </array>
-    <key>LSMinimumSystemVersion</key><string>14.0</string>
-    <key>NSHighResolutionCapable</key><true/>
-    <!-- What macOS puts under its own line in the permission alert. A
-         terminal reaches these places because a command run in one did, and
-         the alert names this app rather than that command: macOS holds the
-         app that spawned a process responsible for what the process reads.
-         A missing string costs a folder its reason and the microphone the
-         asking process, which TCC kills; permissions.md. -->
-    <key>NSNetworkVolumesUsageDescription</key>
-    <string>A command you ran in a Multishell terminal is reading files on a network volume.</string>
-    <key>NSRemovableVolumesUsageDescription</key>
-    <string>A command you ran in a Multishell terminal is reading files on a removable volume.</string>
-    <key>NSDesktopFolderUsageDescription</key>
-    <string>A command you ran in a Multishell terminal is reading files on your Desktop.</string>
-    <key>NSDocumentsFolderUsageDescription</key>
-    <string>A command you ran in a Multishell terminal is reading files in your Documents folder.</string>
-    <key>NSDownloadsFolderUsageDescription</key>
-    <string>A command you ran in a Multishell terminal is reading files in your Downloads folder.</string>
-    <key>NSPhotoLibraryUsageDescription</key>
-    <string>A command you ran in a Multishell terminal is reading your photo library.</string>
-    <key>NSAppleMusicUsageDescription</key>
-    <string>A command you ran in a Multishell terminal is reading your media library.</string>
-    <key>NSMicrophoneUsageDescription</key>
-    <string>A command you ran in a Multishell terminal is recording from your microphone.</string>
-    <key>NSAppleEventsUsageDescription</key>
-    <string>Multishell asks the system to install its command line tool, which needs an administrator.</string>
-    <!-- The pasteboard type a dragged tab carries. Declared so macOS knows
-         it is ours; see TabTransfer. -->
-    <key>UTExportedTypeDeclarations</key>
-    <array>
-        <dict>
-            <key>UTTypeIdentifier</key><string>io.multishell.tab</string>
-            <key>UTTypeDescription</key><string>Multishell Terminal Tab</string>
-            <key>UTTypeConformsTo</key><array><string>public.data</string></array>
-        </dict>
-    </array>
-</dict>
-</plist>
-PLIST
-
-# Signing. An unsigned bundle is killed on launch on Apple silicon, so this is
-# not optional, but which identity signs decides whether the app keeps the
-# privacy permissions the user granted it. TCC keys a grant to the signature's
-# designated requirement, and an ad-hoc signature's requirement is a bare
-# cdhash: it changes with every build, so each install asks again for the
-# volumes and folders a terminal reaches, and the App Management box the user
-# ticked stops matching and silently denies. A certificate makes the
-# requirement name the certificate, which outlives a rebuild.
-# Scripts/make-signing-identity.sh creates it; ad-hoc is the fallback so a
-# fresh clone still builds.
-identity="${MULTISHELL_SIGN_IDENTITY:-Multishell Dev}"
-if [ "$identity" != "-" ] && ! security find-certificate -c "$identity" >/dev/null 2>&1; then
-    echo "note: no '$identity' certificate; signing ad hoc, so macOS will ask" >&2
-    echo "      for file permissions again after this install. Create one:" >&2
-    echo "      make signing-identity" >&2
-    identity="-"
-fi
-
-sign() {
-    if output="$(codesign --force --sign "$identity" "$1" 2>&1)"; then
-        return
-    fi
-    if [ "$identity" = "-" ]; then
-        echo "warning: ad-hoc signing $1 failed, and macOS kills an unsigned" >&2
-        echo "         bundle on launch: $output" >&2
-        return
-    fi
-    # Worth the noise: a silent fall back to ad hoc is what the certificate
-    # exists to avoid, and the reason is the only way to fix it.
-    echo "warning: signing $1 as '$identity' failed; signing ad hoc" >&2
-    echo "         $output" >&2
-    codesign --force --sign - "$1" >/dev/null 2>&1 || true
-}
-
-sign "$app/Contents/Helpers/multishell"
-sign "$app"
+identity="$(signing_identity)"
+sign "$identity" "$app/Contents/Helpers/multishell"
+sign "$identity" "$app"
 codesign --verify "$app" || echo "warning: $app is not validly signed" >&2
 
 echo "built $app ($version)"
