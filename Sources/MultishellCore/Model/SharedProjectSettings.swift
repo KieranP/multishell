@@ -18,12 +18,12 @@ public struct SharedProjectSettings: Equatable, Sendable {
   public var postCreateHook: String?
   public var preDeleteHook: String?
   public var postDeleteHook: String?
-  /// Paths a new worktree is symlinked to, and paths copied. Both run
-  /// nothing, so need no trust; `WorktreeFiles` refuses one reaching outside.
+  /// Paths a new worktree is symlinked to, and paths copied. A repository may
+  /// name only what is under it; `confined(to:)` drops the rest.
   public var linkedPaths: String?
   public var copiedPaths: String?
-  /// What order a project's worktree rows come in. Display only, so like the
-  /// settings above it runs nothing the repository wrote.
+  /// What order a project's worktree rows come in. Display only, changing
+  /// nothing the repository wrote on the reader's disk.
   public var worktreeSortOrder: WorktreeSortOrder?
   public var showsActiveWorktreesFirst: Bool?
   public var iconGlyph: String?
@@ -117,8 +117,8 @@ public struct SharedProjectSettings: Equatable, Sendable {
       iconTint: settings.iconTint)
   }
 
-  /// These settings over `existing`'s hooks and the keys this build could not
-  /// read, neither being the user's to drop on export; see Docs/design/settings.md.
+  /// These settings over what `existing` asks trust for and the keys this build
+  /// could not read, neither being the user's to drop; see Docs/design/settings.md.
   public func keeping(from existing: SharedProjectSettings?) -> SharedProjectSettings {
     guard let existing else { return self }
     var kept = self
@@ -126,8 +126,30 @@ public struct SharedProjectSettings: Equatable, Sendable {
     kept.postCreateHook = postCreateHook ?? existing.postCreateHook
     kept.preDeleteHook = preDeleteHook ?? existing.preDeleteHook
     kept.postDeleteHook = postDeleteHook ?? existing.postDeleteHook
+    kept.linkedPaths = linkedPaths ?? existing.linkedPaths
+    kept.copiedPaths = copiedPaths ?? existing.copiedPaths
+    kept.worktreeDirectory = worktreeDirectory ?? existing.worktreeDirectory
     kept.unread = existing.unread
     return kept
+  }
+
+  /// The three fields that put paths on the reader's disk, held to the
+  /// checkout; see settings.md. The digest is untouched, so a yes still holds.
+  public func confined(to project: Project) -> SharedProjectSettings {
+    var confined = self
+    if let directory = worktreeDirectory,
+      !RepositoryContainment.holds(
+        directory: WorktreeSettings(worktreeDirectory: directory)
+          .worktreeContainer(for: project),
+        under: project.path)
+    {
+      confined.worktreeDirectory = nil
+    }
+    confined.linkedPaths = RepositoryContainment.holding(
+      listedPaths: linkedPaths, under: project.path)
+    confined.copiedPaths = RepositoryContainment.holding(
+      listedPaths: copiedPaths, under: project.path)
+    return confined
   }
 
   /// Writes the file, sorted and indented so a diff reads well. Returns it
@@ -149,18 +171,36 @@ public struct SharedProjectSettings: Equatable, Sendable {
     try JSONDecoder().decode([String: JSONValue].self, from: JSONEncoder().encode(self))
   }
 
-  /// The four hooks as one text, what the trust question shows. For reading,
-  /// not comparing: the decision is stored against `digest`.
-  public var hooksText: String? {
-    let hooks = [
+  /// Everything the user is asked about, as one text. For reading, not
+  /// comparing; the decision is stored against `digest`.
+  public var trustedContentText: String? {
+    let sections = [
+      ("worktree directory", worktreeDirectory),
       ("pre-create", preCreateHook), ("post-create", postCreateHook),
       ("pre-delete", preDeleteHook), ("post-delete", postDeleteHook),
+      ("linked", linkedPaths), ("copied", copiedPaths),
     ]
-    let present = hooks.compactMap { name, script in script.map { "\(name):\n\($0)" } }
+    let present = sections.compactMap { name, body in body.map { "\(name):\n\($0)" } }
     return present.isEmpty ? nil : present.joined(separator: "\n\n")
   }
 
-  public var hasHooks: Bool { hooksText != nil }
+  /// Whether the file asks for anything that reaches the reader's disk, and
+  /// so waits for a yes. See Docs/design/settings.md.
+  public var asksForTrust: Bool { trustedContentText != nil }
+
+  /// The same file with everything the yes covers dropped: what an untrusted
+  /// file is allowed to decide. The fields `trustedContentText` names.
+  public var withoutWhatTrustCovers: SharedProjectSettings {
+    var drawn = self
+    drawn.worktreeDirectory = nil
+    drawn.preCreateHook = nil
+    drawn.postCreateHook = nil
+    drawn.preDeleteHook = nil
+    drawn.postDeleteHook = nil
+    drawn.linkedPaths = nil
+    drawn.copiedPaths = nil
+    return drawn
+  }
 
   /// Blank is absent where "none" and "no opinion" come to the same thing.
   /// The three worktree fields above are the exception; see settings.md.
@@ -240,9 +280,9 @@ extension SharedProjectSettings: Codable {
   }
 }
 
-/// The user's answer to "run the hooks in this repository's
-/// `.multishell.json`?", against the sha256 of the file; see settings.md.
-public struct SharedHooksDecision: Codable, Hashable, Sendable {
+/// The user's answer to "trust what this repository's `.multishell.json`
+/// asks for?", against the sha256 of the file; see settings.md.
+public struct SharedSettingsDecision: Codable, Hashable, Sendable {
   /// `FileDigest.sha256` of the `.multishell.json` this answers for.
   public var digest: String
   public var trusted: Bool

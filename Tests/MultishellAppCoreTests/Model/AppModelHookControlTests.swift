@@ -109,17 +109,17 @@ struct AppModelHookControlTests {
   @Test func aFailedLinkListStopsTheCopyListAndTheHookAndHoldsTheFirstTab() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
-    let outside = h.root.appendingPathComponent("outside")
-    try FileManager.default.createDirectory(at: outside, withIntermediateDirectories: true)
-    try "TOP SECRET".write(
-      to: outside.appendingPathComponent("key"), atomically: true, encoding: .utf8)
+    try h.divertARepositoryPathWithASymlink()
     try "SECRET=1".write(
       to: h.project.path.appendingPathComponent(".env"), atomically: true, encoding: .utf8)
-    h.model.updateSettings(
-      ProjectSettings(
-        postCreateHook: "echo ran > hook.txt", linkedPaths: "../outside/key",
-        copiedPaths: ".env"),
-      for: h.project)
+    try h.shipSharedSettings(
+      #"""
+      { "linkedPaths": "link/key", "copiedPaths": ".env",
+        "postCreateHook": "echo ran > hook.txt" }
+      """#)
+    await h.model.refresh(h.project)
+    h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
+    h.model.decideSharedSettings(try #require(h.model.pendingSharedSettingsTrust), trusted: true)
 
     await h.model.createWorktree(branch: "stuck", basedOn: nil, createBranch: true, in: h.project)
     let created = try #require(h.worktree(onBranch: "stuck"))
@@ -128,7 +128,7 @@ struct AppModelHookControlTests {
     #expect(h.model.presentedError == nil, "not an alert the sheet's dismissal would drop")
     let shown = try #require(h.model.worktreeOperations[created.id])
     #expect(shown.title == "Some files were not linked into the worktree")
-    #expect(shown.failure?.contains("../outside/key") == true)
+    #expect(shown.failure?.contains("link/key") == true)
     let manager = FileManager.default
     #expect(
       !manager.fileExists(atPath: created.path.appendingPathComponent(".env").path),
@@ -141,9 +141,9 @@ struct AppModelHookControlTests {
     #expect(!h.model.workspace.tabs(in: created.id).isEmpty, "and Dismiss hands the worktree over")
   }
 
-  /// A link list runs nothing either, so a repository may ship one and it
-  /// applies without the trust question its hooks wait for.
-  @Test func aRepositorysLinkListAppliesWithoutTheTrustQuestion() async throws {
+  /// A link list reads the reader's own checkout, so it waits for the same
+  /// yes the hook beside it waits for, and one answer covers the file.
+  @Test func aRepositorysLinkListWaitsForTheTrustQuestionLikeItsHooks() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
     try FileManager.default.createDirectory(
@@ -158,19 +158,29 @@ struct AppModelHookControlTests {
     await h.model.workInFlight.setup(of: created.id)?.value
 
     #expect(
-      try FileManager.default.destinationOfSymbolicLink(
-        atPath: created.path.appendingPathComponent("node_modules").path)
-        == h.project.path.appendingPathComponent("node_modules").path,
-      "the link list applied")
+      !FileManager.default.fileExists(
+        atPath: created.path.appendingPathComponent("node_modules").path),
+      "untrusted, so the list did not apply")
     #expect(
       !FileManager.default.fileExists(atPath: created.path.appendingPathComponent("hook.txt").path),
-      "the hook beside it in the same file still waited to be trusted")
+      "and neither did the hook beside it in the same file")
     #expect(h.model.worktreeOperations[created.id] == nil, "the link stage ended")
+
+    h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
+    h.model.decideSharedSettings(try #require(h.model.pendingSharedSettingsTrust), trusted: true)
+    await h.model.createWorktree(branch: "trusted", basedOn: nil, createBranch: true, in: h.project)
+    let second = try #require(h.worktree(onBranch: "trusted"))
+    await h.model.workInFlight.setup(of: second.id)?.value
+
+    #expect(
+      try FileManager.default.destinationOfSymbolicLink(
+        atPath: second.path.appendingPathComponent("node_modules").path)
+        == h.project.path.appendingPathComponent("node_modules").path,
+      "and once trusted the link list applies")
   }
 
-  /// The pane's Cancel on a file list, which has no process to signal: the
-  /// stage ends, nothing after it runs, and the worktree is handed over
-  /// the way a stopped hook hands it over.
+  /// A file list has no process to signal, so Cancel is asked per path. The
+  /// worktree is handed over the way a stopped hook hands it over.
   @Test func cancelOnAFileListEndsTheSetupAndHandsTheWorktreeOver() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
@@ -181,9 +191,8 @@ struct AppModelHookControlTests {
 
     await h.model.createWorktree(branch: "halted", basedOn: nil, createBranch: true, in: h.project)
     let created = try #require(h.worktree(onBranch: "halted"))
-    // Before the setup task has had the actor, so the stop is the one the
-    // stage's own handle was made early to catch, and lands at its first
-    // path rather than in a race with it.
+    // Before the setup task has had the actor: the stage's handle is made
+    // early so the stop lands at its first path, not in a race with it.
     #expect(h.model.worktreeOperations[created.id]?.step == .copyingFiles)
     h.model.cancelStage(of: created)
     await h.model.workInFlight.setup(of: created.id)?.value
@@ -198,9 +207,9 @@ struct AppModelHookControlTests {
     #expect(!h.model.workspace.tabs(in: created.id).isEmpty, "the worktree is the user's to use")
   }
 
-  /// A copy list runs nothing, so unlike the hooks beside it in the file
-  /// it does not wait for the trust question.
-  @Test func aRepositorysCopyListAppliesWithoutTheTrustQuestion() async throws {
+  /// A copy list reads the reader's own checkout, git-ignored files
+  /// included, so like the hooks beside it in the file it waits.
+  @Test func aRepositorysCopyListWaitsForTheTrustQuestionLikeItsHooks() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
     try "SECRET=1".write(
@@ -215,11 +224,11 @@ struct AppModelHookControlTests {
     await h.model.workInFlight.setup(of: created.id)?.value
 
     #expect(
-      FileManager.default.fileExists(atPath: created.path.appendingPathComponent(".env").path),
-      "the copy list applied")
+      !FileManager.default.fileExists(atPath: created.path.appendingPathComponent(".env").path),
+      "untrusted, so the copy list did not apply")
     #expect(
       !FileManager.default.fileExists(atPath: created.path.appendingPathComponent("hook.txt").path),
-      "the hook beside it in the same file still waited to be trusted")
+      "and neither did the hook beside it in the same file")
     #expect(h.model.worktreeOperations[created.id] == nil, "the copy stage ended")
     #expect(
       !h.model.workspace.tabs(in: created.id).isEmpty,
@@ -231,13 +240,12 @@ struct AppModelHookControlTests {
   @Test func aFailedCopyShowsInThePaneAndKeepsThePostCreateHookFromRunning() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
-    let outside = h.root.appendingPathComponent("outside")
-    try FileManager.default.createDirectory(at: outside, withIntermediateDirectories: true)
-    try "SECRET=1".write(
-      to: outside.appendingPathComponent("key"), atomically: true, encoding: .utf8)
-    h.model.updateSettings(
-      ProjectSettings(postCreateHook: "echo ran > hook.txt", copiedPaths: "../outside/key"),
-      for: h.project)
+    try h.divertARepositoryPathWithASymlink()
+    try h.shipSharedSettings(
+      #"{ "copiedPaths": "link/key", "postCreateHook": "echo ran > hook.txt" }"#)
+    await h.model.refresh(h.project)
+    h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
+    h.model.decideSharedSettings(try #require(h.model.pendingSharedSettingsTrust), trusted: true)
 
     await h.model.createWorktree(branch: "escaped", basedOn: nil, createBranch: true, in: h.project)
     let created = try #require(h.worktree(onBranch: "escaped"))
@@ -246,7 +254,7 @@ struct AppModelHookControlTests {
     #expect(h.model.presentedError == nil, "not an alert the sheet's dismissal would drop")
     let shown = try #require(h.model.worktreeOperations[created.id])
     #expect(shown.title == "Some files were not copied into the worktree")
-    #expect(shown.failure?.contains("../outside/key") == true)
+    #expect(shown.failure?.contains("link/key") == true)
     #expect(
       !FileManager.default.fileExists(
         atPath: created.path.appendingPathComponent("hook.txt").path),
@@ -274,9 +282,8 @@ struct AppModelHookControlTests {
       h.model.workspace.tabs(in: created.id).count == 1, "the first tab opens as after a finish")
   }
 
-  /// The board is up while the hook runs, the user reading the roster. The
-  /// stage ending is not the user turning back to the pane: the first tab
-  /// opens behind the board and its card joins the roster.
+  /// A stage ending is not the user turning back to the pane, so the board
+  /// stays up and the first tab opens behind it.
   @Test func aStageEndingUnderTheAgentsBoardLeavesTheBoardUpAndStartsTheTabBehindIt()
     async throws
   {
@@ -299,10 +306,8 @@ struct AppModelHookControlTests {
     #expect(h.engine.focused.isEmpty, "the keyboard is left where it was")
   }
 
-  /// The user turned to another worktree while the hook ran. The first tab
-  /// is the create's, so it opens where they are not looking, under the
-  /// create settings, agent included, and the shell starts without taking
-  /// the keyboard from where they are.
+  /// The first tab is the create's, so it opens under the create settings,
+  /// agent included, without taking the keyboard from where the user is.
   @Test func aCreateFinishedOutOfViewStartsItsFirstTabInTheBackground() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
@@ -332,10 +337,8 @@ struct AppModelHookControlTests {
     #expect(h.model.workspace.tabs(in: created.id).count == 1, "nothing more on the visit")
   }
 
-  /// Removing the project is a decision about everything in it, hooks
-  /// included. Left alone, the user's script ran on against a worktree the
-  /// sidebar no longer shows; the `sleep 30` is what proves it is signalled,
-  /// since the setup task could not be awaited otherwise.
+  /// Removing the project covers the hooks in it. The `sleep 30` is what
+  /// proves the signal, the setup task not being awaitable.
   @Test func removingAProjectEndsAHookStillRunningInItsWorktrees() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
@@ -413,9 +416,8 @@ struct AppModelHookControlTests {
     #expect(slow.worktreeCreationStep == nil)
   }
 
-  /// The coordinator reports steps through a hop to the main actor, and the
-  /// create clears the slot as it returns; a step landing after that belongs
-  /// to a create that has ended and must not fill the slot again.
+  /// Steps reach the main actor through a hop, and the create clears the
+  /// slot as it returns, so a later one must not fill it again.
   @Test func aStepReportedAfterItsCreateEndedIsDropped() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
@@ -427,11 +429,8 @@ struct AppModelHookControlTests {
     #expect(h.model.worktreeCreationStep == nil, "no create owns that stopper any more")
   }
 
-  /// The settings window is its own scene, so a New Worktree sheet on the
-  /// workspace window is not in the way of a project removal confirmed
-  /// there, and outlives it. Its Create used to run `git worktree add` for
-  /// real and leave a directory the sidebar never shows, since `refresh`
-  /// drops the result for a project that has gone.
+  /// The settings window is its own scene, so a sheet outlives a removal
+  /// confirmed there. Its Create used to add a worktree nothing lists.
   @Test func creatingFromASheetHeldOpenAcrossARemovalTouchesNothingOnDisk() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
@@ -600,34 +599,40 @@ struct AppModelHookControlTests {
     let h = try await GitHarness()
     defer { h.tearDown() }
     try
-      #"{ "branchPrefix": "team/", "worktreeDirectory": "../shared-trees", "postCreateHook": "echo shared > hook.txt", "iconGlyph": "hammer" }"#
+      #"{ "branchPrefix": "team/", "worktreeDirectory": ".shared-trees", "postCreateHook": "echo shared > hook.txt", "iconGlyph": "hammer" }"#
       .write(to: SharedProjectSettings.file(in: h.project.path), atomically: true, encoding: .utf8)
 
     await h.model.refresh(h.project)
 
-    #expect(h.model.sharedSettings[h.project.id]?.branchPrefix == "team/")
+    #expect(
+      h.model.workspace.project(h.project.id)?.sharedSettings.asWritten?.branchPrefix == "team/")
     #expect(h.model.worktreeSettings(for: h.project).branchPrefix == "team/")
     #expect(h.model.effectiveSettings(for: h.project).iconGlyph == "hammer")
     #expect(
       h.model.plannedPath(forBranch: "x", createBranch: true, in: h.project)?.path.hasSuffix(
-        "/shared-trees/team-x") == true)
-    #expect(h.model.pendingSharedHooksTrust == nil, "not asked until the user turns to it")
+        "/.shared-trees/team-x") == false,
+      "where a checkout lands waits for trust, unlike the prefix and the icon")
+    #expect(h.model.pendingSharedSettingsTrust == nil, "not asked until the user turns to it")
     h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
-    let pending = try #require(h.model.pendingSharedHooksTrust)
-    #expect(pending.projectID == h.project.id && pending.hooks.contains("echo shared"))
-    #expect(!h.model.trustsSharedHooks(of: h.project))
+    let pending = try #require(h.model.pendingSharedSettingsTrust)
+    #expect(pending.projectID == h.project.id && pending.contents.contains("echo shared"))
+    #expect(!h.model.trustsSharedSettings(of: h.project))
 
     // Untrusted: the create runs no hook, and its own select does not ask.
-    h.model.pendingSharedHooksTrust = nil
+    h.model.pendingSharedSettingsTrust = nil
     await h.model.createWorktree(branch: "a", basedOn: nil, createBranch: true, in: h.project)
-    #expect(h.model.pendingSharedHooksTrust == nil, "the sheet is still going away then")
+    #expect(h.model.pendingSharedSettingsTrust == nil, "the sheet is still going away then")
     let a = try #require(h.worktree(onBranch: "team/a"))
     #expect(h.model.workInFlight.setup(of: a.id) == nil)
     #expect(!FileManager.default.fileExists(atPath: a.path.appendingPathComponent("hook.txt").path))
 
-    h.model.decideSharedHooks(pending, trusted: true)
-    #expect(h.model.pendingSharedHooksTrust == nil)
-    #expect(h.model.trustsSharedHooks(of: h.project))
+    h.model.decideSharedSettings(pending, trusted: true)
+    #expect(h.model.pendingSharedSettingsTrust == nil)
+    #expect(h.model.trustsSharedSettings(of: h.project))
+    #expect(
+      h.model.plannedPath(forBranch: "x", createBranch: true, in: h.project)?.path.hasSuffix(
+        "/.shared-trees/team-x") == true,
+      "and once trusted the file's directory is the one used")
     await h.model.createWorktree(branch: "b", basedOn: nil, createBranch: true, in: h.project)
     let b = try #require(h.worktree(onBranch: "team/b"))
     await h.model.workInFlight.setup(of: b.id)?.value
@@ -641,16 +646,103 @@ struct AppModelHookControlTests {
     try #"{ "postCreateHook": "echo changed" }"#
       .write(to: SharedProjectSettings.file(in: h.project.path), atomically: true, encoding: .utf8)
     await h.model.refresh(h.project)
-    #expect(!h.model.trustsSharedHooks(of: h.project))
+    #expect(!h.model.trustsSharedSettings(of: h.project))
     h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
-    #expect(h.model.pendingSharedHooksTrust?.hooks == "post-create:\necho changed")
+    #expect(h.model.pendingSharedSettingsTrust?.contents == "post-create:\necho changed")
   }
 
-  /// The file is tracked, so checking out another branch changes it. Each
-  /// file is asked about once, against the sha256 of its bytes: a switch
-  /// back to a branch already answered for runs its hooks, or not, without
-  /// asking again. Real commits and real checkouts, since what the app sees
-  /// of a branch switch is git rewriting the file under it.
+  /// What a committed file names outside the checkout is dropped, and the
+  /// reader's own settings stand; see Docs/design/settings.md.
+  @Test func aSettingsFileCannotPlaceAWorktreeOrReadFilesOutsideTheCheckout() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let key = FileManager.default.homeDirectoryForCurrentUser
+      .appendingPathComponent(".ssh/id_ed25519").path
+    let json = """
+      { "worktreeDirectory": "~/.claude/skills", \
+      "linkedPaths": "\(key)\\nvendor", "copiedPaths": "../../.aws/credentials" }
+      """
+    try json.write(
+      to: SharedProjectSettings.file(in: h.project.path), atomically: true, encoding: .utf8)
+
+    await h.model.refresh(h.project)
+    // Trusted, so what is dropped here is dropped for reaching out and not
+    // for waiting on an answer.
+    h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
+    h.model.decideSharedSettings(try #require(h.model.pendingSharedSettingsTrust), trusted: true)
+
+    let effective = h.model.effectiveSettings(for: h.project)
+    #expect(effective.worktreeDirectory == nil, "the reader's own directory stands")
+    #expect(effective.linkedPaths == "vendor", "only the entry reaching out is dropped")
+    #expect(effective.copiedPaths.isEmpty)
+
+    let planned = try #require(
+      h.model.plannedPath(forBranch: "x", createBranch: true, in: h.project))
+    #expect(!planned.path.hasPrefix(FileManager.default.homeDirectoryForCurrentUser.path + "/."))
+    #expect(planned.path.hasSuffix("-worktrees/x"), "the app default, not the file's")
+
+    await h.model.createWorktree(branch: "x", basedOn: nil, createBranch: true, in: h.project)
+    let worktree = try #require(h.worktree(onBranch: "x"))
+    await h.model.workInFlight.setup(of: worktree.id)?.value
+    #expect(
+      !FileManager.default.fileExists(
+        atPath: worktree.path.appendingPathComponent("id_ed25519").path))
+    #expect(
+      !FileManager.default.fileExists(
+        atPath: worktree.path.appendingPathComponent("credentials").path))
+  }
+
+  /// Asking about a path the app has already refused would show a line that
+  /// trusting cannot turn on, and teach the user to say yes to it.
+  @Test func theQuestionLeavesOutWhatConfinementHasAlreadyDropped() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    try #"{ "linkedPaths": "~/.ssh/id_ed25519\nvendor" }"#
+      .write(to: SharedProjectSettings.file(in: h.project.path), atomically: true, encoding: .utf8)
+
+    await h.model.refresh(h.project)
+    h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
+
+    let pending = try #require(h.model.pendingSharedSettingsTrust)
+    #expect(pending.contents == "linked:\nvendor")
+    #expect(!pending.contents.contains(".ssh"), "not a line the user is asked to allow")
+  }
+
+  /// And a file whose every path is refused asks nothing at all: there is
+  /// no longer anything a yes would turn on.
+  @Test func aFileWhoseEveryPathIsRefusedIsNeverAskedAbout() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    try #"{ "linkedPaths": "~/.ssh/id_ed25519", "copiedPaths": "/etc/passwd" }"#
+      .write(to: SharedProjectSettings.file(in: h.project.path), atomically: true, encoding: .utf8)
+
+    await h.model.refresh(h.project)
+    h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
+
+    #expect(h.model.pendingSharedSettingsTrust == nil)
+    h.model.setTrustsSharedSettings(true, for: h.project)
+    #expect(
+      !h.model.trustsSharedSettings(of: h.model.workspace.project(h.project.id)!),
+      "and the tab's button has nothing to turn on either")
+  }
+
+  /// A touch moves the date without changing the bytes. Recording it anyway
+  /// is what stops every tick after re-reading the file.
+  @Test func aFileWhoseBytesDidNotChangeStillRecordsItsNewDate() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let shared = SharedProjectSettings(branchPrefix: "team/")
+    let later = Date(timeIntervalSince1970: 2)
+
+    h.model.noteSharedSettings(
+      .success(shared), stamp: Date(timeIntervalSince1970: 1), for: h.project)
+    h.model.noteSharedSettings(.success(shared), stamp: later, for: h.project)
+
+    #expect(!h.project.sharedSettings.hasMoved(later), "so the next tick spends no read")
+  }
+
+  /// The answer is held against the file's sha256, so a switch back asks
+  /// nothing. Real commits: a branch switch is git rewriting the file.
   @Test func switchingBetweenTwoBranchesHooksAsksAboutEachOnce() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
@@ -665,30 +757,30 @@ struct AppModelHookControlTests {
     try await commit(#"{ "postCreateHook": "echo main" }"#, "main hooks")
     await h.model.refresh(h.project)
     h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
-    h.model.decideSharedHooks(try #require(h.model.pendingSharedHooksTrust), trusted: true)
+    h.model.decideSharedSettings(try #require(h.model.pendingSharedSettingsTrust), trusted: true)
     #expect(h.model.effectiveSettings(for: h.project).postCreateHook == "echo main")
 
     // The other branch's file: bytes nobody has answered for, so asked.
     _ = try await h.git.run(["checkout", "-q", "-b", "feature"], in: repository)
     try await commit(#"{ "postCreateHook": "echo feature" }"#, "feature hooks")
     await h.model.refreshChangedSharedSettings()
-    let feature = try #require(h.model.pendingSharedHooksTrust)
-    #expect(feature.hooks == "post-create:\necho feature")
-    h.model.decideSharedHooks(feature, trusted: false)
-    #expect(!h.model.trustsSharedHooks(of: h.model.workspace.project(h.project.id)!))
+    let feature = try #require(h.model.pendingSharedSettingsTrust)
+    #expect(feature.contents == "post-create:\necho feature")
+    h.model.decideSharedSettings(feature, trusted: false)
+    #expect(!h.model.trustsSharedSettings(of: h.model.workspace.project(h.project.id)!))
 
     // Back to the first branch: the yes it was given stands, unasked.
     _ = try await h.git.run(["checkout", "-q", "main"], in: repository)
     await h.model.refreshChangedSharedSettings()
-    #expect(h.model.pendingSharedHooksTrust == nil, "answered for already")
-    #expect(h.model.trustsSharedHooks(of: h.model.workspace.project(h.project.id)!))
+    #expect(h.model.pendingSharedSettingsTrust == nil, "answered for already")
+    #expect(h.model.trustsSharedSettings(of: h.model.workspace.project(h.project.id)!))
     #expect(h.model.effectiveSettings(for: h.project).postCreateHook == "echo main")
 
     // And back to the other: its no stands, also unasked.
     _ = try await h.git.run(["checkout", "-q", "feature"], in: repository)
     await h.model.refreshChangedSharedSettings()
-    #expect(h.model.pendingSharedHooksTrust == nil, "and the no is not asked again either")
-    #expect(!h.model.trustsSharedHooks(of: h.model.workspace.project(h.project.id)!))
+    #expect(h.model.pendingSharedSettingsTrust == nil, "and the no is not asked again either")
+    #expect(!h.model.trustsSharedSettings(of: h.model.workspace.project(h.project.id)!))
     #expect(h.model.effectiveSettings(for: h.project).postCreateHook == "")
 
     // The answer is against the file's bytes, so a branch that ships the
@@ -698,7 +790,7 @@ struct AppModelHookControlTests {
       #"{ "branchPrefix": "team/", "postCreateHook": "echo main" }"#, "hooks and a prefix")
     await h.model.refreshChangedSharedSettings()
     #expect(
-      h.model.pendingSharedHooksTrust?.hooks == "post-create:\necho main",
+      h.model.pendingSharedSettingsTrust?.contents == "post-create:\necho main",
       "the same hooks, in bytes nobody has answered for")
   }
 
@@ -708,48 +800,54 @@ struct AppModelHookControlTests {
     let file = SharedProjectSettings.file(in: h.project.path)
     try #"{ "postCreateHook": "echo one" }"#.write(to: file, atomically: true, encoding: .utf8)
     await h.model.refresh(h.project)
-    #expect(h.model.pendingSharedHooksTrust == nil, "the first read of a project says nothing")
+    #expect(h.model.pendingSharedSettingsTrust == nil, "the first read of a project says nothing")
 
     // No worktree comes or goes, so the records are the same and the file's
     // date is the only thing that says it changed.
     try #"{ "postCreateHook": "echo two" }"#.write(to: file, atomically: true, encoding: .utf8)
     await h.model.refreshChangedSharedSettings()
-    #expect(h.model.sharedSettings[h.project.id]?.postCreateHook == "echo two")
-    #expect(h.model.pendingSharedHooksTrust == nil, "not a project the user is looking at")
+    #expect(
+      h.model.workspace.project(h.project.id)?.sharedSettings.asWritten?.postCreateHook
+        == "echo two")
+    #expect(h.model.pendingSharedSettingsTrust == nil, "not a project the user is looking at")
 
     h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
-    let stale = try #require(h.model.pendingSharedHooksTrust)
+    let stale = try #require(h.model.pendingSharedSettingsTrust)
 
     // The file moves on while its question is still up.
     try #"{ "postCreateHook": "echo two and a half" }"#
       .write(to: file, atomically: true, encoding: .utf8)
     await h.model.refreshWorktreesIfRecordsChanged()
-    let pending = try #require(h.model.pendingSharedHooksTrust)
+    let pending = try #require(h.model.pendingSharedSettingsTrust)
     #expect(
-      pending.hooks == "post-create:\necho two and a half",
+      pending.contents == "post-create:\necho two and a half",
       "the question up was about text the file no longer has")
 
-    h.model.decideSharedHooks(pending, trusted: true)
-    #expect(h.model.trustsSharedHooks(of: h.model.workspace.project(h.project.id)!))
-    #expect(stale.hooks != pending.hooks)
+    h.model.decideSharedSettings(pending, trusted: true)
+    #expect(h.model.trustsSharedSettings(of: h.model.workspace.project(h.project.id)!))
+    #expect(stale.contents != pending.contents)
 
     // Not over the new-worktree sheet, which the user is answering.
     h.model.newWorktreeRequest = NewWorktreeRequest(projectID: h.project.id)
     try #"{ "postCreateHook": "echo three and a half" }"#
       .write(to: file, atomically: true, encoding: .utf8)
     await h.model.refreshWorktreesIfRecordsChanged()
-    #expect(h.model.sharedSettings[h.project.id]?.postCreateHook == "echo three and a half")
-    #expect(h.model.pendingSharedHooksTrust == nil, "the sheet is what is being answered")
+    #expect(
+      h.model.workspace.project(h.project.id)?.sharedSettings.asWritten?.postCreateHook
+        == "echo three and a half")
+    #expect(h.model.pendingSharedSettingsTrust == nil, "the sheet is what is being answered")
     h.model.newWorktreeRequest = nil
 
     try #"{ "postCreateHook": "echo three" }"#.write(to: file, atomically: true, encoding: .utf8)
     await h.model.refreshWorktreesIfRecordsChanged()
 
-    #expect(h.model.sharedSettings[h.project.id]?.postCreateHook == "echo three")
     #expect(
-      h.model.pendingSharedHooksTrust?.hooks == "post-create:\necho three",
+      h.model.workspace.project(h.project.id)?.sharedSettings.asWritten?.postCreateHook
+        == "echo three")
+    #expect(
+      h.model.pendingSharedSettingsTrust?.contents == "post-create:\necho three",
       "asked while it is the project on screen")
-    #expect(!h.model.trustsSharedHooks(of: h.model.workspace.project(h.project.id)!))
+    #expect(!h.model.trustsSharedSettings(of: h.model.workspace.project(h.project.id)!))
   }
 
   @Test func aBrokenSettingsFileIsAProblemOnTheHooksTabNotAnAlert() async throws {
@@ -760,16 +858,15 @@ struct AppModelHookControlTests {
     await h.model.refresh(h.project)
     #expect(h.model.presentedError == nil)
     #expect(
-      h.model.sharedSettings.problem(of: h.project.id)?.hasPrefix(
+      h.model.workspace.project(h.project.id)?.sharedSettings.problem?.hasPrefix(
         ".multishell.json could not be read")
         == true)
-    #expect(h.model.sharedSettings[h.project.id] == nil)
+    #expect(h.model.workspace.project(h.project.id)?.sharedSettings.asWritten == nil)
     #expect(h.platform.logged.count == 1)
   }
 
-  /// A file that stops parsing takes its question with it: the app has no
-  /// hooks from it to run, so a dialog offering to trust them is offering
-  /// nothing, the way a deleted file's question is dropped.
+  /// A file that stops parsing leaves no hooks to run, so its question is
+  /// dropped the way a deleted file's is.
   @Test func aQuestionGoesAwayWithTheFileItWasAbout() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
@@ -777,19 +874,71 @@ struct AppModelHookControlTests {
     try #"{ "postCreateHook": "echo one" }"#.write(to: file, atomically: true, encoding: .utf8)
     await h.model.refresh(h.project)
     h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
-    #expect(h.model.pendingSharedHooksTrust != nil)
+    #expect(h.model.pendingSharedSettingsTrust != nil)
 
     try "not json".write(to: file, atomically: true, encoding: .utf8)
     await h.model.refreshChangedSharedSettings()
-    #expect(h.model.pendingSharedHooksTrust == nil, "the hooks it named are not the app's any more")
+    #expect(
+      h.model.pendingSharedSettingsTrust == nil, "the hooks it named are not the app's any more")
 
     // The same for a branch that carries no file at all.
     try #"{ "postCreateHook": "echo one" }"#.write(to: file, atomically: true, encoding: .utf8)
     await h.model.refreshChangedSharedSettings()
-    #expect(h.model.pendingSharedHooksTrust != nil, "and comes back when it parses again")
+    #expect(h.model.pendingSharedSettingsTrust != nil, "and comes back when it parses again")
     try FileManager.default.removeItem(at: file)
     await h.model.refreshChangedSharedSettings()
-    #expect(h.model.pendingSharedHooksTrust == nil)
+    #expect(h.model.pendingSharedSettingsTrust == nil)
+  }
+
+  /// The confinement verdict is held against the file's bytes, so a branch can
+  /// add the symlink without moving them. The disk is asked again at the create.
+  @Test func aSymlinkCommittedAfterTheFileWasReadCannotCarryACheckoutOut() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let file = SharedProjectSettings.file(in: h.project.path)
+    try #"{ "worktreeDirectory": "trees" }"#.write(to: file, atomically: true, encoding: .utf8)
+    await h.model.refresh(h.project)
+    h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
+    let asked = try #require(h.model.pendingSharedSettingsTrust)
+    h.model.decideSharedSettings(asked, trusted: true)
+
+    let elsewhere = h.root.appendingPathComponent("elsewhere", isDirectory: true)
+    try FileManager.default.createDirectory(at: elsewhere, withIntermediateDirectories: true)
+    try FileManager.default.createSymbolicLink(
+      at: h.project.path.appendingPathComponent("trees"), withDestinationURL: elsewhere)
+
+    await h.model.createWorktree(branch: "feat", basedOn: nil, createBranch: true, in: h.project)
+
+    #expect(
+      try FileManager.default.contentsOfDirectory(atPath: elsewhere.path).isEmpty,
+      "the link leads out of the checkout, so the file's directory is not in force")
+    let created = try #require(h.worktree(onBranch: "feat"))
+    #expect(!created.path.standardizedFileURL.path.hasPrefix(elsewhere.standardizedFileURL.path))
+  }
+
+  /// The dropped verdict is stored, so the read that put it there must not be
+  /// the last word: taking the symlink away brings the directory back.
+  @Test func takingTheSymlinkAwayBringsTheDirectoryBack() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let file = SharedProjectSettings.file(in: h.project.path)
+    try #"{ "worktreeDirectory": "trees" }"#.write(to: file, atomically: true, encoding: .utf8)
+    await h.model.refresh(h.project)
+    h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
+    h.model.decideSharedSettings(try #require(h.model.pendingSharedSettingsTrust), trusted: true)
+    let link = h.project.path.appendingPathComponent("trees")
+    let elsewhere = h.root.appendingPathComponent("elsewhere", isDirectory: true)
+    try FileManager.default.createDirectory(at: elsewhere, withIntermediateDirectories: true)
+    try FileManager.default.createSymbolicLink(at: link, withDestinationURL: elsewhere)
+
+    _ = await h.model.reconfineSharedSettings(of: h.project)
+    #expect(h.project.sharedSettings.confined?.worktreeDirectory == nil)
+
+    try FileManager.default.removeItem(at: link)
+    _ = await h.model.reconfineSharedSettings(of: h.project)
+
+    #expect(h.project.sharedSettings.confined?.worktreeDirectory == "trees")
+    #expect(h.model.worktreeSettings(for: h.project).worktreeDirectory == "trees")
   }
 
   /// A key from a teammate's newer build is not the user's to drop, and
@@ -810,7 +959,8 @@ struct AppModelHookControlTests {
     #expect(json["$schema"] as? String == "https://example.test/multishell.json")
     #expect(json["branchPrefix"] as? String == "team/" && json["iconTint"] as? Int == 3)
     #expect(
-      h.model.sharedSettings[h.project.id] == (try SharedProjectSettings.load(from: h.project.path))
+      h.model.workspace.project(h.project.id)?.sharedSettings.asWritten
+        == (try SharedProjectSettings.load(from: h.project.path))
     )
   }
 
@@ -843,12 +993,14 @@ struct AppModelHookControlTests {
     #expect(written.iconGlyph == "server.rack" && written.iconTint == 3)
     #expect(written.copiedPaths == ".env\n.env.*", "the file lists travel with the hooks")
     #expect(written.linkedPaths == "node_modules")
-    #expect(written.hooksText?.contains(".env") != true, "but are not part of the hook question")
-    #expect(written.hooksText?.contains("node_modules") != true)
+    #expect(
+      written.trustedContentText?.contains("copied:\n.env") == true,
+      "and are asked about beside them")
+    #expect(written.trustedContentText?.contains("linked:\nnode_modules") == true)
     #expect(written.worktreeDirectory == nil, "following the global is not exported")
-    #expect(h.model.sharedSettings[h.project.id] == written)
-    #expect(h.model.pendingSharedHooksTrust == nil, "the hooks are the user's own words")
-    #expect(h.model.trustsSharedHooks(of: h.model.workspace.project(h.project.id)!))
+    #expect(h.model.workspace.project(h.project.id)?.sharedSettings.asWritten == written)
+    #expect(h.model.pendingSharedSettingsTrust == nil, "it is all the user's own words")
+    #expect(h.model.trustsSharedSettings(of: h.model.workspace.project(h.project.id)!))
     let text = try String(
       contentsOf: SharedProjectSettings.file(in: h.project.path), encoding: .utf8)
     #expect(text.hasPrefix("{\n  \"branchPrefix\""), "sorted and indented for a diff")
@@ -863,18 +1015,126 @@ struct AppModelHookControlTests {
     try #"{ "postCreateHook": "npm ci" }"#.write(to: file, atomically: true, encoding: .utf8)
     await h.model.refresh(h.project)
     h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
-    let asked = try #require(h.model.pendingSharedHooksTrust)
-    h.model.decideSharedHooks(asked, trusted: false)
-    h.model.updateSettings(ProjectSettings(branchPrefix: "mine/"), for: h.project)
+    let asked = try #require(h.model.pendingSharedSettingsTrust)
+    h.model.decideSharedSettings(asked, trusted: false)
+    h.model.updateSettings(
+      with(h.project.settings) { $0.branchPrefix = "mine/" }, for: h.project)
 
     h.model.exportSharedSettings(for: h.project)
 
     let written = try #require(try SharedProjectSettings.load(from: h.project.path))
     #expect(written.branchPrefix == "mine/", "what the user did set is exported")
     #expect(written.postCreateHook == "npm ci", "what they refused is still the file's")
+    let project = try #require(h.model.workspace.project(h.project.id))
+    #expect(!h.model.trustsSharedSettings(of: project), "and exporting is not a way to trust it")
     #expect(
-      !h.model.trustsSharedHooks(of: h.model.workspace.project(h.project.id)!),
-      "and exporting is not a way to trust it")
+      project.settings.sharedSettingsDecision(about: written) == false,
+      "the no travels to the new digest, so nothing asks again")
+  }
+
+  /// The directory and the two path lists wait for the same yes the hooks do,
+  /// so an export before that yes would have dropped them from the file.
+  @Test func exportKeepsThePathsTheUserNeverTrusted() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let file = SharedProjectSettings.file(in: h.project.path)
+    try #"""
+    { "worktreeDirectory": ".trees", "postCreateHook": "npm ci",
+      "linkedPaths": "node_modules", "copiedPaths": ".env" }
+    """#.write(to: file, atomically: true, encoding: .utf8)
+    await h.model.refresh(h.project)
+    h.model.updateSettings(ProjectSettings(branchPrefix: "mine/"), for: h.project)
+
+    h.model.exportSharedSettings(for: h.project)
+
+    let written = try #require(try SharedProjectSettings.load(from: h.project.path))
+    #expect(written.branchPrefix == "mine/", "what the user did set is exported")
+    #expect(written.worktreeDirectory == ".trees")
+    #expect(written.linkedPaths == "node_modules")
+    #expect(written.copiedPaths == ".env")
+    #expect(written.postCreateHook == "npm ci")
+  }
+
+  /// The yes was given about these words, and export writes them back
+  /// unchanged, so the answer travels to the new bytes rather than lapsing.
+  @Test func exportCarriesAYesOntoTheFileItRewrites() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let file = SharedProjectSettings.file(in: h.project.path)
+    try #"{ "worktreeDirectory": "../trees", "postCreateHook": "npm ci" }"#
+      .write(to: file, atomically: true, encoding: .utf8)
+    await h.model.refresh(h.project)
+    h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
+    h.model.decideSharedSettings(try #require(h.model.pendingSharedSettingsTrust), trusted: true)
+
+    h.model.exportSharedSettings(for: h.project)
+
+    let project = try #require(h.model.workspace.project(h.project.id))
+    #expect(h.model.trustsSharedSettings(of: project), "the refused directory did not revoke it")
+    #expect(h.model.effectiveSettings(for: project).postCreateHook == "npm ci")
+  }
+
+  /// Export records an answer it has, never one it does not: writing the
+  /// file back is not the user saying no to a teammate's hook.
+  @Test func exportDoesNotAnswerAQuestionTheUserWasNeverAsked() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let file = SharedProjectSettings.file(in: h.project.path)
+    try #"{ "postCreateHook": "npm ci" }"#.write(to: file, atomically: true, encoding: .utf8)
+    await h.model.refresh(h.project)
+
+    h.model.exportSharedSettings(for: h.project)
+
+    let project = try #require(h.model.workspace.project(h.project.id))
+    let shared = try #require(project.sharedSettings.confined)
+    #expect(project.settings.needsTrustDecision(for: shared), "so selecting still asks")
+  }
+
+  /// A list the user typed is theirs, `RepositoryContainment` holding only
+  /// what a repository ships; an entry reaching out is skipped, not refused.
+  @Test func aPathTheUserListedThemselvesDoesNotStopTheStagesAfterIt() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    try "SECRET=1".write(
+      to: h.project.path.appendingPathComponent(".env"), atomically: true, encoding: .utf8)
+    h.model.updateSettings(
+      ProjectSettings(postCreateHook: "echo ran > hook.txt", copiedPaths: "~/.aws.json\n.env"),
+      for: h.project)
+
+    await h.model.createWorktree(branch: "mine", basedOn: nil, createBranch: true, in: h.project)
+    let created = try #require(h.worktree(onBranch: "mine"))
+    await h.model.workInFlight.setup(of: created.id)?.value
+
+    #expect(h.model.worktreeOperations[created.id] == nil, "every stage ended")
+    let manager = FileManager.default
+    #expect(manager.fileExists(atPath: created.path.appendingPathComponent(".env").path))
+    #expect(
+      manager.fileExists(atPath: created.path.appendingPathComponent("hook.txt").path),
+      "and the hook after the list ran")
+  }
+
+  /// The user's own list replaces the repository's whole, so what is placed
+  /// is theirs and is not held to the checkout, file on disk or not.
+  @Test func theUsersOwnListOverridingTheRepositorysIsStillTheirs() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let secret = h.root.appendingPathComponent("secrets.txt")
+    try "SECRET=1".write(to: secret, atomically: true, encoding: .utf8)
+    try FileManager.default.createSymbolicLink(
+      at: h.project.path.appendingPathComponent(".env"), withDestinationURL: secret)
+    try h.shipSharedSettings(#"{ "copiedPaths": "vendor" }"#)
+    await h.model.refresh(h.project)
+    h.model.updateSettings(
+      with(h.project.settings) { $0.copiedPaths = ".env" }, for: h.project)
+
+    await h.model.createWorktree(branch: "mine", basedOn: nil, createBranch: true, in: h.project)
+    let created = try #require(h.worktree(onBranch: "mine"))
+    await h.model.workInFlight.setup(of: created.id)?.value
+
+    #expect(h.model.worktreeOperations[created.id] == nil, "the stage ended rather than failing")
+    #expect(
+      try String(contentsOf: created.path.appendingPathComponent(".env"), encoding: .utf8)
+        == "SECRET=1", "and their symlinked file was placed")
   }
 
   /// A hook the user wrote themselves still replaces the file's, and that
@@ -886,15 +1146,15 @@ struct AppModelHookControlTests {
     try #"{ "postCreateHook": "npm ci" }"#.write(to: file, atomically: true, encoding: .utf8)
     await h.model.refresh(h.project)
     h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
-    let asked = try #require(h.model.pendingSharedHooksTrust)
-    h.model.decideSharedHooks(asked, trusted: false)
+    let asked = try #require(h.model.pendingSharedSettingsTrust)
+    h.model.decideSharedSettings(asked, trusted: false)
     h.model.updateSettings(ProjectSettings(postCreateHook: "make setup"), for: h.project)
 
     h.model.exportSharedSettings(for: h.project)
 
     let written = try #require(try SharedProjectSettings.load(from: h.project.path))
     #expect(written.postCreateHook == "make setup")
-    #expect(h.model.trustsSharedHooks(of: h.model.workspace.project(h.project.id)!))
+    #expect(h.model.trustsSharedSettings(of: h.model.workspace.project(h.project.id)!))
   }
 }
 

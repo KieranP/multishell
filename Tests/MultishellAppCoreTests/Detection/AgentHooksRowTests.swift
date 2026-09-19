@@ -15,12 +15,12 @@ struct AgentHooksRowTests {
   /// still installed after it has gone: those have to be removable.
   @Test func rowsAreForTheAgentsHereAndTheHooksLeftBehind() {
     let rows = AgentHooksRow.rows(
-      detection: detection(["claude", "gemini", "aider"]), installed: ["codex"])
+      detection: detection(["claude", "gemini", "nonesuch"]), installed: ["codex"])
 
     #expect(rows.map(\.id) == ["claude", "codex", "gemini"], "catalogue order")
     #expect(rows.first { $0.id == "codex" }?.isInstalled == true)
     #expect(rows.first { $0.id == "claude" }?.isInstalled == false)
-    #expect(!rows.contains { $0.id == "aider" }, "no hooks to offer")
+    #expect(!rows.contains { $0.id == "nonesuch" }, "no hooks to offer")
     #expect(!rows.contains { $0.id == "copilot" }, "not on this machine")
   }
 

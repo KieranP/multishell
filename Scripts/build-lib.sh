@@ -2,6 +2,11 @@
 # The parts of a bundle build that are not about this bundle. Sourced by
 # make-app.sh, which sets `set -euo pipefail`; nothing here runs on its own.
 
+# The copyright the bundle carries. One place, so LICENSE, the About box and
+# the notices cannot say three different things.
+COPYRIGHT_HOLDER="Kieran Pilkington"
+COPYRIGHT_YEARS="2026"
+
 # Reports and stops. Each argument is a line, so a reason can carry its detail.
 die() {
     printf '%s\n' "$@" >&2
@@ -34,6 +39,14 @@ bundle_variant() {
     [ "$(git -C "$root" rev-parse --git-dir 2>/dev/null)" \
         != "$(git -C "$root" rev-parse --git-common-dir 2>/dev/null)" ] || return 0
     printf %s "$(basename "$root")" | tr -c 'A-Za-z0-9_-' '-'
+}
+
+# What the About box shows under the version, and the only place the holder
+# is written. AGPL section 5 wants the notice on the work it covers, and the
+# bundle carries LICENSE and THIRD-PARTY-NOTICES.md beside it.
+bundle_copyright() {
+    printf 'Copyright © %s %s. Licensed under the GNU AGPL v3.' \
+        "$COPYRIGHT_YEARS" "$COPYRIGHT_HOLDER"
 }
 
 # xcodebuild rather than swift build, logged rather than -quiet, coverage and

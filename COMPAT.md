@@ -22,7 +22,12 @@ just never updates the state indicator dot.
 | ------------------ | ---------- | ------------- | ------------------- |
 | zsh                | Yes        | Yes           | Yes                 |
 | bash 3.2 and newer | Yes        | Yes           | Yes                 |
+| fish               | No         | No            | No                  |
+| nu                 | No         | No            | No                  |
 | Others             | No         | No            | No                  |
+
+fish and nu are found and offered in the shell picker, and run as terminals, but
+nothing is injected into them.
 
 Your shell configuration continues to work, and no file of yours is written to.
 Click-to-move puts the cursor where you click in the prompt, in terminals that

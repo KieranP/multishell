@@ -120,3 +120,20 @@ One line each, too small for a section of their own. Newest at the bottom.
   one finished tab, not all of them: one you have not looked at is the point of
   the dot. Idle only when every tab is. A report naming only a directory, from a
   terminal outside the app, is one more state in the worktree's set.
+- Install Command Line Tool is the one thing run as root,
+  `do shell script ... with administrator privileges`. The two paths go in as
+  Apple event parameters to a handler in a constant script, never interpolated
+  into it, and the script quotes them for the shell with AppleScript's own
+  `quoted form of` (`AppleScriptHandler`). Interpolating and escaping by hand
+  was the earlier shape and it escaped for `sh`, not for AppleScript, so a `"`
+  in the home path ended the literal and ran the rest as root (BUGS 125). Costs:
+  three four-char codes Swift does not import, and the OSA components are
+  main-actor only.
+- The terminal host is told the app is quitting, through `TerminalHost.shutDown`
+  with a default no-op, and that it holds the instance socket, through
+  `claimSharedFiles`. libghostty's generated config directory is shared by every
+  copy of the build, so only the copy that claimed sweeps it, on the claim and
+  again at quit (BUGS 124). "Built a controller" was the earlier test and did
+  not hold: a copy that handed over keeps its terminals until it quits, so it
+  builds one too. The controller is still built on first use rather than in
+  `init`, `apply` holding the theme until there is one.

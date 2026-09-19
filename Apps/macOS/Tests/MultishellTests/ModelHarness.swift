@@ -10,7 +10,11 @@ import MultishellCore
 @MainActor
 final class ModelHarness {
   let model: Multishell.AppModel
+  /// Captured once, so it goes stale after a write; that is what
+  /// `aBindingFollowsTheRecordAndNotTheProjectItWasBuiltWith` needs.
   let project: Project
+  /// The record as the store has it, which is what a reader passes.
+  var live: Project { model.workspace.project(project.id) ?? project }
   private let directory: URL
 
   init() {

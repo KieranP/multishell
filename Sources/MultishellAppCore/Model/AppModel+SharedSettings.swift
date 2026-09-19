@@ -5,7 +5,7 @@ extension AppModel {
   /// The project's settings with its repository's file filling the gaps, and
   /// what every path, hook and icon decision reads.
   public func effectiveSettings(for project: Project) -> ProjectSettings {
-    project.settings.layered(over: sharedSettings[project.id])
+    project.settings.layered(over: project.sharedSettings.confined)
   }
 
   /// The project as the git layer should see it, hooks and overrides
@@ -27,27 +27,33 @@ extension AppModel {
   public func inherited<Value: Equatable & Sendable>(
     _ keyPath: KeyPath<SharedProjectSettings, Value?>, global: Value, for project: Project
   ) -> InheritedSetting<Value> {
-    if let shared = sharedSettings[project.id]?[keyPath: keyPath] {
+    if let shared = sharedSettingsInForce(for: project)?[keyPath: keyPath] {
       return InheritedSetting(value: shared, isFromRepository: true)
     }
     return InheritedSetting(value: global, isFromRepository: false)
   }
 
-  /// Whether the file's hooks are the ones in force for this project.
-  public func trustsSharedHooks(of project: Project) -> Bool {
-    guard let shared = sharedSettings[project.id] else { return false }
-    return project.settings.trustsHooks(of: shared)
+  /// The repository's settings as they apply here, what the yes covers dropped
+  /// until it is given. The same view `layered` resolves against.
+  private func sharedSettingsInForce(for project: Project) -> SharedProjectSettings? {
+    guard let shared = project.sharedSettings.confined else { return nil }
+    return project.settings.trustsSharedSettings(of: shared)
+      ? shared : shared.withoutWhatTrustCovers
   }
 
-  /// The file and the date it had when read, the date taken first so a write
-  /// landing mid-read is caught by the next tick.
-  nonisolated static func readSharedSettings(
-    from repository: URL
-  ) -> (
-    result: Result<SharedProjectSettings?, any Error>, stamp: Date
-  ) {
-    let stamp = modificationDate(of: SharedProjectSettings.file(in: repository))
-    return (Result { try SharedProjectSettings.load(from: repository) }, stamp)
+  /// Whether what the file asks for is in force for this project.
+  public func trustsSharedSettings(of project: Project) -> Bool {
+    guard let shared = project.sharedSettings.confined else { return false }
+    return project.settings.trustsSharedSettings(of: shared)
+  }
+
+  /// The file, the confinement and the date it had, the date taken first so a
+  /// write landing mid-read is caught by the next tick. Off the main actor.
+  nonisolated static func readSharedSettings(of project: Project) -> SharedSettingsReading {
+    let stamp = modificationDate(of: SharedProjectSettings.file(in: project.path))
+    let result = Result { try SharedProjectSettings.load(from: project.path) }
+    return SharedSettingsReading(
+      result: result, confined: (try? result.get())??.confined(to: project), stamp: stamp)
   }
 
   /// `.distantPast` for a file that is not there, so its arrival reads as a
@@ -72,10 +78,24 @@ extension AppModel {
     let stamp = await Self.offMain {
       Self.modificationDate(of: SharedProjectSettings.file(in: path))
     }
-    guard sharedSettings.hasMoved(stamp, for: project.id) else { return }
-    let read = await Self.offMain { Self.readSharedSettings(from: path) }
+    guard project.sharedSettings.hasMoved(stamp) else { return }
+    let read = await Self.offMain { Self.readSharedSettings(of: project) }
     guard workspace.project(project.id) != nil else { return }
-    noteSharedSettings(read.result, stamp: read.stamp, for: project)
+    noteSharedSettings(read, for: project)
+  }
+
+  /// The confinement against the disk again: the verdict is reached when the
+  /// file is read, and a branch can add a symlink without moving its bytes.
+  func reconfineSharedSettings(of project: Project) async -> Project {
+    guard let shared = workspace.project(project.id)?.sharedSettings.asWritten
+    else { return workspace.project(project.id) ?? project }
+    let confined = await Self.offMain { shared.confined(to: project) }
+    guard var read = workspace.project(project.id)?.sharedSettings, read.asWritten == shared,
+      read.confined != confined
+    else { return workspace.project(project.id) ?? project }
+    read.confined = confined
+    store.updateSharedSettings(read, forProject: project.id)
+    return workspace.project(project.id) ?? project
   }
 
   /// What a refresh read, a file that will not parse costing the shared
@@ -83,90 +103,123 @@ extension AppModel {
   func noteSharedSettings(
     _ result: Result<SharedProjectSettings?, any Error>, stamp: Date, for project: Project
   ) {
-    let firstRead = !sharedSettings.hasRead(project.id)
-    switch result {
+    noteSharedSettings(
+      SharedSettingsReading(
+        result: result, confined: (try? result.get())??.confined(to: project), stamp: stamp),
+      for: project)
+  }
+
+  func noteSharedSettings(_ reading: SharedSettingsReading, for project: Project) {
+    // The workspace's copy, not the caller's: a refresh reads the file, then
+    // awaits git, and a tick's read landing meanwhile is not this one to undo.
+    let project = workspace.project(project.id) ?? project
+    var read = project.sharedSettings
+    let firstRead = !read.hasBeenRead
+    let stamp = reading.stamp
+    switch reading.result {
     case .success(let shared):
-      guard sharedSettings.note(shared, stamp: stamp, for: project.id) else { return }
+      // The date is recorded whatever the bytes say: a touch moves it
+      // without changing them, and an unrecorded date is re-read every tick.
+      let changed = read.asWritten != shared || firstRead
+      read.note(shared, confined: reading.confined, stamp: stamp)
+      store.updateSharedSettings(read, forProject: project.id)
+      guard changed else { return }
       // A question already up is about a file the disk no longer has, and
       // trusting it would store an answer for bytes nobody committed.
-      let wasAsking = pendingSharedHooksTrust?.projectID == project.id
-      if wasAsking, pendingSharedHooksTrust?.digest != shared?.digest {
-        pendingSharedHooksTrust = nil
+      let wasAsking = pendingSharedSettingsTrust?.projectID == project.id
+      if wasAsking, pendingSharedSettingsTrust?.digest != shared?.digest {
+        pendingSharedSettingsTrust = nil
       }
       if !firstRead, wasAsking || workspace.selectedWorktree?.projectID == project.id {
-        askAboutSharedHooksIfNeeded(for: project.id)
+        askAboutSharedSettingsIfNeeded(for: project.id)
       }
     case .failure(let error):
       // A question up names hooks the app no longer has, so it goes the way
       // a deleted file's does, and returns if the file parses again.
-      if pendingSharedHooksTrust?.projectID == project.id { pendingSharedHooksTrust = nil }
+      if pendingSharedSettingsTrust?.projectID == project.id { pendingSharedSettingsTrust = nil }
       let problem = t(
         "error.shared-settings-unreadable", SharedProjectSettings.fileName,
         String(describing: error))
-      if sharedSettings.note(problem: problem, stamp: stamp, for: project.id) {
-        platform.log("\(project.name): \(problem)")
-      }
+      let isNew = read.problem != problem
+      read.note(problem: problem, stamp: stamp)
+      store.updateSharedSettings(read, forProject: project.id)
+      if isNew { platform.log("\(project.name): \(problem)") }
     }
   }
 
   /// Asked when the user turns to the project, not when a refresh finds the
   /// file: a launch would otherwise open with a queue of questions.
-  func askAboutSharedHooksIfNeeded(for id: Project.ID) {
+  func askAboutSharedSettingsIfNeeded(for id: Project.ID) {
     // Never over the new-worktree sheet or its create: two on one window
     // fight, and the question returns on the next selection.
     guard newWorktreeRequest == nil, worktreeCreationStep == nil else { return }
-    guard pendingSharedHooksTrust == nil, let project = workspace.project(id),
-      let shared = sharedSettings[id], let hooks = shared.hooksText, let digest = shared.digest,
-      project.settings.needsHookDecision(for: shared)
+    guard pendingSharedSettingsTrust == nil, let project = workspace.project(id),
+      let shared = project.sharedSettings.confined, let contents = shared.trustedContentText,
+      let digest = shared.digest, project.settings.needsTrustDecision(for: shared)
     else { return }
-    pendingSharedHooksTrust = PendingSharedHooksTrust(
-      projectID: id, projectName: project.name, hooks: hooks, digest: digest)
+    pendingSharedSettingsTrust = PendingSharedSettingsTrust(
+      projectID: id, projectName: project.name, contents: contents, digest: digest)
   }
 
   /// Stores an answer against the file's sha256. The project is read again,
   /// a settings window outliving the refresh that replaced its record.
-  private func recordSharedHooks(file digest: String, trusted: Bool, for id: Project.ID) {
+  private func recordSharedSettings(file digest: String, trusted: Bool, for id: Project.ID) {
     guard var settings = workspace.project(id)?.settings else { return }
-    settings.recordSharedHooks(file: digest, trusted: trusted)
+    settings.recordSharedSettings(file: digest, trusted: trusted)
     store.updateSettings(settings, forProject: id)
   }
 
   /// The dialog's answer. Either way the question is not asked again for
   /// this file, this branch's or another's.
-  public func decideSharedHooks(_ pending: PendingSharedHooksTrust, trusted: Bool) {
-    recordSharedHooks(file: pending.digest, trusted: trusted, for: pending.projectID)
+  public func decideSharedSettings(_ pending: PendingSharedSettingsTrust, trusted: Bool) {
+    recordSharedSettings(file: pending.digest, trusted: trusted, for: pending.projectID)
     // The whole value, not its project: a different question that arrived
     // while this one stood is not answered by it.
-    if pendingSharedHooksTrust == pending { pendingSharedHooksTrust = nil }
+    if pendingSharedSettingsTrust == pending { pendingSharedSettingsTrust = nil }
   }
 
-  /// Export from the General tab: the settings in effect, written to the
-  /// repository's file. A refused hook the file held is kept, and stays refused.
+  /// Export from the General tab. A refused hook or path list the file held
+  /// is kept, and stays refused.
   public func exportSharedSettings(for project: Project) {
-    guard let current = workspace.project(project.id) else { return }
-    let mine = SharedProjectSettings(exporting: effectiveSettings(for: current))
-    let kept = mine.keeping(from: sharedSettings[current.id])
+    // Gone from the workspace between the click and here: export nothing
+    // rather than writing a file into a project the user removed.
+    guard let project = workspace.project(project.id) else { return }
+    let mine = SharedProjectSettings(exporting: effectiveSettings(for: project))
+    let kept = mine.keeping(from: project.sharedSettings.asWritten)
     let shared: SharedProjectSettings
     do {
       // What was written, digest and all, so nothing turns on reading the
       // file back and finding the bytes this run put there.
-      shared = try kept.write(to: current.path)
+      shared = try kept.write(to: project.path)
     } catch {
       report(error)
       return
     }
-    let stamp = Self.modificationDate(of: SharedProjectSettings.file(in: current.path))
-    if shared.hasHooks, let digest = shared.digest {
-      recordSharedHooks(file: digest, trusted: kept.hooksText == mine.hooksText, for: current.id)
+    let stamp = Self.modificationDate(of: SharedProjectSettings.file(in: project.path))
+    // Every word the user's own answers itself; otherwise the answer given
+    // about the file this rewrites travels, and no answer leaves the question.
+    let answer =
+      kept.trustedContentText == mine.trustedContentText
+      ? true
+      : project.sharedSettings.confined.flatMap {
+        project.settings.sharedSettingsDecision(about: $0)
+      }
+    if shared.asksForTrust, let digest = shared.digest, let answer {
+      recordSharedSettings(file: digest, trusted: answer, for: project.id)
     }
-    noteSharedSettings(.success(shared), stamp: stamp, for: current)
+    noteSharedSettings(.success(shared), stamp: stamp, for: project)
   }
 
-  /// From the project's Hooks tab: trust the file's current hooks, or stop.
-  public func setTrustsSharedHooks(_ trusted: Bool, for project: Project) {
-    guard let shared = sharedSettings[project.id], shared.hasHooks, let digest = shared.digest
+  /// From the project's Hooks tab: trust what the file currently asks for,
+  /// or stop.
+  public func setTrustsSharedSettings(_ trusted: Bool, for project: Project) {
+    // A button's action runs after the render that built it, so this one
+    // copy can be a read behind; the digest decides what trust is stored.
+    let project = workspace.project(project.id) ?? project
+    guard let shared = project.sharedSettings.confined, shared.asksForTrust,
+      let digest = shared.digest
     else { return }
-    recordSharedHooks(file: digest, trusted: trusted, for: project.id)
-    if pendingSharedHooksTrust?.projectID == project.id { pendingSharedHooksTrust = nil }
+    recordSharedSettings(file: digest, trusted: trusted, for: project.id)
+    if pendingSharedSettingsTrust?.projectID == project.id { pendingSharedSettingsTrust = nil }
   }
 }

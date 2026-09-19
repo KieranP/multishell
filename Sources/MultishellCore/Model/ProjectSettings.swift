@@ -61,12 +61,12 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   /// own text colour. Applies to symbols and the folder alike.
   public var iconTint: Int?
 
-  /// One answer per `.multishell.json` the user was asked about, against the
-  /// sha256 of its bytes, newest first; see Docs/design/settings.md.
-  var sharedHooks: [SharedHooksDecision]
+  /// One answer per `.multishell.json`, against the sha256 of its bytes; see
+  /// settings.md. Named for hooks alone because the name is the key on disk.
+  var sharedHooks: [SharedSettingsDecision]
 
   /// How many files a project remembers an answer for.
-  static let rememberedSharedHooks = 16
+  static let rememberedSharedSettings = 16
 
   public init(
     worktreeDirectory: String? = nil,
@@ -89,7 +89,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     defaultShell: String? = nil,
     iconGlyph: String? = nil,
     iconTint: Int? = nil,
-    sharedHooks: [SharedHooksDecision] = []
+    sharedHooks: [SharedSettingsDecision] = []
   ) {
     self.worktreeDirectory = worktreeDirectory
     self.branchPrefix = branchPrefix
@@ -149,7 +149,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     iconTint = ProjectIcon.validTint(container.decodeTolerantly(Int.self, forKey: .iconTint))
     // Lossy: an answer that will not decode costs that answer and not the
     // project's others, and its hooks are asked about again.
-    sharedHooks = container.decodeLossy(SharedHooksDecision.self, forKey: .sharedHooks)
+    sharedHooks = container.decodeLossy(SharedSettingsDecision.self, forKey: .sharedHooks)
   }
 
   private static func override(_ value: String?) -> String? {
@@ -159,43 +159,50 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
 
   /// Stores the answer for `digest`, replacing any earlier one about those
   /// bytes and moving it to the front, so the longest unasked-about falls off.
-  public mutating func recordSharedHooks(file digest: String, trusted: Bool) {
+  public mutating func recordSharedSettings(file digest: String, trusted: Bool) {
     sharedHooks.removeAll { $0.digest == digest }
-    sharedHooks.insert(SharedHooksDecision(digest: digest, trusted: trusted), at: 0)
-    if sharedHooks.count > Self.rememberedSharedHooks {
-      sharedHooks.removeLast(sharedHooks.count - Self.rememberedSharedHooks)
+    sharedHooks.insert(SharedSettingsDecision(digest: digest, trusted: trusted), at: 0)
+    if sharedHooks.count > Self.rememberedSharedSettings {
+      sharedHooks.removeLast(sharedHooks.count - Self.rememberedSharedSettings)
     }
   }
 
   /// The answer stored about the file with digest `digest`, if the user has
   /// given one.
-  func decision(aboutFile digest: String) -> SharedHooksDecision? {
+  func decision(aboutFile digest: String) -> SharedSettingsDecision? {
     sharedHooks.first { $0.digest == digest }
   }
 
-  /// Whether the hooks in `shared` came from a file the user said yes to.
+  /// Whether what `shared` asks for came from a file the user said yes to.
   /// Settings that came from no file trust nothing.
-  public func trustsHooks(of shared: SharedProjectSettings) -> Bool {
-    guard shared.hasHooks, let digest = shared.digest else { return false }
+  public func trustsSharedSettings(of shared: SharedProjectSettings) -> Bool {
+    guard shared.asksForTrust, let digest = shared.digest else { return false }
     return decision(aboutFile: digest)?.trusted == true
   }
 
-  /// Whether `shared` has hooks in a file the user has not yet been asked
-  /// about.
-  public func needsHookDecision(for shared: SharedProjectSettings) -> Bool {
-    guard shared.hasHooks, let digest = shared.digest else { return false }
+  /// The answer already given about `shared`, `nil` where none was. Export
+  /// carries it onto the bytes it writes; see Docs/design/settings.md.
+  public func sharedSettingsDecision(about shared: SharedProjectSettings) -> Bool? {
+    guard shared.asksForTrust, let digest = shared.digest else { return nil }
+    return decision(aboutFile: digest)?.trusted
+  }
+
+  /// Whether `shared` asks for something in a file the user has not yet been
+  /// asked about.
+  public func needsTrustDecision(for shared: SharedProjectSettings) -> Bool {
+    guard shared.asksForTrust, let digest = shared.digest else { return false }
     return decision(aboutFile: digest) == nil
   }
 
-  /// These settings with the repository's own filling only the gaps the user
-  /// left, and its hooks only once trusted; see Docs/design/settings.md.
+  /// The repository's own filling only the gaps the user left, and what it
+  /// asks to run or read only once trusted; see Docs/design/settings.md.
   public func layered(over shared: SharedProjectSettings?) -> ProjectSettings {
     // Normalised on both paths, with or without a file to fall through to, or
     // the two disagree over the same stored value.
     var result = self
     result.iconGlyph = ProjectIcon.symbolName(iconGlyph)
-    guard let shared else { return result }
-    result.worktreeDirectory = worktreeDirectory ?? shared.worktreeDirectory
+    guard var shared else { return result }
+    if !trustsSharedSettings(of: shared) { shared = shared.withoutWhatTrustCovers }
     result.branchPrefix = branchPrefix ?? shared.branchPrefix
     result.defaultBranch = defaultBranch ?? shared.defaultBranch
     result.autoStartAgent = autoStartAgent ?? shared.autoStartAgent
@@ -207,14 +214,13 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
       showsActiveWorktreesFirst ?? shared.showsActiveWorktreesFirst
     result.iconGlyph = result.iconGlyph ?? ProjectIcon.symbolName(shared.iconGlyph)
     result.iconTint = iconTint ?? ProjectIcon.validTint(shared.iconTint)
+    result.preCreateHook = preCreateHook.isEmpty ? shared.preCreateHook ?? "" : preCreateHook
+    result.postCreateHook = postCreateHook.isEmpty ? shared.postCreateHook ?? "" : postCreateHook
+    result.preDeleteHook = preDeleteHook.isEmpty ? shared.preDeleteHook ?? "" : preDeleteHook
+    result.postDeleteHook = postDeleteHook.isEmpty ? shared.postDeleteHook ?? "" : postDeleteHook
     result.linkedPaths = linkedPaths.isEmpty ? shared.linkedPaths ?? "" : linkedPaths
     result.copiedPaths = copiedPaths.isEmpty ? shared.copiedPaths ?? "" : copiedPaths
-    if trustsHooks(of: shared) {
-      result.preCreateHook = preCreateHook.isEmpty ? shared.preCreateHook ?? "" : preCreateHook
-      result.postCreateHook = postCreateHook.isEmpty ? shared.postCreateHook ?? "" : postCreateHook
-      result.preDeleteHook = preDeleteHook.isEmpty ? shared.preDeleteHook ?? "" : preDeleteHook
-      result.postDeleteHook = postDeleteHook.isEmpty ? shared.postDeleteHook ?? "" : postDeleteHook
-    }
+    result.worktreeDirectory = worktreeDirectory ?? shared.worktreeDirectory
     return result
   }
 

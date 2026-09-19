@@ -49,6 +49,23 @@ struct GitHarness {
 
   var project: Project { model.workspace.projects[0] }
 
+  /// `link/key` in the repository, where `link` leads out of it: a list that
+  /// passes the spelling check and is refused against the disk.
+  func divertARepositoryPathWithASymlink() throws {
+    let manager = FileManager.default
+    let outside = root.appendingPathComponent("outside", isDirectory: true)
+    try manager.createDirectory(at: outside, withIntermediateDirectories: true)
+    try "TOP SECRET".write(
+      to: outside.appendingPathComponent("key"), atomically: true, encoding: .utf8)
+    try manager.createSymbolicLink(
+      at: project.path.appendingPathComponent("link"), withDestinationURL: outside)
+  }
+
+  func shipSharedSettings(_ json: String) throws {
+    try json.write(
+      to: SharedProjectSettings.file(in: project.path), atomically: true, encoding: .utf8)
+  }
+
   /// A second model on the same store, with a shell script standing in for
   /// git. `$SCRATCH` is the harness root; every call is appended to
   /// `$SCRATCH/calls`.

@@ -215,10 +215,14 @@ launched not being given it. Read once, when the host is created.
 
 The merged text goes to libghostty through a file the wrapper writes under the
 temp directory, named for the bundle. The wrapper removes that file when it
-replaces it and never otherwise, so the host clears the directory as it is
-created and again at quit. A second copy of the app running at the time loses
-its file too, which costs nothing: a controller reads its file once, at load,
-and any later change writes a new one.
+replaces it and never otherwise, so the host clears the directory once and again
+at quit. Every copy of the build shares that directory -> only the copy holding
+the instance socket may sweep it, which the model says with `claimSharedFiles`
+once `startStateSource` has succeeded. A copy that handed over keeps its
+terminals until it quits, and sweeping from it would take the running copy's
+file; gating on "did this copy build a controller" did not catch that, since a
+copy that yielded still opens terminals. Cost: a yielded copy's own file is left
+until the next launch that owns the socket clears it.
 
 ## A line libghostty refuses costs that line, not the file
 

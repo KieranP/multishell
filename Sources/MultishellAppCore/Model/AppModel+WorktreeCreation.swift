@@ -59,6 +59,10 @@ extension AppModel {
     // The workspace, not the value handed in: a sheet held open across a
     // removal would add a worktree nothing in the app lists.
     guard let worktrees, workspace.project(project.id) != nil else { return }
+    // A branch can add the symlink without moving the file's bytes, so the
+    // verdict cached at the read is asked of the disk again; see settings.md.
+    let project = await reconfineSharedSettings(of: project)
+    guard workspace.project(project.id) != nil else { return }
     let resolved = resolved(project)
     let settings = worktreeSettings(for: project)
     let shell = workspace.defaultShell(for: project)
@@ -105,21 +109,34 @@ extension AppModel {
       let created = workspace.worktree(path.standardizedFileURL.path)
         ?? workspace.worktrees(of: project.id).first(where: { $0.branch == name })
     else { return }
-    beginWorktreeSetup(of: created, branch: name, in: resolved, shellPath: shell)
+    beginWorktreeSetup(
+      of: created, branch: name, in: resolved, shellPath: shell,
+      lists: fileLists(of: project, resolvedBy: resolved))
     select(created, openingFirstTab: .onCreate)
+  }
+
+  /// The lists to place, in run order. Only the repository's is held to the
+  /// checkout, and a blank list of the user's own is what lets it stand.
+  private func fileLists(of project: Project, resolvedBy resolved: Project) -> [WorktreeFileList] {
+    WorktreePlacement.allCases.compactMap { placement in
+      let paths = placement.paths(in: resolved.settings)
+      guard !WorktreeFiles.paths(in: paths).isEmpty else { return nil }
+      return WorktreeFileList(
+        placement: placement, paths: paths,
+        heldToRepository: placement.paths(in: project.settings).isEmpty)
+    }
   }
 
   /// The file lists and the post-create hook run in the pane, not under the
   /// sheet: a build cache is not worth holding the window for.
   private func beginWorktreeSetup(
-    of worktree: Worktree, branch: String, in project: Project, shellPath: String?
+    of worktree: Worktree, branch: String, in project: Project, shellPath: String?,
+    lists: [WorktreeFileList]
   ) {
-    let placements = WorktreePlacement.allCases.filter {
-      !WorktreeFiles.paths(in: $0.paths(in: project.settings)).isEmpty
-    }
     let runningHook = WorktreeHooks.hasScript(.postCreate, in: project.settings)
     let first: WorktreeOperation.Step? =
-      placements.first.map(WorktreeOperation.Step.init) ?? (runningHook ? .postCreateHook : nil)
+      lists.first.map { WorktreeOperation.Step($0.placement) }
+      ?? (runningHook ? .postCreateHook : nil)
     guard let first else { return }
     worktreeOperations.begin(first, on: worktree.id)
     // Made here, not in the task: a Cancel clicked before the task has run
@@ -130,7 +147,7 @@ extension AppModel {
       Task {
         await prepareWorktree(
           worktree, branch: branch, in: project, shellPath: shellPath, stopper: stopper,
-          placements: placements, runningHook: runningHook)
+          lists: lists, runningHook: runningHook)
       }, on: worktree.id)
   }
 
@@ -138,14 +155,15 @@ extension AppModel {
   /// the post-create hook. A failure or a Cancel stops the stages after it.
   private func prepareWorktree(
     _ worktree: Worktree, branch: String, in project: Project, shellPath: String?,
-    stopper: ProcessStopper, placements: [WorktreePlacement], runningHook: Bool
+    stopper: ProcessStopper, lists: [WorktreeFileList], runningHook: Bool
   ) async {
-    for (index, placement) in placements.enumerated() {
+    for (index, list) in lists.enumerated() {
+      let placement = list.placement
       let stage = WorktreeOperation.Step(placement)
       if index > 0 { worktreeOperations.advance(to: stage, on: worktree.id) }
       guard
         let failure = await placeListedFiles(
-          placement, into: worktree.path, for: project, stopper: stopper)
+          list, into: worktree.path, for: project, stopper: stopper)
       else { continue }
       endSetup(of: worktree, stopper: stopper)
       // The user's Cancel: the worktree is theirs, as after a stopped hook.
@@ -165,10 +183,12 @@ extension AppModel {
     }
     guard runningHook else {
       endSetup(of: worktree, stopper: stopper)
-      if let last = placements.last { finishStage(WorktreeOperation.Step(last), of: worktree) }
+      if let last = lists.last {
+        finishStage(WorktreeOperation.Step(last.placement), of: worktree)
+      }
       return
     }
-    if !placements.isEmpty { worktreeOperations.advance(to: .postCreateHook, on: worktree.id) }
+    if !lists.isEmpty { worktreeOperations.advance(to: .postCreateHook, on: worktree.id) }
     await runPostCreateHook(
       for: worktree, branch: branch, in: project, shellPath: shellPath, stopper: stopper)
   }
@@ -236,12 +256,12 @@ extension AppModel {
   /// One of the project's file lists, before the post-create hook. Returns
   /// what went wrong rather than throwing; off the main thread.
   private func placeListedFiles(
-    _ placement: WorktreePlacement, into path: URL, for project: Project, stopper: ProcessStopper
+    _ list: WorktreeFileList, into path: URL, for project: Project, stopper: ProcessStopper
   ) async -> (any Error)? {
     guard let worktrees else { return nil }
     return await Self.offMain {
       do {
-        try worktrees.placeFiles(placement, for: project, into: path, stopper: stopper)
+        try worktrees.placeFiles(list, for: project, into: path, stopper: stopper)
         return nil
       } catch {
         return error

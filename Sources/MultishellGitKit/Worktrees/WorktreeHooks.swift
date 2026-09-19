@@ -79,10 +79,8 @@ public struct WorktreeHooks: Sendable {
     }
   }
 
-  /// A create's pre hook runs in the repository, the worktree not being there
-  /// yet, and a delete's post hook likewise, the directory being gone by then.
-  /// A pre-delete hook runs in the worktree while it is still there, and in
-  /// the repository when only the record is being forgotten.
+  /// In the worktree where it exists at that stage, in the repository where
+  /// it does not; see Docs/design/hooks.md.
   private static func directory(
     _ stage: HookFailure.Stage, project: Project, worktreePath: URL
   ) -> URL {

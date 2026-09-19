@@ -24,6 +24,9 @@ extension AppModel {
 
   func refreshMergeStates(of project: Project) async {
     guard let worktrees else { return }
+    // Resolved here, not taken from the caller: `fetch` holds its project
+    // across a network call, so its copy can predate a read of the file.
+    let project = workspace.project(project.id) ?? project
     let override = effectiveSettings(for: project).defaultBranch
     let branches = await worktrees.scanBranches(of: project, defaultBranch: override)
     // Gone, or renamed, while git ran.

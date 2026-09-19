@@ -63,9 +63,8 @@ enum PromisedDrop {
     }
   }
 
-  /// Keeps the drag's order while files land in whatever order sources write
-  /// them. An item retires once its own files are in, the reader being called
-  /// once per promised name; a report past that is kept but does not count.
+  /// Keeps the drag's order while files land in any order. An item retires
+  /// once its own are in; a report past that is kept but does not count.
   @MainActor
   final class Collector {
     private var files: [[URL]]

@@ -44,8 +44,7 @@ extension SessionStates {
     }
 
     /// A roster place a report touched, and whether more than one worker was
-    /// under it when it did. Copilot names workers alike, so such a place
-    /// gives no way to tell which of them reported.
+    /// under it: Copilot names workers alike, so which reported is unknowable.
     struct Place {
       var id: String
       var isShared = false
@@ -93,11 +92,8 @@ extension SessionStates {
       }
     }
 
-    /// Which place an end takes. A named one takes its own and nothing where
-    /// it is not out. An unnamed end is one worker gone whichever it was, so
-    /// it takes one that is asking before one that is not, and the oldest
-    /// place of any kind rather than nothing: a roster left a worker over
-    /// holds the agent's Done for the rest of the turn.
+    /// Which place an end takes: a named one its own, an unnamed one the
+    /// oldest asking. Never nothing, or a leftover holds Done all turn.
     private func endingPlace(for report: SubagentReport) -> Int? {
       guard report.id == SubagentReport.anonymousID else {
         return workers.firstIndex { $0.id == report.id }
@@ -125,10 +121,8 @@ extension SessionStates {
       waitingRaisers = []
     }
 
-    /// One thread's prompt answered. `true` when no other is still asking,
-    /// so the dot may move on. A report from a place several workers share
-    /// answers nothing: it may be from any of them, and the prompt is still
-    /// on screen. See Docs/design/agents.md.
+    /// One prompt answered, `true` when no other is asking. A shared place
+    /// answers nothing, being any of them; see Docs/design/agents.md.
     mutating func answered(_ raiser: Raiser, sharedPlace: Bool = false) -> Bool {
       guard !sharedPlace else { return false }
       waitingRaisers.remove(raiser)

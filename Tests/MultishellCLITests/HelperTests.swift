@@ -870,7 +870,7 @@ struct HelperTests {
     let plugin = try await run(["install-agent-hooks", "--agent", "opencode", "--print"])
     #expect(plugin.succeeded && plugin.standardOutput.contains("MultishellPlugin"))
 
-    let unknown = try await run(["install-agent-hooks", "--agent", "aider"])
-    #expect(unknown.status == 2 && unknown.standardError.contains("no hooks for aider"))
+    let unknown = try await run(["install-agent-hooks", "--agent", "nonesuch"])
+    #expect(unknown.status == 2 && unknown.standardError.contains("no hooks for nonesuch"))
   }
 }

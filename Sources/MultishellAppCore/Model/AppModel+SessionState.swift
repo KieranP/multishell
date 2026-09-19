@@ -27,11 +27,11 @@ extension AppModel {
   public func shutDown() {
     saveNow()
     stateSource.stop()
+    host.shutDown()
   }
 
-  /// What the shell says it just started, where that is an agent, and only
-  /// while it runs. An agent's own report names itself and is left alone;
-  /// see Docs/design/agents.md.
+  /// What the shell says it started, while it runs. An agent naming itself
+  /// is left alone; see Docs/design/agents.md.
   private func noteCommandAgent(_ report: SessionStateReport, of id: TerminalSession.ID) {
     guard report.isShell == true, report.agent == nil else { return }
     setIfChanged(

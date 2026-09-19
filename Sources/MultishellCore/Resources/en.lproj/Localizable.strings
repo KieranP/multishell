@@ -174,10 +174,10 @@
 "project-removal.title" = "Remove project %@?";
 "removal.branch-was-kept" = "The branch %@ was kept.";
 "removal.force-deletion" = "Force Deletion";
-"shared-hooks.decline" = "Ignore Hooks";
-"shared-hooks.message" = "The repository ships these hooks. They would run through your shell when a worktree is created or removed, where your own hook for that stage is blank.\n\n%@";
-"shared-hooks.title" = "Run the hooks in %1$@'s %2$@?";
-"shared-hooks.trust" = "Run Hooks";
+"shared-settings.decline" = "Ignore";
+"shared-settings.message" = "The repository asks for this. A hook runs through your shell when a worktree is created or removed, where your own hook for that stage is blank. A linked or copied path is read from your checkout into each new worktree, including files git does not track.\n\n%@";
+"shared-settings.title" = "Trust what %1$@'s %2$@ asks for?";
+"shared-settings.trust" = "Trust";
 "shell.named-custom-blank" = "the custom path, blank, so the login shell";
 "shell.named-custom-path" = "the custom path %@";
 "shell.named-login-shell" = "the login shell (%@)";

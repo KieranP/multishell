@@ -17,7 +17,7 @@ extension AppModel {
     leaveAgentBoard()
     store.selectWorktree(worktree.id)
     warmWorktrees.insert(worktree.id)
-    if openingFirstTab != .onCreate { askAboutSharedHooksIfNeeded(for: worktree.projectID) }
+    if openingFirstTab != .onCreate { askAboutSharedSettingsIfNeeded(for: worktree.projectID) }
     if !isBusy(worktree.id), workspace.tabs(in: worktree.id).isEmpty,
       opensTab(in: worktree, on: openingFirstTab)
     {

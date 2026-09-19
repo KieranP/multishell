@@ -109,9 +109,8 @@ struct TabBar: View {
     }
   }
 
-  /// New Tab and the two splits, each naming this column, so a click in one
-  /// never acts in another. Outside the scroller, so a full strip cannot
-  /// hide them.
+  /// Each names this column, so a click in one never acts in another.
+  /// Outside the scroller, so a full strip cannot hide them.
   private func stripButtons(_ showsSplits: Bool) -> some View {
     HStack(spacing: 0) {
       newTabMenu
@@ -154,9 +153,8 @@ struct TabBar: View {
     .accessibilityLabel(t("tab.new"))
   }
 
-  /// The plus and the chevron that says it opens a menu. Painted, not a
-  /// `contentShape`: a menu is hit-tested by what its label draws, so a
-  /// clear frame around the glyphs would not be part of the target.
+  /// Painted, not a `contentShape`: a menu is hit-tested by what its label
+  /// draws, so a clear frame around the glyphs would miss.
   private var newTabLabel: some View {
     HStack(spacing: model.metrics.menuChevronGap) {
       Image(systemName: "plus")

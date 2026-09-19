@@ -47,9 +47,8 @@ final class SurfaceFrame: NSView {
   @available(*, unavailable)
   required init?(coder: NSCoder) { nil }
 
-  /// The surface, whether this pane has the keyboard and how to ask for it,
-  /// in one call: a frame `ForEach` hands to another session must never
-  /// focus with the closure or the flag of the one it held.
+  /// All three in one call: a frame handed to another session must never
+  /// focus with the closure or flag of the one it held.
   func show(_ view: NSView?, focused: Bool, requestFocus: @escaping () -> Void) {
     self.requestFocus = requestFocus
     let adopted = surface !== view

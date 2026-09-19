@@ -9,137 +9,68 @@ MVP mark, one each for defects, design, cost and project health, numbered 123
 to 188. "Unproven" is behaviour nobody has shown, kept because the fix is cheap
 or the cost is high.
 
-| #   | Effect   | What                                                                              |
-| --- | -------- | --------------------------------------------------------------------------------- |
-| 123 | High     | A cloned repository's settings file can check a worktree out into the home folder |
-| 159 | High     | The licence names no author and the app asserts no copyright                      |
-| 160 | High     | Two MIT dependencies ship linked in with neither notice                           |
-| 124 | Medium   | A second launch deletes the running copy's generated terminal config              |
-| 125 | Medium   | The root AppleScript escapes its paths for `sh`, not for AppleScript              |
-| 126 | Medium   | Hook detection is a substring test, so it eats and skips the user's own hooks     |
-| 131 | Medium   | One commit on the trunk re-asks every branch's merge verdict                      |
-| 132 | Medium   | `git status` runs for worktrees that are collapsed or filtered out of sight       |
-| 133 | Medium   | A drag rebuilds the sidebar or the tab strip at pointer rate                      |
-| 161 | Medium   | The traced agent marks ship with no trademark or attribution note                 |
-| 162 | Medium   | The bundle is signed without a hardened runtime, a timestamp or entitlements      |
-| 175 | Medium   | Six tests sleep a fixed interval and then assert a count did not grow             |
-| 176 | Medium   | Two suites read the process-wide descriptor count without `.serialized`           |
-| 183 | Medium   | The two sidebar header buttons carry no accessibility label                       |
-| 127 | Low      | A subagent roster with no matching stop grows without bound                       |
-| 128 | Low      | The 500-character cap guards `message` and none of the other reported strings     |
-| 130 | Low      | `forget` reports a prune's success as its own, then the branch is deleted anyway  |
-| 134 | Low      | Theme colours are parsed out of hex on every access                               |
-| 135 | Low      | Rows hold fresh closures, so SwiftUI can never skip one                           |
-| 136 | Low      | The branch scan spawns a git process per project per tick, serially               |
-| 138 | Low      | The agent board is rebuilt whole on every body evaluation                         |
-| 139 | Low      | The whole tab strip sits inside a `GeometryReader`                                |
-| 140 | Low      | The sidebar filter folds every worktree name per keystroke                        |
-| 141 | Low      | Row order and block height are recomputed on every sidebar rebuild                |
-| 143 | Low      | The dropped-file sweep runs synchronously on the main actor at launch             |
-| 144 | Low      | A drag over a pane re-reads the pasteboard on every mouse move                    |
-| 145 | Low      | A view measures the drop indicator's hit split, so nothing tests it               |
-| 146 | Low      | `claimedPaths` is read by seven tests and nothing in production                   |
-| 147 | Low      | `warmWorktrees` is absent from the one place per-worktree state is dropped        |
-| 148 | Low      | `AppModel+Runtime` is four unrelated concerns under a name that says none         |
-| 149 | Low      | Agent, shell and editor detection sits in a file named Agents                     |
-| 150 | Low      | `WorkspaceStore` writes the same index lookup sixteen times                       |
-| 151 | Low      | The two translation test files duplicate their scanner and have drifted           |
-| 152 | Low      | The window header chrome is written out twice                                     |
-| 153 | Low      | The centred-caption styling is written out twice                                  |
-| 154 | Low      | Sixty-eight `public` declarations are named by no other target                    |
-| 155 | Low      | Catalogue keys are split by a stray `s`, which breaks the sort into groups        |
-| 156 | Low      | A general SVG path parser lives in the Agents view folder                         |
-| 157 | Low      | Three unrelated extensions share one file in a folder that does no detection      |
-| 158 | Low      | Twelve comments in shipping source exceed two lines                               |
-| 163 | Low      | `dependencies.md` names no licence and omits MSDisplayLink entirely               |
-| 164 | Low      | CI pins the runner image but selects no Xcode, so it builds under the default     |
-| 165 | Low      | CI has no concurrency cancellation and no job timeouts                            |
-| 166 | Low      | CI runs neither the Markdown formatter nor a shell linter                         |
-| 167 | Low      | COMPAT.md blames Apple silicon on libghostty, which ships both slices             |
-| 168 | Low      | The Xcode floor is stated three different ways in three files                     |
-| 169 | Low      | COMPAT.md omits two agents and two shells the code detects                        |
-| 170 | Low      | The addition checklists never say to update COMPAT.md                             |
-| 171 | Low      | The split-button thresholds in two docs are three points out                      |
-| 172 | Low      | known-gaps.md names a test suite that does not exist                              |
-| 173 | Low      | tests.md names a file as though it were a suite                                   |
-| 174 | Low      | AGENTS.md ends a rule with a bare path that resolves from nowhere                 |
-| 177 | Low      | Two watcher tests sample the descriptor count over a fifth of a second            |
-| 178 | Low      | A main-actor AppKit suite spins the run loop without `.serialized`                |
-| 179 | Low      | A misspelled SF Symbol passes its test and draws nothing                          |
-| 180 | Low      | A parser test asserts two counts are not negative, which cannot fail              |
-| 181 | Low      | Three tests skip silently when node or python3 is absent                          |
-| 182 | Low      | Nothing tests the four appearance setters, each of which writes and persists      |
-| 184 | Low      | No shortcut moves focus between the panes of one tab                              |
-| 185 | Low      | The generated Info.plist carries no copyright and no application category         |
-| 187 | Low      | A public repository with no SECURITY.md, CONTRIBUTING.md or issue template        |
-| 188 | Low      | The short version string is a date and a hash, not a version                      |
-| 129 | Unproven | A recycled pid between the hangup and the kill sends SIGKILL to a stranger        |
-| 137 | Unproven | A `cwd`-only report resolves every worktree's symlinks on the main actor          |
-| 142 | Unproven | The directory watcher stats every watched directory on the main actor             |
-| 86  | Low      | An OpenCode server reused by a second pane lands the dot on the first pane's tab  |
-| 87  | Low      | CI never runs `make-app.sh`, so bundling and signing can break with it green      |
-| 85  | Unproven | Three of the four agents' hook files have never been watched moving a dot         |
+| #   | Effect   | What                                                                             |
+| --- | -------- | -------------------------------------------------------------------------------- |
+| 131 | Medium   | One commit on the trunk re-asks every branch's merge verdict                     |
+| 132 | Medium   | `git status` runs for worktrees that are collapsed or filtered out of sight      |
+| 133 | Medium   | A drag rebuilds the sidebar or the tab strip at pointer rate                     |
+| 162 | Medium   | The bundle is signed without a hardened runtime, a timestamp or entitlements     |
+| 175 | Medium   | Six tests sleep a fixed interval and then assert a count did not grow            |
+| 176 | Medium   | Two suites read the process-wide descriptor count without `.serialized`          |
+| 183 | Medium   | The two sidebar header buttons carry no accessibility label                      |
+| 127 | Low      | A subagent roster with no matching stop grows without bound                      |
+| 128 | Low      | The 500-character cap guards `message` and none of the other reported strings    |
+| 130 | Low      | `forget` reports a prune's success as its own, then the branch is deleted anyway |
+| 134 | Low      | Theme colours are parsed out of hex on every access                              |
+| 135 | Low      | Rows hold fresh closures, so SwiftUI can never skip one                          |
+| 136 | Low      | The branch scan spawns a git process per project per tick, serially              |
+| 138 | Low      | The agent board is rebuilt whole on every body evaluation                        |
+| 139 | Low      | The whole tab strip sits inside a `GeometryReader`                               |
+| 140 | Low      | The sidebar filter folds every worktree name per keystroke                       |
+| 141 | Low      | Row order and block height are recomputed on every sidebar rebuild               |
+| 143 | Low      | The dropped-file sweep runs synchronously on the main actor at launch            |
+| 144 | Low      | A drag over a pane re-reads the pasteboard on every mouse move                   |
+| 145 | Low      | A view measures the drop indicator's hit split, so nothing tests it              |
+| 146 | Low      | `claimedPaths` is read by seven tests and nothing in production                  |
+| 147 | Low      | `warmWorktrees` is absent from the one place per-worktree state is dropped       |
+| 148 | Low      | `AppModel+Runtime` is four unrelated concerns under a name that says none        |
+| 149 | Low      | Agent, shell and editor detection sits in a file named Agents                    |
+| 150 | Low      | `WorkspaceStore` writes the same index lookup sixteen times                      |
+| 151 | Low      | The two translation test files duplicate their scanner and have drifted          |
+| 152 | Low      | The window header chrome is written out twice                                    |
+| 153 | Low      | The centred-caption styling is written out twice                                 |
+| 154 | Low      | Sixty-eight `public` declarations are named by no other target                   |
+| 155 | Low      | Catalogue keys are split by a stray `s`, which breaks the sort into groups       |
+| 156 | Low      | A general SVG path parser lives in the Agents view folder                        |
+| 157 | Low      | Three unrelated extensions share one file in a folder that does no detection     |
+| 164 | Low      | CI pins the runner image but selects no Xcode, so it builds under the default    |
+| 165 | Low      | CI has no concurrency cancellation and no job timeouts                           |
+| 166 | Low      | CI runs neither the Markdown formatter nor a shell linter                        |
+| 167 | Low      | COMPAT.md blames Apple silicon on libghostty, which ships both slices            |
+| 168 | Low      | The Xcode floor is stated three different ways in three files                    |
+| 171 | Low      | The split-button thresholds in two docs are three points out                     |
+| 172 | Low      | known-gaps.md names a test suite that does not exist                             |
+| 173 | Low      | tests.md names a file as though it were a suite                                  |
+| 174 | Low      | AGENTS.md ends a rule with a bare path that resolves from nowhere                |
+| 177 | Low      | Two watcher tests sample the descriptor count over a fifth of a second           |
+| 178 | Low      | A main-actor AppKit suite spins the run loop without `.serialized`               |
+| 179 | Low      | A misspelled SF Symbol passes its test and draws nothing                         |
+| 180 | Low      | A parser test asserts two counts are not negative, which cannot fail             |
+| 181 | Low      | Three tests skip silently when node or python3 is absent                         |
+| 182 | Low      | Nothing tests the four appearance setters, each of which writes and persists     |
+| 184 | Low      | No shortcut moves focus between the panes of one tab                             |
+| 187 | Low      | A public repository with no SECURITY.md, CONTRIBUTING.md or issue template       |
+| 188 | Low      | The short version string is a date and a hash, not a version                     |
+| 86  | Low      | An OpenCode server reused by a second pane lands the dot on the first pane's tab |
+| 87  | Low      | CI never runs `make-app.sh`, so bundling and signing can break with it green     |
+| 129 | Unproven | A recycled pid between the hangup and the kill sends SIGKILL to a stranger       |
+| 137 | Unproven | A `cwd`-only report resolves every worktree's symlinks on the main actor         |
+| 142 | Unproven | The directory watcher stats every watched directory on the main actor            |
+| 85  | Unproven | Three of the four agents' hook files have never been watched moving a dot        |
 
 ## Settings and trust
 
-### 123. High. A cloned repository's settings file can check a worktree out into the home folder
-
-`Sources/MultishellCore/Model/ProjectSettings.swift:198`. `layered(over:)` gates
-the four hook fields on `trustsHooks(of:)` and lets `worktreeDirectory` and
-`branchPrefix` through unconditionally. `worktreeContainer(for:)`
-(WorktreeSettings.swift:41) then runs `expandingTilde` and resolves against the
-project path, so an absolute or `~`-rooted value simply wins over the base, and
-nothing checks the result lands under the project.
-
-A repository commits
-`{"worktreeDirectory": "~/.claude/skills", "copiedPaths": "SKILL.md"}` and a
-root `SKILL.md`. The user clones it, adds it, and creates a worktree on any
-branch. `git worktree add` checks the repository out to
-`~/.claude/skills/<branch-slug>/` and `WorktreeFiles.place`, which is trusted by
-design because it runs nothing (Docs/design/hooks.md), copies the file in. That
-is a globally installed Claude Code skill, loaded when the agent next starts.
-The landing directory does not depend on the slug, so nothing has to be guessed,
-and the same shape reaches the other agents' plugin trees.
-
-This contradicts the rationale in Docs/design/settings.md, which admits a shared
-field without trust because it "changes only what is drawn". `worktreeDirectory`
-is not a drawn setting. The planned path is shown before Create
-(NewWorktreeSheet.swift:180) and git refuses an existing non-empty directory,
-which is the whole of the mitigation. The file is re-read whenever its mtime
-moves (`AppModel+SharedSettings.refreshSharedSettingsIfChanged`), so a
-`git pull` can change the value after the project was trusted in practice.
-
 ## App launch
-
-### 124. Medium. A second launch deletes the running copy's generated terminal config
-
-`Apps/macOS/Sources/Multishell/Terminals/GhosttyTerminalHost.swift:15`.
-`removeGeneratedConfigs()` removes `TerminalController.managedConfigDirectory`
-recursively and runs in `init`, which `AppModel(platform:)`
-(AppModel+Mac.swift:17) constructs inside `MultishellApp.init()`. That is before
-`AppModel.start()` reaches `startStateSource()` and finds another copy holds the
-socket.
-
-The user double-clicks the app while one copy is running with live terminals.
-The second copy's `init` deletes the shared directory out from under the first,
-then detects `SocketFailure.inUse`, hands over and terminates, and
-`applicationWillTerminate` removes it a second time. The first copy's generated
-config is gone while libghostty still points at it. Every other launch-time side
-effect, `HelperLink.refresh`, `ShellIntegration.refresh` and
-`DroppedFiles.sweep`, is behind the `startStateSource()` guard; this one is not.
-What the first copy does on its next config read is unproven. The ordering is
-not.
-
-### 125. Medium. The root AppleScript escapes its paths for `sh`, not for AppleScript
-
-`Apps/macOS/Sources/Multishell/App/MacPlatform.swift:83`. The script is
-`"do shell script \"mkdir -p /usr/local/bin && ln -sf \(target) \(link)\" with administrator privileges"`,
-and the two interpolated paths go through `ShellQuoting.quote`, which wraps in
-single quotes and escapes only `'`. A `"` or a `\` in `Paths.helperLink.path`,
-which comes from `FileManager.homeDirectoryForCurrentUser`, closes the
-AppleScript literal early and the remainder is parsed as AppleScript and run as
-root. The attacker has to control the victim's own home path, so this is hard to
-reach, but the escaping is the wrong one whether or not it is reachable.
 
 ## Agents and session state
 
@@ -164,18 +95,6 @@ spawns the helper from the OpenCode server's process, and the helper reads
 started from one pane and reused by another therefore reports that first pane's
 session, so the dot lands on the wrong tab. Only the plugin has this: every
 other agent's hook runs in the session's own process.
-
-### 126. Medium. Hook detection is a substring test, so it eats and skips the user's own hooks
-
-`Sources/MultishellCore/Integrations/Agents/AgentHooks.swift:29`.
-`isMultishellHook` asks whether the command contains `multishell` and either
-`agent-hook` or `claude-hook`, and it is applied to the user's own entries. Both
-directions break in `AgentHookIntegration+Install.swift`. Removing hooks deletes
-any hand-written entry whose command happens to hold both substrings, such as
-one piping into a script named `multishell-agent-hook-logger`. Installing sees
-`existing.contains(where: isMultishellGroup)` for that event, skips appending
-ours, and reports success, after which `isInstalled(in:)` answers true for a
-file that holds none of our hooks and that event never fires.
 
 ### 127. Low. A subagent roster with no matching stop grows without bound
 
@@ -227,7 +146,7 @@ the row back with its branch gone.
 
 ### 131. Medium. One commit on the trunk re-asks every branch's merge verdict
 
-`Sources/MultishellAppCore/Model/AppModel+Merges.swift:60`, memo key at
+`Sources/MultishellAppCore/Model/AppModel+Merges.swift:64`, memo key at
 line 136. `MergeCheck` holds `baseTip`, so a single commit on the trunk, or a
 fetch moving `origin/main`, invalidates the memo for every worktree at once.
 Each one then runs `verdict` (WorktreeCoordinator+Merges.swift:53): `git cherry`
@@ -306,7 +225,7 @@ projects in a task group and pace the scan per project.
 
 ### 137. Unproven. A `cwd`-only report resolves every worktree's symlinks on the main actor
 
-`Sources/MultishellAppCore/Model/AppModel+SessionState.swift:111`.
+`Sources/MultishellAppCore/Model/AppModel+SessionState.swift:112`.
 `worktree(atPath:)` calls `resolvingSymlinksInPath()` on every worktree in the
 workspace, a `realpath` chain each, plus one for the reported path, and it runs
 on the main actor for every socket report carrying no session id, which is the
@@ -367,9 +286,12 @@ main actor, or only for the directories the tick named.
 
 ### 143. Low. The dropped-file sweep runs synchronously on the main actor at launch
 
-`Sources/MultishellAppCore/Model/AppModel.swift:301`. `DroppedFiles.sweep()`
+`Sources/MultishellAppCore/Model/AppModel.swift:297`. `DroppedFiles.sweep()`
 runs synchronously on the main actor inside `start()`, and each expired drop is
-a recursive `removeItem`. Wrap it in `Self.offMain`.
+a recursive `removeItem`. Wrap it in `Self.offMain`. `host.claimSharedFiles()`
+nine lines above is the same shape: a recursive `removeItem` of the generated
+config directory, on the main actor, and it must stay ahead of the first
+controller, so moving it off needs an await rather than a detached task.
 
 ### 144. Low. A drag over a pane re-reads the pasteboard on every mouse move
 
@@ -397,7 +319,7 @@ and have the tests assert through `isClaimed(_:)`.
 
 ### 147. Low. `warmWorktrees` is absent from the one place per-worktree state is dropped
 
-`Sources/MultishellAppCore/Model/AppModel.swift:107`. It is keyed by
+`Sources/MultishellAppCore/Model/AppModel.swift:108`. It is keyed by
 `Worktree.ID` and `forgetWorktrees` (AppModel+Runtime.swift:88), which adding.md
 names as the single place this state is dropped, does not touch it. The comment
 says it never shrinks and gives no reason. Either add it there or write the
@@ -493,7 +415,7 @@ it to `Support/`.
 Detection while detecting nothing. The style rule is `Type+Concern.swift` per
 extension, so this is three files named `+DisplayName`.
 
-### 158. Low. Twelve comments in shipping source exceed two lines
+## 158. Low. Twelve comments in shipping source exceed two lines
 
 `SessionStates+Entry.swift:96` at five lines, `:128` at four and `:46` at three;
 `WorktreeHooks.swift:82` at four; `UIMetrics.swift:44` at four and `:54` at
@@ -506,41 +428,13 @@ twelve.
 
 ## Licensing and release
 
-### 159. High. The licence names no author and the app asserts no copyright
-
-`LICENSE:633` is the stock AGPL-3.0 with `Copyright (C) <year> <name of author>`
-never filled in. There is no source-file header, no `NSHumanReadableCopyright`
-in `Apps/macOS/Resources/Info.plist.in`, and no credits string in either
-`Localizable.strings`, so the shipped app claims nothing.
-
-### 160. High. Two MIT dependencies ship linked in with neither notice
-
-`Apps/macOS/Package.resolved`. libghostty-spm and MSDisplayLink are both MIT and
-both statically linked into `build/Multishell.app`. MIT requires the notice to
-travel with the binary and neither the repository nor the bundle carries either
-one. `Apps/macOS/.build/checkouts/libghostty-spm/LICENSE` is itself a patched
-repackaging of Ghostty crediting only the repackager, so the notice this project
-would copy is incomplete; check upstream before distributing.
-
-### 161. Medium. The traced agent marks ship with no trademark or attribution note
-
-`Apps/macOS/Sources/Multishell/Resources/Marks/{codex,copilot,gemini,opencode}.svg`.
-Docs/design/agents.md:488 confirms they are drawn from upstream. They ship under
-a licence the project cannot grant over them.
-
 ### 162. Medium. The bundle is signed without a hardened runtime, a timestamp or entitlements
 
-`Scripts/build-lib.sh:147` signs with neither `--options runtime` nor
+`Scripts/build-lib.sh:162` signs with neither `--options runtime` nor
 `--timestamp`, and there is no entitlements file in the tree.
 `codesign -d -vvv build/Multishell.app` reports `flags=0x0(none)` and
 `TeamIdentifier=not set`. TODO.md queues Developer ID and records none of these
 three.
-
-### 163. Low. `dependencies.md` names no licence and omits MSDisplayLink entirely
-
-`Docs/develop/dependencies.md:3` names libghostty without its licence and never
-mentions MSDisplayLink, which `Package.resolved` pins at 2.2.0 and the app
-ships.
 
 ## Scripts and build
 
@@ -548,8 +442,8 @@ ships.
 
 `.github/workflows/ci.yml:12`. CI runs `swift build` and `swift test` for both
 packages and nothing else, while `make build` goes on to `Scripts/make-app.sh`
-(Makefile:26), which writes the generated Info.plist (make-app.sh:98) and signs
-the bundle (make-app.sh:172). A change that breaks any of those passes CI, and
+(Makefile:26), which writes the generated Info.plist (make-app.sh:49) and signs
+the bundle (make-app.sh:58). A change that breaks any of those passes CI, and
 nothing notices until someone runs `make build`. The Makefile's own header at
 line 2 says the two are meant not to drift. `make build` completes here in under
 ten minutes with no warnings, so a fourth job is cheap.
@@ -585,19 +479,6 @@ dependency's.
 `README.md:24` says 26 or later, `COMPAT.md:14` says 27 or 26 for the libraries
 alone, and `Docs/develop/build.md:5` and `:81` say 26 while adding that nobody
 has built it under 26.
-
-### 169. Low. COMPAT.md omits two agents and two shells the code detects
-
-`COMPAT.md:35`. The agent table leaves out Aider (`AgentCatalogue.swift:61`) and
-Cursor Agent (`:66`), both detected, offered in the pickers and markable at a
-prompt. The shell table leaves out fish and nu, which `ShellCatalogue.swift:15`
-searches for and the settings picker offers.
-
-### 170. Low. The addition checklists never say to update COMPAT.md
-
-`Docs/develop/adding.md:26` and `:148`, the agent-or-editor and shell
-checklists. AGENTS.md does not list COMPAT.md at all and `README.md:54` is its
-only pointer, which is how 169 went stale.
 
 ### 171. Low. The split-button thresholds in two docs are three points out
 
@@ -697,13 +578,6 @@ and Add Project buttons the only icon-only controls in the app without one.
 previous tab and group and nothing that moves focus inside a tab, so a split
 pane is mouse-only and Ghostty takes every keystroke. known-gaps.md:59 records
 the sidebar half and TODO.md queues the rest.
-
-### 185. Low. The generated Info.plist carries no copyright and no application category
-
-`Apps/macOS/Resources/Info.plist.in` has no `NSHumanReadableCopyright`, so the
-About box shows none, and no `NSPrincipalClass`, `CFBundleInfoDictionaryVersion`
-or `LSApplicationCategoryType`. The rest of it is correct and the generated file
-is `plutil`-clean.
 
 ## Repository hygiene
 

@@ -100,6 +100,17 @@ extension WorkspaceStore {
     update(project: id) { $0.settings = settings }
   }
 
+  /// This run's read of a project's `.multishell.json`. A read saying what the
+  /// last one did touches nothing: a mutation here is a whole-workspace save.
+  public func updateSharedSettings(
+    _ read: SharedSettingsRead, forProject id: Project.ID
+  ) {
+    guard let index = workspace.projects.firstIndex(where: { $0.id == id }),
+      workspace.projects[index].sharedSettings != read
+    else { return }
+    workspace.projects[index].sharedSettings = read
+  }
+
   private func update(project id: Project.ID, _ change: (inout Project) -> Void) {
     guard let index = workspace.projects.firstIndex(where: { $0.id == id }) else { return }
     change(&workspace.projects[index])

@@ -19,9 +19,11 @@ outright; see smaller-decisions.md. A replacement implements
 `TerminalSurfaceHost` and is passed to `AppModel` in `AppModel+Mac.swift`. Pass
 `SessionEnvironment.variables` to the child. Report a finished command through
 `didFinishCommandIn` if the engine can tell. Frame `paste` as a bracketed paste
-where it can. Two at once needs a multiplexer between them and `AppModel`: one
-host per kind and a map from session to kind, so a running terminal keeps the
-engine that opened it.
+where it can. Drop anything held outside its sessions in `shutDown`, and clear
+what a shared directory holds in `claimSharedFiles`, never outside it; both
+default to doing nothing. Two at once needs a multiplexer between them and
+`AppModel`: one host per kind and a map from session to kind, so a running
+terminal keeps the engine that opened it.
 
 **An agent or editor.** A row in `AgentCatalogue.agents` or
 `EditorCatalogue.editors`; detection and the dropdowns follow. An agent's row
@@ -30,8 +32,9 @@ its own rather than being black or white. A new `AgentMark` case needs a case in
 `AgentMark.drawn` and in `AgentMarkShape.resourceName(of:)`, and a single-path
 `.svg` of that name in `Apps/macOS/Sources/Multishell/Resources/Marks`, in a
 16-point square using absolute `M`, `L`, `C`, `Q` and `Z` only. `.monogram`
-needs none of it and is what an agent ships with until someone draws one. See
-Docs/design/agents.md.
+needs none of it and is what an agent ships with until someone draws one. Give
+it a row in COMPAT.md's agent table, which is the only place a user reads what
+the app does with it. See Docs/design/agents.md.
 
 **A hook stage.** A case in `HookFailure.Stage`, an arm in each of
 `WorktreeHooks.script` and `WorktreeHooks.directory` saying which settings field
@@ -49,8 +52,10 @@ untyped default reads as the Trash refusing and restores.
 the settings field it reads, a `WorktreeOperation.Step` with its titles and the
 help its Cancel shows, an editor in ProjectHooksTab, and if a repository may
 ship it, a field on `SharedProjectSettings` plus a line in
-`ProjectSettings.layered`. AppModel runs one stage per filled-in list, in enum
-order, before the post-create hook.
+`ProjectSettings.layered`, and, since a list names paths on the reader's disk,
+the four places trust and containment are spelled out: `confined(to:)`,
+`trustedContentText`, `withoutWhatTrustCovers` and `keeping(from:)`. AppModel
+runs one stage per filled-in list, in enum order, before the post-create hook.
 
 **An agent's hooks.** An `AgentHookIntegration` in `AgentHooks.integrations`:
 the file, the events, what each says the session is doing, which of two events
@@ -153,7 +158,9 @@ carried by a variable, as zsh's `ZDOTDIR` is). It calls
 `multishell command-started --pid $$` and
 `command-finished --exit $? --duration S`, and does nothing when
 `MULTISHELL_SESSION` is unset. Add it to `ShellCatalogue.searched` if Homebrew
-leaves it out of `/etc/shells`.
+leaves it out of `/etc/shells`, and give it a row in COMPAT.md's shell table. A
+shell added to `searched` alone still needs that row: the picker offers it, so a
+reader has to be told what it does not get.
 
 **A platform GUI.** Depend on the library products as `Apps/macOS/Package.swift`
 does, fix `AppModel<Surface>` to the platform's view type once, implement
@@ -172,7 +179,10 @@ choice in the verb: `decode(_:forKey:or:)` where a key of the wrong type should
 still fail the file, `decodeTolerantly` where a value this build cannot read
 must cost that value alone, which is the answer for an enum a newer build may
 have named. `or:` is the same fallback in both. Element-by-element decode that
-drops a broken one is `LossyArray`; projects stay strict.
+drops a broken one is `LossyArray`; projects stay strict. A field on `Project`
+needs its case adding to that type's own `CodingKeys` and to its `==` and
+`hash`, all three hand-written so `sharedSettings`, which is this run's read of
+a file rather than saved state, stays out of them.
 
 **A preference.** Four touch points, in this order: the field on `Workspace`,
 decoded as above; a setter on `WorkspaceStore`, which has to sit beside the
@@ -182,7 +192,9 @@ no further; a method on AppModel, doing whatever else the change needs (see
 `model.setting(...)`. A project override is a second field on `ProjectSettings`,
 a resolver on `Workspace` reading `project.settings` first, and, if a repository
 may ship it, a field on `SharedProjectSettings` with a line in
-`ProjectSettings.layered`.
+`ProjectSettings.layered`; one naming a path on the reader's disk also goes in
+`confined(to:)`, `trustedContentText`, `withoutWhatTrustCovers` and
+`keeping(from:)`. See settings.md.
 
 **A collection, or a reference between collections.** Extend
 `Workspace.repairReferences` and WorkspaceInvariants. Every store operation must

@@ -32,7 +32,7 @@ public final class AppModel<Surface> {
   public var pendingRemoval: PendingWorktreeRemoval?
   /// The trust question about one project's shared hooks, waiting on its
   /// dialog.
-  public var pendingSharedHooksTrust: PendingSharedHooksTrust?
+  public var pendingSharedSettingsTrust: PendingSharedSettingsTrust?
   /// A project removal waiting on its dialog, in whichever window asked.
   public var pendingProjectRemoval: PendingProjectRemoval?
   /// A pane or tab close waiting on it, because an agent there is working.
@@ -80,8 +80,7 @@ public final class AppModel<Surface> {
   /// The create or remove running on each worktree, shown in its detail pane;
   /// see `WorktreeOperations` for who owns an entry.
   public var worktreeOperations = WorktreeOperations()
-  /// The tasks, stop handles and claimed paths of the work building a
-  /// worktree; see `WorktreeWorkInFlight`. Not observed: the pane draws from
+  /// The work building a worktree. Not observed: the pane draws from
   /// `worktreeOperations` beside it.
   @ObservationIgnored public var workInFlight = WorktreeWorkInFlight()
 
@@ -172,10 +171,6 @@ public final class AppModel<Surface> {
   @ObservationIgnored public var statusReads = StatusReadLog()
   /// One coalesced status refresh per worktree; see `noteActivity`.
   @ObservationIgnored var pendingStatusRefreshes: [Worktree.ID: Task<Void, Never>] = [:]
-
-  /// What each project's `.multishell.json` says, the date it had when it
-  /// was read, and why it would not parse; see `SharedSettingsCache`.
-  public var sharedSettings = SharedSettingsCache()
 
   @ObservationIgnored var pendingSave: Task<Void, Never>?
   /// Set where another copy holds the socket: two copies autosaving one file
@@ -290,6 +285,7 @@ public final class AppModel<Surface> {
   /// actually has. Terminals are not restored; only the tree is.
   public func start() async {
     guard startStateSource() else { return }
+    host.claimSharedFiles()
     do {
       try HelperLink.refresh(to: platform.bundledHelper)
       try ShellIntegration.refresh()

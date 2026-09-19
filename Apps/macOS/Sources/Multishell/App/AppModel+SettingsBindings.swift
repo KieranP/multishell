@@ -66,15 +66,9 @@ extension AppModel {
     return Binding(get: { source.wrappedValue ?? fallback }, set: { source.wrappedValue = $0 })
   }
 
-  /// The record as the workspace has it now, falling back to the one the
-  /// window was opened with, which goes stale across refreshes.
-  func current(_ project: Project) -> Project {
-    workspace.project(project.id) ?? project
-  }
-
-  /// The project's own settings, the repository's not layered in: these forms
-  /// edit what the user set, and blank means "follow the global".
+  /// The project's own, the repository's not layered in. By id: a write from
+  /// a binding's captured copy would undo anything changed meanwhile.
   func settings(of project: Project) -> ProjectSettings {
-    current(project).settings
+    workspace.project(project.id)?.settings ?? project.settings
   }
 }

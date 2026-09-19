@@ -43,6 +43,77 @@ final class WorktreeFilesTests {
       "and nothing was placed in the worktree")
   }
 
+  /// The rule holds a repository to the checkout, not the user: a path they
+  /// typed into project settings is used as written. See settings.md.
+  @Test(arguments: [WorktreePlacement.copy, .link])
+  func aPathTheUserListedThemselvesIsNotHeldToTheCheckout(_ placement: WorktreePlacement) throws {
+    let (repository, worktree) = try directories()
+    try "SECRET=1".write(to: repository.appending(".env"), atomically: true, encoding: .utf8)
+
+    try WorktreeFiles().place(
+      "~/.aws.json\n/etc/passwd\n.env", as: placement, from: repository, to: worktree,
+      heldToRepository: false)
+
+    #expect(FileManager.default.fileExists(atPath: worktree.appending(".env").path))
+    #expect(
+      try FileManager.default.contentsOfDirectory(atPath: worktree.path) == [".env"],
+      "the entries that resolve to nothing under the checkout are skipped, as before")
+  }
+
+  /// The destination is mirrored from the entry rather than asked for, so
+  /// even a list of the user's own places nothing outside the worktree.
+  @Test func aUsersOwnEntryIsNeverPlacedOutsideTheWorktree() throws {
+    let (repository, _) = try directories()
+    let manager = FileManager.default
+    let worktree = root.appending("trees/w")
+    let outside = root.appending("outside")
+    for url in [worktree, outside] {
+      try manager.createDirectory(at: url, withIntermediateDirectories: true)
+    }
+    try "TOP SECRET".write(to: outside.appending("key"), atomically: true, encoding: .utf8)
+
+    try WorktreeFiles().place(
+      "../outside/key", as: .copy, from: repository, to: worktree, heldToRepository: false)
+
+    #expect(try manager.contentsOfDirectory(atPath: worktree.path).isEmpty)
+    #expect(
+      !manager.fileExists(atPath: root.appending("trees/outside/key").path),
+      "and nothing was written beside it either")
+  }
+
+  /// Refused, not silently skipped: these used to fail only because
+  /// `repo/~/.aws.json` does not exist, which is luck; see BUGS 123.
+  @Test(arguments: [WorktreePlacement.copy, .link])
+  func noSpellingOfAPathOutsideTheRepositoryIsPlaced(_ placement: WorktreePlacement) throws {
+    let (repository, worktree) = try directories()
+    let outside = [
+      "~/.aws.json", "~", "$HOME/.aws.json", "/etc/passwd", "/", "../../../.aws.json", "..",
+      "a/../../.aws.json", ".", "./",
+    ]
+
+    for path in outside {
+      let failure = #expect(throws: WorktreeFileFailure.self) {
+        try WorktreeFiles().place(path, as: placement, from: repository, to: worktree)
+      }
+      #expect(failure?.items.map(\.path) == [path], "\(path.debugDescription)")
+    }
+    #expect(try FileManager.default.contentsOfDirectory(atPath: worktree.path).isEmpty)
+  }
+
+  /// One bad entry does not cost the good ones, which is what `place` does
+  /// with every other kind of failure.
+  @Test func theEntriesThatStayInsideArePlacedBesideOneThatIsRefused() throws {
+    let (repository, worktree) = try directories()
+    try "SECRET=1".write(to: repository.appending(".env"), atomically: true, encoding: .utf8)
+
+    let failure = #expect(throws: WorktreeFileFailure.self) {
+      try WorktreeFiles().place(
+        ".env\n~/.aws.json", as: .copy, from: repository, to: worktree)
+    }
+    #expect(failure?.items.map(\.path) == ["~/.aws.json"])
+    #expect(try String(contentsOf: worktree.appending(".env"), encoding: .utf8) == "SECRET=1")
+  }
+
   /// The point of the link list: one `node_modules`, not one per worktree.
   /// The link is absolute and points at the repository's own file, so what
   /// is written through it is written there.
@@ -170,10 +241,13 @@ final class WorktreeFilesTests {
 
   /// A leading `/` or `~` is not a way out: it lands under the repository,
   /// where there is nothing to copy, so it needs no rule of its own.
-  @Test func anAbsolutePathOrATildeLandsInsideAndFindsNothing() throws {
+  @Test func anAbsolutePathOrATildeIsRefusedRatherThanFindingNothing() throws {
     let (repository, worktree) = try directories()
-    try WorktreeFiles().place(
-      "/etc/passwd\n~/.ssh/id_rsa", as: .copy, from: repository, to: worktree)
+    let failure = #expect(throws: WorktreeFileFailure.self) {
+      try WorktreeFiles().place(
+        "/etc/passwd\n~/.ssh/id_rsa", as: .copy, from: repository, to: worktree)
+    }
+    #expect(failure?.items.map(\.path) == ["/etc/passwd", "~/.ssh/id_rsa"])
     #expect(try FileManager.default.contentsOfDirectory(atPath: worktree.path).isEmpty)
   }
 
@@ -254,20 +328,54 @@ final class WorktreeFilesTests {
       "nothing was written outside the worktree")
   }
 
-  /// A checkout whose `.env` is a symlink to somewhere else is a real
-  /// setup, and copying the link copies no secret: the worktree ends up
-  /// pointing where the repository already pointed.
-  @Test func aSymlinkAtTheEndOfThePathIsCopiedAsALinkAndIsNotFollowed() throws {
+  /// `copyItem` copies a link rather than following it, so the worktree would
+  /// hold a pointer at whatever it names. See Docs/design/hooks.md.
+  @Test(arguments: [WorktreePlacement.copy, .link])
+  func aSymlinkAtTheEndOfThePathIsRefusedLikeOneInTheMiddle(_ placement: WorktreePlacement) throws {
     let (repository, worktree) = try directories()
     let outside = repository.deletingLastPathComponent().appending("outside")
     try FileManager.default.createDirectory(at: outside, withIntermediateDirectories: true)
-    try "SECRET=1".write(to: outside.appending("real"), atomically: true, encoding: .utf8)
+    try "TOP SECRET".write(to: outside.appending("real"), atomically: true, encoding: .utf8)
     try FileManager.default.createSymbolicLink(
       at: repository.appending(".env"), withDestinationURL: outside.appending("real"))
 
+    let failure = #expect(throws: WorktreeFileFailure.self) {
+      try WorktreeFiles().place(".env", as: placement, from: repository, to: worktree)
+    }
+    #expect(failure?.items.map(\.path) == [".env"])
+    #expect(try FileManager.default.contentsOfDirectory(atPath: worktree.path).isEmpty)
+  }
+
+  /// A symlink that stays inside is the ordinary case and is carried whole.
+  @Test func aSymlinkThatStaysInsideTheRepositoryIsPlaced() throws {
+    let (repository, worktree) = try directories()
+    try "SECRET=1".write(to: repository.appending(".env.real"), atomically: true, encoding: .utf8)
+    try FileManager.default.createSymbolicLink(
+      at: repository.appending(".env"), withDestinationURL: repository.appending(".env.real"))
+
     try WorktreeFiles().place(".env", as: .copy, from: repository, to: worktree)
-    let copied = try FileManager.default.attributesOfItem(atPath: worktree.appending(".env").path)
-    #expect(copied[.type] as? FileAttributeType == .typeSymbolicLink)
+
+    #expect(try String(contentsOf: worktree.appending(".env"), encoding: .utf8) == "SECRET=1")
+  }
+
+  /// A glob may not reach out either: it expands under the repository, and
+  /// each name it finds is judged against the disk like any other.
+  @Test func aGlobCannotExpandOntoSomethingOutsideTheRepository() throws {
+    let (repository, worktree) = try directories()
+    let outside = repository.deletingLastPathComponent().appending("outside")
+    try FileManager.default.createDirectory(at: outside, withIntermediateDirectories: true)
+    try "TOP SECRET".write(to: outside.appending("key"), atomically: true, encoding: .utf8)
+    try "SECRET=1".write(to: repository.appending("a.env"), atomically: true, encoding: .utf8)
+    try FileManager.default.createSymbolicLink(
+      at: repository.appending("b.env"), withDestinationURL: outside.appending("key"))
+
+    let failure = #expect(throws: WorktreeFileFailure.self) {
+      try WorktreeFiles().place("*.env", as: .copy, from: repository, to: worktree)
+    }
+    #expect(failure?.items.map(\.path) == ["b.env"])
+    #expect(
+      try FileManager.default.contentsOfDirectory(atPath: worktree.path) == ["a.env"],
+      "the one that stayed inside is still placed")
   }
 
   @Test func patternsMatchWithinOneNameOnly() {

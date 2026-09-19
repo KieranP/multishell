@@ -41,8 +41,7 @@ extension AppModel {
     missingProjects.remove(project.id)
     commonGitDirectories[project.id] = nil
     worktreeRecords[project.id] = nil
-    sharedSettings.forget(project.id)
-    if pendingSharedHooksTrust?.projectID == project.id { pendingSharedHooksTrust = nil }
+    if pendingSharedSettingsTrust?.projectID == project.id { pendingSharedSettingsTrust = nil }
     // Or the settings window's fallback to the current project never fires:
     // a stale id wins over it, and the window opens only to dismiss itself.
     if settingsProjectID == project.id { settingsProjectID = nil }
@@ -94,7 +93,7 @@ extension AppModel {
     if let common = await commonGitDirectory(of: project) {
       records = await Self.offMain { WorktreeRecords.read(commonDirectory: common) }
     }
-    let shared = await Self.offMain { Self.readSharedSettings(from: path) }
+    let shared = await Self.offMain { Self.readSharedSettings(of: project) }
     do {
       let discovered = try await worktrees.refresh(project)
       // Removed while git ran: the store ignores the list, and the records
@@ -106,7 +105,7 @@ extension AppModel {
       forgetWorktrees(store.replaceWorktrees(discovered, forProject: project.id))
       worktreeRecords[project.id] = records
       missingProjects.remove(project.id)
-      noteSharedSettings(shared.result, stamp: shared.stamp, for: project)
+      noteSharedSettings(shared, for: project)
       // A worktree removed outside the app loses its tabs and sessions here,
       // and without this the host keeps their surfaces and the shells run on.
       reconcileSessions(takingFocus: false)

@@ -153,12 +153,18 @@ What each test catches, and the conventions a new one follows.
 - The chip reads the same roster on the row and on the card, and a Done gives
   way to a worker and comes back once: SessionStateModelTests, through the
   socket, the banner counted.
-- Export keeps a hook the user refused and does not trust it into the bargain:
-  AppModelHookControlTests, against the real file on disk. The same suite
-  exports over a file holding a `$schema` line, and SharedProjectSettingsTests
-  holds the whole rule: an unknown key, a nested one, an order no build names
-  and a wrong-typed flag all come back as they were, and what `write` returns
-  equals a fresh load.
+- Export keeps a hook the user refused and does not trust it into the bargain,
+  and keeps the directory and the two path lists an unanswered file holds:
+  AppModelHookControlTests, against the real file on disk. The answer itself
+  travels there: the same suite trusts a file holding a directory confinement
+  refuses, exports, and asks whether the hook still runs, the `mine` the export
+  compares against having lost that directory; and exports a file nobody has
+  answered for and asks that it still needs an answer. The same suite plants a
+  symlink after the file was read and watches the create refuse the directory
+  rather than check out through it. The same suite exports over a file holding a
+  `$schema` line, and SharedProjectSettingsTests holds the whole rule: an
+  unknown key, a nested one, an order no build names and a wrong-typed flag all
+  come back as they were, and what `write` returns equals a fresh load.
 - A stage ending while the Agents board is up leaves it up, and the first tab
   opens and starts under the create settings wherever the user is looking, agent
   included, without moving the selection or the keyboard:
@@ -174,7 +180,18 @@ What each test catches, and the conventions a new one follows.
   one yield being what puts the refresh at its await.
 - A focus report that changes nothing writes nothing to the workspace:
   WorkspaceStoreTests, through `withObservationTracking`, the same session
-  focused twice and its tab activated again.
+  focused twice and its tab activated again. A re-read of a repository's file
+  saying what the last one did is held to the same rule there, every activation
+  re-reading every project and a mutation being a whole-workspace save.
+- Only a repository's file lists are held to the checkout: WorktreeFilesTests
+  places a user's `~` and absolute entries with no failure raised, and
+  AppModelHookControlTests runs a create whose user list holds a stale entry and
+  watches the post-create hook still run. What says the provenance is really
+  read is a repository shipping a list the user then overrides, their own entry
+  being a symlink out of the checkout that is placed. Neither end is a licence
+  to write outside the worktree: WorktreeFilesTests points a user's entry at a
+  `..` path, with the worktree nested so the mirrored destination is genuinely
+  elsewhere, and finds nothing written beside it.
 - bash keeps its DEBUG trap against one installed at the first prompt, chains to
   that one and to the `.bashrc` one, and hands `$?` on: HelperTests, real bash
   driven through a pipe so `PROMPT_COMMAND` runs between the two, a `bash -c`

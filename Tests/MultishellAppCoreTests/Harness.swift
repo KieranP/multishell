@@ -186,7 +186,9 @@ final class Harness {
   let source = FakeStateSource()
   let notifier = FakeNotifier()
   let platform = FakePlatform()
-  let project: Project
+  /// Live, not the copy made at setup: `Project` is a value and its shared
+  /// settings are read into the store afterwards.
+  var project: Project { model.workspace.projects[0] }
   let main: Worktree
   let feature: Worktree
   let root: URL
@@ -198,13 +200,13 @@ final class Harness {
     store = WorkspaceStore(
       snapshot: WorkspaceSnapshot(
         fileURL: stateFile ?? tmp.appendingPathComponent("state.json")))
-    project = store.addProject(at: tmp)  // exists on disk, so `select` accepts it
-    main = Worktree(path: tmp, projectID: project.id, head: "a", branch: "main", isPrimary: true)
+    let added = store.addProject(at: tmp)  // exists on disk, so `select` accepts it
+    main = Worktree(path: tmp, projectID: added.id, head: "a", branch: "main", isPrimary: true)
     feature = Worktree(
-      path: tmp.appendingPathComponent("feature"), projectID: project.id, head: "b",
+      path: tmp.appendingPathComponent("feature"), projectID: added.id, head: "b",
       branch: "feature")
     try? FileManager.default.createDirectory(at: feature.path, withIntermediateDirectories: true)
-    store.replaceWorktrees([main, feature], forProject: project.id)
+    store.replaceWorktrees([main, feature], forProject: added.id)
     if savedSelection { store.selectWorktree(main.id) }
 
     model = AppModel(

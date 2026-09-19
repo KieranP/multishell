@@ -10,12 +10,11 @@ struct ProjectHooksTab: View {
   let project: Project
 
   var body: some View {
-    let current = model.current(project)
-    let shared = model.sharedSettings[project.id]
+    let shared = project.sharedSettings.confined
     Form {
-      if let shared, shared.hasHooks {
-        sharedHooksSection(shared, project: current)
-      } else if let problem = model.sharedSettings.problem(of: project.id) {
+      if let shared, shared.asksForTrust {
+        sharedSettingsSection(shared, project: project)
+      } else if let problem = project.sharedSettings.problem {
         Section { SettingsCaption(problem) }
       }
 
@@ -72,16 +71,20 @@ struct ProjectHooksTab: View {
     .formStyle(.grouped)
   }
 
-  /// The repository's hooks run only once trusted, and a change to them
-  /// asks again; the grey text in the editors above is what they are.
-  private func sharedHooksSection(_ shared: SharedProjectSettings, project: Project) -> some View {
-    let trusted = model.trustsSharedHooks(of: project)
+  /// What the repository asks for is used only once trusted, and a change
+  /// asks again; the grey text in the editors above is what it is.
+  private func sharedSettingsSection(
+    _ shared: SharedProjectSettings, project: Project
+  )
+    -> some View
+  {
+    let trusted = model.trustsSharedSettings(of: project)
     return Section {
       HStack(spacing: 8) {
         Text(trusted ? t("hooks.shared-run") : t("hooks.shared-ignored"))
         Spacer()
         Button(trusted ? t("hooks.stop-trusting") : t("hooks.trust")) {
-          model.setTrustsSharedHooks(!trusted, for: project)
+          model.setTrustsSharedSettings(!trusted, for: project)
         }
         .controlSize(.small)
       }

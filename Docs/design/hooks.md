@@ -28,12 +28,23 @@ today. A name may be a pattern, `*` and `?` within one component, reaching a
 leading dot only where the pattern spells the dot, or `*` would take `.git` in.
 Bracket expressions left out rather than half-supported.
 
-Both lists run nothing -> a repo may ship them untrusted; nothing overwriting a
-checked-out path is the other half, since a committed `linkedPaths: src` must
-not point a worktree's source at the main checkout. Containment decided against
-the disk, not the spelling: deepest existing folder on each path is resolved and
-checked, catching `..`, a leading `/` or `~`, and a folder that is itself a
-symlink. A symlink at the end of a path is copied as a symlink, never followed.
+Both lists run nothing, but they read the reader's own checkout, git-ignored
+files included -> a repo shipping one waits for the same yes its hooks wait for
+(settings.md). Nothing overwriting a checked-out path is the other half, since a
+committed `linkedPaths: src` must not point a worktree's source at the main
+checkout. Containment decided twice, and only for a list the repo ships:
+lexically first, each entry resolved against the root and required to land under
+it, so `~/.aws.json`, `$HOME/x`, a leading `/` and every spelling of `..` are
+refused rather than skipped for happening not to exist under the repo; then
+against the disk, resolving the deepest existing folder on each path, the
+folders on the way, and the path's own end. A symlink named by the entry is
+refused, its own end included: `copyItem` copies a link rather than following
+it, so the worktree would hold a pointer at whatever it names. One inside a
+listed directory is not: it is copied as it stands, which is what git would
+check out anyway. A list the user typed is theirs and is used as written
+(settings.md), bar the one end that is not theirs: the destination mirrors the
+entry rather than being asked for, so an entry landing outside the worktree
+places nothing, quietly, rather than failing the stage.
 
 Lists and hook = one pane operation in stages, begun once the worktree exists
 rather than under the sheet; a failed list stops the stages after it. Costs: no

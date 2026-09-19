@@ -94,4 +94,7 @@ architecture, the trade-offs and what shipped were human calls.
 
 ## License
 
-GNU Affero General Public License v3.0. See [LICENSE](LICENSE).
+Copyright (C) 2026 Kieran Pilkington. GNU Affero General Public License v3.0;
+see [LICENSE](LICENSE).
+
+Third party notices are in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

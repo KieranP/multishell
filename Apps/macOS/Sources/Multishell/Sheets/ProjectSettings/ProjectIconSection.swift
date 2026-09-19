@@ -10,9 +10,9 @@ struct ProjectIconSection: View {
 
   var body: some View {
     let own = model.settings(of: project)
-    let settings = model.effectiveSettings(for: model.current(project))
+    let settings = model.effectiveSettings(for: project)
     let kind = ProjectIcon.kind(of: settings.iconGlyph)
-    let shared = model.sharedSettings[project.id]
+    let shared = project.sharedSettings.confined
     // Read as `ProjectSettings.layered` does, or the caption and the icon
     // disagree: a glyph that is not a symbol name is a gap on either side.
     let fromFile =

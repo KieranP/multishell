@@ -8,7 +8,7 @@ struct ProjectWorktreesTab: View {
 
   var body: some View {
     let defaults = model.workspace.worktreeDefaults
-    let effective = model.worktreeSettings(for: model.current(project))
+    let effective = model.worktreeSettings(for: project)
     let directory = model.inherited(
       \.worktreeDirectory, global: defaults.worktreeDirectory, for: project)
     let prefix = model.inherited(\.branchPrefix, global: defaults.branchPrefix, for: project)

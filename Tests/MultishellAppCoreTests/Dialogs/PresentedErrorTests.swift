@@ -273,12 +273,12 @@ struct StoppedHookPresentationTests {
     #expect(byUser.message == "Stopped by you and printed nothing.")
   }
 
-  @Test func theSharedHooksQuestionShowsTheHooksAndNamesTheFile() {
-    let pending = PendingSharedHooksTrust(
-      projectID: "/r", projectName: "acme", hooks: "post-create:\nnpm ci",
+  @Test func theSharedSettingsQuestionShowsWhatIsAskedForAndNamesTheFile() {
+    let pending = PendingSharedSettingsTrust(
+      projectID: "/r", projectName: "acme", contents: "post-create:\nnpm ci\n\ncopied:\n.env",
       digest: FileDigest.sha256(of: Data()))
-    #expect(pending.title == "Run the hooks in acme's .multishell.json?")
-    #expect(pending.message.hasSuffix("post-create:\nnpm ci"))
-    #expect(pending.trustLabel == "Run Hooks" && pending.declineLabel == "Ignore Hooks")
+    #expect(pending.title == "Trust what acme's .multishell.json asks for?")
+    #expect(pending.message.hasSuffix("post-create:\nnpm ci\n\ncopied:\n.env"))
+    #expect(pending.trustLabel == "Trust" && pending.declineLabel == "Ignore")
   }
 }

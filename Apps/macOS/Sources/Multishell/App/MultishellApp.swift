@@ -25,7 +25,6 @@ struct MultishellApp: App {
           appDelegate.workingAgentCount = { model.workingAgentCount }
           appDelegate.willTerminate = {
             model.shutDown()
-            GhosttyTerminalHost.removeGeneratedConfigs()
           }
           await model.start()
         }

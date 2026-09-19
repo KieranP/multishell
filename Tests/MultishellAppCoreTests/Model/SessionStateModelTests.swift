@@ -602,7 +602,7 @@ struct AgentTabTests {
     let before = Harness(stateFile: file)
     before.model.select(before.main)
     before.store.openTab(in: before.main.id, title: "Claude Code", agentID: "claude")
-    before.store.openTab(in: before.main.id, title: "Aider", agentID: "aider")
+    before.store.openTab(in: before.main.id, title: "Flagless", agentID: "flagless")
     before.model.saveNow()
 
     let (store, _) = WorkspaceStore.restored(from: WorkspaceSnapshot(fileURL: file))
@@ -615,8 +615,8 @@ struct AgentTabTests {
     let byTitle = Dictionary(
       uniqueKeysWithValues: engine.opened.map { (store.workspace.session($0.id)!.title, $0) })
     #expect(byTitle["Claude Code"]?.command?.last?.hasPrefix("claude --continue; ") == true)
-    #expect(byTitle["Aider"]?.command == nil, "no resume flag, so a plain shell keeps the title")
-    #expect(after.title(of: store.workspace.tabs(in: before.main.id)[2]) == "Aider")
+    #expect(byTitle["Flagless"]?.command == nil, "no resume flag, so a plain shell keeps the title")
+    #expect(after.title(of: store.workspace.tabs(in: before.main.id)[2]) == "Flagless")
   }
 
   @Test func anAgentThatIsNotInstalledOpensAShellAndSaysSoOnce() {
@@ -749,12 +749,12 @@ struct AgentTabTests {
     #expect(h.model.preferredAgentID(for: h.main) == nil)
     h.model.presentedError = nil
 
-    h.model.newAgentTab("aider", in: columns[0].id)
+    h.model.newAgentTab("opencode", in: columns[0].id)
 
     let tab = h.model.workspace.activeTab(in: h.main.id)!
     #expect(tab.groupID == columns[0].id)
-    #expect(h.model.workspace.session(tab.focusedSessionID)?.agentID == "aider")
-    #expect(h.model.title(of: tab) == "Aider")
+    #expect(h.model.workspace.session(tab.focusedSessionID)?.agentID == "opencode")
+    #expect(h.model.title(of: tab) == "OpenCode")
     #expect(h.model.presentedError == nil, "the strip named the agent, so none was chosen for it")
   }
 

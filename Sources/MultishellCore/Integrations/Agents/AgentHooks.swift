@@ -26,9 +26,17 @@ public enum AgentHooks {
     "[ -x \"\(helper)\" ] && \"\(helper)\" \(subcommand) --agent \(id); exit 0"
   }
 
+  /// Whether a hook line is ours. Whole words, not substrings: the user's own
+  /// `multishell-agent-hook-logger` spells both names and Remove used to eat it.
   static func isMultishellHook(_ command: String) -> Bool {
-    command.contains(helperName)
-      && (command.contains(subcommand) || command.contains(claudeSubcommand))
+    let shellPunctuation = CharacterSet(charactersIn: ";&|()")
+    let words =
+      command
+      .split(whereSeparator: { $0.isWhitespace || $0 == "\"" || $0 == "'" })
+      .map { $0.trimmingCharacters(in: shellPunctuation) }
+    let runsTheHelper = words.contains { $0 == helperName || $0.hasSuffix("/" + helperName) }
+    let namesASubcommand = words.contains { $0 == subcommand || $0 == claudeSubcommand }
+    return runsTheHelper && namesASubcommand
   }
 
   public static func integration(for id: String) -> AgentHookIntegration? {

@@ -13,7 +13,7 @@ struct AgentCatalogueTests {
     #expect(AgentCatalogue.effectiveID(global: nil, override: nil) == nil)
     #expect(AgentCatalogue.effectiveID(global: "none", override: nil) == nil)
     #expect(AgentCatalogue.effectiveID(global: "", override: nil) == nil)
-    #expect(AgentCatalogue.effectiveID(global: nil, override: "aider") == "aider")
+    #expect(AgentCatalogue.effectiveID(global: nil, override: "codex") == "codex")
   }
 
   /// Each of the five the app supports first-hand resumes the way its own
@@ -26,7 +26,7 @@ struct AgentCatalogueTests {
     #expect(resume("gemini") == ["--resume", "latest"])
     #expect(resume("copilot") == ["--continue"])
     #expect(resume("opencode") == ["--continue"])
-    #expect(resume("aider") == nil, "no flag for it, so a saved tab is a shell")
+    #expect(resume("nonesuch") == nil, "an id the catalogue does not know is a shell")
   }
 
   @Test func idsAreUniqueAndReserved() {

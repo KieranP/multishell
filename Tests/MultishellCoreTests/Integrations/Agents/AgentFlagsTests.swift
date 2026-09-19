@@ -143,7 +143,7 @@ struct AgentFlagResolutionTests {
 
     #expect(workspace.agentFlags(for: project, agent: "claude") == "--model opus")
     #expect(workspace.agentFlags(for: project, agent: "codex") == "--full-auto")
-    #expect(workspace.agentFlags(for: project, agent: "aider") == "", "nothing stored")
+    #expect(workspace.agentFlags(for: project, agent: "opencode") == "", "nothing stored")
 
     let quiet = Project(path: project.path, settings: ProjectSettings(agentFlags: ""))
     #expect(quiet.settings.agentFlags != nil, "blank is an override, not an absent key")

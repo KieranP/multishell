@@ -80,15 +80,12 @@ final class MacPlatform: Platform {
   /// Links `/usr/local/bin/multishell` to the stable link, through an
   /// administrator prompt, so the tool survives the app moving.
   func installCommandLineTool() throws {
-    let target = ShellQuoting.quote(Paths.helperLink.path)
-    let link = ShellQuoting.quote(HelperLink.commandLineToolLink.path)
-    let script =
-      "do shell script \"mkdir -p /usr/local/bin && ln -sf \(target) \(link)\" with administrator privileges"
-    var error: NSDictionary?
-    NSAppleScript(source: script)?.executeAndReturnError(&error)
-    if let error {
-      throw CommandLineToolInstallFailed(
-        message: error[NSAppleScript.errorMessage] as? String ?? "\(error)")
+    do {
+      try AppleScriptHandler.call(
+        AppleScriptHandler.installCommandLineTool, handler: "installTool",
+        arguments: [Paths.helperLink.path, HelperLink.commandLineToolLink.path])
+    } catch {
+      throw CommandLineToolInstallFailed(message: "\(error)")
     }
   }
 

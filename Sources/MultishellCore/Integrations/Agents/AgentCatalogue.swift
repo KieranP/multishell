@@ -58,13 +58,9 @@ public enum AgentCatalogue {
     AgentDescriptor(
       id: "copilot", name: "Copilot CLI", executable: "copilot", resumeArguments: ["--continue"],
       mark: .copilot),
-    AgentDescriptor(id: "aider", name: "Aider", executable: "aider", mark: .monogram("Ai")),
     AgentDescriptor(
       id: "opencode", name: "OpenCode", executable: "opencode", resumeArguments: ["--continue"],
       mark: .openCode, markTint: "#fab283"),
-    AgentDescriptor(
-      id: "cursor-agent", name: "Cursor Agent", executable: "cursor-agent",
-      mark: .monogram("Cu")),
   ]
 
   public static func agent(_ id: String) -> AgentDescriptor? {

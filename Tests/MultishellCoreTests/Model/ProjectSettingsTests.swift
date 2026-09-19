@@ -101,9 +101,8 @@ struct ProjectSettingsTests {
     #expect(effective.qualifiedBranch("tabs") == "tabs")
   }
 
-  /// The worktree fields have no other spelling for "none", so a blank one
-  /// keeps the override it is; a project pinned to no prefix while the
-  /// global has one used to go back to following the global on the next load.
+  /// These fields have no other spelling for "none". A project pinned to no
+  /// prefix used to follow the global again on the next load.
   @Test func aBlankWorktreeFieldDecodesAsTheOverrideToNone() throws {
     let json = Data(
       #"{ "worktreeDirectory": "", "branchPrefix": "", "defaultBranch": "", "postCreateHook": "" }"#
@@ -116,9 +115,8 @@ struct ProjectSettingsTests {
     #expect(settings.effective(defaults: defaults).branchPrefix == "", "not the global's team/")
   }
 
-  /// A project pinned to no prefix has to survive being exported, committed
-  /// and read by someone whose own global has one, or the team gets the
-  /// opposite of what was shared.
+  /// Read back by someone whose own global has a prefix, the file has to
+  /// still say none, or the team gets the opposite of what was shared.
   @Test func aBlankOverrideSurvivesAnExportAndTheFileItIsWrittenTo() throws {
     let repository = try Scratch.directory("export")
     defer { try? FileManager.default.removeItem(at: repository) }
@@ -136,9 +134,8 @@ struct ProjectSettingsTests {
     #expect(inEffect.qualifiedBranch("tabs") == "tabs")
   }
 
-  /// A field that spells "none" some other way reads `""` as noise, so an
-  /// empty one keeps following the global rather than overriding with
-  /// nothing.
+  /// A field with its own spelling for "none" reads `""` as noise and keeps
+  /// following the global.
   @Test func aBlankFieldWithASentinelOfItsOwnStaysNoOverride() throws {
     let json = Data(#"{ "preferredAgentID": "", "defaultShell": "", "iconGlyph": "" }"#.utf8)
     let settings = try JSONDecoder().decode(ProjectSettings.self, from: json)
@@ -237,6 +234,124 @@ struct WorktreeSettingsExpansionTests {
   }
 }
 
+/// What a repository's own `.multishell.json` may name on the reader's disk:
+/// only what is under the checkout; see Docs/design/settings.md.
+@Suite
+struct RepositoryContainmentTests {
+  private let project = Project(path: URL(fileURLWithPath: "/Users/dev/Work/multishell"))
+
+  private func holdsDirectory(_ directory: String) -> Bool {
+    RepositoryContainment.holds(
+      directory: WorktreeSettings(worktreeDirectory: directory).worktreeContainer(for: project),
+      under: project.path)
+  }
+
+  @Test func aDirectoryUnderTheCheckoutStands() {
+    #expect(holdsDirectory(".worktrees"))
+    #expect(holdsDirectory("trees/{project}"))
+    #expect(holdsDirectory("  .worktrees  "))
+  }
+
+  @Test func everyDirectoryOutsideTheCheckoutIsRefused() {
+    let outside = [
+      "~/.claude/skills", "~", "/tmp/trees", "/", "../{project}-worktrees", "..",
+      ".worktrees/../..", "", "   ", ".", "./",
+    ]
+    for directory in outside {
+      #expect(!holdsDirectory(directory), "\(directory.debugDescription)")
+    }
+  }
+
+  @Test func aCommittedSymlinkCannotCarryTheDirectoryOutOfTheCheckout() throws {
+    let root = try Scratch.directory("confined")
+    defer { try? FileManager.default.removeItem(at: root) }
+    let repository = root.appendingPathComponent("repo", isDirectory: true)
+    let elsewhere = root.appendingPathComponent("elsewhere", isDirectory: true)
+    try FileManager.default.createDirectory(at: repository, withIntermediateDirectories: true)
+    try FileManager.default.createDirectory(at: elsewhere, withIntermediateDirectories: true)
+    try FileManager.default.createSymbolicLink(
+      at: repository.appendingPathComponent("trees"), withDestinationURL: elsewhere)
+    #expect(
+      !RepositoryContainment.holds(
+        directory: repository.appendingPathComponent("trees"), under: repository))
+  }
+
+  @Test func theRefusedDirectoryLeavesTheReadersOwnValueStanding() {
+    var shared = SharedProjectSettings(worktreeDirectory: "~/.claude/skills", branchPrefix: "team/")
+    shared = shared.confined(to: project)
+    #expect(shared.worktreeDirectory == nil)
+    #expect(shared.branchPrefix == "team/", "only the one field is dropped")
+
+    let layered = ProjectSettings().layered(over: shared)
+    let defaults = WorktreeSettings(worktreeDirectory: "/global/trees")
+    #expect(layered.effective(defaults: defaults).worktreeDirectory == "/global/trees")
+  }
+
+  @Test func aDirectoryUnderTheCheckoutSurvivesConfinement() {
+    let shared = SharedProjectSettings(worktreeDirectory: ".worktrees").confined(to: project)
+    #expect(shared.worktreeDirectory == ".worktrees")
+  }
+
+  @Test func aListedPathUnderTheCheckoutStands() {
+    for path in [
+      ".env", "config/local.yml", "a/../b", "./vendor", "*.env", "a/b/../c", "  .env  ",
+      "deep/nested/path/file.txt", "cost$.txt", "src/a$b/c",
+    ] {
+      #expect(
+        RepositoryContainment.holds(listedPath: path, under: project.path),
+        "\(path.debugDescription)")
+    }
+  }
+
+  @Test func aListedPathReachingOutsideTheCheckoutIsRefused() {
+    let outside = [
+      "~/.ssh/id_ed25519", "~", "~root/.ssh", "/Users/dev/.ssh/id_ed25519", "/etc/passwd", "/",
+      "$HOME/.aws.json", "${HOME}/.aws.json", "../secrets", "a/../../b", "..", "../",
+      "a/b/../../../c", "./../x", ".", "./", "", "   ", "a/../..",
+    ]
+    for path in outside {
+      #expect(
+        !RepositoryContainment.holds(listedPath: path, under: project.path),
+        "\(path.debugDescription)")
+    }
+  }
+
+  @Test func onlyTheReachingEntriesAreDroppedFromAList() {
+    let shared = SharedProjectSettings(
+      linkedPaths: "vendor\n~/.ssh/id_ed25519\nnode_modules",
+      copiedPaths: "/etc/passwd\n../../.aws/credentials"
+    ).confined(to: project)
+    #expect(shared.linkedPaths == "vendor\nnode_modules")
+    #expect(shared.copiedPaths == nil, "a list of nothing but escapes leaves the reader's standing")
+  }
+
+  @Test func aListWithNothingToDropComesBackAsItWasWritten() {
+    let list = "# what the build needs\nvendor\n\nnode_modules"
+    let shared = SharedProjectSettings(linkedPaths: list, copiedPaths: ".env")
+      .confined(to: project)
+    #expect(shared.linkedPaths == list, "export writes this text back over the file")
+    #expect(shared.copiedPaths == ".env")
+  }
+
+  @Test func aKeyLinkedFromHomeNeverReachesTheReadersWorktree() {
+    let shared = SharedProjectSettings(
+      linkedPaths: "~/.ssh/id_ed25519", copiedPaths: "~/.aws/credentials")
+    let layered = ProjectSettings().layered(over: shared.confined(to: project))
+    #expect(layered.linkedPaths.isEmpty && layered.copiedPaths.isEmpty)
+  }
+
+  @Test func confiningLeavesTheDigestAloneSoAHookAnswerStillHolds() throws {
+    let root = try Scratch.directory("confined-digest")
+    defer { try? FileManager.default.removeItem(at: root) }
+    try SharedProjectSettings(worktreeDirectory: "/tmp/trees", postCreateHook: "npm ci")
+      .write(to: root)
+    let read = try #require(try SharedProjectSettings.load(from: root))
+    let confined = read.confined(to: Project(path: root))
+    #expect(confined.digest == read.digest)
+    #expect(confined.postCreateHook == "npm ci")
+  }
+}
+
 /// The two listing settings resolve project-over-global like the rest; the
 /// forms edit the override, and every reader goes through these.
 @Suite
@@ -282,10 +397,8 @@ struct WorktreeListingResolutionTests {
   }
 }
 
-/// The picker in Settings > Worktrees and the override in Project Settings
-/// are built off `allCases`, and its labels are the only thing a view test
-/// would have caught: two orders sharing a label, or one added without one,
-/// give a dropdown with rows the user cannot tell apart.
+/// Both pickers are built off `allCases`, so two orders sharing a label, or
+/// one added without one, give rows the user cannot tell apart.
 @Suite
 struct WorktreeSortOrderLabelTests {
   @Test func everyOrderHasItsOwnLabel() {

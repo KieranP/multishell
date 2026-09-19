@@ -46,8 +46,8 @@ state file, which is how you see which one a running copy has.
 
 Outside that directory, `$TMPDIR/io.multishell.app/ghostty-config-<UUID>.conf`
 is the merged Ghostty config libghostty reads once at load, written by the
-wrapper and cleared by the app at launch and at quit; see
-Docs/design/terminals.md.
+wrapper and cleared at launch and at quit by the copy holding the instance
+socket, which is the only one that may; see Docs/design/terminals.md.
 
 Agent hooks, written only when asked: Claude Code `~/.claude/settings.json`,
 Codex `~/.codex/hooks.json`, Gemini `~/.gemini/settings.json`, each keeping a
@@ -62,7 +62,9 @@ project's worktree records change, and on any tick where its modification date
 moved. A field it ships fills only a gap the user left, so adding one to
 `SharedProjectSettings` also means a line in `ProjectSettings.layered`, a decode
 that costs the key and not the file, and an `OverrideSection` in the tab seeded
-from `InheritedSetting`.
+from `InheritedSetting`. A field naming a path on the reader's disk also goes in
+`confined(to:)`, `trustedContentText`, `withoutWhatTrustCovers` and
+`keeping(from:)`, the last so export does not drop it while it is untrusted.
 
 Decide what a blank one means: `Self.text` where "none" and "no opinion" agree;
 nothing for worktree path, prefix and default branch, where blank is how "none"

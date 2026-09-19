@@ -82,8 +82,7 @@ struct SettingsBindingTests {
       harness.model.hasOverride(\.branchPrefix, of: project, fallback: "team/").wrappedValue,
       "blank is still the project having its say")
     #expect(
-      harness.model.worktreeSettings(for: harness.model.current(project))
-        .qualifiedBranch("tabs") == "tabs",
+      harness.model.worktreeSettings(for: harness.live).qualifiedBranch("tabs") == "tabs",
       "and the branch it would create carries no prefix")
   }
 
@@ -99,7 +98,9 @@ struct SettingsBindingTests {
     harness.model.setExpanded(false, for: stale)
     harness.model.overrideValue(\.autoStartAgent, of: stale, fallback: false).wrappedValue = true
 
-    #expect(harness.model.current(stale).isExpanded == false, "the change is not lost")
+    #expect(
+      harness.model.workspace.project(stale.id)?.isExpanded == false,
+      "the change is not lost")
     #expect(harness.settings(of: stale).autoStartAgent == true, "and the write still landed")
   }
 }

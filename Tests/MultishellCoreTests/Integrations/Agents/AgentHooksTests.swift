@@ -63,12 +63,67 @@ struct AgentHooksTests {
     #expect(AgentHooks.claude.isInstalled(in: ["hooks": groups(claudeEvents, command: old)]))
   }
 
+  /// A substring test ate a hook whose script merely spelled both names, and
+  /// skipped the event it was found under; see BUGS 126.
+  @Test func aUsersOwnHookThatMerelySpellsTheNamesIsNotOurs() {
+    let theirs = [
+      "~/bin/multishell-agent-hook-logger",
+      "$HOME/bin/log-multishell-agent-hook --verbose",
+      "echo multishell agent-hooked",
+      "notify multishell_agent_hook",
+      "run claude-hooks",
+    ]
+    for command in theirs {
+      #expect(!AgentHooks.isMultishellHook(command), "\(command.debugDescription)")
+    }
+  }
+
+  /// Remove takes back what Add put in. A hook of the user's own under the
+  /// same event stays, whatever its script is called.
+  @Test func removeLeavesAUserHookNamedAfterUs() {
+    let theirs = "~/bin/multishell-agent-hook-logger"
+    let ours = AgentHooks.command(agent: AgentCatalogue.claudeID, helper: helper)
+    let settings: [String: Any] = [
+      "hooks": [
+        "Stop": [
+          ["hooks": [["type": "command", "command": theirs]]],
+          ["hooks": [["type": "command", "command": ours]]],
+        ]
+      ]
+    ]
+
+    let removed = AgentHooks.claude.removing(from: settings)
+    let stop = ((removed["hooks"] as? [String: Any])?["Stop"] as? [[String: Any]]) ?? []
+    let commands = stop.flatMap { group in
+      (group["hooks"] as? [[String: Any]] ?? []).compactMap { $0["command"] as? String }
+    }
+    #expect(commands == [theirs])
+  }
+
+  /// A user hook under one event used to read as ours, so Add skipped that
+  /// event and Install reported a success that never fired.
+  @Test func addStillWritesOursUnderAnEventHoldingAUserHookNamedAfterUs() {
+    let theirs = "~/bin/multishell-agent-hook-logger"
+    let settings: [String: Any] = [
+      "hooks": ["Stop": [["hooks": [["type": "command", "command": theirs]]]]]
+    ]
+
+    let added = AgentHooks.claude.adding(to: settings, helper: helper)
+    let stop = ((added["hooks"] as? [String: Any])?["Stop"] as? [[String: Any]]) ?? []
+    let commands = stop.flatMap { group in
+      (group["hooks"] as? [[String: Any]] ?? []).compactMap { $0["command"] as? String }
+    }
+    #expect(commands.count == 2)
+    #expect(commands.contains(theirs))
+    #expect(commands.contains(where: AgentHooks.isMultishellHook))
+  }
+
   @Test func everyIntegrationIsAnAgentTheCatalogueKnows() {
     for integration in AgentHooks.integrations {
       #expect(AgentCatalogue.agent(integration.id) != nil, "\(integration.id) is not launchable")
       #expect(AgentHooks.integration(for: integration.id)?.name == integration.name)
     }
-    #expect(AgentHooks.integration(for: "aider") == nil)
+    #expect(AgentHooks.integration(for: "nonesuch") == nil)
     #expect(
       AgentHooks.integrations.map(\.id) == ["claude", "codex", "gemini", "copilot", "opencode"])
   }

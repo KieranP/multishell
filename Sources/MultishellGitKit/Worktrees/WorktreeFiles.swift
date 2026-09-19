@@ -14,29 +14,49 @@ public struct WorktreeFiles: Sendable {
   }
 
   /// Links or copies each listed path, placing all it can before throwing.
-  /// `isStopped` is asked per path, there being no process to signal.
+  /// Asks `isStopped` per path. `heldToRepository` false = the user's own list.
   public func place(
     _ list: String, as placement: WorktreePlacement, from repository: URL, to worktree: URL,
-    isStopped: @Sendable () -> Bool = { false }
+    heldToRepository: Bool = true, isStopped: @Sendable () -> Bool = { false }
   ) throws {
     let manager = FileManager.default
     let repositoryBase = repository.resolvingSymlinksInPath()
     let worktreeBase = worktree.resolvingSymlinksInPath()
     var failures: [WorktreeFileFailure.Item] = []
 
-    for path in Self.paths(in: list).flatMap({ Self.expand($0, in: repository) }) {
+    // On the spelling, before the disk, so `~/.aws.json` is refused rather
+    // than skipped for not existing under the repository. See settings.md.
+    var listed: [String] = []
+    for path in Self.paths(in: list) {
+      if heldToRepository, !RepositoryContainment.holds(listedPath: path, under: repository) {
+        failures.append(WorktreeFileFailure.Item(path: path, underlying: WorktreeFileEscape()))
+        continue
+      }
+      listed.append(path)
+    }
+
+    for path in listed.flatMap({ Self.expand($0, in: repository) }) {
       guard !isStopped() else { throw WorktreeFilesStopped(failures: failures) }
       let source = repository.appendingPathComponent(path)
       let destination = worktree.appendingPathComponent(path)
       // A path the repository does not have is the quiet case and comes
       // first, so `.env` on a checkout without one is not an escape.
       guard manager.fileExists(atPath: source.path) else { continue }
-      // The folders on the way to each end, as on disk: the whole
-      // containment check, and before the destination is tested.
-      guard Self.isInside(repositoryBase, source.deletingLastPathComponent()),
-        Self.isInside(worktreeBase, Self.deepestExistingAncestor(of: destination))
-      else {
-        failures.append(WorktreeFileFailure.Item(path: path, underlying: WorktreeFileEscape()))
+      let landsInWorktree = Self.isInside(
+        worktreeBase, Self.deepestExistingAncestor(of: destination))
+      if heldToRepository {
+        // Each end as on disk, the source itself included: `copyItem` carries
+        // a symlink rather than following it. See Docs/design/hooks.md.
+        guard landsInWorktree,
+          Self.isInside(repositoryBase, source.deletingLastPathComponent()),
+          Self.isInside(repositoryBase, source)
+        else {
+          failures.append(WorktreeFileFailure.Item(path: path, underlying: WorktreeFileEscape()))
+          continue
+        }
+      } else if !landsInWorktree {
+        // The destination is mirrored from the entry rather than asked for,
+        // so a user's own entry pointing out places nothing rather than failing.
         continue
       }
       guard !Self.isPresent(destination) else { continue }

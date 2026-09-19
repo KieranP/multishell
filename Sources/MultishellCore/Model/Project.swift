@@ -7,7 +7,11 @@ public struct Project: Identifiable, Codable, Hashable, Sendable {
   /// directly rather than standardise again on every comparison.
   public private(set) var path: URL
   public var isExpanded: Bool
+  /// The user's own, as the settings forms edit them.
   public var settings: ProjectSettings
+  /// What the repository's `.multishell.json` said when last read. Per run,
+  /// so it is in neither `CodingKeys` nor `==`; see settings.md.
+  public var sharedSettings: SharedSettingsRead = .unread
 
   public var id: String { path.path }
 
@@ -26,6 +30,22 @@ public struct Project: Identifiable, Codable, Hashable, Sendable {
     self.path = Self.directory(path)
     self.isExpanded = isExpanded
     self.settings = settings
+  }
+
+  /// `sharedSettings` is this run's read of a file, so it is neither written
+  /// nor compared: a restored one would trust a file nobody looked at.
+  enum CodingKeys: String, CodingKey {
+    case path, isExpanded, settings
+  }
+
+  public static func == (a: Project, b: Project) -> Bool {
+    a.path == b.path && a.isExpanded == b.isExpanded && a.settings == b.settings
+  }
+
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(path)
+    hasher.combine(isExpanded)
+    hasher.combine(settings)
   }
 
   /// A directory URL whether or not it exists now: `URL(fileURLWithPath:)`

@@ -103,9 +103,8 @@ struct DecodingDefaultsTests {
     #expect(try JSONDecoder().decode(Theme.self, from: full) == Theme.multishellDark)
   }
 
-  /// A theme file written before the focus ring and the fade existed, and
-  /// one that spells either as the wrong type. Both keys have to default,
-  /// or every user theme file stops loading.
+  /// Both keys have to default, or every theme file written before they
+  /// existed, and every one spelling them wrong, stops loading.
   @Test func aThemeWithoutAFocusRingOrAFadeStillLoads() throws {
     let bare = try decode(
       Theme.self,
@@ -283,10 +282,8 @@ struct DecodingDefaultsTests {
         .opensTerminalOnSelect == false)
   }
 
-  /// One override on and its neighbour following the global is a state the
-  /// forms can produce, so it has to survive being written and read back:
-  /// a nil override is an absent key, and seeding one field from another
-  /// would read that absence as an override next launch.
+  /// A nil override is an absent key, so seeding one field from another
+  /// would read that absence as an override on the next launch.
   @Test func anOverriddenSettingBesideOneFollowingTheGlobalSurvivesARoundTrip() throws {
     var settings = ProjectSettings()
     settings.autoStartAgent = true
@@ -314,10 +311,8 @@ struct DecodingDefaultsTests {
     let login = try decode(ProjectSettings.self, #"{ "defaultShell": "login" }"#)
     #expect(login.defaultShell == ShellCatalogue.loginShellID)
 
-    // Kept, not coerced, for all three worktree fields: blank is the only
-    // way one of them says "none" — the built-in directory, no prefix, or
-    // detect — over what the global or the repository's file says. Every
-    // reader trims, so `""` still means the built-in and still detects.
+    // Kept, not coerced: blank is the only way these three say "none" over
+    // the global or the file. Every reader trims, so `""` still detects.
     let blank = try decode(
       ProjectSettings.self,
       #"{ "worktreeDirectory": "", "branchPrefix": "", "defaultBranch": "" }"#)
@@ -455,10 +450,8 @@ struct DecodingDefaultsTests {
     #expect(dated.createdAt == Date(timeIntervalSinceReferenceDate: 1000))
   }
 
-  /// A date in a shape this build does not read costs the date, not the
-  /// worktree. Worktrees decode lossily, so throwing would drop the row and
-  /// the tabs saved under it, and one odd entry must not take its
-  /// neighbours with it either.
+  /// Worktrees decode lossily, so throwing over a date would drop the row,
+  /// the tabs saved under it, and the neighbours in the same list.
   @Test func aWorktreeWithAnUnreadableDateKeepsEverythingElse() throws {
     let odd = try decode(
       Worktree.self,
@@ -512,9 +505,8 @@ struct DecodingDefaultsTests {
   }
 }
 
-/// One broken element in a saved collection must cost that element, not the
-/// file. Before this, a tab from a newer build with a pane kind this one did
-/// not know moved the whole state aside and the sidebar came up empty.
+/// A broken element costs that element, not the file. One unknown pane kind
+/// used to move the whole state aside and the sidebar came up empty.
 @Suite
 struct LossyDecodingTests {
   private func decode<T: Decodable>(_ type: T.Type, _ json: String) throws -> T {
@@ -636,7 +628,7 @@ struct NewerFieldDefaultsTests {
     #expect(try decode(ProjectSettings.self, "{}").sharedHooks.isEmpty)
     let decided = try decode(
       ProjectSettings.self, #"{ "sharedHooks": [{ "digest": "\#(digest)", "trusted": true }] }"#)
-    #expect(decided.sharedHooks == [SharedHooksDecision(digest: digest, trusted: true)])
+    #expect(decided.sharedHooks == [SharedSettingsDecision(digest: digest, trusted: true)])
     let broken = try decode(
       ProjectSettings.self, #"{ "sharedHooks": "yes", "branchPrefix": "k/" }"#)
     #expect(broken.sharedHooks.isEmpty && broken.branchPrefix == "k/")
@@ -647,24 +639,23 @@ struct NewerFieldDefaultsTests {
                         { "digest": "beef", "trusted": false }], "branchPrefix": "k/" }
       """#)
     #expect(
-      oneBrokenAnswer.sharedHooks == [SharedHooksDecision(digest: "beef", trusted: false)],
+      oneBrokenAnswer.sharedHooks == [SharedSettingsDecision(digest: "beef", trusted: false)],
       "an answer that will not decode costs that answer, not the others or the project")
     #expect(oneBrokenAnswer.branchPrefix == "k/")
 
     // And what is written comes back, so an answer survives a save.
     let two = ProjectSettings(
       sharedHooks: [
-        SharedHooksDecision(digest: digest, trusted: true),
-        SharedHooksDecision(digest: "beef", trusted: false),
+        SharedSettingsDecision(digest: digest, trusted: true),
+        SharedSettingsDecision(digest: "beef", trusted: false),
       ])
     let written = try JSONDecoder().decode(
       ProjectSettings.self, from: try JSONEncoder().encode(two))
     #expect(written.sharedHooks == two.sharedHooks)
   }
 
-  /// A build before the answers were held against the file's digest stored
-  /// the hook text it was answered about, which no digest can be had from.
-  /// Such an answer is dropped and the hooks are asked about once more.
+  /// An older build stored the hook text, which yields no digest, so such
+  /// an answer is dropped and the hooks are asked about again.
   @Test func aDecisionStoredAgainstTheHookTextIsDroppedRatherThanTrusted() throws {
     let legacy = try decode(
       ProjectSettings.self,
@@ -673,9 +664,8 @@ struct NewerFieldDefaultsTests {
     #expect(legacy.sharedHooks.isEmpty && legacy.branchPrefix == "k/")
   }
 
-  /// `decode(_:forKey:or:)` fills in an absent key but still fails on one of
-  /// the wrong type, which is what moves a state file aside as `.broken.json`
-  /// rather than quietly replacing it.
+  /// `decode(_:forKey:or:)` fills an absent key and still fails on a wrong
+  /// type, which is what moves a state file aside as `.broken.json`.
   @Test func theStrictReadDefaultsWhatIsAbsentAndFailsOnWhatIsWrong() throws {
     #expect(try decode(Workspace.self, "{}").customShellPath == "")
     #expect(
@@ -698,5 +688,39 @@ struct NewerFieldDefaultsTests {
     #expect(
       try decode(ProjectSettings.self, #"{ "worktreeSortOrder": 12 }"#)
         .worktreeSortOrder == nil)
+  }
+}
+
+/// `Project` hand-writes coding keys, `==` and `hash` to keep this run's
+/// `sharedSettings` out of all three, so a later field is silently unsaved.
+@Suite
+struct ProjectStoredFieldsTests {
+  @Test func everyFieldIsAccountedForInCodingKeysAndEquality() throws {
+    let fields = Mirror(reflecting: Project(path: URL(fileURLWithPath: "/r")))
+      .children.compactMap(\.label)
+
+    #expect(
+      fields == ["path", "isExpanded", "settings", "sharedSettings"],
+      """
+      A field was added to Project. Put it in CodingKeys, == and hash unless \
+      it is per-run state like sharedSettings, then add it here.
+      """)
+  }
+
+  /// The three that are saved come back; the one that is not resets, or a
+  /// restored project would trust a file this run never read.
+  @Test func aRoundTripKeepsTheSavedFieldsAndForgetsTheRead() throws {
+    var project = Project(
+      path: URL(fileURLWithPath: "/r"), isExpanded: false,
+      settings: ProjectSettings(branchPrefix: "team/"))
+    let shared = SharedProjectSettings(branchPrefix: "theirs/")
+    project.sharedSettings.note(shared, confined: shared.confined(to: project), stamp: .now)
+
+    let decoded = try JSONDecoder().decode(
+      Project.self, from: JSONEncoder().encode(project))
+
+    #expect(decoded.path == project.path && decoded.isExpanded == false)
+    #expect(decoded.settings.branchPrefix == "team/")
+    #expect(decoded.sharedSettings == .unread, "and nothing of the file survives")
   }
 }

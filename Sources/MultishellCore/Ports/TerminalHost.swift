@@ -26,12 +26,24 @@ public protocol TerminalHost: AnyObject {
   var openSessionIDs: Set<TerminalSession.ID> { get }
 
   var delegate: (any TerminalHostDelegate)? { get set }
+
+  /// The app is quitting. An engine holding files or processes outside its
+  /// sessions drops them here; one that holds nothing need not answer.
+  func shutDown()
+
+  /// This copy holds the instance socket, so files every copy of the build
+  /// shares are its to clear. A copy that handed over never says it.
+  func claimSharedFiles()
 }
 
 extension TerminalHost {
   /// An engine with no search: the bar's steps land nowhere rather than
   /// failing the host.
   public func search(_ command: TerminalSearch, in id: TerminalSession.ID) -> Bool { false }
+
+  public func shutDown() {}
+
+  public func claimSharedFiles() {}
 }
 
 @MainActor

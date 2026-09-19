@@ -51,7 +51,8 @@ struct ProjectRemovalTraceTests {
       [project.id] + h.model.workspace.worktrees(of: project.id).map(\.id))
     #expect(paths.count >= 2, "the project and at least one worktree of its own")
     #expect(
-      h.model.sharedSettings[project.id] != nil, "the file was read, so the cache holds something")
+      h.model.workspace.project(project.id)?.sharedSettings.hasBeenRead == true,
+      "the file was read, so the project holds something")
 
     h.model.removeProject(project)
 

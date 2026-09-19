@@ -143,6 +143,27 @@ goes under Unconfirmed behaviour, and moves up when someone does.
   than the places, so the number is right even where the list holds one row for
   two.
 
+- A user's own list is no longer held to the checkout, but an entry of theirs
+  naming somewhere else still places nothing. `~/.env` and `/etc/passwd` are
+  resolved against the repository, so they are looked for at `<repo>/~/.env` and
+  skipped for not being there; `../secrets/key` does resolve, but its
+  destination mirrors it out of the worktree, and nothing is written outside
+  one, so it is skipped too. Silent either way, as a missing path always was.
+  What a user's entry lacks is a spelling for where it lands in the worktree. A
+  symlink of their own is placed, which is what this lifted. See hooks.md and
+  settings.md.
+- A repository's `.multishell.json` can no longer supply the default
+  `../{project}-worktrees`, only a directory inside the checkout, and that only
+  once the file is trusted. A team that shipped the sibling default gets the
+  reader's own global instead, with nothing said about the drop.
+- Aider and Cursor Agent left the agent catalogue. A saved tab or a stored
+  preferred agent naming either raises one "missing agent" alert per run before
+  falling back to a shell, and the `agentFlags` entry kept against that id is
+  never read again.
+- A copy that handed over to a running one leaves its own generated Ghostty
+  config behind until a later launch that holds the instance socket sweeps the
+  shared directory; only that copy may sweep. See terminals.md.
+
 ## Unconfirmed behaviour
 
 - `make-app.sh` has run through `xcodebuild` only under Xcode 27, where

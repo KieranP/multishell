@@ -29,7 +29,7 @@ struct RootView: View {
     .preferredColorScheme(theme.colorScheme)
     .worktreeRemovalDialog(model: model)
     .projectRemovalDialog(model: model, source: .workspace)
-    .sharedHooksTrustDialog(model: model)
+    .sharedSettingsTrustDialog(model: model)
     .pendingCloseDialog(model: model)
     .newWorktreeSheet(model: model)
     .presentedErrorAlert(model: model)

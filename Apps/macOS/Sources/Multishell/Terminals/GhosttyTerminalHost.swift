@@ -9,19 +9,36 @@ import MultishellCore
 final class GhosttyTerminalHost: NSObject, TerminalHost {
   weak var delegate: (any TerminalHostDelegate)?
 
-  private let controller: TerminalController
+  private var madeController: TerminalController?
+  private var pendingTheme: TerminalTheme?
 
-  override init() {
+  /// The generated configs sit in a directory every copy of the build shares,
+  /// so a copy that handed over would sweep a running copy's file with its own.
+  private var ownsSharedFiles = false
+
+  /// Clears what an earlier run left, before any controller writes its own.
+  /// See Docs/design/terminals.md.
+  func claimSharedFiles() {
+    ownsSharedFiles = true
     Self.removeGeneratedConfigs()
-    let base = GhosttyUserConfig.base()
-    controller = TerminalController(configSource: .generated(base))
-    super.init()
-    GhosttyUserConfig.repair(controller, base: base)
   }
 
-  /// At launch and at quit: the wrapper removes a generated config file only
-  /// when replacing it, so the last one outlives the process; see terminals.md.
-  static func removeGeneratedConfigs() {
+  private var controller: TerminalController {
+    if let madeController { return madeController }
+    let base = GhosttyUserConfig.base()
+    let made = TerminalController(configSource: .generated(base))
+    GhosttyUserConfig.repair(made, base: base)
+    madeController = made
+    if let pendingTheme { _ = made.setTheme(pendingTheme) }
+    return made
+  }
+
+  func shutDown() {
+    guard ownsSharedFiles else { return }
+    Self.removeGeneratedConfigs()
+  }
+
+  private static func removeGeneratedConfigs() {
     try? FileManager.default.removeItem(at: TerminalController.managedConfigDirectory)
   }
 
@@ -124,7 +141,12 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
     let configuration = Self.configuration(theme, appearance)
     // Both slots get the same config: the user picked a theme, so the
     // terminal should not flip with the system appearance.
-    _ = controller.setTheme(TerminalTheme(light: configuration, dark: configuration))
+    let applied = TerminalTheme(light: configuration, dark: configuration)
+    pendingTheme = applied
+    // Held rather than pushed where there is no controller yet, so a theme
+    // at launch does not build one before the socket is claimed.
+    guard let madeController else { return }
+    _ = madeController.setTheme(applied)
   }
 
   static func configuration(

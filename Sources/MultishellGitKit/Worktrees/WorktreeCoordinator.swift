@@ -171,12 +171,12 @@ public struct WorktreeCoordinator: Sendable {
   /// Links or copies the project's listed files in before the post-create
   /// hook, so the hook and the first terminal both find them.
   public func placeFiles(
-    _ placement: WorktreePlacement, for project: Project, into worktreePath: URL,
+    _ list: WorktreeFileList, for project: Project, into worktreePath: URL,
     stopper: ProcessStopper? = nil
   ) throws {
     try files.place(
-      placement.paths(in: project.settings), as: placement, from: project.path,
-      to: worktreePath, isStopped: { stopper?.isStopped == true })
+      list.paths, as: list.placement, from: project.path, to: worktreePath,
+      heldToRepository: list.heldToRepository, isStopped: { stopper?.isStopped == true })
   }
 
   /// The other half of a create. Returns at once when the hook is blank.

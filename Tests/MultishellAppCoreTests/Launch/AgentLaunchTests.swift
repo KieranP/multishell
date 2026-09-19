@@ -23,15 +23,16 @@ struct AgentLaunchTests {
   @Test func aCustomLineIsUsedAsTypedAndBlankMeansNothing() {
     #expect(AgentLaunch.command(customLine: "  ", shell: zsh, exec: "exec /bin/zsh -l") == nil)
     #expect(
-      AgentLaunch.command(customLine: " aider --model x \n", shell: zsh, exec: "exec /bin/zsh -l")?
-        .last == "aider --model x; exec /bin/zsh -l")
+      AgentLaunch.command(
+        customLine: " my-agent --model x \n", shell: zsh, exec: "exec /bin/zsh -l")?
+        .last == "my-agent --model x; exec /bin/zsh -l")
   }
 
   /// A dropped file is named to the agent the way its prompt reads one;
   /// the catalogue says so only where that is known.
   @Test func theCatalogueSaysWhichAgentsReadFileMentions() {
     #expect(AgentCatalogue.agent("claude")?.fileMentionPrefix == "@")
-    #expect(AgentCatalogue.agent("aider")?.fileMentionPrefix == nil)
+    #expect(AgentCatalogue.agent("codex")?.fileMentionPrefix == nil)
   }
 
   @Test func resumeUsesTheCatalogueOrGivesUp() {
@@ -40,7 +41,11 @@ struct AgentLaunchTests {
     #expect(AgentLaunch.arguments(for: claude, resume: true) == ["claude", "--continue"])
     let gemini = AgentCatalogue.agent("gemini")!
     #expect(AgentLaunch.arguments(for: gemini, resume: true) == ["gemini", "--resume", "latest"])
-    let aider = AgentCatalogue.agent("aider")!
-    #expect(AgentLaunch.arguments(for: aider, resume: true) == nil, "no resume flag: plain shell")
+    // Every agent in the catalogue resumes today, so the no-flag arm is
+    // shown against a descriptor rather than left uncovered.
+    let flagless = AgentDescriptor(
+      id: "flagless", name: "Flagless", executable: "flagless", mark: .monogram("Fl"))
+    #expect(
+      AgentLaunch.arguments(for: flagless, resume: true) == nil, "no resume flag: plain shell")
   }
 }

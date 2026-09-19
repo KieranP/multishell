@@ -11,7 +11,7 @@ struct ProjectAgentTab: View {
     // The flags of the agent this project actually runs, which its own
     // override may have chosen.
     let globalFlags =
-      model.workspace.preferredAgentID(for: model.current(project))
+      model.workspace.preferredAgentID(for: project)
       .map { model.workspace.agentFlags[$0] ?? "" } ?? ""
     Form {
       OverrideSection(

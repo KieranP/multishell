@@ -44,6 +44,27 @@ the live one to the dangling prune a few lines later, sessions and all. Tabs are
 deduped after that prune for exactly this; the collections with no prune of
 their own stay where they were.
 
+## A project is a value, so a copy is only as fresh as the render that made it
+
+`Project` is a struct and the store owns the array, so a holder has a snapshot,
+not the record. It stays a value because `WorkspaceSave` carries the workspace
+across to a detached task, and `WorktreeCoordinator` takes a project into git
+off the actor; a class would share mutable state with both, and mutating one in
+the array would assign nothing for `@Observable` to see. The cost lands on
+`sharedSettings`, this run's read of a repo's file, which is written into the
+store after a holder took its copy.
+
+So the rule is: resolve per render and never store one. Views do, the settings
+window looking its project up each body, and the model accessors trust what they
+are handed rather than paying a lookup per row. The two places that cannot are
+the settings bindings, whose closures outlive the render, `fetch`, which holds a
+project across a network call, and `noteSharedSettings`, which writes a read its
+caller took before awaiting git; all three look the record up by id, with the
+reason written above them. `ProjectStoredFieldsTests` is the guard: `Project`
+hand-writes `CodingKeys`, `==` and `hash` to keep the read out of all three, so
+a field added later would be silently unsaved, and that test fails until it is
+accounted for.
+
 ## Saves land off the main actor, and in order
 
 Every debounced save encoded the workspace and wrote it on the main actor, so on

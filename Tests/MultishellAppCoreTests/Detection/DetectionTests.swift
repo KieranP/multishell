@@ -119,14 +119,14 @@ struct EditorDetectionTests {
 @Suite
 struct AgentDetectionTests {
   @Test func agentsAreFoundOnTheGivenPathOnly() throws {
-    let bin = try fakeBin(["claude", "aider"])
+    let bin = try fakeBin(["claude", "codex"])
     defer { try? FileManager.default.removeItem(at: bin) }
 
     let detection = AgentDetection(path: "/usr/bin:\(bin.path)")
-    #expect(Set(detection.found.keys) == ["claude", "aider"])
+    #expect(Set(detection.found.keys) == ["claude", "codex"])
     #expect(detection.found["claude"]?.path == bin.appendingPathComponent("claude").path)
     #expect(detection.isInstalled("claude"))
-    #expect(!detection.isInstalled("codex"))
+    #expect(!detection.isInstalled("gemini"))
     #expect(AgentDetection(path: "/usr/bin").found.isEmpty, "nothing on a path with no agents")
   }
 
