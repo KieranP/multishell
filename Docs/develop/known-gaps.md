@@ -166,6 +166,16 @@ goes under Unconfirmed behaviour, and moves up when someone does.
 
 ## Unconfirmed behaviour
 
+- Three of the four agents' hook files have never been watched moving a dot.
+  `Sources/MultishellCore/Integrations/Agents/AgentHooks.swift` writes all four
+  from each agent's documented shape, and only Claude Code's has been watched in
+  a real session. Run each agent once: check its events fire, that the pid
+  reported is the agent and not a wrapper outliving the hook, and that Codex's
+  `/hooks` trust holds. The OpenCode plugin (OpenCodePlugin.swift) has been
+  driven against a stub helper; unconfirmed is that OpenCode loads a plugin
+  exporting a function rather than a default `{ id, setup }`, its loader having
+  two generations of that contract, and that the two permission events arrive
+  under the names the plugin now listens for, with the title where it reads it.
 - `make-app.sh` has run through `xcodebuild` only under Xcode 27, where
   `swift build` had already stopped writing the build path it was switched away
   from (build.md). That Xcode 26's xcodebuild writes none either rests on its
