@@ -32,9 +32,9 @@ struct UIMetrics {
   var tabHeight: Double { (body * 2.6).rounded() }
   /// What a tab is drawn at when the strip has room for it.
   var tabMaxWidth: Double { (body * 14.6).rounded() }
-  /// And the least it is ever drawn: below this the icon, title and close
+  /// And the least it is ever drawn: below this the mark, title and close
   /// button have nowhere to go. See `TabStripLayout`.
-  var tabMinWidth: Double { (body * 7.5).rounded() }
+  var tabMinWidth: Double { (body * 7.8).rounded() }
   /// A split button at the end of a strip, which never scrolls away.
   var newTabWidth: Double { (body * 2.6).rounded() }
   /// The chevron after the New Tab menu's plus, small enough to read as a

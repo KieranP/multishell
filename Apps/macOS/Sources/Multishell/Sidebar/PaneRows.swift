@@ -34,12 +34,18 @@ struct PaneRows: View {
     let state = model.state(ofPane: session.id)
     let subagents = model.subagents(ofPane: session.id)
     let title = model.title(ofPane: session, in: tab)
+    let agentID = model.agentID(ofPane: session)
     return HStack(spacing: 7) {
-      Circle()
-        .fill(theme.color(for: state ?? .idle))
-        .frame(width: 6, height: 6)
-        .frame(width: metrics.icon + 2)
-        .help((state ?? .idle).displayName)
+      PaneGlyph(
+        agentID: agentID,
+        shellSymbol: "apple.terminal",
+        state: state ?? .idle,
+        surface: theme.sidebarColor,
+        plainTint: isActive ? theme.textPrimary : theme.textSecondary,
+        theme: theme,
+        size: metrics.icon + 2
+      )
+      .help((state ?? .idle).displayName)
       if let position {
         PanePositionBadge(index: position.0, metrics: metrics, theme: theme)
       }
@@ -53,7 +59,7 @@ struct PaneRows: View {
         SubagentChip(subagents: subagents, theme: theme, metrics: metrics)
       }
     }
-    // The pane's dot sits under the worktree's name, one step in from its dot.
+    // The pane's glyph sits under the worktree's name, one step in from its dot.
     .padding(.leading, metrics.indent + metrics.icon + 2)
     .padding(.trailing, 8)
     .frame(height: metrics.paneRowHeight)
@@ -63,7 +69,7 @@ struct PaneRows: View {
     .accessibilityLabel(
       AccessibilityText.pane(
         title: title, position: position, isActive: isActive, state: state,
-        subagentCount: subagents.workerCount)
+        subagentCount: subagents.workerCount, agent: agentID.map(model.agentDisplayName))
     )
     .accessibilityAddTraits(isActive ? [.isButton, .isSelected] : .isButton)
   }

@@ -97,6 +97,9 @@ public final class AppModel<Surface> {
   /// Which agent last reported in each session, so a dropped file and the
   /// board both know who is at the prompt; see `ReportedAgent`.
   public internal(set) var reportedAgents: [TerminalSession.ID: ReportedAgent] = [:]
+  /// The agent a shell said it was starting, kept only while that command
+  /// runs. What marks a pane where nobody installed the agent's hooks.
+  public internal(set) var commandAgents: [TerminalSession.ID: String] = [:]
   /// Keys whose banner may still be on screen, so one is taken back only
   /// where there is one to take back. A key leaves as its banner does.
   @ObservationIgnored var notifiedKeys: Set<SessionStates.Key> = []
@@ -245,6 +248,7 @@ public final class AppModel<Surface> {
       setIfChanged(\.liveSessions, live)
       setIfChanged(\.sessionTitles, sessionTitles.filter { live.contains($0.key) })
       setIfChanged(\.reportedAgents, reportedAgents.filter { live.contains($0.key) })
+      setIfChanged(\.commandAgents, commandAgents.filter { live.contains($0.key) })
       pruneStates()
       pruneFind()
       // A shell exiting can bring another pane the keyboard; it is being

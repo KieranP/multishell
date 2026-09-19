@@ -28,6 +28,12 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   /// Which agent the report came from. Says what is at a pane's prompt,
   /// which the tab's own `agentID` cannot; see `ReportedAgent`.
   public var agent: String?
+  /// The foreground command a shell just started, its first word only; see
+  /// Docs/design/agents.md.
+  public var command: String?
+  /// Set on the reports the injected shell integration sends, which are the
+  /// only ones that take an agent's mark back; see Docs/design/agents.md.
+  public var isShell: Bool?
   /// Set where the report moves a dot and another about the same thing will
   /// raise the banner. Absent keeps an older helper's banners.
   public var silent: Bool?
@@ -49,6 +55,8 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     case message
     case duration
     case agent
+    case command
+    case isShell = "shell"
     case silent
     case subagents
     case subagent
@@ -63,6 +71,8 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     message: String? = nil,
     duration: Double? = nil,
     agent: String? = nil,
+    command: String? = nil,
+    isShell: Bool? = nil,
     silent: Bool? = nil,
     subagents: Int? = nil,
     subagent: SubagentReport? = nil,
@@ -76,6 +86,8 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     self.message = Self.trimmed(message)
     self.duration = Self.bounded(duration)
     self.agent = agent
+    self.command = Self.commandWord(command)
+    self.isShell = isShell
     self.silent = silent
     self.subagents = subagents ?? Self.count(of: subagent)
     self.subagent = subagent
@@ -104,6 +116,8 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     message = Self.trimmed(try container.decodeIfPresent(String.self, forKey: .message))
     duration = Self.bounded(try container.decodeIfPresent(Double.self, forKey: .duration))
     agent = try container.decodeIfPresent(String.self, forKey: .agent)
+    command = Self.commandWord(try container.decodeIfPresent(String.self, forKey: .command))
+    isShell = try container.decodeIfPresent(Bool.self, forKey: .isShell)
     silent = try container.decodeIfPresent(Bool.self, forKey: .silent)
     subagents = try container.decodeIfPresent(Int.self, forKey: .subagents)
     subagent = try container.decodeIfPresent(SubagentReport.self, forKey: .subagent)
@@ -122,6 +136,15 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     default:
       return nil
     }
+  }
+
+  /// The first word without its path. The reader's rule, not the hook's: any
+  /// process of the user's can write a line.
+  private static func commandWord(_ command: String?) -> String? {
+    guard let word = command?.split(whereSeparator: \.isWhitespace).first,
+      let name = word.split(separator: "/").last
+    else { return nil }
+    return String(name)
   }
 
   /// A duration outside what a command could have taken is a writer's

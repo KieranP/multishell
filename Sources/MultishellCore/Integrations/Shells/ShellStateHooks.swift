@@ -4,6 +4,9 @@ import Foundation
 /// carrying them into this app's terminals; see Docs/design/terminals.md.
 public enum ShellStateHooks {
   static let helperPlaceholder = "__MULTISHELL_HELPER__"
+  /// The agents a shell may report starting, filled in when the file is
+  /// generated; see Docs/design/agents.md.
+  static let agentsPlaceholder = "__MULTISHELL_AGENTS__"
 
   /// The zsh startup files placed in the directory set as a session's
   /// `ZDOTDIR`. Each chains to the user's own first, editing no file of theirs.
@@ -74,7 +77,12 @@ public enum ShellStateHooks {
       preconditionFailure("\(name).\(`extension`) is missing from the MultishellCore resources")
     }
     while text.hasSuffix("\n") { text.removeLast() }
-    return text.replacingOccurrences(of: helperPlaceholder, with: helper)
+    return
+      text
+      .replacingOccurrences(of: helperPlaceholder, with: helper)
+      .replacingOccurrences(
+        of: agentsPlaceholder,
+        with: AgentCatalogue.agents.map(\.executable).sorted().joined(separator: " "))
   }
 
   private static let resourceBundle = PackageBundle.holding(

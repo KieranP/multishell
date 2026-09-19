@@ -35,9 +35,10 @@ UserNotificationNotifier. `Text/` = its `t(_:_:)`, `Support/` what is left.
 
 Each half's words are a `Resources/en.lproj` inside the target that says them:
 `Sources/MultishellCore/Resources` for the libraries, with the shell-integration
-scripts, and `Apps/macOS/Sources/Multishell/Resources` for the Mac app. A second
-frontend is a third of these. `Apps/macOS/Resources` is not one of them: that is
-the icon, which the bundling script copies and SwiftPM never sees.
+scripts, and `Apps/macOS/Sources/Multishell/Resources` for the Mac app, which
+also holds `Marks/`, one `.svg` per agent mark. A second frontend is a third of
+these. `Apps/macOS/Resources` is not one of them: that is the icon, which the
+bundling script copies and SwiftPM never sees.
 
 Each suite's folders mirror the target it tests, so a file and its tests sit at
 the same place in two trees: `Tests/MultishellCoreTests/Integrations/Agents`

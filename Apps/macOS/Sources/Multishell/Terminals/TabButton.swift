@@ -78,8 +78,9 @@ struct TabButton: View {
     let isFront = isActive && isFocused
     let text = isFront ? theme.textPrimary : theme.textSecondary
     let state = model.state(of: tab)
+    let agentID = model.agentID(of: tab)
     return HStack(spacing: 7) {
-      leadingGlyph(state, text: text)
+      leadingGlyph(state, agentID: agentID, text: text)
 
       if isEditing {
         titleField
@@ -116,32 +117,39 @@ struct TabButton: View {
     .accessibilityElement(children: .contain)
     .accessibilityLabel(
       AccessibilityText.tab(
-        title: model.title(of: tab), isActive: isActive, isSplit: tab.isSplit, state: state)
+        title: model.title(of: tab), isActive: isActive, isSplit: tab.isSplit, state: state,
+        agent: agentID.map(model.agentDisplayName))
     )
     .accessibilityAddTraits(isActive ? [.isButton, .isSelected] : .isButton)
     .accessibilityAction(named: t("action.rename-spoken")) { beginEditing() }
     .contextMenu { menu(state) }
   }
 
-  /// The state dot where there is one, else the tab's kind. A button, so a
-  /// click clears a stale Working state without activating the tab.
+  /// What the tab is running. A button while there is a state, so a click
+  /// clears a stale Working one without activating the tab.
   @ViewBuilder
-  private func leadingGlyph(_ state: SessionState?, text: Color) -> some View {
+  private func leadingGlyph(_ state: SessionState?, agentID: String?, text: Color) -> some View {
+    let glyph = PaneGlyph(
+      agentID: agentID,
+      shellSymbol: tab.isSplit ? "rectangle.split.2x1" : "apple.terminal",
+      state: state,
+      surface: isActive ? theme.backgroundColor : theme.chromeColor,
+      plainTint: text,
+      theme: theme,
+      size: model.metrics.icon + 2)
     if let state {
       Button {
         model.clearState(of: tab)
       } label: {
-        Circle().fill(theme.color(for: state)).frame(width: 7, height: 7)
-          .frame(width: 14, height: 14)
-          .contentShape(.rect)
+        // The target the dot had before the mark took the slot, without the
+        // width: `tabMinWidth` has none to give. See Docs/design/agents.md.
+        glyph.padding(2).contentShape(.rect).padding(-2)
       }
       .buttonStyle(.plain)
       .help(t("tab.state-click-to-clear", state.displayName))
       .accessibilityLabel(t("tab.state-clear-status", state.displayName))
     } else {
-      Image(systemName: tab.isSplit ? "rectangle.split.2x1" : "apple.terminal")
-        .font(.system(size: model.metrics.icon))
-        .foregroundStyle(text)
+      glyph
     }
   }
 

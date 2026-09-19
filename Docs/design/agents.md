@@ -451,3 +451,112 @@ worktrees does not become forty rows. Each row is `paneRowHeight`, which the
 sidebar's block height counts off as it counts a named row, or the drop
 indicator lands in the wrong half. Cost: selecting a worktree shifts every row
 under it by its pane count.
+
+## An agent is drawn as its own mark, not a letter or a stock symbol
+
+Wherever a pane says what it is running, the tab strip, the sidebar's pane rows,
+a board card and a strip's New Tab menu, the agent is a mark of its own:
+`AgentMarkShape` for the five the app draws (Claude Code, Codex, Copilot,
+OpenCode, Gemini), two letters for everything else, and the terminal glyph for a
+shell. A mark is recognised without reading, which is the whole of what an
+11-point slot can carry; letters at that size are four pairs a glance has to
+tell apart on shape alone, and a stock SF Symbol per agent is a mapping nobody
+can learn because nothing about `sparkles` says Claude.
+
+One `.svg` per mark in `Apps/macOS/Sources/Multishell/Resources/Marks`, each a
+single path in a 16-point square, parsed once by `SVGPathParser` and scaled to
+whatever the caller asks for. Files rather than 250 lines of `Path` calls: the
+art is data, a mark can be replaced without touching Swift, and a diff of a new
+mark is one line. Only absolute `M`, `L`, `C`, `Q` and `Z` are read, which is
+all those files hold, and anything else is refused rather than drawn half. A
+file that will not parse is left out of the table, so the mark draws nothing;
+`AgentMarkResourceTests` walks every one, which is what turns that into a
+failing test rather than an empty tab.
+
+All five are traced from the projects' own art, the shape being the recognition:
+Claude Code's robot and Codex's blob from lobe-icons and Copilot's face from
+Octicons, all MIT, and OpenCode's and Gemini CLI's from their icons, a frame
+around a block and a frame around a chevron. Codex's outline is sampled from the
+icon itself, 72 radii from its centroid through a Catmull-Rom curve: six lobes
+on a ring and six on a body were both tried by hand and neither is what that
+shape is, which is irregular. OpenCode's and Codex's marks run to the edges of
+their square rather than sitting inset, those two icons being the mark itself
+with no padding of their own. Codex's prompt is cut out of its blob rather than
+drawn over it, so one fill colour carries both; the cut is made when the file is
+generated, not at runtime. OpenCode's and Gemini CLI's are alike at 11 points
+and are told apart by their tint, which is the projects' doing and not something
+to fix by drawing either one wrong. A mark that is black or white upstream is
+drawn in the theme's text colour, `markTint` being `nil` for it; the rest carry
+the project's hex. Cost: a mark redrawn upstream is wrong here until someone
+notices, a trace is only as good as the asset it came from, and the programs
+that traced these five are not in the tree. The `.svg` is the artefact and the
+thing to edit; changing a mark means drawing it again, not re-running something.
+
+A mark is drawn, so it is said: a tab and a pane row name their agent after
+their title, in the form a card already uses, and drop it where the title is the
+agent's name and would say it twice.
+
+The fallback is letters rather than nothing: `AgentMark.letters(of:)` takes one
+from each of the first two words. A command the user typed and an id a newer
+build stored both land there, so a workspace from a later version still draws
+something in every tab.
+
+## A typed agent is known from the command, not only from its hooks
+
+An agent marks its pane from three places, in this order: the hook report that
+names it, the command the shell said it was starting, and the tab's own
+`agentID`. The middle one is why typing `codex` in a plain shell tab marks it
+with nobody having installed Codex's hooks: the injected integration already
+reports a command starting and finishing, so it carries the program's name with
+it, first word and no path, and `AgentCatalogue.agent(runningCommand:)` matches
+that against each agent's `executable`. `commandAgents` holds the answer only
+while that command runs.
+
+What takes the answer back is any report from the shell itself that names no
+command: the prompt coming back, the shell exiting, or the next command, which
+the shell reports whether or not it is an agent. Keyed on the report having no
+`agent`, not on its state: an agent's own hooks report `running` all through a
+turn and name themselves, and clearing on those would drop the shell's answer
+the moment the agent started working. The two are read in that order anyway, so
+the cost of getting this wrong is only a pane whose mark lags what is at its
+prompt. Without this, an agent whose hooks are not installed looks like a plain
+shell everywhere, which is what the board, the strip and the sidebar all showed
+before.
+
+Which reports are the shell's is a field it sets, `shell`, and not a guess from
+the state or the absence of `agent`. `multishell state` is documented for the
+user's own scripts, and one run from inside an agent's turn reports `running`
+with no agent and no command, which read as the shell's would blank the mark for
+the rest of that turn. The injected files set `--shell true` and write
+`"shell":true` into the line zsh sends itself; nothing else does, so nothing
+else takes a mark back.
+
+Matched on the executable alone, so `npx codex` is nobody: the word is the
+command, and a wrapper is not the agent. What is stepped over first is what
+carries no meaning of its own, a leading `VAR=value`, `command`, `env` or
+`exec`, since `NODE_OPTIONS=… claude` is the same claude. A word needing JSON
+escapes is left out of the shell's own line rather than escaped, since no
+agent's name needs one and the quoting is where this would break. Cost: a script
+of the user's called `codex` marks its pane as Codex.
+
+## The state dot badges the mark instead of taking the slot
+
+A tab has one leading slot, and it used to hold either the state dot or the
+tab's kind, never both. `PaneGlyph` draws the mark with the dot on its
+lower-right corner, ringed in whatever colour is behind it, so a row says what
+is running and how it is doing at once. The dot keeps a floor of the seven
+points it was drawn at before it moved onto the mark, and sits in the corner so
+that what it covers is the mark's edge rather than the middle that carries the
+shape. Covering part of the mark is the trade, and the right way round: a state
+is read down a whole strip, a mark only where the eye already is, and an idle
+pane draws the mark whole. The sizes were set by rendering the shapes at 11, 14,
+24 and 48 points and looking, which is also what threw out a hand-drawn Copilot
+mark that read as an animal at 11 points. A mark that only works at 48 points is
+no mark, and the box cannot grow to help: `tabMinWidth` is exactly the width of
+what a tab already draws at the smallest UI font. The tab's dot keeps its click,
+which clears a stale Working state, and the whole glyph is now that target.
+
+A split tab loses its split symbol where an agent is at the prompt: one slot
+draws one thing, and which agent is working matters more from across a strip
+than which tabs hold two panes, the split being visible in the pane itself. The
+row still says "split" to a screen reader, that being free there.

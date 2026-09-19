@@ -22,7 +22,7 @@ struct AgentBoardTests {
       id: UUID(),
       tabID: UUID(),
       worktreeID: "/w",
-      occupant: agent ? .agent(name) : .shell(name),
+      occupant: agent ? .agent(id: "claude", name: name) : .shell(name),
       title: title,
       projectName: "multishell",
       worktreeName: "main",

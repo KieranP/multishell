@@ -329,6 +329,15 @@ struct HelperTests {
     #expect(
       SessionStateReport.parse(recorder.received[0])?.pid == 4242,
       "the shell's pid, so a shell that exits mid-command clears its Working")
+    #expect(
+      recorder.received.allSatisfy { SessionStateReport.parse($0)?.isShell == true },
+      "both are the shell's own, which is what may take an agent's mark back")
+
+    #expect(try await run(["state", "running"], environment: env).succeeded)
+    try await waitUntil { recorder.received.count == 5 }
+    #expect(
+      SessionStateReport.parse(recorder.received[4])?.isShell == nil,
+      "and a script of the user's is not, whatever state it reports")
   }
 
   /// The generated ZDOTDIR files, driven by a real zsh: the user's own

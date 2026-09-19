@@ -61,28 +61,37 @@ public enum AccessibilityText {
     return inSentence ? t("kind.linked-in-sentence") : t("kind.linked")
   }
 
-  /// A tab in the strip: its title, whether it is the one shown, its state
-  /// and whether it is split.
+  /// A tab in the strip: its title, the agent its mark names, whether it is
+  /// the one shown, its state and whether it is split.
   public static func tab(
-    title: String, isActive: Bool, isSplit: Bool, state: SessionState?
+    title: String, isActive: Bool, isSplit: Bool, state: SessionState?, agent: String?
   )
     -> String
   {
     var parts = [t("spoken.tab", title)]
+    parts.append(contentsOf: spokenAgent(agent, title: title))
     if isActive { parts.append(t("spoken.selected")) }
     if isSplit { parts.append(t("spoken.split")) }
     if let state { parts.append(state.displayName) }
     return parts.joined(separator: ", ")
   }
 
+  /// The mark a row draws, said where it adds something: a tab whose title
+  /// is already the agent's name would otherwise say it twice.
+  private static func spokenAgent(_ agent: String?, title: String) -> [String] {
+    guard let agent, agent != title else { return [] }
+    return [t("spoken.named", agent, t("spoken.agent"))]
+  }
+
   /// A pane's row in the sidebar: its title, which pane of a split it is,
   /// whether it is the one with the keyboard, its state and its workers.
   public static func pane(
     title: String, position: (Int, Int)?, isActive: Bool, state: SessionState?,
-    subagentCount: Int
+    subagentCount: Int, agent: String?
   ) -> String {
     // One pane of a split is not a tab, so only a whole tab is read as one.
     var parts = [position == nil ? t("spoken.tab", title) : title]
+    parts.append(contentsOf: spokenAgent(agent, title: title))
     if let position { parts.append(t("spoken.pane-position", position.0, position.1)) }
     if isActive { parts.append(t("spoken.selected")) }
     if let state { parts.append(state.displayName) }

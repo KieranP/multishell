@@ -13,6 +13,7 @@ unset _multishell_profiled
 
 if [ -n "${MULTISHELL_SESSION-}" ] && [ -x "__MULTISHELL_HELPER__" ]; then
   _multishell_bin="__MULTISHELL_HELPER__"
+  _multishell_agents="__MULTISHELL_AGENTS__"
   _multishell_ran=0
   _multishell_armed=0
   _multishell_started=0
@@ -24,7 +25,27 @@ if [ -n "${MULTISHELL_SESSION-}" ] && [ -x "__MULTISHELL_HELPER__" ]; then
     _multishell_ran=1
     _multishell_started=${EPOCHREALTIME:-$SECONDS}
     if [ "$_multishell_marks" = 1 ]; then printf '\033]133;C\007'; fi
-    "$_multishell_bin" command-started --pid $$ >/dev/null 2>&1
+    # The program being started, sent only where it is an agent: the words
+    # of the line, past any prefix. Docs/design/terminals.md.
+    local line="$1" cmd=""
+    while [ -n "$line" ]; do
+      cmd="${line%% *}"
+      case "$cmd" in
+        ""|*=*|command|env|exec) ;;
+        *) break ;;
+      esac
+      cmd=""
+      case "$line" in
+        *" "*) line="${line#* }" ;;
+        *) line="" ;;
+      esac
+    done
+    cmd="${cmd##*/}"
+    case " $_multishell_agents " in
+      (*" $cmd "*) ;;
+      (*) cmd="" ;;
+    esac
+    "$_multishell_bin" command-started --pid $$ --command "$cmd" >/dev/null 2>&1
   }
   # A bare `trap ... DEBUG` replaces the one .bashrc installed, silencing
   # Atuin and bash-preexec. Theirs is kept, quoted as `trap -p` prints it.
@@ -63,7 +84,7 @@ _multishell_owns_debug || trap "_multishell_debug" DEBUG'
     [ "$_multishell_armed" = 1 ] || return 0
     [ -n "${COMP_LINE-}" ] && return 0
     _multishell_armed=0
-    _multishell_command_started
+    _multishell_command_started "$BASH_COMMAND"
   }
   _multishell_precmd() {
     local e=$?

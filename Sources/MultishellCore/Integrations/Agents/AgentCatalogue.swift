@@ -13,10 +13,16 @@ public struct AgentDescriptor: Identifiable, Hashable, Sendable {
   /// How this agent is told about a file: `@` for one that reads mentions,
   /// `nil` for a plain path. Only set where the prompt is known to resolve.
   public let fileMentionPrefix: String?
+  /// The mark drawn wherever this agent is at a prompt.
+  public let mark: AgentMark
+  /// The hex `mark` is drawn at. `nil` draws it in the theme's own text
+  /// colour, which is what a project mark that is black or white wants.
+  public let markTint: String?
 
   public init(
     id: String, name: String, executable: String, launchArguments: [String] = [],
-    resumeArguments: [String]? = nil, fileMentionPrefix: String? = nil
+    resumeArguments: [String]? = nil, fileMentionPrefix: String? = nil,
+    mark: AgentMark, markTint: String? = nil
   ) {
     self.id = id
     self.name = name
@@ -24,6 +30,8 @@ public struct AgentDescriptor: Identifiable, Hashable, Sendable {
     self.launchArguments = launchArguments
     self.resumeArguments = resumeArguments
     self.fileMentionPrefix = fileMentionPrefix
+    self.mark = mark
+    self.markTint = markTint
   }
 }
 
@@ -40,22 +48,46 @@ public enum AgentCatalogue {
   public static let agents: [AgentDescriptor] = [
     AgentDescriptor(
       id: claudeID, name: "Claude Code", executable: "claude", resumeArguments: ["--continue"],
-      fileMentionPrefix: "@"),
+      fileMentionPrefix: "@", mark: .claude, markTint: "#d97757"),
     AgentDescriptor(
-      id: "codex", name: "Codex", executable: "codex", resumeArguments: ["resume", "--last"]),
+      id: "codex", name: "Codex", executable: "codex", resumeArguments: ["resume", "--last"],
+      mark: .codex),
     AgentDescriptor(
       id: "gemini", name: "Gemini CLI", executable: "gemini",
-      resumeArguments: ["--resume", "latest"]),
+      resumeArguments: ["--resume", "latest"], mark: .gemini, markTint: "#8ab4f8"),
     AgentDescriptor(
-      id: "copilot", name: "Copilot CLI", executable: "copilot", resumeArguments: ["--continue"]),
-    AgentDescriptor(id: "aider", name: "Aider", executable: "aider"),
+      id: "copilot", name: "Copilot CLI", executable: "copilot", resumeArguments: ["--continue"],
+      mark: .copilot),
+    AgentDescriptor(id: "aider", name: "Aider", executable: "aider", mark: .monogram("Ai")),
     AgentDescriptor(
-      id: "opencode", name: "OpenCode", executable: "opencode", resumeArguments: ["--continue"]),
-    AgentDescriptor(id: "cursor-agent", name: "Cursor Agent", executable: "cursor-agent"),
+      id: "opencode", name: "OpenCode", executable: "opencode", resumeArguments: ["--continue"],
+      mark: .openCode, markTint: "#fab283"),
+    AgentDescriptor(
+      id: "cursor-agent", name: "Cursor Agent", executable: "cursor-agent",
+      mark: .monogram("Cu")),
   ]
 
   public static func agent(_ id: String) -> AgentDescriptor? {
     agents.first { $0.id == id }
+  }
+
+  /// What is drawn where this id is at a prompt. A command the user typed and
+  /// an id a newer build stored have no mark of their own, so they get letters.
+  public static func mark(_ id: String) -> AgentMark {
+    if let agent = agent(id) { return agent.mark }
+    return .monogram(AgentMark.letters(of: id == customID ? t("option.custom-command") : id))
+  }
+
+  /// The agent a shell just started. Matched on the executable alone, so
+  /// `npx codex` is nobody: a wrapper is not the agent.
+  public static func agent(runningCommand command: String) -> AgentDescriptor? {
+    let name = command.lowercased()
+    return agents.first { $0.executable.lowercased() == name }
+  }
+
+  /// What the mark is drawn in, `nil` for the theme's own text colour.
+  public static func markTintRGB(_ id: String) -> RGB? {
+    agent(id)?.markTint.flatMap(HexColor.parse)
   }
 
   /// The id in force for a project: its override when it has one, else the

@@ -7,13 +7,21 @@ public struct AgentBoardCard: Identifiable, Equatable, Sendable {
   /// What is at the pane's prompt. An agent is named by the catalogue; a
   /// shell by its own file name, which is all a shell has to say for itself.
   public enum Occupant: Equatable, Sendable {
-    case agent(String)
+    case agent(id: String, name: String)
     case shell(String)
 
     public var name: String {
       switch self {
-      case .agent(let name), .shell(let name): name
+      case .agent(_, let name): name
+      case .shell(let name): name
       }
+    }
+
+    /// The catalogue id, for the card's mark. `nil` is a shell, which keeps
+    /// the terminal glyph.
+    public var agentID: String? {
+      if case .agent(let id, _) = self { return id }
+      return nil
     }
 
     var isAgent: Bool {

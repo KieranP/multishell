@@ -101,10 +101,11 @@ carries nothing else a surface reads.
 
 The card used to open with the agent's name, which the tab title almost always
 repeats, and put where the pane is on its third line. It now reads top down the
-way the sidebar does: the state dot with `project › branch` and the git badge on
-the right, then the tab title with the elapsed time on the same right-hand rail.
-That drops the fixed three of the section above to a fixed two, and the agent's
-name off the card; a pane running an agent under a tab named something else is
-told apart by the tab name, which is what the user wrote. The message block
-under them is unchanged. Cost: nothing on the card says which engine is at the
-prompt, so a tab left with its default name is the only place that shows.
+way the sidebar does: the agent's mark with the state dot badged on its corner,
+`project › branch` beside it and the git badge on the right, then the tab title
+with the elapsed time on the same right-hand rail. That drops the fixed three of
+the section above to a fixed two, and the agent's name off the card; a pane
+running an agent under a tab named something else is told apart by the tab name,
+which is what the user wrote, and by the mark, which says what is at the prompt
+however the tab is named. The message block under them is unchanged. See
+agents.md for the mark and its badge.

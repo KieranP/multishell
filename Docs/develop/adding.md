@@ -24,7 +24,14 @@ host per kind and a map from session to kind, so a running terminal keeps the
 engine that opened it.
 
 **An agent or editor.** A row in `AgentCatalogue.agents` or
-`EditorCatalogue.editors`; detection and the dropdowns follow.
+`EditorCatalogue.editors`; detection and the dropdowns follow. An agent's row
+also names its `mark`, and `markTint` where the project's mark has a colour of
+its own rather than being black or white. A new `AgentMark` case needs a case in
+`AgentMark.drawn` and in `AgentMarkShape.resourceName(of:)`, and a single-path
+`.svg` of that name in `Apps/macOS/Sources/Multishell/Resources/Marks`, in a
+16-point square using absolute `M`, `L`, `C`, `Q` and `Z` only. `.monogram`
+needs none of it and is what an agent ships with until someone draws one. See
+Docs/design/agents.md.
 
 **A hook stage.** A case in `HookFailure.Stage`, an arm in each of
 `WorktreeHooks.script` and `WorktreeHooks.directory` saying which settings field

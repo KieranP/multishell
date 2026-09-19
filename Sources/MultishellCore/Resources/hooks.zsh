@@ -20,6 +20,7 @@ fi
 
 if [ -n "${MULTISHELL_SESSION-}" ] && [ -n "${MULTISHELL_SOCKET-}" ]; then
   typeset -g _multishell_bin="__MULTISHELL_HELPER__"
+  typeset -g _multishell_agents="__MULTISHELL_AGENTS__"
   typeset -g _multishell_ran=0
   typeset -g _multishell_started=0
   zmodload zsh/net/socket 2>/dev/null
@@ -50,15 +51,34 @@ if [ -n "${MULTISHELL_SESSION-}" ] && [ -n "${MULTISHELL_SOCKET-}" ]; then
     done
   }
   _multishell_json_cwd
+  # `shell` marks these as the integration's own; see Docs/design/agents.md.
   _multishell_json() {
-    print -r -- "{\"v\":1,\"state\":\"$1\",\"session\":\"$MULTISHELL_SESSION\",\"cwd\":\"$_multishell_cwd\"$2}"
+    print -r -- "{\"v\":1,\"state\":\"$1\",\"session\":\"$MULTISHELL_SESSION\",\"cwd\":\"$_multishell_cwd\",\"shell\":true$2}"
   }
   # Both reports run inline: a fast command's finished must not overtake
   # its started, and a fast close must not skip either.
   _multishell_preexec() {
     _multishell_ran=1
     _multishell_started=${EPOCHREALTIME:-$SECONDS}
-    _multishell_send "$(_multishell_json running ",\"pid\":$$")" command-started --pid $$
+    # The program being started, sent only where it is an agent: the
+    # expanded line, its words, past any prefix. Docs/design/terminals.md.
+    local -a _multishell_words
+    _multishell_words=(${(z)${2:-$1}})
+    local _multishell_i=1
+    while (( _multishell_i <= $#_multishell_words )); do
+      case ${_multishell_words[_multishell_i]} in
+        (*=*|command|env|exec) (( _multishell_i++ )) ;;
+        (*) break ;;
+      esac
+    done
+    local _multishell_cmd=${_multishell_words[_multishell_i]:t}
+    local _multishell_fields=",\"pid\":$$"
+    case " $_multishell_agents " in
+      (*" $_multishell_cmd "*) _multishell_fields+=",\"command\":\"$_multishell_cmd\"" ;;
+      (*) _multishell_cmd="" ;;
+    esac
+    _multishell_send "$(_multishell_json running "$_multishell_fields")" \
+      command-started --pid $$ --command "$_multishell_cmd"
   }
   _multishell_precmd() {
     local e=$?
@@ -74,7 +94,9 @@ if [ -n "${MULTISHELL_SESSION-}" ] && [ -n "${MULTISHELL_SOCKET-}" ]; then
     _multishell_send "$(_multishell_json $state ",\"duration\":$d")" command-finished --exit "$e" --duration "$d"
   }
   # `exit` runs preexec but never the next precmd, so clear on the way out.
-  _multishell_zshexit() { _multishell_send "$(_multishell_json idle "")" state idle; }
+  _multishell_zshexit() {
+    _multishell_send "$(_multishell_json idle "")" state idle --shell true
+  }
   autoload -Uz add-zsh-hook 2>/dev/null
   add-zsh-hook preexec _multishell_preexec
   add-zsh-hook precmd _multishell_precmd

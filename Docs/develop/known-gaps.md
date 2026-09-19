@@ -466,3 +466,8 @@ goes under Unconfirmed behaviour, and moves up when someone does.
   if that field is absent from the session info, as it may be, every OpenCode
   worker shows as "subagent". The kind is also in the child's title, as "(@name
   subagent)", which the plugin does not parse. Not seen against a run.
+- The New Tab menu's items carry an agent's mark as a rendered `Image`,
+  `AgentMarkImage`, an `NSMenuItem` drawing a title and an image and nothing
+  else. Nobody has watched one of those menus open. SwiftUI may drop a `Label`'s
+  icon in a menu, in which case the items read as they did before, their titles
+  alone. Fallback = the titles, which say the same thing.

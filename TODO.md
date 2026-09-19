@@ -10,7 +10,6 @@ than fixed lives in `Docs/develop/known-gaps.md`; a defect goes to `BUGS.md`.
 
 ## Refinements
 
-- Change tab icon and agents dashboard tiles to show icons for the agent running
 - On Agents Dashboard, order agents in the same order as Projects, and group
   agents from same project
 - Ability to rename worktree using default agent

@@ -42,6 +42,7 @@ extension AppModel {
     if let reported = reportedAgents[session.id], reported.isAtThePrompt {
       return reported.agentID
     }
+    if let running = commandAgents[session.id] { return running }
     return session.agentID
   }
 }

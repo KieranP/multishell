@@ -221,6 +221,21 @@ struct ShellLaunchTests {
     }
   }
 
+  /// A placeholder left in reports no command, and the live-shell tests
+  /// catch that only where both shells are installed.
+  @Test func everyPlaceholderIsFilledInAndTheAgentsAreNamed() {
+    var files = ShellStateHooks.zshIntegrationFiles(helper: "/x/multishell")
+    files["init.bash"] = ShellStateHooks.bashInitFile(helper: "/x/multishell")
+    for (name, text) in files {
+      #expect(!text.contains("__MULTISHELL_"), "\(name) still holds a placeholder")
+    }
+    for script in [files[".zshrc"] ?? "", files["init.bash"] ?? ""] {
+      for id in ["claude", "codex", "opencode"] {
+        #expect(script.contains(id), "the shell cannot match \(id) without its name")
+      }
+    }
+  }
+
   @Test func theBashInitReproducesTheLoginChainThenAddsHooks() {
     let text = ShellStateHooks.bashInitFile(helper: "/x/multishell")
     #expect(text.contains(". /etc/profile"))

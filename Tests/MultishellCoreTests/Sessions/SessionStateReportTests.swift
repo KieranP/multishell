@@ -154,4 +154,31 @@ struct SessionStateReportTests {
       SessionStateReport.parse(#"{"v":1,"state":"done","duration":41.5}"#))
     #expect(real.duration == 41.5, "what a command actually took is kept")
   }
+
+  /// The mark a pane draws comes off this word, and any process of the
+  /// user's can write the line it arrives on.
+  @Test func aCommandIsCutToItsFirstWordWithoutItsPathOrDroppedEntirely() throws {
+    let kept = try #require(
+      SessionStateReport.parse(#"{"v":1,"state":"running","command":"/opt/bin/codex --resume"}"#))
+    #expect(kept.command == "codex")
+    let trailing = try #require(
+      SessionStateReport.parse(#"{"v":1,"state":"running","command":"/opt/bin/"}"#))
+    #expect(
+      trailing.command == "bin", "a trailing slash names the directory, as every path API has it")
+    for written in ["/", "//", "   ", ""] {
+      let report = try #require(
+        SessionStateReport.parse(#"{"v":1,"state":"running","command":"\#(written)"}"#))
+      #expect(report.command == nil, "[\(written)] names no program")
+    }
+  }
+
+  /// Only the shell's own reports take an agent's mark back, so the field
+  /// that says a shell sent one has to survive the wire both ways.
+  @Test func aShellSaysSoOnItsOwnReportsAndNobodyElseDoes() throws {
+    let sent = try #require(
+      SessionStateReport.parse(SessionStateReport(state: .done, isShell: true).encodedLine()))
+    #expect(sent.isShell == true)
+    let scripted = try #require(SessionStateReport.parse(#"{"v":1,"state":"done"}"#))
+    #expect(scripted.isShell == nil, "a line that does not claim it is not a shell's")
+  }
 }

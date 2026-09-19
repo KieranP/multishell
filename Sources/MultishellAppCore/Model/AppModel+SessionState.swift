@@ -29,6 +29,15 @@ extension AppModel {
     stateSource.stop()
   }
 
+  /// What the shell says it just started, where that is an agent, and only
+  /// while it runs. An agent's own report names itself and is left alone;
+  /// see Docs/design/agents.md.
+  private func noteCommandAgent(_ report: SessionStateReport, of id: TerminalSession.ID) {
+    guard report.isShell == true, report.agent == nil else { return }
+    setIfChanged(
+      \.commandAgents[id], report.command.flatMap { AgentCatalogue.agent(runningCommand: $0)?.id })
+  }
+
   /// A report names a live session, or only a directory. One naming an
   /// unknown session is dropped, never matched by directory.
   public func apply(_ report: SessionStateReport) {
@@ -41,6 +50,7 @@ extension AppModel {
       if let agent = report.agent {
         setIfChanged(\.reportedAgents[id], ReportedAgent(agentID: agent, pid: pid))
       }
+      noteCommandAgent(report, of: id)
       apply(
         report, pid: pid, to: .session(id), in: session.worktreeID, isSeen: hasBeenSeen(id),
         isOnScreen: isShown(id) && platform.isActive)

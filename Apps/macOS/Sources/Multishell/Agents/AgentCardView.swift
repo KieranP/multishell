@@ -70,9 +70,14 @@ struct AgentCardView: View {
   /// the card has one right-hand rail. The name gives way first.
   private var place: some View {
     HStack(spacing: 4) {
-      Circle()
-        .fill(theme.color(for: card.state ?? .idle))
-        .frame(width: 7, height: 7)
+      PaneGlyph(
+        agentID: card.occupant.agentID,
+        shellSymbol: "apple.terminal",
+        state: card.state ?? .idle,
+        surface: theme.cardColor,
+        plainTint: theme.textSecondary,
+        theme: theme,
+        size: metrics.badge + 4)
       Text(card.projectName)
         .foregroundStyle(theme.textSecondary)
         .lineLimit(1)

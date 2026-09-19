@@ -95,6 +95,20 @@ opens with `local ret=$?` read ours instead and every command looked successful.
 zsh needs none of this, restoring `lastval` around each `precmd_functions`
 entry.
 
+A command starting also carries the program's name, its first word without a
+path, and only where that word is one of the agents: the list is filled into the
+generated file, so the shell decides and nothing else the user runs is reported.
+That is what marks an agent typed at a prompt on a machine with none of its
+hooks installed; see agents.md.
+
+Which word that is, the two shells reach differently. bash's `BASH_COMMAND` is
+already alias-expanded; zsh hands preexec the line as typed in `$1` and the
+expanded one in `$2`, so `$2` is what is read, or an
+`alias claude='claude --flag'` left the pane a plain shell. zsh splits it into a
+real array first: `${${(z)1}[1]}` subscripts words for `codex --x` and
+characters for a lone `/path/to/codex`, which came out empty. Both then step
+over a leading `VAR=value`, `command`, `env` or `exec` before taking the word.
+
 It also disarms the trap before anything else runs at the prompt. The arm is set
 last in `PROMPT_COMMAND` and consumed by the next command's DEBUG firing; an
 empty Enter runs no command, so the arm lived on into the next prompt, where the

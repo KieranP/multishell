@@ -32,7 +32,7 @@ struct AccessibilityTextTests {
     #expect(
       AccessibilityText.card(
         card(
-          occupant: .agent("Claude Code"), state: .attention, secondsAgo: 360,
+          occupant: .agent(id: "claude", name: "Claude Code"), state: .attention, secondsAgo: 360,
           note: SessionNote(state: .attention, message: "Permission to run rm -rf .build"),
           status: status),
         at: now)
@@ -89,7 +89,8 @@ struct AccessibilityTextTests {
       Subagent(id: "a", type: "Explore", since: now.addingTimeInterval(-72)),
       Subagent(id: "b", type: nil, since: now.addingTimeInterval(-34)),
     ]
-    var withWorkers = card(occupant: .agent("Claude Code"), state: .running, secondsAgo: 60)
+    var withWorkers = card(
+      occupant: .agent(id: "claude", name: "Claude Code"), state: .running, secondsAgo: 60)
     withWorkers.subagents = out
     #expect(
       AccessibilityText.card(withWorkers, at: now)
@@ -99,11 +100,13 @@ struct AccessibilityTextTests {
     #expect(AccessibilityText.subagents(out) == "2 subagents, Explore, subagent")
     #expect(
       AccessibilityText.pane(
-        title: "claude", position: nil, isActive: false, state: .running, subagentCount: 2)
-        == "claude, tab, Working, 2 subagents")
+        title: "claude", position: nil, isActive: false, state: .running, subagentCount: 2,
+        agent: "Claude Code")
+        == "claude, tab, Claude Code, agent, Working, 2 subagents")
     #expect(
       AccessibilityText.pane(
-        title: "fix tests", position: (2, 2), isActive: true, state: nil, subagentCount: 0)
+        title: "fix tests", position: (2, 2), isActive: true, state: nil, subagentCount: 0,
+        agent: nil)
         == "fix tests, pane 2 of 2, selected",
       "a renamed tab names every pane alike, so the position tells them apart")
   }
@@ -173,11 +176,18 @@ struct AccessibilityTextTests {
         name: "acme", isExpanded: true, isMissing: false, state: nil, worktreeCount: 4,
         isFetching: true) == "acme, project, expanded, 4 worktrees, fetching")
     #expect(
-      AccessibilityText.tab(title: "zsh", isActive: true, isSplit: true, state: .done)
+      AccessibilityText.tab(title: "zsh", isActive: true, isSplit: true, state: .done, agent: nil)
         == "zsh, tab, selected, split, Done")
     #expect(
-      AccessibilityText.tab(title: "claude", isActive: false, isSplit: false, state: nil)
-        == "claude, tab")
+      AccessibilityText.tab(
+        title: "claude", isActive: false, isSplit: false, state: nil, agent: "Claude Code")
+        == "claude, tab, Claude Code, agent",
+      "the mark is drawn, so it is said")
+    #expect(
+      AccessibilityText.tab(
+        title: "Claude Code", isActive: false, isSplit: false, state: nil, agent: "Claude Code")
+        == "Claude Code, tab",
+      "and not twice where the title is already the agent's name")
   }
 
   /// A worktree with one column has nothing to tell apart, so its strip

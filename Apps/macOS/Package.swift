@@ -28,7 +28,7 @@ let package = Package(
       // `Apps/macOS/Resources`, which is the icon the bundling script
       // copies and nothing SwiftPM knows about. The libraries keep theirs
       // the same way, under MultishellCore.
-      resources: [.process("Resources/en.lproj")]
+      resources: [.process("Resources/en.lproj"), .process("Resources/Marks")]
     ),
     // Pure pieces of the app: error mapping, metrics, colour derivation.
     // Views themselves stay untested here.

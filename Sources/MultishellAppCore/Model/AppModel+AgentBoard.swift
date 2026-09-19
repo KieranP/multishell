@@ -50,7 +50,8 @@ extension AppModel {
   /// Whether an agent is at this pane's prompt, the report winning over the
   /// tab's own id. Asked by the board and its counts alike.
   func isAgentPane(_ session: TerminalSession) -> Bool {
-    reportedAgents[session.id] != nil || session.agentID != nil
+    reportedAgents[session.id] != nil || commandAgents[session.id] != nil
+      || session.agentID != nil
   }
 
   /// How many cards each column holds, without building one: a card carries
@@ -74,10 +75,13 @@ extension AppModel {
   /// Who is at the prompt, by name.
   private func occupant(of session: TerminalSession) -> AgentBoardCard.Occupant {
     if let reported = reportedAgents[session.id] {
-      return .agent(AgentCatalogue.displayName(reported.agentID))
+      return .agent(id: reported.agentID, name: AgentCatalogue.displayName(reported.agentID))
+    }
+    if let running = commandAgents[session.id] {
+      return .agent(id: running, name: AgentCatalogue.displayName(running))
     }
     if let agentID = session.agentID {
-      return .agent(AgentCatalogue.displayName(agentID))
+      return .agent(id: agentID, name: AgentCatalogue.displayName(agentID))
     }
     return .shell(
       URL(fileURLWithPath: shellPath(forWorktree: session.worktreeID)).lastPathComponent)

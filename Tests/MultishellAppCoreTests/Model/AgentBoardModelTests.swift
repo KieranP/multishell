@@ -34,7 +34,91 @@ struct AgentBoardModelTests {
     harness.source.send(SessionStateReport(state: .running, sessionID: session.id, agent: "claude"))
     model.setShowsAllTerminals(false)
     #expect(model.agentBoard.count(of: .working) == 1)
-    #expect(model.agentBoard.column(.working).cards[0].occupant == .agent("Claude Code"))
+    #expect(
+      model.agentBoard.column(.working).cards[0].occupant
+        == .agent(id: "claude", name: "Claude Code"))
+  }
+
+  /// The strip and the sidebar draw a mark from this, so a shell someone
+  /// typed `claude` into has to stop looking like a shell.
+  @Test func theMarkFollowsWhoIsAtThePromptRatherThanWhatOpenedTheTab() {
+    let (harness, session) = harnessWithOnePane()
+    let model = harness.model
+    let tab = harness.store.workspace.tabs[0]
+
+    #expect(model.agentID(of: tab) == nil, "a plain shell")
+    #expect(model.agentID(ofPane: session) == nil)
+
+    harness.source.send(SessionStateReport(state: .running, sessionID: session.id, agent: "codex"))
+    #expect(model.agentID(of: tab) == "codex")
+    #expect(model.agentID(ofPane: session) == "codex")
+  }
+
+  /// Typed at a prompt, with none of that agent's hooks installed: the
+  /// shell's own report of what it just started is all the app has.
+  @Test func aCommandThatIsAnAgentMarksThePaneUntilItFinishes() {
+    let (harness, session) = harnessWithOnePane()
+    let model = harness.model
+
+    harness.source.send(
+      SessionStateReport(state: .running, sessionID: session.id, command: "codex", isShell: true))
+    #expect(model.agentID(ofPane: session) == "codex")
+    #expect(model.agentBoardCards[0].occupant == .agent(id: "codex", name: "Codex"))
+
+    harness.source.send(SessionStateReport(state: .done, sessionID: session.id, isShell: true))
+    #expect(model.agentID(ofPane: session) == nil, "it exited, so the pane is a shell again")
+  }
+
+  /// A shell reports every command it starts and names only the agents, so
+  /// the next unnamed one is the last agent's end whether a finish landed.
+  @Test func aPlainCommandAfterAnAgentTakesTheMarkBack() {
+    let (harness, session) = harnessWithOnePane()
+    let model = harness.model
+
+    harness.source.send(
+      SessionStateReport(state: .running, sessionID: session.id, command: "codex", isShell: true))
+    #expect(model.agentID(ofPane: session) == "codex")
+
+    harness.source.send(
+      SessionStateReport(state: .running, sessionID: session.id, isShell: true))
+    #expect(model.agentID(ofPane: session) == nil, "`ls` is not codex")
+  }
+
+  /// `multishell state` is documented for the user's own scripts, and one
+  /// run from inside an agent's turn is not that agent's shell exiting.
+  @Test func aReportFromSomethingOtherThanTheShellLeavesTheMarkWhereItIs() {
+    let (harness, session) = harnessWithOnePane()
+    let model = harness.model
+
+    harness.source.send(
+      SessionStateReport(state: .running, sessionID: session.id, command: "codex", isShell: true))
+    harness.source.send(SessionStateReport(state: .attention, sessionID: session.id))
+    #expect(model.agentID(ofPane: session) == "codex")
+  }
+
+  /// An agent's own hooks report while it works and never name a command,
+  /// so they must not take back the mark the shell put there.
+  @Test func anAgentsOwnReportLeavesTheShellsAnswerWhereItIs() {
+    let (harness, session) = harnessWithOnePane()
+    let model = harness.model
+
+    harness.source.send(
+      SessionStateReport(state: .running, sessionID: session.id, command: "codex", isShell: true))
+    harness.source.send(
+      SessionStateReport(state: .running, sessionID: session.id, agent: "codex"))
+    #expect(model.agentID(ofPane: session) == "codex")
+  }
+
+  @Test func aTabOpenedForCodexOrOpenCodeDrawsThatAgentsMark() {
+    let harness = Harness()
+    let model = harness.model
+    model.select(harness.main)
+
+    for id in ["codex", "opencode"] {
+      model.newAgentTab(id)
+      let tab = harness.store.workspace.tabs.last!
+      #expect(model.agentID(of: tab) == id)
+    }
   }
 
   /// One card per pane, not per tab: a split holds two panes under one
@@ -65,7 +149,7 @@ struct AgentBoardModelTests {
 
     let agentCards = model.agentBoardCards.filter(\.occupant.isAgent)
     #expect(agentCards.count == 1)
-    #expect(agentCards[0].occupant == .agent("Custom command"))
+    #expect(agentCards[0].occupant == .agent(id: "custom", name: "Custom command"))
     #expect(model.agentBoard.count(of: .idle) == 1, "nothing has reported from it yet")
   }
 

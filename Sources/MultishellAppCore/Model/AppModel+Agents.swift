@@ -99,6 +99,21 @@ extension AppModel {
     AgentCatalogue.displayName(id)
   }
 
+  /// Which agent a tab draws the mark of, `nil` for a shell. The last step
+  /// is a scan of every session, so a strip asks this once per tab.
+  public func agentID(of tab: TerminalTab) -> String? {
+    if let reported = reportedAgents[tab.focusedSessionID], reported.isAtThePrompt {
+      return reported.agentID
+    }
+    if let running = commandAgents[tab.focusedSessionID] { return running }
+    return workspace.session(tab.focusedSessionID)?.agentID
+  }
+
+  /// One pane's own, for its sidebar row and its card.
+  public func agentID(ofPane session: TerminalSession) -> String? {
+    agentAtThePrompt(of: session)
+  }
+
   /// Cmd+Option+T: a tab running the preferred agent. The store records the
   /// agent id; the command line is built when the shell starts.
   public func newAgentTab() {

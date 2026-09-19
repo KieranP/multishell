@@ -129,9 +129,17 @@ struct TabBar: View {
   /// on auto-start, is not among them: each item here says what it starts.
   private var newTabMenu: some View {
     Menu {
-      Button(t("menu.new-shell-tab")) { model.newShellTab(in: group.id) }
+      Button {
+        model.newShellTab(in: group.id)
+      } label: {
+        Label(t("menu.new-shell-tab"), systemImage: "apple.terminal")
+      }
       ForEach(model.installedAgentIDs, id: \.self) { id in
-        Button(itemTitle(id)) { model.newAgentTab(id, in: group.id) }
+        Button {
+          model.newAgentTab(id, in: group.id)
+        } label: {
+          itemLabel(id)
+        }
       }
     } label: {
       newTabLabel
@@ -165,6 +173,21 @@ struct TabBar: View {
     )
     .background(theme.chromeColor)
     .contentShape(.rect)
+  }
+
+  /// The agent's mark beside its item. A menu is AppKit's, which draws a
+  /// title and an image, so the mark is rendered rather than laid out.
+  @ViewBuilder
+  private func itemLabel(_ id: String) -> some View {
+    if let image = AgentMarkImage.image(for: id) {
+      Label {
+        Text(itemTitle(id))
+      } icon: {
+        image
+      }
+    } else {
+      Text(itemTitle(id))
+    }
   }
 
   /// "New Claude Code Tab", and the typed command by its own name rather

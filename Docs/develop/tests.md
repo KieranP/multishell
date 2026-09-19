@@ -43,6 +43,16 @@ What each test catches, and the conventions a new one follows.
   AgentBoardModelTests, every state and both filter positions. `agentLaneCounts`
   counts without building a card, so a shell reporting a new prompt does not
   re-render the sidebar, and the two ways of counting can part.
+- An agent mark that draws nothing: AgentMarkResourceTests parses every `.svg`
+  in `Resources/Marks` and holds each to its 16-point square, a file that will
+  not parse being left out of the table rather than crashing a view.
+- An agent typed at a prompt that marks nothing: the placeholder test in
+  ShellStateHooksTests holds the generated startup files to naming the agents,
+  and `bashNamesAnAgentItStartsAndNothingElse` and
+  `zshWritesTheAgentIntoTheLineItSendsAndLeavesTheRestOut` in PromptMarkTests
+  run the real shells and read what they report. The zsh one is what caught
+  `${${(z)1}[1]:t}` subscripting characters rather than words for a command run
+  by its path; `zsh -n` cannot see that.
 - A settings page outgrowing its fixed window: SettingsPageSizeTests lays the
   pages of both settings windows out at 560 in an NSHostingView in an NSWindow
   never ordered in, and holds each to 600. No screen and no permission: what

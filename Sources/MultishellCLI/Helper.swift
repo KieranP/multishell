@@ -10,7 +10,7 @@ enum Helper {
       multishell state <running|attention|done|error|idle> [--session ID] [--cwd PATH]
                        [--pid PID] [--message TEXT] [--agent ID]
                        [--subagent ID --subagent-phase <started|working|ended>
-                        [--subagent-type NAME]] [--new-turn true]
+                        [--subagent-type NAME]] [--new-turn true] [--shell true]
           Report a state for the terminal this runs in. Defaults come from the
           environment the app sets: MULTISHELL_SESSION, MULTISHELL_WORKTREE,
           MULTISHELL_SOCKET, MULTISHELL_APP_PID. The pid defaults to the
@@ -21,11 +21,15 @@ enum Helper {
           --subagent names a worker the agent has out, so the app can list
           it: started and ended are its ends, working a tool call inside it.
           --new-turn marks the prompt starting a turn, after which no worker
-          of the last one is still out.
-      multishell command-started [--pid N]
+          of the last one is still out. --shell says the injected shell
+          integration sent this, which is what may take back the mark a
+          command put on a pane; nothing else sets it.
+      multishell command-started [--pid N] [--command WORD]
           Report that a foreground command has started (running). For a shell
           preexec hook; pass the shell's pid so the state clears if the shell
-          exits without a prompt.
+          exits without a prompt. --command names the program it runs, its
+          first word without a path, which marks the pane where that program
+          is an agent nobody has installed hooks for.
       multishell command-finished --exit N [--duration S]
           Report that it finished: done when N is 0 or a signal, failed
           otherwise. For a shell precmd hook; a short duration posts no
@@ -52,7 +56,9 @@ enum Helper {
         return try state(Array(arguments.dropFirst()), environment: environment)
       case "command-started":
         let options = try Options(arguments.dropFirst())
-        return report(SessionState.running, environment: environment, pid: options.int32("pid"))
+        return report(
+          SessionState.running, environment: environment, pid: options.int32("pid"),
+          command: options["command"])
       case "command-finished":
         let options = try Options(arguments.dropFirst())
         return report(
@@ -101,6 +107,7 @@ enum Helper {
       pid: options.int32("pid") ?? reportingProcess(environment),
       message: options["message"],
       agent: options["agent"],
+      isShell: options["shell"] == "true" ? true : nil,
       subagent: try subagent(options),
       startsTurn: options["new-turn"] == "true" ? true : nil)
     do {
@@ -156,14 +163,16 @@ enum Helper {
   /// the shell's, a command's not being known in a preexec hook.
   private static func report(
     _ state: SessionState, environment: [String: String], pid: Int32? = nil,
-    duration: Double? = nil
+    duration: Double? = nil, command: String? = nil
   ) -> Int32 {
     let report = SessionStateReport(
       state: state,
       sessionID: environment[SessionEnvironment.sessionKey].flatMap { UUID(uuidString: $0) },
       cwd: environment[SessionEnvironment.worktreeKey],
       pid: pid,
-      duration: duration)
+      duration: duration,
+      command: command,
+      isShell: true)
     do {
       try send(report, environment: environment)
       return 0
