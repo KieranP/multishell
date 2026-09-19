@@ -42,10 +42,8 @@ struct TabBar: View {
 
   private var strip: some View {
     GeometryReader { proxy in
-      // What the tabs share, the strip's buttons taken off, and from it one
-      // width for all of them, so a drop needs no measuring. The splits go
-      // where they would leave no room for a tab, so both halves of this
-      // read the width the same way.
+      // One width for every tab, the strip's buttons taken off, so a drop
+      // needs no measuring and both halves below read the width alike.
       let width = Double(proxy.size.width)
       let showsSplits = model.metrics.stripShowsSplits(in: width)
       let available =

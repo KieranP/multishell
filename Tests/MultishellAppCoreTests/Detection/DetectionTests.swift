@@ -115,3 +115,67 @@ struct EditorDetectionTests {
       "and neither does a chosen None")
   }
 }
+
+@Suite
+struct AgentDetectionTests {
+  @Test func agentsAreFoundOnTheGivenPathOnly() throws {
+    let bin = try fakeBin(["claude", "aider"])
+    defer { try? FileManager.default.removeItem(at: bin) }
+
+    let detection = AgentDetection(path: "/usr/bin:\(bin.path)")
+    #expect(Set(detection.found.keys) == ["claude", "aider"])
+    #expect(detection.found["claude"]?.path == bin.appendingPathComponent("claude").path)
+    #expect(detection.isInstalled("claude"))
+    #expect(!detection.isInstalled("codex"))
+    #expect(AgentDetection(path: "/usr/bin").found.isEmpty, "nothing on a path with no agents")
+  }
+
+  @Test func theDropdownListsInstalledAgentsTheStaleChoiceAndCustom() throws {
+    let bin = try fakeBin(["codex"])
+    defer { try? FileManager.default.removeItem(at: bin) }
+    let detection = AgentDetection(path: bin.path)
+
+    let plain = detection.options(selected: nil).map(\.id)
+    #expect(plain == ["none", "codex", "custom"])
+
+    let stale = detection.options(selected: "claude")
+    #expect(stale.map(\.id) == ["none", "claude", "codex", "custom"], "catalogue order")
+    #expect(stale[1].label == "Claude Code (not installed)")
+    #expect(!stale[1].isInstalled)
+
+    let unknown = detection.options(selected: "future-agent")
+    #expect(unknown.map(\.id).contains("future-agent"), "a newer build's id still shows")
+    #expect(detection.isInstalled("custom"))
+    #expect(!detection.isInstalled("claude"))
+  }
+}
+
+/// The terminal font picker's rows.
+@Suite
+struct FontDetectionTests {
+  private let fonts = FontDetection(
+    monospaced: ["Menlo", "JetBrains Mono"], others: ["Helvetica", "Avenir"])
+
+  @Test func systemFirstThenMonospacedThenADividerThenTheRestSorted() {
+    let ids = fonts.options(selected: nil).map(\.id)
+    #expect(
+      ids == [
+        FontDetection.systemID, "JetBrains Mono", "Menlo", FontDetection.dividerID, "Avenir",
+        "Helvetica",
+      ])
+    #expect(fonts.options(selected: nil)[0].label == "System monospace")
+  }
+
+  @Test func aStoredFontTheMachineLacksIsListedMarkedRatherThanDropped() {
+    let options = fonts.options(selected: "Fira Code")
+    let missing = options.first { $0.id == "Fira Code" }
+    #expect(missing?.label == "Fira Code (not installed)" && missing?.isInstalled == false)
+    #expect(fonts.options(selected: "Menlo").allSatisfy { $0.isInstalled })
+    #expect(fonts.options(selected: FontDetection.systemID).allSatisfy { $0.isInstalled })
+  }
+
+  @Test func withNoOtherFamiliesThereIsNoDivider() {
+    let only = FontDetection(monospaced: ["Menlo"], others: [])
+    #expect(!only.options(selected: nil).map(\.id).contains(FontDetection.dividerID))
+  }
+}

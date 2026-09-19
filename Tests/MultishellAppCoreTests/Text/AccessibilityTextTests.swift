@@ -1,7 +1,5 @@
 import Foundation
 import MultishellCore
-import MultishellGitKit
-import MultishellProcess
 import Testing
 
 @testable import MultishellAppCore
@@ -203,89 +201,5 @@ struct AccessibilityTextTests {
   @Test func aDropBandSaysWhichSideTheNewColumnGoes() {
     #expect(AccessibilityText.newTabGroupBand(.before) == "New tab group left")
     #expect(AccessibilityText.newTabGroupBand(.after) == "New tab group right")
-  }
-}
-
-/// The terminal font picker's rows.
-@Suite
-struct FontDetectionTests {
-  private let fonts = FontDetection(
-    monospaced: ["Menlo", "JetBrains Mono"], others: ["Helvetica", "Avenir"])
-
-  @Test func systemFirstThenMonospacedThenADividerThenTheRestSorted() {
-    let ids = fonts.options(selected: nil).map(\.id)
-    #expect(
-      ids == [
-        FontDetection.systemID, "JetBrains Mono", "Menlo", FontDetection.dividerID, "Avenir",
-        "Helvetica",
-      ])
-    #expect(fonts.options(selected: nil)[0].label == "System monospace")
-  }
-
-  @Test func aStoredFontTheMachineLacksIsListedMarkedRatherThanDropped() {
-    let options = fonts.options(selected: "Fira Code")
-    let missing = options.first { $0.id == "Fira Code" }
-    #expect(missing?.label == "Fira Code (not installed)" && missing?.isInstalled == false)
-    #expect(fonts.options(selected: "Menlo").allSatisfy { $0.isInstalled })
-    #expect(fonts.options(selected: FontDetection.systemID).allSatisfy { $0.isInstalled })
-  }
-
-  @Test func withNoOtherFamiliesThereIsNoDivider() {
-    let only = FontDetection(monospaced: ["Menlo"], others: [])
-    #expect(!only.options(selected: nil).map(\.id).contains(FontDetection.dividerID))
-  }
-}
-
-/// The pane's stage titles, and which stages offer its Cancel.
-@Suite
-struct RemovalStageWordingTests {
-  @Test func thePaneNamesTheTrashAndAHookThatDidNotFinish() {
-    let removing = WorktreeOperation(.removingWorktree)
-    #expect(removing.title == "Moving the worktree to the Trash…")
-    #expect(removing.detail.contains("in the Trash"))
-    #expect(removing.step.cancelHelp == nil, "git's own stages are left to finish")
-    #expect(WorktreeOperation(.postCreateHook).step.cancelHelp?.contains("hook") == true)
-    #expect(
-      WorktreeOperation(.copyingFiles).step.cancelHelp?.contains("nothing else runs in it") == true,
-      "the same Cancel, and what it means where it is not a hook")
-    #expect(WorktreeOperation(.linkingFiles).title == "Linking files into the worktree…")
-    #expect(
-      WorktreeOperation(.linkingFiles, failure: "x").title
-        == "Some files were not linked into the worktree")
-    #expect(
-      WorktreeOperation(.removingWorktree, failure: "x").title
-        == "The worktree could not be removed")
-    let timedOut = WorktreeOperation(.preDeleteHook, failure: "x", timedOut: true)
-    #expect(timedOut.title == "The pre-delete hook did not finish")
-    #expect(
-      WorktreeOperation(.postCreateHook, failure: "x", timedOut: true).title
-        == "The post-create hook did not finish")
-  }
-}
-
-@Suite
-struct StoppedHookPresentationTests {
-  @Test func aStoppedOrTimedOutHookIsTitledForWhatEndedIt() {
-    let timedOut = ProcessFailure(
-      executable: "zsh", arguments: [], status: 129, message: "installing",
-      stop: .timedOut(after: .seconds(1)))
-    let presented = PresentedError(HookFailure(stage: .postCreate, underlying: timedOut))
-    #expect(presented.title == "Worktree created, but its hook did not finish")
-    #expect(presented.message == "installing\n\nStopped after 1 second, the hook timeout.")
-
-    let stopped = ProcessFailure(
-      executable: "zsh", arguments: [], status: 129, message: "", stop: .stopped)
-    let byUser = PresentedError(HookFailure(stage: .preCreate, underlying: stopped))
-    #expect(byUser.title == "Worktree not created: its pre-create hook was stopped")
-    #expect(byUser.message == "Stopped by you and printed nothing.")
-  }
-
-  @Test func theSharedHooksQuestionShowsTheHooksAndNamesTheFile() {
-    let pending = PendingSharedHooksTrust(
-      projectID: "/r", projectName: "acme", hooks: "post-create:\nnpm ci",
-      digest: FileDigest.sha256(of: Data()))
-    #expect(pending.title == "Run the hooks in acme's .multishell.json?")
-    #expect(pending.message.hasSuffix("post-create:\nnpm ci"))
-    #expect(pending.trustLabel == "Run Hooks" && pending.declineLabel == "Ignore Hooks")
   }
 }

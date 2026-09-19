@@ -72,9 +72,7 @@ enum OpenCodePlugin {
       }
       return {
         // A prompt in the parent starts a turn; one in a child is its work.
-        // `chat.message` is handed the message as its second argument, so the
-        // session is read from either; with none, nothing is a new turn, which
-        // would otherwise empty the roster mid-turn.
+        // With no session in either argument, no new turn: that empties the roster.
         "chat.message": async (input, output) => {
           const message = output && output.message
           const id = (input && input.sessionID) || (message && message.sessionID)

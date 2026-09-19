@@ -60,9 +60,8 @@ public struct AgentHookEvent: Hashable, Sendable {
       guard let id = payload.agentID else { return nil }
       return SubagentReport(id: id, type: type, phase: .working)
     }
-    // A start or an end moved the roster by one whatever its payload said, so
-    // one that names nobody takes an unnamed place rather than reading as the
-    // agent's own report, which would leave the roster a worker over.
+    // A start or an end moved the roster by one, so one naming nobody takes
+    // an unnamed place; read as the agent's own it leaves a worker over.
     let id = payload.agentID ?? payload.agentName ?? SubagentReport.anonymousID
     return SubagentReport(id: id, type: type, phase: phase)
   }

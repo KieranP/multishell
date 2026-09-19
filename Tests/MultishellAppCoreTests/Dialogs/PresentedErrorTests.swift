@@ -241,3 +241,44 @@ struct SeveralFailuresAtOnceTests {
     #expect(h.platform.logged.count == 3, "and the rest are in the log: \(h.platform.logged)")
   }
 }
+
+@Suite
+struct PresentedMessageTests {
+  @Test func eachMessageNamesWhatItIsAbout() {
+    #expect(
+      PresentedError.notARepository(URL(fileURLWithPath: "/w/notes")).message.hasPrefix("notes is")
+    )
+    #expect(PresentedError.worktreeDirectoryMissing("/w/t").message.hasPrefix("/w/t does not"))
+    #expect(PresentedError.agentNotInstalled("Codex").title == "Codex is not installed")
+    #expect(PresentedError.editorNotInstalled("Zed").message.contains("Install Zed"))
+    #expect(PresentedError.noEditorCommand.message.contains("{path}"))
+    #expect(PresentedError.themeUnreadable("bad json").message == "bad json")
+  }
+}
+
+@Suite
+struct StoppedHookPresentationTests {
+  @Test func aStoppedOrTimedOutHookIsTitledForWhatEndedIt() {
+    let timedOut = ProcessFailure(
+      executable: "zsh", arguments: [], status: 129, message: "installing",
+      stop: .timedOut(after: .seconds(1)))
+    let presented = PresentedError(HookFailure(stage: .postCreate, underlying: timedOut))
+    #expect(presented.title == "Worktree created, but its hook did not finish")
+    #expect(presented.message == "installing\n\nStopped after 1 second, the hook timeout.")
+
+    let stopped = ProcessFailure(
+      executable: "zsh", arguments: [], status: 129, message: "", stop: .stopped)
+    let byUser = PresentedError(HookFailure(stage: .preCreate, underlying: stopped))
+    #expect(byUser.title == "Worktree not created: its pre-create hook was stopped")
+    #expect(byUser.message == "Stopped by you and printed nothing.")
+  }
+
+  @Test func theSharedHooksQuestionShowsTheHooksAndNamesTheFile() {
+    let pending = PendingSharedHooksTrust(
+      projectID: "/r", projectName: "acme", hooks: "post-create:\nnpm ci",
+      digest: FileDigest.sha256(of: Data()))
+    #expect(pending.title == "Run the hooks in acme's .multishell.json?")
+    #expect(pending.message.hasSuffix("post-create:\nnpm ci"))
+    #expect(pending.trustLabel == "Run Hooks" && pending.declineLabel == "Ignore Hooks")
+  }
+}
