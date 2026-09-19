@@ -50,6 +50,9 @@ Codex asks you to trust a new hook once, with `/hooks`. Plain shell commands
 report without any of this. Until an agent's hooks are in, its dots never move
 and the Agents board stays empty.
 
+Which shells and agents are supported, and how far each one goes, is in
+[COMPAT.md](COMPAT.md).
+
 To work on it, start with [AGENTS.md](AGENTS.md), which indexes `Docs/develop/`
 for the build, the tests and the rules, and `Docs/design/` for why things are
 the way they are.
