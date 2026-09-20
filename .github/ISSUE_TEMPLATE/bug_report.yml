@@ -1,0 +1,39 @@
+name: Bug report
+description: Something the app does that it should not
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you got instead.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Multishell, About Multishell. It names the commit.
+      placeholder: 2026.09.19-a0393d1
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS and hardware
+      placeholder: 15.6, Apple silicon
+    validations:
+      required: true
+  - type: input
+    id: shell
+    attributes:
+      label: Shell and agent
+      description: Which shell the pane runs, and which agent if one is involved.
+      placeholder: zsh, Claude Code
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: >
+        Console output, a screenshot, or the state on disk if it is about
+        projects or worktrees going missing. See Docs/develop/state-on-disk.md.

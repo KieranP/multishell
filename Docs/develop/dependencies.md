@@ -1,43 +1,35 @@
 # Dependencies
 
-`THIRD-PARTY-NOTICES.md` carries the notices for the code that is actually in
-the built app, which `make-app.sh` copies into the bundle beside `LICENSE`. It
-is written from reading the bundle, not the dependency graph: a transitive
-dependency compiled into the executable needs its notice there (MSDisplayLink is
-one), while a file that ships with its own licence beside it (bash-preexec, in
-libghostty's resource bundle) is pointed at rather than copied. Adding a
-dependency means checking which of the two it is.
-
-- libghostty via `Lakr233/libghostty-spm`, MIT, pinned to an exact tag, the
-  embedding API not being stable. Third-party prebuilt with patches; build from
-  source with its `Script/build.sh` before distributing. It carries Ghostty
-  itself (MIT, Mitchell Hashimoto) and bash-preexec. Its `GhosttyTheme` product,
-  which holds the iTerm2 colour schemes, is not linked and ships nothing.
-  Ghostty's own bash and zsh integration is GPLv3; the package ships its own MIT
-  rewrite instead and has a script that refuses GPL text, which is what keeps
-  this repository's AGPL from inheriting a GPL obligation.
-  - Moving the pin changes which config keys a user's Ghostty file may use, so
-    `GhosttyUserConfig` wants a look then. What was run to write it:
-    `ghostty +show-config --default` for the key list, each line handed to the
-    pinned build alone, which took 206 of 207. `--docs` on the same command says
-    what a key does, and is what the allowed list was decided from.
-- MSDisplayLink via `Lakr233/MSDisplayLink`, MIT, pinned at 2.2.0. Easy to miss:
-  this tree imports it nowhere and `Apps/macOS/Package.swift` does not name it.
-  libghostty-spm depends on it, and its symbols are in the built executable.
-- `WeightedSplit` uses `_VariadicView`, an underscored SwiftUI API.
-- git, 2.36 or newer. `git worktree list --porcelain -z` is the only call that
-  needs it, and `-z` is what keeps a path holding a newline from being read as
-  two records; see Docs/design/worktrees.md. The floor is under what the
-  supported macOS ships, Sonoma's own being 2.39, but git is looked up on the
-  login shell's PATH, so a version manager pinning an older git is the way to
-  fall under it. An older one fails the read outright and the project's row says
-  so, naming the option.
-- prettier, for the Markdown in `make format` and the Claude Code hook, but not
-  in CI. From Homebrew rather than a `package.json`: the repository has no Node
-  toolchain, and a `node_modules` for one formatter is more than the docs are
-  worth. `proseWrap: always` in `.prettierrc` is what reflows a paragraph to 80
-  columns; without it the hook would only fix bullets. Prettier pads every table
-  row to the widest cell whatever `printWidth` says, so a table with a long cell
-  is wide in the source; nothing is `prettier-ignore`d over it. Prettier refuses
-  a symlink, so the hook skips one; `CLAUDE.md` is formatted through
-  `AGENTS.md`.
+- **`THIRD-PARTY-NOTICES.md` is written from the bundle, not the dependency
+  graph.** A transitive dependency compiled into the executable needs its notice
+  there (MSDisplayLink is one); a file shipping its own licence beside it
+  (bash-preexec) is pointed at. Adding a dependency means deciding which.
+- **libghostty via `Lakr233/libghostty-spm`**, MIT, pinned to an exact tag, the
+  embedding API not being stable. Prebuilt by a third party with patches; build
+  it from source before distributing.
+- **It carries Ghostty itself and bash-preexec.** Its `GhosttyTheme` product,
+  the iTerm2 colour schemes, is not linked and ships nothing.
+- **Ghostty's own bash and zsh integration is GPLv3.** The package ships an MIT
+  rewrite and a script that refuses GPL text, which is what keeps this
+  repository's AGPL from inheriting a GPL obligation.
+- **Moving the pin changes which config keys a user's Ghostty file may use**, so
+  `GhosttyUserConfig` wants a look then. The list came from Ghostty's own
+  `show-config` and `docs` output, each key handed to the pinned build to see
+  whether it took it.
+- **MSDisplayLink via `Lakr233/MSDisplayLink`**, MIT, pinned. Easy to miss: this
+  tree imports it nowhere and names it in no manifest, but libghostty-spm
+  depends on it and its symbols are in the executable.
+- **`WeightedSplit` uses `_VariadicView`**, an underscored SwiftUI API.
+- **git 2.36 or newer**, for `-z` on `git worktree list --porcelain`, which is
+  what keeps a path holding a newline from reading as two records. The floor is
+  under what the supported macOS ships; a version manager is the way to fall
+  under it, and an older git fails the read outright with the row saying so.
+- **prettier**, for the Markdown in `make format` and the Claude Code hook, not
+  in CI. From Homebrew rather than a `package.json`: there is no Node toolchain
+  here and a `node_modules` for one formatter is more than the docs are worth.
+- **`proseWrap: always` is what reflows to 80 columns.** Prettier pads a table
+  row to its widest cell whatever `printWidth` says, and refuses a symlink, so
+  the hook skips one and `CLAUDE.md` is formatted through `AGENTS.md`.
+- **The app package names its path dependency** rather than only pointing at it:
+  SwiftPM identifies a local package by its directory, which is the branch's
+  name in a worktree, so the unnamed form built from the checkout alone.

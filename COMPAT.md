@@ -7,14 +7,20 @@ just never updates the state indicator dot.
 
 ## Platform
 
-| Item            | Value                                   |
-| --------------- | --------------------------------------- |
-| macOS           | 14 Sonoma and newer, Apple silicon      |
-| Other platforms | None                                    |
-| Build           | Xcode 27, or 26 for the libraries alone |
-| git             | 2.36 or newer                           |
-| Release         | Source only, no notarised build         |
-| Language        | English                                 |
+| Item            | Value                           |
+| --------------- | ------------------------------- |
+| macOS           | 14 Sonoma and newer             |
+| Other platforms | None                            |
+| Build           | Xcode 26 or newer               |
+| git             | 2.36 or newer                   |
+| Release         | Source only, no notarised build |
+| Language        | English                         |
+
+`make build` builds for the machine it runs on, `arch=$(uname -m)` in
+`Scripts/build-lib.sh`, so the binary is single-architecture rather than
+universal. libghostty ships both slices; only Apple silicon has been built and
+run here. Only Xcode 27 has been built with, the floor of 26 resting on
+`xcodebuild` behaving there as it does in 27; see BUGS.md.
 
 ## Shells
 

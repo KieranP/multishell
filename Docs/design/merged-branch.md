@@ -3,116 +3,85 @@
 How "this branch landed" is decided without ever writing to the repository.
 Newest at the bottom.
 
-## A merged branch is inferred from three signs, none of which writes
-
-Deciding it is the whole feature; the green glyph is the easy half.
-
-Ancestry cannot tell "landed" from "never began", `git worktree add -b` cutting
-a branch at its start commit, nor from "was carried up", a `git pull` in a
-worktree cut before the trunk moved fast-forwarding it onto commits it was
-handed.
-
-Sign 1, the branch's reflog. Arrivals: creation, reset, clone, fetch, a merge or
-pull that fast-forwarded, and a rebase that replayed nothing. Work of its own:
-everything else, a `commit:`, a rebase's `(finish)` that moved the branch past
-the commit it was rebased onto, a merge that made a commit. A deny list, because
-the arrivals are the closed set and a message a later git invents reads as work,
-which is what counting entries assumed of every entry anyway. Names given to git
-whole with `--` after, else a branch sharing a name with a path in the repo is
-"both revision and filename" and the read fails instead of answering.
-
-A bare `git rebase main` in a worktree with no commits of its own writes
-`rebase (finish): refs/heads/feat onto <sha>`, the same words as a rebase that
-replayed commits, and `git branch --merged` then lists the branch. Reproduced
-with git 2.55. So the reflog is read as `%H %gs`, and a finish whose new value
-is the `<sha>` it names is an arrival; a finish that names no commit, or one the
-branch rested past, stays work. `git pull --rebase` on the same setup writes
-`Fast-forward` instead and was already an arrival.
-
-No reflog at all -> nothing claimed. A bare repo logs no branch creation, so
-guessing from the tips instead badges every worktree it holds that was cut from
-anywhere but the trunk's own tip, which in that layout is most of them. It does
-log a commit, so a branch that landed still says so. Cost: no badge on a branch
-whose reflog expired, and a badge not drawn is a worktree nobody is told to
-remove.
-
-Sign 2, patch ids. A rebase-merge or a run of cherry-picks leaves no reachable
-tip -> `git cherry`: at least one `-` and no `+`. Not "no `+`" alone, cherry
-skipping merge commits, so a worktree that merged the trunk in and wrote nothing
-of its own prints nothing at all, and read as "every patch landed" that badges a
-branch that landed nothing.
-
-Sign 3, a gone upstream. A squash merge leaves neither of the above, and
-detecting one needs `commit-tree`, a write -> the sign taken is the `[gone]`
-upstream "delete branch on merge" leaves, with two things beside it, `[gone]`
-alone being three different stories:
-
-- A base that has moved on, since `branch.<name>` config outlives the branch it
-  names and a name used before hands its successor an upstream that was never on
-  the remote, spelled `[gone]` in the very same words.
-- The branch's own changes reading the same on the base, since the badge hides
-  while a worktree holds work only it has, and `git status` cannot see that
-  here, a branch whose upstream is gone being ahead of nothing. Two
-  `git diff --name-only`: paths the branch changed since it forked against paths
-  where the two differ now, nothing in both. A path the base changed since
-  counts as differing -> errs towards no badge. Three reads beyond the `cherry`,
-  paid only by branches whose upstream is gone.
-
-Sign 3 is inference, a PR closed unmerged leaving it too -> `isCertain`
-separates the three. All three badge; only the two that are proof get a removal
-dialog led by the button that deletes the branch, which may be the only copy of
-the work. Badge hides while the worktree holds uncommitted or unpushed work.
-
-A failed read is not a verdict: `nil` not an empty set from the merged list;
-`nil` not `false` from the patch, behind and content reads; `nil` from the ref
-read, which otherwise says a project has no branches at all and drops every
-badge and commit date it has; `nil` from the reflog read, git answering "no
-reflog" with empty output and success, so only a real failure is silent. A
-verdict is recorded, and memoised, only where git answered.
-
-Base = `origin/HEAD`, then `origin/main`, `origin/master`, `main`, `master`,
-with a repo override. A remote-tracking ref beats a local branch of the same
-name. An override resolving to nothing = no badges rather than a guess. Fetching
-on a timer is out, being network, credentials and the one git call here that can
-hang -> a badge is only as fresh as the last fetch, and Fetch is a menu item
-with a timeout and a spinner on the project row.
-
-The check rides the status poll, not the watcher: a commit moves a ref no
-watched file mentions. Each verdict memoised on base, base tip, branch, branch
-tip and whether its upstream was gone: the branch because two branches may sit
-on one commit with only one gone upstream, the upstream because a first push
-puts one back without moving either tip. Nothing observable written unless it
-changed, else the sidebar redraws every five seconds.
-
-Never badged: main worktree, bare repo, detached HEAD, the trunk's own checkout.
-
-## The user's git config is not allowed to change what a read means
-
-Every runner sets `log.showSignature=false` and
-`status.showUntrackedFiles=normal`, through `GIT_CONFIG_*` rather than `-c`,
-which a failure would report in its arguments. Both are the deny lists above
-meeting output they did not expect. Signature verification prints on stdout
-ahead of each reflog subject, so `Good "git" signature for ...` splits at its
-first `:` into an action no arrival prefix matches and reads as work of its own:
-every branch just cut then claims to have landed, and, being clean and certain,
-gets the dialog led by the button that deletes it. `showUntrackedFiles=no`
-empties the porcelain for a worktree whose work is all untracked, which reads as
-clean, so the badge goes over uncommitted work and the directory is trashed.
-Neither is a wording difference the parsers could absorb; a caller's own entry
-still wins over both.
-
-## A branch is named to git by refname, never bare
-
-`refs/heads/<branch>` in every read that takes a worktree's branch, and
-`%(refname:lstrip=2)` from the merged list. A bare name reaches a tag of that
-name first, and git writes the ambiguity warning to stderr, which the poll's
-reads discard. `%(refname:short)` is ambiguity-aware the other way and answers
-`heads/x` where a tag ties, matching no worktree's branch. Both directions are
-wrong and neither is silent about nothing: the tie either loses a badge the
-branch had earned, or, where the tag sits on a pre-rebase commit, hands a
-certain "merged" to a branch holding work nobody has landed.
-
-The base is not covered: `DefaultBranch.ref` is the short print form,
-`origin/main` or `main`, and goes to git as it stands. A remote-tracking base
-cannot tie with a tag, so what is left is a tag named exactly like a local
-trunk.
+- **Deciding it is the whole feature**; the green glyph is the easy half.
+- **Ancestry alone cannot tell "landed" from "never began"**, a branch being cut
+  at its start commit, nor from "was carried up", a pull in a worktree cut
+  before the trunk moved fast-forwarding it.
+- **Sign 1 is the branch's reflog**, read as a deny list. Creation, reset,
+  clone, fetch, a fast-forward and a rebase that replayed nothing are arrivals;
+  everything else is work of its own.
+- **A deny list because the arrivals are the closed set.** A message a later git
+  invents reads as work, which is what counting entries assumed of every entry
+  anyway.
+- **Names go to git whole, with `--` after**, or a branch sharing a name with a
+  path is "both revision and filename" and the read fails instead of answering.
+- **A bare rebase with nothing to replay writes the same words as one that
+  replayed**, and the merged list then lists the branch. So a finish whose new
+  value is the commit it names is an arrival; one naming no commit, or one the
+  branch rested past, stays work.
+- **No reflog, nothing claimed.** A bare repo logs no branch creation, and
+  guessing from the tips instead badges most of the worktrees it holds. Cost: no
+  badge where a reflog expired, and a badge not drawn tells nobody to remove the
+  worktree.
+- **Sign 2 is patch ids.** A rebase-merge or a run of cherry-picks leaves no
+  reachable tip, so `git cherry` wants at least one `-` and no `+`.
+- **Not "no `+`" alone.** Cherry skips merge commits, so a worktree that merged
+  the trunk in and wrote nothing of its own prints nothing, which read as "every
+  patch landed".
+- **Sign 3 is a gone upstream.** A squash merge leaves neither other sign, and
+  detecting one would need a write, so the sign taken is what "delete branch on
+  merge" leaves behind.
+- **`[gone]` alone is three different stories**, so two reads go beside it.
+- **A base that has moved on**: the branch config outlives the branch it names,
+  so a reused name inherits an upstream that was never on the remote, spelled
+  the same way.
+- **The branch's own changes reading the same on the base**, which status cannot
+  see here, a branch with no upstream being ahead of nothing. Two diffs: what
+  the branch changed since it forked against where the two differ now, nothing
+  in both. A path the base changed counts as differing, erring towards no badge.
+- **Sign 3 is inference**, a PR closed unmerged leaving it too, so `isCertain`
+  separates the three. All three badge; only the two that are proof get a
+  removal dialog led by the button that deletes the branch.
+- **The badge hides while the worktree holds uncommitted or unpushed work.**
+- **A failed read is not a verdict.** Nil rather than an empty set from the
+  merged list, nil rather than false from the patch, behind and content reads,
+  nil from the ref read, which otherwise says a project has no branches and
+  drops every badge it has.
+- **git answers "no reflog" with success and no output**, so only a real failure
+  there is silent. A verdict is recorded, and memoised, only where git answered.
+- **Base is `origin/HEAD`, then the usual trunk names, with a repo override.** A
+  remote-tracking ref beats a local branch of the same name, and an override
+  resolving to nothing means no badges rather than a guess.
+- **Fetching on a timer is out**, being network, credentials and the one git
+  call here that can hang. So a badge is only as fresh as the last fetch, and
+  Fetch is a menu item with a timeout and a spinner.
+- **The check rides the status poll, not the watcher**: a commit moves a ref no
+  watched file mentions.
+- **Each verdict is memoised on base, base tip, branch, branch tip and whether
+  the upstream was gone.** The branch because two may sit on one commit with
+  only one gone upstream; the upstream because a first push puts one back
+  without moving either tip.
+- **Nothing observable is written unless it changed**, or the sidebar redraws on
+  every poll.
+- **Never badged**: main worktree, bare repo, detached HEAD, the trunk's own
+  checkout.
+- **The user's git config cannot change what a read means.** Every runner turns
+  signature printing off and untracked files on, through the environment rather
+  than `-c`, which a failure would report in its arguments.
+- **A printed signature splits a reflog subject into an action no prefix
+  matches**, so every freshly cut branch claims to have landed, and being clean
+  and certain gets the dialog led by the delete button.
+- **Untracked files hidden empties the porcelain** for a worktree whose work is
+  all untracked, which reads as clean, so the badge goes over uncommitted work
+  and the directory is trashed. A caller's own entry still wins over both.
+- **A branch is named to git by refname, never bare.** A bare name reaches a tag
+  of that name first, and git's ambiguity warning goes to stderr, which the
+  poll's reads discard.
+- **The short print form is wrong the other way**, answering a `heads/`-prefixed
+  name where a tag ties, which matches no worktree's branch.
+- **Either direction is wrong and neither is silent about nothing**: the tie
+  loses a badge the branch earned, or hands a certain "merged" to a branch
+  holding work nobody has landed.
+- **The base is not covered.** It goes to git in its short print form; a
+  remote-tracking base cannot tie with a tag, so what is left is a tag named
+  exactly like a local trunk.

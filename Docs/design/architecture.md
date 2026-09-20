@@ -1,68 +1,40 @@
 # Architecture
 
-What the core is, what it refuses, and how work reaches it. Newest at the
-bottom.
+What the core is, what it refuses, how work reaches it. Newest at the bottom.
 
-## Core decides what exists, GUI how it appears
-
-The engine owns the pty and a replacement need not -> core never sees a
-descriptor, byte stream or view. AppModel holds the runtime state the core
-refuses, in a library not the Mac app, so a Linux frontend need not copy it out.
-Windows same way, never built. Cost: `public` on every moved type, one
-`Platform` conformance per frontend.
-
-## Reconcile, don't command
-
-One path for tab open, tab close, worktree removed, project removed, process
-exited, relaunch. Cost: a session that fails to open is removed after, not
-prevented.
-
-One function, `reconcileSessions(takingFocus:)`, because a poll reaches it too.
-Without focus it brings the surfaces in line and leaves the keyboard alone; with
-it, it also focuses the active session and marks what is shown as seen, and only
-a user's own action passes it. It was two functions, `sync` and
-`reconcileSessions`, and the names said nothing about which took the keyboard. A
-refresh runs from the watcher and from any branch moving, so focusing there
-takes first responder off whatever the user is typing in, the sidebar filter
-included, every few seconds. A refresh still has to reconcile: a worktree
-removed outside the app loses its tabs and sessions in the store, and without it
-the host keeps the surfaces and the shells run on with nothing able to reach
-them.
-
-## Identity is the path
-
-Worktrees rediscovered from git every refresh; a minted id would change under
-persisted selection. Cost: moving a repository = a new project.
-
-## Shell out to git
-
-libgit2's worktree support is its worst part, gitoxide's incomplete, porcelain
-formats a stable contract. Cost: git must be installed, every operation is a
-spawn.
-
-Found on the login shell's PATH, like every other tool the app looks up. The
-process's own, which from the Finder is the system directories alone, misses a
-git from Nix or a version manager, and the app would then be unusable for
-someone whose terminals all have one. That PATH arrives after the coordinator is
-built, so the lookup is made twice: once at launch, and again when the login
-environment lands, which takes the launch report back if it finds git. Cost: a
-user with no git at all sees the alert a moment before it is confirmed, and the
-second lookup stats the PATH on the main actor, the other detections having
-moved off it.
-
-That PATH rides on the runner as well, so every git child is looked up on it
-too: a checkout runs `git-lfs`, a fetch runs a credential helper, a diff runs a
-driver, and from the Finder none of those is on the app's own PATH. So the
-coordinator is rebuilt when the login environment lands even where launch
-already found git; only a first find refreshes the sidebar.
-
-## Nothing in the core blocks a thread
-
-Waits inside `Task`s held one cooperative-pool thread per core until GCD ran out
-of threads and the suite hung. Both pipes drain at once, else the second fills
-its 64 KiB buffer and blocks the child; EOFs count as arrived one second after
-the exit, a backgrounded server holding them open. Running out of descriptors is
-an error, never an empty answer: at the limit `Pipe()` cannot fail and hands
-back stdin, so `git worktree list` read as a project with no worktrees and the
-store dropped every tab. Hence the `pipe` syscall, the refused empty list, the
-raised limit.
+- **Core owns what exists, the GUI how it looks.** The engine owns the pty, so
+  core never sees a descriptor, a byte stream or a view. Cost: `public` on every
+  moved type, one `Platform` per frontend.
+- **Runtime state lives in AppModel, in a library not the Mac app**, so a second
+  frontend need not copy it out.
+- **Reconcile, don't command.** One path for tab open and close, worktree or
+  project removed, process exited, relaunch. Cost: a session that fails to open
+  is removed after, not prevented.
+- **One `reconcileSessions(takingFocus:)`, and only a user's action passes
+  focus.** A refresh runs from the watcher, so focusing there would take the
+  keyboard off whatever is being typed.
+- **A refresh still reconciles.** Without it a worktree removed outside the app
+  keeps its surfaces and its shells run on unreachable.
+- **Identity is the path.** A minted id would change under persisted selection.
+  Cost: moving a repository is a new project.
+- **Shell out to git.** libgit2's worktree support is its worst part, gitoxide's
+  incomplete, porcelain a stable contract. Cost: git must be installed.
+- **git comes off the login shell's PATH**, twice: at launch and when the login
+  environment lands. The process's own PATH from the Finder misses Nix and
+  version managers.
+- **That PATH rides on the runner**, so `git-lfs`, credential helpers and diff
+  drivers are found too. Hence the coordinator is rebuilt when the environment
+  lands even if launch found git.
+- **Nothing in the core blocks a thread.** Waits inside `Task`s held a pool
+  thread per core until GCD ran out and the suite hung.
+- **Both pipes drain at once**, or the second fills its buffer and blocks the
+  child. EOF counts as arrived shortly after the exit, a backgrounded server
+  holding them open.
+- **Out of descriptors is an error, never an empty answer.** At the limit
+  `Pipe()` hands back stdin, and `git worktree list` reading as no worktrees
+  dropped every tab.
+- **Paths are directory URLs always.** A relative worktree path resolved against
+  a URL Foundation took for a file lands in the parent.
+- **No desktop is named in the core.** Where to lift a refusal comes from the
+  platform, and one that never asks answers unavailable, which keeps the page
+  from promising a dialog nobody will see.

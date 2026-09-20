@@ -1,378 +1,301 @@
 # Tests
 
-What each test catches, and the conventions a new one follows.
+What each test catches, and the conventions a new one follows. `Docs/design/`
+says why these are the rules.
 
 ## What catches a breach of the rules
 
-`Docs/design/` says why these are the rules.
-
-- Persisted defaults, unknown enum values included: DecodingDefaultsTests.
-- Old state file still loads with what it said: TabGroupMigrationTests reads a
-  real pre-columns file through `WorkspaceStore.restored`;
-  NotificationPreferenceMigrationTests reads the notification picker this build
-  replaced with toggles.
-- WorkspaceInvariants and `repairReferences`: WorkspaceStoreInvariantTests,
-  AppModelInvariantTests, random operations, printing failing seed and step.
-- No blocking in the core: ProcessRunnerTests runs four one-second children per
-  core, 96 at least, and reads off what each saw running beside it that more
-  than twice the cores were alive at once; starved, a thread per core is the
-  ceiling. Four per core so the bound stays half the batch on a machine with
-  more cores than the batch had children. DescriptorExhaustionTests lowers the
-  process-wide limit, so it needs `MULTISHELL_EXHAUST_DESCRIPTORS=1` and a
-  `--filter`.
-- Git on a timer reads only: StatusLockTests.
-- A tree still being built wears no badge, and a stage on a listed worktree
-  keeps the one it earned: the `Badged` tests in AppModelGitTests+Refresh and
-  `aWorktreeStillBeingBuiltDoesNotWearTheMergedBadge` in +Merges, on real git
-  with a gated hook where the window matters.
-- Git against real repositories, bare clone with worktrees beside it included:
-  RepositoryFixture. FakeGit only for what real git cannot do on demand. Parsers
-  get fixture text, CRLF and malformed lines included.
-- Detection runs against fake executables on a fake PATH, never the machine.
+- **Persisted defaults, unknown enum values included**: DecodingDefaultsTests.
+- **An old state file still loads with what it said**: TabGroupMigrationTests
+  reads a real pre-columns file, NotificationPreferenceMigrationTests the picker
+  this build replaced with toggles.
+- **The workspace invariants and the reference repair**:
+  WorkspaceStoreInvariantTests and AppModelInvariantTests, random operations,
+  printing the failing seed and step.
+- **No blocking in the core**: ProcessRunnerTests runs several children per core
+  and reads off what each saw running beside it, starved being a thread per core
+  at the ceiling.
+- **Descriptor exhaustion** lowers the process-wide limit, so
+  DescriptorExhaustionTests needs its environment flag and a filter.
+- **Git on a timer reads only**: StatusLockTests.
+- **A tree still being built wears no badge, and a stage on a listed worktree
+  keeps the one it earned**: the badged tests in AppModelGitTests+Refresh and
+  the merged-badge one in +Merges, on real git with a gated hook.
+- **Git against real repositories**, bare clone with worktrees beside it
+  included: RepositoryFixture. FakeGit only for what real git cannot do on
+  demand.
+- **Detection runs against fake executables on a fake PATH**, never the machine.
   Hooks run through real shells under a substitute home.
-- A shortcut's two spellings agree, clipboard ones stay with the terminal:
-  AppShortcutTests, pinned against the config Ghostty was given before it was
-  derived.
-- Identifiers spelled in both Swift and the generated `Info.plist` still match:
-  BundleDeclarationTests, reading `Info.plist.in` out of the checkout. Nothing
-  at build or run time notices these having parted.
-- Each override binds to its own setting: SettingsBindingTests, since
-  `hasOverride` and `overrideValue` take the same arguments and return the same
-  type.
-- Sidebar Agents counts agree with the columns they summarise:
-  AgentBoardModelTests, every state and both filter positions. `agentLaneCounts`
-  counts without building a card, so a shell reporting a new prompt does not
-  re-render the sidebar, and the two ways of counting can part.
-- An agent mark that draws nothing: AgentMarkResourceTests parses every `.svg`
-  in `Resources/Marks` and holds each to its 16-point square, a file that will
-  not parse being left out of the table rather than crashing a view.
-- An agent typed at a prompt that marks nothing: the placeholder test in
-  ShellStateHooksTests holds the generated startup files to naming the agents,
-  and `bashNamesAnAgentItStartsAndNothingElse` and
-  `zshWritesTheAgentIntoTheLineItSendsAndLeavesTheRestOut` in PromptMarkTests
-  run the real shells and read what they report. The zsh one is what caught
-  `${${(z)1}[1]:t}` subscripting characters rather than words for a command run
-  by its path; `zsh -n` cannot see that.
-- A settings page outgrowing its fixed window: SettingsPageSizeTests lays the
-  pages of both settings windows out at 560 in an NSHostingView in an NSWindow
-  never ordered in, and holds each to 600. No screen and no permission: what
-  macOS gates is reading another process, not your own, and CI's runner has the
-  window server this needs. Two pages are exempt and say why: Hooks scrolls on
-  purpose, and Agent settings reads the machine on appear, so its height is the
-  developer's rather than anyone's. Width is not checkable at all, a
-  minimum-size measurement reporting where text stops wrapping rather than where
-  a control is cut off.
-- A tab strip that stops answering the mouse wheel: SidewaysWheelTests sends a
+- **A shortcut's two spellings agree and the clipboard ones stay with the
+  terminal**: AppShortcutTests, pinned against the config the engine was given.
+- **Identifiers spelled in both Swift and the generated Info.plist still
+  match**: BundleDeclarationTests, reading the template out of the checkout.
+  Nothing at build or run time notices these having parted.
+- **Each override binds to its own setting**: SettingsBindingTests, the override
+  accessors taking the same arguments and returning the same type.
+- **Sidebar counts agree with the columns they summarise**: AgentBoardModelTests
+  over every state and both filter positions, the counts being made without
+  building a card.
+- **An agent mark that draws nothing**: AgentMarkResourceTests parses every mark
+  and holds each to its square, a file that will not parse being left out of the
+  table rather than crashing a view.
+- **An agent typed at a prompt that marks nothing**: the placeholder test in
+  ShellLaunchTests holds the generated files to naming the agents, and
+  PromptMarkTests runs the real shells and reads what they report.
+- **That zsh test caught a word subscript taking characters** for a command run
+  by its path, which a syntax check cannot see.
+- **A settings page outgrowing its fixed window**: SettingsPageSizeTests lays
+  each page out in a window never ordered in and holds it to the window's
+  height.
+- **Two pages are exempt and say why**: one scrolls on purpose, and one reads
+  the machine on appear, so its height is the developer's. Width is not
+  checkable at all, a minimum-size measurement reporting where text wraps.
+- **A tab strip that stops answering the wheel**: SidewaysWheelTests sends a
   synthesized vertical scroll to the overlay over a real scroller and reads the
-  offset back a run loop turn later, since a scroller answers on its own
-  schedule. The control is the same event handed straight to the scroller, which
-  moves it by nothing: that is why the catcher exists. One test needs the window
-  server SettingsPageSizeTests does, and holds both halves of the regression: a
-  sidebar that scrolls laid out beside a strip that does, the marked scroller
-  having to be the strip's rather than the sidebar's, and the catcher having to
-  be outside the scroller, since a scroller never calls a catcher inside its own
-  content.
-- A word on screen with no translation, or a translation nothing shows:
-  TranslationTests reads every `t("…")` off the source, from its own
-  `#filePath`, and checks the keys against `Localizable.strings` and
-  `Localizable.stringsdict` both ways. One per catalogue, each over its own
-  half: `Tests/MultishellCoreTests` over `Sources`, `Apps/macOS/Tests` over that
-  app's. The app's also pins the shadowing the split rests on, that a view's
-  `t(_:_:)` is the app's own and answers from the app's catalogue, and that the
-  words written in both catalogues read the same in both, which is the app's to
-  check because the libraries do not know a frontend exists. Each counts a
-  call's arguments against the placeholders in its phrase, as the compiler would
-  have had the keys been an enum, fails a phrase taking several arguments that
-  does not number them, and refuses a `%s`, which takes a C string and would be
-  a crash rather than a wrong word. Every counted form is rendered at one and at
-  many, since a stringsdict whose format key does not name its own
-  sub-dictionary answers with the raw format and only two of the ten were
-  exercised by what they say. It expects over a hundred call sites, so a scan
-  that has lost the source tree fails rather than passes, and it reads the file
-  as text as well as parsed, to catch an entry written twice, which loads as one
-  without a word, and one left blank, which every other check passes and shows
-  nothing. The keys come off the source and the words out of the built bundle,
-  which can be a copy made before the edit: one check compares the two files
-  byte for byte, so `swift test --skip-build` after changing the catalogue says
-  so instead of passing on what is no longer there.
-- State that will not open, not just will not decode, is moved aside, and a file
-  that cannot be moved either is never saved over: PersistenceTests, one
-  unreadable file and one in a directory that takes no rename.
-- The user's git config cannot change what a read means, and a tag sharing a
-  branch's name decides nothing: GitRunnerConfigurationTests reads the two
-  isolated keys back through `git config --get` and watches an all-untracked
-  worktree read dirty; WorktreeMergeTests ties a tag to a merged branch. That
-  fixture merges by refname, or git takes the tag and nothing lands.
-- Remove leaves a hook the user put in our own group: AgentHooksTests.
-- A poll reconciles without taking the keyboard, and a cross-column drop takes
-  it with the tab: AppModelGitTests removes a worktree behind the app's back,
-  AppModelTests drops a tab on another column's tab. Both read `FakeEngine`'s
-  recorded focus.
-- A comma-decimal locale still sends a report that parses: HelperTests, real zsh
-  under `de_DE.UTF-8`. It points `MULTISHELL_USER_ZDOTDIR` at an empty
-  directory, or the chain reaches the developer's own `.zshrc`, whose locale
-  decides the test instead; it skips where the locale is absent rather than
-  failing on its absence.
-- The sidebar filter is not folded by the reader's alphabet: SidebarFilterTests
-  reads the source, `Locale.current` being process-wide and so not movable for
-  one suite while the others run beside it.
-- A tab id written twice keeps the copy whose worktree is still there:
+  offset back a run loop turn later.
+- **Its control is the same event handed straight to the scroller**, which moves
+  it by nothing: that is why the catcher exists. It holds both halves, the
+  marked scroller being the strip's and the catcher being outside it.
+- **A word on screen with no translation, or a translation nothing shows**:
+  TranslationTests reads every lookup off the source and checks the keys both
+  ways, one per catalogue over its own half.
+- **The app's also pins the shadowing the split rests on**, and that the words
+  written in both catalogues read the same, which the libraries cannot check,
+  not knowing a frontend exists.
+- **Each counts a call's arguments against its phrase**, fails a multi-argument
+  phrase that does not number them, and refuses the C-string specifier, which
+  would be a crash rather than a wrong word.
+- **Every counted form is rendered singular and plural**, a form whose format
+  key does not name its own sub-dictionary answering with the raw format.
+- **It expects a large number of call sites**, so a scan that has lost the
+  source tree fails rather than passes, and it reads the file as text as well as
+  parsed, to catch an entry written twice or left blank.
+- **It compares the source catalogue with the built one byte for byte**, so a
+  skip-build run after changing the catalogue says so instead of passing on what
+  is no longer there.
+- **State that will not open, not just will not decode, is moved aside**, and
+  one that cannot be moved is never saved over: PersistenceTests.
+- **The user's git config cannot change what a read means**:
+  GitRunnerConfigurationTests reads the isolated keys back and watches an
+  all-untracked worktree read dirty.
+- **A tag sharing a branch's name decides nothing**: WorktreeMergeTests ties a
+  tag to a merged branch, its fixture merging by refname or git takes the tag.
+- **Remove leaves a hook the user put in our own group**: AgentHooksTests.
+- **A poll reconciles without taking the keyboard, and a cross-column drop takes
+  it with the tab**: AppModelGitTests and AppModelTests, both reading the fake
+  engine's recorded focus.
+- **A comma-decimal locale still sends a report that parses**: HelperTests under
+  a real zsh, pointing the user variable at an empty directory or the chain
+  reaches the developer's own rc file.
+- **The sidebar filter is not folded by the reader's alphabet**:
+  SidebarFilterTests reads the source, the current locale being process-wide and
+  so not movable for one suite.
+- **A tab id written twice keeps the copy whose worktree is still there**:
   WorkspaceRepairTests, the dead one listed first.
-- A notification type no build has heard of is taken to ask: AgentHooksTests.
-- What a failed `accept` means: AcceptOutcomeTests, the classification only. A
-  real descriptor shortage is DescriptorExhaustionTests' territory and the spin
-  it used to cause is not staged.
-- Open in Editor leaves the board and refuses a busy worktree, and an Escaped
-  tab rename is not undone by the commit that follows it: AppModelTests, both
-  against the model rather than the field, which is why the editing tab moved
-  out of the strip's own state.
-- A worktree path holding a newline is one worktree: WorktreePathTests against
-  real git, and the parser's own fixtures are NUL-separated through a converter
-  so they stay readable.
-- A comma-decimal locale gives bash a sane duration: HelperTests sets
-  `EPOCHREALTIME` by hand, which Apple's bash 3.2 leaves unset.
-- Remove writes nothing to a file holding none of ours, and still takes back a
-  half-written install: AgentHooksTests.
-- A repeat agent report writes nothing observable: SessionStateModelTests,
-  through `withObservationTracking`.
-- A worker's start or end leaves a Waiting or a Failed alone, its tool call
-  clears a Waiting, either lifts a Done or nothing to Working, and the last
-  worker out pays the Done back or clears the lift: BackgroundWorkerTests, with
-  the roster kept by id, an older helper's count read as unnamed workers, and a
-  worker's tool calls leaving the roster as it was, named or unnamed.
-- A held Stop leaves a failure alone whether a worker's prompt covered it or it
-  is still standing, so no failure is paid back as a Done:
+- **A notification type no build has heard of is taken to ask**:
+  AgentHooksTests.
+- **What a failed accept means**: AcceptOutcomeTests, the classification only.
+- **Open in Editor leaves the board and refuses a busy worktree, and an escaped
+  rename is not undone by the commit after it**: AppModelTests, both against the
+  model rather than the field.
+- **A worktree path holding a newline is one worktree**: WorktreePathTests
+  against real git, the parser's fixtures NUL-separated through a converter so
+  they stay readable.
+- **A comma-decimal locale gives bash a sane duration**: HelperTests sets the
+  clock variable by hand, which the system bash leaves unset.
+- **Remove writes nothing to a file holding none of ours, and still takes back a
+  half-written install**: AgentHooksTests.
+- **A repeat agent report writes nothing observable**: SessionStateModelTests,
+  through observation tracking.
+- **The worker rules**: BackgroundWorkerTests, with the roster kept by id, an
+  older helper's count read as unnamed workers, and a worker's tool calls
+  leaving the roster as it was.
+- **A held stop leaves a failure alone** whether a worker's prompt covered it or
+  it is still standing, so no failure is paid back as a Done:
   BackgroundWorkerTests.
-- Each agent names a worker in its own spelling, Codex as Claude and Copilot by
-  name with no id at the start, and a start or a stop naming nobody counted as
-  an unnamed one: AgentHookPayloadTests; the plugin follows a child session:
-  OpenCodePluginRunTests runs the generated JavaScript under node with `spawn`
-  replaced, and reads back what the helper would have been called with, since a
-  source test passes whatever that state machine was rewritten to; the flags a
-  plugin reports one by: HelperTests, half a worker refused with exit 2.
-- The chip reads the same roster on the row and on the card, and a Done gives
-  way to a worker and comes back once: SessionStateModelTests, through the
+- **Each agent names a worker in its own spelling**, and a start or stop naming
+  nobody counts as an unnamed one: AgentHookPayloadTests.
+- **The plugin follows a child session**: OpenCodePluginRunTests runs the
+  generated JavaScript with spawn replaced and reads back what the helper would
+  have been called with, a source test passing whatever it was rewritten to.
+- **The chip reads the same roster on the row and on the card**, and a Done
+  gives way to a worker and comes back once: SessionStateModelTests, through the
   socket, the banner counted.
-- Export keeps a hook the user refused and does not trust it into the bargain,
-  and keeps the directory and the two path lists an unanswered file holds:
-  AppModelHookControlTests, against the real file on disk. The answer itself
-  travels there: the same suite trusts a file holding a directory confinement
-  refuses, exports, and asks whether the hook still runs, the `mine` the export
-  compares against having lost that directory; and exports a file nobody has
-  answered for and asks that it still needs an answer. The same suite plants a
-  symlink after the file was read and watches the create refuse the directory
-  rather than check out through it. The same suite exports over a file holding a
-  `$schema` line, and SharedProjectSettingsTests holds the whole rule: an
-  unknown key, a nested one, an order no build names and a wrong-typed flag all
-  come back as they were, and what `write` returns equals a fresh load.
-- A stage ending while the Agents board is up leaves it up, and the first tab
-  opens and starts under the create settings wherever the user is looking, agent
-  included, without moving the selection or the keyboard:
-  AppModelHookControlTests, the hook cancelled under the board and with another
-  worktree selected, opening on select turned off so only the create pair can
-  explain the tab, and the fake engine's opens and focus read back.
-- The login environment is not known before its PATH has been scanned:
-  SessionStateModelTests polls for the environment and reads the detections in
-  the same turn, `/etc/shells` being what makes the check independent of which
-  agents the machine has.
-- A `git status` answering after its worktree went badges nothing:
-  AppModelGitTests, real git, the store emptied between the ask and the answer,
-  one yield being what puts the refresh at its await.
-- A focus report that changes nothing writes nothing to the workspace:
-  WorkspaceStoreTests, through `withObservationTracking`, the same session
-  focused twice and its tab activated again. A re-read of a repository's file
-  saying what the last one did is held to the same rule there, every activation
-  re-reading every project and a mutation being a whole-workspace save.
-- Only a repository's file lists are held to the checkout: WorktreeFilesTests
-  places a user's `~` and absolute entries with no failure raised, and
-  AppModelHookControlTests runs a create whose user list holds a stale entry and
-  watches the post-create hook still run. What says the provenance is really
-  read is a repository shipping a list the user then overrides, their own entry
-  being a symlink out of the checkout that is placed. Neither end is a licence
-  to write outside the worktree: WorktreeFilesTests points a user's entry at a
-  `..` path, with the worktree nested so the mirrored destination is genuinely
-  elsewhere, and finds nothing written beside it.
-- bash keeps its DEBUG trap against one installed at the first prompt, chains to
-  that one and to the `.bashrc` one, and hands `$?` on: HelperTests, real bash
-  driven through a pipe so `PROMPT_COMMAND` runs between the two, a `bash -c`
-  script never prompting. What says the chain really runs is a firing after the
-  trap came back, not the one at the prompt it arrived at, and a body naming a
-  path it cannot reach: run as one word, bash says so once per command.
-- git's own children are looked up on the login PATH:
+- **Export keeps a hook the user refused** and does not trust it into the
+  bargain, and keeps the directory and path lists an unanswered file holds:
+  AppModelHookControlTests, against the real file on disk.
+- **The trust answer travels to the new digest**: the same suite trusts a file
+  whose directory confinement refuses, exports, and asks whether the hook still
+  runs.
+- **A symlink planted after the file was read is caught**: the same suite
+  watches the create refuse the directory rather than check out through it.
+- **What the app cannot read is written back as it was**:
+  SharedProjectSettingsTests over an unknown key, a nested one, an order no
+  build names and a wrong-typed flag.
+- **A stage ending while the board is up leaves it up**, and the first tab opens
+  under the create settings wherever the user is looking, without moving the
+  selection or the keyboard: AppModelHookControlTests.
+- **The login environment is not known before its PATH has been scanned**:
+  SessionStateModelTests, using the system shells file so the check is
+  independent of which agents the machine has.
+- **A status answering after its worktree went badges nothing**:
+  AppModelGitTests, real git, the store emptied between the ask and the answer.
+- **A focus report that changes nothing writes nothing**: WorkspaceStoreTests,
+  through observation tracking, a re-read of a repository's file held to the
+  same rule.
+- **Only a repository's file lists are held to the checkout**:
+  WorktreeFilesTests places a user's home and absolute entries with no failure
+  raised.
+- **Neither end is a licence to write outside the worktree**: the same suite
+  points a user's entry at a parent path, with the worktree nested so the
+  mirrored destination is genuinely elsewhere, and finds nothing written.
+- **bash keeps its debug trap against one installed at the first prompt**,
+  chains to both and hands the last status on: HelperTests, real bash driven
+  through a pipe so the prompt command runs between the two.
+- **git's own children are looked up on the login PATH**:
   GitRunnerConfigurationTests, through an alias that runs a helper on a PATH of
   the test's own; the same runner without it fails, which is what makes the pass
   mean something.
-- A launched command is given no pipes, so a shim that holds the editor open
-  holds no descriptors: ProcessRunnerTests asks the shell whether its own stdout
-  is a pipe, counting them in a process this busy being hopeless.
-- A frame handed another session's surface asks that session for focus:
+- **A launched command is given no pipes**, so a shim holding the editor open
+  holds no descriptors: ProcessRunnerTests asks the shell whether its own output
+  is a pipe.
+- **A frame handed another session's surface asks that session for focus**:
   SurfaceFrameTests, in a window never ordered in.
-- A duration no clock could have produced is dropped coming off the channel and
-  renders as nothing: SessionStateReportTests and ElapsedTextTests, the trap
-  being `Int(_: Double)` outside its range.
-- A branch name git will reject is refused before the pre-create hook:
-  AppModelHookControlTests; the rules themselves are held against real
-  `git check-ref-format` over a table in GitRefNameTests. The existing-branch
-  path is held to it as well: WorktreeCreationTests, an empty, blank, spaced and
-  `HEAD` name each against a hook that leaves a marker.
-- A bare `git rebase` that replayed nothing is not a landing: WorktreeMergeTests
+- **A duration no clock could have produced is dropped coming off the channel**:
+  SessionStateReportTests and ElapsedTextTests, the trap being a conversion
+  outside its range.
+- **A branch name git will reject is refused before the pre-create hook**:
+  AppModelHookControlTests, the rules themselves held against real git over a
+  table in GitRefNameTests, the existing-branch path in WorktreeCreationTests.
+- **A bare rebase that replayed nothing is not a landing**: WorktreeMergeTests
   against real git, beside the fast-forward case it mirrors, and
   MergeParserTests for the finish wording old and new.
-- A placeholder inside a value is not expanded again: AgentFlagsTests.
-- An item promising two files is not delivered on the first: PromisedDropTests.
-- A live socket whose accept backlog is full is not taken for a dead one:
-  UnixSocketServerTests, the server's queue blocked and the backlog filled by
-  hand. The same suite starts a live server twice and has a second process try
-  the claim, a process's own record locks never conflicting with each other, and
-  holds the path limit to the staging name's, 102 and 103 bytes refused under
-  the socket's own name where 101 binds.
-- The pid the helper reports stops short of the app: HelperTests, two real
-  `sh -c` layers under the test process posing as the app, the report naming the
-  outer shell; ProcessAncestryTests has the walk on its own. The model's half, a
-  report naming the app's pid tracking none, is SessionStateModelTests, beside a
-  report from a subdirectory marking the deepest worktree containing it, the
-  harness nesting one worktree inside the other.
-- Removing the main worktree is refused before the hook and the Trash:
+- **A placeholder inside a value is not expanded again**: AgentFlagsTests.
+- **An item promising two files is not delivered on the first**:
+  PromisedDropTests.
+- **A live socket whose accept backlog is full is not taken for a dead one**:
+  UnixSocketServerTests, the queue blocked and the backlog filled by hand.
+- **The same suite starts a live server twice** and has a second process try the
+  claim, a process's own record locks never conflicting, and holds the path
+  limit to the staging name's.
+- **The pid the helper reports stops short of the app**: HelperTests with two
+  real shell layers under the test process posing as the app;
+  ProcessAncestryTests has the walk on its own.
+- **The model's half**: SessionStateModelTests, a report naming the app's pid
+  tracking none, beside one from a subdirectory marking the deepest worktree
+  containing it.
+- **Removing the main worktree is refused before the hook and the Trash**:
   AppModelHookControlTests. Without the guard that test bins the fixture.
-- Removing one worktree leaves the record of another whose directory is away,
-  and a Trash that refuses leaves a lock and its reason in place:
-  WorktreeForgetScopeTests, against real git. The same suite hands the
-  coordinator a Trash that takes nothing and expects the removal to stop there,
-  the forget being a `remove --force --force` that would unlink a directory
-  still in place.
-- A refused create leaves no container directory: WorktreeCreationTests, the
-  branch name taken and the worktree directory three levels deep.
-- The Trash is asked off the main thread: AppModelHookControlTests, the fake
+- **Removing one worktree leaves the record of another whose directory is
+  away**, and a Trash that refuses leaves a lock and its reason in place:
+  WorktreeForgetScopeTests, against real git.
+- **A Trash that takes nothing stops the removal there**, the forget being what
+  would unlink a directory still in place: the same suite.
+- **A refused create leaves no container directory**: WorktreeCreationTests.
+- **The Trash is asked off the main thread**: AppModelHookControlTests, the fake
   Trash recording the thread of each call.
-- A worktree path holding a control character still reports from zsh:
-  HelperTests, real zsh with a tab, a newline, a quote and a backslash in the
-  path, and every line the socket received must parse. bash is not exercised,
-  going through the helper, which encodes.
-- A `ZDOTDIR` the user's `.zprofile` sets is followed: HelperTests, a login
-  interactive zsh under a fake home, beside the `.zshenv` case it was modelled
-  on. Only a login shell reads the profile, so the `-l` is what the test is. The
-  session and socket variables are blanked in its environment: the runner merges
-  over the process's own, and run from a Multishell tab the hooks reported to
-  the developer's live app, shown with a listener standing in.
-- An empty Enter under a user's `PROMPT_COMMAND` starts no command:
-  PromptMarkTests, real bash with `history -a`, a logging stand-in for the
-  helper and `\n\ntrue\n\nexit`, counting the started lines.
-- A dead agent with a worker counted no longer holds Working, and its shell's
-  later failure is not an agent waiting on the badge: BackgroundWorkerTests
-  pairs a subagent tick with the engine's command end in both orders;
-  AgentBoardModelTests reads the badge with the board closed.
-- A hook still running when its worktree is removed in a terminal is ended:
-  AppModelHookControlTests, a `sleep 30; exit 1` hook, the row removed with real
-  git and refreshed, held under twelve seconds with no alert. The same suite
-  cancels a `git worktree add` a fake git holds open, and drops a step reported
-  after its create ended. WorktreeWorkInFlightTests holds the ownership rules
-  those rest on, on the plain value: a stop handle dropped only by the stage
-  that installed it, a removal sharing that slot but dropping no create's setup
-  task, a claim counted so two creates on one path each let go of their own, and
-  only the newest create answering the sheet's Cancel.
-- A failing refresh landing after its project was removed dims nothing:
-  AppModelGitTests, a fake git that waits for a file before failing, the project
-  removed between.
-- A record git will neither remove nor prune after the Trash took the directory
-  is `WorktreeForgetFailure` and an alert that refreshes:
-  WorktreeCoordinatorTests on a fake git, RemovalFailureTests for the mapping.
-- A greeting holding `=` does not cost the login shell its first variable:
-  LoginShellEnvironmentTests, on the parser alone.
-- Numbers in an agent's settings file come back as written, and a literal JSON
-  refuses or bytes that are not UTF-8 are still refused untouched:
-  AgentHooksTests, install and remove over `1.0`, `0.1`, a 23-digit integer,
-  `1e-7`, then `01`, `1-2`, `1.e5` and a Latin-1 byte.
-- A zero or non-finite split weight is refused on decode and on write:
-  DecodingDefaultsTests and WorkspaceStoreTests, whose change counter counts
-  store operations rather than writes, `replaceWorktrees` making two.
-- Foundation-only imports: checked by hand in a `swift:6.0` container, Linux
-  being out of CI. Views untested, but a value a view reads is.
-- A removal dialog left up for a worktree git no longer lists, and Remove
-  offered on the main worktree: AppModelGitTests removes the worktree behind the
-  app's back and refreshes; AppModelTests asks to remove the primary and expects
-  no dialog and no operation. Both go through `forgetWorktrees` and
-  `Worktree.isRemovable`, the one place each is decided.
-- A second copy of the app writing the workspace file: AppModelTests hands the
-  fake state source an in-use socket and expects the platform asked to hand
-  over, no poll started, and no file after a change, the debounce and `saveNow`
-  both.
-- Two saves landing out of order: OrderedSaveTests prepares two, runs the later
-  first, and expects the file to hold it.
-- What the git badge counts: DiffStatParserTests and UntrackedLineCounterTests
-  on fixture text and files in a scratch directory, the binary, mode-change and
-  rename rows that carry no line among them, a row whose counts are neither
-  numbers nor both `-`, a symlink that is never followed, a file that would
-  cross the 8 MB budget with a small one after it that still counts, and the
-  files past the five hundredth, which count as nothing rather than as files
-  with no lines; WorktreeCoordinatorTests on real git for the three together,
-  once per `GitStatusIndicator`, plus an untracked directory that is one entry
-  whose lines are still counted and a real merge conflict that is no file with
-  no lines; GitRunnerConfigurationTests for a repository whose own config says
-  not to look at untracked files, where the lines are counted anyway. Changing
-  the setting reads every badge at once rather than at the next poll:
-  AppModelGitTests, the pace's record emptied and the read that follows waited
-  for, and a read started before the change badges nothing, held open by a fake
-  git until the read that replaced it has landed.
-- The status poll asking a missing project or a slow checkout: AppModelGitTests
-  on a fake git, once with the project marked missing and once with a `status`
-  that sleeps past the pace's floor, counting the calls, once more for a
-  prompt's own refresh of that slow worktree, which the same pace holds, and
-  once for a read discarded mid-flight because its row went under construction,
-  which must leave the next read due. StatusPollPaceTests holds the rule itself
-  and StatusReadLogTests the readings it is applied to, the generation included:
-  a read in flight when the indicator changed counted what the badge no longer
-  means, so its cost must not pace the read that does. Every other model test
-  runs `.unpaced`, or a read right after a change would be skipped.
-- A find bar is its pane's own and ends with its pane: AppModelFindTests through
-  `FakeEngine`'s recorded searches, Find Next disabled and inert with the bar
-  down or in a second worktree while the first's search is untouched, Close Find
-  taking down the pane in view's bar and no other, a bar's arrows stepping its
-  pane while another has the keyboard, the menu acting on the bar whose field
-  has the keyboard and handed back when that bar closes, Escape handing the
-  keyboard to the bar's pane rather than the focused one, the same needle again
-  sent nowhere since Return recommits the field, the first step after a needle
-  landing nearest the prompt whichever arrow asked, and a bar brought back by a
-  worktree switch asking for no field. The steps' Ghostty spellings, a find as
-  the needle alone and Next crossed to Ghostty's `previous`, are
-  FindBindingActionTests; their shortcuts being taken from the surface, Escape
-  released to the program, and every unbind line accepted by the pinned
-  libghostty, which otherwise refuses the whole theme config, are
-  AppShortcutTests.
-- A watcher tick re-reading every project: AppModelGitTests adds a second
+- **A worktree path holding a control character still reports from zsh**:
+  HelperTests, and every line the socket received must parse. bash is not
+  exercised, going through the helper, which encodes.
+- **A user-set shell directory variable is followed**: HelperTests, a login
+  interactive zsh under a fake home. Only a login shell reads the profile, so
+  the login flag is what the test is.
+- **Its session and socket variables are blanked**: the runner merges over the
+  process's own, and run from a Multishell tab the hooks reported to the
+  developer's live app.
+- **An empty Enter under a user's prompt command starts no command**:
+  PromptMarkTests, real bash with a logging stand-in for the helper, counting
+  the started lines.
+- **A dead agent with a worker counted no longer holds Working**, and its
+  shell's later failure is not an agent waiting on the badge:
+  BackgroundWorkerTests in both orders, AgentBoardModelTests with the board
+  closed.
+- **A hook still running when its worktree is removed in a terminal is ended**:
+  AppModelHookControlTests, a sleeping hook, the row removed with real git,
+  bounded and with no alert.
+- **The ownership rules those rest on**: WorktreeWorkInFlightTests on the plain
+  value, a stop handle dropped only by the stage that installed it, a claim
+  counted, and only the newest create answering the sheet's Cancel.
+- **A failing refresh landing after its project was removed dims nothing**:
+  AppModelGitTests, a fake git that waits for a file before failing.
+- **A record git will neither remove nor prune after the Trash took the
+  directory is its own failure**: WorktreeCoordinatorTests on a fake git,
+  RemovalFailureTests for the mapping.
+- **A prune that leaves the record listed is still a failure**, and an
+  unreadable or empty list counts as listed: the same suite, a fake git whose
+  remove fails and whose list still names the path.
+- **A greeting holding an equals sign does not cost the login shell its first
+  variable**: LoginShellEnvironmentTests, on the parser alone.
+- **Numbers in an agent's settings file come back as written**, and a literal
+  the grammar refuses or bytes that are not UTF-8 are still refused untouched:
+  AgentHooksTests over both sets.
+- **A zero or non-finite split weight is refused on decode and on write**:
+  DecodingDefaultsTests and WorkspaceStoreTests, whose counter counts store
+  operations rather than writes.
+- **Foundation-only imports**: checked by hand in a Linux container, Linux being
+  out of CI. Views untested, but a value a view reads is.
+- **A removal dialog left up for a worktree git no longer lists, and Remove
+  offered on the main worktree**: AppModelGitTests and AppModelTests, both
+  through the one place each is decided.
+- **A second copy of the app writing the workspace file**: AppModelTests hands
+  the fake state source an in-use socket and expects the platform asked to hand
+  over, no poll started, and no file after a change.
+- **Two saves landing out of order**: OrderedSaveTests prepares two, runs the
+  later first, and expects the file to hold it.
+- **What the git badge counts**: DiffStatParserTests and
+  UntrackedLineCounterTests on fixture text and scratch files, the rows that
+  carry no line among them, a symlink that is never followed, a file that would
+  cross the budget, and the files past the cap.
+- **The three together on real git**: WorktreeCoordinatorTests, once per
+  indicator setting, plus an untracked directory that is one entry whose lines
+  are still counted and a real merge conflict that is no file with no lines.
+- **A repository whose own config says not to look at untracked files**:
+  GitRunnerConfigurationTests, where the lines are counted anyway.
+- **Changing the indicator reads every badge at once**: AppModelGitTests, and a
+  read started before the change badges nothing, held open by a fake git until
+  the read that replaced it has landed.
+- **The status poll asking a missing project or a slow checkout**:
+  AppModelGitTests on a fake git, counting the calls, once more for a prompt's
+  own refresh of that slow worktree, and once for a read discarded mid-flight,
+  which must leave the next read due.
+- **The pacing rule itself**: StatusPollPaceTests, and StatusReadLogTests for
+  the readings it is applied to, the generation included. Every other model test
+  runs unpaced, or a read right after a change would be skipped.
+- **A find bar is its pane's own and ends with its pane**: AppModelFindTests
+  through the fake engine's recorded searches, over the disabled items, the
+  second worktree, the arrows, the keyboard hand-back and the repeat needle.
+- **The steps' engine spellings**: FindBindingActionTests, the needle alone and
+  the crossed next; their shortcuts being taken from the surface and every
+  unbind line accepted by the pinned engine are AppShortcutTests.
+- **A watcher tick re-reading every project**: AppModelGitTests adds a second
   repository, adds a worktree to it behind the app's back, and ticks with the
-  first project's directory; the second must stay unread and nothing re-armed
-  until a tick names no directory.
+  first project's directory.
 
 ## Conventions
 
-- A new file goes in the folder its subject is in, one tree mirroring the other;
-  see layout.md. Harnesses and fakes stay at the suite's root.
-- Git behaviour goes against a real repository with RepositoryFixture, never
-  mocks. Parsers get fixture text, odd lines included.
-- Prefer evidence to a clock. Concurrency is read off what the children recorded
-  about each other, not off how long the batch took; a call that returned before
-  a hook finished is read off the state it returned in. Both were wall-clock
-  bounds first, and both flaked. Waiting for a state is `waitUntil` from
-  TestScratch, eight seconds at most, with the assertion after it; a fixed sleep
-  fails on a loaded runner and wastes time on a quiet one.
-- Never the developer's machine: a shell runs against a home the test wrote,
-  `LoginShellEnvironment.capture(shellPath:home:)` and `runScript(shellPath:)`
-  naming `/bin/zsh`; the model's login environment comes from the harness's
-  `captureLoginEnvironment`; git is the fixture's runner, never the PATH's.
-  Every scratch directory and socket is removed by the test or its harness's
-  `deinit`, and `Scratch.removeSocket` takes the claim file the server keeps.
-- A bound that is left tells one outcome from another, not a fast machine from a
-  slow one: the child sleeps thirty seconds and the bound is twelve, so what
-  fails it is the stop never arriving. Do not size a bound to a measured figure
-  plus headroom; the runner's mood decides that. `make test` holds a lock across
-  worktrees for the same reason; a bare `swift test` does not, so two of those
-  at once is the one way left to fail a bound on a fast machine.
-- A test that reads something process-wide, the open descriptor count being the
-  one so far, is reading the other suites too: they run beside it in the same
-  process. Take the lowest of several seconds of samples rather than one
-  reading, `lowestDescriptorCount` in TestScratch, and expect to revisit it when
-  a test that spawns in bulk arrives.
-- Real git comes from a fixture, whose runner carries `commit.gpgsign=false`: a
+- **A new file goes in the folder its subject is in**, one tree mirroring the
+  other (layout.md). Harnesses and fakes stay at the suite's root.
+- **Git behaviour goes against a real repository**, never mocks. Parsers get
+  fixture text, odd lines included.
+- **Prefer evidence to a clock.** Concurrency is read off what the children
+  recorded about each other, not off how long the batch took. Both were
+  wall-clock bounds first, and both flaked.
+- **Waiting for a state is the shared helper**, with the assertion after it; a
+  fixed sleep fails on a loaded runner and wastes time on a quiet one.
+- **Never the developer's machine**: a shell runs against a home the test wrote,
+  the model's login environment comes from the harness, and git is the fixture's
+  runner rather than the PATH's.
+- **Every scratch directory and socket is removed** by the test or its harness,
+  and the socket helper takes the claim file the server keeps.
+- **A bound that is left tells one outcome from another**, not a fast machine
+  from a slow one: the child sleeps far longer than the bound, so what fails it
+  is the stop never arriving.
+- **Do not size a bound to a measured figure plus headroom**; the runner's mood
+  decides that. The test lock across worktrees is for the same reason, and a
+  bare test run takes none.
+- **A test that reads something process-wide is reading the other suites too.**
+  Take the lowest of several samples rather than one reading, and expect to
+  revisit it when a test that spawns in bulk arrives.
+- **Real git comes from a fixture whose runner turns commit signing off**, or a
   developer whose global config signs would be asked for the key once per
-  fixture commit. It rides on the runner, so a clone a new test adds needs no
-  step of its own.
+  fixture commit. It rides on the runner, so a clone needs no step of its own.

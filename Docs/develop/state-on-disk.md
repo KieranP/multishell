@@ -1,74 +1,65 @@
 # State on disk
 
-`~/Library/Application Support/Multishell/` on macOS,
-`$XDG_CONFIG_HOME/multishell/` on Linux. Debug build uses `state.debug.json`,
-`multishell.debug.sock`, `integration.debug/`, `drops.debug/`; themes and the
-helper link are shared. A debug build made in a git worktree adds that
-worktree's name, `state.debug-fix1.json` and so on, so two of them can run at
-once: `make-app.sh` writes the name into `MultishellVariant` in the bundle's
-`Info.plist`, `open` passing no environment to what it launches. The name is cut
-to 14 characters and spelled `[A-Za-z0-9_-]`, a socket path having 103 bytes to
-fit in, two of them the `.b` it is bound under. Settings > General prints the
-state file, which is how you see which one a running copy has.
+Application support on macOS, the XDG config directory on Linux.
 
-- `state.json`: sidebar, tabs, the columns they sit in with each column's width
-  and active tab, pane trees, worktree names, each worktree's directory creation
-  date, every setting. Not: processes, shell titles, the shell a tab resolved
-  to, a branch's last commit time. Nor anything about the Agents board: whether
-  it is showing and whether it is filtered to agents are runtime state, so the
-  filter is off after a relaunch, the Dock badge having to read the same flag a
-  view-local `@AppStorage` could not offer it. A file written before columns
-  existed names no group on any tab and carries an `activeTabByWorktree` this
-  build has no property for: `Workspace` reads that key for which tab was
-  active, and `repairReferences` gathers each worktree's ungrouped tabs into the
-  one column they were saved as.
-- `state.<timestamp>.broken.json`: a state file that failed to read or to
-  decode. Where the move itself failed the original is still at `state.json` and
-  nothing saves over it; see Docs/design/state-and-store.md.
-- `themes/*.json`, `themes/examples/` not loaded.
-- `multishell.sock`, mode 0600. Bound at `multishell.sock.b` and renamed into
+- **A debug build keeps its own state file, socket, integration and drops
+  directories**; themes and the helper link are shared.
+- **A debug build made in a git worktree adds that worktree's name**, so two can
+  run at once. The bundling script writes the name into the Info.plist, `open`
+  passing no environment to what it launches.
+- **The name is cut short and spelled conservatively**, a socket path having
+  only `sun_path` to fit in, some of it taken by the staging suffix.
+- **Settings prints the state file**, which is how you see which one a running
+  copy has.
+- **`state.json`**: sidebar, tabs, the columns they sit in with their widths and
+  active tab, pane trees, worktree names and creation dates, every setting.
+- **Not in it**: processes, shell titles, the shell a tab resolved to, a
+  branch's last commit time, or anything about the Agents board, which is
+  runtime state, so its filter is off after a relaunch.
+- **A file written before columns existed names no group**, and carries a key
+  for the active tab this build has no property for; the repair gathers each
+  worktree's ungrouped tabs into the one column they were saved as.
+- **A broken state file is moved aside with a timestamp.** Where the move itself
+  failed the original is still in place and nothing saves over it
+  (state-and-store.md).
+- **Themes are JSON in a themes folder**, with the examples beside them not
+  loaded.
+- **The socket is mode 0600**, bound under a staging name and renamed into
   place, so it is never briefly world-readable: the mode comes from the umask at
-  bind, and umask is process-wide. So the longest path that binds is 101 bytes,
-  not `sun_path`'s 103, and the refusal names the socket, the staging file being
-  no concern of the user's.
-- `multishell.sock.lock`, empty, never removed. A running instance holds an
-  exclusive `fcntl` record lock on it for as long as it listens, which is what
-  tells a second launch that the socket has a live owner, so it brings that
-  owner forward and quits; see state-and-store.md. Not `flock`: a child forked
-  while one is held keeps it until it execs, and this process spawns freely. A
-  connect alone cannot tell: a listener whose accept backlog is full refuses one
-  exactly as a dead socket does.
-- `bin/multishell`: symlink to the helper in the current bundle, refreshed at
-  launch. Hook lines reference this path, through `$HOME`.
-- `integration/`: generated at launch.
-- `drops/<uuid>/`: files a drag promised rather than handed over, swept at
-  launch once a week old.
-
-Outside that directory, `$TMPDIR/io.multishell.app/ghostty-config-<UUID>.conf`
-is the merged Ghostty config libghostty reads once at load, written by the
-wrapper and cleared at launch and at quit by the copy holding the instance
-socket, which is the only one that may; see Docs/design/terminals.md.
-
-Agent hooks, written only when asked: Claude Code `~/.claude/settings.json`,
-Codex `~/.codex/hooks.json`, Gemini `~/.gemini/settings.json`, each keeping a
-`.before-multishell` copy the first time; Copilot
-`~/.copilot/hooks/multishell.json` and OpenCode's plugin
-`~/.config/opencode/plugin/multishell.js`, both ours alone, deleted to remove.
-Sidebar width lives in `UserDefaults`.
-
-A repository may carry `.multishell.json` at its root, written by Export in
-project settings, same keys as a project's settings. Read at launch, when a
-project's worktree records change, and on any tick where its modification date
-moved. A field it ships fills only a gap the user left, so adding one to
-`SharedProjectSettings` also means a line in `ProjectSettings.layered`, a decode
-that costs the key and not the file, and an `OverrideSection` in the tab seeded
-from `InheritedSetting`. A field naming a path on the reader's disk also goes in
-`confined(to:)`, `trustedContentText`, `withoutWhatTrustCovers` and
-`keeping(from:)`, the last so export does not drop it while it is untrusted.
-
-Decide what a blank one means: `Self.text` where "none" and "no opinion" agree;
-nothing for worktree path, prefix and default branch, where blank is how "none"
-is spelled. Not cosmetic: a blank hook left uncoerced counts as a hook, and the
-trust question then asks about an empty script. Trust is held per file against
-its sha256 (`FileDigest`, `ProjectSettings.sharedHooks`);
-`Docs/design/settings.md` has why.
+  bind, and umask is process-wide.
+- **So the longest path that binds is shorter than `sun_path`**, and the refusal
+  names the socket rather than the staging file, which is no concern of the
+  user's.
+- **A lock file beside it is never removed.** A running instance holds an
+  exclusive record lock on it while it listens, which is what tells a second
+  launch the socket has a live owner (state-and-store.md).
+- **A record lock, not `flock`**: a child forked while one is held keeps it
+  until it execs, and this process spawns freely.
+- **A connect alone cannot tell**: a listener whose accept backlog is full
+  refuses one exactly as a dead socket does.
+- **A symlink to the helper in the current bundle** is refreshed at launch. Hook
+  lines reference that path through the home directory.
+- **The integration directory is generated at launch**; the drops directory
+  holds files a drag promised rather than handed over, swept at launch once old.
+- **The merged Ghostty config lives in the temporary directory**, read once at
+  load, written by the wrapper and cleared at launch and quit by the copy
+  holding the instance socket (terminals.md).
+- **Agent hooks are written only when asked**, each in that agent's own config
+  directory. Three of them keep a copy of the file as it was the first time; the
+  other two are files of ours alone and are deleted to remove.
+- **Sidebar width lives in user defaults.**
+- **A repository may carry `.multishell.json` at its root**, written by Export,
+  with the same keys as a project's settings. Read at launch, when a project's
+  worktree records change, and on any tick where its modification date moved.
+- **A field it ships fills only a gap the user left**, so adding one means a
+  line in the layering, a decode that costs the key and not the file, and an
+  override section in the tab.
+- **A field naming a path on the reader's disk needs more**: confinement, the
+  trust text, the gate, and the export keep, the last so export does not drop it
+  while it is untrusted.
+- **Decide what a blank one means.** Coerce to "none" where that and "no
+  opinion" agree, and leave it alone for the fields where blank is how "none" is
+  spelled.
+- **Not cosmetic**: a blank hook left uncoerced counts as a hook, and the trust
+  question then asks about an empty script.
+- **Trust is held per file against its digest** (settings.md).

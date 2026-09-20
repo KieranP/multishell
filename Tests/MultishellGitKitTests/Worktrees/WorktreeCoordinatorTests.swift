@@ -574,6 +574,66 @@ struct GitIntegrationTests {
     }
   }
 
+  /// `prune` exits 0 having removed nothing, so its success cannot stand in
+  /// for the record going: `remove` then reports a removal that never was.
+  @Test func aPruneThatLeavesTheRecordListedIsStillAFailure() async throws {
+    let fake = try FakeGit.make(
+      """
+      case "$1 $2" in
+        "worktree remove") exit 128 ;;
+        "worktree prune") exit 0 ;;
+        "worktree list") printf 'worktree %s/gone\\0HEAD a\\0branch refs/heads/gone\\0\\0' "$SCRATCH" ;;
+      esac
+      """)
+    defer { fake.tearDown() }
+    let project = Project(path: fake.directory)
+    let worktree = Worktree(
+      path: fake.directory.appendingPathComponent("gone"), projectID: project.id, head: "a",
+      branch: "gone")
+
+    await #expect(throws: WorktreeForgetFailure.self) {
+      try await WorktreeService(git: fake.runner).forget(worktree, in: project)
+    }
+  }
+
+  /// Every repository has its main worktree, so a list of none is git failing
+  /// quietly, which `list` treats the same way.
+  @Test func aListOfNoWorktreesAtAllIsNotProofTheRecordWent() async throws {
+    let fake = try FakeGit.make(
+      """
+      case "$1 $2" in
+        "worktree remove") exit 128 ;;
+      esac
+      """)
+    defer { fake.tearDown() }
+    let project = Project(path: fake.directory)
+    let worktree = Worktree(
+      path: fake.directory.appendingPathComponent("gone"), projectID: project.id, head: "a",
+      branch: "gone")
+
+    await #expect(throws: WorktreeForgetFailure.self) {
+      try await WorktreeService(git: fake.runner).forget(worktree, in: project)
+    }
+  }
+
+  @Test func aPruneThatTakesTheRecordIsASuccess() async throws {
+    let fake = try FakeGit.make(
+      """
+      case "$1 $2" in
+        "worktree remove") exit 128 ;;
+        "worktree prune") exit 0 ;;
+        "worktree list") printf 'worktree %s\\0HEAD a\\0branch refs/heads/main\\0\\0' "$SCRATCH" ;;
+      esac
+      """)
+    defer { fake.tearDown() }
+    let project = Project(path: fake.directory)
+    let worktree = Worktree(
+      path: fake.directory.appendingPathComponent("gone"), projectID: project.id, head: "a",
+      branch: "gone")
+
+    try await WorktreeService(git: fake.runner).forget(worktree, in: project)
+  }
+
   @Test func hasCommitsIsFalseUntilTheFirstCommit() async throws {
     let repo = try await RepositoryFixture.make(commit: false)
     defer { repo.tearDown() }

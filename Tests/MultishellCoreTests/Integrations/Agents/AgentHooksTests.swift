@@ -64,7 +64,7 @@ struct AgentHooksTests {
   }
 
   /// A substring test ate a hook whose script merely spelled both names, and
-  /// skipped the event it was found under; see BUGS 126.
+  /// skipped the event it was found under.
   @Test func aUsersOwnHookThatMerelySpellsTheNamesIsNotOurs() {
     let theirs = [
       "~/bin/multishell-agent-hook-logger",

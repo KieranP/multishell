@@ -55,7 +55,9 @@ Which shells and agents are supported, and how far each one goes, is in
 
 To work on it, start with [AGENTS.md](AGENTS.md), which indexes `Docs/develop/`
 for the build, the tests and the rules, and `Docs/design/` for why things are
-the way they are.
+the way they are. Pull requests are collaborators only, which
+[CONTRIBUTING.md](CONTRIBUTING.md) explains; issues are open to anyone, and
+[SECURITY.md](SECURITY.md) is where a vulnerability goes instead of an issue.
 
 ## Features
 

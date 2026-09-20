@@ -212,14 +212,31 @@ public struct WorktreeService: Sendable {
       // which stays on the record until this moment rather than being unlocked.
       _ = try await git.run(
         ["worktree", "remove", "--force", "--force", worktree.path.path], in: project.path)
-    } catch {
+    } catch let refusal {
       // A record git cannot match to the path; see Docs/design/worktrees.md.
       do {
         _ = try await git.run(["worktree", "prune"], in: project.path)
       } catch {
         throw WorktreeForgetFailure(path: worktree.path, underlying: error)
       }
+      // prune exits 0 whether or not this record was one it took, and the
+      // caller deletes the branch on a success; see Docs/design/worktrees.md.
+      guard await !isListed(worktree.path, in: project) else {
+        throw WorktreeForgetFailure(path: worktree.path, underlying: refusal)
+      }
     }
+  }
+
+  /// An answer that proves nothing, unreadable or empty, counts as listed:
+  /// the caller deletes the branch next. See Docs/design/worktrees.md.
+  private func isListed(_ path: URL, in project: Project) async -> Bool {
+    guard
+      let output = await git.output(["worktree", "list", "--porcelain", "-z"], in: project.path)
+    else { return true }
+    let listed = WorktreeListParser.parse(output, projectID: project.id)
+    guard !listed.isEmpty else { return true }
+    let wanted = path.resolvingSymlinksInPath().standardizedFileURL.path
+    return listed.contains { $0.path.resolvingSymlinksInPath().standardizedFileURL.path == wanted }
   }
 
   /// `git branch -d`, which refuses a branch with commits no other branch

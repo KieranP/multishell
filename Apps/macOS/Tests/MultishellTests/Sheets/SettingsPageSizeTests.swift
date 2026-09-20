@@ -38,7 +38,7 @@ import Testing
 /// And width: a minimum-size measurement reports the width at which text
 /// stops wrapping, not the width at which a control is cut off, so it reads
 /// 744 for the Notifications page whose caption is meant to wrap. Both are in
-/// known-gaps.md.
+/// BUGS.md.
 @Suite @MainActor
 struct SettingsPageSizeTests {
   @Test func noSettingsPageIsTallerThanTheWindowItOpensIn() {

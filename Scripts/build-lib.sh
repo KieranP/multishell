@@ -155,11 +155,34 @@ signing_identity() {
     printf %s "$identity"
 }
 
-# An unsigned bundle is killed on launch on Apple silicon, so this is not
-# optional and a failure is a warning rather than a stop.
+# Written into `derived` because a debug build adds `get-task-allow`, which
+# the debugger wants and notarisation refuses. See Docs/design/signing.md.
+bundle_entitlements() {
+    local source="$1" derived="$2" config="$3" file="$2/Multishell.entitlements"
+    [ -f "$source" ] || die "error: no entitlements file at $source," \
+        "       which every build signs with. See Docs/design/signing.md."
+    mkdir -p "$derived"
+    cp "$source" "$file"
+    if [ "$config" != "release" ]; then
+        /usr/libexec/PlistBuddy -c \
+            "Add :com.apple.security.get-task-allow bool true" "$file" >/dev/null
+    fi
+    printf %s "$file"
+}
+
+# An unsigned bundle is killed on launch on Apple silicon, so a failure here
+# is a warning rather than a stop. Runtime and entitlements: signing.md.
 sign() {
-    local identity="$1" path="$2" output
-    if output="$(codesign --force --sign "$identity" "$path" 2>&1)"; then
+    local identity="$1" path="$2" entitlements="${3:-}" output
+    local -a options=(--force --options runtime --sign "$identity")
+    [ -z "$entitlements" ] || options+=(--entitlements "$entitlements")
+    # A timestamp is a call to Apple's server, which notarisation requires and
+    # a local build would only fail offline for.
+    case "$identity" in
+    "Developer ID"*) options+=(--timestamp) ;;
+    *) options+=(--timestamp=none) ;;
+    esac
+    if output="$(codesign "${options[@]}" "$path" 2>&1)"; then
         return
     fi
     if [ "$identity" = "-" ]; then
@@ -171,5 +194,5 @@ sign() {
     # exists to avoid, and the reason is the only way to fix it.
     echo "warning: signing $path as '$identity' failed; signing ad hoc" >&2
     echo "         $output" >&2
-    codesign --force --sign - "$path" >/dev/null 2>&1 || true
+    sign - "$path" "$entitlements"
 }

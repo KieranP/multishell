@@ -16,6 +16,17 @@ struct UIMetricsTests {
     }
   }
 
+  /// Written out rather than recomputed from `UIMetrics`: with the same
+  /// expression on both sides the test cannot see the widths change.
+  @Test func theSplitThresholdIsTheWidthTheDocsQuote() {
+    for (size, threshold) in [(10.0, 193.0), (13.0, 252.0), (18.0, 351.0)] {
+      let metrics = UIMetrics(fontSize: size)
+      #expect(metrics.stripShowsSplits(in: threshold), "the splits never show at \(size)")
+      #expect(
+        !metrics.stripShowsSplits(in: threshold - 1), "the splits show a point early at \(size)")
+    }
+  }
+
   @Test func rowsAreTallEnoughForTheirText() {
     for size in stride(from: 10.0, through: 18.0, by: 1) {
       let metrics = UIMetrics(fontSize: size)

@@ -22,26 +22,59 @@
     </array>
     <key>LSMinimumSystemVersion</key><string>14.0</string>
     <key>NSHighResolutionCapable</key><true/>
+    <!-- A Metal app on a two-GPU Mac holds the discrete one all session
+         without this, which costs battery and nothing else. -->
+    <key>NSSupportsAutomaticGraphicsSwitching</key><true/>
     <!-- What macOS puts under its own line in the permission alert; a missing
          string costs the alert its reason or kills the asker. permissions.md. -->
     <key>NSNetworkVolumesUsageDescription</key>
-    <string>A command you ran in a Multishell terminal is reading files on a network volume.</string>
+    <string>Multishell (or a terminal) is wanting to open files on a network volume.</string>
     <key>NSRemovableVolumesUsageDescription</key>
-    <string>A command you ran in a Multishell terminal is reading files on a removable volume.</string>
+    <string>Multishell (or a terminal) is wanting to open files on a removable volume.</string>
     <key>NSDesktopFolderUsageDescription</key>
-    <string>A command you ran in a Multishell terminal is reading files on your Desktop.</string>
+    <string>Multishell (or a terminal) is wanting to open files on your Desktop.</string>
     <key>NSDocumentsFolderUsageDescription</key>
-    <string>A command you ran in a Multishell terminal is reading files in your Documents folder.</string>
+    <string>Multishell (or a terminal) is wanting to open files in your Documents folder.</string>
     <key>NSDownloadsFolderUsageDescription</key>
-    <string>A command you ran in a Multishell terminal is reading files in your Downloads folder.</string>
+    <string>Multishell (or a terminal) is wanting to open files in your Downloads folder.</string>
     <key>NSPhotoLibraryUsageDescription</key>
-    <string>A command you ran in a Multishell terminal is reading your photo library.</string>
+    <string>Multishell (or a terminal) is wanting to read your photo library.</string>
     <key>NSAppleMusicUsageDescription</key>
-    <string>A command you ran in a Multishell terminal is reading your media library.</string>
+    <string>Multishell (or a terminal) is wanting to read or play your media library.</string>
     <key>NSMicrophoneUsageDescription</key>
-    <string>A command you ran in a Multishell terminal is recording from your microphone.</string>
+    <string>Multishell (or a terminal) is wanting to listen on your microphone, for a coding agent taking dictation for example.</string>
+    <key>NSCameraUsageDescription</key>
+    <string>Multishell (or a terminal) is wanting to use your camera.</string>
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>Multishell (or a terminal) is wanting to reach another device on your network, a development server or a container for example.</string>
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>Multishell (or a terminal) is wanting to use Bluetooth to reach a nearby device.</string>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>Multishell (or a terminal) is wanting to send speech to be recognised.</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>Multishell (or a terminal) is wanting to save into your photo library.</string>
+    <key>NSContactsUsageDescription</key>
+    <string>Multishell (or a terminal) is wanting to read your contacts.</string>
+    <key>NSCalendarsUsageDescription</key>
+    <string>Multishell (or a terminal) is wanting to read your calendar.</string>
+    <key>NSCalendarsFullAccessUsageDescription</key>
+    <string>Multishell (or a terminal) is wanting to read and change your calendar.</string>
+    <key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+    <string>Multishell (or a terminal) is wanting to add to your calendar.</string>
+    <key>NSRemindersUsageDescription</key>
+    <string>Multishell (or a terminal) is wanting to read your reminders.</string>
+    <key>NSRemindersFullAccessUsageDescription</key>
+    <string>Multishell (or a terminal) is wanting to read and change your reminders.</string>
+    <key>NSSystemAdministrationUsageDescription</key>
+    <string>Multishell (or a terminal) is wanting to change a system setting or write to a system folder.</string>
+    <key>NSFileProviderDomainUsageDescription</key>
+    <string>Multishell (or a terminal) is wanting to open files kept in sync by another app, in iCloud Drive or Dropbox for example.</string>
+    <key>NSFocusStatusUsageDescription</key>
+    <string>Multishell (or a terminal) is wanting to know whether a Focus is on.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Multishell (or a terminal) is wanting to know where this Mac is.</string>
     <key>NSAppleEventsUsageDescription</key>
-    <string>Multishell asks the system to install its command line tool, which needs an administrator.</string>
+    <string>Multishell is wanting to link its multishell command line tool into /usr/local/bin, which needs an administrator.</string>
     <!-- The pasteboard type a dragged tab carries. Declared so macOS knows
          it is ours; see TabTransfer. -->
     <key>UTExportedTypeDeclarations</key>

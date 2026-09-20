@@ -24,7 +24,7 @@ struct AppleScriptHandlerTests {
   }
 
   /// A home directory holding a quote used to close the AppleScript literal
-  /// and leave the rest to run as AppleScript, as root; see BUGS 125.
+  /// and leave the rest to run as AppleScript, as root.
   @Test func aPathHoldingQuotesAndSemicolonsArrivesAsOneArgument() throws {
     let hostile = #"/Users/od"d/x'; rm -rf /"#
     let command = try AppleScriptHandler.call(

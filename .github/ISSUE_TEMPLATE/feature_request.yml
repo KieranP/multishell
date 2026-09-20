@@ -1,0 +1,25 @@
+name: Feature request
+description: Something the app should do and does not
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you are trying to do
+      description: The workflow this gets in the way of, not the feature itself.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you have in mind
+      description: How you would expect it to work, if you have a view.
+  - type: checkboxes
+    id: checked
+    attributes:
+      label: Checked first
+      options:
+        - label: TODO.md does not already queue this
+          required: true
+        - label: COMPAT.md does not already state it as unsupported
+          required: true

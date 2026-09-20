@@ -55,8 +55,14 @@ render_template "$package/Resources/Info.plist.in" \
     > "$app/Contents/Info.plist"
 
 identity="$(signing_identity)"
-sign "$identity" "$app/Contents/Helpers/multishell"
-sign "$identity" "$app"
+entitlements="$(bundle_entitlements \
+    "$package/Resources/Multishell.entitlements" "$app_derived" "$config")"
+# The helper needs none of the app's entitlements; in a debug build it takes
+# the same file anyway, for the `get-task-allow` the debugger wants.
+helper_entitlements=""
+[ "$config" = "release" ] || helper_entitlements="$entitlements"
+sign "$identity" "$app/Contents/Helpers/multishell" "$helper_entitlements"
+sign "$identity" "$app" "$entitlements"
 codesign --verify "$app" || echo "warning: $app is not validly signed" >&2
 
 echo "built $app ($version)"

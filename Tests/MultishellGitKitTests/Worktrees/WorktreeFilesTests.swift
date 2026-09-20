@@ -82,7 +82,7 @@ final class WorktreeFilesTests {
   }
 
   /// Refused, not silently skipped: these used to fail only because
-  /// `repo/~/.aws.json` does not exist, which is luck; see BUGS 123.
+  /// `repo/~/.aws.json` does not exist, which is luck.
   @Test(arguments: [WorktreePlacement.copy, .link])
   func noSpellingOfAPathOutsideTheRepositoryIsPlaced(_ placement: WorktreePlacement) throws {
     let (repository, worktree) = try directories()
