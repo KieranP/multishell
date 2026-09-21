@@ -207,7 +207,7 @@ struct NewWorktreeSheet: View {
     else {
       return "—"
     }
-    return url.path
+    return url.path.abbreviatingHomeDirectory()
   }
 
   private func create() {
