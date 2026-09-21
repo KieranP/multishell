@@ -25,11 +25,11 @@ snapshot of it, and untracked files that look like they belong in this change.
 
     <paragraph 1: the primary change>
 
-    <paragraph 2: only if a reviewer would be surprised>
+    <paragraph 2, or a short bullet list: only if it earns its place>
 
     <Co-Authored-By: line>
 
-No third paragraph, bullets, headings, labels, or emoji.
+No third block, headings, labels, or emoji.
 
 **Tag.** A fix leads with the repo's issue-tracker reference, `[TICKET-1234]`,
 or the error-tracker item, `[Errors#20893]`, or both when a ticket tracks an
@@ -47,10 +47,18 @@ append a PR number like `(#7714)`; GitHub adds that on squash-merge. Good:
 `Fixed a bug in the date parsing logic`.
 
 **Body.** Wrap at 72. Why, never a file-by-file recap. For a fix, the root cause
-naming the failing call. For a feature, the constraint forcing this shape.
-Paragraph 2 only for an incidental change, deleted dead code, or a commit
+naming the failing call. For a feature, the constraint forcing this shape. The
+second block is for an incidental change, deleted dead code, or a commit
 reverted by short SHA. Skip the body when the subject says it all: dep bump,
 rename, lint rule. Never mention Claude or the session.
+
+**Bullets.** The second block can be a list instead of a paragraph when the
+commit carries several distinct items a reviewer will scan: endpoints added,
+separate bugs fixed, checks tightened. Lead each with `- `, keep it to one
+sentence and 200 characters at most, and wrap continuation lines at 72 indented
+two spaces. Two bullets minimum; below that write the sentence. Prose stays the
+default, and a single coherent change never becomes a list. Never one bullet per
+file, and never a bullet restating the subject.
 
 **Trailer.** Blank line, then the exact `Co-Authored-By:` line from your system
 prompt. Never copy one from an older commit or from the example below.
@@ -63,6 +71,19 @@ prompt. Never copy one from an older commit or from the example below.
     object, so the bare string reported here produced a payload with no
     frames. Wrap the report in a dedicated error class with an explicit
     caller backtrace.
+
+    <Co-Authored-By: line>
+
+With a list, where the commit lands several separate items:
+
+    [TICKET-3512] Tighten validation on the sign-up form
+
+    The form accepted values the downstream billing API rejects, so the
+    failure surfaced hours later in a job rather than at submission.
+
+    - Reject start dates more than a year ahead, the limit billing enforces
+    - Require a country on any address once a postal code is entered
+    - Strip zero-width characters from names before the length check
 
     <Co-Authored-By: line>
 
