@@ -16,6 +16,7 @@ extension View {
     ) { pending in
       Button(pending.trustLabel) { model.decideSharedSettings(pending, trusted: true) }
       Button(pending.declineLabel) { model.decideSharedSettings(pending, trusted: false) }
+        .keyboardShortcut(.defaultAction)
       // Escape: asked again next time, since nothing was decided.
       Button(t("dialog.decide-later"), role: .cancel) { model.pendingSharedSettingsTrust = nil }
     } message: { pending in

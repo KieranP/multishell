@@ -18,6 +18,7 @@ extension View {
         model.pendingProjectRemoval = nil
         model.removeProject(pending.project)
       }
+      .keyboardShortcut(.dialogDefault)
       Button(t("action.cancel"), role: .cancel) { model.pendingProjectRemoval = nil }
     } message: { pending in
       Text(model.projectRemovalMessage(for: pending.project))

@@ -91,6 +91,12 @@ What each addition needs beyond the code itself.
 - **The clipboard combinations are kept by the surface**; a plain key the engine
   binds that must reach the program instead is released by the engine's own key
   name, nothing of ours being on the key.
+- **A dialog.** A `View` extension in a file named for it, attached by the scene
+  that asks. The cancel role gives Escape; Return needs
+  `.keyboardShortcut(.dialogDefault)` on the lead button, or `.defaultAction`
+  where a blue default button is wanted. An `NSAlert` takes Return on its first
+  button and needs its Cancel's key equivalent set
+  (design/smaller-decisions.md).
 - **A project icon.** A name in one of the symbol groups, or a new group. It
   must exist as far back as the deployment target; a name that does not resolve
   draws nothing rather than failing.

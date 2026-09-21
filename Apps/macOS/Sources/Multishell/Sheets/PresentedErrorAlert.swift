@@ -14,6 +14,7 @@ extension View {
     ) { error in
       if let label = error.retryLabel, let retry = error.retry {
         Button(label, role: .destructive) { Task { await retry() } }
+          .keyboardShortcut(.dialogDefault)
         Button(t("action.cancel"), role: .cancel) {}
       }
     } message: { error in

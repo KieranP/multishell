@@ -31,6 +31,9 @@ says why these are the rules.
 - **Identifiers spelled in both Swift and the generated Info.plist still
   match**: BundleDeclarationTests, reading the template out of the checkout.
   Nothing at build or run time notices these having parted.
+- **The quit alert answers both keys under any language**: QuitAlertTests, which
+  builds it with translated titles, AppKit binding Escape by matching the
+  English one.
 - **Each override binds to its own setting**: SettingsBindingTests, the override
   accessors taking the same arguments and returning the same type.
 - **Sidebar counts agree with the columns they summarise**: AgentBoardModelTests

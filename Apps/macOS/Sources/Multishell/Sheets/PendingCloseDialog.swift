@@ -14,6 +14,7 @@ extension View {
       presenting: model.pendingClose
     ) { pending in
       Button(pending.buttonLabel, role: .destructive) { model.confirmPendingClose() }
+        .keyboardShortcut(.dialogDefault)
       Button(t("action.cancel"), role: .cancel) { model.pendingClose = nil }
     } message: { _ in
       Text(t("dialog.agent-still-working"))

@@ -15,13 +15,14 @@ extension View {
     ) { pending in
       // The order is the value's: a merged branch leads with the button
       // that deletes it. See `PendingWorktreeRemoval.choices`.
-      ForEach(pending.choices, id: \.label) { choice in
+      ForEach(Array(pending.choices.enumerated()), id: \.element.label) { index, choice in
         Button(choice.label, role: .destructive) {
           model.pendingRemoval = nil
           Task {
             await model.removeWorktree(pending.worktree, deletingBranch: choice.deletesBranch)
           }
         }
+        .keyboardShortcut(index == 0 ? .dialogDefault : nil)
       }
       Button(t("action.cancel"), role: .cancel) { model.pendingRemoval = nil }
     } message: { pending in
