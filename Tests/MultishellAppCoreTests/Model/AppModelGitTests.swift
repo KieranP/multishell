@@ -498,17 +498,20 @@ struct AppModelGitTests {
   @Test func aHookThatLeavesABackgroundProcessDoesNotHangTheCreate() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
-    h.model.updateSettings(ProjectSettings(postCreateHook: "sleep 30 &"), for: h.project)
+    h.model.updateSettings(
+      ProjectSettings(postCreateHook: "sleep 30 & echo $! > sleep.pid"), for: h.project)
 
-    let started = ContinuousClock.now
     await h.model.createWorktree(branch: "served", basedOn: nil, createBranch: true, in: h.project)
     let created = try #require(h.worktree(onBranch: "served"))
     await h.model.workInFlight.setup(of: created.id)?.value
-    let elapsed = ContinuousClock.now - started
+    let written = try String(
+      contentsOf: created.path.appendingPathComponent("sleep.pid"), encoding: .utf8)
+    let hookChild = try #require(pid_t(written.trimmingCharacters(in: .whitespacesAndNewlines)))
+    defer { kill(hookChild, SIGKILL) }
 
     #expect(h.model.presentedError == nil)
     #expect(h.model.worktreeOperations.isEmpty)
-    #expect(elapsed < .seconds(10), "waited on the hook's child: \(elapsed)")
+    #expect(kill(hookChild, 0) == 0, "waited on the hook's child until it exited")
   }
 
   @Test func removingAWorktreeClosesItsShellsAndDropsItsTabs() async throws {

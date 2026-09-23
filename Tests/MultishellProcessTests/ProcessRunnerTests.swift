@@ -205,19 +205,18 @@ struct ProcessRunnerCompletionTests {
   /// pipes, so EOF never comes while the server runs. The call must return
   /// when the process the caller started exits, not when its descendants do.
   ///
-  /// The grandchild outlives the bound by fifty seconds, so the two answers
-  /// are a moment and a minute and no loaded runner is anywhere between
-  /// them. It is orphaned when the test ends and sleeps out its minute
-  /// against nothing.
+  /// A clock bound flaked on a loaded CI runner, so the proof is that the
+  /// grandchild is still alive when the call returns.
   @Test func aChildThatExitsWithABackgroundGrandchildStillCompletes() async throws {
-    let started = ContinuousClock.now
     let output = try await runner.capture(
-      sh, ["-c", "printf before; sleep 60 & exit 0"], in: cwd)
-    let elapsed = ContinuousClock.now - started
+      sh, ["-c", "printf before; sleep 60 & echo $! >&2; exit 0"], in: cwd)
+    let grandchild = try #require(
+      pid_t(output.standardError.trimmingCharacters(in: .whitespacesAndNewlines)))
+    defer { kill(grandchild, SIGKILL) }
 
     #expect(output.succeeded)
     #expect(output.standardOutput == "before")
-    #expect(elapsed < .seconds(10), "waited on the grandchild: \(elapsed)")
+    #expect(kill(grandchild, 0) == 0, "waited on the grandchild until it exited")
   }
 
   /// Output written right before exit sits in the pipe when the exit is
