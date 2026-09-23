@@ -1,108 +1,54 @@
 # Third party notices
 
 Multishell is licensed under the GNU Affero General Public License v3.0; see
-[LICENSE](LICENSE). It ships the software below, each under its own licence.
+[LICENSE](LICENSE). The executable also contains the software below, most of it
+inside the prebuilt `libghostty` library, built from Ghostty at commit
+`c4e1697`. Each licence text is in [Licenses/](Licenses/), which ships in the
+app bundle beside this file.
 
-MIT asks that its notice travel with every copy of the code. That binds whoever
-hands the copy over, so a dependency naming its own dependencies in its own
-repository does not discharge it: nobody who receives `Multishell.app` sees
-those repositories. What follows is the code that is actually in the app, found
-by reading the built bundle rather than the dependency graph. Code that is
-compiled in carries no file of its own, so its notice is reproduced here in
-full; a file that ships with its licence beside it is pointed at instead of
-copied. `make build` copies this file and `LICENSE` into
-`Multishell.app/Contents/Resources/`, so both travel with the binary.
+| Component                 | Copyright                                     | Licence                     | Text                                                                                 |
+| ------------------------- | --------------------------------------------- | --------------------------- | ------------------------------------------------------------------------------------ |
+| libghostty-spm            | 2026 @Lakr233                                 | MIT                         | [libghostty-spm.txt](Licenses/libghostty-spm.txt)                                    |
+| MSDisplayLink             | 2024 Lakr Aream                               | MIT                         | [MSDisplayLink.txt](Licenses/MSDisplayLink.txt)                                      |
+| Ghostty                   | 2024 Mitchell Hashimoto, Ghostty contributors | MIT                         | [Ghostty.txt](Licenses/Ghostty.txt)                                                  |
+| Zig standard library      | Zig contributors                              | MIT                         | [Zig.txt](Licenses/Zig.txt)                                                          |
+| libxev                    | 2023 Mitchell Hashimoto                       | MIT                         | [libxev.txt](Licenses/libxev.txt)                                                    |
+| libvaxis                  | 2023 Tim Culverhouse                          | MIT                         | [libvaxis.txt](Licenses/libvaxis.txt)                                                |
+| zig-objc                  | 2023 Mitchell Hashimoto                       | MIT                         | [zig-objc.txt](Licenses/zig-objc.txt)                                                |
+| z2d                       | 2024-2026 Chris Marchesi                      | MPL-2.0, with MIT portions  | [z2d.txt](Licenses/z2d.txt), [MPL-2.0.txt](Licenses/MPL-2.0.txt)                     |
+| uucode                    | 2026 Jacob Sandlund                           | MIT                         | [uucode.txt](Licenses/uucode.txt)                                                    |
+| Unicode data, via uucode  | 1991-2025 Unicode, Inc.                       | Unicode License v3          | [Unicode.txt](Licenses/Unicode.txt)                                                  |
+| Oniguruma                 | 2002-2021 K.Kosako                            | BSD-2-Clause                | [Oniguruma.txt](Licenses/Oniguruma.txt)                                              |
+| simdutf                   | 2021 The simdutf authors                      | MIT                         | [simdutf.txt](Licenses/simdutf.txt)                                                  |
+| Highway                   | The Highway Project Authors                   | BSD-3-Clause                | [Highway.txt](Licenses/Highway.txt)                                                  |
+| Wuffs                     | 2023 The Wuffs Authors                        | MIT                         | [Wuffs.txt](Licenses/Wuffs.txt)                                                      |
+| GNU libintl, gettext 0.24 | 1995-2025 Free Software Foundation, Inc.      | LGPL-2.1-or-later           | [LGPL-2.1.txt](Licenses/LGPL-2.1.txt)                                                |
+| JetBrains Mono            | 2020 The JetBrains Mono Project Authors       | OFL-1.1                     | [JetBrains-Mono.txt](Licenses/JetBrains-Mono.txt)                                    |
+| Symbols Nerd Font 3.4.0   | 2014 Ryan L McIntyre                          | MIT, glyphs under their own | [Nerd-Fonts.txt](Licenses/Nerd-Fonts.txt), [Apache-2.0.txt](Licenses/Apache-2.0.txt) |
 
-Adding a dependency means adding it here. `Docs/develop/dependencies.md` says
-what each one is for; `Apps/macOS/Package.resolved` pins the versions.
+simdutf, Highway and Wuffs are each also offered under Apache-2.0; Multishell
+takes the licence named above.
 
-## libghostty-spm
+The z2d source shipped is
+<https://github.com/vancluever/z2d/tree/7dbae85c81784dba9988320bf9543ed9a81350c8>.
 
-<https://github.com/Lakr233/libghostty-spm>. The app links its `GhosttyTerminal`
-product, which is compiled into the executable. Its `GhosttyTheme` product,
-which carries the iTerm2 colour schemes, is not linked and nothing of it ships.
+libintl is linked statically. To relink the app against a modified copy, use the
+gettext 0.24 source (<https://ftp.gnu.org/gnu/gettext/gettext-0.24.tar.gz>),
+Ghostty's source at the commit above, libghostty-spm's build scripts, and this
+repository.
 
-```
-MIT License
+The Nerd Font's glyphs come from icon sets under their own licences, listed in
+<https://github.com/ryanoasis/nerd-fonts/blob/v3.4.0/license-audit.md>. Font
+Awesome (Fonticons, Inc.) and Codicons (Microsoft) are CC BY 4.0, and Material
+Design Icons is Apache-2.0.
 
-Copyright (c) 2026 @Lakr233
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
-### Ghostty
-
-The `libghostty` binary inside that package, and the `xterm-ghostty` terminfo
-entry in its resource bundle, are built from [Ghostty](https://ghostty.org). MIT
-License, Copyright (c) 2024 Mitchell Hashimoto and the Ghostty contributors. The
-package's `LICENSE` names only the repackager, so this line is the attribution
-upstream is owed; its README states the same.
-
-Ghostty's own bash and zsh integration scripts are GPLv3 and are not shipped.
-The package ships its own MIT rewrite instead, and has a script that refuses GPL
-text, which is what keeps this repository's AGPL from inheriting a GPL
-obligation.
-
-### bash-preexec
-
-`GhosttyTerminal`'s resource bundle carries
-`Ghostty/shell-integration/bash/bash-preexec.sh`, from
-<https://github.com/rcaloras/bash-preexec>, MIT License, Copyright (c) 2017 Ryan
-Caloras and contributors. It is not vendored in this repository, and its licence
-ships beside it as
-`GhosttyKit_GhosttyTerminal.bundle/Contents/Resources/Ghostty/shell-integration/bash/LICENSE-bash-preexec.md`,
-so the notice already travels with the copy and is not repeated here.
-
-## MSDisplayLink
-
-<https://github.com/Lakr233/MSDisplayLink>, pinned at 2.2.0. A dependency of
-libghostty-spm rather than one this repository declares, and compiled into the
-executable, so its notice has to travel here.
-
-```
-MIT License
-
-Copyright (c) 2024 Lakr Aream
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+bash-preexec (MIT, 2017 Ryan Caloras and contributors) ships as a file in
+libghostty-spm's resource bundle, with its licence beside it as
+`GhosttyKit_GhosttyTerminal.bundle/Contents/Resources/Ghostty/shell-integration/bash/LICENSE-bash-preexec.md`.
 
 ## Agent marks
 
-`Apps/macOS/Sources/Multishell/Resources/Marks/` holds hand-drawn marks for
-Claude Code, Codex, Gemini CLI, GitHub Copilot and OpenCode, traced from each
-vendor's own so a row reads at a glance. They are each vendor's trademark, not
-Multishell's, and this project grants no rights over them. They identify the
-agent the app is talking to and say nothing about endorsement.
+The marks in `Apps/macOS/Sources/Multishell/Resources/Marks/` are traced from
+Claude Code's, Codex's, Gemini CLI's, GitHub Copilot's and OpenCode's own. Each
+is its vendor's trademark and identifies the agent in a pane; none implies
+endorsement, and this project grants no rights over them.

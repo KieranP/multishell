@@ -34,8 +34,10 @@ the bottom.
   about.
 - **Holding an entitlement permits asking and grants nothing**, the answer still
   being the user's. iTerm2 and Ghostty declare much the same list.
-- **The set is every Resource Access entitlement the hardened runtime defines**,
-  read out of Xcode's own capability list, so there is no other to add.
+- **The set is every Resource Access entitlement Xcode defines but printing**,
+  read out of its own capability list. `com.apple.security.print` is a sandbox
+  key with no privacy prompt behind it, so an unsandboxed pane prints without
+  it.
 - **The `cs.` group is deliberately absent.** JIT, unsigned executable memory,
   library validation and dyld variables are about this app's own code: no JIT
   symbols, no third-party dylib, nothing setting dyld variables. A child's JIT

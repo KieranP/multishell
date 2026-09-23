@@ -43,7 +43,7 @@ bundle_variant() {
 
 # What the About box shows under the version, and the only place the holder
 # is written. AGPL section 5 wants the notice on the work it covers, and the
-# bundle carries LICENSE and THIRD-PARTY-NOTICES.md beside it.
+# bundle carries LICENSE, THIRD-PARTY-NOTICES.md and Licenses/ beside it.
 bundle_copyright() {
     printf 'Copyright © %s %s. Licensed under the GNU AGPL v3.' \
         "$COPYRIGHT_YEARS" "$COPYRIGHT_HOLDER"

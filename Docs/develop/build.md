@@ -23,9 +23,9 @@
   modified tree; the build number is the commit count, that key taking digits
   and dots only.
 - **The first app build downloads the libghostty xcframework**, which is large.
-- **`build-lib.sh` holds the parts that are not about this bundle** and is
-  sourced, not run. What stays in `make-app.sh` is the paths, the version and
-  the worktree variant.
+- **`build-lib.sh` holds the helpers `make-app.sh` sources**, not runs: the
+  copyright holder, the version, the build number and the worktree variant. What
+  stays in `make-app.sh` is the paths, the build and the signing.
 - **The Info.plist is a template filled in by placeholder**, and
   BundleDeclarationTests reads it out of the checkout (tests.md). Substitution
   is bash's own, so a value may hold a newline or an ampersand unescaped.

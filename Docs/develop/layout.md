@@ -50,8 +50,9 @@
 
 ## Layering rules
 
-- **The four root libraries are Foundation only.** One file may carry an OS
-  conditional; platform code goes behind the ports folder.
+- **The four root libraries are Foundation only.** One file in Core may carry an
+  OS conditional; other platform code goes in the process layer or behind the
+  ports folder.
 - **`Apps/macOS` is views and AppKit.** Everything else lives in
   MultishellAppCore, including a plain value beside a view unless it names
   AppKit or a Mac measurement.

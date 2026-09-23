@@ -18,8 +18,9 @@ to and no bounty.
 ## What counts
 
 The app spawns shells, reads and writes files in your repositories, runs hooks
-from a project's `.multishell.json`, and listens on a unix socket in your own
-`$TMPDIR` for agent state reports. What would interest me:
+from a project's `.multishell.json`, and listens on a unix socket in
+`~/Library/Application Support/Multishell/` for agent state reports. What would
+interest me:
 
 - Anything a cloned repository can make happen without a click. A hook from a
   `.multishell.json` someone else committed is meant to need the trust prompt

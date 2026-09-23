@@ -47,10 +47,11 @@ where nobody has watched it go either way.
 - Developer ID signing and notarisation, so another machine will run it; the
   local certificate buys privacy grants and nothing towards distribution. The
   hardened runtime, the entitlement and the timestamp rule are in already
-  (signing.md); libghostty is static, so it asked for no entitlement of its own,
-  but nobody has watched a long session under the runtime (BUGS.md).
+  (signing.md); libghostty is static, so it asked for no entitlement of its own.
+  What is still unwatched under the runtime is the CLI install's administrator
+  prompt (BUGS.md).
 - A release workflow: versioned DMG or zip from a tag, and the version from the
-  tag rather than the commit `make-app.sh` writes.
+  tag rather than the commit `build-lib.sh` stamps.
 - In-app update: notice a newer release, say so, and install it on the user's
   word. Wants the release workflow's versioned artefact and Developer ID first,
   since an unnotarised update will not launch on the machine it replaces itself

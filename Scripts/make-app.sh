@@ -40,10 +40,11 @@ cp "$cli_build/multishell" "$app/Contents/Helpers/multishell"
 
 copy_resource_bundles "$app_build" "$app/Contents/Resources"
 cp "$package/Resources/Multishell.icns" "$app/Contents/Resources/Multishell.icns"
-# MIT requires each notice to travel with the binary, so the bundle carries
-# both licences; THIRD-PARTY-NOTICES.md says which covers what.
+# Each compiled-in dependency's licence must travel with the binary;
+# THIRD-PARTY-NOTICES.md says which text in Licenses/ covers what.
 cp "$root/LICENSE" "$app/Contents/Resources/LICENSE"
 cp "$root/THIRD-PARTY-NOTICES.md" "$app/Contents/Resources/THIRD-PARTY-NOTICES.md"
+cp -R "$root/Licenses" "$app/Contents/Resources/Licenses"
 copy_info_plist_strings "$resources" "$app/Contents/Resources"
 
 render_template "$package/Resources/Info.plist.in" \

@@ -153,13 +153,7 @@ Last checked in full on 2026-09-23 against 61cec24, with claude 2.1.280, codex
 | 132 | Code   | Editor launches are built by `AgentLaunch`                                                                   |
 | 133 | Code   | `SocketFailure` and fifteen other types sit in another type's file                                           |
 | 134 | Code   | Seven comments outside the tests run past two lines, and 282 inside them                                     |
-| 135 | Docs   | The third-party notices miss two fonts and three libraries the binary carries                                |
-| 136 | Docs   | SECURITY.md puts the socket in `$TMPDIR`                                                                     |
-| 137 | Docs   | signing.md says the entitlements hold every resource-access key, but printing is missing                     |
-| 138 | Docs   | layout.md allows one file an OS conditional, and six carry one                                               |
-| 139 | Docs   | build.md puts the version and variant in `make-app.sh`, and `build-lib.sh` defines them                      |
-| 140 | Docs   | The design index gives a board card three lines, and the view draws two                                      |
-| 141 | Docs   | TODO.md says no long session has run under the hardened runtime, citing an entry that says one has           |
+| 135 | Docs   | libintl is LGPL and linked statically, from a libghostty someone else built                                  |
 
 ## High
 
@@ -1582,56 +1576,14 @@ or give the suites a pass.
 
 ## Docs
 
-### 135. The third-party notices miss two fonts and three libraries the binary carries
+### 135. libintl is LGPL and linked statically, from a libghostty someone else built
 
-`THIRD-PARTY-NOTICES.md:8-13` and `Docs/develop/dependencies.md:3-6` say the
-notices were written from the built bundle. A scan of
-`build/Multishell.app/Contents/MacOS/Multishell`, built from this tree, found
-JetBrains Mono 2.304 Regular and Italic and Symbols Nerd Font 3.4.0 in font name
-tables (SIL OFL 1.1, the latter MIT as well), Oniguruma by its error strings
-(BSD-2-Clause, whose binary clause wants the notice), and Wuffs and simdutf by
-their symbols (Apache-2.0 or MIT). The static `libghostty.a` also defines
-FreeType and libpng symbols, which carry notices of their own. OFL 1.1 wants its
-licence shipped with the font. Nothing binds until the app is distributed, and
-this is the first thing to settle before it is. Fix = add the notices.
-
-### 136. SECURITY.md puts the socket in `$TMPDIR`
-
-`SECURITY.md:21-22`. It is
-`~/Library/Application Support/Multishell/multishell<variant>.sock`
-(`Paths.swift:73-77`, whose comment says "not `$TMPDIR`").
-
-### 137. signing.md says the entitlements hold every resource-access key, but printing is missing
-
-`Docs/design/signing.md:37-38`. Xcode 27's build settings list
-`ENABLE_RESOURCE_ACCESS_PRINTING` among its nine, and `com.apple.security.print`
-is not in `Multishell.entitlements`. Printing probably raises no prompt for an
-unsandboxed app, so the fix is the key or the reason, but "no other to add" is
-wrong either way.
-
-### 138. layout.md allows one file an OS conditional, and six carry one
-
-`Docs/develop/layout.md:53-54`. They are `UnixSocketAddress.swift:56`,
-`ProcessAncestry.swift:41` and four more lines in it, `DescriptorLimit.swift:23`
-and `:30`, `UnixSocketClient.swift:16`, `Paths.swift:7` and
-`DispatchDirectoryWatcher.swift:1`. `Paths.swift:3-4`, "the only OS branch in
-the core", is true of Core alone, and `layout.md:60-61`, which puts an OS
-difference in the process layer or a port, is what the code follows. Fix = "One
-file in Core may".
-
-### 139. build.md puts the version and variant in `make-app.sh`, and `build-lib.sh` defines them
-
-`Docs/develop/build.md:26-28` against `Scripts/build-lib.sh:18-42`;
-`make-app.sh:24-26` only calls `bundle_version`, `bundle_build_number` and
-`bundle_variant`. `TODO.md:52-53` repeats it.
-
-### 140. The design index gives a board card three lines, and the view draws two
-
-`Docs/DESIGN.md:17` against `Docs/design/appearance.md:65-67` and
-`AgentCardView.swift:19-24`, which draws two fixed lines and an optional
-message.
-
-### 141. TODO.md says no long session has run under the hardened runtime, citing an entry that says one has
-
-`TODO.md:50-51` against 038, which counts a long session covered because the
-running app is hardened.
+GNU gettext 0.24's libintl reaches the executable inside the prebuilt
+`libghostty.a` (Ghostty's Zig object calls `bindtextdomain` and `dgettext`).
+LGPL-2.1 asks that whoever receives a statically linked copy can relink it
+against a modified libintl. `THIRD-PARTY-NOTICES.md` names the pieces for that,
+the gettext source, Ghostty's at the pinned commit, libghostty-spm's build
+scripts and this repository, but nobody has walked the relink, and libghostty is
+built by a third party (`Docs/develop/dependencies.md`). Nothing binds until the
+app is distributed. Fix = build libghostty from source before a release, which
+dependencies.md already asks for, and try the relink once.
