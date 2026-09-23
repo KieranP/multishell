@@ -1,3 +1,4 @@
+import AppKit
 import MultishellAppCore
 import MultishellCore
 import SwiftUI
@@ -6,18 +7,15 @@ extension View {
   /// Asked when Cmd+W would close a pane or tab whose agent last reported
   /// that it is still working.
   func pendingCloseDialog(model: AppModel) -> some View {
-    confirmationDialog(
-      model.pendingClose?.title ?? "",
-      isPresented: Binding(
-        get: { model.pendingClose != nil }, set: { if !$0 { model.pendingClose = nil } }),
-      titleVisibility: .visible,
-      presenting: model.pendingClose
-    ) { pending in
-      Button(pending.buttonLabel, role: .destructive) { model.confirmPendingClose() }
-        .keyboardShortcut(.dialogDefault)
-      Button(t("action.cancel"), role: .cancel) { model.pendingClose = nil }
-    } message: { _ in
-      Text(t("dialog.agent-still-working"))
+    destructiveAlert(model.pendingClose) { pending in
+      DestructiveAlert.make(
+        title: pending.title,
+        message: t("dialog.agent-still-working"),
+        choices: [pending.buttonLabel],
+        cancel: t("action.cancel"))
+    } answer: { _, choice in
+      // `confirmPendingClose` reads the pending close and clears it itself.
+      if choice == nil { model.pendingClose = nil } else { model.confirmPendingClose() }
     }
   }
 }

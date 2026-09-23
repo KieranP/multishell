@@ -120,19 +120,20 @@ wrong. Those come last within their rank.
 | 102 | UI/UX  | [Unconfirmed] A click on the blank part of the New Tab menu's frame                                 |
 | 103 | UI/UX  | [Unconfirmed] The subagent chip's popover                                                           |
 | 104 | UI/UX  | [Unconfirmed] The New Tab menu's rendered agent marks                                               |
-| 105 | Code   | A view measures the drop indicator's hit split, so nothing tests it                                 |
-| 106 | Code   | `claimedPaths` is read by seven tests and nothing in production                                     |
-| 107 | Code   | `warmWorktrees` is absent from the one place per-worktree state is dropped                          |
-| 108 | Code   | `AppModel+Runtime` is four unrelated concerns under a name that says none                           |
-| 109 | Code   | Agent, shell and editor detection sits in a file named Agents                                       |
-| 110 | Code   | `WorkspaceStore` writes the same index lookup sixteen times                                         |
-| 111 | Code   | The two translation test files duplicate their scanner and have drifted                             |
-| 112 | Code   | The window header chrome is written out twice                                                       |
-| 113 | Code   | The centred-caption styling is written out twice                                                    |
-| 114 | Code   | `public` declarations named by no other target                                                      |
-| 115 | Code   | Catalogue keys are split by a stray `s`, which breaks the sort into groups                          |
-| 116 | Code   | A general SVG path parser lives in the Agents view folder                                           |
-| 117 | Code   | Three unrelated extensions share one file                                                           |
+| 105 | UI/UX  | [Unconfirmed] A later alert layout takes Return off the removal button                              |
+| 106 | Code   | A view measures the drop indicator's hit split, so nothing tests it                                 |
+| 107 | Code   | `claimedPaths` is read by seven tests and nothing in production                                     |
+| 108 | Code   | `warmWorktrees` is absent from the one place per-worktree state is dropped                          |
+| 109 | Code   | `AppModel+Runtime` is four unrelated concerns under a name that says none                           |
+| 110 | Code   | Agent, shell and editor detection sits in a file named Agents                                       |
+| 111 | Code   | `WorkspaceStore` writes the same index lookup sixteen times                                         |
+| 112 | Code   | The two translation test files duplicate their scanner and have drifted                             |
+| 113 | Code   | The window header chrome is written out twice                                                       |
+| 114 | Code   | The centred-caption styling is written out twice                                                    |
+| 115 | Code   | `public` declarations named by no other target                                                      |
+| 116 | Code   | Catalogue keys are split by a stray `s`, which breaks the sort into groups                          |
+| 117 | Code   | A general SVG path parser lives in the Agents view folder                                           |
+| 118 | Code   | Three unrelated extensions share one file                                                           |
 
 ## Medium
 
@@ -904,9 +905,20 @@ A menu item draws a title and an image and nothing else, and nobody has watched
 one of those menus open. SwiftUI may drop the icon, in which case the items read
 as they did before. Fallback = the titles, which say the same thing.
 
+### 105. [Unconfirmed] A later alert layout takes Return off the removal button
+
+`NSAlert.layout()` clears the key equivalent of a `hasDestructiveAction` button,
+which is why `DestructiveAlert` sets it after presenting and again a turn later.
+Watched in a probe: a further `layout()` clears it again, while the `.systemRed`
+bezel survives. So a red button with a dead Return is reachable if anything lays
+the alert out a third time. Nothing in the app calls `layout()` itself, and a
+parent-window resize did not clear it in the probe, so the trigger is
+unidentified rather than ruled out. Fallback = the mouse and Escape, which no
+layout touches. A key monitor on the sheet would not depend on layout at all.
+
 ## Code
 
-### 105. A view measures the drop indicator's hit split, so nothing tests it
+### 106. A view measures the drop indicator's hit split, so nothing tests it
 
 `Apps/macOS/Sources/Multishell/Sidebar/SidebarView.swift:166`.
 `blockHeight(of:metrics:)` does arithmetic over row heights, pane counts and
@@ -915,13 +927,13 @@ untested. A wrong answer here is a user-visible bug with no test. Extract it
 beside `UIMetrics` in `Apps/macOS/Sources/Multishell/Support/`, where it stays
 because it names a Mac measurement, and cover it.
 
-### 106. `claimedPaths` is read by seven tests and nothing in production
+### 107. `claimedPaths` is read by seven tests and nothing in production
 
 `Sources/MultishellAppCore/Worktrees/WorktreeWorkInFlight.swift:88`. Its only
 readers are `WorktreeWorkInFlightTests` and `AppModelGitTests+Refresh`. Delete
 it and have the tests assert through `isClaimed(_:)`.
 
-### 107. `warmWorktrees` is absent from the one place per-worktree state is dropped
+### 108. `warmWorktrees` is absent from the one place per-worktree state is dropped
 
 `Sources/MultishellAppCore/Model/AppModel.swift:107`. It is keyed by
 `Worktree.ID`, written from four places, and `forgetWorktrees`
@@ -929,7 +941,7 @@ it and have the tests assert through `isClaimed(_:)`.
 state is dropped, does not touch it. The comment says it never shrinks and gives
 no reason. Either add it there or write the reason into worktrees.md.
 
-### 108. `AppModel+Runtime` is four unrelated concerns under a name that says none
+### 109. `AppModel+Runtime` is four unrelated concerns under a name that says none
 
 `Sources/MultishellAppCore/Model/AppModel+Runtime.swift`, 229 lines: session
 reconcile and error reporting at 5 to 64, the `offMain`, `setIfChanged` and
@@ -938,14 +950,14 @@ activity and title notes at 190 to 229. Split into `AppModel+Reconcile`,
 `AppModel+StatusPolling` and `AppModel+Activity`, and move the two utilities to
 `Support/`.
 
-### 109. Agent, shell and editor detection sits in a file named Agents
+### 110. Agent, shell and editor detection sits in a file named Agents
 
 `Sources/MultishellAppCore/Model/AppModel+Agents.swift:9`.
 `refreshLoginEnvironment` captures the login shell and then detects agents,
 shells and editors, and rebuilds the `WorktreeCoordinator` besides. Move it into
 `AppModel+Detection.swift`; the rest of the file is named correctly.
 
-### 110. `WorkspaceStore` writes the same index lookup sixteen times
+### 111. `WorkspaceStore` writes the same index lookup sixteen times
 
 `Sources/MultishellCore/Store/WorkspaceStore.swift` holds sixteen
 `firstIndex(where:)` calls, nine of them the identical
@@ -956,7 +968,7 @@ no `tabIndex` or `groupIndex`. Add the two and collapse all sixteen. The file's
 means every writer shares it, but state-and-store.md should say that this file
 only grows.
 
-### 111. The two translation test files duplicate their scanner and have drifted
+### 112. The two translation test files duplicate their scanner and have drifted
 
 `Tests/MultishellCoreTests/Text/TranslationTests.swift` (221 lines) and
 `Apps/macOS/Tests/MultishellTests/Text/TranslationTests.swift` (302). About 100
@@ -967,7 +979,7 @@ lines of scanning machinery, `callSites`, `arguments`, `placeholders`,
 split forces the duplication. Equalise the check lists and record the pairing in
 tests.md.
 
-### 112. The window header chrome is written out twice
+### 113. The window header chrome is written out twice
 
 `Apps/macOS/Sources/Multishell/Terminals/DetailView.swift:82` and
 `Agents/AgentBoardHeader.swift:26` apply the same four modifiers,
@@ -976,13 +988,13 @@ tests.md.
 window header. `SidebarHeader.swift:20` repeats three of the four. Make it one
 `View` extension so it cannot drift.
 
-### 113. The centred-caption styling is written out twice
+### 114. The centred-caption styling is written out twice
 
 `Apps/macOS/Sources/Multishell/Terminals/WorktreeOperationView.swift:27` and
 `EmptyStateView.swift:24`: the same five modifiers, down to `maxWidth: 380` and
 `padding(.top, 6)`.
 
-### 114. `public` declarations named by no other target
+### 115. `public` declarations named by no other target
 
 Many `public` declarations are nested types reached through a public signature
 and genuinely need it. These are confinable:
@@ -1003,7 +1015,7 @@ with `AppModel.workInFlight`, `StatusReadLog.invalidate`,
 `WorktreeOperations.advance` and the mutating funcs in `SessionStates.swift` the
 same pattern.
 
-### 115. Catalogue keys are split by a stray `s`, which breaks the sort into groups
+### 116. Catalogue keys are split by a stray `s`, which breaks the sort into groups
 
 Across the two catalogues: fourteen keys under `action.` and ten under
 `actions.`, so `action.remove` sorts away from `actions.remove-worktree` and
@@ -1012,13 +1024,13 @@ nine under `notifications.`, and one `worktree.` key alone against seventeen
 `worktrees.`. translation.md says the catalogue is sorted by key so that it
 groups by part of the app, which this defeats. Pick one spelling per group.
 
-### 116. A general SVG path parser lives in the Agents view folder
+### 117. A general SVG path parser lives in the Agents view folder
 
 `Apps/macOS/Sources/Multishell/Agents/SVGPathParser.swift`, 105 lines. layout.md
 gives view folders to the part of the window they draw and this draws none. Move
 it to `Support/`.
 
-### 117. Three unrelated extensions share one file
+### 118. Three unrelated extensions share one file
 
 `Sources/MultishellAppCore/Detection/DisplayNames.swift` extends
 `AgentCatalogue`, `EditorCatalogue` and `ShellCatalogue` in one file. The style

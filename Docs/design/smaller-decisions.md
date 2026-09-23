@@ -10,17 +10,24 @@ What has no other file to go in. Newest at the bottom.
   as root. Costs: four-char codes Swift does not import, and main-actor-only
   components.
 - **Return presses a dialog's lead button, Escape its Cancel.** SwiftUI gives a
-  cancel-role button Escape on its own but makes no destructive button the
-  default, so Return answered nothing in the confirmations. Each dialog with a
-  choice to make now names its default, the worktree one taking the first of
-  `choices`, so the merge state decides which. The error alert's forced branch
-  deletion answers Return too: it is the one thing that alert offers, and a
-  removal the user already confirmed is what put it there.
-- **A destructive button takes a plain Return, not `.defaultAction`.** Both were
-  watched on a screen: `.defaultAction` answers the dialog and repaints the
-  button as the blue default, losing the red that says what it does; Return with
-  no modifiers, `KeyboardShortcut.dialogDefault`, answers it and leaves it red.
-- **The shared-settings question is the exception**: Return declines. Its other
+  cancel-role button Escape on its own but binds Return to nothing, so the
+  confirmations could only be answered with the mouse.
+- **A confirmation that removes something is an `NSAlert`, not a SwiftUI
+  dialog.** `.defaultAction` answers Return and repaints the button as the blue
+  default, losing the red that says what it does, and no styling brings it back.
+  AppKit is stricter still: `layout()` takes Return off any button with
+  `hasDestructiveAction`, which is how the platform keeps a destructive action
+  from being the default. `DestructiveAlert` builds the alert and puts the key
+  back after presenting, the last layout there is. A default button is drawn in
+  the accent colour whatever its role, so the bezel is painted `.systemRed`
+  there too, and again a turn later: the sheet lays out once more on its way up,
+  and until it does the button opens blue and only flashes red as it is pressed.
+- **Clearing the pending value takes the sheet down with it.** A worktree
+  removed outside the app clears `pendingRemoval`, and a sheet left standing
+  would confirm a removal on a path git no longer knows (worktrees.md). The
+  answer is dropped when that happens, rather than read as a Cancel.
+- **The shared-settings question stays a SwiftUI dialog**: nothing it offers is
+  destructive, so the blue default is right, and Return declines. Its other
   button runs what a repository committed, nobody asked for the question, and a
   keystroke meant for the window behind must not be what trusts it.
 - **The quit alert is AppKit's own.** `NSAlert` gives Return to its first

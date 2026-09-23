@@ -34,6 +34,10 @@ says why these are the rules.
 - **The quit alert answers both keys under any language**: QuitAlertTests, which
   builds it with translated titles, AppKit binding Escape by matching the
   English one.
+- **A removal button keeps its red bezel and its Return**:
+  DestructiveAlertTests, AppKit taking the key off at every layout and drawing a
+  default button in the accent colour. What a presented sheet actually draws is
+  not testable here, so the suite holds the properties, not the pixels.
 - **Each override binds to its own setting**: SettingsBindingTests, the override
   accessors taking the same arguments and returning the same type.
 - **Sidebar counts agree with the columns they summarise**: AgentBoardModelTests
