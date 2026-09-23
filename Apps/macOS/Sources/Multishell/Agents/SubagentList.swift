@@ -17,7 +17,7 @@ struct SubagentList: View {
         Image(systemName: "arrow.triangle.branch")
           .font(.system(size: metrics.badge - 1, weight: .semibold))
           .foregroundStyle(theme.color(for: .running))
-        Text(t("count.subagents", subagents.workerCount))
+        Text(subagents.countText)
           .font(.system(size: metrics.badge, weight: .semibold))
           .foregroundStyle(theme.textPrimary)
       }

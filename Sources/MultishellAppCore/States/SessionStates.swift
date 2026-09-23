@@ -40,11 +40,18 @@ public struct SessionStates: Equatable, Sendable {
   @discardableResult
   public mutating func report(
     _ state: SessionState, pid: Int32?, message: String? = nil, duration: Double? = nil,
-    subagent: SubagentReport? = nil, startsTurn: Bool = false, for key: Key, isSeen: Bool
+    subagent: SubagentReport? = nil, startsTurn: Bool = false, backgroundShells: [Int32] = [],
+    resumesAfterWorkers: Bool = false, for key: Key, isSeen: Bool
   ) -> SessionState? {
     // A prompt starts a turn, so whatever the last one left out is gone: an
     // agent interrupted fires no hook and its workers send no stop.
     if startsTurn { update(key) { $0.settleTurn() } }
+    if state == .done, subagent == nil {
+      update(key) {
+        $0.keepShells(backgroundShells)
+        $0.stopResumes = resumesAfterWorkers
+      }
+    }
     guard let state = settling(state, subagent: subagent, for: key) else { return nil }
     switch state {
     case .idle:
@@ -79,7 +86,11 @@ public struct SessionStates: Equatable, Sendable {
       return settlingOwn(state, entry: entries[key] ?? Entry(), for: key)
     }
     var place = Entry.Place(id: subagent.id)
-    update(key) { place = $0.keep(subagent) }
+    update(key) {
+      place = $0.keep(subagent)
+      // A worker out holds the Done itself; the last one out waits again.
+      if !$0.workers.isEmpty { $0.awaitingResume = false }
+    }
     let entry = entries[key] ?? Entry()
     let raiser = Entry.Raiser.worker(place.id)
     switch state {
@@ -120,10 +131,14 @@ public struct SessionStates: Equatable, Sendable {
       var answered = false
       update(key) { answered = $0.answered(raiser, sharedPlace: place.isShared) }
       guard answered else { return nil }
-      if !outstanding, let displaced = entry.displaced { return restore(displaced, for: key) }
+      if !outstanding, let displaced = entry.displaced {
+        return lastOut(displaced, entry: entry, for: key)
+      }
       return .running
     }
-    if !outstanding, let displaced = entry.displaced { return restore(displaced, for: key) }
+    if !outstanding, let displaced = entry.displaced {
+      return lastOut(displaced, entry: entry, for: key)
+    }
     if outstanding, entry.state == nil || entry.state == .done {
       update(key) { $0.rememberDisplaced(byPrompt: false) }
       return .running
@@ -137,6 +152,8 @@ public struct SessionStates: Equatable, Sendable {
   private mutating func settlingOwn(
     _ state: SessionState, entry: Entry, for key: Key
   ) -> SessionState? {
+    // Any report of the agent's own is the turn it was awaited for.
+    update(key) { $0.awaitingResume = false }
     switch state {
     case .running:
       // The claim goes whether or not another thread's prompt still holds the
@@ -180,6 +197,38 @@ public struct SessionStates: Equatable, Sendable {
       return state
     }
   }
+
+  /// The last worker out pays what its agent's Stop owed, unless that agent
+  /// takes a turn when its workers end: that turn's Stop pays it instead.
+  private mutating func lastOut(
+    _ displaced: Entry.Displaced, entry: Entry, for key: Key
+  ) -> SessionState? {
+    guard displaced == .stop, entry.stopResumes else { return restore(displaced, for: key) }
+    update(key) {
+      $0.awaitingResume = true
+      $0.waitingRaisers = []
+    }
+    return entry.state == .running ? nil : .running
+  }
+
+  /// The awaited turn never came, so its Done is paid now.
+  mutating func payOverdueResume(_ key: Key, isSeen: Bool) -> SessionState? {
+    guard entries[key]?.awaitingResume == true, let displaced = entries[key]?.displaced else {
+      return nil
+    }
+    update(key) { $0.awaitingResume = false }
+    guard let state = restore(displaced, for: key) else { return nil }
+    update(key) {
+      $0.state = isSeen && state.clearsWhenSeen ? nil : state
+      $0.pid = nil
+    }
+    if entries[key]?.state != nil {
+      update(key) { $0.note = SessionNote(state: state, message: nil, duration: nil) }
+    }
+    return state
+  }
+
+  var keysAwaitingResume: Set<Key> { Set(entries.filter(\.value.awaitingResume).keys) }
 
   /// The last worker out puts back what the first displaced: a Done is paid
   /// and announced, nothing is cleared, a failure was announced when it happened.
@@ -309,7 +358,19 @@ public struct SessionStates: Equatable, Sendable {
     }
   }
 
-  var trackedPIDs: Set<Int32> { Set(entries.values.compactMap(\.pid)) }
+  /// The ends a shell's exit stands for, one per key it is out under.
+  func endings(ofShell pid: Int32) -> [(key: Key, report: SubagentReport)] {
+    entries.flatMap { key, entry in
+      entry.workers.filter { $0.pid == pid }.map {
+        (key: key, report: SubagentReport(id: $0.id, phase: .ended))
+      }
+    }
+  }
+
+  /// The agents' own pids and their background shells'.
+  var trackedPIDs: Set<Int32> {
+    Set(entries.values.flatMap { [$0.pid] + $0.workers.map(\.pid) }.compactMap { $0 })
+  }
 
   public func state(ofSessions ids: [TerminalSession.ID]) -> SessionState? {
     SessionState.mostUrgent(ids.compactMap { self[.session($0)] })

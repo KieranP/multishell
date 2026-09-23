@@ -455,3 +455,50 @@ at the bottom.
   slot draws one thing, and which agent is working matters more from across a
   strip than which tabs hold two panes. The row still says split to a screen
   reader.
+- **A shell the agent backgrounded is a worker too**, the user's rule for
+  subagents applied to the other thing a turn leaves running: a pane waiting on
+  a build it started showed Done, then Idle once looked at.
+- **No hook says a background shell ended**, and none of the notification types
+  covers it, so its end is its exit: the pid goes on the roster and the pid poll
+  takes it off, paying the Done as the last worker out would.
+- **The Stop names them**, there being no tool call in flight at a Stop, so any
+  tool shell still alive under the agent is one it backgrounded. The helper
+  lists the agent's children and keeps those whose command line holds the
+  agent's shell marker.
+- **The marker, not "any child"**: MCP servers and the agent's other helpers are
+  children for the whole session and would hold every Done forever.
+- **Claude's marker is the snapshot every Bash tool shell sources**, matched
+  below the config directory so a moved one still matches. It is how the agent
+  happens to start a shell, not a contract: if it changes, nothing matches and a
+  pane goes Done early, as before, rather than Working for good.
+- **One place per pid however many Stops name it**, since a turn woken by the
+  shell's output stops again with the shell still listed until the poll sees it
+  go.
+- **The prompt starting a turn drops them with the rest of the roster**, and the
+  next Stop lists them again: during the turn the pane is Working anyway.
+- **An unnamed worker's end never takes a shell's place.** A shell is never a
+  hook's to end, and one taken that way would be off the roster and unpolled.
+- **Cost: a pid reused before the poll looks holds the Done** until the new
+  process goes, the poll seeing only that the number is alive.
+- **Claude takes another turn when work it left out ends**, a background shell's
+  exit or a subagent's end reaching the model as a message, and that turn ends
+  in a Stop of its own: seen in a session's own transcript, every such wake-up
+  followed by the hook.
+- **So the last worker out pays that agent nothing, and its woken turn's Stop
+  pays the Done.** Paying it at the exit announced Done, then Working, then Done
+  again seconds later, with two banners.
+- **The Stop says so**, the integration being the only place an agent is known,
+  and the entry keeps it beside the Done it owes.
+- **Anything the agent says ends the wait**: its tool call, its prompt, its
+  Stop. A new turn, a failure or the agent going settle it like the rest.
+- **A wait that nothing ends is paid after fifteen seconds**, for a wake-up that
+  never comes. Cost: that Done arrives late, and the figure is a guess longer
+  than a woken turn takes to call a tool or stop.
+- **Shells and subagents are counted apart** wherever the workers are counted, a
+  shell not being a subagent to anyone reading the label.
+- **A sweep takes every dead agent before any dead shell.** An agent gone with
+  its shell takes the shell with it; checked in a set's order, the shell was
+  sometimes first and announced a Done for a dead agent.
+- **A worker on the roster ends the wait too**, holding the Done itself, and the
+  last one out starts the wait again: the woken turn's subagent can be heard
+  from before its main thread, and the deadline paid a Done over it.

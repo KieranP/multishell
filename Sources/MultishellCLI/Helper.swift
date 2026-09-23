@@ -146,17 +146,29 @@ enum Helper {
       let payload = AgentHookPayload(json: data),
       let event = integration.event(for: payload)
     else { return }
+    let pid = reportingProcess(environment)
     let report = SessionStateReport(
       state: event.state,
       sessionID: environment[SessionEnvironment.sessionKey].flatMap { UUID(uuidString: $0) },
       cwd: payload.cwd ?? environment[SessionEnvironment.worktreeKey],
-      pid: reportingProcess(environment),
+      pid: pid,
       message: payload.message,
       agent: id,
       silent: event.silent ? true : nil,
       subagent: event.subagentReport(for: payload),
-      startsTurn: event.startsTurn(for: payload) ? true : nil)
+      startsTurn: event.startsTurn(for: payload) ? true : nil,
+      backgroundShells: event.state == .done
+        ? backgroundShells(of: pid, marker: integration.backgroundShellMarker) : nil,
+      resumesAfterWorkers: event.state == .done && integration.resumesAfterWorkers ? true : nil)
     try? send(report, environment: environment)
+  }
+
+  /// A Stop comes with no tool running, so any tool shell still alive under
+  /// the agent is one it backgrounded. `nil` for none, keeping the line short.
+  private static func backgroundShells(of agent: Int32, marker: String?) -> [Int32]? {
+    guard let marker else { return nil }
+    let shells = ProcessAncestry.children(of: agent, whoseArgumentsContain: marker)
+    return shells.isEmpty ? nil : shells
   }
 
   /// A state with no message, for the shell hooks. The pid, when given, is

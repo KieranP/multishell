@@ -45,42 +45,77 @@ extension AppModel {
     // never goes while it is looking; see Docs/design/agents.md.
     let pid = report.pid == ProcessInfo.processInfo.processIdentifier ? nil : report.pid
     if let id = report.sessionID {
-      guard liveSessions.contains(id), let session = workspace.session(id) else { return }
+      guard liveSessions.contains(id), workspace.session(id) != nil else { return }
       // Who is at that prompt, so a drop is written as that agent reads a file.
       if let agent = report.agent {
         setIfChanged(\.reportedAgents[id], ReportedAgent(agentID: agent, pid: pid))
       }
       noteCommandAgent(report, of: id)
-      apply(
-        report, pid: pid, to: .session(id), in: session.worktreeID, isSeen: hasBeenSeen(id),
-        isOnScreen: isShown(id) && platform.isActive)
+      apply(report, pid: pid, to: .session(id))
     } else if let cwd = report.cwd, let worktree = worktree(atPath: cwd) {
-      // Gated on the board as `isShown` is, the worktree being selected
-      // with nothing of it on screen; and on frontmost as `hasBeenSeen`.
-      let seen =
-        !showsAgentBoard && workspace.selectedWorktreeID == worktree.id && platform.isActive
-      apply(
-        report, pid: pid, to: .worktree(worktree.id), in: worktree.id, isSeen: seen,
-        isOnScreen: seen)
+      apply(report, pid: pid, to: .worktree(worktree.id))
     }
     updatePIDWatch()
   }
 
   /// `isSeen` is the focused pane and clears a Done; `isOnScreen` is any pane
   /// in view and holds the banner. See Docs/design/terminals.md.
-  private func apply(
-    _ report: SessionStateReport, pid: Int32?, to key: SessionStates.Key,
-    in worktreeID: Worktree.ID, isSeen: Bool, isOnScreen: Bool
-  ) {
+  private struct Placement {
+    var worktreeID: Worktree.ID
+    var isSeen: Bool
+    var isOnScreen: Bool
+  }
+
+  private func placement(of key: SessionStates.Key) -> Placement? {
+    switch key {
+    case .session(let id):
+      guard let session = workspace.session(id) else { return nil }
+      return Placement(
+        worktreeID: session.worktreeID, isSeen: hasBeenSeen(id),
+        isOnScreen: isShown(id) && platform.isActive)
+    case .worktree(let id):
+      // Gated on the board as `isShown` is, the worktree being selected
+      // with nothing of it on screen; and on frontmost as `hasBeenSeen`.
+      let seen = !showsAgentBoard && workspace.selectedWorktreeID == id && platform.isActive
+      return Placement(worktreeID: id, isSeen: seen, isOnScreen: seen)
+    }
+  }
+
+  private func apply(_ report: SessionStateReport, pid: Int32?, to key: SessionStates.Key) {
+    guard let place = placement(of: key) else { return }
     var meant: SessionState?
     mutateStates {
       meant = $0.report(
         report.state, pid: pid, message: report.message, duration: report.duration,
-        subagent: report.subagentChange, startsTurn: report.startsTurn == true, for: key,
-        isSeen: isSeen)
+        subagent: report.subagentChange, startsTurn: report.startsTurn == true,
+        backgroundShells: report.backgroundShells ?? [],
+        resumesAfterWorkers: report.resumesAfterWorkers == true, for: key, isSeen: place.isSeen)
     }
     if let meant {
-      notifyIfNeeded(report, as: meant, key: key, worktreeID: worktreeID, isSeen: isOnScreen)
+      notifyIfNeeded(
+        report, as: meant, key: key, worktreeID: place.worktreeID, isSeen: place.isOnScreen)
+    }
+  }
+
+  /// Pays the awaited Done if the agent reports nothing within `resumeGrace`.
+  private func scheduleResumeDeadline(for key: SessionStates.Key) {
+    resumeDeadlines[key]?.cancel()
+    resumeDeadlines[key] = Task { @MainActor [weak self, resumeGrace] in
+      try? await Task.sleep(for: resumeGrace)
+      guard !Task.isCancelled, let self else { return }
+      resumeDeadlines[key] = nil
+      payOverdueResume(key)
+    }
+  }
+
+  private func payOverdueResume(_ key: SessionStates.Key) {
+    guard let place = placement(of: key) else { return }
+    var meant: SessionState?
+    mutateStates { meant = $0.payOverdueResume(key, isSeen: place.isSeen) }
+    if let meant {
+      notifyIfNeeded(
+        SessionStateReport(state: meant), as: meant, key: key, worktreeID: place.worktreeID,
+        isSeen: place.isOnScreen)
     }
   }
 
@@ -204,8 +239,10 @@ extension AppModel {
     // Before the assignment, so the comparison is against what the banners
     // were posted about.
     let moved = notifiedKeys.filter { changed[$0] != sessionStates[$0] }
+    let resuming = changed.keysAwaitingResume.subtracting(sessionStates.keysAwaitingResume)
     sessionStates = changed
     for key in moved { withdrawNotification(about: key) }
+    for key in resuming { scheduleResumeDeadline(for: key) }
     updateDockBadge()
   }
 
@@ -294,9 +331,17 @@ extension AppModel {
   /// One pass over them. A state whose process has gone loses the claim it
   /// was making; a pane whose agent has gone is a plain shell again.
   func sweepGonePIDs() {
-    for pid in watchedPIDs where ProcessAncestry.isGone(pid) {
+    let gone = watchedPIDs.filter(ProcessAncestry.isGone)
+    for pid in gone {
       mutateStates { $0.processGone(pid) }
       dropReportedAgents(withPID: pid)
+    }
+    // Agents first: a shell swept before its dead agent announced a Done.
+    for pid in gone {
+      for ending in sessionStates.endings(ofShell: pid) {
+        apply(
+          SessionStateReport(state: .running, subagent: ending.report), pid: nil, to: ending.key)
+      }
     }
   }
 

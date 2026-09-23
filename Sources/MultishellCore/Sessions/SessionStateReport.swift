@@ -45,6 +45,12 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   public var subagent: SubagentReport?
   /// Set on the prompt that starts a turn, which empties the roster.
   public var startsTurn: Bool?
+  /// The shells the agent left running at its Stop, by pid; their exit is
+  /// the only end they report. See Docs/design/agents.md.
+  public var backgroundShells: [Int32]?
+  /// Set on a Stop from an agent that takes another turn when the work it
+  /// left out ends, so that turn pays the Done; see Docs/design/agents.md.
+  public var resumesAfterWorkers: Bool?
 
   enum CodingKeys: String, CodingKey {
     case version = "v"
@@ -61,6 +67,8 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     case subagents
     case subagent
     case startsTurn = "turn"
+    case backgroundShells = "shells"
+    case resumesAfterWorkers = "resumes"
   }
 
   public init(
@@ -76,7 +84,9 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     silent: Bool? = nil,
     subagents: Int? = nil,
     subagent: SubagentReport? = nil,
-    startsTurn: Bool? = nil
+    startsTurn: Bool? = nil,
+    backgroundShells: [Int32]? = nil,
+    resumesAfterWorkers: Bool? = nil
   ) {
     self.version = Self.protocolVersion
     self.state = state
@@ -92,6 +102,8 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     self.subagents = subagents ?? Self.count(of: subagent)
     self.subagent = subagent
     self.startsTurn = startsTurn
+    self.backgroundShells = backgroundShells
+    self.resumesAfterWorkers = resumesAfterWorkers
   }
 
   /// What an app that reads only the count should make of a worker. A tool
@@ -122,6 +134,8 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     subagents = try container.decodeIfPresent(Int.self, forKey: .subagents)
     subagent = try container.decodeIfPresent(SubagentReport.self, forKey: .subagent)
     startsTurn = try container.decodeIfPresent(Bool.self, forKey: .startsTurn)
+    backgroundShells = try container.decodeIfPresent([Int32].self, forKey: .backgroundShells)
+    resumesAfterWorkers = try container.decodeIfPresent(Bool.self, forKey: .resumesAfterWorkers)
   }
 
   /// The roster change the report carries, an older helper's count read as

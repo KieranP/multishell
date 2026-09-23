@@ -19,7 +19,7 @@ extension AccessibilityText {
     if let position = card.position {
       parts.append(t("spoken.pane-position", position.index, position.count))
     }
-    if !card.subagents.isEmpty { parts.append(t("count.subagents", card.subagents.workerCount)) }
+    if !card.subagents.isEmpty { parts.append(card.subagents.countText) }
     if let elapsed = card.elapsed(at: now) { parts.append(t("spoken.elapsed", elapsed)) }
     if let message = card.message { parts.append(message) }
     return parts.joined(separator: ", ")
@@ -31,7 +31,7 @@ extension AccessibilityText {
     let named = subagents.map { worker in
       [worker.displayName, worker.occurrenceText].compactMap { $0 }.joined(separator: " ")
     }
-    return ([t("count.subagents", subagents.workerCount)] + named).joined(separator: ", ")
+    return ([subagents.countText] + named).joined(separator: ", ")
   }
 
   /// The sidebar's Agents entry, which carries the counts.

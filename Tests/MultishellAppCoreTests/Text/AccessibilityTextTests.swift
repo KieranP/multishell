@@ -98,15 +98,33 @@ struct AccessibilityTextTests {
     #expect(AccessibilityText.subagents(out) == "2 subagents, Explore, subagent")
     #expect(
       AccessibilityText.pane(
-        title: "claude", position: nil, isActive: false, state: .running, subagentCount: 2,
+        title: "claude", position: nil, isActive: false, state: .running, subagents: out,
         agent: "Claude Code")
         == "claude, tab, Claude Code, agent, Working, 2 subagents")
     #expect(
       AccessibilityText.pane(
-        title: "fix tests", position: (2, 2), isActive: true, state: nil, subagentCount: 0,
+        title: "fix tests", position: (2, 2), isActive: true, state: nil, subagents: [],
         agent: nil)
         == "fix tests, pane 2 of 2, selected",
       "a renamed tab names every pane alike, so the position tells them apart")
+  }
+
+  @Test func backgroundShellsAreCountedApartFromSubagents() {
+    let out = [
+      Subagent(id: "a", type: "Explore"),
+      Subagent(id: "shell:500", type: nil, pid: 500),
+      Subagent(id: "shell:501", type: nil, pid: 501),
+    ]
+    #expect(out.countText == "1 subagent, 2 background shells")
+    #expect([out[1]].countText == "1 background shell")
+    #expect(
+      AccessibilityText.subagents(out)
+        == "1 subagent, 2 background shells, Explore, background shell, background shell")
+    #expect(
+      AccessibilityText.pane(
+        title: "claude", position: nil, isActive: false, state: .running, subagents: out,
+        agent: nil)
+        == "claude, tab, Working, 1 subagent, 2 background shells")
   }
 
   /// The green glyph, in the place it is drawn: after the lock, before the

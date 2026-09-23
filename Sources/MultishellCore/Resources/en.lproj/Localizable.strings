@@ -253,6 +253,7 @@
 "step.worktree-not-removed" = "The worktree could not be removed";
 "subagent.occurrences" = "×%d";
 "subagent.unnamed" = "subagent";
+"subagent.background-shell" = "background shell";
 "tab.editor" = "Editor";
 "tab.shell" = "Shell";
 "worktree.not-removable" = "%@ is the repository itself, not a worktree that can be removed.";

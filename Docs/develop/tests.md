@@ -116,6 +116,14 @@ says why these are the rules.
 - **A held stop leaves a failure alone** whether a worker's prompt covered it or
   it is still standing, so no failure is paid back as a Done:
   BackgroundWorkerTests.
+- **A background shell is held for by pid and ended by its exit**:
+  BackgroundShellTests, and ProcessAncestryTests finds one among real children
+  by its command line.
+- **A resuming agent's Done is paid once**, by the woken turn or the deadline,
+  never with a worker out: ResumingAgentTests, and SessionStateModelTests
+  through the socket with the banner counted.
+- **An agent dying with its shell announces nothing in either sweep order**:
+  SessionStateModelTests over twelve pairs, a set's order meeting both.
 - **Each agent names a worker in its own spelling**, and a start or stop naming
   nobody counts as an unnamed one: AgentHookPayloadTests.
 - **The plugin follows a child session**: OpenCodePluginRunTests runs the

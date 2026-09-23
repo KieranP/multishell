@@ -69,7 +69,7 @@ struct PaneRows: View {
     .accessibilityLabel(
       AccessibilityText.pane(
         title: title, position: position, isActive: isActive, state: state,
-        subagentCount: subagents.workerCount, agent: agentID.map(model.agentDisplayName))
+        subagents: subagents, agent: agentID.map(model.agentDisplayName))
     )
     .accessibilityAddTraits(isActive ? [.isButton, .isSelected] : .isButton)
   }

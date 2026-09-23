@@ -34,10 +34,17 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   /// What the agent asks of the user before it will run a hook, when it
   /// asks anything at all. Codex trusts a hook only once told to.
   public let trustNote: String?
+  /// What the command line of a shell the agent runs a tool in holds, so its
+  /// Stop can name those still running; see Docs/design/agents.md.
+  public let backgroundShellMarker: String?
+  /// Whether the agent takes another turn when the work it left out at its
+  /// Stop ends, which then pays the Done; see Docs/design/agents.md.
+  public let resumesAfterWorkers: Bool
 
   init(
     id: String, name: String, file: URL, displayPath: String, events: [AgentHookEvent],
-    format: Format, trustNote: String? = nil
+    format: Format, trustNote: String? = nil, backgroundShellMarker: String? = nil,
+    resumesAfterWorkers: Bool = false
   ) {
     self.id = id
     self.name = name
@@ -46,6 +53,8 @@ public struct AgentHookIntegration: Identifiable, Sendable {
     self.events = events
     self.format = format
     self.trustNote = trustNote
+    self.backgroundShellMarker = backgroundShellMarker
+    self.resumesAfterWorkers = resumesAfterWorkers
   }
 
   /// Whether the file is Multishell's own, rather than one the user keeps

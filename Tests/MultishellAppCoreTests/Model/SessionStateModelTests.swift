@@ -446,6 +446,125 @@ struct SessionStateModelTests {
     #expect(h.model.state(of: tab) == .running)
   }
 
+  @Test func aStopHeldForABackgroundShellIsPaidAndAnnouncedWhenTheShellExits() async throws {
+    let h = Harness()
+    h.model.pidPollInterval = .milliseconds(50)
+    h.model.setNotifications(NotificationPreference(attention: true, error: true, done: true))
+    h.model.select(h.main)
+    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    h.model.newTab()
+    let session = tab.focusedSessionID
+    let me = ProcessInfo.processInfo.processIdentifier
+
+    let shell = Process()
+    shell.executableURL = URL(fileURLWithPath: "/bin/sh")
+    shell.arguments = ["-c", "read line"]
+    let input = Pipe()
+    shell.standardInput = input
+    try shell.run()
+    defer { shell.terminate() }
+
+    h.source.send(SessionStateReport(state: .running, sessionID: session, pid: me, agent: "claude"))
+    h.source.send(
+      SessionStateReport(
+        state: .done, sessionID: session, pid: me, agent: "claude",
+        backgroundShells: [shell.processIdentifier]))
+    #expect(h.model.state(ofPane: session) == .running, "the shell is still working")
+    #expect(h.model.subagents(ofPane: session).count == 1)
+    #expect(h.notifier.posted.isEmpty)
+
+    try input.fileHandleForWriting.close()
+    shell.waitUntilExit()
+    for _ in 0..<80 where h.model.state(ofPane: session) != .done {
+      try await Task.sleep(for: .milliseconds(50))
+    }
+    #expect(h.model.state(ofPane: session) == .done)
+    #expect(h.model.subagents(ofPane: session).isEmpty)
+    #expect(h.notifier.posted.count == 1, "the Done announced once, at the end")
+  }
+
+  private func exitedProcess() throws -> Int32 {
+    let child = Process()
+    child.executableURL = URL(fileURLWithPath: "/bin/sh")
+    child.arguments = ["-c", "exit 0"]
+    try child.run()
+    child.waitUntilExit()
+    return child.processIdentifier
+  }
+
+  @Test func aResumeThatComesInTimeIsTheOnlyDoneAnnounced() async throws {
+    let h = Harness()
+    h.model.resumeGrace = .milliseconds(100)
+    h.model.setNotifications(NotificationPreference(attention: true, error: true, done: true))
+    h.model.select(h.main)
+    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    h.model.newTab()
+    let session = tab.focusedSessionID
+    let me = ProcessInfo.processInfo.processIdentifier
+    let shell = try exitedProcess()
+
+    h.source.send(
+      SessionStateReport(
+        state: .done, sessionID: session, pid: me, agent: "claude", backgroundShells: [shell],
+        resumesAfterWorkers: true))
+    h.model.sweepGonePIDs()
+    #expect(h.model.state(ofPane: session) == .running, "waiting on the turn the exit starts")
+
+    h.source.send(SessionStateReport(state: .running, sessionID: session, agent: "claude"))
+    h.source.send(
+      SessionStateReport(
+        state: .done, sessionID: session, agent: "claude", resumesAfterWorkers: true))
+    try await Task.sleep(for: .milliseconds(400))
+    #expect(h.model.state(ofPane: session) == .done)
+    #expect(h.notifier.posted.count == 1)
+  }
+
+  @Test func aResumeThatNeverComesIsPaidAndAnnouncedWhenOverdue() async throws {
+    let h = Harness()
+    h.model.resumeGrace = .milliseconds(100)
+    h.model.setNotifications(NotificationPreference(attention: true, error: true, done: true))
+    h.model.select(h.main)
+    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    h.model.newTab()
+    let session = tab.focusedSessionID
+    let me = ProcessInfo.processInfo.processIdentifier
+    let shell = try exitedProcess()
+
+    h.source.send(
+      SessionStateReport(
+        state: .done, sessionID: session, pid: me, agent: "claude", backgroundShells: [shell],
+        resumesAfterWorkers: true))
+    h.model.sweepGonePIDs()
+    #expect(h.notifier.posted.isEmpty)
+    for _ in 0..<40 where h.model.state(ofPane: session) != .done {
+      try await Task.sleep(for: .milliseconds(50))
+    }
+    #expect(h.model.state(ofPane: session) == .done)
+    #expect(h.notifier.posted.count == 1)
+  }
+
+  /// Whether the agent or its shell is checked first is a set's order, so
+  /// several pairs make sure both orders are met.
+  @Test func anAgentDyingWithItsShellAnnouncesNothingWhicheverIsSweptFirst() throws {
+    let h = Harness()
+    h.model.setNotifications(NotificationPreference(attention: true, error: true, done: true))
+    h.model.select(h.main)
+    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    h.model.newTab()
+    let session = tab.focusedSessionID
+    for _ in 0..<12 {
+      let agent = try exitedProcess()
+      let shell = try exitedProcess()
+      h.source.send(SessionStateReport(state: .running, sessionID: session, pid: agent))
+      h.source.send(
+        SessionStateReport(
+          state: .done, sessionID: session, pid: agent, backgroundShells: [shell]))
+      h.model.sweepGonePIDs()
+      #expect(h.model.state(ofPane: session) == nil, "agent \(agent), shell \(shell)")
+    }
+    #expect(h.notifier.posted.isEmpty)
+  }
+
   @Test func aFinishedCommandClearsWorkingAndCommandsAreDistinctFromActivity() {
     let h = Harness()
     h.model.select(h.main)

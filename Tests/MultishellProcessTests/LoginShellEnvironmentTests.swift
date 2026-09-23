@@ -107,4 +107,27 @@ struct ProcessAncestryTests {
     #expect(ProcessAncestry.reportingProcess(startingAt: under) == me, "the walk as it was")
     #expect(ProcessAncestry.reportingProcess(startingAt: under, stoppingAt: me) == under)
   }
+
+  @Test func childrenAreFoundByAWordOfTheirCommandLine() throws {
+    func waiting(_ script: String) throws -> Process {
+      let shell = Process()
+      shell.executableURL = URL(fileURLWithPath: "/bin/sh")
+      shell.arguments = ["-c", script]
+      shell.standardInput = Pipe()
+      try shell.run()
+      return shell
+    }
+    let marked = try waiting("read line # /shell-snapshots/snapshot-test")
+    let plain = try waiting("read line")
+    defer {
+      marked.terminate()
+      plain.terminate()
+    }
+    let me = ProcessInfo.processInfo.processIdentifier
+
+    let found = ProcessAncestry.children(of: me, whoseArgumentsContain: "/shell-snapshots/")
+    #expect(found.contains(marked.processIdentifier))
+    #expect(!found.contains(plain.processIdentifier))
+    #expect(ProcessAncestry.children(of: 999_999_999, whoseArgumentsContain: "x").isEmpty)
+  }
 }

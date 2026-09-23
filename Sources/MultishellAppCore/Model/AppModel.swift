@@ -109,6 +109,9 @@ public final class AppModel<Surface> {
   /// How often a Working state's pid is checked. Settable so a test does
   /// not wait the full interval.
   @ObservationIgnored public var pidPollInterval: Duration = .seconds(2)
+  /// How long a resuming agent has to report its woken turn; see agents.md.
+  @ObservationIgnored var resumeGrace: Duration = .seconds(15)
+  @ObservationIgnored var resumeDeadlines: [SessionStates.Key: Task<Void, Never>] = [:]
   /// Runs the user's login shell for its environment. Settable so a test
   /// hands in a PATH of its own rather than reading the developer's machine.
   @ObservationIgnored var captureLoginEnvironment: @Sendable () async -> LoginShellEnvironment = {

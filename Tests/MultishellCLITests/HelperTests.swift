@@ -166,6 +166,49 @@ struct HelperTests {
     #expect(recorder.received.count == 3)
   }
 
+  /// Here the test process stands in for Claude, the helper's first
+  /// non-shell ancestor, and the marked shell for a task it backgrounded.
+  @Test func claudesStopNamesTheBackgroundShellsItLeftRunning() async throws {
+    let path = Scratch.socketPath("cli")
+    let server = UnixSocketServer(path: path)
+    defer {
+      server.stop()
+      Scratch.removeSocket(path)
+    }
+    let recorder = LineRecorder()
+    server.onLine = { recorder.record($0) }
+    try server.start()
+    let shell = Process()
+    shell.executableURL = URL(fileURLWithPath: "/bin/sh")
+    shell.arguments = ["-c", "read line # ~/.claude/shell-snapshots/snapshot-zsh-test.sh"]
+    shell.standardInput = Pipe()
+    try shell.run()
+    defer { shell.terminate() }
+
+    let stop = try await run(
+      ["agent-hook", "--agent", "claude"], environment: ["MULTISHELL_SOCKET": path.path],
+      stdin: #"{"hook_event_name":"Stop","cwd":"/w/repo"}"#)
+    #expect(stop.succeeded && stop.standardOutput.isEmpty)
+    let tool = try await run(
+      ["agent-hook", "--agent", "claude"], environment: ["MULTISHELL_SOCKET": path.path],
+      stdin: #"{"hook_event_name":"PreToolUse","cwd":"/w/repo"}"#)
+    #expect(tool.succeeded)
+    let gemini = try await run(
+      ["agent-hook", "--agent", "gemini"], environment: ["MULTISHELL_SOCKET": path.path],
+      stdin: #"{"hook_event_name":"AfterAgent","cwd":"/w/repo"}"#)
+    #expect(gemini.succeeded)
+
+    try await waitUntil { recorder.received.count == 3 }
+    let reports = recorder.received.map(SessionStateReport.parse)
+    #expect(reports[0]?.state == .done)
+    #expect(reports[0]?.backgroundShells?.contains(shell.processIdentifier) == true)
+    #expect(reports[0]?.resumesAfterWorkers == true, "Claude takes a turn when they end")
+    #expect(reports[1]?.backgroundShells == nil, "only a Stop looks")
+    #expect(reports[1]?.resumesAfterWorkers == nil)
+    #expect(reports[2]?.backgroundShells == nil, "and only for an agent with a signature")
+    #expect(reports[2]?.resumesAfterWorkers == nil)
+  }
+
   /// Any tool can say which agent is at the prompt, the way Claude's hooks
   /// do, so the app writes a dropped file the way that agent reads one.
   @Test func stateCanNameTheAgentAtThePrompt() async throws {

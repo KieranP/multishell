@@ -21,6 +21,11 @@ extension SessionStates {
     /// Who raised the prompts on screen, since only that thread's next tool
     /// call, or its end, says its own was answered.
     var waitingRaisers: Set<Raiser> = []
+    /// Whether the agent whose Stop is owed takes a turn when its workers
+    /// end. Read only while `displaced` is `.stop`.
+    var stopResumes = false
+    /// The last worker is out and that turn has not reported yet.
+    var awaitingResume = false
 
     enum Displaced: Equatable {
       case nothing
@@ -52,7 +57,7 @@ extension SessionStates {
 
     var isEmpty: Bool {
       state == nil && pid == nil && since == nil && note == nil && workers.isEmpty
-        && displaced == nil && waitingRaisers.isEmpty
+        && displaced == nil && waitingRaisers.isEmpty && !awaitingResume
     }
 
     /// A start or a tool call puts a worker on the roster, its end takes it off.
@@ -99,7 +104,16 @@ extension SessionStates {
         return workers.firstIndex { $0.id == report.id }
       }
       let asking = workers.lastIndex { $0.isAnonymous && waitingRaisers.contains(.worker($0.id)) }
-      return asking ?? workers.lastIndex(where: \.isAnonymous) ?? workers.indices.first
+      // A background shell's end is its exit, never a hook's.
+      return asking ?? workers.lastIndex(where: \.isAnonymous)
+        ?? workers.firstIndex { $0.pid == nil }
+    }
+
+    /// One place per pid, however many Stops name it.
+    mutating func keepShells(_ pids: [Int32]) {
+      for pid in pids where !workers.contains(where: { $0.pid == pid }) {
+        workers.append(Subagent(id: Subagent.shellPrefix + String(pid), type: nil, pid: pid))
+      }
     }
 
     /// Remembers what a worker's report is about to stand over, once. A
@@ -119,6 +133,7 @@ extension SessionStates {
       workers = []
       displaced = nil
       waitingRaisers = []
+      awaitingResume = false
     }
 
     /// One prompt answered, `true` when no other is asking. A shared place

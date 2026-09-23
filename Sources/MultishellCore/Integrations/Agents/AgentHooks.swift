@@ -79,7 +79,12 @@ public enum AgentHooks {
       AgentHookEvent("StopFailure", .error),
       AgentHookEvent("SessionEnd", .idle),
     ],
-    format: .sharedSettings(millisecondTimeout: false))
+    format: .sharedSettings(millisecondTimeout: false),
+    backgroundShellMarker: claudeShellMarker, resumesAfterWorkers: true)
+
+  /// Every Bash tool shell sources a snapshot under the config directory,
+  /// wherever that is set to. Not a documented contract; see agents.md.
+  static let claudeShellMarker = "/shell-snapshots/snapshot-"
 
   /// Codex: `~/.codex/hooks.json`, the JSON half of a file it also accepts as
   /// `[hooks]` in `config.toml`, which is not ours to rewrite.
