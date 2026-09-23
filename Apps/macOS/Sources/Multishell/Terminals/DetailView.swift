@@ -34,6 +34,10 @@ struct DetailView: View {
         }
       }
     }
+    // The widest sidebar leaves less than the header needs. Clipped from the
+    // leading side, so the actions menu is what stays in view.
+    .frame(minWidth: 0, maxWidth: .infinity, alignment: .trailing)
+    .clipped()
     .background(theme.backgroundColor)
   }
 

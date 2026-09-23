@@ -10,6 +10,7 @@ import MultishellCore
 @MainActor
 final class ModelHarness {
   let model: Multishell.AppModel
+  let store: WorkspaceStore
   /// Captured once, so it goes stale after a write; that is what
   /// `aBindingFollowsTheRecordAndNotTheProjectItWasBuiltWith` needs.
   let project: Project
@@ -25,6 +26,7 @@ final class ModelHarness {
     let store = WorkspaceStore(
       snapshot: WorkspaceSnapshot(fileURL: directory.appendingPathComponent("state.json")))
     project = store.addProject(at: directory)
+    self.store = store
     model = Multishell.AppModel(
       store: store,
       host: NoEngine(),
