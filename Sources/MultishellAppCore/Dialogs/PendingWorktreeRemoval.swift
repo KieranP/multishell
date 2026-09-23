@@ -35,15 +35,18 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
   /// Whether the branch has landed, which decides the button the dialog
   /// leads with and adds a line to what it says.
   public let mergeState: WorktreeMergeState
+  /// Whether the directory goes to the Trash or is deleted outright.
+  let trashes: Bool
 
   init(
     worktree: Worktree, branch: BranchChoice, customName: String? = nil,
-    mergeState: WorktreeMergeState = .unknown
+    mergeState: WorktreeMergeState = .unknown, trashes: Bool = true
   ) {
     self.worktree = worktree
     self.branch = branch
     self.customName = customName
     self.mergeState = mergeState
+    self.trashes = trashes
   }
 
   public var id: String { worktree.id }
@@ -81,7 +84,7 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
 
   public static func decide(
     _ worktree: Worktree, customName: String? = nil, confirms: Bool, alwaysDeletesBranch: Bool,
-    mergeState: WorktreeMergeState = .unknown
+    trashes: Bool = true, mergeState: WorktreeMergeState = .unknown
   ) -> Decision {
     let hasBranch = worktree.branch != nil
     let deletes = hasBranch && alwaysDeletesBranch
@@ -90,13 +93,16 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
     return .ask(
       PendingWorktreeRemoval(
         worktree: worktree, branch: branchIsOpen ? .asks : .decided(deletes: deletes),
-        customName: customName, mergeState: mergeState))
+        customName: customName, mergeState: mergeState, trashes: trashes))
   }
 
   /// Names the path and where it goes, says what happens to the branch,
   /// then whatever the status badge and live-shell count know.
   public func message(warning: String?) -> String {
-    var notes = [t("worktree-removal.moves", worktree.path.path)]
+    let path = worktree.path.path
+    var notes = [
+      trashes ? t("worktree-removal.moves", path) : t("worktree-removal.deletes", path)
+    ]
     if let name = worktree.branch {
       switch branch {
       case .asks: notes.append(t("worktree-removal.branch-asked", name))
@@ -112,11 +118,18 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
   }
 
   /// What the confirmation warns about beyond the removal: uncommitted files
-  /// bound for the Trash, and the shells still running there.
-  public static func warning(changedFiles: Int, liveTerminals: Int) -> String? {
+  /// bound for the Trash or deletion, and the shells still running there.
+  public static func warning(
+    changedFiles: Int, liveTerminals: Int, trashes: Bool = true
+  )
+    -> String?
+  {
     var notes: [String] = []
     if changedFiles > 0 {
-      notes.append(t("removal.changed-files", changedFiles))
+      notes.append(
+        trashes
+          ? t("removal.changed-files", changedFiles)
+          : t("removal.changed-files-deleted", changedFiles))
     }
     if liveTerminals > 0 {
       notes.append(t("removal.terminals-closed", liveTerminals))

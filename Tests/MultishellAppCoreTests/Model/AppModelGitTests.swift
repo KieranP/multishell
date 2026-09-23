@@ -558,6 +558,40 @@ struct AppModelGitTests {
     #expect(h.model.liveTerminalCount == 0)
   }
 
+  @Test func withTheTrashOffARemovedWorktreeIsDeletedOutright() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    h.model.setTrashesRemovedWorktrees(false)
+    await h.model.createWorktree(branch: "gone", basedOn: nil, createBranch: true, in: h.project)
+    let worktree = try #require(h.worktree(onBranch: "gone"))
+    try "uncommitted\n".write(
+      to: worktree.path.appendingPathComponent("work.txt"), atomically: true, encoding: .utf8)
+    await h.model.refreshStatuses()
+    #expect(h.model.removalWarning(for: worktree)?.contains("deleted with the directory") == true)
+
+    await h.model.removeWorktree(worktree)
+
+    #expect(h.model.presentedError == nil)
+    #expect(h.platform.trashed.isEmpty)
+    #expect(!FileManager.default.fileExists(atPath: worktree.path.path))
+    #expect(h.worktree(onBranch: "gone") == nil)
+  }
+
+  @Test func aConfirmedRemovalKeepsTheTrashTheDialogNamedThoughTheSettingChanged() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    await h.model.createWorktree(branch: "kept", basedOn: nil, createBranch: true, in: h.project)
+    let worktree = try #require(h.worktree(onBranch: "kept"))
+    h.model.requestRemoval(of: worktree)
+    let pending = try #require(h.model.pendingRemoval)
+    #expect(pending.message(warning: nil).hasPrefix("Moves "))
+
+    h.model.setTrashesRemovedWorktrees(false)
+    await h.model.confirmRemoval(pending, deletingBranch: false)
+
+    #expect(h.platform.trashed == [worktree.path])
+  }
+
   @Test func removingWithTheBranchDeletesItAndAnUnmergedOneOffersTheForcedForm() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }

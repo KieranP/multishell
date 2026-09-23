@@ -280,6 +280,7 @@ struct PersistenceTests {
     workspace.showsActiveWorktreesFirst = true
     workspace.confirmsWorktreeRemoval = false
     workspace.deletesBranchWithWorktree = true
+    workspace.trashesRemovedWorktrees = false
     workspace.hookTimeoutSeconds = 5
     workspace.gitStatusIndicator = .stagedOnly
 

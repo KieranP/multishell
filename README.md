@@ -65,7 +65,7 @@ the way they are. Pull requests are collaborators only, which
 - Tabs, splits and side-by-side columns per worktree; drag a tab to another.
 - Terminals keep running while you look elsewhere.
 - New worktree and branch in one step, with a terminal or agent already open.
-- Removing a worktree moves it to the Trash.
+- Removing a worktree moves it to the Trash, or deletes it if you would rather.
 - Copy or symlink `.env`, `node_modules` and the like into every new worktree.
 - A state dot per tab and worktree: working, waiting, done, failed.
 - Hooks for five agents; zsh and bash need no setup; anything else can call

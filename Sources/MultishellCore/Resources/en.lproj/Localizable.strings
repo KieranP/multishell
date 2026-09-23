@@ -89,7 +89,7 @@
 "error.theme-unreadable-title" = "A theme file could not be read";
 "error.trash-refused" = "Worktree not removed: the directory could not be moved to the Trash or deleted";
 "error.trash-took-nothing" = "The directory is still there.";
-"error.forget-refused" = "Worktree in the Trash, but git still lists it";
+"error.forget-refused" = "Worktree directory gone, but git still lists it";
 "error.shared-settings-unreadable" = "%1$@ could not be read: %2$@";
 "error.unknown-hooks-message" = "%1$@ holds something under hooks.%2$@ that is not the list of hooks the agent documents, and writing ours there would lose it. Use Show JSON beside the agent and add the entries yourself.";
 "error.unknown-hooks-section-message" = "%@ holds something under hooks that is not the object of events the agent documents, and writing ours there would lose it. Use Show JSON beside the agent and add the entries yourself.";
@@ -224,6 +224,7 @@
 "status.staged" = "%d staged";
 "status.untracked" = "%d untracked";
 "step.adding-worktree" = "Running git worktree add…";
+"step.after-removal-detail" = "Its terminals close when it is gone.";
 "step.branch-not-deleted" = "The branch was not deleted";
 "step.cancel-files-help" = "Ends the list once the file it is on is done. What is already in the worktree stays, and nothing else runs in it.";
 "step.cancel-hook-help" = "Ends the hook now. It runs under the hook timeout in Settings > Worktrees otherwise.";
@@ -247,6 +248,8 @@
 "step.pre-delete-hook" = "Running the pre-delete hook…";
 "step.pre-delete-hook-refused" = "The pre-delete hook refused the removal";
 "step.pre-delete-hook-timed-out" = "The pre-delete hook did not finish";
+"step.deleting-worktree" = "Deleting the worktree…";
+"step.deletion-detail" = "Its terminals close when it is gone; the directory is deleted.";
 "step.removal-detail" = "Its terminals close when it is gone; the directory is in the Trash.";
 "step.removal-failed-detail" = "Dismiss to go back to the terminals.";
 "step.removing-worktree" = "Moving the worktree to the Trash…";
@@ -261,6 +264,7 @@
 "worktree-removal.branch-asked" = "The branch %@ is kept unless you remove it too.";
 "worktree-removal.branch-deleted" = "The branch %@ is deleted with it.";
 "worktree-removal.branch-kept" = "The branch %@ is kept.";
+"worktree-removal.deletes" = "Deletes %@ and removes it from git.";
 "worktree-removal.moves" = "Moves %@ to the Trash and removes it from git.";
 "worktree-removal.remove" = "Remove Worktree";
 "worktree-removal.remove-with-branch" = "Remove Worktree and Branch";

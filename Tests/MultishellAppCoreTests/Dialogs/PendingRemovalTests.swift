@@ -85,6 +85,14 @@ struct PendingWorktreeRemovalTests {
     )
   }
 
+  @Test func withTheTrashOffTheMessageAndWarningSayTheDirectoryIsDeleted() {
+    let deletes = PendingWorktreeRemoval(worktree: branched, branch: .asks, trashes: false)
+    #expect(deletes.message(warning: nil).hasPrefix("Deletes /trees/feat and removes it from git."))
+    #expect(
+      PendingWorktreeRemoval.warning(changedFiles: 2, liveTerminals: 0, trashes: false)
+        == "It has 2 changed files, deleted with the directory.")
+  }
+
   @Test func theMessageNamesThePathTheBranchsFateAndTheWarning() {
     let asks = PendingWorktreeRemoval(worktree: branched, branch: .asks)
     #expect(

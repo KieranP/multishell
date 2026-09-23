@@ -72,6 +72,11 @@ struct WorktreeOperationsTests {
     #expect(WorktreeOperation.Step(WorktreeRemovalStep.removingWorktree) == .removingWorktree)
     #expect(WorktreeOperation.Step(WorktreeRemovalStep.postDeleteHook) == .postDeleteHook)
     #expect(WorktreeOperation.Step(WorktreeRemovalStep.deletingBranch) == .deletingBranch)
+    #expect(
+      WorktreeOperation.Step(WorktreeRemovalStep.removingWorktree, trashes: false)
+        == .deletingWorktree)
+    #expect(
+      WorktreeOperation.Step(WorktreeRemovalStep.postDeleteHook, trashes: false) == .postDeleteHook)
   }
 }
 
@@ -88,8 +93,7 @@ struct WorktreeOperationTests {
     #expect(removal.detail.contains("stays if the hook refuses"))
     #expect(WorktreeOperation(WorktreeRemovalStep.deletingBranch).title == "Deleting the branch…")
     #expect(
-      WorktreeOperation(WorktreeRemovalStep.removingWorktree).detail
-        == WorktreeOperation(WorktreeRemovalStep.postDeleteHook).detail)
+      WorktreeOperation(WorktreeRemovalStep.postDeleteHook).detail.contains("terminals close"))
   }
 
   @Test func aFailureChangesTheTitleAndTheDetailAndEndsTheRun() {
@@ -114,6 +118,13 @@ struct RemovalStageWordingTests {
     #expect(removing.title == "Moving the worktree to the Trash…")
     #expect(removing.detail.contains("in the Trash"))
     #expect(removing.step.cancelHelp == nil, "git's own stages are left to finish")
+    let deleting = WorktreeOperation(.deletingWorktree)
+    #expect(deleting.title == "Deleting the worktree…")
+    #expect(deleting.detail.contains("deleted") && !deleting.detail.contains("Trash"))
+    #expect(deleting.step.cancelHelp == nil)
+    #expect(
+      WorktreeOperation(.deletingWorktree, failure: "x").title
+        == "The worktree could not be removed")
     #expect(WorktreeOperation(.postCreateHook).step.cancelHelp?.contains("hook") == true)
     #expect(
       WorktreeOperation(.copyingFiles).step.cancelHelp?.contains("nothing else runs in it") == true,

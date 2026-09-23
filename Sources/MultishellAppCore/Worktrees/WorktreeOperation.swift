@@ -11,6 +11,7 @@ public struct WorktreeOperation: Equatable, Sendable {
     case postCreateHook
     case preDeleteHook
     case removingWorktree
+    case deletingWorktree
     case postDeleteHook
     case deletingBranch
 
@@ -21,10 +22,10 @@ public struct WorktreeOperation: Equatable, Sendable {
       }
     }
 
-    public init(_ removal: WorktreeRemovalStep) {
+    public init(_ removal: WorktreeRemovalStep, trashes: Bool = true) {
       switch removal {
       case .preDeleteHook: self = .preDeleteHook
-      case .removingWorktree: self = .removingWorktree
+      case .removingWorktree: self = trashes ? .removingWorktree : .deletingWorktree
       case .postDeleteHook: self = .postDeleteHook
       case .deletingBranch: self = .deletingBranch
       }
@@ -42,7 +43,7 @@ public struct WorktreeOperation: Equatable, Sendable {
       switch self {
       case .linkingFiles, .copyingFiles: return t("step.cancel-files-help")
       case .postCreateHook, .preDeleteHook, .postDeleteHook: return t("step.cancel-hook-help")
-      case .removingWorktree, .deletingBranch: return nil
+      case .removingWorktree, .deletingWorktree, .deletingBranch: return nil
       }
     }
   }
@@ -78,7 +79,7 @@ public struct WorktreeOperation: Equatable, Sendable {
       case .preDeleteHook:
         return timedOut
           ? t("step.pre-delete-hook-timed-out") : t("step.pre-delete-hook-refused")
-      case .removingWorktree: return t("step.worktree-not-removed")
+      case .removingWorktree, .deletingWorktree: return t("step.worktree-not-removed")
       case .postDeleteHook: return t("step.post-delete-hook-failed")
       case .deletingBranch: return t("step.branch-not-deleted")
       }
@@ -89,6 +90,7 @@ public struct WorktreeOperation: Equatable, Sendable {
     case .postCreateHook: return t("step.post-create-hook")
     case .preDeleteHook: return t("step.pre-delete-hook")
     case .removingWorktree: return t("step.removing-worktree")
+    case .deletingWorktree: return t("step.deleting-worktree")
     case .postDeleteHook: return t("step.post-delete-hook")
     case .deletingBranch: return t("step.deleting-branch")
     }
@@ -105,14 +107,16 @@ public struct WorktreeOperation: Equatable, Sendable {
         return t("step.files-failed-detail")
       case .postCreateHook: return t("step.post-create-failed-detail")
       case .preDeleteHook: return t("step.pre-delete-failed-detail")
-      case .removingWorktree, .postDeleteHook, .deletingBranch:
+      case .removingWorktree, .deletingWorktree, .postDeleteHook, .deletingBranch:
         return t("step.removal-failed-detail")
       }
     }
     switch step {
     case .linkingFiles, .copyingFiles, .postCreateHook: return t("step.creation-detail")
     case .preDeleteHook: return t("step.pre-delete-detail")
-    case .removingWorktree, .postDeleteHook, .deletingBranch: return t("step.removal-detail")
+    case .removingWorktree: return t("step.removal-detail")
+    case .deletingWorktree: return t("step.deletion-detail")
+    case .postDeleteHook, .deletingBranch: return t("step.after-removal-detail")
     }
   }
 }

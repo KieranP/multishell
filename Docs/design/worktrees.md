@@ -56,6 +56,10 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   removes the wrong worktree is the time that matters.
 - **A Trash that refuses falls back to deletion.** Cost: on such a volume the
   recovery the Trash promised is not there.
+- **A global setting deletes outright instead**; the Trash stays the default. A
+  tree with a large `node_modules` or build output fills the Trash, and emptying
+  it takes as long as the move saved. It is about the machine, not the repo, so
+  no project overrides it. The dialog and the pane say which it does.
 - **Trash and fallback run off the main actor**: a share with no trash folder
   walks a dependency tree for as long as it takes, and the window stood still
   for it.

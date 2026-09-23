@@ -19,7 +19,7 @@ extension View {
       model.pendingRemoval = nil
       guard let choice, pending.choices.indices.contains(choice) else { return }
       let deletesBranch = pending.choices[choice].deletesBranch
-      Task { await model.removeWorktree(pending.worktree, deletingBranch: deletesBranch) }
+      Task { await model.confirmRemoval(pending, deletingBranch: deletesBranch) }
     }
   }
 }

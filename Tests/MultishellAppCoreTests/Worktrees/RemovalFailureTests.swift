@@ -75,7 +75,7 @@ struct RemovalFailureTests {
       Issue.record("expected an alert")
       return
     }
-    #expect(title == "Worktree in the Trash, but git still lists it")
+    #expect(title == "Worktree directory gone, but git still lists it")
     #expect(message.hasPrefix("/trees/x"))
     #expect(retry == nil && removed)
   }

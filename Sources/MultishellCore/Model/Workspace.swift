@@ -63,6 +63,9 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// Delete a worktree's branch along with it every time. Off, the removal
   /// asks whether the branch goes too.
   public var deletesBranchWithWorktree = false
+  /// A removed worktree's directory goes to the Trash. Off, it is deleted
+  /// outright, for trees too large to keep there.
+  public var trashesRemovedWorktrees = true
   /// How long a project hook may run before it is stopped and reported.
   /// Zero is no limit.
   public var hookTimeoutSeconds = Self.defaultHookTimeoutSeconds
@@ -120,6 +123,8 @@ public struct Workspace: Codable, Hashable, Sendable {
       Bool.self, forKey: .confirmsWorktreeRemoval, or: true)
     deletesBranchWithWorktree = try container.decode(
       Bool.self, forKey: .deletesBranchWithWorktree, or: false)
+    trashesRemovedWorktrees = try container.decode(
+      Bool.self, forKey: .trashesRemovedWorktrees, or: true)
     hookTimeoutSeconds = try container.decode(
       Int.self, forKey: .hookTimeoutSeconds, or: Self.defaultHookTimeoutSeconds)
     // Tolerated for the reason `worktreeSortOrder` is: a newer build may

@@ -265,7 +265,7 @@
 "worktrees.branch-prefix" = "Branch prefix:";
 "worktrees.branch-prefix-info" = "Prepended to branch names typed in the new-worktree sheet. An existing branch keeps its name. Any project can override it.";
 "worktrees.confirm-removal" = "Ask before removing a worktree";
-"worktrees.confirm-removal-info" = "The directory goes to the Trash and git forgets it. The confirmation counts uncommitted changes and open terminals. Off, a removal still asks about the branch unless the toggle below settles it.";
+"worktrees.confirm-removal-info" = "The directory goes to the Trash, or is deleted if the Trash toggle is off, and git forgets it. The confirmation counts uncommitted changes and open terminals. Off, a removal still asks about the branch unless the branch toggle settles it.";
 "worktrees.delete-branch" = "Always delete the branch with its worktree";
 "worktrees.delete-branch-info" = "Runs git branch -d once the post-delete hook has run. Off, removing a worktree asks whether the branch goes too. A branch with commits nothing else has is offered again forced.";
 "worktrees.hook-timeout" = "Hook timeout:";
@@ -278,3 +278,5 @@
 "worktrees.prefix-none" = "none";
 "worktrees.seconds" = "seconds";
 "worktrees.sort" = "Sort worktrees:";
+"worktrees.trash-removed" = "Move a removed worktree to the Trash";
+"worktrees.trash-removed-info" = "On, the directory and any uncommitted work can be put back from the Trash. Off, it is deleted outright, for trees too large to keep there. A volume with no Trash deletes it either way.";

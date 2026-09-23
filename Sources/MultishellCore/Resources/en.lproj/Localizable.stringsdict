@@ -112,6 +112,18 @@
       <key>other</key><string>It has %d changed files, kept in the Trash with the directory.</string>
     </dict>
   </dict>
+  <key>removal.changed-files-deleted</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>It has %d changed file, deleted with the directory.</string>
+      <key>other</key><string>It has %d changed files, deleted with the directory.</string>
+    </dict>
+  </dict>
   <key>removal.terminals-closed</key>
   <dict>
     <key>NSStringLocalizedFormatKey</key>

@@ -61,6 +61,10 @@ struct WorktreeSettingsTab: View {
           t("worktrees.delete-branch"), info: t("worktrees.delete-branch-info"),
           isOn: model.setting(
             \.deletesBranchWithWorktree, write: model.setDeletesBranchWithWorktree))
+        InfoToggle(
+          t("worktrees.trash-removed"), info: t("worktrees.trash-removed-info"),
+          isOn: model.setting(
+            \.trashesRemovedWorktrees, write: model.setTrashesRemovedWorktrees))
       }
     }
     .formStyle(.grouped)

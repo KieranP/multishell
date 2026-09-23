@@ -394,12 +394,14 @@ struct DecodingDefaultsTests {
     let workspace = try decode(Workspace.self, #"{ "projects": [] }"#)
     #expect(workspace.confirmsWorktreeRemoval, "asks until told not to")
     #expect(!workspace.deletesBranchWithWorktree, "the branch stays until told otherwise")
+    #expect(workspace.trashesRemovedWorktrees, "the Trash until told to delete")
 
     let chosen = try decode(
       Workspace.self,
-      #"{ "confirmsWorktreeRemoval": false, "deletesBranchWithWorktree": true, "defaultShell": "custom", "customShellPath": "/opt/nu" }"#
+      #"{ "confirmsWorktreeRemoval": false, "deletesBranchWithWorktree": true, "trashesRemovedWorktrees": false, "defaultShell": "custom", "customShellPath": "/opt/nu" }"#
     )
     #expect(!chosen.confirmsWorktreeRemoval && chosen.deletesBranchWithWorktree)
+    #expect(!chosen.trashesRemovedWorktrees)
     #expect(chosen.defaultShell == ShellCatalogue.customID && chosen.customShellPath == "/opt/nu")
   }
 

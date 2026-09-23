@@ -207,6 +207,8 @@ says why these are the rules.
 - **A Trash that takes nothing stops the removal there**, the forget being what
   would unlink a directory still in place: the same suite.
 - **A refused create leaves no container directory**: WorktreeCreationTests.
+- **A confirmed removal trashes or deletes as its dialog said**, though the
+  setting changed while it was up: AppModelGitTests.
 - **The Trash is asked off the main thread**: AppModelHookControlTests, the fake
   Trash recording the thread of each call.
 - **A worktree path holding a control character still reports from zsh**:

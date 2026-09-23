@@ -66,7 +66,7 @@ public struct WorktreeForgetFailure: Error, CustomStringConvertible {
   }
 
   public var description: String {
-    "\(path.path) is in the Trash but git still lists it: \(underlying)"
+    "\(path.path) is gone but git still lists it: \(underlying)"
   }
 }
 
