@@ -61,6 +61,9 @@ at the bottom.
 - **So the announcing types are named and everything else counts as waiting**, a
   deny list, so a question added later raises a dot instead of falling silently
   out.
+- **The list is read from the agent's own**, plus two types it sends outside it.
+  A type saying the task will not go on without the user, such as a usage limit
+  reset waiting for Return, asks.
 - **Sorted from the payload's own type, not the matcher the event takes**: a
   matcher is written into the settings file, so it would reach only installs
   made after the build that adds it, and an agent old enough to send no type
@@ -216,17 +219,26 @@ at the bottom.
   branch name someone else pushed cannot run anything: substitutions, backticks
   and semicolons all arrive as literal characters.
 - **Checked against a real zsh by random values** over quotes, backslashes,
-  shell metacharacters, a space and a newline, on both paths: every one arrived
-  as the one argument meant and none ran.
+  shell metacharacters, a space and a newline: every one arrived as the one
+  argument meant and none ran.
 - **The values are not only branches**, which git keeps tame, but a worktree
   name the user typed and paths that are whatever the directories are called.
 - **The same quoting is why a home shortcut or a glob in a flag line is
   literal**, which is the cost: a path there means a placeholder or the custom
   command, which is raw shell by definition.
-- **In that custom line a placeholder the user has already quoted ends up
-  double-quoted**, its value carrying the quotes; the editor placeholder has
-  always behaved that way and the flags field does not, having split the line
-  first.
+- **The custom command and the custom editor are shell text**, so a value
+  written into them is shell text too: quoted where it landed, a `$(…)` in a
+  branch ran anyway inside the user's own quotes, which close or ignore ours.
+- **So each placeholder there reads a variable** (`MULTISHELL_BRANCH` and the
+  rest, named as the hook variables are where one means the same), set by `env`
+  around the login shell so no shell parses a value on the way.
+- **The read is quoted for where the placeholder sits**: the user's quote is
+  closed, the variable read double-quoted, the quote reopened. That one spelling
+  is one word in sh, zsh, bash, dash, tcsh and fish, checked against the first
+  five with hostile values.
+- **A wrong guess about the quoting costs a split word, never a command**: a
+  placeholder inside `$(…)` inside double quotes reads unquoted, and bash splits
+  it, but nothing in a value is ever run.
 - **Neither flags field carries prompt text.** A greyed example in an empty
   field reads as what the agent is already being started with, and the field's
   whole job is to say what is being passed.
@@ -310,11 +322,27 @@ at the bottom.
   than minting one, which would have left the chip counting tool calls.
 - **Per agent, from what each says to a hook.** One spells the two events as the
   first does, behind its own feature flag.
-- **One names a worker by name at the start and by name and id at the end**, so
-  the name is the key at both ends and two workers of one kind are one entry.
-- **That entry counts its starts and takes as many ends**, the alternative being
-  a Done paid while the second is still working; the chip counts workers rather
-  than places, so it says two where the list holds one row.
+- **One runs a subagent as a conversation of its own**, which fires its own
+  prompt, tool calls and Stop under its own conversation id and no worker id.
+  Read as the agent's, its Stop put the pane at Done mid-turn, once per worker.
+- **So the pane keeps its own conversation's id**, taken from the first report,
+  a session start or a Stop, and a report under any other id is a worker keyed
+  by it. Its end names that same id as the worker's, so the two meet.
+- **Its Stop is told apart without that memory**: the transcript it names is
+  filed under its parent's id and never names its own. The helper drops it, the
+  end following at once.
+- **Not by the transcript's directory**, though that is where the id sits today:
+  another agent names the file instead, and under that layout the directory rule
+  would have dropped every one of the pane's own Stops.
+- **Its start is not asked for**: it arrives in the agent's other spelling,
+  which names no id, and one keyed by name alone would never be ended. The
+  worker goes on at its own first event instead, so the chip shows no kind.
+- **A new conversation of the pane's that sends no session start reads as a
+  worker until its Stop**, whose own transcript says it is the pane's; the place
+  it held goes then. Cost: Working all that turn, which it was anyway.
+- **A start repeated under one id counts its starts and takes as many ends**,
+  the alternative being a Done paid while the second is still working; the chip
+  counts workers rather than places, so it says two where the list holds one.
 - **Nothing says which of them a later report came from**, so neither a tool
   call nor an end under a shared place answers a prompt raised there while
   another worker is on it. Cost: a prompt the asking worker answered stays until

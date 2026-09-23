@@ -1,8 +1,8 @@
 import Foundation
-import MultishellCore
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellCore
 
 @Suite
 struct AgentLaunchTests {
@@ -21,11 +21,25 @@ struct AgentLaunchTests {
   }
 
   @Test func aCustomLineIsUsedAsTypedAndBlankMeansNothing() {
-    #expect(AgentLaunch.command(customLine: "  ", shell: zsh, exec: "exec /bin/zsh -l") == nil)
+    #expect(
+      AgentLaunch.command(customLine: ShellLine(text: "  "), shell: zsh, exec: "exec /bin/zsh -l")
+        == nil)
     #expect(
       AgentLaunch.command(
-        customLine: " my-agent --model x \n", shell: zsh, exec: "exec /bin/zsh -l")?
-        .last == "my-agent --model x; exec /bin/zsh -l")
+        customLine: ShellLine(text: " my-agent --model x \n"), shell: zsh,
+        exec: "exec /bin/zsh -l")
+        == ["/bin/zsh", "-l", "-i", "-c", "my-agent --model x; exec /bin/zsh -l"])
+  }
+
+  @Test func theValuesACustomLineReadsAreSetAroundTheShellByEnv() {
+    let line = ShellLine(
+      text: #"my-agent --name "$MULTISHELL_BRANCH""#,
+      environment: ["MULTISHELL_BRANCH": "feat$(x)", "MULTISHELL_PROJECT_NAME": "demo"])
+    #expect(
+      AgentLaunch.command(customLine: line, shell: zsh, exec: "exec /bin/zsh -l") == [
+        "/usr/bin/env", "MULTISHELL_BRANCH=feat$(x)", "MULTISHELL_PROJECT_NAME=demo",
+        "/bin/zsh", "-l", "-i", "-c", #"my-agent --name "$MULTISHELL_BRANCH"; exec /bin/zsh -l"#,
+      ])
   }
 
   /// A dropped file is named to the agent the way its prompt reads one;

@@ -276,6 +276,32 @@ struct RepositoryContainmentTests {
         directory: repository.appendingPathComponent("trees"), under: repository))
   }
 
+  @Test func aCommittedSymlinkCannotCarryADirectoryNotYetMadeOutOfTheCheckout() throws {
+    let root = try Scratch.directory("confined-unmade")
+    defer { try? FileManager.default.removeItem(at: root) }
+    let repository = root.appendingPathComponent("repo", isDirectory: true)
+    let elsewhere = root.appendingPathComponent("elsewhere", isDirectory: true)
+    try FileManager.default.createDirectory(at: repository, withIntermediateDirectories: true)
+    try FileManager.default.createDirectory(at: elsewhere, withIntermediateDirectories: true)
+    try FileManager.default.createSymbolicLink(
+      at: repository.appendingPathComponent("wt"), withDestinationURL: elsewhere)
+    try FileManager.default.createSymbolicLink(
+      at: repository.appendingPathComponent("dangling"),
+      withDestinationURL: root.appendingPathComponent("nowhere"))
+
+    #expect(
+      !RepositoryContainment.holds(
+        directory: repository.appendingPathComponent("wt/new/deeper"), under: repository))
+    #expect(
+      !RepositoryContainment.holds(
+        directory: repository.appendingPathComponent("dangling/new"), under: repository),
+      "a link to nothing yet could be made to point anywhere")
+    #expect(
+      RepositoryContainment.holds(
+        directory: repository.appendingPathComponent("trees/new"), under: repository),
+      "a plain directory still to be made stays inside")
+  }
+
   @Test func theRefusedDirectoryLeavesTheReadersOwnValueStanding() {
     var shared = SharedProjectSettings(worktreeDirectory: "~/.claude/skills", branchPrefix: "team/")
     shared = shared.confined(to: project)

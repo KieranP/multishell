@@ -416,7 +416,7 @@ struct HelperTests {
       to: userZdotdir.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
 
     let session = UUID()
-    var env = ProcessInfo.processInfo.environment
+    var env = Scratch.shellEnvironment
     env["ZDOTDIR"] = integration.path
     env["MULTISHELL_USER_ZDOTDIR"] = userZdotdir.path
     env["MULTISHELL_SOCKET"] = path.path
@@ -483,7 +483,7 @@ struct HelperTests {
         to: integration.appendingPathComponent(name), atomically: true, encoding: .utf8)
     }
 
-    var env = ProcessInfo.processInfo.environment
+    var env = Scratch.shellEnvironment
     env["ZDOTDIR"] = integration.path
     env["MULTISHELL_USER_ZDOTDIR"] = userZdotdir.path
     env["MULTISHELL_SOCKET"] = path.path
@@ -527,7 +527,7 @@ struct HelperTests {
     try ShellStateHooks.bashInitFile(helper: Self.requireHelper().path)
       .write(to: initFile, atomically: true, encoding: .utf8)
 
-    var env = ProcessInfo.processInfo.environment
+    var env = Scratch.shellEnvironment
     env["HOME"] = home.path
     env["MULTISHELL_SOCKET"] = path.path
     env["MULTISHELL_SESSION"] = UUID().uuidString
@@ -573,7 +573,7 @@ struct HelperTests {
       to: home.appendingPathComponent(".bashrc"), atomically: true, encoding: .utf8)
 
     let session = UUID()
-    var env = ProcessInfo.processInfo.environment
+    var env = Scratch.shellEnvironment
     env["HOME"] = home.path
     env["MULTISHELL_SOCKET"] = path.path
     env["MULTISHELL_SESSION"] = session.uuidString
@@ -623,7 +623,7 @@ struct HelperTests {
     try ShellStateHooks.bashInitFile(helper: Self.requireHelper().path)
       .write(to: initFile, atomically: true, encoding: .utf8)
 
-    var env = ProcessInfo.processInfo.environment
+    var env = Scratch.shellEnvironment
     env["HOME"] = home.path
     env["MULTISHELL_SOCKET"] = path.path
     env["MULTISHELL_SESSION"] = UUID().uuidString
@@ -675,7 +675,7 @@ struct HelperTests {
     try "trap 'printf x >> \(marks.path)' DEBUG\n".write(
       to: home.appendingPathComponent(".bashrc"), atomically: true, encoding: .utf8)
 
-    var env = ProcessInfo.processInfo.environment
+    var env = Scratch.shellEnvironment
     env["HOME"] = home.path
     env["MULTISHELL_SOCKET"] = home.appendingPathComponent("nowhere.sock").path
     env["MULTISHELL_SESSION"] = UUID().uuidString
@@ -710,7 +710,7 @@ struct HelperTests {
     try ShellStateHooks.bashInitFile(helper: Self.requireHelper().path)
       .write(to: initFile, atomically: true, encoding: .utf8)
 
-    var env = ProcessInfo.processInfo.environment
+    var env = Scratch.shellEnvironment
     env["HOME"] = home.path
     env["MULTISHELL_SOCKET"] = home.appendingPathComponent("nowhere.sock").path
     env["MULTISHELL_SESSION"] = UUID().uuidString
@@ -766,7 +766,7 @@ struct HelperTests {
     try "export MULTISHELL_USER_RC_LOADED=relocated\n".write(
       to: relocated.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
 
-    var env = ProcessInfo.processInfo.environment
+    var env = Scratch.shellEnvironment
     env["HOME"] = home.path
     env["ZDOTDIR"] = integration.path
     env.removeValue(forKey: "MULTISHELL_USER_ZDOTDIR")
@@ -862,7 +862,7 @@ struct HelperTests {
     }
 
     let worktree = "/w/re\tpo\nsit\"or\\y"
-    var env = ProcessInfo.processInfo.environment
+    var env = Scratch.shellEnvironment
     env["ZDOTDIR"] = integration.path
     env["MULTISHELL_USER_ZDOTDIR"] = userZdotdir.path
     env["MULTISHELL_SOCKET"] = path.path

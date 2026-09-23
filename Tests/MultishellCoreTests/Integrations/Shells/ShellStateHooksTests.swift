@@ -33,6 +33,71 @@ struct ZshIntegrationTests {
     #expect(zshrc.contains(capture) == false, "the last file hands it back instead")
   }
 
+  private func historyFile(
+    userZdotdir: URL? = nil, userZshrc: String? = nil
+  ) throws -> (
+    file: String, home: URL, integration: URL
+  ) {
+    let root = try Scratch.directory("histfile")
+    let home = root.appendingPathComponent("home", isDirectory: true)
+    let integration = root.appendingPathComponent("integration", isDirectory: true)
+    for directory in [home, integration] + (userZdotdir.map { [$0] } ?? []) {
+      try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    }
+    for (name, contents) in ShellStateHooks.zshIntegrationFiles(helper: "/x/multishell") {
+      try contents.write(
+        to: integration.appendingPathComponent(name), atomically: true, encoding: .utf8)
+    }
+    if let userZshrc {
+      try userZshrc.write(
+        to: (userZdotdir ?? home).appendingPathComponent(".zshrc"), atomically: true,
+        encoding: .utf8)
+    }
+    var environment = [
+      "HOME": home.path, "ZDOTDIR": integration.path, "PATH": "/usr/bin:/bin", "TERM": "dumb",
+    ]
+    environment["MULTISHELL_USER_ZDOTDIR"] = userZdotdir?.path
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/bin/zsh")
+    process.arguments = ["-l", "-i", "-c", "print -r -- \"$HISTFILE\""]
+    process.environment = environment
+    process.currentDirectoryURL = home
+    let output = Pipe()
+    process.standardOutput = output
+    process.standardError = FileHandle.nullDevice
+    try process.run()
+    process.waitUntilExit()
+    let file = String(decoding: output.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+    return (file.trimmingCharacters(in: .newlines), home, integration)
+  }
+
+  private var systemRcSetsHistory: Bool {
+    (try? String(contentsOfFile: "/etc/zshrc", encoding: .utf8))?.contains("HISTFILE=") == true
+  }
+
+  @Test func aTabsHistoryGoesWhereTheUsersOwnShellWouldPutIt() throws {
+    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
+    let plain = try historyFile()
+    defer { try? FileManager.default.removeItem(at: plain.home.deletingLastPathComponent()) }
+    #expect(!plain.file.hasPrefix(plain.integration.path), "\(plain.file)")
+    if systemRcSetsHistory {
+      #expect(plain.file == plain.home.appendingPathComponent(".zsh_history").path)
+    }
+
+    let root = try Scratch.directory("histfile-user")
+    defer { try? FileManager.default.removeItem(at: root) }
+    let own = root.appendingPathComponent("zdot", isDirectory: true)
+    let relocated = try historyFile(userZdotdir: own)
+    defer { try? FileManager.default.removeItem(at: relocated.home.deletingLastPathComponent()) }
+    if systemRcSetsHistory {
+      #expect(relocated.file == own.appendingPathComponent(".zsh_history").path)
+    }
+
+    let chosen = try historyFile(userZshrc: "HISTFILE=/elsewhere/history\n")
+    defer { try? FileManager.default.removeItem(at: chosen.home.deletingLastPathComponent()) }
+    #expect(chosen.file == "/elsewhere/history", "the user's own setting stands")
+  }
+
   @Test func theSessionGetsZDOTDIROnlyWhenGeneratedAndTheShellIsZsh() throws {
     let dir = try directoryThatExists()
     defer { try? FileManager.default.removeItem(at: dir) }

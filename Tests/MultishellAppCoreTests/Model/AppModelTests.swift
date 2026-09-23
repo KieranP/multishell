@@ -256,9 +256,11 @@ struct AppModelTests {
       worktreeID: h.feature.id, workingDirectory: h.feature.path, title: "Agent",
       agentID: AgentCatalogue.customID)
 
+    let command = h.model.prepared(session).command
+    #expect(command?.last == #"my-agent --name="$MULTISHELL_WORKTREE_NAME"; exec /bin/sh -l"#)
     #expect(
-      h.model.prepared(session).command?.last == "my-agent --name='The fix'; exec /bin/sh -l",
-      "quoted where it lands, the custom line being run as text")
+      command?.prefix(2) == ["/usr/bin/env", "MULTISHELL_WORKTREE_NAME=The fix"],
+      "the value is handed over around the shell, never written into its line")
   }
 
   /// Nothing that acts on the tab in front of the user acts at all while the
@@ -307,7 +309,9 @@ struct AppModelTests {
     #expect(h.model.workspace.selectedWorktreeID == h.main.id, "the tab is brought on screen")
     #expect(h.model.liveTerminalCount == 1)
     #expect(h.engine.opened.last?.command?.last?.hasPrefix("my-editor ") == true)
-    #expect(h.engine.opened.last?.command?.last?.contains(h.main.path.lastPathComponent) == true)
+    #expect(
+      h.engine.opened.last?.command?.contains("MULTISHELL_WORKTREE_PATH=\(h.main.path.path)")
+        == true)
 
     h.model.setPreferredEditor("vscode")
     h.model.openInEditor(h.main)

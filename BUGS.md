@@ -17,228 +17,144 @@ wrong. Those come last within their rank.
 Last checked in full on 2026-09-23 against 61cec24, with claude 2.1.280, codex
 0.155.1, gemini 0.46.0, copilot 1.0.87 and opencode 1.18.30.
 
-| #   | Effect | What                                                                                                         |
-| --- | ------ | ------------------------------------------------------------------------------------------------------------ |
-| 001 | High   | A branch name runs code through a quoted placeholder in the custom agent or editor command                   |
-| 002 | High   | A committed symlink carries the worktree directory out of the checkout when the directory does not exist yet |
-| 003 | Medium | A zsh tab's history goes to the integration directory, not the user's own file                               |
-| 004 | Medium | A Copilot subagent's own prompt and Stop read as the agent's, so the pane goes Done mid-turn                 |
-| 005 | Medium | An OpenCode permission prompt reads `[object Object]` before its pattern                                     |
-| 006 | Medium | [Unconfirmed] Parts of three agents' hook files have never been watched                                      |
-| 007 | Medium | [Unconfirmed] Four announcing Claude notification types are missing from the deny list                       |
-| 008 | Low    | Removing a stale worktree record trashes whatever directory now sits at its path                             |
-| 009 | Low    | A pane attached to another pane's OpenCode server lands the dot on the server's tab                          |
-| 010 | Low    | A subagent roster with no matching stop grows without bound                                                  |
-| 011 | Low    | The 500-character cap guards `message` and none of the other reported strings                                |
-| 012 | Low    | A recycled pid between the hangup and the kill sends SIGKILL to a stranger                                   |
-| 013 | Low    | The short version string is a date and a hash, not a version                                                 |
-| 014 | Low    | A shell directory variable set system-wide leaves the tab without hooks                                      |
-| 015 | Low    | A greeting line shaped like an assignment swallows the login shell's first variable                          |
-| 016 | Low    | A tab drag released where nothing takes it never ends                                                        |
-| 017 | Low    | A repository's file is read from the project path, which a bare repository has no checkout at                |
-| 018 | Low    | A git under the floor fails the worktree list with no fallback                                               |
-| 019 | Low    | A tag named exactly like the base decides every merge read                                                   |
-| 020 | Low    | A hand-written hook group mixing the two shapes survives Remove, or loses the user's hook                    |
-| 021 | Low    | Saving stays off for the session after an unreadable, unmovable state file                                   |
-| 022 | Low    | Two ways past the under-construction hold-back remain                                                        |
-| 023 | Low    | Two overlapping creates share one Cancel                                                                     |
-| 024 | Low    | A user's list entry naming somewhere else places nothing, silently                                           |
-| 025 | Low    | Two agents left the catalogue and a stored id still names them                                               |
-| 026 | Low    | A copy that failed to quit after handing over leaves its generated config behind                             |
-| 027 | Low    | Neither a file list nor the checkout has a timeout                                                           |
-| 028 | Low    | A cancelled create leaves its new branch, so the same name cannot be retried                                 |
-| 029 | Low    | An include line in the user's Ghostty config is not followed                                                 |
-| 030 | Low    | Click-to-move does not work on the later lines of a multi-line buffer                                        |
-| 031 | Low    | On bash before 5.1, an array `PROMPT_COMMAND` in the user's rc silences every hook                           |
-| 032 | Low    | An owed Done can pay in the middle of the next turn under an older helper                                    |
-| 033 | Low    | A displaced failure comes back with a fresh age                                                              |
-| 034 | Low    | Codex clamps two of our hook timeouts and warns at every launch                                              |
-| 035 | Low    | Copilot's prompt mode sends SessionStart after the first prompt, clearing Working                            |
-| 036 | Low    | A project hook runs wherever the user's rc file leaves the shell, not in the worktree                        |
-| 037 | Low    | A misspelt `--agent` on `install-agent-hooks` writes Claude's hooks                                          |
-| 038 | Low    | [Unconfirmed] The CLI install's administrator step under the hardened runtime                                |
-| 039 | Low    | [Unconfirmed] A promised drop counts every item as one file                                                  |
-| 040 | Low    | [Unconfirmed] Neither half of the banner grouping has been seen on screen                                    |
-| 041 | Low    | [Unconfirmed] An interrupted Claude turn fires no hook                                                       |
-| 042 | Low    | [Unconfirmed] The plugin's map of child ids keeps a child that never ends                                    |
-| 043 | Low    | [Unconfirmed] A resumed OpenCode subagent's first message would empty the roster                             |
-| 044 | Low    | [Unconfirmed] OpenCode reports Done twice at the end of each turn                                            |
-| 045 | Low    | [Unconfirmed] Under fish, two dropped files named for it type a command that runs on Return                  |
-| 046 | CI     | The destructive-alert suite fails on macOS 27: an alert button drops its red bezel                           |
-| 047 | CI     | CI never runs `make-app.sh`, so bundling and signing can break with it green                                 |
-| 048 | CI     | CI builds under Xcode 16.4, below the floor of 26                                                            |
-| 049 | CI     | CI has no concurrency cancellation and no job timeouts                                                       |
-| 050 | CI     | CI runs neither the Markdown formatter nor a shell linter                                                    |
-| 051 | CI     | Nine tests sleep a fixed interval and then assert a count did not grow                                       |
-| 052 | CI     | Two suites read the process-wide descriptor count alongside every other suite                                |
-| 053 | CI     | Two watcher tests sample the descriptor count over a fifth of a second                                       |
-| 054 | CI     | Seven main-actor AppKit suites run beside each other, one spinning the run loop                              |
-| 055 | CI     | A parser test asserts two counts are not negative, which cannot fail                                         |
-| 056 | CI     | Nine tests skip when node, python3 or a comma locale is absent, three of them as passes                      |
-| 057 | CI     | Nothing tests the four appearance setters                                                                    |
-| 058 | CI     | The hook-shell tests run the developer's own login shell, and two pass without running under fish or tcsh    |
-| 059 | CI     | A watcher test waits out a stale unlink callback with a 900 ms sleep                                         |
-| 060 | CI     | A shortcut left out of `AppShortcuts.all` passes every test                                                  |
-| 061 | CI     | The project-removal trace exempts two caches `forgetWorktrees` now clears                                    |
-| 062 | CI     | [Unconfirmed] The bundle script has run through xcodebuild only under the newer Xcode                        |
-| 063 | CI     | [Unconfirmed] Nothing drives a terminal host against a real child                                            |
-| 064 | CI     | [Unconfirmed] Linux has never been compiled, and its counted phrases would misbehave                         |
-| 065 | Perf   | One fetch of the trunk re-asks every branch's merge verdict                                                  |
-| 066 | Perf   | `git status` runs for worktrees that are collapsed or filtered out of sight                                  |
-| 067 | Perf   | A worktree the app creates is read about four times slower on every poll until its index is written          |
-| 068 | Perf   | Every git call pays about 3.6 ms for the `/usr/bin/git` shim                                                 |
-| 069 | Perf   | The untracked-line count re-reads up to 500 files and 8 MiB on every read                                    |
-| 070 | Perf   | Theme colours are parsed out of hex on every access                                                          |
-| 071 | Perf   | Rows hold fresh closures, so SwiftUI can never skip one                                                      |
-| 072 | Perf   | The branch scan spawns a git process per project per tick, serially                                          |
-| 073 | Perf   | A `cwd`-only report resolves every worktree's symlinks on the main actor                                     |
-| 074 | Perf   | The agent board is rebuilt whole on every body evaluation                                                    |
-| 075 | Perf   | The whole tab strip sits inside a `GeometryReader`                                                           |
-| 076 | Perf   | The sidebar filter folds every worktree name per keystroke                                                   |
-| 077 | Perf   | Row order is recomputed on every sidebar rebuild                                                             |
-| 078 | Perf   | The directory watcher stats and opens directories on the main actor                                          |
-| 079 | Perf   | The dropped-file sweep runs synchronously on the main actor at launch                                        |
-| 080 | Perf   | A drag over a pane re-reads the pasteboard on every mouse move                                               |
-| 081 | Perf   | The directory check before a shell starts runs on the main thread                                            |
-| 082 | Perf   | A bash tab spawns the helper twice per command, inline                                                       |
-| 083 | Perf   | zsh forks twice per command to build the JSON it sends                                                       |
-| 084 | Perf   | Export writes, stats and confines the shared file on the main actor                                          |
-| 085 | Perf   | [Unconfirmed] A sidebar drag writes its drop target at pointer rate                                          |
-| 086 | Perf   | [Unconfirmed] A working Claude's title spinner sets off a status read of its worktree about once a second    |
-| 087 | UI/UX  | Five icon-only controls carry no accessibility label                                                         |
-| 088 | UI/UX  | Project settings' Hooks tab overflows the window it opens in                                                 |
-| 089 | UI/UX  | While the board is up, two commands act on a worktree nothing on screen names                                |
-| 090 | UI/UX  | English only, so no layout has been seen in another language                                                 |
-| 091 | UI/UX  | A number inside a phrase carries no locale                                                                   |
-| 092 | UI/UX  | A tab title persisted before a language change keeps the old word                                            |
-| 093 | UI/UX  | Agent settings is the one page nothing holds                                                                 |
-| 094 | UI/UX  | The find bar shows no match count and no wrapped mark                                                        |
-| 095 | UI/UX  | A turn over the New Tab or split buttons scrolls nothing                                                     |
-| 096 | UI/UX  | An edit to the user's Ghostty config lands only at the next launch                                           |
-| 097 | UI/UX  | A large git badge overflows a row or card at its minimum width                                               |
-| 098 | UI/UX  | The Hooks tab's caption is wrong for csh and tcsh, and for shells the runner swaps for `/bin/sh`             |
-| 099 | UI/UX  | [Unconfirmed] The rename field's accessibility container under VoiceOver                                     |
-| 100 | UI/UX  | [Unconfirmed] The tab strip's two split buttons have never been watched on a screen                          |
-| 101 | UI/UX  | [Unconfirmed] A cancelled divider drag                                                                       |
-| 102 | UI/UX  | [Unconfirmed] A wheel that sends lines, and a trackpad's vertical turn                                       |
-| 103 | UI/UX  | [Unconfirmed] Whether a reused surface frame leaves the keyboard in the right place                          |
-| 104 | UI/UX  | [Unconfirmed] The notifications settings page has never been seen on screen                                  |
-| 105 | UI/UX  | [Unconfirmed] The settings window is as tall as its tallest page                                             |
-| 106 | UI/UX  | [Unconfirmed] Tab-group drawing is unverified on screen                                                      |
-| 107 | UI/UX  | [Unconfirmed] Whether a SwiftUI overlay composites above the engine's surface                                |
-| 108 | UI/UX  | [Unconfirmed] The find bar has never been seen on a screen                                                   |
-| 109 | UI/UX  | [Unconfirmed] The reordered board card and the git indicator picker have not been seen drawn                 |
-| 110 | UI/UX  | [Unconfirmed] Agents board drawing is unverified on screen                                                   |
-| 111 | UI/UX  | [Unconfirmed] Neither agent-flags row has been seen on screen                                                |
-| 112 | UI/UX  | [Unconfirmed] A click on the blank part of the New Tab menu's frame                                          |
-| 113 | UI/UX  | [Unconfirmed] The subagent chip's popover                                                                    |
-| 114 | UI/UX  | [Unconfirmed] The New Tab menu's rendered agent marks                                                        |
-| 115 | UI/UX  | [Unconfirmed] A later alert layout takes Return off the removal button                                       |
-| 116 | Code   | A view measures the drop indicator's hit split, so nothing tests it                                          |
-| 117 | Code   | `claimedPaths` is read by four tests and nothing in production                                               |
-| 118 | Code   | `warmWorktrees` is absent from the one place per-worktree state is dropped                                   |
-| 119 | Code   | `AppModel+Runtime` is four unrelated concerns under a name that says none                                    |
-| 120 | Code   | Agent, shell and editor detection sits in a file named Agents                                                |
-| 121 | Code   | `WorkspaceStore` writes the same tab index lookup nine times                                                 |
-| 122 | Code   | The two translation test files duplicate their scanner                                                       |
-| 123 | Code   | The window header chrome is written out twice                                                                |
-| 124 | Code   | The centred-caption styling is written out twice                                                             |
-| 125 | Code   | `public` declarations named by no other target                                                               |
-| 126 | Code   | Catalogue keys are split by a stray `s`, which breaks the sort into groups                                   |
-| 127 | Code   | The marks' SVG path parser lives in the Agents view folder                                                   |
-| 128 | Code   | The one-worktree status read applies the bulk read's guards differently                                      |
-| 129 | Code   | The app imports MultishellProcess, which neither manifest gives it                                           |
-| 130 | Code   | A retry and its label are two optionals the alert reads apart                                                |
-| 131 | Code   | Two comments state what the code does not                                                                    |
-| 132 | Code   | Editor launches are built by `AgentLaunch`                                                                   |
-| 133 | Code   | `SocketFailure` and fifteen other types sit in another type's file                                           |
-| 134 | Code   | Seven comments outside the tests run past two lines, and 282 inside them                                     |
-| 135 | Docs   | libintl is LGPL and linked statically, from a libghostty someone else built                                  |
-
-## High
-
-### 001. A branch name runs code through a quoted placeholder in the custom agent or editor command
-
-`AgentFlags.expand` (`AgentFlags.swift:53-55`, `:70`), called from
-`AppModel+Agents.swift:170-173`, and `EditorCatalogue.customCommandLine`
-(`EditorCatalogue.swift:108-114`) drop `ShellQuoting.quote(value)` into the line
-the user wrote, and the login shell runs the result. Inside the user's own
-double quotes the value's single quotes are plain characters, and inside the
-user's single quotes they close and reopen them, so either way a `$(…)` in the
-value runs. git accepts `feat$(date>ran)` as a branch name, and the slug keeps
-it (`WorktreeSettings.swift:55-58` replaces only `/` and space), so `{path}`
-carries it too. Shown against the real `MultishellCore`:
-`expand("echo \"on {{branch}}\"", …)` gave `echo "on 'feat$(date>ran-agent)'"`,
-`customCommandLine("echo \"{path}\"", …)` gave the same shape, and each run
-through `/bin/zsh -c` created its file; a single-quoted placeholder ran too. It
-needs the placeholder quoted, which the help text (app `Localizable.strings:32`)
-invites by saying only that placeholders are filled in, and a local branch
-someone else named, such as a checked-out pull request.
-`Docs/design/agents.md:226-229` calls the doubled quoting cosmetic and
-`:215-217` says a pushed branch cannot run anything; the zsh check at `:218-221`
-never quoted a placeholder. Fix = hand the values over in the environment and
-have the line read `"$MULTISHELL_BRANCH"`, or refuse a placeholder that sits
-inside quotes.
-
-### 002. A committed symlink carries the worktree directory out of the checkout when the directory does not exist yet
-
-`RepositoryContainment.holds(directory:)` (`RepositoryContainment.swift:8-11`)
-checks what `resolvingSymlinksInPath()` gives back, and that returns a path that
-does not exist unchanged, so a symlink partway along is never followed. Before
-the first create the container has not been made, so this is the ordinary case.
-Shown in a scratch repository with `wt -> ../outside` committed and
-`"worktreeDirectory": "wt/new"` in `.multishell.json`: `confined(to:)`
-(`SharedProjectSettings.swift:138-147`) kept it, the trust dialog read `wt/new`,
-and the real `WorktreeCoordinator.add` made the worktree at
-`outside/new/feature`. The re-confine at create
-(`AppModel+SharedSettings.swift:89-99`) calls the same function. The user still
-has to trust the file, but is shown a path that reads as inside the checkout.
-`Docs/design/settings.md:25`, "a committed link cannot carry it out", is wrong
-for any directory not yet made, including the `~/.claude/skills` case at
-`:18-20`. Fix = resolve the deepest ancestor that exists, as
-`WorktreeFiles.deepestExistingAncestor` does, append the rest, then check.
+| #   | Effect | What                                                                                                      |
+| --- | ------ | --------------------------------------------------------------------------------------------------------- |
+| 006 | Medium | [Unconfirmed] Parts of three agents' hook files have never been watched                                   |
+| 008 | Low    | Removing a stale worktree record trashes whatever directory now sits at its path                          |
+| 009 | Low    | A pane attached to another pane's OpenCode server lands the dot on the server's tab                       |
+| 010 | Low    | A subagent roster with no matching stop grows without bound                                               |
+| 011 | Low    | The 500-character cap guards `message` and none of the other reported strings                             |
+| 012 | Low    | A recycled pid between the hangup and the kill sends SIGKILL to a stranger                                |
+| 013 | Low    | The short version string is a date and a hash, not a version                                              |
+| 014 | Low    | A shell directory variable set system-wide leaves the tab without hooks                                   |
+| 015 | Low    | A greeting line shaped like an assignment swallows the login shell's first variable                       |
+| 016 | Low    | A tab drag released where nothing takes it never ends                                                     |
+| 017 | Low    | A repository's file is read from the project path, which a bare repository has no checkout at             |
+| 018 | Low    | A git under the floor fails the worktree list with no fallback                                            |
+| 019 | Low    | A tag named exactly like the base decides every merge read                                                |
+| 020 | Low    | A hand-written hook group mixing the two shapes survives Remove, or loses the user's hook                 |
+| 021 | Low    | Saving stays off for the session after an unreadable, unmovable state file                                |
+| 022 | Low    | Two ways past the under-construction hold-back remain                                                     |
+| 023 | Low    | Two overlapping creates share one Cancel                                                                  |
+| 024 | Low    | A user's list entry naming somewhere else places nothing, silently                                        |
+| 025 | Low    | Two agents left the catalogue and a stored id still names them                                            |
+| 026 | Low    | A copy that failed to quit after handing over leaves its generated config behind                          |
+| 027 | Low    | Neither a file list nor the checkout has a timeout                                                        |
+| 028 | Low    | A cancelled create leaves its new branch, so the same name cannot be retried                              |
+| 029 | Low    | An include line in the user's Ghostty config is not followed                                              |
+| 030 | Low    | Click-to-move does not work on the later lines of a multi-line buffer                                     |
+| 031 | Low    | On bash before 5.1, an array `PROMPT_COMMAND` in the user's rc silences every hook                        |
+| 032 | Low    | An owed Done can pay in the middle of the next turn under an older helper                                 |
+| 033 | Low    | A displaced failure comes back with a fresh age                                                           |
+| 034 | Low    | Codex clamps two of our hook timeouts and warns at every launch                                           |
+| 035 | Low    | Copilot's prompt mode sends SessionStart after the first prompt, clearing Working                         |
+| 036 | Low    | A project hook runs wherever the user's rc file leaves the shell, not in the worktree                     |
+| 037 | Low    | A misspelt `--agent` on `install-agent-hooks` writes Claude's hooks                                       |
+| 136 | Low    | An older app beside this helper leaves a pane Working after a Copilot subagent that outlived its turn     |
+| 137 | Low    | A Copilot worker's chip names no kind                                                                     |
+| 139 | Low    | An installed hook file or plugin keeps what the build that wrote it said                                  |
+| 038 | Low    | [Unconfirmed] The CLI install's administrator step under the hardened runtime                             |
+| 039 | Low    | [Unconfirmed] A promised drop counts every item as one file                                               |
+| 040 | Low    | [Unconfirmed] Neither half of the banner grouping has been seen on screen                                 |
+| 041 | Low    | [Unconfirmed] An interrupted Claude turn fires no hook                                                    |
+| 042 | Low    | [Unconfirmed] The plugin's map of child ids keeps a child that never ends                                 |
+| 043 | Low    | [Unconfirmed] A resumed OpenCode subagent's first message would empty the roster                          |
+| 044 | Low    | [Unconfirmed] OpenCode reports Done twice at the end of each turn                                         |
+| 045 | Low    | [Unconfirmed] Under fish, two dropped files named for it type a command that runs on Return               |
+| 138 | Low    | [Unconfirmed] An app started while a Copilot subagent runs takes it for the pane's own                    |
+| 046 | CI     | The destructive-alert suite fails on macOS 27: an alert button drops its red bezel                        |
+| 047 | CI     | CI never runs `make-app.sh`, so bundling and signing can break with it green                              |
+| 048 | CI     | CI builds under Xcode 16.4, below the floor of 26                                                         |
+| 049 | CI     | CI has no concurrency cancellation and no job timeouts                                                    |
+| 050 | CI     | CI runs neither the Markdown formatter nor a shell linter                                                 |
+| 051 | CI     | Nine tests sleep a fixed interval and then assert a count did not grow                                    |
+| 052 | CI     | Two suites read the process-wide descriptor count alongside every other suite                             |
+| 053 | CI     | Two watcher tests sample the descriptor count over a fifth of a second                                    |
+| 054 | CI     | Seven main-actor AppKit suites run beside each other, one spinning the run loop                           |
+| 055 | CI     | A parser test asserts two counts are not negative, which cannot fail                                      |
+| 056 | CI     | Nine tests skip when node, python3 or a comma locale is absent, three of them as passes                   |
+| 057 | CI     | Nothing tests the four appearance setters                                                                 |
+| 058 | CI     | The hook-shell tests run the developer's own login shell, and two pass without running under fish or tcsh |
+| 059 | CI     | A watcher test waits out a stale unlink callback with a 900 ms sleep                                      |
+| 060 | CI     | A shortcut left out of `AppShortcuts.all` passes every test                                               |
+| 061 | CI     | The project-removal trace exempts two caches `forgetWorktrees` now clears                                 |
+| 140 | CI     | A process-ancestry test failed once in six runs, reading a child before its arguments were set            |
+| 062 | CI     | [Unconfirmed] The bundle script has run through xcodebuild only under the newer Xcode                     |
+| 063 | CI     | [Unconfirmed] Nothing drives a terminal host against a real child                                         |
+| 064 | CI     | [Unconfirmed] Linux has never been compiled, and its counted phrases would misbehave                      |
+| 065 | Perf   | One fetch of the trunk re-asks every branch's merge verdict                                               |
+| 066 | Perf   | `git status` runs for worktrees that are collapsed or filtered out of sight                               |
+| 067 | Perf   | A worktree the app creates is read about four times slower on every poll until its index is written       |
+| 068 | Perf   | Every git call pays about 3.6 ms for the `/usr/bin/git` shim                                              |
+| 069 | Perf   | The untracked-line count re-reads up to 500 files and 8 MiB on every read                                 |
+| 070 | Perf   | Theme colours are parsed out of hex on every access                                                       |
+| 071 | Perf   | Rows hold fresh closures, so SwiftUI can never skip one                                                   |
+| 072 | Perf   | The branch scan spawns a git process per project per tick, serially                                       |
+| 073 | Perf   | A `cwd`-only report resolves every worktree's symlinks on the main actor                                  |
+| 074 | Perf   | The agent board is rebuilt whole on every body evaluation                                                 |
+| 075 | Perf   | The whole tab strip sits inside a `GeometryReader`                                                        |
+| 076 | Perf   | The sidebar filter folds every worktree name per keystroke                                                |
+| 077 | Perf   | Row order is recomputed on every sidebar rebuild                                                          |
+| 078 | Perf   | The directory watcher stats and opens directories on the main actor                                       |
+| 079 | Perf   | The dropped-file sweep runs synchronously on the main actor at launch                                     |
+| 080 | Perf   | A drag over a pane re-reads the pasteboard on every mouse move                                            |
+| 081 | Perf   | The directory check before a shell starts runs on the main thread                                         |
+| 082 | Perf   | A bash tab spawns the helper twice per command, inline                                                    |
+| 083 | Perf   | zsh forks twice per command to build the JSON it sends                                                    |
+| 084 | Perf   | Export writes, stats and confines the shared file on the main actor                                       |
+| 085 | Perf   | [Unconfirmed] A sidebar drag writes its drop target at pointer rate                                       |
+| 086 | Perf   | [Unconfirmed] A working Claude's title spinner sets off a status read of its worktree about once a second |
+| 087 | UI/UX  | Five icon-only controls carry no accessibility label                                                      |
+| 088 | UI/UX  | Project settings' Hooks tab overflows the window it opens in                                              |
+| 089 | UI/UX  | While the board is up, two commands act on a worktree nothing on screen names                             |
+| 090 | UI/UX  | English only, so no layout has been seen in another language                                              |
+| 091 | UI/UX  | A number inside a phrase carries no locale                                                                |
+| 092 | UI/UX  | A tab title persisted before a language change keeps the old word                                         |
+| 093 | UI/UX  | Agent settings is the one page nothing holds                                                              |
+| 094 | UI/UX  | The find bar shows no match count and no wrapped mark                                                     |
+| 095 | UI/UX  | A turn over the New Tab or split buttons scrolls nothing                                                  |
+| 096 | UI/UX  | An edit to the user's Ghostty config lands only at the next launch                                        |
+| 097 | UI/UX  | A large git badge overflows a row or card at its minimum width                                            |
+| 098 | UI/UX  | The Hooks tab's caption is wrong for csh and tcsh, and for shells the runner swaps for `/bin/sh`          |
+| 099 | UI/UX  | [Unconfirmed] The rename field's accessibility container under VoiceOver                                  |
+| 100 | UI/UX  | [Unconfirmed] The tab strip's two split buttons have never been watched on a screen                       |
+| 101 | UI/UX  | [Unconfirmed] A cancelled divider drag                                                                    |
+| 102 | UI/UX  | [Unconfirmed] A wheel that sends lines, and a trackpad's vertical turn                                    |
+| 103 | UI/UX  | [Unconfirmed] Whether a reused surface frame leaves the keyboard in the right place                       |
+| 104 | UI/UX  | [Unconfirmed] The notifications settings page has never been seen on screen                               |
+| 105 | UI/UX  | [Unconfirmed] The settings window is as tall as its tallest page                                          |
+| 106 | UI/UX  | [Unconfirmed] Tab-group drawing is unverified on screen                                                   |
+| 107 | UI/UX  | [Unconfirmed] Whether a SwiftUI overlay composites above the engine's surface                             |
+| 108 | UI/UX  | [Unconfirmed] The find bar has never been seen on a screen                                                |
+| 109 | UI/UX  | [Unconfirmed] The reordered board card and the git indicator picker have not been seen drawn              |
+| 110 | UI/UX  | [Unconfirmed] Agents board drawing is unverified on screen                                                |
+| 111 | UI/UX  | [Unconfirmed] Neither agent-flags row has been seen on screen                                             |
+| 112 | UI/UX  | [Unconfirmed] A click on the blank part of the New Tab menu's frame                                       |
+| 113 | UI/UX  | [Unconfirmed] The subagent chip's popover                                                                 |
+| 114 | UI/UX  | [Unconfirmed] The New Tab menu's rendered agent marks                                                     |
+| 115 | UI/UX  | [Unconfirmed] A later alert layout takes Return off the removal button                                    |
+| 116 | Code   | A view measures the drop indicator's hit split, so nothing tests it                                       |
+| 117 | Code   | `claimedPaths` is read by four tests and nothing in production                                            |
+| 118 | Code   | `warmWorktrees` is absent from the one place per-worktree state is dropped                                |
+| 119 | Code   | `AppModel+Runtime` is four unrelated concerns under a name that says none                                 |
+| 120 | Code   | Agent, shell and editor detection sits in a file named Agents                                             |
+| 121 | Code   | `WorkspaceStore` writes the same tab index lookup nine times                                              |
+| 122 | Code   | The two translation test files duplicate their scanner                                                    |
+| 123 | Code   | The window header chrome is written out twice                                                             |
+| 124 | Code   | The centred-caption styling is written out twice                                                          |
+| 125 | Code   | `public` declarations named by no other target                                                            |
+| 126 | Code   | Catalogue keys are split by a stray `s`, which breaks the sort into groups                                |
+| 127 | Code   | The marks' SVG path parser lives in the Agents view folder                                                |
+| 128 | Code   | The one-worktree status read applies the bulk read's guards differently                                   |
+| 129 | Code   | The app imports MultishellProcess, which neither manifest gives it                                        |
+| 130 | Code   | A retry and its label are two optionals the alert reads apart                                             |
+| 131 | Code   | Two comments state what the code does not                                                                 |
+| 132 | Code   | Editor launches are built by `AgentLaunch`                                                                |
+| 133 | Code   | `SocketFailure` and fifteen other types sit in another type's file                                        |
+| 134 | Code   | Seven comments outside the tests run past two lines, and 282 inside them                                  |
+| 135 | Docs   | libintl is LGPL and linked statically, from a libghostty someone else built                               |
 
 ## Medium
-
-### 003. A zsh tab's history goes to the integration directory, not the user's own file
-
-macOS's `/etc/zshrc:16` sets `HISTFILE=${ZDOTDIR:-$HOME}/.zsh_history`, and it
-runs between our `.zprofile` and our `.zshrc`. Our `.zprofile` hands ZDOTDIR
-back to our own directory (`ShellStateHooks.swift:52`, `restoreToSelf`), so at
-that moment it names `~/Library/Application Support/Multishell/integration/zsh`.
-A user whose own files set no HISTFILE gets a Multishell-only history there, and
-`~/.zsh_history` never sees a command typed in a tab. Shown by starting
-`zsh -il` with an empty home and ZDOTDIR on a copy of the generated files:
-`HISTFILE=<copy>/.zsh_history`. Not seen on this machine because its `.zshrc`
-sets HISTFILE. Fix = have our `.zshrc` put HISTFILE back when it still points
-into our directory.
-
-### 004. A Copilot subagent's own prompt and Stop read as the agent's, so the pane goes Done mid-turn
-
-Watched against Copilot 1.0.87. A worker's hooks carry the child's own
-`session_id` and no `agent_id`, and the child fires its own `UserPromptSubmit`
-and `Stop`. The reader keys workers only by snake-case `agent_id`
-(`AgentHookPayload.swift:48-50`, `AgentHookEvent.swift:55-67`), so the helper
-sends those as the agent's turn and its Done: the pane goes Done in the middle
-of the turn, once per subagent. `SubagentStart` fires under the Pascal spelling
-the file asks for but with the camel payload (no `hook_event_name`, only
-`agentName`), which the guard at `AgentHookPayload.swift:39-42` refuses, so no
-worker ever reaches the roster and no chip shows. `SubagentStop` does carry
-`agent_id`, a different key from the name the start would give. The comment at
-`AgentHooks.swift:147-148` and `Docs/design/agents.md:313-321` describe the name
-as the key at both ends, which no longer holds.
-
-`COMPAT.md:51` still answers Yes to workers for Copilot CLI.
-
-### 005. An OpenCode permission prompt reads `[object Object]` before its pattern
-
-Watched against OpenCode 1.18.30. `asked()` at `OpenCodePlugin.swift:17-22`
-joins `properties.tool` into the message, but in v2's PermissionRequest that
-field is `{messageID, callID}`; the tool's name is `properties.permission`. The
-helper was sent `--message "[object Object] echo hi"`. The comment at `:15-16`
-misreads the type, and `OpenCodePluginRunTests.swift:52-54` passes `tool` as a
-string, so the test cannot catch it; the fix starts by giving that fixture the
-real shape.
 
 ### 006. [Unconfirmed] Parts of three agents' hook files have never been watched
 
@@ -249,17 +165,6 @@ PermissionRequest and Interrupt; Gemini past SessionStart, its free tier no
 longer authenticating; Copilot's `notification`, and its reading of the
 user-level `~/.copilot/hooks` rather than a repository's. Step: trust the hook
 once with `/hooks` in Codex and start a session without the bypass flag.
-
-### 007. [Unconfirmed] Four announcing Claude notification types are missing from the deny list
-
-`idle_prompt` was watched arriving 60 s after a Stop and dropped, as intended.
-The 2.1.280 binary sends every OS notification through the same hook, and its
-type list is fifteen long where `AgentHooks.swift:54` says fourteen. Of those,
-`computer_use_enter` and `computer_use_exit` announce, and so do
-`elicitation_complete` and `elicitation_response`, which are sent outside the
-enum; none is on the list at `AgentHooks.swift:56-58`, so each would read as
-Waiting and raise a banner. Probably also `push_notification` and the two
-`quota_auto_resume_*` types. None was watched arriving.
 
 ## Low
 
@@ -374,8 +279,7 @@ an ended phase; whether it fires for an `.onDrag` drag is unchecked.
 `git worktree list`, which for a bare repository is the `.git` directory itself,
 so a bare project never picks up a shared `.multishell.json`. Reading it through
 git instead skips the checkout-based symlink confinement (`confined(to:)`), so
-that design would need revisiting. It already misses a directory not yet made
-(002).
+that design would need revisiting.
 
 ### 018. A git under the floor fails the worktree list with no fallback
 
@@ -580,6 +484,35 @@ removes Claude's. Fix = parse both through `Options`, with `--print` a flag and
 `--agent` required, and keep the lenient read for `agent-hook` and
 `claude-hook`.
 
+### 136. An older app beside this helper leaves a pane Working after a Copilot subagent that outlived its turn
+
+The helper link points at whichever build launched last, so this build's helper
+can report to an app from before it. The helper now drops a Copilot subagent's
+own Stop (`AgentHookIntegration.swift`, `event(for:)`), and only this build's
+app reads the `conversation` field that stands in for it. Replayed through the
+model with that field stripped: the pane's Stop came first, the subagent's tool
+call put the pane back at Working, and its SubagentStop left it there, where the
+older helper's forwarded Stop used to bring back Done. A subagent the turn waits
+for is unaffected. It clears at the next prompt or when Copilot exits.
+
+### 137. A Copilot worker's chip names no kind
+
+Copilot's SubagentStart carries the kind (`agentName`) but no id, in the
+camel-case spelling the payload reader refuses, so it is not asked for
+(`AgentHooks.swift`, the Copilot events). The worker goes on the roster at its
+own first event, which names neither, so the chip and its popover show a worker
+with no kind. SubagentStop carries `agent_type`, too late to be shown.
+
+### 139. An installed hook file or plugin keeps what the build that wrote it said
+
+Only Install in Settings > Agents and `multishell install-agent-hooks` write
+them (`AppModel+Agents.swift:240`, `Helper.swift:231`); nothing at launch
+compares the file with what this build would write. So a fix in the generated
+file reaches no one who installed before it: an OpenCode plugin written before
+this build still prints `[object Object]` in its permission banner, and a
+Copilot hook file still asks for SubagentStart, which the helper now drops. The
+zsh and bash integration files are rewritten at launch; these are not.
+
 ### 038. [Unconfirmed] The CLI install's administrator step under the hardened runtime
 
 `AppleScriptHandler.swift:9-14` runs
@@ -656,6 +589,15 @@ and both names can come from one unpacked download. Under nu a name holding `'`
 breaks the line instead. Reasoned from fish's documented quoting; fish is not
 installed here. Fix = quote for the pane's shell, or leave out a name carrying a
 backslash, as control characters already are.
+
+### 138. [Unconfirmed] An app started while a Copilot subagent runs takes it for the pane's own
+
+The pane's own conversation is whichever id the first report carries
+(`SessionStates.swift`, `worker(inConversation:)`). An app launched, or a pane
+opened onto a Copilot, mid-subagent hears the subagent first, so the parent's
+reports read as a worker's until the parent's next Stop, whose transcript names
+it, puts that right. Meanwhile the chip counts the parent and the dot shows
+Working, which it is. Reasoned from the code, not run.
 
 ## CI
 
@@ -813,6 +755,16 @@ gone. Both reasons are stale: `forgetWorktrees` filters `statuses`
 and both caches asserted non-empty before `removeProject`, so a regression in
 either clear stays green today. Fix = delete both entries; `warmWorktrees`'s
 waits on 118.
+
+### 140. A process-ancestry test failed once in six runs, reading a child before its arguments were set
+
+`ProcessAncestryTests.childrenAreFoundByAWordOfTheirCommandLine`
+(`LoginShellEnvironmentTests.swift:111-132`) starts two `/bin/sh -c` children
+and at once asks `ProcessAncestry.children` for the one whose command line holds
+a marker. It failed at `:129` once in a full `swift test` run on 2026-09-23 and
+passed the five runs after. The likely race is `Process.run()` returning before
+the child's arguments are visible to the lookup. Fix = wait until the children
+are listed before asserting.
 
 ### 062. [Unconfirmed] The bundle script has run through xcodebuild only under the newer Xcode
 

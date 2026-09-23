@@ -141,32 +141,23 @@ enum Helper {
     _ id: String, environment: [String: String], input: FileHandle
   ) {
     let data = input.readDataToEndOfFile()
-    guard
-      let integration = AgentHooks.integration(for: id),
-      let payload = AgentHookPayload(json: data),
-      let event = integration.event(for: payload)
+    guard let integration = AgentHooks.integration(for: id),
+      let payload = AgentHookPayload(json: data), integration.event(for: payload) != nil
     else { return }
     let pid = reportingProcess(environment)
-    let report = SessionStateReport(
-      state: event.state,
-      sessionID: environment[SessionEnvironment.sessionKey].flatMap { UUID(uuidString: $0) },
-      cwd: payload.cwd ?? environment[SessionEnvironment.worktreeKey],
-      pid: pid,
-      message: payload.message,
-      agent: id,
-      silent: event.silent ? true : nil,
-      subagent: event.subagentReport(for: payload),
-      startsTurn: event.startsTurn(for: payload) ? true : nil,
-      backgroundShells: event.state == .done
-        ? backgroundShells(of: pid, marker: integration.backgroundShellMarker) : nil,
-      resumesAfterWorkers: event.state == .done && integration.resumesAfterWorkers ? true : nil)
+    guard
+      let report = integration.report(
+        for: payload,
+        session: environment[SessionEnvironment.sessionKey].flatMap { UUID(uuidString: $0) },
+        cwd: environment[SessionEnvironment.worktreeKey], pid: pid,
+        backgroundShells: { backgroundShells(of: pid, marker: $0) })
+    else { return }
     try? send(report, environment: environment)
   }
 
   /// A Stop comes with no tool running, so any tool shell still alive under
   /// the agent is one it backgrounded. `nil` for none, keeping the line short.
-  private static func backgroundShells(of agent: Int32, marker: String?) -> [Int32]? {
-    guard let marker else { return nil }
+  private static func backgroundShells(of agent: Int32, marker: String) -> [Int32]? {
     let shells = ProcessAncestry.children(of: agent, whoseArgumentsContain: marker)
     return shells.isEmpty ? nil : shells
   }

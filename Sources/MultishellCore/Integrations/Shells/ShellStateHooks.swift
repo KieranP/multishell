@@ -21,7 +21,7 @@ public enum ShellStateHooks {
       ".zprofile": zshChain(
         userFile: ".zprofile", restoreToSelf: true, capturesUserZdotdir: true, appending: nil),
       ".zshrc": zshChain(
-        userFile: ".zshrc", restoreToSelf: false,
+        userFile: ".zshrc", restoreToSelf: false, restoresHistory: true,
         appending: script("hooks", extension: "zsh", helper: helper)),
     ]
   }
@@ -30,7 +30,7 @@ public enum ShellStateHooks {
   /// it back so nested shells skip the chain; the first two may relocate it.
   private static func zshChain(
     userFile: String, restoreToSelf: Bool, capturesUserZdotdir: Bool = false,
-    appending extra: String?
+    restoresHistory: Bool = false, appending extra: String?
   ) -> String {
     let header = """
       # Multishell zsh integration, for this app's terminals only. It chains
@@ -43,6 +43,7 @@ public enum ShellStateHooks {
       else
         unset ZDOTDIR
       fi
+      \(restoresHistory ? historyFromUsersDirectory : "")
       [ -f "${ZDOTDIR:-$HOME}/\(userFile)" ] && source "${ZDOTDIR:-$HOME}/\(userFile)"
       \(capturesUserZdotdir ? "[ -n \"${ZDOTDIR-}\" ] && export MULTISHELL_USER_ZDOTDIR=\"$ZDOTDIR\"" : "")
       """
@@ -61,6 +62,14 @@ public enum ShellStateHooks {
       """
     return [header, extra, footer].compactMap { $0 }.joined(separator: "\n") + "\n"
   }
+
+  /// macOS's `/etc/zshrc` names the history file after ZDOTDIR while it is
+  /// still ours, so a tab's history left the user's file; see terminals.md.
+  private static let historyFromUsersDirectory = """
+    case "${HISTFILE-}" in
+      "$_multishell_self_zdotdir"/*) HISTFILE="${ZDOTDIR:-$HOME}/.zsh_history" ;;
+    esac
+    """
 
   /// A bash init file for `--init-file`, which is read instead of `.bashrc`
   /// and skips the profile chain, so this reproduces that chain first.

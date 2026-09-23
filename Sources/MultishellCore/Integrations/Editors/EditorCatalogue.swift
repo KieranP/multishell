@@ -103,13 +103,14 @@ public enum EditorCatalogue {
     return id
   }
 
-  /// The user's template with `{path}` filled in, quoted for the shell. One
+  /// The user's template with `{path}` read from the environment. One
   /// without the placeholder gets the path appended.
-  public static func customCommandLine(_ template: String, path: URL) -> String? {
+  public static func customCommandLine(_ template: String, path: URL) -> ShellLine? {
     let trimmed = template.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !trimmed.isEmpty else { return nil }
-    let quoted = ShellQuoting.quote(path.path)
-    guard trimmed.contains("{path}") else { return "\(trimmed) \(quoted)" }
-    return trimmed.replacingOccurrences(of: "{path}", with: quoted)
+    let token = "{path}"
+    let line = trimmed.contains(token) ? trimmed : "\(trimmed) \(token)"
+    return ShellLine(
+      line, substituting: [token: (AgentPlaceholder.worktreePath.variable, path.path)])
   }
 }

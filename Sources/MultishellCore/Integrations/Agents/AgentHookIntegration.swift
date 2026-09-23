@@ -40,11 +40,14 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   /// Whether the agent takes another turn when the work it left out at its
   /// Stop ends, which then pays the Done; see Docs/design/agents.md.
   public let resumesAfterWorkers: Bool
+  /// Whether a subagent is a conversation of its own, firing its own prompt
+  /// and Stop, which only its conversation id tells apart; see agents.md.
+  let workersAreConversations: Bool
 
   init(
     id: String, name: String, file: URL, displayPath: String, events: [AgentHookEvent],
     format: Format, trustNote: String? = nil, backgroundShellMarker: String? = nil,
-    resumesAfterWorkers: Bool = false
+    resumesAfterWorkers: Bool = false, workersAreConversations: Bool = false
   ) {
     self.id = id
     self.name = name
@@ -55,6 +58,7 @@ public struct AgentHookIntegration: Identifiable, Sendable {
     self.trustNote = trustNote
     self.backgroundShellMarker = backgroundShellMarker
     self.resumesAfterWorkers = resumesAfterWorkers
+    self.workersAreConversations = workersAreConversations
   }
 
   /// Whether the file is Multishell's own, rather than one the user keeps
@@ -74,7 +78,35 @@ public struct AgentHookIntegration: Identifiable, Sendable {
     if let type = payload.notificationType, event.ignoredNotificationTypes.contains(type) {
       return nil
     }
+    // A subagent's own Stop, which its SubagentStop follows: read as the
+    // agent's, it put the pane at Done in the middle of the turn.
+    if workersAreConversations, event.state.isFinished, payload.isFiledUnderAnotherConversation {
+      return nil
+    }
     return event
+  }
+
+  /// What the helper sends for a payload, or nothing where it says nothing.
+  /// `backgroundShells` walks the processes, so it is asked only at a Stop.
+  public func report(
+    for payload: AgentHookPayload, session: TerminalSession.ID?, cwd: String?, pid: Int32?,
+    backgroundShells: (_ marker: String) -> [Int32]? = { _ in nil }
+  ) -> SessionStateReport? {
+    guard let event = event(for: payload) else { return nil }
+    let isStop = event.state == .done
+    return SessionStateReport(
+      state: event.state,
+      sessionID: session,
+      cwd: payload.cwd ?? cwd,
+      pid: pid,
+      message: payload.message,
+      agent: id,
+      silent: event.silent ? true : nil,
+      subagent: event.subagentReport(for: payload),
+      startsTurn: event.startsTurn(for: payload) ? true : nil,
+      backgroundShells: isStop ? backgroundShellMarker.flatMap(backgroundShells) : nil,
+      resumesAfterWorkers: isStop && resumesAfterWorkers ? true : nil,
+      conversationID: workersAreConversations ? payload.conversationID : nil)
   }
 
   /// The hooks as the file spells them: the whole file for one of ours, the

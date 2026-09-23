@@ -54,6 +54,10 @@ at the bottom.
   directory's copy in place of the home one, skipping the file that set it.
 - **Cost: a `ZDOTDIR` set system-wide redirects zsh past our files**, as it
   would past any, and that tab has no hooks.
+- **macOS's `/etc/zshrc` names the history file after `ZDOTDIR`**, and runs
+  while it is still ours, so our `.zshrc` moves a history file inside our
+  directory back to where the user's shell would have put it, before their own
+  file can set another.
 - **The bash init file is read in place of the rc file**, so the generated one
   reproduces a login shell's chain itself and reads the rc file only where that
   found nothing, as a login shell does.

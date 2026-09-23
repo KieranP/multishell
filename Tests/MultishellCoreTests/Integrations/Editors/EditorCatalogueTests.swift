@@ -20,18 +20,19 @@ struct EditorCatalogueTests {
     #expect(!ids.contains(EditorCatalogue.noneID) && !ids.contains(EditorCatalogue.customID))
   }
 
-  @Test func theCustomTemplateGetsTheQuotedPathWhereThePlaceholderIs() {
+  @Test func theCustomTemplateReadsThePathFromTheEnvironmentWhereThePlaceholderIs() {
     let path = URL(fileURLWithPath: "/Users/me/My Work/repo")
+    let environment = ["MULTISHELL_WORKTREE_PATH": "/Users/me/My Work/repo"]
     #expect(
       EditorCatalogue.customCommandLine("code-insiders {path}", path: path)
-        == "code-insiders '/Users/me/My Work/repo'")
+        == ShellLine(text: #"code-insiders "$MULTISHELL_WORKTREE_PATH""#, environment: environment))
     #expect(
       EditorCatalogue.customCommandLine("  micro  ", path: path)
-        == "micro '/Users/me/My Work/repo'",
+        == ShellLine(text: #"micro "$MULTISHELL_WORKTREE_PATH""#, environment: environment),
       "no placeholder: the path is appended")
     #expect(EditorCatalogue.customCommandLine("  ", path: path) == nil)
     #expect(
-      EditorCatalogue.customCommandLine("open -a X {path} && echo {path}", path: path)
-        == "open -a X '/Users/me/My Work/repo' && echo '/Users/me/My Work/repo'")
+      EditorCatalogue.customCommandLine("open -a X {path} && echo {path}", path: path)?.text
+        == #"open -a X "$MULTISHELL_WORKTREE_PATH" && echo "$MULTISHELL_WORKTREE_PATH""#)
   }
 }

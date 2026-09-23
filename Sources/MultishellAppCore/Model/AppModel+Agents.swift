@@ -170,7 +170,7 @@ extension AppModel {
     let values = placeholderValues(in: worktreeID)
     if id == AgentCatalogue.customID {
       return AgentLaunch.command(
-        customLine: AgentFlags.expand(workspace.customAgentCommand, values: values),
+        customLine: AgentFlags.customLine(workspace.customAgentCommand, values: values),
         shell: shell, exec: exec)
     }
     guard let agent = AgentCatalogue.agent(id) else {

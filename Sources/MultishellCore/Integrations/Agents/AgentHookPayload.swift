@@ -16,14 +16,15 @@ public struct AgentHookPayload: Hashable, Sendable {
   /// Claude Code and Codex set it on every event of a subagent's.
   public var agentID: String?
   var agentType: String?
-  /// Copilot's name for a subagent, on its start and stop and possibly on a
-  /// session run under `--agent`; read as an id only where an event names one.
-  var agentName: String?
+  /// The agent's own id for the conversation. Copilot runs a subagent as a
+  /// conversation of its own, whose id its SubagentStop names as `agent_id`.
+  var conversationID: String?
+  var transcriptPath: String?
 
   public init(
     eventName: String, cwd: String? = nil, message: String? = nil, permissionMode: String? = nil,
     notificationType: String? = nil, agentID: String? = nil, agentType: String? = nil,
-    agentName: String? = nil
+    conversationID: String? = nil, transcriptPath: String? = nil
   ) {
     self.eventName = eventName
     self.cwd = cwd
@@ -32,7 +33,8 @@ public struct AgentHookPayload: Hashable, Sendable {
     self.notificationType = notificationType
     self.agentID = agentID
     self.agentType = agentType
-    self.agentName = agentName
+    self.conversationID = conversationID
+    self.transcriptPath = transcriptPath
   }
 
   public init?(json data: Data) {
@@ -46,8 +48,17 @@ public struct AgentHookPayload: Hashable, Sendable {
     self.permissionMode = object["permission_mode"] as? String
     self.notificationType = object["notification_type"] as? String
     self.agentID = object["agent_id"] as? String
-    self.agentType = object["agent_type"] as? String ?? object["agentDisplayName"] as? String
-    self.agentName = object["agentName"] as? String
+    self.agentType = object["agent_type"] as? String
+    self.conversationID = object["session_id"] as? String
+    self.transcriptPath = object["transcript_path"] as? String
+  }
+
+  /// Whether the transcript named is another conversation's: Copilot files a
+  /// subagent's under its parent's id. One naming this id anywhere is its own,
+  /// so a changed layout costs a mid-turn Done rather than every Done.
+  var isFiledUnderAnotherConversation: Bool {
+    guard let conversationID, !conversationID.isEmpty, let transcriptPath else { return false }
+    return !transcriptPath.contains(conversationID)
   }
 
   /// Whether the payload's mode stops for the user. An unknown one is taken

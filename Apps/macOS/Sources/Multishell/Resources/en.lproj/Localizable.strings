@@ -78,7 +78,7 @@
 "find.previous" = "Previous Match";
 "find.prompt" = "Find";
 "general.editor" = "Editor:";
-"general.editor-command-info" = "Run as a new tab in the worktree through your login shell. {path} is replaced by the worktree's quoted path, or appended if absent.";
+"general.editor-command-info" = "Run as a new tab in the worktree through your login shell. {path} is the worktree's path, inside quotes or out, and is appended if absent.";
 "general.editor-command-prompt" = "code-insiders {path}";
 "general.editor-info" = "What Open in Editor (⇧⌘O) uses. Found by bundle identifier, or by a command on the login shell's PATH; a terminal editor opens as a new tab.";
 "general.state-file" = "State file:";

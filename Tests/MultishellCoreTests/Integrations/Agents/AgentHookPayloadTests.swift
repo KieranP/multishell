@@ -120,6 +120,14 @@ struct AgentHookPayloadTests {
     #expect(state("agent_completed") == nil)
     #expect(state("auth_success") == nil)
     #expect(state("quota_auto_resume_fired") == nil)
+    for announcement in [
+      "computer_use_enter", "computer_use_exit", "elicitation_complete", "elicitation_response",
+      "push_notification",
+    ] {
+      #expect(state(announcement) == nil, "\(announcement)")
+    }
+    #expect(state("quota_auto_resume_stale") == .attention, "it asks for Return")
+    #expect(state("quota_auto_resume_disabled") == .attention, "it asks for a prompt")
     #expect(state(nil) == .attention, "a Claude from before the field keeps its banner")
     #expect(
       state("plan_approval_prompt") == .attention,
@@ -202,9 +210,7 @@ struct AgentHookPayloadTests {
     #expect(copilot?.message == "Permission needed")
   }
 
-  /// Codex spells a subagent as Claude does. Copilot names one at its start and
-  /// adds an id only at its stop, so the name is the key at both ends.
-  @Test func codexAndCopilotNameASubagentInTheirOwnSpelling() throws {
+  @Test func codexNamesASubagentAsClaudeDoes() throws {
     let codex = AgentHooks.codex
     #expect(codex.events.first { $0.name == "SubagentStart" }?.subagent == .started)
     #expect(codex.events.first { $0.name == "SubagentStop" }?.subagent == .ended)
@@ -216,40 +222,55 @@ struct AgentHookPayloadTests {
     #expect(
       codex.event(for: inCodex)?.subagentReport(for: inCodex)
         == SubagentReport(id: "t2", type: "worker", phase: .working))
-
-    let copilot = AgentHooks.copilot
-    let start = try #require(
-      AgentHookPayload(
-        json: Data(
-          #"""
-          {"hook_event_name":"SubagentStart","sessionId":"s","timestamp":1,"cwd":"/w",
-           "agentName":"code-review","agentDisplayName":"Code Review"}
-          """#.utf8)))
-    #expect(
-      copilot.event(for: start)?.subagentReport(for: start)
-        == SubagentReport(id: "code-review", type: "Code Review", phase: .started))
-    let stop = try #require(
-      AgentHookPayload(
-        json: Data(
-          #"""
-          {"hook_event_name":"SubagentStop","sessionId":"s","timestamp":2,"cwd":"/w",
-           "agentId":"a9","agentType":"custom","agentName":"code-review","stopReason":"end_turn"}
-          """#.utf8)))
-    #expect(
-      copilot.event(for: stop)?.subagentReport(for: stop)?.id == "code-review",
-      "the stop's id was never seen at the start; the name was")
-    #expect(copilot.event(for: stop)?.subagentReport(for: stop)?.phase == .ended)
-    // A session run under --agent may name that agent on every event; a
-    // name on a tool call is not a worker, or the roster never empties.
-    let underAgent = try #require(
-      AgentHookPayload(
-        json: Data(
-          #"{"hook_event_name":"PreToolUse","sessionId":"s","cwd":"/w","agentName":"reviewer"}"#
-            .utf8)))
-    #expect(copilot.event(for: underAgent)?.subagentReport(for: underAgent) == nil)
     #expect(
       AgentHooks.gemini.events.allSatisfy { $0.subagent == nil },
       "Gemini says nothing about a subagent to a hook")
+  }
+
+  /// Captured from Copilot 1.0.87: a subagent is a conversation of its own,
+  /// its Stop filed under its parent's transcript, and its end names it.
+  @Test func copilotNamesASubagentByItsConversation() throws {
+    let copilot = AgentHooks.copilot
+    let parent = "17954dff-e162-4e7a-925e-a59ca530c5fb"
+    let child = "37880ecf-c5f3-42ce-afe0-82b221d75839"
+    let transcript = "/Users/dev/.copilot/session-state/\(parent)/events.jsonl"
+    func payload(_ json: String) throws -> AgentHookPayload {
+      try #require(AgentHookPayload(json: Data(json.utf8)))
+    }
+
+    let childStop = try payload(
+      #"{"hook_event_name":"Stop","session_id":"\#(child)","transcript_path":"\#(transcript)"}"#)
+    #expect(copilot.event(for: childStop) == nil)
+    let ownStop = try payload(
+      #"{"hook_event_name":"Stop","session_id":"\#(parent)","transcript_path":"\#(transcript)"}"#)
+    #expect(copilot.event(for: ownStop)?.state == .done)
+    let fileNamedForItself = try payload(
+      #"{"hook_event_name":"Stop","session_id":"\#(parent)","transcript_path":"/Users/dev/.copilot/session-state/\#(parent).jsonl"}"#
+    )
+    #expect(
+      copilot.event(for: fileNamedForItself)?.state == .done,
+      "a transcript naming the conversation anywhere is its own")
+    #expect(
+      AgentHooks.claude.event(for: childStop)?.state == .done,
+      "only an agent that runs workers as conversations is read this way")
+
+    let childTool = try payload(
+      #"{"hook_event_name":"PreToolUse","session_id":"\#(child)","tool_name":"Bash"}"#)
+    #expect(
+      copilot.report(for: childTool, session: nil, cwd: nil, pid: nil)?.conversationID == child)
+    #expect(
+      AgentHooks.claude.report(for: childTool, session: nil, cwd: nil, pid: nil)?.conversationID
+        == nil)
+
+    let end = try payload(
+      #"{"hook_event_name":"SubagentStop","session_id":"\#(parent)","transcript_path":"\#(transcript)","agent_id":"\#(child)","agent_type":"general-purpose","agent_name":"general-purpose"}"#
+    )
+    #expect(
+      copilot.event(for: end)?.subagentReport(for: end)
+        == SubagentReport(id: child, type: "general-purpose", phase: .ended))
+    #expect(
+      !copilot.events.contains { $0.name == "SubagentStart" },
+      "its start names no id, and arrives in a spelling no event is read in")
   }
 
   @Test func aPayloadWithoutAnEventNameIsNotAPayload() {

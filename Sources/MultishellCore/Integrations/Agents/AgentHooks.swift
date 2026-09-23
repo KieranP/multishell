@@ -51,10 +51,12 @@ public enum AgentHooks {
     claude, codex, gemini, copilot, openCode,
   ]
 
-  /// Which of Claude's fourteen notification types announces rather than asks.
-  /// A deny list, sorted from the payload; see Docs/design/agents.md.
+  /// Which of Claude's notification types announce rather than ask: fifteen
+  /// in its list and two sent outside it. A deny list; see agents.md.
   static let claudeAnnouncements: Set<String> = [
     "idle_prompt", "agent_completed", "auth_success", "quota_auto_resume_fired",
+    "computer_use_enter", "computer_use_exit", "elicitation_complete", "elicitation_response",
+    "push_notification",
   ]
 
   /// Claude Code: `~/.claude/settings.json`. The one agent asked for both a
@@ -144,14 +146,13 @@ public enum AgentHooks {
       AgentHookEvent(
         "notification", .attention, reported: "Notification",
         matcher: "permission_prompt|elicitation_dialog"),
-      // Copilot names a subagent, not an id, at its start; the roster keys
-      // on the name for it. See Docs/design/agents.md.
-      AgentHookEvent("SubagentStart", .running, subagent: .started),
+      // No SubagentStart: it arrives in the other spelling, naming no id.
+      // A worker goes on at its own first event; see Docs/design/agents.md.
       AgentHookEvent("SubagentStop", .running, subagent: .ended),
       AgentHookEvent("Stop", .done),
       AgentHookEvent("SessionEnd", .idle),
     ],
-    format: .ownHookFile)
+    format: .ownHookFile, workersAreConversations: true)
 
   /// OpenCode has no hooks in its settings: what a session is doing shows only
   /// to a plugin, so it is given one.

@@ -12,13 +12,14 @@ enum OpenCodePlugin {
 
     const helper = \(javaScriptPath(helper))
 
-    // What is being asked for, from v2's PermissionRequest. Its predecessor
-    // carried a `title`, which this read for a while and never found.
+    // What is being asked for, from v2's PermissionRequest: its `tool` is the
+    // call's ids, and the permission names the tool.
     const asked = (properties) => {
       if (!properties) return undefined
       const patterns = properties.patterns
       const detail = Array.isArray(patterns) ? patterns.join(" ") : patterns
-      return [properties.tool, detail].filter(Boolean).join(" ") || undefined
+      const name = typeof properties.permission === "string" ? properties.permission : undefined
+      return [name, detail].filter(Boolean).join(" ") || undefined
     }
 
     export const MultishellPlugin = async ({ directory, worktree }) => {

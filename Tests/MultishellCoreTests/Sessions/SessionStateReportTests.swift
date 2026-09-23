@@ -142,6 +142,18 @@ struct SessionStateReportTests {
     #expect(message.hasSuffix("…"))
   }
 
+  @Test func aConversationIdLongerThanAnyAgentsIsDroppedComingOffTheChannel() throws {
+    let long = String(repeating: "c", count: SessionStateReport.maximumIdentifierLength + 1)
+    let dropped = try #require(
+      SessionStateReport.parse(#"{"v":1,"state":"running","conversation":"\#(long)"}"#))
+    #expect(dropped.conversationID == nil)
+    let kept = try #require(
+      SessionStateReport.parse(
+        #"{"v":1,"state":"running","conversation":"37880ecf-c5f3-42ce-afe0-82b221d75839"}"#))
+    #expect(kept.conversationID == "37880ecf-c5f3-42ce-afe0-82b221d75839")
+    #expect(SessionStateReport(state: .running, conversationID: "").conversationID == nil)
+  }
+
   /// The same rule for the duration: the board renders it, and a value no
   /// clock could have produced is a writer's, not a command's.
   @Test func aDurationNoCommandCouldHaveTakenIsDroppedComingOffTheChannel() throws {

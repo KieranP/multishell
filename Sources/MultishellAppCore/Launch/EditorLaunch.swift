@@ -28,7 +28,7 @@ enum EditorLaunch {
       guard let line = EditorCatalogue.customCommandLine(customTemplate, path: directory),
         let command = AgentLaunch.command(customLine: line, shell: shell, exec: exec)
       else { return nil }
-      return .openTab(title: title(of: line), command: command)
+      return .openTab(title: title(of: line.text), command: command)
     }
     guard let editor = EditorCatalogue.editor(editorID) else { return nil }
     switch editor.kind {

@@ -17,6 +17,18 @@ public enum AgentPlaceholder: String, CaseIterable, Sendable {
 
   var token: String { "{{\(rawValue)}}" }
 
+  /// What a custom command reads the value from, named as the hook
+  /// variables are where one means the same.
+  var variable: String {
+    switch self {
+    case .branch: "MULTISHELL_BRANCH"
+    case .worktree: "MULTISHELL_WORKTREE_NAME"
+    case .worktreePath: "MULTISHELL_WORKTREE_PATH"
+    case .project: "MULTISHELL_PROJECT_NAME"
+    case .projectPath: "MULTISHELL_PROJECT_PATH"
+    }
+  }
+
   /// `name` is what the sidebar shows, `Workspace.displayName(of:)`, which
   /// the worktree record cannot answer on its own.
   public static func values(
@@ -45,20 +57,22 @@ public enum AgentFlags {
   public static func arguments(
     _ line: String, values: [AgentPlaceholder: String]
   ) -> [String] {
-    split(line).map { expanded($0, values: values, quoting: false) }
+    split(line).map { expanded($0, values: values) }
   }
 
-  /// The same for a line that stays text: the custom agent command, which
-  /// runs as written, so each value is quoted where it lands.
-  public static func expand(_ line: String, values: [AgentPlaceholder: String]) -> String {
-    expanded(line, values: values, quoting: true)
+  /// The custom agent command, which runs as written: each placeholder reads
+  /// a variable, so no value is ever shell text. See Docs/design/agents.md.
+  public static func customLine(_ line: String, values: [AgentPlaceholder: String]) -> ShellLine {
+    var tokens: [String: (variable: String, value: String)] = [:]
+    for (placeholder, value) in values {
+      tokens[placeholder.token] = (placeholder.variable, value)
+    }
+    return ShellLine(line, substituting: tokens)
   }
 
   /// One pass over what was typed. A token appearing in a value is text the
   /// user named something, not a placeholder; see Docs/design/agents.md.
-  private static func expanded(
-    _ text: String, values: [AgentPlaceholder: String], quoting: Bool
-  ) -> String {
+  private static func expanded(_ text: String, values: [AgentPlaceholder: String]) -> String {
     var result = ""
     var rest = Substring(text)
     while let open = rest.range(of: "{{"),
@@ -67,7 +81,7 @@ public enum AgentFlags {
       result += rest[..<open.lowerBound]
       let name = String(rest[open.upperBound..<close.lowerBound])
       if let placeholder = AgentPlaceholder(rawValue: name), let value = values[placeholder] {
-        result += quoting ? ShellQuoting.quote(value) : value
+        result += value
       } else {
         result += rest[open.lowerBound..<close.upperBound]
       }

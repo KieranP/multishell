@@ -45,8 +45,9 @@ struct EditorLaunchTests {
         == .openTab(
           title: "code-insiders",
           command: [
+            "/usr/bin/env", "MULTISHELL_WORKTREE_PATH=/Users/me/Work/repo trees/feat",
             "/bin/zsh", "-l", "-i", "-c",
-            "code-insiders '/Users/me/Work/repo trees/feat'; exec /bin/zsh -l",
+            #"code-insiders "$MULTISHELL_WORKTREE_PATH"; exec /bin/zsh -l"#,
           ]))
     #expect(action("custom", custom: "/usr/local/bin/micro")?.self.title == "micro")
     #expect(action("custom", custom: "   ") == nil, "nothing typed")

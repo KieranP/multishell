@@ -97,9 +97,11 @@ extension AgentHooksTests {
         return integration.event(for: payload)?.subagentReport(for: payload)
       }
       let anonymous = SubagentReport.anonymousID
-      #expect(
-        change("SubagentStart") == SubagentReport(id: anonymous, phase: .started),
-        "\(integration.id) starts")
+      if integration.id != AgentHooks.copilot.id {
+        #expect(
+          change("SubagentStart") == SubagentReport(id: anonymous, phase: .started),
+          "\(integration.id) starts")
+      }
       #expect(
         change("SubagentStop") == SubagentReport(id: anonymous, phase: .ended),
         "\(integration.id) stops")

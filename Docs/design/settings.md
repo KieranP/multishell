@@ -23,6 +23,10 @@ shipped hook. Newest at the bottom.
   on the project, the sidebar asking per row per render. The tick's reader
   confines off the main actor with the parse; export does it on the main actor.
 - **The directory resolves symlinks**, so a committed link cannot carry it out.
+- **Resolved as far as it exists, the rest appended**: the resolver returns a
+  path that does not exist unchanged, links and all, and before the first create
+  the container never exists. A link to nothing is refused, there being no
+  telling where it will lead.
 - **The lists are resolved lexically and must land strictly under the root**,
   the file not being there yet. `..` is resolved, never counted, so no spelling
   of it has to be anticipated.

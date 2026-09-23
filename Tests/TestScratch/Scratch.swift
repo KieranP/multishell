@@ -44,6 +44,14 @@ public enum Scratch {
     for path in [url.path, url.path + ".lock"] { try? FileManager.default.removeItem(atPath: path) }
   }
 
+  /// This process's environment for a shell a test starts, saving no
+  /// history: an exported `HISTFILE` had an interactive bash append each
+  /// test's commands to the developer's own. Empty, not absent, as
+  /// `ProcessRunner` merges what it is given over its own environment.
+  public static var shellEnvironment: [String: String] {
+    ProcessInfo.processInfo.environment.merging(["HISTFILE": ""]) { _, new in new }
+  }
+
   /// Removes a path if it is there, for a `defer` or a `tearDown`.
   public static func remove(_ url: URL) {
     try? FileManager.default.removeItem(at: url)

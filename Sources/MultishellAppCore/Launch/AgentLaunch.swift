@@ -12,15 +12,15 @@ enum AgentLaunch {
     line(ShellQuoting.commandLine(arguments), shell: shell, exec: exec)
   }
 
-  /// The custom entry is a shell line as the user typed it.
+  /// The custom entry is a shell line as the user typed it, the values its
+  /// placeholders read set in the environment around the shell.
   static func command(
-    customLine: String,
+    customLine: ShellLine,
     shell: (executable: URL, arguments: [String]),
     exec: String
   ) -> [String]? {
-    let trimmed = customLine.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !trimmed.isEmpty else { return nil }
-    return line(trimmed, shell: shell, exec: exec)
+    guard !customLine.text.isEmpty else { return nil }
+    return customLine.prefixing(line(customLine.text, shell: shell, exec: exec))
   }
 
   /// `nil` when a relaunch has nothing to resume with; the tab is then a

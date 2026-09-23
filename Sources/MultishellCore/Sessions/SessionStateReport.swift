@@ -51,6 +51,9 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   /// Set on a Stop from an agent that takes another turn when the work it
   /// left out ends, so that turn pays the Done; see Docs/design/agents.md.
   public var resumesAfterWorkers: Bool?
+  /// The agent's own id for the conversation, from an agent that runs a
+  /// subagent as a conversation of its own; see Docs/design/agents.md.
+  public var conversationID: String?
 
   enum CodingKeys: String, CodingKey {
     case version = "v"
@@ -69,6 +72,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     case startsTurn = "turn"
     case backgroundShells = "shells"
     case resumesAfterWorkers = "resumes"
+    case conversationID = "conversation"
   }
 
   public init(
@@ -86,7 +90,8 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     subagent: SubagentReport? = nil,
     startsTurn: Bool? = nil,
     backgroundShells: [Int32]? = nil,
-    resumesAfterWorkers: Bool? = nil
+    resumesAfterWorkers: Bool? = nil,
+    conversationID: String? = nil
   ) {
     self.version = Self.protocolVersion
     self.state = state
@@ -104,6 +109,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     self.startsTurn = startsTurn
     self.backgroundShells = backgroundShells
     self.resumesAfterWorkers = resumesAfterWorkers
+    self.conversationID = Self.identifier(conversationID)
   }
 
   /// What an app that reads only the count should make of a worker. A tool
@@ -136,6 +142,8 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     startsTurn = try container.decodeIfPresent(Bool.self, forKey: .startsTurn)
     backgroundShells = try container.decodeIfPresent([Int32].self, forKey: .backgroundShells)
     resumesAfterWorkers = try container.decodeIfPresent(Bool.self, forKey: .resumesAfterWorkers)
+    conversationID = Self.identifier(
+      try container.decodeIfPresent(String.self, forKey: .conversationID))
   }
 
   /// The roster change the report carries, an older helper's count read as
@@ -167,6 +175,15 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     guard let duration, duration.isFinite, duration >= 0, duration <= maximumDuration
     else { return nil }
     return duration
+  }
+
+  /// Longer than any agent's id, and dropped rather than cut: a cut one
+  /// would name a different worker.
+  static let maximumIdentifierLength = 128
+
+  private static func identifier(_ id: String?) -> String? {
+    guard let id, !id.isEmpty, id.count <= maximumIdentifierLength else { return nil }
+    return id
   }
 
   private static func trimmed(_ message: String?) -> String? {

@@ -49,7 +49,7 @@ extension SessionStates {
     }
 
     /// A roster place a report touched, and whether more than one worker was
-    /// under it: Copilot names workers alike, so which reported is unknowable.
+    /// under it: a start repeated under one id makes which reported unknowable.
     struct Place {
       var id: String
       var isShared = false

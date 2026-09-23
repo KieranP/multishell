@@ -12,6 +12,9 @@ public struct SessionStates: Equatable, Sendable {
   }
 
   private var entries: [Key: Entry] = [:]
+  /// The id of each pane's own conversation, from an agent that runs a
+  /// worker as one of its own. Apart from `entries`, which go on a clear.
+  private var ownConversationIDs: [Key: String] = [:]
 
   public init() {}
 
@@ -41,8 +44,16 @@ public struct SessionStates: Equatable, Sendable {
   public mutating func report(
     _ state: SessionState, pid: Int32?, message: String? = nil, duration: Double? = nil,
     subagent: SubagentReport? = nil, startsTurn: Bool = false, backgroundShells: [Int32] = [],
-    resumesAfterWorkers: Bool = false, for key: Key, isSeen: Bool
+    resumesAfterWorkers: Bool = false, conversationID: String? = nil, for key: Key, isSeen: Bool
   ) -> SessionState? {
+    var subagent = subagent
+    var startsTurn = startsTurn
+    if let conversationID, subagent == nil,
+      let worker = worker(inConversation: conversationID, reporting: state, for: key)
+    {
+      subagent = worker
+      startsTurn = false
+    }
     // A prompt starts a turn, so whatever the last one left out is gone: an
     // agent interrupted fires no hook and its workers send no stop.
     if startsTurn { update(key) { $0.settleTurn() } }
@@ -73,6 +84,24 @@ public struct SessionStates: Equatable, Sendable {
       update(key) { $0.note = SessionNote(state: state, message: message, duration: duration) }
     }
     return state
+  }
+
+  /// The worker a report of another conversation's is, or `nil` for the
+  /// pane's own. Only the pane's own sends a start, an end or a Stop.
+  private mutating func worker(
+    inConversation conversation: String, reporting state: SessionState, for key: Key
+  ) -> SubagentReport? {
+    let own = ownConversationIDs[key]
+    guard own == nil || state == .idle || state.isFinished else {
+      return own == conversation ? nil : SubagentReport(id: conversation, phase: .working)
+    }
+    if let own, own != conversation {
+      // A new conversation of the pane's, cleared or started without a
+      // SessionStart, was read as a worker until now.
+      update(key) { $0.workers.removeAll { $0.id == conversation } }
+    }
+    ownConversationIDs[key] = conversation
+    return nil
   }
 
   /// What a report means once the roster is kept, `nil` for one that moves
@@ -268,6 +297,7 @@ public struct SessionStates: Equatable, Sendable {
     // An agent killed with a worker out sends no SubagentStop; the command
     // it was has returned, so nothing is out and nothing is owed.
     update(key) { $0.settleTurn() }
+    ownConversationIDs[key] = nil
     switch entries[key]?.state {
     case .running, .attention, nil:
       update(key) {
@@ -318,12 +348,14 @@ public struct SessionStates: Equatable, Sendable {
   /// Keeps the keys a subset of what exists: live shells and known
   /// worktrees. Done for a dead shell is nothing to look at.
   public mutating func retain(sessions: Set<TerminalSession.ID>, worktrees: Set<Worktree.ID>) {
-    entries = entries.filter { entry in
-      switch entry.key {
+    func exists(_ key: Key) -> Bool {
+      switch key {
       case .session(let id): sessions.contains(id)
       case .worktree(let id): worktrees.contains(id)
       }
     }
+    entries = entries.filter { exists($0.key) }
+    ownConversationIDs = ownConversationIDs.filter { exists($0.key) }
   }
 
   /// The process a state was about has gone. Working and Waiting were claims
@@ -336,6 +368,7 @@ public struct SessionStates: Equatable, Sendable {
         // Its workers went with it, so nothing is owed and nothing is out.
         $0.settleTurn()
       }
+      ownConversationIDs[key] = nil
     }
   }
 

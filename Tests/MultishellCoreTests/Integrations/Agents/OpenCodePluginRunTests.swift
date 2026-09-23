@@ -49,8 +49,14 @@ struct OpenCodePluginRunTests {
         ["sessionID": AnyEncodable(session), "status": AnyEncodable(["type": "busy"])])
     }
 
-    static func asked(_ session: String, tool: String) -> Step {
-      event("permission.asked", ["sessionID": AnyEncodable(session), "tool": AnyEncodable(tool)])
+    static func asked(_ session: String, permission: String, pattern: String) -> Step {
+      event(
+        "permission.asked",
+        [
+          "sessionID": AnyEncodable(session), "permission": AnyEncodable(permission),
+          "patterns": AnyEncodable([pattern]),
+          "tool": AnyEncodable(["messageID": "message-1", "callID": "call-1"]),
+        ])
     }
   }
 
@@ -62,6 +68,7 @@ struct OpenCodePluginRunTests {
     init(_ value: String) { encode = { try value.encode(to: $0) } }
     init(_ value: [String: String]) { encode = { try value.encode(to: $0) } }
     init(_ value: [String: AnyEncodable]) { encode = { try value.encode(to: $0) } }
+    init(_ value: [String]) { encode = { try value.encode(to: $0) } }
 
     func encode(to encoder: Encoder) throws { try encode(encoder) }
   }
@@ -169,9 +176,9 @@ struct OpenCodePluginRunTests {
   @Test func aPermissionAskedInsideAChildIsThatWorkersPrompt() throws {
     let out = try reports(of: [
       .created(child: "a", of: "parent", agent: "Plan"),
-      .asked("parent/a", tool: "Bash"),
+      .asked("parent/a", permission: "bash", pattern: "echo hi"),
     ])
-    #expect(out.map(said) == ["running started Plan", "attention working Plan Bash"])
+    #expect(out.map(said) == ["running started Plan", "attention working Plan bash echo hi"])
   }
 
   /// A child's id outlives its end, so a late event of its own is not read as

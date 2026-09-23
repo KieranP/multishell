@@ -77,8 +77,8 @@ struct AgentFlagsTests {
       AgentFlags.arguments("--name={{branch}}", values: values) == ["--name=feat/{{project}}"])
     #expect(AgentFlags.arguments("--w={{worktree}}", values: values) == ["--w={{project_path}}"])
     #expect(
-      AgentFlags.expand("run --name={{branch}}", values: values)
-        == "run --name='feat/{{project}}'")
+      AgentFlags.customLine("run --name={{branch}}", values: values).environment
+        == ["MULTISHELL_BRANCH": "feat/{{project}}"])
   }
 
   @Test func everyPlaceholderHasAValue() {
@@ -116,19 +116,29 @@ struct AgentFlagsTests {
         ShellQuoting.commandLine(flags) == "'--name=\(hostile)'",
         "single-quoted on the way to the command line, so the shell reads it as text")
 
-      let custom = AgentFlags.expand("my-agent --name={{branch}}", values: values)
-      #expect(custom == "my-agent --name='\(hostile)'", "quoted where it lands")
+      let custom = AgentFlags.customLine("my-agent --name={{branch}}", values: values)
+      #expect(custom.text == "my-agent --name=\"$MULTISHELL_BRANCH\"", "read, never written in")
+      #expect(custom.environment == ["MULTISHELL_BRANCH": hostile])
     }
   }
 
-  /// The custom command runs as text, so a value lands in it quoted.
-  @Test func theCustomLineTakesPlaceholdersQuoted() {
+  @Test func theCustomLineReadsEachPlaceholderFromTheEnvironmentWhereItsQuoteLeavesIt() {
+    let line = AgentFlags.customLine(
+      #"my-agent --name={{worktree}} "in {{project_path}}" 'at {{worktree_path}}' {{nonsense}}"#,
+      values: values)
     #expect(
-      AgentFlags.expand("my-agent --name={{worktree}}", values: values)
-        == "my-agent --name='The fix'")
+      line.text
+        == #"my-agent --name="$MULTISHELL_WORKTREE_NAME" "in ""$MULTISHELL_PROJECT_PATH""" 'at '"$MULTISHELL_WORKTREE_PATH"'' {{nonsense}}"#
+    )
     #expect(
-      AgentFlags.expand("my-agent --branch {{branch}}", values: values)
-        == "my-agent --branch kieran/fix", "nothing to quote")
+      line.environment == [
+        "MULTISHELL_WORKTREE_NAME": "The fix",
+        "MULTISHELL_PROJECT_PATH": "/Users/dev/Work/multishell",
+        "MULTISHELL_WORKTREE_PATH": "/Users/dev/Work/multishell-worktrees/fix",
+      ], "only what the line names")
+    #expect(
+      AgentFlags.customLine(#"my-agent \{{branch}}"#, values: values).text
+        == #"my-agent \{{branch}}"#, "an escaped brace is the user's text")
   }
 }
 

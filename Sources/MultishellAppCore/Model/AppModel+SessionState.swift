@@ -89,7 +89,8 @@ extension AppModel {
         report.state, pid: pid, message: report.message, duration: report.duration,
         subagent: report.subagentChange, startsTurn: report.startsTurn == true,
         backgroundShells: report.backgroundShells ?? [],
-        resumesAfterWorkers: report.resumesAfterWorkers == true, for: key, isSeen: place.isSeen)
+        resumesAfterWorkers: report.resumesAfterWorkers == true,
+        conversationID: report.conversationID, for: key, isSeen: place.isSeen)
     }
     if let meant {
       notifyIfNeeded(

@@ -51,9 +51,9 @@ public struct AgentHookEvent: Hashable, Sendable {
   }
 
   /// The roster change this event and payload amount to, or nothing for the
-  /// main thread's. Copilot names a worker without an id; see agents.md.
+  /// main thread's.
   public func subagentReport(for payload: AgentHookPayload) -> SubagentReport? {
-    let type = payload.agentType ?? payload.agentName
+    let type = payload.agentType
     guard let phase = subagent else {
       // Any other event is a tool call, which is a worker's only where one
       // is named: an agent's own carries no id.
@@ -62,7 +62,7 @@ public struct AgentHookEvent: Hashable, Sendable {
     }
     // A start or an end moved the roster by one, so one naming nobody takes
     // an unnamed place; read as the agent's own it leaves a worker over.
-    let id = payload.agentID ?? payload.agentName ?? SubagentReport.anonymousID
+    let id = payload.agentID ?? SubagentReport.anonymousID
     return SubagentReport(id: id, type: type, phase: phase)
   }
 }

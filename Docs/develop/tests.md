@@ -130,6 +130,11 @@ says why these are the rules.
   SessionStateModelTests over twelve pairs, a set's order meeting both.
 - **Each agent names a worker in its own spelling**, and a start or stop naming
   nobody counts as an unnamed one: AgentHookPayloadTests.
+- **A worker that is a conversation of its own is a worker, and its Stop is not
+  the pane's Done**: CopilotWorkerTests, captured payloads driven through the
+  helper's report into the model.
+- **No value in a custom command or editor line is run**, inside the user's
+  quotes or out: CustomLineShellTests under five real shells.
 - **The plugin follows a child session**: OpenCodePluginRunTests runs the
   generated JavaScript with spawn replaced and reads back what the helper would
   have been called with, a source test passing whatever it was rewritten to.
@@ -302,6 +307,9 @@ says why these are the rules.
 - **Never the developer's machine**: a shell runs against a home the test wrote,
   the model's login environment comes from the harness, and git is the fixture's
   runner rather than the PATH's.
+- **A shell given this process's environment takes `Scratch.shellEnvironment`**,
+  which empties `HISTFILE`: an exported one had an interactive bash append the
+  tests' commands to the developer's own zsh history.
 - **Every scratch directory and socket is removed** by the test or its harness,
   and the socket helper takes the claim file the server keeps.
 - **A bound that is left tells one outcome from another**, not a fast machine
