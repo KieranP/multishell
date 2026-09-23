@@ -1,21 +1,59 @@
-#!/bin/sh
+#!/bin/bash
+# Character counts and substrings below assume UTF-8
+export LC_ALL=C.UTF-8
 input=$(cat)
 
 cwd=$(echo "$input" | jq -r '.cwd')
+display_cwd=$cwd
+home=${HOME%/}
+if [ -n "$home" ]; then
+  case "$cwd" in
+    "$home" | "$home"/*) display_cwd="~${cwd#"$home"}" ;;
+  esac
+fi
 model=$(echo "$input" | jq -r '.model.display_name')
 
 # Get git branch: prefer worktree.branch from JSON, fall back to git rev-parse
 branch=$(echo "$input" | jq -r '.worktree.branch // empty')
 [ -z "$branch" ] && branch=$(git -C "$cwd" --no-optional-locks rev-parse --abbrev-ref HEAD 2>/dev/null)
 
-# Get effort level from settings
-effort=$(jq -r '.effortLevel // empty' ~/.claude/settings.json 2>/dev/null)
+# Session effort changes with /effort; settings.json holds only the default
+effort=$(echo "$input" | jq -r '.effort.level // empty')
+[ -z "$effort" ] && effort=$(jq -r '.effortLevel // empty' ~/.claude/settings.json 2>/dev/null)
 
-# Build output
-out=" $cwd"
-[ -n "$branch" ] && out="$out |  $branch"
-out="$out | 󰧑 $model"
-[ -n "$effort" ] && out="$out [$effort]"
+model_str="󰧑 $model"
+[ -n "$effort" ] && model_str="$model_str [$effort]"
+
+# Takes the path and branch to show, so either can be shortened to fit
+build_left() {
+  left=" $1"
+  [ -n "$2" ] && left="$left |  $2"
+}
+
+# Fish-style: every directory but the last cut to one letter (two for dotdirs).
+# Bash substrings count characters; awk's substr cuts UTF-8 mid-byte.
+abbreviate_path() {
+  local dir=${1%/*} last=${1##*/} out="" part parts
+  if [ "$dir" = "$1" ] || [ -z "$last" ]; then
+    echo "$1"
+    return
+  fi
+  IFS=/ read -ra parts <<< "$dir"
+  for part in "${parts[@]}"; do
+    case $part in
+      .*) out="$out${part:0:2}/" ;;
+      *) out="$out${part:0:1}/" ;;
+    esac
+  done
+  echo "$out$last"
+}
+
+ESC=$(printf '\033')
+display_width() {
+  printf '%s' "$1" | sed "s/$ESC\[[0-9;]*m//g" | wc -m
+}
+
+out=""
 
 # Append context window usage if available
 used_pct=$(echo "$input" | jq -r '.context_window.used_percentage // empty')
@@ -23,7 +61,7 @@ ctx_size=$(echo "$input" | jq -r '.context_window.context_window_size // empty')
 if [ -n "$used_pct" ] && [ -n "$ctx_size" ]; then
   used_k=$(awk "BEGIN { printf \"%.0f\", ($used_pct / 100) * $ctx_size / 1000 }")
   total_k=$(awk "BEGIN { printf \"%.0f\", $ctx_size / 1000 }")
-  out="$out | 󰍛 ${used_k}k/${total_k}k"
+  out=" | 󰍛 ${used_k}k/${total_k}k"
 fi
 
 # Format seconds into a compact countdown string (e.g. "2d03h", "1h23m", or "45m")
@@ -80,4 +118,34 @@ if [ -n "$week_pct" ]; then
   out="$out | $week_str"
 fi
 
-echo "$out"
+right=${out# | }
+
+# Claude Code sets COLUMNS for the statusline command. The margin allows for
+# its padding; 4 is a guess, raise it if the line end still clips.
+STATUS_MARGIN=4
+max_width=$(( ${COLUMNS:-0} - STATUS_MARGIN ))
+
+too_wide() {
+  [ "${COLUMNS:-0}" -gt 0 ] && [ "$(display_width "$1")" -gt "$max_width" ]
+}
+
+short_cwd=$(abbreviate_path "$display_cwd")
+rest="$model_str${right:+ | $right}"
+
+build_left "$display_cwd" "$branch"
+line="$left | $rest"
+if too_wide "$line"; then
+  build_left "$short_cwd" "$branch"
+  line="$left | $rest"
+fi
+if too_wide "$line"; then
+  if too_wide "$left"; then
+    build_left "$short_cwd" ""
+    room=$(( max_width - $(display_width "$left | x ") ))
+    [ "$room" -gt 1 ] && build_left "$short_cwd" "${branch:0:room-1}…"
+  fi
+  line="$left
+$rest"
+fi
+
+printf '%s\n' "$line"
