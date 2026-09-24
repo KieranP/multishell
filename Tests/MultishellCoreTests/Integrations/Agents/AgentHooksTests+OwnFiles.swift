@@ -45,9 +45,8 @@ extension AgentHooksTests {
     #expect(FileManager.default.fileExists(atPath: file.path))
   }
 
-  /// OpenCode reports nothing to a hook command, so it is given a plugin
-  /// that calls the helper itself, with the states spelled as the helper
-  /// takes them.
+  /// OpenCode reports nothing to a hook command, so its plugin calls the helper itself, with the
+  /// states spelled as the helper takes them.
   @Test func openCodeGetsAPluginThatCallsTheHelper() throws {
     let directory = temporaryDirectory()
     defer { try? FileManager.default.removeItem(at: directory) }

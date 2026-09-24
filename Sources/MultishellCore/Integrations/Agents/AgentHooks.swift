@@ -13,6 +13,9 @@ public enum AgentHooks {
   /// An agent kills a hook that runs longer than this. The helper connects,
   /// writes one line and exits; anything longer means the app is wedged.
   static let timeoutSeconds = 5
+  /// Codex clamps its exit events' hooks to three seconds and warns at every
+  /// start where one asks for more.
+  static let codexExitTimeoutSeconds = 3
 
   /// The helper as a hook should reference it: through `$HOME`, so a synced
   /// dotfile still resolves on another machine.
@@ -43,8 +46,13 @@ public enum AgentHooks {
     integrations.first { $0.id == id }
   }
 
+  /// `$HOME` first, as the agents themselves read it: the account's home
+  /// ignores it, and a test's helper then wrote the developer's own files.
   private static func home(_ path: String) -> URL {
-    FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(path)
+    let home = ProcessInfo.processInfo.environment["HOME"].flatMap { $0.isEmpty ? nil : $0 }
+    return
+      (home.map { URL(fileURLWithPath: $0, isDirectory: true) }
+      ?? FileManager.default.homeDirectoryForCurrentUser).appendingPathComponent(path)
   }
 
   public static let integrations: [AgentHookIntegration] = [
@@ -61,13 +69,13 @@ public enum AgentHooks {
 
   /// Claude Code: `~/.claude/settings.json`. The one agent asked for both a
   /// permission request and a notification; see Docs/design/agents.md.
-  public static let claude = AgentHookIntegration(
+  static let claude = AgentHookIntegration(
     id: AgentCatalogue.claudeID,
     name: "Claude Code",
     file: home(".claude/settings.json"),
     displayPath: "~/.claude/settings.json",
     events: [
-      AgentHookEvent("SessionStart", .idle),
+      AgentHookEvent("SessionStart", .idle, startsSession: true),
       AgentHookEvent("UserPromptSubmit", .running, startsTurn: true),
       AgentHookEvent("PreToolUse", .running),
       AgentHookEvent("PostToolUse", .running),
@@ -96,7 +104,7 @@ public enum AgentHooks {
     file: home(".codex/hooks.json"),
     displayPath: "~/.codex/hooks.json",
     events: [
-      AgentHookEvent("SessionStart", .idle),
+      AgentHookEvent("SessionStart", .idle, startsSession: true),
       AgentHookEvent("UserPromptSubmit", .running, startsTurn: true),
       AgentHookEvent("PreToolUse", .running),
       AgentHookEvent("PostToolUse", .running),
@@ -105,8 +113,8 @@ public enum AgentHooks {
       AgentHookEvent("SubagentStart", .running, subagent: .started),
       AgentHookEvent("SubagentStop", .running, subagent: .ended),
       AgentHookEvent("Stop", .done),
-      AgentHookEvent("Interrupt", .idle),
-      AgentHookEvent("SessionEnd", .idle),
+      AgentHookEvent("Interrupt", .idle, timeoutSeconds: codexExitTimeoutSeconds),
+      AgentHookEvent("SessionEnd", .idle, timeoutSeconds: codexExitTimeoutSeconds),
     ],
     format: .sharedSettings(millisecondTimeout: false),
     trustNote:
@@ -121,7 +129,7 @@ public enum AgentHooks {
     file: home(".gemini/settings.json"),
     displayPath: "~/.gemini/settings.json",
     events: [
-      AgentHookEvent("SessionStart", .idle),
+      AgentHookEvent("SessionStart", .idle, startsSession: true),
       AgentHookEvent("BeforeAgent", .running, startsTurn: true),
       AgentHookEvent("BeforeTool", .running),
       AgentHookEvent("AfterTool", .running),
@@ -139,7 +147,7 @@ public enum AgentHooks {
     file: home(".copilot/hooks/multishell.json"),
     displayPath: "~/.copilot/hooks/multishell.json",
     events: [
-      AgentHookEvent("SessionStart", .idle),
+      AgentHookEvent("SessionStart", .idle, startsSession: true),
       AgentHookEvent("UserPromptSubmit", .running, startsTurn: true),
       AgentHookEvent("PreToolUse", .running),
       AgentHookEvent("PostToolUse", .running),

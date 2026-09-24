@@ -29,6 +29,9 @@ public struct Subagent: Identifiable, Equatable, Sendable {
 
   static let shellPrefix = "shell:"
 
+  /// The place every worker started past the roster limit shares.
+  static let overflowID = "overflow:"
+
   /// Ids given to workers an older helper counted without naming, so its
   /// `-1` takes one of those and never a named one.
   static let anonymousPrefix = "anonymous:"

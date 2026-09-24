@@ -41,18 +41,45 @@ struct StatusReadLogTests {
     #expect(!log.isEmpty)
   }
 
-  /// The bug this guards: a read in flight when the indicator changed
-  /// counted what the badge no longer means, so its cost must not pace the
-  /// read that does.
+  /// A read in flight when the indicator changed used to count what the badge
+  /// no longer means, and its cost paced the read that does.
   @Test func aReadInFlightWhenTheIndicatorChangedNoLongerCounts() {
     var log = StatusReadLog()
-    let generation = log.currentGeneration()
-    #expect(log.stillCounts(generation))
+    let stale = log.begin([a])
 
     log.remember([a: .seconds(2)])
     log.invalidate()
-    #expect(!log.stillCounts(generation))
+    #expect(!log.isReading(a), "the read that replaces it may start")
     #expect(log.isEmpty, "and every worktree is due again")
     #expect(log.isDue(a, at: .now))
+    let counted = log.finish(stale)
+    #expect(!counted)
+  }
+
+  @Test func aRowIsHeldUntilTheReadThatTookItLastFinishes() {
+    var log = StatusReadLog()
+    let first = log.begin([a, b])
+    #expect(log.isReading(a) && log.isReading(b))
+
+    let second = log.begin([a])
+    _ = log.finish(first)
+    #expect(log.isReading(a), "the later read still holds it")
+    #expect(!log.isReading(b))
+
+    _ = log.finish(second)
+    #expect(!log.isReading(a))
+  }
+
+  @Test func aStaleReadFinishingLetsGoOfNothingTheNewOneHolds() {
+    var log = StatusReadLog()
+    let stale = log.begin([a])
+    log.invalidate()
+    let fresh = log.begin([a])
+
+    let staleCounted = log.finish(stale)
+    #expect(!staleCounted)
+    #expect(log.isReading(a))
+    let freshCounted = log.finish(fresh)
+    #expect(freshCounted)
   }
 }

@@ -11,12 +11,7 @@ struct SidebarView: View {
   @State private var dropTarget: ProjectDropTarget?
   /// The worktree a dragged tab is hovering over, drawn on its row.
   @State private var tabDropTarget: Worktree.ID?
-  @State private var filter = ""
-  /// The filter field is folded away until asked for; it is wanted rarely.
-  @State private var isFiltering = false
-  @Environment(\.openWindow) private var openWindow
 
-  private static let rowSpacing: CGFloat = 1
   /// Above the first row, so the gap holds whether or not the filter is shown.
   private static let listGap: CGFloat = 10
 
@@ -29,14 +24,15 @@ struct SidebarView: View {
     let visible = visibleProjects
     VStack(spacing: 0) {
       SidebarHeader(
-        isFiltering: isFiltering,
+        isFiltering: model.showsSidebarFilter,
         theme: theme,
-        toggleFilter: { setFiltering(!isFiltering) },
+        toggleFilter: { model.setSidebarFilterOpen(!model.showsSidebarFilter) },
         addProject: { Task { await model.chooseProject() } }
       )
-      if isFiltering {
+      if model.showsSidebarFilter {
         SidebarFilterField(
-          filter: $filter, theme: theme, metrics: metrics, close: { setFiltering(false) })
+          filter: Bindable(model).sidebarFilterText, theme: theme, metrics: metrics,
+          close: { model.setSidebarFilterOpen(false) })
       }
       ScrollView {
         LazyVStack(spacing: 1) {
@@ -47,6 +43,7 @@ struct SidebarView: View {
             metrics: metrics,
             select: { model.showAgentBoard() }
           )
+          .equatable()
           .padding(.bottom, 4)
 
           ProjectsHeader(model: model, theme: theme, metrics: metrics)
@@ -94,21 +91,12 @@ struct SidebarView: View {
   }
 
   private var visibleProjects: [SidebarFilter.Entry] {
-    SidebarFilter(filter).apply(to: model.workspace)
+    SidebarFilter(model.sidebarFilterText).apply(to: model.workspace)
   }
 
   /// The rows of one project's block, in the order its settings ask for.
   private func rows(of entry: SidebarFilter.Entry, sessions: WorktreeSessions) -> [Worktree] {
     model.ordered(entry.worktrees, in: entry.project, sessions: sessions)
-  }
-
-  /// Closing clears the filter, a field folded away being unable to say why
-  /// rows are missing, and hands the keyboard back rather than dropping it.
-  private func setFiltering(_ wanted: Bool) {
-    isFiltering = wanted
-    guard !wanted else { return }
-    filter = ""
-    model.focusActivePane()
   }
 
   /// A project and its worktrees move as one block, so the drop indicator
@@ -121,7 +109,7 @@ struct SidebarView: View {
     let expanded = project.isExpanded || forcedOpen
     let visible = expanded ? worktrees : []
 
-    return VStack(spacing: Self.rowSpacing) {
+    return VStack(spacing: UIMetrics.sidebarRowSpacing) {
       projectRow(
         project, worktrees: worktrees, expanded: expanded, sessions: sessions, theme: theme,
         metrics: metrics)
@@ -161,19 +149,16 @@ struct SidebarView: View {
     !model.showsAgentBoard && model.workspace.selectedWorktreeID == worktree.id
   }
 
-  /// How tall a project's block is, which the drop delegate halves: each
-  /// worktree's row, two lines when named, plus the selected one's pane rows.
   private func blockHeight(of visible: [Worktree], metrics: UIMetrics) -> CGFloat {
-    visible.reduce(metrics.rowHeight) { total, worktree in
-      let panes =
-        isSelected(worktree)
-        ? model.workspace.tabs(in: worktree.id).reduce(0) { $0 + $1.sessionIDs.count } : 0
-      return total + Self.rowSpacing
-        + metrics.worktreeRowHeight(
+    metrics.projectBlockHeight(
+      worktreeRows: visible.map { worktree in
+        (
           isNamed: model.customName(of: worktree) != nil,
-          isRenaming: model.renamingWorktreeID == worktree.id)
-        + CGFloat(panes) * (metrics.paneRowHeight + Self.rowSpacing)
-    }
+          isRenaming: model.renamingWorktreeID == worktree.id,
+          paneCount: isSelected(worktree)
+            ? model.workspace.tabs(in: worktree.id).reduce(0) { $0 + $1.sessionIDs.count } : 0
+        )
+      })
   }
 
   private func projectRow(
@@ -194,7 +179,8 @@ struct SidebarView: View {
       toggle: { model.setExpanded(!project.isExpanded, for: project) },
       newWorktree: { model.requestNewWorktree(in: project) }
     )
-    .contextMenu { projectMenu(project) }
+    .equatable()
+    .contextMenu { ProjectMenu(model: model, project: project) }
     .onDrag {
       draggingProject = project.id
       return NSItemProvider(object: project.id as NSString)
@@ -221,6 +207,7 @@ struct SidebarView: View {
       commit: { model.commitRename(of: worktree.id, to: $0) },
       cancel: { model.cancelRenaming() }
     )
+    .equatable()
     .onTapGesture { model.select(worktree) }
     .contextMenu { WorktreeActions(model: model, worktree: worktree) }
     // A tab dragged from the strip lands here. The type is the tab's own,
@@ -245,26 +232,6 @@ struct SidebarView: View {
       } else if tabDropTarget == worktree.id {
         tabDropTarget = nil
       }
-    }
-  }
-
-  @ViewBuilder
-  private func projectMenu(_ project: Project) -> some View {
-    Button(t("actions.new-worktree")) { model.requestNewWorktree(in: project) }
-    Button(t("action.refresh")) { Task { await model.refreshRequested(project) } }
-    // Refresh asks git what is on disk; Fetch asks the remote, which is
-    // what the merged badges are measured against.
-    Button(t("actions.fetch")) { Task { await model.fetch(project) } }
-      .disabled(model.isFetching(project))
-    Divider()
-    Button(t("actions.project-settings")) {
-      model.settingsProjectID = project.id
-      openWindow(id: ProjectSettingsWindow.windowID)
-    }
-    Button(t("action.reveal-in-finder")) { model.revealInFileBrowser(project.path) }
-    Divider()
-    Button(t("actions.remove-project"), role: .destructive) {
-      model.requestProjectRemoval(project, from: .workspace)
     }
   }
 }

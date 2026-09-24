@@ -6,6 +6,11 @@ Newest at the bottom.
 - **Every word the app shows is a lookup by key.** The English sits against that
   key in a catalogue sorted by key, which groups it by the part of the app it is
   in and puts a new one in one place.
+- **Cost: nothing checks the order**, and six of the libraries' entries had
+  drifted out of it before a pass re-sorted them.
+- **A prefix is a thing, singular, or a settings page, plural**: `action.` for a
+  verb anywhere, `notification.` for a banner and `notifications.` for its page,
+  `worktree.` for a fault of one and `worktrees.` for the page.
 - **A language is that folder again under its code**, plus a line in the
   manifest. Nothing else changes.
 - **The key is written at the call site**, not behind a name for it. An enum of
@@ -45,10 +50,12 @@ Newest at the bottom.
 - **Not `.xcstrings`.** SwiftPM copies one verbatim rather than compiling it, so
   every lookup answers with its own key. Checked against the toolchain, not
   assumed.
-- **Resource lookup goes through one wrapper**, because the package accessor
-  looks beside the executable and never where the bundling script puts the
-  resource bundles. The app binary's own accessor does look there; the wrapper
-  stays for the helper and the tests.
+- **Resource lookup goes through one wrapper**, because the `swift build`
+  accessor looks beside the executable and never where the bundling script puts
+  the resource bundles. Both binaries in the bundle now come from xcodebuild,
+  whose accessor does look there, so the wrapper only guards a `swift build`
+  binary. It does nothing for the helper, whose main bundle is
+  `Contents/Helpers`.
 - **A new key when in doubt, not a shared one.** The same English word is held
   by several keys on purpose: a column, a state and a sort order need not be one
   word in every language.
@@ -69,9 +76,9 @@ Newest at the bottom.
 - **The helper's own output stays English too.** Its words sit in a terminal
   beside git's and its commands are English tokens, so half a translated
   sentence reads worse than none.
-- **It also must not start.** The helper is its own main bundle, so a lookup
-  there would fall through to a package bundle that is an absolute path into
-  this build directory and traps everywhere else.
+- **It also must not start.** The helper's main bundle is `Contents/Helpers`,
+  which holds no resource bundle, so a lookup there finds no catalogue and the
+  accessor traps.
 - **Proper names stay**: the engine, the agents, the built-in themes. The icon
   picker's group names are the only words in it.
 - **The permission strings are in the Info.plist, not the catalogue.** A
@@ -100,3 +107,10 @@ Newest at the bottom.
   every locale but English searching words it could not see.
 - **Errors are mapped, not stringified.** The alert is the only place a user
   learns why something failed, so it gets git's own words.
+- **A number in a phrase carries no locale, and that is a won't-fix.** A
+  runtime's tenths read `0.4s` in a region that writes a comma.
+  `String(format:)` given a locale also groups every integer, so the git badge
+  grew a separator and no longer fit the row, and it picks the counted phrases'
+  plural rules by it: English words under a Russian region read `21 subagent`.
+  Formatting the one fraction apart fixed it but was more code than the comma is
+  worth.

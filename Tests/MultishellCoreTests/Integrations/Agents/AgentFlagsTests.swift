@@ -99,10 +99,8 @@ struct AgentFlagsTests {
     #expect(values[.branch] == "abc1234", "never the empty string: `--name=` is worse")
   }
 
-  /// A branch name is whatever anyone pushed, and both paths hand it to a
-  /// shell. Checked against a real zsh when this was written: every one of
-  /// these reaches the agent as one literal argument, and none of them runs
-  /// anything.
+  /// A branch name is whatever anyone pushed, and both paths hand it to a shell.
+  /// TabCommandTests runs the flag path through real shells.
   @Test func aBranchNameCannotRunACommandOnEitherPath() {
     for hostile in ["$(touch /tmp/pwned)", "`touch /tmp/pwned`", "a;touch /tmp/pwned"] {
       let worktree = Worktree(
@@ -112,9 +110,6 @@ struct AgentFlagsTests {
 
       let flags = AgentFlags.arguments("--name={{branch}}", values: values)
       #expect(flags == ["--name=\(hostile)"], "one argument, expanded but not run")
-      #expect(
-        ShellQuoting.commandLine(flags) == "'--name=\(hostile)'",
-        "single-quoted on the way to the command line, so the shell reads it as text")
 
       let custom = AgentFlags.customLine("my-agent --name={{branch}}", values: values)
       #expect(custom.text == "my-agent --name=\"$MULTISHELL_BRANCH\"", "read, never written in")

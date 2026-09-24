@@ -10,11 +10,10 @@ public struct PresentedError: Identifiable {
   public let title: String
   public let message: String
   /// Offered when the failure has a stronger form of the same action.
-  public var retryLabel: String?
-  public var retry: (@MainActor () async -> Void)?
+  public var retry: Retry?
   /// The launch alert about a missing git, which finding git on the login
   /// shell's PATH takes down; nothing else is dismissed by the model.
-  public private(set) var saysGitIsMissing = false
+  private(set) var saysGitIsMissing = false
 
   public init(title: String, message: String) {
     self.title = title
@@ -46,7 +45,8 @@ public struct PresentedError: Identifiable {
         case .link: t("error.files-not-linked")
         case .copy: t("error.files-not-copied")
         }
-      message = failure.description
+      message = ([failure.description] + Self.describeSkipped(failure.skippedEntries))
+        .joined(separator: "\n\n")
     case let failure as BranchDeletionFailure:
       title = t("error.branch-not-deleted", failure.branch)
       message = Self.describe(failure.underlying)
@@ -56,6 +56,12 @@ public struct PresentedError: Identifiable {
     case let failure as WorktreeForgetFailure:
       title = t("error.forget-refused")
       message = "\(failure.path.path)\n\n\(Self.describe(failure.underlying))"
+    case let skipped as WorktreeFilesSkipped:
+      title = t("error.files-skipped-title")
+      message = Self.describeSkipped(skipped.entries).joined()
+    case let failure as NotTheCheckout:
+      title = t("error.not-the-checkout-title")
+      message = t("error.not-the-checkout-message", failure.path.path)
     case let failure as ProcessFailure where failure.message.contains("invalid reference: HEAD"):
       // An unborn HEAD: the repository has never been committed to.
       title = t("error.no-commits-title")
@@ -122,6 +128,12 @@ public struct PresentedError: Identifiable {
     }
   }
 
+  /// What an entry must be, and the entries that were not; none for none.
+  private static func describeSkipped(_ entries: [String]) -> [String] {
+    guard !entries.isEmpty else { return [] }
+    return [t("error.files-skipped-message", entries.map { "• " + $0 }.joined(separator: "\n"))]
+  }
+
   /// A hook's own words, startup noise cut away, then its exit status.
   /// Never the command line it ran as; a stop gives its reason instead.
   private static func describe(_ error: any Error) -> String {
@@ -173,5 +185,19 @@ public struct PresentedError: Identifiable {
 
   private static func seconds(_ duration: Duration) -> Int {
     Int(duration.components.seconds)
+  }
+}
+
+extension PresentedError {
+  /// The stronger form and the button naming it, one value so neither can be
+  /// set without the other.
+  public struct Retry {
+    public let label: String
+    public let action: @MainActor () async -> Void
+
+    init(label: String, action: @escaping @MainActor () async -> Void) {
+      self.label = label
+      self.action = action
+    }
   }
 }

@@ -31,9 +31,7 @@ extension AgentHooksTests {
     #expect(removed.contains(#""c" : 0.1"#) && removed.contains(#""a" : 1.0"#), "\(removed)")
   }
 
-  /// Keeping numbers as written must not widen what is accepted: a literal
-  /// JSON refuses, or bytes that are not UTF-8, are still refused, not
-  /// written back with our hooks beside them.
+  /// Keeping numbers as written must not widen what a read accepts.
   @Test func aNumberThatIsNotJSONOrAFileThatIsNotUTF8IsStillRefused() throws {
     let directory = temporaryDirectory()
     defer { try? FileManager.default.removeItem(at: directory) }
@@ -72,9 +70,8 @@ extension AgentHooksTests {
     #expect(!AgentHooks.gemini.isInstalled(in: file))
   }
 
-  /// Gemini's settings file takes comments, and Gemini keeps them when it
-  /// writes the file itself. Reading one loosely and writing it back
-  /// strictly would throw them away, so the file is left alone.
+  /// Gemini's settings file takes comments and Gemini keeps them when it writes the file, so a
+  /// strict rewrite would throw them away.
   @Test func aFileWithCommentsIsRefusedRatherThanRewrittenWithoutThem() throws {
     let directory = temporaryDirectory()
     defer { try? FileManager.default.removeItem(at: directory) }
@@ -100,9 +97,8 @@ extension AgentHooksTests {
       "nothing was written, so nothing was backed up")
   }
 
-  /// A settings file is often a symlink into a dotfiles repository. An
-  /// atomic write puts a regular file where the link was, and the
-  /// repository stops seeing the user's settings from then on.
+  /// A settings file is often a symlink into a dotfiles repository, and an atomic write puts a
+  /// regular file where the link was.
   @Test func aSymlinkedSettingsFileIsWrittenThroughRatherThanReplaced() throws {
     let directory = temporaryDirectory()
     defer { try? FileManager.default.removeItem(at: directory) }

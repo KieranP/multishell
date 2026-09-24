@@ -86,7 +86,7 @@ struct AgentCardView: View {
         .foregroundStyle(theme.textTertiary)
       Text(card.worktreeName)
         .font(.system(size: metrics.badge, design: .monospaced))
-        .foregroundStyle(theme.ansiRGB[6].color)
+        .foregroundStyle(theme.ansiRGB(6).color)
         .lineLimit(1)
         .truncationMode(.middle)
       if let status = card.status, !status.isClean {

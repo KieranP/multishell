@@ -4,17 +4,14 @@ import Testing
 
 @testable import MultishellCore
 
-/// The repository's `.multishell.json`, and how it layers under the user's
-/// own settings.
 @Suite
 struct SharedProjectSettingsTests {
   private func decode(_ json: String) throws -> SharedProjectSettings {
     try JSONDecoder().decode(SharedProjectSettings.self, from: Data(json.utf8))
   }
 
-  /// The value as the app has it: written to a repository and read back, so
-  /// its digest is the sha256 of real bytes, which is what a hook decision
-  /// is held against.
+  /// Written to a repository and read back, so its digest is the sha256 of real bytes, which is
+  /// what a hook decision is held against.
   private func asRead(_ settings: SharedProjectSettings) throws -> SharedProjectSettings {
     let root = try Scratch.directory("shared")
     defer { try? FileManager.default.removeItem(at: root) }
@@ -92,9 +89,6 @@ struct SharedProjectSettingsTests {
       "the file's no-prefix beats the reader's global")
   }
 
-  /// The text is what the question shows, and names each hook so the user
-  /// can see which stage would run what. The decision itself is held
-  /// against the file's digest.
   @Test func theHooksTextNamesEachHookSoTheQuestionSaysWhichStageRunsWhat() {
     let one = SharedProjectSettings(postCreateHook: "npm ci")
     #expect(one.trustedContentText == "post-create:\nnpm ci")
@@ -148,10 +142,8 @@ struct SharedProjectSettingsTests {
         == ProjectSettings(branchPrefix: "me/"))
   }
 
-  /// A repository may ship what its worktrees open, so a team gets the same
-  /// setup without each person finding the settings. Unlike a hook, this
-  /// runs nothing the repository wrote: it starts the shell or the agent
-  /// the user themselves chose, so it needs no trust decision.
+  /// Unlike a hook this runs nothing the repository wrote, only the shell or agent the user
+  /// chose, so it needs no trust decision.
   @Test func aRepositoryMaySayWhatItsWorktreesOpenAndTheUsersOwnAnswerWins() throws {
     let shared = try decode(
       #"{ "autoStartAgent": true, "autoStartAgentOnCreate": true, "opensTerminalOnSelect": false, "opensTerminalOnCreate": true }"#
@@ -191,9 +183,6 @@ struct SharedProjectSettingsTests {
     #expect(ProjectSettings().layered(over: fileEmoji).iconGlyph == nil, "and neither way round")
   }
 
-  /// Whatever is stored either side, and however it got there, what the app
-  /// reads is a symbol name or nothing, and a trip out through the
-  /// repository's file and back does not change it.
   @Test func theIconInForceIsAlwaysASymbolNameAndSurvivesARoundTrip() {
     let stored: [String?] = [
       nil, "", "   ", "folder", "hammer", "  hammer  ", "server.rack",
@@ -259,9 +248,7 @@ struct SharedProjectSettingsTests {
     #expect(wrongFlag.worktreeSortOrder == .createdOldestFirst, "the good key survives")
   }
 
-  /// The raw values travel in a committed file, so they are part of its
-  /// format: this pins every one of them, and fails if a case is renamed
-  /// rather than added.
+  /// The raw values travel in a committed file, so a case renamed rather than added breaks it.
   @Test func theStoredNamesAreTheFileFormat() {
     #expect(
       WorktreeSortOrder.allCases.map(\.rawValue) == [
@@ -353,9 +340,8 @@ struct SharedProjectSettingsTests {
     #expect(trusted.layered(over: unread).postCreateHook == "")
   }
 
-  /// The file is tracked, so it differs between branches. An answer per
-  /// file means a switch back to a branch already answered for asks
-  /// nothing, where one last answer asked on every switch.
+  /// The file is tracked, so it differs between branches, and keeping only the last answer asked
+  /// again on every switch.
   @Test func anAnswerIsKeptPerFileSoTwoBranchesHooksAreEachAskedAboutOnce() throws {
     let main = try asRead(SharedProjectSettings(postCreateHook: "npm ci"))
     let feature = try asRead(SharedProjectSettings(postCreateHook: "make bootstrap"))
@@ -389,9 +375,8 @@ struct SharedProjectSettingsTests {
       "the file longest unanswered-about is the one dropped")
   }
 
-  /// A teammate on a newer build commits a key this one has no field for, a
-  /// `$schema` line, or a value this build cannot read. Export writes the
-  /// whole file back, so what it could not read goes back as it was.
+  /// Export writes the whole file back, so a key or value a teammate's newer build committed goes
+  /// back as it was.
   @Test func exportKeepsTheKeysThisBuildCannotRead() throws {
     let root = try Scratch.directory("shared")
     defer { try? FileManager.default.removeItem(at: root) }

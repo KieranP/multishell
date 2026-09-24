@@ -4,11 +4,8 @@ import Testing
 
 @Suite
 struct ProjectIconSymbolTests {
-  /// A misspelled SF Symbol name draws nothing at all, and the palette is
-  /// hundreds of names typed by hand. This catches the typo; that a name
-  /// exists as far back as macOS 14 is checked against CoreGlyphs' own
-  /// availability data when a symbol is added, not here, since the test
-  /// machine's OS is newer.
+  /// A misspelled SF Symbol draws nothing. macOS 14 availability is checked against
+  /// CoreGlyphs' data when a symbol is added, not here, since the test machine is newer.
   @Test func everySymbolInThePaletteExists() {
     for name in ProjectIcon.symbols {
       #expect(
@@ -17,12 +14,8 @@ struct ProjectIconSymbolTests {
     }
   }
 
-  /// The sidebar draws a symbol in a square of `UIMetrics.icon + 6`, which
-  /// is 17 points at the default font size, and SwiftUI does not clip it: a
-  /// symbol wider than that spills into the gap before the project's name.
-  /// Most SF Symbols wider than they are tall do, and eight of the fifty-nine
-  /// the app shipped with already did, the widest at 22. So the rule is no
-  /// worse than what has always been drawn, measured rather than guessed.
+  /// The sidebar's unclipped 17pt square lets wider symbols spill toward the name. Eight
+  /// of the 59 the app first shipped already did, the widest at 22, so 22 is the cap.
   @Test func noSymbolIsWiderThanTheWidestTheSidebarAlreadyDrew() {
     let configuration = NSImage.SymbolConfiguration(pointSize: 11, weight: .regular)
     for name in ProjectIcon.symbols {

@@ -1,11 +1,6 @@
 import Foundation
 import MultishellProcess
 
-public struct GitUnavailable: Error, CustomStringConvertible {
-  public init() {}
-  public var description: String { "git was not found on PATH" }
-}
-
 /// Runs git and hands back its standard output. Shelling out rather than
 /// linking libgit2; see Docs/design/architecture.md.
 public struct GitRunner: Sendable {
@@ -23,7 +18,7 @@ public struct GitRunner: Sendable {
   ]
 
   /// `configuration` beats `isolation` and git's own. Through the environment,
-  /// not `-c`, which a failure would report in its arguments; see architecture.md.
+  /// not `-c`, which a failure would report in its arguments; see merged-branch.md.
   public init(
     executable: URL? = ExecutableLookup.find("git"), runner: ProcessRunner = ProcessRunner(),
     path: String? = nil, configuration: [String: String] = [:]
@@ -60,6 +55,14 @@ public struct GitRunner: Sendable {
     return output?.succeeded ?? false
   }
 
+  /// The exit status of a run nobody stopped, `nil` where there was none.
+  func status(_ arguments: [String], in directory: URL) async -> Int32? {
+    let output = try? await runner.capture(
+      executable, arguments, in: directory, environment: configEnvironment)
+    guard let output, output.stop == nil else { return nil }
+    return output.status
+  }
+
   /// The output where git succeeded, `nil` where it failed. For a poll's
   /// reads, where a repository that cannot answer is a badge not drawn.
   public func output(_ arguments: [String], in directory: URL) async -> String? {
@@ -68,4 +71,9 @@ public struct GitRunner: Sendable {
     guard let output, output.succeeded else { return nil }
     return output.standardOutput
   }
+}
+
+public struct GitUnavailable: Error, CustomStringConvertible {
+  public init() {}
+  public var description: String { "git was not found on PATH" }
 }

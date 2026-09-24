@@ -18,6 +18,35 @@ struct SessionStateReportTests {
     #expect(SessionStateReport.parse(line) == report)
   }
 
+  @Test func everyStringOffTheChannelIsBounded() {
+    let long = String(repeating: "x", count: 12_000)
+    let shells = (1...500).map(String.init).joined(separator: ",")
+    let line = """
+      {"state":"running","agent":"\(long)","cwd":"/\(long)","command":"\(long) arg",\
+      "subagent":{"id":"\(long)","type":"\(long)","phase":"started"},\
+      "shells":[\(shells)]}
+      """
+    let report = SessionStateReport.parse(line)
+
+    #expect(report?.agent == nil)
+    #expect(report?.cwd == nil)
+    #expect(report?.command == nil)
+    #expect(report?.subagent?.id == SubagentReport.anonymousID)
+    #expect(report?.subagent?.type?.count == SubagentReport.maximumTypeLength + 1)
+    #expect(report?.backgroundShells?.count == SessionStateReport.rosterLimit)
+  }
+
+  @Test func boundedStringsWithinTheirLimitsAreKeptWhole() {
+    let report = SessionStateReport.parse(
+      #"{"state":"running","agent":"codex","cwd":"/w/repo","command":"/bin/make all","#
+        + #""subagent":{"id":"t1","type":"Explore","phase":"working"}}"#)
+
+    #expect(report?.agent == "codex")
+    #expect(report?.cwd == "/w/repo")
+    #expect(report?.command == "make")
+    #expect(report?.subagent == SubagentReport(id: "t1", type: "Explore", phase: .working))
+  }
+
   @Test func onlyTheStateIsRequiredAndTheVersionDefaultsToOne() {
     let report = SessionStateReport.parse(#"{"state":"running"}"#)
     #expect(report?.state == .running)
@@ -108,10 +137,8 @@ struct SessionStateReportTests {
       "so the helper's walk up from a prompt knows where to stop")
   }
 
-  /// The channel drops a line over 64 KB as not speaking the protocol, so a
-  /// message long enough to push a report past it would lose the state as
-  /// well as the text — and the state it loses is Waiting for input, from a
-  /// permission prompt quoting a very long command.
+  /// The channel drops a line over 64 KB, so an overlong message would lose the state too:
+  /// Waiting for input, from a permission prompt quoting a very long command.
   @Test func averyLongMessageIsTrimmedSoItsReportStillFits() throws {
     let report = SessionStateReport(
       state: .attention, cwd: String(repeating: "d", count: 900),
@@ -127,10 +154,8 @@ struct SessionStateReportTests {
     #expect(short.message == "Allow rm -rf?", "anything a banner shows is left alone")
   }
 
-  /// The cap has to hold coming in, not only going out. The channel is a
-  /// file any process of the user's can write to, so the reports the app
-  /// trusts are the parsed ones, and a message well under the line limit
-  /// would otherwise reach a notification body whole.
+  /// The app trusts only parsed reports, since any process of the user's can write to the
+  /// channel, and a message under the line limit would otherwise reach a banner whole.
   @Test func aLongMessageIsTrimmedComingOffTheChannelAndNotOnlyGoingOntoIt() throws {
     let long = String(repeating: "x", count: 60_000)
     let report = try #require(

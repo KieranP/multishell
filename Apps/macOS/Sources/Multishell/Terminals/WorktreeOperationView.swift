@@ -18,18 +18,10 @@ struct WorktreeOperationView: View {
       } else {
         Image(systemName: "exclamationmark.triangle.fill")
           .font(.system(size: 34, weight: .light))
-          .foregroundStyle(theme.ansiRGB[1].color)
+          .foregroundStyle(theme.ansiRGB(1).color)
       }
-      Text(operation.title)
-        .font(.system(size: 18, weight: .semibold))
-        .foregroundStyle(theme.textPrimary)
-        .padding(.top, 20)
-      Text(operation.detail)
-        .font(.system(size: 13))
-        .foregroundStyle(theme.textSecondary)
-        .multilineTextAlignment(.center)
-        .frame(maxWidth: 380)
-        .padding(.top, 6)
+      Text(operation.title).stateTitle(theme)
+      Text(operation.detail).stateCaption(theme)
       if operation.isRunning, let help = operation.step.cancelHelp {
         Button(t("action.cancel"), action: cancel)
           .padding(.top, 18)

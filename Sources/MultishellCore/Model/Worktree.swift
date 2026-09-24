@@ -10,6 +10,9 @@ public struct Worktree: Identifiable, Codable, Hashable, Sendable {
   public var branch: String?
   public var isPrimary: Bool
   public var isLocked: Bool
+  /// git's own mark on a worktree `git worktree add` is still checking out,
+  /// wherever that add was run.
+  public var isInitializing: Bool
   /// The repository itself in a bare layout: listed first by git, with no
   /// checkout to show a status for.
   public var isBare: Bool
@@ -27,6 +30,7 @@ public struct Worktree: Identifiable, Codable, Hashable, Sendable {
     self.branch = try container.decodeIfPresent(String.self, forKey: .branch)
     self.isPrimary = try container.decode(Bool.self, forKey: .isPrimary, or: false)
     self.isLocked = try container.decode(Bool.self, forKey: .isLocked, or: false)
+    self.isInitializing = try container.decode(Bool.self, forKey: .isInitializing, or: false)
     self.isBare = try container.decode(Bool.self, forKey: .isBare, or: false)
     // Tolerated: a date in a shape a newer build wrote costs the date, not
     // the worktree and the tabs saved under it.
@@ -52,6 +56,7 @@ public struct Worktree: Identifiable, Codable, Hashable, Sendable {
     branch: String? = nil,
     isPrimary: Bool = false,
     isLocked: Bool = false,
+    isInitializing: Bool = false,
     isBare: Bool = false,
     createdAt: Date? = nil
   ) {
@@ -61,6 +66,7 @@ public struct Worktree: Identifiable, Codable, Hashable, Sendable {
     self.branch = branch
     self.isPrimary = isPrimary
     self.isLocked = isLocked
+    self.isInitializing = isInitializing
     self.isBare = isBare
     self.createdAt = createdAt
   }

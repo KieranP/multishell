@@ -118,10 +118,8 @@ struct RemovalDisposalTests {
     project.settings = ProjectSettings(preCreateHook: "echo starting\nsleep 30")
     let started = ContinuousClock.now
 
-    // Long enough that the interactive login shell's rc files finish and
-    // `echo starting` runs before the stop: at half a second, a loaded
-    // machine killed the shell during its own startup and the message was
-    // rc noise with nothing of the hook's in it.
+    // At half a second a loaded machine killed the login shell during its rc files, and the
+    // message was rc noise with nothing of the hook's in it.
     let timeout = Duration.seconds(3)
     do {
       try await repo.coordinator.create(

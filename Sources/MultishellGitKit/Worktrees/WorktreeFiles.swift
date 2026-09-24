@@ -13,37 +13,42 @@ public struct WorktreeFiles: Sendable {
     return LineList.entries(in: list).filter { seen.insert($0).inserted }
   }
 
-  /// Links or copies each listed path, placing all it can before throwing.
-  /// Asks `isStopped` per path. `heldToRepository` false = the user's own list.
+  /// Links or copies each listed path, placing all it can before throwing, and
+  /// returns a user's own entries that name somewhere else; see hooks.md.
+  @discardableResult
   public func place(
     _ list: String, as placement: WorktreePlacement, from repository: URL, to worktree: URL,
     heldToRepository: Bool = true, isStopped: @Sendable () -> Bool = { false }
-  ) throws {
+  ) throws -> [WorktreeFileFailure.Item] {
     let manager = FileManager.default
     let repositoryBase = repository.resolvingSymlinksInPath()
     let worktreeBase = worktree.resolvingSymlinksInPath()
     var failures: [WorktreeFileFailure.Item] = []
+    var skipped: [WorktreeFileFailure.Item] = []
 
     // On the spelling, before the disk, so `~/.aws.json` is refused rather
     // than skipped for not existing under the repository. See settings.md.
     var listed: [String] = []
     for path in Self.paths(in: list) {
-      if heldToRepository, !RepositoryContainment.holds(listedPath: path, under: repository) {
-        failures.append(WorktreeFileFailure.Item(path: path, underlying: WorktreeFileEscape()))
+      if !RepositoryContainment.holds(listedPath: path, under: repository) {
+        let item = WorktreeFileFailure.Item(path: path, underlying: WorktreeFileEscape())
+        if heldToRepository { failures.append(item) } else { skipped.append(item) }
         continue
       }
       listed.append(path)
     }
 
     for path in listed.flatMap({ Self.expand($0, in: repository) }) {
-      guard !isStopped() else { throw WorktreeFilesStopped(failures: failures) }
+      guard !isStopped() else {
+        throw WorktreeFilesStopped(failures: failures, skipped: skipped)
+      }
       let source = repository.appendingPathComponent(path)
       let destination = worktree.appendingPathComponent(path)
       // A path the repository does not have is the quiet case and comes
       // first, so `.env` on a checkout without one is not an escape.
       guard manager.fileExists(atPath: source.path) else { continue }
       let landsInWorktree = Self.isInside(
-        worktreeBase, Self.deepestExistingAncestor(of: destination))
+        worktreeBase, destination.deletingLastPathComponent().splitAtDeepestExisting().existing)
       if heldToRepository {
         // Each end as on disk, the source itself included: `copyItem` carries
         // a symlink rather than following it. See Docs/design/hooks.md.
@@ -56,7 +61,8 @@ public struct WorktreeFiles: Sendable {
         }
       } else if !landsInWorktree {
         // The destination is mirrored from the entry rather than asked for,
-        // so a user's own entry pointing out places nothing rather than failing.
+        // so a user's own entry pointing out places nothing, and is named.
+        skipped.append(WorktreeFileFailure.Item(path: path, underlying: WorktreeFileEscape()))
         continue
       }
       guard !Self.isPresent(destination) else { continue }
@@ -69,13 +75,73 @@ public struct WorktreeFiles: Sendable {
           // checkout the user sees. Absolute, as git records one.
           try manager.createSymbolicLink(at: destination, withDestinationURL: source)
         case .copy:
-          try manager.copyItem(at: source, to: destination)
+          try Self.copy(source, to: destination, isStopped: isStopped)
         }
+      } catch is WorktreeFilesStopped {
+        throw WorktreeFilesStopped(failures: failures, skipped: skipped)
       } catch {
         failures.append(WorktreeFileFailure.Item(path: path, underlying: error))
       }
     }
-    guard failures.isEmpty else { throw WorktreeFileFailure(placement: placement, items: failures) }
+    guard failures.isEmpty else {
+      throw WorktreeFileFailure(
+        placement: placement, items: failures, skippedEntries: skipped.map(\.path))
+    }
+    return skipped
+  }
+
+  /// A directory entry by entry, asking `isStopped` before each, so a large
+  /// one ends at the next file on Cancel; `copyItem` alone takes it whole.
+  static func copy(_ source: URL, to destination: URL, isStopped: () -> Bool) throws {
+    let manager = FileManager.default
+    var isDirectory: ObjCBool = false
+    guard manager.fileExists(atPath: source.path, isDirectory: &isDirectory), isDirectory.boolValue,
+      (try? source.resourceValues(forKeys: [.isSymbolicLinkKey]))?.isSymbolicLink != true
+    else {
+      try manager.copyItem(at: source, to: destination)
+      return
+    }
+    // Modes go on last, deepest first: a 0555 folder made first takes no children.
+    var made: [(directory: URL, source: URL)] = []
+    defer { for (directory, source) in made.reversed() { copyMode(of: source, to: directory) } }
+    try manager.createDirectory(at: destination, withIntermediateDirectories: false)
+    made.append((destination, source))
+    // Nil, the enumerator walks on past a folder it cannot read and the copy
+    // reads as whole where `copyItem` would have thrown.
+    var unread: (any Error)?
+    let entries = manager.enumerator(
+      at: source, includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey],
+      options: [.producesRelativePathURLs]
+    ) { _, error in
+      unread = error
+      return false
+    }
+    do {
+      while let entry = entries?.nextObject() as? URL {
+        guard !isStopped() else { throw WorktreeFilesStopped() }
+        let target = destination.appendingPathComponent(entry.relativePath)
+        let values = try entry.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+        if values.isDirectory == true, values.isSymbolicLink != true {
+          try manager.createDirectory(at: target, withIntermediateDirectories: false)
+          made.append((target, entry))
+        } else {
+          try manager.copyItem(at: entry, to: target)
+        }
+      }
+      if let unread { throw unread }
+    } catch {
+      // Half a directory would read as placed, and nothing places over it.
+      made = []
+      try? manager.removeItem(at: destination)
+      throw error
+    }
+  }
+
+  private static func copyMode(of source: URL, to directory: URL) {
+    let manager = FileManager.default
+    if let mode = try? manager.attributesOfItem(atPath: source.path)[.posixPermissions] {
+      try? manager.setAttributes([.posixPermissions: mode], ofItemAtPath: directory.path)
+    }
   }
 
   /// The paths a listed one stands for. One with no pattern is itself, never
@@ -147,17 +213,5 @@ public struct WorktreeFiles: Sendable {
   /// Whether `url`, symlinks resolved, is `base` or something under it.
   private static func isInside(_ base: URL, _ url: URL) -> Bool {
     url.resolvingSymlinksInPath().pathComponents(under: base) != nil
-  }
-
-  /// The nearest folder on the way to `url` already there. Resolving `url`
-  /// says nothing, a path whose tail is missing being left alone.
-  private static func deepestExistingAncestor(of url: URL) -> URL {
-    var current = url.deletingLastPathComponent()
-    while current.pathComponents.count > 1,
-      !FileManager.default.fileExists(atPath: current.path)
-    {
-      current = current.deletingLastPathComponent()
-    }
-    return current
   }
 }

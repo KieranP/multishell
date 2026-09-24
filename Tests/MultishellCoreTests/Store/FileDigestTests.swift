@@ -4,8 +4,7 @@ import Testing
 
 @testable import MultishellCore
 
-/// The core hashes its own bytes, so the vectors are checked here rather
-/// than taken on trust: the padding around a block boundary is where an
+/// The core hashes its own bytes, and the padding around a block boundary is where an
 /// implementation of this goes wrong.
 @Suite
 struct FileDigestTests {

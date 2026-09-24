@@ -105,7 +105,9 @@ struct TabBar: View {
         isShuffling: isShuffling,
         width: layout.tabWidth,
         theme: theme,
-        drag: $drag)
+        drag: $drag
+      )
+      .equatable()
     }
   }
 
@@ -153,8 +155,8 @@ struct TabBar: View {
     .accessibilityLabel(t("tab.new"))
   }
 
-  /// Painted, not a `contentShape`: a menu is hit-tested by what its label
-  /// draws, so a clear frame around the glyphs would miss.
+  /// Painted as well as shaped: a menu is hit-tested by what its label draws,
+  /// so a clear frame around the glyphs would miss.
   private var newTabLabel: some View {
     HStack(spacing: model.metrics.menuChevronGap) {
       Image(systemName: "plus")

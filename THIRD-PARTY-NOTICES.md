@@ -3,7 +3,7 @@
 Multishell is licensed under the GNU Affero General Public License v3.0; see
 [LICENSE](LICENSE). The executable also contains the software below, most of it
 inside the prebuilt `libghostty` library, built from Ghostty at commit
-`c4e1697`. Each licence text is in [Licenses/](Licenses/), which ships in the
+`3c47ca1`. Each licence text is in [Licenses/](Licenses/), which ships in the
 app bundle beside this file.
 
 | Component                 | Copyright                                     | Licence                     | Text                                                                                 |

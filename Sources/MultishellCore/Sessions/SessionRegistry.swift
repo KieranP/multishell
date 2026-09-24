@@ -82,7 +82,6 @@ extension SessionRegistry: TerminalHostDelegate {
     _ host: any TerminalHost, didRetitle id: TerminalSession.ID, to title: String
   ) {
     onRetitle?(id, title)
-    onActivity?(id)
   }
 
   public func terminalHost(_ host: any TerminalHost, didSeeActivityIn id: TerminalSession.ID) {

@@ -43,8 +43,8 @@ the bottom.
   symbols, no third-party dylib, nothing setting dyld variables. A child's JIT
   is the child's business.
 - **Usage strings go further than the entitlements.** The file locations, the
-  local network, speech recognition, a system setting, a file provider's files
-  and Focus status have a string and no entitlement to hold.
+  local network, the media library, speech recognition, a system setting, a file
+  provider's files and Focus status have a string and no entitlement to hold.
 - **Calendars and reminders carry the legacy key and the newer split both**,
   because the string shown is the responsible app's and the asking CLI may be
   linked against either SDK.

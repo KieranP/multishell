@@ -17,12 +17,25 @@ extension AppModel {
   /// Whether each worktree's branch has landed. On the status poll, not the
   /// watcher: a commit moves a ref no watched file mentions.
   func refreshMergeStates() async {
-    for project in workspace.projects where !missingProjects.contains(project.id) {
-      await refreshMergeStates(of: project)
+    let projects = workspace.projects.filter { !missingProjects.contains($0.id) }
+    mergeReads.beginRound()
+    // A few at once: one git per project per tick, serially, was the tick's
+    // longest wait at ten projects. Each writes only its own worktrees' ids.
+    await withTaskGroup(of: Void.self) { group in
+      var pending = projects.makeIterator()
+      func startNext() {
+        guard let project = pending.next() else { return }
+        group.addTask { await self.refreshMergeStates(of: project, inRound: true) }
+      }
+      for _ in 0..<Self.concurrentBranchScans { startNext() }
+      for await _ in group { startNext() }
     }
   }
 
-  func refreshMergeStates(of project: Project) async {
+  static var concurrentBranchScans: Int { 4 }
+
+  /// `inRound` inside the poll's round, whose projects share one budget.
+  func refreshMergeStates(of project: Project, inRound: Bool = false) async {
     guard let worktrees else { return }
     // Resolved here, not taken from the caller: `fetch` holds its project
     // across a network call, so its copy can predate a read of the file.
@@ -47,13 +60,13 @@ extension AppModel {
     note(scan.base, asMergeBaseOf: project.id)
 
     var checks: [Worktree.ID: MergeCheck] = [:]
-    var asking: Set<String> = []
+    var waiting: [(id: Worktree.ID, branch: String)] = []
     var unbadgeable: [Worktree.ID] = []
     for worktree in workspace.worktrees(of: project.id) {
       // A stage keeps what it earned and is asked nothing; a claimed path
       // forgets, the last checkout there being gone. See worktrees.md.
       if worktreeOperations.isUnderWay(worktree.id) { continue }
-      guard !workInFlight.isClaimed(worktree.id),
+      guard !workInFlight.isClaimed(worktree.id), !worktree.isInitializing,
         WorktreeMergeState.applies(to: worktree, base: scan.base.branch),
         let branch = worktree.branch, let tip = scan.tip(of: branch)
       else {
@@ -64,22 +77,28 @@ extension AppModel {
         base: scan.base.ref, baseTip: scan.base.tip, branch: branch, tip: tip,
         upstreamIsGone: scan.upstreamIsGone(branch))
       checks[worktree.id] = check
-      // Nothing has moved since the answer we have, so nothing to ask. A
-      // branch checked out in two worktrees is asked about once.
+      // Nothing has moved since the answer we have, so nothing to ask.
       guard mergeChecks[worktree.id] != check || mergeStates[worktree.id] == nil else { continue }
-      asking.insert(branch)
+      waiting.append((worktree.id, branch))
     }
     forget(unbadgeable)
 
-    let fresh = await worktrees.mergeStates(of: asking.sorted(), in: project, scan: scan)
+    // The rest keep their stale check, so the next round asks them. A branch
+    // checked out in two worktrees is asked about once.
+    let admitted = mergeReads.admit(waiting.map(\.id), sharingRound: inRound)
+    let asking = Set(waiting.filter { admitted.contains($0.id) }.map(\.branch))
+    let fresh = await worktrees.mergeReadings(of: asking.sorted(), in: project, scan: scan)
     // The worktrees may have changed under the git calls above; only what
     // is still there and still on that branch is kept.
     for worktree in workspace.worktrees(of: project.id) {
       guard let check = checks[worktree.id], check.branch == worktree.branch,
-        let state = fresh[check.branch], !isUnderConstruction(worktree.id)
+        let reading = fresh[check.branch], !isUnderConstruction(worktree)
       else { continue }
+      // A failed read is logged too, or it sorts first every round at the guess.
+      mergeReads.remember([worktree.id: reading.took])
       // Only an answer settles it: stamping the check for a failed read
       // pins the old verdict to the new tip for good.
+      guard let state = reading.state else { continue }
       setIfChanged(\.mergeStates[worktree.id], state)
       mergeChecks[worktree.id] = check
     }
@@ -103,6 +122,7 @@ extension AppModel {
       setIfChanged(\.mergeStates[id], nil)
       mergeChecks[id] = nil
     }
+    mergeReads.forget(ids)
   }
 
   /// Where a project's default branch has gone: its badges are about a base
@@ -132,14 +152,4 @@ extension AppModel {
     await refreshStatuses()
     await refreshMergeStates(of: project)
   }
-}
-
-/// What a worktree's merge verdict was computed from, so a refresh finding
-/// it unmoved asks git nothing. The branch and its gone upstream are in it.
-struct MergeCheck: Equatable, Sendable {
-  let base: String
-  let baseTip: String
-  let branch: String
-  let tip: String
-  let upstreamIsGone: Bool
 }

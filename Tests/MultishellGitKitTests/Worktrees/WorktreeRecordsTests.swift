@@ -4,9 +4,8 @@ import Testing
 
 @testable import MultishellGitKit
 
-/// The records are what a watcher tick compares to decide whether to run
-/// `git worktree list`. They must move for anything that list would show and
-/// stay put for the index writes `git status` makes in the same directory.
+/// A watcher tick compares the records to decide whether to run `git worktree list`,
+/// and `git status` writes the index into the same directory.
 @Suite(.serialized)
 struct WorktreeRecordsTests {
   @Test func indexWritesInALinkedWorktreeDoNotChangeTheRecords() async throws {

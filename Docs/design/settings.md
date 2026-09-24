@@ -21,7 +21,9 @@ shipped hook. Newest at the bottom.
   reads.
 - **So a repo's three are confined to the checkout**, once at read time and held
   on the project, the sidebar asking per row per render. The tick's reader
-  confines off the main actor with the parse; export does it on the main actor.
+  confines off the main actor with the parse, and export writes, stamps and
+  confines there too: each touches the disk, and on a slow volume would hold the
+  window.
 - **The directory resolves symlinks**, so a committed link cannot carry it out.
 - **Resolved as far as it exists, the rest appended**: the resolver returns a
   path that does not exist unchanged, links and all, and before the first create
@@ -36,9 +38,12 @@ shipped hook. Newest at the bottom.
 - **A refused value is dropped whole and the user's stands.** Pointing outside
   is the user's to do in settings, not the repository's. Cost: a repo can no
   longer ship `../{project}-worktrees`, and the drop is silent.
-- **The rule reaches only what the file ships.** `place` takes
-  `heldToRepository`, false for a user's list, whose source end is used as
-  written. The destination end is held for everyone, mirroring the entry.
+- **Refusal reaches only what the file ships.** `place` takes
+  `heldToRepository`, false for a user's list: an entry of theirs spelled to
+  leave the root is skipped and named rather than failing the create (hooks.md),
+  and its symlinked sources may lead anywhere. Both lists take an entry as a
+  path inside the repository and mirror it into the worktree; `~` and variables
+  are never expanded.
 - **A list is wholly one or the other.** `layered` takes the repo's only where
   the user's is blank, so a create decides it once and carries it on the value
   as `WorktreeFileList`.
@@ -85,6 +90,12 @@ shipped hook. Newest at the bottom.
   can read it changes it.
 - **Help goes behind an (i).** Captions doubled every form's height and were
   read once. A caption is left only for a value computed live.
+- **A page taller than its window is split, not scrolled.** A grouped form's
+  scroller is an overlay, so what is below the fold says nothing, and forcing
+  the indicators changes nothing there. Project Hooks shows Create, Delete or
+  Environment, six editors being 973 pt of a 600 pt window; Agents shows the
+  preferred agent or the hooks, the hooks growing with every agent installed.
+- **A hook file opens in a popover**, which inline added 166 pt a row.
 - **Which states raise a banner is three toggles, not one picker.** The picker
   offered three of the eight answers and could not say "only when something
   failed", which is the whole of what some people want.
@@ -97,3 +108,9 @@ shipped hook. Newest at the bottom.
 - **The answer is runtime state**, re-read as the page opens and as the app
   returns to the front, that being the way back from the settings the caption
   points at.
+- **Export stores its trust answer before the write**, the digest being known
+  from the bytes. Stored after, a poll reading the file in between asked the
+  user to trust hooks they had just exported, and nothing withdrew it.
+- **Exports land in the order they were asked**, through the store's ticket, one
+  order per project. Two on a slow volume otherwise landed backwards, the older
+  overwriting the newer, and a late finish recorded the older's bytes.

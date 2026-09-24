@@ -3,11 +3,8 @@ import Testing
 
 @testable import MultishellCore
 
-/// The catalogue and the code that asks it for words have to hold each
-/// other up: a key nothing has an entry for reaches a screen as itself, and
-/// an entry nothing asks for is a line a translator pays for and nobody
-/// reads. A key is a literal at its call site, so both are read off the
-/// source, which this finds from its own `#filePath`.
+/// A missing key reaches a screen as itself and an unused entry costs a translator. Keys
+/// are literals, so both are read off the source, found from `#filePath`.
 struct TranslationTests {
   @Test func everyKeyTheCodeAsksForIsInTheCatalogue() throws {
     let catalogue = try Self.catalogue()
@@ -27,9 +24,8 @@ struct TranslationTests {
     }
   }
 
-  /// What the enum of keys used to catch at compile time: a call passing
-  /// too few arguments prints a raw `%@`, and one passing too many drops
-  /// the extra without a word.
+  /// Too few arguments print a raw `%@` and too many are dropped silently; the enum of keys
+  /// used to catch both at compile time.
   @Test func everyCallPassesTheArgumentsItsPhraseTakes() throws {
     let catalogue = try Self.catalogue()
     for site in try Self.callSites() {
@@ -44,10 +40,8 @@ struct TranslationTests {
     }
   }
 
-  /// A phrase filled in with two or more arguments has to number them, or a
-  /// translation that reorders the sentence silently swaps them. All of
-  /// them or none: a phrase that numbers some is counted wrong by
-  /// `placeholders(in:)`, and the check above would pass it.
+  /// Unnumbered, a translation that reorders the sentence swaps the arguments. A phrase
+  /// numbering only some is miscounted by `placeholders(in:)`, so the check above passes it.
   @Test func everyPhraseWithSeveralArgumentsNumbersThem() throws {
     for (key, english) in try Self.catalogue() {
       let all = english.matches(of: /%[0-9]*\$?[0-9.]*[@dfs]/).map { String($0.output) }
@@ -69,16 +63,8 @@ struct TranslationTests {
     #expect(t("quit.terminals-open", 2).hasPrefix("2 terminals"))
   }
 
-  /// The keys are read off the source and the words out of the built
-  /// bundle, so a run that skipped the build compares one against a copy of
-  /// the other made before the edit, and passes on what is no longer there.
-  /// `make test` builds first; a bare `swift test --skip-build` need not.
-  /// Two ways an entry goes wrong that every other check here passes: a
-  /// blank value, which shows nothing where a word should be, and a key
-  /// written twice, where the file still parses and `NSDictionary` keeps
-  /// one of the two without a word about the other. The second reads the
-  /// file rather than the parsed form, which is the only place the loss is
-  /// still visible; one entry per line is the convention it counts on.
+  /// `NSDictionary` silently keeps one of a key written twice, so the duplicate check reads
+  /// the raw file and counts on the convention of one entry per line.
   @Test func noEntryIsBlankOrWrittenTwice() throws {
     for (key, english) in try Self.catalogue() {
       let isSaid = !english.trimmingCharacters(in: .whitespaces).isEmpty
@@ -96,9 +82,8 @@ struct TranslationTests {
     #expect(written.count == (try Self.catalogue().count))
   }
 
-  /// `%s` is a C string. A Swift `String` handed to one is a pointer where
-  /// a pointer is not, which is a crash or worse rather than a wrong word,
-  /// and nothing else here would catch it: the argument count is right.
+  /// A Swift `String` passed to `%s` is read as a C string pointer, a crash rather than a
+  /// wrong word, and the argument count check passes it.
   @Test func noPhraseAsksForACString() throws {
     for (key, english) in try Self.catalogue() {
       let takesACString = english.contains(/%[0-9$]*s/)
@@ -106,11 +91,8 @@ struct TranslationTests {
     }
   }
 
-  /// Every counted form, rendered. The rule lives in a plist whose format
-  /// key has to name its own sub-dictionary, and a pair that does not match
-  /// answers with the raw format rather than a word. Two of these are
-  /// exercised by what they say; the rest were only ever checked by being
-  /// present.
+  /// A stringsdict format key must name its own sub-dictionary or it answers with the raw
+  /// format; most forms were otherwise only checked by being present.
   @Test func everyCountedFormRendersForOneAndMany() {
     for key in Self.countedForms.sorted() {
       let one = t(key, 1)
@@ -122,6 +104,8 @@ struct TranslationTests {
     }
   }
 
+  /// Keys come off the source and words off the built bundle, so a run that skipped the
+  /// build compares against a stale copy. `make test` builds first; `--skip-build` does not.
   @Test func theBuiltCatalogueIsNotStale() throws {
     for name in ["Localizable.strings", "Localizable.stringsdict"] {
       let built = try #require(Bundle.catalogue.url(forResource: name, withExtension: nil))
@@ -143,9 +127,8 @@ struct TranslationTests {
     let `where`: String
   }
 
-  /// Every `t("…")` in the app, with how many arguments it passes. Counted
-  /// by walking the brackets rather than by pattern, since an argument is
-  /// as often a call as a name.
+  /// Arguments are counted by walking the brackets rather than by pattern, since an argument
+  /// is as often a call as a name.
   private static func callSites() throws -> [CallSite] {
     var sites: [CallSite] = []
     for file in try swiftFiles() {
@@ -205,8 +188,6 @@ struct TranslationTests {
     return Set(entries.keys)
   }()
 
-  /// The checkout this test was compiled from, which is where the source
-  /// it reads is.
   private static let checkout = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent()  // Text
     .deletingLastPathComponent()  // MultishellCoreTests

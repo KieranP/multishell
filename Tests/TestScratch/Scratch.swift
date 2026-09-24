@@ -1,17 +1,10 @@
 import Foundation
 
-/// Throwaway paths under the system temp directory.
-///
-/// Every suite needs one and they were hand-rolled per test, so the same four
-/// lines appeared fifty times with a different tag each. `tag` is only there
-/// to make a stray directory recognisable when a test crashes before its
-/// teardown; nothing reads it.
-///
 /// No dependencies, so the test targets for the Foundation-only libraries can
 /// use it without linking the git layer that `TestSupport` needs.
 public enum Scratch {
-  /// A unique directory URL. Not created: several tests hand the path to the
-  /// code under test precisely to check that it makes it.
+  /// Not created: several tests check that the code under test makes it. `tag` only marks a
+  /// stray directory a crashed test left behind; nothing reads it.
   public static func path(_ tag: String = "scratch") -> URL {
     URL(fileURLWithPath: NSTemporaryDirectory())
       .appendingPathComponent("multishell-\(tag)-\(UUID().uuidString)", isDirectory: true)
@@ -44,10 +37,8 @@ public enum Scratch {
     for path in [url.path, url.path + ".lock"] { try? FileManager.default.removeItem(atPath: path) }
   }
 
-  /// This process's environment for a shell a test starts, saving no
-  /// history: an exported `HISTFILE` had an interactive bash append each
-  /// test's commands to the developer's own. Empty, not absent, as
-  /// `ProcessRunner` merges what it is given over its own environment.
+  /// An exported `HISTFILE` had an interactive bash append each test's commands to the
+  /// developer's own. Empty, not absent, as `ProcessRunner` merges it over its own environment.
   public static var shellEnvironment: [String: String] {
     ProcessInfo.processInfo.environment.merging(["HISTFILE": ""]) { _, new in new }
   }

@@ -37,9 +37,8 @@ struct NewWorktreeDraftTests {
     #expect(draft.startPoint == "main")
   }
 
-  /// The bug this guards against: a switch cancelled the first project's
-  /// load, whose late return then cleared a "loading" flag while the second
-  /// project's load was still running.
+  /// A switch used to cancel the first project's load, whose late return cleared a "loading"
+  /// flag while the second project's load was still running.
   @Test func aLateLoadForAnotherProjectIsIgnoredAndDoesNotEnableCreate() {
     var draft = NewWorktreeDraft(projectID: a)
     draft.branch = "feat"

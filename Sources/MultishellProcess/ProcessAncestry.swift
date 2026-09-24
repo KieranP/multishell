@@ -119,7 +119,7 @@ public enum ProcessAncestry {
       try? String(contentsOfFile: "/proc/\(pid)/stat", encoding: .utf8)
     }
   #else
-    private static func kinfo(_ pid: Int32) -> kinfo_proc? {
+    static func kinfo(_ pid: Int32) -> kinfo_proc? {
       var name: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, pid]
       var info = kinfo_proc()
       var size = MemoryLayout<kinfo_proc>.size

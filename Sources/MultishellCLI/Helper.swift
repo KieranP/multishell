@@ -34,6 +34,11 @@ enum Helper {
           Report that it finished: done when N is 0 or a signal, failed
           otherwise. For a shell precmd hook; a short duration posts no
           notification.
+      multishell relay [--pid N]
+          Read `command-started PID WORD` and `command-finished EXIT SECONDS`
+          lines from stdin until it closes or process N exits, reporting each
+          as the two commands above do. One per bash shell, whose pid is N, so
+          a command costs no process launch.
       multishell agent-hook --agent ID
           Read that agent's hook payload from stdin and report the state its
           event stands for. Always exits 0. Known agents:
@@ -64,15 +69,20 @@ enum Helper {
         return report(
           SessionState.finished(exitCode: options.int32("exit")), environment: environment,
           duration: options.double("duration"))
+      case "relay":
+        let options = try Options(arguments.dropFirst())
+        relay(environment: environment, input: standardInput, shell: options.int32("pid"))
+        return 0
       // `claude-hook` stays: builds before the rename wrote it into
       // settings files that are on disk now and run this line.
       case "agent-hook", "claude-hook":
         agentHook(agentID(in: arguments), environment: environment, input: standardInput)
         return 0
       case "install-agent-hooks":
-        return installHooks(try agent(in: arguments), print: arguments.contains("--print"))
+        let options = try Options(arguments.dropFirst(), names: ["agent"], flags: ["print"])
+        return installHooks(try agent(options), print: options.has("print"))
       case "remove-agent-hooks":
-        return removeHooks(try agent(in: arguments))
+        return removeHooks(try agent(Options(arguments.dropFirst(), names: ["agent"])))
       case "--version", "version":
         print("multishell helper, protocol version \(SessionStateReport.protocolVersion)")
         return 0
@@ -133,6 +143,52 @@ enum Helper {
           + SubagentReport.Phase.allCases.map(\.rawValue).joined(separator: ", "))
     }
     return SubagentReport(id: id, type: options["subagent-type"], phase: phase)
+  }
+
+  /// Started at the prompt, so it shares the shell's process group: a Ctrl-C
+  /// or Ctrl-Z there reaches it too, and a hang-up comes before the last lines.
+  private static let relayIgnores = [SIGHUP, SIGINT, SIGQUIT, SIGTSTP, SIGTTIN, SIGTTOU, SIGPIPE]
+
+  /// Ends at EOF or when the shell exits, as a child it started may hold the
+  /// pipe open past it. A line it cannot read is dropped: that child could write.
+  private static func relay(environment: [String: String], input: FileHandle, shell: Int32?) {
+    for number in relayIgnores { _ = signal(number, SIG_IGN) }
+    let watch = shell.flatMap { InputOrExitWatch(descriptor: input.fileDescriptor, pid: $0) }
+    var pending = Data()
+    func relayLines() {
+      while let newline = pending.firstIndex(of: UInt8(ascii: "\n")) {
+        relayLine(String(decoding: pending[..<newline], as: UTF8.self), environment: environment)
+        pending.removeSubrange(...newline)
+      }
+    }
+    while true {
+      if let watch, watch.next() == .exited {
+        pending.append(watch.drain())
+        relayLines()
+        return
+      }
+      let chunk = input.availableData
+      guard !chunk.isEmpty else { return }
+      pending.append(chunk)
+      relayLines()
+    }
+  }
+
+  private static func relayLine(_ line: String, environment: [String: String]) {
+    let fields = line.split(separator: " ", omittingEmptySubsequences: false).map(String.init)
+    guard fields.count == 3 else { return }
+    switch fields[0] {
+    case "command-started":
+      _ = report(
+        SessionState.running, environment: environment, pid: Int32(fields[1]),
+        command: fields[2])
+    case "command-finished":
+      _ = report(
+        SessionState.finished(exitCode: Int32(fields[1])), environment: environment,
+        duration: Double(fields[2]))
+    default:
+      return
+    }
   }
 
   /// Nothing this prints or returns may disturb the agent: exit 0, no
@@ -199,7 +255,7 @@ enum Helper {
     try UnixSocketClient.send(try report.encodedLine(), to: socket)
   }
 
-  /// Which agent the line names, Claude Code when it names none. Read by
+  /// Which agent a hook line names, Claude Code when it names none. Read by
   /// hand, since a hook must never fail over an argument.
   private static func agentID(in arguments: [String]) -> String {
     guard let flag = arguments.firstIndex(of: "--agent"), flag + 1 < arguments.count else {
@@ -208,8 +264,9 @@ enum Helper {
     return arguments[flag + 1]
   }
 
-  private static func agent(in arguments: [String]) throws -> AgentHookIntegration {
-    let id = agentID(in: arguments)
+  /// A person typed this line, so a missing agent is refused, not guessed.
+  private static func agent(_ options: Options) throws -> AgentHookIntegration {
+    guard let id = options["agent"] else { throw UsageError("--agent is required") }
     guard let integration = AgentHooks.integration(for: id) else {
       throw UsageError(
         "no hooks for \(id); known agents: "
@@ -253,24 +310,38 @@ enum Helper {
   }
 }
 
-/// `--name value` pairs after the subcommand. Anything else is a usage
-/// error, so a typo in a hook line is caught rather than ignored.
+/// `--name value` pairs and bare `--flag`s after the subcommand. Anything
+/// else is a usage error, so a typo in a hook line is caught rather than ignored.
 struct Options {
   private let values: [String: String]
+  private let setFlags: Set<String>
 
-  init(_ arguments: ArraySlice<String>) throws {
+  /// `names` limits the pairs accepted; nil takes any.
+  init(
+    _ arguments: ArraySlice<String>, names: Set<String>? = nil, flags: Set<String> = []
+  ) throws {
     var values: [String: String] = [:]
+    var setFlags: Set<String> = []
     var rest = arguments
-    while let flag = rest.popFirst() {
-      guard flag.hasPrefix("--"), let value = rest.popFirst() else {
-        throw UsageError("unexpected argument \(flag)")
+    while let argument = rest.popFirst() {
+      let name = String(argument.dropFirst(2))
+      guard argument.hasPrefix("--") else { throw UsageError("unexpected argument \(argument)") }
+      if flags.contains(name) {
+        setFlags.insert(name)
+        continue
       }
-      values[String(flag.dropFirst(2))] = value
+      guard names?.contains(name) ?? true, let value = rest.popFirst() else {
+        throw UsageError("unexpected argument \(argument)")
+      }
+      values[name] = value
     }
     self.values = values
+    self.setFlags = setFlags
   }
 
   subscript(name: String) -> String? { values[name] }
+
+  func has(_ flag: String) -> Bool { setFlags.contains(flag) }
 
   func int32(_ name: String) -> Int32? { values[name].flatMap { Int32($0) } }
 

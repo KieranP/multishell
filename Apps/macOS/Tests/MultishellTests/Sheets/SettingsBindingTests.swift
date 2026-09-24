@@ -4,21 +4,12 @@ import Testing
 
 @testable import Multishell
 
-/// The bindings a project settings row is built from.
-///
-/// `hasOverride` and `overrideValue` are the hazard their own doc comment
-/// names: for a `Bool` setting both return a `Binding<Bool>` from the same
-/// arguments, so a swapped pair compiles and quietly binds each control to
-/// the other's job. Nothing above them can catch that — the form is a view,
-/// and views are not tested — so it is caught here, where the bindings are
-/// driven the way a toggle and a field drive them and the store is read back.
+/// For a `Bool` setting `hasOverride` and `overrideValue` take the same arguments and
+/// return the same type, so a swapped pair compiles. The form is an untested view.
 @Suite @MainActor
 struct SettingsBindingTests {
-  /// Turning an override on stores the value that was already in force, not
-  /// `true`. This is the assertion a swapped pair fails: bound to
-  /// `overrideValue`, the toggle would write its own `true` into the
-  /// setting, and the project would start auto-starting an agent because
-  /// someone ticked "override".
+  /// A swapped pair fails this: bound to `overrideValue`, ticking "override" would write
+  /// `true` into the setting and the project would start auto-starting an agent.
   @Test func turningAnOverrideOnSeedsItWithWhatWasInForce() {
     let harness = ModelHarness()
     let project = harness.project
@@ -36,8 +27,6 @@ struct SettingsBindingTests {
       "and the row now reads as overridden")
   }
 
-  /// Turning it off goes back to following, rather than storing the value
-  /// the disabled control happened to be showing.
   @Test func turningAnOverrideOffClearsItRatherThanStoringWhatWasShown() {
     let harness = ModelHarness()
     let project = harness.project
@@ -50,9 +39,8 @@ struct SettingsBindingTests {
       "off means follow the global, which is a nil override and not a stored false")
   }
 
-  /// The disabled control shows what is actually in effect. Blank would
-  /// read as "this project has no worktree path", which is a different
-  /// claim from "it uses the one you set globally".
+  /// Blank would read as "this project has no worktree path", a different claim from
+  /// "it uses the one you set globally".
   @Test func anOverrideThatIsOffShowsTheInheritedValue() {
     let harness = ModelHarness()
     let project = harness.project
@@ -86,10 +74,8 @@ struct SettingsBindingTests {
       "and the branch it would create carries no prefix")
   }
 
-  /// A settings window is its own scene and stays up across refreshes, so
-  /// the `Project` it was handed goes stale. Every read and write looks the
-  /// record up again; a binding that closed over the old one would write
-  /// its settings back over anything changed meanwhile.
+  /// A settings window outlives refreshes, so its `Project` goes stale; a binding that
+  /// closed over it would write its settings back over anything changed meanwhile.
   @Test func aBindingFollowsTheRecordAndNotTheProjectItWasBuiltWith() {
     let harness = ModelHarness()
     let stale = harness.project

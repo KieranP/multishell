@@ -29,12 +29,16 @@ enum PromisedDrop {
     then deliver: @escaping ([URL]) -> Void
   ) {
     guard let directory = destination else { return deliver([]) }
+    // `fileNames` is empty until a promise is called in, so it is read per report.
+    let promised = { (index: Int) in max(1, receivers[index].fileNames.count) }
     // The directory is made before the sources are asked, so one nothing
     // arrives in would linger until the sweep. It is this drag's own.
-    let collector = Collector(expecting: receivers.map { max(1, $0.fileNames.count) }) { urls in
-      if urls.isEmpty { try? FileManager.default.removeItem(at: directory) }
-      deliver(urls)
-    }
+    let collector = Collector(
+      expecting: receivers.map { _ in 1 }, recounting: promised,
+      deliver: { urls in
+        if urls.isEmpty { try? FileManager.default.removeItem(at: directory) }
+        deliver(urls)
+      })
     let queue = OperationQueue()
     collector.queue = queue
     for (index, receiver) in receivers.enumerated() {
@@ -68,7 +72,8 @@ enum PromisedDrop {
   @MainActor
   final class Collector {
     private var files: [[URL]]
-    private var outstanding: [Int]
+    private var reported: [Int]
+    private var promised: (Int) -> Int
     private var waiting: Set<Int>
     private let deliver: ([URL]) -> Void
     private var delivered = false
@@ -83,10 +88,15 @@ enum PromisedDrop {
 
     var isDelivered: Bool { delivered }
 
-    /// `counts` is how many files each item promised, in the drag's order.
-    init(expecting counts: [Int], deliver: @escaping ([URL]) -> Void) {
+    /// `counts` is how many files each item promised, in the drag's order;
+    /// `recounting` replaces an item's count once a report says it is known.
+    init(
+      expecting counts: [Int], recounting: ((Int) -> Int)? = nil,
+      deliver: @escaping ([URL]) -> Void
+    ) {
       files = Array(repeating: [], count: counts.count)
-      outstanding = counts
+      reported = Array(repeating: 0, count: counts.count)
+      promised = recounting ?? { counts[$0] }
       waiting = Set(counts.indices.filter { counts[$0] > 0 })
       self.deliver = deliver
       if waiting.isEmpty { answer() }
@@ -94,8 +104,8 @@ enum PromisedDrop {
 
     func received(_ url: URL?, from index: Int) {
       if let url { files[index].append(url) }
-      outstanding[index] -= 1
-      guard outstanding[index] <= 0 else { return }
+      reported[index] += 1
+      guard reported[index] >= promised(index) else { return }
       guard waiting.remove(index) != nil, waiting.isEmpty else { return }
       answer()
     }
@@ -110,8 +120,9 @@ enum PromisedDrop {
       delivered = true
       giveUpTimer?.cancel()
       // The queue holds the reader, which holds this, so a source that never
-      // writes would leave all three standing. Nothing needs it after here.
+      // writes would leave all three standing; `promised` holds the receivers.
       queue = nil
+      promised = { _ in 1 }
       deliver(files.flatMap { $0 })
     }
   }

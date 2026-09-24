@@ -19,18 +19,23 @@ public struct SidebarFilter: Sendable {
   public var isActive: Bool { !needle.isEmpty }
 
   public func apply(to workspace: Workspace) -> [Entry] {
-    workspace.projects.compactMap { project in
-      let worktrees = workspace.worktrees(of: project.id)
+    // One pass over the worktrees, not one per project; grouping keeps order.
+    let byProject = Dictionary(grouping: workspace.worktrees, by: \.projectID)
+    return workspace.projects.compactMap { project in
+      let worktrees = byProject[project.id] ?? []
       guard isActive else {
         return Entry(project: project, worktrees: worktrees, forcedOpen: false)
       }
       if project.name.foldedContains(needle) {
         return Entry(project: project, worktrees: worktrees, forcedOpen: true)
       }
-      let matching = worktrees.filter {
-        $0.name.foldedContains(needle) || workspace.displayName(of: $0).foldedContains(needle)
-      }
+      let matching = worktrees.filter { names($0, in: workspace) }
       return matching.isEmpty ? nil : Entry(project: project, worktrees: matching, forcedOpen: true)
     }
+  }
+
+  private func names(_ worktree: Worktree, in workspace: Workspace) -> Bool {
+    worktree.name.foldedContains(needle)
+      || workspace.displayName(of: worktree).foldedContains(needle)
   }
 }

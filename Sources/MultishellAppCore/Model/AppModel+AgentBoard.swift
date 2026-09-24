@@ -2,8 +2,7 @@ import Foundation
 import MultishellCore
 
 extension AppModel {
-  /// Every live pane, flattened into a card. Rebuilt each read, a cache
-  /// being one more thing that can disagree with the sidebar.
+  /// Every live pane, flattened into a card.
   var agentBoardCards: [AgentBoardCard] {
     let projectNames = Dictionary(
       workspace.projects.map { ($0.id, $0.name) }, uniquingKeysWith: { first, _ in first })
@@ -43,8 +42,25 @@ extension AppModel {
     }
   }
 
+  /// Held until anything the build read changes, the build being tracked so
+  /// no input can be missed; see Docs/design/agents.md.
   public var agentBoard: AgentBoard {
-    AgentBoard(cards: agentBoardCards, showsShells: showsAllTerminals)
+    // What a view holding the cached board is told through.
+    _ = agentBoardGeneration
+    if let cachedAgentBoard { return cachedAgentBoard }
+    let board = withObservationTracking {
+      AgentBoard(cards: agentBoardCards, showsShells: showsAllTerminals)
+    } onChange: { [weak self] in
+      MainActor.assumeIsolated { self?.dropCachedAgentBoard() }
+    }
+    agentBoardBuilds += 1
+    cachedAgentBoard = board
+    return board
+  }
+
+  private func dropCachedAgentBoard() {
+    cachedAgentBoard = nil
+    agentBoardGeneration &+= 1
   }
 
   /// Whether an agent is at this pane's prompt, the report winning over the

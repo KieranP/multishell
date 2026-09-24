@@ -92,7 +92,7 @@ extension AgentHookIntegration {
 
   /// One entry of the file, whichever of the two shapes it is in: a group
   /// of hooks, or a hook on its own.
-  private func isMultishellGroup(_ group: [String: Any]) -> Bool {
+  func isMultishellGroup(_ group: [String: Any]) -> Bool {
     var commands = (group["hooks"] as? [[String: Any]] ?? []).compactMap {
       $0["command"] as? String
     }
@@ -100,19 +100,25 @@ extension AgentHookIntegration {
     return commands.contains(where: AgentHooks.isMultishellHook)
   }
 
-  /// Ours taken out of one group, `nil` where nothing of the user's is left.
-  /// Add only ever appends its own group, so a mixed one is theirs to keep.
+  /// Ours out of one group, `nil` where nothing of the user's is left; a mixed
+  /// group, ours never, keeps theirs. See Docs/design/agents.md.
   private func withoutOurHooks(_ group: [String: Any]) -> [String: Any]? {
-    guard let entries = group["hooks"] as? [[String: Any]] else { return nil }
-    let kept = entries.filter { entry in
-      guard let command = entry["command"] as? String else { return true }
-      return !AgentHooks.isMultishellHook(command)
-    }
-    guard !kept.isEmpty else { return nil }
     var trimmed = group
-    trimmed["hooks"] = kept
-    return trimmed
+    if let command = group["command"] as? String, AgentHooks.isMultishellHook(command) {
+      for key in Self.bareHookKeys { trimmed[key] = nil }
+    }
+    if let entries = group["hooks"] as? [[String: Any]] {
+      let kept = entries.filter { entry in
+        guard let command = entry["command"] as? String else { return true }
+        return !AgentHooks.isMultishellHook(command)
+      }
+      trimmed["hooks"] = kept.isEmpty ? nil : kept
+    }
+    return trimmed["hooks"] != nil || trimmed["command"] != nil ? trimmed : nil
   }
+
+  /// What a bare hook of ours carries; a matcher is the group's and stays.
+  private static let bareHookKeys = ["type", "command", "timeout", "timeoutSec"]
 
   public func isInstalled(in file: URL? = nil) -> Bool {
     let file = file ?? self.file
@@ -134,7 +140,8 @@ extension AgentHookIntegration {
       if let event = unreadableEvents(in: settings).first {
         throw UnreadableHookEntries(file: file, event: event)
       }
-      try HookSettingsFile.write(adding(to: settings, helper: helper), to: file)
+      // Ours out first, so an install over an older build's is an update.
+      try HookSettingsFile.write(adding(to: removing(from: settings), helper: helper), to: file)
     }
   }
 

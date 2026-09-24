@@ -22,9 +22,8 @@ struct RepositoryFixture {
     return fixture
   }
 
-  /// The layout this app's audience favours: a bare clone with its worktrees
-  /// beside it. `project` is the bare repository, as `git worktree list`
-  /// puts it first; `checkout` is a linked worktree of `main`.
+  /// A bare clone with its worktrees beside it. `project` is the bare repository, which
+  /// `git worktree list` puts first; `checkout` is a linked worktree of `main`.
   static func makeBare() async throws -> (fixture: RepositoryFixture, checkout: URL) {
     let source = try await make()
     let bare = source.root.appendingPathComponent("repo.git", isDirectory: true)
@@ -58,7 +57,9 @@ struct RepositoryFixture {
     .split(whereSeparator: \.isNewline).map(String.init).sorted()
   }
 
-  var coordinator: WorktreeCoordinator { WorktreeCoordinator(service: WorktreeService(git: git)) }
+  var coordinator: WorktreeCoordinator {
+    WorktreeCoordinator(service: WorktreeService(git: git, settlesNewIndex: false))
+  }
   var trees: WorktreeSettings { WorktreeSettings(worktreeDirectory: "../trees") }
 
   func tearDown() {
@@ -67,13 +68,15 @@ struct RepositoryFixture {
 }
 
 extension WorktreeCoordinator {
-  /// Both halves of a create in one call, in the order `AppModel` runs them:
-  /// `add`, then the post-create hook, with the same `.postCreateHook` step
-  /// reported before a hook that has a script.
-  ///
-  /// The app keeps them apart so a worktree appears, and can be worked in,
-  /// while a slow hook is still running. A test about the git side has no
-  /// use for that, so it waits here for both.
+  /// The verdicts alone, which is all a merge test asks about.
+  func mergeStates(
+    of branches: [String], in project: Project, scan: MergeScan
+  ) async -> [String: WorktreeMergeState] {
+    await mergeReadings(of: branches, in: project, scan: scan).compactMapValues(\.state)
+  }
+
+  /// Both halves of a create in `AppModel`'s order, awaited together; the app keeps them apart so
+  /// a worktree can be worked in while a slow hook still runs.
   @discardableResult
   func create(
     branch rawBranch: String,

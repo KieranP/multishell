@@ -132,9 +132,8 @@ struct ZshIntegrationTests {
       "nothing when the setting has not generated the directory")
   }
 
-  /// libghostty sets `ZDOTDIR` to its own bootstrap and then applies the
-  /// surface's variables on top, so ours would replace it and its integration
-  /// would never load. Given the bootstrap, the session enters it first.
+  /// libghostty sets `ZDOTDIR` to its own bootstrap and then applies the surface's
+  /// variables on top, so ours would replace it and its integration would never load.
   @Test func theEnginesBootstrapIsEnteredFirstWhenItHasOne() throws {
     let ours = try directoryThatExists()
     defer { try? FileManager.default.removeItem(at: ours) }

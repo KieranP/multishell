@@ -7,10 +7,8 @@ import Testing
 // The plain values a tab strip is drawn from. Each runs on every few pixels
 // of a drag or a resize, so each is arithmetic kept out of the view.
 
-/// A tab dragged along its own strip moves as the pointer passes each
-/// neighbour, so this arithmetic runs on every few pixels of a drag and has
-/// to agree with `WorkspaceStore.moveTab` exactly: a disagreement is a tab
-/// that moves on every mouse event and never settles.
+/// This has to agree with `WorkspaceStore.moveTab` exactly: a disagreement is a tab that
+/// moves on every mouse event and never settles.
 @Suite
 struct TabShuffleTests {
   private let a = UUID()
@@ -48,9 +46,8 @@ struct TabShuffleTests {
   }
 }
 
-/// A strip that runs out of room has to scroll rather than squeeze: below a
-/// floor the icon, the title and the close button run into each other and
-/// into the next tab.
+/// Below a floor the icon, the title and the close button run into each other and into
+/// the next tab, so a full strip scrolls instead.
 @Suite
 struct TabStripLayoutTests {
   private func layout(_ available: Double, _ count: Int) -> TabStripLayout {
@@ -87,10 +84,8 @@ struct TabStripLayoutTests {
     #expect(layout(.nan, 3).tabWidth == 190, "the cap, until it has been laid out")
   }
 
-  /// A window dragged narrow enough leaves a column with less room than the
-  /// New Tab button takes. Read as "not scrolling" that would put a
-  /// full-width tab in a strip a few points wide and spill it over the
-  /// column beside it, which is the whole thing the floor exists to stop.
+  /// A narrow window can leave a column less room than the New Tab button. Read as not
+  /// scrolling, that spills a full-width tab over the column beside it.
   @Test func aStripWithNoRoomAtAllStillScrolls() {
     #expect(layout(0, 3).scrolls)
     #expect(layout(-40, 3).scrolls)
@@ -103,9 +98,8 @@ struct TabStripLayoutTests {
   }
 }
 
-/// A strip that scrolls draws an arrow at the end that has tabs past it.
-/// Getting this wrong either hides that there is more, or offers an arrow at
-/// an end that is already as far as it goes.
+/// Getting this wrong either hides that there is more, or offers an arrow at an end that
+/// is already as far as it goes.
 @Suite
 struct TabStripEdgeTests {
   private func edges(_ offset: Double) -> TabStripLayout.Edges {
@@ -141,9 +135,8 @@ struct TabStripEdgeTests {
   }
 }
 
-/// What a tab drag is doing. Nothing is drawn from the drag having begun,
-/// only from what the pointer is over, because a drag can be released where
-/// no target of ours sees it and a highlight would be left behind.
+/// Nothing is drawn from the drag having begun, since a drag can be released where no
+/// target of ours sees it and a highlight would be left behind.
 @Suite
 struct TabDragStateTests {
   private let tab = UUID()
@@ -167,9 +160,8 @@ struct TabDragStateTests {
     #expect(drag.isEngaged)
   }
 
-  /// The bands sit inside the terminal area they belong to, so the pointer
-  /// moving onto one takes it off the area. Reading only the area would put
-  /// the bands out the moment one of them was aimed at.
+  /// The bands sit inside their terminal area, so aiming at one takes the pointer off the
+  /// area, and reading only the area would put the bands out.
   @Test func aColumnShowsItsBandsFromEitherTheAreaOrTheBands() {
     var drag = TabDragState()
     drag.begin(tab)
@@ -193,7 +185,8 @@ struct TabDragStateTests {
 
     drag.end()
 
-    #expect(drag == TabDragState())
+    #expect(drag.tabID == nil && drag.insertion == nil)
+    #expect(drag.overColumn == nil && drag.band == nil)
     #expect(!drag.isDragging && !drag.isEngaged)
   }
 

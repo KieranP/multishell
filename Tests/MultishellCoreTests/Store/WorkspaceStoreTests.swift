@@ -23,10 +23,8 @@ struct OrderedSaveTests {
   }
 }
 
-/// Counts the store operations that notified observers, as autosave and the
-/// views are notified. One operation may write `workspace` more than once,
-/// `replaceWorktrees` removing then appending, so the firings between two
-/// reads of `changes` count as one; a write of an equal value still fires.
+/// `replaceWorktrees` writes `workspace` twice, so firings between two reads of `changes`
+/// count as one operation. A write of an equal value still fires.
 @MainActor
 private final class ChangeCounter {
   private var counted = 0
@@ -155,9 +153,6 @@ struct WorkspaceStoreTests {
     #expect(store.workspace.activeTab(in: worktree.id)?.id == first.id)
   }
 
-  /// Dragged onto another worktree's row in the sidebar. The tab is listed
-  /// there from now on, panes and all, and lands after the tabs already
-  /// there.
   @Test func aTabMovedToAnotherWorktreeTakesItsPanesAndLandsLast() {
     let (store, project, main) = demoStore()
     let feature = Worktree(
@@ -178,10 +173,8 @@ struct WorkspaceStoreTests {
     #expect(store.workspace.activeTab(in: feature.id)?.id == moving.id)
   }
 
-  /// The directory travels with the tab. It is where the tab's panes start,
-  /// and the shell they start is resolved from the same worktree, so a tab
-  /// left pointing at the old directory would open one project's shell in
-  /// another project's checkout on the next launch.
+  /// The panes' shell is resolved from the worktree, so a tab left on the old directory
+  /// would open one project's shell in another project's checkout on the next launch.
   @Test func aMovedTabsPanesStartInTheWorktreeItLandedIn() {
     let (store, project, main) = demoStore()
     let feature = Worktree(
@@ -380,9 +373,8 @@ struct WorkspaceStoreEdgeTests {
     #expect(store.workspace.activeTab(in: worktree.id)?.id == first.id)
   }
 
-  /// The engine reports focus on every click and every showing, the Ghostty
-  /// one from inside a SwiftUI update, and every write re-runs the views
-  /// and re-arms autosave. One that changes nothing must not write.
+  /// The engine reports focus on every click and showing, Ghostty's from inside a SwiftUI
+  /// update, and every write re-runs the views and re-arms autosave.
   @Test func focusingTheSessionAlreadyFocusedWritesNothing() {
     let (store, _, worktree) = demoStore()
     let first = store.openTab(in: worktree.id)!

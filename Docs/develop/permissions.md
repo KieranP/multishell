@@ -11,19 +11,24 @@
 - **What a missing string costs depends on the service.** A folder is denied
   with no reason named; the device services kill the process that asked, with a
   privacy-violation abort and nothing shown.
+- **An empty string counts as missing.** `BundleDeclarationTests`
+  `theMicrophoneUsageStringIsDeclaredInTheBundleTheScriptWrites` holds the
+  microphone's to having words, a pane's dictation being the common case.
 - **A grant is keyed to the designated requirement**, so an ad-hoc build's bare
   cdhash loses every permission at each rebuild. A record the requirement no
   longer matches is ignored, so a changed identity is asked about again.
 - **`codesign -d -r-` on the bundle says what it will be remembered by**, and
-  the TCC subsystem in the unified log says which command actually asked.
+  the `com.apple.TCC` subsystem in the unified log says which command actually
+  asked.
 - **`AUTHREQ_ATTRIBUTION` names the accessing process** beside the responsible
   one, which is always this app. Service names are the log's less the
   `kTCCService` prefix.
 - **App Management, Full Disk Access, Accessibility, Input Monitoring and Screen
   Recording are never prompted for**, only denied, so they are added by hand in
   System Settings.
-- **App Management is the one this app needs itself**: anything a pane runs that
-  writes inside an app bundle wants it, a `make install` of this app included.
+- **App Management is the one working on this app needs**: anything a pane runs
+  that writes inside an app bundle wants it, a `make install` of this app
+  included. Its service name is `SystemPolicyAppBundles`.
 - **A pane driving the keyboard or taking a screenshot wants one of the other
   three**, under this app's name.
 - **`tccutil reset <service> <bundle id>` is for a remembered no.**

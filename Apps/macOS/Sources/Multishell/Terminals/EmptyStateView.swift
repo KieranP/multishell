@@ -13,19 +13,10 @@ struct EmptyStateView: View {
         .foregroundStyle(theme.textTertiary)
 
       Text(hasProjects ? t("empty.select-worktree") : t("empty.add-project"))
-        .font(.system(size: 18, weight: .semibold))
-        .foregroundStyle(theme.textPrimary)
-        .padding(.top, 20)
+        .stateTitle(theme)
 
-      Text(
-        hasProjects
-          ? t("empty.select-worktree-detail") : t("empty.add-project-detail")
-      )
-      .font(.system(size: 13))
-      .foregroundStyle(theme.textSecondary)
-      .multilineTextAlignment(.center)
-      .frame(maxWidth: 380)
-      .padding(.top, 6)
+      Text(hasProjects ? t("empty.select-worktree-detail") : t("empty.add-project-detail"))
+        .stateCaption(theme)
 
       if !hasProjects {
         Button(action: addProject) {

@@ -9,8 +9,8 @@
   operations, the output readers, what a branch is and where it points, and the
   runner above them all.
 - **MultishellAppCore**: AppModel, detections, dialogs, error mapping, every
-  decision a view makes; what a screen reader is told; and the two pieces that
-  belong to no concern.
+  decision a view makes; what a screen reader is told; and, under `Support/`,
+  the pieces that belong to no concern.
 - **Everything about a program someone else wrote is in `Integrations/`**, one
   folder per kind: agents, editors, shells, and the JSON reading the agents
   share. Another agent touches the agents folder and no other.
@@ -19,6 +19,7 @@
 - **Its views sit under the part of the window they draw.** The rest draw no
   part of one: reused small views, the AppKit modifiers and representables that
   reach under SwiftUI for an event it has no gesture for, the scene and menus.
+  What draws nothing at all sits under `Support/`.
 - **Each half's words live in the target that says them.** The libraries' also
   carry the shell-integration scripts; the app's also carries the agent marks. A
   second frontend is a third of these.
@@ -30,9 +31,10 @@
   root, and a file covering several concerns goes by the one it spends most of
   its lines on.
 - **What the suites share sits in plain targets**, a test target not being
-  dependable on. Two of them, split by what they drag in: one with no
-  dependencies that every root suite reaches, one needing GitKit for the suites
-  that touch a real repository.
+  dependable on. Two of them, split by what they drag in: TestScratch, with no
+  dependencies, that every root suite reaches, and TestSupport, needing GitKit,
+  for the suites that touch a real repository, so a Core or Process suite does
+  not link GitKit for a temporary path.
 - **`Apps/macOS` reaches neither**, being its own package, so its harness is its
   own.
 
@@ -43,7 +45,8 @@
   of error types.
 - **Two exceptions**: an error thrown from one file alone may sit at its bottom,
   and several small types of one shape only ever read together may share a file
-  named for what they are.
+  named for what they are. A `private` helper type is its file's own and stays
+  in it; a null object is a type like any other and gets a file.
 - **No `MARK` banners**: a file is the grouping. Tests are swift-testing, named
   as sentences about behaviour. A dialog is a `View` extension in a file named
   for it, attached by the scene that asked.
@@ -53,9 +56,9 @@
 - **The four root libraries are Foundation only.** One file in Core may carry an
   OS conditional; other platform code goes in the process layer or behind the
   ports folder.
-- **`Apps/macOS` is views and AppKit.** Everything else lives in
-  MultishellAppCore, including a plain value beside a view unless it names
-  AppKit or a Mac measurement.
+- **`Apps/macOS` is views, AppKit and the engine host.** Everything else lives
+  in MultishellAppCore, including a plain value beside a view unless it names
+  AppKit, a Mac measurement or the engine.
 - **What the model needs from the desktop goes through the platform port**,
   never a direct AppKit call.
 - **Mac and Linux only, no Windows branches.** An OS difference belongs in the
@@ -63,7 +66,8 @@
 - **Views call AppModel**, never the store, a host or git. A terminal's view
   comes from the model.
 - **A decision a view makes is a plain value in MultishellAppCore**, tested
-  there. Views are untested and measure nothing.
+  there. Views measure nothing, and a test lays one out only to hold its size or
+  its pixels, in a window never ordered in.
 - **Small single-purpose files.** Comments only for why, a non-local
   consequence, or a fact the code cannot show.
 - **`public` only where another target reads it.** The split costs a `public` on

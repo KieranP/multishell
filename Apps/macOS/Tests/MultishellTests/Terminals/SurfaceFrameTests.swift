@@ -3,9 +3,8 @@ import Testing
 
 @testable import Multishell
 
-/// A pane's frame is reused: `PaneTreeView` renders split children by index,
-/// so closing one leaves the frame that held it showing the next session's
-/// surface. What it asks for focus has to move with the surface.
+/// `PaneTreeView` renders split children by index, so closing one leaves its frame
+/// showing the next session's surface, and the focus request moves with the surface.
 @Suite @MainActor
 struct SurfaceFrameTests {
   /// A window never ordered in, focus being refused to a view that is in
@@ -25,8 +24,6 @@ struct SurfaceFrameTests {
     frame.show(NSView(), focused: true) { asked.append("first") }
     #expect(asked == ["first"])
 
-    // The pane holding the first session closes and this frame slides on to
-    // the next, which is focused as the first was.
     frame.show(NSView(), focused: true) { asked.append("second") }
     #expect(asked == ["first", "second"], "the closed pane was asked for the open one")
     _ = window

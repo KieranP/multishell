@@ -11,6 +11,13 @@ extension AppModel {
     return workspace.projects.count == 1 ? workspace.projects.first : nil
   }
 
+  /// The project a command should act on while nothing else names one: the
+  /// worktree in view's, or the only project. The board names none.
+  var projectInView: Project? {
+    if let worktree = worktreeInView { return workspace.project(worktree.projectID) }
+    return workspace.projects.count == 1 ? workspace.projects.first : nil
+  }
+
   /// The worktree whose terminals are on screen: the selected one unless the
   /// board covers them. Everything acting on the tab in front asks here.
   var worktreeInView: Worktree? {

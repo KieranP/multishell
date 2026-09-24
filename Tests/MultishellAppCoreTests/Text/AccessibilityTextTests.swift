@@ -4,7 +4,6 @@ import Testing
 
 @testable import MultishellAppCore
 
-/// What a screen reader says for the hand-drawn rows and tabs.
 @Suite
 struct AccessibilityTextTests {
   private let feature = Worktree(
@@ -80,8 +79,6 @@ struct AccessibilityTextTests {
       .contains("failed: The post-create hook failed"))
   }
 
-  /// The chip is read where it is drawn, on a tab row and a card, and the
-  /// chip itself reads the list it hides.
   @Test func aTabRowAndACardSayHowManyWorkersAreOutAndTheChipSaysWhich() {
     let out = [
       Subagent(id: "a", type: "Explore", since: now.addingTimeInterval(-72)),
@@ -127,9 +124,8 @@ struct AccessibilityTextTests {
         == "claude, tab, Working, 1 subagent, 2 background shells")
   }
 
-  /// The green glyph, in the place it is drawn: after the lock, before the
-  /// changes. It is read only where it is drawn, so work that is only in
-  /// this worktree silences it here too.
+  /// The green glyph is read only where it is drawn, so work that is only in this worktree
+  /// silences it here too.
   @Test func aMergedRowSaysSoBetweenItsLockAndItsChanges() {
     var behind = WorktreeStatus()
     behind.behind = 2

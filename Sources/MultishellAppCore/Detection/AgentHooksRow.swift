@@ -9,13 +9,16 @@ public struct AgentHooksRow: Identifiable, Equatable, Sendable {
   /// The file the hooks go in, as the row names it.
   public let path: String
   public let isInstalled: Bool
+  /// Installed by an older build and not what this one writes, so Add would
+  /// write something else: offered as an update.
+  public let wantsUpdate: Bool
   /// What the disclosure button offers to show: the file is JSON for every
   /// agent but OpenCode, which is given a plugin.
   public let contentsName: String
   public let info: String
 
   public static func rows(
-    detection: AgentDetection, installed: Set<String>,
+    detection: AgentDetection, installed: Set<String>, stale: Set<String> = [],
     integrations: [AgentHookIntegration] = AgentHooks.integrations
   ) -> [AgentHooksRow] {
     integrations.compactMap { integration in
@@ -26,6 +29,7 @@ public struct AgentHooksRow: Identifiable, Equatable, Sendable {
         name: integration.name,
         path: integration.displayPath,
         isInstalled: isInstalled,
+        wantsUpdate: isInstalled && stale.contains(integration.id),
         contentsName: integration.isPlugin
           ? t("agent-hooks.plugin") : t("agent-hooks.json"),
         info: info(for: integration))

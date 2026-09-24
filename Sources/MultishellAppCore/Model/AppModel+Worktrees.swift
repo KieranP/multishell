@@ -42,7 +42,9 @@ extension AppModel {
   /// opened first, a collapsed one leaving no row to type into.
   public func beginRenaming(_ worktree: Worktree) {
     guard workspace.worktree(worktree.id) != nil else { return }
-    store.setExpanded(true, forProject: worktree.projectID)
+    if let project = workspace.project(worktree.projectID), !project.isExpanded {
+      setExpanded(true, for: project)
+    }
     renamingWorktreeID = worktree.id
   }
 
@@ -76,6 +78,14 @@ extension AppModel {
   /// filling it, so git reads a half-made tree; see worktrees.md.
   func isUnderConstruction(_ id: Worktree.ID) -> Bool {
     workInFlight.isClaimed(id) || worktreeOperations.isUnderWay(id)
+      || workspace.worktree(id)?.isInitializing == true
+  }
+
+  /// The same for a worktree in hand, which the poll asks of every row: the
+  /// lookup by id scans the list, and a round asking it per row went quadratic.
+  func isUnderConstruction(_ worktree: Worktree) -> Bool {
+    workInFlight.isClaimed(worktree.id) || worktreeOperations.isUnderWay(worktree.id)
+      || worktree.isInitializing
   }
 
   /// The pane's Dismiss after a failed stage. A dismissed create stage
@@ -98,8 +108,41 @@ extension AppModel {
   /// Checked before anything that starts a shell, a missing directory being
   /// refused. Named for the demand, since it raises the alert itself.
   func requireDirectory(of worktree: Worktree) -> Bool {
-    if FileManager.default.fileExists(atPath: worktree.path.path) { return true }
-    presentedError = .worktreeDirectoryMissing(worktree.path.path)
+    switch directoryProbe.probe(worktree.path.path) {
+    case .present: return true
+    case .missing: presentedError = .worktreeDirectoryMissing(worktree.path.path)
+    case .unanswered: presentedError = .worktreeDirectoryUnanswered(worktree.path.path)
+    }
     return false
+  }
+}
+
+extension AppModel {
+  /// The one place per-worktree runtime state is dropped, fed with what the
+  /// store discarded. Paths are ids, so a worktree re-made there starts clean.
+  func forgetWorktrees(_ ids: [Worktree.ID]) {
+    guard !ids.isEmpty else { return }
+    let gone = Set(ids)
+    setIfChanged(\.statuses, statuses.filter { !gone.contains($0.key) })
+    setIfChanged(\.mergeStates, mergeStates.filter { !gone.contains($0.key) })
+    setIfChanged(\.lastCommits, lastCommits.filter { !gone.contains($0.key) })
+    mergeChecks = mergeChecks.filter { !gone.contains($0.key) }
+    mergeReads.forget(gone)
+    resolvedWorktreePaths = resolvedWorktreePaths.filter { !gone.contains($0.key) }
+    // Their sessions went with them, so a worktree re-made at the path starts cold.
+    warmWorktrees.subtract(gone)
+    statusReads.forget(gone)
+    worktrees?.forgetStatusReads(of: ids)
+    for id in ids {
+      // A stage still running has no pane left to Cancel from, so it is ended
+      // as that Cancel would end it; its task lets go of these as it returns.
+      workInFlight.stopStage(of: id)
+      worktreeOperations.clear(id)
+      pendingStatusRefreshes[id]?.cancel()
+      pendingStatusRefreshes[id] = nil
+    }
+    if let renaming = renamingWorktreeID, gone.contains(renaming) { renamingWorktreeID = nil }
+    if let pending = pendingRemoval, gone.contains(pending.worktree.id) { pendingRemoval = nil }
+    if let latest = latestRemovalRequest, gone.contains(latest) { latestRemovalRequest = nil }
   }
 }

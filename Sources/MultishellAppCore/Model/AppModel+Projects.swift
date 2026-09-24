@@ -41,6 +41,7 @@ extension AppModel {
     missingProjects.remove(project.id)
     commonGitDirectories[project.id] = nil
     worktreeRecords[project.id] = nil
+    worktreeOrders.forget(project.id)
     if pendingSharedSettingsTrust?.projectID == project.id { pendingSharedSettingsTrust = nil }
     // Or the settings window's fallback to the current project never fires:
     // a stale id wins over it, and the window opens only to dismiss itself.
@@ -67,6 +68,10 @@ extension AppModel {
 
   public func setExpanded(_ expanded: Bool, for project: Project) {
     store.setExpanded(expanded, forProject: project.id)
+    // A collapsed project's rows went unread; opening reads them now, through
+    // the poll's own read, which holds git to a few at a time.
+    guard expanded else { return }
+    Task { await refreshStatuses(of: project.id) }
   }
 
   public func updateSettings(_ settings: ProjectSettings, for project: Project) {

@@ -4,11 +4,11 @@ import Foundation
 /// is doing.
 public struct AgentHookEvent: Hashable, Sendable {
   /// What the settings file calls the event.
-  public let name: String
+  let name: String
   /// What the payload calls it, usually the same word. Copilot takes
   /// `notification` in its file and reports `Notification`.
-  public let reported: String
-  public let state: SessionState
+  let reported: String
+  let state: SessionState
   /// Which occurrences of the event to ask for, where the agent can filter
   /// them and only some of them mean what we are after.
   let matcher: String?
@@ -20,18 +20,24 @@ public struct AgentHookEvent: Hashable, Sendable {
   let ignoredNotificationTypes: Set<String>
   /// Whether the event moves the dot and says nothing else, for the second
   /// of two events standing for one thing.
-  public let silent: Bool
+  let silent: Bool
   /// What the event says about the subagent its payload names: its start or
   /// its end. Any other event naming one is a tool call inside it.
-  public let subagent: SubagentReport.Phase?
+  let subagent: SubagentReport.Phase?
   /// Whether the event is a prompt starting a turn, after which nothing of
   /// the last turn is still out.
-  public let startsTurn: Bool
+  let startsTurn: Bool
+  /// Where the agent caps this event's hooks below the usual timeout.
+  let timeoutSeconds: Int?
+  /// Whether this is the agent's session starting, which moves nothing from
+  /// a turn already under way.
+  let startsSession: Bool
 
-  public init(
+  init(
     _ name: String, _ state: SessionState, reported: String? = nil, matcher: String? = nil,
     ignoredNotificationTypes: Set<String> = [], onlyWhenPrompting: Bool = false,
-    silent: Bool = false, subagent: SubagentReport.Phase? = nil, startsTurn: Bool = false
+    silent: Bool = false, subagent: SubagentReport.Phase? = nil, startsTurn: Bool = false,
+    startsSession: Bool = false, timeoutSeconds: Int? = nil
   ) {
     self.name = name
     self.reported = reported ?? name
@@ -42,17 +48,19 @@ public struct AgentHookEvent: Hashable, Sendable {
     self.silent = silent
     self.subagent = subagent
     self.startsTurn = startsTurn
+    self.timeoutSeconds = timeoutSeconds
+    self.startsSession = startsSession
   }
 
   /// Whether this is the agent's own prompt starting a turn: one inside a
   /// worker, should an agent ever send one, starts nothing of the agent's.
-  public func startsTurn(for payload: AgentHookPayload) -> Bool {
+  func startsTurn(for payload: AgentHookPayload) -> Bool {
     startsTurn && subagentReport(for: payload) == nil
   }
 
   /// The roster change this event and payload amount to, or nothing for the
   /// main thread's.
-  public func subagentReport(for payload: AgentHookPayload) -> SubagentReport? {
+  func subagentReport(for payload: AgentHookPayload) -> SubagentReport? {
     let type = payload.agentType
     guard let phase = subagent else {
       // Any other event is a tool call, which is a worker's only where one

@@ -9,11 +9,19 @@ public struct DefaultBranch: Hashable, Sendable {
   /// sitting on the trunk has as its own branch.
   public let branch: String
   public let tip: String
+  /// What git is handed: a tag named `main` or `origin/main` ties with the
+  /// short form and wins it; see Docs/design/merged-branch.md.
+  let fullRef: String
 
   public init(ref: String, branch: String, tip: String) {
+    self.init(ref: ref, branch: branch, tip: tip, fullRef: ref)
+  }
+
+  init(ref: String, branch: String, tip: String, fullRef: String) {
     self.ref = ref
     self.branch = branch
     self.tip = tip
+    self.fullRef = fullRef
   }
 
   /// The refs to try, in order. A remote-tracking ref beats a local branch
@@ -46,7 +54,8 @@ public struct DefaultBranch: Hashable, Sendable {
     let originHead = byName[BranchRef.originHead]?.symref
     for candidate in candidateRefs(override: override, originHead: originHead) {
       guard let ref = byName[candidate] else { continue }
-      return DefaultBranch(ref: ref.shortName, branch: ref.branchName, tip: ref.tip)
+      return DefaultBranch(
+        ref: ref.shortName, branch: ref.branchName, tip: ref.tip, fullRef: ref.fullName)
     }
     return nil
   }

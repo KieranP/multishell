@@ -4,9 +4,6 @@ import Testing
 
 @testable import MultishellAppCore
 
-/// What the menu items and the drag targets do once the model has run them:
-/// no shell restarted, the keyboard following the column that took the
-/// focus, and a pane in a second column counting as on screen.
 @Suite @MainActor
 struct TabGroupModelTests {
   /// Two columns of the selected worktree, the second holding the tab that
@@ -100,8 +97,6 @@ struct TabGroupModelTests {
       "the keystroke names no column and opens in the focused one")
   }
 
-  /// Closing what a column shows leaves the column when it has other tabs
-  /// and takes it away when it does not.
   @Test func aColumnLastsAsLongAsItHasATab() {
     let h = Harness()
     let columns = twoColumns(h)
@@ -116,8 +111,6 @@ struct TabGroupModelTests {
     #expect(h.model.focusedGroup?.id == columns.first.id)
   }
 
-  /// Splitting acts on the focused column's active tab, wherever the other
-  /// columns' panes are.
   @Test func splittingActsInsideTheFocusedColumn() {
     let h = Harness()
     let columns = twoColumns(h)
@@ -129,8 +122,6 @@ struct TabGroupModelTests {
     #expect(h.model.workspace.activeTab(in: columns.second)?.isSplit == false)
   }
 
-  /// A strip's own split button names its column, so it splits what that
-  /// column shows and hands the keyboard to it.
   @Test func aSplitNamingAColumnActsInItAndFocusesIt() {
     let h = Harness()
     let columns = twoColumns(h)
@@ -195,9 +186,8 @@ struct TabGroupModelTests {
     #expect(h.model.workspace == before)
   }
 
-  /// The drop at the end of a shuffle lands on the move the shuffle has
-  /// already made. Repeating it would leave the strip identical and cost a
-  /// save and a re-render, so it writes nothing at all.
+  /// Repeating the move a shuffle already made would leave the strip identical
+  /// and cost a save and a re-render.
   @Test func aDropOnAMoveAlreadyMadeWritesNothing() {
     let h = Harness()
     h.model.select(h.main)
@@ -213,9 +203,8 @@ struct TabGroupModelTests {
     #expect(h.model.workspace == shuffled)
   }
 
-  /// A tab crossing into another column waits for the drop. Moving it live
-  /// would close the column it left while the drag is still going, taking
-  /// the layout out from under the pointer.
+  /// Moving a tab into another column live would close the column it left
+  /// mid-drag, taking the layout out from under the pointer.
   @Test func aTabDoesNotShuffleIntoAnotherColumn() {
     let h = Harness()
     let columns = twoColumns(h)

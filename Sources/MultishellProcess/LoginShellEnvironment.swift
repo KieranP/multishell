@@ -23,11 +23,11 @@ public struct LoginShellEnvironment: Sendable, Equatable {
   /// would rather run with a poorer PATH than keep the dropdowns empty.
   public static let timeout: Duration = .seconds(8)
 
-  /// `shellPath` and `home` stand in for `$SHELL` and the user's home, so a
-  /// test can run a real shell against rc files of its own.
+  /// `shellPath`, `home` and `inherited` stand in for `$SHELL`, the home and
+  /// what the app was started with, so a test runs a real shell of its own.
   public static func capture(
     runner: ProcessRunner = ProcessRunner(), timeout: Duration = timeout,
-    shellPath: String? = nil, home: URL? = nil
+    shellPath: String? = nil, home: URL? = nil, inherited: [String: String] = [:]
   ) async -> LoginShellEnvironment {
     let fallback = ProcessInfo.processInfo.environment
     guard let shell = ShellCommand.shell(preferring: shellPath) else {
@@ -35,17 +35,16 @@ public struct LoginShellEnvironment: Sendable, Equatable {
         variables: fallback, source: .processFallback(reason: "no shell"))
     }
     let directory = home ?? FileManager.default.homeDirectoryForCurrentUser
-    let environment = home.map { ["HOME": $0.path, "ZDOTDIR": $0.path] } ?? [:]
+    let environment = ShellCommand.historyless(
+      inherited.merging(home.map { ["HOME": $0.path, "ZDOTDIR": $0.path] } ?? [:]) { $1 })
     do {
       let output = try await runner.capture(
-        shell.executable, shell.arguments + ["env -0"], in: directory, environment: environment,
+        shell.executable, shell.arguments + ["printf '\\n%s\\n' \(startMarker); env -0"],
+        in: directory, environment: environment,
         timeout: timeout)
       guard output.succeeded else {
-        let reason = output.standardError.trimmingCharacters(in: .whitespacesAndNewlines)
         return LoginShellEnvironment(
-          variables: fallback,
-          source: .processFallback(
-            reason: reason.isEmpty ? "exit status \(output.status)" : reason))
+          variables: fallback, source: .processFallback(reason: failureReason(output)))
       }
       let parsed = parse(nulSeparated: output.standardOutput)
       guard parsed["PATH"] != nil else {
@@ -59,12 +58,26 @@ public struct LoginShellEnvironment: Sendable, Equatable {
     }
   }
 
-  /// `env -0` output. An rc file that prints a greeting puts it in front of
-  /// the first entry, so an entry begins at the first line reading `KEY=`.
+  /// A timed-out shell's status is only the SIGHUP that ended it.
+  private static func failureReason(_ output: ProcessOutput) -> String {
+    if case .timedOut(let after) = output.stop { return "timed out after \(after)" }
+    let stderr = output.standardError.trimmingCharacters(in: .whitespacesAndNewlines)
+    return stderr.isEmpty ? "exit status \(output.status)" : stderr
+  }
+
+  /// Printed on a line of its own before `env -0`, after any greeting the rc
+  /// files wrote: a greeting shaped like `KEY=` was taken for a variable.
+  static let startMarker = "__multishell_env__"
+
+  /// `env -0` output, from the line after the marker. Without one, an entry
+  /// begins at the first line reading `KEY=`, which a greeting can fool.
   static func parse(nulSeparated text: String) -> [String: String] {
+    let marked = text.range(of: "\n\(startMarker)\n").map { text[$0.upperBound...] }
     var variables: [String: String] = [:]
-    for whole in text.split(separator: "\0", omittingEmptySubsequences: true) {
-      guard let entry = entryAfterGreeting(whole), let equals = entry.firstIndex(of: "=") else {
+    for whole in (marked ?? text[...]).split(separator: "\0", omittingEmptySubsequences: true) {
+      guard let entry = marked == nil ? entryAfterGreeting(whole) : whole,
+        let equals = entry.firstIndex(of: "=")
+      else {
         continue
       }
       variables[String(entry[..<equals])] = String(entry[entry.index(after: equals)...])

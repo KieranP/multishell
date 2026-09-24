@@ -3,21 +3,8 @@ import Testing
 
 @testable import Multishell
 
-/// Files a drag promises rather than hands over: a screenshot's preview is
-/// the one that matters, and its copy has to arrive somewhere the pane can
-/// read before a path is worth pasting.
-///
-/// The receipt is what these exercise, from the reader AppKit calls as each
-/// file lands. That reader runs on the queue it was given, never the main
-/// actor, and a reader written as if it did runs into an isolation check the
-/// moment a file arrives: the app dies on every promised drop, and nothing
-/// but a real drag shows it. So every test here calls the reader off the main
-/// actor, the way AppKit does.
-///
-/// The drag itself cannot be staged: a promise is fulfilled through a drag
-/// session, and one written to a pasteboard in this process is never asked
-/// for. What can be had without one is everything from the reader inwards,
-/// which is where the crash was and where the ordering lives.
+/// AppKit calls the reader off the main actor, and one assuming the main actor traps on
+/// every promised drop. A promise on this process's own pasteboard is never asked for.
 @Suite(.serialized) @MainActor
 struct PromisedDropTests {
   /// Holds what came back, since delivery lands after the call returns, and
@@ -60,8 +47,6 @@ struct PromisedDropTests {
     return try #require(delivery.urls, "the drop was never delivered")
   }
 
-  /// The one that would have caught the crash: a file reported from an
-  /// operation queue has to reach the main actor rather than trap on the way.
   @Test func aFileReportedOffTheMainActorIsDelivered() async throws {
     let delivery = Delivery()
     let collector = PromisedDrop.Collector(expecting: [1]) { delivery.answer($0) }
@@ -72,8 +57,6 @@ struct PromisedDropTests {
     #expect(try await awaitDelivery(delivery) == [shot])
   }
 
-  /// Several files land in whatever order their sources write them, and the
-  /// prompt reads them in the order they were dragged.
   @Test func theFilesArriveInTheDragsOrderWhateverOrderTheyLandIn() async throws {
     let delivery = Delivery()
     let files = (0..<8).map { file("shot-\($0).png") }
@@ -84,8 +67,6 @@ struct PromisedDropTests {
     #expect(try await awaitDelivery(delivery) == files)
   }
 
-  /// A source that will not write its file costs that file and no more: the
-  /// rest of the drag is still worth pasting.
   @Test func aFileTheSourceRefusesIsLeftOutAndTheRestArrive() async throws {
     let delivery = Delivery()
     let written = file("written.png")
@@ -107,9 +88,7 @@ struct PromisedDropTests {
     #expect(try await awaitDelivery(delivery).isEmpty)
   }
 
-  /// A source reporting twice is one breaking its own promise. The extra file
-  /// is kept, but it must not count again: counting it would deliver the drop
-  /// while another file was still coming.
+  /// A source reporting twice breaks its own promise, but the extra file is still kept.
   @Test func aSecondReportFromOneSourceDoesNotDeliverTheDropEarly() async throws {
     let delivery = Delivery()
     let first = file("first.png")
@@ -125,9 +104,8 @@ struct PromisedDropTests {
     #expect(try await awaitDelivery(delivery) == [first, second, late])
   }
 
-  /// One item can promise several files, and AppKit calls the reader once
-  /// per name. Counting items delivered on the first, and the rest were
-  /// written into the drop directory and never pasted.
+  /// AppKit calls the reader once per promised name, so counting items delivered on the
+  /// first and left the rest in the drop directory, never pasted.
   @Test func anItemPromisingTwoFilesIsNotDeliveredOnTheFirst() async throws {
     let delivery = Delivery()
     let first = file("one.png")
@@ -143,13 +121,42 @@ struct PromisedDropTests {
     #expect(try await awaitDelivery(delivery) == [first, second, other])
   }
 
-  /// A drag carrying no promise at all is answered at once rather than left,
-  /// since the caller is waiting on that answer.
+  /// A legacy source, whose one item names several files. AppKit's `fileNames`
+  /// is empty until the promise is called in, per NSFilePromiseReceiver.h.
+  private final class TwoFilePromise: NSFilePromiseReceiver {
+    private var calledIn = false
+
+    override var fileNames: [String] { calledIn ? ["one.png", "two.png"] : [] }
+
+    override func receivePromisedFiles(
+      atDestination destination: URL, options: [AnyHashable: Any] = [:],
+      operationQueue: OperationQueue,
+      reader: @escaping (URL, (any Error)?) -> Void
+    ) {
+      calledIn = true
+      // AppKit's own signature is not `@Sendable`, though it calls the reader off the main actor.
+      nonisolated(unsafe) let reader = reader
+      for name in ["one.png", "two.png"] {
+        let url = destination.appendingPathComponent(name)
+        operationQueue.addOperation { reader(url, nil) }
+      }
+    }
+  }
+
+  @Test func anItemNamingTwoFilesOnceCalledInDeliversBoth() async throws {
+    let delivery = Delivery()
+    let directory = URL(fileURLWithPath: NSTemporaryDirectory())
+      .appendingPathComponent("ms-promised-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    PromisedDrop.receive([TwoFilePromise()], into: directory) { delivery.answer($0) }
+
+    #expect(try await awaitDelivery(delivery).map(\.lastPathComponent) == ["one.png", "two.png"])
+  }
+
   @Test func aDragWithNoPromisesIsAnsweredAtOnce() {
     let delivery = Delivery()
-    // A directory of this test's own: `receive` takes back what it was given
-    // when nothing arrives, and a real path here would be a test that deletes
-    // it.
+    // Its own directory, since `receive` deletes what it was given when nothing arrives.
     let directory = URL(fileURLWithPath: NSTemporaryDirectory())
       .appendingPathComponent("ms-promised-\(UUID().uuidString)", isDirectory: true)
     PromisedDrop.receive([], into: directory) { delivery.answer($0) }
@@ -164,8 +171,7 @@ struct PromisedDropTests {
     #expect(delivery.urls == [])
   }
 
-  /// A drag none of whose files arrive leaves nothing behind. The directory
-  /// is made before the sources are asked, and an empty one would otherwise
+  /// The directory exists before the sources are asked, and an empty one would otherwise
   /// sit in the state directory until the sweep a week later.
   @Test func aDropThatDeliversNothingTakesItsDirectoryBack() throws {
     let directory = URL(fileURLWithPath: NSTemporaryDirectory())
@@ -178,9 +184,8 @@ struct PromisedDropTests {
     #expect(!FileManager.default.fileExists(atPath: directory.path))
   }
 
-  /// A source is not obliged to answer. One that never does would otherwise
-  /// hold the drop for as long as the app runs — no paste, no refusal — so
-  /// the drop is given up on and what did arrive is delivered.
+  /// A source is not obliged to answer, and one that never does would hold the drop, with
+  /// no paste and no refusal, for as long as the app runs.
   @Test func aSourceThatNeverAnswersDoesNotHoldTheDropForGood() {
     let delivery = Delivery()
     let arrived = file("arrived.png")
@@ -193,8 +198,6 @@ struct PromisedDropTests {
     #expect(delivery.urls == [arrived], "what arrived is still worth pasting")
   }
 
-  /// The one answer is the whole of it: a source reporting after the drop was
-  /// given up on must not paste a second time.
   @Test func aSourceReportingAfterTheDropWasGivenUpOnPastesNothingMore() async throws {
     let delivery = Delivery()
     let collector = PromisedDrop.Collector(expecting: [1, 1]) { delivery.answer($0) }
@@ -208,8 +211,6 @@ struct PromisedDropTests {
     #expect(delivery.urls == [])
   }
 
-  /// The timer behind a drop is dropped with it: a drag that answered at once
-  /// must not be answered again when the patience runs out.
   @Test func aDropAnsweredAtOnceIsNotAnsweredAgainWhenThePatienceRunsOut() async throws {
     let delivery = Delivery()
     let directory = URL(fileURLWithPath: NSTemporaryDirectory())

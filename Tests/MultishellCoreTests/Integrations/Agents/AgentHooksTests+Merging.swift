@@ -82,6 +82,38 @@ extension AgentHooksTests {
     #expect(!AgentHooks.claude.isInstalled(in: removed))
   }
 
+  @Test func removingSplitsAHandWrittenGroupMixingTheTwoShapes() throws {
+    let ours = AgentHooks.command(agent: AgentCatalogue.claudeID, helper: helper)
+    let mixed: [String: Any] = [
+      "hooks": [
+        "Stop": [
+          [
+            "type": "command", "command": ours, "timeout": 5,
+            "hooks": [["type": "command", "command": "~/bin/theirs.sh"]],
+          ],
+          [
+            "type": "command", "command": "~/bin/also-theirs.sh",
+            "hooks": [["type": "command", "command": ours]],
+          ],
+        ]
+      ]
+    ]
+
+    let removed = AgentHooks.claude.removing(from: mixed)
+
+    let left = try #require(removed["hooks"] as? [String: Any])
+    let stop = try #require(left["Stop"] as? [[String: Any]])
+    #expect(stop.count == 2)
+    #expect(stop.first?["command"] == nil)
+    #expect(stop.first?["timeout"] == nil)
+    #expect(
+      (stop.first?["hooks"] as? [[String: Any]])?.compactMap { $0["command"] as? String }
+        == ["~/bin/theirs.sh"])
+    #expect(stop.last?["command"] as? String == "~/bin/also-theirs.sh")
+    #expect(stop.last?["hooks"] == nil)
+    #expect(!AgentHooks.claude.holdsAnyOfOurs(removed))
+  }
+
   /// Remove on a file that has none of ours rewrites nothing: the write
   /// sorts keys and re-indents, and takes a backup copy nobody asked for.
   @Test func removingNothingLeavesTheFileAndMakesNoBackup() throws {
@@ -111,10 +143,8 @@ extension AgentHooksTests {
     #expect(left["hooks"] == nil, "our one entry was still ours to remove")
   }
 
-  /// Whatever is under an event this cannot read is the user's: a string
-  /// where a list of hooks goes, an object, a shape a later version of the
-  /// agent takes. Remove must not carry it off, and Add must not write over
-  /// it — nothing there was ever ours.
+  /// A string, an object or a later agent's shape under an event is the user's: none of
+  /// it was ever ours, so Remove must not carry it off nor Add write over it.
   @Test func anEntryThisCannotReadIsLeftToTheUser() throws {
     let existing: [String: Any] = [
       "hooks": [

@@ -15,9 +15,10 @@ extension AppModel {
     EditorCatalogue.displayName(id)
   }
 
-  /// Open in Editor (Cmd+Shift+O) on the selected worktree.
+  /// Open in Editor (Cmd+Shift+O) on the worktree on screen, which over the
+  /// board is none, no row drawing as selected there.
   public func openSelectedWorktreeInEditor() {
-    guard let worktree = workspace.selectedWorktree else { return }
+    guard let worktree = worktreeInView else { return }
     openInEditor(worktree)
   }
 
@@ -46,9 +47,10 @@ extension AppModel {
         }
       }
     case .runInBackground(let line):
+      let shellPath = workspace.project(worktree.projectID).flatMap(workspace.defaultShell)
       Task { [weak self] in
         do {
-          try await ShellCommand().launch(line, in: worktree.path)
+          try await ShellCommand().launch(line, in: worktree.path, shellPath: shellPath)
         } catch {
           self?.report(error)
         }

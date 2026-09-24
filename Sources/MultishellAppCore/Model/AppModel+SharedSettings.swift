@@ -52,8 +52,7 @@ extension AppModel {
   nonisolated static func readSharedSettings(of project: Project) -> SharedSettingsReading {
     let stamp = modificationDate(of: SharedProjectSettings.file(in: project.path))
     let result = Result { try SharedProjectSettings.load(from: project.path) }
-    return SharedSettingsReading(
-      result: result, confined: (try? result.get())??.confined(to: project), stamp: stamp)
+    return SharedSettingsReading(result: result, stamp: stamp, project: project)
   }
 
   /// `.distantPast` for a file that is not there, so its arrival reads as a
@@ -100,15 +99,6 @@ extension AppModel {
 
   /// What a refresh read, a file that will not parse costing the shared
   /// settings and not the project. Hooks changed under the user are asked here.
-  func noteSharedSettings(
-    _ result: Result<SharedProjectSettings?, any Error>, stamp: Date, for project: Project
-  ) {
-    noteSharedSettings(
-      SharedSettingsReading(
-        result: result, confined: (try? result.get())??.confined(to: project), stamp: stamp),
-      for: project)
-  }
-
   func noteSharedSettings(_ reading: SharedSettingsReading, for project: Project) {
     // The workspace's copy, not the caller's: a refresh reads the file, then
     // awaits git, and a tick's read landing meanwhile is not this one to undo.
@@ -180,22 +170,27 @@ extension AppModel {
 
   /// Export from the General tab. A refused hook or path list the file held
   /// is kept, and stays refused.
-  public func exportSharedSettings(for project: Project) {
-    // Gone from the workspace between the click and here: export nothing
-    // rather than writing a file into a project the user removed.
-    guard let project = workspace.project(project.id) else { return }
-    let mine = SharedProjectSettings(exporting: effectiveSettings(for: project))
-    let kept = mine.keeping(from: project.sharedSettings.asWritten)
-    let shared: SharedProjectSettings
+  public func exportSharedSettings(for project: Project) async {
+    let export: SharedSettingsExport
     do {
-      // What was written, digest and all, so nothing turns on reading the
-      // file back and finding the bytes this run put there.
-      shared = try kept.write(to: project.path)
+      guard let prepared = try prepareSharedSettingsExport(for: project) else { return }
+      export = prepared
     } catch {
       report(error)
       return
     }
-    let stamp = Self.modificationDate(of: SharedProjectSettings.file(in: project.path))
+    // The write, its date and the confinement off the main actor: on a slow
+    // volume each would hold the window.
+    let written = await Self.offMain { Self.write(export) }
+    finishSharedSettingsExport(export, written)
+  }
+
+  /// `nil` for a project gone from the workspace between the click and here,
+  /// rather than writing a file into a project the user removed.
+  func prepareSharedSettingsExport(for project: Project) throws -> SharedSettingsExport? {
+    guard let project = workspace.project(project.id) else { return nil }
+    let mine = SharedProjectSettings(exporting: effectiveSettings(for: project))
+    let kept = mine.keeping(from: project.sharedSettings.asWritten)
     // Every word the user's own answers itself; otherwise the answer given
     // about the file this rewrites travels, and no answer leaves the question.
     let answer =
@@ -204,10 +199,47 @@ extension AppModel {
       : project.sharedSettings.confined.flatMap {
         project.settings.sharedSettingsDecision(about: $0)
       }
-    if shared.asksForTrust, let digest = shared.digest, let answer {
+    let (data, written) = try kept.fileContents()
+    // Stored before the bytes can be read: a poll reading them first would
+    // otherwise ask the user to trust what they just exported.
+    if written.asksForTrust, let digest = written.digest, let answer {
       recordSharedSettings(file: digest, trusted: answer, for: project.id)
     }
-    noteSharedSettings(.success(shared), stamp: stamp, for: project)
+    let order = sharedSettingsWrites[project.id] ?? SaveOrder()
+    sharedSettingsWrites[project.id] = order
+    return SharedSettingsExport(
+      project: project, data: data, written: written, order: order, ticket: order.issue())
+  }
+
+  /// `nil` where a later export landed first, which leaves the file to it.
+  nonisolated static func write(
+    _ export: SharedSettingsExport
+  ) -> Result<SharedSettingsReading?, any Error> {
+    let file = SharedProjectSettings.file(in: export.project.path)
+    return Result {
+      let stamp = try export.order.land(export.ticket) {
+        try export.data.write(to: file, options: .atomic)
+        return modificationDate(of: file)
+      }
+      return stamp.map {
+        SharedSettingsReading(result: .success(export.written), stamp: $0, project: export.project)
+      }
+    }
+  }
+
+  func finishSharedSettingsExport(
+    _ export: SharedSettingsExport, _ written: Result<SharedSettingsReading?, any Error>
+  ) {
+    let project = export.project
+    guard workspace.project(project.id) != nil else { return }
+    switch written {
+    case .failure(let error):
+      report(error)
+    case .success(let reading?) where export.order.isLastLanded(export.ticket):
+      noteSharedSettings(reading, for: project)
+    case .success:
+      break
+    }
   }
 
   /// From the project's Hooks tab: trust what the file currently asks for,

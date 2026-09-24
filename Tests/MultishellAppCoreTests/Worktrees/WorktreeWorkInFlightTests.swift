@@ -3,8 +3,6 @@ import Testing
 
 @testable import MultishellAppCore
 
-/// Who owns a stop handle and a setup task while a worktree is built, on the
-/// plain value the model keeps them in.
 @Suite
 struct WorktreeWorkInFlightTests {
   private let a = "/trees/a"
@@ -23,9 +21,8 @@ struct WorktreeWorkInFlightTests {
     #expect(work.stopper(of: a) == nil)
   }
 
-  /// The bug this guards: a removal running over a create shares the stop
-  /// handle slot but owns no setup task, so its ending must leave the
-  /// create's task for a caller still awaiting it.
+  /// A removal running over a create shares the stop handle slot but owns no setup task, so its
+  /// ending must leave the create's task for a caller still awaiting it.
   @Test func disarmLeavesTheSetupTaskWhereEndTakesIt() async {
     var work = WorktreeWorkInFlight()
     let stopper = ProcessStopper()
@@ -45,19 +42,19 @@ struct WorktreeWorkInFlightTests {
     work.claim(a)
     work.claim(a)
     work.claim(b)
-    #expect(work.claimedPaths == [a, b])
+    #expect(work.isClaimed(a) && work.isClaimed(b))
 
     work.release(a)
     #expect(work.isClaimed(a), "the second create still holds it")
     work.release(a)
     #expect(!work.isClaimed(a))
-    #expect(work.claimedPaths == [b])
+    #expect(work.isClaimed(b))
   }
 
   @Test func releasingAPathNothingClaimedChangesNothing() {
     var work = WorktreeWorkInFlight()
     work.release(a)
-    #expect(work.claimedPaths.isEmpty)
+    #expect(!work.isClaimed(a))
   }
 
   @Test func onlyTheCreateTheSheetIsShowingIsTheOneCancelReaches() {
@@ -71,7 +68,20 @@ struct WorktreeWorkInFlightTests {
     #expect(!work.isCreating(with: first), "the older create's steps are dropped")
     #expect(work.isCreating(with: second))
 
-    work.endCreation()
+    work.endCreation(with: second)
     #expect(!work.isCreating(with: second))
+  }
+
+  @Test func theFirstOfTwoCreatesToEndLeavesTheOtherItsCancel() {
+    var work = WorktreeWorkInFlight()
+    let first = ProcessStopper()
+    let second = ProcessStopper()
+    work.beginCreation(with: first)
+    work.beginCreation(with: second)
+
+    work.endCreation(with: first)
+    #expect(work.isCreating(with: second))
+    work.cancelCreation()
+    #expect(second.isStopped)
   }
 }

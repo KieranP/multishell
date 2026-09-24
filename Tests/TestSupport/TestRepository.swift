@@ -2,12 +2,8 @@ import Foundation
 import MultishellGitKit
 import TestScratch
 
-/// A throwaway git repository, as both the GitKit and the AppCore suites
-/// want one.
-///
-/// The two built it separately and identically, down to the committer name,
-/// so changing what a fixture repository looks like meant remembering two
-/// files in two targets.
+/// A throwaway git repository, shared by the GitKit and AppCore suites so what a fixture
+/// repository looks like is decided in one place.
 public enum TestRepository {
   /// What fixture commits are authored as. Not a real address.
   static let committerEmail = "tests@multishell.local"
@@ -16,9 +12,8 @@ public enum TestRepository {
   /// a developer may have set to anything.
   static let initialBranch = "main"
 
-  /// An initialised repository at `url`, with the fixture identity set on the
-  /// repository itself so a developer's global config cannot change what the
-  /// tests commit as. No commit yet; `commit` makes the first.
+  /// The fixture identity goes on the repository itself, so a developer's global config
+  /// cannot change what the tests commit as. No commit yet; `commit` makes the first.
   public static func initialise(at url: URL, using git: GitRunner) async throws {
     try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
     _ = try await git.run(["init", "--initial-branch=\(initialBranch)"], in: url)

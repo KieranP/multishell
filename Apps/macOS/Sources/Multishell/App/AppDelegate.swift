@@ -5,6 +5,7 @@ import MultishellProcess
 
 /// Asks before quitting while terminals are open. Every open session is a
 /// live pty, and quitting kills whatever is running in it.
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
   var openTerminalCount: @MainActor () -> Int = { 0 }
   var workingAgentCount: @MainActor () -> Int = { 0 }
@@ -15,7 +16,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   func applicationWillTerminate(_ notification: Notification) {
-    MainActor.assumeIsolated { willTerminate() }
+    willTerminate()
   }
 
   func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
@@ -23,17 +24,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-    MainActor.assumeIsolated {
-      let (count, working) = (openTerminalCount(), workingAgentCount())
-      guard count > 0 else { return .terminateNow }
+    let (count, working) = (openTerminalCount(), workingAgentCount())
+    guard count > 0 else { return .terminateNow }
 
-      let alert = Self.quitAlert(
-        terminals: count, working: working, quit: t("action.quit"), cancel: t("action.cancel"))
-      return alert.runModal() == .alertFirstButtonReturn ? .terminateNow : .terminateCancel
-    }
+    let alert = Self.quitAlert(
+      terminals: count, working: working, quit: t("action.quit"), cancel: t("action.cancel"))
+    return alert.runModal() == .alertFirstButtonReturn ? .terminateNow : .terminateCancel
   }
 
-  @MainActor
   static func quitAlert(terminals: Int, working: Int, quit: String, cancel: String) -> NSAlert {
     let alert = NSAlert()
     alert.messageText = t("quit.title")

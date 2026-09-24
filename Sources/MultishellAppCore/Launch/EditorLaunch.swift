@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import MultishellProcess
 
 /// What Open in Editor does for the editor in force, decided apart from the
 /// view and the model so it can be tested.
@@ -26,7 +27,7 @@ enum EditorLaunch {
   ) -> Action? {
     if editorID == EditorCatalogue.customID {
       guard let line = EditorCatalogue.customCommandLine(customTemplate, path: directory),
-        let command = AgentLaunch.command(customLine: line, shell: shell, exec: exec)
+        let command = TabCommand.running(customLine: line, shell: shell, exec: exec)
       else { return nil }
       return .openTab(title: title(of: line.text), command: command)
     }
@@ -35,12 +36,13 @@ enum EditorLaunch {
     case .application:
       if let application = found?.application { return .openApplication(application) }
       guard let command = found?.command else { return nil }
-      return .runInBackground(ShellQuoting.commandLine([command.path, directory.path]))
+      return .runInBackground(
+        [command.path, directory.path].map(AnyShellQuoting.quote).joined(separator: " "))
     case .terminal:
       guard let command = found?.command else { return nil }
       return .openTab(
         title: editor.name,
-        command: AgentLaunch.command(agent: [command.path, "."], shell: shell, exec: exec))
+        command: TabCommand.running([command.path, "."], shell: shell, exec: exec))
     }
   }
 

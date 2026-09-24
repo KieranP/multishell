@@ -24,6 +24,37 @@ struct UntrackedLineCounterTests {
     #expect(counted.unscored == 0)
   }
 
+  @Test func aFileUnchangedSinceTheLastCountIsNotReadAgain() throws {
+    let root = try directory()
+    defer {
+      try? FileManager.default.setAttributes(
+        [.posixPermissions: 0o644], ofItemAtPath: root.appendingPathComponent("one.txt").path)
+      try? FileManager.default.removeItem(at: root)
+    }
+    let file = root.appendingPathComponent("one.txt")
+    try "a\nb\n".write(to: file, atomically: true, encoding: .utf8)
+    let memo = UntrackedLineMemo()
+    _ = UntrackedLineCounter.count(paths: ["one.txt"], in: root, memo: memo)
+    try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: file.path)
+
+    let counted = UntrackedLineCounter.count(paths: ["one.txt"], in: root, memo: memo)
+
+    #expect(counted.lines == 2, "the unreadable file was not read")
+    #expect(counted.unscored == 0)
+  }
+
+  @Test func aFileRewrittenToANewSizeIsCountedAgain() throws {
+    let root = try directory()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let file = root.appendingPathComponent("one.txt")
+    try "a\n".write(to: file, atomically: true, encoding: .utf8)
+    let memo = UntrackedLineMemo()
+    _ = UntrackedLineCounter.count(paths: ["one.txt"], in: root, memo: memo)
+    try "a\nb\nc\n".write(to: file, atomically: true, encoding: .utf8)
+
+    #expect(UntrackedLineCounter.count(paths: ["one.txt"], in: root, memo: memo).lines == 3)
+  }
+
   @Test func aBinaryFileAndAMissingOneCountAsFilesWithNoLines() throws {
     let root = try directory()
     defer { try? FileManager.default.removeItem(at: root) }
@@ -97,6 +128,31 @@ struct UntrackedLineCounterTests {
     let counting = full * UntrackedLineCounter.byteLimit + headroom - 2048 + 4
     #expect(counted.lines == counting / 2)
     #expect(counted.unscored == 1, "the file that would not fit, and not the small one after it")
+  }
+
+  @Test func aFileThatCouldNotBeReadLeavesTheBudgetToTheRest() throws {
+    let root = try directory()
+    let full = UntrackedLineCounter.totalByteLimit / UntrackedLineCounter.byteLimit
+    let unreadable = (0..<full).map { root.appendingPathComponent("locked\($0).txt") }
+    defer {
+      for file in unreadable {
+        try? FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: file.path)
+      }
+      try? FileManager.default.removeItem(at: root)
+    }
+    for file in unreadable {
+      try String(repeating: "x\n", count: UntrackedLineCounter.byteLimit / 2).write(
+        to: file, atomically: true, encoding: .utf8)
+      try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: file.path)
+    }
+    try "a\nb\n".write(
+      to: root.appendingPathComponent("after.txt"), atomically: true, encoding: .utf8)
+
+    let counted = UntrackedLineCounter.count(
+      paths: unreadable.map(\.lastPathComponent) + ["after.txt"], in: root)
+
+    #expect(counted.lines == 2)
+    #expect(counted.unscored == full)
   }
 
   @Test func onlyTheFilesItWillReadAreDecoded() {

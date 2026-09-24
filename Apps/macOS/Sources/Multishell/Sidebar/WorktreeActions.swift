@@ -12,13 +12,13 @@ struct WorktreeActions: View {
     // asked for; the model carries which worktree is being renamed.
     Button(t("action.rename")) { model.beginRenaming(worktree) }
     if model.customName(of: worktree) != nil {
-      Button(t("actions.use-branch-name")) { model.renameWorktree(worktree.id, to: nil) }
+      Button(t("action.use-branch-name")) { model.renameWorktree(worktree.id, to: nil) }
     }
     Divider()
     Button(t("action.open-in-editor")) { model.openInEditor(worktree) }
     Button(t("action.reveal-in-finder")) { model.revealInFileBrowser(worktree.path) }
-    Button(t("actions.copy-path")) { model.copyToClipboard(worktree.path.path) }
-    Button(t("actions.copy-branch")) { model.copyToClipboard(worktree.name) }
+    Button(t("action.copy-path")) { model.copyToClipboard(worktree.path.path) }
+    Button(t("action.copy-branch")) { model.copyToClipboard(worktree.name) }
     Divider()
     // Selected first, so the tab opens where it was asked for. Always a
     // shell: the agent has its own item, so auto-start does not apply.
@@ -34,11 +34,11 @@ struct WorktreeActions: View {
     }
     if model.state(ofWorktree: worktree.id) != nil {
       Divider()
-      Button(t("actions.clear-status")) { model.clearState(ofWorktree: worktree.id) }
+      Button(t("action.clear-status")) { model.clearState(ofWorktree: worktree.id) }
     }
     if worktree.isRemovable {
       Divider()
-      Button(t("actions.remove-worktree"), role: .destructive) {
+      Button(t("action.remove-worktree"), role: .destructive) {
         model.requestRemoval(of: worktree)
       }
       .disabled(model.isBusy(worktree.id))

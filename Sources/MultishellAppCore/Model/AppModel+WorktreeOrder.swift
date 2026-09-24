@@ -8,11 +8,13 @@ extension AppModel {
     _ worktrees: [Worktree], in project: Project, sessions: WorktreeSessions? = nil
   ) -> [Worktree] {
     let sessions = sessions ?? worktreeSessions
-    return worktreeOrder(for: project).sort(
+    let order = worktreeOrder(for: project)
+    let keys = order.keys(
       worktrees,
       displayName: { self.workspace.displayName(of: $0) },
       isActive: { self.isActive($0.id, sessions: sessions) },
       lastCommit: { self.lastCommits[$0.id] })
+    return worktreeOrders.rows(of: project.id, keys: keys, order: order)
   }
 
   /// The rule in force for a project, measured against the merge badges'

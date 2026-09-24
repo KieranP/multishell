@@ -39,7 +39,7 @@ extension AppModel {
       guard let common = await commonGitDirectory(of: project) else { continue }
       directories += await Self.offMain { WorktreeCoordinator.directoriesToWatch(in: common) }
     }
-    watcher.watch(directories)
+    await watcher.watch(directories)
   }
 
   func commonGitDirectory(of project: Project) async -> URL? {

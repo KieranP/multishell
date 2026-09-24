@@ -4,9 +4,8 @@ import MultishellCore
 
 @testable import Multishell
 
-/// The Mac model with nothing behind it: no git, no watcher, no engine.
-/// For tests that read and write settings or lay a view out, none of the
-/// three is ever reached.
+/// The Mac model with no git, watcher or engine behind it, for tests that only
+/// read and write settings or lay a view out.
 @MainActor
 final class ModelHarness {
   let model: Multishell.AppModel

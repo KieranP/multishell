@@ -4,9 +4,6 @@ import Testing
 
 @testable import MultishellCore
 
-/// Settings files built at random, put through Add and Remove: what was in
-/// the file has to come back, since the one promise these make is that they
-/// touch nothing they did not write. A failure prints the seed.
 @Suite
 struct AgentHookMergeInvariantTests {
   private let helper = "$HOME/Library/Application Support/Multishell/bin/multishell"
@@ -62,9 +59,8 @@ struct AgentHookMergeInvariantTests {
     return found
   }
 
-  /// A settings file with the shapes these meet: keys of the user's own, a
-  /// hooks object holding foreign hooks, ours from an older build, entries
-  /// in a shape this cannot read, and events left out altogether.
+  /// Keys of the user's own, foreign hooks, ours from an older build, entries in a shape
+  /// this cannot read, and events left out altogether.
   private func settings(
     _ rng: inout SeededGenerator, events: [String]
   ) -> [String: Any] {

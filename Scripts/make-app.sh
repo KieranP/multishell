@@ -22,6 +22,7 @@ cli_derived="$root/.build/xcode"
 cli_build="$cli_derived/Build/Products/$configuration"
 
 version="$(bundle_version "$root")"
+commit="$(bundle_commit "$root")"
 commits="$(bundle_build_number "$root")"
 variant="$(bundle_variant "$root" "$config")"
 
@@ -50,6 +51,7 @@ copy_info_plist_strings "$resources" "$app/Contents/Resources"
 render_template "$package/Resources/Info.plist.in" \
     @VERSION@ "$version" \
     @BUILD@ "$commits" \
+    @COMMIT@ "$commit" \
     @VARIANT@ "$variant" \
     @COPYRIGHT@ "$(bundle_copyright)" \
     @LOCALIZATIONS@ "$(bundle_localizations "$resources")" \
@@ -66,4 +68,4 @@ sign "$identity" "$app/Contents/Helpers/multishell" "$helper_entitlements"
 sign "$identity" "$app" "$entitlements"
 codesign --verify "$app" || echo "warning: $app is not validly signed" >&2
 
-echo "built $app ($version)"
+echo "built $app ($version, $commit)"

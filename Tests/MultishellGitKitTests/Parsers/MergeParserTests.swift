@@ -63,10 +63,8 @@ struct MergeParserTests {
     #expect(local.branchName == "release/2.0")
   }
 
-  /// A ref name may hold no space, so `* ` and `+ ` are always git's own
-  /// decoration. A parenthesis is legal in one, so `(wip)` is a branch and
-  /// keeps its badge; git's detached line is harmless beside it, since only
-  /// names a worktree actually has are ever looked up.
+  /// A ref name holds no space, so `* ` and `+ ` are git's decoration, but may hold a
+  /// parenthesis, so `(wip)` keeps its badge; only a worktree's own names are looked up.
   @Test func mergedBranchesDropGitsDecorationButNeverARealBranchName() {
     let merged = MergedBranchParser.parse(
       """
@@ -237,7 +235,10 @@ struct MergeParserTests {
       BranchRef(fullName: "refs/remotes/origin/main", tip: "remote"),
     ]
     let resolved = DefaultBranch.resolve(from: refs, override: nil)
-    #expect(resolved == DefaultBranch(ref: "origin/main", branch: "main", tip: "remote"))
+    #expect(
+      resolved
+        == DefaultBranch(
+          ref: "origin/main", branch: "main", tip: "remote", fullRef: "refs/remotes/origin/main"))
 
     // Local only: a repository that has never had a remote.
     let localOnly = DefaultBranch.resolve(from: [refs[0]], override: nil)

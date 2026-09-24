@@ -53,9 +53,8 @@ public struct AgentHookPayload: Hashable, Sendable {
     self.transcriptPath = object["transcript_path"] as? String
   }
 
-  /// Whether the transcript named is another conversation's: Copilot files a
-  /// subagent's under its parent's id. One naming this id anywhere is its own,
-  /// so a changed layout costs a mid-turn Done rather than every Done.
+  /// Whether the transcript is another conversation's: Copilot files a
+  /// subagent's under its parent's id; see Docs/design/agents.md.
   var isFiledUnderAnotherConversation: Bool {
     guard let conversationID, !conversationID.isEmpty, let transcriptPath else { return false }
     return !transcriptPath.contains(conversationID)

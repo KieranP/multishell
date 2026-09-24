@@ -5,15 +5,10 @@ import Testing
 
 @testable import Multishell
 
-/// The two halves of a keyboard shortcut: the menu item's equivalent and the
-/// `keybind=…=unbind` the terminal surface needs, or the surface eats the
-/// keystroke before the menu bar sees it. They were two lists that had to be
-/// kept in step by hand; these pin what the one list now derives.
+/// A menu shortcut also needs a `keybind=…=unbind` on the terminal surface, or
+/// the surface eats the keystroke before the menu bar sees it.
 @Suite
 struct AppShortcutTests {
-  /// The combinations the surface is told to give up: the hand-written
-  /// config's own list, plus the tab-group and find items added since. This
-  /// is the assertion that says the change to one source altered nothing.
   @Test func theDerivedUnbindListIsTheOneGhosttyWasAlwaysGiven() {
     #expect(
       Set(AppShortcuts.unbound) == [
@@ -81,10 +76,8 @@ struct AppShortcutTests {
     #expect(AppShortcuts.unbound.contains("escape"))
   }
 
-  /// The deliberate exception, pinned so it is not "fixed". In a pane these
-  /// are Ghostty's own clipboard actions on the terminal's selection, which
-  /// is what Cmd+C means there; unbinding them sends it to a menu item that
-  /// has no selection to copy.
+  /// In a pane Cmd+C is Ghostty's copy of the terminal selection, and unbinding
+  /// it sends it to a menu item that has no selection to copy.
   @Test func theClipboardShortcutsStayWithTheTerminal() {
     let unbound = Set(AppShortcuts.unbound)
     for shortcut in [
@@ -111,9 +104,8 @@ struct AppShortcutTests {
     #expect(AppShortcuts.nextTab.ghosttyCombo == "ctrl+tab")
     #expect(AppShortcuts.previousTab.ghosttyCombo == "ctrl+shift+tab")
 
-    // The arrows arrive as private-use scalars, which Ghostty would not
-    // parse; it names them instead. Alt and a bare arrow is word movement
-    // in a terminal and stays bound, so these carry Command as well.
+    // Ghostty cannot parse the arrows' private-use scalars, so it names them. Alt
+    // and a bare arrow is word movement in a terminal, so these add Command.
     #expect(AppShortcuts.nextGroup.ghosttyCombo == "super+alt+right")
     #expect(AppShortcuts.previousGroup.ghosttyCombo == "super+alt+left")
     // Not super+alt+d: the system's Dock toggle, which the

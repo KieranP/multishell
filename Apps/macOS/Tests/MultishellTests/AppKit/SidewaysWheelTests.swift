@@ -6,7 +6,7 @@ import Testing
 
 /// What a turn does to the strip is AppKit's behaviour rather than
 /// arithmetic, so each is checked against a real scroller.
-@Suite @MainActor
+@Suite(.serialized) @MainActor
 struct SidewaysWheelTests {
   private func wheel(vertical: Double, horizontal: Double = 0) -> NSEvent {
     let event = CGEvent(
@@ -38,10 +38,13 @@ struct SidewaysWheelTests {
     return (window, scroller, catcher)
   }
 
-  /// A scroller answers a wheel on its own schedule, so nothing is read back
-  /// in the same turn it was sent.
-  private func settle() {
-    RunLoop.main.run(until: Date().addingTimeInterval(0.25))
+  /// A scroller answers a wheel on its own schedule. `run(until:)` returns at
+  /// once while the main run loop has no source, so the wait is looped.
+  private func settle(until done: () -> Bool = { false }, within limit: TimeInterval = 0.25) {
+    let deadline = Date().addingTimeInterval(limit)
+    while !done(), Date() < deadline {
+      RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.01))
+    }
   }
 
   private func scrolled(_ scroller: NSScrollView) -> Double {
@@ -51,7 +54,7 @@ struct SidewaysWheelTests {
   @Test func aVerticalTurnScrollsTheStripSideways() {
     let (window, scroller, catcher) = strip()
     catcher.scrollWheel(with: wheel(vertical: -40))
-    settle()
+    settle(until: { scrolled(scroller) > 0 }, within: 2)
     #expect(scrolled(scroller) > 0, "the strip moved along its tabs")
     withExtendedLifetime(window) {}
   }
@@ -73,6 +76,7 @@ struct SidewaysWheelTests {
     let (farWindow, far, farCatcher) = strip()
     nearCatcher.scrollWheel(with: wheel(vertical: -40))
     farCatcher.scrollWheel(with: wheel(vertical: -80))
+    settle(until: { scrolled(near) > 0 && scrolled(far) > 0 }, within: 2)
     settle()
     #expect(scrolled(far) > scrolled(near))
     withExtendedLifetime([nearWindow, farWindow]) {}
@@ -83,7 +87,9 @@ struct SidewaysWheelTests {
     let (diagonalWindow, diagonal, diagonalCatcher) = strip()
     straightCatcher.scrollWheel(with: wheel(vertical: -40))
     diagonalCatcher.scrollWheel(with: wheel(vertical: -40, horizontal: 30))
+    settle(until: { scrolled(straight) > 0 && scrolled(diagonal) > 0 }, within: 2)
     settle()
+    #expect(scrolled(straight) > 0)
     #expect(scrolled(diagonal) == scrolled(straight))
     withExtendedLifetime([straightWindow, diagonalWindow]) {}
   }
@@ -95,6 +101,7 @@ struct SidewaysWheelTests {
     let (controlWindow, control, _) = strip()
     catcher.scrollWheel(with: notch(vertical: -3))
     control.scrollWheel(with: notch(horizontal: -3))
+    settle(until: { scrolled(turned) > 0 && scrolled(control) > 0 }, within: 2)
     settle()
     #expect(scrolled(turned) > 0)
     #expect(scrolled(turned) == scrolled(control))

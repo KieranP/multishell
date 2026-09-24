@@ -63,7 +63,7 @@ struct WorktreeRow: View {
         } else {
           Image(systemName: "exclamationmark.triangle.fill")
             .font(.system(size: metrics.badge))
-            .foregroundStyle(theme.ansiRGB[1].color)
+            .foregroundStyle(theme.ansiRGB(1).color)
             .help(operation.title)
         }
       }
@@ -78,7 +78,7 @@ struct WorktreeRow: View {
       if mergeState.showsBadge(with: status) {
         Image(systemName: "arrow.triangle.merge")
           .font(.system(size: metrics.badge))
-          .foregroundStyle(theme.ansiRGB[2].color)
+          .foregroundStyle(theme.ansiRGB(2).color)
           .help(mergeState.help)
       }
       // Git changes sit left of the terminal count, so the count stays at
@@ -180,5 +180,17 @@ struct WorktreeRow: View {
 
   private func changes(_ status: WorktreeStatus) -> some View {
     ChangeCounts(status: status, theme: theme, size: metrics.badge, tint: theme.textSecondary)
+  }
+}
+
+/// Everything but the closures, which are rebuilt on every sidebar render and
+/// capture nothing the rest does not already say; see `SidebarView`.
+extension WorktreeRow: @MainActor Equatable {
+  static func == (a: WorktreeRow, b: WorktreeRow) -> Bool {
+    a.worktree == b.worktree && a.customName == b.customName && a.isRenaming == b.isRenaming
+      && a.terminalCount == b.terminalCount && a.state == b.state && a.operation == b.operation
+      && a.isSelected == b.isSelected && a.isDropTarget == b.isDropTarget
+      && a.status == b.status && a.mergeState == b.mergeState && a.theme == b.theme
+      && a.metrics == b.metrics
   }
 }

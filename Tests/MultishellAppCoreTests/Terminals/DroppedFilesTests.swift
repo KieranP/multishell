@@ -31,9 +31,8 @@ struct DroppedFilesTests {
     #expect(FileManager.default.fileExists(atPath: two.path))
   }
 
-  /// The copy a drag hands over is the one this app alone may read, so it has
-  /// to be told from a file the user has: the first is asked for again
-  /// through its promise, the second keeps the path it is at.
+  /// Only this app may read the copy a drag hands over, so it is asked for again through its
+  /// promise, while a file the user has keeps its path.
   @Test func theCopyMacOSMakesForADropIsToldFromTheUsersOwnFile() {
     let temporary = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
     let copy =
@@ -54,22 +53,17 @@ struct DroppedFilesTests {
     #expect(DroppedFiles.isTemporaryCopy(copy))
   }
 
-  /// A directory of the user's own that happens to be called `TemporaryItems`
-  /// is theirs, and a file in it keeps its path.
   @Test func aFolderOfTheUsersOwnCalledTemporaryItemsIsNotTheDragsCopy() {
     let mine = URL(fileURLWithPath: "/Users/x/TemporaryItems/notes.md")
     #expect(!DroppedFiles.isTemporaryCopy(mine))
   }
 
-  /// A drag with no path at all is one whose files are not written yet —
-  /// dragged out of Photos, or off a mail message — and the promise is the
-  /// only thing there is to ask. Reading its paths as enough would refuse the
-  /// drop after the pane had offered it.
+  /// A drag with no path has files not yet written, as out of Photos or Mail; taking no paths as
+  /// enough would refuse the drop after the pane had offered it.
   @Test func aDragOfferingNoPathAtAllIsOneToAskThePromiseFor() {
     #expect(DroppedFiles.needsPromise(for: []))
   }
 
-  /// A copy among them is asked for again; paths the user's own are enough.
   @Test func onlyADragCarryingACopyNeedsThePromiseAsked() {
     let mine = URL(fileURLWithPath: "/Users/x/Desktop/Notes.md")
     let copy = URL(fileURLWithPath: "/somewhere/NSIRD_screencaptureui_A1/Shot.png")
@@ -79,9 +73,8 @@ struct DroppedFilesTests {
     #expect(DroppedFiles.needsPromise(for: [mine, copy]))
   }
 
-  /// A drag of both kinds at once keeps the user's own files, which the drop
-  /// pastes at once; the copies among them are asked for again through the
-  /// promise, and a drop that took only the promised ones would lose these.
+  /// The drop pastes the user's own files at once and asks for the copies again through the
+  /// promise, so a drop that took only the promised ones would lose these.
   @Test func aDragOfBothKindsKeepsTheFilesTheUserHas() {
     let mine = URL(fileURLWithPath: "/Users/x/Desktop/Notes.md")
     let copy = URL(fileURLWithPath: "/somewhere/NSIRD_screencaptureui_A1/Shot.png")

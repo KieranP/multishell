@@ -213,6 +213,8 @@ final class Harness {
       store: store, host: engine, worktrees: nil, watcher: watcher, platform: platform,
       stateSource: source, notifier: notifier)
     model.statusReads.pace = .unpaced
+    model.refreshLaunchFiles = { _ in nil }
+    model.sweepDroppedFiles = {}
     let path = tmp.appendingPathComponent("bin").path
     model.captureLoginEnvironment = {
       LoginShellEnvironment(
@@ -231,9 +233,8 @@ final class Harness {
 
   deinit { Scratch.remove(root) }
 
-  /// Lets the model's own tasks finish. They are `@MainActor`, so yielding
-  /// hands them the actor this test holds; a handful of turns covers one
-  /// that awaits a port on the way.
+  /// The model's tasks are `@MainActor`, so yielding hands them the actor this test holds; a
+  /// handful of turns covers one that awaits a port on the way.
   func settled(turns: Int = 10) async {
     for _ in 0..<turns { await Task.yield() }
   }

@@ -4,9 +4,11 @@ import MultishellCore
 /// Parses `git worktree list --porcelain -z`, free of any process or
 /// filesystem access so the format is testable against fixture text alone.
 enum WorktreeListParser {
-  /// NUL-terminated records of `worktree <path>`, `HEAD <sha>` and either
-  /// `branch <ref>` or `detached`; see Docs/design/worktrees.md for `-z`.
-  static func parse(_ porcelain: String, projectID: Project.ID) -> [Worktree] {
+  /// Records of `worktree <path>`, `HEAD <sha>` and `branch <ref>` or `detached`,
+  /// split on NUL for `-z` or a newline for an older git's form; see worktrees.md.
+  static func parse(
+    _ porcelain: String, projectID: Project.ID, separator: Character = "\0"
+  ) -> [Worktree] {
     var worktrees: [Worktree] = []
     var fields: [String: String] = [:]
 
@@ -22,13 +24,14 @@ enum WorktreeListParser {
           branch: fields["branch"].map(shortBranchName),
           isPrimary: worktrees.isEmpty,
           isLocked: fields["locked"] != nil,
+          isInitializing: fields["locked"] == "initializing",
           isBare: fields["bare"] != nil
         )
       )
     }
 
     // An empty field is the blank line the plain form had: end of record.
-    for line in porcelain.split(separator: "\0", omittingEmptySubsequences: false) {
+    for line in porcelain.split(separator: separator, omittingEmptySubsequences: false) {
       if line.isEmpty {
         flush()
         continue

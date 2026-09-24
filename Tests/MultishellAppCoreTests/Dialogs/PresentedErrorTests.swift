@@ -1,19 +1,15 @@
 import Foundation
-import MultishellCore
-import MultishellGitKit
 import MultishellProcess
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellCore
+@testable import MultishellGitKit
 
-/// The alert is the one place a user learns why something failed, so each
-/// error type must come out with a title that names the situation and a
-/// message that carries git's own words.
 @Suite
 struct PresentedErrorTests {
-  /// A `LocalizedError` reaching the default arm is printed by
-  /// `String(describing:)`, which gives the struct's fields rather than its
-  /// sentence, so each one needs a case of its own.
+  /// The default arm prints a `LocalizedError` with `String(describing:)`, which gives the
+  /// struct's fields rather than its sentence, so each one needs a case of its own.
   @Test func theGitKitErrorsReadAsSentencesRatherThanSwiftValues() {
     let branch = PresentedError(InvalidBranchName("my branch"))
     #expect(branch.message == "git will not take my branch as a branch name.")
@@ -60,9 +56,7 @@ struct PresentedErrorTests {
     #expect(presented.message == "npm ERR!\n\nExited with status 1.")
   }
 
-  /// The alert for a file list that could not finish, which is only ever
-  /// raised when the pane it belongs to has gone: it names which list it
-  /// was, since a worktree may have had both.
+  /// Raised only once the pane that would have shown it has gone.
   @Test func aFileListFailureSaysWhichListItWasAndNamesEachPath() {
     for (placement, expected) in [
       (WorktreePlacement.link, "Worktree created, but some of its files were not linked"),
@@ -149,8 +143,6 @@ struct PresentedErrorTests {
     #expect(presented.message.contains("Nothing will be saved over it"))
   }
 
-  /// A settings file Multishell will not rewrite has to say which file and
-  /// what to do instead, or the user is left with a JSON parser's words.
   @Test func aSettingsFileItWillNotRewriteSaysWhichAndWhatToDoInstead() {
     let file = URL(fileURLWithPath: "/Users/x/.gemini/settings.json")
     let unparsable = PresentedError(UnparsableSettingsFile(file: file))
@@ -196,6 +188,39 @@ struct PresentedErrorTests {
         + "\(String(cString: strerror(EACCES))) (\(EACCES))")
   }
 
+  @Test func anotherListsSkippedEntriesAreNotNamedAsThisListsFailures() {
+    let failure = WorktreeFileFailure(
+      placement: .copy,
+      items: [
+        WorktreeFileFailure.Item(path: ".env", underlying: CocoaError(.fileWriteNoPermission))
+      ]
+    ).including(skipped: ["~/.aws"])
+    let presented = PresentedError(failure)
+
+    #expect(failure.items.map(\.path) == [".env"])
+    #expect(presented.message.hasPrefix(".env: "))
+    #expect(!presented.message.contains("~/.aws: "))
+    #expect(presented.message.contains("so they were skipped and the rest placed:\n\n• ~/.aws"))
+  }
+
+  @Test func skippedListEntriesAreNamedWithWhatAnEntryMustBe() {
+    let presented = PresentedError(
+      WorktreeFilesSkipped(entries: ["~/.aws.json", "../shared/.env"]))
+
+    #expect(presented.title == "Some listed files were not placed")
+    #expect(presented.message.contains("~/.aws.json"))
+    #expect(presented.message.contains("../shared/.env"))
+    #expect(presented.message.contains("inside the repository"))
+  }
+
+  @Test func aDirectoryThatIsNotTheWorktreeSaysItWasLeftAlone() {
+    let presented = PresentedError(NotTheCheckout(path: URL(fileURLWithPath: "/w/feature")))
+
+    #expect(presented.title == "Worktree not removed: something else is at its path")
+    #expect(presented.message.contains("/w/feature"))
+    #expect(presented.message.contains("left it alone"))
+  }
+
   @Test func aTrashThatTookNothingSaysSoInTheReadersLanguage() {
     let presented = PresentedError(
       TrashFailure(path: URL(fileURLWithPath: "/w/feature"), underlying: TrashTookNothing()))
@@ -215,9 +240,9 @@ struct PresentedErrorTests {
 
   @Test func retryIsAbsentUnlessAdded() {
     var presented = PresentedError(GitUnavailable())
-    #expect(presented.retryLabel == nil && presented.retry == nil)
-    presented.retryLabel = "Delete Branch Anyway"
-    #expect(presented.retryLabel == "Delete Branch Anyway")
+    #expect(presented.retry == nil)
+    presented.retry = .init(label: "Delete Branch Anyway") {}
+    #expect(presented.retry?.label == "Delete Branch Anyway")
   }
 }
 

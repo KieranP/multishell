@@ -24,6 +24,14 @@ struct AgentHooksRowTests {
     #expect(!rows.contains { $0.id == "copilot" }, "not on this machine")
   }
 
+  @Test func aRowWhoseHooksAnOlderBuildWroteAsksForAnUpdate() throws {
+    let rows = AgentHooksRow.rows(
+      detection: detection(["claude", "codex"]), installed: ["claude", "codex"], stale: ["codex"])
+
+    #expect(try #require(rows.first { $0.id == "codex" }).wantsUpdate)
+    #expect(try !#require(rows.first { $0.id == "claude" }).wantsUpdate)
+  }
+
   @Test func eachRowNamesItsFileAndWhatWritingItDoes() throws {
     let rows = AgentHooksRow.rows(
       detection: detection(["claude", "codex", "copilot", "opencode"]), installed: [])

@@ -16,9 +16,8 @@ struct AgentCatalogueTests {
     #expect(AgentCatalogue.effectiveID(global: nil, override: "codex") == "codex")
   }
 
-  /// Each of the five the app supports first-hand resumes the way its own
-  /// CLI spells it; one spelled wrong reaches the pane as "unknown option"
-  /// and the tab is a shell where a conversation was expected.
+  /// A resume spelled wrong reaches the pane as "unknown option", and the tab is a shell
+  /// where a conversation was expected.
   @Test func theSupportedAgentsResumeTheirLastConversation() {
     let resume = { AgentCatalogue.agent($0)?.resumeArguments }
     #expect(resume("claude") == ["--continue"])

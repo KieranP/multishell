@@ -11,6 +11,10 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
 
   private var madeController: TerminalController?
   private var pendingTheme: TerminalTheme?
+  /// What the controller was last handed from the user's files, so coming to
+  /// the front rereads them and pushes only a change.
+  private var userBase = ""
+  private var activation: (any NSObjectProtocol)?
 
   /// The generated configs sit in a directory every copy of the build shares,
   /// so a copy that handed over would sweep a running copy's file with its own.
@@ -29,8 +33,21 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
     let made = TerminalController(configSource: .generated(base))
     GhosttyUserConfig.repair(made, base: base)
     madeController = made
+    userBase = base
     if let pendingTheme { _ = made.setTheme(pendingTheme) }
+    // An edit to the user's file is made in another app, so switching back
+    // is when it can have changed.
+    activation = NotificationCenter.default.addObserver(
+      forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main
+    ) { [weak self] _ in
+      MainActor.assumeIsolated { self?.reloadUserConfig() }
+    }
     return made
+  }
+
+  private func reloadUserConfig() {
+    guard let madeController else { return }
+    userBase = GhosttyUserConfig.reload(madeController, over: userBase)
   }
 
   func shutDown() {
@@ -164,7 +181,7 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
       // colour, their text the darker of the theme's pair; see appearance.md.
       let selected = theme.focusRingRGB ?? theme.selectionRGB
       let text = theme.isDark ? theme.backgroundRGB : theme.foregroundRGB
-      builder.withCustom("search-background", theme.ansiRGB[3].hex)
+      builder.withCustom("search-background", theme.ansiRGB(3).hex)
       builder.withCustom("search-foreground", text.hex)
       builder.withCustom("search-selected-background", selected.hex)
       builder.withCustom("search-selected-foreground", text.hex)
@@ -246,8 +263,8 @@ private final class SurfaceObserver:
     host?.activity(in: sessionID)
   }
 
-  /// Needs shell integration in the child shell; Ghostty's resources
-  /// include it for zsh, bash and fish.
+  /// Needs shell integration in the child shell, which zsh and bash get and
+  /// fish and nu do not; see COMPAT.md.
   func terminalDidFinishCommand(exitCode: Int?, durationNanos: UInt64) {
     host?.commandFinished(in: sessionID, exitCode: exitCode)
   }

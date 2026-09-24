@@ -4,19 +4,13 @@ import Testing
 
 @testable import MultishellAppCore
 
-/// Every runtime cache the model keeps about a project or a worktree is keyed
-/// by its path, so a project that leaves must take its own path and its
-/// worktrees' with it. Walked by reflection rather than field by field: a
-/// cache added later is populated by the same refresh and caught here without
-/// anyone remembering to extend this test.
+/// Walked by reflection rather than field by field, so a path-keyed cache added later is caught
+/// without anyone remembering to extend this test.
 @Suite(.serialized) @MainActor
 struct ProjectRemovalTraceTests {
   /// Fields that are meant to still name a departed project, each for a
   /// reason the field's own comment gives.
   private static let exempt: Set<String> = [
-    // Documented never to shrink while the app runs. A re-added project has
-    // no saved sessions left for a stale entry to warm.
-    "warmWorktrees",
     // Pruned by the next `refreshStatuses` against the workspace, which is
     // cheaper than walking every worktree on a removal.
     "_statuses",
@@ -29,9 +23,8 @@ struct ProjectRemovalTraceTests {
     defer { h.tearDown() }
     let project = h.project
 
-    // Give the repository a `.multishell.json` and a second worktree, so the
-    // shared-settings cache, the merge scan and the record check all have
-    // something to hold before the project goes.
+    // A `.multishell.json` and a second worktree give the shared-settings cache, the merge scan
+    // and the record check something to hold before the project goes.
     try #"{"branchPrefix": "team/"}"#.write(
       to: SharedProjectSettings.file(in: project.path), atomically: true, encoding: .utf8)
     await h.model.createWorktree(
@@ -45,7 +38,7 @@ struct ProjectRemovalTraceTests {
     h.model.settingsProjectID = project.id
     // The dialogs a second scene can leave standing over a removal.
     h.model.requestNewWorktree(in: project)
-    h.model.requestRemoval(of: worktrees[1])
+    await h.model.requestRemoval(of: worktrees[1])?.value
 
     let paths = Set(
       [project.id] + h.model.workspace.worktrees(of: project.id).map(\.id))
@@ -61,9 +54,6 @@ struct ProjectRemovalTraceTests {
     }
   }
 
-  /// Walks the model's stored properties, recursing through value types and
-  /// collections but never into a class, and reports every place one of
-  /// `paths` survives.
   private static func traces(
     in model: AppModel<FakeSurface>, of paths: Set<String>
   ) -> [(field: String, value: String)] {
@@ -77,13 +67,8 @@ struct ProjectRemovalTraceTests {
     return found
   }
 
-  /// Every string reachable from `value` by value-type structure: dictionary
-  /// keys, set and array members, and the stored properties of a struct or
-  /// enum. Classes are skipped, which keeps the store, the registry and the
-  /// engine out of it; they answer to the workspace, not to this.
-  /// The bound is only a stop against a value type that somehow nests
-  /// without end; nothing here is close to it, and a cache buried deeper
-  /// than this would go unchecked.
+  /// Classes are skipped, keeping out the store, registry and engine, which answer to the
+  /// workspace. The depth bound only stops endless nesting; a cache buried deeper goes unchecked.
   private static func strings(in value: Any, depth: Int = 0) -> [String] {
     guard depth < 12 else { return [] }
     if let text = value as? String { return [text] }

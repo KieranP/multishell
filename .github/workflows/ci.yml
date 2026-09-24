@@ -6,7 +6,7 @@ on:
 
 jobs:
   core-macos:
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
       - run: swift build
@@ -14,13 +14,13 @@ jobs:
 
   # swift-format ships in the toolchain, so no install step.
   lint:
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
       - run: make lint
 
   app-macos:
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
       - run: swift build --package-path Apps/macOS

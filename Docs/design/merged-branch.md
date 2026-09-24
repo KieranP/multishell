@@ -56,11 +56,29 @@ Newest at the bottom.
   call here that can hang. So a badge is only as fresh as the last fetch, and
   Fetch is a menu item with a timeout and a spinner.
 - **The check rides the status poll, not the watcher**: a commit moves a ref no
-  watched file mentions.
+  watched file mentions. Four projects are scanned at once, one after another
+  having been the tick's longest wait at ten projects.
 - **Each verdict is memoised on base, base tip, branch, branch tip and whether
   the upstream was gone.** The branch because two may sit on one commit with
   only one gone upstream; the upstream because a first push puts one back
   without moving either tip.
+- **A base that moves re-asks every branch**, so a fetch, pull or push misses no
+  landing. Keying on the merge-base instead would miss a rebase-merge, which
+  leaves the merge-base where it was.
+- **Paced by cost, not all at once**: `git cherry` takes 0.6 to 1.3 s a branch
+  on a 7,700-commit repository, so thirty long-lived branches after one fetch
+  started 20 to 40 s of git together. Each round starts re-asks until their last
+  costs reach 2 s across all its projects, always one a project, the longest
+  since answered first, so every branch is reached in turn. A budget per project
+  let a round of four start four budgets' worth. A lone project's refresh, a
+  fetch's or a new worktree's, has a budget of its own and leaves the round's as
+  it found it. Cost: after a fetch the last of thirty such branches changes
+  about 75 s later.
+- **A branch never read is not paced**, having no badge to show meanwhile:
+  paced, a project of forty took five rounds at launch to badge them all. Cost:
+  the first round asks every branch, held to the shared width below.
+- **A failed read is logged at its cost like an answer**, or it stayed never
+  read and went unpaced every round.
 - **Nothing observable is written unless it changed**, or the sidebar redraws on
   every poll.
 - **Never badged**: main worktree, bare repo, detached HEAD, the trunk's own
@@ -73,7 +91,8 @@ Newest at the bottom.
   and certain gets the dialog led by the delete button.
 - **Untracked files hidden empties the porcelain** for a worktree whose work is
   all untracked, which reads as clean, so the badge goes over uncommitted work
-  and the directory is trashed. A caller's own entry still wins over both.
+  and the directory is trashed or deleted. A caller's own entry still wins over
+  both.
 - **A branch is named to git by refname, never bare.** A bare name reaches a tag
   of that name first, and git's ambiguity warning goes to stderr, which the
   poll's reads discard.
@@ -82,6 +101,10 @@ Newest at the bottom.
 - **Either direction is wrong and neither is silent about nothing**: the tie
   loses a badge the branch earned, or hands a certain "merged" to a branch
   holding work nobody has landed.
-- **The base is not covered.** It goes to git in its short print form; a
-  remote-tracking base cannot tie with a tag, so what is left is a tag named
-  exactly like a local trunk.
+- **The base goes by refname too**: a tag ties with a local trunk and with a
+  remote-tracking one alike, a tag named `origin/main` included. The short form
+  stays for what a badge says it was merged into.
+- **Every project's per-branch merge reads share one width of eight.** The poll
+  scans four projects at once, and each project reading eight branches at once
+  started up to 32 git processes a round after a fetch moved every base. A
+  read's cost is timed from when it gets a slot, not from its wait.

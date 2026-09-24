@@ -31,6 +31,6 @@ struct ProjectIconView: View {
   }
 
   private var tint: Color {
-    settings.iconTint.map { theme.ansiRGB[$0].color } ?? theme.textSecondary
+    settings.iconTint.map { theme.ansiRGB($0).color } ?? theme.textSecondary
   }
 }

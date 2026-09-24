@@ -41,13 +41,29 @@ public struct SessionStates: Equatable, Sendable {
   /// A report over the channel, `isSeen` the user looking at it. Returns what
   /// it meant once `settling` has kept the roster, `nil` for a bookkeeping tick.
   @discardableResult
-  public mutating func report(
+  mutating func report(
     _ state: SessionState, pid: Int32?, message: String? = nil, duration: Double? = nil,
-    subagent: SubagentReport? = nil, startsTurn: Bool = false, backgroundShells: [Int32] = [],
+    subagent: SubagentReport? = nil, startsTurn: Bool = false, startsSession: Bool = false,
+    backgroundShells: [Int32] = [], fromShell: Bool = false,
     resumesAfterWorkers: Bool = false, conversationID: String? = nil, for key: Key, isSeen: Bool
   ) -> SessionState? {
+    // Copilot's prompt mode starts its session after the first prompt. Before
+    // the conversation is read, or a dropped start re-points the pane's own.
+    if startsSession, subagent == nil, entries[key]?.isShellsWorking != true,
+      [.running, .attention].contains(entries[key]?.state)
+    {
+      return nil
+    }
     var subagent = subagent
     var startsTurn = startsTurn
+    // A worker's end names the conversation it ran under: the pane's own, where
+    // a pane that heard the worker first took the worker for its own.
+    if let conversationID, let ending = subagent, ending.phase == .ended,
+      ownConversationIDs[key] == ending.id
+    {
+      ownConversationIDs[key] = conversationID
+      update(key) { $0.forgetWorker(conversationID) }
+    }
     if let conversationID, subagent == nil,
       let worker = worker(inConversation: conversationID, reporting: state, for: key)
     {
@@ -55,7 +71,7 @@ public struct SessionStates: Equatable, Sendable {
       startsTurn = false
     }
     // A prompt starts a turn, so whatever the last one left out is gone: an
-    // agent interrupted fires no hook and its workers send no stop.
+    // agent interrupted, Codex aside, fires no hook and its workers send no stop.
     if startsTurn { update(key) { $0.settleTurn() } }
     if state == .done, subagent == nil {
       update(key) {
@@ -78,6 +94,7 @@ public struct SessionStates: Equatable, Sendable {
         if let pid { $0.pid = pid }
       }
     }
+    update(key) { $0.isShellsWorking = fromShell && $0.state == .running }
     // Only where a state survived the report: a Done about a tab the user is
     // looking at leaves nothing to say something about.
     if entries[key]?.state != nil {
@@ -98,7 +115,7 @@ public struct SessionStates: Equatable, Sendable {
     if let own, own != conversation {
       // A new conversation of the pane's, cleared or started without a
       // SessionStart, was read as a worker until now.
-      update(key) { $0.workers.removeAll { $0.id == conversation } }
+      update(key) { $0.forgetWorker(conversation) }
     }
     ownConversationIDs[key] = conversation
     return nil
@@ -269,11 +286,12 @@ public struct SessionStates: Equatable, Sendable {
     switch displaced {
     case .nothing: return .idle
     case .done, .stop: return .done
-    case .failed(let note):
+    case .failed(let note, let since):
       update(key) {
         $0.state = .error
         $0.pid = nil
         $0.note = note
+        $0.since = since
       }
       return nil
     }
@@ -281,7 +299,7 @@ public struct SessionStates: Equatable, Sendable {
 
   /// A bell or a title from the engine: something happened, not what. It
   /// never downgrades a state the occupant reported.
-  public mutating func noteActivity(in id: TerminalSession.ID, isSeen: Bool) {
+  mutating func noteActivity(in id: TerminalSession.ID, isSeen: Bool) {
     let key = Key.session(id)
     guard entries[key]?.state == nil, !isSeen else { return }
     update(key) { $0.state = .done }
@@ -289,7 +307,7 @@ public struct SessionStates: Equatable, Sendable {
 
   /// The shell's foreground command returned: the one engine signal that
   /// outranks a report. A non-zero exit is Failed, and covers a Done.
-  public mutating func noteCommandFinished(
+  mutating func noteCommandFinished(
     in id: TerminalSession.ID, exitCode: Int32?, isSeen: Bool
   ) {
     let key = Key.session(id)
@@ -313,7 +331,7 @@ public struct SessionStates: Equatable, Sendable {
 
   /// The shown tab and the selected worktree have been seen. Done goes;
   /// the rest stay until something other than a look deals with them.
-  public mutating func markSeen(sessions: [TerminalSession.ID], worktree: Worktree.ID?) {
+  mutating func markSeen(sessions: [TerminalSession.ID], worktree: Worktree.ID?) {
     for key in keys(sessions, worktree) where entries[key]?.state?.clearsWhenSeen == true {
       update(key) { $0.state = nil }
     }
@@ -331,7 +349,7 @@ public struct SessionStates: Equatable, Sendable {
 
   /// The state and what it claimed go; the stamp and the note are left for
   /// `stampChanges`, which reads the transition.
-  public mutating func clear(_ key: Key) {
+  mutating func clear(_ key: Key) {
     update(key) {
       $0.state = nil
       $0.pid = nil
@@ -340,14 +358,14 @@ public struct SessionStates: Equatable, Sendable {
   }
 
   /// The user's own clear, for a Working dot whose agent is long gone.
-  public mutating func clear(sessions: [TerminalSession.ID], worktree: Worktree.ID?) {
+  mutating func clear(sessions: [TerminalSession.ID], worktree: Worktree.ID?) {
     for id in sessions { clear(.session(id)) }
     if let worktree { clear(.worktree(worktree)) }
   }
 
   /// Keeps the keys a subset of what exists: live shells and known
   /// worktrees. Done for a dead shell is nothing to look at.
-  public mutating func retain(sessions: Set<TerminalSession.ID>, worktrees: Set<Worktree.ID>) {
+  mutating func retain(sessions: Set<TerminalSession.ID>, worktrees: Set<Worktree.ID>) {
     func exists(_ key: Key) -> Bool {
       switch key {
       case .session(let id): sessions.contains(id)
@@ -360,7 +378,7 @@ public struct SessionStates: Equatable, Sendable {
 
   /// The process a state was about has gone. Working and Waiting were claims
   /// about it and go; Done and Failed are about the user and stay.
-  public mutating func processGone(_ pid: Int32) {
+  mutating func processGone(_ pid: Int32) {
     for (key, entry) in entries where entry.pid == pid {
       update(key) {
         if $0.state?.isFinished != true { $0.state = nil }
@@ -373,10 +391,12 @@ public struct SessionStates: Equatable, Sendable {
   }
 
   /// Records when each key's state changed, once per mutation, and stamps a
-  /// worker's start. A key that did not move keeps its time.
-  public mutating func stampChanges(against previous: SessionStates, at now: Date) {
+  /// worker's start. A state put back with its own stamp keeps it.
+  mutating func stampChanges(against previous: SessionStates, at now: Date) {
     for key in Set(entries.keys).union(previous.entries.keys)
-    where entries[key]?.state != previous.entries[key]?.state {
+    where entries[key]?.state != previous.entries[key]?.state
+      && (entries[key]?.since == nil || entries[key]?.since == previous.entries[key]?.since)
+    {
       update(key) {
         $0.since = now
         if $0.state == nil { $0.note = nil }

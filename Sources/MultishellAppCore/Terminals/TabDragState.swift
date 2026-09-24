@@ -15,6 +15,9 @@ public struct TabDragState: Equatable, Sendable {
   public var overColumn: TabGroup.ID?
   /// The band the pointer is over, lit while it is.
   public var band: Band?
+  /// Counts drags, and survives their end, so the release of one cannot end
+  /// the next; see `endAbandoned`.
+  public private(set) var generation = 0
 
   public init() {}
 
@@ -31,14 +34,25 @@ public struct TabDragState: Equatable, Sendable {
   }
 
   public mutating func begin(_ id: TerminalTab.ID) {
+    let next = generation &+ 1
     self = TabDragState()
+    generation = next
     tabID = id
   }
 
   /// Every drop path ends here, the ones that moved nothing included: the
   /// four in `TabDrops` and the sidebar row, which is why `AppModel` holds it.
   public mutating func end() {
+    let kept = generation
     self = TabDragState()
+    generation = kept
+  }
+
+  /// A drag released where nothing takes it calls no drop, and `.onDrag` has
+  /// no end below macOS 26, so the button coming up ends it; see `DragRelease`.
+  public mutating func endAbandoned(_ generation: Int) {
+    guard isDragging, generation == self.generation else { return }
+    end()
   }
 
   /// Where a dragged tab would land in a strip: on a tab, and which side.

@@ -4,9 +4,8 @@ import Testing
 
 @testable import MultishellCore
 
-/// Random sequences of the operations views can trigger, in any order. Every
-/// step must leave the workspace consistent; a failure prints the seed and
-/// the step so it can be replayed.
+/// Random sequences of the operations views can trigger. A failure prints the
+/// seed and the step so it can be replayed.
 @Suite @MainActor
 struct WorkspaceStoreInvariantTests {
   @Test(arguments: [1, 2, 3, 5, 8, 13, 21, 34, 55, 89] as [UInt64])
@@ -70,10 +69,8 @@ struct WorkspaceStoreInvariantTests {
           store.moveTab(tab.id, to: worktree.id)
         }
       case 11:
-        // The project settings forms: an override turned on, blanked, given
-        // whitespace to opt out of a global, and turned off again. A blank
-        // one has to come back as an override, which the round-trip check
-        // below is what proves.
+        // The project settings forms, where whitespace opts out of a global. A blank
+        // override must come back as an override, which the round-trip check proves.
         let project = projects.randomElement(using: &rng)!
         var settings = ws.project(project.id)?.settings ?? ProjectSettings()
         let value = ["team/", "", "  ", "../trees"].randomElement(using: &rng)!
@@ -118,9 +115,6 @@ struct WorkspaceStoreInvariantTests {
       WorkspaceInvariants.check(store.workspace, "seed \(seed) step \(step)")
     }
 
-    // Whatever shape the operations reached, a relaunch must reproduce it:
-    // the encoder and the lossy decoder agree on every element, and repair
-    // finds nothing to do in a workspace the store built.
     let encoder = JSONEncoder()
     encoder.outputFormatting = [.sortedKeys]
     let data = try encoder.encode(store.workspace)

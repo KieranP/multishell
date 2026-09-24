@@ -37,14 +37,14 @@ struct WorktreeOrderTests {
     _ order: WorktreeOrder, _ worktrees: [Worktree], named: [Worktree.ID: String] = [:],
     active: Set<Worktree.ID> = [], commits: [String: Double] = [:]
   ) -> [String] {
-    order.sort(
+    let keys = order.keys(
       worktrees,
       displayName: { named[$0.id] ?? $0.name },
       isActive: { active.contains($0.id) },
       lastCommit: { worktree in
         worktree.branch.flatMap { commits[$0] }.map { epoch.addingTimeInterval($0 * 86_400) }
-      }
-    ).map { named[$0.id] ?? $0.name }
+      })
+    return order.sorted(keys).map { named[$0.id] ?? $0.name }
   }
 
   @Test func alphabeticalKeepsThePrimaryFirst() {
@@ -68,8 +68,6 @@ struct WorktreeOrderTests {
     #expect(names(order, list, named: renamed) == ["main", "mango", "zebra", "Zzz last"])
   }
 
-  /// Numbers read as numbers, so wt10 comes after wt9 rather than after
-  /// wt1.
   @Test func alphabeticalCountsRunsOfDigitsAsNumbers() {
     let order = WorktreeOrder(order: .alphabetical, activeFirst: false)
     let list = [linked("wt10", daysAfterEpoch: 1), linked("wt9", daysAfterEpoch: 2)]
@@ -99,9 +97,8 @@ struct WorktreeOrderTests {
     #expect(names(order, list, active: [list[0].id]) == ["main", "zebra", "alpha", "mango"])
   }
 
-  /// A bare repository is git's main worktree, and the trunk is checked out
-  /// in a linked one. Both hold the top, the bare one first, as git lists
-  /// them.
+  /// A bare repository is git's main worktree and the trunk sits in a linked one; both
+  /// hold the top, the bare one first, as git lists them.
   @Test func aBareRepositoryKeepsItsTrunkWorktreeSecond() {
     let bare = Worktree(
       path: URL(fileURLWithPath: "/w/acme.git"), projectID: project.id, head: "0", isPrimary: true,
@@ -111,8 +108,6 @@ struct WorktreeOrderTests {
     #expect(names(order, list) == ["acme.git", "main", "alpha"])
   }
 
-  /// The project's own trunk, not the guess: a repository whose default
-  /// branch is `develop` pins that row, and `main` sorts with the rest.
   @Test func aResolvedTrunkOutranksTheMainMasterGuess() {
     let list = [
       linked("main", daysAfterEpoch: 1), linked("develop", daysAfterEpoch: 2),
@@ -124,8 +119,6 @@ struct WorktreeOrderTests {
     #expect(names(resolved, list) == ["develop", "alpha", "main"])
   }
 
-  /// A detached worktree has no branch to be the trunk, and must not crash
-  /// or be pinned by one.
   @Test func aDetachedWorktreeIsNeverTheTrunk() {
     let detached = Worktree(
       path: URL(fileURLWithPath: "/w/t/detached"), projectID: project.id, head: "beefbeefbeef",
@@ -157,9 +150,8 @@ struct WorktreeOrderTests {
     #expect(names(order, [a, b]) == names(order, [b, a]))
   }
 
-  /// The commit dates are runtime state and have nothing to do with when
-  /// the directory was made: a worktree cut last week and committed to this
-  /// morning is the recently committed one.
+  /// Commit dates are runtime state, unrelated to when the directory was made: a worktree
+  /// cut last week and committed to this morning is the recently committed one.
   @Test func recentlyCommittedGoesByTheLastCommitNotTheCreationDate() {
     let list = worktrees()
     let commits = ["zebra": 9.0, "alpha": 5.0, "mango": 7.0]
@@ -173,9 +165,8 @@ struct WorktreeOrderTests {
         == ["main", "alpha", "mango", "zebra"])
   }
 
-  /// A branch nobody has a date for — a detached checkout, or a project
-  /// whose scan has not run yet — is not the least recently committed thing
-  /// in the repository.
+  /// A branch with no date, a detached checkout or a project not yet scanned, is not the
+  /// least recently committed thing in the repository.
   @Test func aBranchWithNoCommitDateSortsLastInBothCommittedOrders() {
     let list = [linked("dated", daysAfterEpoch: 1), linked("undated", daysAfterEpoch: 2)]
     for order in [WorktreeSortOrder.committedNewestFirst, .committedOldestFirst] {
@@ -196,9 +187,8 @@ struct WorktreeOrderTests {
     }
   }
 
-  /// With no trunk resolved, both guesses are honoured: a repository that
-  /// has `main` and `master` checked out pins both rather than picking one
-  /// it has no grounds to pick. The first scan settles it.
+  /// With no trunk resolved, `main` and `master` are both pinned, there being no grounds
+  /// to pick one; the first scan settles it.
   @Test func bothGuessedTrunkNamesArePinnedUntilOneIsResolved() {
     let list = [
       linked("alpha", daysAfterEpoch: 1), linked("master", daysAfterEpoch: 2),
@@ -218,8 +208,6 @@ struct WorktreeOrderTests {
   }
 }
 
-/// The rule reaching the sidebar: which settings win, and what the model
-/// counts as active.
 @Suite
 @MainActor
 struct AppModelWorktreeOrderTests {
@@ -259,7 +247,6 @@ struct AppModelWorktreeOrderTests {
         == ["main", "feature", "aardvark"], "the dated branch leads, the undated follows")
   }
 
-  /// A terminal open, or a state reported with no terminal at all.
   @Test func activeMeansATerminalOrAReportedState() {
     let (harness, extra) = harnessWithThree()
     #expect(!harness.model.isActive(harness.feature.id))
@@ -272,8 +259,6 @@ struct AppModelWorktreeOrderTests {
     #expect(harness.model.isActive(extra.id), "so is a state with no terminal")
   }
 
-  /// The toggle lifts a busy worktree over one that sorts above it, and
-  /// still never over the main one.
   @Test func showActiveAtTheTopLiftsTheBusyRow() {
     let (harness, _) = harnessWithThree()
     harness.store.openTab(in: harness.feature.id)
@@ -297,9 +282,8 @@ struct AppModelWorktreeOrderTests {
 @Suite
 @MainActor
 struct WorktreeCommitDateLifetimeTests {
-  /// Paths are ids, so a project added again gets worktrees with the ids it
-  /// had before. Dates read before it left would order its rows until the
-  /// first poll answered.
+  /// Paths are ids, so a project added again gets its old worktree ids, and dates read
+  /// before it left would order its rows until the first poll answered.
   @Test func removingAProjectForgetsItsCommitDates() {
     let harness = Harness()
     harness.model.lastCommits[harness.main.id] = Date(timeIntervalSince1970: 1000)
@@ -309,9 +293,8 @@ struct WorktreeCommitDateLifetimeTests {
     #expect(harness.model.lastCommits.isEmpty)
   }
 
-  /// A project whose default branch went away keeps them: the same call
-  /// forgets the merge badges, and losing the dates with them would leave a
-  /// trunk-less repository with nothing to order by.
+  /// The same call forgets the merge badges; losing the dates too would leave a trunk-less
+  /// repository with nothing to order by.
   @Test func losingTheDefaultBranchKeepsTheCommitDates() {
     let harness = Harness()
     harness.model.lastCommits[harness.feature.id] = Date(timeIntervalSince1970: 2000)
@@ -323,11 +306,8 @@ struct WorktreeCommitDateLifetimeTests {
   }
 }
 
-/// The seam the layer tests each miss: a real repository, a real scan, and
-/// the rows the sidebar would draw. Everything else about the commit orders
-/// is tested with dates put there by hand, so nothing else would notice if
-/// the scan's answer never reached the model, or reached it under the wrong
-/// key.
+/// Every other commit-order test sets dates by hand, so only this one notices the scan's
+/// answer never reaching the model, or reaching it under the wrong key.
 @Suite(.serialized)
 @MainActor
 struct WorktreeOrderOnRealGitTests {
@@ -340,11 +320,8 @@ struct WorktreeOrderOnRealGitTests {
       await harness.model.createWorktree(
         branch: branch, basedOn: nil, createBranch: true, in: harness.project)
     }
-    // Then commit to zulu, making it the most recently committed. The
-    // committer date is set rather than taken from the clock: git prints it
-    // in whole seconds, so a repository built and committed to inside one
-    // second gives every branch the same date and the order falls back to
-    // the name — which is the answer this test is trying to rule out.
+    // git prints the committer date in whole seconds, so a clock date can tie every branch
+    // and fall back to the name order this test rules out.
     let zulu = try #require(harness.model.workspace.worktrees.first { $0.branch == "zulu" })
     try "work\n".write(
       to: zulu.path.appendingPathComponent("a.txt"), atomically: true, encoding: .utf8)
@@ -383,10 +360,8 @@ struct WorktreeOrderOnRealGitTests {
   @Test func theCreatedOrderComesOffTheRealDirectories() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    // Alphabetically first is created first, so the newest-first answer
-    // disagrees with the name order. The other way round, two directories
-    // sharing a birth time would fall back to the name and give the same
-    // rows, and the test would pass without the dates being read at all.
+    // Alphabetically first is created first, so newest-first disagrees with the name
+    // order; the other way round, a birth-time tie would pass without reading a date.
     for branch in ["alpha", "zulu"] {
       await harness.model.createWorktree(
         branch: branch, basedOn: nil, createBranch: true, in: harness.project)
@@ -436,16 +411,14 @@ struct SharedWorktreeOrderTests {
       harness.model.ordered(all, in: harness.project).map(\.name) == ["main", "zulu", "alpha"],
       "the file's order, which the global would have listed the other way")
 
-    // What the form shows for a project overriding neither: the file's
-    // value, said to come from the file, so turning the override on seeds
-    // what the sidebar was already doing.
+    // A project overriding neither shows the file's value, said to come from the file, so
+    // turning the override on seeds what the sidebar was already doing.
     let inherited = harness.model.inherited(
       \.worktreeSortOrder, global: harness.model.workspace.worktreeSortOrder,
       for: harness.project)
     #expect(inherited == InheritedSetting(value: .createdOldestFirst, isFromRepository: true))
     #expect(inherited.caption.contains(SharedProjectSettings.fileName))
 
-    // The user's own choice always wins over the team's.
     var settings = harness.model.workspace.project(harness.project.id)!.settings
     settings.worktreeSortOrder = .alphabetical
     harness.model.updateSettings(settings, for: harness.project)
@@ -464,7 +437,7 @@ struct SharedWorktreeOrderTests {
     settings.showsActiveWorktreesFirst = true
     harness.model.updateSettings(settings, for: harness.project)
 
-    harness.model.exportSharedSettings(for: harness.project)
+    await harness.model.exportSharedSettings(for: harness.project)
 
     let written = try #require(try SharedProjectSettings.load(from: harness.project.path))
     #expect(written.worktreeSortOrder == .committedNewestFirst)

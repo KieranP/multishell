@@ -6,13 +6,8 @@ import Testing
 
 @Suite
 struct DebugPathsTests {
-  /// Tests are debug builds, so they see the debug variant; a release build
-  /// drops the suffix. Either way the three move together.
-  ///
-  /// Under a time limit because reading the variant walks up from the running
-  /// binary looking for an `.app`, and a walk that does not end hangs the run
-  /// rather than failing it: a job that times out after an hour says far less
-  /// than this does.
+  /// Tests are debug builds, so they see the debug variant. Reading it walks up for an
+  /// `.app`, and a walk that never ends would hang the run rather than fail it.
   @Test(.timeLimit(.minutes(1)))
   func debugBuildsKeepTheirOwnStateSocketAndIntegration() {
     #expect(Paths.stateFile.lastPathComponent == "state\(Paths.variant).json")
@@ -33,10 +28,8 @@ struct DebugPathsTests {
     #expect(Paths.debugVariant(named: "") == ".debug", "make-app.sh writes the key empty")
   }
 
-  /// The name lands in a socket path, and `sun_path` holds 103 bytes plus
-  /// the terminator, two of them spent on the `.b` the socket is bound
-  /// under: this directory plus `multishell.debug-.sock` already spends
-  /// about 75, so an uncut branch name would make the socket unbindable.
+  /// `sun_path` holds 103 bytes, two spent on the `.b` the socket binds under, and this
+  /// directory plus `multishell.debug-.sock` takes about 75, so the name is cut.
   @Test func aLongOrOddWorktreeNameIsCutAndSpelledSafely() {
     let longest = Paths.debugVariant(named: String(repeating: "\u{1F600}", count: 40))
     #expect(longest == ".debug-" + String(repeating: "-", count: 14))
@@ -126,6 +119,33 @@ struct PersistenceTests {
 
   /// Moving it aside frees the path to write. Where that fails too the state
   /// is still there; see Docs/design/state-and-store.md.
+  @Test @MainActor func aStateFileMovedAwayMidSessionLetsSavingResume() throws {
+    let file = scratchFile()
+    let directory = file.deletingLastPathComponent()
+    defer {
+      try? FileManager.default.setAttributes(
+        [.posixPermissions: 0o755], ofItemAtPath: directory.path)
+      try? FileManager.default.removeItem(at: directory)
+    }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    try Data(#"{"projects":[{"path":"file:///repos/demo/"}]}"#.utf8).write(to: file)
+    try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: file.path)
+    try FileManager.default.setAttributes(
+      [.posixPermissions: 0o500], ofItemAtPath: directory.path)
+    let (store, _) = WorkspaceStore.restored(from: WorkspaceSnapshot(fileURL: file))
+    #expect(store.refusesToSave)
+
+    try FileManager.default.setAttributes(
+      [.posixPermissions: 0o755], ofItemAtPath: directory.path)
+    try FileManager.default.moveItem(at: file, to: directory.appendingPathComponent("kept.json"))
+    store.addProject(at: URL(fileURLWithPath: "/repos/other"))
+    try store.save()
+
+    #expect(!store.refusesToSave)
+    let saved = try WorkspaceSnapshot(fileURL: file).load()
+    #expect(saved.projects.map(\.path.path) == ["/repos/other"])
+  }
+
   @Test @MainActor func aStateFileThatCannotBeMovedAsideIsNeverSavedOver() throws {
     let file = scratchFile()
     let directory = file.deletingLastPathComponent()
@@ -226,10 +246,8 @@ struct PersistenceTests {
     let loadTime = ContinuousClock.now - loading
 
     #expect(loaded == workspace)
-    // Locally each is a few tens of ms. The bounds are far above that
-    // because these are wall-clock readings taken while the rest of the
-    // suite runs beside them on a two-core runner; what they catch is an
-    // accidental quadratic, which costs minutes, not a doubling.
+    // Locally each takes a few tens of ms; the bounds allow for a loaded two-core runner
+    // and catch an accidental quadratic, which costs minutes, not a doubling.
     #expect(saved < .seconds(5), "save took \(saved)")
     #expect(loadTime < .seconds(5), "load took \(loadTime)")
 
@@ -247,11 +265,8 @@ struct PersistenceTests {
     let file = scratchFile()
     defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
 
-    // Every scalar set away from its default, so a field the decoder forgets
-    // to read fails here rather than silently reverting on someone's next
-    // launch. The pairs that seed one field from another when the key is
-    // absent (auto-start, opens-terminal) are set to differ from each other,
-    // or a dropped key would read as the value it was meant to have.
+    // Every scalar is off its default, so a field the decoder forgets fails here. The pairs
+    // seeded from each other (auto-start, opens-terminal) differ, or a dropped key passes.
     var workspace = Workspace()
     workspace.projects = [
       Project(
@@ -427,9 +442,8 @@ struct ThemeCatalogTests {
 
 @Suite @MainActor
 struct PartialStateTests {
-  /// A tab whose pane kind this build does not know, next to a sound one:
-  /// the store must come up with the project, the sound tab and no error,
-  /// and the session the dropped tab owned must go with it.
+  /// The dropped tab has a pane kind this build does not know; the session it owned goes
+  /// with it.
   @Test func aStateFileWithOneUnreadableTabRestoresEverythingElse() throws {
     let file = Scratch.path("scratch")
       .appendingPathComponent("state.json")
@@ -468,10 +482,8 @@ struct PartialStateTests {
   }
 }
 
-/// The other upgrade an existing install goes through: notifications were
-/// one name, and are three toggles. Covered through the store rather than
-/// only through `Codable`, since it is the file on disk that has to survive
-/// the first launch and the first save after it.
+/// Notifications were one name and are three toggles. Tested through the store, since it
+/// is the file on disk that has to survive the first launch and the first save after it.
 @Suite @MainActor
 struct NotificationPreferenceMigrationTests {
   @Test func thePickersLastRungComesBackAsThreeTogglesAndIsSavedThatWay() throws {
@@ -508,9 +520,8 @@ struct NotificationPreferenceMigrationTests {
   }
 }
 
-/// The upgrade every existing install goes through on its first launch: a
-/// state file whose tabs name no column and whose active tab per worktree is
-/// the key this build no longer has a property for.
+/// A state file from before columns: tabs name no column, and the active tab per worktree
+/// sits under a key this build no longer has a property for.
 @Suite @MainActor
 struct TabGroupMigrationTests {
   @Test func aStateFileWrittenBeforeColumnsComesBackAsOneColumnPerWorktree() throws {
@@ -560,7 +571,6 @@ struct TabGroupMigrationTests {
     #expect(error == nil, "\(String(describing: error))")
     WorkspaceInvariants.check(ws, "migrated")
 
-    // One column per worktree, holding that worktree's tabs in file order.
     #expect(ws.groups(in: "/repos/demo").count == 1)
     #expect(ws.groups(in: "/repos/demo-feat").count == 1)
     let column = ws.groups(in: "/repos/demo")[0]
@@ -571,7 +581,6 @@ struct TabGroupMigrationTests {
     #expect(ws.activeTab(in: "/repos/demo")?.id == agentTab)
     #expect(ws.activeTab(in: "/repos/demo-feat")?.id == featureTab, "its only tab")
 
-    // Nothing else about the file was disturbed.
     #expect(ws.tab(agentTab)?.customTitle == "build")
     #expect(ws.tab(splitTab)?.isSplit == true)
     #expect(ws.tab(splitTab)?.focusedSessionID == right)
@@ -579,8 +588,6 @@ struct TabGroupMigrationTests {
     #expect(ws.groups(in: "/repos/demo")[0].weight == 1)
   }
 
-  /// The same file saved again names its columns, and the key it was read
-  /// from is not written back.
   @Test func theMigratedStateIsWhatIsSavedFromThenOn() throws {
     var workspace = Workspace()
     let project = Project(path: URL(fileURLWithPath: "/repos/demo"))

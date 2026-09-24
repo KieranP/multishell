@@ -59,10 +59,8 @@ struct AgentHookPayloadTests {
     #expect(state(gemini, "Stop") == nil, "Gemini names its own events")
   }
 
-  /// Codex asks its hook before it decides whether a call needs anyone at
-  /// all, so under a mode that never stops, a permission request is work in
-  /// progress and not a question. Reporting it as waiting would put a
-  /// banner on every tool call of a full-auto run.
+  /// Codex asks its hook before deciding a call needs anyone, so under a mode that never
+  /// stops a request is work, and a banner would land on every full-auto tool call.
   @Test func codexOnlyWaitsInAModeThatStopsForTheUser() {
     let codex = AgentHooks.codex
     #expect(state(codex, "PermissionRequest", mode: "default") == .attention)
@@ -77,9 +75,8 @@ struct AgentHookPayloadTests {
     #expect(state(codex, "Stop", mode: "dontAsk") == .done, "the mode governs that event only")
   }
 
-  /// Claude asks the hook before it decides whether a call needs anyone at
-  /// all, the same as Codex, so the mode governs the request there too. Its
-  /// `auto` is the mode a classifier answers in.
+  /// Claude, like Codex, asks the hook before deciding a call needs anyone, so the mode
+  /// governs the request; its `auto` is the mode a classifier answers in.
   @Test func claudeOnlyWaitsOnARequestInAModeThatStopsForTheUser() {
     let claude = AgentHooks.claude
     #expect(state(claude, "PermissionRequest", mode: "default") == .attention)
@@ -104,9 +101,8 @@ struct AgentHookPayloadTests {
     #expect(AgentHooks.integrations.allSatisfy { $0.events.filter(\.silent).count <= 1 })
   }
 
-  /// Claude raises a notification for a finished login and a resumed
-  /// quota as much as for a question, and the idle one a minute after a
-  /// turn ends followed the Done that turn's Stop had already reported.
+  /// Claude notifies for a finished login or a resumed quota as for a question, and the
+  /// idle one a minute after a turn follows the Done its Stop already reported.
   @Test func claudeOnlyWaitsOnANotificationThatAsksSomething() {
     let claude = AgentHooks.claude
     func state(_ type: String?) -> SessionState? {
@@ -156,9 +152,8 @@ struct AgentHookPayloadTests {
     #expect(state(copilot, "Stop") == .done)
   }
 
-  /// Copilot raises a notification for a background shell finishing as
-  /// much as for a question, and only the questions are worth a blue
-  /// dot; the type is asked for in the file rather than sorted out here.
+  /// Copilot notifies for a finished background shell as for a question, so the file asks
+  /// for the question types by matcher rather than this code sorting them.
   @Test func copilotAsksOnlyForTheNotificationsThatAreQuestions() throws {
     let event = try #require(AgentHooks.copilot.events.first { $0.state == .attention })
     #expect(event.matcher == "permission_prompt|elicitation_dialog")

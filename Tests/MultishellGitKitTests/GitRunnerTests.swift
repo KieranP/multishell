@@ -8,11 +8,8 @@ import Testing
 
 @Suite
 struct GitRunnerConfigurationTests {
-  /// The fixtures turn commit signing off this way, and nothing else would
-  /// notice it stopping working: a machine whose global config does not sign
-  /// commits, CI included, behaves the same either way. So the seam is
-  /// tested on a key whose effect is plain to see, and against a repository
-  /// whose own config says otherwise.
+  /// The fixtures turn signing off this way, and a machine that does not sign, CI included,
+  /// never notices it breaking, so a plainly visible key is tested against the repo's own.
   @Test func aRunnersConfigurationBeatsTheRepositorysOwn() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
@@ -53,9 +50,8 @@ struct GitRunnerConfigurationTests {
       "a caller asking for it still wins")
   }
 
-  /// A repository with LFS, a credential helper or a diff driver has git
-  /// exec a program off PATH. From the Finder the app's own is the system
-  /// directories alone, so the login shell's has to travel with the runner.
+  /// LFS, a credential helper or a diff driver has git exec a program off PATH, and from the
+  /// Finder the app's PATH is the system directories alone.
   @Test func gitsOwnChildrenAreLookedUpOnTheLoginPath() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }

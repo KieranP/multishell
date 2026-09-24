@@ -39,10 +39,10 @@ extension Theme {
   /// dirty-files dot is the same yellow, so the two never sit together.
   func color(for state: SessionState) -> Color {
     switch state {
-    case .running: ansiRGB[3].color
-    case .attention: ansiRGB[4].color
-    case .done: ansiRGB[2].color
-    case .error: ansiRGB[1].color
+    case .running: ansiRGB(3).color
+    case .attention: ansiRGB(4).color
+    case .done: ansiRGB(2).color
+    case .error: ansiRGB(1).color
     case .idle: textTertiary
     }
   }

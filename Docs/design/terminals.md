@@ -58,6 +58,9 @@ at the bottom.
   while it is still ours, so our `.zshrc` moves a history file inside our
   directory back to where the user's shell would have put it, before their own
   file can set another.
+- **bash 5.1 made `PROMPT_COMMAND` an array**, so a user's array gets ours as
+  elements; before 5.1 bash runs only element 0, so the string form goes there,
+  or an array in the rc file silenced every hook.
 - **The bash init file is read in place of the rc file**, so the generated one
   reproduces a login shell's chain itself and reads the rc file only where that
   found nothing, as a login shell does.
@@ -128,6 +131,12 @@ at the bottom.
 - **Files dropped on a terminal are pasted, never run.** A shell gets absolute
   quoted paths; an agent whose prompt reads mentions gets its prefix and paths
   relative to the session's directory.
+- **One quoting for every shell**, a backslash and a `!` going outside the
+  quotes: tcsh at a prompt expands a `!` even inside them, and fish reads `\\`
+  and `\'` inside single quotes as escapes, so a name ending in a backslash
+  carried the next name out of its quotes. The pane's shell is not known at the
+  drop anyway, a fish typed at a zsh prompt being fish. Cost: nu, whose single
+  quotes have no escape at all, still breaks on a name holding one.
 - **Which agent a pane holds is asked of what reported there**, not of the tab:
   one started by hand leaves no id, and a tab keeps its id after the agent
   quits.
@@ -145,12 +154,17 @@ at the bottom.
 - **Costs**: a promised drop cannot be refused back to the drag, a copy macOS
   stops marking is pasted as a path again, and a file whose name a terminal
   would act on must be typed.
+- **An item's file count is read as each file lands.** AppKit's `fileNames` is
+  empty until the promise is called in, so counted up front, a legacy item
+  naming several files counted as one and only the first was pasted.
 - **Agents and shells are ids in the store, command lines at launch.** A newer
   build's agent loads harmlessly on an older one, and a custom shell is an id
   rather than a typed path, which would show as not installed either way.
 - **An agent launches through the login shell and execs a shell after it**, the
   exec carrying the integration a fresh tab gets: the agent is found on the
   terminal's PATH and a shell remains with the scrollback.
+- **Its words take the drop's quoting**, an editor tab's too: the login shell
+  may be tcsh or fish, which read a `!` or a backslash inside single quotes.
 - **A session off disk resumes rather than starts**: four saved agent tabs must
   not start four agents. Cost: a shell that cannot take the login-interactive
   form still gets a plain shell for hooks.
@@ -160,8 +174,11 @@ at the bottom.
 - **Its output is read from the first line shaped like an assignment**: an rc
   file's greeting lands in front of the first entry, and cutting at the first
   separator gave a banner an empty key and lost that entry, which was PATH.
-- **A greeting line itself shaped like an assignment is still not told apart**
-  (BUGS.md).
+- **So the capture prints a marker line first**, after whatever the rc files
+  printed, and only what follows it is read: a greeting shaped like an
+  assignment was taken for the first variable and swallowed it.
+- **The capture runs with no history file**, as a hook does (hooks.md): it is an
+  interactive shell and would take an inherited `HISTFILE` for its own.
 - **Auto-start opens the agent where a shell would have**, held back until the
   post-create hook ends. New Shell Tab always opens a shell, so one stays
   reachable.
@@ -179,17 +196,26 @@ at the bottom.
 - **Keybinds arrive as written**, less the app's own combinations and the keys
   it releases, unbound by name as before, so a binding they put over a menu item
   is theirs no longer.
-- **Both places the engine reads on a Mac are read**, in its own order, the
-  app-support one having the later word. The XDG variable is not read, an app
-  the Finder launched not being given it. Read once, when the host is created.
+- **Both places the engine reads on a Mac are read, under both names**, in its
+  own order: `config` then `config.ghostty`, the XDG one then app support, each
+  later file having the later word. The XDG variable is not read, an app the
+  Finder launched not being given it. Read when the first terminal opens and
+  again each time the app comes to the front, the file being edited in another
+  app; only a change is handed on.
+- **Their `config-file` includes are followed here**, in the engine's order:
+  each after the whole file naming it, a relative path from beside that file,
+  `?` for one that may be missing, a file already read skipped. Left to the
+  engine they would resolve from the temp directory the merged text is in.
+- **A line ends at `\n` or `\r\n`**, as in Ghostty. Swift reads `\r\n` as one
+  character, so a CRLF file split on `\n` was one line: its includes were lost
+  and every key after the first rode through the allow list behind it.
 - **The merged text reaches the engine through a file under the temp
   directory.** The wrapper removes that file only when it replaces it, so the
   host clears the directory at launch and at quit.
 - **Every copy of the build shares that directory**, so only the copy holding
-  the instance socket may sweep it. A copy that handed over keeps its terminals
-  until it quits, and sweeping from it would take the running copy's file.
-- **Cost: a yielded copy's own file is left** until the next launch that owns
-  the socket clears it.
+  the instance socket may sweep it. A copy that hands over quits before it opens
+  a terminal, and one whose quit failed starts no shell (state-and-store.md), so
+  neither writes a file, and sweeping from either would take the running copy's.
 - **A line the engine refuses costs that line, not the file.** It answers one
   complaint by refusing the whole config and falling back to its own defaults,
   where Ghostty names the line and carries on.
@@ -241,6 +267,39 @@ at the bottom.
   newline made every line from that tab unparseable, in silence.
 - **The socket path is taken on any stock zsh**, so the helper that encodes
   correctly was never reached. bash always goes through the helper.
+- **bash writes to one resident helper per shell**, `multishell relay` behind a
+  process substitution on descriptor 62, since bash 3.2 cannot open a socket. A
+  helper launched per report cost 9.4 ms a command, nearly all of it launch; a
+  pipe keeps the order as running inline did.
+- **The relay is started in the background of the substitution**, which then
+  exits. bash 4.4 and later set `$!` to a process substitution and a bare `wait`
+  waits on it (`wait_for_background_pids` in bash's `jobs.c`), so a relay that
+  was the substitution itself hung it for the life of the tab.
+- **Each write ignores SIGPIPE for itself alone**: a write to a relay that has
+  gone kills an interactive bash with SIGPIPE. The disposition is put back
+  before anything else runs, since one left set would pass to every command the
+  user runs. A subshell per write did the same at two forks a command. A failed
+  write sends that report and every later one inline.
+- **What is put back is the handler standing at that write**, read each time.
+  Read once at startup, a `trap … PIPE` set later was lost at the next report.
+  Cost: the read is a command substitution, a fork per report, about 0.5 ms,
+  which is what a subshell per write cost.
+- **A relay that exits in failure hands its pipe to a shell loop**, a helper
+  launched per line. A helper older than `relay` exits 2 without reading, so
+  what the shell wrote before that went nowhere, and only a later write's EPIPE
+  turned it inline. Cost: lines the relay had read are lost.
+- **The loop ends with the shell too**, asked each time a read waits a second.
+  At EOF alone, a background child holding the pipe kept the loop's bash
+  resident under launchd after the tab closed. bash 3.2 gives a timeout EOF's
+  status, so a read that fails inside one tick of `SECONDS` is taken for EOF.
+  Cost: a wake a second while the loop runs, and a timeout taken for EOF sends
+  the rest inline.
+- **The relay ignores interrupt, quit, job-control and hang-up**, sharing the
+  shell's process group at the prompt, so a Ctrl-C there would end it. Cost: a
+  resident process per bash tab.
+- **It ends at EOF or when the shell's pid exits**, whichever is first. bash has
+  no close-on-exec, so every command inherits descriptor 62, and an editor or
+  server started in the tab held the pipe open long after the tab closed.
 - **Find is the engine's search under a bar of ours**, driven by its three
   search actions. The bar is the app's, the engine's own being a GUI the
   embedding never shows.
@@ -295,7 +354,8 @@ at the bottom.
   which also tells the engine's own bar.
 - **Cost: no "3 of 12".** The engine reports its match count and which is
   selected through two actions the wrapper logs and drops, on its main branch as
-  on the pinned tag, so only a patch to the wrapper buys it back (BUGS.md).
+  on the pinned tag, so only a patch to the wrapper buys it back, and a count is
+  not worth carrying one (appearance.md).
 - **Sessions warm up when visited**, a saved workspace implying dozens of shells
   at launch. Selecting a worktree opens a terminal unless told not to; a create
   is asked about separately. Cost: four settings where there were two.
@@ -342,11 +402,11 @@ at the bottom.
   surface is Metal-backed.
 - **Cost of one engine**: a pinned build that misbehaves has nothing to fall
   back to, the unfocused fade is a scrim rather than view opacity, and nothing
-  tests the host against a real shell (BUGS.md).
+  tests the host against a real shell, a surface needing a window and a GPU.
 - **The terminal host is told the app is quitting**, and told that it holds the
   instance socket. The engine's generated config directory is shared by every
   copy of the build, so only the copy that claimed sweeps it, on the claim and
   again at quit.
 - **"Built a controller" was the earlier test and did not hold**: a copy that
-  handed over keeps its terminals until it quits, so it builds one too. The
+  handed over once kept its terminals until it quit, and built one too. The
   controller is still built on first use, the theme held until there is one.

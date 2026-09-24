@@ -5,14 +5,28 @@ at the bottom.
 
 - **A hook is a shell script, context in env vars**, so nothing needs quoting.
   Only a pre hook can refuse.
-- **Login and interactive.** A Finder-launched app's bare PATH fails
-  `npm install` on Homebrew or a version manager. `set -e` after the rc files.
-  Cost: startup time, stderr noise under `-i`.
+- **Login and interactive**, or interactive alone for csh and tcsh, which refuse
+  `-l` beside `-c`. A Finder-launched app's bare PATH fails `npm install` on
+  Homebrew or a version manager. A `cd` back to the hook's directory after the
+  rc files, since an rc file may leave the shell anywhere, then `set -e`: under
+  it one failing line in a zsh `chpwd` hook ended every hook at the `cd`. Cost:
+  startup time, stderr noise under `-i`, no `.login` for csh.
+- **Known gap: fish and the csh family have no `set -e`**, so there a failing
+  line does not end the hook.
+- **No history file.** An interactive shell takes an inherited `HISTFILE` for
+  its own: bash truncated a zsh user's history to its rc file's size, and ksh
+  rewrote it in its format, a few bytes long. So hooks and the login capture run
+  with it empty, and an rc file naming the shell's own still names it.
 - **It runs in the pane, not a modal**, which would hold the window. A failed
   one holds its worktree until Dismiss.
 - **Stopped through ProcessStopper**: SIGHUP to the process group then SIGKILL.
   Interactive shells ignore SIGTERM, and a shell with no terminal does not pass
-  SIGHUP on.
+  SIGHUP on. On macOS the SIGKILL is held back only where the group's leader
+  started after the hangup, the pid being free for reuse once the group empties;
+  Linux asks only whether the group answers.
+- **Age alone does not decide it**: a hook's HUP trap can start a child, as
+  young as a stranger's. Cost: a stranger's group whose own leader has already
+  exited is killed, which needs a pid wrap inside the three-second grace.
 - **Files come from a list, not a hook.** Copying `.env` in was the post-create
   hook nearly everyone wrote, at the cost of a login shell and a timeout.
 - **Lists run between `git worktree add` and the hook**, so the first terminal
@@ -26,14 +40,29 @@ at the bottom.
   expressions.
 - **A repo's list waits for the same yes its hooks wait for** (settings.md): it
   reads the reader's checkout, git-ignored files included.
-- **Containment twice, for a repo's list only.** Lexically, so `$HOME/x`, a
-  leading `/` and every `..` are refused rather than skipped for not existing;
-  then against the disk, every folder on the way and the path's end.
-- **A symlink named by an entry is refused**, since `copyItem` copies the link
-  rather than following it. One inside a listed directory is kept, git having
+- **Containment twice refuses, for a repo's list only.** Lexically, so `~/x`,
+  `$HOME/x`, a leading `/` and a `..` that climbs out are refused rather than
+  skipped for not existing; then against the disk, every folder on the way and
+  the path's end. A user's list gets the lexical check and the destination's,
+  and is named, not refused (below).
+- **A symlink named by an entry is judged by where it leads**, since `copyItem`
+  copies the link rather than following it: one leading out is refused, one
+  staying inside is placed. One inside a listed directory is kept, git having
   checked it out anyway.
-- **A user's list is used as written** (settings.md), bar the destination, which
-  mirrors the entry: one landing outside the worktree places nothing, quietly.
+- **A user's entry naming somewhere else is named, not refused**: `~/x`,
+  `$HOME/x` or `../x` places nothing, and once the rest are placed an alert
+  lists them and the post-create hook still runs. Silent, the entry read as
+  working; refused, one typo cost the hook.
+- **Where a later list fails, they are named in its failure**, not in an alert
+  of their own: there is one alert, and the failure's took it. A Cancel still
+  names them, the typo being no less one for the stop.
 - **Lists and hook are one pane operation in stages**, begun once the worktree
   exists. A failed list stops what follows; Cancel waits for the file in flight
-  then ends the lot.
+  then ends the lot, a copied directory being copied file by file so that its
+  next file is where Cancel lands. The half copied is taken away, after a Cancel
+  or a file it could not read, or it reads as placed and nothing places over it.
+  No timeout: a list is no shell to wedge, and a large one takes as long as its
+  files.
+- **A hook runs in the worktree only where one exists at its stage**, since in a
+  missing directory it fails at its `cd`. Pre-create and post-delete run in the
+  repository, as does the pre-delete of a worktree removed by hand.

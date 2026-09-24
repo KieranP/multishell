@@ -16,6 +16,10 @@ public struct TerminalSession: Identifiable, Codable, Hashable, Sendable {
   /// relaunched tab reads the setting again.
   public var shell: String?
 
+  /// A plain shell's title is saved empty and put in words here, or a tab
+  /// saved under one language kept that language's word under the next.
+  public var displayTitle: String { title.isEmpty ? t("tab.shell") : title }
+
   public init(
     id: UUID = UUID(),
     worktreeID: Worktree.ID,

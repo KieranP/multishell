@@ -2,7 +2,7 @@ import Foundation
 
 /// Every chrome size, derived from one number so the UI font slider scales
 /// the sidebar, tabs and header together and rows never clip their text.
-struct UIMetrics {
+struct UIMetrics: Equatable {
   let body: Double
 
   init(fontSize: Double) {
@@ -25,6 +25,21 @@ struct UIMetrics {
   func worktreeRowHeight(isNamed: Bool, isRenaming: Bool) -> Double {
     isNamed || isRenaming ? namedRowHeight : rowHeight
   }
+  /// The gap between the sidebar's rows.
+  static let sidebarRowSpacing: Double = 1
+
+  /// How tall a project's block is, which the drop delegate halves: its row,
+  /// each worktree's, and the pane rows under the one that shows them.
+  func projectBlockHeight(
+    worktreeRows: [(isNamed: Bool, isRenaming: Bool, paneCount: Int)]
+  ) -> Double {
+    worktreeRows.reduce(rowHeight) { total, row in
+      total + Self.sidebarRowSpacing
+        + worktreeRowHeight(isNamed: row.isNamed, isRenaming: row.isRenaming)
+        + Double(row.paneCount) * (paneRowHeight + Self.sidebarRowSpacing)
+    }
+  }
+
   /// A pane's row under the selected worktree: one line of badge-sized text,
   /// shorter than a worktree's so the panes read as its.
   var paneRowHeight: Double { (body * 1.75).rounded() }

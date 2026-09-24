@@ -92,6 +92,27 @@ struct WorktreeListParserEdgeTests {
     #expect(worktrees[2].isLocked)
   }
 
+  @Test func aWorktreeGitIsStillMakingIsMarkedAsSo() {
+    let output = """
+      worktree /w/demo
+      HEAD 1111111111111111111111111111111111111111
+      branch refs/heads/main
+
+      worktree /w/making
+      HEAD 2222222222222222222222222222222222222222
+      branch refs/heads/making
+      locked initializing
+
+      worktree /w/pinned
+      HEAD 3333333333333333333333333333333333333333
+      branch refs/heads/pinned
+      locked initializing the drive
+      """
+    let worktrees = WorktreeListParser.parse(zeroTerminated(output), projectID: "/p")
+    #expect(worktrees.map(\.isInitializing) == [false, true, false])
+    #expect(worktrees[1].isLocked)
+  }
+
   @Test func aBareRepositoryIsListedWithNoBranch() {
     let output = """
       worktree /srv/repo.git

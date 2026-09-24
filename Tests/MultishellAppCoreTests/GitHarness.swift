@@ -1,16 +1,15 @@
 import Foundation
 import MultishellCore
-import MultishellGitKit
 import Observation
 import TestScratch
 import TestSupport
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellGitKit
 
-/// The model on real git, a fake engine and a fake watcher: what the sidebar
-/// flows do from a click to the shells and the repository, in a throwaway
-/// repository under the temp directory.
+/// The model on real git in a throwaway repository, with a fake engine and
+/// watcher: the sidebar flows from a click to the shells and the repository.
 @MainActor
 struct GitHarness {
   let root: URL
@@ -33,7 +32,8 @@ struct GitHarness {
     model = AppModel(
       store: store,
       host: self.engine,
-      worktrees: WorktreeCoordinator(service: WorktreeService(git: git)),
+      worktrees: WorktreeCoordinator(
+        service: WorktreeService(git: git, settlesNewIndex: false)),
       watcher: watcher, platform: platform)
     model.statusReads.pace = .unpaced
     await model.addProject(at: repository)
@@ -66,9 +66,8 @@ struct GitHarness {
       to: SharedProjectSettings.file(in: project.path), atomically: true, encoding: .utf8)
   }
 
-  /// A second model on the same store, with a shell script standing in for
-  /// git. `$SCRATCH` is the harness root; every call is appended to
-  /// `$SCRATCH/calls`.
+  /// A second model on the same store, with `body` as a shell script standing
+  /// in for git.
   func modelOnFakeGit(_ body: String) throws -> AppModel<FakeSurface> {
     let script = root.appendingPathComponent("fake-git-\(UUID().uuidString)")
     try Scratch.script(
@@ -81,7 +80,7 @@ struct GitHarness {
       store: store,
       host: self.engine,
       worktrees: WorktreeCoordinator(
-        service: WorktreeService(git: try GitRunner(executable: script))),
+        service: WorktreeService(git: try GitRunner(executable: script), settlesNewIndex: false)),
       watcher: watcher)
     model.statusReads.pace = .unpaced
     model.presentedError = nil

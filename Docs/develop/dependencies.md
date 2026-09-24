@@ -20,18 +20,26 @@
 - **Ghostty's own bash and zsh integration is GPLv3.** The package ships an MIT
   rewrite and a script that refuses GPL text, which is what keeps this
   repository's AGPL from inheriting a GPL obligation.
-- **Moving the pin changes which config keys a user's Ghostty file may use**, so
-  `GhosttyUserConfig` wants a look then. The list came from Ghostty's own
-  `show-config` and `docs` output, each key handed to the pinned build to see
-  whether it took it.
-- **MSDisplayLink via `Lakr233/MSDisplayLink`**, MIT, pinned. Easy to miss: this
-  tree imports it nowhere and names it in no manifest, but libghostty-spm
-  depends on it and its symbols are in the executable.
+- **Moving the pin changes which config keys a user's Ghostty file may use**,
+  and can change which file names it reads, so `GhosttyUserConfig` wants a look
+  then. The key list came from Ghostty's own `show-config` and `docs` output,
+  each key handed to the pinned build to see whether it took it; the names and
+  their order came from its `loadDefaultFiles`.
+- **MSDisplayLink via `Lakr233/MSDisplayLink`**, MIT. Easy to miss: this tree
+  imports it nowhere and names it in no manifest, but libghostty-spm depends on
+  it and its symbols are in the executable. libghostty-spm asks only for
+  `from: "2.2.0"`, so `Package.resolved` alone pins it, and a
+  `swift package update` can move it without the libghostty pin moving.
 - **`WeightedSplit` uses `_VariadicView`**, an underscored SwiftUI API.
-- **git 2.36 or newer**, for `-z` on `git worktree list --porcelain`, which is
-  what keeps a path holding a newline from reading as two records. The floor is
-  under what the supported macOS ships; a version manager is the way to fall
-  under it, and an older git fails the read outright with the row saying so.
+- **git 2.36 or newer**, for `-z` on `git worktree list --porcelain`, which
+  keeps a path holding a newline from reading as two records. The floor is under
+  what the supported macOS ships, so an older git usually comes from a version
+  manager. That git refuses `-z` with status 129 and `WorktreeService` asks for
+  the newline form, losing only such a path
+  (`aGitThatRefusesTheNulFormIsAskedForTheNewlineOne`). Under 2.31 `rev-parse`
+  echoes `--path-format=absolute` back and answers relative, and
+  `WorktreeService` resolves the answer
+  (`aCheckoutIsRemovedWithItsHooksOnAGitThatPredatesPathFormat`).
 - **prettier**, for the Markdown in `make format` and the Claude Code hook, not
   in CI. From Homebrew rather than a `package.json`: there is no Node toolchain
   here and a `node_modules` for one formatter is more than the docs are worth.
@@ -39,5 +47,6 @@
   row to its widest cell whatever `printWidth` says, and refuses a symlink, so
   the hook skips one and `CLAUDE.md` is formatted through `AGENTS.md`.
 - **The app package names its path dependency** rather than only pointing at it:
-  SwiftPM identifies a local package by its directory, which is the branch's
-  name in a worktree, so the unnamed form built from the checkout alone.
+  SwiftPM takes a local package's identity from its directory, which in a
+  worktree is the branch's name, so every `package: "multishell"` named a
+  package that did not exist and the unnamed form built from the checkout alone.

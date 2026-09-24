@@ -27,6 +27,12 @@ public enum ShellLaunch {
     }
   }
 
+  /// Only zsh and bash are given the marks that say a command finished; see
+  /// COMPAT.md.
+  public static func reportsFinishedCommands(_ shellPath: String) -> Bool {
+    ["zsh", "bash"].contains(URL(fileURLWithPath: shellPath).lastPathComponent)
+  }
+
   /// A command line replacing the engine's default shell, `nil` to leave it.
   /// bash goes through `/bin/sh -c`; see Docs/design/terminals.md.
   public static func overrideCommand(

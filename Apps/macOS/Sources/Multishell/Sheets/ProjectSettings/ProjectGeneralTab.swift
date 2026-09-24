@@ -60,10 +60,10 @@ struct ProjectGeneralTab: View {
 
       Section {
         HStack(spacing: 8) {
-          Button(t("action.export")) { model.exportSharedSettings(for: project) }
+          Button(t("action.export")) { Task { await model.exportSharedSettings(for: project) } }
           InfoButton(t("project.export-info", SharedProjectSettings.fileName))
           Spacer()
-          Button(t("actions.remove-project"), role: .destructive) {
+          Button(t("action.remove-project"), role: .destructive) {
             model.requestProjectRemoval(project, from: .settings)
           }
           InfoButton(t("project.remove-info"))

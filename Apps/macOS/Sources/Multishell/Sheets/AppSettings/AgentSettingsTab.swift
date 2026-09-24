@@ -2,71 +2,106 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Settings > Agents: the preferred agent and the hooks that feed the dots,
-/// one row per agent found. None is named, recommended or installed here.
+/// Settings > Agents: the preferred agent, or the hooks, a row per agent found,
+/// apart as they grow with each agent. None is recommended or installed here.
 struct AgentSettingsTab: View {
+  enum Part: CaseIterable {
+    case agent
+    case hooks
+
+    var title: String {
+      switch self {
+      case .agent: t("agents.part-agent")
+      case .hooks: t("settings.hooks")
+      }
+    }
+  }
+
   let model: AppModel
 
+  @State private var part: Part
   /// Which row's file is on show, at most one at a time.
   @State private var shownContents: String?
+
+  init(model: AppModel, part: Part = .agent) {
+    self.model = model
+    _part = State(initialValue: part)
+  }
 
   var body: some View {
     Form {
       Section {
-        DetectionPicker(
-          label: t("agents.preferred-agent"),
-          selection: model.setting(
-            \.preferredAgentID, or: AgentCatalogue.noneID, write: model.setPreferredAgent),
-          options: model.agentDetection.options(selected:),
-          refresh: { Task { await model.refreshLoginEnvironment() } },
-          info: environmentCaption
-        )
-        if model.workspace.preferredAgentID == AgentCatalogue.customID {
-          InfoRow(t("agents.command"), info: t("agents.command-info")) {
-            TextField(
-              t("agents.command"),
-              text: model.setting(\.customAgentCommand, write: model.setCustomAgentCommand),
-              prompt: Text(t("agents.command-prompt")))
-          }
-        } else if let agentID = model.workspace.preferredAgentID, agentID != AgentCatalogue.noneID {
-          InfoRow(t("agents.flags"), info: t("agents.flags-info")) {
-            // No prompt text: a greyed example in an empty field reads as a
-            // default the agent is already being started with.
-            TextField(t("agents.flags"), text: model.agentFlagsSetting(for: agentID))
-          }
+        Picker(t("label.agents"), selection: $part) {
+          ForEach(Part.allCases, id: \.self) { Text($0.title).tag($0) }
         }
-        InfoToggle(
-          t("agents.auto-start-tab"), info: t("agents.auto-start-tab-info"),
-          isOn: model.setting(\.autoStartAgent, write: model.setAutoStartAgent)
-        )
-        .disabled(model.workspace.preferredAgentID == nil)
-        InfoToggle(
-          t("agents.auto-start-create"), info: t("agents.auto-start-create-info"),
-          isOn: model.setting(\.autoStartAgentOnCreate, write: model.setAutoStartAgentOnCreate)
-        )
-        .disabled(model.workspace.preferredAgentID == nil)
+        .pickerStyle(.segmented)
+        .labelsHidden()
       }
 
-      if !model.agentHooksRows.isEmpty {
-        hooksSection
-      }
-
-      Section(t("agents.command-line-tool")) {
-        InfoRow(t("agents.helper-label"), info: t("agents.helper-info")) {
-          Text(
-            model.commandLineToolInstalled
-              ? t("agents.helper-installed") : t("agents.not-installed")
-          )
-          .foregroundStyle(.secondary)
-          if !model.commandLineToolInstalled {
-            Button(t("agents.install-helper")) { model.installCommandLineTool() }
-              .controlSize(.small)
-          }
+      switch part {
+      case .agent: agentSection
+      case .hooks:
+        if !model.agentHooksRows.isEmpty {
+          hooksSection
         }
+        commandLineToolSection
       }
     }
     .formStyle(.grouped)
     .onAppear { model.refreshAgentStatus() }
+  }
+
+  private var agentSection: some View {
+    Section {
+      DetectionPicker(
+        label: t("agents.preferred-agent"),
+        selection: model.setting(
+          \.preferredAgentID, or: AgentCatalogue.noneID, write: model.setPreferredAgent),
+        options: model.agentDetection.options(selected:),
+        refresh: { Task { await model.refreshLoginEnvironment() } },
+        info: environmentCaption
+      )
+      if model.workspace.preferredAgentID == AgentCatalogue.customID {
+        InfoRow(t("agents.command"), info: t("agents.command-info")) {
+          TextField(
+            t("agents.command"),
+            text: model.setting(\.customAgentCommand, write: model.setCustomAgentCommand),
+            prompt: Text(t("agents.command-prompt")))
+        }
+      } else if let agentID = model.workspace.preferredAgentID, agentID != AgentCatalogue.noneID {
+        InfoRow(t("agents.flags"), info: t("agents.flags-info")) {
+          // No prompt text: a greyed example in an empty field reads as a
+          // default the agent is already being started with.
+          TextField(t("agents.flags"), text: model.agentFlagsSetting(for: agentID))
+        }
+      }
+      InfoToggle(
+        t("agents.auto-start-tab"), info: t("agents.auto-start-tab-info"),
+        isOn: model.setting(\.autoStartAgent, write: model.setAutoStartAgent)
+      )
+      .disabled(model.workspace.preferredAgentID == nil)
+      InfoToggle(
+        t("agents.auto-start-create"), info: t("agents.auto-start-create-info"),
+        isOn: model.setting(\.autoStartAgentOnCreate, write: model.setAutoStartAgentOnCreate)
+      )
+      .disabled(model.workspace.preferredAgentID == nil)
+    }
+  }
+
+  private var commandLineToolSection: some View {
+    Section(t("agents.command-line-tool")) {
+      InfoRow(t("agents.helper-label"), info: t("agents.helper-info")) {
+        Text(
+          model.commandLineToolInstalled
+            ? t("agents.helper-installed") : t("agents.not-installed")
+        )
+        .foregroundStyle(.secondary)
+        if !model.commandLineToolInstalled {
+          Button(t("agents.install-helper")) { model.installCommandLineTool() }
+            .controlSize(.small)
+        }
+      }
+    }
   }
 
   private var hooksSection: some View {
@@ -81,38 +116,50 @@ struct AgentSettingsTab: View {
           .lineLimit(1)
           .truncationMode(.head)
           if row.isInstalled {
+            if row.wantsUpdate {
+              Button(t("action.update")) { model.installAgentHooks(row.id) }
+            }
             Button(t("action.remove")) { model.removeAgentHooks(row.id) }
           } else {
             Button(t("action.add")) { model.installAgentHooks(row.id) }
           }
-          Button(
-            shownContents == row.id
-              ? t("agents.hide", row.contentsName)
-              : t("agents.show", row.contentsName)
-          ) {
-            shownContents = shownContents == row.id ? nil : row.id
-          }
+          // A popover, not the page: shown inline it added 166 pt a row.
+          Button(t("agents.show", row.contentsName)) { shownContents = row.id }
+            .popover(isPresented: isShowing(row), arrowEdge: .bottom) { contents(of: row) }
         }
         .controlSize(.small)
-        if shownContents == row.id {
-          contents(of: row)
-        }
       }
     }
   }
 
+  private func isShowing(_ row: AgentHooksRow) -> Binding<Bool> {
+    Binding(
+      get: { shownContents == row.id },
+      set: { if !$0, shownContents == row.id { shownContents = nil } })
+  }
+
   private func contents(of row: AgentHooksRow) -> some View {
-    VStack(alignment: .leading, spacing: 6) {
+    VStack(alignment: .leading, spacing: 8) {
+      HStack(spacing: 8) {
+        Text(row.path)
+          .font(.system(size: 11))
+          .foregroundStyle(.secondary)
+          .lineLimit(1)
+          .truncationMode(.head)
+        Spacer(minLength: 8)
+        Button(t("action.copy")) { model.copyToClipboard(model.agentHooksSnippet(row.id)) }
+          .controlSize(.small)
+      }
       ScrollView(.vertical) {
         Text(model.agentHooksSnippet(row.id))
           .font(.system(size: 10, design: .monospaced))
           .textSelection(.enabled)
           .frame(maxWidth: .infinity, alignment: .leading)
       }
-      .frame(height: 140)
-      Button(t("action.copy")) { model.copyToClipboard(model.agentHooksSnippet(row.id)) }
-        .controlSize(.small)
+      .frame(height: 240)
     }
+    .padding(12)
+    .frame(width: 420)
   }
 
   private var environmentCaption: String {

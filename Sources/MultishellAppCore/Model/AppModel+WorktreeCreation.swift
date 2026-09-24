@@ -7,7 +7,7 @@ extension AppModel {
   /// Opens the sheet for `project`, or the one being worked in. With several
   /// projects and nothing selected the picker starts blank.
   public func requestNewWorktree(in project: Project? = nil) {
-    newWorktreeRequest = NewWorktreeRequest(projectID: (project ?? activeProject)?.id)
+    newWorktreeRequest = NewWorktreeRequest(projectID: (project ?? projectInView)?.id)
   }
 
   public func plannedPath(
@@ -36,7 +36,7 @@ extension AppModel {
   }
 
   /// The sheet's Cancel while the pre-create hook or git runs. A stopped
-  /// add leaves what git had made; the next refresh lists it or not.
+  /// add takes back the branch and directories it made; see worktrees.md.
   public func cancelWorktreeCreation() {
     workInFlight.cancelCreation()
   }
@@ -74,8 +74,8 @@ extension AppModel {
     let stopper = ProcessStopper()
     workInFlight.beginCreation(with: stopper)
     defer {
-      worktreeCreationStep = nil
-      workInFlight.endCreation()
+      if workInFlight.isCreating(with: stopper) { worktreeCreationStep = nil }
+      workInFlight.endCreation(with: stopper)
       if let claimed { endConstruction(of: claimed, in: project) }
     }
     let path: URL
@@ -157,30 +157,42 @@ extension AppModel {
     _ worktree: Worktree, branch: String, in project: Project, shellPath: String?,
     stopper: ProcessStopper, lists: [WorktreeFileList], runningHook: Bool
   ) async {
+    var skipped: [String] = []
     for (index, list) in lists.enumerated() {
       let placement = list.placement
       let stage = WorktreeOperation.Step(placement)
       if index > 0 { worktreeOperations.advance(to: stage, on: worktree.id) }
-      guard
-        let failure = await placeListedFiles(
-          list, into: worktree.path, for: project, stopper: stopper)
-      else { continue }
+      let placed = await placeListedFiles(
+        list, into: worktree.path, for: project, stopper: stopper)
+      guard let failure = placed.failure else {
+        skipped += placed.skipped
+        continue
+      }
       endSetup(of: worktree, stopper: stopper)
       // The user's Cancel: the worktree is theirs, as after a stopped hook.
       // What had already failed is still said, Cancel excusing only the rest.
       if let stopped = failure as? WorktreeFilesStopped {
+        skipped += stopped.skipped.map(\.path)
         if stopped.failures.isEmpty {
+          if !skipped.isEmpty { report(WorktreeFilesSkipped(entries: skipped)) }
           finishStage(stage, of: worktree)
         } else {
           failStage(
             stage, of: worktree,
-            WorktreeFileFailure(placement: placement, items: stopped.failures))
+            WorktreeFileFailure(placement: placement, items: stopped.failures)
+              .including(skipped: skipped))
         }
+      } else if let failed = failure as? WorktreeFileFailure {
+        failStage(stage, of: worktree, failed.including(skipped: skipped))
       } else {
+        if !skipped.isEmpty { report(WorktreeFilesSkipped(entries: skipped)) }
         failStage(stage, of: worktree, failure)
       }
       return
     }
+    // Said and gone past: an entry of the user's own naming elsewhere is a
+    // typo worth a word, not worth their post-create hook.
+    if !skipped.isEmpty { report(WorktreeFilesSkipped(entries: skipped)) }
     guard runningHook else {
       endSetup(of: worktree, stopper: stopper)
       if let last = lists.last {
@@ -254,17 +266,16 @@ extension AppModel {
   }
 
   /// One of the project's file lists, before the post-create hook. Returns
-  /// what went wrong rather than throwing; off the main thread.
+  /// what went wrong rather than throwing, and what was skipped; off main.
   private func placeListedFiles(
     _ list: WorktreeFileList, into path: URL, for project: Project, stopper: ProcessStopper
-  ) async -> (any Error)? {
-    guard let worktrees else { return nil }
+  ) async -> (failure: (any Error)?, skipped: [String]) {
+    guard let worktrees else { return (nil, []) }
     return await Self.offMain {
       do {
-        try worktrees.placeFiles(list, for: project, into: path, stopper: stopper)
-        return nil
+        return (nil, try worktrees.placeFiles(list, for: project, into: path, stopper: stopper))
       } catch {
-        return error
+        return (error, [])
       }
     }
   }

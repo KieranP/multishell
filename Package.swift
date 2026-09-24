@@ -7,6 +7,7 @@ let package = Package(
   platforms: [.macOS(.v14)],
   products: [
     .library(name: "MultishellCore", targets: ["MultishellCore"]),
+    .library(name: "MultishellProcess", targets: ["MultishellProcess"]),
     .library(name: "MultishellGitKit", targets: ["MultishellGitKit"]),
     .library(name: "MultishellAppCore", targets: ["MultishellAppCore"]),
     // The command-line helper that hooks and scripts call to report a
@@ -14,12 +15,8 @@ let package = Package(
     .executable(name: "multishell", targets: ["MultishellCLI"]),
   ],
   targets: [
-    // Pure model and state. No processes, no platform UI. The resources are
-    // the shell-integration scripts, kept as shell files, and the libraries'
-    // string catalogue, read through `t(_:_:)`. Inside the target that
-    // declares them, so a path here is where it says it is; each frontend
-    // keeps its own the same way. A new language is another `<code>.lproj`
-    // beside `en.lproj` and another line here.
+    // Pure model and state. Its resources are the shell scripts and the
+    // libraries' catalogue; see Docs/design/translation.md.
     .target(
       name: "MultishellCore",
       resources: [
@@ -30,19 +27,15 @@ let package = Package(
     .target(name: "MultishellProcess"),
     // git worktree operations and their hooks.
     .target(name: "MultishellGitKit", dependencies: ["MultishellCore", "MultishellProcess"]),
-    // The app layer: the model, detection, launch command lines, session
-    // states, dialog texts, error presentation, the socket channel. A GUI
-    // adds views and implements the ports.
+    // The app layer; Docs/develop/layout.md says what it holds.
     .target(
       name: "MultishellAppCore",
       dependencies: ["MultishellCore", "MultishellProcess", "MultishellGitKit"]),
     .executableTarget(
       name: "MultishellCLI", dependencies: ["MultishellCore", "MultishellProcess"]),
 
-    // What the test targets share. Plain targets, since a test target cannot
-    // be depended on. Two of them: every suite wants a scratch directory,
-    // but only the two that touch git want the git fixtures, and a Core or
-    // Process suite should not link MultishellGitKit to get a temp path.
+    // What the suites share, split by what each drags in; see
+    // Docs/develop/layout.md.
     .target(name: "TestScratch", path: "Tests/TestScratch"),
     .target(
       name: "TestSupport", dependencies: ["MultishellGitKit", "TestScratch"],

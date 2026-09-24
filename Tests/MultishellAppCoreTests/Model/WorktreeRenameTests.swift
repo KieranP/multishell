@@ -4,9 +4,8 @@ import Testing
 
 @testable import MultishellAppCore
 
-/// The rename the menus start and the sidebar row's field finishes. The
-/// field is drawn by a row the model does not know about, so the model is
-/// what says which worktree is being renamed and what a late commit does.
+/// The field is drawn by a sidebar row the model does not know about, so the model says which
+/// worktree is being renamed and what a late commit does.
 @Suite @MainActor
 struct WorktreeRenameTests {
   @Test func aCommittedNameReplacesTheBranchAndAnEmptyOneGivesItBack() {

@@ -88,7 +88,8 @@ extension AppModel {
       meant = $0.report(
         report.state, pid: pid, message: report.message, duration: report.duration,
         subagent: report.subagentChange, startsTurn: report.startsTurn == true,
-        backgroundShells: report.backgroundShells ?? [],
+        startsSession: report.startsSession == true,
+        backgroundShells: report.backgroundShells ?? [], fromShell: report.isShell == true,
         resumesAfterWorkers: report.resumesAfterWorkers == true,
         conversationID: report.conversationID, for: key, isSeen: place.isSeen)
     }
@@ -150,12 +151,21 @@ extension AppModel {
     // Depth is the matching root's, not the written path's: a symlink chain
     // can spell a shallow worktree long.
     let matches = workspace.worktrees.compactMap { worktree -> (Worktree, Int)? in
-      let depth = [worktree.path, worktree.path.resolvingSymlinksInPath()].map(\.pathComponents)
+      let depth = [worktree.path.pathComponents, resolvedComponents(of: worktree)]
         .filter { root in spellings.contains { $0.starts(with: root) } }
         .map(\.count).max()
       return depth.map { (worktree, $0) }
     }
     return matches.max { $0.1 < $1.1 }?.0
+  }
+
+  /// Kept per worktree: each report naming only a directory walked every
+  /// worktree's symlinks, on the main actor, a network mount's among them.
+  private func resolvedComponents(of worktree: Worktree) -> [String] {
+    if let known = resolvedWorktreePaths[worktree.id] { return known }
+    let resolved = worktree.path.resolvingSymlinksInPath().pathComponents
+    resolvedWorktreePaths[worktree.id] = resolved
+    return resolved
   }
 
   /// `state` is what the report meant, not what it said: a Done held back for

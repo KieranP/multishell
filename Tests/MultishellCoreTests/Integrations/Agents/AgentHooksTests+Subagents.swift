@@ -87,9 +87,8 @@ extension AgentHooksTests {
       "a session run under --agent names a type and no worker")
   }
 
-  /// A start or an end whose payload names nobody still moved the roster by
-  /// one. Read as the agent's own report it would leave a worker on the roster
-  /// for the rest of the turn, and the Done its Stop owes unpaid.
+  /// Read as the agent's own, an unnamed start would leave a worker on the roster for the
+  /// rest of the turn, and the Done its Stop owes unpaid.
   @Test func aSubagentEventThatNamesNoWorkerTakesAnUnnamedPlace() {
     for integration in [AgentHooks.claude, AgentHooks.codex, AgentHooks.copilot] {
       func change(_ event: String) -> SubagentReport? {

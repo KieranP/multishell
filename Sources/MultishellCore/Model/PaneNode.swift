@@ -1,10 +1,5 @@
 import Foundation
 
-public enum SplitAxis: String, Codable, Hashable, Sendable {
-  case horizontal
-  case vertical
-}
-
 /// The arrangement of terminals inside one tab: a leaf per terminal, a split
 /// per divider, with the weights a divider drag writes back.
 public indirect enum PaneNode: Codable, Hashable, Sendable {

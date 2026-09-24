@@ -4,10 +4,8 @@ import Testing
 
 @testable import MultishellCore
 
-/// State off disk can be inconsistent: a crash mid-save, a hand edit, a bug
-/// in an earlier build. Each test breaks one invariant the store otherwise
-/// maintains and checks that `repairReferences` restores it without losing
-/// anything that was sound.
+/// State off disk can break an invariant the store keeps: a crash mid-save, a hand edit, or a bug
+/// in an earlier build.
 @Suite
 struct WorkspaceRepairTests {
   private let project = Project(path: URL(fileURLWithPath: "/repos/demo"))
@@ -130,9 +128,8 @@ struct WorkspaceRepairTests {
     #expect(ws.worktreeNames == [worktree.id: "Checkout"])
   }
 
-  /// The store writes a session's worktree with its tab's, so a file where
-  /// they disagree was written by something else. The tab is what the
-  /// sidebar lists it under, so the tab decides.
+  /// The store writes a session's worktree with its tab's, so a file where they disagree was
+  /// written by something else; the sidebar lists it under the tab, so the tab decides.
   @Test func aSessionSaidToBeInAnotherWorktreeThanItsTabIsPutBack() {
     var (ws, tab) = sound()
     ws.sessions[0].worktreeID = "/repos/nowhere"
@@ -146,9 +143,7 @@ struct WorkspaceRepairTests {
       "the directory it starts in comes back with it")
   }
 
-  /// Every tab of a state file written before columns existed names no
-  /// group. They belong in the one column they were saved as, not in one
-  /// column each.
+  /// Every tab of a state file written before columns existed names no group.
   @Test func tabsThatNameNoColumnAreGatheredIntoOne() {
     var (ws, tab) = sound()
     let second = session()
@@ -167,9 +162,7 @@ struct WorkspaceRepairTests {
     #expect(ws.activeTab(in: worktree.id)?.id == tab.id, "the first tab of the column shows")
   }
 
-  /// A column whose group decoded badly and was dropped leaves its tabs
-  /// behind. They join the column the worktree still has rather than
-  /// opening a second one beside it.
+  /// A column whose group decoded badly is dropped and leaves its tabs behind.
   @Test func aTabWhoseColumnIsGoneJoinsTheWorktreesFirstColumn() {
     var (ws, tab) = sound()
     let stray = session()
@@ -184,9 +177,8 @@ struct WorkspaceRepairTests {
     #expect(ws.activeTab(in: worktree.id)?.id == tab.id)
   }
 
-  /// Two columns, and the focused one is emptied by the pane pass. The
-  /// focus has to land on the column that is left, or the worktree draws no
-  /// strip at all.
+  /// The pane pass empties the focused column, and unless the focus moves on the worktree draws
+  /// no strip at all.
   @Test func aColumnLeftWithNoTabsGoesAndTheFocusMovesOn() {
     var (ws, tab) = sound()
     var second = TabGroup(worktreeID: worktree.id)
@@ -228,8 +220,6 @@ struct WorkspaceRepairTests {
     #expect(ws.selectedWorktreeID == nil)
   }
 
-  /// Random damage, then repair: the result must satisfy every invariant and
-  /// a second repair must change nothing.
   @Test(arguments: [7, 11, 19, 23, 29, 31] as [UInt64])
   func repairIsCompleteAndIdempotentOnRandomDamage(seed: UInt64) {
     var rng = SeededGenerator(seed: seed)
@@ -305,12 +295,8 @@ struct WorkspaceRepairTests {
   }
 }
 
-/// Shapes the store never writes but a hand edit or a half-written save can:
-/// one session shown in two places, and splits with too few children nested
-/// where the top-level checks do not look. Each must come out satisfying
-/// every invariant, since `SessionRegistry` would otherwise open a shell for
-/// a pane that another pane already shows, or a view would divide by zero
-/// laying out an empty split.
+/// Left unrepaired, `SessionRegistry` opens a second shell for a pane already shown, or a view
+/// divides by zero laying out an empty split.
 @Suite
 struct WorkspaceRepairShapeTests {
   private let project = Project(path: URL(fileURLWithPath: "/repos/demo"))
@@ -324,9 +310,7 @@ struct WorkspaceRepairShapeTests {
     ws.worktrees = [worktree]
     ws.sessions = sessions
     ws.tabs = tabs
-    // The tabs arrive naming no column, which is the shape of every state
-    // file written before columns existed: repair gives them the one they
-    // were saved as.
+    // The tabs name no column, the shape of every state file written before columns existed.
     return ws
   }
 
@@ -405,9 +389,6 @@ struct WorkspaceRepairShapeTests {
           axis: .horizontal, children: [.terminal(a.id), .terminal(b.id)], weights: [3, 1]))
   }
 
-  /// Random trees mixing every kind of damage at every depth. Whatever the
-  /// input, repair must end with the invariants true and change nothing on a
-  /// second pass.
   @Test(arguments: [41, 43, 47, 53, 59, 61, 67, 71] as [UInt64])
   func randomTreesRepairCompletelyAndIdempotently(seed: UInt64) {
     var rng = SeededGenerator(seed: seed)
@@ -447,10 +428,8 @@ struct WorkspaceRepairShapeTests {
   }
 }
 
-/// The store never adds the same project or worktree twice, but a state
-/// file can hold one twice: a hand edit, or two spellings of one path that
-/// normalise to the same identity. Every view keys on identity, and the
-/// New Worktree picker's labels are a dictionary that traps on a repeat.
+/// A hand edit or two spellings of one path can list an entry twice, and the New Worktree
+/// picker's labels are a dictionary that traps on a repeat.
 @Suite
 struct WorkspaceRepairDuplicateTests {
   /// The same as the tab case below, one collection up: the dead copy is the

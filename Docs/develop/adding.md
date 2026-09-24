@@ -9,7 +9,7 @@ What each addition needs beyond the code itself.
   colour or empty for no line, and the inactive-pane fade, which clamps before a
   pane looks broken. Both are drawn per pane.
 - **A terminal engine.** There is one and the model names its host outright
-  (smaller-decisions.md). A replacement implements the surface-host protocol and
+  (design/terminals.md). A replacement implements the surface-host protocol and
   is passed to the model in the Mac half.
 - **What a host owes**: the session environment to the child, a finished command
   reported if the engine can tell, paste framed as a bracketed paste, anything
@@ -20,9 +20,13 @@ What each addition needs beyond the code itself.
 - **An agent or editor.** A row in its catalogue; detection and the dropdowns
   follow. An agent's row names its mark, and a tint where the project's mark has
   a colour of its own.
+- **Removing an agent adds its id to `AgentCatalogue.retiredIDs`**, or a state
+  file naming it raises an install alert for it at every run:
+  WorkspaceRetiredAgentsTests.
 - **A new mark** needs a case in the drawn list and in the resource lookup, plus
   a single-path `.svg` of that name in the app's marks folder, in the square
-  `AgentMarkResourceTests` holds them all to, with absolute commands only.
+  `AgentMarkResourceTests` holds them all to, with absolute commands only:
+  SVGPathParserTests holds the parser to refusing the rest.
 - **The monogram needs none of that** and is what an agent ships with until
   someone draws one. Give the agent a row in COMPAT.md's table, the only place a
   user reads what the app does with it.
@@ -33,20 +37,24 @@ What each addition needs beyond the code itself.
 - **A way a worktree stage can fail.** A failure type naming what is still on
   disk, an error title, and an arm in the removal describer saying whether the
   worktree is still there, which decides whether the row is restored or
-  refreshed.
+  refreshed. Nothing forces the arm: without it the failure falls to the Trash's
+  default and the row comes back.
 - **A list of files a new worktree is given.** A case in the placement with the
   settings field it reads, an operation step with its titles and Cancel help,
   and an editor in the Hooks tab.
 - **If a repository may ship that list**, it also needs a field on the shared
   settings, a line in the layering, and the four places trust and containment
-  are spelled out, since it names paths on the reader's disk.
+  are spelled out (`keeping(from:)`, `confined(to:)`, `trustedContentText`,
+  `withoutWhatTrustCovers`), since it names paths on the reader's disk.
 - **An agent's hooks.** An integration naming the file, the events, what each
   says the session is doing, which of two events standing for one thing is
-  silent, which two are a subagent's start and end, and which is the prompt that
-  starts a turn.
-- **Every agent with events needs the turn-starting one.** An interrupt fires no
-  hook and the workers it killed send no stop, so the next prompt is the only
-  thing that empties the roster.
+  silent, which two are a subagent's start and end, which is the prompt that
+  starts a turn, and which is its session starting.
+- **An event's timeout goes below five seconds where the agent caps it**, as
+  Codex does its two exit events at three, warning at every start otherwise.
+- **Every agent with events needs the turn-starting one.** Most agents fire no
+  hook on an interrupt, and the workers it killed send no stop, so the next
+  prompt is the only thing that empties the roster.
 - **A payload names a worker by id and type**, or that agent's own spelling,
   which needs a line in the payload reader. A start or end naming no worker
   still counts as one, taking an unnamed place.
@@ -57,9 +65,10 @@ What each addition needs beyond the code itself.
   that is ours alone is written whole and deleted to remove.
 - **A variable a hook receives.** A case in the hook variables, which both
   builds the environment and draws the Hooks tab's table.
-- **A placeholder an agent's flags may use.** A case with its value, and a line
-  in the documentation: the settings rows name one as an example rather than the
-  list, so nothing in the app tells anyone the new one exists.
+- **A placeholder an agent's flags may use.** A case with its value and the
+  variable a custom command reads it from. The settings rows name one as an
+  example rather than the list, and no page in the repository lists them yet, so
+  nothing tells a user the new one exists.
 - **A tab strip measurement.** The metrics bound what a tab is drawn at and the
   strip layout divides the strip by them. `UIMetricsTests` checks across the
   font-size range that the floor leaves room for what a tab always draws.
@@ -68,9 +77,14 @@ What each addition needs beyond the code itself.
 - **The buttons and both gutters come off the room first**, so nothing measures
   itself. A scroll wheel is not counted in tabs at all, the strip being handed
   the turn sideways.
+- **A field on a sidebar row** also goes in that row's hand-written `==`, which
+  leaves the closures out; a field missing there never redraws the row, and no
+  test catches it (design/appearance.md). A row of a new height goes into
+  `UIMetrics.projectBlockHeight`, or the drop line lands in the wrong half.
 - **A column on the Agents board.** A case in the lane enum in draw order, its
   title, the state whose colour its header wears, and a line in the lane lookup,
-  total over the state so a state with no column is a compile error.
+  total over the state so a state with no column is a compile error. The
+  sidebar's counts are a separate list, `summarised`, which nothing forces.
 - **Each further column asks for another column's width and gap**, and four
   already ask for more window than the app's minimum.
 - **A fact on a board card.** A field on the card, filled where cards are built,
@@ -109,12 +123,17 @@ What each addition needs beyond the code itself.
   repositories through the shared file, so renaming one silently turns a
   committed order into the default.
 - **Anything not on the worktree is passed to the sort as a closure**, as the
-  active flag and the last commit are. Nothing sorts above the trunk row.
+  active flag and the last commit are, and lands on the sort key. The order memo
+  compares keys to skip a sort, so a comparison reading anything off the key
+  serves the old order. No order lifts a row above the main worktree or the
+  trunk, which the bands place first.
 - **A shell with command-status hooks.** A script in the libraries' resources
   with the helper's placeholder, listed in the manifest, loaded by the state
   hooks, written by the integration refresh and picked up at launch.
 - **It reports a command started and finished through the helper**, and does
-  nothing when the session variable is unset.
+  nothing when the session variable is unset. Name it in
+  `ShellLaunch.reportsFinishedCommands` too, or its panes also read git on every
+  retitle, the fallback for shells that report nothing.
 - **Add it to the searched shells if Homebrew leaves it out of `/etc/shells`**,
   and give it a row in COMPAT.md's table: the picker offers it, so a reader has
   to be told what it does not get.
@@ -146,7 +165,9 @@ What each addition needs beyond the code itself.
   seeded random tests find it if not, printing the seed and step to replay.
 - **Runtime state.** On the model, never the workspace. Keyed by worktree it
   also goes in the forget, or it outlives its row and the next worktree at that
-  path inherits it.
+  path inherits it; keyed by project, in the project's removal.
+- **A value a poll or timer writes goes through `setIfChanged`**, or every view
+  reading it redraws on each tick (design/merged-branch.md).
 - **The session states own who clears what**: change it there and in their
   tests, not in a view.
 - **A per-build file.** On the variant pattern, so a debug run never touches the
@@ -158,9 +179,13 @@ What each addition needs beyond the code itself.
   made elsewhere.
 - **An override is an override section**, naming the key path once. Help goes
   behind an (i); a caption is only for a value computed live.
+- **A page that outgrows its window gets another part** in its segmented switch,
+  and each part a line in SettingsPageSizeTests. Hooks' Create part has 7 pt
+  left under a repository file asking for trust.
 - **A user-visible string.** A line in the catalogue of the half that says it,
-  in key order, and the lookup where the words are wanted. A word both halves
-  say is written in both, and app code never reads the libraries' catalogue.
+  in key order under its thing's prefix (design/translation.md), and the lookup
+  where the words are wanted. A word both halves say is written in both, and app
+  code never reads the libraries' catalogue.
 - **A form whose wording turns on a number** goes in the counted-forms file
   instead and takes the number like any other argument. Two or more arguments
   are numbered so a translation may reorder them.
@@ -170,8 +195,10 @@ What each addition needs beyond the code itself.
 - **A language.** That code's folder beside the English one in both halves, both
   files translated, and a line for it in each manifest. The bundling script
   takes the list from the app half's folders.
-- **The permission strings are not in the catalogue**: they are an
-  `InfoPlist.strings` beside the app half's, which the script copies into the
-  bundle's resources on its own.
+- **The permission strings are not in the catalogue**: English stays in the
+  Info.plist template, and a translation is an `InfoPlist.strings` in that
+  language's folder in the app half, which the script copies into the bundle's
+  resources on its own.
 - **A notified state.** A toggle in the notification preference, whose subscript
-  answers for every state so a caller can hand it whatever was reported.
+  answers for every state so a caller can hand it whatever was reported, and a
+  place in `notifiableStates`, the order the settings tab lists them in.

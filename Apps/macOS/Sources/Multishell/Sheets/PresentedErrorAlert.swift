@@ -22,12 +22,12 @@ extension View {
       DestructiveAlert.make(
         title: error.title,
         message: error.message,
-        choices: error.retryLabel.map { [$0] } ?? [],
+        choices: error.retry.map { [$0.label] } ?? [],
         cancel: t("action.cancel"))
     } answer: { error, choice in
       model.presentedError = nil
       guard choice != nil, let retry = error.retry else { return }
-      Task { await retry() }
+      Task { await retry.action() }
     }
   }
 }

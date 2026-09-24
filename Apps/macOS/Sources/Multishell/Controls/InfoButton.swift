@@ -20,6 +20,8 @@ struct InfoButton: View {
     }
     .buttonStyle(.plain)
     .help(text)
+    .accessibilityLabel(t("action.more-info"))
+    .accessibilityHint(text)
     .popover(isPresented: $showsInfo, arrowEdge: .bottom) {
       Text(text)
         .font(.system(size: 12))

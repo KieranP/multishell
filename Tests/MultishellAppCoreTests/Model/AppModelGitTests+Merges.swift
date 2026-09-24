@@ -34,9 +34,49 @@ extension AppModelGitTests {
     #expect(h.model.presentedError == nil)
   }
 
-  /// The badge reads "safe to remove". A path a create has claimed forgets
-  /// what the last checkout there earned; a stage on a worktree hides it and
-  /// asks nothing new, so a removal's own badge stands while its hook runs.
+  @Test func aLoneProjectsRefreshLeavesTheRoundsBudgetAsItFoundIt() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    h.model.mergeReads.budget = .seconds(2)
+    h.model.mergeReads.remember(["a": .seconds(1), "b": .seconds(1), "c": .seconds(1)])
+    h.model.mergeReads.remember(["d": .seconds(1)])
+    h.model.mergeReads.beginRound()
+    #expect(h.model.mergeReads.admit(["a", "b"], sharingRound: true).count == 2)
+
+    await h.model.refreshMergeStates(of: h.project)
+
+    #expect(h.model.mergeReads.admit(["c", "d"], sharingRound: true).count == 1)
+  }
+
+  @Test func aTrunkThatMovedUnderEveryBranchIsReAskedOverSeveralRounds() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    for branch in ["one", "two", "three"] {
+      await h.model.createWorktree(branch: branch, basedOn: nil, createBranch: true, in: h.project)
+    }
+    let trees = try ["one", "two", "three"].map { try #require(h.worktree(onBranch: $0)) }
+    for tree in trees {
+      _ = try await h.git.run(["commit", "-q", "--allow-empty", "-m", "work"], in: tree.path)
+    }
+    await h.model.refreshMergeStates()
+    #expect(trees.allSatisfy { h.model.mergeState(of: $0) == .unmerged })
+    h.model.mergeReads.budget = .zero
+
+    for tree in trees {
+      _ = try await h.git.run(
+        ["merge", "-q", "--no-ff", "-m", "merge", tree.name], in: h.project.path)
+    }
+    let merged = { trees.filter { h.model.mergeState(of: $0) != .unmerged }.count }
+    await h.model.refreshMergeStates()
+    #expect(merged() == 1, "one read a round where the budget allows none")
+    await h.model.refreshMergeStates()
+    #expect(merged() == 2)
+    await h.model.refreshMergeStates()
+    #expect(merged() == 3, "and none left behind")
+  }
+
+  /// The badge reads "safe to remove", so a claimed path or a running stage hides it; a
+  /// removal's own badge stands while its hook runs.
   @Test func aWorktreeStillBeingBuiltDoesNotWearTheMergedBadge() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
@@ -67,10 +107,8 @@ extension AppModelGitTests {
       "a removal keeps the badge it is asking about")
   }
 
-  /// The check runs on the status poll, so a pass that finds nothing moved
-  /// must not touch the observable state: writing a dictionary entry back
-  /// unchanged still tells every view watching it to draw again, and this
-  /// would do that to the whole sidebar every five seconds.
+  /// Writing a dictionary entry back unchanged still redraws every view watching it, and the
+  /// status poll would do that to the whole sidebar every five seconds.
   @Test func aPassThatChangesNothingDoesNotDisturbTheViews() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
@@ -90,9 +128,8 @@ extension AppModelGitTests {
     #expect(!fired.raised, "nothing moved, so nothing to redraw")
   }
 
-  /// A git call that failed is not an answer, and must not be recorded as
-  /// one: the verdict it could not replace would then be pinned to the new
-  /// tip and never asked about again.
+  /// A verdict recorded from a failed call would be pinned to the new tip and never asked
+  /// about again.
   @Test func aFailedReadLeavesTheBranchToBeAskedAboutAgain() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
@@ -128,10 +165,34 @@ extension AppModelGitTests {
     #expect(afterRetry > afterFailure, "the failed pass must not settle the question")
   }
 
-  /// The ref read answers two questions at once, so a failure taken as an
-  /// answer would say the project has no branches: every badge dropped, the
-  /// base forgotten and every commit date the rows are ordered by blanked,
-  /// on one bad read.
+  @Test func aBranchWhoseReadKeepsFailingWaitsItsTurnBehindOneNeverRead() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    for branch in ["bad", "good"] {
+      await h.model.createWorktree(branch: branch, basedOn: nil, createBranch: true, in: h.project)
+    }
+    let good = try #require(h.worktree(onBranch: "good"))
+    let model = try h.modelOnFakeGit(
+      """
+      case "$*" in
+        for-each-ref*)
+          printf 'refs/heads/main\\tMMM\\t\\t\\nrefs/heads/bad\\tBBB\\t\\t\\nrefs/heads/good\\tGGG\\t\\t\\n' ;;
+        branch\\ --merged*) echo main ;;
+        cherry*bad*) exit 128 ;;
+        cherry*) echo '+ AAA' ;;
+        *) exit 0 ;;
+      esac
+      """)
+    model.mergeReads.budget = .zero
+
+    await model.refreshMergeStates()
+    await model.refreshMergeStates()
+
+    #expect(model.mergeState(of: good) == .unmerged)
+  }
+
+  /// The ref read answers two questions, so a failure taken as an answer drops every badge,
+  /// the base, and every commit date the rows are ordered by.
   @Test func aFailedRefReadLeavesTheBaseAndTheBadgesWhereTheyWere() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
@@ -192,6 +253,70 @@ extension AppModelGitTests {
 
   /// The badge is on the status poll, so what it costs when nothing has
   /// moved is the ceiling on how often it may run.
+  @Test func projectsAreScannedForBranchesSeveralAtATime() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let other = h.root.appendingPathComponent("other", isDirectory: true)
+    try FileManager.default.createDirectory(at: other, withIntermediateDirectories: true)
+    h.store.addProject(at: other)
+    let model = try h.modelOnFakeGit(
+      """
+      case "$*" in
+        for-each-ref*)
+          touch "$SCRATCH/scan-$$"; sleep 0.5
+          ls "$SCRATCH" | grep -c '^scan-' >> "$SCRATCH/overlap"; rm -f "$SCRATCH/scan-$$" ;;
+      esac
+      """)
+
+    await model.refreshMergeStates()
+
+    let overlap = try String(
+      contentsOf: h.root.appendingPathComponent("overlap"), encoding: .utf8)
+    #expect(
+      overlap.split(separator: "\n").contains {
+        Int($0.trimmingCharacters(in: .whitespaces)) ?? 0 >= 2
+      },
+      "\(overlap)")
+  }
+
+  @Test func aSlowProjectHoldsOnlyItsOwnSlotWhileTheOthersAreScanned() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    try "".write(
+      to: h.project.path.appendingPathComponent(".slow"), atomically: true, encoding: .utf8)
+    for name in ["p1", "p2", "p3", "p4"] {
+      let other = h.root.appendingPathComponent(name, isDirectory: true)
+      try FileManager.default.createDirectory(at: other, withIntermediateDirectories: true)
+      h.store.addProject(at: other)
+    }
+    let release = h.root.appendingPathComponent("release")
+    let model = try h.modelOnFakeGit(
+      """
+      case "$*" in
+        for-each-ref*)
+          if [ -e .slow ]; then
+            i=0
+            while [ ! -e "$SCRATCH/release" ] && [ $i -lt 200 ]; do sleep 0.05; i=$((i+1)); done
+          else
+            echo "$PWD" >> "$SCRATCH/scanned"
+          fi ;;
+      esac
+      """)
+    let scanned = {
+      ((try? String(
+        contentsOf: h.root.appendingPathComponent("scanned"), encoding: .utf8)) ?? "")
+        .split(separator: "\n").count
+    }
+
+    let round = Task { await model.refreshMergeStates() }
+    try await waitUntil { scanned() == 4 }
+    let scannedWhileHeld = scanned()
+    try "".write(to: release, atomically: true, encoding: .utf8)
+    await round.value
+
+    #expect(scannedWhileHeld == 4)
+  }
+
   @Test func asecondPassAsksGitNothingAboutABranchThatHasNotMoved() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
@@ -221,10 +346,8 @@ extension AppModelGitTests {
     #expect(model.mergeState(of: feat) == .unmerged)
   }
 
-  /// The verdict is memoised on what it was drawn from, and whether the
-  /// upstream was gone is part of that. A first push puts one back under a
-  /// branch that had none, moving neither the branch nor the trunk, and the
-  /// badge the missing upstream earned has to go with it.
+  /// The verdict is memoised on its inputs, the gone upstream included: a first push puts one
+  /// back without moving either tip.
   @Test func aBadgeFromAGoneUpstreamGoesWhenAPushPutsTheUpstreamBack() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
@@ -236,16 +359,13 @@ extension AppModelGitTests {
 
     await h.model.createWorktree(branch: "feat", basedOn: nil, createBranch: true, in: h.project)
     let feat = try #require(h.worktree(onBranch: "feat"))
-    // Real changes, and two of them: the commit the forge squashes them into
-    // shares a patch id with neither, so only the gone upstream is left to
-    // answer for the branch.
+    // Two real commits: the squash shares a patch id with neither, so only the gone
+    // upstream answers for the branch.
     try await commit("work", file: "feat.txt", content: "a\n", in: feat.path, with: h.git)
     try await commit("more work", file: "feat-too.txt", content: "b\n", in: feat.path, with: h.git)
     _ = try await h.git.run(["push", "-q", "-u", "origin", "feat"], in: feat.path)
-    // The forge squashes the branch onto main and deletes it.
-    // One commit carrying the branch's whole tree, as a squash does. Two
-    // mirroring its own would be a cherry-pick, which `git cherry` answers
-    // for before the upstream is ever read.
+    // The forge squashes onto main as one commit of the branch's whole tree; two mirroring
+    // its own would be a cherry-pick, which `git cherry` answers for first.
     try await commit(
       "squashed work", files: ["feat.txt": "a\n", "feat-too.txt": "b\n"], in: path, with: h.git)
     _ = try await h.git.run(["push", "-q", "origin", "main"], in: path)

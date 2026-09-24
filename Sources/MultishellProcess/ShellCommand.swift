@@ -10,23 +10,22 @@ public struct ShellCommand: Sendable {
   }
 
   /// Starts a command with no pipes and no timeout, waiting only to hear how
-  /// it ended: an editor shim may hold this open; see smaller-decisions.md.
+  /// it ended: an editor shim may hold this open; see terminals.md.
   public func launch(
     _ commandLine: String,
     in directory: URL,
-    environment: [String: String] = [:]
+    environment: [String: String] = [:],
+    shellPath: String? = nil
   ) async throws {
-    guard let shell = Self.shell else { throw ShellUnavailable() }
+    guard let shell = Self.shell(preferring: shellPath) else { throw ShellUnavailable() }
     let arguments = shell.arguments + [commandLine]
     let process = Process()
     process.executableURL = shell.executable
     process.arguments = arguments
     process.currentDirectoryURL = directory
-    if !environment.isEmpty {
-      process.environment = ProcessInfo.processInfo.environment.merging(environment) { _, new in
-        new
-      }
-    }
+    // Not historyless: an editor started here keeps what its terminals inherit.
+    process.environment = ProcessInfo.processInfo.environment
+      .merging(environment) { _, new in new }
     // Nothing to drain and nothing to fill: a child that writes has it go
     // nowhere rather than into a buffer this side must keep reading.
     process.standardInput = FileHandle.nullDevice
@@ -62,12 +61,16 @@ public struct ShellCommand: Sendable {
     stopper: ProcessStopper? = nil
   ) async throws -> String {
     guard let shell = Self.shell(preferring: shellPath) else { throw ShellUnavailable() }
-    let prepared = Self.markingOutput(
-      Self.stoppingAtFirstFailure(script, shell: shell.executable), shell: shell.executable)
+    // The `cd` before the marker, so a `chpwd` hook's stderr is not the hook's,
+    // and before `set -e`, so a failing command inside that hook ends nothing.
+    let prepared = Self.entering(
+      directory,
+      before: Self.stoppingAtFirstFailure(
+        Self.markingOutput(script, shell: shell.executable), shell: shell.executable))
     let arguments = shell.arguments + [prepared]
     let output = try await runner.capture(
-      shell.executable, arguments, in: directory, environment: environment, timeout: timeout,
-      stopper: stopper)
+      shell.executable, arguments, in: directory, environment: Self.historyless(environment),
+      timeout: timeout, stopper: stopper)
     guard output.succeeded, output.stop == nil else {
       throw ProcessFailure(
         executable: shell.executable.lastPathComponent, arguments: arguments,
@@ -86,6 +89,18 @@ public struct ShellCommand: Sendable {
       .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
       .filter { !$0.isEmpty }
       .joined(separator: "\n")
+  }
+
+  /// The shell is interactive, so an inherited HISTFILE is its history: bash
+  /// truncates it and ksh rewrites it in its own format; see hooks.md.
+  static func historyless(_ environment: [String: String]) -> [String: String] {
+    environment.merging(["HISTFILE": ""]) { _, empty in empty }
+  }
+
+  /// The rc files run first and may leave the shell anywhere, so the script
+  /// goes back; quietly, as zsh's `chpwd` hooks print on every `cd`.
+  static func entering(_ directory: URL, before script: String) -> String {
+    "cd \(AnyShellQuoting.quote(directory.path)) >/dev/null || exit 1\n" + script
   }
 
   /// Shells whose `set -e` exits on the first failing command. Set inside
@@ -141,17 +156,23 @@ public struct ShellCommand: Sendable {
   /// Shells known to take `-l -i -c`. Another one (nu, xonsh, elvish) would
   /// fail on the flags, so it gets `/bin/sh` instead.
   static let interactiveLoginShells: Set<String> = [
-    "sh", "bash", "zsh", "fish", "dash", "ksh", "mksh", "tcsh", "csh",
+    "sh", "bash", "zsh", "fish", "dash", "ksh", "mksh",
   ]
 
+  /// csh and tcsh take `-l` only as their one flag, so beside `-c` they get
+  /// `-i` alone, which reads `.cshrc` and `.tcshrc` but not `.login`.
+  static let loginFlagRefusers: Set<String> = ["tcsh", "csh"]
+
   static func shell(named path: String?) -> (executable: URL, arguments: [String]) {
-    if let path, !path.isEmpty,
-      interactiveLoginShells.contains(URL(fileURLWithPath: path).lastPathComponent),
-      FileManager.default.isExecutableFile(atPath: path)
-    {
-      return (URL(fileURLWithPath: path), ["-l", "-i", "-c"])
+    guard let path, !path.isEmpty, FileManager.default.isExecutableFile(atPath: path) else {
+      return (URL(fileURLWithPath: "/bin/sh"), ["-c"])
     }
-    return (URL(fileURLWithPath: "/bin/sh"), ["-c"])
+    let name = URL(fileURLWithPath: path).lastPathComponent
+    if loginFlagRefusers.contains(name) { return (URL(fileURLWithPath: path), ["-i", "-c"]) }
+    guard interactiveLoginShells.contains(name) else {
+      return (URL(fileURLWithPath: "/bin/sh"), ["-c"])
+    }
+    return (URL(fileURLWithPath: path), ["-l", "-i", "-c"])
   }
 }
 

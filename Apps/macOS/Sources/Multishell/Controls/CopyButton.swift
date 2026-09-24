@@ -31,5 +31,6 @@ struct CopyButton: View {
     }
     .buttonStyle(.plain)
     .help(t("action.copy-value", text))
+    .accessibilityLabel(t("action.copy-value", text))
   }
 }

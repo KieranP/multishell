@@ -2,7 +2,7 @@ import Foundation
 
 /// The command-status hooks a shell runs, and the generated startup files
 /// carrying them into this app's terminals; see Docs/design/terminals.md.
-public enum ShellStateHooks {
+enum ShellStateHooks {
   static let helperPlaceholder = "__MULTISHELL_HELPER__"
   /// The agents a shell may report starting, filled in when the file is
   /// generated; see Docs/design/agents.md.
@@ -10,7 +10,7 @@ public enum ShellStateHooks {
 
   /// The zsh startup files placed in the directory set as a session's
   /// `ZDOTDIR`. Each chains to the user's own first, editing no file of theirs.
-  public static func zshIntegrationFiles(
+  static func zshIntegrationFiles(
     helper: String = AgentHooks.helperReference
   )
     -> [String: String]
@@ -73,7 +73,7 @@ public enum ShellStateHooks {
 
   /// A bash init file for `--init-file`, which is read instead of `.bashrc`
   /// and skips the profile chain, so this reproduces that chain first.
-  public static func bashInitFile(helper: String = AgentHooks.helperReference) -> String {
+  static func bashInitFile(helper: String = AgentHooks.helperReference) -> String {
     script("init", extension: "bash", helper: helper) + "\n"
   }
 

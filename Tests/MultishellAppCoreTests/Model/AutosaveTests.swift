@@ -5,18 +5,14 @@ import Testing
 
 @testable import MultishellAppCore
 
-/// The autosave is what makes a relaunch look like the last session. It is
-/// observation-driven and debounced, so both halves are checked: a change
-/// reaches disk unprompted, and so does the change after that.
 @Suite(.serialized) @MainActor
 struct AutosaveTests {
   private func stateFile() -> URL {
     Scratch.path("autosave").appendingPathComponent("state.json")
   }
 
-  /// The debounce is 300 ms. Polling rather than a fixed sleep keeps this
-  /// fast on a quiet machine and honest on a loaded CI runner, where the
-  /// other suites in this process compete for the main actor.
+  /// The debounce is 300 ms. Polling keeps this fast on a quiet machine and honest on a
+  /// loaded CI runner, where the other suites in this process compete for the main actor.
   private func saved(_ file: URL, until done: (Workspace) -> Bool) async throws -> Workspace {
     for _ in 0..<160 {
       if FileManager.default.fileExists(atPath: file.path) {

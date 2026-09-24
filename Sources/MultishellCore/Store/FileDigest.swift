@@ -2,9 +2,9 @@ import Foundation
 
 /// The sha256 of a file's bytes, the core importing Foundation only. Names
 /// inside are FIPS 180-4's, to be checked against the document.
-public enum FileDigest {
+enum FileDigest {
   /// The digest of `data`, sixty-four hex characters.
-  public static func sha256(of data: Data) -> String {
+  static func sha256(of data: Data) -> String {
     var state = initialState
     var message = [UInt8](data)
     let bits = UInt64(message.count) * 8

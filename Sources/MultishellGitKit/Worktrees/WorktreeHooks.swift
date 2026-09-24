@@ -2,40 +2,6 @@ import Foundation
 import MultishellCore
 import MultishellProcess
 
-/// Raised when a hook fails. A pre hook's failure means the operation was
-/// never asked for; a post hook's means it has already succeeded.
-public struct HookFailure: Error, CustomStringConvertible {
-  public enum Stage: String, Sendable {
-    case preCreate
-    case postCreate
-    case preDelete
-    case postDelete
-
-    /// Whether the git operation the hook surrounds has happened.
-    public var operationHappened: Bool {
-      self == .postCreate || self == .postDelete
-    }
-  }
-
-  public let stage: Stage
-  public let underlying: any Error
-
-  public init(stage: Stage, underlying: any Error) {
-    self.stage = stage
-    self.underlying = underlying
-  }
-
-  public var description: String {
-    "\(stage.rawValue) hook failed: \(underlying)"
-  }
-
-  /// Why the hook did not finish on its own, when it did not: the timeout,
-  /// or the user's stop.
-  public var stop: ProcessStop? {
-    (underlying as? ProcessFailure)?.stop
-  }
-}
-
 /// Runs the per-project hooks from `ProjectSettings`, context through the
 /// environment so a hook is a plain script; see Docs/design/hooks.md.
 public struct WorktreeHooks: Sendable {
@@ -90,5 +56,39 @@ public struct WorktreeHooks: Sendable {
     case .preDelete:
       FileManager.default.fileExists(atPath: worktreePath.path) ? worktreePath : project.path
     }
+  }
+}
+
+/// Raised when a hook fails. A pre hook's failure means the operation was
+/// never asked for; a post hook's means it has already succeeded.
+public struct HookFailure: Error, CustomStringConvertible {
+  public enum Stage: String, Sendable {
+    case preCreate
+    case postCreate
+    case preDelete
+    case postDelete
+
+    /// Whether the git operation the hook surrounds has happened.
+    public var operationHappened: Bool {
+      self == .postCreate || self == .postDelete
+    }
+  }
+
+  public let stage: Stage
+  public let underlying: any Error
+
+  public init(stage: Stage, underlying: any Error) {
+    self.stage = stage
+    self.underlying = underlying
+  }
+
+  public var description: String {
+    "\(stage.rawValue) hook failed: \(underlying)"
+  }
+
+  /// Why the hook did not finish on its own, when it did not: the timeout,
+  /// or the user's stop.
+  public var stop: ProcessStop? {
+    (underlying as? ProcessFailure)?.stop
   }
 }

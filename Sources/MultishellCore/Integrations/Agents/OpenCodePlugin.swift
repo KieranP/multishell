@@ -22,12 +22,18 @@ enum OpenCodePlugin {
       return [name, detail].filter(Boolean).join(" ") || undefined
     }
 
-    export const MultishellPlugin = async ({ directory, worktree }) => {
+    export const MultishellPlugin = async ({ directory, worktree, client }) => {
       const cwd = worktree || directory
       // A subagent is a child session, so its events are told by its id.
       // What each runs as is kept from its creation.
       const workers = new Map()
+      // The parent's idle arrives in both spellings, so its second Done is no news.
+      let lastOwn
       const report = (state, message, worker, newTurn) => {
+        if (!worker) {
+          if (state === "done" && lastOwn === "done") return
+          lastOwn = state
+        }
         const args = ["state", state, "--agent", "opencode"]
         if (cwd) args.push("--cwd", cwd)
         if (message) args.push("--message", message)
@@ -66,6 +72,35 @@ enum OpenCodePlugin {
           if (value && value.done) workers.delete(old)
         }
       }
+      // A task resumed by its id reuses its session and announces nothing, so
+      // an id the map lacks is asked about once. Any failure leaves it the parent's.
+      const lookups = new Map()
+      // Bounded, so a server slow to answer holds no hook of OpenCode's.
+      const within = (promise) => new Promise((resolve) => {
+        const timer = setTimeout(() => resolve(null), 1000)
+        if (timer.unref) timer.unref()
+        promise.then((value) => { clearTimeout(timer); resolve(value) })
+      })
+      const adopt = (id, session, agent) => {
+        if (!session || !session.parentID || workers.has(id)) return
+        lookups.delete(id)
+        const type = agent || session.agent
+        workers.set(id, { type })
+        report("running", undefined, { id, phase: "started", type })
+      }
+      // Every hook shares the first one's bound, so a lookup that never settles
+      // holds only that second; one landing after it still puts a child back.
+      const recognise = async (id, agent) => {
+        if (!id || workers.has(id)) return
+        if (!lookups.has(id)) {
+          const asked = Promise.resolve()
+            .then(() => client.session.get({ path: { id } }))
+            .then((answer) => (answer && answer.data) || null, () => null)
+          asked.then((session) => adopt(id, session, agent))
+          lookups.set(id, within(asked))
+        }
+        await lookups.get(id)
+      }
       const under = (id, newTurn) => {
         const child = worker(id, "working")
         if (child) report("running", undefined, child)
@@ -77,10 +112,15 @@ enum OpenCodePlugin {
         "chat.message": async (input, output) => {
           const message = output && output.message
           const id = (input && input.sessionID) || (message && message.sessionID)
-          if (id) under(id, true)
-          else report("running")
+          if (!id) return report("running")
+          await recognise(id, input && input.agent)
+          under(id, true)
         },
-        "tool.execute.before": async (input) => under(input && input.sessionID, false),
+        "tool.execute.before": async (input) => {
+          const id = input && input.sessionID
+          await recognise(id)
+          under(id, false)
+        },
         // Not permission.ask: uncalled since the 1.1 permissions rewrite,
         // and it would report a prompt the bus already reports.
         event: async ({ event }) => {
@@ -90,7 +130,9 @@ enum OpenCodePlugin {
           // is taken from either, in the parent as in a child.
           const status = event.type === "session.status" && properties.status && properties.status.type
           const idle = event.type === "session.idle" || status === "idle"
-          if (event.type === "session.created" && info && info.parentID) {
+          if (event.type !== "session.created") await recognise(properties.sessionID)
+          // Not a second start for a child a lookup already put back.
+          if (event.type === "session.created" && info && info.parentID && !workers.has(info.id)) {
             workers.set(info.id, { type: info.agent })
             report("running", undefined, { id: info.id, phase: "started", type: info.agent })
           } else if (workers.has(properties.sessionID)) {
@@ -111,6 +153,8 @@ enum OpenCodePlugin {
             else if (event.type === "permission.asked") report("attention", asked(properties), child)
             else if (event.type === "permission.replied") report("running", undefined, child)
           } else if (idle) report("done")
+          // A turn that never passed chat.message still ends in a Done of its own.
+          else if (status === "busy") lastOwn = undefined
           else if (event.type === "session.error") report("error")
           else if (event.type === "permission.asked") report("attention", asked(properties))
           else if (event.type === "permission.replied") report("running")

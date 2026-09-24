@@ -32,4 +32,5 @@ struct ShellQuotingTests {
     ).dropLast().map(String.init)
     #expect(lines == arguments)
   }
+
 }

@@ -3,8 +3,6 @@ import Testing
 
 @testable import MultishellAppCore
 
-/// Who owns a worktree's operation entry, on the plain value the model and
-/// the pane read.
 @Suite
 struct WorktreeOperationsTests {
   private let a = "/trees/a"
@@ -25,9 +23,8 @@ struct WorktreeOperationsTests {
     #expect(operations.isEmpty)
   }
 
-  /// The bug this guards: a post-create hook still running when the user
-  /// asks for a removal must not, on ending, clear the removal's stage or
-  /// put its own failure over it.
+  /// A post-create hook still running when a removal starts must not, on ending, clear
+  /// the removal's stage or put its own failure over it.
   @Test func aRemovalTakesTheEntryFromARunningPostCreateHook() {
     var operations = WorktreeOperations()
     operations.begin(.postCreateHook, on: a)

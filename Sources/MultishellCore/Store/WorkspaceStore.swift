@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 
-/// The single place workspace state changes; see Docs/design/architecture.md.
+/// The single place workspace state changes; see Docs/design/state-and-store.md.
 /// One file, not an extension per collection: `private` reaches no further.
 @Observable
 @MainActor
@@ -13,7 +13,7 @@ public final class WorkspaceStore {
 
   /// Set where unread state is still on disk: saving the empty workspace over
   /// it deletes the user's sidebar. See Docs/design/state-and-store.md.
-  @ObservationIgnored public private(set) var refusesToSave = false
+  @ObservationIgnored private(set) var refusesToSave = false
 
   public init(workspace: Workspace = Workspace(), snapshot: WorkspaceSnapshot = WorkspaceSnapshot())
   {
@@ -29,6 +29,7 @@ public final class WorkspaceStore {
     do {
       var workspace = try snapshot.load()
       workspace.repairReferences()
+      workspace.forgetRetiredAgents()
       return (WorkspaceStore(workspace: workspace, snapshot: snapshot), nil)
     } catch {
       let store = WorkspaceStore(workspace: Workspace(), snapshot: snapshot)
@@ -37,30 +38,25 @@ public final class WorkspaceStore {
     }
   }
 
+  /// A file the user moved away is no longer in the way, so saving resumes;
+  /// one stat, and only while refusing. A readable one still waits for relaunch.
+  private func stillRefusesToSave() -> Bool {
+    if refusesToSave, !snapshot.holdsFile { refusesToSave = false }
+    return refusesToSave
+  }
+
   /// Silent where it refuses: the failed load has already told the user their
   /// state could not be read, and every change would otherwise raise it again.
   public func save() throws {
-    guard !refusesToSave else { return }
+    guard !stillRefusesToSave() else { return }
     try snapshot.save(workspace)
   }
 
   /// A save to run off the main actor, `nil` where saving is refused. The
   /// synchronous `save` stays for quit, when there is no later to wait for.
   public func prepareSave() -> WorkspaceSave? {
-    guard !refusesToSave else { return nil }
+    guard !stillRefusesToSave() else { return nil }
     return WorkspaceSave(workspace: workspace, snapshot: snapshot, ticket: snapshot.ticket())
-  }
-}
-
-/// One save, the workspace as a value and where it goes, ready to run on
-/// any thread. Its ticket keeps saves landing in the order they were asked.
-public struct WorkspaceSave: Sendable {
-  let workspace: Workspace
-  let snapshot: WorkspaceSnapshot
-  let ticket: WorkspaceSnapshot.Ticket
-
-  public func run() throws {
-    try snapshot.save(workspace, as: ticket)
   }
 }
 
@@ -204,7 +200,7 @@ extension WorkspaceStore {
   }
 
   public func closeTab(_ id: TerminalTab.ID) {
-    guard let index = workspace.tabs.firstIndex(where: { $0.id == id }) else { return }
+    guard let index = workspace.tabIndex(id) else { return }
     removeTab(at: index)
   }
 
@@ -214,8 +210,8 @@ extension WorkspaceStore {
     _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, _ target: TerminalTab.ID
   ) {
     guard
-      let movingIndex = workspace.tabs.firstIndex(where: { $0.id == id }),
-      let anchorIndex = workspace.tabs.firstIndex(where: { $0.id == target }),
+      let movingIndex = workspace.tabIndex(id),
+      let anchorIndex = workspace.tabIndex(target),
       workspace.tabs[movingIndex].worktreeID == workspace.tabs[anchorIndex].worktreeID,
       id != target
     else { return }
@@ -232,7 +228,7 @@ extension WorkspaceStore {
   @discardableResult
   public func moveTab(_ id: TerminalTab.ID, toEndOf groupID: TabGroup.ID) -> Bool {
     guard
-      let index = workspace.tabs.firstIndex(where: { $0.id == id }),
+      let index = workspace.tabIndex(id),
       let destination = workspace.group(groupID),
       workspace.tabs[index].worktreeID == destination.worktreeID,
       workspace.tabs[index].groupID != groupID
@@ -246,7 +242,7 @@ extension WorkspaceStore {
   @discardableResult
   public func moveTab(_ id: TerminalTab.ID, to worktreeID: Worktree.ID) -> Bool {
     guard
-      let index = workspace.tabs.firstIndex(where: { $0.id == id }),
+      let index = workspace.tabIndex(id),
       let destination = workspace.worktree(worktreeID),
       workspace.tabs[index].worktreeID != worktreeID,
       let column = resolvedGroup(nil, in: worktreeID)
@@ -263,7 +259,7 @@ extension WorkspaceStore {
   /// What the three moves share: the tab retagged for `column` and put back
   /// at `index`, else last; a tab leaving its column settles it and is shown.
   private func relocate(_ id: TerminalTab.ID, into column: TabGroup.ID, at index: Int? = nil) {
-    guard let movingIndex = workspace.tabs.firstIndex(where: { $0.id == id }),
+    guard let movingIndex = workspace.tabIndex(id),
       let destination = workspace.group(column)
     else { return }
     let vacated = slot(of: id)
@@ -281,7 +277,7 @@ extension WorkspaceStore {
   /// Empty or whitespace clears the custom title, so the shell's takes over
   /// again.
   public func setCustomTitle(_ title: String?, forTab id: TerminalTab.ID) {
-    guard let index = workspace.tabs.firstIndex(where: { $0.id == id }) else { return }
+    guard let index = workspace.tabIndex(id) else { return }
     let trimmed = title?.trimmingCharacters(in: .whitespaces) ?? ""
     workspace.tabs[index].customTitle = trimmed.isEmpty ? nil : trimmed
   }
@@ -314,7 +310,7 @@ extension WorkspaceStore {
     _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, of neighbour: TabGroup.ID
   ) -> TabGroup? {
     guard
-      let tabIndex = workspace.tabs.firstIndex(where: { $0.id == id }),
+      let tabIndex = workspace.tabIndex(id),
       let groupIndex = workspace.tabGroups.firstIndex(where: { $0.id == neighbour }),
       workspace.tabGroups[groupIndex].worktreeID == workspace.tabs[tabIndex].worktreeID,
       workspace.tabs[tabIndex].groupID != neighbour || workspace.tabs(in: neighbour).count > 1
@@ -445,7 +441,7 @@ extension WorkspaceStore {
   public func splitFocusedPane(
     of tabID: TerminalTab.ID, axis: SplitAxis, command: [String]? = nil
   ) -> TerminalSession? {
-    guard let index = workspace.tabs.firstIndex(where: { $0.id == tabID }) else { return nil }
+    guard let index = workspace.tabIndex(tabID) else { return nil }
     let tab = workspace.tabs[index]
     guard let session = makeSession(in: tab.worktreeID, title: nil, command: command) else {
       return nil
@@ -461,7 +457,7 @@ extension WorkspaceStore {
   /// Written back when a divider is dragged, so a layout survives relaunch.
   public func setSplitWeights(_ weights: [Double], at path: [Int], ofTab tabID: TerminalTab.ID) {
     guard weights.allSatisfy({ $0.isFinite && $0 > 0 }),
-      let index = workspace.tabs.firstIndex(where: { $0.id == tabID })
+      let index = workspace.tabIndex(tabID)
     else { return }
     workspace.tabs[index].root = workspace.tabs[index].root.settingWeights(weights, at: path)
   }
@@ -483,7 +479,7 @@ extension WorkspaceStore {
   }
 
   private func defaultTitle(for command: [String]?) -> String {
-    guard let executable = command?.first else { return t("tab.shell") }
+    guard let executable = command?.first else { return "" }
     return URL(fileURLWithPath: executable).lastPathComponent
   }
 }

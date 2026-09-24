@@ -4,65 +4,29 @@ import MultishellGitKit
 import MultishellProcess
 
 extension AppModel {
-  /// Asks the login shell for its environment once, off the main thread, and
-  /// re-runs detection against its PATH.
-  public func refreshLoginEnvironment() async {
-    let environment = await captureLoginEnvironment()
-    if case .processFallback(let reason) = environment.source {
-      platform.log("login shell environment unavailable, using the process's own: \(reason)")
-    }
-    // The bundle lookups answer from LaunchServices' own database and need
-    // the platform, so they stay; it is the PATH that has to be left.
-    let applications = EditorCatalogue.editors.reduce(into: [String: URL]()) { found, editor in
-      guard let id = editor.bundleIdentifier, let url = platform.applicationURL(forIdentifier: id)
-      else { return }
-      found[id] = url
-    }
-    // A stat per PATH directory per catalogue entry, and every one of them
-    // blocks for the timeout on a mount that has gone; see architecture.md.
-    let path = environment.path
-    let detected = await Self.offMain {
-      (
-        agents: AgentDetection(path: path), shells: ShellDetection(path: path),
-        editors: EditorDetection(path: path) { applications[$0] }
-      )
-    }
-    // Together, after the scan: `agentCommand` reads a set environment as
-    // "detection has answered", and the sidebar is already up.
-    loginEnvironment = environment
-    agentDetection = detected.agents
-    shellDetection = detected.shells
-    editorDetection = detected.editors
-    // Rebuilt even where launch found git: that PATH is what git's own
-    // children are looked up on; see Docs/design/architecture.md.
-    let hadGit = worktrees != nil
-    if let found = try? WorktreeCoordinator(path: environment.path) {
-      worktrees = found
-      if !hadGit {
-        if presentedError?.saysGitIsMissing == true { presentedError = nil }
-        // `start` refreshed before this ran and found no git, so every project
-        // listed nothing; the sidebar stays empty until something asks again.
-        await refreshAll()
-      }
-    }
-    note(await Self.offMain { Self.agentStatus() })
-  }
-
   /// Whose hooks and whether the command-line tool are installed. Six files,
   /// read here on the main actor: the settings rows ask after writing one.
   public func refreshAgentStatus() {
     note(Self.agentStatus())
   }
 
-  nonisolated static func agentStatus() -> (hooks: Set<String>, tool: Bool) {
-    (
-      Set(AgentHooks.integrations.filter { $0.isInstalled() }.map(\.id)),
-      HelperLink.isCommandLineToolInstalled
-    )
+  nonisolated static func agentStatus() -> AgentStatus {
+    let installations = AgentHooks.integrations.map { ($0.id, $0.installation()) }
+    return AgentStatus(
+      hooks: Set(installations.filter { $0.1 != .absent }.map(\.0)),
+      staleHooks: Set(installations.filter { $0.1 == .stale }.map(\.0)),
+      tool: HelperLink.isCommandLineToolInstalled)
   }
 
-  private func note(_ status: (hooks: Set<String>, tool: Bool)) {
+  struct AgentStatus: Sendable {
+    let hooks: Set<String>
+    let staleHooks: Set<String>
+    let tool: Bool
+  }
+
+  func note(_ status: AgentStatus) {
     setIfChanged(\.installedAgentHooks, status.hooks)
+    setIfChanged(\.staleAgentHooks, status.staleHooks)
     setIfChanged(\.commandLineToolInstalled, status.tool)
   }
 }
@@ -169,7 +133,7 @@ extension AppModel {
     let exec = ShellLaunch.execCommandLine(forShell: tabShell)
     let values = placeholderValues(in: worktreeID)
     if id == AgentCatalogue.customID {
-      return AgentLaunch.command(
+      return TabCommand.running(
         customLine: AgentFlags.customLine(workspace.customAgentCommand, values: values),
         shell: shell, exec: exec)
     }
@@ -185,7 +149,7 @@ extension AppModel {
     }
     guard let arguments = AgentLaunch.arguments(for: agent, resume: resume) else { return nil }
     let flags = AgentFlags.arguments(agentFlags(id, in: worktreeID), values: values)
-    return AgentLaunch.command(agent: arguments + flags, shell: shell, exec: exec)
+    return TabCommand.running(arguments + flags, shell: shell, exec: exec)
   }
 
   /// The flag line in force for a worktree's project, or none where the
@@ -226,7 +190,8 @@ extension AppModel {
   /// The agents Settings > Agents offers hooks for: the ones this machine
   /// has, and any whose hooks are still installed.
   public var agentHooksRows: [AgentHooksRow] {
-    AgentHooksRow.rows(detection: agentDetection, installed: installedAgentHooks)
+    AgentHooksRow.rows(
+      detection: agentDetection, installed: installedAgentHooks, stale: staleAgentHooks)
   }
 
   /// The file as it would be written, for the row that shows it.

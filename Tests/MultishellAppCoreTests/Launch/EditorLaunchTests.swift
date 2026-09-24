@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import TestScratch
 import Testing
 
 @testable import MultishellAppCore
@@ -27,6 +28,35 @@ struct EditorLaunchTests {
         == .runInBackground("/opt/homebrew/bin/code '/Users/me/Work/repo trees/feat'"))
     #expect(action("vscode", found: nil) == nil, "in the catalogue, not installed")
     #expect(action("no-such-editor") == nil)
+  }
+
+  @Test func anEditorShimGetsAWorktreePathWithABangUnderInteractiveTcsh() throws {
+    let tcsh = "/bin/tcsh"
+    guard FileManager.default.isExecutableFile(atPath: tcsh) else { return }
+    let home = try Scratch.directory("editor-shim")
+    defer { Scratch.remove(home) }
+    let worktree = URL(fileURLWithPath: "/code/a!b")
+    let shim = URL(fileURLWithPath: "/bin/echo")
+    guard
+      case .runInBackground(let line) = EditorLaunch.action(
+        editorID: "vscode", found: .init(application: nil, command: shim), customTemplate: "",
+        directory: worktree, shell: zsh, exec: "exit")
+    else {
+      Issue.record("the shim runs in the background")
+      return
+    }
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: tcsh)
+    process.arguments = ["-f", "-i", "-c", line]
+    process.environment = ["PATH": "/usr/bin:/bin", "HISTFILE": "", "HOME": home.path]
+    let output = Pipe()
+    process.standardOutput = output
+    process.standardError = output
+    try process.run()
+    let text = String(decoding: output.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+    process.waitUntilExit()
+
+    #expect(text == worktree.path + "\n")
   }
 
   @Test func aTerminalEditorIsATabRunningItInTheWorktreeWithAShellAfter() {

@@ -19,17 +19,20 @@ Application support on macOS, the XDG config directory on Linux.
 - **A file written before columns existed names no group**, and carries a key
   for the active tab this build has no property for; the repair gathers each
   worktree's ungrouped tabs into the one column they were saved as.
+- **An agent id the catalogue retired is forgotten on load**: its tab comes back
+  a plain shell and a preference naming it falls back, since a kept id raised an
+  install alert at every launch. `WorkspaceRetiredAgentsTests` holds it.
 - **A broken state file is moved aside with a timestamp.** Where the move itself
-  failed the original is still in place and nothing saves over it
-  (state-and-store.md).
+  failed the original is still in place and nothing saves over it; once the user
+  moves it away, that session saves again (state-and-store.md).
 - **Themes are JSON in a themes folder**, with the examples beside them not
   loaded.
 - **The socket is mode 0600**, bound under a staging name and renamed into
   place, so it is never briefly world-readable: the mode comes from the umask at
   bind, and umask is process-wide.
-- **So the longest path that binds is shorter than `sun_path`**, and the refusal
-  names the socket rather than the staging file, which is no concern of the
-  user's.
+- **So the longest path that binds is two bytes shorter than `sun_path`
+  allows**, the `.b` of the staging name, and the refusal names the socket
+  rather than the staging file, which is no concern of the user's.
 - **A lock file beside it is never removed.** A running instance holds an
   exclusive record lock on it while it listens, which is what tells a second
   launch the socket has a live owner (state-and-store.md).
@@ -41,12 +44,14 @@ Application support on macOS, the XDG config directory on Linux.
   lines reference that path through the home directory.
 - **The integration directory is generated at launch**; the drops directory
   holds files a drag promised rather than handed over, swept at launch once old.
-- **The merged Ghostty config lives in the temporary directory**, read once at
-  load, written by the wrapper and cleared at launch and quit by the copy
-  holding the instance socket (terminals.md).
+- **The merged Ghostty config lives in the temporary directory**, written by the
+  wrapper when the first terminal opens and again when the app comes to the
+  front with the user's files changed, and cleared at launch and quit by the
+  copy holding the instance socket (terminals.md).
 - **Agent hooks are written only when asked**, each in that agent's own config
-  directory. Three of them keep a copy of the file as it was the first time; the
-  other two are files of ours alone and are deleted to remove.
+  directory; launch leaves alone even one an older build wrote (agents.md).
+  Three of them keep a copy of the file as it was the first time; the other two
+  are files of ours alone and are deleted to remove.
 - **Sidebar width lives in user defaults.**
 - **A repository may carry `.multishell.json` at its root**, written by Export,
   with the same keys as a project's settings. Read at launch, when a project's

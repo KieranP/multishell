@@ -7,8 +7,6 @@ import Testing
 /// tab is a view and untested; everything it says is here.
 @Suite
 struct NotificationSettingsTests {
-  /// One toggle per state a notification can be asked for, and no row for a
-  /// state that never raises one.
   @Test func thereIsARowPerStateANotificationCanBeAskedFor() {
     #expect(NotificationSettings.rows.map(\.state) == NotificationPreference.notifiableStates)
     #expect(NotificationSettings.rows.map(\.title) == ["Waiting for input", "Failed", "Done"])
@@ -32,9 +30,8 @@ struct NotificationSettingsTests {
       "waiting is never short")
   }
 
-  /// A refusal replaces the note rather than sitting beside it: the three
-  /// toggles above do nothing until it is lifted, and where to lift it is
-  /// the only thing worth saying then.
+  /// The three toggles do nothing until a refusal is lifted, so where to lift it
+  /// is all the note says then.
   @Test func aRefusalReplacesTheNoteAndSaysWhereToLiftIt() {
     let place = "System Settings > Notifications"
     let refused = NotificationSettings.note(for: .refused, settingsLocation: place)
@@ -49,9 +46,8 @@ struct NotificationSettingsTests {
       "a desktop with no such place is not sent to one")
   }
 
-  /// Only a desktop that asks says it will: a notification daemon that
-  /// posts without permission answers `unavailable`, and a page there would
-  /// promise a dialog nobody will see.
+  /// A notification daemon that posts without permission answers `unavailable`,
+  /// and a page there would promise a dialog nobody will see.
   @Test func onlyAnUnansweredPermissionPromisesToAsk() {
     #expect(NotificationSettings.note(for: .notAsked, settingsLocation: nil).contains("Permission"))
     for settled in [NotificationAuthorization.allowed, .unavailable] {
@@ -99,9 +95,8 @@ struct NotificationAuthorizationTests {
     #expect(h.notifier.authorizationRequests == 1, "one going off is not one going on")
   }
 
-  /// A refusal is asked again the next time a state goes on: macOS answers
-  /// from what it settled without showing its dialog, and the page needs
-  /// the answer to say so.
+  /// macOS answers a repeat request from what it settled, without its dialog,
+  /// and the page needs that answer to show the refusal.
   @Test func aRefusalIsShownAndAskedAgainOnTheNextToggle() async {
     let h = Harness()
     h.notifier.answer = .refused
@@ -116,9 +111,8 @@ struct NotificationAuthorizationTests {
     #expect(h.notifier.authorizationRequests == 2)
   }
 
-  /// Coming back to the app is the return from the system settings a
-  /// refusal points at, so the answer is read again there and the page does
-  /// not sit on a refusal that has just been lifted.
+  /// Coming back to the app is the return from the system settings a refusal
+  /// points at, so the page does not sit on a refusal just lifted.
   @Test func comingBackToTheFrontReadsTheAnswerAgain() async {
     let h = Harness()
     h.notifier.answer = .refused
@@ -133,8 +127,6 @@ struct NotificationAuthorizationTests {
     #expect(h.notifier.authorizationRequests == 0, "reading is not asking")
   }
 
-  /// What the system settings say now, without asking for anything: the
-  /// page reads it as it opens.
   @Test func thePageReadsTheStandingAnswerWithoutAsking() async {
     let h = Harness()
     h.notifier.answer = .refused

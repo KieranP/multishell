@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import MultishellProcess
 
 /// What a terminal receives when files are dropped: quoted absolute paths for
 /// a shell, relative mentions for an agent. A trailing space, never a newline.
@@ -8,7 +9,9 @@ enum FileDrop {
     for urls: [URL], relativeTo directory: URL, mentionPrefix: String? = nil
   ) -> String {
     let words = urls.filter { isTypable($0) }.map { url in
-      guard let mentionPrefix else { return ShellQuoting.quote(url.standardizedFileURL.path) }
+      guard let mentionPrefix else {
+        return AnyShellQuoting.quote(url.standardizedFileURL.path)
+      }
       return mentionPrefix + escaping(path(of: url, relativeTo: directory))
     }
     guard !words.isEmpty else { return "" }

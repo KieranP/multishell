@@ -23,10 +23,8 @@ enum DestructiveAlert {
     return alert
   }
 
-  /// AppKit takes Return off a destructive button at every layout, so it
-  /// goes back on after the last of them, which is presenting the alert.
-  /// Answering Return makes it the default button, which AppKit paints in
-  /// the accent colour, so the bezel is painted back.
+  /// AppKit takes Return off a destructive button at every layout and paints a
+  /// default one blue; see Docs/design/smaller-decisions.md.
   static func leadTakesReturn(_ alert: NSAlert) {
     guard let lead = alert.buttons.first, lead.hasDestructiveAction else { return }
     lead.keyEquivalent = "\r"

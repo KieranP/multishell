@@ -18,18 +18,24 @@ What has no other file to go in. Newest at the bottom.
   AppKit is stricter still: `layout()` takes Return off any button with
   `hasDestructiveAction`, which is how the platform keeps a destructive action
   from being the default. `DestructiveAlert` builds the alert and puts the key
-  back after presenting, the last layout there is. A default button is drawn in
-  the accent colour whatever its role, so the bezel is painted `.systemRed`
-  there too, and again a turn later: the sheet lays out once more on its way up,
-  and until it does the button opens blue and only flashes red as it is pressed.
+  back after presenting, the last layout there is. AppKit draws a default button
+  in the accent colour whatever its role, so `DestructiveAlert` paints the bezel
+  `.systemRed` there too, and again a turn later: the sheet lays out once more
+  on its way up, and until it does the button opens blue and only flashes red as
+  it is pressed.
+- **macOS 27's alert button keeps no bezel colour**, and draws a destructive one
+  red itself, the one taking Return solid in a key window and the rest pale; so
+  the test reads the drawing there, offscreen.
 - **Clearing the pending value takes the sheet down with it.** A worktree
   removed outside the app clears `pendingRemoval`, and a sheet left standing
   would confirm a removal on a path git no longer knows (worktrees.md). The
-  answer is dropped when that happens, rather than read as a Cancel.
+  `destructiveAlert` modifier drops the answer when that happens, rather than
+  reading it as a Cancel.
 - **The shared-settings question stays a SwiftUI dialog**: nothing it offers is
   destructive, so the blue default is right, and Return declines. Its other
   button runs what a repository committed, nobody asked for the question, and a
   keystroke meant for the window behind must not be what trusts it.
 - **The quit alert is AppKit's own.** `NSAlert` gives Return to its first
-  button, and Escape only to one titled exactly "Cancel", so the key equivalent
-  is set by hand: a translated title would leave that alert with no way out.
+  button, and Escape only to one titled exactly "Cancel", so the app sets the
+  key equivalent by hand: a translated title would leave that alert with no way
+  out.

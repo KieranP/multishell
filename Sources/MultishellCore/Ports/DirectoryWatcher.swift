@@ -8,8 +8,8 @@ public protocol DirectoryWatcher: AnyObject {
   /// only the project they belong to; empty where the watcher cannot say.
   var onChange: (@MainActor ([URL]) -> Void)? { get set }
 
-  /// Replaces the watched set. Paths that do not exist yet are skipped;
-  /// call again after they appear.
-  func watch(_ directories: [URL])
+  /// Replaces the watched set on return, unless a later call began meanwhile.
+  /// A path not there yet is skipped; call again once it is.
+  func watch(_ directories: [URL]) async
   func stop()
 }

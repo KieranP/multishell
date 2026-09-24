@@ -62,7 +62,7 @@ struct DetailView: View {
         .foregroundStyle(theme.textTertiary)
       Text(model.displayName(of: worktree))
         .font(.system(size: model.metrics.mono, weight: .medium, design: .monospaced))
-        .foregroundStyle(theme.ansiRGB[6].color)
+        .foregroundStyle(theme.ansiRGB(6).color)
         .lineLimit(1)
         .layoutPriority(1)
       // A renamed worktree still says which branch it is: every git command
@@ -83,10 +83,7 @@ struct DetailView: View {
       Spacer(minLength: 8)
       actionsMenu(worktree, theme: theme)
     }
-    .padding(.horizontal, 14)
-    .frame(height: UIMetrics.headerHeight)
-    .background(theme.chromeColor)
-    .titleBarDoubleClick()
+    .windowHeader(fill: theme.chromeColor)
   }
 
   /// Everything that acts on the selected worktree, in one place a new user
@@ -104,7 +101,7 @@ struct DetailView: View {
     .menuIndicator(.hidden)
     .fixedSize()
     .foregroundStyle(theme.textSecondary)
-    .help(t("actions.worktree-actions"))
-    .accessibilityLabel(t("actions.worktree-actions"))
+    .help(t("action.worktree-actions"))
+    .accessibilityLabel(t("action.worktree-actions"))
   }
 }

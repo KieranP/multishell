@@ -8,6 +8,12 @@ at the bottom.
   quoting, a stable protocol and one place for each agent's mapping.
 - **Fields are only ever added.** A report naming an unknown session is dropped,
   not matched by directory.
+- **Every string off the channel is bounded**, any process of the user's being
+  able to write a line. An id, an agent or a command word past 128 characters is
+  dropped rather than cut, a cut one naming something else, and a worker's id
+  past it counts as an unnamed worker; a path past 1024 bytes is dropped; a
+  worker's kind is cut to 64 and the message to 500, both being display only; a
+  Stop names at most 64 shells.
 - **One naming only a directory marks the deepest worktree containing it**, so
   an agent started in a subfolder says that folder, and a worktree nested in
   another is the one meant.
@@ -21,8 +27,9 @@ at the bottom.
   usually being started by hand.
 - **It moves a dot, raises a notification and decides how a dropped file is
   written.** It opens no tab, runs no command and puts no text at a prompt.
-- **Shell reports run inline**, or a fast command's finished overtakes its
-  started.
+- **Shell reports never go in the background**, or a fast command's finished
+  overtakes its started: zsh sends each inline, bash down one pipe to its relay
+  (terminals.md).
 - **Four agents share one hook line and one parser**, each running a command at
   every lifecycle event with the same three fields. What differs is the file,
   what each calls an event and how that file spells a hook.
@@ -32,8 +39,20 @@ at the bottom.
   asked in the spelling whose payload names its event.
 - **One counts its timeout in milliseconds**, where the obvious number would
   kill the helper before it reached the socket.
+- **One clamps its two exit events' hooks to three seconds** and warns at every
+  start where one asks for more, so those two are written as three.
 - **One reads a directory of hook files rather than a settings file**, so its
   file is ours alone: written whole, deleted to remove, no copy kept.
+- **A file of ours alone is rewritten only by Update**, as a settings file is.
+  Rewriting at launch one an older build wrote took a hand edit with it, the
+  file carrying no sign of which it was. Cost: a fix in that file reaches only
+  those who press Update.
+- **A settings file of the user's holding any hook of ours counts as
+  installed**, so one an older build wrote, short an event added since, reads as
+  needing Update rather than as not installed.
+- **A file of the user's is never rewritten unasked**, the write sorting its
+  keys and re-indenting it; the row offers Update instead, which takes ours out
+  and puts this build's in, a hook of theirs inside our group kept.
 - **One reports to no command at all**, only a plugin seeing a session go idle,
   so it is given a plugin calling the helper as any script would.
 - **That one is also the only agent that says a permission was answered**,
@@ -122,7 +141,8 @@ at the bottom.
   the user's this cannot put back, so Add refuses and names the event.
 - **Remove takes back what Add put in and nothing else**, inside a group as well
   as between them: a group holding one of ours beside one of theirs was written
-  by hand, so ours are stripped and the group stands.
+  by hand, so ours are stripped and the group stands. So too a group that is
+  also a bare hook, whichever half is ours.
 - **Dropping at group granularity read as Remove working**, the file even
   shrinking, while an audit hook someone had added to our entry went with it.
 - **Numbers are written back as the user spelled them.** Parsed to doubles, a
@@ -145,6 +165,9 @@ at the bottom.
   whichever agent the user already chose.
 - **Cost: a machine with none installed gets an empty picker and no help filling
   it.**
+- **An agent dropped from the catalogue is forgotten on load**: its tab comes
+  back a plain shell and a preference naming it is cleared. Kept, the id raised
+  an install alert at every run.
 - **The Agents board is a roster, not a queue.** Every open pane has a card
   while it is open, moving between columns as its state moves, so nothing is
   hidden by having been looked at.
@@ -181,6 +204,11 @@ at the bottom.
   without a report nothing can know an agent is at a prompt. Not gated on hooks
   being installed: one agent's being in place says nothing about the agent at
   the prompt.
+- **The board is built once and held until anything the build read changes**: it
+  reads nine pieces of state, so a title change in one pane rebuilt every card
+  on every render. The build runs under observation tracking rather than a
+  hand-kept list of inputs, which would drift from the sidebar the first time
+  someone added one. Cost: any store write drops it, a focus change included.
 - **Newest first everywhere**, so an arriving card pushes the rest down a place
   and nothing else about a card moves on its own.
 - **Columns share the room down to a floor and the board scrolls past it**, a
@@ -218,11 +246,14 @@ at the bottom.
 - **A flag line is not shell text.** Splitting it and quoting each word means a
   branch name someone else pushed cannot run anything: substitutions, backticks
   and semicolons all arrive as literal characters.
-- **Checked against a real zsh by random values** over quotes, backslashes,
-  shell metacharacters, a space and a newline: every one arrived as the one
-  argument meant and none ran.
+- **Checked against real sh, zsh, bash and tcsh** with a substitution, backticks
+  and a semicolon in the branch: each arrived as the one argument meant and none
+  ran. An earlier check by random values ran against zsh under the old quoting.
 - **The values are not only branches**, which git keeps tame, but a worktree
   name the user typed and paths that are whatever the directories are called.
+- **Each word is quoted the one way every shell reads alike**, a `!` and a
+  backslash outside the quotes: the login shell running the line may be tcsh or
+  fish, which read either inside single quotes (terminals.md).
 - **The same quoting is why a home shortcut or a glob in a flag line is
   literal**, which is the cost: a path there means a placeholder or the custom
   command, which is raw shell by definition.
@@ -255,6 +286,11 @@ at the bottom.
   on and its end takes it off.
 - **The count is how many workers those places stand for**, which is more than
   the places only where an agent names two workers alike.
+- **The roster holds 64 places, and one more shared by every worker past them**,
+  which keeps their ids and counts, so the count stays true, a tool call is not
+  a new worker and a stray end takes nothing. Dropping the oldest paid a Done
+  while it still ran. Cost: a shell past 64 is dropped, its pid having nowhere
+  to go in a shared place, and so is a worker past 1,024 ids.
 - **Each carries its kind and when it started**, stamped by the model's one
   clock as a state is.
 - **Not the tool it is in, though the payload says**: shown, it changed with
@@ -267,8 +303,9 @@ at the bottom.
 - **The same link makes the reverse meeting happen**, so a start and an end also
   write the count beside the object; a tool call writes none, or each would put
   another unnamed worker on an older app's roster.
-- **An interrupt fires no hook and the workers it killed send no stop**, so an
-  interrupted fan-out left its chip standing.
+- **An interrupt fires no hook, Codex's aside, and the workers it killed send no
+  stop**, so an interrupted fan-out left its chip standing. Codex's `Interrupt`
+  reports Idle, which clears the pane and its roster.
 - **What says the last turn is over is the prompt that starts the next**, so
   that event empties the roster, nothing owed and nothing lifted, before its own
   Working lands.
@@ -285,8 +322,9 @@ at the bottom.
 - **Provided the worker's start was seen**: one first seen at a tool call after
   the Done was announced lifts it and announces it again, the app having no way
   to tell a late worker from a new one.
-- **A Failed comes back unannounced**, having been announced when it happened,
-  and only a worker's prompt displaces it, mere work leaving it standing.
+- **A Failed comes back unannounced and as old as it was**, having been
+  announced when it happened, and only a worker's prompt displaces it, mere work
+  leaving it standing.
 - **The agent's own Working takes the dot back for itself**, so the last worker
   out leaves it, and it gives up that claim even where another thread's prompt
   holds the dot, or a Done would fire in the middle of a turn.
@@ -328,18 +366,29 @@ at the bottom.
 - **So the pane keeps its own conversation's id**, taken from the first report,
   a session start or a Stop, and a report under any other id is a worker keyed
   by it. Its end names that same id as the worker's, so the two meet.
+- **A worker's end also names the conversation it ran under**, so a pane that
+  heard a worker first, opened or launched mid-subagent, takes that one as its
+  own there rather than counting the parent as a worker until its Stop.
 - **Its Stop is told apart without that memory**: the transcript it names is
   filed under its parent's id and never names its own. The helper drops it, the
   end following at once.
 - **Not by the transcript's directory**, though that is where the id sits today:
   another agent names the file instead, and under that layout the directory rule
-  would have dropped every one of the pane's own Stops.
+  would have dropped every one of the pane's own Stops. A path naming the id
+  anywhere is the pane's, so a changed layout costs a Done mid-turn, never every
+  Done.
 - **Its start is not asked for**: it arrives in the agent's other spelling,
   which names no id, and one keyed by name alone would never be ended. The
   worker goes on at its own first event instead, so the chip shows no kind.
 - **A new conversation of the pane's that sends no session start reads as a
   worker until its Stop**, whose own transcript says it is the pane's; the place
   it held goes then. Cost: Working all that turn, which it was anyway.
+- **A session start over Working or Waiting moves nothing**: one agent's prompt
+  mode sends it after the first prompt, and its idle cleared Working until the
+  first tool call. Over anything else it clears, as a fresh session should.
+- **The shell's own Working is not one of those**: it stands from the moment the
+  user types the agent's name, so a start held off by it left every agent
+  launched from a prompt Working until its first turn ended.
 - **A start repeated under one id counts its starts and takes as many ends**,
   the alternative being a Done paid while the second is still working; the chip
   counts workers rather than places, so it says two where the list holds one.
@@ -357,9 +406,20 @@ at the bottom.
 - **Both the old and new spellings of that idle end a child**, the old one being
   deprecated: reading only it in the parent would have left the pane Working for
   good once it is dropped.
+- **The parent's idle comes in both spellings too, so the plugin sends its Done
+  once**: the model cannot drop a second Done, the shell's own report of a
+  finished command arriving after the terminal's in just that shape.
+- **The parent's busy status clears that**, reporting nothing: a turn that never
+  passed the message hook otherwise ended in no Done at all.
 - **An ended child's id is kept, marked rather than deleted**, so a second end
   or a late permission of its own is not read as the parent's; a busy status is
   the one thing that puts it back.
+- **A child the plugin never saw created is asked about**: a task resumed by its
+  id reuses its session and publishes no creation, so its first message read as
+  the parent's prompt. The session's parent is looked up once per id, any
+  failure leaving it the parent's. Every hook for that id shares the first one's
+  one-second bound, so a lookup that never settles costs one hook a second, not
+  every hook; an answer after the bound still puts the child back.
 - **Ended ids are kept in their own capped list, oldest first**, the cap being
   on that list rather than on the map: gated on the map, a child cycling busy
   and idle grew the list without bound.

@@ -6,6 +6,10 @@ struct MultishellCommands: Commands {
   let model: AppModel
 
   var body: some Commands {
+    CommandGroup(replacing: .appInfo) {
+      Button(t("menu.about")) { AboutPanel.show() }
+    }
+
     // Only the find items carry `.disabled`: Commands are not re-evaluated
     // reliably, so every action is also a no-op when it does not apply.
     CommandGroup(replacing: .newItem) {

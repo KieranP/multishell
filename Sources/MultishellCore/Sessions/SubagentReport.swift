@@ -15,6 +15,9 @@ public struct SubagentReport: Codable, Hashable, Sendable {
   /// naming one, from a build before workers had names.
   public static let anonymousID = ""
 
+  /// Display only, so cut rather than dropped, as the message is.
+  static let maximumTypeLength = 64
+
   public var id: String
   /// What the agent calls the kind: `Explore`, `Plan`, a custom agent's name.
   public var type: String?
@@ -24,5 +27,17 @@ public struct SubagentReport: Codable, Hashable, Sendable {
     self.id = id
     self.type = type
     self.phase = phase
+  }
+
+  /// Any process may write a line, so the reader bounds both strings. An id
+  /// past the report's limit is no worker's and counts as an unnamed one.
+  public init(from decoder: any Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    let id = try container.decode(String.self, forKey: .id)
+    self.id = id.count <= SessionStateReport.maximumIdentifierLength ? id : Self.anonymousID
+    type = try container.decodeIfPresent(String.self, forKey: .type).map {
+      $0.count > Self.maximumTypeLength ? $0.prefix(Self.maximumTypeLength) + "…" : $0
+    }
+    phase = try container.decode(Phase.self, forKey: .phase)
   }
 }

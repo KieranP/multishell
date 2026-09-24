@@ -5,9 +5,9 @@ CONFIG ?= debug
 APP     = build/Multishell.app
 INSTALL_DIR ?= /Applications
 
-# Several bounds in the suite are wall-clock (ProcessRunnerTests runs 96
-# children under one), and what makes them fail is a second suite running at
-# the same time in another worktree. lockf queues that run instead of letting
+# Several bounds in the suite are wall-clock (waitUntil gives up after 8 s),
+# and what makes them fail is a second suite running at the same time in
+# another worktree. lockf queues that run instead of letting
 # the two oversubscribe the machine; -k keeps the file, which is what gives
 # the queue its order. `make test` in a second worktree therefore waits,
 # silently, until the first has run. Where there is no lockf, Linux included,
@@ -16,6 +16,15 @@ TEST_LOCK_FILE ?= $(HOME)/Library/Caches/multishell-test.lock
 LOCKF := $(shell command -v lockf 2>/dev/null)
 ifneq ($(LOCKF),)
 LOCK = $(LOCKF) -k "$(TEST_LOCK_FILE)"
+endif
+
+# Tests may write only the build trees and the temporary directories. Why
+# --disable-sandbox, and where it runs unconfined: Docs/develop/build.md.
+SANDBOX_EXEC := $(shell command -v sandbox-exec 2>/dev/null)
+ifneq ($(SANDBOX_EXEC),)
+SWIFT_TEST = $(SANDBOX_EXEC) -D REPO="$(CURDIR)" -D HOME="$(HOME)" -f Scripts/test-sandbox.sb swift test --skip-build --disable-sandbox
+else
+SWIFT_TEST = swift test --skip-build
 endif
 
 .PHONY: build release test test-app lint format prettier install run clean signing-identity
@@ -38,9 +47,9 @@ release:
 ## half for nothing.
 test:
 	swift build --build-tests
-	$(LOCK) swift test --skip-build
+	$(LOCK) $(SWIFT_TEST)
 	swift build --build-tests --package-path Apps/macOS
-	$(LOCK) swift test --skip-build --package-path Apps/macOS
+	$(LOCK) $(SWIFT_TEST) --package-path Apps/macOS
 
 ## Compile the macOS app without bundling; catches SwiftUI errors fast.
 test-app:

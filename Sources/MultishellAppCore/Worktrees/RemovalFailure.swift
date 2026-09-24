@@ -46,6 +46,11 @@ enum RemovalFailure: Equatable, Sendable {
       return .alert(
         title: presented.title, message: presented.message + kept, retry: nil,
         worktreeRemoved: true)
+    case let failure as NotTheCheckout:
+      // Nothing was removed and nothing is worth retrying until it moves.
+      let presented = PresentedError(failure)
+      return .alert(
+        title: presented.title, message: presented.message, retry: nil, worktreeRemoved: false)
     case let failure as WorktreeForgetFailure:
       // The directory is in the Trash, so there is nothing to restore; the
       // refresh shows the record git kept, directory missing.

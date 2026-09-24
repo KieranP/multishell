@@ -12,7 +12,7 @@ just never updates the state indicator dot.
 | macOS           | 14 Sonoma and newer             |
 | Other platforms | None                            |
 | Build           | Xcode 26 or newer               |
-| git             | 2.36 or newer                   |
+| git             | 2.36 or newer advised           |
 | Release         | Source only, no notarised build |
 | Language        | English                         |
 
@@ -21,6 +21,10 @@ just never updates the state indicator dot.
 universal. libghostty ships both slices; only Apple silicon has been built and
 run here. Only Xcode 27 has been built with, the floor of 26 resting on
 `xcodebuild` behaving there as it does in 27; see BUGS.md.
+
+A git older than 2.36 has no `-z` for `git worktree list`, so the app reads the
+newline form instead, and a worktree whose path holds a newline shows a
+directory that does not exist.
 
 ## Shells
 
@@ -33,7 +37,14 @@ run here. Only Xcode 27 has been built with, the floor of 26 resting on
 | Others             | No         | No            | No                  |
 
 fish and nu are found and offered in the shell picker, and run as terminals, but
-nothing is injected into them.
+nothing is injected into them. Under nu, a dropped file whose name holds a
+single quote is pasted as a line nu cannot read.
+
+A project hook runs through the project's shell with its startup files read:
+interactive and login for sh, bash, zsh, dash, ksh, mksh and fish, interactive
+only for csh and tcsh, which skips `.login`. The first failing line stops it
+except in fish, csh and tcsh. A shell not in that list, nu for one, runs it
+through `/bin/sh` without its startup files.
 
 Your shell configuration continues to work, and no file of yours is written to.
 Click-to-move puts the cursor where you click in the prompt, in terminals that
@@ -67,9 +78,11 @@ Waiting clears then rather than at the next tool call.
 | OpenCode    | `~/.config/opencode/plugin/multishell.js` | Yes        |
 
 A file of yours is merged into, with a `.before-multishell` copy kept the first
-time and Remove taking out only our own entries. One holding comments, as
-Gemini's may, is refused rather than rewritten; add the entries by hand. A file
-of ours alone is written whole and deleted again.
+time and Remove taking out only our own entries. One holding comments or a
+trailing comma, as Gemini's may, is refused rather than rewritten; add the
+entries by hand. A file of ours alone is written whole and deleted again. Where
+either holds hooks an older build wrote, Settings > Agents > Hooks offers
+Update, which puts this build's in their place. Nothing rewrites them unasked.
 
 An agent is listed once its executable is on the login shell's PATH, and a saved
 tab resumes it, or runs the custom line again. Typing an agent at a supported

@@ -45,6 +45,9 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   public var subagent: SubagentReport?
   /// Set on the prompt that starts a turn, which empties the roster.
   public var startsTurn: Bool?
+  /// Set on an agent's session start, which one agent sends after its first
+  /// prompt; see Docs/design/agents.md.
+  public var startsSession: Bool?
   /// The shells the agent left running at its Stop, by pid; their exit is
   /// the only end they report. See Docs/design/agents.md.
   public var backgroundShells: [Int32]?
@@ -70,6 +73,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     case subagents
     case subagent
     case startsTurn = "turn"
+    case startsSession = "start"
     case backgroundShells = "shells"
     case resumesAfterWorkers = "resumes"
     case conversationID = "conversation"
@@ -89,6 +93,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     subagents: Int? = nil,
     subagent: SubagentReport? = nil,
     startsTurn: Bool? = nil,
+    startsSession: Bool? = nil,
     backgroundShells: [Int32]? = nil,
     resumesAfterWorkers: Bool? = nil,
     conversationID: String? = nil
@@ -96,18 +101,19 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     self.version = Self.protocolVersion
     self.state = state
     self.sessionID = sessionID
-    self.cwd = cwd
+    self.cwd = Self.path(cwd)
     self.pid = pid
     self.message = Self.trimmed(message)
     self.duration = Self.bounded(duration)
-    self.agent = agent
+    self.agent = Self.identifier(agent)
     self.command = Self.commandWord(command)
     self.isShell = isShell
     self.silent = silent
     self.subagents = subagents ?? Self.count(of: subagent)
     self.subagent = subagent
     self.startsTurn = startsTurn
-    self.backgroundShells = backgroundShells
+    self.startsSession = startsSession
+    self.backgroundShells = backgroundShells.map { Array($0.prefix(Self.rosterLimit)) }
     self.resumesAfterWorkers = resumesAfterWorkers
     self.conversationID = Self.identifier(conversationID)
   }
@@ -127,20 +133,22 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     version = try container.decode(Int.self, forKey: .version, or: 1)
     state = try container.decode(SessionState.self, forKey: .state)
     sessionID = try container.decodeIfPresent(UUID.self, forKey: .sessionID)
-    cwd = try container.decodeIfPresent(String.self, forKey: .cwd)
+    cwd = Self.path(try container.decodeIfPresent(String.self, forKey: .cwd))
     pid = try container.decodeIfPresent(Int32.self, forKey: .pid)
     // Trimmed on the way in as well as out: any process of the user's may
     // write a line, so the cap is the reader's rule.
     message = Self.trimmed(try container.decodeIfPresent(String.self, forKey: .message))
     duration = Self.bounded(try container.decodeIfPresent(Double.self, forKey: .duration))
-    agent = try container.decodeIfPresent(String.self, forKey: .agent)
+    agent = Self.identifier(try container.decodeIfPresent(String.self, forKey: .agent))
     command = Self.commandWord(try container.decodeIfPresent(String.self, forKey: .command))
     isShell = try container.decodeIfPresent(Bool.self, forKey: .isShell)
     silent = try container.decodeIfPresent(Bool.self, forKey: .silent)
     subagents = try container.decodeIfPresent(Int.self, forKey: .subagents)
     subagent = try container.decodeIfPresent(SubagentReport.self, forKey: .subagent)
     startsTurn = try container.decodeIfPresent(Bool.self, forKey: .startsTurn)
+    startsSession = try container.decodeIfPresent(Bool.self, forKey: .startsSession)
     backgroundShells = try container.decodeIfPresent([Int32].self, forKey: .backgroundShells)
+      .map { Array($0.prefix(Self.rosterLimit)) }
     resumesAfterWorkers = try container.decodeIfPresent(Bool.self, forKey: .resumesAfterWorkers)
     conversationID = Self.identifier(
       try container.decodeIfPresent(String.self, forKey: .conversationID))
@@ -166,7 +174,15 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     guard let word = command?.split(whereSeparator: \.isWhitespace).first,
       let name = word.split(separator: "/").last
     else { return nil }
-    return String(name)
+    return identifier(String(name))
+  }
+
+  /// macOS's PATH_MAX; a longer one is no directory a worktree could be.
+  static let maximumPathLength = 1024
+
+  private static func path(_ path: String?) -> String? {
+    guard let path, path.utf8.count <= maximumPathLength else { return nil }
+    return path
   }
 
   /// A duration outside what a command could have taken is a writer's
@@ -180,6 +196,10 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   /// Longer than any agent's id, and dropped rather than cut: a cut one
   /// would name a different worker.
   static let maximumIdentifierLength = 128
+
+  /// The places a model's roster holds and the shells a report names, or an agent
+  /// never ending its workers or a Stop naming thousands grows it for good.
+  public static let rosterLimit = 64
 
   private static func identifier(_ id: String?) -> String? {
     guard let id, !id.isEmpty, id.count <= maximumIdentifierLength else { return nil }

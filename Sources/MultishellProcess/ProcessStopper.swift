@@ -1,13 +1,5 @@
 import Foundation
 
-/// Why a child was ended by this side rather than exiting on its own.
-public enum ProcessStop: Equatable, Sendable {
-  /// It was still running when `timeout` ran out.
-  case timedOut(after: Duration)
-  /// `ProcessStopper.stop()` was called: the user asked.
-  case stopped
-}
-
 /// A handle to end a running child: SIGHUP then SIGKILL, to the process
 /// group. Not SIGTERM, which an interactive bash or zsh ignores.
 public final class ProcessStopper: @unchecked Sendable {
@@ -72,6 +64,11 @@ public final class ProcessStopper: @unchecked Sendable {
   private static func end(_ process: Process) {
     guard process.isRunning else { return }
     let pid = process.processIdentifier
+    let hungUp = {
+      var now = timeval()
+      gettimeofday(&now, nil)
+      return now
+    }()
     // The group where the child leads one, which is how `Process` spawns it;
     // the child alone where the signal says it does not.
     let leadsGroup = kill(-pid, SIGHUP) == 0
@@ -82,8 +79,8 @@ public final class ProcessStopper: @unchecked Sendable {
         return
       }
       // The group, not the shell: a grandchild trapping SIGHUP outlives it.
-      // An empty group answers ESRCH, so what answers here is ours.
-      guard kill(-pid, 0) == 0 else { return }
+      // The pid may have been reused by then, so the group is checked first.
+      guard ProcessGroup.isStillOurs(hungUpAt: hungUp, group: pid) else { return }
       kill(-pid, SIGKILL)
     }
   }

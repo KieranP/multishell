@@ -44,7 +44,14 @@ extension Theme {
   /// The 16 ANSI colours, with any unparsable entry falling back to grey so
   /// a hand-edited theme file cannot leave a terminal unpaintable.
   public var ansiRGB: [RGB] {
-    ansi.map { HexColor.parse($0) ?? RGB(red: 128, green: 128, blue: 128) }
+    ansi.indices.map(ansiRGB)
+  }
+
+  /// One of them, parsing that one alone: a row draws a few, a render many.
+  public func ansiRGB(_ slot: Int) -> RGB {
+    let grey = RGB(red: 128, green: 128, blue: 128)
+    guard ansi.indices.contains(slot) else { return grey }
+    return HexColor.parse(ansi[slot]) ?? grey
   }
 
   public var backgroundRGB: RGB { HexColor.parse(background) ?? RGB(red: 0, green: 0, blue: 0) }

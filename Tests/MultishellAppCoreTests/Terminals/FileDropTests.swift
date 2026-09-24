@@ -20,6 +20,15 @@ struct FileDropTests {
     #expect(text == "'/repos/demo/My Notes.md' ")
   }
 
+  @Test func aBackslashEndingANameCannotCarryTheNextOutOfItsQuotes() {
+    let text = FileDrop.text(
+      for: [
+        URL(fileURLWithPath: #"/repos/demo/a\"#),
+        URL(fileURLWithPath: "/repos/demo/x; touch pwned; #"),
+      ], relativeTo: directory)
+    #expect(text == #"'/repos/demo/a'\\'' '/repos/demo/x; touch pwned; #' "#)
+  }
+
   @Test func anAgentGetsAMentionRelativeToTheSessionsDirectory() {
     let text = FileDrop.text(
       for: [URL(fileURLWithPath: "/repos/demo/Sources/App.swift")], relativeTo: directory,
@@ -60,9 +69,8 @@ struct FileDropTests {
     #expect(!text.contains("\n"), "a drop leaves something to read, it does not submit")
   }
 
-  /// A file name may hold a newline or an escape, and a terminal would act
-  /// on either: press Return at the prompt, read a sequence. No quoting
-  /// reaches through, so the file is left out of the drop.
+  /// A terminal acts on a newline or an escape in a name, pressing Return or reading a
+  /// sequence, and no quoting reaches through.
   @Test func aNameATerminalWouldActOnIsLeftOut() {
     let awkward = URL(fileURLWithPath: "/repos/demo/two\nlines.md")
     let plain = URL(fileURLWithPath: "/repos/demo/a.swift")
@@ -168,8 +176,6 @@ struct AppModelDropTests {
     #expect(h.engine.pasted.map(\.text) == ["\(h.main.path.path)/a.swift "])
   }
 
-  /// A tab opened as an agent tab still says so, for a build whose hooks
-  /// are not installed and which therefore hears no report.
   @Test func aDropFocusesThePaneItLandedIn() {
     let h = Harness()
     h.model.select(h.main)
@@ -185,10 +191,8 @@ struct AppModelDropTests {
     #expect(h.engine.focused.last == first)
   }
 
-  /// A promised drag's files land after the drop, and by then the user may
-  /// have moved on. The paste still belongs to the pane it was dropped on;
-  /// the focus does not, since taking it switches the worktree's tab and
-  /// saves that.
+  /// A promised drag's files land after the drop, when the user may have moved on. Taking
+  /// the focus then would switch the worktree's tab and save that.
   @Test func aDropWhoseFilesArrivedLateDoesNotTakeTheFocusBack() {
     let h = Harness()
     h.model.select(h.main)
@@ -235,9 +239,8 @@ struct AppModelDropTests {
     #expect(h.engine.pasted.isEmpty)
   }
 
-  /// The engine has the last word: a session whose surface never came up
-  /// takes no text, and the drag is told so rather than the files going
-  /// nowhere.
+  /// A session whose surface never came up takes no text, and the drag is told so rather
+  /// than the files going nowhere.
   @Test func aDropTheEngineCouldNotTakeIsRefused() {
     let h = Harness()
     h.model.select(h.main)

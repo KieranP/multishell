@@ -3,9 +3,6 @@ import Testing
 
 @testable import MultishellCore
 
-/// A worktree's tabs sit in columns side by side; see `TabGroup`. Every test
-/// here is one of the moves a drag or a menu item makes, and each must leave
-/// the workspace consistent.
 @Suite @MainActor
 struct TabGroupStoreTests {
   @Test func theFirstTabOfAWorktreeOpensAColumnForItself() {
@@ -38,9 +35,8 @@ struct TabGroupStoreTests {
     WorkspaceInvariants.check(store.workspace, "new column")
   }
 
-  /// Half each, the way splitting a pane halves the pane. Weights are
-  /// relative, so what matters is that the two are equal and the total is
-  /// what the one column had.
+  /// Weights are relative, so what matters is that the two are equal and the total is what the
+  /// one column had.
   @Test func aNewColumnTakesHalfTheWidthOfTheOneItLandedBeside() {
     let (store, _, worktree) = demoStore()
     store.openTab(in: worktree.id)
@@ -66,9 +62,8 @@ struct TabGroupStoreTests {
     #expect(store.workspace == before, "the same layout under a new id is not a move")
   }
 
-  /// A column of one tab dropped on another column's band is not the
-  /// no-move above: the column it left goes, and a new one arrives at the
-  /// side it was dropped on, which is how a column is moved along.
+  /// Unlike the no-move above, the column it left goes and a new one arrives at the side it was
+  /// dropped on, which is how a column is moved along.
   @Test func theOnlyTabOfAColumnMayStillLandBesideAnother() {
     let (store, _, worktree) = demoStore()
     let staying = store.openTab(in: worktree.id)!
@@ -115,9 +110,7 @@ struct TabGroupStoreTests {
     WorkspaceInvariants.check(store.workspace, "column emptied by a close")
   }
 
-  /// The column that slid into its place, or the last one where it was the
-  /// rightmost: what a tab strip does when the active tab closes, one level
-  /// out.
+  /// What a tab strip does when the active tab closes, one level out.
   @Test func theFocusGoesToTheColumnThatTookItsPlace() {
     let (store, _, worktree) = demoStore()
     let a = store.openTab(in: worktree.id)!
@@ -286,8 +279,6 @@ struct TabGroupStoreTests {
     WorkspaceInvariants.check(store.workspace, "worktree removed")
   }
 
-  /// Cycling stays inside one column: a strip of two tabs is a two-tab
-  /// cycle, whatever the other columns hold.
   @Test func tabCyclingStaysInsideItsColumn() {
     let (store, _, worktree) = demoStore()
     let a = store.openTab(in: worktree.id)!
@@ -317,8 +308,6 @@ struct TabGroupStoreTests {
     #expect(workspace.focusedGroup(in: worktree.id)?.id == first.id, "and a column that has gone")
   }
 
-  /// One tab per column is on screen, and only those: a tab behind another
-  /// in the same strip is not being looked at.
   @Test func onlyOneTabPerColumnCountsAsShown() {
     let (store, _, worktree) = demoStore()
     let hidden = store.openTab(in: worktree.id)!
@@ -378,8 +367,6 @@ struct ClosedTabSuccessionTests {
     #expect(column(of: worktree.id, in: store).activeTabID == tabs[1].id)
   }
 
-  /// The same rule for a tab dragged out of a strip: the column it left is a
-  /// strip that just lost its shown tab.
   @Test func draggingTheShownTabAwayLeavesItsNeighbourShowing() {
     let (store, _, worktree) = demoStore()
     let tabs = (0..<4).map { _ in store.openTab(in: worktree.id)! }
@@ -392,8 +379,6 @@ struct ClosedTabSuccessionTests {
     WorkspaceInvariants.check(store.workspace, "dragged shown tab out")
   }
 
-  /// The same again for a tab dropped on another column's strip, the third
-  /// way a column loses the tab it was showing.
   @Test func droppingTheShownTabOnAnotherColumnLeavesItsNeighbourShowing() {
     let (store, _, worktree) = demoStore()
     let tabs = (0..<4).map { _ in store.openTab(in: worktree.id)! }

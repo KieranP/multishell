@@ -18,19 +18,40 @@ extension AppModel {
 
   /// Entry point from the UI, asking first unless the settings have settled
   /// both questions. Nothing while an operation is already running there.
-  public func requestRemoval(of worktree: Worktree) {
-    guard worktree.isRemovable, !isBusy(worktree.id) else { return }
-    switch PendingWorktreeRemoval.decide(
+  /// The task ends once the dialog is up or the removal is over.
+  @discardableResult
+  public func requestRemoval(of worktree: Worktree) -> Task<Void, Never>? {
+    guard worktree.isRemovable, !isBusy(worktree.id) else { return nil }
+    if case .remove(let deletingBranch) = removalDecision(for: worktree) {
+      return Task { await removeWorktree(worktree, deletingBranch: deletingBranch) }
+    }
+    latestRemovalRequest = worktree.id
+    guard removalReads.insert(worktree.id).inserted else { return nil }
+    // Any row's status may be as old as the pace allows, and the dialog,
+    // built once, warns of the changed files that status counts.
+    return Task {
+      await refreshStatus(of: worktree.id, forced: true)
+      removalReads.remove(worktree.id)
+      let isLatest = latestRemovalRequest == worktree.id
+      if isLatest { latestRemovalRequest = nil }
+      // A late read must not swap the dialog up, or a newer click's, for its own.
+      guard isLatest, pendingRemoval == nil, let current = workspace.worktree(worktree.id),
+        !isBusy(current.id)
+      else { return }
+      switch removalDecision(for: current) {
+      case .ask(let pending): pendingRemoval = pending
+      case .remove(let deletingBranch):
+        await removeWorktree(current, deletingBranch: deletingBranch)
+      }
+    }
+  }
+
+  private func removalDecision(for worktree: Worktree) -> PendingWorktreeRemoval.Decision {
+    PendingWorktreeRemoval.decide(
       worktree, customName: customName(of: worktree),
       confirms: workspace.confirmsWorktreeRemoval,
       alwaysDeletesBranch: workspace.deletesBranchWithWorktree,
       trashes: workspace.trashesRemovedWorktrees, mergeState: mergeState(of: worktree))
-    {
-    case .ask(let pending):
-      pendingRemoval = pending
-    case .remove(let deletingBranch):
-      Task { await removeWorktree(worktree, deletingBranch: deletingBranch) }
-    }
   }
 
   /// The dialog's answer, trashing or deleting as its message said even if
@@ -49,10 +70,13 @@ extension AppModel {
 
   /// The pane shows each stage while this runs. What a failed stage does is
   /// `RemovalFailure`'s decision; this attaches the retry it names.
-  public func removeWorktree(
+  func removeWorktree(
     _ worktree: Worktree, deletingBranch: Bool = false, trashes: Bool? = nil
   ) async {
-    guard let worktrees, let project = workspace.project(worktree.projectID) else { return }
+    // Here, before the stage begins, as each request reaches this in a Task of its own.
+    guard let worktrees, let project = workspace.project(worktree.projectID),
+      !isBusy(worktree.id)
+    else { return }
     if renamingWorktreeID == worktree.id { renamingWorktreeID = nil }
     let resolved = resolved(project)
     let trashes = trashes ?? workspace.trashesRemovedWorktrees
@@ -91,8 +115,7 @@ extension AppModel {
       case .alert(let title, let message, let retry, let worktreeRemoved):
         var presented = PresentedError(title: title, message: message)
         if let retry, case .deleteBranchAnyway(let branch) = retry {
-          presented.retryLabel = retry.label
-          presented.retry = { [weak self] in
+          presented.retry = .init(label: retry.label) { [weak self] in
             await self?.deleteBranch(branch, of: project, force: true)
           }
         }

@@ -32,6 +32,38 @@ struct LoginShellEnvironmentTests {
     #expect(parsed.count == 2)
   }
 
+  @Test func theCaptureLeavesAHistoryFileItsEnvironmentNamesAlone() async throws {
+    guard FileManager.default.isExecutableFile(atPath: "/bin/bash") else { return }
+    let home = try Scratch.directory("home")
+    defer { Scratch.remove(home) }
+    let history = home.appendingPathComponent("zsh_history")
+    let lines = (1...600).map { ": 1700000000:0;command \($0)\n" }.joined()
+    try lines.write(to: history, atomically: true, encoding: .utf8)
+    try "HISTFILESIZE=10\n".write(
+      to: home.appendingPathComponent(".bash_profile"), atomically: true, encoding: .utf8)
+
+    _ = await LoginShellEnvironment.capture(
+      shellPath: "/bin/bash", home: home, inherited: ["HISTFILE": history.path])
+
+    #expect(try String(contentsOf: history, encoding: .utf8) == lines)
+  }
+
+  /// macOS `/etc/zshrc` sets HISTFILE again after the empty one is inherited.
+  @Test func theCaptureLeavesZshHistoryAloneThoughEtcZshrcNamesIt() async throws {
+    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
+    let home = try Scratch.directory("home")
+    defer { Scratch.remove(home) }
+    let history = home.appendingPathComponent(".zsh_history")
+    let lines = (1...600).map { ": 1700000000:0;command \($0)\n" }.joined()
+    try lines.write(to: history, atomically: true, encoding: .utf8)
+    try "HISTFILE=\(history.path)\nSAVEHIST=10\nsetopt share_history inc_append_history\n"
+      .write(to: home.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
+
+    _ = await LoginShellEnvironment.capture(shellPath: "/bin/zsh", home: home)
+
+    #expect(try String(contentsOf: history, encoding: .utf8) == lines)
+  }
+
   @Test func aLoginShellAnswersWithThePathItsOwnRcFilesBuilt() async throws {
     guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
     let home = try Scratch.directory("home")
@@ -43,6 +75,39 @@ struct LoginShellEnvironmentTests {
 
     #expect(environment.path?.hasPrefix("/opt/marker/bin:") == true, "\(environment)")
     #expect(environment.source == .loginShell(URL(fileURLWithPath: "/bin/zsh")))
+  }
+
+  @Test func aShellCutOffByTheTimeoutSaysSoRatherThanNamingItsSignal() async throws {
+    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
+    let home = try Scratch.directory("home")
+    defer { Scratch.remove(home) }
+    try "sleep 30\n".write(
+      to: home.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
+
+    let environment = await LoginShellEnvironment.capture(
+      timeout: .milliseconds(300), shellPath: "/bin/zsh", home: home)
+
+    #expect(environment.source == .processFallback(reason: "timed out after 0.3 seconds"))
+  }
+
+  @Test func aGreetingShapedLikeAnAssignmentIsNotTakenForAVariable() async throws {
+    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
+    let home = try Scratch.directory("home")
+    defer { Scratch.remove(home) }
+    try "printf 'motd=welcome back'\n".write(
+      to: home.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
+
+    let environment = await LoginShellEnvironment.capture(shellPath: "/bin/zsh", home: home)
+
+    #expect(environment.variables["motd"] == nil)
+    #expect(environment.variables["HOME"] == home.path)
+    #expect(environment.path != nil)
+  }
+
+  @Test func onlyWhatFollowsTheMarkerIsTheEnvironment() {
+    let text = "motd=hi\n\(LoginShellEnvironment.startMarker)\nHOME=/u\0PATH=/bin\0"
+
+    #expect(LoginShellEnvironment.parse(nulSeparated: text) == ["HOME": "/u", "PATH": "/bin"])
   }
 
   @Test func aShellThatHangsFallsBackWithinTheTimeout() async throws {
@@ -108,7 +173,9 @@ struct ProcessAncestryTests {
     #expect(ProcessAncestry.reportingProcess(startingAt: under, stoppingAt: me) == under)
   }
 
-  @Test func childrenAreFoundByAWordOfTheirCommandLine() throws {
+  /// Failed once in a full run with the marked child unlisted, for a reason
+  /// nobody has seen again; the answer is waited for rather than read once.
+  @Test func childrenAreFoundByAWordOfTheirCommandLine() async throws {
     func waiting(_ script: String) throws -> Process {
       let shell = Process()
       shell.executableURL = URL(fileURLWithPath: "/bin/sh")
@@ -124,10 +191,14 @@ struct ProcessAncestryTests {
       plain.terminate()
     }
     let me = ProcessInfo.processInfo.processIdentifier
+    func found() -> [Int32] {
+      ProcessAncestry.children(of: me, whoseArgumentsContain: "/shell-snapshots/")
+    }
 
-    let found = ProcessAncestry.children(of: me, whoseArgumentsContain: "/shell-snapshots/")
-    #expect(found.contains(marked.processIdentifier))
-    #expect(!found.contains(plain.processIdentifier))
+    try await waitUntil { found().contains(marked.processIdentifier) }
+
+    #expect(found().contains(marked.processIdentifier))
+    #expect(!found().contains(plain.processIdentifier))
     #expect(ProcessAncestry.children(of: 999_999_999, whoseArgumentsContain: "x").isEmpty)
   }
 }

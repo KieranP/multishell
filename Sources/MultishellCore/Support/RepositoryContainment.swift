@@ -6,24 +6,11 @@ public enum RepositoryContainment {
   /// A directory, resolved the way the setting is, so a committed symlink
   /// cannot carry it out. `false` for the repository root itself.
   public static func holds(directory: URL, under repository: URL) -> Bool {
-    guard let resolved = resolvedOnDisk(directory) else { return false }
-    return resolved.pathComponents(under: repository.resolvingSymlinksInPath())?.isEmpty == false
-  }
-
-  /// `resolvingSymlinksInPath` returns a path that does not exist unchanged,
-  /// links and all, so resolve what exists and append what is still to be
-  /// made. `nil` where the deepest existing part is a link to nothing.
-  private static func resolvedOnDisk(_ url: URL) -> URL? {
-    var existing = url.standardizedFileURL
-    var unmade: [String] = []
-    while existing.pathComponents.count > 1,
-      (try? FileManager.default.attributesOfItem(atPath: existing.path)) == nil
-    {
-      unmade.insert(existing.lastPathComponent, at: 0)
-      existing = existing.deletingLastPathComponent()
-    }
-    guard FileManager.default.fileExists(atPath: existing.path) else { return nil }
-    return unmade.reduce(existing.resolvingSymlinksInPath()) { $0.appendingPathComponent($1) }
+    guard let resolved = directory.resolvedAsFarAsItExists()?.pathComponents,
+      let root = repository.resolvedAsFarAsItExists()?.pathComponents
+    else { return false }
+    // As spelled: `standardizedFileURL` drops `/private` only from a path that exists.
+    return resolved.count > root.count && resolved.starts(with: root)
   }
 
   /// Resolved against the root and required to land strictly under it, `..`

@@ -23,10 +23,7 @@ struct AgentBoardHeader: View {
       Spacer(minLength: 8)
       allTerminalsToggle
     }
-    .padding(.horizontal, 14)
-    .frame(height: UIMetrics.headerHeight)
-    .background(theme.chromeColor)
-    .titleBarDoubleClick()
+    .windowHeader(fill: theme.chromeColor)
   }
 
   /// The board's one control, deciding membership and nothing else: a shell

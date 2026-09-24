@@ -58,6 +58,39 @@ struct CopilotWorkerTests {
     var state: SessionState? { h.model.state(of: tab) }
     var workers: [String] { h.model.sessionStates.subagents(.session(session)).map(\.id) }
   }
+  @Test func aSessionStartAfterThePromptLeavesThePaneWorking() {
+    let pane = Pane()
+    pane.hook(Self.prompt)
+    pane.hook(Self.sessionStart)
+
+    #expect(pane.state == .running)
+    pane.hook(Self.stop)
+    #expect(pane.state == .done)
+  }
+
+  @Test func aDroppedSessionStartOfAnotherConversationLeavesThePanesOwn() {
+    let pane = Pane()
+    pane.hook(Self.sessionStart)
+    pane.hook(Self.prompt)
+    pane.hook(
+      #"{"hook_event_name":"SessionStart","session_id":"\#(Self.child)","cwd":"/w","source":"new"}"#
+    )
+
+    pane.hook(Self.taskCall)
+
+    #expect(pane.workers.isEmpty)
+    pane.hook(Self.stop)
+    #expect(pane.state == .done)
+  }
+
+  @Test func aSessionStartOverAFinishedTurnStillClearsIt() {
+    let pane = Pane()
+    pane.hook(Self.prompt)
+    pane.hook(Self.stop)
+    pane.hook(Self.sessionStart)
+
+    #expect(pane.state == nil)
+  }
 
   @Test func aSubagentsOwnStopIsNotThePanesDone() {
     let pane = Pane()
@@ -76,6 +109,18 @@ struct CopilotWorkerTests {
     pane.hook(Self.taskDone)
     #expect(pane.state == .running)
 
+    pane.hook(Self.stop)
+    #expect(pane.state == .done)
+  }
+
+  @Test func aPaneFirstHearingASubagentCountsTheParentOnceItsEndNamesIt() {
+    let pane = Pane()
+    pane.hook(Self.childTool)
+    pane.hook(Self.childStop)
+    pane.hook(Self.subagentStop)
+    pane.hook(Self.taskDone)
+
+    #expect(pane.workers.isEmpty, "the parent is the pane's own, not a worker")
     pane.hook(Self.stop)
     #expect(pane.state == .done)
   }

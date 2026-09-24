@@ -18,6 +18,12 @@ extension PresentedError {
       message: t("error.worktree-missing-message", path))
   }
 
+  static func worktreeDirectoryUnanswered(_ path: String) -> PresentedError {
+    PresentedError(
+      title: t("error.worktree-unanswered-title"),
+      message: t("error.worktree-unanswered-message", path))
+  }
+
   static var noAgentChosen: PresentedError {
     PresentedError(
       title: t("error.no-agent-title"), message: t("error.no-agent-message"))

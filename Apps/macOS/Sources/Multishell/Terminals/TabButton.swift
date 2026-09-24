@@ -40,6 +40,7 @@ struct TabButton: View {
       }
       .onDrag {
         drag.begin(tab.id)
+        endWhenReleasedOverNothing(drag.generation)
         return TabTransfer(id: tab.id).itemProvider()
       } preview: {
         // A drag with no image of its own: AppKit holds its preview card
@@ -122,7 +123,9 @@ struct TabButton: View {
     )
     .accessibilityAddTraits(isActive ? [.isButton, .isSelected] : .isButton)
     .accessibilityAction(named: t("action.rename-spoken")) { beginEditing() }
-    .contextMenu { menu(state) }
+    .contextMenu {
+      TabMenu(model: model, group: group, tab: tab, canLeaveColumn: canLeaveColumn)
+    }
   }
 
   /// What the tab is running. A button while there is a state, so a click
@@ -169,29 +172,6 @@ struct TabButton: View {
     .accessibilityLabel(t("tab.close"))
   }
 
-  @ViewBuilder
-  private func menu(_ state: SessionState?) -> some View {
-    Button(t("action.rename")) { beginEditing() }
-    if tab.customTitle != nil {
-      Button(t("tab.use-shell-title")) { model.renameTab(tab.id, to: nil) }
-    }
-    if state != nil {
-      Divider()
-      Button(t("actions.clear-status")) { model.clearState(of: tab) }
-    }
-    Divider()
-    // The keyboard-only way to the layout the edge bands offer a drag, and
-    // only where it would do something.
-    Button(t("tab.move-to-new-group")) {
-      model.moveTab(tab.id, .after, toNewGroupOf: group.id)
-    }
-    .disabled(!canLeaveColumn)
-    Divider()
-    // The one way to close an inactive tab without a mouse, the X being
-    // drawn on the active one alone. Not destructive-red.
-    Button(t("tab.close")) { model.closeTab(tab.id) }
-  }
-
   /// An empty name clears the custom title rather than storing a blank one;
   /// `InlineNameField` has the keyboard contract.
   private var titleField: some View {
@@ -204,7 +184,24 @@ struct TabButton: View {
       cancel: { model.cancelRenamingTab() })
   }
 
+  private func endWhenReleasedOverNothing(_ generation: Int) {
+    Task { @MainActor [model] in
+      await DragRelease.wait(isPressed: { NSEvent.pressedMouseButtons & 1 != 0 })
+      model.tabDrag.endAbandoned(generation)
+    }
+  }
+
   private func beginEditing() {
     model.beginRenamingTab(tab.id)
+  }
+}
+
+/// Everything but the model, which is one object, and the binding, compared
+/// by its value; the body's reads of the model are observed on their own.
+extension TabButton: @MainActor Equatable {
+  static func == (a: TabButton, b: TabButton) -> Bool {
+    a.model === b.model && a.group == b.group && a.tab == b.tab && a.isFocused == b.isFocused
+      && a.canLeaveColumn == b.canLeaveColumn && a.isShuffling == b.isShuffling
+      && a.width == b.width && a.theme == b.theme && a.drag == b.drag
   }
 }

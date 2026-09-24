@@ -117,7 +117,7 @@ struct LazySessionTests {
     #expect(registry.liveSessionIDs.count == 2)
   }
 
-  @Test func retitleCountsAsActivity() {
+  @Test func aRetitleIsItsOwnCallbackNotActivity() {
     let store = WorkspaceStore()
     let project = store.addProject(at: URL(fileURLWithPath: "/repos/demo"))
     let worktree = Worktree(
@@ -127,12 +127,15 @@ struct LazySessionTests {
     let host = RecordingHost()
     let registry = SessionRegistry(store: store, host: host)
     var seen: [TerminalSession.ID] = []
+    var titled: [String] = []
     registry.onActivity = { seen.append($0) }
+    registry.onRetitle = { titled.append($1) }
 
     host.delegate?.terminalHost(host, didRetitle: tab.focusedSessionID, to: "make")
     host.delegate?.terminalHost(host, didSeeActivityIn: tab.focusedSessionID)
 
-    #expect(seen == [tab.focusedSessionID, tab.focusedSessionID])
+    #expect(seen == [tab.focusedSessionID])
+    #expect(titled == ["make"])
   }
 
   @Test func aFinishedCommandIsItsOwnCallbackNotActivity() {

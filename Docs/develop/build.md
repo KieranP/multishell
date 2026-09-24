@@ -5,8 +5,8 @@
 - **Xcode, at the floor COMPAT.md names**, with Swift 6. The app build runs
   `xcodebuild`, which the command line tools alone do not have.
 - **git on PATH**, and **prettier** for the Markdown half of `make format`. CI
-  runs neither prettier nor the Markdown formatter; a Claude Code hook runs it
-  on every `.md` an agent writes.
+  does not run prettier; a Claude Code hook runs it on every `.md` an agent
+  writes, and skips it quietly where prettier is missing.
 
 ## Build, test, run
 
@@ -19,16 +19,22 @@
   and signs both.
 - **Signed with the hardened runtime and the entitlements** in the app's
   resources (signing.md).
-- **The short version names the commit and its date**, with a suffix for a
-  modified tree; the build number is the commit count, that key taking digits
-  and dots only.
+- **The short version is three integers**, the only form Apple's key takes: a
+  `vX.Y.Z` tag on HEAD, else the commit's date. An rc tag on the same commit is
+  passed over, where `git describe` picked it when annotated. The build number
+  is the commit count, and `MultishellCommit` names the commit, with a suffix
+  for a modified tree. The About panel shows it beside the build number, so a
+  bug report still says what was installed: AboutPanelTests.
 - **The first app build downloads the libghostty xcframework**, which is large.
-- **`build-lib.sh` holds the helpers `make-app.sh` sources**, not runs: the
-  copyright holder, the version, the build number and the worktree variant. What
-  stays in `make-app.sh` is the paths, the build and the signing.
+- **`build-lib.sh` holds the functions `make-app.sh` sources**, not runs: the
+  copyright holder, the version, the commit, the build number, the worktree
+  variant, the xcodebuild call, the checks and the signing. What stays in
+  `make-app.sh` is the paths and the order of the steps.
 - **The Info.plist is a template filled in by placeholder**, and
   BundleDeclarationTests reads it out of the checkout (tests.md). Substitution
-  is bash's own, so a value may hold a newline or an ampersand unescaped.
+  is bash's own, so a value may hold a newline or an ampersand unescaped. The
+  replacement is quoted because bash 5.2 and later read an unquoted `&` as the
+  placeholder, and the assignment is not, because 3.2 then keeps the quotes.
 - **macOS needs a bundle** for a Dock icon, activation and the menu bar, and
   SwiftPM emits a bare executable.
 - **A worktree's name is spelled down to safe characters** before it reaches the
@@ -49,6 +55,14 @@
   compiles alongside the first and waits only for its turn to run.
 - **A bare `swift test` takes no lock**, and nothing caps the compiler's own
   parallelism, so several full builds at once still oversubscribe the machine.
+- **`make test` runs the suites in a write sandbox**, `Scripts/test-sandbox.sb`
+  through `sandbox-exec`: the build trees, SwiftPM's caches and the temporary
+  directories only. A bare `swift test` has none, so run the tests through make.
+  Where there is no `sandbox-exec`, Linux included, `make test` runs the suites
+  unconfined.
+- **SwiftPM sandboxes its manifest compile**, and one sandbox cannot be applied
+  inside another, so the sandboxed run passes `--disable-sandbox`, which lifts
+  only SwiftPM's.
 - **A debug bundle built in a worktree names it** in its state file and socket
   (state-on-disk.md), so two can run at once.
 
@@ -86,7 +100,8 @@
   build.
 - **CI runs three jobs in parallel**: build and test for the root package, the
   same for the app package, and the lint. It calls `swift test` directly, so it
-  takes no lock.
+  takes no lock and has no write sandbox: a test writing outside the temporary
+  directories passes there.
 
 ## Before you say something works
 

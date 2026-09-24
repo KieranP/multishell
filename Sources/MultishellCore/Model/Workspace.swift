@@ -164,6 +164,10 @@ extension Workspace {
     tabs.first { $0.id == id }
   }
 
+  func tabIndex(_ id: TerminalTab.ID) -> Int? {
+    tabs.firstIndex { $0.id == id }
+  }
+
   public func group(_ id: TabGroup.ID) -> TabGroup? {
     tabGroups.first { $0.id == id }
   }
@@ -238,7 +242,7 @@ extension Workspace {
   /// a running shell reports is runtime state the GUI layers on top.
   public func title(of tab: TerminalTab) -> String {
     if let custom = tab.customTitle { return custom }
-    return session(tab.focusedSessionID)?.title ?? t("tab.shell")
+    return session(tab.focusedSessionID)?.displayTitle ?? t("tab.shell")
   }
 
   public func tabOwning(_ session: TerminalSession.ID) -> TerminalTab? {

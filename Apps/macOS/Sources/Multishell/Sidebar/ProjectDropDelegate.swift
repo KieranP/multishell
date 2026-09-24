@@ -2,11 +2,6 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-struct ProjectDropTarget: Equatable {
-  let projectID: Project.ID
-  let edge: VerticalEdge
-}
-
 /// Tracks the pointer over a project block for the insertion line, and moves
 /// on release. The dragged id lives in the sidebar's state.
 struct ProjectDropDelegate: DropDelegate {
@@ -22,12 +17,19 @@ struct ProjectDropDelegate: DropDelegate {
   }
 
   func dropEntered(info: DropInfo) {
-    target = ProjectDropTarget(projectID: projectID, edge: edge(for: info))
+    aim(at: info)
   }
 
   func dropUpdated(info: DropInfo) -> DropProposal? {
-    target = ProjectDropTarget(projectID: projectID, edge: edge(for: info))
+    aim(at: info)
     return DropProposal(operation: .move)
+  }
+
+  /// Written only on a change: an update arrives at pointer rate, and each
+  /// write to the sidebar's state may rebuild the whole of it.
+  private func aim(at info: DropInfo) {
+    let next = ProjectDropTarget(projectID: projectID, edge: edge(for: info))
+    if target != next { target = next }
   }
 
   func dropExited(info: DropInfo) {

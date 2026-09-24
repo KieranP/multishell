@@ -7,9 +7,9 @@ Themes, the focused pane, the window the app draws itself. Newest at the bottom.
 - **The window chrome is drawn by hand.** Recent macOS renders split-view
   sidebars as floating glass, and the AppKit split sizes children however it
   likes and exposes nothing.
-- **Cost of that**: sidebar keyboard navigation has to be built, the split uses
-  an underscored SwiftUI API, and each hand-drawn row needs an accessibility
-  label reading its glyphs in order.
+- **Cost of that**: sidebar keyboard navigation has to be built, the pane split
+  uses an underscored SwiftUI API, and each hand-drawn row needs an
+  accessibility label reading its glyphs in order.
 - **Both headers stand in for the title bar at the metric's height**, the band a
   hidden title bar keeps. Anything shorter, or anything but a header reaching
   into that band, and AppKit paints over it.
@@ -54,7 +54,8 @@ Themes, the focused pane, the window the app draws itself. Newest at the bottom.
 - **Not a strip across the pane.** A strip takes a row from every pane it is up
   in; a bar floating over the corner costs the terminal nothing.
 - **No match count beside the field**, which Ghostty has, because the wrapper
-  drops it (BUGS.md) and an empty slot would read as broken.
+  drops it and an empty slot would read as broken. A patched wrapper would bring
+  it back, and a count is not worth carrying one.
 - **The theme sets the engine's search colours**, or it paints matches in its
   own defaults: matches in the theme's yellow, the selected one in the ring's
   colour, both with whichever of background and foreground is darker as their
@@ -87,3 +88,10 @@ Themes, the focused pane, the window the app draws itself. Newest at the bottom.
   nothing, one rule read the same way everywhere, so a leftover neither masks
   the icon a repo's file names nor is written back into it. Cost: a project that
   had one draws the folder.
+- **Sidebar rows compare everything but their closures**, so SwiftUI skips a row
+  whose state has not moved. The closures are rebuilt on every render and never
+  compare equal. Without the comparison each rebuild re-ran every row's tooltips
+  and accessibility label, measured at about half a millisecond at 40 rows.
+- **Cost of that**: a field added to a row and left out of its `==` never
+  redraws the row, and a closure that comes to capture more than the row's own
+  project or worktree goes stale. No test catches either.

@@ -5,11 +5,6 @@ import Testing
 
 @testable import MultishellAppCore
 
-/// Random user actions and engine events, in any order. After each, what the
-/// views read must agree with what the engine has: the same live set, every
-/// live shell backed by a session, no title or dot for a shell that is gone,
-/// and the focused pane of the shown tab is what the engine was told to
-/// focus last.
 @Suite @MainActor
 struct AppModelInvariantTests {
   @Test(arguments: [3, 4, 6, 9, 12, 17, 25, 33] as [UInt64])

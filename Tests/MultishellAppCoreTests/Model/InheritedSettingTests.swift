@@ -24,7 +24,9 @@ struct InheritedSettingTests {
     #expect(global == InheritedFlag(value: true, isFromRepository: false))
 
     h.model.noteSharedSettings(
-      .success(SharedProjectSettings(autoStartAgentOnCreate: false)), stamp: .now,
+      SharedSettingsReading(
+        result: .success(SharedProjectSettings(autoStartAgentOnCreate: false)), stamp: .now,
+        project: h.project),
       for: h.project)
     let file = h.model.inherited(\.autoStartAgentOnCreate, global: true, for: h.project)
     #expect(
@@ -43,7 +45,9 @@ struct InheritedSettingTests {
     h.model.setWorktreeDefaults(WorktreeSettings(worktreeDirectory: "/global/trees"))
 
     h.model.noteSharedSettings(
-      .success(SharedProjectSettings(worktreeDirectory: ".worktrees")), stamp: .now,
+      SharedSettingsReading(
+        result: .success(SharedProjectSettings(worktreeDirectory: ".worktrees")), stamp: .now,
+        project: h.project),
       for: h.project)
 
     let directory = h.model.inherited(
@@ -65,7 +69,9 @@ struct InheritedSettingTests {
     #expect(h.model.worktreeSettings(for: h.project).qualifiedBranch("tabs") == "team/tabs")
 
     h.model.noteSharedSettings(
-      .success(SharedProjectSettings(branchPrefix: "")), stamp: .now, for: h.project)
+      SharedSettingsReading(
+        result: .success(SharedProjectSettings(branchPrefix: "")), stamp: .now, project: h.project),
+      for: h.project)
 
     let prefix = h.model.inherited(
       \.branchPrefix, global: h.model.workspace.worktreeDefaults.branchPrefix, for: h.project)

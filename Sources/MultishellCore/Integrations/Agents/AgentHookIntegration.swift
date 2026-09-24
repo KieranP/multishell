@@ -104,6 +104,7 @@ public struct AgentHookIntegration: Identifiable, Sendable {
       silent: event.silent ? true : nil,
       subagent: event.subagentReport(for: payload),
       startsTurn: event.startsTurn(for: payload) ? true : nil,
+      startsSession: event.startsSession ? true : nil,
       backgroundShells: isStop ? backgroundShellMarker.flatMap(backgroundShells) : nil,
       resumesAfterWorkers: isStop && resumesAfterWorkers ? true : nil,
       conversationID: workersAreConversations ? payload.conversationID : nil)
@@ -146,12 +147,12 @@ public struct AgentHookIntegration: Identifiable, Sendable {
     var handler: [String: Any] = [
       "type": "command", "command": AgentHooks.command(agent: id, helper: helper),
     ]
+    let timeout = event.timeoutSeconds ?? AgentHooks.timeoutSeconds
     switch format {
     case .sharedSettings(let millisecondTimeout):
-      handler["timeout"] =
-        millisecondTimeout ? AgentHooks.timeoutSeconds * 1000 : AgentHooks.timeoutSeconds
+      handler["timeout"] = millisecondTimeout ? timeout * 1000 : timeout
     case .ownHookFile:
-      handler["timeoutSec"] = AgentHooks.timeoutSeconds
+      handler["timeoutSec"] = timeout
       if let matcher = event.matcher { handler["matcher"] = matcher }
     case .plugin:
       break

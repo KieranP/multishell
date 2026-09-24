@@ -4,9 +4,8 @@ import Testing
 
 @testable import MultishellCore
 
-/// The plugin is 70 lines of state that no Swift test can reach: it keeps its
-/// own roster of child sessions and decides what the helper is told. These run
-/// it under node with `spawn` replaced, and read the argument lists back.
+/// The plugin's 70 lines of state are out of Swift's reach, so these run it under node
+/// with `spawn` replaced and read the argument lists back.
 @Suite(.serialized, .enabled(if: openCodeNode != nil))
 struct OpenCodePluginRunTests {
   /// A step handed to the driver: a hook by name, with whatever OpenCode
@@ -27,6 +26,9 @@ struct OpenCodePluginRunTests {
     static func tool(session: String) -> Step {
       Step(hook: "tool.execute.before", input: ["sessionID": session])
     }
+
+    /// Long enough for a lookup the stub answers late to land.
+    static var pause: Step { Step(hook: "pause") }
 
     static func event(_ type: String, _ properties: [String: AnyEncodable]) -> Step {
       Step(
@@ -74,7 +76,17 @@ struct OpenCodePluginRunTests {
   }
 
   /// What the helper was called with, one list per report, in order.
-  private func reports(of steps: [Step]) throws -> [[String]] {
+  /// `sessions` is what the fake client answers a lookup with, by id.
+  private func reports(
+    of steps: [Step], sessions: [String: [String: String]] = [:]
+  ) throws -> [[String]] {
+    try run(steps, sessions: sessions).reports
+  }
+
+  /// The reports, and how many of the plugin's bounded waits on a lookup began.
+  private func run(
+    _ steps: [Step], sessions: [String: [String: String]] = [:]
+  ) throws -> (reports: [[String]], waits: Int) {
     let node = try #require(openCodeNode)
     let directory = Scratch.path("opencode-plugin")
     defer { try? FileManager.default.removeItem(at: directory) }
@@ -90,9 +102,10 @@ struct OpenCodePluginRunTests {
       to: directory.appendingPathComponent("register.mjs"), atomically: true, encoding: .utf8)
 
     let script = String(decoding: try JSONEncoder().encode(steps), as: UTF8.self)
+    let known = String(decoding: try JSONEncoder().encode(sessions), as: UTF8.self)
     let process = Process()
     process.executableURL = node
-    process.arguments = ["--import", "./register.mjs", "./drive.mjs", script]
+    process.arguments = ["--import", "./register.mjs", "./drive.mjs", script, known]
     process.currentDirectoryURL = directory
     let out = Pipe()
     let errors = Pipe()
@@ -105,9 +118,14 @@ struct OpenCodePluginRunTests {
     #expect(
       process.terminationStatus == 0,
       "node failed: \(String(decoding: failed, as: UTF8.self))")
-    return String(decoding: printed, as: UTF8.self).split(separator: "\n").compactMap {
-      try? JSONDecoder().decode([String].self, from: Data($0.utf8))
+    let lines = String(decoding: printed, as: UTF8.self).split(separator: "\n")
+    let waits = lines.compactMap {
+      try? JSONDecoder().decode([String: Int].self, from: Data($0.utf8))["waits"]
     }
+    return (
+      lines.compactMap { try? JSONDecoder().decode([String].self, from: Data($0.utf8)) },
+      waits.last ?? 0
+    )
   }
 
   /// What a report says about a worker, as the chip reads it: the state, the
@@ -137,9 +155,26 @@ struct OpenCodePluginRunTests {
       ])
   }
 
-  /// The one report that empties the roster. OpenCode hands `chat.message`
-  /// the message as its second argument, so a session named only there still
-  /// has to be read, or every child's message starts the parent's turn.
+  @Test func aTurnsEndInBothSpellingsIsReportedOnce() throws {
+    let idleStatus = Step.event(
+      "session.status",
+      ["sessionID": AnyEncodable("parent"), "status": AnyEncodable(["type": "idle"])])
+    let out = try reports(of: [
+      .message(session: "parent"), idleStatus, .idle("parent"),
+      .message(session: "parent"), .idle("parent"), idleStatus,
+    ])
+    #expect(out.map(said) == ["running true", "done", "running true", "done"])
+  }
+
+  @Test func aParentTurnWithNoPromptStillEndsInADone() throws {
+    let out = try reports(of: [
+      .message(session: "parent"), .idle("parent"), .busy("parent"), .idle("parent"),
+    ])
+    #expect(out.map(said) == ["running true", "done", "done"])
+  }
+
+  /// OpenCode hands `chat.message` the message as its second argument, so a session named
+  /// only there still has to be read, or every child's message starts the parent's turn.
   @Test func aChildsMessageInTheSecondArgumentStartsNoTurnOfTheParents() throws {
     let out = try reports(of: [
       .message(session: "parent"),
@@ -193,9 +228,8 @@ struct OpenCodePluginRunTests {
     #expect(out.map(said) == ["running started Explore", "running ended Explore"])
   }
 
-  /// A child going busy and idle over and over holds one place among the ids
-  /// kept past an end, so it cannot push another child's out and have that
-  /// child's late event read as the parent's Done.
+  /// With more than one place, the cycling child would push another's id out, and that
+  /// child's late event would read as the parent's Done.
   @Test func aChildCyclingBusyAndIdleKeepsOnePlaceAmongTheEndedIds() throws {
     var steps: [Step] = [
       .created(child: "a", of: "parent", agent: "Explore"),
@@ -211,6 +245,54 @@ struct OpenCodePluginRunTests {
     let out = try reports(of: steps).map(said)
     #expect(out.last == "running ended Explore", "b's late idle says nothing")
     #expect(!out.contains("done"), "and is not read as the parent's Done")
+  }
+
+  /// A task resumed by its id reuses its session and publishes no `session.created`
+  /// (opencode `tool/task.ts`), so a plugin that has lost the id must ask for it.
+  @Test func aResumedChildsFirstMessageStartsNoTurnOfTheParents() throws {
+    let out = try reports(
+      of: [.message(session: "parent"), .message(session: "parent/a"), .idle("parent/a")],
+      sessions: ["parent/a": ["id": "parent/a", "parentID": "parent"]])
+    #expect(
+      out.map(said) == [
+        "running true", "running started", "running working", "running ended",
+      ])
+  }
+
+  @Test func aLookupThatFailsLeavesTheSessionTheParents() throws {
+    let out = try reports(
+      of: [.message(session: "parent"), .idle("parent")],
+      sessions: ["parent": ["throws": "true"]])
+    #expect(out.map(said) == ["running true", "done"])
+  }
+
+  @Test(arguments: [[:], ["parent": ["hangs": "true"]]])
+  func theParentIsLookedUpOnceHoweverTheLookupEnds(sessions: [String: [String: String]]) throws {
+    let out = try run(
+      [
+        .message(session: "parent"), .tool(session: "parent"), .tool(session: "parent"),
+        .idle("parent"),
+      ],
+      sessions: sessions)
+    #expect(out.reports.map(said) == ["running true", "running", "running", "done"])
+    #expect(out.waits == 1)
+  }
+
+  @Test func aChildWhoseLookupAnswersAfterTheBoundIsPutBackWhenItLands() throws {
+    let out = try reports(
+      of: [.message(session: "parent/a"), .pause, .idle("parent/a")],
+      sessions: ["parent/a": ["id": "parent/a", "parentID": "parent", "late": "true"]])
+    #expect(out.map(said) == ["running true", "running started", "running ended"])
+  }
+
+  @Test func aChildPutBackByALookupIsNotStartedAgainByALateCreation() throws {
+    let out = try reports(
+      of: [
+        .message(session: "parent/a"), .created(child: "a", of: "parent", agent: "Explore"),
+        .idle("parent/a"),
+      ],
+      sessions: ["parent/a": ["id": "parent/a", "parentID": "parent"]])
+    #expect(out.map(said) == ["running started", "running working", "running ended"])
   }
 
   private static let register = """
@@ -240,11 +322,34 @@ struct OpenCodePluginRunTests {
   private static let driver = """
     import { MultishellPlugin } from "./multishell.js"
 
-    const plugin = await MultishellPlugin({ directory: "/w", worktree: "/w" })
+    // The plugin's one-second bound fires at once and holds node open, a hung
+    // lookup leaving nothing else pending; each one begun is counted.
+    let waits = 0
+    const timeout = globalThis.setTimeout
+    globalThis.setTimeout = (callback, delay) => {
+      if (delay !== 1000) return timeout(callback, delay)
+      waits += 1
+      const timer = timeout(callback, 0)
+      timer.unref = () => timer
+      return timer
+    }
+    const sessions = JSON.parse(process.argv[3])
+    const get = async ({ path }) => {
+      if (sessions[path.id] && sessions[path.id].throws) throw new Error("unreachable")
+      if (sessions[path.id] && sessions[path.id].hangs) return new Promise(() => {})
+      if (sessions[path.id] && sessions[path.id].late) {
+        return new Promise((resolve) => timeout(() => resolve({ data: sessions[path.id] }), 20))
+      }
+      return { data: sessions[path.id] }
+    }
+    const client = { session: { get } }
+    const plugin = await MultishellPlugin({ directory: "/w", worktree: "/w", client })
     for (const step of JSON.parse(process.argv[2])) {
-      if (step.hook === "event") await plugin.event({ event: step.event })
+      if (step.hook === "pause") await new Promise((resolve) => timeout(resolve, 100))
+      else if (step.hook === "event") await plugin.event({ event: step.event })
       else await plugin[step.hook](step.input, step.output)
     }
+    process.stdout.write(JSON.stringify({ waits }) + "\\n")
 
     """
 }

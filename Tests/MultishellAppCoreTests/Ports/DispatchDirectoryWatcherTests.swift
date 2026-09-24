@@ -5,22 +5,14 @@
 
   @testable import MultishellAppCore
 
-  /// The kqueue watcher is the only file-event code in the app. These wait
-  /// on real filesystem events, so they carry a timeout rather than a fixed
-  /// sleep.
   @Suite(.serialized) @MainActor
   struct DispatchDirectoryWatcherTests {
     private func scratch() throws -> URL {
       try Scratch.directory("watch")
     }
 
-    /// Counts the watcher's callbacks from the moment it is made.
-    ///
-    /// Made before the change it is counting, never after: the watcher
-    /// coalesces and delivers once, so a callback that lands while nobody is
-    /// listening is gone, and nothing touches the directory a second time.
-    /// Awaiting an `async let` around the change was that mistake, and it
-    /// cost a whole test run on a runner where the callback won the race.
+    /// Call before the change: the watcher delivers once per coalesced burst, so a
+    /// callback with no listener is lost. An `async let` around the change lost that race.
     private func changes(of watcher: DispatchDirectoryWatcher) -> Changes {
       let changes = Changes()
       watcher.onChange = { _ in changes.count += 1 }
@@ -30,11 +22,8 @@
     @MainActor final class Changes {
       var count = 0
 
-      /// Whether a callback has arrived, waiting up to `seconds` for one.
-      /// The wait is far above the watcher's 400 ms coalesce because both the
-      /// event and this loop land on the main actor, which the rest of the
-      /// suite is also using; a busy runner has taken over ten seconds to
-      /// deliver.
+      /// The event and this loop share a busy main actor, so the wait is far above the
+      /// 400 ms coalesce; a loaded runner has taken over ten seconds to deliver.
       func arrived(within seconds: Double = 30) async -> Bool {
         let deadline = ContinuousClock.now + .seconds(seconds)
         while count == 0, ContinuousClock.now < deadline {
@@ -48,7 +37,7 @@
       let dir = try scratch()
       defer { try? FileManager.default.removeItem(at: dir) }
       let watcher = DispatchDirectoryWatcher()
-      watcher.watch([dir])
+      await watcher.watch([dir])
       defer { watcher.stop() }
 
       let changed = changes(of: watcher)
@@ -57,9 +46,8 @@
       #expect(await changed.arrived())
     }
 
-    /// `git worktree remove foo` then `git worktree add ... foo` inside one
-    /// coalesce window: the path stays wanted, but the descriptor is left on
-    /// the unlinked inode and never fires again.
+    /// `git worktree remove foo` then `add ... foo` inside one coalesce window keeps the
+    /// path wanted but leaves the descriptor on the unlinked inode, never firing again.
     @Test func aDirectoryDeletedAndRemadeAtOnePathIsWatchedAgain() async throws {
       let parent = try scratch()
       defer { try? FileManager.default.removeItem(at: parent) }
@@ -67,17 +55,16 @@
       try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
 
       let watcher = DispatchDirectoryWatcher()
-      watcher.watch([dir])
+      await watcher.watch([dir])
       defer { watcher.stop() }
 
       try FileManager.default.removeItem(at: dir)
       try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
       // The rearm the app does once its own watch fires; the path is still
       // wanted, so nothing here asks for a new source outright.
-      watcher.watch([dir])
-      // The unlink fires the old source, and that callback is what this test
-      // counted at first: it arrived and said nothing about the new directory.
-      // Waited out against a nil handler, so what is counted next is the file.
+      await watcher.watch([dir])
+      // The unlink fires the old source, which once passed this test by itself; waiting
+      // it out against a nil handler leaves the file as the next thing counted.
       try? await Task.sleep(for: .milliseconds(900))
 
       let changed = changes(of: watcher)
@@ -90,7 +77,7 @@
       let dir = try scratch()
       defer { try? FileManager.default.removeItem(at: dir) }
       let watcher = DispatchDirectoryWatcher()
-      watcher.watch([dir])
+      await watcher.watch([dir])
       defer { watcher.stop() }
 
       let changed = changes(of: watcher)
@@ -111,8 +98,8 @@
         try? FileManager.default.removeItem(at: b)
       }
       let watcher = DispatchDirectoryWatcher()
-      watcher.watch([a, URL(fileURLWithPath: "/definitely/not/here")])
-      watcher.watch([b])
+      await watcher.watch([a, URL(fileURLWithPath: "/definitely/not/here")])
+      await watcher.watch([b])
       defer { watcher.stop() }
 
       let forA = changes(of: watcher)
@@ -124,16 +111,15 @@
       #expect(await forB.arrived())
     }
 
-    /// Every refresh re-arms the watcher with the current directory set.
-    /// Each source holds a descriptor until its cancel handler runs; a
-    /// mistake there would exhaust the process after a day of ticks.
+    /// Every refresh re-arms the watcher and each source holds a descriptor until its
+    /// cancel handler runs, so a leak there exhausts the process within a day of ticks.
     @Test func rearmingRepeatedlyDoesNotLeakDescriptors() async throws {
       let dirs = try (0..<4).map { _ in try scratch() }
       defer {
         for dir in dirs { try? FileManager.default.removeItem(at: dir) }
       }
       let watcher = DispatchDirectoryWatcher()
-      watcher.watch(dirs)
+      await watcher.watch(dirs)
       let before = try await lowestDescriptorCount(
         over: .milliseconds(120), every: .milliseconds(30))
 
@@ -141,12 +127,12 @@
         // Alternate between the full set, a subset, and a set with a missing
         // directory, so sources are created, kept, cancelled and skipped.
         switch round % 3 {
-        case 0: watcher.watch(dirs)
-        case 1: watcher.watch(Array(dirs.prefix(2)))
-        default: watcher.watch([dirs[3], URL(fileURLWithPath: "/definitely/not/here")])
+        case 0: await watcher.watch(dirs)
+        case 1: await watcher.watch(Array(dirs.prefix(2)))
+        default: await watcher.watch([dirs[3], URL(fileURLWithPath: "/definitely/not/here")])
         }
       }
-      watcher.watch(dirs)
+      await watcher.watch(dirs)
 
       let after = try await lowestDescriptorCount(
         over: .milliseconds(240), every: .milliseconds(30))
@@ -155,11 +141,53 @@
       watcher.stop()
     }
 
+    @Test func directoriesAreOpenedOffTheMainThread() async throws {
+      let dir = try scratch()
+      defer { try? FileManager.default.removeItem(at: dir) }
+      let onMain = LineRecorder()
+      let watcher = DispatchDirectoryWatcher { path in
+        onMain.record(Thread.isMainThread ? "main" : "off")
+        return open(path, O_EVTONLY)
+      }
+      defer { watcher.stop() }
+
+      await watcher.watch([dir])
+
+      #expect(onMain.received == ["off"])
+    }
+
+    @Test func aWatchSupersededWhileItsDirectoriesOpenedArmsNothing() async throws {
+      let a = try scratch()
+      let b = try scratch()
+      defer {
+        try? FileManager.default.removeItem(at: a)
+        try? FileManager.default.removeItem(at: b)
+      }
+      let opened = LineRecorder()
+      let gate = DispatchSemaphore(value: 0)
+      let watcher = DispatchDirectoryWatcher { path in
+        opened.record(path)
+        if path == a.standardizedFileURL.path { gate.wait() }
+        return open(path, O_EVTONLY)
+      }
+      defer { watcher.stop() }
+
+      let first = Task { await watcher.watch([a]) }
+      try await waitUntil { !opened.received.isEmpty }
+      await watcher.watch([b])
+      gate.signal()
+      await first.value
+
+      let forA = changes(of: watcher)
+      try "x".write(to: a.appendingPathComponent("ignored"), atomically: true, encoding: .utf8)
+      #expect(await forA.arrived(within: 1) == false)
+    }
+
     @Test func stopSilencesTheWatcher() async throws {
       let dir = try scratch()
       defer { try? FileManager.default.removeItem(at: dir) }
       let watcher = DispatchDirectoryWatcher()
-      watcher.watch([dir])
+      await watcher.watch([dir])
       watcher.stop()
 
       let changed = changes(of: watcher)

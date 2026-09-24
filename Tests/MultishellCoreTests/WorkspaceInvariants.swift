@@ -28,9 +28,8 @@ enum WorkspaceInvariants {
       #expect(tab.root.contains(tab.focusedSessionID), "\(context): focus outside its tree")
       for id in tab.sessionIDs {
         #expect(sessionIDs.contains(id), "\(context): pane without a session")
-        // A session's worktree is the worktree of the tab that shows it:
-        // warmth, and so whether its shell is running at all, is decided
-        // from the session's own copy.
+        // Warmth, and so whether a session's shell runs at all, is decided from the
+        // session's own copy of its worktree.
         if let session = ws.session(id) {
           #expect(
             session.worktreeID == tab.worktreeID, "\(context): a pane in another worktree")
@@ -52,10 +51,6 @@ enum WorkspaceInvariants {
     }
   }
 
-  /// A worktree's columns: every one belongs to a worktree that exists,
-  /// holds at least one tab, shows one of its own tabs, and has a width
-  /// something can be laid out in. Every tab sits in a column of its own
-  /// worktree, and a worktree with columns has one of them focused.
   private static func checkGroups(
     _ ws: Workspace, _ context: String, worktreeIDs: Set<Worktree.ID>
   ) {

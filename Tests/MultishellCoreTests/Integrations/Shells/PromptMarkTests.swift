@@ -4,12 +4,22 @@ import Testing
 
 @testable import MultishellCore
 
-/// The OSC 133 marks a prompt writes about itself, which are what let a click
-/// inside it move the cursor. zsh only has to add the claim to the marks
-/// Ghostty's own integration already writes; bash has to write all of them,
-/// since Ghostty writes none for it.
+/// OSC 133 marks let a click in a prompt move the cursor. zsh adds the claim to
+/// Ghostty's own marks, and bash writes all of them, since Ghostty writes none for it.
 @Suite
 struct PromptMarkTests {
+  /// A helper whose relay writes down each line bash sends it. It can finish
+  /// just after bash exits, so a test waits on the log rather than reads it.
+  private func relayLogging(to log: URL, in scratch: URL) throws -> URL {
+    try Scratch.script(
+      "[ \"$1\" = relay ] || exit 0\nwhile IFS= read -r line; do printf '%s\\n' \"$line\" >> '\(log.path)'; done",
+      at: scratch.appendingPathComponent("multishell"))
+  }
+
+  private static func lines(of log: URL) -> [String] {
+    ((try? String(contentsOf: log, encoding: .utf8)) ?? "").split(separator: "\n").map(String.init)
+  }
+
   @Test func theZshPromptSaysAClickInItMayMoveTheCursor() {
     let zshrc = ShellStateHooks.zshIntegrationFiles(helper: "/x/multishell")[".zshrc"] ?? ""
     #expect(zshrc.contains("]133;A;cl=line"))
@@ -42,9 +52,8 @@ struct PromptMarkTests {
       "a separator of its own is what a trailing one in theirs doubles")
   }
 
-  /// The claims are only worth something if a real shell writes them at a
-  /// prompt. The generated files are a chain, and a hook that fell out of it
-  /// anywhere would leave every one of them valid shell.
+  /// The generated files are a chain, and a hook dropped from it would leave every
+  /// file valid shell, so only a real shell at a prompt shows the claim.
   @Test func aRealZshWritesTheClaimAtItsPromptUnderGhosttyAndNowhereElse() throws {
     let zsh = "/bin/zsh"
     guard FileManager.default.isExecutableFile(atPath: zsh) else { return }
@@ -70,10 +79,8 @@ struct PromptMarkTests {
     }
   }
 
-  /// A prompt of its own, because the input mark rides on the end of PS1 and
-  /// readline drops the end of a prompt as wide as the screen: on a machine
-  /// whose `/etc/bashrc` made `\h:\W \u\$` reach 80 columns, the mark was
-  /// written and then scrolled off, and the test read as our file's fault.
+  /// readline drops the end of a screen-wide prompt, where the input mark rides. One machine's
+  /// `/etc/bashrc` PS1 reached 80 columns and scrolled the mark off, so the test sets its own.
   @Test func aRealBashWritesAllThreeMarksUnderGhosttyAndNoneWithoutIt() throws {
     let bash = "/bin/bash"
     guard FileManager.default.isExecutableFile(atPath: bash) else { return }
@@ -137,14 +144,13 @@ struct PromptMarkTests {
 
   /// An empty Enter runs nothing, so the arm lived on into the next
   /// PROMPT_COMMAND, where the user's own entry was reported as a command.
-  @Test func anEmptyEnterUnderTheUsersPromptCommandStartsNoCommand() throws {
+  @Test func anEmptyEnterUnderTheUsersPromptCommandStartsNoCommand() async throws {
     let bash = "/bin/bash"
     guard FileManager.default.isExecutableFile(atPath: bash) else { return }
     let scratch = try Scratch.directory("marks-helper")
     defer { Scratch.remove(scratch) }
     let log = scratch.appendingPathComponent("log")
-    let helper = try Scratch.script(
-      "printf '%s\\n' \"$1\" >> '\(log.path)'", at: scratch.appendingPathComponent("multishell"))
+    let helper = try relayLogging(to: log, in: scratch)
     let files = try GeneratedIntegration(helper: helper.path)
     defer { files.remove() }
     try files.writeHomeFile(".bashrc", "PS1='> '\nPROMPT_COMMAND='history -a'\n")
@@ -155,7 +161,8 @@ struct PromptMarkTests {
       bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment,
       input: "\n\ntrue\n\nexit\n")
 
-    let lines = try String(contentsOf: log, encoding: .utf8).split(separator: "\n")
+    try await waitUntil { Self.lines(of: log).count >= 3 }
+    let lines = Self.lines(of: log).map { $0.split(separator: " ").first ?? "" }
     #expect(
       lines.filter { $0 == "command-started" }.count == 2, "one for `true` and one for `exit`")
     #expect(lines.filter { $0 == "command-finished" }.count == 1)
@@ -163,14 +170,13 @@ struct PromptMarkTests {
 
   /// Typing an agent's name is how most agents start, and most have no
   /// hooks installed; the shell's own report is what marks the pane.
-  @Test func bashNamesAnAgentItStartsAndNothingElse() throws {
+  @Test func bashNamesAnAgentItStartsAndNothingElse() async throws {
     let bash = "/bin/bash"
     guard FileManager.default.isExecutableFile(atPath: bash) else { return }
     let scratch = try Scratch.directory("marks-command")
     defer { Scratch.remove(scratch) }
     let log = scratch.appendingPathComponent("log")
-    let helper = try Scratch.script(
-      "printf '%s\\n' \"$*\" >> '\(log.path)'", at: scratch.appendingPathComponent("multishell"))
+    let helper = try relayLogging(to: log, in: scratch)
     let codex = try Scratch.script("true", at: scratch.appendingPathComponent("codex"))
     let files = try GeneratedIntegration(helper: helper.path)
     defer { files.remove() }
@@ -183,12 +189,13 @@ struct PromptMarkTests {
       bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment,
       input: "\(codex.path) --continue\nFOO=1 \(codex.path)\ntrue\nexit\n")
 
-    let lines = try String(contentsOf: log, encoding: .utf8).split(separator: "\n")
+    try await waitUntil { Self.lines(of: log).count >= 7 }
+    let lines = Self.lines(of: log).filter { $0.hasPrefix("command-started ") }
     #expect(
-      lines.filter { $0.contains("command-started") && $0.contains("--command codex") }.count == 2,
+      lines.filter { $0.hasSuffix(" codex") }.count == 2,
       "the agent it ran, by name without its path or an assignment before it: \(lines)")
     #expect(
-      lines.filter { $0.contains("command-started") && $0.contains("--command true") }.isEmpty,
+      lines.filter { $0.hasSuffix(" true") }.isEmpty,
       "and nothing of what else the user runs: \(lines)")
   }
 
@@ -243,9 +250,8 @@ struct PromptMarkTests {
     return text.split(separator: "\n").filter { $0.contains("\"running\"") }.map(String.init)
   }
 
-  /// An alias is how an agent is usually started once someone has flags they
-  /// always pass. zsh hands preexec the line as typed and the line with its
-  /// aliases expanded; bash's `BASH_COMMAND` is already expanded.
+  /// zsh hands preexec the line as typed and the line with its aliases expanded;
+  /// bash's `BASH_COMMAND` is already expanded.
   @Test func zshReadsTheExpandedLineSoAnAliasedAgentIsStillTheAgent() throws {
     guard
       let lines = try zshPreexecLines([
@@ -278,8 +284,7 @@ struct PromptMarkTests {
     #expect(output.contains("%{") == false, "and no brace leaks into the prompt")
   }
 
-  /// A mark belongs at a prompt, never in what a command wrote. Hooks run
-  /// through `$SHELL -l -i -c`, which reads the rc files, so a mark written
+  /// Hooks run through `$SHELL -l -i -c`, which reads the rc files, so a mark written
   /// anywhere but a prompt hook would land in the output a hook is judged by.
   @Test func aShellRunningOneCommandWritesNoMarksIntoItsOutput() throws {
     let zsh = "/bin/zsh"
@@ -295,10 +300,8 @@ struct PromptMarkTests {
     #expect(output.contains("\u{1B}]133;") == false, "nothing a hook's message would carry")
   }
 
-  /// Where our entries sit in `PROMPT_COMMAND` is the whole of the bash
-  /// design: the marks have to be put back after a framework's own entry has
-  /// rebuilt PS1, and arming the DEBUG trap has to come after everything.
-  /// bash 5.1 made `PROMPT_COMMAND` an array, so both shapes are built.
+  /// Our marks go back after a framework's entry rebuilds PS1, and the DEBUG trap arms
+  /// last. bash 5.1 made `PROMPT_COMMAND` an array; an older one runs only element 0.
   @Test func theUsersOwnPromptCommandEntriesKeepTheirPlaceBetweenOurs() throws {
     let bash = "/bin/bash"
     guard FileManager.default.isExecutableFile(atPath: bash) else { return }
@@ -311,18 +314,35 @@ struct PromptMarkTests {
     let output = try interactiveShell(
       bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment,
       input: "declare -p PROMPT_COMMAND\nexit\n")
-    let order =
-      ["_multishell_precmd", "theirs_first", "theirs_second"]
-      + ["_multishell_prompt_marks", "_multishell_arm"]
-    let places = order.compactMap { output.range(of: $0, options: .backwards)?.lowerBound }
+    let declared = try #require(output.range(of: "declare -a PROMPT_COMMAND=")).upperBound
+    let listing = output[declared...]
+    let order = [
+      "_multishell_precmd", "theirs_first", "_multishell_prompt_marks", "_multishell_arm",
+    ]
+    let places = order.compactMap { listing.range(of: $0)?.lowerBound }
     #expect(places.count == order.count, "every entry is there")
     #expect(places == places.sorted(), "and in this order")
+    #expect(listing.contains("theirs_second"))
   }
 
-  /// `TERM_PROGRAM` is the one variable these files read that a terminal may
-  /// genuinely not set, and a shell run with `nounset` treats reading it as an
-  /// error: zsh writes one at every startup, and bash abandons the rest of the
-  /// init file, taking the command-status hooks with it.
+  @Test func anArrayPromptCommandStillRunsOurHooksOnABashThatRunsOnlyItsFirstElement() throws {
+    let bash = "/bin/bash"
+    guard FileManager.default.isExecutableFile(atPath: bash) else { return }
+    let files = try GeneratedIntegration(helper: "/bin/echo")
+    defer { files.remove() }
+    try files.writeHomeFile(".bashrc", "PS1='> '\nPROMPT_COMMAND=(theirs_first theirs_second)\n")
+    var environment = files.environment(termProgram: "ghostty")
+    environment[SessionEnvironment.sessionKey] = "array-prompt-command"
+
+    let output = try interactiveShell(
+      bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment,
+      input: "true\nexit\n")
+    #expect(output.contains(Marks.claim))
+    #expect(output.contains("> " + Marks.input))
+  }
+
+  /// A terminal may leave `TERM_PROGRAM` unset. Under `nounset`, reading it makes zsh
+  /// print an error at every startup and bash abandon the init file, hooks and all.
   @Test func aShellRunWithNounsetIsNotTrippedByTheTerminalItIsNotIn() throws {
     let files = try GeneratedIntegration(helper: "/bin/echo")
     defer { files.remove() }
@@ -349,12 +369,8 @@ struct PromptMarkTests {
     #expect(output.contains("HOOKSOK"), "the hooks outlive the rest of the file")
   }
 
-  /// libghostty's zsh integration is reached only through its own bootstrap
-  /// `.zshenv`, which restores the `ZDOTDIR` it displaced and chains on to it.
-  /// The engine applies a surface's variables after setting that up, so the
-  /// session has to name the pair itself. Stood in for by a bootstrap that
-  /// keeps the same contract: enter the displaced directory, and from a
-  /// deferred precmd write a plain prompt start and the input mark.
+  /// libghostty's zsh integration loads only through its bootstrap `.zshenv`, and the
+  /// engine applies a surface's variables after that, so the session names both.
   @Test func aFreshTabEntersTheEnginesBootstrapWhichChainsOnToOurs() throws {
     let zsh = "/bin/zsh"
     guard FileManager.default.isExecutableFile(atPath: zsh) else { return }
@@ -377,9 +393,8 @@ struct PromptMarkTests {
     #expect(plain.lowerBound < claim.lowerBound, "the claim still lands last")
   }
 
-  /// The shell that replaces an exited agent is started by a fragment, not
-  /// by the session's environment, so it names the same pair itself, found
-  /// through the variable the engine leaves in every child.
+  /// The shell after an exited agent is started by a fragment, not the session's
+  /// environment, so it finds both through the variable the engine leaves in every child.
   @Test func theShellAfterAnAgentEntersTheEnginesBootstrapUnderGhosttyOnly() throws {
     let zsh = "/bin/zsh"
     guard FileManager.default.isExecutableFile(atPath: zsh) else { return }
@@ -426,9 +441,8 @@ struct PromptMarkTests {
   }
 }
 
-/// The integration files as the app writes them, in a directory of their own,
-/// beside a home holding no startup file, so a shell run against them reads
-/// nothing this machine has.
+/// The integration files as the app writes them, beside a home with no startup
+/// file, so a shell run against them reads nothing this machine has.
 private struct GeneratedIntegration {
   let root: URL
   let home: URL
@@ -452,10 +466,8 @@ private struct GeneratedIntegration {
   /// `shell-integration/zsh` below it, as libghostty's is.
   var engineResources: URL { root.appendingPathComponent("resources", isDirectory: true) }
 
-  /// A bootstrap with libghostty's contract: restore the `ZDOTDIR` it
-  /// displaced from `GHOSTTY_ZSH_ZDOTDIR`, source that directory's `.zshenv`,
-  /// and from a precmd deferred past `.zshrc` write a plain prompt start and
-  /// put the input mark on the end of PS1.
+  /// libghostty's bootstrap contract: restore `ZDOTDIR` from `GHOSTTY_ZSH_ZDOTDIR`, source
+  /// its `.zshenv`, and from a precmd deferred past `.zshrc` write the prompt start and mark.
   func writeEngineBootstrap() throws -> URL {
     let dir = engineResources.appendingPathComponent("shell-integration/zsh", isDirectory: true)
     try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -498,9 +510,8 @@ private struct GeneratedIntegration {
   }
 }
 
-/// Everything one interactive shell writes before `exit` reaches it, its
-/// prompt included: bash writes its prompt to stderr and zsh to stdout, so
-/// the two are read as one.
+/// Everything one interactive shell writes before `exit` reaches it. bash writes its
+/// prompt to stderr and zsh to stdout, so the two are read as one.
 private func interactiveShell(
   _ executable: String, arguments: [String], environment: [String: String],
   input: String = "true\nexit\n"

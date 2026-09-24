@@ -5,8 +5,6 @@ import Testing
 
 @Suite @MainActor
 struct ScrollToTopTests {
-  /// A 100 pt scroll view holding a document taller than itself, scrolled
-  /// away from the top.
   private func scrolledAway(
     flipped: Bool, topInset: CGFloat = 0, documentHeight: CGFloat = 400
   )
@@ -29,16 +27,14 @@ struct ScrollToTopTests {
     #expect(scrollView.contentView.bounds.origin.y == 0)
   }
 
-  /// The regression: a settings window's toolbar gives its scroll view a top
-  /// content inset, and the top of the document is that far above y 0. Going
-  /// to 0 instead hid the first rows under the toolbar.
+  /// A settings window's toolbar gives its scroll view a top content inset, and
+  /// scrolling to y 0 instead hid the first rows under the toolbar.
   @Test func aTopContentInsetIsTheTop() {
     let scrollView = scrolledAway(flipped: true, topInset: 52)
     scrollView.scrollDescendantsToTop()
     #expect(scrollView.contentView.bounds.origin.y == -52)
   }
 
-  /// Content shorter than the window still sits under the inset, not over it.
   @Test func aDocumentShorterThanItsScrollViewKeepsTheInset() {
     let scrollView = scrolledAway(flipped: true, topInset: 52, documentHeight: 50)
     scrollView.scrollDescendantsToTop()
@@ -69,8 +65,6 @@ struct ScrollToTopTests {
     #expect(inner.contentView.bounds.origin.y == 0, "a tab's own scroll view sits inside the form")
   }
 
-  /// The window's whole tree is walked, so a scroll view anywhere under a
-  /// plain container is still found.
   @Test func aScrollViewUnderAPlainViewIsFound() {
     let container = NSView()
     let scrollView = scrolledAway(flipped: true)

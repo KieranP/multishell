@@ -4,14 +4,8 @@ import Testing
 
 @testable import Multishell
 
-/// The Mac app's own catalogue against the Mac app's own source, the way
-/// `Tests/MultishellCoreTests` checks the libraries against theirs.
-///
-/// Two catalogues and two `t(_:_:)`s, so each is checked where it lives:
-/// this package cannot see the libraries' tests, and a frontend added later
-/// would carry a third of these. The duplication is the price of the split,
-/// and it is what lets a frontend word its chrome without touching what the
-/// model says.
+/// Pairs with the TranslationTests in `Tests/MultishellCoreTests`: a check added to one goes in
+/// the other; see Docs/develop/tests.md.
 @Suite
 struct TranslationTests {
   @Test func everyKeyTheAppAsksForIsInItsOwnCatalogue() throws {
@@ -63,14 +57,8 @@ struct TranslationTests {
     }
   }
 
-  /// The app's `t(_:_:)` has to be the one a file of this target gets, and
-  /// it has to reach the app's catalogue: a shadowing that stopped working
-  /// would send every view to the libraries' words, where most of these
-  /// keys are not, and every label would come out as its own key.
-  /// Named `Multishell.t` here and not in the app itself: a module that
-  /// imports both this one and MultishellCore sees two, and only a file
-  /// inside the app gets its own without asking. That is the whole
-  /// mechanism, so it is worth one test that says so out loud.
+  /// A shadowing that stopped working would send every view to the libraries' words, each label
+  /// coming out as its key. Qualified here because this module imports both halves.
   @Test func theAppsOwnFunctionAnswersFromTheAppsOwnCatalogue() {
     #expect(Multishell.t("menu.new-tab") == "New Tab")
     #expect(
@@ -84,12 +72,18 @@ struct TranslationTests {
       "and the libraries' own lookup still finds it")
   }
 
-  /// A word both halves say is written in both catalogues, which is what
-  /// keeps a view off the libraries' words. Nothing stops the two copies
-  /// parting, and if they do the sidebar and the screen reader describing
-  /// it say different things. Checked from this side because the app
-  /// already depends on MultishellCore; the libraries do not know a
-  /// frontend exists and their own test does not look.
+  @Test func aCountedPhraseReadsAsSingularAndPlural() {
+    #expect(Multishell.t("count.terminals", 1) == "1 terminal")
+    #expect(Multishell.t("count.worktrees", 1) == "1 worktree")
+    #expect(Multishell.t("count.worktrees", 4) == "4 worktrees")
+  }
+
+  @Test func aKeyWithNoEntryAnswersWithItself() {
+    #expect(Multishell.t("no.such.key") == "no.such.key")
+  }
+
+  /// Checked from this side because the libraries do not know a frontend exists; copies that
+  /// part leave the sidebar and the screen reader describing it saying different things.
   @Test func aWordInBothCataloguesReadsTheSameInBoth() throws {
     let mine = try Self.catalogue()
     let libraries = try #require(
@@ -130,12 +124,8 @@ struct TranslationTests {
     }
   }
 
-  /// Two ways an entry goes wrong that every other check here passes: a
-  /// blank value, which shows nothing where a word should be, and a key
-  /// written twice, where the file still parses and `NSDictionary` keeps
-  /// one of the two without a word about the other. The second reads the
-  /// file rather than the parsed form, which is the only place the loss is
-  /// still visible; one entry per line is the convention it counts on.
+  /// `NSDictionary` silently keeps one of a key written twice, so the second check reads the file
+  /// as text, counting on one entry per line.
   @Test func noEntryIsBlankOrWrittenTwice() throws {
     for (key, english) in try Self.catalogue() {
       let isSaid = !english.trimmingCharacters(in: .whitespaces).isEmpty
@@ -153,9 +143,8 @@ struct TranslationTests {
     #expect(written.count == (try Self.catalogue().count))
   }
 
-  /// `%s` is a C string. A Swift `String` handed to one is a pointer where
-  /// a pointer is not, which is a crash or worse rather than a wrong word,
-  /// and nothing else here would catch it: the argument count is right.
+  /// A Swift `String` handed to `%s` is read as a C pointer, a crash rather than a wrong word, and
+  /// the argument count check still passes.
   @Test func noPhraseAsksForACString() throws {
     for (key, english) in try Self.catalogue() {
       let takesACString = english.contains(/%[0-9$]*s/)
@@ -163,11 +152,8 @@ struct TranslationTests {
     }
   }
 
-  /// Every counted form, rendered. The rule lives in a plist whose format
-  /// key has to name its own sub-dictionary, and a pair that does not match
-  /// answers with the raw format rather than a word. Two of these are
-  /// exercised by what they say; the rest were only ever checked by being
-  /// present.
+  /// A format key that does not name its own sub-dictionary answers with the raw format, and
+  /// most forms are otherwise only checked by being present.
   @Test func everyCountedFormRendersForOneAndMany() {
     for key in Self.countedForms.sorted() {
       let one = Multishell.t(key, 1)
@@ -190,11 +176,8 @@ struct TranslationTests {
     }
   }
 
-  /// layout.md's "no user-visible literal outside a catalogue", which until
-  /// now was a rule with nothing behind it: every other check here starts at
-  /// a `t` call and so cannot see a word that never became one. A literal
-  /// here is looked up in `Bundle.main`, which carries no catalogue, so it
-  /// shows in English whatever the language and no translator ever sees it.
+  /// A literal is looked up in `Bundle.main`, which has no catalogue, and every other check here
+  /// starts at a `t` call; see Docs/design/translation.md.
   @Test func noViewLabelsItselfWithALiteral() throws {
     for file in try Self.swiftFiles() {
       let text = try String(contentsOf: file, encoding: .utf8)
@@ -208,9 +191,7 @@ struct TranslationTests {
     }
   }
 
-  /// The initialisers and modifiers taking a `LocalizedStringKey`, holding a
-  /// literal that is neither empty nor an interpolation. Built per call: a
-  /// `Regex` is not `Sendable`, so a `static let` of one does not compile.
+  /// Built per call: a `Regex` is not `Sendable`, so a `static let` of one does not compile.
   private static func literalLabel() -> Regex<(Substring, Substring)> {
     /\b(Text|Label|Button|Toggle|Picker|TextField|SecureField|Stepper|Link|Section|GroupBox|DisclosureGroup|help|navigationTitle|accessibilityLabel|accessibilityHint|alert|confirmationDialog)\(\s*"[^"\\(]+"/
   }

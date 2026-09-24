@@ -1,44 +1,12 @@
 import AppKit
+import MultishellCore
 import SwiftUI
 import Testing
 
 @testable import Multishell
 
-/// Every settings page laid out at the width its window gives it, in a
-/// window that is never ordered in: no screen, and none of the permissions
-/// driving one would ask for.
-///
-/// Both settings windows are fixed at `SettingsView.windowSize`, so a page
-/// taller than that is reachable only by scrolling a form the user has no
-/// reason to think scrolls. Adding rows is how that happens, and adding rows
-/// is cheap. The one page that already scrolls says so below, which is what
-/// makes this catch the next one.
-///
-/// The full height is the page's to use: measured here, the tab content is
-/// given the whole window and the band takes none of it. That was worth
-/// checking, since the band is invisible to everything else in this file.
-///
-/// Agent settings is left out, not fixed: its `onAppear` refresh reads the
-/// machine, so the page is as tall as this developer has agents, and a test
-/// that measured it would be measuring a laptop. Appearance stays in: its
-/// font list is the machine's too, but a picker is one row however many
-/// fonts are in it.
-///
-/// The bound is absolute rather than a margin, and Project General sits
-/// 18.5pt under it. So this is likely the first test to fail on a macOS that
-/// grows a grouped form's rows, and that failure would be correct: the
-/// window is fixed, so the page really would overflow. A page is worth a
-/// point or two more on one machine than another: Project Agents measured
-/// 541 here and 539 on the CI runner, which does have the window server this
-/// needs.
-///
-/// Two things this cannot see. The tab band itself: SwiftUI draws it outside
-/// the AppKit hierarchy, absent from both a rendered bitmap and a measured
-/// size, so whether six tab items fit in 560 stays a question for the screen.
-/// And width: a minimum-size measurement reports the width at which text
-/// stops wrapping, not the width at which a control is cut off, so it reads
-/// 744 for the Notifications page whose caption is meant to wrap. Both are in
-/// BUGS.md.
+/// Agent settings' Hooks part is left out because its height is the developer's agent count; the
+/// exemptions and what this cannot see are in Docs/develop/tests.md and build.md.
 @Suite @MainActor
 struct SettingsPageSizeTests {
   @Test func noSettingsPageIsTallerThanTheWindowItOpensIn() {
@@ -67,6 +35,7 @@ struct SettingsPageSizeTests {
       Page(name: "General", view: AnyView(GeneralSettingsTab(model: model))),
       Page(name: "Worktrees", view: AnyView(WorktreeSettingsTab(model: model))),
       Page(name: "Terminal", view: AnyView(TerminalSettingsTab(model: model))),
+      Page(name: "Agents, Agent", view: AnyView(AgentSettingsTab(model: model, part: .agent))),
       Page(name: "Notifications", view: AnyView(NotificationSettingsTab(model: model))),
       Page(name: "Appearance", view: AnyView(AppearanceSettingsTab(model: model))),
       Page(
@@ -74,10 +43,19 @@ struct SettingsPageSizeTests {
       Page(
         name: "Project Worktrees",
         view: AnyView(ProjectWorktreesTab(model: model, project: project))),
-      // Six monospaced editors: no window this size was ever going to hold it.
       Page(
-        name: "Project Hooks", view: AnyView(ProjectHooksTab(model: model, project: project)),
-        scrolls: true),
+        name: "Project Hooks, Create",
+        view: AnyView(ProjectHooksTab(model: model, project: project, stage: .create))),
+      Page(
+        name: "Project Hooks, Create, a repository file asking for trust",
+        view: AnyView(
+          ProjectHooksTab(model: model, project: askingForTrust(project), stage: .create))),
+      Page(
+        name: "Project Hooks, Delete",
+        view: AnyView(ProjectHooksTab(model: model, project: project, stage: .delete))),
+      Page(
+        name: "Project Hooks, Environment",
+        view: AnyView(ProjectHooksTab(model: model, project: project, stage: .environment))),
       Page(
         name: "Project Terminal",
         view: AnyView(ProjectTerminalTab(model: model, project: project))),
@@ -87,9 +65,17 @@ struct SettingsPageSizeTests {
   }
 }
 
+/// The tallest the Create group gets: the trust section stands above it.
+@MainActor
+private func askingForTrust(_ project: Project) -> Project {
+  let shared = SharedProjectSettings(preCreateHook: "make setup", postCreateHook: "npm ci")
+  var asking = project
+  asking.sharedSettings = SharedSettingsRead(
+    asWritten: shared, confined: shared, hasBeenRead: true)
+  return asking
+}
+
 extension View {
-  /// The height this view needs to show everything at `width`.
-  ///
   /// The window is not decoration: hosted without one the same view measures
   /// a few points taller, so the figure would not be the one the user gets.
   @MainActor

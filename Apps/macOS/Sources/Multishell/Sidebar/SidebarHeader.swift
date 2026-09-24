@@ -17,9 +17,7 @@ struct SidebarHeader: View {
       button("folder.badge.plus", help: t("sidebar.add-project"), action: addProject)
         .foregroundStyle(theme.textSecondary)
     }
-    .padding(.horizontal, 14)
-    .frame(height: UIMetrics.headerHeight)
-    .titleBarDoubleClick()
+    .windowHeader()
   }
 
   private func button(
@@ -33,5 +31,6 @@ struct SidebarHeader: View {
     }
     .buttonStyle(.plain)
     .help(help)
+    .accessibilityLabel(help)
   }
 }

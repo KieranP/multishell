@@ -589,7 +589,7 @@ struct AppModelHookControlTests {
 
     let alert = try #require(h.model.presentedError)
     #expect(alert.title.hasPrefix("Worktree not removed: the directory could not be moved"))
-    #expect(alert.retryLabel == nil)
+    #expect(alert.retry == nil)
     #expect(h.worktree(onBranch: "pinned") != nil && h.model.worktreeOperations.isEmpty)
     #expect(FileManager.default.fileExists(atPath: worktree.path.path))
     #expect(h.model.liveTerminalCount == 1, "the shell is still there")
@@ -735,8 +735,12 @@ struct AppModelHookControlTests {
     let later = Date(timeIntervalSince1970: 2)
 
     h.model.noteSharedSettings(
-      .success(shared), stamp: Date(timeIntervalSince1970: 1), for: h.project)
-    h.model.noteSharedSettings(.success(shared), stamp: later, for: h.project)
+      SharedSettingsReading(
+        result: .success(shared), stamp: Date(timeIntervalSince1970: 1), project: h.project),
+      for: h.project)
+    h.model.noteSharedSettings(
+      SharedSettingsReading(result: .success(shared), stamp: later, project: h.project),
+      for: h.project)
 
     #expect(!h.project.sharedSettings.hasMoved(later), "so the next tick spends no read")
   }
@@ -952,7 +956,7 @@ struct AppModelHookControlTests {
     await h.model.refresh(h.project)
     h.model.updateSettings(ProjectSettings(iconTint: 3), for: h.project)
 
-    h.model.exportSharedSettings(for: h.project)
+    await h.model.exportSharedSettings(for: h.project)
 
     let json = try #require(
       try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
@@ -969,7 +973,7 @@ struct AppModelHookControlTests {
     defer { h.tearDown() }
     h.model.updateSettings(ProjectSettings(iconGlyph: "🚀", iconTint: 3), for: h.project)
 
-    h.model.exportSharedSettings(for: h.project)
+    await h.model.exportSharedSettings(for: h.project)
 
     let written = try #require(try SharedProjectSettings.load(from: h.project.path))
     #expect(written.iconGlyph == nil, "an emoji left over from an older build is not the team's")
@@ -986,7 +990,7 @@ struct AppModelHookControlTests {
         iconGlyph: "server.rack", iconTint: 3),
       for: h.project)
 
-    h.model.exportSharedSettings(for: h.project)
+    await h.model.exportSharedSettings(for: h.project)
 
     let written = try #require(try SharedProjectSettings.load(from: h.project.path))
     #expect(written.branchPrefix == "team/" && written.postCreateHook == "npm ci")
@@ -1020,7 +1024,7 @@ struct AppModelHookControlTests {
     h.model.updateSettings(
       with(h.project.settings) { $0.branchPrefix = "mine/" }, for: h.project)
 
-    h.model.exportSharedSettings(for: h.project)
+    await h.model.exportSharedSettings(for: h.project)
 
     let written = try #require(try SharedProjectSettings.load(from: h.project.path))
     #expect(written.branchPrefix == "mine/", "what the user did set is exported")
@@ -1045,7 +1049,7 @@ struct AppModelHookControlTests {
     await h.model.refresh(h.project)
     h.model.updateSettings(ProjectSettings(branchPrefix: "mine/"), for: h.project)
 
-    h.model.exportSharedSettings(for: h.project)
+    await h.model.exportSharedSettings(for: h.project)
 
     let written = try #require(try SharedProjectSettings.load(from: h.project.path))
     #expect(written.branchPrefix == "mine/", "what the user did set is exported")
@@ -1067,7 +1071,7 @@ struct AppModelHookControlTests {
     h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
     h.model.decideSharedSettings(try #require(h.model.pendingSharedSettingsTrust), trusted: true)
 
-    h.model.exportSharedSettings(for: h.project)
+    await h.model.exportSharedSettings(for: h.project)
 
     let project = try #require(h.model.workspace.project(h.project.id))
     #expect(h.model.trustsSharedSettings(of: project), "the refused directory did not revoke it")
@@ -1083,7 +1087,7 @@ struct AppModelHookControlTests {
     try #"{ "postCreateHook": "npm ci" }"#.write(to: file, atomically: true, encoding: .utf8)
     await h.model.refresh(h.project)
 
-    h.model.exportSharedSettings(for: h.project)
+    await h.model.exportSharedSettings(for: h.project)
 
     let project = try #require(h.model.workspace.project(h.project.id))
     let shared = try #require(project.sharedSettings.confined)
@@ -1092,6 +1096,45 @@ struct AppModelHookControlTests {
 
   /// A list the user typed is theirs, `RepositoryContainment` holding only
   /// what a repository ships; an entry reaching out is skipped, not refused.
+  @Test func skippedEntriesAreStillNamedWhenALaterListFails() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let locked = h.project.path.appendingPathComponent("locked.txt")
+    try "x".write(to: locked, atomically: true, encoding: .utf8)
+    try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: locked.path)
+    defer {
+      try? FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: locked.path)
+    }
+    h.model.updateSettings(
+      ProjectSettings(linkedPaths: "~/.aws.json", copiedPaths: "locked.txt"), for: h.project)
+
+    await h.model.createWorktree(branch: "mine", basedOn: nil, createBranch: true, in: h.project)
+    let created = try #require(h.worktree(onBranch: "mine"))
+    await h.model.workInFlight.setup(of: created.id)?.value
+
+    let shown = try #require(h.model.worktreeOperations[created.id])
+    #expect(!shown.isRunning, "the copy failed")
+    #expect(shown.failure?.contains("locked.txt") == true)
+    #expect(shown.failure?.contains("~/.aws.json") == true, "on the one failure that is shown")
+    #expect(h.model.presentedError == nil, "not a second message racing it for the one alert")
+  }
+
+  @Test func aCancelledListStillNamesTheEntriesItSkippedBeforeTheStop() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    try "SECRET=1".write(
+      to: h.project.path.appendingPathComponent(".env"), atomically: true, encoding: .utf8)
+    h.model.updateSettings(ProjectSettings(copiedPaths: "~/.aws.json\n.env"), for: h.project)
+
+    await h.model.createWorktree(branch: "mine", basedOn: nil, createBranch: true, in: h.project)
+    let created = try #require(h.worktree(onBranch: "mine"))
+    h.model.cancelStage(of: created)
+    await h.model.workInFlight.setup(of: created.id)?.value
+
+    #expect(h.model.worktreeOperations[created.id] == nil, "the stage ended rather than failing")
+    #expect(h.model.presentedError?.message.contains("~/.aws.json") == true)
+  }
+
   @Test func aPathTheUserListedThemselvesDoesNotStopTheStagesAfterIt() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
@@ -1111,6 +1154,7 @@ struct AppModelHookControlTests {
     #expect(
       manager.fileExists(atPath: created.path.appendingPathComponent("hook.txt").path),
       "and the hook after the list ran")
+    #expect(h.model.presentedError?.message.contains("~/.aws.json") == true)
   }
 
   /// The user's own list replaces the repository's whole, so what is placed
@@ -1150,7 +1194,7 @@ struct AppModelHookControlTests {
     h.model.decideSharedSettings(asked, trusted: false)
     h.model.updateSettings(ProjectSettings(postCreateHook: "make setup"), for: h.project)
 
-    h.model.exportSharedSettings(for: h.project)
+    await h.model.exportSharedSettings(for: h.project)
 
     let written = try #require(try SharedProjectSettings.load(from: h.project.path))
     #expect(written.postCreateHook == "make setup")

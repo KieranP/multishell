@@ -98,3 +98,13 @@ struct ProjectRow: View {
     .accessibilityLabel(help)
   }
 }
+
+/// Everything but the closures, which capture only the project; see
+/// `WorktreeRow`'s.
+extension ProjectRow: @MainActor Equatable {
+  static func == (a: ProjectRow, b: ProjectRow) -> Bool {
+    a.project == b.project && a.settings == b.settings && a.isMissing == b.isMissing
+      && a.state == b.state && a.worktreeCount == b.worktreeCount
+      && a.isFetching == b.isFetching && a.theme == b.theme && a.metrics == b.metrics
+  }
+}

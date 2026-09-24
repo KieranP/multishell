@@ -37,6 +37,17 @@ public final class AppModel<Surface> {
   public var pendingProjectRemoval: PendingProjectRemoval?
   /// A pane or tab close waiting on it, because an agent there is working.
   public var pendingClose: PendingClose?
+  /// Held here, not by the sidebar, because the poll reads the rows it opens.
+  public var sidebarFilterText = "" {
+    didSet {
+      guard sidebarFilterText != oldValue else { return }
+      scheduleRevealedRowsRead(from: oldValue)
+      if !sidebarFilterText.isEmpty { showsSidebarFilter = true }
+    }
+  }
+  /// Up whenever there is text, and down only through `setSidebarFilterOpen`,
+  /// so emptying the field never takes the keyboard away with it.
+  public internal(set) var showsSidebarFilter = false
   /// Which project the settings window shows.
   public var settingsProjectID: Project.ID?
   /// The worktree showing its name field. Runtime state, so the menu that
@@ -73,6 +84,12 @@ public final class AppModel<Surface> {
   public internal(set) var showsAllTerminals = false
   /// What the badge was last set to, so it is written only when it changes.
   @ObservationIgnored var badgedWaitingCount = 0
+  /// The board as last built; see `agentBoard`. Bumping the generation is
+  /// what tells a view holding it that it went stale.
+  @ObservationIgnored var cachedAgentBoard: AgentBoard?
+  var agentBoardGeneration = 0
+  /// How many times the board was built, for the tests.
+  @ObservationIgnored var agentBoardBuilds = 0
 
   /// Which stage a create is in while the sheet still waits on it: the
   /// pre-create hook and `git worktree add`. `nil` when none is running.
@@ -82,7 +99,7 @@ public final class AppModel<Surface> {
   public var worktreeOperations = WorktreeOperations()
   /// The work building a worktree. Not observed: the pane draws from
   /// `worktreeOperations` beside it.
-  @ObservationIgnored public var workInFlight = WorktreeWorkInFlight()
+  @ObservationIgnored var workInFlight = WorktreeWorkInFlight()
 
   /// Sessions with a running shell, mirrored from the host after each
   /// reconcile so views can observe it; the host itself is not observable.
@@ -103,12 +120,17 @@ public final class AppModel<Surface> {
   /// where there is one to take back. A key leaves as its banner does.
   @ObservationIgnored var notifiedKeys: Set<SessionStates.Key> = []
   /// Worktrees whose saved tabs have been given live shells. Empty at launch,
-  /// so a relaunch starts nothing; never shrinks while the app runs.
+  /// so a relaunch starts nothing; shrinks only as worktrees are forgotten.
   @ObservationIgnored var warmWorktrees: Set<Worktree.ID> = []
+  /// Each project's exports of its repository's file, landing in the order
+  /// they were asked.
+  @ObservationIgnored var sharedSettingsWrites: [Project.ID: SaveOrder] = [:]
+  /// Settable so a test stands in a mount that never answers.
+  @ObservationIgnored var directoryProbe = DirectoryProbe()
   @ObservationIgnored var pidWatch: Task<Void, Never>?
   /// How often a Working state's pid is checked. Settable so a test does
   /// not wait the full interval.
-  @ObservationIgnored public var pidPollInterval: Duration = .seconds(2)
+  @ObservationIgnored var pidPollInterval: Duration = .seconds(2)
   /// How long a resuming agent has to report its woken turn; see agents.md.
   @ObservationIgnored var resumeGrace: Duration = .seconds(15)
   @ObservationIgnored var resumeDeadlines: [SessionStates.Key: Task<Void, Never>] = [:]
@@ -117,6 +139,10 @@ public final class AppModel<Surface> {
   @ObservationIgnored var captureLoginEnvironment: @Sendable () async -> LoginShellEnvironment = {
     await LoginShellEnvironment.capture()
   }
+  /// A harness stands in for both, the real ones writing the account's own files.
+  @ObservationIgnored var refreshLaunchFiles: @Sendable (_ helper: URL?) -> (any Error)? =
+    LaunchFiles.refresh
+  @ObservationIgnored var sweepDroppedFiles: @Sendable () -> Void = { DroppedFiles.sweep() }
 
   /// The environment of the user's interactive login shell, once captured.
   /// `nil` until the shell has answered and its PATH has been scanned.
@@ -135,6 +161,8 @@ public final class AppModel<Surface> {
   /// Which agents' hooks are in place, by catalogue id. Read from disk on
   /// demand by `refreshAgentStatus`, not observed.
   var installedAgentHooks: Set<String> = []
+  /// Installed, but not what this build writes.
+  var staleAgentHooks: Set<String> = []
   public var commandLineToolInstalled = false
   /// What the notification centre has been told about this app. The system's
   /// answer, not the workspace's, and changeable while the app runs.
@@ -162,18 +190,34 @@ public final class AppModel<Surface> {
   /// What each worktree's merge verdict was computed from, so a refresh
   /// that finds nothing moved spawns no git; see `MergeCheck`.
   @ObservationIgnored var mergeChecks: [Worktree.ID: MergeCheck] = [:]
+  /// What each verdict cost, which spreads a re-ask of every branch over
+  /// several rounds; a test sets `budget` to see them spread.
+  @ObservationIgnored var mergeReads = MergeReadLog()
+  /// Each worktree's path with its symlinks resolved, for placing a report
+  /// that names only a directory. Stale only if a link on the way is repointed.
+  @ObservationIgnored var resolvedWorktreePaths: [Worktree.ID: [String]] = [:]
   /// `git rev-parse --git-common-dir` per project, asked once. The watcher
   /// and the records check run from it without spawning git.
   @ObservationIgnored var commonGitDirectories: [Project.ID: URL] = [:]
+  /// Written from the sidebar's body, so not observed: a write there would
+  /// invalidate the body writing it.
+  @ObservationIgnored var worktreeOrders = WorktreeOrderMemo()
   /// What the last refresh of each project was computed from; see
   /// `refreshWorktreesIfRecordsChanged`.
   @ObservationIgnored var worktreeRecords: [Project.ID: WorktreeRecords] = [:]
   @ObservationIgnored var statusPolling: Task<Void, Never>?
   /// When each worktree's status was last read and how often it is read; a
   /// test reading right after a change sets `pace` to `.unpaced`.
-  @ObservationIgnored public var statusReads = StatusReadLog()
+  @ObservationIgnored var statusReads = StatusReadLog()
   /// One coalesced status refresh per worktree; see `noteActivity`.
   @ObservationIgnored var pendingStatusRefreshes: [Worktree.ID: Task<Void, Never>] = [:]
+  /// The read after the filter text changes, one per pause in typing, and
+  /// the rows the poll kept reading through every keystroke of that burst.
+  @ObservationIgnored var pendingRevealedRowsRead:
+    (polledThroughout: Set<Worktree.ID>, task: Task<Void, Never>)?
+  /// Worktrees whose removal is reading their status, and the latest asked.
+  @ObservationIgnored var removalReads: Set<Worktree.ID> = []
+  @ObservationIgnored var latestRemovalRequest: Worktree.ID?
 
   @ObservationIgnored var pendingSave: Task<Void, Never>?
   /// Set where another copy holds the socket: two copies autosaving one file
@@ -289,15 +333,11 @@ public final class AppModel<Surface> {
   public func start() async {
     guard startStateSource() else { return }
     host.claimSharedFiles()
-    do {
-      try HelperLink.refresh(to: platform.bundledHelper)
-      try ShellIntegration.refresh()
-    } catch {
-      report(error)
-    }
-    // Outside the refreshes, which throw: this sweep is all that bounds the
-    // drops directory.
-    DroppedFiles.sweep()
+    // On the main actor, before `start` first yields, so no tab can open ahead.
+    if let failure = refreshLaunchFiles(platform.bundledHelper) { report(failure) }
+    // All that bounds the drops directory; no terminal waits on it.
+    let sweep = sweepDroppedFiles
+    Task { await Self.offMain(sweep) }
     await refreshAll()
     reconcileSessions(takingFocus: true)
     startStatusPolling()

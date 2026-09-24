@@ -1,18 +1,19 @@
 import Foundation
 import GhosttyTerminal
 
-/// The user's own Ghostty configuration, read as text and handed over as the
-/// base a surface is configured from. Read once, at host creation.
+/// The user's own Ghostty configuration, the base a surface is configured
+/// from, read as the first terminal opens and when the app comes to the front.
 enum GhosttyUserConfig {
-  /// Both places Ghostty reads on a Mac, in its own order, measured with
-  /// `ghostty +show-config`. `XDG_CONFIG_HOME` is not read.
+  /// Both names in both places Ghostty reads on a Mac, in its own order
+  /// (`loadDefaultFiles`). `XDG_CONFIG_HOME` is not read.
   static let fileURLs: [URL] = {
     let home = FileManager.default.homeDirectoryForCurrentUser
-    return [
-      home.appendingPathComponent(".config/ghostty/config", isDirectory: false),
-      home.appendingPathComponent(
-        "Library/Application Support/com.mitchellh.ghostty/config", isDirectory: false),
-    ]
+    let directories = [".config/ghostty", "Library/Application Support/com.mitchellh.ghostty"]
+    return directories.flatMap { directory in
+      ["config", "config.ghostty"].map {
+        home.appendingPathComponent("\(directory)/\($0)", isDirectory: false)
+      }
+    }
   }()
 
   /// What this app asks for before the user's files, so a key in both is the
@@ -23,7 +24,9 @@ enum GhosttyUserConfig {
   }
 
   static func base(reading urls: [URL] = fileURLs) -> String {
-    base(userContents: urls.compactMap { try? String(contentsOf: $0, encoding: .utf8) })
+    base(
+      userContents: GhosttyConfigIncludes.contents(
+        following: urls, home: FileManager.default.homeDirectoryForCurrentUser))
   }
 
   static func base(userContents: [String]) -> String {
@@ -50,6 +53,20 @@ enum GhosttyUserConfig {
     "shell-integration-features", "term", "title-report", "vt-kam-allowed", "window-colorspace",
     "window-vsync",
   ]
+
+  /// The files as they now read, where they changed since `previous`; the
+  /// wrapper lays the theme and overrides back over the new base.
+  @MainActor
+  @discardableResult
+  static func reload(
+    _ controller: TerminalController, reading urls: [URL] = fileURLs, over previous: String
+  ) -> String {
+    let base = base(reading: urls)
+    guard base != previous else { return previous }
+    controller.updateConfigSource(.generated(base))
+    repair(controller, base: base)
+    return base
+  }
 
   /// libghostty refuses a file whole over one complaint, where Ghostty names
   /// the line and carries on. Blank the named lines and offer the rest again.
@@ -81,8 +98,7 @@ enum GhosttyUserConfig {
   }
 
   private static func usable(_ contents: String) -> String {
-    contents
-      .split(separator: "\n", omittingEmptySubsequences: false)
+    GhosttyConfigIncludes.lines(of: contents)
       .filter { isAllowed(key(of: $0)) }
       .joined(separator: "\n")
   }

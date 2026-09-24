@@ -21,7 +21,7 @@ struct WorktreeOrder: Equatable, Sendable {
   }
 
   /// Which band a worktree is listed in, before the sort orders each band.
-  private enum Band: Int {
+  fileprivate enum Band: Int {
     /// git's own main worktree, which is the repository in a bare layout.
     case primary
     /// A linked worktree checked out on the trunk, which is where the trunk
@@ -31,29 +31,30 @@ struct WorktreeOrder: Equatable, Sendable {
     case other
   }
 
-  /// `displayName`, `isActive` and `lastCommit` are asked once per worktree:
-  /// they read runtime state, which the caller holds.
-  func sort(
+  /// Everything the sort reads, so two equal lists sort the same. The closures
+  /// are asked once per worktree: they read runtime state, which the caller holds.
+  func keys(
     _ worktrees: [Worktree],
     displayName: (Worktree) -> String,
     isActive: (Worktree) -> Bool,
     lastCommit: (Worktree) -> Date?
-  ) -> [Worktree] {
-    worktrees
-      .map { worktree in
-        Key(
-          band: band(of: worktree, isActive: isActive(worktree)),
-          name: displayName(worktree),
-          createdAt: worktree.createdAt,
-          lastCommit: lastCommit(worktree),
-          worktree: worktree)
-      }
-      .sorted(by: precedes)
-      .map(\.worktree)
+  ) -> [Key] {
+    worktrees.map { worktree in
+      Key(
+        band: band(of: worktree, isActive: isActive(worktree)),
+        name: displayName(worktree),
+        createdAt: worktree.createdAt,
+        lastCommit: lastCommit(worktree),
+        worktree: worktree)
+    }
   }
 
-  private struct Key {
-    let band: Band
+  func sorted(_ keys: [Key]) -> [Worktree] {
+    keys.sorted(by: precedes).map(\.worktree)
+  }
+
+  struct Key: Equatable, Sendable {
+    fileprivate let band: Band
     let name: String
     let createdAt: Date?
     let lastCommit: Date?

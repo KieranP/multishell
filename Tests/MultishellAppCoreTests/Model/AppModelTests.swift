@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import MultishellGitKit
 import MultishellProcess
 import TestScratch
 import Testing
@@ -157,167 +158,6 @@ struct AppModelTests {
     #expect(h.model.liveTerminalCount == 0)
   }
 
-  @Test func eachTabRunsTheShellInForceForItsProject() {
-    let h = Harness()
-    let session = TerminalSession(
-      worktreeID: h.main.id, workingDirectory: h.main.path, title: "Shell")
-    #expect(h.model.prepared(session).shellPath == ShellCatalogue.loginShellPath())
-
-    h.model.setDefaultShell("/bin/bash")
-    #expect(h.model.prepared(session).shell == "/bin/bash")
-
-    h.model.updateSettings(ProjectSettings(defaultShell: "/bin/sh"), for: h.project)
-    #expect(h.model.prepared(session).shell == "/bin/sh", "the project's override wins")
-
-    h.model.updateSettings(
-      ProjectSettings(defaultShell: ShellCatalogue.loginShellID), for: h.project)
-    #expect(
-      h.model.prepared(session).shell == ShellCatalogue.loginShellPath(),
-      "a project can step back to $SHELL under a global choice")
-
-    h.model.select(h.main)
-    #expect(h.engine.opened.last?.shell == ShellCatalogue.loginShellPath(), "reaches the engine")
-    #expect(h.model.workspace.sessions.allSatisfy { $0.shell == nil }, "never in the workspace")
-  }
-
-  @Test func anAgentTabsFollowingShellIsTheChosenOne() {
-    let h = Harness()
-    h.model.setDefaultShell("/bin/sh")
-    h.model.setPreferredAgent(AgentCatalogue.customID)
-    h.model.setCustomAgentCommand("my-agent")
-    let session = TerminalSession(
-      worktreeID: h.main.id, workingDirectory: h.main.path, title: "Agent",
-      agentID: AgentCatalogue.customID)
-
-    let prepared = h.model.prepared(session)
-
-    #expect(prepared.command?.last == "my-agent; exec /bin/sh -l")
-  }
-
-  /// The flags are the user's, so they reach the command line whole, with
-  /// `{{branch}}` standing for the tab's own worktree.
-  @Test func anAgentTabCarriesTheFlagsWithItsPlaceholdersFilledIn() {
-    let h = Harness()
-    h.model.setDefaultShell("/bin/sh")
-    h.model.setPreferredAgent(AgentCatalogue.claudeID)
-    h.model.agentDetection = AgentDetection(found: ["claude": URL(fileURLWithPath: "/bin/claude")])
-    h.model.setAgentFlags("--name={{branch}} --model opus", for: AgentCatalogue.claudeID)
-    let session = TerminalSession(
-      worktreeID: h.feature.id, workingDirectory: h.feature.path, title: "Claude Code",
-      agentID: AgentCatalogue.claudeID)
-
-    #expect(
-      h.model.prepared(session).command?.last
-        == "claude --name=feature --model opus; exec /bin/sh -l"
-    )
-
-    h.model.updateSettings(ProjectSettings(agentFlags: "--model haiku"), for: h.project)
-    #expect(
-      h.model.prepared(session).command?.last == "claude --model haiku; exec /bin/sh -l",
-      "the project's line replaces the global one")
-
-    h.model.updateSettings(ProjectSettings(agentFlags: ""), for: h.project)
-    #expect(
-      h.model.prepared(session).command?.last == "claude; exec /bin/sh -l",
-      "blank runs it bare under a global that passes flags")
-  }
-
-  /// A saved tab that comes back as `claude --continue` is the same tab,
-  /// and the flags said how that tab is meant to run.
-  @Test func aResumedAgentTabIsStartedWithTheFlagsToo() throws {
-    let file = Scratch.path("agent-flags")
-      .appendingPathComponent("state.json")
-    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
-    let before = Harness(stateFile: file)
-    before.model.setPreferredAgent(AgentCatalogue.claudeID)
-    before.model.setAgentFlags("--name={{branch}}", for: AgentCatalogue.claudeID)
-    before.model.select(before.main)
-    before.store.openTab(in: before.main.id, title: "Claude Code", agentID: AgentCatalogue.claudeID)
-    before.model.saveNow()
-
-    let (store, _) = WorkspaceStore.restored(from: WorkspaceSnapshot(fileURL: file))
-    let engine = FakeEngine()
-    let after = AppModel(
-      store: store, host: engine, worktrees: nil,
-      watcher: FakeWatcher())
-    after.select(before.main)
-
-    let opened = engine.opened.first { store.workspace.session($0.id)?.title == "Claude Code" }
-    #expect(opened?.command?.last?.hasPrefix("claude --continue --name=main; ") == true)
-  }
-
-  @Test func aRenamedWorktreeAndACustomCommandTakePlaceholdersToo() {
-    let h = Harness()
-    h.model.setDefaultShell("/bin/sh")
-    h.model.setPreferredAgent(AgentCatalogue.customID)
-    h.model.setCustomAgentCommand("my-agent --name={{worktree}}")
-    h.model.renameWorktree(h.feature.id, to: "The fix")
-    let session = TerminalSession(
-      worktreeID: h.feature.id, workingDirectory: h.feature.path, title: "Agent",
-      agentID: AgentCatalogue.customID)
-
-    let command = h.model.prepared(session).command
-    #expect(command?.last == #"my-agent --name="$MULTISHELL_WORKTREE_NAME"; exec /bin/sh -l"#)
-    #expect(
-      command?.prefix(2) == ["/usr/bin/env", "MULTISHELL_WORKTREE_NAME=The fix"],
-      "the value is handed over around the shell, never written into its line")
-  }
-
-  /// Nothing that acts on the tab in front of the user acts at all while the
-  /// board covers it, and nothing starts a shell where a removal is running.
-  @Test func openInEditorLeavesTheBoardAndRefusesABusyWorktree() throws {
-    let h = Harness()
-    h.model.setPreferredEditor(EditorCatalogue.customID)
-    h.model.setCustomEditorCommand("my-editor {path}")
-    h.model.showAgentBoard()
-    #expect(h.model.showsAgentBoard)
-
-    h.model.openInEditor(h.main)
-
-    #expect(!h.model.showsAgentBoard, "a tab opened behind the board nobody can see or close")
-    #expect(h.model.workspace.activeTab(in: h.main.id) != nil)
-
-    let busy = Harness()
-    busy.model.setPreferredEditor(EditorCatalogue.customID)
-    busy.model.setCustomEditorCommand("my-editor {path}")
-    busy.model.worktreeOperations.begin(.preDeleteHook, on: busy.main.id)
-    busy.model.presentedError = nil
-
-    busy.model.openInEditor(busy.main)
-
-    #expect(busy.model.workspace.tabs.isEmpty, "its directory is about to be trashed")
-  }
-
-  @Test func openInEditorNeedsAnEditorAndACustomOneBecomesATab() throws {
-    let h = Harness()
-    h.model.presentedError = nil
-    h.model.openInEditor(h.main)
-    #expect(h.model.presentedError?.title == "No editor chosen")
-    #expect(h.model.workspace.tabs.isEmpty)
-
-    h.model.presentedError = nil
-    h.model.setPreferredEditor(EditorCatalogue.customID)
-    h.model.openInEditor(h.main)
-    #expect(h.model.presentedError?.title == "No editor command", "nothing typed yet")
-
-    h.model.presentedError = nil
-    h.model.setCustomEditorCommand("my-editor {path}")
-    h.model.openInEditor(h.main)
-    #expect(h.model.presentedError == nil)
-    let tab = try #require(h.model.workspace.activeTab(in: h.main.id))
-    #expect(h.model.workspace.title(of: tab) == "my-editor")
-    #expect(h.model.workspace.selectedWorktreeID == h.main.id, "the tab is brought on screen")
-    #expect(h.model.liveTerminalCount == 1)
-    #expect(h.engine.opened.last?.command?.last?.hasPrefix("my-editor ") == true)
-    #expect(
-      h.engine.opened.last?.command?.contains("MULTISHELL_WORKTREE_PATH=\(h.main.path.path)")
-        == true)
-
-    h.model.setPreferredEditor("vscode")
-    h.model.openInEditor(h.main)
-    #expect(h.model.presentedError?.title == "Visual Studio Code is not installed")
-  }
-
   @Test func savedTabsInAnUnvisitedWorktreeStayCold() {
     let h = Harness()
     h.store.openTab(in: h.feature.id)
@@ -346,35 +186,56 @@ struct AppModelTests {
     #expect(h.model.liveTerminalCount == 0)
   }
 
-  @Test func closingTheLastPaneClosesItsTabAndShell() {
+  @Test func selectingAWorktreeOnAVolumeThatDoesNotAnswerIsRefusedWithoutWaitingForIt() {
     let h = Harness()
-    h.model.select(h.main)
-    h.model.newTab()
-    #expect(h.model.workspace.tabs(in: h.main.id).count == 2)
+    let stat = HangingStat()
+    defer { stat.release() }
+    h.model.directoryProbe = DirectoryProbe(bound: .milliseconds(50), exists: stat.exists)
+    h.model.presentedError = nil
 
-    h.model.closeActivePane()
-    #expect(h.model.workspace.tabs(in: h.main.id).count == 1)
-    #expect(h.engine.closed.count == 1)
+    h.model.select(h.feature)
+    h.model.select(h.feature)
 
-    h.model.closeActivePane()
-    #expect(h.model.workspace.tabs(in: h.main.id).isEmpty)
+    #expect(!stat.hasReturned)
+    #expect(stat.calls == 1, "a second stat would pile another thread onto the mount")
+    #expect(h.model.workspace.selectedWorktreeID == nil)
+    #expect(h.model.presentedError?.title == PresentedError.worktreeDirectoryUnanswered("").title)
     #expect(h.model.liveTerminalCount == 0)
-
-    h.model.closeActivePane()  // nothing left: must not throw or select anything
-    #expect(h.model.workspace.selectedWorktreeID == h.main.id)
   }
 
-  @Test func splitThenCloseCollapsesBackToOnePane() {
+  @Test func launchRefreshesTheFilesAndSweepsTheDropsOnceAndSaysWhatFailed() async throws {
     let h = Harness()
-    h.model.select(h.main)
-    h.model.splitActivePane(.horizontal)
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-    #expect(tab.isSplit && h.model.liveTerminalCount == 2)
+    let calls = LineRecorder()
+    h.model.refreshLaunchFiles = { _ in
+      calls.record("refresh")
+      return CocoaError(.fileWriteNoPermission)
+    }
+    h.model.sweepDroppedFiles = { calls.record("sweep") }
 
-    h.model.closeActivePane()
-    let after = h.model.workspace.tab(tab.id)!
-    #expect(!after.isSplit)
-    #expect(h.model.liveTerminalCount == 1)
+    await h.model.start()
+
+    try await waitUntil { calls.received.count == 2 }
+    #expect(calls.received == ["refresh", "sweep"])
+    #expect(
+      h.model.presentedError?.message
+        == PresentedError(CocoaError(.fileWriteNoPermission)).message)
+  }
+
+  @Test func launchOpensTerminalsWithoutWaitingForTheDroppedFileSweep() async throws {
+    let h = Harness()
+    let gate = LineRecorder()
+    h.model.sweepDroppedFiles = {
+      let giveUp = Date().addingTimeInterval(10)
+      while !gate.received.contains("open"), Date() < giveUp { usleep(1000) }
+      gate.record("finished")
+    }
+
+    await h.model.start()
+    let finishedFirst = gate.received.contains("finished")
+    gate.record("open")
+
+    #expect(!finishedFirst)
+    try await waitUntil { gate.received.contains("finished") }
   }
 
   @Test func aSecondCopyOfTheAppHandsOverToTheRunningOneAndSavesNothing() async {
@@ -394,6 +255,18 @@ struct AppModelTests {
     #expect(!FileManager.default.fileExists(atPath: file.path), "two writers of one file")
   }
 
+  @Test func aCopyThatCouldNotQuitAfterHandingOverStartsNoShell() async {
+    let h = Harness()
+    h.source.startError = SocketFailure(kind: .inUse, path: "/tmp/multishell.sock")
+    await h.model.start()
+
+    h.model.select(h.main)
+    h.model.newTab()
+
+    #expect(h.engine.opened.isEmpty, "its config would outlive its quit")
+    #expect(h.model.liveTerminalCount == 0)
+  }
+
   @Test func removingTheMainWorktreeIsRefusedBeforeAnyDialog() {
     let h = Harness()
     h.model.requestRemoval(of: h.main)
@@ -403,118 +276,33 @@ struct AppModelTests {
     #expect(h.feature.isRemovable)
   }
 
-  @Test func removalAsksUnlessTheGlobalSettingsSettleBothTheWorktreeAndTheBranch() {
+  @Test func removalAsksUnlessTheGlobalSettingsSettleBothTheWorktreeAndTheBranch() async {
     let h = Harness()
-    h.model.requestRemoval(of: h.feature)
+    await h.model.requestRemoval(of: h.feature)?.value
     #expect(h.model.pendingRemoval?.id == h.feature.id)
     #expect(h.model.pendingRemoval?.choices.count == 2)
 
     h.model.pendingRemoval = nil
     h.model.setConfirmsWorktreeRemoval(false)
-    h.model.requestRemoval(of: h.feature)
+    await h.model.requestRemoval(of: h.feature)?.value
     #expect(h.model.pendingRemoval?.id == h.feature.id, "the branch question is still open")
     #expect(h.model.pendingRemoval?.choices.count == 2)
 
     h.model.pendingRemoval = nil
     h.model.setDeletesBranchWithWorktree(true)
-    h.model.requestRemoval(of: h.feature)
+    await h.model.requestRemoval(of: h.feature)?.value
     #expect(
       h.model.pendingRemoval == nil, "goes straight to removal, which needs git and so no-ops here")
 
     h.model.setConfirmsWorktreeRemoval(true)
-    h.model.requestRemoval(of: h.feature)
+    await h.model.requestRemoval(of: h.feature)?.value
     #expect(h.model.pendingRemoval?.deletesBranch == true)
     #expect(h.model.pendingRemoval?.choices.count == 1)
 
     h.model.pendingRemoval = nil
     h.model.setTrashesRemovedWorktrees(false)
-    h.model.requestRemoval(of: h.feature)
+    await h.model.requestRemoval(of: h.feature)?.value
     #expect(h.model.pendingRemoval?.message(warning: nil).hasPrefix("Deletes ") == true)
-  }
-
-  @Test func theCustomShellPathReachesTabsAndTheCaptionSaysWhenItWillNot() {
-    let h = Harness()
-    let session = TerminalSession(
-      worktreeID: h.main.id, workingDirectory: h.main.path, title: "Shell")
-    h.model.setDefaultShell(ShellCatalogue.customID)
-    #expect(h.model.prepared(session).shell == ShellCatalogue.loginShellPath(), "blank path")
-    #expect(h.model.customShellPathProblem?.hasPrefix("Blank") == true)
-    #expect(h.model.shellDisplayName(ShellCatalogue.customID).contains("blank"))
-
-    h.model.setCustomShellPath("/no/such/shell")
-    #expect(h.model.prepared(session).shell == "/no/such/shell")
-    #expect(h.model.customShellPathProblem?.hasPrefix("Nothing executable") == true)
-
-    h.model.setCustomShellPath(" /bin/sh ")
-    #expect(h.model.prepared(session).shell == "/bin/sh")
-    #expect(h.model.customShellPathProblem == nil)
-    #expect(h.model.shellDisplayName(ShellCatalogue.customID) == "the custom path /bin/sh")
-    h.model.updateSettings(ProjectSettings(defaultShell: "/bin/bash"), for: h.project)
-    #expect(h.model.prepared(session).shell == "/bin/bash", "a project override still wins")
-  }
-
-  @Test func activityInABackgroundTabIsRememberedUntilItIsShown() {
-    let h = Harness()
-    h.model.select(h.main)
-    let first = h.model.workspace.activeTab(in: h.main.id)!
-    h.model.newTab()
-    let second = h.model.workspace.activeTab(in: h.main.id)!
-
-    h.engine.delegate?.terminalHost(h.engine, didSeeActivityIn: first.focusedSessionID)
-    h.engine.delegate?.terminalHost(h.engine, didSeeActivityIn: second.focusedSessionID)
-
-    #expect(h.model.state(of: first) == .done)
-    #expect(h.model.state(of: second) == nil, "the focused tab is being watched")
-    #expect(h.model.state(ofWorktree: h.main.id) == .done)
-
-    h.model.activate(first)
-    #expect(h.model.state(of: first) == nil)
-  }
-
-  @Test func aBurstOfActivityCoalescesIntoOneStatusRefresh() async {
-    let h = Harness()
-    h.model.select(h.main)
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-
-    // Title before the command, command finished, title after: what one
-    // prompt produces. Each used to spawn its own `git status`.
-    for _ in 0..<3 {
-      h.engine.delegate?.terminalHost(h.engine, didRetitle: tab.focusedSessionID, to: "make")
-      h.engine.delegate?.terminalHost(h.engine, didSeeActivityIn: tab.focusedSessionID)
-    }
-
-    #expect(h.model.pendingStatusRefreshes.count == 1)
-    #expect(h.model.pendingStatusRefreshes[h.main.id] != nil)
-
-    // The debounce is 250 ms; polled with headroom for a busy CI runner.
-    for _ in 0..<160 where !h.model.pendingStatusRefreshes.isEmpty {
-      try? await Task.sleep(for: .milliseconds(50))
-    }
-    #expect(h.model.pendingStatusRefreshes.isEmpty, "the one refresh ran and cleared itself")
-  }
-
-  @Test func activityOfAShellThatExitedIsForgotten() {
-    let h = Harness()
-    h.model.select(h.main)
-    let first = h.model.workspace.activeTab(in: h.main.id)!
-    h.model.newTab()
-    h.engine.delegate?.terminalHost(h.engine, didSeeActivityIn: first.focusedSessionID)
-    #expect(h.model.state(ofWorktree: h.main.id) == .done)
-
-    h.engine.delegate?.terminalHost(h.engine, didExit: first.focusedSessionID)
-
-    #expect(h.model.sessionStates.isEmpty, "nothing left to look at")
-  }
-
-  @Test func aProcessExitDropsTheTabAndTheLiveCount() {
-    let h = Harness()
-    h.model.select(h.main)
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-
-    h.engine.delegate?.terminalHost(h.engine, didExit: tab.focusedSessionID)
-
-    #expect(h.model.workspace.tabs(in: h.main.id).isEmpty)
-    #expect(h.model.liveTerminalCount == 0)
   }
 
   @Test func activeProjectFollowsSelectionOrTheOnlyProject() {
@@ -524,25 +312,6 @@ struct AppModelTests {
     #expect(h.model.activeProject == nil, "two projects, nothing selected")
     h.model.select(h.feature)
     #expect(h.model.activeProject?.id == h.project.id)
-  }
-
-  @Test func shellTitlesAreShownButNeverWrittenToTheWorkspace() {
-    let h = Harness()
-    h.model.select(h.main)
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-    let before = h.model.workspace
-
-    h.engine.delegate?.terminalHost(h.engine, didRetitle: tab.focusedSessionID, to: "vim")
-    #expect(h.model.title(of: tab) == "vim")
-    #expect(h.model.workspace == before, "a prompt must not trigger a save")
-
-    h.model.renameTab(tab.id, to: "build")
-    #expect(h.model.title(of: h.model.workspace.tab(tab.id)!) == "build")
-    h.model.renameTab(tab.id, to: nil)
-    #expect(h.model.title(of: h.model.workspace.tab(tab.id)!) == "vim")
-
-    h.engine.delegate?.terminalHost(h.engine, didExit: tab.focusedSessionID)
-    #expect(h.model.sessionTitles.isEmpty, "titles of dead shells are not kept")
   }
 
   @Test func aFailingSaveIsReportedOnceNotAfterEveryChange() async {
@@ -559,223 +328,12 @@ struct AppModelTests {
     h.model.presentedError = nil
     #expect(await h.presentedErrorArrives() == nil, "the same alert, not a new one each time")
   }
-
-  /// The drop activates the tab in the column it lands in, so the tab that
-  /// was showing there goes behind it and must not keep the keyboard.
-  @Test func aTabDroppedOnAnotherColumnsTabTakesTheKeyboardWithIt() throws {
-    let h = Harness()
-    h.model.select(h.main)
-    let a = try #require(h.model.workspace.activeTab(in: h.main.id))
-    h.model.newTab()
-    let b = try #require(h.model.workspace.activeTab(in: h.main.id))
-    h.model.moveActiveTabToNewGroup()
-    h.model.activate(try #require(h.model.workspace.tab(a.id)))
-    #expect(h.model.workspace.group(of: a.id)?.id != h.model.workspace.group(of: b.id)?.id)
-    h.engine.focused.removeAll()
-
-    h.model.moveTab(b.id, .before, a.id)
-
-    #expect(h.model.workspace.group(of: b.id)?.id == h.model.workspace.group(of: a.id)?.id)
-    #expect(
-      h.engine.focused.last == h.model.workspace.tab(b.id)?.focusedSessionID,
-      "b is what the column shows now; a is behind it")
-  }
-
-  @Test func focusingTheActivePaneHandsTheKeyboardToTheActiveTabsFocusedSession() throws {
-    let h = Harness()
-    h.model.select(h.main)
-    let tab = try #require(h.model.workspace.activeTab(in: h.main.id))
-    h.engine.focused.removeAll()
-
-    h.model.focusActivePane()
-
-    #expect(h.engine.focused == [tab.focusedSessionID])
-  }
-
-  @Test func focusingTheActivePaneDoesNothingWhileTheBoardCoversThePanes() {
-    let h = Harness()
-    h.model.select(h.main)
-    h.model.showAgentBoard()
-    h.engine.focused.removeAll()
-
-    h.model.focusActivePane()
-
-    #expect(h.engine.focused.isEmpty)
-  }
-
-  /// The field commits when focus leaves it, and Escape takes the field away,
-  /// so the commit can arrive after the edit was abandoned. The worktree
-  /// rename has guarded this since it was written; the tab's had not.
-  @Test func escapeOnATabsNameFieldIsNotUndoneByTheCommitLosingFocus() throws {
-    let h = Harness()
-    h.model.select(h.main)
-    let a = try #require(h.model.workspace.activeTab(in: h.main.id))
-    h.model.newTab()
-    let b = try #require(h.model.workspace.activeTab(in: h.main.id))
-
-    h.model.beginRenamingTab(a.id)
-    h.model.cancelRenamingTab()
-    h.model.commitTabRename(of: a.id, to: "scratch")
-    #expect(h.model.workspace.tab(a.id)?.customTitle == nil, "Escape kept the name it had")
-
-    // A second field opening must not be closed by the first one's late blur.
-    h.model.beginRenamingTab(a.id)
-    h.model.beginRenamingTab(b.id)
-    h.model.commitTabRename(of: a.id, to: "late")
-    #expect(h.model.workspace.tab(a.id)?.customTitle == nil)
-    #expect(h.model.renamingTabID == b.id, "b is still the one being typed into")
-
-    h.model.commitTabRename(of: b.id, to: "build")
-    #expect(h.model.workspace.tab(b.id)?.customTitle == "build")
-    #expect(h.model.renamingTabID == nil)
-  }
-
-  /// The worktree rename drops its id when the row goes; the tab's had no
-  /// equivalent, so a closed tab left one pointing at nothing.
-  @Test func closingATabBeingRenamedTakesTheFieldWithIt() throws {
-    let h = Harness()
-    h.model.select(h.main)
-    let tab = try #require(h.model.workspace.activeTab(in: h.main.id))
-    h.model.beginRenamingTab(tab.id)
-
-    h.model.closeTab(tab.id)
-
-    #expect(h.model.workspace.tab(tab.id) == nil)
-    #expect(h.model.renamingTabID == nil)
-  }
-
-  @Test func tabRenamesAndReordersReachTheStore() {
-    let h = Harness()
-    h.model.select(h.main)
-    let a = h.model.workspace.activeTab(in: h.main.id)!
-    h.model.newTab()
-    let b = h.model.workspace.activeTab(in: h.main.id)!
-
-    h.model.renameTab(a.id, to: "build")
-    h.model.moveTab(b.id, .before, a.id)
-
-    #expect(h.model.workspace.title(of: h.model.workspace.tab(a.id)!) == "build")
-    #expect(h.model.workspace.tabs(in: h.main.id).map(\.id) == [b.id, a.id])
-
-    h.model.moveTab(b.id, .after, a.id)
-    #expect(h.model.workspace.tabs(in: h.main.id).map(\.id) == [a.id, b.id])
-  }
-
-  /// A middle click closes the tab it landed on, which need not be the
-  /// active one; the keystrokes only ever close what is on screen.
-  @Test func aMiddleClickClosesTheTabItLandedOnActiveOrNot() {
-    let h = Harness()
-    h.model.select(h.main)
-    let first = h.model.workspace.activeTab(in: h.main.id)!
-    h.model.newTab()
-    let second = h.model.workspace.activeTab(in: h.main.id)!
-
-    h.model.closeTab(first.id)
-
-    #expect(h.model.workspace.tabs(in: h.main.id).map(\.id) == [second.id])
-    #expect(h.model.workspace.activeTab(in: h.main.id)?.id == second.id, "the active one stays")
-    #expect(h.engine.closed == [first.focusedSessionID], "its shell went with it")
-
-    h.model.closeTab(UUID())
-    #expect(h.model.workspace.tabs(in: h.main.id).count == 1, "no such tab")
-  }
-
-  /// The same question Cmd+Shift+W asks, since a middle click on the wrong
-  /// tab is at least as easy to make.
-  @Test func aMiddleClickOnAWorkingAgentAsksFirst() {
-    let h = Harness()
-    h.model.select(h.main)
-    h.model.newTab()
-    let working = h.model.workspace.activeTab(in: h.main.id)!
-    h.model.select(h.feature)
-    h.source.send(
-      SessionStateReport(state: .running, sessionID: working.focusedSessionID, cwd: nil, pid: nil))
-
-    h.model.closeTab(working.id)
-
-    #expect(h.model.pendingClose == .tab(working.id))
-    #expect(h.model.workspace.tab(working.id) != nil, "nothing closed until it is confirmed")
-
-    h.model.confirmPendingClose()
-    #expect(h.model.workspace.tab(working.id) == nil)
-  }
-
-  /// Dragged from the strip onto another worktree's row. The shells come
-  /// with it and keep running, and the worktree it landed in is the one on
-  /// screen, so the tab is where the drag left it.
-  @Test func aTabDraggedOntoAnotherWorktreeGoesThereWithItsShells() {
-    let h = Harness()
-    h.model.select(h.main)
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-    h.model.splitActivePane(.vertical)
-    let panes = Set(h.model.workspace.tab(tab.id)!.sessionIDs)
-
-    #expect(h.model.moveTab(tab.id, to: h.feature.id))
-
-    #expect(h.model.workspace.selectedWorktreeID == h.feature.id)
-    #expect(h.model.workspace.activeTab(in: h.feature.id)?.id == tab.id)
-    #expect(h.model.workspace.tabs(in: h.main.id).isEmpty)
-    #expect(panes.isSubset(of: h.engine.openSessionIDs), "the shells kept running")
-    #expect(h.engine.closed.isEmpty)
-    #expect(h.model.workspace.tabs(in: h.feature.id).count == 1, "no second tab was opened")
-  }
-
-  @Test func aTabIsNotDraggedIntoAWorktreeThatCannotTakeIt() {
-    let h = Harness()
-    let gone = Worktree(
-      path: URL(fileURLWithPath: "/repos/gone"), projectID: h.project.id, head: "c",
-      branch: "gone")
-    h.store.replaceWorktrees([h.main, h.feature, gone], forProject: h.project.id)
-    h.model.select(h.main)
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-
-    h.model.worktreeOperations.begin(.removingWorktree, on: h.feature.id)
-    #expect(h.model.moveTab(tab.id, to: h.feature.id) == false, "a worktree on its way out")
-    h.model.worktreeOperations.clear(h.feature.id)
-
-    // The other end of the same rule: a tab dragged clear of a removal
-    // would be the one thing still running in a trashed directory.
-    h.model.worktreeOperations.begin(.removingWorktree, on: h.main.id)
-    #expect(h.model.moveTab(tab.id, to: h.feature.id) == false, "dragged out of a removal")
-    h.model.worktreeOperations.clear(h.main.id)
-
-    h.model.presentedError = nil
-    #expect(h.model.moveTab(tab.id, to: gone.id) == false)
-    #expect(h.model.presentedError?.title == "Worktree directory is missing")
-    #expect(h.model.moveTab(tab.id, to: h.main.id) == false, "already there")
-
-    #expect(h.model.workspace.tab(tab.id)?.worktreeID == h.main.id)
-    #expect(h.model.workspace.selectedWorktreeID == h.main.id)
-  }
-}
-
-@Suite @MainActor
-struct AttentionDotTests {
-  /// The dot means "something happened here since you looked". When the
-  /// shown tab's shell exits, the neighbour becomes the shown tab and is
-  /// being looked at, so its dot must go the way a click would clear it.
-  @Test func aTabRevealedByAnExitLosesItsDot() {
-    let h = Harness()
-    h.model.select(h.main)
-    let first = h.model.workspace.activeTab(in: h.main.id)!
-    h.model.newTab()
-    let second = h.model.workspace.activeTab(in: h.main.id)!
-    h.engine.delegate?.terminalHost(h.engine, didSeeActivityIn: first.focusedSessionID)
-    #expect(h.model.state(of: first) == .done)
-
-    h.engine.delegate?.terminalHost(h.engine, didExit: second.focusedSessionID)
-
-    #expect(h.model.workspace.activeTab(in: h.main.id)?.id == first.id)
-    #expect(h.model.state(of: first) == nil)
-    #expect(h.model.state(ofWorktree: h.main.id) == nil)
-  }
 }
 
 @Suite @MainActor
 struct MissingDirectoryTests {
-  /// Selection was refused when the directory was gone, but a worktree that
-  /// was selected while it existed could still get new shells after it was
-  /// deleted by hand, each landing silently in $HOME.
+  /// A worktree selected while it existed could still get new shells after it was deleted by
+  /// hand, each landing silently in $HOME.
   @Test func aNewTabOrSplitInAWorktreeWhoseDirectoryVanishedIsRefused() throws {
     let h = Harness()
     h.model.select(h.feature)
@@ -795,7 +353,6 @@ struct MissingDirectoryTests {
   }
 }
 
-/// What the New Worktree sheet opens with, from each way of asking for it.
 @Suite @MainActor
 struct NewWorktreeRequestTests {
   @Test func theMenuWithOneProjectAndNothingSelectedPicksThatProject() {
@@ -812,6 +369,17 @@ struct NewWorktreeRequestTests {
 
     #expect(h.model.newWorktreeRequest != nil, "used to do nothing, silently")
     #expect(h.model.newWorktreeRequest?.projectID == nil, "the picker starts blank")
+  }
+
+  @Test func theMenuOverTheBoardWithSeveralProjectsOpensWithNoProject() {
+    let h = Harness()
+    h.store.addProject(at: URL(fileURLWithPath: "/other"))
+    h.model.select(h.feature)
+    h.model.showAgentBoard()
+
+    h.model.requestNewWorktree()
+
+    #expect(h.model.newWorktreeRequest?.projectID == nil, "nothing on screen names a project")
   }
 
   @Test func theMenuFollowsTheSelectedWorktreesProject() {
@@ -845,9 +413,6 @@ struct NewWorktreeRequestTests {
   }
 }
 
-/// The whole promise of saving: quit, relaunch, and what was there is there.
-/// Tabs, splits, weights and names come back; nothing is live until a
-/// worktree is visited; the first visit brings every saved shell up.
 @Suite(.serialized) @MainActor
 struct RelaunchTests {
   @Test func aSavedWorkspaceComesBackAndWarmsOnTheFirstVisit() throws {

@@ -39,6 +39,11 @@ bottom.
   no target leaves a highlight with no drag behind it, so a target has to be
   there; lighting every terminal would be a second way to do what the strip
   does.
+- **A drag released over nothing ends when the button is seen up**, polled every
+  100 ms, then 250 ms more so a drop that did land reads the drag first.
+  `.onDrag` has no end below macOS 26, and without this every column kept a
+  clear drop target over its terminal until the next drag began. The drag
+  carries a count, so one drag's release never ends the next.
 - **A band refuses where halving the column would put either half under the pane
   minimum**, so the drag springs back rather than making two columns nobody can
   read.
@@ -79,7 +84,8 @@ bottom.
   one under the pointer takes the layout out from under a drag still going on.
 - **A reorder is committed as the pointer passes**, so a drag abandoned half-way
   leaves the tabs where it dragged them rather than springing back. Saves
-  coalesce, so a drag's worth of moves is one write.
+  coalesce, so moves in quick succession share a write; a drag that pauses
+  between neighbours writes once per pause.
 - **Nothing follows the cursor outside a strip**, a departure from the Mac
   convention. Bringing a ghost back means owning the drag as an AppKit source,
   and the tab's click, double click and middle click with it.
@@ -132,8 +138,9 @@ bottom.
   reached the scroller, so a trackpad worked from the start and a mouse, which
   turns one way, did nothing.
 - **The turn is turned rather than counted.** A catcher answers hit-testing only
-  for a scroll whose vertical beats its horizontal, copies the event, adds its
-  vertical deltas to the horizontal ones and hands it to the strip's scroller.
+  for a scroll whose vertical beats its horizontal, copies the event, moves its
+  vertical deltas into the horizontal fields and hands it to the strip's
+  scroller.
 - **So clicks, drags and a sideways scroll reach the tabs untouched**, and the
   pixels, the momentum and the rubber band stay AppKit's.
 - **Copied rather than built**, so the phase, momentum and precision it arrived
@@ -175,7 +182,8 @@ bottom.
   and every column has one.
 - **Before the login shell has answered it offers the shell alone**, rather than
   a catalogue of agents the machine may not have, and fills in when the scan
-  lands.
+  lands. A typed custom command is the exception, listed from launch: it has no
+  scan to wait for.
 - **The plus draws its own chevron**, small enough to read as a mark on it
   rather than a second glyph, which makes the button wider than the splits
   beside it.

@@ -2,9 +2,8 @@ import AppKit
 import SwiftUI
 
 extension View {
-  /// Runs `alert` as a sheet on this view's window while `item` is set, and
-  /// answers with the choice pressed, or `nil` for Cancel. The model
-  /// clearing `item` takes the sheet down with it.
+  /// Runs `alert` as a sheet on this window while `item` is set, answering the
+  /// choice pressed, or `nil` for Cancel. Clearing `item` takes it down.
   func destructiveAlert<Item: Identifiable>(
     _ item: Item?,
     alert: @escaping (Item) -> NSAlert,

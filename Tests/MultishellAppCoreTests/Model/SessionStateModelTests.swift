@@ -58,9 +58,8 @@ struct SessionStateModelTests {
     #expect(h.model.sessionStates.isEmpty)
   }
 
-  /// Claude Code started in an outside terminal from a package directory
-  /// says that directory, and the worktree containing it is the one meant.
-  /// The harness nests `feature` inside `main`, so the deeper one must win.
+  /// Claude Code started outside the app in a package directory reports that directory. The
+  /// harness nests `feature` inside `main`, so the deeper one must win.
   @Test func aReportFromInsideAWorktreeMarksTheWorktreeContainingIt() {
     let h = Harness()
     h.model.select(h.main)
@@ -77,9 +76,8 @@ struct SessionStateModelTests {
     #expect(h.model.state(ofWorktree: h.feature.id) == .attention)
   }
 
-  /// Which worktree is deepest is decided where the match was made: a
-  /// worktree added through a symlink chain has a long written path and a
-  /// short real one, and a worktree nested inside its real path is deeper.
+  /// A worktree added through a symlink chain has a long written path and a short real one,
+  /// and a worktree nested inside its real path is deeper.
   @Test func depthIsMeasuredOnTheSpellingThatMatched() throws {
     let h = Harness()
     let files = FileManager.default
@@ -134,9 +132,8 @@ struct SessionStateModelTests {
     #expect(h.notifier.posted.first?.title.contains("feature") == false, "not the branch")
   }
 
-  /// A background worker starting or ending while a prompt is up is
-  /// bookkeeping: the banner already on screen is the prompt's, and posting
-  /// again under the same key replaces it with a body that says less.
+  /// The banner already up is the prompt's, and posting again under the same key would
+  /// replace it with a body that says less.
   @Test func aWorkerTickRaisesNoSecondBannerForAPromptAlreadyUp() {
     let h = Harness()
     h.model.setNotifications(NotificationPreference(attention: true, error: true, done: true))
@@ -263,127 +260,6 @@ struct SessionStateModelTests {
     #expect(h.model.state(ofPane: other) == nil, "the keyboard is in it now")
   }
 
-  @Test func notificationsFollowThePreferenceAndTheShownTab() {
-    let h = Harness()
-    h.source.send(SessionStateReport(state: .attention, cwd: h.main.path.path))
-    #expect(h.notifier.posted.isEmpty, "off until turned on")
-    h.model.setNotifications(NotificationPreference(attention: true, error: true, done: true))
-    h.model.select(h.main)
-    let first = h.model.workspace.activeTab(in: h.main.id)!
-    h.model.newTab()
-
-    h.source.send(SessionStateReport(state: .running, sessionID: first.focusedSessionID))
-    #expect(h.notifier.posted.isEmpty, "working is never a banner")
-
-    h.source.send(
-      SessionStateReport(
-        state: .attention, sessionID: first.focusedSessionID, message: "Needs Bash"))
-    #expect(h.notifier.posted.count == 1)
-    #expect(h.notifier.posted.first?.body == "Needs Bash")
-    #expect(h.notifier.posted.first?.title.contains("main") == true)
-    #expect(h.notifier.posted.first?.key == .session(first.focusedSessionID))
-
-    h.model.setNotifications(NotificationPreference(attention: true))
-    h.source.send(SessionStateReport(state: .done, sessionID: first.focusedSessionID))
-    #expect(h.notifier.posted.count == 1)
-
-    h.model.setNotifications(.off)
-    h.source.send(SessionStateReport(state: .attention, sessionID: first.focusedSessionID))
-    #expect(h.notifier.posted.count == 1)
-
-    // A click on the banner brings the tab back.
-    h.notifier.onActivate?(.session(first.focusedSessionID))
-    #expect(h.model.workspace.activeTab(in: h.main.id)?.id == first.id)
-  }
-
-  /// The user answers the question in the pane and the agent gets back to
-  /// work: the banner is about something that has stopped being true, so it
-  /// goes rather than sitting in Notification Centre until it is swiped.
-  @Test func aBannerIsTakenBackWhenTheStateItNamedMovesOn() {
-    let h = Harness()
-    h.model.setNotifications(NotificationPreference(attention: true, error: true, done: true))
-    h.model.select(h.main)
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-    let session = tab.focusedSessionID
-    h.model.newTab()
-
-    h.source.send(SessionStateReport(state: .attention, sessionID: session))
-    #expect(h.notifier.posted.count == 1)
-    #expect(h.notifier.withdrawn.isEmpty, "nothing has changed yet")
-
-    h.source.send(SessionStateReport(state: .running, sessionID: session))
-    #expect(h.notifier.withdrawn == [.session(session)])
-    #expect(h.notifier.posted.count == 1, "working raises none of its own")
-
-    h.source.send(SessionStateReport(state: .running, sessionID: session))
-    #expect(h.notifier.withdrawn.count == 1, "taken back once, not on every report after")
-  }
-
-  /// Looking at the pane answers the banner even where it does not answer
-  /// the question: Waiting survives being seen, and its dot stays blue,
-  /// but the interruption has done its job.
-  @Test func lookingAtThePaneTakesItsBannerBackAndLeavesTheDot() {
-    let h = Harness()
-    h.model.setNotifications(NotificationPreference(attention: true, error: true, done: true))
-    h.model.select(h.main)
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-    let session = tab.focusedSessionID
-    h.model.newTab()
-
-    h.source.send(SessionStateReport(state: .attention, sessionID: session))
-    #expect(h.notifier.posted.count == 1)
-
-    h.model.activate(tab)
-    #expect(h.notifier.withdrawn == [.session(session)])
-    #expect(h.model.sessionStates[.session(session)] == .attention, "the question still stands")
-  }
-
-  /// The pane on screen while the user is in another app has not been seen,
-  /// and the dot and the banner have to agree about that or the one says
-  /// there is nothing to look at while the other is still saying there is.
-  /// A shell exiting anywhere runs the seen-it pass, so being away has to
-  /// hold both of them.
-  @Test func nothingCountsAsSeenWhileTheUserIsInAnotherApp() {
-    let h = Harness()
-    h.model.setNotifications(NotificationPreference(attention: true, error: true, done: true))
-    h.model.select(h.main)
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-    let session = tab.focusedSessionID
-
-    h.platform.isActive = false
-    h.source.send(SessionStateReport(state: .done, sessionID: session))
-    #expect(h.notifier.posted.count == 1, "shown, but nobody is looking")
-    #expect(h.model.sessionStates[.session(session)] == .done, "and the dot says so too")
-
-    h.model.reconcileSessions(takingFocus: true)
-    #expect(h.notifier.withdrawn.isEmpty, "still away")
-    #expect(h.model.sessionStates[.session(session)] == .done, "a shell exiting is not a look")
-
-    h.platform.isActive = true
-    h.platform.onDidBecomeActive?()
-    #expect(h.notifier.withdrawn == [.session(session)], "back, and the pane is on screen")
-    #expect(h.model.sessionStates[.session(session)] == nil, "seen now, so the dot goes as well")
-  }
-
-  /// A pane that is gone has nothing left to say, so its banner goes with
-  /// it rather than sitting in Notification Centre pointing at a tab that
-  /// cannot be opened.
-  @Test func closingATabTakesItsBannerWithIt() {
-    let h = Harness()
-    h.model.setNotifications(NotificationPreference(attention: true, error: true, done: true))
-    h.model.select(h.main)
-    let first = h.model.workspace.activeTab(in: h.main.id)!
-    let session = first.focusedSessionID
-    h.model.newTab()
-
-    h.source.send(SessionStateReport(state: .done, sessionID: session))
-    #expect(h.notifier.posted.count == 1)
-
-    h.model.closeTab(first.id)
-    #expect(h.notifier.withdrawn == [.session(session)])
-    #expect(h.model.notifiedKeys.isEmpty, "and nothing is left tracking it")
-  }
-
   @Test func launchingAnAgentFlashesThenIdlesUntilAPromptDrivesItsOwnStates() {
     let h = Harness()
     h.model.select(h.main)
@@ -411,6 +287,21 @@ struct SessionStateModelTests {
     // The turn ends: done.
     h.source.send(SessionStateReport(state: .done, sessionID: id))
     #expect(h.model.state(of: tab) == .done)
+  }
+
+  @Test func anAgentsSessionStartClearsTheShellsOwnWorking() {
+    let h = Harness()
+    h.model.select(h.main)
+    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    h.model.newTab()
+    let id = tab.focusedSessionID
+
+    h.source.send(
+      SessionStateReport(
+        state: .running, sessionID: id, pid: 4242, command: "claude", isShell: true))
+    h.source.send(SessionStateReport(state: .idle, sessionID: id, startsSession: true))
+
+    #expect(h.model.state(of: tab) == nil)
   }
 
   @Test func aReportedProcessThatExitsClearsWorking() async throws {
@@ -610,8 +501,7 @@ struct SessionStateModelTests {
     #expect(h.model.liveTerminalCount == 0)
   }
 
-  /// The question goes when its subject does, whichever way that happens.
-  /// A project removal is one way; this is the other, and it is why the
+  /// The question goes when its subject does, whichever way that happens, which is why the
   /// prune lives in the reconcile rather than beside a removal.
   @Test func aCloseWaitingOnAConfirmationGoesWithTheProjectItAskedAbout() {
     let h = Harness()
@@ -672,273 +562,6 @@ struct SessionStateModelTests {
       try await Task.sleep(for: .milliseconds(50))
     }
     #expect(model.state(of: tab) == .attention)
-  }
-}
-
-/// Agent tabs: the store keeps an id, the shell gets a command line.
-@Suite @MainActor
-struct AgentTabTests {
-  @Test func newAgentTabRecordsTheIdAndOpensTheAgentThroughTheLoginShell() {
-    let h = Harness()
-    h.model.setPreferredAgent("claude")
-    h.model.select(h.main)
-
-    h.model.newAgentTab()
-
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-    let session = h.model.workspace.session(tab.focusedSessionID)!
-    #expect(session.agentID == "claude")
-    #expect(session.command == nil, "the store never holds the command line")
-    #expect(h.model.title(of: tab) == "Claude Code")
-    let opened = h.engine.opened.last!
-    #expect(opened.id == session.id)
-    #expect(opened.command?.last?.hasPrefix("claude; ") == true, "\(opened.command ?? [])")
-    #expect(opened.command?.last?.contains("exec ") == true, "a shell takes over after the agent")
-  }
-
-  @Test func theProjectOverrideBeatsTheGlobalAndNoneMeansNoAgent() {
-    let h = Harness()
-    h.model.setPreferredAgent("claude")
-    #expect(h.model.preferredAgentID(for: h.main) == "claude")
-
-    h.model.updateSettings(ProjectSettings(preferredAgentID: "codex"), for: h.project)
-    #expect(h.model.preferredAgentID(for: h.main) == "codex")
-
-    h.model.updateSettings(ProjectSettings(preferredAgentID: "none"), for: h.project)
-    #expect(h.model.preferredAgentID(for: h.main) == nil)
-    h.model.select(h.main)
-    let tabs = h.model.workspace.tabs(in: h.main.id).count
-    h.model.presentedError = nil
-    h.model.newAgentTab()
-    #expect(h.model.workspace.tabs(in: h.main.id).count == tabs)
-    #expect(h.model.presentedError?.title == "No agent chosen")
-  }
-
-  @Test func aSavedAgentTabResumesWhereItCanAndIsAShellWhereItCannot() throws {
-    let file = Scratch.path("agent-relaunch")
-      .appendingPathComponent("state.json")
-    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
-    let before = Harness(stateFile: file)
-    before.model.select(before.main)
-    before.store.openTab(in: before.main.id, title: "Claude Code", agentID: "claude")
-    before.store.openTab(in: before.main.id, title: "Flagless", agentID: "flagless")
-    before.model.saveNow()
-
-    let (store, _) = WorkspaceStore.restored(from: WorkspaceSnapshot(fileURL: file))
-    let engine = FakeEngine()
-    let after = AppModel(
-      store: store, host: engine, worktrees: nil,
-      watcher: FakeWatcher())
-    after.select(before.main)
-
-    let byTitle = Dictionary(
-      uniqueKeysWithValues: engine.opened.map { (store.workspace.session($0.id)!.title, $0) })
-    #expect(byTitle["Claude Code"]?.command?.last?.hasPrefix("claude --continue; ") == true)
-    #expect(byTitle["Flagless"]?.command == nil, "no resume flag, so a plain shell keeps the title")
-    #expect(after.title(of: store.workspace.tabs(in: before.main.id)[2]) == "Flagless")
-  }
-
-  @Test func anAgentThatIsNotInstalledOpensAShellAndSaysSoOnce() {
-    let h = Harness()
-    h.model.loginEnvironment = LoginShellEnvironment(
-      variables: ["PATH": "/usr/bin"], source: .loginShell(URL(fileURLWithPath: "/bin/zsh")))
-    h.model.agentDetection = AgentDetection(path: "/usr/bin")
-    h.model.setPreferredAgent("claude")
-    h.model.select(h.main)
-    h.model.presentedError = nil
-
-    h.model.newAgentTab()
-    #expect(h.engine.opened.last?.command == nil)
-    #expect(h.model.presentedError?.title == "Claude Code is not installed")
-
-    h.model.presentedError = nil
-    h.model.newAgentTab()
-    #expect(h.model.presentedError == nil, "reported once per run")
-    #expect(h.model.workspace.tabs(in: h.main.id).count == 3)
-  }
-
-  @Test func autoStartMakesNewTabAndTheFirstTabTheAgentButNeverASplit() {
-    let h = Harness()
-    h.model.setPreferredAgent("claude")
-    h.model.setAutoStartAgent(true)
-
-    h.model.select(h.main)
-    let first = h.model.workspace.activeTab(in: h.main.id)!
-    #expect(
-      h.model.workspace.session(first.focusedSessionID)?.agentID == "claude",
-      "the first tab after select, which is what follows a create")
-    #expect(h.model.title(of: first) == "Claude Code")
-
-    h.model.newTab()
-    let second = h.model.workspace.activeTab(in: h.main.id)!
-    #expect(h.model.workspace.session(second.focusedSessionID)?.agentID == "claude")
-
-    h.model.splitActivePane(.horizontal)
-    let split = h.model.workspace.tab(second.id)!
-    let pane = split.sessionIDs.first { $0 != second.focusedSessionID }!
-    #expect(h.model.workspace.session(pane)?.agentID == nil, "splits stay plain shells")
-
-    h.model.newShellTab()
-    let shell = h.model.workspace.activeTab(in: h.main.id)!
-    #expect(
-      h.model.workspace.session(shell.focusedSessionID)?.agentID == nil, "a shell stays reachable")
-  }
-
-  @Test func autoStartOffOrNoAgentOpensShellsAndTheProjectOverrideWins() {
-    let h = Harness()
-    h.model.setPreferredAgent("claude")
-    h.model.select(h.main)
-    #expect(
-      h.model.workspace.session(h.model.workspace.activeTab(in: h.main.id)!.focusedSessionID)?
-        .agentID == nil, "off by default")
-
-    h.model.updateSettings(ProjectSettings(autoStartAgent: true), for: h.project)
-    h.model.newTab()
-    #expect(
-      h.model.workspace.session(h.model.workspace.activeTab(in: h.main.id)!.focusedSessionID)?
-        .agentID == "claude", "the project override turns it on")
-
-    h.model.setAutoStartAgent(true)
-    h.model.updateSettings(ProjectSettings(autoStartAgent: false), for: h.project)
-    h.model.newTab()
-    #expect(
-      h.model.workspace.session(h.model.workspace.activeTab(in: h.main.id)!.focusedSessionID)?
-        .agentID == nil, "the project override turns it off")
-
-    h.model.updateSettings(ProjectSettings(preferredAgentID: "none"), for: h.project)
-    h.model.newTab()
-    #expect(
-      h.model.workspace.session(h.model.workspace.activeTab(in: h.main.id)!.focusedSessionID)?
-        .agentID == nil, "auto-start with no agent in force is a shell")
-  }
-
-  @Test func theCustomEntryRunsWhatWasTyped() {
-    let h = Harness()
-    h.model.setPreferredAgent("custom")
-    h.model.setCustomAgentCommand("my-agent --fast")
-    h.model.select(h.main)
-    h.model.newAgentTab()
-    #expect(h.engine.opened.last?.command?.last?.hasPrefix("my-agent --fast; ") == true)
-    #expect(h.model.title(of: h.model.workspace.activeTab(in: h.main.id)!) == "Custom command")
-  }
-
-  /// The sidebar is up while the login shell answers and its PATH is
-  /// scanned. A saved agent tab clicked in that window must not be told the
-  /// agent is missing, so the environment and what was found on it land together.
-  @Test func theEnvironmentIsNotKnownBeforeItsPathHasBeenScanned() async {
-    let h = Harness()
-    let refresh = Task { await h.model.refreshLoginEnvironment() }
-    while h.model.loginEnvironment == nil { try? await Task.sleep(for: .milliseconds(1)) }
-    #expect(h.model.shellDetection != .empty, "/etc/shells alone fills this")
-    #expect(h.model.agentDetection == AgentDetection(path: h.model.loginEnvironment?.path))
-    await refresh.value
-  }
-
-  @Test func theNewTabMenuListsWhatWasFoundAndTheCustomCommandOnlyWhenTyped() throws {
-    let bin = try fakeBin(["codex", "claude"])
-    defer { try? FileManager.default.removeItem(at: bin) }
-    let h = Harness()
-    h.model.agentDetection = AgentDetection(path: bin.path)
-
-    #expect(h.model.installedAgentIDs == ["claude", "codex"], "catalogue order")
-
-    h.model.setCustomAgentCommand("  ")
-    #expect(h.model.installedAgentIDs == ["claude", "codex"], "a blank line is no agent")
-
-    h.model.setCustomAgentCommand("my-agent --fast")
-    #expect(h.model.installedAgentIDs == ["claude", "codex", "custom"])
-
-    // Its own store: a second model over the harness's would deselect the
-    // worktree under it, `init` clearing the selection.
-    let saved = WorkspaceStore(
-      snapshot: WorkspaceSnapshot(
-        fileURL: Scratch.path("relaunch").appendingPathComponent("state.json")))
-    saved.setCustomAgentCommand("my-agent --fast")
-    let relaunched = AppModel(
-      store: saved, host: FakeEngine(), worktrees: nil, watcher: FakeWatcher())
-    #expect(relaunched.installedAgentIDs == ["custom"], "the saved command, before any PATH scan")
-  }
-
-  @Test func aNamedAgentTabNeedsNoPreferredAgentAndOpensInTheColumnGiven() {
-    let h = Harness()
-    h.model.select(h.main)
-    h.model.newTab()
-    h.model.moveActiveTabToNewGroup()
-    let columns = h.model.workspace.groups(in: h.main.id)
-    #expect(h.model.preferredAgentID(for: h.main) == nil)
-    h.model.presentedError = nil
-
-    h.model.newAgentTab("opencode", in: columns[0].id)
-
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-    #expect(tab.groupID == columns[0].id)
-    #expect(h.model.workspace.session(tab.focusedSessionID)?.agentID == "opencode")
-    #expect(h.model.title(of: tab) == "OpenCode")
-    #expect(h.model.presentedError == nil, "the strip named the agent, so none was chosen for it")
-  }
-
-  @Test func theNewTabMenusShellTabOpensInTheColumnGiven() {
-    let h = Harness()
-    h.model.select(h.main)
-    h.model.setPreferredAgent("claude")
-    h.model.setAutoStartAgent(true)
-    h.model.newTab()
-    h.model.moveActiveTabToNewGroup()
-    let columns = h.model.workspace.groups(in: h.main.id)
-
-    h.model.newShellTab(in: columns[0].id)
-
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-    #expect(tab.groupID == columns[0].id)
-    #expect(h.model.workspace.session(tab.focusedSessionID)?.agentID == nil)
-  }
-
-  @Test func theLoginEnvironmentFeedsDetection() async throws {
-    let h = Harness()
-    try h.installFakeAgent("claude")
-    #expect(h.model.loginEnvironment == nil)
-    await h.model.refreshLoginEnvironment()
-    #expect(h.model.loginEnvironment?.path != nil)
-    #expect(h.model.agentDetection.found[AgentCatalogue.claudeID] != nil, "found on that PATH")
-    #expect(h.model.agentDetection == AgentDetection(path: h.model.loginEnvironment?.path))
-  }
-}
-
-@Suite @MainActor
-struct NotificationClickTests {
-  /// A banner outlives the worktree it was about: a network volume unmounts
-  /// between the report and the click. `select` refuses, and what follows it
-  /// would otherwise rewrite the active tab of a worktree nobody can reach.
-  @Test func aClickOnAWorktreeThatHasGoneActivatesNothing() throws {
-    let h = Harness()
-    h.model.select(h.feature)
-    let first = try #require(h.model.workspace.activeTab(in: h.feature.id))
-    h.model.newTab()
-    let second = try #require(h.model.workspace.activeTab(in: h.feature.id))
-    #expect(second.id != first.id)
-    h.model.select(h.main)
-    let selected = h.model.workspace.selectedWorktreeID
-
-    try FileManager.default.removeItem(at: h.feature.path)
-    h.model.reveal(.session(first.focusedSessionID))
-
-    #expect(h.model.presentedError?.title == PresentedError.worktreeDirectoryMissing("").title)
-    #expect(h.model.workspace.selectedWorktreeID == selected, "the selection stands")
-    #expect(
-      h.model.workspace.activeTab(in: h.feature.id)?.id == second.id,
-      "and the refused worktree's own strip is left as it was")
-  }
-
-  @Test func aClickOnAWorktreeThatIsStillThereBringsItsTabUp() throws {
-    let h = Harness()
-    h.model.select(h.feature)
-    let tab = try #require(h.model.workspace.activeTab(in: h.feature.id))
-    h.model.select(h.main)
-
-    h.model.reveal(.session(tab.focusedSessionID))
-
-    #expect(h.model.workspace.selectedWorktreeID == h.feature.id)
-    #expect(h.model.workspace.activeTab(in: h.feature.id)?.id == tab.id)
   }
 }
 

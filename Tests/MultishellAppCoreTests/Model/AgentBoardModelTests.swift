@@ -5,12 +5,9 @@ import Testing
 
 @testable import MultishellAppCore
 
-/// What the model does around the board: what it gathers, what showing it
-/// means for a Done state, and the badge.
 @Suite
 @MainActor
 struct AgentBoardModelTests {
-  /// A worktree with one live pane, and the session behind it.
   private func harnessWithOnePane() -> (Harness, TerminalSession) {
     let harness = Harness()
     harness.model.select(harness.main)
@@ -167,9 +164,8 @@ struct AgentBoardModelTests {
     #expect(card.since != nil)
   }
 
-  /// Without this the selected worktree's Done states clear the moment the
-  /// board opens, and their cards sit in Idle having never passed through
-  /// Done: nothing would ever say a pane had finished.
+  /// Otherwise the selected worktree's Done states clear as the board opens, and nothing would
+  /// ever say a pane had finished.
   @Test func theBoardIsNotShowingATabSoADoneSurvivesOpeningIt() {
     let (harness, session) = harnessWithOnePane()
     let model = harness.model
@@ -217,9 +213,8 @@ struct AgentBoardModelTests {
     #expect(!harness.model.showsAgentBoard)
   }
 
-  /// Clicking a row git no longer lists selects nothing, so it must not
-  /// close the board either: the user would be left looking at a worktree
-  /// they did not pick.
+  /// Clicking a row git no longer lists selects nothing, so closing the board would leave the
+  /// user looking at a worktree they did not pick.
   @Test func aRowTheStoreNoLongerHasLeavesTheBoardUp() {
     let harness = Harness()
     let stale = harness.feature
@@ -231,9 +226,8 @@ struct AgentBoardModelTests {
     #expect(harness.model.workspace.selectedWorktreeID != stale.id)
   }
 
-  /// The sidebar entry and the badge count without building a card, so a
-  /// shell reporting a new prompt does not re-render the sidebar. Two paths,
-  /// one answer.
+  /// The sidebar entry and the badge count without building a card, so a shell reporting a new
+  /// prompt does not re-render the sidebar.
   @Test func theCheapCountsAgreeWithTheColumnsTheySummarise() {
     let (harness, session) = harnessWithOnePane()
     let model = harness.model
@@ -328,10 +322,8 @@ struct AgentBoardModelTests {
     #expect(model.reportedAgents[session.id] == nil)
   }
 
-  /// A hook that fires in a terminal Multishell did not open reports a
-  /// directory, not a session. It still moves the sidebar dot, but it has no
-  /// pane to take you to, so it earns no card and is not in the badge. The
-  /// board is deliberately narrower than the sidebar here.
+  /// A hook in a terminal Multishell did not open reports a directory and has no pane to take you
+  /// to; the board is narrower than the sidebar here on purpose.
   @Test func aReportWithNoPaneBehindItEarnsNoCard() {
     let harness = Harness()
     let model = harness.model
@@ -392,8 +384,7 @@ struct AgentBoardModelTests {
     #expect(model.title(of: renamed) == "build", "the strip and the rows agree")
   }
 
-  /// Both panes of a renamed tab carry that one name, so each card says which
-  /// pane it is, as the sidebar row does. Without it the board draws two cards
+  /// Both panes of a renamed tab carry one name, so without a position the board draws two cards
   /// nothing tells apart.
   @Test func eachCardOfASplitSaysWhichPaneItIs() {
     let harness = Harness()
@@ -415,10 +406,8 @@ struct AgentBoardModelTests {
     #expect(AccessibilityText.card(cards[1], at: .now).contains(t("spoken.pane-position", 2, 2)))
   }
 
-  /// An agent that has gone quiet is watched only while the board is up:
-  /// nothing else shows a quit agent, and a dropped file asks about the pid
-  /// at the moment of the drop. So opening the board sweeps once, or its
-  /// first frame would be stale.
+  /// A quiet agent is watched only while the board is up, since a dropped file asks about the pid
+  /// when it lands; so opening the board sweeps once, or its first frame would be stale.
   @Test func openingTheBoardSweepsAnAgentThatWentQuietAndQuit() {
     let (harness, session) = harnessWithOnePane()
     let model = harness.model
@@ -460,6 +449,38 @@ struct AgentBoardModelTests {
     model.hideAgentBoard()
     model.newTab()
     #expect(model.workspace.tabs.count == tabs + 1)
+  }
+
+  @Test func theBoardIsBuiltOnceUntilSomethingItReadChanges() throws {
+    let (harness, session) = harnessWithOnePane()
+    let model = harness.model
+    model.setShowsAllTerminals(true)
+    _ = model.agentBoard
+    let builds = model.agentBoardBuilds
+
+    _ = model.agentBoard
+    #expect(model.agentBoardBuilds == builds)
+
+    model.noteTitle("vim", of: session.id)
+    #expect(model.agentBoard.column(.idle).cards.first?.title == "vim")
+    #expect(model.agentBoardBuilds == builds + 1)
+  }
+
+  @Test func aViewHoldingTheCachedBoardIsToldWhenItChanges() throws {
+    let (harness, session) = harnessWithOnePane()
+    let model = harness.model
+    model.setShowsAllTerminals(true)
+    _ = model.agentBoard
+    let changed = LineRecorder()
+
+    withObservationTracking {
+      _ = model.agentBoard
+    } onChange: {
+      changed.record("board")
+    }
+    model.noteTitle("vim", of: session.id)
+
+    #expect(changed.received == ["board"])
   }
 
   /// A pid that has certainly been reaped: a child run to completion and

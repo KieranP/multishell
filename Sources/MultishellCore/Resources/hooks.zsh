@@ -52,8 +52,9 @@ if [ -n "${MULTISHELL_SESSION-}" ] && [ -n "${MULTISHELL_SOCKET-}" ]; then
   }
   _multishell_json_cwd
   # `shell` marks these as the integration's own; see Docs/design/agents.md.
+  # Set, not printed: a command substitution forks, twice per command.
   _multishell_json() {
-    print -r -- "{\"v\":1,\"state\":\"$1\",\"session\":\"$MULTISHELL_SESSION\",\"cwd\":\"$_multishell_cwd\",\"shell\":true$2}"
+    typeset -g _multishell_line="{\"v\":1,\"state\":\"$1\",\"session\":\"$MULTISHELL_SESSION\",\"cwd\":\"$_multishell_cwd\",\"shell\":true$2}"
   }
   # Both reports run inline: a fast command's finished must not overtake
   # its started, and a fast close must not skip either.
@@ -77,8 +78,8 @@ if [ -n "${MULTISHELL_SESSION-}" ] && [ -n "${MULTISHELL_SOCKET-}" ]; then
       (*" $_multishell_cmd "*) _multishell_fields+=",\"command\":\"$_multishell_cmd\"" ;;
       (*) _multishell_cmd="" ;;
     esac
-    _multishell_send "$(_multishell_json running "$_multishell_fields")" \
-      command-started --pid $$ --command "$_multishell_cmd"
+    _multishell_json running "$_multishell_fields"
+    _multishell_send "$_multishell_line" command-started --pid $$ --command "$_multishell_cmd"
   }
   _multishell_precmd() {
     local e=$?
@@ -91,11 +92,13 @@ if [ -n "${MULTISHELL_SESSION-}" ] && [ -n "${MULTISHELL_SOCKET-}" ]; then
     (( _multishell_ms < 0 )) && _multishell_ms=0
     printf -v d '%d.%03d' $(( _multishell_ms / 1000 )) $(( _multishell_ms % 1000 ))
     if [ "$e" -eq 0 ] || [ "$e" -gt 128 ]; then state=done; else state=error; fi
-    _multishell_send "$(_multishell_json $state ",\"duration\":$d")" command-finished --exit "$e" --duration "$d"
+    _multishell_json $state ",\"duration\":$d"
+    _multishell_send "$_multishell_line" command-finished --exit "$e" --duration "$d"
   }
   # `exit` runs preexec but never the next precmd, so clear on the way out.
   _multishell_zshexit() {
-    _multishell_send "$(_multishell_json idle "")" state idle --shell true
+    _multishell_json idle ""
+    _multishell_send "$_multishell_line" state idle --shell true
   }
   autoload -Uz add-zsh-hook 2>/dev/null
   add-zsh-hook preexec _multishell_preexec

@@ -29,7 +29,7 @@ struct ProjectIconSection: View {
         HStack(spacing: 5) {
           swatch(nil, shown: settings, color: model.currentTheme.textSecondary)
           ForEach(0..<16, id: \.self) { slot in
-            swatch(slot, shown: settings, color: model.currentTheme.ansiRGB[slot].color)
+            swatch(slot, shown: settings, color: model.currentTheme.ansiRGB(slot).color)
           }
         }
       }
@@ -40,7 +40,7 @@ struct ProjectIconSection: View {
   }
 
   private func tint(_ settings: ProjectSettings) -> Color {
-    settings.iconTint.map { model.currentTheme.ansiRGB[$0].color }
+    settings.iconTint.map { model.currentTheme.ansiRGB($0).color }
       ?? model.currentTheme.textSecondary
   }
 
@@ -63,5 +63,7 @@ struct ProjectIconSection: View {
     }
     .buttonStyle(.plain)
     .help(slot.map { Theme.ansiSlotNames[$0] } ?? t("project.no-tint"))
+    .accessibilityLabel(slot.map { Theme.ansiSlotNames[$0] } ?? t("project.no-tint"))
+    .accessibilityAddTraits(selected ? .isSelected : [])
   }
 }

@@ -13,20 +13,36 @@ die() {
     exit 1
 }
 
-# The version names the commit, so a bug report identifies what was installed.
-# A tree with uncommitted work says so: its binary matches no commit.
+# Three integers, the only form the key takes: a `vX.Y.Z` tag on HEAD, else
+# the commit's date with no leading zeros. The commit is bundle_commit's.
 bundle_version() {
-    local root="$1" commit committed
+    local root="$1" tag year month day
+    # Every tag on HEAD, not describe's one: it prefers an annotated rc tag to
+    # the release beside it, and a glob cannot refuse the rc.
+    while read -r tag; do
+        if [[ "${tag#v}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            printf %s "${tag#v}"
+            return
+        fi
+    done < <(git -C "$root" tag --points-at HEAD --sort=-v:refname --list 'v*' 2>/dev/null)
+    read -r year month day < <(git -C "$root" log -1 --format=%cd --date=format:'%Y %m %d' 2>/dev/null \
+        || echo "0 0 0")
+    printf %s "$((10#$year)).$((10#$month)).$((10#$day))"
+}
+
+# The commit, so a bug report identifies what was installed. A tree with
+# uncommitted work says so: its binary matches no commit.
+bundle_commit() {
+    local root="$1" commit
     commit="$(git -C "$root" rev-parse --short HEAD 2>/dev/null || echo unknown)"
-    committed="$(git -C "$root" log -1 --format=%cd --date=format:%Y.%m.%d 2>/dev/null || echo 0.0.0)"
     if [ -n "$(git -C "$root" --no-optional-locks status --porcelain 2>/dev/null)" ]; then
         commit="$commit-dirty"
     fi
-    printf %s "$committed-$commit"
+    printf %s "$commit"
 }
 
-# CFBundleVersion takes only digits and dots, hence the commit count here and
-# the readable string in CFBundleShortVersionString.
+# CFBundleVersion takes only digits and dots, hence the commit count here; the
+# version string is bundle_version's.
 bundle_build_number() {
     git -C "$1" rev-list --count HEAD 2>/dev/null || echo 0
 }
@@ -120,7 +136,9 @@ render_template() {
     shift
     text="$(cat "$template")"
     while [ "$#" -gt 1 ]; do
-        text="${text//$1/$2}"
+        # Bash 5.2 reads an unquoted & in the value as the match, and 3.2 keeps
+        # these inner quotes if the whole is quoted, so the outer quotes go.
+        text=${text//"$1"/"$2"}
         shift 2
     done
     # A dropped pair at the call site would otherwise ship a plist whose

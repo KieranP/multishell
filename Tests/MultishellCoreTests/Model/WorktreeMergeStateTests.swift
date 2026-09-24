@@ -25,9 +25,8 @@ struct WorktreeMergeStateTests {
     #expect(WorktreeMergeState.unmerged.help.isEmpty)
   }
 
-  /// Work that is only in this worktree takes the badge away: it would go
-  /// to the Trash with the directory, and the badge's whole claim is that
-  /// nothing would be lost.
+  /// Work only in this worktree would go to the Trash with the directory, and the badge's
+  /// whole claim is that nothing would be lost.
   @Test func uncommittedFilesOrUnpushedCommitsHideTheBadge() {
     let merged = WorktreeMergeState.merged(.ancestor, into: "origin/main")
     #expect(merged.showsBadge(with: WorktreeStatus()))

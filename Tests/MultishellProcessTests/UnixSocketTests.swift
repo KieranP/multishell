@@ -52,10 +52,8 @@ struct UnixSocketServerTests {
     #expect(!FileManager.default.fileExists(atPath: path.path), "stop unlinks")
   }
 
-  /// Why a refused connect is not proof that nobody is there: a live
-  /// instance whose accept backlog is full refuses one exactly as a dead
-  /// instance's socket file does, and the second launch used to read that as
-  /// nobody being behind it.
+  /// A live instance with a full accept backlog refuses a connect exactly as a dead one's
+  /// socket file does, and the second launch used to read that as nobody there.
   @Test func aLiveServerWhoseBacklogIsFullRefusesConnectsLikeADeadOne() throws {
     let path = Scratch.socketPath("srv")
     let blocked = DispatchQueue(label: "ms-test-blocked")
@@ -87,9 +85,8 @@ struct UnixSocketServerTests {
     #expect(refused, "the backlog never filled, so nothing is being tested")
   }
 
-  /// So the claim decides instead. Held by another process for as long as it
-  /// listens: a socket file beside a held claim has a live owner, whatever
-  /// the connect said, and taking it would leave that instance deaf for good.
+  /// So the claim decides: a socket file beside a claim another process holds has a live
+  /// owner, whatever the connect said, and taking it would leave that owner deaf for good.
   @Test func aSocketWhoseClaimAnotherProcessHoldsIsNotTakenOver() throws {
     guard FileManager.default.isExecutableFile(atPath: "/usr/bin/python3") else { return }
     let path = Scratch.socketPath("srv")
@@ -135,9 +132,8 @@ struct UnixSocketServerTests {
     #expect(FileManager.default.fileExists(atPath: path.path), "and left it where it was")
   }
 
-  /// Under a permissive umask the socket still ends up private. The window
-  /// between bind and chmod is what the umask around the bind closes, and
-  /// that window is not observable from here.
+  /// The umask around the bind closes the window between bind and chmod, and that window is
+  /// not observable from here.
   @Test func theSocketIsPrivateWhateverTheUmask() throws {
     let path = Scratch.socketPath("srv")
     let previous = umask(0)
@@ -166,9 +162,8 @@ struct UnixSocketServerTests {
     }
   }
 
-  /// A start that fails after taking the claim has to let it go: `flock`
-  /// refuses a second description of a file even to the process holding it,
-  /// so a retry would otherwise read its own lock as another instance.
+  /// `flock` refuses a second description of a file even to the process holding it, so a
+  /// retry would otherwise read its own lock as another instance.
   @Test func aFailedStartLetsItsClaimGoSoARetrySaysWhatIsWrong() {
     let long = URL(fileURLWithPath: "/tmp/" + String(repeating: "y", count: 120) + ".sock")
     // Two instances, both kept: what the second must not meet is the first's
@@ -187,9 +182,8 @@ struct UnixSocketServerTests {
     }
   }
 
-  /// A second `start()` on a live server is a no-op, claim included. The
-  /// probe finds this instance answering, and letting the claim go on that
-  /// would leave the socket unguarded while the listener kept accepting.
+  /// The probe finds this instance answering, and letting the claim go on that would leave
+  /// the socket unguarded while the listener kept accepting.
   @Test func startingALiveServerAgainKeepsItsClaim() async throws {
     guard FileManager.default.isExecutableFile(atPath: "/usr/bin/python3") else { return }
     let path = Scratch.socketPath("srv")

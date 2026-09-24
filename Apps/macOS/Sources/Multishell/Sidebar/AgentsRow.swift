@@ -53,3 +53,11 @@ struct AgentsRow: View {
     .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
   }
 }
+
+/// Everything but `select`, which captures nothing; see `WorktreeRow`'s.
+extension AgentsRow: @MainActor Equatable {
+  static func == (a: AgentsRow, b: AgentsRow) -> Bool {
+    a.counts.elementsEqual(b.counts) { $0.lane == $1.lane && $0.count == $1.count }
+      && a.isSelected == b.isSelected && a.theme == b.theme && a.metrics == b.metrics
+  }
+}

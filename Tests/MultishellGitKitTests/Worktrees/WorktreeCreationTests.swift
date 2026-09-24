@@ -1,6 +1,7 @@
 import Foundation
 import MultishellCore
 import MultishellProcess
+import TestScratch
 import Testing
 
 @testable import MultishellGitKit
@@ -113,6 +114,214 @@ struct WorktreeCreationTests {
     let deep = repo.root.appendingPathComponent("deep", isDirectory: true)
     #expect(
       !FileManager.default.fileExists(atPath: deep.path), "git made nothing, so nothing is left")
+  }
+
+  @Test func aCancelledCreateTakesBackTheBranchAndDirectoriesItMade() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    try await repo.commit("slow", files: [".gitattributes": "*.dat filter=slow\n", "a.dat": "x\n"])
+    _ = try await repo.git.run(
+      ["config", "filter.slow.smudge", "sleep 30; cat"], in: repo.project.path)
+    let settings = WorktreeSettings(worktreeDirectory: "../deep/er/trees")
+    let stopper = ProcessStopper()
+    let coordinator = repo.coordinator
+    let project = repo.project
+    let add = Task {
+      try await coordinator.add(
+        branch: "held", in: project, settings: settings, stopper: stopper)
+    }
+    let record = project.path.appendingPathComponent(".git/worktrees/held")
+    try await waitUntil { FileManager.default.fileExists(atPath: record.path) }
+
+    stopper.stop()
+    await #expect(throws: ProcessFailure.self) { try await add.value }
+
+    #expect(try await repo.branches() == ["main"])
+    #expect(!FileManager.default.fileExists(atPath: repo.root.appendingPathComponent("deep").path))
+    _ = try await repo.git.run(["config", "--unset", "filter.slow.smudge"], in: project.path)
+    try await repo.coordinator.create(branch: "held", in: project, settings: settings)
+  }
+
+  /// The add exits just past a second boundary, so the index wait after it
+  /// lasts about a second rather than anything down to 10 ms.
+  @Test func aCancelWhileTheNewIndexSettlesTakesBackTheWorktreeAndItsBranch() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    let fake = try FakeGit.make(
+      """
+      if [ "$1 $2" = "worktree add" ]; then
+        git "$@" || exit
+        perl -MTime::HiRes=time,sleep -e 'sleep(1.02 - (time - int(time)))'
+        touch "$SCRATCH/added"
+        exit 0
+      fi
+      exec git "$@"
+      """)
+    defer { fake.tearDown() }
+    let coordinator = WorktreeCoordinator(service: WorktreeService(git: fake.runner))
+    let stopper = ProcessStopper()
+    let project = repo.project
+    let settings = repo.trees
+    let add = Task {
+      try await coordinator.add(branch: "held", in: project, settings: settings, stopper: stopper)
+    }
+    let added = fake.directory.appendingPathComponent("added")
+    try await waitUntil { FileManager.default.fileExists(atPath: added.path) }
+
+    stopper.stop()
+    let failure = await #expect(throws: ProcessFailure.self) { try await add.value }
+
+    #expect(failure?.stop == .stopped)
+    #expect(try await repo.coordinator.refresh(project).map(\.branch) == ["main"])
+    #expect(try await repo.branches() == ["main"])
+  }
+
+  @Test func aCreateStoppedAfterGitMadeTheWorktreeTakesItBack() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    let fake = try FakeGit.make(
+      """
+      if [ "$1 $2" = "worktree add" ]; then
+        git "$@" || exit
+        touch "$SCRATCH/added"
+        exec sleep 30
+      fi
+      exec git "$@"
+      """)
+    defer { fake.tearDown() }
+    let coordinator = WorktreeCoordinator(
+      service: WorktreeService(git: fake.runner, settlesNewIndex: false))
+    let stopper = ProcessStopper()
+    let project = repo.project
+    let settings = repo.trees
+    let add = Task {
+      try await coordinator.add(branch: "held", in: project, settings: settings, stopper: stopper)
+    }
+    let added = fake.directory.appendingPathComponent("added")
+    try await waitUntil { FileManager.default.fileExists(atPath: added.path) }
+
+    stopper.stop()
+    await #expect(throws: ProcessFailure.self) { try await add.value }
+
+    #expect(try await repo.coordinator.refresh(project).map(\.branch) == ["main"])
+    #expect(try await repo.branches() == ["main"])
+  }
+
+  @Test func aCreateStoppedAfterGitFilledAnEmptyDirectoryAtItsPathTakesItBack() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    let fake = try FakeGit.make(
+      """
+      if [ "$1 $2" = "worktree add" ]; then
+        git "$@" || exit
+        touch "$SCRATCH/added"
+        exec sleep 30
+      fi
+      exec git "$@"
+      """)
+    defer { fake.tearDown() }
+    let coordinator = WorktreeCoordinator(
+      service: WorktreeService(git: fake.runner, settlesNewIndex: false))
+    let project = repo.project
+    let settings = repo.trees
+    try FileManager.default.createDirectory(
+      at: coordinator.plannedPath(forBranch: "held", in: project, settings: settings),
+      withIntermediateDirectories: true)
+    let stopper = ProcessStopper()
+    let add = Task {
+      try await coordinator.add(branch: "held", in: project, settings: settings, stopper: stopper)
+    }
+    let added = fake.directory.appendingPathComponent("added")
+    try await waitUntil { FileManager.default.fileExists(atPath: added.path) }
+
+    stopper.stop()
+    await #expect(throws: ProcessFailure.self) { try await add.value }
+
+    #expect(try await repo.coordinator.refresh(project).map(\.branch) == ["main"])
+    #expect(try await repo.branches() == ["main"])
+  }
+
+  @Test func aStoppedCreateLeavesAWorktreeAlreadyRegisteredAtItsPath() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    let away = try await repo.coordinator.create(
+      branch: "away", in: repo.project, settings: repo.trees)
+    let aside = away.deletingLastPathComponent().appendingPathComponent("away-aside")
+    try FileManager.default.moveItem(at: away, to: aside)
+    _ = try await repo.git.run(["branch", "-m", "away", "renamed"], in: repo.project.path)
+    let stopper = ProcessStopper()
+    stopper.stop()
+
+    await #expect(throws: (any Error).self) {
+      try await repo.coordinator.add(
+        branch: "away", in: repo.project, settings: repo.trees, stopper: stopper)
+    }
+
+    let listed = try await repo.coordinator.refresh(repo.project)
+    #expect(listed.map(\.branch) == ["main", "renamed"])
+  }
+
+  @Test func aCreateStoppedBeforeGitRanLeavesABranchThatWasAlreadyThere() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    _ = try await repo.git.run(["checkout", "-q", "-b", "mywork"], in: repo.project.path)
+    try await repo.commit("mine", file: "mine.txt", content: "x\n")
+    _ = try await repo.git.run(["checkout", "-q", "main"], in: repo.project.path)
+    let stopper = ProcessStopper()
+    stopper.stop()
+
+    await #expect(throws: (any Error).self) {
+      try await repo.coordinator.add(
+        branch: "mywork", in: repo.project, settings: repo.trees, stopper: stopper)
+    }
+
+    #expect(try await repo.branches().contains("mywork"))
+  }
+
+  @Test func aStoppedCreateWhoseBranchLookupFailedDeletesNoBranch() async throws {
+    let fake = try FakeGit.make(
+      """
+      case "$1 $2" in
+        "rev-parse --verify") exit 128 ;;
+        "worktree add") exit 128 ;;
+        "worktree list") printf 'worktree %s\\0HEAD a\\0branch refs/heads/main\\0\\0' "$SCRATCH" ;;
+        "branch -D") echo "$3" >> "$SCRATCH/deleted" ;;
+      esac
+      """)
+    defer { fake.tearDown() }
+    let coordinator = WorktreeCoordinator(
+      service: WorktreeService(git: fake.runner, settlesNewIndex: false))
+    let stopper = ProcessStopper()
+    stopper.stop()
+
+    await #expect(throws: (any Error).self) {
+      try await coordinator.add(
+        branch: "mywork", in: Project(path: fake.directory),
+        settings: WorktreeSettings(worktreeDirectory: "../trees"), stopper: stopper)
+    }
+
+    #expect(
+      !FileManager.default.fileExists(atPath: fake.directory.appendingPathComponent("deleted").path)
+    )
+  }
+
+  @Test func aNewWorktreesIndexIsWrittenAfterTheSecondItsFilesWereCheckedOutIn() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+
+    let settling = WorktreeCoordinator(service: WorktreeService(git: repo.git))
+    let path = try await settling.create(branch: "fresh", in: repo.project, settings: repo.trees)
+
+    let index = try await repo.git.run(
+      ["rev-parse", "--path-format=absolute", "--git-path", "index"], in: path
+    )
+    .trimmingCharacters(in: .whitespacesAndNewlines)
+    func second(_ file: String) throws -> Int {
+      let date = try #require(
+        try FileManager.default.attributesOfItem(atPath: file)[.modificationDate] as? Date)
+      return Int(date.timeIntervalSince1970.rounded(.down))
+    }
+    #expect(try second(index) > second(path.appendingPathComponent("README.md").path))
   }
 
   @Test func aBranchThatAlreadyExistsIsAGitErrorNotACrash() async throws {

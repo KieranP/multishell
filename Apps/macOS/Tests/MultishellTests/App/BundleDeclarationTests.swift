@@ -5,24 +5,14 @@ import UniformTypeIdentifiers
 
 @testable import Multishell
 
-/// The identifiers this app spells twice, once in Swift and once in the
-/// `Info.plist` template `Scripts/make-app.sh` fills in, and the permission
-/// strings that plist alone declares.
-///
-/// Nothing at build time joins the two, and nothing at run time notices they
-/// have parted. Every other test on either side reads the same constant on
-/// both, so renaming the Swift one and leaving the script alone passes them
-/// all and ships a bundle that exports a type the app never uses and uses a
-/// type the bundle never declared.
+/// Swift and the `Info.plist.in` that `Scripts/make-app.sh` fills in both spell these, and
+/// every other test reads one constant for both, so a rename on one side passes them all.
 @Suite
 struct BundleDeclarationTests {
-  /// The dragged tab's type. CLAUDE.md's rule is that it is spelled in both
-  /// places; this is what catches it not being.
   @Test func theDraggedTabTypeIsDeclaredInTheBundleTheScriptWrites() throws {
     let identifier = TabTransfer.contentType.identifier
-    // The Bool first, not `template.contains(…)` inside the expectation:
-    // swift-testing prints the expression it was given, and that one prints
-    // the whole template over the message that says what is wrong.
+    // A Bool rather than `contains(…)` in the #expect, since swift-testing prints that
+    // expression, the whole template, over the message.
     let isDeclared = try infoPlistTemplate().contains(
       "<key>UTTypeIdentifier</key><string>\(identifier)</string>")
     #expect(
@@ -33,9 +23,8 @@ struct BundleDeclarationTests {
       """)
   }
 
-  /// The subsystem `MacPlatform` logs under is the bundle id, so
-  /// `log show --predicate 'subsystem == "…"'` finds this app's lines.
-  /// Docs/develop/permissions.md tells you to run exactly that.
+  /// `log show --predicate 'subsystem == "…"'` with the bundle id finds nothing unless
+  /// `MacPlatform` logs under it.
   @Test func theLoggingSubsystemIsTheBundleIdentifier() throws {
     let subsystem = MacPlatform.loggingSubsystem
     let isBundleIdentifier = try infoPlistTemplate().contains(
@@ -44,18 +33,12 @@ struct BundleDeclarationTests {
       isBundleIdentifier,
       """
       MacPlatform logs under \(subsystem), which is not the bundle identifier Info.plist.in \
-      carries, so the `log show` predicate in Docs/develop/permissions.md finds none of \
-      this app's lines.
+      carries, so a `log show` predicate on the bundle id finds none of this app's lines.
       """)
   }
 
-  /// The key a debug bundle built from a worktree carries its name in, so
-  /// two worktrees can both `make run` over their own state and socket.
-  ///
-  /// Renaming it on the Swift side alone breaks nothing loudly: `Paths`
-  /// finds no key, falls back to the plain `.debug` files a checkout build
-  /// wants anyway, and the two worktrees go back to sharing one state file
-  /// and one socket without a word.
+  /// A worktree's debug bundle carries its name in this key. Renamed on the Swift side alone,
+  /// `Paths` falls back to the plain `.debug` files without a word.
   @Test func theWorktreeVariantKeyIsWrittenIntoTheBundleTheScriptWrites() throws {
     let isWritten = try infoPlistTemplate().contains("<key>\(Paths.variantKey)</key>")
     #expect(
@@ -66,9 +49,19 @@ struct BundleDeclarationTests {
       """)
   }
 
-  /// A pane records through this app, so without this key TCC kills the
-  /// asking process rather than showing an alert; permissions.md. The words
-  /// are matched too: an empty string is a key TCC does not count.
+  @Test func theCommitKeyTheAboutPanelReadsIsWrittenIntoTheBundle() throws {
+    let isWritten = try infoPlistTemplate().contains(
+      "<key>\(AboutPanel.commitKey)</key><string>@COMMIT@</string>")
+    #expect(
+      isWritten,
+      """
+      Info.plist.in does not carry \(AboutPanel.commitKey), so the About panel shows no commit \
+      and a bug report cannot say which tree was installed.
+      """)
+  }
+
+  /// Without this key TCC kills a pane's process that asks for the mic instead of alerting,
+  /// and TCC ignores an empty string; see Docs/develop/permissions.md.
   @Test func theMicrophoneUsageStringIsDeclaredInTheBundleTheScriptWrites() throws {
     let isDeclared =
       try infoPlistTemplate().range(
@@ -83,9 +76,8 @@ struct BundleDeclarationTests {
       """)
   }
 
-  /// Read from the checkout rather than the built bundle: these tests run
-  /// against the package, which has no `Info.plist` of its own, and the
-  /// point is to check the source the script fills in.
+  /// From the checkout, since the package these tests run in has no `Info.plist`
+  /// and the script's source is what is under test.
   private func infoPlistTemplate() throws -> String {
     // …/Apps/macOS/Tests/MultishellTests/App/<this file>
     let macOS = URL(fileURLWithPath: #filePath)
@@ -101,9 +93,8 @@ struct BundleDeclarationTests {
   }
 }
 
-/// Thrown rather than returned empty, so a checkout laid out differently
-/// fails saying where it looked instead of passing on a string with nothing
-/// in it.
+/// Thrown rather than returning empty, so a different checkout layout fails naming where it
+/// looked instead of passing on an empty string.
 private struct TemplateNotFound: Error, CustomStringConvertible {
   let path: String
   var description: String { "Info.plist.in not found at \(path)" }

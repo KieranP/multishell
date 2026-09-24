@@ -4,7 +4,6 @@ import Testing
 
 @testable import MultishellCore
 
-/// The line a hook file runs, and what reads one back as ours.
 @Suite
 struct AgentHooksTests {
   let helper = "$HOME/Library/Application Support/Multishell/bin/multishell"
@@ -22,9 +21,8 @@ struct AgentHooksTests {
     #expect(!AgentHooks.isMultishellHook("curl -sf http://127.0.0.1:9/hook"))
   }
 
-  /// Copilot denies a tool call when a preToolUse hook exits non-zero, and
-  /// Claude blocks one on exit 2. Whatever becomes of the helper, the line
-  /// answers 0: the worst a broken Multishell may do is stop the dots.
+  /// Copilot denies a tool call when a preToolUse hook exits non-zero, and Claude blocks one on
+  /// exit 2, so the line answers 0 whatever becomes of the helper.
   @Test func aHelperThatDiesTakesTheDotsWithItAndNotTheToolCall() throws {
     let directory = temporaryDirectory()
     defer { try? FileManager.default.removeItem(at: directory) }
@@ -54,9 +52,8 @@ struct AgentHooksTests {
     return process.terminationStatus
   }
 
-  /// The first hooks were installed with `claude-hook`, and settings files
-  /// still say it: an install that did not recognise its own line would
-  /// append a second one beside it.
+  /// Settings files still hold the `claude-hook` line the first builds wrote, and an install that
+  /// missed it would append a second one beside it.
   @Test func theLineAnOlderBuildWroteIsStillOurs() {
     let old = "[ -x \"\(helper)\" ] && exec \"\(helper)\" claude-hook; exit 0"
     #expect(AgentHooks.isMultishellHook(old))
@@ -78,8 +75,6 @@ struct AgentHooksTests {
     }
   }
 
-  /// Remove takes back what Add put in. A hook of the user's own under the
-  /// same event stays, whatever its script is called.
   @Test func removeLeavesAUserHookNamedAfterUs() {
     let theirs = "~/bin/multishell-agent-hook-logger"
     let ours = AgentHooks.command(agent: AgentCatalogue.claudeID, helper: helper)
@@ -138,6 +133,20 @@ struct AgentHooksTests {
     let parsed = try JSONSerialization.jsonObject(with: Data(snippet.utf8)) as? [String: Any]
     #expect(AgentHooks.claude.isInstalled(in: parsed ?? [:]))
     #expect(snippet.contains("\"timeout\" : 5"))
+  }
+
+  @Test func codexIsGivenNoTimeoutItWouldClampAndWarnAbout() throws {
+    let hooks = try #require(AgentHooks.codex.entries(helper: helper)["hooks"] as? [String: Any])
+    func timeout(_ event: String) -> Int? {
+      let groups = hooks[event] as? [[String: Any]]
+      return (groups?.first?["hooks"] as? [[String: Any]])?.first?["timeout"] as? Int
+    }
+
+    #expect(timeout("Interrupt") == 3)
+    #expect(timeout("SessionEnd") == 3)
+    for event in hooks.keys where !["Interrupt", "SessionEnd"].contains(event) {
+      #expect(timeout(event) == 5, "\(event)")
+    }
   }
 
   /// Gemini counts the timeout in milliseconds, and five seconds spelled as

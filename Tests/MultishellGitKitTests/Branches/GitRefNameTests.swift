@@ -24,10 +24,8 @@ struct GitRefNameTests {
     }
   }
 
-  /// `check-ref-format --branch` is not the gate `git branch` is: it takes
-  /// `HEAD` and `@` as shorthands for the current branch, where creating a
-  /// branch is what these names are checked for. So the oracle is the real
-  /// thing, in the fixture's own repository.
+  /// `check-ref-format --branch` takes `HEAD` and `@` as shorthands for the current branch,
+  /// so the oracle is `git branch` itself, in the fixture's own repository.
   private static func gitAccepts(
     _ name: String, in repository: URL, using git: GitRunner
   ) async -> Bool {

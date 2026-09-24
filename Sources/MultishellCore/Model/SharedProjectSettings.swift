@@ -155,15 +155,22 @@ public struct SharedProjectSettings: Equatable, Sendable {
   /// Writes the file, sorted and indented so a diff reads well. Returns it
   /// with the digest set, so the writer need not read the file back.
   @discardableResult public func write(to repository: URL) throws -> SharedProjectSettings {
+    let contents = try fileContents()
+    try contents.data.write(to: Self.file(in: repository), options: .atomic)
+    return contents.settings
+  }
+
+  /// The bytes `write` puts down, and these settings as they will read back,
+  /// digest set. The digest is known before the file is there.
+  public func fileContents() throws -> (data: Data, settings: SharedProjectSettings) {
     let encoder = JSONEncoder.forFile()
     let fields = try fields()
     let kept = unread.filter { fields[$0.key] == nil }
     let data = try encoder.encode(kept.merging(fields) { _, field in field })
-    try data.write(to: Self.file(in: repository), options: .atomic)
     var written = self
     written.unread = kept
     written.digest = FileDigest.sha256(of: data)
-    return written
+    return (data, written)
   }
 
   /// The fields as the file would carry them, blanks and unknowns left out.
@@ -277,18 +284,5 @@ extension SharedProjectSettings: Codable {
     for key in file.allKeys where !written.contains(key.stringValue) {
       unread[key.stringValue] = try file.decode(JSONValue.self, forKey: key)
     }
-  }
-}
-
-/// The user's answer to "trust what this repository's `.multishell.json`
-/// asks for?", against the sha256 of the file; see settings.md.
-public struct SharedSettingsDecision: Codable, Hashable, Sendable {
-  /// `FileDigest.sha256` of the `.multishell.json` this answers for.
-  public var digest: String
-  public var trusted: Bool
-
-  public init(digest: String, trusted: Bool) {
-    self.digest = digest
-    self.trusted = trusted
   }
 }

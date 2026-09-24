@@ -3,8 +3,10 @@
 An index. Pull in the file you need; do not read them all. Rules live with their
 reasons, so a file under `Docs/design/` is binding and not background.
 
-Four rules live here. The rest are in the files below.
+Five rules live here. The rest are in the files below.
 
+- Before changing code in an area, read the `Docs/design/` file that covers it;
+  the table in [Docs/DESIGN.md](Docs/DESIGN.md) says which.
 - Commit only when the user explicitly asks.
 - No code comment exceeds two lines. Where more is needed, add it to a file
   under `Docs/design/` or `Docs/develop/` and refer to it from the comment.
@@ -17,7 +19,7 @@ Four rules live here. The rest are in the files below.
 ## Where the rest is
 
 - [Docs/DEVELOP.md](Docs/DEVELOP.md) indexes `Docs/develop/`: the build, the
-  tests, the layout, what is on disk, what macOS asks for, the dependencies and
-  the open findings.
+  tests, the layout, what an addition needs, what is on disk, what macOS asks
+  for, the dependencies, the open findings and the queued work.
 - [Docs/DESIGN.md](Docs/DESIGN.md) indexes `Docs/design/`: why each decision
   went the way it did, and the rules that follow from it.

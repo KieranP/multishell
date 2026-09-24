@@ -27,6 +27,17 @@ struct UIMetricsTests {
     }
   }
 
+  @Test func aProjectsBlockIsItsRowAndEachWorktreesWithTheSelectedOnesPanes() {
+    let metrics = UIMetrics(fontSize: 13)
+
+    let height = metrics.projectBlockHeight(worktreeRows: [
+      (isNamed: false, isRenaming: false, paneCount: 0),
+      (isNamed: true, isRenaming: false, paneCount: 2),
+    ])
+
+    #expect(height == 148)
+  }
+
   @Test func rowsAreTallEnoughForTheirText() {
     for size in stride(from: 10.0, through: 18.0, by: 1) {
       let metrics = UIMetrics(fontSize: size)

@@ -48,19 +48,8 @@ struct ProcessRunnerTests {
     #expect(output.standardError.count == 300_000)
   }
 
-  /// Blocking waits inside a `Task` occupy the cooperative pool, one thread
-  /// per core, so ninety-six of them starved would run in rounds of as many
-  /// as the machine has cores. Each child says how many others were running
-  /// when it started, so what is read is the overlap itself rather than how
-  /// long the lot took: a wall-clock bound here was the runner's mood, and
-  /// the figure that had headroom over three seconds of launches on one core
-  /// could not also catch a twelve-core laptop starving in two.
-  ///
-  /// The pool is the yardstick. Starved, no more than a thread per core is
-  /// ever inside a run, so anything past twice the cores says the waits let
-  /// their threads go; unstarved it is nearly all of them, the hold being long
-  /// against what a launch costs. Four children per core, so the bound stays
-  /// half the batch on a machine with more cores than the batch had children.
+  /// Starved, the cooperative pool holds at most a thread per core inside a run, so each child
+  /// counts the runs beside it instead of timing the batch; see Docs/develop/tests.md.
   @Test func manyConcurrentProcessesDoNotStarveEachOther() async throws {
     let running = cwd.appendingPathComponent("ms-overlap-\(UUID().uuidString)", isDirectory: true)
     try FileManager.default.createDirectory(at: running, withIntermediateDirectories: true)
@@ -103,54 +92,18 @@ struct ProcessRunnerTests {
         == cwd.standardizedFileURL.path.replacingOccurrences(of: "/private", with: "")
         || out.contains(cwd.lastPathComponent))
   }
-}
 
-@Suite
-struct ShellCommandTests {
-  @Test func runsACommandLineThroughTheShellWithEnvironment() async throws {
-    let out = try await ShellCommand().runScript(
-      "echo $MULTISHELL_BRANCH | tr a-z A-Z", in: URL(fileURLWithPath: NSTemporaryDirectory()),
-      environment: ["MULTISHELL_BRANCH": "feat"])
-    #expect(out.trimmingCharacters(in: .whitespacesAndNewlines) == "FEAT")
-  }
+  /// On this process's terminal, an interactive zsh outside the foreground
+  /// group stopped itself on SIGTTIN and sat there until the timeout.
+  @Test func aChildRunsInASessionOfItsOwnSoNoTerminalCanStopIt() async throws {
+    let output = try await runner.capture(
+      sh, ["-c", "sleep 30 >/dev/null 2>&1 & echo $!"], in: cwd)
+    let background = try #require(
+      pid_t(output.standardOutput.trimmingCharacters(in: .whitespacesAndNewlines)))
+    defer { kill(background, SIGKILL) }
 
-  @Test func aLaunchedCommandSaysHowItEnded() async throws {
-    let directory = URL(fileURLWithPath: NSTemporaryDirectory())
-    try await ShellCommand().launch("true", in: directory)
-    await #expect(throws: ProcessFailure.self) {
-      try await ShellCommand().launch("exit 3", in: directory)
-    }
-    await #expect(throws: (any Error).self) {
-      try await ShellCommand().launch("true", in: URL(fileURLWithPath: "/no/such/dir"))
-    }
-  }
-  /// An editor shim that holds the editor open for as long as the file is
-  /// open holds this call with it, so it must cost no pipes: it used to keep
-  /// two descriptors and a login shell per click, for the life of the app.
-  /// A shell can see the difference, where counting descriptors in a process
-  /// this busy cannot.
-  @Test func aLaunchedCommandIsGivenNoPipes() async throws {
-    let directory = URL(fileURLWithPath: NSTemporaryDirectory())
-    for stream in ["1", "2"] {
-      await #expect(throws: ProcessFailure.self, "stream \(stream)") {
-        try await ShellCommand().launch("test -p /dev/fd/\(stream)", in: directory)
-      }
-      let captured = try await ShellCommand().runScript(
-        "test -p /dev/fd/\(stream) && printf pipe", in: directory)
-      #expect(captured == "pipe", "which is what `runScript` gives it, for the contrast")
-    }
-  }
-}
-
-@Suite
-struct ExecutableLookupTests {
-  @Test func findsToolsOnPath() {
-    #expect(ExecutableLookup.find("sh") != nil)
-    #expect(ExecutableLookup.find("git") != nil)
-  }
-
-  @Test func returnsNilForMissingTools() {
-    #expect(ExecutableLookup.find("definitely-not-a-real-binary-\(UUID().uuidString)") == nil)
+    #expect(getsid(background) > 0)
+    #expect(getsid(background) != getsid(0))
   }
 }
 
@@ -173,12 +126,8 @@ struct ProcessRunnerFailureTests {
     }
   }
 
-  /// The status poll hits this every five seconds for a worktree on an
-  /// unmounted drive; each failure used to keep six descriptors open forever.
-  ///
-  /// The count is process-wide and other suites open hundreds of descriptors
-  /// while this runs, so each side is the lowest reading over seconds: the
-  /// noise is transient, the leak is not.
+  /// Each failure used to leak six descriptors, every five seconds on an unmounted drive. Other
+  /// suites' descriptors come and go, so each side is the lowest reading over seconds.
   @Test func failedLaunchesDoNotLeakFileDescriptors() async throws {
     let runner = ProcessRunner()
     func failToLaunch() async {
@@ -201,12 +150,8 @@ struct ProcessRunnerCompletionTests {
   private let sh = URL(fileURLWithPath: "/bin/sh")
   private let cwd = URL(fileURLWithPath: NSTemporaryDirectory())
 
-  /// A hook like `npm run dev &` exits at once but its child inherits the
-  /// pipes, so EOF never comes while the server runs. The call must return
-  /// when the process the caller started exits, not when its descendants do.
-  ///
-  /// A clock bound flaked on a loaded CI runner, so the proof is that the
-  /// grandchild is still alive when the call returns.
+  /// `npm run dev &` exits at once but its child keeps the pipes, so EOF never comes. A clock
+  /// bound flaked on CI, so the proof is the grandchild still alive when the call returns.
   @Test func aChildThatExitsWithABackgroundGrandchildStillCompletes() async throws {
     let output = try await runner.capture(
       sh, ["-c", "printf before; sleep 60 & echo $! >&2; exit 0"], in: cwd)
@@ -230,9 +175,8 @@ struct ProcessRunnerCompletionTests {
     }
   }
 
-  /// Each run opens two pipes, four descriptors. The status poll runs one
-  /// per worktree every five seconds, so a leak here would exhaust the
-  /// process within the hour.
+  /// Each run opens four descriptors, and the status poll runs one per worktree every five
+  /// seconds, so a leak here would exhaust the process within the hour.
   @Test func successfulRunsDoNotLeakFileDescriptors() async throws {
     for _ in 0..<5 { _ = try await runner.run(sh, ["-c", "printf x"], in: cwd) }
     let before = try await lowestDescriptorCount(over: .seconds(2))
@@ -240,365 +184,5 @@ struct ProcessRunnerCompletionTests {
     let after = try await lowestDescriptorCount(over: .seconds(4))
 
     #expect(after - before < 100, "before \(before), after \(after); a leak would be 400")
-  }
-}
-
-/// Lowering the process-wide descriptor limit starves every other suite
-/// running alongside, so this runs only when asked:
-///
-///     MULTISHELL_EXHAUST_DESCRIPTORS=1 swift test --filter DescriptorExhaustionTests
-@Suite(.serialized)
-struct DescriptorExhaustionTests {
-  @Test(.enabled(if: ProcessInfo.processInfo.environment["MULTISHELL_EXHAUST_DESCRIPTORS"] != nil))
-  func atTheDescriptorLimitARunThrowsInsteadOfReadingTheAppsStdin() async throws {
-    // libdispatch raises the soft limit the first time a process creates a
-    // file source. Make that happen now, or it happens inside the runner and
-    // undoes the shortage this test sets up.
-    let warmUp = FileHandle(fileDescriptor: 2, closeOnDealloc: false)
-    warmUp.readabilityHandler = { _ in }
-    warmUp.readabilityHandler = nil
-
-    var saved = rlimit()
-    getrlimit(RLIMIT_NOFILE, &saved)
-    var held: [Int32] = []
-    defer {
-      var restore = saved
-      setrlimit(RLIMIT_NOFILE, &restore)
-      for fd in held { close(fd) }
-    }
-
-    // Take every descriptor up to a limit just above what is open now.
-    let inUse = try FileManager.default.contentsOfDirectory(atPath: "/dev/fd").count
-    var lowered = saved
-    lowered.rlim_cur = rlim_t(inUse + 8)
-    #expect(setrlimit(RLIMIT_NOFILE, &lowered) == 0)
-    while true {
-      let fd = open("/dev/null", O_RDONLY)
-      if fd < 0 { break }
-      held.append(fd)
-    }
-
-    let runner = ProcessRunner()
-    let cwd = URL(fileURLWithPath: NSTemporaryDirectory())
-    do {
-      let output = try await runner.capture(
-        URL(fileURLWithPath: "/bin/sh"), ["-c", "printf real"], in: cwd)
-      Issue.record("ran with output \(output.standardOutput.debugDescription) at the limit")
-    } catch is PipeUnavailable {
-      // What we want: a loud failure the caller reports.
-    } catch {
-      Issue.record("wrong error: \(error)")
-    }
-
-    var restore = saved
-    setrlimit(RLIMIT_NOFILE, &restore)
-    for fd in held { close(fd) }
-    held = []
-    let output = try await runner.run(
-      URL(fileURLWithPath: "/bin/sh"), ["-c", "printf ok"], in: cwd)
-    #expect(output == "ok", "works again once descriptors are back")
-  }
-}
-
-@Suite
-struct HookShellTests {
-  /// Hooks must see the PATH a terminal sees: a login, interactive shell
-  /// reads its rc files, each of which exports a marker under this home.
-  @Test func aHookRunsInAnInteractiveLoginShellThatReadsItsRcFiles() async throws {
-    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
-    let home = try Scratch.directory("home")
-    defer { try? FileManager.default.removeItem(at: home) }
-    for (file, marker) in [
-      (".zshrc", "zshrc"), (".zprofile", "zprofile"), (".bashrc", "bashrc"),
-      (".bash_profile", "bash_profile"), (".profile", "profile"),
-    ] {
-      try "export MULTISHELL_RC=\(marker)\n".write(
-        to: home.appendingPathComponent(file), atomically: true, encoding: .utf8)
-    }
-
-    let out = try await ShellCommand().runScript(
-      "printf '%s' \"$MULTISHELL_RC\"", in: home,
-      environment: ["HOME": home.path, "ZDOTDIR": home.path], shellPath: "/bin/zsh")
-
-    #expect(out == "zshrc", ".zprofile then .zshrc, as a login interactive zsh reads them")
-  }
-
-  @Test func aChildThatReadsStdinGetsEOFNotTheApps() async throws {
-    let out = try await ProcessRunner().run(
-      URL(fileURLWithPath: "/bin/sh"), ["-c", "cat; printf done"],
-      in: URL(fileURLWithPath: NSTemporaryDirectory()))
-    #expect(out == "done")
-  }
-
-  @Test func aScriptStopsAtItsFirstFailingLineWhereTheShellCanBeTold() async throws {
-    let scratch = try Scratch.directory("script")
-    defer { try? FileManager.default.removeItem(at: scratch) }
-
-    let shell = ShellCommand.shell!.executable.lastPathComponent
-    guard ShellCommand.errexitShells.contains(shell) else { return }
-    await #expect(throws: ProcessFailure.self) {
-      try await ShellCommand().runScript(
-        "echo one > first.txt\nfalse\necho two > second.txt", in: scratch)
-    }
-    #expect(
-      FileManager.default.fileExists(atPath: scratch.appendingPathComponent("first.txt").path))
-    #expect(
-      !FileManager.default.fileExists(atPath: scratch.appendingPathComponent("second.txt").path),
-      "the line after the failure ran")
-
-    let out = try await ShellCommand().runScript("printf a\nprintf b", in: scratch)
-    #expect(out == "ab", "a sound script runs every line")
-  }
-
-  /// The user's rc files write to stderr under `-i` with no terminal, and
-  /// that noise used to be the whole of a failing hook's message when the
-  /// hook itself printed little or nothing.
-  @Test func aFailingScriptsMessageIsItsOwnStderrNotTheRcFiles() async throws {
-    let home = try Scratch.directory("home")
-    defer { try? FileManager.default.removeItem(at: home) }
-    for file in [".zshrc", ".zprofile", ".zshenv", ".bashrc", ".bash_profile", ".profile"] {
-      try "echo 'rc noise' >&2\n".write(
-        to: home.appendingPathComponent(file), atomically: true, encoding: .utf8)
-    }
-    let shell = ShellCommand.shell!.executable.lastPathComponent
-    guard ShellCommand.markingShells.contains(shell) else { return }
-
-    let cases: [(script: String, message: String)] = [
-      ("echo 'the hook said so' >&2\nexit 3", "the hook said so"),
-      ("exit 3", ""),
-      ("echo hey\necho 'and then' >&2\nexit 3", "hey\nand then"),
-      ("echo hey\nexit 3", "hey"),
-    ]
-    for (script, message) in cases {
-      do {
-        _ = try await ShellCommand().runScript(script, in: home, environment: ["HOME": home.path])
-        Issue.record("the script did not fail")
-      } catch let failure as ProcessFailure {
-        #expect(failure.status == 3)
-        #expect(!failure.message.contains("rc noise"), "\(script): \(failure.message)")
-        #expect(failure.message == message, "\(script): \(failure.message)")
-      }
-    }
-  }
-
-  @Test func aFailureMessageIsStdoutThenTheScriptsStderr() {
-    let marker = ShellCommand.outputMarker
-    #expect(
-      ShellCommand.failureMessage(standardOutput: "hey\n", standardError: "noise\n\(marker)\nbad\n")
-        == "hey\nbad")
-    #expect(
-      ShellCommand.failureMessage(standardOutput: "", standardError: "\(marker)\n") == "",
-      "silent")
-    #expect(ShellCommand.failureMessage(standardOutput: "  hey  ", standardError: "") == "hey")
-  }
-
-  @Test func theMarkerSplitsStderrAndIsWrittenForShellsThatTakeTheRedirect() {
-    let marker = ShellCommand.outputMarker
-    #expect(ShellCommand.scriptOutput(fromStderr: "noise\n\(marker)\nmine\n") == "mine")
-    #expect(ShellCommand.scriptOutput(fromStderr: "noise\n\(marker)\n") == "")
-    #expect(ShellCommand.scriptOutput(fromStderr: "no marker here") == "no marker here")
-    #expect(
-      ShellCommand.scriptOutput(fromStderr: "noise\n\(marker)\nmine\nlogout\n") == "mine",
-      "bash's parting word is not the hook's")
-    #expect(ShellCommand.scriptOutput(fromStderr: "\(marker)\nlogout\n") == "", "silent hook")
-    #expect(
-      ShellCommand.scriptOutput(fromStderr: "\(marker)\nlogout early\n") == "logout early",
-      "only the whole last line goes")
-    #expect(
-      ShellCommand.markingOutput("a", shell: URL(fileURLWithPath: "/bin/zsh"))
-        == "printf '%s\\n' '\(marker)' >&2\na")
-    #expect(
-      ShellCommand.markingOutput("a", shell: URL(fileURLWithPath: "/opt/homebrew/bin/fish"))
-        .hasPrefix("printf"))
-    #expect(
-      ShellCommand.markingOutput("a", shell: URL(fileURLWithPath: "/bin/tcsh")) == "a",
-      "csh has no >&2")
-  }
-
-  @Test func errexitIsPrependedForThePosixFamilyOnly() {
-    #expect(
-      ShellCommand.stoppingAtFirstFailure("a\nb", shell: URL(fileURLWithPath: "/bin/zsh"))
-        == "set -e\na\nb")
-    #expect(
-      ShellCommand.stoppingAtFirstFailure("a\nb", shell: URL(fileURLWithPath: "/bin/sh"))
-        == "set -e\na\nb")
-    #expect(
-      ShellCommand.stoppingAtFirstFailure(
-        "a\nb", shell: URL(fileURLWithPath: "/opt/homebrew/bin/fish"))
-        == "a\nb", "fish's set -e erases a variable")
-    #expect(
-      ShellCommand.stoppingAtFirstFailure("a", shell: URL(fileURLWithPath: "/bin/tcsh")) == "a")
-  }
-
-  @Test func onlyKnownShellsGetTheInteractiveLoginFormOthersFallBackToSh() {
-    #expect(ShellCommand.shell(named: "/bin/zsh").arguments == ["-l", "-i", "-c"])
-    #expect(ShellCommand.shell(named: "/bin/zsh").executable.path == "/bin/zsh")
-    for odd in ["/usr/local/bin/nu", "/opt/homebrew/bin/xonsh", "/no/such/zsh", "", nil] {
-      let fallback = ShellCommand.shell(named: odd)
-      #expect(fallback.executable.path == "/bin/sh", "\(odd ?? "nil")")
-      #expect(fallback.arguments == ["-c"], "\(odd ?? "nil")")
-    }
-    #expect(ShellCommand.shell != nil)
-  }
-}
-
-/// Ending a child from this side: the timeout and the user's stop. Both go
-/// through `ProcessStopper`, so both must end an interactive shell, which
-/// ignores SIGTERM, and the command it is running.
-@Suite
-struct ProcessStopTests {
-  private let runner = ProcessRunner()
-  private let cwd = URL(fileURLWithPath: NSTemporaryDirectory())
-
-  /// The pid of the `sleep` the shell runs, so the test can check it went
-  /// with the shell rather than living on as an orphan.
-  private func sleepPID(in output: String) -> pid_t? {
-    output.split(whereSeparator: \.isNewline).first.flatMap { Int32($0) }
-  }
-
-  /// Gone or a zombie waiting for a parent that is itself gone. `kill(pid,
-  /// 0)` alone says a zombie is alive, and launchd reaps orphans at its own
-  /// pace, so the check waits a little.
-  private func hasEnded(_ pid: pid_t) async -> Bool {
-    for _ in 0..<30 {
-      if kill(pid, 0) != 0 || isZombie(pid) { return true }
-      try? await Task.sleep(for: .milliseconds(100))
-    }
-    return false
-  }
-
-  private func isZombie(_ pid: pid_t) -> Bool {
-    #if os(Linux)
-      guard let stat = try? String(contentsOfFile: "/proc/\(pid)/stat", encoding: .utf8),
-        let close = stat.lastIndex(of: ")")
-      else { return false }
-      return stat[stat.index(after: close)...].trimmingCharacters(in: .whitespaces).hasPrefix("Z")
-    #else
-      var name: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, pid]
-      var info = kinfo_proc()
-      var size = MemoryLayout<kinfo_proc>.size
-      guard sysctl(&name, UInt32(name.count), &info, &size, nil, 0) == 0, size > 0 else {
-        return false
-      }
-      return Int32(info.kp_proc.p_stat) == SZOMB
-    #endif
-  }
-
-  @Test func aTimeoutEndsAnInteractiveShellAndTheCommandItRuns() async throws {
-    for shell in ["/bin/zsh", "/bin/bash"]
-    where FileManager.default.isExecutableFile(atPath: shell) {
-      let started = ContinuousClock.now
-      let output = try await runner.capture(
-        URL(fileURLWithPath: shell), ["-i", "-c", "sleep 30 & echo $!; wait"], in: cwd,
-        environment: ["HOME": cwd.path], timeout: .milliseconds(500))
-      let elapsed = ContinuousClock.now - started
-      #expect(output.stop == .timedOut(after: .milliseconds(500)), "\(shell)")
-      #expect(!output.succeeded, "\(shell)")
-      // The child sleeps thirty, so twelve tells a stop from no stop
-      // rather than a fast runner from a slow one.
-      #expect(elapsed < .seconds(12), "\(shell) took \(elapsed) to be ended")
-      let child = try #require(sleepPID(in: output.standardOutput), "\(shell)")
-      #expect(await hasEnded(child), "\(shell) left its sleep running as pid \(child)")
-    }
-  }
-
-  @Test func theStopperEndsTheChildAndSaysTheUserAsked() async throws {
-    let stopper = ProcessStopper()
-    Task {
-      try await Task.sleep(for: .milliseconds(300))
-      stopper.stop()
-    }
-    let started = ContinuousClock.now
-    let output = try await runner.capture(
-      URL(fileURLWithPath: "/bin/sh"), ["-c", "sleep 30"], in: cwd, stopper: stopper)
-    #expect(output.stop == .stopped)
-    #expect(ContinuousClock.now - started < .seconds(12), "the child sleeps thirty")
-  }
-
-  @Test func aStopAskedBeforeTheChildStartsAppliesToIt() async throws {
-    let stopper = ProcessStopper()
-    stopper.stop()
-    let output = try await runner.capture(
-      URL(fileURLWithPath: "/bin/sh"), ["-c", "sleep 30"], in: cwd, stopper: stopper)
-    #expect(output.stop == .stopped)
-  }
-
-  @Test func aChildThatIgnoresSIGHUPIsKilledAfterTheGrace() async throws {
-    let started = ContinuousClock.now
-    let output = try await runner.capture(
-      URL(fileURLWithPath: "/bin/sh"), ["-c", "trap '' HUP; sleep 30"], in: cwd,
-      timeout: .milliseconds(200))
-    let elapsed = ContinuousClock.now - started
-    #expect(output.stop == .timedOut(after: .milliseconds(200)))
-    #expect(elapsed > .seconds(2), "the grace was skipped: \(elapsed)")
-    #expect(elapsed < .seconds(12), "the kill never came: \(elapsed)")
-  }
-
-  @Test func aChildThatFinishesInTimeHasNoStop() async throws {
-    let stopper = ProcessStopper()
-    let output = try await runner.capture(
-      URL(fileURLWithPath: "/bin/sh"), ["-c", "printf ok"], in: cwd, timeout: .seconds(5),
-      stopper: stopper)
-    #expect(output.stop == nil && output.succeeded)
-    #expect(stopper.reason == nil)
-  }
-
-  /// `WorktreeCoordinator.remove` hands one stopper to the pre-delete and
-  /// post-delete hooks in turn. A Cancel landing between them used to poison
-  /// it: the second hook ran unsignalled while the run was reported stopped.
-  @Test func aStopBetweenTwoChildrenCarriesToTheSecondRatherThanPoisoning() async throws {
-    let stopper = ProcessStopper()
-    let first = try await runner.capture(
-      URL(fileURLWithPath: "/bin/sh"), ["-c", "printf ok"], in: cwd, stopper: stopper)
-    #expect(first.succeeded)
-
-    stopper.stop()
-    #expect(stopper.reason == nil, "nothing was signalled: the first child had already exited")
-    #expect(stopper.isStopped, "but the ask stands for whatever runs next")
-
-    let started = ContinuousClock.now
-    let second = try await runner.capture(
-      URL(fileURLWithPath: "/bin/sh"), ["-c", "sleep 30"], in: cwd, stopper: stopper)
-    #expect(second.stop == .stopped, "the second hook is the one the Cancel was for")
-    #expect(ContinuousClock.now - started < .seconds(12), "it slept its thirty")
-  }
-
-  /// The timer is armed per child, so one that exits just as its timeout
-  /// fires has nothing to stop. Carrying that forward would end the next hook
-  /// the stopper is given, which is a live child nobody asked to stop.
-  @Test func aTimeoutThatMissesItsChildDoesNotEndTheNextOne() async throws {
-    let stopper = ProcessStopper()
-    let first = try await runner.capture(
-      URL(fileURLWithPath: "/bin/sh"), ["-c", "printf ok"], in: cwd, stopper: stopper)
-    #expect(first.succeeded)
-
-    // The race, run outright: the child is gone, and its timer fires anyway.
-    stopper.stop(.timedOut(after: .milliseconds(1)))
-    #expect(stopper.reason == nil)
-    #expect(!stopper.isStopped, "a timeout dies with the run that armed it")
-
-    let second = try await runner.capture(
-      URL(fileURLWithPath: "/bin/sh"), ["-c", "printf two"], in: cwd, stopper: stopper)
-    #expect(second.stop == nil && second.standardOutput == "two")
-  }
-
-  /// SIGHUP reaches the group, so the shell goes at once and the guard on it
-  /// let a grandchild that traps SIGHUP run until the user logged out.
-  @Test func aGrandchildThatTrapsSIGHUPIsKilledThoughTheShellWentAtOnce() async throws {
-    let output = try await runner.capture(
-      URL(fileURLWithPath: "/bin/sh"),
-      ["-c", "/bin/sh -c \"trap '' HUP; sleep 30\" & echo $!; wait"], in: cwd,
-      timeout: .milliseconds(200))
-    let child = try #require(sleepPID(in: output.standardOutput))
-    #expect(await hasEnded(child), "left running as pid \(child)")
-  }
-
-  @Test func aStoppedScriptIsAFailureThatSaysSo() async throws {
-    do {
-      _ = try await ShellCommand().runScript("sleep 30", in: cwd, timeout: .milliseconds(300))
-      Issue.record("the script did not fail")
-    } catch let failure as ProcessFailure {
-      #expect(failure.stop == .timedOut(after: .milliseconds(300)))
-    }
   }
 }

@@ -152,6 +152,61 @@ struct AppModelGitTests {
       "the second read is due, the first having badged nothing")
   }
 
+  @Test func openingAProjectRereadsNoRowThePollIsStillReading() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let gate = h.root.appendingPathComponent("go")
+    let fake = try h.modelOnFakeGit(
+      """
+      case "$*" in
+        *status*)
+          if [ ! -f "$SCRATCH/first" ]; then
+            touch "$SCRATCH/first"
+            while [ ! -f "\(gate.path)" ]; do sleep 0.02; done
+          fi
+          printf '## main\\n' ;;
+      esac
+      """)
+    func statusReads() -> Int { h.gitCalls().filter { $0.contains("status") }.count }
+
+    let poll = Task { await fake.refreshStatuses() }
+    try await waitUntil { statusReads() > 0 }
+    await fake.refreshStatuses(of: h.project.id)
+    try Data().write(to: gate)
+    await poll.value
+
+    #expect(statusReads() == 1)
+  }
+
+  @Test func aPromptsRefreshWhileThePollReadsItsRowIsReadOnceThePollLands() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let gate = h.root.appendingPathComponent("go")
+    let fake = try h.modelOnFakeGit(
+      """
+      case "$*" in
+        *status*)
+          if [ ! -f "$SCRATCH/first" ]; then
+            touch "$SCRATCH/first"
+            while [ ! -f "\(gate.path)" ]; do sleep 0.02; done
+          fi
+          printf '## main\\n' ;;
+      esac
+      """)
+    func statusReads() -> Int { h.gitCalls().filter { $0.contains("status") }.count }
+    let main = try #require(fake.workspace.worktrees(of: h.project.id).first)
+    fake.statusPolling?.cancel()
+
+    let poll = Task { await fake.refreshStatuses() }
+    try await waitUntil { statusReads() > 0 }
+    await fake.refreshStatus(of: main.id)
+    try Data().write(to: gate)
+    await poll.value
+
+    try await waitUntil { statusReads() == 2 }
+    #expect(statusReads() == 2, "the refresh asked for mid-read was dropped")
+  }
+
   @Test func aTickNamingOneProjectsRecordsLeavesTheOtherProjectUnread() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
@@ -181,7 +236,7 @@ struct AppModelGitTests {
     defer { h.tearDown() }
     await h.model.createWorktree(branch: "asked", basedOn: nil, createBranch: true, in: h.project)
     let created = try #require(h.worktree(onBranch: "asked"))
-    h.model.requestRemoval(of: created)
+    await h.model.requestRemoval(of: created)?.value
     #expect(h.model.pendingRemoval?.id == created.id)
 
     _ = try await h.git.run(
@@ -278,8 +333,7 @@ struct AppModelGitTests {
       "what the hook printed on either stream, then its status, and no rc noise")
   }
 
-  /// The reason the hook runs apart from the sheet: `npm install` in a
-  /// post-create hook used to hold the sheet, and the whole app, for as
+  /// `npm install` in a post-create hook used to hold the sheet, and the whole app, for as
   /// long as it took.
   @Test func aSlowPostCreateHookReturnsAtOnceShowsItsProgressAndHoldsTheFirstTab() async throws {
     let h = try await GitHarness()
@@ -289,10 +343,8 @@ struct AppModelGitTests {
     await h.model.createWorktree(branch: "slow", basedOn: nil, createBranch: true, in: h.project)
 
     let created = try #require(h.worktree(onBranch: "slow"))
-    // The state is the evidence that the call came back first, and it needs
-    // no clock: a create that had waited out the hook would leave the
-    // operation finished and the first tab open, which is what the next
-    // three read.
+    // No clock needed: a create that waited out the hook would leave the operation
+    // finished and the first tab open, which the next three read.
     #expect(h.model.workspace.selectedWorktreeID == created.id)
     #expect(h.model.worktreeOperations[created.id]?.step == .postCreateHook)
     #expect(h.model.isBusy(created.id))
@@ -364,10 +416,8 @@ struct AppModelGitTests {
       "the project override turns it off")
   }
 
-  /// The file is only worth carrying these if the runtime path reads the
-  /// layered settings rather than the project's own.
-  /// The other way round from the test above it: someone whose own tabs are
-  /// agents can still ask for a fresh worktree to come up as a shell.
+  /// The file is only worth carrying these if the runtime path reads the layered settings
+  /// rather than the project's own.
   @Test func aCreatedWorktreeIsAShellWhenOnlyTabOpenAutoStartsTheAgent() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
@@ -585,7 +635,7 @@ struct AppModelGitTests {
     defer { h.tearDown() }
     await h.model.createWorktree(branch: "kept", basedOn: nil, createBranch: true, in: h.project)
     let worktree = try #require(h.worktree(onBranch: "kept"))
-    h.model.requestRemoval(of: worktree)
+    await h.model.requestRemoval(of: worktree)?.value
     let pending = try #require(h.model.pendingRemoval)
     #expect(pending.message(warning: nil).hasPrefix("Moves "))
 
@@ -620,11 +670,11 @@ struct AppModelGitTests {
 
     let refused = try #require(h.model.presentedError)
     #expect(refused.title == "Worktree removed, but branch ahead was not deleted")
-    #expect(refused.retryLabel == "Force Deletion")
+    #expect(refused.retry?.label == "Force Deletion")
     #expect(h.worktree(onBranch: "ahead") == nil, "the worktree itself went")
     #expect(h.model.liveTerminalCount == 0)
 
-    await refused.retry?()
+    await refused.retry?.action()
 
     let after = try await h.git.run(
       ["for-each-ref", "--format=%(refname:short)", "refs/heads"], in: h.project.path)
