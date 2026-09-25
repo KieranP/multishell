@@ -1,4 +1,3 @@
-import Foundation
 import Synchronization
 
 /// A box for `withObservationTracking`, whose `@Sendable` callback can

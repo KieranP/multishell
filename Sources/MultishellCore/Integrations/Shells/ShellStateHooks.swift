@@ -11,7 +11,7 @@ enum ShellStateHooks {
   /// The zsh startup files placed in the directory set as a session's
   /// `ZDOTDIR`. Each chains to the user's own first, editing no file of theirs.
   static func zshIntegrationFiles(
-    helper: String = AgentHooks.helperReference
+    helper: String = AgentHookCatalogue.helperReference
   )
     -> [String: String]
   {
@@ -73,14 +73,14 @@ enum ShellStateHooks {
 
   /// A bash init file for `--init-file`, which is read instead of `.bashrc`
   /// and skips the profile chain, so this reproduces that chain first.
-  static func bashInitFile(helper: String = AgentHooks.helperReference) -> String {
+  static func bashInitFile(helper: String = AgentHookCatalogue.helperReference) -> String {
     script("init", extension: "bash", helper: helper) + "\n"
   }
 
   /// A script from the resource bundle with the helper's path filled in,
   /// without its trailing newline so callers place it in a chain.
   private static func script(_ name: String, extension: String, helper: String) -> String {
-    guard let url = resourceBundle.url(forResource: name, withExtension: `extension`),
+    guard let url = Bundle.coreResources.url(forResource: name, withExtension: `extension`),
       var text = try? String(contentsOf: url, encoding: .utf8)
     else {
       preconditionFailure("\(name).\(`extension`) is missing from the MultishellCore resources")
@@ -93,7 +93,4 @@ enum ShellStateHooks {
         of: agentsPlaceholder,
         with: AgentCatalogue.agents.map(\.executable).sorted().joined(separator: " "))
   }
-
-  private static let resourceBundle = PackageBundle.holding(
-    "hooks", withExtension: "zsh", named: "multishell_MultishellCore.bundle", or: .module)
 }

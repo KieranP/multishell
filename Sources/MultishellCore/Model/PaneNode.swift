@@ -1,5 +1,3 @@
-import Foundation
-
 /// The arrangement of terminals inside one tab: a leaf per terminal, a split
 /// per divider, with the weights a divider drag writes back.
 public indirect enum PaneNode: Codable, Hashable, Sendable {
@@ -40,7 +38,7 @@ extension PaneNode {
     let axis = split.decodeTolerantly(SplitAxis.self, forKey: .axis, or: .horizontal)
     let children = try split.decode([PaneNode].self, forKey: .children)
     let weights = try split.decode([Double].self, forKey: .weights, or: [])
-    guard weights.count == children.count, weights.allSatisfy({ $0.isFinite && $0 > 0 }) else {
+    guard weights.count == children.count, LayoutWeight.allUsable(weights) else {
       self = .split(axis: axis, children: children)
       return
     }
@@ -81,8 +79,7 @@ extension PaneNode {
       return shouldDrop(id) ? nil : self
 
     case .split(let axis, let children, let weights):
-      let aligned =
-        weights.count == children.count ? weights : Array(repeating: 1, count: children.count)
+      let aligned = LayoutWeight.aligned(weights, count: children.count)
       var survivors: [PaneNode] = []
       var survivingWeights: [Double] = []
       for (child, weight) in zip(children, aligned) {
@@ -110,20 +107,17 @@ extension PaneNode {
       guard existing == id else { return self }
       return .split(axis: axis, children: [.terminal(existing), .terminal(newSession)])
 
-    case .split(let axis0, let children, let weights):
-      if axis0 == axis, let index = children.firstIndex(of: .terminal(id)) {
+    case .split(let existingAxis, let children, let weights):
+      if existingAxis == axis, let index = children.firstIndex(of: .terminal(id)) {
         var newChildren = children
-        // Indexed by child, so weights that do not line up become equal
-        // shares here rather than a trap; `pruning` makes the same choice.
-        var newWeights =
-          weights.count == children.count ? weights : Array(repeating: 1, count: children.count)
+        var newWeights = LayoutWeight.aligned(weights, count: children.count)
         newChildren.insert(.terminal(newSession), at: index + 1)
         newWeights[index] /= 2
         newWeights.insert(newWeights[index], at: index + 1)
-        return .split(axis: axis0, children: newChildren, weights: newWeights)
+        return .split(axis: existingAxis, children: newChildren, weights: newWeights)
       }
       let updated = children.map { $0.splitting(id, with: newSession, axis: axis) }
-      return .split(axis: axis0, children: updated, weights: weights)
+      return .split(axis: existingAxis, children: updated, weights: weights)
     }
   }
 

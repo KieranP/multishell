@@ -1,4 +1,3 @@
-import Foundation
 import MultishellProcess
 import TestScratch
 

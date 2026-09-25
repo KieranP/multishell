@@ -1,12 +1,6 @@
 import MultishellCore
 import SwiftUI
 
-extension RGB {
-  var color: Color {
-    Color(.sRGB, red: Double(red) / 255, green: Double(green) / 255, blue: Double(blue) / 255)
-  }
-}
-
 /// Every chrome colour derives from the theme, so the window follows it
 /// rather than the system appearance; see Docs/design/appearance.md.
 extension Theme {

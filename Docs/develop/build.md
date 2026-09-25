@@ -103,7 +103,10 @@
   helper's schemes share it.
 - **CI runs two jobs in parallel**: build and test, and the lint. It calls
   `swift test` directly, so it takes no lock and has no write sandbox: a test
-  writing outside the temporary directories passes there.
+  writing outside the temporary directories passes there. It shares only the
+  one-test-per-core cap with `make test`, and a run past 30 minutes is stopped.
+  It builds without debug info, which took a cold build from 38 s to 29 s here,
+  so a crash backtrace from CI has no line numbers.
 
 ## Before you say something works
 

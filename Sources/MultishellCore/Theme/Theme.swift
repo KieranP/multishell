@@ -1,5 +1,3 @@
-import Foundation
-
 /// A colour scheme for terminals and app chrome. Hex strings, not a platform
 /// colour type, so the core imports no UI framework; see Docs/design/appearance.md.
 public struct Theme: Identifiable, Codable, Hashable, Sendable {
@@ -117,7 +115,7 @@ extension Theme {
     inactivePaneOpacity: 0.8
   )
 
-  public static let multishellLight = Theme(
+  static let multishellLight = Theme(
     id: "multishell.light",
     name: "Multishell Light",
     isDark: false,

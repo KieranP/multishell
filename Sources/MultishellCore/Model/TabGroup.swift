@@ -31,7 +31,7 @@ public struct TabGroup: Identifiable, Codable, Hashable, Sendable {
   /// A weight of zero, or one that is not a number, is a column nothing can
   /// be laid out in; `PaneNode` resets a split's whole list over one.
   static func usableWeight(_ weight: Double) -> Double {
-    weight.isFinite && weight > 0 ? weight : 1
+    LayoutWeight.isUsable(weight) ? weight : 1
   }
 
   /// Weight and active tab default; id and worktree do not, a group

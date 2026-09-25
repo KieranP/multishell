@@ -9,11 +9,11 @@ public struct AgentDetection: Equatable, Sendable {
 
   public static let empty = AgentDetection(found: [:])
 
-  public init(found: [String: URL]) {
+  init(found: [String: URL]) {
     self.found = found
   }
 
-  public init(path: String?) {
+  init(path: String?) {
     var found: [String: URL] = [:]
     for agent in AgentCatalogue.agents {
       if let executable = ExecutableLookup.find(agent.executable, path: path) {

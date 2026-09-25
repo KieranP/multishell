@@ -25,7 +25,6 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   /// The agent's catalogue id, which the hook line carries so a report says
   /// who is at the pane's prompt.
   public let id: String
-  public let name: String
   public let file: URL
   /// The file as the settings window names it, `~` and all.
   public let displayPath: String
@@ -36,7 +35,7 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   public let trustNote: String?
   /// What the command line of a shell the agent runs a tool in holds, so its
   /// Stop can name those still running; see Docs/design/agents.md.
-  public let backgroundShellMarker: String?
+  let backgroundShellMarker: String?
   /// Whether the agent takes another turn when the work it left out at its
   /// Stop ends, which then pays the Done; see Docs/design/agents.md.
   public let resumesAfterWorkers: Bool
@@ -45,12 +44,11 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   let workersAreConversations: Bool
 
   init(
-    id: String, name: String, file: URL, displayPath: String, events: [AgentHookEvent],
+    id: String, file: URL, displayPath: String, events: [AgentHookEvent],
     format: Format, trustNote: String? = nil, backgroundShellMarker: String? = nil,
     resumesAfterWorkers: Bool = false, workersAreConversations: Bool = false
   ) {
     self.id = id
-    self.name = name
     self.file = file
     self.displayPath = displayPath
     self.events = events
@@ -60,6 +58,8 @@ public struct AgentHookIntegration: Identifiable, Sendable {
     self.resumesAfterWorkers = resumesAfterWorkers
     self.workersAreConversations = workersAreConversations
   }
+
+  public var name: String { AgentCatalogue.agent(id)?.name ?? id }
 
   /// Whether the file is Multishell's own, rather than one the user keeps
   /// their own settings in.
@@ -73,7 +73,9 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   /// Which asked-for event a payload is, or nothing where it says nothing
   /// about waiting. The hook exits quietly on nothing.
   public func event(for payload: AgentHookPayload) -> AgentHookEvent? {
-    guard let event = events.first(where: { $0.reported == payload.eventName }) else { return nil }
+    guard let event = events.first(where: { $0.reportedName == payload.eventName }) else {
+      return nil
+    }
     if event.onlyWhenPrompting, !payload.promptsForPermission { return nil }
     if let type = payload.notificationType, event.ignoredNotificationTypes.contains(type) {
       return nil
@@ -102,7 +104,7 @@ public struct AgentHookIntegration: Identifiable, Sendable {
       message: payload.message,
       agent: id,
       silent: event.silent ? true : nil,
-      subagent: event.subagentReport(for: payload),
+      subagent: event.subagentChange(for: payload),
       startsTurn: event.startsTurn(for: payload) ? true : nil,
       startsSession: event.startsSession ? true : nil,
       backgroundShells: isStop ? backgroundShellMarker.flatMap(backgroundShells) : nil,
@@ -112,7 +114,7 @@ public struct AgentHookIntegration: Identifiable, Sendable {
 
   /// The hooks as the file spells them: the whole file for one of ours, the
   /// object to merge for a file of the user's.
-  func entries(helper: String = AgentHooks.helperReference) -> [String: Any] {
+  func entries(helper: String = AgentHookCatalogue.helperReference) -> [String: Any] {
     switch format {
     case .sharedSettings:
       var hooks: [String: Any] = [:]
@@ -128,10 +130,10 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   }
 
   /// What the settings window shows and the clipboard gets.
-  public func snippet(helper: String = AgentHooks.helperReference) -> String {
+  public func snippet(helper: String = AgentHookCatalogue.helperReference) -> String {
     switch format {
     case .plugin: OpenCodePlugin.source(helper: helper)
-    case .sharedSettings, .ownHookFile: HookSettingsFile.render(entries(helper: helper))
+    case .sharedSettings, .ownHookFile: AgentSettingsFile.render(entries(helper: helper))
     }
   }
 
@@ -145,9 +147,9 @@ public struct AgentHookIntegration: Identifiable, Sendable {
 
   private func handler(_ event: AgentHookEvent, helper: String) -> [String: Any] {
     var handler: [String: Any] = [
-      "type": "command", "command": AgentHooks.command(agent: id, helper: helper),
+      "type": "command", "command": AgentHookCatalogue.command(agent: id, helper: helper),
     ]
-    let timeout = event.timeoutSeconds ?? AgentHooks.timeoutSeconds
+    let timeout = event.timeoutSeconds ?? AgentHookCatalogue.timeoutSeconds
     switch format {
     case .sharedSettings(let millisecondTimeout):
       handler["timeout"] = millisecondTimeout ? timeout * 1000 : timeout

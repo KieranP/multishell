@@ -2,13 +2,13 @@ import Foundation
 
 /// One row of `git for-each-ref` over `refs/heads` and `refs/remotes`. The
 /// whole repository in one process, which is what a merge check starts from.
-public struct BranchRef: Hashable, Sendable {
+struct BranchRef: Hashable, Sendable {
   /// `refs/heads/feat`, `refs/remotes/origin/main`.
   let fullName: String
-  public let tip: String
+  let tip: String
   /// The full name of the upstream a local branch tracks, whether or not
   /// that upstream still exists; `nil` for a branch that tracks nothing.
-  public let upstream: String?
+  let upstream: String?
   /// The upstream is configured and no longer there: `git`'s `[gone]`.
   let isUpstreamGone: Bool
   /// What this ref points at when symbolic, as `refs/remotes/origin/HEAD`
@@ -18,7 +18,7 @@ public struct BranchRef: Hashable, Sendable {
   /// last-commit orders. Read here for the same reason as `symref`.
   let committedAt: Date?
 
-  public init(
+  init(
     fullName: String, tip: String, upstream: String? = nil, isUpstreamGone: Bool = false,
     symref: String? = nil, committedAt: Date? = nil
   ) {
@@ -36,6 +36,10 @@ public struct BranchRef: Hashable, Sendable {
   static let localPrefix = "refs/heads/"
   static let remotePrefix = "refs/remotes/"
 
+  /// Full refname: a bare name reaches a tag of that name first, and git's
+  /// ambiguity warning goes to stderr, which `runner.output` throws away.
+  static func localRef(_ branch: String) -> String { localPrefix + branch }
+
   var isLocal: Bool { fullName.hasPrefix(Self.localPrefix) }
   var isRemote: Bool { fullName.hasPrefix(Self.remotePrefix) }
 
@@ -48,7 +52,7 @@ public struct BranchRef: Hashable, Sendable {
 
   /// The branch with no remote in front of it, so the trunk's own checkout
   /// is not badged. Only the remote's first component is dropped.
-  public var branchName: String {
+  var branchName: String {
     guard isRemote else { return shortName }
     let short = shortName
     guard let slash = short.firstIndex(of: "/") else { return short }

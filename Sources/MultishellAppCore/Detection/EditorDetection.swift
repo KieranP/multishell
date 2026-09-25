@@ -9,7 +9,7 @@ public struct EditorDetection: Equatable, Sendable {
     public let application: URL?
     public let command: URL?
 
-    public init(application: URL?, command: URL?) {
+    init(application: URL?, command: URL?) {
       self.application = application
       self.command = command
     }
@@ -19,11 +19,11 @@ public struct EditorDetection: Equatable, Sendable {
 
   public static let empty = EditorDetection(found: [:])
 
-  public init(found: [String: Found]) {
+  init(found: [String: Found]) {
     self.found = found
   }
 
-  public init(path: String?, applicationLookup: (String) -> URL?) {
+  init(path: String?, applicationLookup: (String) -> URL?) {
     var found: [String: Found] = [:]
     for editor in EditorCatalogue.editors {
       let application = editor.bundleIdentifier.flatMap(applicationLookup)

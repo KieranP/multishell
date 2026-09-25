@@ -6,8 +6,8 @@ import Testing
 
 @Suite
 struct SessionStatesTests {
-  private let a = UUID()
-  private let b = UUID()
+  let a = UUID()
+  let b = UUID()
 
   @Test func doneIsAboutTheUserAndClearsWhenSeen() {
     var states = SessionStates()
@@ -128,7 +128,7 @@ struct SessionStatesTests {
     states.report(.attention, pid: nil, for: .worktree("/w"), isSeen: false)
     #expect(states.state(ofWorktree: "/w", sessions: [a, b]) == .attention)
     #expect(states.state(ofWorktree: "/other", sessions: []) == nil)
-    #expect(states.workingSessionCount == 1, "worktree-level Working is nobody's shell")
+    #expect(states.workingAgentCount == 1, "worktree-level Working is nobody's shell")
   }
 
   @Test func retainDropsWhatNoLongerExists() {
@@ -149,7 +149,7 @@ struct SessionStatesTests {
     var stamped = states
     stamped.report(.running, pid: 1, for: .session(a), isSeen: false)
     stamped.stampChanges(against: states, at: start)
-    #expect(stamped.since[.session(a)] == start)
+    #expect(stamped.sinceDates[.session(a)] == start)
 
     // An agent reports Working on every tool call; how long it has been
     // working must not keep resetting.
@@ -157,13 +157,13 @@ struct SessionStatesTests {
     var again = states
     again.report(.running, pid: 1, for: .session(a), isSeen: false)
     again.stampChanges(against: states, at: start.addingTimeInterval(60))
-    #expect(again.since[.session(a)] == start, "the state did not move")
+    #expect(again.sinceDates[.session(a)] == start, "the state did not move")
 
     states = again
     var finished = states
     finished.report(.done, pid: nil, for: .session(a), isSeen: false)
     finished.stampChanges(against: states, at: start.addingTimeInterval(90))
-    #expect(finished.since[.session(a)] == start.addingTimeInterval(90))
+    #expect(finished.sinceDates[.session(a)] == start.addingTimeInterval(90))
   }
 
   /// Idle is never a stored state, so the board reads how long a pane has
@@ -179,7 +179,7 @@ struct SessionStatesTests {
     cleared.report(.idle, pid: nil, for: .session(a), isSeen: false)
     cleared.stampChanges(against: states, at: start)
     #expect(cleared[.session(a)] == nil)
-    #expect(cleared.since[.session(a)] == start)
+    #expect(cleared.sinceDates[.session(a)] == start)
     #expect(cleared.notes[.session(a)] == nil, "nothing left for the note to be about")
   }
 
@@ -206,7 +206,7 @@ struct SessionStatesTests {
     states.report(.running, pid: 2, message: "testing", for: .session(b), isSeen: false)
     states.stampChanges(against: SessionStates(), at: Date(timeIntervalSince1970: 1))
     states.retain(sessions: [a], worktrees: [])
-    #expect(states.since.keys.map { $0 } == [.session(a)])
+    #expect(states.sinceDates.keys.map { $0 } == [.session(a)])
     #expect(states.notes.keys.map { $0 } == [.session(a)])
   }
 

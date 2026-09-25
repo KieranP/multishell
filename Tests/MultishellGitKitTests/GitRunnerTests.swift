@@ -7,7 +7,7 @@ import Testing
 @testable import MultishellGitKit
 
 @Suite
-struct GitRunnerConfigurationTests {
+struct GitRunnerTests {
   /// The fixtures turn signing off this way, and a machine that does not sign, CI included,
   /// never notices it breaking, so a plainly visible key is tested against the repo's own.
   @Test func aRunnersConfigurationBeatsTheRepositorysOwn() async throws {
@@ -66,7 +66,9 @@ struct GitRunnerConfigurationTests {
 
     // An alias git runs through a shell, which is how a filter or credential
     // helper is reached: it is found only on the PATH the runner carries.
-    let git = try TestGit.build(path: bin.path, configuration: ["alias.helped": "!ms-test-helper"])
+    let git = try TestGit.build(
+      searchPath: bin.path + ":" + (ProcessInfo.processInfo.environment["PATH"] ?? ""),
+      configuration: ["alias.helped": "!ms-test-helper"])
     let output = try await git.run(["helped"], in: fixture.project.path)
     #expect(output.contains("found the helper"))
 
@@ -88,11 +90,29 @@ struct GitRunnerConfigurationTests {
 
     let worktree = Worktree(
       path: repository, projectID: fixture.project.id, head: "a", branch: "main")
-    let status = try await WorktreeService(git: try GitRunner()).status(of: worktree)
+    let status = try await WorktreeGit(runner: try GitRunner()).status(of: worktree)
 
     #expect(status.untracked == 1)
     #expect(status.isDirty, "the repository's own config said not to look")
     #expect(status.insertions == 1, "and its line is counted, the badge reading from the same list")
+  }
+
+  @Test func aRunnerGivenOnlyASearchPathRunsTheGitOnIt() async throws {
+    let directory = try Scratch.directory("gitsearchpath")
+    defer { Scratch.remove(directory) }
+    try Scratch.script("echo the searched git", at: directory.appendingPathComponent("git"))
+    let other = try Scratch.script(
+      "echo the named git", at: directory.appendingPathComponent("other-git"))
+
+    let searched = try await GitRunner(searchPath: directory.path).run(["--version"], in: directory)
+    let named = try await GitRunner(executable: other, searchPath: directory.path)
+      .run(["--version"], in: directory)
+
+    #expect(searched.contains("the searched git"))
+    #expect(named.contains("the named git"))
+    #expect(throws: GitUnavailable.self) {
+      _ = try GitRunner(searchPath: directory.appendingPathComponent("empty").path)
+    }
   }
 
   /// From the Finder the process PATH is the system directories alone, so a
@@ -102,9 +122,9 @@ struct GitRunnerConfigurationTests {
     defer { Scratch.remove(directory) }
     try Scratch.script("exit 0", at: directory.appendingPathComponent("git"))
 
-    #expect(throws: Never.self) { _ = try WorktreeService(path: directory.path) }
+    #expect(throws: Never.self) { _ = try WorktreeGit(searchPath: directory.path) }
     #expect(throws: GitUnavailable.self) {
-      _ = try WorktreeService(path: directory.appendingPathComponent("empty").path)
+      _ = try WorktreeGit(searchPath: directory.appendingPathComponent("empty").path)
     }
   }
 }

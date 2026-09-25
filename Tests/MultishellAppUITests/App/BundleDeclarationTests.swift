@@ -1,9 +1,9 @@
 import Foundation
-import MultishellCore
 import Testing
 import UniformTypeIdentifiers
 
 @testable import MultishellAppUI
+@testable import MultishellCore
 
 /// Swift and the `Info.plist.in` that `Scripts/make-app.sh` fills in both spell these, and
 /// every other test reads one constant for both, so a rename on one side passes them all.
@@ -26,7 +26,7 @@ struct BundleDeclarationTests {
   /// `log show --predicate 'subsystem == "…"'` with the bundle id finds nothing unless
   /// `MacPlatform` logs under it.
   @Test func theLoggingSubsystemIsTheBundleIdentifier() throws {
-    let subsystem = MacPlatform.loggingSubsystem
+    let subsystem = MacPlatform.bundleIdentifier
     let isBundleIdentifier = try infoPlistTemplate().contains(
       "<key>CFBundleIdentifier</key><string>\(subsystem)</string>")
     #expect(

@@ -1,0 +1,88 @@
+import Foundation
+import MultishellCore
+
+/// One open pane, as everything the board needs of it. Flattened so the
+/// arrangement is testable without a workspace, a host or a clock.
+public struct AgentBoardCard: Identifiable, Equatable, Sendable {
+  /// What is at the pane's prompt. An agent is named by the catalogue; a
+  /// shell by its own file name, which is all a shell has to say for itself.
+  public enum Occupant: Equatable, Sendable {
+    case agent(id: String, name: String)
+    case shell(String)
+
+    public var name: String {
+      switch self {
+      case .agent(_, let name): name
+      case .shell(let name): name
+      }
+    }
+
+    /// The catalogue id, for the card's mark. `nil` is a shell, which keeps
+    /// the terminal glyph.
+    public var agentID: String? {
+      if case .agent(let id, _) = self { return id }
+      return nil
+    }
+
+    var isAgent: Bool {
+      if case .agent = self { return true }
+      return false
+    }
+  }
+
+  /// Which pane of a split this card is. A renamed tab gives both its panes
+  /// one title, so the card says which it is; `nil` for a tab with one pane.
+  public struct Position: Equatable, Sendable {
+    public let index: Int
+    public let count: Int
+
+    init(index: Int, count: Int) {
+      self.index = index
+      self.count = count
+    }
+
+    /// The pane at `offset` in `tab`, or `nil` where the tab has only the one.
+    public static func of(paneAt offset: Int, in tab: TerminalTab) -> Position? {
+      tab.sessionIDs.count > 1 ? Position(index: offset + 1, count: tab.sessionIDs.count) : nil
+    }
+  }
+
+  public let id: TerminalSession.ID
+  public let tabID: TerminalTab.ID
+  public let worktreeID: Worktree.ID
+  public let occupant: Occupant
+  /// What the tab strip calls this pane's tab, which for a shell running a
+  /// command is usually the command.
+  public let title: String
+  public let projectName: String
+  public let worktreeName: String
+  /// `nil` for a pane with nothing to report, which is what Idle means.
+  public let state: SessionState?
+  /// When it entered that state, absent for a pane that has never left it.
+  public let since: Date?
+  let note: SessionNote?
+  public let status: WorktreeStatus?
+  /// The workers the occupant has out, oldest first. Empty is no chip.
+  public var subagents: [Subagent] = []
+  public var position: Position?
+
+  public var lane: AgentBoardLane { AgentBoardLane.of(state) }
+
+  /// What the occupant last said about itself, or what a finished command
+  /// amounted to. Absent for a pane that has said nothing.
+  public var message: String? {
+    guard let note = note?.describing(state) else { return nil }
+    if let message = note.message, !message.isEmpty { return message }
+    guard let duration = note.duration, let text = ElapsedText.precise(duration) else { return nil }
+    switch note.state {
+    case .done: return t("card.done", text)
+    case .error: return t("card.failed", text)
+    case .running, .attention, .idle: return nil
+    }
+  }
+
+  /// How long it has been in its column.
+  public func elapsed(at now: Date) -> String? {
+    ElapsedText.short(since: since, now: now)
+  }
+}

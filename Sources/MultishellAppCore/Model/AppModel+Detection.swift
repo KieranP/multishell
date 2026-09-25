@@ -1,6 +1,7 @@
 import Foundation
 import MultishellCore
 import MultishellGitKit
+import MultishellProcess
 
 /// The login shell's environment, and what is looked up on its PATH: agents,
 /// shells, editors and git.
@@ -22,7 +23,7 @@ extension AppModel {
     // A stat per PATH directory per catalogue entry, and every one of them
     // blocks for the timeout on a mount that has gone; see architecture.md.
     let path = environment.path
-    let detected = await Self.offMain {
+    let detected = await offMain {
       (
         agents: AgentDetection(path: path), shells: ShellDetection(path: path),
         editors: EditorDetection(path: path) { applications[$0] }
@@ -38,7 +39,7 @@ extension AppModel {
     // children are looked up on; see Docs/design/architecture.md.
     let hadGit = worktrees != nil
     if let found = try? await WorktreeCoordinator.resolved(
-      path: environment.path, replacing: worktrees)
+      searchPath: environment.path, replacing: worktrees)
     {
       worktrees = found
       if !hadGit {
@@ -48,6 +49,6 @@ extension AppModel {
         await refreshAll()
       }
     }
-    note(await Self.offMain { Self.agentStatus() })
+    recordInstallState(await offMain { Self.installState() })
   }
 }

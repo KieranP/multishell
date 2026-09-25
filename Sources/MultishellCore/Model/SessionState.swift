@@ -1,5 +1,3 @@
-import Foundation
-
 /// What a terminal's occupant last said about itself. Runtime only; `idle`
 /// is the absence of a state, reported only to clear one.
 public enum SessionState: String, Codable, Hashable, Sendable, CaseIterable {
@@ -41,7 +39,7 @@ public enum SessionState: String, Codable, Hashable, Sendable, CaseIterable {
 
   /// `nil` for idle, so a dictionary of states never holds an entry that
   /// means "no entry".
-  public var stored: SessionState? {
+  var nonIdle: SessionState? {
     self == .idle ? nil : self
   }
 
@@ -63,6 +61,6 @@ public enum SessionState: String, Codable, Hashable, Sendable, CaseIterable {
   }
 
   public static func mostUrgent(_ states: some Sequence<SessionState>) -> SessionState? {
-    states.max { $0.urgency < $1.urgency }?.stored
+    states.max { $0.urgency < $1.urgency }?.nonIdle
   }
 }

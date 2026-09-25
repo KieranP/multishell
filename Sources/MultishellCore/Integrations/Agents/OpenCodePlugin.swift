@@ -1,9 +1,7 @@
-import Foundation
-
 /// The plugin OpenCode is given, since it runs no hook command. Here and not
 /// in `Resources`, which the helper cannot reach; see Docs/design/agents.md.
 enum OpenCodePlugin {
-  static func source(helper: String = AgentHooks.helperReference) -> String {
+  static func source(helper: String = AgentHookCatalogue.helperReference) -> String {
     """
     // Written by Multishell so its tabs can show what a session is doing.
     // Remove it from Settings > Agents, or delete this file.
@@ -34,7 +32,7 @@ enum OpenCodePlugin {
           if (state === "done" && lastOwn === "done") return
           lastOwn = state
         }
-        const args = ["state", state, "--agent", "opencode"]
+        const args = ["state", state, "--agent", "\(AgentCatalogue.openCodeID)"]
         if (cwd) args.push("--cwd", cwd)
         if (message) args.push("--message", message)
         if (newTurn) args.push("--new-turn", "true")

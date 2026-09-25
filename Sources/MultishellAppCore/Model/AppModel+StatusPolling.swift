@@ -1,4 +1,3 @@
-import Foundation
 import MultishellCore
 import MultishellGitKit
 
@@ -21,7 +20,7 @@ extension AppModel {
     await refreshProjectsWithUnfinishedAdds()
     await refreshStatuses()
     await refreshMergeStates()
-    await refreshChangedSharedSettings()
+    await refreshSharedSettingsIfChanged()
   }
 
   /// Missing and slow projects are skipped, see `StatusPollPace`; nil is every project.
@@ -62,7 +61,7 @@ extension AppModel {
 
   /// Only rows on screen are polled, bar the main one, the selected one and any
   /// on the board; see Docs/design/worktrees.md.
-  func isStatusWanted(_ worktree: Worktree, onSidebar: Set<Worktree.ID>) -> Bool {
+  private func isStatusWanted(_ worktree: Worktree, onSidebar: Set<Worktree.ID>) -> Bool {
     worktree.isPrimary || worktree.id == workspace.selectedWorktreeID
       || onSidebar.contains(worktree.id)
       || (showsAgentBoard
@@ -71,7 +70,7 @@ extension AppModel {
 
   /// The rows the sidebar draws, once a round: asked per row, the filter
   /// looked up the project and folded the text for every worktree.
-  func sidebarRowIDs(filteredBy text: String? = nil) -> Set<Worktree.ID> {
+  private func sidebarRowIDs(filteredBy text: String? = nil) -> Set<Worktree.ID> {
     let filter = SidebarFilter(text ?? sidebarFilterText)
     guard !filter.isActive else {
       return Set(filter.apply(to: workspace).flatMap { $0.worktrees.map(\.id) })
@@ -91,7 +90,7 @@ extension AppModel {
     let ticket = statusReads.begin(worktrees.map(\.id))
     let readings = await coordinator.readStatuses(
       of: worktrees, counting: workspace.gitStatusIndicator)
-    let counts = statusReads.finish(ticket)
+    let stillCounts = statusReads.finish(ticket)
     let again = statusReads.takeAskedAgain(of: ticket)
     if !again.isEmpty {
       // Past the pace, which the read just landed would otherwise hold them to.
@@ -99,7 +98,7 @@ extension AppModel {
         for id in again { await self?.refreshStatus(of: id, forced: true) }
       }
     }
-    guard counts else { return [:] }
+    guard stillCounts else { return [:] }
     return readings
   }
 
@@ -114,7 +113,7 @@ extension AppModel {
 
   /// A `git checkout` in the main worktree touches `.git/HEAD`, which is not
   /// watched. Where the poll's branch disagrees, re-read that project.
-  func refreshProjectsWhoseBranchMoved(_ fresh: [Worktree.ID: WorktreeStatus]) async {
+  private func refreshProjectsWhoseBranchMoved(_ fresh: [Worktree.ID: WorktreeStatus]) async {
     var drifted: Set<Project.ID> = []
     for worktree in workspace.worktrees {
       if let status = fresh[worktree.id], status.branch != worktree.branch {
@@ -163,6 +162,17 @@ extension AppModel {
     pendingRevealedRowsRead = (polledThroughout, task)
   }
 
+  /// Nothing writes there now, so read rather than wait out the poll. Judged
+  /// when the read runs: `endSetup` is called before a file list's entry clears.
+  func refreshBadges(of id: Worktree.ID, in projectID: Project.ID) {
+    scheduleStatusRefresh(of: id)
+    Task { @MainActor [weak self] in
+      guard let self, !isUnderConstruction(id), let project = workspace.project(projectID)
+      else { return }
+      await refreshMergeStates(of: project)
+    }
+  }
+
   /// One command at a prompt raises several events in a row, each of which
   /// would spawn a `git status`. The burst becomes one run.
   func scheduleStatusRefresh(of worktreeID: Worktree.ID) {
@@ -173,5 +183,13 @@ extension AppModel {
       pendingStatusRefreshes[worktreeID] = nil
       await refreshStatus(of: worktreeID)
     }
+  }
+
+  /// Every badge is re-read at once rather than at the next poll, which a
+  /// slow checkout paces minutes out: the setting was changed to be seen.
+  public func setGitStatusIndicator(_ indicator: GitStatusIndicator) {
+    store.setGitStatusIndicator(indicator)
+    statusReads.invalidate()
+    Task { await refreshStatuses() }
   }
 }

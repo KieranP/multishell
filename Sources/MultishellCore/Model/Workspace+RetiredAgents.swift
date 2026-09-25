@@ -1,5 +1,3 @@
-import Foundation
-
 extension Workspace {
   /// A stored id of a dropped agent raised an install alert every run, so it is
   /// forgotten on load: a tab restores as a plain shell, a preference falls back.

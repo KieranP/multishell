@@ -6,13 +6,13 @@ public struct PendingSharedSettingsTrust: Identifiable, Equatable, Sendable {
   public let projectID: Project.ID
   public let projectName: String
   /// What the file asks for, as shown:
-  /// `SharedProjectSettings.trustedContentText`.
+  /// `SharedProjectSettings.trustCoveredText`.
   public let contents: String
   /// The sha256 of the file they were read from: what the answer is stored
   /// against, and what says whether the file has moved on.
   let digest: String
 
-  public init(projectID: Project.ID, projectName: String, contents: String, digest: String) {
+  init(projectID: Project.ID, projectName: String, contents: String, digest: String) {
     self.projectID = projectID
     self.projectName = projectName
     self.contents = contents

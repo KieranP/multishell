@@ -1,4 +1,3 @@
-import Foundation
 import MultishellCore
 import MultishellProcess
 
@@ -29,13 +28,13 @@ extension AppModel {
       presentedError = .noEditorChosen
       return
     }
-    guard readyForShell(worktree), let shell = ShellCommand.shell else { return }
+    guard readyForShell(worktree) else { return }
     let action = EditorLaunch.action(
       editorID: editorID,
       found: editorDetection.found[editorID],
       customTemplate: workspace.customEditorCommand,
       directory: worktree.path,
-      shell: shell,
+      shell: ShellCommand.shell(named: ShellCatalogue.loginShellPath()),
       exec: ShellLaunch.execCommandLine(forShell: shellPath(forWorktree: worktree.id)))
     switch action {
     case .openApplication(let application):
@@ -47,7 +46,7 @@ extension AppModel {
         }
       }
     case .runInBackground(let line):
-      let shellPath = workspace.project(worktree.projectID).flatMap(workspace.defaultShell)
+      let shellPath = shellPath(for: worktree)
       Task { [weak self] in
         do {
           try await ShellCommand().launch(line, in: worktree.path, shellPath: shellPath)
@@ -58,7 +57,7 @@ extension AppModel {
     case .openTab(let title, let command):
       // Or the editor runs in a pane the board covers, which Cmd+W cannot
       // reach either: nothing acts on the tab in front while it is up.
-      leaveAgentBoard()
+      hideAgentBoard(markingFocusedPaneSeen: false)
       store.openTab(in: worktree.id, title: title, command: command)
       store.selectWorktree(worktree.id)
       warmWorktrees.insert(worktree.id)
@@ -68,13 +67,5 @@ extension AppModel {
         editorID == EditorCatalogue.customID
         ? .noEditorCommand : .editorNotInstalled(editorDisplayName(editorID))
     }
-  }
-
-  public func revealInFileBrowser(_ url: URL) {
-    platform.revealInFileBrowser(url)
-  }
-
-  public func copyToClipboard(_ text: String) {
-    platform.copyToClipboard(text)
   }
 }

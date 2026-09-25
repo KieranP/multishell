@@ -7,14 +7,18 @@ on:
 jobs:
   test:
     runs-on: macos-26
+    # A frozen run otherwise holds the runner for GitHub's six-hour default.
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - run: swift build --build-tests
-      - run: swift test --skip-build
+      - uses: actions/checkout@v7
+      # No debug info: about a quarter off the build. Crash backtraces lose
+      # their line numbers; a failed expectation still names its own.
+      - run: swift build --build-tests -Xswiftc -gnone
+      - run: Scripts/one-test-per-core.sh swift test --skip-build
 
   # swift-format ships in the toolchain, so no install step.
   lint:
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: make lint

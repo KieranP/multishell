@@ -69,8 +69,7 @@ public enum EditorCatalogue {
 
   /// The id in force, or `nil` for none.
   static func effectiveID(_ id: String?) -> String? {
-    guard let id, !id.isEmpty, id != noneID else { return nil }
-    return id
+    ChosenID.inForce(global: id, none: noneID)
   }
 
   /// The user's template with `{path}` read from the environment. One

@@ -24,7 +24,7 @@ extension AppModelGitTests {
     _ = try await h.git.run(["commit", "-q", "--allow-empty", "-m", "work"], in: feat.path)
     await h.model.refreshMergeStates()
     #expect(h.model.mergeState(of: feat) == .unmerged)
-    #expect(h.model.mergeBase(of: h.project)?.ref == "main", "no remote, so the local branch")
+    #expect(h.model.mergeBase(of: h.project)?.shortName == "main", "no remote, so the local branch")
 
     _ = try await h.git.run(["merge", "-q", "--no-ff", "-m", "merge", "feat"], in: h.project.path)
     await h.model.refreshMergeStates()
@@ -209,11 +209,11 @@ extension AppModelGitTests {
       """)
 
     await model.refreshMergeStates()
-    #expect(model.mergeBase(of: h.project)?.ref == "main")
+    #expect(model.mergeBase(of: h.project)?.shortName == "main")
 
     await model.refreshMergeStates()
 
-    #expect(model.mergeBase(of: h.project)?.ref == "main", "a failed read settles nothing")
+    #expect(model.mergeBase(of: h.project)?.shortName == "main", "a failed read settles nothing")
   }
 
   /// A fetch waits on a network, so the sidebar has to say it is happening

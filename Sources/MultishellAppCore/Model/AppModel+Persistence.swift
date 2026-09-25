@@ -8,7 +8,7 @@ extension AppModel {
     pendingSave?.cancel()
     pendingSave = nil
     guard !yieldingToRunningInstance else { return }
-    note(Result { try store.save() })
+    recordSaveOutcome(Result { try store.save() })
   }
 
   /// Saves shortly after any workspace change, whoever made it. The loop only
@@ -29,7 +29,7 @@ extension AppModel {
   }
 
   /// Terminal titles change on every prompt, so writes are coalesced.
-  func scheduleSave() {
+  private func scheduleSave() {
     pendingSave?.cancel()
     pendingSave = Task { @MainActor [weak self] in
       try? await Task.sleep(for: .milliseconds(300))
@@ -43,12 +43,12 @@ extension AppModel {
   func save() {
     guard !yieldingToRunningInstance, let save = store.prepareSave() else { return }
     Task { @MainActor [weak self] in
-      let outcome = await Self.offMain { Result { try save.run() } }
-      self?.note(outcome)
+      let outcome = await offMain { Result { try save.run() } }
+      self?.recordSaveOutcome(outcome)
     }
   }
 
-  private func note(_ outcome: Result<Void, any Error>) {
+  private func recordSaveOutcome(_ outcome: Result<Void, any Error>) {
     switch outcome {
     case .success:
       saveFailureReported = false

@@ -86,14 +86,14 @@ public enum AccessibilityText {
   /// A pane's row in the sidebar: its title, which pane of a split it is,
   /// whether it is the one with the keyboard, its state and its workers.
   public static func pane(
-    title: String, position: (Int, Int)?, isActive: Bool, state: SessionState?,
+    title: String, position: AgentBoardCard.Position?, isFocusedPane: Bool, state: SessionState?,
     subagents: [Subagent], agent: String?
   ) -> String {
     // One pane of a split is not a tab, so only a whole tab is read as one.
     var parts = [position == nil ? t("spoken.tab", title) : title]
     parts.append(contentsOf: spokenAgent(agent, title: title))
-    if let position { parts.append(t("spoken.pane-position", position.0, position.1)) }
-    if isActive { parts.append(t("spoken.selected")) }
+    if let position { parts.append(t("spoken.pane-position", position.index, position.count)) }
+    if isFocusedPane { parts.append(t("spoken.selected")) }
     if let state { parts.append(state.displayName) }
     if !subagents.isEmpty { parts.append(subagents.countText) }
     return parts.joined(separator: ", ")

@@ -1,5 +1,3 @@
-import Foundation
-
 /// A coding agent the app knows how to start.
 public struct AgentDescriptor: Identifiable, Hashable, Sendable {
   public let id: String

@@ -26,18 +26,16 @@ struct WeightedSplit<Content: View>: View {
     let weights = liveWeights ?? weights
     GeometryReader { geometry in
       let length = axis == .horizontal ? geometry.size.width : geometry.size.height
-      let available = max(length - CGFloat(weights.count - 1) * dividerThickness, 0)
-      let total = weights.reduce(0, +)
-      let sizes = weights.map {
-        total > 0 ? available * CGFloat($0 / total) : available / CGFloat(weights.count)
-      }
+      let available = SplitMath.available(
+        Double(length), panes: weights.count, divider: Double(dividerThickness))
+      let sizes = SplitMath.sizes(of: weights, sharing: available).map { CGFloat($0) }
 
-      layout(sizes: sizes, available: available, total: total)
+      layout(sizes: sizes, available: CGFloat(available))
     }
     .onChange(of: self.weights) { liveWeights = nil }
   }
 
-  private func layout(sizes: [CGFloat], available: CGFloat, total: Double) -> some View {
+  private func layout(sizes: [CGFloat], available: CGFloat) -> some View {
     Group(subviews: content()) { subviews in
       SplitPanes(
         subviews: subviews, axis: axis, sizes: sizes, divider: divider, background: background,

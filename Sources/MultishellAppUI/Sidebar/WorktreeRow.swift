@@ -24,8 +24,8 @@ struct WorktreeRow: View {
   let theme: Theme
   let metrics: UIMetrics
   let beginRename: () -> Void
-  let commit: (String) -> Void
-  let cancel: () -> Void
+  let commitRename: (String) -> Void
+  let cancelRename: () -> Void
 
   private var kind: String { AccessibilityText.kind(of: worktree) }
 
@@ -41,9 +41,7 @@ struct WorktreeRow: View {
     HStack(spacing: 7) {
       // Always a dot, grey when nothing is running, and keeping its colour
       // when selected, which is why selection is an outline.
-      Circle()
-        .fill(theme.color(for: state ?? .idle))
-        .frame(width: 7, height: 7)
+      StateDot(state: state ?? .idle, theme: theme)
         .frame(width: metrics.icon + 2)
         .help(t("sidebar.kind-and-state", kind, (state ?? .idle).displayName))
 
@@ -55,68 +53,19 @@ struct WorktreeRow: View {
 
       Spacer(minLength: 4)
 
-      if let operation {
-        if operation.isRunning {
-          ProgressView()
-            .controlSize(.mini)
-            .help(operation.title)
-        } else {
-          Image(systemName: "exclamationmark.triangle.fill")
-            .font(.system(size: metrics.badge))
-            .foregroundStyle(theme.ansiRGB(1).color)
-            .help(operation.title)
-        }
-      }
-      if worktree.isLocked {
-        Image(systemName: "lock.fill")
-          .font(.system(size: metrics.badge - 1))
-          .foregroundStyle(theme.textTertiary)
-          .help(t("sidebar.locked"))
-      }
-      // Never beside the line counts or an unpushed count: work that is only
-      // here hides the badge. See `WorktreeMergeState.showsBadge`.
-      if mergeState.showsBadge(with: status) {
-        Image(systemName: "arrow.triangle.merge")
-          .font(.system(size: metrics.badge))
-          .foregroundStyle(theme.ansiRGB(2).color)
-          .help(mergeState.help)
-      }
-      // Git changes sit left of the terminal count, so the count stays at
-      // the row's right edge and lines up with rows that have no changes.
-      if let status, !status.isClean {
-        changes(status)
-      }
-      if shownTerminalCount > 0 {
-        Text("\(shownTerminalCount)")
-          .font(.system(size: metrics.badge, weight: .semibold))
-          .monospacedDigit()
-          .foregroundStyle(theme.textSecondary)
-          .padding(.horizontal, 6)
-          .padding(.vertical, 1)
-          .background(theme.rowHover, in: Capsule())
-          .help(t("count.terminals", shownTerminalCount))
-      }
+      WorktreeRowBadges(
+        operation: operation,
+        isLocked: worktree.isLocked,
+        mergeState: mergeState,
+        status: status,
+        terminalCount: shownTerminalCount,
+        theme: theme,
+        metrics: metrics)
     }
     .padding(.leading, metrics.indent)
     .padding(.trailing, 8)
     .frame(height: height)
-    // Selected is a blue outline, not a fill: a filled row tinted the state
-    // dot and hid its colour. A faint wash keeps it legible without that.
-    .background(
-      isSelected || isDropTarget ? Color.accentColor.opacity(0.12) : .clear,
-      in: RoundedRectangle(cornerRadius: 6)
-    )
-    // A dashed border for a hovering tab, the solid one meaning selected and
-    // a row being able to be both at once.
-    .overlay {
-      if isDropTarget {
-        RoundedRectangle(cornerRadius: 6)
-          .strokeBorder(Color.accentColor, style: StrokeStyle(lineWidth: 2, dash: [4, 3]))
-      } else if isSelected {
-        RoundedRectangle(cornerRadius: 6)
-          .strokeBorder(Color.accentColor, lineWidth: 1.5)
-      }
-    }
+    .rowSelection(isSelected: isSelected, isDropTarget: isDropTarget)
     .contentShape(.rect)
     // `.contain` while renaming, or the field the Rename action opened would
     // sit inside an ignored subtree where VoiceOver cannot reach it.
@@ -162,8 +111,8 @@ struct WorktreeRow: View {
         prompt: t("sidebar.name-prompt"),
         font: .system(size: metrics.secondary, weight: .medium),
         color: theme.textPrimary,
-        commit: commit,
-        cancel: cancel)
+        commit: commitRename,
+        cancel: cancelRename)
       branchLine
     }
   }
@@ -176,10 +125,6 @@ struct WorktreeRow: View {
       .foregroundStyle(theme.textTertiary)
       .lineLimit(1)
       .truncationMode(.middle)
-  }
-
-  private func changes(_ status: WorktreeStatus) -> some View {
-    ChangeCounts(status: status, theme: theme, size: metrics.badge, tint: theme.textSecondary)
   }
 }
 

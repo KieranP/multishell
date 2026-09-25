@@ -1,7 +1,5 @@
 import Foundation
 import MultishellCore
-import MultishellProcess
-import TestScratch
 import Testing
 
 @testable import MultishellGitKit
@@ -36,14 +34,14 @@ struct GitIntegrationTests {
 
     // Asked the way the app asks: the common directory once, then the
     // directories read off it without spawning git for each watcher tick.
-    let common = try await coordinator.commonGitDirectory(project)
+    let common = try await coordinator.git.commonGitDirectory(project)
 
-    let before = WorktreeCoordinator.directoriesToWatch(in: common)
+    let before = WorktreeRecords.directoriesToWatch(in: common)
     #expect(before.map(\.lastPathComponent) == [".git"])
 
     try await coordinator.create(
       branch: "one", in: project, settings: WorktreeSettings(worktreeDirectory: "../trees"))
-    let after = WorktreeCoordinator.directoriesToWatch(in: common)
+    let after = WorktreeRecords.directoriesToWatch(in: common)
     #expect(after.map(\.lastPathComponent) == ["worktrees", "one"])
   }
 
@@ -51,16 +49,16 @@ struct GitIntegrationTests {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
     let project = repo.project
-    let service = WorktreeService(git: repo.git)
-    let main = try await service.list(project)[0]
+    let worktreeGit = WorktreeGit(runner: repo.git)
+    let main = try await worktreeGit.list(project)[0]
 
-    #expect(try await service.status(of: main).isClean)
+    #expect(try await worktreeGit.status(of: main).isClean)
 
     try "changed\n".write(
       to: project.path.appendingPathComponent("README.md"), atomically: true, encoding: .utf8)
     try "new\n".write(
       to: project.path.appendingPathComponent("scratch.txt"), atomically: true, encoding: .utf8)
-    let dirty = try await service.status(of: main)
+    let dirty = try await worktreeGit.status(of: main)
 
     #expect(dirty.unstaged == 1)
     #expect(dirty.untracked == 1)
@@ -71,11 +69,11 @@ struct GitIntegrationTests {
   @Test func statusCountsLinesAddedAndRemovedAgainstHead() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    let service = WorktreeService(git: repo.git)
+    let worktreeGit = WorktreeGit(runner: repo.git)
     try await repo.commit("seed", file: "counted.txt", content: "a\nb\nc\n")
-    let main = try await service.list(repo.project)[0]
+    let main = try await worktreeGit.list(repo.project)[0]
 
-    let clean = try await service.status(of: main)
+    let clean = try await worktreeGit.status(of: main)
     #expect(clean.insertions == 0 && clean.deletions == 0)
 
     try "a\nx\ny\nz\n".write(
@@ -83,7 +81,7 @@ struct GitIntegrationTests {
       encoding: .utf8)
     try "untracked\n".write(
       to: repo.project.path.appendingPathComponent("loose.txt"), atomically: true, encoding: .utf8)
-    let dirty = try await service.status(of: main)
+    let dirty = try await worktreeGit.status(of: main)
 
     #expect(dirty.insertions == 4)
     #expect(dirty.deletions == 2)
@@ -93,16 +91,16 @@ struct GitIntegrationTests {
   @Test func aModeChangeAndANewBinaryFileCountAsFilesWithNoLines() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    let service = WorktreeService(git: repo.git)
+    let worktreeGit = WorktreeGit(runner: repo.git)
     let script = repo.project.path.appendingPathComponent("run.sh")
     try await repo.commit("seed", file: "run.sh", content: "echo hi\n")
-    let main = try await service.list(repo.project)[0]
+    let main = try await worktreeGit.list(repo.project)[0]
 
     try FileManager.default.setAttributes(
       [.posixPermissions: 0o755], ofItemAtPath: script.path)
     try Data([0x89, 0x50, 0x00, 0x01]).write(
       to: repo.project.path.appendingPathComponent("icon.png"))
-    let status = try await service.status(of: main)
+    let status = try await worktreeGit.status(of: main)
 
     #expect(status.insertions == 0 && status.deletions == 0)
     #expect(status.unscoredFiles == 2, "the mode change and the new png")
@@ -114,9 +112,9 @@ struct GitIntegrationTests {
   @Test func anUntrackedDirectoryIsOneEntryWhoseLinesAreStillCounted() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    let service = WorktreeService(git: repo.git)
+    let worktreeGit = WorktreeGit(runner: repo.git)
     try await repo.commit("seed", file: "counted.txt", content: "a\n")
-    let main = try await service.list(repo.project)[0]
+    let main = try await worktreeGit.list(repo.project)[0]
     let fresh = repo.project.path.appendingPathComponent("fresh", isDirectory: true)
     try FileManager.default.createDirectory(at: fresh, withIntermediateDirectories: true)
     try "a\nb\n".write(
@@ -124,7 +122,7 @@ struct GitIntegrationTests {
     try "c\nd\n".write(
       to: fresh.appendingPathComponent("two.txt"), atomically: true, encoding: .utf8)
 
-    let status = try await service.status(of: main)
+    let status = try await worktreeGit.status(of: main)
 
     #expect(status.untracked == 1, "the directory, which is what git reports")
     #expect(status.changedFiles == 1)
@@ -137,16 +135,16 @@ struct GitIntegrationTests {
   @Test func aConflictedFileIsNotCountedAsAFileWithNoLines() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    let service = WorktreeService(git: repo.git)
+    let worktreeGit = WorktreeGit(runner: repo.git)
     try await repo.commit("seed", file: "f.txt", content: "a\nb\n")
     _ = try await repo.git.run(["checkout", "-q", "-b", "other"], in: repo.project.path)
     try await repo.commit("theirs", file: "f.txt", content: "x\nb\n")
     _ = try await repo.git.run(["checkout", "-q", "main"], in: repo.project.path)
     try await repo.commit("mine", file: "f.txt", content: "y\nb\n")
     _ = try? await repo.git.run(["merge", "other"], in: repo.project.path)
-    let main = try await service.list(repo.project)[0]
+    let main = try await worktreeGit.list(repo.project)[0]
 
-    let staged = try await service.status(of: main, counting: .stagedOnly)
+    let staged = try await worktreeGit.status(of: main, counting: .stagedOnly)
 
     #expect(staged.conflicted == 1)
     #expect(staged.unscoredFiles == 0, "the conflict is not a binary file or a rename")
@@ -155,9 +153,9 @@ struct GitIntegrationTests {
   @Test func stagedOnlyCountsTheIndexAndNoUntrackedFile() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    let service = WorktreeService(git: repo.git)
+    let worktreeGit = WorktreeGit(runner: repo.git)
     try await repo.commit("seed", file: "counted.txt", content: "a\nb\nc\n")
-    let main = try await service.list(repo.project)[0]
+    let main = try await worktreeGit.list(repo.project)[0]
 
     try "a\nx\ny\nz\n".write(
       to: repo.project.path.appendingPathComponent("counted.txt"), atomically: true,
@@ -165,11 +163,11 @@ struct GitIntegrationTests {
     try "untracked\n".write(
       to: repo.project.path.appendingPathComponent("loose.txt"), atomically: true, encoding: .utf8)
 
-    let unstaged = try await service.status(of: main, counting: .stagedOnly)
+    let unstaged = try await worktreeGit.status(of: main, counting: .stagedOnly)
     #expect(unstaged.insertions == 0 && unstaged.deletions == 0 && unstaged.unscoredFiles == 0)
 
     _ = try await repo.git.run(["add", "counted.txt"], in: repo.project.path)
-    let staged = try await service.status(of: main, counting: .stagedOnly)
+    let staged = try await worktreeGit.status(of: main, counting: .stagedOnly)
     #expect(staged.insertions == 3)
     #expect(staged.deletions == 2)
   }
@@ -185,7 +183,7 @@ struct GitIntegrationTests {
     try await coordinator.create(branch: "first", in: project, settings: trees)
     try await coordinator.create(branch: "second", in: project, settings: trees)
 
-    let listed = try await WorktreeService(git: repo.git).list(project)
+    let listed = try await WorktreeGit(runner: repo.git).list(project)
     let dates = try listed.map { try #require($0.createdAt, "no date for \($0.name)") }
     let byBranch = Dictionary(uniqueKeysWithValues: zip(listed.map(\.name), dates))
 
@@ -202,10 +200,11 @@ struct GitIntegrationTests {
       branch: "ghost", in: project, settings: WorktreeSettings(worktreeDirectory: "../trees"))
     try FileManager.default.removeItem(at: path)
 
-    let ghost = try #require(try await coordinator.refresh(project).first { $0.branch == "ghost" })
+    let ghost = try #require(
+      try await coordinator.git.list(project).first { $0.branch == "ghost" })
     try await coordinator.remove(ghost, in: project)
 
-    #expect(try await coordinator.refresh(project).count == 1)
+    #expect(try await coordinator.git.list(project).count == 1)
   }
 
   /// Both fail: the directory is in the Trash by then, so the caller has to
@@ -219,7 +218,7 @@ struct GitIntegrationTests {
       branch: "gone")
 
     await #expect(throws: WorktreeForgetFailure.self) {
-      try await WorktreeService(git: fake.runner).forget(worktree, in: project)
+      try await WorktreeGit(runner: fake.runner).forget(worktree, in: project)
     }
   }
 
@@ -241,7 +240,7 @@ struct GitIntegrationTests {
       branch: "gone")
 
     await #expect(throws: WorktreeForgetFailure.self) {
-      try await WorktreeService(git: fake.runner).forget(worktree, in: project)
+      try await WorktreeGit(runner: fake.runner).forget(worktree, in: project)
     }
   }
 
@@ -261,7 +260,7 @@ struct GitIntegrationTests {
       branch: "gone")
 
     await #expect(throws: WorktreeForgetFailure.self) {
-      try await WorktreeService(git: fake.runner).forget(worktree, in: project)
+      try await WorktreeGit(runner: fake.runner).forget(worktree, in: project)
     }
   }
 
@@ -280,7 +279,7 @@ struct GitIntegrationTests {
       path: fake.directory.appendingPathComponent("gone"), projectID: project.id, head: "a",
       branch: "gone")
 
-    try await WorktreeService(git: fake.runner).forget(worktree, in: project)
+    try await WorktreeGit(runner: fake.runner).forget(worktree, in: project)
   }
 
   @Test func hasCommitsIsFalseUntilTheFirstCommit() async throws {
@@ -289,11 +288,11 @@ struct GitIntegrationTests {
     let project = repo.project
     let coordinator = repo.coordinator
 
-    #expect(await coordinator.hasCommits(project) == false)
+    #expect(await coordinator.git.hasCommits(project) == false)
     try "x\n".write(to: project.path.appendingPathComponent("f"), atomically: true, encoding: .utf8)
     _ = try await repo.git.run(["add", "."], in: project.path)
     _ = try await repo.git.run(["commit", "-m", "first"], in: project.path)
-    #expect(await coordinator.hasCommits(project) == true)
+    #expect(await coordinator.git.hasCommits(project) == true)
   }
 
   @Test func remoteBranchesComeFromRefsRemotesWithoutHEAD() async throws {
@@ -304,7 +303,7 @@ struct GitIntegrationTests {
     let clone = repo.root.appendingPathComponent("clone", isDirectory: true)
     _ = try await repo.git.run(["clone", "-q", upstream.path.path, clone.path], in: repo.root)
 
-    let branches = try await WorktreeService(git: repo.git).remoteBranches(Project(path: clone))
+    let branches = try await WorktreeGit(runner: repo.git).remoteBranches(Project(path: clone))
     #expect(branches.sorted() == ["origin/feature", "origin/main"])
   }
 }

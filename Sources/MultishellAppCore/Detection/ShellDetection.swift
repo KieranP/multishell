@@ -15,19 +15,19 @@ public struct ShellDetection: Equatable, Sendable {
   public static let empty = ShellDetection(
     installed: [], loginShell: ShellCatalogue.loginShellPath())
 
-  public init(installed: [String], loginShell: String) {
+  init(installed: [String], loginShell: String) {
     self.installed = installed
     self.loginShell = loginShell
     self.loginShellExists = FileManager.default.isExecutableFile(atPath: loginShell)
   }
 
-  public init(
+  init(
     path: String?,
     systemList: URL = URL(fileURLWithPath: "/etc/shells"),
     loginShell: String = ShellCatalogue.loginShellPath()
   ) {
     var found = Set(Self.listed(in: systemList))
-    for name in ShellCatalogue.searched {
+    for name in ShellCatalogue.extraShellNamesToSearch {
       if let executable = ExecutableLookup.find(name, path: path) { found.insert(executable.path) }
     }
     self.init(installed: Self.sorted(found), loginShell: loginShell)
@@ -35,7 +35,7 @@ public struct ShellDetection: Equatable, Sendable {
 
   /// Lines of `/etc/shells` that are executables, comments and blanks
   /// skipped.
-  public static func listed(in file: URL) -> [String] {
+  private static func listed(in file: URL) -> [String] {
     guard let text = try? String(contentsOf: file, encoding: .utf8) else { return [] }
     return LineList.entries(in: text).filter { FileManager.default.isExecutableFile(atPath: $0) }
   }
@@ -47,7 +47,7 @@ public struct ShellDetection: Equatable, Sendable {
     }
   }
 
-  public static func name(_ path: String) -> String {
+  private static func name(_ path: String) -> String {
     URL(fileURLWithPath: path).lastPathComponent
   }
 

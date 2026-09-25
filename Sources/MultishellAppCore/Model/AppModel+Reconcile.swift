@@ -1,4 +1,3 @@
-import Foundation
 import MultishellCore
 
 extension AppModel {
@@ -15,7 +14,7 @@ extension AppModel {
 
   /// For a control that is leaving, such as the sidebar filter on Escape: the
   /// keyboard would otherwise fall to the window and type into nothing.
-  public func focusActivePane() {
+  func focusActivePane() {
     guard !showsAgentBoard else { return }
     registry.focusActiveSession()
   }
@@ -39,27 +38,7 @@ extension AppModel {
       store.closeSession(failure.sessionID)
     }
     pruneStates()
-    prunePendingClose()
+    pruneTabPrompts()
     pruneFind()
-  }
-
-  /// The focused pane and the selected worktree are seen; every pane in view
-  /// loses its banner. Guarded on the board and frontmost, as `hasBeenSeen` is.
-  func markFocusedPaneSeen() {
-    guard platform.isActive, !showsAgentBoard, let worktree = workspace.selectedWorktreeID
-    else { return }
-    let focused = workspace.activeTab(in: worktree).map { [$0.focusedSessionID] } ?? []
-    if sessionStates.hasAnythingToSee(sessions: focused, worktree: worktree) {
-      mutateStates { $0.markSeen(sessions: focused, worktree: worktree) }
-    }
-    guard !notifiedKeys.isEmpty else { return }
-    for id in workspace.shownTabs(in: worktree).flatMap(\.sessionIDs) {
-      withdrawNotification(about: .session(id))
-    }
-    withdrawNotification(about: .worktree(worktree))
-  }
-
-  public func report(_ error: any Error) {
-    presentedError = PresentedError(error)
   }
 }

@@ -1,5 +1,3 @@
-import Foundation
-
 /// An editor Open in Editor can hand a worktree to.
 public struct EditorDescriptor: Identifiable, Hashable, Sendable {
   public enum Kind: Hashable, Sendable {
@@ -19,7 +17,7 @@ public struct EditorDescriptor: Identifiable, Hashable, Sendable {
   /// its path: `code`, `subl`, `nvim`.
   public let command: String?
 
-  public init(
+  init(
     id: String, name: String, kind: Kind, bundleIdentifier: String? = nil, command: String? = nil
   ) {
     self.id = id

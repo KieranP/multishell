@@ -1,5 +1,3 @@
-import Foundation
-
 /// Whether a worktree's branch has landed, and on what evidence. Runtime
 /// only, so no badge comes off disk; see Docs/design/merged-branch.md.
 public enum WorktreeMergeState: Hashable, Sendable {
@@ -57,7 +55,7 @@ public enum WorktreeMergeState: Hashable, Sendable {
 
   /// The row's tooltip. "Safe to remove" only where the evidence is proof;
   /// the badge is not drawn at all where there is work to lose.
-  public var help: String {
+  public var tooltip: String {
     guard isMerged else { return "" }
     return isCertain ? t("merged.safe-to-remove", summary) : summary
   }

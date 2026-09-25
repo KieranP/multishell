@@ -13,7 +13,7 @@ struct WorktreeRecordsTests {
     defer { repo.tearDown() }
     let path = try await repo.coordinator.create(
       branch: "work", in: repo.project, settings: repo.trees)
-    let common = try await repo.coordinator.commonGitDirectory(repo.project)
+    let common = try await repo.coordinator.git.commonGitDirectory(repo.project)
     let before = WorktreeRecords.read(commonDirectory: common)
     #expect(before.files.keys.contains("worktrees/work/HEAD"))
 
@@ -27,7 +27,7 @@ struct WorktreeRecordsTests {
   @Test func branchSwitchesLocksAndNewWorktreesChangeTheRecords() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    let common = try await repo.coordinator.commonGitDirectory(repo.project)
+    let common = try await repo.coordinator.git.commonGitDirectory(repo.project)
     let empty = WorktreeRecords.read(commonDirectory: common)
 
     let path = try await repo.coordinator.create(
@@ -45,34 +45,5 @@ struct WorktreeRecordsTests {
 
     _ = try await repo.git.run(["checkout", "-q", "-b", "main-moved"], in: repo.project.path)
     #expect(WorktreeRecords.read(commonDirectory: common) != locked, "the main HEAD counts too")
-  }
-}
-
-@Suite(.serialized)
-struct RepositoryRootTests {
-  @Test func aSubdirectoryAndALinkedWorktreeResolveToTheMainWorktree() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    let linked = try await repo.coordinator.create(
-      branch: "side", in: repo.project, settings: repo.trees)
-    let subdirectory = repo.project.path.appendingPathComponent("Sources", isDirectory: true)
-    try FileManager.default.createDirectory(at: subdirectory, withIntermediateDirectories: true)
-
-    func root(_ url: URL) async throws -> String {
-      try await repo.coordinator.repositoryRoot(containing: url).resolvingSymlinksInPath().path
-    }
-    let main = repo.project.path.resolvingSymlinksInPath().path
-
-    #expect(try await root(repo.project.path) == main)
-    #expect(try await root(subdirectory) == main)
-    #expect(try await root(linked) == main, "a linked worktree is the same project")
-  }
-
-  @Test func aDirectoryOutsideAnyRepositoryIsAnError() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    await #expect(throws: (any Error).self) {
-      try await repo.coordinator.repositoryRoot(containing: repo.root)
-    }
   }
 }

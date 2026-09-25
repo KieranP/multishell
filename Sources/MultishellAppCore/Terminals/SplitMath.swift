@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 
 /// The arithmetic behind a divider drag: the two panes trade weight, both
 /// staying at or above the minimum where there is room.

@@ -381,9 +381,9 @@ struct PromptMarkTests {
     let bootstrap = try files.writeEngineBootstrap()
     var environment = files.environment(termProgram: "ghostty")
     environment.merge(
-      SessionEnvironment.zshIntegration(
-        shellPath: zsh, environment: [:], integrationDirectory: files.zshDirectory,
-        engineBootstrap: bootstrap)
+      ShellLaunch.zshIntegration(
+        shellPath: zsh, environment: [:], zshDirectory: files.zshDirectory,
+        engineZshBootstrap: bootstrap)
     ) { _, new in new }
     #expect(environment["ZDOTDIR"] == bootstrap.path)
 
@@ -405,7 +405,7 @@ struct PromptMarkTests {
     _ = try files.writeEngineBootstrap()
     // A tab is a pty, so the shell it starts is interactive; a pipe is not.
     let exec = ShellLaunch.execCommandLine(
-      forShell: zsh, zshIntegration: files.zshDirectory, bashInit: files.bashInit
+      forShell: zsh, zshDirectory: files.zshDirectory, bashInit: files.bashInit
     ).replacingOccurrences(of: "exec \(zsh) -l", with: "exec \(zsh) -l -i")
     #expect(exec.contains(files.engineResources.path) == false, "found at run time, not baked in")
 

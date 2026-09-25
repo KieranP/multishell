@@ -1,9 +1,9 @@
 import Foundation
-import MultishellGitKit
 import MultishellProcess
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellGitKit
 
 /// What a failed removal stage shows, for each error the coordinator throws.
 @Suite
@@ -14,7 +14,7 @@ struct RemovalFailureTests {
     executable: "git", arguments: ["worktree", "prune"], status: 128, message: "fatal: locked")
 
   @Test func aPreDeleteVetoKeepsTheWorktreeAndSpeaksThroughThePane() {
-    let failure = RemovalFailure.describe(
+    let failure = RemovalFailure(
       HookFailure(stage: .preDelete, underlying: refused), deletingBranch: "feat")
     #expect(failure == .vetoed(message: "unpushed\n\nExited with status 1.", timedOut: false))
   }
@@ -23,7 +23,7 @@ struct RemovalFailureTests {
     let timedOut = ProcessFailure(
       executable: "zsh", arguments: [], status: 129, message: "still going",
       stop: .timedOut(after: .seconds(60)))
-    let failure = RemovalFailure.describe(
+    let failure = RemovalFailure(
       HookFailure(stage: .preDelete, underlying: timedOut), deletingBranch: nil)
     #expect(
       failure
@@ -33,10 +33,10 @@ struct RemovalFailureTests {
     let stopped = ProcessFailure(
       executable: "zsh", arguments: [], status: 129, message: "", stop: .stopped)
     #expect(
-      RemovalFailure.describe(
+      RemovalFailure(
         HookFailure(stage: .preDelete, underlying: stopped), deletingBranch: nil)
         == .stopped)
-    let afterRemoval = RemovalFailure.describe(
+    let afterRemoval = RemovalFailure(
       HookFailure(stage: .postDelete, underlying: stopped), deletingBranch: "feat")
     #expect(
       afterRemoval
@@ -51,7 +51,7 @@ struct RemovalFailureTests {
       path: URL(fileURLWithPath: "/trees/x"),
       underlying: CocoaError(.fileWriteVolumeReadOnly))
     guard
-      case .alert(let title, let message, let retry, let removed) = RemovalFailure.describe(
+      case .alert(let title, let message, let retry, let removed) = RemovalFailure(
         error, deletingBranch: nil)
     else {
       Issue.record("expected an alert")
@@ -69,7 +69,7 @@ struct RemovalFailureTests {
     let error = WorktreeForgetFailure(
       path: URL(fileURLWithPath: "/trees/x"), underlying: pruneFailed)
     guard
-      case .alert(let title, let message, let retry, let removed) = RemovalFailure.describe(
+      case .alert(let title, let message, let retry, let removed) = RemovalFailure(
         error, deletingBranch: nil)
     else {
       Issue.record("expected an alert")
@@ -81,7 +81,7 @@ struct RemovalFailureTests {
   }
 
   @Test func aGitFailureBeforeTheDirectoryIsGoneKeepsTheWorktree() {
-    let failure = RemovalFailure.describe(pruneFailed, deletingBranch: nil)
+    let failure = RemovalFailure(pruneFailed, deletingBranch: nil)
     guard case .alert(let title, let message, let retry, let removed) = failure else {
       Issue.record("expected an alert")
       return
@@ -93,14 +93,14 @@ struct RemovalFailureTests {
 
   @Test func aPostDeleteFailureSaysTheBranchWasKeptOnlyWhenItWasToGo() {
     let error = HookFailure(stage: .postDelete, underlying: refused)
-    let keptBranch = RemovalFailure.describe(error, deletingBranch: "feat")
+    let keptBranch = RemovalFailure(error, deletingBranch: "feat")
     #expect(
       keptBranch
         == .alert(
           title: "Worktree removed, but its hook failed",
           message: "unpushed\n\nExited with status 1.\n\nThe branch feat was kept.", retry: nil,
           worktreeRemoved: true))
-    let noBranch = RemovalFailure.describe(error, deletingBranch: nil)
+    let noBranch = RemovalFailure(error, deletingBranch: nil)
     guard case .alert(_, let message, _, _) = noBranch else {
       Issue.record("expected an alert")
       return
@@ -114,7 +114,7 @@ struct RemovalFailureTests {
       underlying: ProcessFailure(
         executable: "git", arguments: ["branch", "-d", "feat"], status: 1,
         message: "error: the branch 'feat' is not fully merged"))
-    let failure = RemovalFailure.describe(error, deletingBranch: "feat")
+    let failure = RemovalFailure(error, deletingBranch: "feat")
     guard case .alert(let title, _, let retry, let removed) = failure else {
       Issue.record("expected an alert")
       return

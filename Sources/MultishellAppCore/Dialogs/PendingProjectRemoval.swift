@@ -11,11 +11,6 @@ public struct PendingProjectRemoval: Identifiable, Equatable, Sendable {
   public let project: Project
   public let source: Source
 
-  public init(project: Project, source: Source) {
-    self.project = project
-    self.source = source
-  }
-
   public var id: String { project.id }
 
   public var title: String { t("project-removal.title", project.name) }

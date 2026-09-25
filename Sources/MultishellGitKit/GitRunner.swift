@@ -17,11 +17,21 @@ public struct GitRunner: Sendable {
     "status.showUntrackedFiles": "normal",
   ]
 
+  /// The git on `searchPath`, or on the process's own PATH where there is none.
+  public init(
+    runner: ProcessRunner = ProcessRunner(), searchPath: String? = nil,
+    configuration: [String: String] = [:]
+  ) throws {
+    try self.init(
+      executable: ExecutableLookup.find("git", path: searchPath), runner: runner,
+      searchPath: searchPath, configuration: configuration)
+  }
+
   /// `configuration` beats `isolation` and git's own. Through the environment,
   /// not `-c`, which a failure would report in its arguments; see merged-branch.md.
   public init(
-    executable: URL? = ExecutableLookup.find("git"), runner: ProcessRunner = ProcessRunner(),
-    path: String? = nil, configuration: [String: String] = [:]
+    executable: URL?, runner: ProcessRunner = ProcessRunner(),
+    searchPath: String? = nil, configuration: [String: String] = [:]
   ) throws {
     guard let executable else { throw GitUnavailable() }
     self.executable = executable
@@ -33,12 +43,12 @@ public struct GitRunner: Sendable {
       overrides["GIT_CONFIG_KEY_\(index)"] = entry.key
       overrides["GIT_CONFIG_VALUE_\(index)"] = entry.value
     }
-    if let path { overrides["PATH"] = path }
+    if let searchPath { overrides["PATH"] = searchPath }
     self.configEnvironment = overrides
   }
 
   /// `environment` and `timeout` are for the one call that talks to a network,
-  /// `WorktreeService.fetch`; `stopper` for the checkout a user may end, `add`.
+  /// `WorktreeGit.fetch`; `stopper` for the checkout a user may end, `add`.
   public func run(
     _ arguments: [String], in directory: URL, environment: [String: String] = [:],
     timeout: Duration? = nil, stopper: ProcessStopper? = nil
@@ -56,7 +66,7 @@ public struct GitRunner: Sendable {
   }
 
   /// The exit status of a run nobody stopped, `nil` where there was none.
-  func status(_ arguments: [String], in directory: URL) async -> Int32? {
+  func exitStatus(_ arguments: [String], in directory: URL) async -> Int32? {
     let output = try? await runner.capture(
       executable, arguments, in: directory, environment: configEnvironment)
     guard let output, output.stop == nil else { return nil }
@@ -65,15 +75,10 @@ public struct GitRunner: Sendable {
 
   /// The output where git succeeded, `nil` where it failed. For a poll's
   /// reads, where a repository that cannot answer is a badge not drawn.
-  public func output(_ arguments: [String], in directory: URL) async -> String? {
+  func output(_ arguments: [String], in directory: URL) async -> String? {
     let output = try? await runner.capture(
       executable, arguments, in: directory, environment: configEnvironment)
     guard let output, output.succeeded else { return nil }
     return output.standardOutput
   }
-}
-
-public struct GitUnavailable: Error, CustomStringConvertible {
-  public init() {}
-  public var description: String { "git was not found on PATH" }
 }

@@ -6,19 +6,27 @@ at the bottom.
 - **A hook is a shell script, context in env vars**, so nothing needs quoting.
   Only a pre hook can refuse.
 - **Login and interactive**, or interactive alone for csh and tcsh, which refuse
-  `-l` beside `-c`. A Finder-launched app's bare PATH fails `npm install` on
-  Homebrew or a version manager. A `cd` back to the hook's directory after the
-  rc files, since an rc file may leave the shell anywhere, then `set -e`: under
-  it one failing line in a zsh `chpwd` hook ended every hook at the `cd`. Cost:
-  startup time, stderr noise under `-i`, no `.login` for csh.
-- **Known gap: fish and the csh family have no `set -e`**, so there a failing
-  line does not end the hook.
+  `-l` beside `-c`, so the rc files set the environment: a Finder-launched app's
+  bare PATH fails `npm install` on Homebrew or a version manager. With `$SHELL`
+  unset it is zsh, as a terminal's is. Cost: startup time, stderr noise under
+  `-i`, no `.login` for csh.
+- **The script is sh, which that shell `exec`s**, the text passed in
+  `MULTISHELL_SCRIPT` and unset before it runs: csh takes no newline inside
+  quotes, and an interactive csh expands a `!` in them. So a hook reads alike
+  under every login shell, zsh's unmatched glob no longer ends it, and `set -e`
+  stops it at the first failing line where fish and csh had none. A `cd` back to
+  its directory comes first, as an rc file may leave the shell anywhere. Cost:
+  only exported variables reach it; an rc file's functions and aliases,
+  `nvm use` among them, do not. A shell that would refuse the flags, nu or
+  xonsh, is passed over for `/bin/sh` alone, with no rc files. An editor's shim
+  run in the background goes the same way.
 - **No history file.** An interactive shell takes an inherited `HISTFILE` for
   its own: bash truncated a zsh user's history to its rc file's size, and ksh
   rewrote it in its format, a few bytes long. So hooks and the login capture run
   with it empty, and an rc file naming the shell's own still names it.
 - **It runs in the pane, not a modal**, which would hold the window. A failed
-  one holds its worktree until Dismiss.
+  one holds its worktree until Dismiss. Pre-create has no worktree yet, so it
+  runs under the sheet, whose Cancel stops it.
 - **Stopped through ProcessStopper**: SIGHUP to the process group then SIGKILL.
   Interactive shells ignore SIGTERM, and a shell with no terminal does not pass
   SIGHUP on. The SIGKILL is held back only where the group's leader started

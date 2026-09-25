@@ -1,6 +1,5 @@
 import Foundation
 import MultishellGitKit
-import TestScratch
 
 /// A throwaway git repository, shared by the GitKit and AppCore suites so what a fixture
 /// repository looks like is decided in one place.

@@ -43,7 +43,7 @@ struct CustomLineShellTests {
       "printf '%s|' {{branch}}{{branch}}": "\(hostile)\(hostile)|",
     ]
     for (template, expected) in expectations {
-      let line = AgentFlags.customLine(template, values: values(branch: hostile))
+      let line = AgentFlags.customCommandLine(template, values: values(branch: hostile))
       #expect(try run(shell, line, in: directory) == expected, "\(template)")
     }
     #expect(!FileManager.default.fileExists(atPath: directory.appendingPathComponent("ran").path))

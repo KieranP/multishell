@@ -19,7 +19,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   public var cwd: String?
   /// The process the state is about, so the app can notice it is gone.
   public var pid: Int32?
-  /// Shown in the notification when present. Trimmed as it is set: the
+  /// Shown in the notification when present. Truncated as it is set: the
   /// channel drops a line over 64 KB, losing the report that matters most.
   public var message: String?
   /// How long the finished command ran, in seconds, when the source knows.
@@ -101,9 +101,9 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     self.version = Self.protocolVersion
     self.state = state
     self.sessionID = sessionID
-    self.cwd = Self.path(cwd)
+    self.cwd = Self.boundedPath(cwd)
     self.pid = pid
-    self.message = Self.trimmed(message)
+    self.message = Self.truncated(message)
     self.duration = Self.bounded(duration)
     self.agent = Self.identifier(agent)
     self.command = Self.commandWord(command)
@@ -133,11 +133,11 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     version = try container.decode(Int.self, forKey: .version, or: 1)
     state = try container.decode(SessionState.self, forKey: .state)
     sessionID = try container.decodeIfPresent(UUID.self, forKey: .sessionID)
-    cwd = Self.path(try container.decodeIfPresent(String.self, forKey: .cwd))
+    cwd = Self.boundedPath(try container.decodeIfPresent(String.self, forKey: .cwd))
     pid = try container.decodeIfPresent(Int32.self, forKey: .pid)
-    // Trimmed on the way in as well as out: any process of the user's may
+    // Truncated on the way in as well as out: any process of the user's may
     // write a line, so the cap is the reader's rule.
-    message = Self.trimmed(try container.decodeIfPresent(String.self, forKey: .message))
+    message = Self.truncated(try container.decodeIfPresent(String.self, forKey: .message))
     duration = Self.bounded(try container.decodeIfPresent(Double.self, forKey: .duration))
     agent = Self.identifier(try container.decodeIfPresent(String.self, forKey: .agent))
     command = Self.commandWord(try container.decodeIfPresent(String.self, forKey: .command))
@@ -180,7 +180,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   /// macOS's PATH_MAX; a longer one is no directory a worktree could be.
   static let maximumPathLength = 1024
 
-  private static func path(_ path: String?) -> String? {
+  private static func boundedPath(_ path: String?) -> String? {
     guard let path, path.utf8.count <= maximumPathLength else { return nil }
     return path
   }
@@ -206,7 +206,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     return id
   }
 
-  private static func trimmed(_ message: String?) -> String? {
+  private static func truncated(_ message: String?) -> String? {
     guard let message, message.count > maximumMessageLength else { return message }
     return message.prefix(maximumMessageLength) + "…"
   }

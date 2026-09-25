@@ -78,10 +78,11 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   caption**, not a settings row: an order is changed while looking at the rows
   it moves, and the settings window was three clicks away.
 - **A project's override stays in its settings**, the only place with room for
-  the (i) text. Cost: the help naming the tie-break is only there.
+  the (i) text. Cost: the help saying the main and trunk rows hold the top is
+  only there.
 - **The glyph is a mark rather than a control**, badge-sized and dimmer than the
-  caption. It uses the strip's plain menu style, the bordered AppKit one drawing
-  the image at its own size and tint whatever the label asked
+  caption. It uses the strip's plain menu style, the borderless AppKit one
+  drawing the image at its own size and tint whatever the label asked
   (tabs-and-columns.md).
 - **A removed worktree goes to the Trash**, not `git worktree remove`, which
   refuses a dirty tree and whose force unlinks the files. The one time someone
@@ -162,7 +163,7 @@ Discovery, naming, ordering, removal. Newest at the bottom.
 - **So a failure with the worktree gone ends its own entry and alerts instead**,
   there being no pane left to put the message on. A removal that has since taken
   the entry keeps it.
-- **The store's discard drops the entry and stops the stage**, as the pane's
+- **Forgetting a worktree drops the entry and stops the stage**, as the pane's
   Cancel would: a hook left running in a directory removed in a terminal ran to
   its timeout and then alerted about a worktree that was not there.
 - **The worktree list is read NUL-terminated.** git's own documentation calls

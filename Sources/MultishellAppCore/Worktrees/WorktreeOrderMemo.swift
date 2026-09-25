@@ -1,4 +1,3 @@
-import Foundation
 import MultishellCore
 
 /// Each project's last sorted rows and what they were sorted from, so an

@@ -1,8 +1,8 @@
 import Foundation
-import MultishellCore
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellCore
 
 @Suite
 struct SidebarFilterTests {

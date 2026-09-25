@@ -50,11 +50,12 @@ Newest at the bottom.
 - **Not `.xcstrings`.** SwiftPM copies one verbatim rather than compiling it, so
   every lookup answers with its own key. Checked against the toolchain, not
   assumed.
-- **Resource lookup goes through one wrapper**, because the `swift build`
-  accessor looks beside the executable and never where the bundling script puts
-  the resource bundles. Both binaries in the bundle now come from xcodebuild,
-  whose accessor does look there, so the wrapper only guards a `swift build`
-  binary. It does nothing for the helper, whose main bundle is
+- **The catalogues and shell scripts are found through one wrapper**, because
+  the `swift build` accessor looks beside the executable and never where the
+  bundling script puts the resource bundles. Both binaries in the bundle now
+  come from xcodebuild, whose accessor does look there, so the wrapper only
+  guards a `swift build` binary, and the agent marks read `Bundle.module`
+  unwrapped. It does nothing for the helper, whose main bundle is
   `Contents/Helpers`.
 - **A new key when in doubt, not a shared one.** The same English word is held
   by several keys on purpose: a column, a state and a sort order need not be one

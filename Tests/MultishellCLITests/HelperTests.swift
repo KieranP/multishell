@@ -22,10 +22,10 @@ struct HelperTests {
         environment: env)
     }
     // Stdin through a shell pipe, since the runner gives children /dev/null.
-    let quoted = ShellQuoting.quote(stdin)
+    let quoted = PosixShellQuoting.quote(stdin)
     let command =
-      "printf '%s' \(quoted) | \(ShellQuoting.quote(try HelperBinary.require().path)) "
-      + ShellQuoting.commandLine(arguments)
+      "printf '%s' \(quoted) | \(PosixShellQuoting.quote(try HelperBinary.require().path)) "
+      + PosixShellQuoting.commandLine(arguments)
     return try await runner.capture(
       URL(fileURLWithPath: "/bin/sh"), ["-c", command], in: URL(fileURLWithPath: "/tmp"),
       environment: env)
@@ -246,9 +246,9 @@ struct HelperTests {
     let path = listener.path
     let recorder = listener.recorder
 
-    let inner = "\(ShellQuoting.quote(try HelperBinary.require().path)) state running"
+    let inner = "\(PosixShellQuoting.quote(try HelperBinary.require().path)) state running"
     let output = try await run(
-      ["-c", "/bin/sh -c \(ShellQuoting.quote(inner))"],
+      ["-c", "/bin/sh -c \(PosixShellQuoting.quote(inner))"],
       environment: ["MULTISHELL_SOCKET": path.path], via: URL(fileURLWithPath: "/bin/sh"))
     #expect(output.succeeded, "\(output.standardError)")
 
@@ -266,9 +266,9 @@ struct HelperTests {
     let recorder = listener.recorder
 
     let me = ProcessInfo.processInfo.processIdentifier
-    let inner = "\(ShellQuoting.quote(try HelperBinary.require().path)) state running"
+    let inner = "\(PosixShellQuoting.quote(try HelperBinary.require().path)) state running"
     let output = try await run(
-      ["-c", "echo $$; /bin/sh -c \(ShellQuoting.quote(inner))"],
+      ["-c", "echo $$; /bin/sh -c \(PosixShellQuoting.quote(inner))"],
       environment: ["MULTISHELL_SOCKET": path.path, "MULTISHELL_APP_PID": String(me)],
       via: URL(fileURLWithPath: "/bin/sh"))
     #expect(output.succeeded, "\(output.standardError)")
@@ -340,7 +340,7 @@ struct HelperTests {
     #expect(claude.succeeded)
     let object =
       try JSONSerialization.jsonObject(with: Data(claude.standardOutput.utf8)) as? [String: Any]
-    #expect(AgentHooks.claude.isInstalled(in: object ?? [:]))
+    #expect(AgentHookCatalogue.claude.isInstalled(in: object ?? [:]))
 
     let copilot = try await run(["install-agent-hooks", "--agent", "copilot", "--print"])
     #expect(copilot.succeeded)
@@ -383,11 +383,11 @@ struct HelperTests {
     let installed = try await run(
       ["install-agent-hooks", "--agent", "codex"], environment: ["HOME": home.path])
     #expect(installed.succeeded, "\(installed.standardError)")
-    #expect(AgentHooks.codex.isInstalled(in: file))
+    #expect(AgentHookCatalogue.codex.isInstalled(in: file))
 
     let removed = try await run(
       ["remove-agent-hooks", "--agent", "codex"], environment: ["HOME": home.path])
     #expect(removed.succeeded, "\(removed.standardError)")
-    #expect(!AgentHooks.codex.isInstalled(in: file))
+    #expect(!AgentHookCatalogue.codex.isInstalled(in: file))
   }
 }

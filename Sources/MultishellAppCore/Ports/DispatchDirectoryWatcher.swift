@@ -69,9 +69,7 @@ public final class DispatchDirectoryWatcher: DirectoryWatcher {
     let generation = generation
     let known = watches.filter { wanted.contains($0.key) }.mapValues(\.directory)
     let openDirectory = openDirectory
-    let scan = await Task.detached(priority: .utility) {
-      Self.scan(wanted, known: known, opening: openDirectory)
-    }.value
+    let scan = await offMain { Self.scan(wanted, known: known, opening: openDirectory) }
     guard generation == self.generation else {
       scan.closeAll()
       return

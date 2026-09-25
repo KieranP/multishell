@@ -166,8 +166,9 @@ at the bottom.
 - **Its words take the drop's quoting**, an editor tab's too: the login shell
   may be tcsh or fish, which read a `!` or a backslash inside single quotes.
 - **A session off disk resumes rather than starts**: four saved agent tabs must
-  not start four agents. Cost: a shell that cannot take the login-interactive
-  form still gets a plain shell for hooks.
+  not start four agents. Cost: where the login shell cannot take the
+  login-interactive form, as nu cannot, the agent runs under `/bin/sh` as a hook
+  does, reading no startup file.
 - **One login-shell environment is captured at launch**, agents living under
   Homebrew, npm or a version manager, none of which a Finder-launched app has on
   PATH. Past a time limit a poorer PATH beats empty dropdowns.
@@ -210,8 +211,9 @@ at the bottom.
   character, so a CRLF file split on `\n` was one line: its includes were lost
   and every key after the first rode through the allow list behind it.
 - **The merged text reaches the engine through a file under the temp
-  directory.** The wrapper removes that file only when it replaces it, so the
-  host clears the directory at launch and at quit.
+  directory.** The wrapper removes that file only when it replaces it or frees
+  its controller, which here lives until the process ends, so the host clears
+  the directory at launch and at quit.
 - **Every copy of the build shares that directory**, so only the copy holding
   the instance socket may sweep it. A copy that hands over quits before it opens
   a terminal, and one whose quit failed starts no shell (state-and-store.md), so

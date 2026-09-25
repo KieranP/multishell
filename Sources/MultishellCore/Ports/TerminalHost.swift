@@ -1,5 +1,3 @@
-import Foundation
-
 /// The seam between the core and whatever draws a terminal. The engine owns
 /// the child and a replacement need not, so nothing here exposes a descriptor.
 @MainActor
@@ -44,13 +42,4 @@ extension TerminalHost {
   public func shutDown() {}
 
   public func claimSharedFiles() {}
-}
-
-extension TerminalHostDelegate {
-  /// A host without the distinction reports a finished command as activity.
-  public func terminalHost(
-    _ host: any TerminalHost, didFinishCommandIn id: TerminalSession.ID, exitCode: Int32?
-  ) {
-    terminalHost(host, didSeeActivityIn: id)
-  }
 }

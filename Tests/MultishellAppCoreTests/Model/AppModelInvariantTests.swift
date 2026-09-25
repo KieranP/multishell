@@ -1,9 +1,9 @@
 import Foundation
-import MultishellCore
 import TestScratch
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellCore
 
 @Suite @MainActor
 struct AppModelInvariantTests {

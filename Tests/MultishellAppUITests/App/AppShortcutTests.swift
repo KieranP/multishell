@@ -54,7 +54,7 @@ struct AppShortcutTests {
   @MainActor
   @Test func everyBuiltInThemesConfigurationIsOneThePinnedLibghosttyAccepts() {
     for theme in Theme.builtins {
-      let rendered = GhosttyTerminalHost.configuration(theme, Appearance()).rendered
+      let rendered = GhosttyThemeConfig.configuration(theme, Appearance()).rendered
       #expect(rendered.contains("search-background = #"), "\(theme.name)")
       #expect(rendered.contains("search-selected-background = #"), "\(theme.name)")
       // Match text is the dark one of the pair: a light theme's background is

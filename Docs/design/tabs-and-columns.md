@@ -191,8 +191,8 @@ bottom.
 - **Every item says what it starts**, which the plain plus could not: it ran the
   new-tab shortcut, whose answer turns on the project's auto-start setting, so
   the same click started a shell in one project and an agent in the next.
-- **The shortcut itself is unchanged**, and is the only way left to the
-  auto-start answer.
+- **The shortcut itself is unchanged**, and it and its File menu item are the
+  only ways left to the auto-start answer.
 - **The items open in the column the menu sits in**, as the split buttons do, so
   a click never acts in the column the keyboard happens to be in.
 - **The list is held on the model**, rebuilt when detection answers or the

@@ -1,4 +1,3 @@
-import Foundation
 import MultishellCore
 
 /// Whether a tab dragged along its own strip should move now. Index arithmetic

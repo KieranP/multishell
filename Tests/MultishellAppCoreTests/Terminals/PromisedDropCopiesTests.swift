@@ -1,0 +1,121 @@
+import Foundation
+import TestScratch
+import Testing
+
+@testable import MultishellAppCore
+
+@Suite
+struct PromisedDropCopiesTests {
+  private func makeParent() throws -> URL {
+    let parent = try Scratch.directory("drops")
+    return parent
+  }
+
+  private func drop(_ name: String, in parent: URL, modified: Date) throws -> URL {
+    let directory = parent.appendingPathComponent(name, isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    try Data().write(to: directory.appendingPathComponent("shot.png"))
+    try FileManager.default.setAttributes(
+      [.modificationDate: modified], ofItemAtPath: directory.path)
+    return directory
+  }
+
+  @Test func eachDragGetsItsOwnDirectorySoTwoOfANameCannotCollide() throws {
+    let parent = try makeParent()
+    defer { try? FileManager.default.removeItem(at: parent) }
+
+    let one = try PromisedDropCopies.makeDirectory(in: parent)
+    let two = try PromisedDropCopies.makeDirectory(in: parent)
+    #expect(one != two)
+    #expect(FileManager.default.fileExists(atPath: one.path))
+    #expect(FileManager.default.fileExists(atPath: two.path))
+  }
+
+  /// Only this app may read the copy a drag hands over, so it is asked for again through its
+  /// promise, while a file the user has keeps its path.
+  @Test func theCopyMacOSMakesForADropIsToldFromTheUsersOwnFile() {
+    let temporary = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+    let copy =
+      temporary
+      .appendingPathComponent("TemporaryItems", isDirectory: true)
+      .appendingPathComponent("NSIRD_screencaptureui_YGSj8h", isDirectory: true)
+      .appendingPathComponent("Screenshot 2026-09-07 at 3.31.01 PM.png")
+    #expect(PromisedDropCopies.isTemporaryCopy(copy))
+
+    #expect(!PromisedDropCopies.isTemporaryCopy(URL(fileURLWithPath: "/Users/x/Desktop/Shot.png")))
+    #expect(
+      !PromisedDropCopies.isTemporaryCopy(URL(fileURLWithPath: "/repos/demo/Sources/App.swift")))
+  }
+
+  /// The name a copy carries is enough on its own, since a copy put outside
+  /// the temporary directory is still one.
+  @Test func aCopyNamedForItsSourceIsOneWhereverItWasPut() {
+    let copy = URL(fileURLWithPath: "/somewhere/NSIRD_Mail_A1B2/Attachment.pdf")
+    #expect(PromisedDropCopies.isTemporaryCopy(copy))
+  }
+
+  @Test func aFolderOfTheUsersOwnCalledTemporaryItemsIsNotTheDragsCopy() {
+    let mine = URL(fileURLWithPath: "/Users/x/TemporaryItems/notes.md")
+    #expect(!PromisedDropCopies.isTemporaryCopy(mine))
+  }
+
+  /// A drag with no path has files not yet written, as out of Photos or Mail; taking no paths as
+  /// enough would refuse the drop after the pane had offered it.
+  @Test func aDragOfferingNoPathAtAllIsOneToAskThePromiseFor() {
+    #expect(PromisedDropCopies.needsPromise(for: []))
+  }
+
+  @Test func onlyADragCarryingACopyNeedsThePromiseAsked() {
+    let mine = URL(fileURLWithPath: "/Users/x/Desktop/Notes.md")
+    let copy = URL(fileURLWithPath: "/somewhere/NSIRD_screencaptureui_A1/Shot.png")
+
+    #expect(!PromisedDropCopies.needsPromise(for: [mine]))
+    #expect(PromisedDropCopies.needsPromise(for: [copy]))
+    #expect(PromisedDropCopies.needsPromise(for: [mine, copy]))
+  }
+
+  /// The drop pastes the user's own files at once and asks for the copies again through the
+  /// promise, so a drop that took only the promised ones would lose these.
+  @Test func aDragOfBothKindsKeepsTheFilesTheUserHas() {
+    let mine = URL(fileURLWithPath: "/Users/x/Desktop/Notes.md")
+    let copy = URL(fileURLWithPath: "/somewhere/NSIRD_screencaptureui_A1/Shot.png")
+
+    #expect(PromisedDropCopies.own(among: [mine, copy]) == [mine])
+    #expect(PromisedDropCopies.own(among: [copy]).isEmpty)
+    #expect(PromisedDropCopies.own(among: [mine]) == [mine])
+    #expect(PromisedDropCopies.own(among: []).isEmpty)
+  }
+
+  /// Nothing makes the drops directory before the first drop needs it, and a
+  /// drop that could not make it delivers nothing at all.
+  @Test func theFirstDragMakesTheDirectoryItself() throws {
+    let parent = Scratch.path("drops")
+    defer { try? FileManager.default.removeItem(at: parent) }
+    #expect(!FileManager.default.fileExists(atPath: parent.path))
+
+    let directory = try PromisedDropCopies.makeDirectory(in: parent)
+
+    #expect(FileManager.default.fileExists(atPath: directory.path))
+  }
+
+  @Test func aSweepTakesTheDragsPastKeepingAndLeavesTheRest() throws {
+    let parent = try makeParent()
+    defer { try? FileManager.default.removeItem(at: parent) }
+    let now = Date()
+    let old = try drop("old", in: parent, modified: now.addingTimeInterval(-8 * 24 * 60 * 60))
+    let recent = try drop("recent", in: parent, modified: now.addingTimeInterval(-60))
+
+    PromisedDropCopies.sweep(in: parent, keeping: PromisedDropCopies.keep, now: now)
+
+    #expect(!FileManager.default.fileExists(atPath: old.path))
+    #expect(FileManager.default.fileExists(atPath: recent.path))
+  }
+
+  /// Nothing to sweep is not a failure: the directory is made by the first
+  /// promised drag, and most launches come before one.
+  @Test func aSweepOfADirectoryThatIsNotThereDoesNothing() {
+    let missing = Scratch.path("drops")
+    PromisedDropCopies.sweep(in: missing)
+    #expect(!FileManager.default.fileExists(atPath: missing.path))
+  }
+}

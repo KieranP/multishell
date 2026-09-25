@@ -1,10 +1,10 @@
 import Foundation
-import MultishellProcess
 import Testing
 
 @testable import MultishellAppCore
 @testable import MultishellCore
 @testable import MultishellGitKit
+@testable import MultishellProcess
 
 @Suite
 struct PresentedErrorTests {
@@ -59,13 +59,13 @@ struct PresentedErrorTests {
   /// Raised only once the pane that would have shown it has gone.
   @Test func aFileListFailureSaysWhichListItWasAndNamesEachPath() {
     for (placement, expected) in [
-      (WorktreePlacement.link, "Worktree created, but some of its files were not linked"),
-      (WorktreePlacement.copy, "Worktree created, but some of its files were not copied"),
+      (WorktreeFilePlacement.link, "Worktree created, but some of its files were not linked"),
+      (WorktreeFilePlacement.copy, "Worktree created, but some of its files were not copied"),
     ] {
       let presented = PresentedError(
         WorktreeFileFailure(
           placement: placement,
-          items: [
+          failures: [
             WorktreeFileFailure.Item(path: "../outside/key", underlying: WorktreeFileEscape())
           ]
         ))
@@ -164,9 +164,6 @@ struct PresentedErrorTests {
   /// `MultishellProcess` depends on nothing and so has no catalogue to
   /// reach; the words for its failures live here. See translation.md.
   @Test func theProcessLayersFailuresAreTranslatedRatherThanPrintedAsWritten() {
-    let noShell = PresentedError(HookFailure(stage: .preCreate, underlying: ShellUnavailable()))
-    #expect(noShell.message == "No shell was found to run it with.")
-
     let noPipe = PresentedError(PipeUnavailable(code: EMFILE))
     #expect(noPipe.title == "A command could not be started")
     #expect(noPipe.message.hasPrefix("A pipe could not be opened:"))
@@ -191,13 +188,13 @@ struct PresentedErrorTests {
   @Test func anotherListsSkippedEntriesAreNotNamedAsThisListsFailures() {
     let failure = WorktreeFileFailure(
       placement: .copy,
-      items: [
+      failures: [
         WorktreeFileFailure.Item(path: ".env", underlying: CocoaError(.fileWriteNoPermission))
       ]
     ).including(skipped: ["~/.aws"])
     let presented = PresentedError(failure)
 
-    #expect(failure.items.map(\.path) == [".env"])
+    #expect(failure.failures.map(\.path) == [".env"])
     #expect(presented.message.hasPrefix(".env: "))
     #expect(!presented.message.contains("~/.aws: "))
     #expect(presented.message.contains("so they were skipped and the rest placed:\n\n• ~/.aws"))
@@ -205,7 +202,7 @@ struct PresentedErrorTests {
 
   @Test func skippedListEntriesAreNamedWithWhatAnEntryMustBe() {
     let presented = PresentedError(
-      WorktreeFilesSkipped(entries: ["~/.aws.json", "../shared/.env"]))
+      WorktreeFileSkipped(entries: ["~/.aws.json", "../shared/.env"]))
 
     #expect(presented.title == "Some listed files were not placed")
     #expect(presented.message.contains("~/.aws.json"))
@@ -243,67 +240,5 @@ struct PresentedErrorTests {
     #expect(presented.retry == nil)
     presented.retry = .init(label: "Delete Branch Anyway") {}
     #expect(presented.retry?.label == "Delete Branch Anyway")
-  }
-}
-
-/// The model has one alert slot, so what happens when several things fail at
-/// once has to be decided rather than left to whichever wrote last.
-@Suite @MainActor
-struct SeveralFailuresAtOnceTests {
-  @Test func onlyTheFirstFailedSessionTakesTheAlertAndTheRestAreLogged() {
-    let h = Harness()
-    h.model.select(h.main)
-    for _ in 0..<3 { h.model.newTab() }
-    #expect(h.model.liveTerminalCount == 4)
-    h.engine.refusesToOpen = true
-    for id in h.engine.openSessionIDs { h.engine.close(id) }
-    h.model.presentedError = nil
-    h.platform.logged.removeAll()
-
-    h.model.reconcileSessions(takingFocus: false)
-
-    #expect(h.model.presentedError != nil, "the user is told once")
-    #expect(h.platform.logged.count == 3, "and the rest are in the log: \(h.platform.logged)")
-  }
-}
-
-@Suite
-struct PresentedMessageTests {
-  @Test func eachMessageNamesWhatItIsAbout() {
-    #expect(
-      PresentedError.notARepository(URL(fileURLWithPath: "/w/notes")).message.hasPrefix("notes is")
-    )
-    #expect(PresentedError.worktreeDirectoryMissing("/w/t").message.hasPrefix("/w/t does not"))
-    #expect(PresentedError.agentNotInstalled("Codex").title == "Codex is not installed")
-    #expect(PresentedError.editorNotInstalled("Zed").message.contains("Install Zed"))
-    #expect(PresentedError.noEditorCommand.message.contains("{path}"))
-    #expect(PresentedError.themeUnreadable("bad json").message == "bad json")
-  }
-}
-
-@Suite
-struct StoppedHookPresentationTests {
-  @Test func aStoppedOrTimedOutHookIsTitledForWhatEndedIt() {
-    let timedOut = ProcessFailure(
-      executable: "zsh", arguments: [], status: 129, message: "installing",
-      stop: .timedOut(after: .seconds(1)))
-    let presented = PresentedError(HookFailure(stage: .postCreate, underlying: timedOut))
-    #expect(presented.title == "Worktree created, but its hook did not finish")
-    #expect(presented.message == "installing\n\nStopped after 1 second, the hook timeout.")
-
-    let stopped = ProcessFailure(
-      executable: "zsh", arguments: [], status: 129, message: "", stop: .stopped)
-    let byUser = PresentedError(HookFailure(stage: .preCreate, underlying: stopped))
-    #expect(byUser.title == "Worktree not created: its pre-create hook was stopped")
-    #expect(byUser.message == "Stopped by you and printed nothing.")
-  }
-
-  @Test func theSharedSettingsQuestionShowsWhatIsAskedForAndNamesTheFile() {
-    let pending = PendingSharedSettingsTrust(
-      projectID: "/r", projectName: "acme", contents: "post-create:\nnpm ci\n\ncopied:\n.env",
-      digest: FileDigest.sha256(of: Data()))
-    #expect(pending.title == "Trust what acme's .multishell.json asks for?")
-    #expect(pending.message.hasSuffix("post-create:\nnpm ci\n\ncopied:\n.env"))
-    #expect(pending.trustLabel == "Trust" && pending.declineLabel == "Ignore")
   }
 }

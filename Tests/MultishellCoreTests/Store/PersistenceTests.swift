@@ -5,43 +5,6 @@ import Testing
 @testable import MultishellCore
 
 @Suite
-struct DebugPathsTests {
-  /// Tests are debug builds, so they see the debug variant. Reading it walks up for an
-  /// `.app`, and a walk that never ends would hang the run rather than fail it.
-  @Test(.timeLimit(.minutes(1)))
-  func debugBuildsKeepTheirOwnStateSocketAndIntegration() {
-    #expect(Paths.stateFile.lastPathComponent == "state\(Paths.variant).json")
-    #expect(Paths.socketFile.lastPathComponent == "multishell\(Paths.variant).sock")
-    #expect(Paths.integrationDirectory.lastPathComponent == "integration\(Paths.variant)")
-    #expect(Paths.helperLink.lastPathComponent == "multishell", "shared: hooks reference it")
-    #if DEBUG
-      // A test process is no app bundle, so it carries no worktree name.
-      #expect(Paths.variant == ".debug")
-    #endif
-  }
-
-  /// A debug bundle built from a worktree gets its own state file, socket,
-  /// integration directory and drops, so two worktrees can both `make run`.
-  @Test func aWorktreesDebugBundleNamesItself() {
-    #expect(Paths.debugVariant(named: "fix1") == ".debug-fix1")
-    #expect(Paths.debugVariant(named: nil) == ".debug", "the checkout keeps the plain files")
-    #expect(Paths.debugVariant(named: "") == ".debug", "make-app.sh writes the key empty")
-  }
-
-  /// `sun_path` holds 103 bytes, two spent on the `.b` the socket binds under, and this
-  /// directory plus `multishell.debug-.sock` takes about 75, so the name is cut.
-  @Test func aLongOrOddWorktreeNameIsCutAndSpelledSafely() {
-    let longest = Paths.debugVariant(named: String(repeating: "\u{1F600}", count: 40))
-    #expect(longest == ".debug-" + String(repeating: "-", count: 14))
-    #expect(Paths.debugVariant(named: "feat.two wds/x") == ".debug-feat-two-wds-x")
-    let socket =
-      "/Users/averylongusername/Library/Application Support/Multishell"
-      + "/multishell\(longest).sock"
-    #expect(socket.utf8.count + ".b".utf8.count <= 103, "\(socket.utf8.count) bytes: \(socket)")
-  }
-}
-
-@Suite
 struct PersistenceTests {
   private func scratchFile() -> URL {
     Scratch.path("state").appendingPathComponent("state.json")
@@ -59,7 +22,7 @@ struct PersistenceTests {
       """.utf8
     ).write(to: file)
 
-    let workspace = try WorkspaceSnapshot(fileURL: file).load()
+    let workspace = try WorkspaceFile(fileURL: file).load()
 
     #expect(workspace.projects.map(\.name) == ["demo"])
     #expect(workspace.appearance.themeID == Theme.multishellDark.id)
@@ -72,10 +35,10 @@ struct PersistenceTests {
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     try Data("not json".utf8).write(to: file)
 
-    let snapshot = WorkspaceSnapshot(fileURL: file)
+    let stateFile = WorkspaceFile(fileURL: file)
     var reported: URL?
     do {
-      _ = try snapshot.load()
+      _ = try stateFile.load()
       Issue.record("unreadable state loaded")
     } catch let state as UnreadableState {
       reported = state.backup
@@ -106,7 +69,7 @@ struct PersistenceTests {
     var reported: URL?
     #expect(throws: (any Error).self) {
       do {
-        _ = try WorkspaceSnapshot(fileURL: file).load()
+        _ = try WorkspaceFile(fileURL: file).load()
       } catch let state as UnreadableState {
         reported = state.backup
         throw state
@@ -132,7 +95,7 @@ struct PersistenceTests {
     try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: file.path)
     try FileManager.default.setAttributes(
       [.posixPermissions: 0o500], ofItemAtPath: directory.path)
-    let (store, _) = WorkspaceStore.restored(from: WorkspaceSnapshot(fileURL: file))
+    let (store, _) = WorkspaceStore.restored(from: WorkspaceFile(fileURL: file))
     #expect(store.refusesToSave)
 
     try FileManager.default.setAttributes(
@@ -142,7 +105,7 @@ struct PersistenceTests {
     try store.save()
 
     #expect(!store.refusesToSave)
-    let saved = try WorkspaceSnapshot(fileURL: file).load()
+    let saved = try WorkspaceFile(fileURL: file).load()
     #expect(saved.projects.map(\.path.path) == ["/repos/other"])
   }
 
@@ -163,7 +126,7 @@ struct PersistenceTests {
     try FileManager.default.setAttributes(
       [.posixPermissions: 0o500], ofItemAtPath: directory.path)
 
-    let (store, loadError) = WorkspaceStore.restored(from: WorkspaceSnapshot(fileURL: file))
+    let (store, loadError) = WorkspaceStore.restored(from: WorkspaceFile(fileURL: file))
 
     #expect(loadError is UnmovedState)
     #expect(store.refusesToSave)
@@ -192,9 +155,9 @@ struct PersistenceTests {
     let orphan = TerminalSession(
       worktreeID: worktree.id, workingDirectory: worktree.path, title: "x")
     workspace.sessions = [orphan]
-    try WorkspaceSnapshot(fileURL: file).save(workspace)
+    try WorkspaceFile(fileURL: file).save(workspace)
 
-    let (store, error) = WorkspaceStore.restored(from: WorkspaceSnapshot(fileURL: file))
+    let (store, error) = WorkspaceStore.restored(from: WorkspaceFile(fileURL: file))
 
     #expect(error == nil)
     #expect(store.workspace.worktrees.map(\.id) == [worktree.id])
@@ -237,12 +200,12 @@ struct PersistenceTests {
     }
     #expect(workspace.tabs.count == 2000)
 
-    let snapshot = WorkspaceSnapshot(fileURL: file)
+    let stateFile = WorkspaceFile(fileURL: file)
     let saving = ContinuousClock.now
-    try snapshot.save(workspace)
+    try stateFile.save(workspace)
     let saved = ContinuousClock.now - saving
     let loading = ContinuousClock.now
-    let loaded = try snapshot.load()
+    let loaded = try stateFile.load()
     let loadTime = ContinuousClock.now - loading
 
     #expect(loaded == workspace)
@@ -299,318 +262,8 @@ struct PersistenceTests {
     workspace.hookTimeoutSeconds = 5
     workspace.gitStatusIndicator = .stagedOnly
 
-    let snapshot = WorkspaceSnapshot(fileURL: file)
-    try snapshot.save(workspace)
-    #expect(try snapshot.load() == workspace)
-  }
-}
-
-@Suite @MainActor
-struct OrderingTests {
-  private func store() -> (WorkspaceStore, Worktree) {
-    let store = WorkspaceStore()
-    let project = store.addProject(at: URL(fileURLWithPath: "/repos/a"))
-    store.addProject(at: URL(fileURLWithPath: "/repos/b"))
-    store.addProject(at: URL(fileURLWithPath: "/repos/c"))
-    let worktree = Worktree(
-      path: project.path, projectID: project.id, head: "x", branch: "main", isPrimary: true)
-    store.replaceWorktrees([worktree], forProject: project.id)
-    return (store, worktree)
-  }
-
-  @Test func aProjectMovesToAPlaceCountedInTheListAsItStands() {
-    let (store, _) = store()
-    store.moveProject(at: 0, to: 3)
-    #expect(store.workspace.projects.map(\.name) == ["b", "c", "a"])
-    store.moveProject(at: 2, to: 0)
-    #expect(store.workspace.projects.map(\.name) == ["a", "b", "c"])
-  }
-
-  @Test func aMoveOutsideTheListIsIgnoredNotACrash() {
-    let (store, _) = store()
-    store.moveProject(at: 0, to: 4)
-    store.moveProject(at: 7, to: 0)
-    store.moveProject(at: 1, to: -1)
-    #expect(store.workspace.projects.map(\.name) == ["a", "b", "c"])
-  }
-
-  @Test func tabsMoveWithinTheirWorktreeOnly() {
-    let (store, worktree) = store()
-    let t1 = store.openTab(in: worktree.id)!
-    let t2 = store.openTab(in: worktree.id)!
-    let t3 = store.openTab(in: worktree.id)!
-
-    store.moveTab(t3.id, .before, t1.id)
-    #expect(store.workspace.tabs(in: worktree.id).map(\.id) == [t3.id, t1.id, t2.id])
-
-    store.moveTab(t1.id, .before, UUID())
-    #expect(store.workspace.tabs(in: worktree.id).map(\.id) == [t3.id, t1.id, t2.id])
-
-    // The trailing half of the last tab, which is the only way to the end
-    // of the strip: there is no tab past it to land before.
-    store.moveTab(t3.id, .after, t2.id)
-    #expect(store.workspace.tabs(in: worktree.id).map(\.id) == [t1.id, t2.id, t3.id])
-  }
-
-  @Test func nextAndPreviousWrapAround() {
-    let (store, worktree) = store()
-    let t1 = store.openTab(in: worktree.id)!
-    let t2 = store.openTab(in: worktree.id)!
-
-    #expect(store.workspace.tab(after: t2.id)?.id == t1.id)
-    #expect(store.workspace.tab(before: t1.id)?.id == t2.id)
-    store.closeTab(t2.id)
-    #expect(store.workspace.tab(after: t1.id) == nil)
-  }
-}
-
-@Suite
-struct ThemeCatalogTests {
-  @Test func userFilesAreAddedAndCanReplaceBuiltins() throws {
-    let directory = Scratch.path("themes")
-    defer { try? FileManager.default.removeItem(at: directory) }
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-
-    var custom = Theme.multishellDark
-    custom.id = "user.custom"
-    custom.name = "Custom"
-    var override = Theme.multishellLight
-    override.name = "Light, but mine"
-    for theme in [custom, override] {
-      try JSONEncoder().encode(theme).write(
-        to: directory.appendingPathComponent("\(theme.id).json"))
-    }
-    try Data("{".utf8).write(to: directory.appendingPathComponent("broken.json"))
-
-    let catalogue = ThemeCatalogue.load(from: directory)
-
-    #expect(catalogue.themes.map(\.id) == ["multishell.dark", "multishell.light", "user.custom"])
-    #expect(catalogue.themes.first { $0.id == Theme.multishellLight.id }?.name == "Light, but mine")
-    #expect(catalogue.problems.count == 1)
-  }
-
-  @Test func aThemeFileWithTooFewColoursIsAProblemNotACrash() throws {
-    let directory = Scratch.path("themes")
-    defer { try? FileManager.default.removeItem(at: directory) }
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-    var short = Theme.multishellDark
-    short.id = "user.short"
-    short.ansi = Array(short.ansi.prefix(8))
-    try JSONEncoder().encode(short).write(to: directory.appendingPathComponent("short.json"))
-
-    let catalogue = ThemeCatalogue.load(from: directory)
-
-    #expect(catalogue.themes.map(\.id) == Theme.builtins.map(\.id))
-    #expect(catalogue.problems.count == 1)
-    #expect(catalogue.problems[0].hasPrefix("short.json:"))
-    #expect(catalogue.themes.allSatisfy { $0.ansiRGB.count == 16 })
-  }
-
-  @Test func loadAloneRelocatesStrayExamples() throws {
-    let directory = Scratch.path("themes")
-    defer { try? FileManager.default.removeItem(at: directory) }
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-    try JSONEncoder().encode(Theme.multishellDark).write(
-      to: directory.appendingPathComponent("example.multishell.dark.json"))
-
-    let catalogue = ThemeCatalogue.load(from: directory)
-
-    #expect(catalogue.themes.count == Theme.builtins.count)
-    #expect(
-      FileManager.default.fileExists(
-        atPath: directory.appendingPathComponent("examples/example.multishell.dark.json").path))
-  }
-
-  @Test func examplesAreWrittenBesideTheThemesNotAmongThem() throws {
-    let directory = Scratch.path("themes")
-    defer { try? FileManager.default.removeItem(at: directory) }
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-    // A leftover from the earlier layout, which loaded as a duplicate.
-    try JSONEncoder().encode(Theme.multishellDark).write(
-      to: directory.appendingPathComponent("example.multishell.dark.json"))
-
-    try ThemeCatalogue.seedExamples(in: directory)
-
-    #expect(ThemeCatalogue.load(from: directory).themes.map(\.id) == Theme.builtins.map(\.id))
-    let examples = try FileManager.default.contentsOfDirectory(
-      atPath: directory.appendingPathComponent("examples").path
-    ).sorted()
-    #expect(
-      examples == ["example.multishell.dark.json", "multishell.dark.json", "multishell.light.json"])
-  }
-}
-
-@Suite @MainActor
-struct PartialStateTests {
-  /// The dropped tab has a pane kind this build does not know; the session it owned goes
-  /// with it.
-  @Test func aStateFileWithOneUnreadableTabRestoresEverythingElse() throws {
-    let file = Scratch.path("scratch")
-      .appendingPathComponent("state.json")
-    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
-    try FileManager.default.createDirectory(
-      at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
-
-    let kept = UUID()
-    let orphaned = UUID()
-    let keptTab = UUID()
-    try Data(
-      #"""
-      { "projects": [ { "path": "file:///repos/demo/" } ],
-        "worktrees": [ { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "a" } ],
-        "sessions": [
-          { "id": "\#(kept)", "worktreeID": "/repos/demo", "workingDirectory": "file:///repos/demo/", "title": "sh" },
-          { "id": "\#(orphaned)", "worktreeID": "/repos/demo", "workingDirectory": "file:///repos/demo/", "title": "sh" } ],
-        "tabs": [
-          { "id": "\#(keptTab)", "worktreeID": "/repos/demo", "focusedSessionID": "\#(kept)",
-            "root": { "terminal": { "_0": "\#(kept)" } } },
-          { "id": "\#(UUID())", "worktreeID": "/repos/demo", "focusedSessionID": "\#(orphaned)",
-            "root": { "stack": { "pages": [ { "terminal": { "_0": "\#(orphaned)" } } ] } } } ],
-        "activeTabByWorktree": { "/repos/demo": "\#(keptTab)" } }
-      """#.utf8
-    ).write(to: file)
-
-    let (store, error) = WorkspaceStore.restored(from: WorkspaceSnapshot(fileURL: file))
-
-    #expect(error == nil, "\(String(describing: error))")
-    #expect(store.workspace.projects.map(\.name) == ["demo"])
-    #expect(store.workspace.tabs.map(\.id) == [keptTab])
-    #expect(store.workspace.sessions.map(\.id) == [kept])
-    #expect(store.workspace.activeTab(in: "/repos/demo")?.id == keptTab)
-    WorkspaceInvariants.check(store.workspace, "restored")
-    #expect(FileManager.default.fileExists(atPath: file.path), "nothing was moved aside")
-  }
-}
-
-/// Notifications were one name and are three toggles. Tested through the store, since it
-/// is the file on disk that has to survive the first launch and the first save after it.
-@Suite @MainActor
-struct NotificationPreferenceMigrationTests {
-  @Test func thePickersLastRungComesBackAsThreeTogglesAndIsSavedThatWay() throws {
-    let file = Scratch.path("scratch")
-      .appendingPathComponent("state.json")
-    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
-    try FileManager.default.createDirectory(
-      at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
-    try Data(
-      #"{ "projects": [ { "path": "file:///repos/demo/" } ], "notifications": "attentionAndDone" }"#
-        .utf8
-    ).write(to: file)
-
-    let snapshot = WorkspaceSnapshot(fileURL: file)
-    let (store, error) = WorkspaceStore.restored(from: snapshot)
-    #expect(error == nil, "\(String(describing: error))")
-    #expect(
-      store.workspace.notifications
-        == NotificationPreference(
-          attention: true, error: true, done: true))
-
-    try store.save()
-    let written = try #require(
-      try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
-    #expect(
-      written["notifications"] as? [String: Bool] == [
-        "attention": true, "error": true, "done": true,
-      ],
-      "written as toggles, not as the name it was read from")
-
-    let (again, reloadError) = WorkspaceStore.restored(from: snapshot)
-    #expect(reloadError == nil, "\(String(describing: reloadError))")
-    #expect(again.workspace.notifications == store.workspace.notifications)
-  }
-}
-
-/// A state file from before columns: tabs name no column, and the active tab per worktree
-/// sits under a key this build no longer has a property for.
-@Suite @MainActor
-struct TabGroupMigrationTests {
-  @Test func aStateFileWrittenBeforeColumnsComesBackAsOneColumnPerWorktree() throws {
-    let file = Scratch.path("scratch")
-      .appendingPathComponent("state.json")
-    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
-    try FileManager.default.createDirectory(
-      at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
-
-    let (shell, agent, left, right, lonely) = (UUID(), UUID(), UUID(), UUID(), UUID())
-    let (shellTab, agentTab, splitTab, featureTab) = (UUID(), UUID(), UUID(), UUID())
-    func session(_ id: UUID, _ worktree: String, _ title: String) -> String {
-      """
-      { "id": "\(id)", "worktreeID": "\(worktree)", "title": "\(title)",
-        "workingDirectory": "file://\(worktree)/" }
-      """
-    }
-    try Data(
-      #"""
-      { "projects": [ { "path": "file:///repos/demo/" } ],
-        "worktrees": [
-          { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "a", "branch": "main" },
-          { "path": "file:///repos/demo-feat/", "projectID": "/repos/demo", "head": "b", "branch": "feat" } ],
-        "sessions": [
-          \#(session(shell, "/repos/demo", "zsh")),
-          \#(session(agent, "/repos/demo", "claude")),
-          \#(session(left, "/repos/demo", "left")),
-          \#(session(right, "/repos/demo", "right")),
-          \#(session(lonely, "/repos/demo-feat", "zsh")) ],
-        "tabs": [
-          { "id": "\#(shellTab)", "worktreeID": "/repos/demo", "focusedSessionID": "\#(shell)",
-            "root": { "terminal": { "_0": "\#(shell)" } } },
-          { "id": "\#(agentTab)", "worktreeID": "/repos/demo", "focusedSessionID": "\#(agent)",
-            "customTitle": "build", "root": { "terminal": { "_0": "\#(agent)" } } },
-          { "id": "\#(splitTab)", "worktreeID": "/repos/demo", "focusedSessionID": "\#(right)",
-            "root": { "split": { "axis": "horizontal", "weights": [3, 1], "children": [
-              { "terminal": { "_0": "\#(left)" } }, { "terminal": { "_0": "\#(right)" } } ] } } },
-          { "id": "\#(featureTab)", "worktreeID": "/repos/demo-feat", "focusedSessionID": "\#(lonely)",
-            "root": { "terminal": { "_0": "\#(lonely)" } } } ],
-        "activeTabByWorktree": { "/repos/demo": "\#(agentTab)" } }
-      """#.utf8
-    ).write(to: file)
-
-    let (store, error) = WorkspaceStore.restored(from: WorkspaceSnapshot(fileURL: file))
-    let ws = store.workspace
-
-    #expect(error == nil, "\(String(describing: error))")
-    WorkspaceInvariants.check(ws, "migrated")
-
-    #expect(ws.groups(in: "/repos/demo").count == 1)
-    #expect(ws.groups(in: "/repos/demo-feat").count == 1)
-    let column = ws.groups(in: "/repos/demo")[0]
-    #expect(ws.tabs(in: column.id).map(\.id) == [shellTab, agentTab, splitTab])
-
-    // What the user was looking at, which is the whole reason the old key is
-    // still read.
-    #expect(ws.activeTab(in: "/repos/demo")?.id == agentTab)
-    #expect(ws.activeTab(in: "/repos/demo-feat")?.id == featureTab, "its only tab")
-
-    #expect(ws.tab(agentTab)?.customTitle == "build")
-    #expect(ws.tab(splitTab)?.isSplit == true)
-    #expect(ws.tab(splitTab)?.focusedSessionID == right)
-    #expect(ws.sessions.count == 5)
-    #expect(ws.groups(in: "/repos/demo")[0].weight == 1)
-  }
-
-  @Test func theMigratedStateIsWhatIsSavedFromThenOn() throws {
-    var workspace = Workspace()
-    let project = Project(path: URL(fileURLWithPath: "/repos/demo"))
-    let worktree = Worktree(path: project.path, projectID: project.id, head: "a", branch: "main")
-    let session = TerminalSession(
-      worktreeID: worktree.id, workingDirectory: worktree.path, title: "sh")
-    var group = TabGroup(worktreeID: worktree.id)
-    let tab = TerminalTab(worktreeID: worktree.id, groupID: group.id, session: session.id)
-    group.activeTabID = tab.id
-    workspace.projects = [project]
-    workspace.worktrees = [worktree]
-    workspace.sessions = [session]
-    workspace.tabs = [tab]
-    workspace.tabGroups = [group]
-    workspace.focusedGroupByWorktree = [worktree.id: group.id]
-
-    let json = String(decoding: try JSONEncoder().encode(workspace), as: UTF8.self)
-    #expect(json.contains("tabGroups"))
-    #expect(json.contains("focusedGroupByWorktree"))
-    #expect(!json.contains("activeTabByWorktree"), "the old key is read, never written")
-
-    var reloaded = try JSONDecoder().decode(Workspace.self, from: Data(json.utf8))
-    reloaded.repairReferences()
-    #expect(reloaded == workspace, "a saved layout comes back exactly")
+    let stateFile = WorkspaceFile(fileURL: file)
+    try stateFile.save(workspace)
+    #expect(try stateFile.load() == workspace)
   }
 }

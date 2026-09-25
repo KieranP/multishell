@@ -21,6 +21,19 @@ public struct PresentedError: Identifiable {
   }
 
   public init(_ error: any Error) {
+    let alert =
+      Self.setupAlert(error) ?? Self.worktreeAlert(error) ?? Self.processAlert(error)
+      ?? Self.fileAlert(error)
+      ?? (t("error.something-went-wrong"), Self.describe(error))
+    title = alert.title
+    message = alert.message
+    saysGitIsMissing = error is GitUnavailable
+  }
+
+  private typealias Alert = (title: String, message: String)
+
+  /// A hook, or a file list, around a create or a removal.
+  private static func setupAlert(_ error: any Error) -> Alert? {
     switch error {
     case let failure as HookFailure:
       // A pre hook's failure stopped the operation, a post hook's came
@@ -31,100 +44,124 @@ public struct PresentedError: Identifiable {
         case .timedOut: t("error.hook-did-not-finish")
         case .stopped: t("error.hook-was-stopped")
         }
-      title =
+      let title =
         switch failure.stage {
         case .preCreate: t("error.pre-create-hook", ending)
         case .postCreate: t("error.post-create-hook", ending)
         case .preDelete: t("error.pre-delete-hook", ending)
         case .postDelete: t("error.post-delete-hook", ending)
         }
-      message = Self.describe(failure.underlying)
+      return (title, describe(failure.underlying))
     case let failure as WorktreeFileFailure:
-      title =
+      let title =
         switch failure.placement {
         case .link: t("error.files-not-linked")
         case .copy: t("error.files-not-copied")
         }
-      message = ([failure.description] + Self.describeSkipped(failure.skippedEntries))
-        .joined(separator: "\n\n")
+      return (
+        title, ([failure.description] + describeSkipped(failure.skipped)).joined(separator: "\n\n")
+      )
+    case let skipped as WorktreeFileSkipped:
+      return (t("error.files-skipped-title"), describeSkipped(skipped.entries).joined())
+    default:
+      return nil
+    }
+  }
+
+  /// What git or the Trash refused about a worktree or a branch.
+  private static func worktreeAlert(_ error: any Error) -> Alert? {
+    switch error {
     case let failure as BranchDeletionFailure:
-      title = t("error.branch-not-deleted", failure.branch)
-      message = Self.describe(failure.underlying)
+      return (t("error.branch-not-deleted", failure.branch), describe(failure.underlying))
     case let failure as TrashFailure:
-      title = t("error.trash-refused")
-      message = "\(failure.path.path)\n\n\(Self.describe(failure.underlying))"
+      return (t("error.trash-refused"), "\(failure.path.path)\n\n\(describe(failure.underlying))")
     case let failure as WorktreeForgetFailure:
-      title = t("error.forget-refused")
-      message = "\(failure.path.path)\n\n\(Self.describe(failure.underlying))"
-    case let skipped as WorktreeFilesSkipped:
-      title = t("error.files-skipped-title")
-      message = Self.describeSkipped(skipped.entries).joined()
+      return (
+        t("error.forget-refused"), "\(failure.path.path)\n\n\(describe(failure.underlying))"
+      )
     case let failure as NotTheCheckout:
-      title = t("error.not-the-checkout-title")
-      message = t("error.not-the-checkout-message", failure.path.path)
+      return (
+        t("error.not-the-checkout-title"), t("error.not-the-checkout-message", failure.path.path)
+      )
+    case let invalid as InvalidBranchName:
+      return (t("error.invalid-branch-title"), invalid.errorDescription ?? "")
+    case let repository as NotAWorktree:
+      return (t("error.not-a-worktree-title"), repository.errorDescription ?? "")
+    case is GitUnavailable:
+      return (t("error.git-not-found-title"), t("error.git-not-found-message"))
+    default:
+      return nil
+    }
+  }
+
+  /// A child process, a pipe or the socket.
+  private static func processAlert(_ error: any Error) -> Alert? {
+    switch error {
     case let failure as ProcessFailure where failure.message.contains("invalid reference: HEAD"):
       // An unborn HEAD: the repository has never been committed to.
-      title = t("error.no-commits-title")
-      message = t("error.no-commits-message")
+      return (t("error.no-commits-title"), t("error.no-commits-message"))
     case let failure as ProcessFailure where failure.arguments.first == "fetch":
       // Fetch runs with no terminal to answer on, so a repository wanting a
       // password waits out the timeout: the likeliest way this ends.
       switch failure.stop {
       case .timedOut:
-        title = t("error.fetch-timed-out-title")
-        message = t("error.fetch-timed-out-message")
+        return (t("error.fetch-timed-out-title"), t("error.fetch-timed-out-message"))
       case .stopped, .none:
-        title = t("error.fetch-failed-title")
-        message =
-          failure.message.isEmpty
-          ? t("error.exit-status", failure.status) : failure.message
+        return (
+          t("error.fetch-failed-title"),
+          failure.message.isEmpty ? t("error.exit-status", failure.status) : failure.message
+        )
       }
     case let failure as ProcessFailure:
-      title = t(
-        "error.command-failed-title",
-        failure.executable, failure.arguments.prefix(2).joined(separator: " "))
-      message =
+      return (
+        t(
+          "error.command-failed-title",
+          failure.executable, failure.arguments.prefix(2).joined(separator: " ")),
         failure.message.isEmpty ? t("error.exit-status", failure.status) : failure.message
-    case let invalid as InvalidBranchName:
-      title = t("error.invalid-branch-title")
-      message = invalid.errorDescription ?? ""
-    case let repository as NotAWorktree:
-      title = t("error.not-a-worktree-title")
-      message = repository.errorDescription ?? ""
-    case is GitUnavailable:
-      title = t("error.git-not-found-title")
-      message = t("error.git-not-found-message")
-      saysGitIsMissing = true
+      )
     case let failure as SocketFailure:
-      (title, message) = Self.socketAlert(failure)
+      return socketAlert(failure)
     case let failure as PipeUnavailable:
-      title = t("error.no-pipe-title")
-      message = Self.pipeMessage(failure)
-    case let entries as UnreadableHookEntries:
-      title = t("error.unknown-hooks-title")
-      message = t("error.unknown-hooks-message", entries.file.path, entries.event)
-    case let section as UnreadableHookSection:
-      title = t("error.unknown-hooks-title")
-      message = t("error.unknown-hooks-section-message", section.file.path)
-    case let unparsable as UnparsableSettingsFile:
-      title = t("error.unparsable-settings-title")
-      message = t("error.unparsable-settings-message", unparsable.file.path)
-    case let shape as UnexpectedSettingsShape:
-      title = t("error.settings-shape-title")
-      message = t("error.settings-shape-message", shape.file.path)
-    case let state as UnreadableState:
-      title = t("error.unreadable-state-title")
-      message = t(
-        "error.unreadable-state-message",
-        state.backup.lastPathComponent, String(describing: state.underlying))
-    case let state as UnmovedState:
-      title = t("error.unreadable-state-title")
-      message = t(
-        "error.unmoved-state-message",
-        state.file.path, String(describing: state.underlying))
+      return (t("error.no-pipe-title"), pipeMessage(failure))
     default:
-      title = t("error.something-went-wrong")
-      message = Self.describe(error)
+      return nil
+    }
+  }
+
+  /// An agent's settings file, or the app's own state file, that would not read.
+  private static func fileAlert(_ error: any Error) -> Alert? {
+    switch error {
+    case let entries as UnreadableHookEntries:
+      return (
+        t("error.unknown-hooks-title"),
+        t("error.unknown-hooks-message", entries.file.path, entries.event)
+      )
+    case let section as UnreadableHookSection:
+      return (
+        t("error.unknown-hooks-title"),
+        t("error.unknown-hooks-section-message", section.file.path)
+      )
+    case let unparsable as UnparsableSettingsFile:
+      return (
+        t("error.unparsable-settings-title"),
+        t("error.unparsable-settings-message", unparsable.file.path)
+      )
+    case let shape as UnexpectedSettingsShape:
+      return (t("error.settings-shape-title"), t("error.settings-shape-message", shape.file.path))
+    case let state as UnreadableState:
+      return (
+        t("error.unreadable-state-title"),
+        t(
+          "error.unreadable-state-message",
+          state.backup.lastPathComponent, String(describing: state.underlying))
+      )
+    case let state as UnmovedState:
+      return (
+        t("error.unreadable-state-title"),
+        t("error.unmoved-state-message", state.file.path, String(describing: state.underlying))
+      )
+    default:
+      return nil
     }
   }
 
@@ -137,9 +174,8 @@ public struct PresentedError: Identifiable {
   /// A hook's own words, startup noise cut away, then its exit status.
   /// Never the command line it ran as; a stop gives its reason instead.
   private static func describe(_ error: any Error) -> String {
-    // Each says it in English on itself, two from a target with no
+    // Each says it in English on itself, one from a target with no
     // catalogue to reach; see Docs/design/translation.md.
-    if error is ShellUnavailable { return t("error.no-shell") }
     if error is TrashTookNothing { return t("error.trash-took-nothing") }
     if let failure = error as? PipeUnavailable { return Self.pipeMessage(failure) }
     if let failure = error as? ProcessFailure {
@@ -162,7 +198,7 @@ public struct PresentedError: Identifiable {
 
   /// A second copy holding the socket is its own alert; the rest say what
   /// the call was. Only `strerror` stays in English, being the system's.
-  private static func socketAlert(_ failure: SocketFailure) -> (title: String, message: String) {
+  private static func socketAlert(_ failure: SocketFailure) -> Alert {
     switch failure.kind {
     case .inUse:
       (t("error.another-app-title"), t("error.another-app-message", failure.path))

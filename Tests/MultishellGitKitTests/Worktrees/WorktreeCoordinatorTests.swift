@@ -1,7 +1,5 @@
 import Foundation
 import MultishellCore
-import MultishellProcess
-import Synchronization
 import TestScratch
 import Testing
 
@@ -25,7 +23,7 @@ struct WorktreeCoordinatorTests {
     #expect(path.deletingLastPathComponent().lastPathComponent == "trees")
     #expect(FileManager.default.fileExists(atPath: path.appendingPathComponent("hook.txt").path))
 
-    let worktrees = try await coordinator.refresh(project)
+    let worktrees = try await coordinator.git.list(project)
     #expect(worktrees.count == 2)
     #expect(worktrees.contains { $0.branch == "kieran/tabs" })
   }
@@ -41,10 +39,10 @@ struct WorktreeCoordinatorTests {
     let coordinator = repo.coordinator
     try await coordinator.create(branch: "scratch", in: project, settings: settings)
 
-    let worktree = try await coordinator.refresh(project).first { $0.branch == "scratch" }
+    let worktree = try await coordinator.git.list(project).first { $0.branch == "scratch" }
     try await coordinator.remove(#require(worktree), in: project)
 
-    #expect(try await coordinator.refresh(project).count == 1)
+    #expect(try await coordinator.git.list(project).count == 1)
     #expect(
       FileManager.default.fileExists(
         atPath: project.path.appendingPathComponent("deleted.txt").path))
@@ -62,7 +60,7 @@ struct WorktreeCoordinatorTests {
     await #expect(throws: HookFailure.self) {
       try await coordinator.create(branch: "doomed", in: project, settings: settings)
     }
-    #expect(try await coordinator.refresh(project).contains { $0.branch == "doomed" })
+    #expect(try await coordinator.git.list(project).contains { $0.branch == "doomed" })
   }
 
   @Test func aFailingPreCreateHookLeavesNoWorktreeAndNoBranch() async throws {
@@ -75,7 +73,7 @@ struct WorktreeCoordinatorTests {
       try await repo.coordinator.create(branch: "refused", in: project, settings: repo.trees)
     }
 
-    #expect(try await repo.coordinator.refresh(project).count == 1)
+    #expect(try await repo.coordinator.git.list(project).count == 1)
     #expect(try await repo.branches() == ["main"], "git was never asked")
     #expect(
       !FileManager.default.fileExists(
@@ -109,14 +107,14 @@ struct WorktreeCoordinatorTests {
     project.settings = ProjectSettings(preDeleteHook: "exit 1")
     let path = try await repo.coordinator.create(branch: "kept", in: project, settings: repo.trees)
     let worktree = try #require(
-      try await repo.coordinator.refresh(project).first { $0.branch == "kept" })
+      try await repo.coordinator.git.list(project).first { $0.branch == "kept" })
 
     await #expect(throws: HookFailure.self) {
       try await repo.coordinator.remove(worktree, in: project)
     }
 
     #expect(FileManager.default.fileExists(atPath: path.path))
-    #expect(try await repo.coordinator.refresh(project).count == 2)
+    #expect(try await repo.coordinator.git.list(project).count == 2)
   }
 
   @Test func aPreDeleteHookRunsInTheWorktreeBeforeItGoes() async throws {
@@ -128,7 +126,7 @@ struct WorktreeCoordinatorTests {
     let path = try await repo.coordinator.create(
       branch: "leaving", in: project, settings: repo.trees)
     let worktree = try #require(
-      try await repo.coordinator.refresh(project).first { $0.branch == "leaving" })
+      try await repo.coordinator.git.list(project).first { $0.branch == "leaving" })
 
     try await repo.coordinator.remove(worktree, in: project)
 
@@ -152,7 +150,7 @@ struct WorktreeCoordinatorTests {
     let path = try await repo.coordinator.create(
       branch: "vanished", in: project, settings: repo.trees)
     let worktree = try #require(
-      try await repo.coordinator.refresh(project).first { $0.branch == "vanished" })
+      try await repo.coordinator.git.list(project).first { $0.branch == "vanished" })
     try FileManager.default.removeItem(at: path)
 
     try await repo.coordinator.remove(worktree, in: project)
@@ -164,7 +162,7 @@ struct WorktreeCoordinatorTests {
       return trimmed.hasPrefix("/private/") ? String(trimmed.dropFirst("/private".count)) : trimmed
     }
     #expect(plain(ran) == plain(project.path.path))
-    #expect(try await repo.coordinator.refresh(project).count == 1)
+    #expect(try await repo.coordinator.git.list(project).count == 1)
   }
 
   @Test func aMultiLineHookRunsItsLinesInOrderAndStopsAtAFailure() async throws {
@@ -187,21 +185,20 @@ struct WorktreeCoordinatorTests {
   @Test func hooksRunThroughTheShellTheProjectChose() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
+    let shells = try Scratch.directory("shells")
+    defer { Scratch.remove(shells) }
     var project = repo.project
-    project.settings = ProjectSettings(
-      postCreateHook: "printf '%s|%s' \"$ZSH_VERSION\" \"$BASH_VERSION\" > shell.txt")
+    project.settings = ProjectSettings(postCreateHook: "true")
 
-    let zsh = try await repo.coordinator.create(
-      branch: "zsh", in: project, settings: repo.trees, shellPath: "/bin/zsh")
-    let underZsh = try String(contentsOf: zsh.appendingPathComponent("shell.txt"), encoding: .utf8)
-    #expect(underZsh.hasPrefix("|") == false && underZsh.hasSuffix("|"), "zsh set, bash not")
-
-    let bash = try await repo.coordinator.create(
-      branch: "bash", in: project, settings: repo.trees, shellPath: "/bin/bash")
-    let underBash = try String(
-      contentsOf: bash.appendingPathComponent("shell.txt"), encoding: .utf8)
-    #expect(underBash.hasPrefix("|"), "zsh not set under bash")
-    #expect(underBash.count > 1, "bash set")
+    for name in ["zsh", "bash"] {
+      let shell = try Scratch.script(
+        "printf %s \(name) > shell.txt", at: shells.appendingPathComponent(name))
+      let created = try await repo.coordinator.create(
+        branch: name, in: project, settings: repo.trees, shellPath: shell.path)
+      #expect(
+        try String(contentsOf: created.appendingPathComponent("shell.txt"), encoding: .utf8)
+          == name)
+    }
   }
 
   @Test func removingCanDeleteTheBranchAfterThePostHookHasSeenIt() async throws {
@@ -212,7 +209,7 @@ struct WorktreeCoordinatorTests {
       postDeleteHook: "git rev-parse --verify \"$MULTISHELL_BRANCH\" > hook-saw-branch.txt")
     try await repo.coordinator.create(branch: "done", in: project, settings: repo.trees)
     let worktree = try #require(
-      try await repo.coordinator.refresh(project).first { $0.branch == "done" })
+      try await repo.coordinator.git.list(project).first { $0.branch == "done" })
 
     try await repo.coordinator.remove(worktree, deletingBranch: true, in: project)
 
@@ -231,13 +228,14 @@ struct WorktreeCoordinatorTests {
     _ = try await repo.git.run(["add", "."], in: path)
     _ = try await repo.git.run(["commit", "-q", "-m", "unmerged"], in: path)
     let worktree = try #require(
-      try await repo.coordinator.refresh(repo.project).first { $0.branch == "unmerged" })
+      try await repo.coordinator.git.list(repo.project).first { $0.branch == "unmerged" })
 
     await #expect(throws: BranchDeletionFailure.self) {
       try await repo.coordinator.remove(worktree, deletingBranch: true, in: repo.project)
     }
 
-    #expect(try await repo.coordinator.refresh(repo.project).count == 1, "the worktree is gone")
+    #expect(
+      try await repo.coordinator.git.list(repo.project).count == 1, "the worktree is gone")
     #expect(try await repo.branches() == ["main", "unmerged"], "the branch is kept")
 
     try await repo.coordinator.deleteBranch("unmerged", force: true, in: repo.project)
@@ -253,7 +251,9 @@ struct WorktreeCoordinatorTests {
     _ = try await repo.git.run(
       ["worktree", "add", "-q", "--detach", path.path], in: repo.project.path)
     let worktree = try #require(
-      try await repo.coordinator.refresh(repo.project).first { $0.isDetached && !$0.isPrimary })
+      try await repo.coordinator.git.list(repo.project).first {
+        $0.isDetached && !$0.isPrimary
+      })
 
     try await repo.coordinator.remove(worktree, deletingBranch: true, in: repo.project)
 
@@ -263,7 +263,7 @@ struct WorktreeCoordinatorTests {
   @Test func creationReportsEachStepAndSkipsHooksWithNoScript() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    let steps = StepLog()
+    let steps = StepLog<WorktreeCreationStep>()
 
     try await repo.coordinator.create(
       branch: "plain", in: repo.project, settings: repo.trees, onStep: { steps.add($0) })
@@ -274,7 +274,7 @@ struct WorktreeCoordinatorTests {
     steps.clear()
     try await repo.coordinator.create(
       branch: "hooked", in: hooked, settings: repo.trees, onStep: { steps.add($0) })
-    #expect(steps.steps == [.preCreateHook, .addingWorktree, .postCreateHook])
+    #expect(steps.steps == [.preCreateHook, .addingWorktree])
 
     var refused = repo.project
     refused.settings = ProjectSettings(preCreateHook: "exit 1", postCreateHook: "true")
@@ -297,7 +297,7 @@ struct WorktreeCoordinatorTests {
 
     #expect(
       FileManager.default.fileExists(atPath: project.path.appendingPathComponent("pre.txt").path))
-    #expect(try await repo.coordinator.refresh(project).count == 2, "the worktree exists")
+    #expect(try await repo.coordinator.git.list(project).count == 2, "the worktree exists")
     #expect(!FileManager.default.fileExists(atPath: path.appendingPathComponent("post.txt").path))
 
     try await repo.coordinator.runPostCreate(for: project, worktreePath: path, branch: "halves")
@@ -307,10 +307,10 @@ struct WorktreeCoordinatorTests {
   @Test func removalReportsEachStepAndSkipsWhatDoesNotApply() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    let steps = RemovalStepLog()
+    let steps = StepLog<WorktreeRemovalStep>()
     try await repo.coordinator.create(branch: "plain", in: repo.project, settings: repo.trees)
     let plain = try #require(
-      try await repo.coordinator.refresh(repo.project).first { $0.branch == "plain" })
+      try await repo.coordinator.git.list(repo.project).first { $0.branch == "plain" })
 
     try await repo.coordinator.remove(plain, in: repo.project, onStep: { steps.add($0) })
     #expect(steps.steps == [.removingWorktree], "no hooks, branch kept")
@@ -320,7 +320,7 @@ struct WorktreeCoordinatorTests {
     hooked.settings = ProjectSettings(preDeleteHook: "true", postDeleteHook: "true")
     try await repo.coordinator.create(branch: "hooked", in: hooked, settings: repo.trees)
     let worktree = try #require(
-      try await repo.coordinator.refresh(hooked).first { $0.branch == "hooked" })
+      try await repo.coordinator.git.list(hooked).first { $0.branch == "hooked" })
     steps.clear()
     try await repo.coordinator.remove(
       worktree, deletingBranch: true, in: hooked, onStep: { steps.add($0) })
@@ -330,27 +330,10 @@ struct WorktreeCoordinatorTests {
   }
 
   @Test func recognisesADirectoryThatIsNotARepository() async throws {
-    let coordinator = WorktreeCoordinator(service: WorktreeService(git: try GitRunner()))
+    let coordinator = WorktreeCoordinator(git: WorktreeGit(runner: try GitRunner()))
     let empty = try Scratch.directory("empty")
     defer { try? FileManager.default.removeItem(at: empty) }
 
-    #expect(await coordinator.isRepository(empty) == false)
+    #expect(await coordinator.git.isRepository(empty) == false)
   }
-}
-
-/// Collects the steps a create reports, from whatever thread they arrive on.
-private final class StepLog: Sendable {
-  private let collected = Mutex<[WorktreeCreationStep]>([])
-
-  var steps: [WorktreeCreationStep] { collected.withLock { $0 } }
-  func add(_ step: WorktreeCreationStep) { collected.withLock { $0.append(step) } }
-  func clear() { collected.withLock { $0 = [] } }
-}
-
-final class RemovalStepLog: Sendable {
-  private let collected = Mutex<[WorktreeRemovalStep]>([])
-
-  var steps: [WorktreeRemovalStep] { collected.withLock { $0 } }
-  func add(_ step: WorktreeRemovalStep) { collected.withLock { $0.append(step) } }
-  func clear() { collected.withLock { $0 = [] } }
 }

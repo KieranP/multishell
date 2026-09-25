@@ -21,20 +21,17 @@ extension AppModel {
     return nil
   }
 
-  public func setOpensTerminalOnSelect(_ enabled: Bool) {
-    store.setOpensTerminalOnSelect(enabled)
-  }
-
-  public func setOpensTerminalOnCreate(_ enabled: Bool) {
-    store.setOpensTerminalOnCreate(enabled)
-  }
-
   /// The shell a tab in this worktree runs: the project's override, else
   /// the global choice, else `$SHELL`.
-  public func shellPath(forWorktree id: Worktree.ID) -> String {
-    guard let worktree = workspace.worktree(id), let project = workspace.project(worktree.projectID)
-    else { return ShellCatalogue.loginShellPath() }
-    return workspace.defaultShell(for: project) ?? ShellCatalogue.loginShellPath()
+  func shellPath(forWorktree id: Worktree.ID) -> String {
+    guard let worktree = workspace.worktree(id) else { return ShellCatalogue.loginShellPath() }
+    return shellPath(for: worktree)
+  }
+
+  /// The same for a worktree in hand, which may have left the list since.
+  func shellPath(for worktree: Worktree) -> String {
+    workspace.project(worktree.projectID).flatMap(workspace.defaultShell)
+      ?? ShellCatalogue.loginShellPath()
   }
 
   /// What the dropdown and captions call a stored shell.

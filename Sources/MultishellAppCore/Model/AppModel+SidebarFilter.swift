@@ -1,5 +1,3 @@
-import Foundation
-
 extension AppModel {
   /// Closing clears the filter, a field folded away being unable to say why
   /// rows are missing, and hands the keyboard back rather than dropping it.

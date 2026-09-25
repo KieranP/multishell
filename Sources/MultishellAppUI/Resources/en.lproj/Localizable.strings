@@ -90,7 +90,7 @@
 "hooks.create" = "Create";
 "hooks.delete" = "Delete";
 "hooks.environment" = "Environment";
-"hooks.environment-info" = "Each script runs through this project's shell, with your startup files read and these variables set. Pre-create and post-delete run in the repository, post-create in the new worktree, and pre-delete in the worktree, or in the repository when its directory is already gone. In sh, bash, zsh, dash and ksh the first failing line stops it; fish, csh and tcsh run every line. A shell Multishell does not know, such as nu, runs it through /bin/sh without your startup files. The Worktrees timeout applies.";
+"hooks.environment-info" = "Each script is sh, whatever your shell, with these variables set. This project's shell starts it, so your startup files set the environment, though their functions and aliases do not reach the script. Pre-create and post-delete run in the repository, post-create in the new worktree, and pre-delete in the worktree, or in the repository when its directory is already gone. The first failing line stops any script. A shell Multishell does not know, such as nu, reads no startup files. The Worktrees timeout applies.";
 "hooks.linked-paths" = "Link into new worktrees";
 "hooks.linked-paths-info" = "Symlinked in the new worktree back to the repository's own file, so node_modules or a build cache is one directory again. Same paths and patterns as the copy list. A list in %@ fills a blank one.";
 "hooks.post-create" = "Post-create";
@@ -135,6 +135,7 @@
 "menu.theme" = "Theme";
 "menu.undo" = "Undo";
 "notifications.header" = "Post a notification when a tab you are not looking at reports";
+"platform.applescript-unreadable" = "AppleScript would not read the script.";
 "platform.notification-settings" = "System Settings > Notifications";
 "project.active-first" = "Show active at the top";
 "project.active-first-info" = "Whether this project's worktrees with a terminal open, or with a reported state, are listed above the rest, whatever the global says.";
@@ -148,7 +149,7 @@
 "project.default-branch" = "Default branch";
 "project.default-branch-info" = "The branch this project's work is merged into; a worktree whose branch has landed on it gets a badge. Detected from origin/HEAD, then origin/main, origin/master, main, master.";
 "project.default-shell" = "Default shell";
-"project.default-shell-info" = "New tabs in this project's worktrees run this shell instead of the global choice, and so do its hooks.";
+"project.default-shell-info" = "New tabs in this project's worktrees run this shell instead of the global choice. Its hooks start in it for your startup files, then run as sh.";
 "project.export-info" = "Writes this project's settings, hooks and file lists, as they are in effect, to %@ at the repository root for the team to commit. Anyone who adds the repository gets them as defaults.";
 "project.flags" = "CLI Flags";
 "project.flags-info" = "Added to this project's agent command line instead of the global flags. Blank runs it with none, whatever the global passes.";
@@ -253,7 +254,7 @@
 "tab.state-click-to-clear" = "%@. Click to clear.";
 "tab.use-shell-title" = "Use Shell Title";
 "terminal.default-shell" = "Default shell:";
-"terminal.default-shell-info" = "What new tabs run, and what project hooks run through. Running terminals keep their shell. zsh and bash get the command-status hooks. Any project can override this.";
+"terminal.default-shell-info" = "What new tabs run. Project hooks start in it for your startup files, then run as sh. Running terminals keep their shell. zsh and bash get the command-status hooks. Any project can override this.";
 "terminal.open-on-create" = "Open a terminal when a worktree is created";
 "terminal.open-on-create-info" = "On, a worktree gets its first shell as soon as it is created, or once its post-create hook has finished. Off, it is shown empty. Any project can override this.";
 "terminal.open-on-select" = "Open a terminal when a worktree is selected";

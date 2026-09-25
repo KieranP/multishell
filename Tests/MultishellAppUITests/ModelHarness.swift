@@ -23,7 +23,7 @@ final class ModelHarness {
     self.directory = directory
     try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     let store = WorkspaceStore(
-      snapshot: WorkspaceSnapshot(fileURL: directory.appendingPathComponent("state.json")))
+      file: WorkspaceFile(fileURL: directory.appendingPathComponent("state.json")))
     project = store.addProject(at: directory)
     self.store = store
     model = MultishellAppUI.AppModel(
@@ -40,23 +40,4 @@ final class ModelHarness {
   func settings(of project: Project) -> ProjectSettings {
     model.settings(of: project)
   }
-}
-
-@MainActor
-final class NoEngine: TerminalSurfaceHost {
-  var openSessionIDs: Set<TerminalSession.ID> = []
-  weak var delegate: (any TerminalHostDelegate)?
-  func open(_ session: TerminalSession) throws {}
-  func close(_ id: TerminalSession.ID) {}
-  func focus(_ id: TerminalSession.ID) {}
-  func paste(_ text: String, into id: TerminalSession.ID) -> Bool { false }
-  func view(for id: TerminalSession.ID) -> NSView? { nil }
-  func apply(_ theme: Theme, appearance: Appearance) {}
-}
-
-@MainActor
-final class NoWatcher: DirectoryWatcher {
-  var onChange: (@MainActor ([URL]) -> Void)?
-  func watch(_ directories: [URL]) {}
-  func stop() {}
 }

@@ -77,7 +77,7 @@ struct AgentFlagsTests {
       AgentFlags.arguments("--name={{branch}}", values: values) == ["--name=feat/{{project}}"])
     #expect(AgentFlags.arguments("--w={{worktree}}", values: values) == ["--w={{project_path}}"])
     #expect(
-      AgentFlags.customLine("run --name={{branch}}", values: values).environment
+      AgentFlags.customCommandLine("run --name={{branch}}", values: values).environment
         == ["MULTISHELL_BRANCH": "feat/{{project}}"])
   }
 
@@ -111,14 +111,14 @@ struct AgentFlagsTests {
       let flags = AgentFlags.arguments("--name={{branch}}", values: values)
       #expect(flags == ["--name=\(hostile)"], "one argument, expanded but not run")
 
-      let custom = AgentFlags.customLine("my-agent --name={{branch}}", values: values)
+      let custom = AgentFlags.customCommandLine("my-agent --name={{branch}}", values: values)
       #expect(custom.text == "my-agent --name=\"$MULTISHELL_BRANCH\"", "read, never written in")
       #expect(custom.environment == ["MULTISHELL_BRANCH": hostile])
     }
   }
 
   @Test func theCustomLineReadsEachPlaceholderFromTheEnvironmentWhereItsQuoteLeavesIt() {
-    let line = AgentFlags.customLine(
+    let line = AgentFlags.customCommandLine(
       #"my-agent --name={{worktree}} "in {{project_path}}" 'at {{worktree_path}}' {{nonsense}}"#,
       values: values)
     #expect(
@@ -132,43 +132,7 @@ struct AgentFlagsTests {
         "MULTISHELL_WORKTREE_PATH": "/Users/dev/Work/multishell-worktrees/fix",
       ], "only what the line names")
     #expect(
-      AgentFlags.customLine(#"my-agent \{{branch}}"#, values: values).text
+      AgentFlags.customCommandLine(#"my-agent \{{branch}}"#, values: values).text
         == #"my-agent \{{branch}}"#, "an escaped brace is the user's text")
-  }
-}
-
-@Suite
-struct AgentFlagResolutionTests {
-  private let project = Project(path: URL(fileURLWithPath: "/repos/a"))
-
-  @Test func aProjectsFlagsOverrideTheGlobalOnesForItsAgent() {
-    var workspace = Workspace()
-    workspace.preferredAgentID = AgentCatalogue.claudeID
-    workspace.agentFlags = ["claude": "--model opus", "codex": "--full-auto"]
-
-    #expect(workspace.agentFlags(for: project, agent: "claude") == "--model opus")
-    #expect(workspace.agentFlags(for: project, agent: "codex") == "--full-auto")
-    #expect(workspace.agentFlags(for: project, agent: "opencode") == "", "nothing stored")
-
-    let quiet = Project(path: project.path, settings: ProjectSettings(agentFlags: ""))
-    #expect(quiet.settings.agentFlags != nil, "blank is an override, not an absent key")
-    #expect(
-      workspace.agentFlags(for: quiet, agent: "claude") == "",
-      "a project can run the agent bare under a global that passes flags")
-
-    let own = Project(path: project.path, settings: ProjectSettings(agentFlags: "--model haiku"))
-    #expect(workspace.agentFlags(for: own, agent: "claude") == "--model haiku")
-  }
-
-  /// The settings field writes on every keystroke, so the space between two
-  /// flags has to survive being typed; only an empty line drops the entry.
-  @Test @MainActor func storingFlagsKeepsWhatWasTypedAndClearingRemovesTheEntry() {
-    let store = WorkspaceStore()
-    store.setAgentFlags("--model opus ", for: "claude")
-    #expect(store.workspace.agentFlags["claude"] == "--model opus ")
-    store.setAgentFlags(" ", for: "claude")
-    #expect(store.workspace.agentFlags["claude"] == " ", "a space is a flag half typed")
-    store.setAgentFlags("", for: "claude")
-    #expect(store.workspace.agentFlags["claude"] == nil, "cleared, so nothing is left behind")
   }
 }

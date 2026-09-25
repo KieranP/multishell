@@ -1,4 +1,3 @@
-import AppKit
 import SwiftUI
 
 /// Hands the enclosing `NSWindow` to whoever needs it, once the view is in

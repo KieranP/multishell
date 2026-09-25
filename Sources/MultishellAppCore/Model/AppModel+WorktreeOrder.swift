@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import MultishellGitKit
 
 extension AppModel {
   /// Orders a project's rows as its settings ask. Takes the worktrees rather
@@ -14,22 +15,22 @@ extension AppModel {
       displayName: { self.workspace.displayName(of: $0) },
       isActive: { self.isActive($0.id, sessions: sessions) },
       lastCommit: { self.lastCommits[$0.id] })
-    return worktreeOrders.rows(of: project.id, keys: keys, order: order)
+    return worktreeOrderMemo.rows(of: project.id, keys: keys, order: order)
   }
 
   /// The rule in force for a project, measured against the merge badges'
   /// trunk. Looked up again, the settings window being its own scene.
-  func worktreeOrder(for project: Project) -> WorktreeOrder {
+  private func worktreeOrder(for project: Project) -> WorktreeOrder {
     let resolved = resolved(workspace.project(project.id) ?? project)
     return WorktreeOrder(
-      order: workspace.worktreeSortOrder(for: resolved),
+      sortOrder: workspace.worktreeSortOrder(for: resolved),
       activeFirst: workspace.showsActiveWorktreesFirst(for: resolved),
-      trunkBranch: mergeBase(of: project)?.branch)
+      trunkBranch: mergeBase(of: project)?.branchName)
   }
 
   /// Whether anything is going on in a worktree: a terminal open in it, or
   /// a state something reported for it.
-  public func isActive(_ id: Worktree.ID, sessions: WorktreeSessions? = nil) -> Bool {
+  func isActive(_ id: Worktree.ID, sessions: WorktreeSessions? = nil) -> Bool {
     let sessions = sessions ?? worktreeSessions
     return !sessions[id].isEmpty || state(ofWorktree: id, sessions: sessions) != nil
   }
@@ -40,13 +41,5 @@ extension AppModel {
 
   public func setShowsActiveWorktreesFirst(_ enabled: Bool) {
     store.setShowsActiveWorktreesFirst(enabled)
-  }
-
-  /// Every badge is re-read at once rather than at the next poll, which a
-  /// slow checkout paces minutes out: the setting was changed to be seen.
-  public func setGitStatusIndicator(_ indicator: GitStatusIndicator) {
-    store.setGitStatusIndicator(indicator)
-    statusReads.invalidate()
-    Task { await refreshStatuses() }
   }
 }

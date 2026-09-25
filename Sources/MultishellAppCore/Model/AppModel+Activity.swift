@@ -1,4 +1,3 @@
-import Foundation
 import MultishellCore
 
 extension AppModel {
@@ -29,15 +28,15 @@ extension AppModel {
     noteStateActivity(in: id)
   }
 
-  /// What the tab strip shows: the user's name, else what the shell last
-  /// reported, else the tab's starting title.
-  public func title(of tab: TerminalTab) -> String {
-    tab.customTitle ?? sessionTitles[tab.focusedSessionID] ?? workspace.title(of: tab)
-  }
-
-  /// One pane's, a split holding several: the user's name for the tab, else
-  /// what this pane's shell last reported, else its starting title.
-  public func title(ofPane session: TerminalSession, in tab: TerminalTab) -> String {
-    tab.customTitle ?? sessionTitles[session.id] ?? session.displayTitle
+  func noteCommandFinished(in id: TerminalSession.ID, exitCode: Int32?) {
+    if let session = workspace.session(id) {
+      scheduleStatusRefresh(of: session.worktreeID)
+    }
+    // An agent typed at the prompt was the foreground command, so the pane is
+    // a plain shell again; with the board closed no pid poll would say so.
+    setIfChanged(\.reportedAgents[id], nil)
+    mutateStates { $0.noteCommandFinished(in: id, exitCode: exitCode, isSeen: hasBeenSeen(id)) }
+    updateDockBadge()
+    updatePIDWatch()
   }
 }

@@ -1,3 +1,4 @@
+import Foundation
 import MultishellCore
 
 /// A worktree removal waiting on its dialog. The branch question is asked
@@ -12,7 +13,7 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
   }
 
   /// How a removal request proceeds under the settings.
-  public enum Decision: Equatable, Sendable {
+  enum Decision: Equatable, Sendable {
     case remove(deletingBranch: Bool)
     case ask(PendingWorktreeRemoval)
   }
@@ -22,7 +23,7 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
     public let label: String
     public let deletesBranch: Bool
 
-    public init(label: String, deletesBranch: Bool) {
+    init(label: String, deletesBranch: Bool) {
       self.label = label
       self.deletesBranch = deletesBranch
     }
@@ -82,7 +83,7 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
   /// What confirming the first button deletes.
   public var deletesBranch: Bool { branch == .decided(deletes: true) }
 
-  public static func decide(
+  static func decide(
     _ worktree: Worktree, customName: String? = nil, confirms: Bool, alwaysDeletesBranch: Bool,
     trashes: Bool = true, mergeState: WorktreeMergeState = .unknown
   ) -> Decision {
@@ -119,7 +120,7 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
 
   /// What the confirmation warns about beyond the removal: uncommitted files
   /// bound for the Trash or deletion, and the shells still running there.
-  public static func warning(
+  static func warning(
     changedFiles: Int, liveTerminals: Int, trashes: Bool = true
   )
     -> String?

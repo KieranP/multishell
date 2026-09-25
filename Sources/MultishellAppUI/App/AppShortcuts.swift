@@ -22,7 +22,7 @@ enum AppShortcuts {
   static let previousGroup = AppShortcut(.leftArrow, .option)
   /// The Agents board, in place of the selected worktree's terminals. Not
   /// Cmd+A, which is Select All in a pane and stays there.
-  static let showAgents = AppShortcut("a", .shift)
+  static let toggleAgentBoard = AppShortcut("a", .shift)
   static let undo = AppShortcut("z")
   static let redo = AppShortcut("z", .shift)
   static let nextTab = AppShortcut.control(.tab)
@@ -49,7 +49,7 @@ enum AppShortcuts {
     newTab, newShellTab, newAgentTab, closePane, closeTab, newWorktree,
     addProject, openInEditor, splitRight, splitDown,
     moveTabToNewGroup, nextGroup, previousGroup,
-    showAgents, undo, redo, nextTab, previousTab,
+    toggleAgentBoard, undo, redo, nextTab, previousTab,
     find, findNext, findPrevious, closeFind,
     cut, copy, paste, selectAll,
   ]

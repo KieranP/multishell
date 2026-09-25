@@ -2,7 +2,6 @@ import Foundation
 import MultishellCore
 import MultishellGitKit
 import MultishellProcess
-import Observation
 
 /// Wires the core to a GUI and turns view actions into store mutations;
 /// see Docs/design/architecture.md.
@@ -13,7 +12,7 @@ public final class AppModel<Surface> {
   // coarsens what `@Observable` tracks.
 
   let host: any TerminalSurfaceHost<Surface>
-  public let platform: any Platform
+  let platform: any Platform
   @ObservationIgnored let store: WorkspaceStore
   @ObservationIgnored let registry: SessionRegistry
   @ObservationIgnored let stateSource: any SessionStateSource
@@ -29,7 +28,7 @@ public final class AppModel<Surface> {
   public var presentedError: PresentedError?
   public var newWorktreeRequest: NewWorktreeRequest?
   /// A removal waiting on the confirmation dialog.
-  public var pendingRemoval: PendingWorktreeRemoval?
+  public var pendingWorktreeRemoval: PendingWorktreeRemoval?
   /// The trust question about one project's shared hooks, waiting on its
   /// dialog.
   public var pendingSharedSettingsTrust: PendingSharedSettingsTrust?
@@ -52,10 +51,10 @@ public final class AppModel<Surface> {
   public var settingsProjectID: Project.ID?
   /// The worktree showing its name field. Runtime state, so the menu that
   /// starts a rename and the row that draws it need not know each other.
-  public var renamingWorktreeID: Worktree.ID?
+  public internal(set) var renamingWorktreeID: Worktree.ID?
   /// The tab whose strip shows a name field, for the same reason the worktree
   /// above has one: a commit arriving after the edit ended must be ignored.
-  public var renamingTabID: TerminalTab.ID?
+  public internal(set) var renamingTabID: TerminalTab.ID?
   /// The panes with a find bar up, each pane's its own; see `showFind`.
   /// Runtime state, dropped with the session.
   public internal(set) var findingSessionIDs: Set<TerminalSession.ID> = []
@@ -70,7 +69,7 @@ public final class AppModel<Surface> {
   var findSelections: Set<TerminalSession.ID> = []
   /// The pane whose bar's field has the keyboard, which the menu's find items
   /// act on ahead of the focused pane, a field taking no store focus.
-  public internal(set) var findFieldPane: TerminalSession.ID?
+  var findFieldPane: TerminalSession.ID?
 
   /// What a tab drag is doing. Here, not in the column tree that draws it,
   /// because a sidebar row takes a drop too and could not reach a `@State`.
@@ -99,17 +98,17 @@ public final class AppModel<Surface> {
 
   /// Which stage a create is in while the sheet still waits on it: the
   /// pre-create hook and `git worktree add`. `nil` when none is running.
-  public var worktreeCreationStep: WorktreeCreationStep?
+  public internal(set) var worktreeCreationStep: WorktreeCreationStep?
   /// The create or remove running on each worktree, shown in its detail pane;
   /// see `WorktreeOperations` for who owns an entry.
-  public var worktreeOperations = WorktreeOperations()
+  public internal(set) var worktreeOperations = WorktreeOperations()
   /// The work building a worktree. Not observed: the pane draws from
   /// `worktreeOperations` beside it.
   @ObservationIgnored var workInFlight = WorktreeWorkInFlight()
 
   /// Sessions with a running shell, mirrored from the host after each
   /// reconcile so views can observe it; the host itself is not observable.
-  public var liveSessions: Set<TerminalSession.ID> = []
+  public internal(set) var liveSessions: Set<TerminalSession.ID> = []
   /// What each running shell last said its title was. Kept apart from the
   /// workspace so a prompt does not re-render the sidebar or schedule a save.
   var sessionTitles: [TerminalSession.ID: String] = [:]
@@ -118,10 +117,10 @@ public final class AppModel<Surface> {
   var sessionStates = SessionStates()
   /// Which agent last reported in each session, so a dropped file and the
   /// board both know who is at the prompt; see `ReportedAgent`.
-  public internal(set) var reportedAgents: [TerminalSession.ID: ReportedAgent] = [:]
+  var reportedAgents: [TerminalSession.ID: ReportedAgent] = [:]
   /// The agent a shell said it was starting, kept only while that command
   /// runs. What marks a pane where nobody installed the agent's hooks.
-  public internal(set) var commandAgents: [TerminalSession.ID: String] = [:]
+  var commandAgents: [TerminalSession.ID: String] = [:]
   /// Keys whose banner may still be on screen, so one is taken back only
   /// where there is one to take back. A key leaves as its banner does.
   @ObservationIgnored var notifiedKeys: Set<SessionStates.Key> = []
@@ -143,41 +142,43 @@ public final class AppModel<Surface> {
   /// Runs the user's login shell for its environment. Settable so a test
   /// hands in a PATH of its own rather than reading the developer's machine.
   @ObservationIgnored var captureLoginEnvironment: @Sendable () async -> LoginShellEnvironment = {
-    await LoginShellEnvironment.capture()
+    await LoginShellEnvironment.capture(shellPath: ShellCatalogue.loginShellPath())
   }
   /// A harness stands in for both, the real ones writing the account's own files.
   @ObservationIgnored var refreshLaunchFiles: @Sendable (_ helper: URL?) -> (any Error)? =
     LaunchFiles.refresh
-  @ObservationIgnored var sweepDroppedFiles: @Sendable () -> Void = { DroppedFiles.sweep() }
+  @ObservationIgnored var sweepPromisedDropCopies: @Sendable () -> Void = {
+    PromisedDropCopies.sweep()
+  }
 
   /// The environment of the user's interactive login shell, once captured.
   /// `nil` until the shell has answered and its PATH has been scanned.
-  public var loginEnvironment: LoginShellEnvironment?
+  public internal(set) var loginEnvironment: LoginShellEnvironment?
   /// Which catalogue agents that environment's PATH has.
-  public var agentDetection = AgentDetection.empty {
+  public internal(set) var agentDetection = AgentDetection.empty {
     didSet { refreshInstalledAgents() }
   }
   /// The agents a New Tab menu lists, held rather than worked out: a strip's
   /// body reads it on every render. Rebuilt by `refreshInstalledAgents`.
   public internal(set) var installedAgentIDs: [String] = []
   /// Which shells the machine has, from `/etc/shells` and that PATH.
-  public var shellDetection = ShellDetection.empty
+  public internal(set) var shellDetection = ShellDetection.empty
   /// Which catalogue editors are installed, by application id or shim.
-  public var editorDetection = EditorDetection.empty
+  public internal(set) var editorDetection = EditorDetection.empty
   /// Which agents' hooks are in place, by catalogue id. Read from disk on
-  /// demand by `refreshAgentStatus`, not observed.
+  /// demand by `refreshInstallState`, not observed.
   var installedAgentHooks: Set<String> = []
   /// Installed, but not what this build writes.
   var staleAgentHooks: Set<String> = []
-  public var commandLineToolInstalled = false
+  public internal(set) var commandLineToolInstalled = false
   /// What the notification centre has been told about this app. The system's
   /// answer, not the workspace's, and changeable while the app runs.
-  public internal(set) var notificationAuthorization = NotificationAuthorization.notAsked
-  public var themes: [Theme] = Theme.builtins
+  var notificationAuthorization = NotificationAuthorization.notAsked
+  public internal(set) var themes: [Theme] = Theme.builtins
   @ObservationIgnored var reportedMissingAgents: Set<String> = []
 
   /// `git status` per worktree. Runtime only; see `WorktreeStatus`.
-  public var statuses: [Worktree.ID: WorktreeStatus] = [:]
+  public internal(set) var statuses: [Worktree.ID: WorktreeStatus] = [:]
   /// Whether each worktree's branch has already landed on its project's
   /// default branch. Runtime only; see `WorktreeMergeState`.
   var mergeStates: [Worktree.ID: WorktreeMergeState] = [:]
@@ -192,7 +193,7 @@ public final class AppModel<Surface> {
   var fetchingProjects: Set<Project.ID> = []
   /// Projects whose directory has gone. Kept in the sidebar, dimmed, rather
   /// than dropped: an unmounted drive should not delete someone's setup.
-  public var missingProjects: Set<Project.ID> = []
+  public internal(set) var missingProjects: Set<Project.ID> = []
   /// What each worktree's merge verdict was computed from, so a refresh
   /// that finds nothing moved spawns no git; see `MergeCheck`.
   @ObservationIgnored var mergeChecks: [Worktree.ID: MergeCheck] = [:]
@@ -207,7 +208,7 @@ public final class AppModel<Surface> {
   @ObservationIgnored var commonGitDirectories: [Project.ID: URL] = [:]
   /// Written from the sidebar's body, so not observed: a write there would
   /// invalidate the body writing it.
-  @ObservationIgnored var worktreeOrders = WorktreeOrderMemo()
+  @ObservationIgnored var worktreeOrderMemo = WorktreeOrderMemo()
   /// What the last refresh of each project was computed from; see
   /// `refreshWorktreesIfRecordsChanged`.
   @ObservationIgnored var worktreeRecords: [Project.ID: WorktreeRecords] = [:]
@@ -272,7 +273,19 @@ public final class AppModel<Surface> {
     // Nothing is selected at launch, so no shell starts until the user picks
     // a worktree. Saved tabs stay saved and open with that first click.
     store.selectWorktree(nil)
+    wireCallbacks()
+    observeForAutosave()
+  }
 
+  deinit {
+    autosave?.cancel()
+    tabDragReleaseWatch?.cancel()
+    projectDragReleaseWatch?.cancel()
+  }
+
+  /// What the platform, the registry, the socket, the notifier and the
+  /// watcher report back, each routed to the model.
+  private func wireCallbacks() {
     // Statuses poll only while frontmost, so a return would show badges five
     // seconds stale. The permission is read back for the same reason.
     platform.onDidBecomeActive = { [weak self] in
@@ -309,13 +322,6 @@ public final class AppModel<Surface> {
     watcher.onChange = { [weak self] changed in
       Task { await self?.refreshWorktreesIfRecordsChanged(under: changed) }
     }
-    observeForAutosave()
-  }
-
-  deinit {
-    autosave?.cancel()
-    tabDragReleaseWatch?.cancel()
-    projectDragReleaseWatch?.cancel()
   }
 
   /// The view a session draws into, from whichever engine opened it: the one
@@ -333,7 +339,7 @@ public final class AppModel<Surface> {
   /// Shells actually running, as opposed to saved tabs waiting to be opened.
   public var liveTerminalCount: Int { liveSessions.count }
 
-  public func liveTerminalCount(in worktree: Worktree.ID) -> Int {
+  func liveTerminalCount(in worktree: Worktree.ID) -> Int {
     workspace.sessions(in: worktree).filter { liveSessions.contains($0.id) }.count
   }
 
@@ -349,8 +355,8 @@ public final class AppModel<Surface> {
     // On the main actor, before `start` first yields, so no tab can open ahead.
     if let failure = refreshLaunchFiles(platform.bundledHelper) { report(failure) }
     // All that bounds the drops directory; no terminal waits on it.
-    let sweep = sweepDroppedFiles
-    Task { await Self.offMain(sweep) }
+    let sweep = sweepPromisedDropCopies
+    Task { await offMain(sweep) }
     await refreshAll()
     reconcileSessions(takingFocus: true)
     startStatusPolling()

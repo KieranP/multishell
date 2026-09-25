@@ -1,4 +1,3 @@
-import Foundation
 import MultishellCore
 
 /// One agent's line in Settings > Agents. Listed once it is on the PATH, and
@@ -19,7 +18,7 @@ public struct AgentHooksRow: Identifiable, Equatable, Sendable {
 
   public static func rows(
     detection: AgentDetection, installed: Set<String>, stale: Set<String> = [],
-    integrations: [AgentHookIntegration] = AgentHooks.integrations
+    integrations: [AgentHookIntegration] = AgentHookCatalogue.integrations
   ) -> [AgentHooksRow] {
     integrations.compactMap { integration in
       let isInstalled = installed.contains(integration.id)

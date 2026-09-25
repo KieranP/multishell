@@ -23,14 +23,10 @@ struct SidebarHeader: View {
   private func button(
     _ symbol: String, help: String, action: @escaping () -> Void
   ) -> some View {
-    Button(action: action) {
+    GlyphButton(help: help, action: action) {
       Image(systemName: symbol)
         .font(.system(size: 13, weight: .medium))
         .frame(width: 28, height: 28)
-        .contentShape(.rect)
     }
-    .buttonStyle(.plain)
-    .help(help)
-    .accessibilityLabel(help)
   }
 }

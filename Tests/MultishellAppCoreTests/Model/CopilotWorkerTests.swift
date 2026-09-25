@@ -8,7 +8,7 @@ import Testing
 /// subagent, driven through the report the helper builds and into the model.
 @Suite @MainActor
 struct CopilotWorkerTests {
-  static let copilot = AgentHooks.integration(for: "copilot")!
+  static let copilot = AgentHookCatalogue.integration(for: "copilot")!
   static let parent = "17954dff-e162-4e7a-925e-a59ca530c5fb"
   static let child = "37880ecf-c5f3-42ce-afe0-82b221d75839"
   static let transcript = "/Users/dev/.copilot/session-state/\(parent)/events.jsonl"

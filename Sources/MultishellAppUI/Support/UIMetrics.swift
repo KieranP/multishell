@@ -1,5 +1,3 @@
-import Foundation
-
 /// Every chrome size, derived from one number so the UI font slider scales
 /// the sidebar, tabs and header together and rows never clip their text.
 struct UIMetrics: Equatable {
@@ -51,28 +49,39 @@ struct UIMetrics: Equatable {
   /// button have nowhere to go. See `TabStripLayout`.
   var tabMinWidth: Double { (body * 7.8).rounded() }
   /// A split button at the end of a strip, which never scrolls away.
-  var newTabWidth: Double { (body * 2.6).rounded() }
+  var splitButtonWidth: Double { (body * 2.6).rounded() }
   /// The chevron after the New Tab menu's plus, small enough to read as a
   /// mark on the plus rather than a second glyph.
   var menuChevron: Double { (icon * 0.6).rounded() }
   var menuChevronGap: Double { 2 }
   /// A split's width plus the chevron, less one gap; the ink either side
   /// differs from its box. See Docs/design/tabs-and-columns.md.
-  var newTabMenuWidth: Double { newTabWidth + menuChevron - menuChevronGap }
+  var newTabMenuWidth: Double { splitButtonWidth + menuChevron - menuChevronGap }
   /// A split glyph's inset, which the menu's plus shares.
-  var stripGlyphInset: Double { (newTabWidth - icon) / 2 }
+  var stripGlyphInset: Double { (splitButtonWidth - icon) / 2 }
   /// The New Tab menu and the two splits. Comes off the strip before a tab
   /// is measured, so nothing measures itself.
-  var stripButtonsWidth: Double { newTabMenuWidth + newTabWidth * 2 }
+  var stripButtonsWidth: Double { newTabMenuWidth + splitButtonWidth * 2 }
   /// Splits go only where they cost neither a whole tab nor the arrows; a
   /// lower bar buys them by silent scrolling. See tabs-and-columns.md.
   func stripShowsSplits(in width: Double) -> Bool {
     width.isFinite && width >= stripButtonsWidth + 2 * tabArrowWidth + tabMinWidth
   }
+  /// The room a strip of that width leaves its tabs, its buttons taken off.
+  func stripTabRoom(in width: Double) -> Double {
+    width - (stripShowsSplits(in: width) ? stripButtonsWidth : newTabMenuWidth)
+  }
   /// The arrow at either end of a strip with more tabs that way. Its room is
   /// kept either way, so the tabs do not shift under the pointer.
   var tabArrowWidth: Double { (body * 1.7).rounded() }
+  /// Each end's gutter in a scrolling strip with that room. None without room
+  /// for both and a tab besides, or two arrows draw over the column beside it.
+  func tabArrowGutter(forRoom room: Double) -> Double {
+    room >= 2 * tabArrowWidth + tabMinWidth ? tabArrowWidth : 0
+  }
   var indent: Double { (body * 2).rounded() }
+  /// The find bar's well height, and each of its glyph buttons' side.
+  var findControlSize: Double { (body * 2.2).rounded() }
 
   /// The narrowest a board column is drawn, below which a card's two split
   /// rows run into themselves. See `AgentBoardLayout`.
@@ -82,7 +91,7 @@ struct UIMetrics: Equatable {
   var boardGap: Double { (body * 0.8).rounded() }
   var boardPadding: Double { (body * 0.9).rounded() }
 
-  /// How wide a drop band down a column's edge is; see `TabGroupBands`. Wide
+  /// How wide a drop band down a column's edge is; see `ColumnDropBands`. Wide
   /// enough to aim at without hiding what is under it.
   static let dropBandWidth: Double = 74
 

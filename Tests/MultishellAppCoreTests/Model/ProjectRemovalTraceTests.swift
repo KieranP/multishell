@@ -34,11 +34,11 @@ struct ProjectRemovalTraceTests {
     _ = h.model.select(worktrees[0])
     // The references a window and a row hold, which no refresh will come
     // back to clear once the project has left.
-    h.model.beginRenaming(worktrees[0])
+    h.model.beginRenamingWorktree(worktrees[0])
     h.model.settingsProjectID = project.id
     // The dialogs a second scene can leave standing over a removal.
     h.model.requestNewWorktree(in: project)
-    await h.model.requestRemoval(of: worktrees[1])?.value
+    await h.model.requestWorktreeRemoval(of: worktrees[1])?.value
 
     let paths = Set(
       [project.id] + h.model.workspace.worktrees(of: project.id).map(\.id))

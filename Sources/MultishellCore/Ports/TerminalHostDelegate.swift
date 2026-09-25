@@ -1,5 +1,3 @@
-import Foundation
-
 @MainActor
 public protocol TerminalHostDelegate: AnyObject {
   func terminalHost(_ host: any TerminalHost, didRetitle id: TerminalSession.ID, to title: String)
@@ -14,4 +12,13 @@ public protocol TerminalHostDelegate: AnyObject {
   /// only Ghostty has; the one signal outranking an agent's own report.
   func terminalHost(
     _ host: any TerminalHost, didFinishCommandIn id: TerminalSession.ID, exitCode: Int32?)
+}
+
+extension TerminalHostDelegate {
+  /// A host without the distinction reports a finished command as activity.
+  public func terminalHost(
+    _ host: any TerminalHost, didFinishCommandIn id: TerminalSession.ID, exitCode: Int32?
+  ) {
+    terminalHost(host, didSeeActivityIn: id)
+  }
 }

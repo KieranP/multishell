@@ -1,5 +1,3 @@
-import Foundation
-
 /// For tests, and for a platform without a channel yet.
 @MainActor
 public final class NullStateSource: SessionStateSource {

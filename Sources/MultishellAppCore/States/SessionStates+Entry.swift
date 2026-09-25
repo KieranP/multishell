@@ -9,14 +9,14 @@ extension SessionStates {
     /// The process behind a Working or Waiting state, when the report said.
     var pid: Int32?
     /// The Working is the shell's report of a command started, not an agent's.
-    var isShellsWorking = false
+    var workingIsShellCommand = false
     /// When the state last changed. Handed in, never read from a clock.
     var since: Date?
     /// What the last report said beyond its state.
     var note: SessionNote?
     /// The workers the agent still has out, in the order they started; see
     /// Docs/design/agents.md.
-    var workers: [Subagent] = []
+    var subagents: [Subagent] = []
     /// What a worker's report put the dot over, remembered once, for the
     /// last worker out to put back; `nil` while the agent's own state shows.
     var displaced: Displaced?
@@ -64,7 +64,7 @@ extension SessionStates {
     static let foldLimit = 1024
 
     var isEmpty: Bool {
-      state == nil && pid == nil && since == nil && note == nil && workers.isEmpty
+      state == nil && pid == nil && since == nil && note == nil && subagents.isEmpty
         && displaced == nil && waitingRaisers.isEmpty && !awaitingResume && folded.isEmpty
     }
 
@@ -77,32 +77,32 @@ extension SessionStates {
       case .ended:
         if let id = foldedID(endedBy: report) { return unfold(id) }
         guard let index = endingPlace(for: report) else { return Place(id: report.id) }
-        let place = Place(id: workers[index].id, isShared: workers[index].occurrences > 1)
-        if workers[index].occurrences > 1 {
-          workers[index].occurrences -= 1
+        let place = Place(id: subagents[index].id, isShared: subagents[index].occurrences > 1)
+        if subagents[index].occurrences > 1 {
+          subagents[index].occurrences -= 1
         } else {
-          workers.remove(at: index)
+          subagents.remove(at: index)
         }
         return place
       case .working where isAnonymous:
         // A tool call names no worker either, so it is one already out, and
         // only a start puts another unnamed place on the roster.
-        if let index = workers.lastIndex(where: \.isAnonymous) {
-          return Place(id: workers[index].id, isShared: workers[index].occurrences > 1)
+        if let index = subagents.lastIndex(where: \.isAnonymous) {
+          return Place(id: subagents[index].id, isShared: subagents[index].occurrences > 1)
         }
         if foldedAnonymousID != nil { return overflowPlace }
         return add(Subagent(id: Subagent.anonymousPrefix + UUID().uuidString, type: report.type))
       case .started, .working:
         let id = isAnonymous ? Subagent.anonymousPrefix + UUID().uuidString : report.id
-        guard let index = workers.firstIndex(where: { $0.id == id }) else {
+        guard let index = subagents.firstIndex(where: { $0.id == id }) else {
           guard folded[id] != nil else { return add(Subagent(id: id, type: report.type)) }
           if report.phase == .started { _ = fold(id) }
           return overflowPlace
         }
         // A tool call from one already out says nothing; a second start under
         // its id is a second worker an agent named without an id.
-        if report.phase == .started { workers[index].occurrences += 1 }
-        return Place(id: id, isShared: workers[index].occurrences > 1)
+        if report.phase == .started { subagents[index].occurrences += 1 }
+        return Place(id: id, isShared: subagents[index].occurrences > 1)
       }
     }
 
@@ -110,15 +110,15 @@ extension SessionStates {
     /// oldest asking. Never nothing, or a leftover holds Done all turn.
     private func endingPlace(for report: SubagentReport) -> Int? {
       guard report.id == SubagentReport.anonymousID else {
-        return workers.firstIndex { $0.id == report.id }
+        return subagents.firstIndex { $0.id == report.id }
       }
-      let asking = workers.lastIndex { $0.isAnonymous && waitingRaisers.contains(.worker($0.id)) }
+      let asking = subagents.lastIndex { $0.isAnonymous && waitingRaisers.contains(.worker($0.id)) }
       // A background shell's end is its exit, never a hook's.
-      return asking ?? workers.lastIndex(where: \.isAnonymous) ?? firstNamedPlace
+      return asking ?? subagents.lastIndex(where: \.isAnonymous) ?? firstNamedPlace
     }
 
     private var firstNamedPlace: Int? {
-      workers.firstIndex { $0.pid == nil && $0.id != Subagent.overflowID }
+      subagents.firstIndex { $0.pid == nil && $0.id != Subagent.overflowID }
     }
 
     /// The folded worker an end takes, in `endingPlace`'s order: an unnamed
@@ -127,7 +127,7 @@ extension SessionStates {
       guard report.id == SubagentReport.anonymousID else {
         return folded[report.id] == nil ? nil : report.id
       }
-      guard !workers.contains(where: \.isAnonymous) else { return nil }
+      guard !subagents.contains(where: \.isAnonymous) else { return nil }
       return foldedAnonymousID ?? (firstNamedPlace == nil ? folded.keys.first : nil)
     }
 
@@ -136,18 +136,18 @@ extension SessionStates {
     }
 
     private var overflowIndex: Int? {
-      workers.firstIndex { $0.id == Subagent.overflowID }
+      subagents.firstIndex { $0.id == Subagent.overflowID }
     }
 
     private var overflowPlace: Place {
       Place(
         id: Subagent.overflowID,
-        isShared: overflowIndex.map { workers[$0].occurrences > 1 } ?? false)
+        isShared: overflowIndex.map { subagents[$0].occurrences > 1 } ?? false)
     }
 
     /// One place per pid, however many Stops name it.
     mutating func keepShells(_ pids: [Int32]) {
-      var kept = Set(workers.compactMap(\.pid))
+      var kept = Set(subagents.compactMap(\.pid))
       for pid in pids where kept.insert(pid).inserted {
         add(Subagent(id: Subagent.shellPrefix + String(pid), type: nil, pid: pid))
       }
@@ -157,9 +157,9 @@ extension SessionStates {
     /// dropped. A shell is, its pid having nowhere to go in a shared place.
     @discardableResult
     private mutating func add(_ worker: Subagent) -> Place {
-      let placed = workers.count - (overflowIndex == nil ? 0 : 1)
+      let placed = subagents.count - (overflowIndex == nil ? 0 : 1)
       guard placed >= SessionStateReport.rosterLimit else {
-        workers.append(worker)
+        subagents.append(worker)
         return Place(id: worker.id)
       }
       guard worker.pid == nil, fold(worker.id) else { return Place(id: worker.id) }
@@ -171,16 +171,16 @@ extension SessionStates {
       guard folded[id] != nil || folded.count < Self.foldLimit else { return false }
       folded[id, default: 0] += 1
       if let overflow = overflowIndex {
-        workers[overflow].occurrences += 1
+        subagents[overflow].occurrences += 1
       } else {
-        workers.append(Subagent(id: Subagent.overflowID, type: nil))
+        subagents.append(Subagent(id: Subagent.overflowID, type: nil))
       }
       return true
     }
 
     /// Takes a worker off wherever it is, every start under its id included.
-    mutating func forgetWorker(_ id: String) {
-      workers.removeAll { $0.id == id }
+    mutating func forgetSubagent(_ id: String) {
+      subagents.removeAll { $0.id == id }
       for _ in 0..<(folded[id] ?? 0) { unfold(id) }
     }
 
@@ -189,10 +189,10 @@ extension SessionStates {
       let place = overflowPlace
       folded[id] = folded[id].flatMap { $0 > 1 ? $0 - 1 : nil }
       if let overflow = overflowIndex {
-        if workers[overflow].occurrences > 1 {
-          workers[overflow].occurrences -= 1
+        if subagents[overflow].occurrences > 1 {
+          subagents[overflow].occurrences -= 1
         } else {
-          workers.remove(at: overflow)
+          subagents.remove(at: overflow)
         }
       }
       return place
@@ -212,7 +212,7 @@ extension SessionStates {
 
     /// The turn is over, however it ended: nothing out, displaced or asked.
     mutating func settleTurn() {
-      workers = []
+      subagents = []
       folded = [:]
       displaced = nil
       waitingRaisers = []

@@ -24,9 +24,7 @@ struct AgentsRow: View {
       Spacer(minLength: 4)
       ForEach(counts.filter { $0.count > 0 }, id: \.lane) { entry in
         HStack(spacing: 3) {
-          Circle()
-            .fill(theme.color(for: entry.lane.headerState))
-            .frame(width: 6, height: 6)
+          StateDot(state: entry.lane.headerState, theme: theme, diameter: 6)
           Text("\(entry.count)")
             .font(.system(size: metrics.badge, weight: .medium))
             .monospacedDigit()
@@ -36,16 +34,7 @@ struct AgentsRow: View {
     }
     .padding(.horizontal, 8)
     .frame(height: metrics.rowHeight)
-    .background(
-      isSelected ? Color.accentColor.opacity(0.12) : .clear,
-      in: RoundedRectangle(cornerRadius: 6)
-    )
-    .overlay {
-      if isSelected {
-        RoundedRectangle(cornerRadius: 6)
-          .strokeBorder(Color.accentColor, lineWidth: 1.5)
-      }
-    }
+    .rowSelection(isSelected: isSelected)
     .contentShape(.rect)
     .onTapGesture(perform: select)
     .accessibilityElement(children: .ignore)

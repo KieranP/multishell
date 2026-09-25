@@ -1,4 +1,3 @@
-import Foundation
 import MultishellCore
 
 extension AppModel {
@@ -68,7 +67,7 @@ extension AppModel {
   /// field: that one bar goes down and no other.
   public func closeFind() {
     guard paneInView != nil, let id = menuFindPane else { return }
-    hideFind(of: id)
+    closeFind(in: id)
   }
 
   /// A bar's own Return and arrows, which act on its pane whichever pane
@@ -90,7 +89,7 @@ extension AppModel {
 
   /// Escape or the close: the keyboard goes to the bar's own pane, not the focused
   /// one, since clicking into a field moved the store's focus nowhere; terminals.md.
-  public func hideFind(of id: TerminalSession.ID) {
+  public func closeFind(in id: TerminalSession.ID) {
     guard findingSessionIDs.remove(id) != nil else { return }
     findSelections.remove(id)
     // The torn-down field may never say it lost the keyboard.
@@ -118,7 +117,7 @@ extension AppModel {
     return workspace.activeTab(in: worktree)?.focusedSessionID
   }
 
-  /// Bars and needles whose pane has gone. From the reconcile, as `prunePendingClose`
+  /// Bars and needles whose pane has gone. From the reconcile, as `pruneTabPrompts`
   /// is, and from a shell exiting, which closes its session without one.
   func pruneFind() {
     setIfChanged(\.findingSessionIDs, findingSessionIDs.filter { workspace.session($0) != nil })

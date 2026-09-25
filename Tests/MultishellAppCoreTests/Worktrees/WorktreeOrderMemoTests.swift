@@ -7,7 +7,7 @@ import Testing
 @Suite
 struct WorktreeOrderMemoTests {
   private let project = Project(path: URL(fileURLWithPath: "/w/acme"))
-  private let order = WorktreeOrder(order: .alphabetical, activeFirst: false)
+  private let order = WorktreeOrder(sortOrder: .alphabetical, activeFirst: false)
 
   private func worktree(_ branch: String) -> Worktree {
     Worktree(
@@ -34,7 +34,7 @@ struct WorktreeOrderMemoTests {
 
   @Test func aRenamedRowOrADifferentRuleSortsAgain() {
     var memo = WorktreeOrderMemo()
-    let newest = WorktreeOrder(order: .createdNewestFirst, activeFirst: false)
+    let newest = WorktreeOrder(sortOrder: .createdNewestFirst, activeFirst: false)
 
     _ = memo.rows(of: project.id, keys: keys(["zulu", "alpha"]), order: order)
     let renamed = memo.rows(of: project.id, keys: keys(["zulu", "beta"]), order: order)

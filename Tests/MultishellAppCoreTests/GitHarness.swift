@@ -1,9 +1,7 @@
 import Foundation
 import MultishellCore
-import Observation
 import TestScratch
 import TestSupport
-import Testing
 
 @testable import MultishellAppCore
 @testable import MultishellGitKit
@@ -28,18 +26,18 @@ struct GitHarness {
     try await TestRepository.commitInitial(in: repository, using: git)
 
     store = WorkspaceStore(
-      snapshot: WorkspaceSnapshot(fileURL: root.appendingPathComponent("state.json")))
+      file: WorkspaceFile(fileURL: root.appendingPathComponent("state.json")))
     model = AppModel(
       store: store,
       host: self.engine,
       worktrees: WorktreeCoordinator(
-        service: WorktreeService(git: git, settlesNewIndex: false)),
+        git: WorktreeGit(runner: git, settlesNewIndex: false)),
       watcher: watcher, platform: platform)
     model.statusReads.pace = .unpaced
     await model.addProject(at: repository)
   }
 
-  /// Waits for the removal that `requestRemoval` or a dialog started, up to
+  /// Waits for the removal that `requestWorktreeRemoval` or a dialog started, up to
   /// a few seconds, by watching the operation entry.
   func awaitOperationEnd(on id: Worktree.ID) async {
     for _ in 0..<200 where model.worktreeOperations[id]?.isRunning == true {
@@ -80,7 +78,7 @@ struct GitHarness {
       store: store,
       host: self.engine,
       worktrees: WorktreeCoordinator(
-        service: WorktreeService(git: try GitRunner(executable: script), settlesNewIndex: false)),
+        git: WorktreeGit(runner: try GitRunner(executable: script), settlesNewIndex: false)),
       watcher: watcher)
     model.statusReads.pace = .unpaced
     model.presentedError = nil

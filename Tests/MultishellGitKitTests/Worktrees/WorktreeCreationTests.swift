@@ -158,7 +158,7 @@ struct WorktreeCreationTests {
       exec git "$@"
       """)
     defer { fake.tearDown() }
-    let coordinator = WorktreeCoordinator(service: WorktreeService(git: fake.runner))
+    let coordinator = WorktreeCoordinator(git: WorktreeGit(runner: fake.runner))
     let stopper = ProcessStopper()
     let project = repo.project
     let settings = repo.trees
@@ -172,7 +172,7 @@ struct WorktreeCreationTests {
     let failure = await #expect(throws: ProcessFailure.self) { try await add.value }
 
     #expect(failure?.stop == .stopped)
-    #expect(try await repo.coordinator.refresh(project).map(\.branch) == ["main"])
+    #expect(try await repo.coordinator.git.list(project).map(\.branch) == ["main"])
     #expect(try await repo.branches() == ["main"])
   }
 
@@ -190,7 +190,7 @@ struct WorktreeCreationTests {
       """)
     defer { fake.tearDown() }
     let coordinator = WorktreeCoordinator(
-      service: WorktreeService(git: fake.runner, settlesNewIndex: false))
+      git: WorktreeGit(runner: fake.runner, settlesNewIndex: false))
     let stopper = ProcessStopper()
     let project = repo.project
     let settings = repo.trees
@@ -203,7 +203,7 @@ struct WorktreeCreationTests {
     stopper.stop()
     await #expect(throws: ProcessFailure.self) { try await add.value }
 
-    #expect(try await repo.coordinator.refresh(project).map(\.branch) == ["main"])
+    #expect(try await repo.coordinator.git.list(project).map(\.branch) == ["main"])
     #expect(try await repo.branches() == ["main"])
   }
 
@@ -221,7 +221,7 @@ struct WorktreeCreationTests {
       """)
     defer { fake.tearDown() }
     let coordinator = WorktreeCoordinator(
-      service: WorktreeService(git: fake.runner, settlesNewIndex: false))
+      git: WorktreeGit(runner: fake.runner, settlesNewIndex: false))
     let project = repo.project
     let settings = repo.trees
     try FileManager.default.createDirectory(
@@ -237,7 +237,7 @@ struct WorktreeCreationTests {
     stopper.stop()
     await #expect(throws: ProcessFailure.self) { try await add.value }
 
-    #expect(try await repo.coordinator.refresh(project).map(\.branch) == ["main"])
+    #expect(try await repo.coordinator.git.list(project).map(\.branch) == ["main"])
     #expect(try await repo.branches() == ["main"])
   }
 
@@ -257,7 +257,7 @@ struct WorktreeCreationTests {
         branch: "away", in: repo.project, settings: repo.trees, stopper: stopper)
     }
 
-    let listed = try await repo.coordinator.refresh(repo.project)
+    let listed = try await repo.coordinator.git.list(repo.project)
     #expect(listed.map(\.branch) == ["main", "renamed"])
   }
 
@@ -290,7 +290,7 @@ struct WorktreeCreationTests {
       """)
     defer { fake.tearDown() }
     let coordinator = WorktreeCoordinator(
-      service: WorktreeService(git: fake.runner, settlesNewIndex: false))
+      git: WorktreeGit(runner: fake.runner, settlesNewIndex: false))
     let stopper = ProcessStopper()
     stopper.stop()
 
@@ -309,7 +309,7 @@ struct WorktreeCreationTests {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
 
-    let settling = WorktreeCoordinator(service: WorktreeService(git: repo.git))
+    let settling = WorktreeCoordinator(git: WorktreeGit(runner: repo.git))
     let path = try await settling.create(branch: "fresh", in: repo.project, settings: repo.trees)
 
     let index = try await repo.git.run(
@@ -332,7 +332,8 @@ struct WorktreeCreationTests {
     await #expect(throws: ProcessFailure.self) {
       try await repo.coordinator.create(branch: "taken", in: repo.project, settings: repo.trees)
     }
-    #expect(try await repo.coordinator.refresh(repo.project).count == 1, "nothing was created")
+    #expect(
+      try await repo.coordinator.git.list(repo.project).count == 1, "nothing was created")
   }
 
   @Test func anOccupiedTargetDirectoryIsRefusedAndTheHookDoesNotRun() async throws {
@@ -369,7 +370,7 @@ struct WorktreeCreationTests {
       }
       #expect(!FileManager.default.fileExists(atPath: marker.path), "the hook did not run")
     }
-    #expect(try await repo.coordinator.refresh(project).count == 1, "nothing was created")
+    #expect(try await repo.coordinator.git.list(project).count == 1, "nothing was created")
   }
 
   @Test func aBranchCheckedOutElsewhereCannotBeCheckedOutAgain() async throws {
@@ -388,7 +389,7 @@ struct WorktreeCreationTests {
     defer { repo.tearDown() }
     try await repo.coordinator.create(branch: "keep", in: repo.project, settings: repo.trees)
     let worktree = try #require(
-      try await repo.coordinator.refresh(repo.project).first { $0.branch == "keep" })
+      try await repo.coordinator.git.list(repo.project).first { $0.branch == "keep" })
 
     try await repo.coordinator.remove(worktree, in: repo.project)
 
@@ -404,7 +405,7 @@ struct WorktreeCreationTests {
     try "uncommitted\n".write(
       to: path.appendingPathComponent("work.txt"), atomically: true, encoding: .utf8)
     let worktree = try #require(
-      try await repo.coordinator.refresh(repo.project).first { $0.branch == "dirty" })
+      try await repo.coordinator.git.list(repo.project).first { $0.branch == "dirty" })
     let bin = repo.root.appendingPathComponent("bin", isDirectory: true)
 
     try await repo.coordinator.remove(
@@ -417,7 +418,7 @@ struct WorktreeCreationTests {
     #expect(!FileManager.default.fileExists(atPath: path.path))
     #expect(
       FileManager.default.fileExists(atPath: bin.appendingPathComponent("dirty/work.txt").path))
-    #expect(try await repo.coordinator.refresh(repo.project).count == 1)
+    #expect(try await repo.coordinator.git.list(repo.project).count == 1)
   }
 
   @Test func theListReflectsCreateAndRemove() async throws {
@@ -426,13 +427,13 @@ struct WorktreeCreationTests {
 
     try await repo.coordinator.create(branch: "a", in: repo.project, settings: repo.trees)
     try await repo.coordinator.create(branch: "b", in: repo.project, settings: repo.trees)
-    var listed = try await repo.coordinator.refresh(repo.project)
+    var listed = try await repo.coordinator.git.list(repo.project)
     #expect(listed.map(\.branch) == ["main", "a", "b"])
     #expect(listed[0].isPrimary && !listed[1].isPrimary)
     #expect(listed.allSatisfy { $0.projectID == repo.project.id })
 
     try await repo.coordinator.remove(listed[1], in: repo.project)
-    listed = try await repo.coordinator.refresh(repo.project)
+    listed = try await repo.coordinator.git.list(repo.project)
     #expect(listed.map(\.branch) == ["main", "b"])
   }
 
@@ -441,7 +442,7 @@ struct WorktreeCreationTests {
     defer { repo.tearDown() }
     let path = try await repo.coordinator.create(
       branch: "ghost", in: repo.project, settings: repo.trees)
-    let worktrees = try await repo.coordinator.refresh(repo.project)
+    let worktrees = try await repo.coordinator.git.list(repo.project)
     try FileManager.default.removeItem(at: path)
 
     let statuses = await repo.coordinator.readStatuses(of: worktrees).mapValues(\.status)
@@ -457,7 +458,7 @@ struct WorktreeCreationTests {
       postDeleteHook: "printf \"%s|%s\" \"$PWD\" \"$MULTISHELL_WORKTREE_PATH\" > deleted.txt")
     let path = try await repo.coordinator.create(branch: "bye", in: project, settings: repo.trees)
     let worktree = try #require(
-      try await repo.coordinator.refresh(project).first { $0.branch == "bye" })
+      try await repo.coordinator.git.list(project).first { $0.branch == "bye" })
 
     try await repo.coordinator.remove(worktree, in: project)
 
@@ -467,24 +468,5 @@ struct WorktreeCreationTests {
     .split(separator: "|").map(String.init)
     #expect(URL(fileURLWithPath: recorded[0]).standardizedFileURL.lastPathComponent == "demo")
     #expect(recorded[1] == path.path)
-  }
-}
-
-@Suite(.serialized)
-struct BranchQueryTests {
-  @Test func currentAndLocalBranchesComeFromGit() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    _ = try await repo.git.run(["branch", "feature"], in: repo.project.path)
-
-    #expect(try await repo.coordinator.currentBranch(repo.project) == "main")
-    #expect(try await repo.coordinator.localBranches(repo.project).sorted() == ["feature", "main"])
-  }
-
-  @Test func aRepositoryIsRecognisedAndItsParentIsNot() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    #expect(await repo.coordinator.isRepository(repo.project.path))
-    #expect(await repo.coordinator.isRepository(repo.root) == false)
   }
 }

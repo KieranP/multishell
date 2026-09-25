@@ -1,4 +1,3 @@
-import Foundation
 import MultishellCore
 
 /// One row of a settings dropdown listing what a machine has. A picker whose
@@ -7,12 +6,6 @@ public struct DetectionOption: Identifiable, Equatable, Sendable {
   public let id: String
   public let label: String
   public let isInstalled: Bool
-
-  public init(id: String, label: String, isInstalled: Bool) {
-    self.id = id
-    self.label = label
-    self.isInstalled = isInstalled
-  }
 }
 
 extension DetectionOption {

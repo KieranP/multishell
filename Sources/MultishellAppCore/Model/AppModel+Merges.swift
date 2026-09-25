@@ -21,14 +21,8 @@ extension AppModel {
     mergeReads.beginRound()
     // A few at once: one git per project per tick, serially, was the tick's
     // longest wait at ten projects. Each writes only its own worktrees' ids.
-    await withTaskGroup(of: Void.self) { group in
-      var pending = projects.makeIterator()
-      func startNext() {
-        guard let project = pending.next() else { return }
-        group.addTask { await self.refreshMergeStates(of: project, inRound: true) }
-      }
-      for _ in 0..<Self.concurrentBranchScans { startNext() }
-      for await _ in group { startNext() }
+    await projects.concurrentMap(width: Self.concurrentBranchScans) { project in
+      await self.refreshMergeStates(of: project, inRound: true)
     }
   }
 
@@ -49,48 +43,58 @@ extension AppModel {
     guard let branches else { return }
     // Before the base is resolved, and whether or not it can be: a
     // repository with no trunk still has branches to order.
-    note(branches.lastCommits, asLastCommitsOf: project.id)
-    guard let scan = branches.merges else {
+    recordLastCommits(branches.lastCommits, of: project.id)
+    guard let inputs = branches.mergeInputs else {
       // No branch to measure against: drop the badges rather than leave
       // them about a base that no longer applies.
       forgetMergeStates(of: project.id)
-      note(nil, asMergeBaseOf: project.id)
+      recordMergeBase(nil, of: project.id)
       return
     }
-    note(scan.base, asMergeBaseOf: project.id)
+    recordMergeBase(inputs.base, of: project.id)
 
-    var checks: [Worktree.ID: MergeCheck] = [:]
-    var waiting: [(id: Worktree.ID, branch: String)] = []
-    var unbadgeable: [Worktree.ID] = []
-    for worktree in workspace.worktrees(of: project.id) {
+    let plan = planMergeChecks(of: project.id, against: inputs)
+    forgetMergeStates(of: plan.unbadgeable)
+    // The rest keep their stale check, so the next round asks them. A branch
+    // checked out in two worktrees is asked about once.
+    let admitted = mergeReads.admit(plan.waiting.map(\.id), sharingRound: inRound)
+    let asking = Set(plan.waiting.filter { admitted.contains($0.id) }.map(\.branch))
+    let fresh = await worktrees.readMerges(of: asking.sorted(), in: project, inputs: inputs)
+    storeMergeReadings(fresh, checks: plan.checks, of: project.id)
+  }
+
+  /// What each of the project's worktrees would be checked against, which of
+  /// those have moved since their answer, and which can carry no badge.
+  private func planMergeChecks(of id: Project.ID, against inputs: MergeInputs) -> MergeCheckPlan {
+    var plan = MergeCheckPlan()
+    for worktree in workspace.worktrees(of: id) {
       // A stage keeps what it earned and is asked nothing; a claimed path
       // forgets, the last checkout there being gone. See worktrees.md.
       if worktreeOperations.isUnderWay(worktree.id) { continue }
       guard !workInFlight.isClaimed(worktree.id), !worktree.isInitializing,
-        WorktreeMergeState.applies(to: worktree, base: scan.base.branch),
-        let branch = worktree.branch, let tip = scan.tip(of: branch)
+        WorktreeMergeState.applies(to: worktree, base: inputs.base.branchName),
+        let branch = worktree.branch, let tip = inputs.tip(of: branch)
       else {
-        unbadgeable.append(worktree.id)
+        plan.unbadgeable.append(worktree.id)
         continue
       }
       let check = MergeCheck(
-        base: scan.base.ref, baseTip: scan.base.tip, branch: branch, tip: tip,
-        upstreamIsGone: scan.upstreamIsGone(branch))
-      checks[worktree.id] = check
+        base: inputs.base.shortName, baseTip: inputs.base.tip, branch: branch, tip: tip,
+        upstreamIsGone: inputs.upstreamIsGone(branch))
+      plan.checks[worktree.id] = check
       // Nothing has moved since the answer we have, so nothing to ask.
       guard mergeChecks[worktree.id] != check || mergeStates[worktree.id] == nil else { continue }
-      waiting.append((worktree.id, branch))
+      plan.waiting.append((worktree.id, branch))
     }
-    forget(unbadgeable)
+    return plan
+  }
 
-    // The rest keep their stale check, so the next round asks them. A branch
-    // checked out in two worktrees is asked about once.
-    let admitted = mergeReads.admit(waiting.map(\.id), sharingRound: inRound)
-    let asking = Set(waiting.filter { admitted.contains($0.id) }.map(\.branch))
-    let fresh = await worktrees.mergeReadings(of: asking.sorted(), in: project, scan: scan)
-    // The worktrees may have changed under the git calls above; only what
-    // is still there and still on that branch is kept.
-    for worktree in workspace.worktrees(of: project.id) {
+  /// The worktrees may have changed under the git calls; only what is still
+  /// there and still on the branch it was checked on is kept.
+  private func storeMergeReadings(
+    _ fresh: [String: MergeReading], checks: [Worktree.ID: MergeCheck], of id: Project.ID
+  ) {
+    for worktree in workspace.worktrees(of: id) {
       guard let check = checks[worktree.id], check.branch == worktree.branch,
         let reading = fresh[check.branch], !isUnderConstruction(worktree)
       else { continue }
@@ -104,12 +108,12 @@ extension AppModel {
     }
   }
 
-  private func note(_ base: DefaultBranch?, asMergeBaseOf id: Project.ID) {
+  private func recordMergeBase(_ base: DefaultBranch?, of id: Project.ID) {
     setIfChanged(\.mergeBases[id], base)
   }
 
   /// The scan answers by branch, the sidebar asks by worktree.
-  private func note(_ dates: [String: Date], asLastCommitsOf id: Project.ID) {
+  private func recordLastCommits(_ dates: [String: Date], of id: Project.ID) {
     var fresh = lastCommits
     for worktree in workspace.worktrees(of: id) {
       fresh[worktree.id] = worktree.branch.flatMap { dates[$0] }
@@ -117,7 +121,7 @@ extension AppModel {
     setIfChanged(\.lastCommits, fresh)
   }
 
-  private func forget(_ ids: [Worktree.ID]) {
+  private func forgetMergeStates(of ids: [Worktree.ID]) {
     for id in ids {
       setIfChanged(\.mergeStates[id], nil)
       mergeChecks[id] = nil
@@ -128,28 +132,12 @@ extension AppModel {
   /// Where a project's default branch has gone: its badges are about a base
   /// that no longer applies. A removed project goes through `forgetWorktrees`.
   func forgetMergeStates(of project: Project.ID) {
-    forget(workspace.worktrees(of: project).map(\.id))
+    forgetMergeStates(of: workspace.worktrees(of: project).map(\.id))
   }
+}
 
-  /// Whether a fetch is running on this project: its row spins, and the
-  /// menu item that started it is disabled until it ends.
-  public func isFetching(_ project: Project) -> Bool {
-    fetchingProjects.contains(project.id)
-  }
-
-  /// The menus' Fetch, the one git call that talks to a network and only on
-  /// a click. Marked for the whole of it, re-reads included.
-  public func fetch(_ project: Project) async {
-    guard let worktrees, fetchingProjects.insert(project.id).inserted else { return }
-    defer { fetchingProjects.remove(project.id) }
-    do {
-      try await worktrees.fetch(project)
-    } catch {
-      report(error)
-      return
-    }
-    await refresh(project)
-    await refreshStatuses()
-    await refreshMergeStates(of: project)
-  }
+private struct MergeCheckPlan {
+  var checks: [Worktree.ID: MergeCheck] = [:]
+  var waiting: [(id: Worktree.ID, branch: String)] = []
+  var unbadgeable: [Worktree.ID] = []
 }

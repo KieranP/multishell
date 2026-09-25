@@ -71,6 +71,9 @@ shipped hook. Newest at the bottom.
 - **The forms read that same view through `inherited`**, or a caption saying
   "from .multishell.json" names a value the layering left out, which it did for
   an untrusted `worktreeDirectory`.
+- **An `InheritableSetting` pairs the project field with the file's once.**
+  Reading the layering with the override cleared answered only for a field
+  merged as `own ?? shared`; any other quietly showed the global.
 - **Export writes the settings in force back over the file**, but keeps the
   file's own words where the user wrote none, or exporting would silently drop a
   teammate's committed hook.
@@ -100,8 +103,8 @@ shipped hook. Newest at the bottom.
   offered three of the eight answers and could not say "only when something
   failed", which is the whole of what some people want.
 - **Cost of that**: a state file written by this build reads as off on a build
-  with the picker. One caption at the foot holds whichever toggles are on, where
-  three (i) buttons said it three times.
+  with the picker. One caption at the foot says what holds for every toggle,
+  where three (i) buttons said it three times.
 - **Permission is asked as the toggle goes on**, not at the first report, so the
   dialog arrives while the user is looking at the thing it is about and a
   refusal can be answered where it is read.
@@ -111,7 +114,7 @@ shipped hook. Newest at the bottom.
 - **Export stores its trust answer before the write**, the digest being known
   from the bytes. Stored after, a poll reading the file in between asked the
   user to trust hooks they had just exported, and nothing withdrew it.
-- **Exports land in the order they were asked**, through the store's ticket, one
-  order per project. Two on a slow volume otherwise landed backwards, the older
-  overwriting the newer, and a late finish recorded the older's bytes, even with
-  the newer still being written.
+- **Exports land in the order they were asked**, through the `SaveOrder` ticket
+  the store's saves use, one order per project. Two on a slow volume otherwise
+  landed backwards, the older overwriting the newer, and a late finish recorded
+  the older's bytes, even with the newer still being written.

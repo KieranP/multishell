@@ -1,3 +1,4 @@
+import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
@@ -10,7 +11,7 @@ struct WorktreeActions: View {
   var body: some View {
     // The field it opens is on the sidebar row, wherever the menu was
     // asked for; the model carries which worktree is being renamed.
-    Button(t("action.rename")) { model.beginRenaming(worktree) }
+    Button(t("action.rename")) { model.beginRenamingWorktree(worktree) }
     if model.customName(of: worktree) != nil {
       Button(t("action.use-branch-name")) { model.renameWorktree(worktree.id, to: nil) }
     }
@@ -39,7 +40,7 @@ struct WorktreeActions: View {
     if worktree.isRemovable {
       Divider()
       Button(t("action.remove-worktree"), role: .destructive) {
-        model.requestRemoval(of: worktree)
+        model.requestWorktreeRemoval(of: worktree)
       }
       .disabled(model.isBusy(worktree.id))
     }

@@ -1,4 +1,3 @@
-import Foundation
 import MultishellCore
 
 /// How much of a worktree's git badge a row has room for, widest first. The

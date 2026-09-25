@@ -17,41 +17,41 @@ struct PaneRows: View {
       model.workspace.sessions(in: worktree.id).map { ($0.id, $0) },
       uniquingKeysWith: { first, _ in first })
     ForEach(model.workspace.tabs(in: worktree.id)) { tab in
-      let panes = tab.sessionIDs
-      ForEach(Array(panes.enumerated()), id: \.element) { index, id in
+      ForEach(Array(tab.sessionIDs.enumerated()), id: \.element) { offset, id in
         if let session = sessions[id] {
           row(
-            session, in: tab, position: panes.count > 1 ? (index + 1, panes.count) : nil,
-            isActive: id == focused)
+            session, in: tab, position: .of(paneAt: offset, in: tab),
+            isFocusedPane: id == focused)
         }
       }
     }
   }
 
   private func row(
-    _ session: TerminalSession, in tab: TerminalTab, position: (Int, Int)?, isActive: Bool
+    _ session: TerminalSession, in tab: TerminalTab, position: AgentBoardCard.Position?,
+    isFocusedPane: Bool
   ) -> some View {
     let state = model.state(ofPane: session.id)
     let subagents = model.subagents(ofPane: session.id)
     let title = model.title(ofPane: session, in: tab)
-    let agentID = model.agentID(ofPane: session)
+    let agentID = model.agentAtThePrompt(of: session)
     return HStack(spacing: 7) {
       PaneGlyph(
         agentID: agentID,
         shellSymbol: "apple.terminal",
         state: state ?? .idle,
         surface: theme.sidebarColor,
-        plainTint: isActive ? theme.textPrimary : theme.textSecondary,
+        plainTint: isFocusedPane ? theme.textPrimary : theme.textSecondary,
         theme: theme,
         size: metrics.icon + 2
       )
       .help((state ?? .idle).displayName)
       if let position {
-        PanePositionBadge(index: position.0, metrics: metrics, theme: theme)
+        PanePositionBadge(index: position.index, metrics: metrics, theme: theme)
       }
       Text(title)
-        .font(.system(size: metrics.badge, weight: isActive ? .semibold : .regular))
-        .foregroundStyle(isActive ? theme.textPrimary : theme.textSecondary)
+        .font(.system(size: metrics.badge, weight: isFocusedPane ? .semibold : .regular))
+        .foregroundStyle(isFocusedPane ? theme.textPrimary : theme.textSecondary)
         .lineLimit(1)
         .truncationMode(.tail)
       Spacer(minLength: 4)
@@ -68,9 +68,9 @@ struct PaneRows: View {
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(
       AccessibilityText.pane(
-        title: title, position: position, isActive: isActive, state: state,
+        title: title, position: position, isFocusedPane: isFocusedPane, state: state,
         subagents: subagents, agent: agentID.map(model.agentDisplayName))
     )
-    .accessibilityAddTraits(isActive ? [.isButton, .isSelected] : .isButton)
+    .accessibilityAddTraits(isFocusedPane ? [.isButton, .isSelected] : .isButton)
   }
 }

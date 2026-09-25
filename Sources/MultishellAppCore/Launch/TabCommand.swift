@@ -7,7 +7,7 @@ import MultishellProcess
 enum TabCommand {
   static func running(
     _ arguments: [String],
-    shell: (executable: URL, arguments: [String]),
+    shell: ShellInvocation,
     exec: String
   ) -> [String] {
     // The login shell may be tcsh or fish, which read a `!` or a `\` in single quotes.
@@ -18,7 +18,7 @@ enum TabCommand {
   /// placeholders read set in the environment around the shell.
   static func running(
     customLine: ShellLine,
-    shell: (executable: URL, arguments: [String]),
+    shell: ShellInvocation,
     exec: String
   ) -> [String]? {
     guard !customLine.text.isEmpty else { return nil }
@@ -26,7 +26,7 @@ enum TabCommand {
   }
 
   private static func line(
-    _ commandLine: String, shell: (executable: URL, arguments: [String]), exec: String
+    _ commandLine: String, shell: ShellInvocation, exec: String
   ) -> [String] {
     [shell.executable.path] + shell.arguments + ["\(commandLine); \(exec)"]
   }

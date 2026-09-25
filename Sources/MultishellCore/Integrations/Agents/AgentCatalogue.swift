@@ -1,5 +1,3 @@
-import Foundation
-
 /// The agents people install, as a static table. Ids are strings in the
 /// workspace so a newer build's agent loads harmlessly on an older one.
 public enum AgentCatalogue {
@@ -9,6 +7,10 @@ public enum AgentCatalogue {
   /// The command the user typed in settings, run as written.
   public static let customID = "custom"
   public static let claudeID = "claude"
+  static let codexID = "codex"
+  static let geminiID = "gemini"
+  static let copilotID = "copilot"
+  static let openCodeID = "opencode"
   /// Agents a build before this one offered, which a state file may still name.
   static let retiredIDs: Set<String> = ["aider", "cursor-agent"]
 
@@ -17,16 +19,16 @@ public enum AgentCatalogue {
       id: claudeID, name: "Claude Code", executable: "claude", resumeArguments: ["--continue"],
       fileMentionPrefix: "@", mark: .claude, markTint: "#d97757"),
     AgentDescriptor(
-      id: "codex", name: "Codex", executable: "codex", resumeArguments: ["resume", "--last"],
+      id: codexID, name: "Codex", executable: "codex", resumeArguments: ["resume", "--last"],
       mark: .codex),
     AgentDescriptor(
-      id: "gemini", name: "Gemini CLI", executable: "gemini",
+      id: geminiID, name: "Gemini CLI", executable: "gemini",
       resumeArguments: ["--resume", "latest"], mark: .gemini, markTint: "#8ab4f8"),
     AgentDescriptor(
-      id: "copilot", name: "Copilot CLI", executable: "copilot", resumeArguments: ["--continue"],
+      id: copilotID, name: "Copilot CLI", executable: "copilot", resumeArguments: ["--continue"],
       mark: .copilot),
     AgentDescriptor(
-      id: "opencode", name: "OpenCode", executable: "opencode", resumeArguments: ["--continue"],
+      id: openCodeID, name: "OpenCode", executable: "opencode", resumeArguments: ["--continue"],
       mark: .openCode, markTint: "#fab283"),
   ]
 
@@ -56,8 +58,6 @@ public enum AgentCatalogue {
   /// The id in force for a project: its override when it has one, else the
   /// global. `nil` means no agent, whichever side said so.
   static func effectiveID(global: String?, override: String?) -> String? {
-    let chosen = override ?? global
-    guard let chosen, !chosen.isEmpty, chosen != noneID else { return nil }
-    return chosen
+    ChosenID.inForce(global: global, override: override, none: noneID)
   }
 }

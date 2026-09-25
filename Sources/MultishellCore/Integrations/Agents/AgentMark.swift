@@ -1,5 +1,3 @@
-import Foundation
-
 /// The glyph drawn where an agent is at a prompt: a case per project the app
 /// has art for, letters for the rest. See Docs/design/agents.md.
 public enum AgentMark: Equatable, Hashable, Sendable {
@@ -16,7 +14,7 @@ public enum AgentMark: Equatable, Hashable, Sendable {
 
   /// One letter from each of the first two words, or the first two of one
   /// word. Non-letters are passed over, so `claude-3` reads as `Cl`.
-  public static func letters(of name: String) -> String {
+  static func letters(of name: String) -> String {
     let words = name.split(whereSeparator: { !$0.isLetter }).filter { !$0.isEmpty }
     guard let first = words.first else { return "?" }
     if words.count > 1, let second = words.dropFirst().first?.first {

@@ -1,6 +1,5 @@
 import AppKit
 import MultishellAppCore
-import MultishellCore
 import MultishellProcess
 
 /// Asks before quitting while terminals are open. Every open session is a

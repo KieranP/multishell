@@ -6,7 +6,7 @@ public enum ShellIntegration {
   public static func refresh(
     zshDirectory: URL = Paths.zshIntegrationDirectory,
     bashInit: URL = Paths.bashInitFile,
-    helper: String = AgentHooks.helperReference
+    helper: String = AgentHookCatalogue.helperReference
   ) throws {
     try FileManager.default.createDirectory(at: zshDirectory, withIntermediateDirectories: true)
     for (name, contents) in ShellStateHooks.zshIntegrationFiles(helper: helper) {

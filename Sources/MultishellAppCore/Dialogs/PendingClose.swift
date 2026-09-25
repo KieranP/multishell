@@ -1,3 +1,4 @@
+import Foundation
 import MultishellCore
 
 /// A close waiting on its dialog, the pane or tab holding an agent that

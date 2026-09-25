@@ -1,0 +1,25 @@
+import Testing
+
+@testable import MultishellAppCore
+@testable import MultishellCore
+
+/// The model has one alert slot, so what happens when several things fail at
+/// once has to be decided rather than left to whichever wrote last.
+@Suite @MainActor
+struct AppModelReconcileTests {
+  @Test func onlyTheFirstFailedSessionTakesTheAlertAndTheRestAreLogged() {
+    let h = Harness()
+    h.model.select(h.main)
+    for _ in 0..<3 { h.model.newTab() }
+    #expect(h.model.liveTerminalCount == 4)
+    h.engine.refusesToOpen = true
+    for id in h.engine.openSessionIDs { h.engine.close(id) }
+    h.model.presentedError = nil
+    h.platform.logged.removeAll()
+
+    h.model.reconcileSessions(takingFocus: false)
+
+    #expect(h.model.presentedError != nil, "the user is told once")
+    #expect(h.platform.logged.count == 3, "and the rest are in the log: \(h.platform.logged)")
+  }
+}

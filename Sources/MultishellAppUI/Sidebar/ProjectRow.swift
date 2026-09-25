@@ -43,9 +43,7 @@ struct ProjectRow: View {
             .frame(width: metrics.icon + 6)
             .help(t("sidebar.fetching"))
         } else if let state {
-          Circle()
-            .fill(theme.color(for: state))
-            .frame(width: 7, height: 7)
+          StateDot(state: state, theme: theme)
             .frame(width: metrics.icon + 6)
             .help(t("sidebar.collapsed-state", state.displayName))
         } else {
@@ -86,16 +84,12 @@ struct ProjectRow: View {
 
   private func rowButton(_ symbol: String, help: String, action: @escaping () -> Void) -> some View
   {
-    Button(action: action) {
+    GlyphButton(help: help, action: action) {
       Image(systemName: symbol)
         .font(.system(size: metrics.icon))
         .foregroundStyle(isHovered ? theme.textSecondary : theme.textTertiary)
         .frame(width: 24, height: 24)
-        .contentShape(.rect)
     }
-    .buttonStyle(.plain)
-    .help(help)
-    .accessibilityLabel(help)
   }
 }
 

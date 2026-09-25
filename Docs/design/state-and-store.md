@@ -40,9 +40,9 @@ What is written, what is repaired, how it is tested. Newest at the bottom.
   rule the settings window changes from its own scene, a fetch holding a project
   across the network, an export, and the write-back of a read taken before
   awaiting git. Each looks the record up by id.
-- **`ProjectStoredFieldsTests` is the guard.** `Project` hand-writes its coding
-  keys, `==` and `hash` to keep this run's read of a repo's file out of all
-  three, so a field added later would be silently unsaved.
+- **`ProjectTests` is the guard.** `Project` hand-writes its coding keys, `==`
+  and `hash` to keep this run's read of a repo's file out of all three, so a
+  field added later would be silently unsaved.
 - **Saves land off the main actor.** Encoding and writing on it held the window
   for every divider drag, tab move and rename on a network home directory. Cost:
   a failed save is reported a moment after the change.

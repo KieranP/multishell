@@ -1,6 +1,5 @@
 import Foundation
 import MultishellCore
-import MultishellProcess
 import TestScratch
 import Testing
 
@@ -16,20 +15,22 @@ struct AppModelLaunchTests {
     #expect(h.model.prepared(session).shellPath == ShellCatalogue.loginShellPath())
 
     h.model.setDefaultShell("/bin/bash")
-    #expect(h.model.prepared(session).shell == "/bin/bash")
+    #expect(h.model.prepared(session).shellOverride == "/bin/bash")
 
     h.model.updateSettings(ProjectSettings(defaultShell: "/bin/sh"), for: h.project)
-    #expect(h.model.prepared(session).shell == "/bin/sh", "the project's override wins")
+    #expect(h.model.prepared(session).shellOverride == "/bin/sh", "the project's override wins")
 
     h.model.updateSettings(
       ProjectSettings(defaultShell: ShellCatalogue.loginShellID), for: h.project)
     #expect(
-      h.model.prepared(session).shell == ShellCatalogue.loginShellPath(),
+      h.model.prepared(session).shellOverride == ShellCatalogue.loginShellPath(),
       "a project can step back to $SHELL under a global choice")
 
     h.model.select(h.main)
-    #expect(h.engine.opened.last?.shell == ShellCatalogue.loginShellPath(), "reaches the engine")
-    #expect(h.model.workspace.sessions.allSatisfy { $0.shell == nil }, "never in the workspace")
+    #expect(
+      h.engine.opened.last?.shellOverride == ShellCatalogue.loginShellPath(), "reaches the engine")
+    #expect(
+      h.model.workspace.sessions.allSatisfy { $0.shellOverride == nil }, "never in the workspace")
   }
 
   @Test func anAgentTabsFollowingShellIsTheChosenOne() {
@@ -87,7 +88,7 @@ struct AppModelLaunchTests {
     before.store.openTab(in: before.main.id, title: "Claude Code", agentID: AgentCatalogue.claudeID)
     before.model.saveNow()
 
-    let (store, _) = WorkspaceStore.restored(from: WorkspaceSnapshot(fileURL: file))
+    let (store, _) = WorkspaceStore.restored(from: WorkspaceFile(fileURL: file))
     let engine = FakeEngine()
     let after = AppModel(
       store: store, host: engine, worktrees: nil,
@@ -120,20 +121,21 @@ struct AppModelLaunchTests {
     let session = TerminalSession(
       worktreeID: h.main.id, workingDirectory: h.main.path, title: "Shell")
     h.model.setDefaultShell(ShellCatalogue.customID)
-    #expect(h.model.prepared(session).shell == ShellCatalogue.loginShellPath(), "blank path")
+    #expect(
+      h.model.prepared(session).shellOverride == ShellCatalogue.loginShellPath(), "blank path")
     #expect(h.model.customShellPathProblem?.hasPrefix("Blank") == true)
     #expect(h.model.shellDisplayName(ShellCatalogue.customID).contains("blank"))
 
     h.model.setCustomShellPath("/no/such/shell")
-    #expect(h.model.prepared(session).shell == "/no/such/shell")
+    #expect(h.model.prepared(session).shellOverride == "/no/such/shell")
     #expect(h.model.customShellPathProblem?.hasPrefix("Nothing executable") == true)
 
     h.model.setCustomShellPath(" /bin/sh ")
-    #expect(h.model.prepared(session).shell == "/bin/sh")
+    #expect(h.model.prepared(session).shellOverride == "/bin/sh")
     #expect(h.model.customShellPathProblem == nil)
     #expect(h.model.shellDisplayName(ShellCatalogue.customID) == "the custom path /bin/sh")
     h.model.updateSettings(ProjectSettings(defaultShell: "/bin/bash"), for: h.project)
-    #expect(h.model.prepared(session).shell == "/bin/bash", "a project override still wins")
+    #expect(h.model.prepared(session).shellOverride == "/bin/bash", "a project override still wins")
   }
 
   /// Nothing that acts on the tab in front of the user acts at all while the
@@ -167,7 +169,8 @@ struct AppModelLaunchTests {
     try FileManager.default.createDirectory(at: shells, withIntermediateDirectories: true)
     let ran = h.root.appendingPathComponent("shell-ran")
     let shell = try Scratch.script(
-      "echo \"$@\" > '\(ran.path)'", at: shells.appendingPathComponent("bash"))
+      "printf '%s' \"$MULTISHELL_SCRIPT\" > '\(ran.path)'",
+      at: shells.appendingPathComponent("bash"))
     let code = try Scratch.script("exit 0", at: shells.appendingPathComponent("code"))
     h.model.editorDetection = EditorDetection(
       found: ["vscode": .init(application: nil, command: code)])

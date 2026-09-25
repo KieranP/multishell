@@ -9,7 +9,7 @@ struct SidebarSortMenu: View {
   let theme: Theme
   let metrics: UIMetrics
 
-  @State private var hovered = false
+  @State private var isHovered = false
 
   var body: some View {
     Menu {
@@ -28,7 +28,7 @@ struct SidebarSortMenu: View {
     } label: {
       Image(systemName: "arrow.up.arrow.down")
         .font(.system(size: metrics.badge))
-        .foregroundStyle(hovered ? theme.textSecondary : theme.textTertiary.opacity(0.7))
+        .foregroundStyle(isHovered ? theme.textSecondary : theme.textTertiary.opacity(0.7))
         .frame(width: 24, height: 22)
         // Painted: a menu is hit-tested by its label's ink, and the glyph
         // alone is a small target. As the strip's + does.
@@ -41,7 +41,7 @@ struct SidebarSortMenu: View {
     .buttonStyle(.plain)
     .menuIndicator(.hidden)
     .fixedSize()
-    .onHover { hovered = $0 }
+    .onHover { isHovered = $0 }
     .help(t("sidebar.sort-worktrees"))
     .accessibilityLabel(t("sidebar.sort-worktrees"))
   }

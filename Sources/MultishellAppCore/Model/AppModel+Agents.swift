@@ -1,35 +1,6 @@
 import Foundation
 import MultishellCore
-import MultishellGitKit
 import MultishellProcess
-
-extension AppModel {
-  /// Whose hooks and whether the command-line tool are installed. Six files,
-  /// read here on the main actor: the settings rows ask after writing one.
-  public func refreshAgentStatus() {
-    note(Self.agentStatus())
-  }
-
-  nonisolated static func agentStatus() -> AgentStatus {
-    let installations = AgentHooks.integrations.map { ($0.id, $0.installation()) }
-    return AgentStatus(
-      hooks: Set(installations.filter { $0.1 != .absent }.map(\.0)),
-      staleHooks: Set(installations.filter { $0.1 == .stale }.map(\.0)),
-      tool: HelperLink.isCommandLineToolInstalled)
-  }
-
-  struct AgentStatus: Sendable {
-    let hooks: Set<String>
-    let staleHooks: Set<String>
-    let tool: Bool
-  }
-
-  func note(_ status: AgentStatus) {
-    setIfChanged(\.installedAgentHooks, status.hooks)
-    setIfChanged(\.staleAgentHooks, status.staleHooks)
-    setIfChanged(\.commandLineToolInstalled, status.tool)
-  }
-}
 
 extension AppModel {
   public func setPreferredAgent(_ id: String?) {
@@ -63,19 +34,30 @@ extension AppModel {
     AgentCatalogue.displayName(id)
   }
 
+  /// Which agent a pane holds: the one that reported while its process is up,
+  /// else the tab's own. Most panes get theirs typed at a shell prompt.
+  public func agentAtThePrompt(of session: TerminalSession) -> String? {
+    agentAtThePrompt(session.id, orOpenedAs: session.agentID)
+  }
+
   /// Which agent a tab draws the mark of, `nil` for a shell. The last step
   /// is a scan of every session, so a strip asks this once per tab.
   public func agentID(of tab: TerminalTab) -> String? {
-    if let reported = reportedAgents[tab.focusedSessionID], reported.isAtThePrompt {
-      return reported.agentID
-    }
-    if let running = commandAgents[tab.focusedSessionID] { return running }
-    return workspace.session(tab.focusedSessionID)?.agentID
+    agentAtThePrompt(
+      tab.focusedSessionID, orOpenedAs: workspace.session(tab.focusedSessionID)?.agentID)
   }
 
-  /// One pane's own, for its sidebar row and its card.
-  public func agentID(ofPane session: TerminalSession) -> String? {
-    agentAtThePrompt(of: session)
+  private func agentAtThePrompt(
+    _ id: TerminalSession.ID, orOpenedAs openedAs: @autoclosure () -> String?
+  ) -> String? {
+    if let reported = reportedAgents[id], reported.isAtThePrompt { return reported.agentID }
+    return commandAgents[id] ?? openedAs()
+  }
+
+  /// Whether an agent is at this pane's prompt, the report winning over the
+  /// tab's own id. Asked by the board and its counts alike.
+  func isAgentPane(_ session: TerminalSession) -> Bool {
+    agentAtThePrompt(of: session) != nil
   }
 
   /// Cmd+Option+T: a tab running the preferred agent. The store records the
@@ -97,9 +79,14 @@ extension AppModel {
   }
 
   private func openAgentTab(_ agentID: String, in worktree: Worktree, group: TabGroup.ID?) {
+    addAgentTab(agentID, in: worktree, group: group)
+    reconcileSessions(takingFocus: true)
+  }
+
+  /// The store's half alone, for a caller that reconciles later.
+  func addAgentTab(_ agentID: String, in worktree: Worktree, group: TabGroup.ID?) {
     store.openTab(
       in: worktree.id, group: group, title: agentDisplayName(agentID), agentID: agentID)
-    reconcileSessions(takingFocus: true)
   }
 
   /// What a New Tab menu offers: the PATH scan's finds in catalogue order,
@@ -114,9 +101,9 @@ extension AppModel {
 
   /// What the registry opens for a session: its shell, or the agent's command
   /// line. A restored tab resumes where it can, four not starting four agents.
-  public func prepared(_ session: TerminalSession) -> TerminalSession {
+  func prepared(_ session: TerminalSession) -> TerminalSession {
     var prepared = session
-    prepared.shell = shellPath(forWorktree: session.worktreeID)
+    prepared.shellOverride = shellPath(forWorktree: session.worktreeID)
     guard let agentID = session.agentID else { return prepared }
     prepared.command = agentCommand(
       agentID, resume: restoredSessionIDs.contains(session.id), shell: prepared.shellPath,
@@ -129,12 +116,12 @@ extension AppModel {
   func agentCommand(
     _ id: String, resume: Bool, shell tabShell: String, in worktreeID: Worktree.ID
   ) -> [String]? {
-    guard let shell = ShellCommand.shell else { return nil }
+    let shell = ShellCommand.shell(named: ShellCatalogue.loginShellPath())
     let exec = ShellLaunch.execCommandLine(forShell: tabShell)
     let values = placeholderValues(in: worktreeID)
     if id == AgentCatalogue.customID {
       return TabCommand.running(
-        customLine: AgentFlags.customLine(workspace.customAgentCommand, values: values),
+        customLine: AgentFlags.customCommandLine(workspace.customAgentCommand, values: values),
         shell: shell, exec: exec)
     }
     guard let agent = AgentCatalogue.agent(id) else {
@@ -155,27 +142,18 @@ extension AppModel {
   /// The flag line in force for a worktree's project, or none where the
   /// worktree's project has gone.
   private func agentFlags(_ id: String, in worktreeID: Worktree.ID) -> String {
-    guard let project = project(owning: worktreeID) else { return "" }
+    guard let worktree = workspace.worktree(worktreeID), let project = resolvedProject(of: worktree)
+    else { return "" }
     return workspace.agentFlags(for: project, agent: id)
   }
 
   /// What `{{branch}}` and the rest stand for here. Empty where the worktree
   /// has gone, leaving each placeholder as typed.
   private func placeholderValues(in worktreeID: Worktree.ID) -> [AgentPlaceholder: String] {
-    guard let worktree = workspace.worktree(worktreeID),
-      let project = project(owning: worktreeID)
+    guard let worktree = workspace.worktree(worktreeID), let project = resolvedProject(of: worktree)
     else { return [:] }
     return AgentPlaceholder.values(
       project: project, worktree: worktree, name: workspace.displayName(of: worktree))
-  }
-
-  /// The project with its repository's `.multishell.json` layered in, since
-  /// every settings resolution has to be asked of the model.
-  private func project(owning worktreeID: Worktree.ID) -> Project? {
-    guard let worktree = workspace.worktree(worktreeID),
-      let project = workspace.project(worktree.projectID)
-    else { return nil }
-    return resolved(project)
   }
 
   /// Once per agent per run, like an unreachable project: every relaunch of
@@ -183,48 +161,5 @@ extension AppModel {
   private func reportMissingAgentOnce(_ id: String, name: String) {
     guard reportedMissingAgents.insert(id).inserted else { return }
     presentedError = .agentNotInstalled(name)
-  }
-}
-
-extension AppModel {
-  /// The agents Settings > Agents offers hooks for: the ones this machine
-  /// has, and any whose hooks are still installed.
-  public var agentHooksRows: [AgentHooksRow] {
-    AgentHooksRow.rows(
-      detection: agentDetection, installed: installedAgentHooks, stale: staleAgentHooks)
-  }
-
-  /// The file as it would be written, for the row that shows it.
-  public func agentHooksSnippet(_ id: String) -> String {
-    AgentHooks.integration(for: id)?.snippet() ?? ""
-  }
-
-  public func installAgentHooks(_ id: String) {
-    guard let integration = AgentHooks.integration(for: id) else { return }
-    do {
-      try integration.install()
-    } catch {
-      report(error)
-    }
-    refreshAgentStatus()
-  }
-
-  public func removeAgentHooks(_ id: String) {
-    guard let integration = AgentHooks.integration(for: id) else { return }
-    do {
-      try integration.remove()
-    } catch {
-      report(error)
-    }
-    refreshAgentStatus()
-  }
-
-  public func installCommandLineTool() {
-    do {
-      try platform.installCommandLineTool()
-    } catch {
-      report(error)
-    }
-    refreshAgentStatus()
   }
 }

@@ -12,15 +12,15 @@ public enum ShellCatalogue {
 
   /// Shells worth looking for on the login shell's PATH beyond `/etc/shells`,
   /// which Homebrew installs do not always register.
-  public static let searched = ["zsh", "bash", "fish", "nu"]
+  public static let extraShellNamesToSearch = ["zsh", "bash", "fish", "nu"]
 
   /// The path in force for a project, or `nil` for `$SHELL`. `customID`
   /// resolves to `customPath`, and blank is `$SHELL` too.
   static func effectivePath(
     global: String?, override: String?, customPath: String = ""
   ) -> String? {
-    let chosen = override ?? global
-    guard let chosen, !chosen.isEmpty, chosen != loginShellID else { return nil }
+    guard let chosen = ChosenID.inForce(global: global, override: override, none: loginShellID)
+    else { return nil }
     guard chosen == customID else { return chosen }
     let path = customPath.trimmingCharacters(in: .whitespaces)
     return path.isEmpty ? nil : path

@@ -27,10 +27,10 @@ What has no other file to go in. Newest at the bottom.
   red itself, the one taking Return solid in a key window and the rest pale; so
   the test reads the drawing there, offscreen.
 - **Clearing the pending value takes the sheet down with it.** A worktree
-  removed outside the app clears `pendingRemoval`, and a sheet left standing
-  would confirm a removal on a path git no longer knows (worktrees.md). The
-  `destructiveAlert` modifier drops the answer when that happens, rather than
-  reading it as a Cancel.
+  removed outside the app clears `pendingWorktreeRemoval`, and a sheet left
+  standing would confirm a removal on a path git no longer knows (worktrees.md).
+  The `destructiveAlert` modifier drops the answer when that happens, rather
+  than reading it as a Cancel.
 - **The shared-settings question stays a SwiftUI dialog**: nothing it offers is
   destructive, so the blue default is right, and Return declines. Its other
   button runs what a repository committed, nobody asked for the question, and a

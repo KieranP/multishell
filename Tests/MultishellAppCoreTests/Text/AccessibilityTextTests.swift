@@ -95,12 +95,13 @@ struct AccessibilityTextTests {
     #expect(AccessibilityText.subagents(out) == "2 subagents, Explore, subagent")
     #expect(
       AccessibilityText.pane(
-        title: "claude", position: nil, isActive: false, state: .running, subagents: out,
+        title: "claude", position: nil, isFocusedPane: false, state: .running, subagents: out,
         agent: "Claude Code")
         == "claude, tab, Claude Code, agent, Working, 2 subagents")
     #expect(
       AccessibilityText.pane(
-        title: "fix tests", position: (2, 2), isActive: true, state: nil, subagents: [],
+        title: "fix tests", position: AgentBoardCard.Position(index: 2, count: 2),
+        isFocusedPane: true, state: nil, subagents: [],
         agent: nil)
         == "fix tests, pane 2 of 2, selected",
       "a renamed tab names every pane alike, so the position tells them apart")
@@ -119,7 +120,7 @@ struct AccessibilityTextTests {
         == "1 subagent, 2 background shells, Explore, background shell, background shell")
     #expect(
       AccessibilityText.pane(
-        title: "claude", position: nil, isActive: false, state: .running, subagents: out,
+        title: "claude", position: nil, isFocusedPane: false, state: .running, subagents: out,
         agent: nil)
         == "claude, tab, Working, 1 subagent, 2 background shells")
   }

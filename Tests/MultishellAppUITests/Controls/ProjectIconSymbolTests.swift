@@ -1,6 +1,7 @@
 import AppKit
-import MultishellCore
 import Testing
+
+@testable import MultishellCore
 
 @Suite
 struct ProjectIconSymbolTests {

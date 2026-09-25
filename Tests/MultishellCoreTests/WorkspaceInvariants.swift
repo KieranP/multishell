@@ -1,5 +1,4 @@
 import Foundation
-import TestScratch
 import Testing
 
 @testable import MultishellCore

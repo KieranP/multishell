@@ -93,8 +93,8 @@ struct SessionStateReportTests {
     #expect(SessionState.mostUrgent([.idle, .idle]) == nil, "idle only when every tab is")
     #expect(SessionState.mostUrgent([.idle]) == nil)
     #expect(SessionState.mostUrgent([]) == nil)
-    #expect(SessionState.idle.stored == nil)
-    #expect(SessionState.done.stored == .done)
+    #expect(SessionState.idle.nonIdle == nil)
+    #expect(SessionState.done.nonIdle == .done)
   }
 
   @Test func eachNotifiedStateIsAskedForOnItsOwnAndRunningNeverBanners() {

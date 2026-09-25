@@ -1,5 +1,4 @@
 import Foundation
-import Observation
 
 /// The single place workspace state changes; see Docs/design/state-and-store.md.
 /// One file, not an extension per collection: `private` reaches no further.
@@ -9,31 +8,30 @@ public final class WorkspaceStore {
   /// `private(set)`, so nothing outside this file writes the workspace.
   public private(set) var workspace: Workspace
 
-  @ObservationIgnored private let snapshot: WorkspaceSnapshot
+  @ObservationIgnored private let file: WorkspaceFile
 
   /// Set where unread state is still on disk: saving the empty workspace over
   /// it deletes the user's sidebar. See Docs/design/state-and-store.md.
   @ObservationIgnored private(set) var refusesToSave = false
 
-  public init(workspace: Workspace = Workspace(), snapshot: WorkspaceSnapshot = WorkspaceSnapshot())
-  {
+  public init(workspace: Workspace = Workspace(), file: WorkspaceFile = WorkspaceFile()) {
     self.workspace = workspace
-    self.snapshot = snapshot
+    self.file = file
   }
 
   /// Loads saved state. `loadError` is set, not thrown, so the app still
   /// starts and can tell the user what happened.
   public static func restored(
-    from snapshot: WorkspaceSnapshot = WorkspaceSnapshot()
+    from file: WorkspaceFile = WorkspaceFile()
   ) -> (store: WorkspaceStore, loadError: (any Error)?) {
     do {
-      var workspace = try snapshot.load()
+      var workspace = try file.load()
       workspace.repairReferences()
       workspace.forgetRetiredAgents()
-      return (WorkspaceStore(workspace: workspace, snapshot: snapshot), nil)
+      return (WorkspaceStore(workspace: workspace, file: file), nil)
     } catch {
-      let store = WorkspaceStore(workspace: Workspace(), snapshot: snapshot)
-      store.refusesToSave = snapshot.holdsFile
+      let store = WorkspaceStore(workspace: Workspace(), file: file)
+      store.refusesToSave = file.holdsFile
       return (store, error)
     }
   }
@@ -41,7 +39,7 @@ public final class WorkspaceStore {
   /// A file the user moved away is no longer in the way, so saving resumes;
   /// one stat, and only while refusing. A readable one still waits for relaunch.
   private func stillRefusesToSave() -> Bool {
-    if refusesToSave, !snapshot.holdsFile { refusesToSave = false }
+    if refusesToSave, !file.holdsFile { refusesToSave = false }
     return refusesToSave
   }
 
@@ -49,14 +47,14 @@ public final class WorkspaceStore {
   /// state could not be read, and every change would otherwise raise it again.
   public func save() throws {
     guard !stillRefusesToSave() else { return }
-    try snapshot.save(workspace)
+    try file.save(workspace)
   }
 
   /// A save to run off the main actor, `nil` where saving is refused. The
   /// synchronous `save` stays for quit, when there is no later to wait for.
   public func prepareSave() -> WorkspaceSave? {
     guard !stillRefusesToSave() else { return nil }
-    return WorkspaceSave(workspace: workspace, snapshot: snapshot, ticket: snapshot.ticket())
+    return WorkspaceSave(workspace: workspace, file: file, ticket: file.ticket())
   }
 }
 
@@ -99,7 +97,7 @@ extension WorkspaceStore {
   /// This run's read of a project's `.multishell.json`. A read saying what the
   /// last one did touches nothing: a mutation here is a whole-workspace save.
   public func updateSharedSettings(
-    _ read: SharedSettingsRead, forProject id: Project.ID
+    _ read: SharedSettingsSnapshot, forProject id: Project.ID
   ) {
     guard let index = workspace.projects.firstIndex(where: { $0.id == id }),
       workspace.projects[index].sharedSettings != read
@@ -337,7 +335,7 @@ extension WorkspaceStore {
   /// layout survives relaunch. Relative shares, like a split's weights.
   public func setGroupWeights(_ weights: [Double], in worktreeID: Worktree.ID) {
     let columns = workspace.groups(in: worktreeID)
-    guard weights.count == columns.count, weights.allSatisfy({ $0.isFinite && $0 > 0 }) else {
+    guard weights.count == columns.count, LayoutWeight.allUsable(weights) else {
       return
     }
     var next = weights.makeIterator()
@@ -458,7 +456,7 @@ extension WorkspaceStore {
 
   /// Written back when a divider is dragged, so a layout survives relaunch.
   public func setSplitWeights(_ weights: [Double], at path: [Int], ofTab tabID: TerminalTab.ID) {
-    guard weights.allSatisfy({ $0.isFinite && $0 > 0 }),
+    guard LayoutWeight.allUsable(weights),
       let index = workspace.tabIndex(tabID)
     else { return }
     workspace.tabs[index].root = workspace.tabs[index].root.settingWeights(weights, at: path)

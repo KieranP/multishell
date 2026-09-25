@@ -1,4 +1,3 @@
-import Foundation
 import MultishellCore
 
 extension AppModel {
@@ -32,9 +31,5 @@ extension AppModel {
     }
     reloadThemes()
     platform.revealInFileBrowser(Paths.themesDirectory)
-  }
-
-  public func setWorktreeDefaults(_ defaults: WorktreeSettings) {
-    store.setWorktreeDefaults(defaults)
   }
 }

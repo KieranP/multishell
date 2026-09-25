@@ -1,5 +1,3 @@
-import Foundation
-
 /// App-wide look, separate from `ProjectSettings` because it is not per-repo.
 public struct Appearance: Codable, Hashable, Sendable {
   public var themeID: Theme.ID

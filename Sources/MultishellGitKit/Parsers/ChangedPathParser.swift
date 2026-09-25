@@ -1,5 +1,3 @@
-import Foundation
-
 /// Parses `git diff --name-only -z`, NUL separated: a path may hold a
 /// newline, and git quotes one that does.
 enum ChangedPathParser {

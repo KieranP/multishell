@@ -17,12 +17,12 @@ struct WorktreeMergeStateTests {
 
   @Test func theTooltipOffersRemovalOnlyWhereTheEvidenceIsProof() {
     #expect(
-      WorktreeMergeState.merged(.ancestor, into: "origin/main").help
+      WorktreeMergeState.merged(.ancestor, into: "origin/main").tooltip
         == "Merged into origin/main · safe to remove")
     #expect(
-      !WorktreeMergeState.merged(.upstreamGone, into: "origin/main").help
+      !WorktreeMergeState.merged(.upstreamGone, into: "origin/main").tooltip
         .contains("safe to remove"))
-    #expect(WorktreeMergeState.unmerged.help.isEmpty)
+    #expect(WorktreeMergeState.unmerged.tooltip.isEmpty)
   }
 
   /// Work only in this worktree would go to the Trash with the directory, and the badge's

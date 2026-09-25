@@ -10,7 +10,7 @@ struct SidebarFilterField: View {
   let metrics: UIMetrics
   let close: () -> Void
 
-  @FocusState private var focused: Bool
+  @FocusState private var isFocused: Bool
 
   var body: some View {
     HStack(spacing: 6) {
@@ -18,15 +18,15 @@ struct SidebarFilterField: View {
         .textFieldStyle(.plain)
         .font(.system(size: metrics.secondary))
         .foregroundStyle(theme.textPrimary)
-        .focused($focused)
+        .focused($isFocused)
         // A turn later: focus does not take on a field the hierarchy has not
         // installed yet.
-        .task { focused = true }
+        .task { isFocused = true }
         .onExitCommand(perform: close)
       if SidebarFilter(filter).isActive {
         Button {
           filter = ""
-          focused = true
+          isFocused = true
         } label: {
           Image(systemName: "xmark.circle.fill")
             .font(.system(size: metrics.icon))

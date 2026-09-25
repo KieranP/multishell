@@ -27,7 +27,7 @@ public enum ProjectIcon {
 
   /// The glyph as a symbol name, or `nil`. A name this build lacks is still
   /// a name, a teammate's build drawing it; an emoji is not.
-  public static func symbolName(_ glyph: String?) -> String? {
+  static func normalizedGlyph(_ glyph: String?) -> String? {
     guard let glyph else { return nil }
     let trimmed = glyph.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !trimmed.isEmpty, trimmed.unicodeScalars.allSatisfy(\.isASCII) else { return nil }

@@ -17,7 +17,7 @@ struct GitExecutableTests {
       "echo '\(real.path)'", at: root.appendingPathComponent("xcrun"))
 
     let found = await GitExecutable.resolve(
-      path: root.path, shim: shim, xcrun: xcrun, developerDirectory: root)
+      searchPath: root.path, shim: shim, xcrun: xcrun, developerDirectory: root)
 
     #expect(found?.path == real.path)
   }
@@ -29,7 +29,7 @@ struct GitExecutableTests {
     let xcrun = try Scratch.script("exit 1", at: root.appendingPathComponent("xcrun"))
 
     let found = await GitExecutable.resolve(
-      path: root.path, shim: shim, xcrun: xcrun, developerDirectory: root)
+      searchPath: root.path, shim: shim, xcrun: xcrun, developerDirectory: root)
 
     #expect(found?.path == shim.path)
   }
@@ -43,7 +43,7 @@ struct GitExecutableTests {
       "touch '\(marker.path)'", at: root.appendingPathComponent("xcrun"))
 
     let found = await GitExecutable.resolve(
-      path: root.path, shim: URL(fileURLWithPath: "/usr/bin/git"), xcrun: xcrun,
+      searchPath: root.path, shim: URL(fileURLWithPath: "/usr/bin/git"), xcrun: xcrun,
       developerDirectory: root)
 
     #expect(found?.path == git.path)
@@ -59,7 +59,7 @@ struct GitExecutableTests {
       "touch '\(marker.path)'", at: root.appendingPathComponent("xcrun"))
 
     let found = await GitExecutable.resolve(
-      path: root.path, shim: shim, xcrun: xcrun,
+      searchPath: root.path, shim: shim, xcrun: xcrun,
       developerDirectory: root.appendingPathComponent("CommandLineTools"))
 
     #expect(found?.path == shim.path)

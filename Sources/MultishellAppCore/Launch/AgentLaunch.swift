@@ -1,4 +1,3 @@
-import Foundation
 import MultishellCore
 
 /// The arguments an agent tab starts with; `TabCommand` puts them in a line.

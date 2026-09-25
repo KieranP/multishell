@@ -4,10 +4,12 @@ import Testing
 
 @testable import MultishellAppCore
 @testable import MultishellCore
+@testable import MultishellProcess
 
 @Suite
 struct TabCommandTests {
-  private let zsh = (executable: URL(fileURLWithPath: "/bin/zsh"), arguments: ["-l", "-i", "-c"])
+  private let zsh = ShellInvocation(
+    executable: URL(fileURLWithPath: "/bin/zsh"), arguments: ["-l", "-i", "-c"])
 
   @Test func theAgentRunsInTheLoginShellAndAShellTakesOverAfterIt() {
     let command = TabCommand.running(
@@ -29,7 +31,8 @@ struct TabCommandTests {
     let words = ["/code/a!b", #"back\\slash"#]
     let command = TabCommand.running(
       ["/usr/bin/printf", "[%s]\\n"] + words,
-      shell: (URL(fileURLWithPath: tcsh), ["-f", "-i", "-c"]), exec: "exit")
+      shell: ShellInvocation(
+        executable: URL(fileURLWithPath: tcsh), arguments: ["-f", "-i", "-c"]), exec: "exit")
     let text = try await Detached.output(
       of: command[0], Array(command.dropFirst()),
       environment: ["PATH": "/usr/bin:/bin", "HISTFILE": "", "HOME": home.path])
@@ -56,7 +59,8 @@ struct TabCommandTests {
       let values = AgentPlaceholder.values(project: project, worktree: worktree, name: hostile)
       let command = TabCommand.running(
         ["/usr/bin/printf", "[%s]\\n"] + AgentFlags.arguments("--name={{branch}}", values: values),
-        shell: (URL(fileURLWithPath: shell), flags), exec: "exit")
+        shell: ShellInvocation(executable: URL(fileURLWithPath: shell), arguments: flags),
+        exec: "exit")
       let text = try await Detached.output(
         of: command[0], Array(command.dropFirst()),
         environment: ["PATH": "/usr/bin:/bin", "HISTFILE": "", "HOME": home.path],

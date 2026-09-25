@@ -236,15 +236,16 @@ struct AppModelGitTests {
     defer { h.tearDown() }
     await h.model.createWorktree(branch: "asked", basedOn: nil, createBranch: true, in: h.project)
     let created = try #require(h.worktree(onBranch: "asked"))
-    await h.model.requestRemoval(of: created)?.value
-    #expect(h.model.pendingRemoval?.id == created.id)
+    await h.model.requestWorktreeRemoval(of: created)?.value
+    #expect(h.model.pendingWorktreeRemoval?.id == created.id)
 
     _ = try await h.git.run(
       ["worktree", "remove", "--force", created.path.path], in: h.project.path)
     await h.model.refresh(h.project)
 
     #expect(h.model.workspace.worktree(created.id) == nil)
-    #expect(h.model.pendingRemoval == nil, "Confirm would remove a path git no longer lists")
+    #expect(
+      h.model.pendingWorktreeRemoval == nil, "Confirm would remove a path git no longer lists")
   }
 
   /// A refresh drops the vanished worktree's tabs and sessions, and without
@@ -355,8 +356,8 @@ struct AppModelGitTests {
     h.model.newShellTab()
     h.model.select(created)
     #expect(h.model.workspace.tabs(in: created.id).isEmpty, "nothing starts a shell meanwhile")
-    h.model.requestRemoval(of: created)
-    #expect(h.model.pendingRemoval == nil, "and nothing removes it meanwhile")
+    h.model.requestWorktreeRemoval(of: created)
+    #expect(h.model.pendingWorktreeRemoval == nil, "and nothing removes it meanwhile")
 
     await h.model.workInFlight.setup(of: created.id)?.value
 
@@ -530,19 +531,22 @@ struct AppModelGitTests {
   @Test func hooksRunThroughTheProjectsShellOverride() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
-    h.model.setDefaultShell("/bin/zsh")
+    let shells = h.root.appendingPathComponent("shells", isDirectory: true)
+    try FileManager.default.createDirectory(at: shells, withIntermediateDirectories: true)
+    let (zsh, bash) = (shells.appendingPathComponent("zsh"), shells.appendingPathComponent("bash"))
+    try Scratch.script("printf zsh > shell.txt", at: zsh)
+    try Scratch.script("printf bash > shell.txt", at: bash)
+    h.model.setDefaultShell(zsh.path)
     h.model.updateSettings(
-      ProjectSettings(
-        postCreateHook: "printf '%s' \"$BASH_VERSION\" > shell.txt", defaultShell: "/bin/bash"),
-      for: h.project)
+      ProjectSettings(postCreateHook: "true", defaultShell: bash.path), for: h.project)
 
     await h.model.createWorktree(branch: "bashed", basedOn: nil, createBranch: true, in: h.project)
 
     let created = try #require(h.worktree(onBranch: "bashed"))
     await h.model.workInFlight.setup(of: created.id)?.value
-    let version = try String(
+    let shell = try String(
       contentsOf: created.path.appendingPathComponent("shell.txt"), encoding: .utf8)
-    #expect(!version.isEmpty, "the project's bash, not the global zsh")
+    #expect(shell == "bash", "the project's shell, not the global one")
   }
 
   @Test func aHookThatLeavesABackgroundProcessDoesNotHangTheCreate() async throws {
@@ -597,7 +601,7 @@ struct AppModelGitTests {
     await h.model.refreshStatuses()
     let pending = PendingWorktreeRemoval(worktree: worktree, branch: .decided(deletes: false))
     #expect(
-      pending.message(warning: h.model.removalWarning(for: worktree))
+      pending.message(warning: h.model.worktreeRemovalWarning(for: worktree))
         .contains("1 changed file, kept in the Trash"))
 
     await h.model.removeWorktree(worktree)
@@ -620,7 +624,8 @@ struct AppModelGitTests {
     try "uncommitted\n".write(
       to: worktree.path.appendingPathComponent("work.txt"), atomically: true, encoding: .utf8)
     await h.model.refreshStatuses()
-    #expect(h.model.removalWarning(for: worktree)?.contains("deleted with the directory") == true)
+    #expect(
+      h.model.worktreeRemovalWarning(for: worktree)?.contains("deleted with the directory") == true)
 
     await h.model.removeWorktree(worktree)
 
@@ -635,12 +640,12 @@ struct AppModelGitTests {
     defer { h.tearDown() }
     await h.model.createWorktree(branch: "kept", basedOn: nil, createBranch: true, in: h.project)
     let worktree = try #require(h.worktree(onBranch: "kept"))
-    await h.model.requestRemoval(of: worktree)?.value
-    let pending = try #require(h.model.pendingRemoval)
+    await h.model.requestWorktreeRemoval(of: worktree)?.value
+    let pending = try #require(h.model.pendingWorktreeRemoval)
     #expect(pending.message(warning: nil).hasPrefix("Moves "))
 
     h.model.setTrashesRemovedWorktrees(false)
-    await h.model.confirmRemoval(pending, deletingBranch: false)
+    await h.model.confirmWorktreeRemoval(pending, deletingBranch: false)
 
     #expect(h.platform.trashed == [worktree.path])
   }
@@ -717,7 +722,6 @@ struct AppModelGitTests {
     await create.value
 
     #expect(seen.contains(.preCreateHook), "the sheet could name the hook it waited on: \(seen)")
-    #expect(!seen.contains(.postCreateHook), "the post hook runs after the sheet has gone")
     #expect(h.model.worktreeCreationStep == nil, "cleared once the sheet's part is over")
     let created = try #require(h.worktree(onBranch: "stepped"))
     await h.model.workInFlight.setup(of: created.id)?.value

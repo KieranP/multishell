@@ -1,5 +1,3 @@
-import Foundation
-
 /// Waits out a drag no drag session will end: until the button is up, then
 /// `grace` more, so a drop that did land has read the drag first.
 enum DragRelease {

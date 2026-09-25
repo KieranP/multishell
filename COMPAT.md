@@ -40,11 +40,12 @@ fish and nu are found and offered in the shell picker, and run as terminals, but
 nothing is injected into them. Under nu, a dropped file whose name holds a
 single quote is pasted as a line nu cannot read.
 
-A project hook runs through the project's shell with its startup files read:
-interactive and login for sh, bash, zsh, dash, ksh, mksh and fish, interactive
-only for csh and tcsh, which skips `.login`. The first failing line stops it
-except in fish, csh and tcsh. A shell not in that list, nu for one, runs it
-through `/bin/sh` without its startup files.
+A project hook is an sh script, started from the project's shell so its startup
+files set the environment: interactive and login for sh, bash, zsh, dash, ksh,
+mksh and fish, interactive only for csh and tcsh, which skips `.login`. Their
+functions and aliases do not reach the script, only what they export. The first
+failing line stops it under every shell. A shell not in that list, nu for one,
+reads no startup files, and the script runs in `/bin/sh` alone.
 
 Your shell configuration continues to work, and no file of yours is written to.
 Click-to-move puts the cursor where you click in the prompt, in terminals that

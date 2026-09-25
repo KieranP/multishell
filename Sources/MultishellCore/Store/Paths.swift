@@ -9,7 +9,7 @@ public enum Paths {
 
   /// The `Info.plist` key naming the worktree a debug bundle was built from.
   /// `Scripts/make-app.sh` writes it; nothing at build time joins the two.
-  public static let variantKey = "MultishellVariant"
+  static let variantKey = "MultishellVariant"
 
   /// Debug builds keep their own files, a worktree build naming itself; see
   /// Docs/develop/state-on-disk.md. The name rides in the bundle.

@@ -1,41 +1,6 @@
-import Foundation
 import MultishellCore
 
 extension AppModel {
-  /// The project a worktree-scoped command should act on: the selected
-  /// worktree's project, or the only project when nothing is selected yet.
-  public var activeProject: Project? {
-    if let worktree = workspace.selectedWorktree {
-      return workspace.project(worktree.projectID)
-    }
-    return workspace.projects.count == 1 ? workspace.projects.first : nil
-  }
-
-  /// The project a command should act on while nothing else names one: the
-  /// worktree in view's, or the only project. The board names none.
-  var projectInView: Project? {
-    if let worktree = worktreeInView { return workspace.project(worktree.projectID) }
-    return workspace.projects.count == 1 ? workspace.projects.first : nil
-  }
-
-  /// The worktree whose terminals are on screen: the selected one unless the
-  /// board covers them. Everything acting on the tab in front asks here.
-  var worktreeInView: Worktree? {
-    showsAgentBoard ? nil : workspace.selectedWorktree
-  }
-
-  /// The worktree in view when a shell may start in it. `nil` otherwise,
-  /// the missing-directory alert already raised.
-  func worktreeReadyForShell() -> Worktree? {
-    worktreeInView.flatMap { readyForShell($0) ? $0 : nil }
-  }
-
-  /// Whether a shell may start in `worktree`: no create or remove running or
-  /// failed there, and its directory present. Every way of starting one asks.
-  func readyForShell(_ worktree: Worktree) -> Bool {
-    !isBusy(worktree.id) && requireDirectory(of: worktree)
-  }
-
   /// Cmd+T: the preferred agent where auto-start is on, else a plain shell.
   /// A strip's button names its column; the keystroke names none.
   public func newTab(in group: TabGroup.ID? = nil) {
@@ -55,12 +20,11 @@ extension AppModel {
   /// What a new tab is by default here, and the first tab a worktree gets
   /// when selected or created.
   func openFirstOrNewTab(in worktree: Worktree, on opening: TabOpening, group: TabGroup.ID? = nil) {
-    if let project = project(of: worktree),
+    if let project = resolvedProject(of: worktree),
       autoStartsAgent(in: project, on: opening),
       let agentID = workspace.preferredAgentID(for: project)
     {
-      store.openTab(
-        in: worktree.id, group: group, title: agentDisplayName(agentID), agentID: agentID)
+      addAgentTab(agentID, in: worktree, group: group)
     } else {
       store.openTab(in: worktree.id, group: group)
     }
@@ -72,25 +36,19 @@ extension AppModel {
     switch opening {
     case .byUser: true
     case .onSelect:
-      if let project = project(of: worktree) {
+      if let project = resolvedProject(of: worktree) {
         workspace.opensTerminalOnSelect(for: project)
       } else {
         workspace.opensTerminalOnSelect
       }
     case .onCreate:
-      if let project = project(of: worktree) {
+      if let project = resolvedProject(of: worktree) {
         workspace.opensTerminalOnCreate(for: project)
       } else {
         workspace.opensTerminalOnCreate
       }
     case .never: false
     }
-  }
-
-  /// The worktree's project with the repository's file layered in: reading
-  /// `project.settings` would pass over what the file says.
-  private func project(of worktree: Worktree) -> Project? {
-    workspace.project(worktree.projectID).map { resolved($0) }
   }
 
   /// Whether that tab runs the agent. Only a create asks the create setting;
@@ -126,9 +84,9 @@ extension AppModel {
     perform(pending)
   }
 
-  /// A close whose subject has gone has nothing left to ask. Run from
-  /// the reconcile, so every path that takes one away is covered.
-  func prunePendingClose() {
+  /// A close or a name field whose subject has gone has nothing left to ask.
+  /// Run from the reconcile, so every path that takes one away is covered.
+  func pruneTabPrompts() {
     switch pendingClose {
     case .pane(let id) where workspace.session(id) == nil: pendingClose = nil
     case .tab(let id) where workspace.tab(id) == nil: pendingClose = nil
@@ -192,7 +150,7 @@ extension AppModel {
   /// the strip reading the same writes nothing, the shuffle having done it.
   /// `false` where either tab has gone or they sit in different worktrees.
   @discardableResult
-  public func moveTab(
+  func moveTab(
     _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, _ target: TerminalTab.ID
   ) -> Bool {
     guard changesTheStrip(id, placement, target) else { return true }
@@ -219,7 +177,7 @@ extension AppModel {
   /// A tab dragged onto a worktree's row, shells and all, the destination
   /// turned to. `false` where the move cannot happen; see tabs-and-columns.md.
   @discardableResult
-  public func moveTab(_ id: TerminalTab.ID, to worktreeID: Worktree.ID) -> Bool {
+  func moveTab(_ id: TerminalTab.ID, to worktreeID: Worktree.ID) -> Bool {
     guard
       let source = workspace.tab(id)?.worktreeID, source != worktreeID, !isBusy(source),
       let worktree = workspace.worktree(worktreeID), readyForShell(worktree),
@@ -281,11 +239,11 @@ extension AppModel {
     store.setSplitWeights(weights, at: path, ofTab: tabID)
   }
 
-  public func selectNextTab() { selectTab(.after) }
-  public func selectPreviousTab() { selectTab(.before) }
+  public func selectNextTab() { activateAdjacentTab(.after) }
+  public func selectPreviousTab() { activateAdjacentTab(.before) }
 
   /// The tab one place along the strip, wrapping at either end.
-  func selectTab(_ direction: TerminalTab.Placement) {
+  private func activateAdjacentTab(_ direction: TerminalTab.Placement) {
     guard
       let worktree = worktreeInView?.id,
       let current = workspace.activeTab(in: worktree),
@@ -293,5 +251,25 @@ extension AppModel {
         ? workspace.tab(after: current.id) : workspace.tab(before: current.id)
     else { return }
     activate(next)
+  }
+
+  public func setOpensTerminalOnSelect(_ enabled: Bool) {
+    store.setOpensTerminalOnSelect(enabled)
+  }
+
+  public func setOpensTerminalOnCreate(_ enabled: Bool) {
+    store.setOpensTerminalOnCreate(enabled)
+  }
+
+  /// What the tab strip shows: the user's name, else what the shell last
+  /// reported, else the tab's starting title.
+  public func title(of tab: TerminalTab) -> String {
+    tab.customTitle ?? sessionTitles[tab.focusedSessionID] ?? workspace.title(of: tab)
+  }
+
+  /// One pane's, a split holding several: the user's name for the tab, else
+  /// what this pane's shell last reported, else its starting title.
+  public func title(ofPane session: TerminalSession, in tab: TerminalTab) -> String {
+    tab.customTitle ?? sessionTitles[session.id] ?? session.displayTitle
   }
 }

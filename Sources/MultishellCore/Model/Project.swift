@@ -11,7 +11,7 @@ public struct Project: Identifiable, Codable, Hashable, Sendable {
   public var settings: ProjectSettings
   /// What the repository's `.multishell.json` said when last read. Per run,
   /// so it is in neither `CodingKeys` nor `==`; see settings.md.
-  public var sharedSettings: SharedSettingsRead = .unread
+  public var sharedSettings: SharedSettingsSnapshot = .unread
 
   public var id: String { path.path }
 

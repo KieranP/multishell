@@ -22,7 +22,7 @@ enum EditorLaunch {
     found: EditorDetection.Found?,
     customTemplate: String,
     directory: URL,
-    shell: (executable: URL, arguments: [String]),
+    shell: ShellInvocation,
     exec: String
   ) -> Action? {
     if editorID == EditorCatalogue.customID {

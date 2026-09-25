@@ -7,11 +7,11 @@ enum GitExecutable {
   /// The PATH's git, or where the shim leads when that is the shim. The shim
   /// stays where xcrun cannot say, as a git that runs beats none.
   static func resolve(
-    path: String?, shim: URL = URL(fileURLWithPath: "/usr/bin/git"),
+    searchPath: String?, shim: URL = URL(fileURLWithPath: "/usr/bin/git"),
     xcrun: URL = URL(fileURLWithPath: "/usr/bin/xcrun"),
     developerDirectory: URL? = selectedDeveloperDirectory()
   ) async -> URL? {
-    guard let found = ExecutableLookup.find("git", path: path) else { return nil }
+    guard let found = ExecutableLookup.find("git", path: searchPath) else { return nil }
     guard found.standardizedFileURL.path == shim.standardizedFileURL.path else { return found }
     // With no developer tools xcrun may raise their install dialog, at every launch.
     guard let developerDirectory,

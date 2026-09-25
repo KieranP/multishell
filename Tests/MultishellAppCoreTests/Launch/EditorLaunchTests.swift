@@ -1,13 +1,14 @@
 import Foundation
-import MultishellCore
 import TestScratch
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellProcess
 
 @Suite
 struct EditorLaunchTests {
-  private let zsh = (executable: URL(fileURLWithPath: "/bin/zsh"), arguments: ["-l", "-i", "-c"])
+  private let zsh = ShellInvocation(
+    executable: URL(fileURLWithPath: "/bin/zsh"), arguments: ["-l", "-i", "-c"])
   private let directory = URL(fileURLWithPath: "/Users/me/Work/repo trees/feat")
 
   private func action(

@@ -25,13 +25,13 @@ What each addition needs beyond the code itself.
   WorkspaceRetiredAgentsTests.
 - **A new mark** needs a case in the drawn list and in the resource lookup, plus
   a single-path `.svg` of that name in the app's marks folder, in the square
-  `AgentMarkResourceTests` holds them all to, with absolute commands only:
+  `AgentMarkShapeTests` holds them all to, with absolute commands only:
   SVGPathParserTests holds the parser to refusing the rest.
 - **The monogram needs none of that** and is what an agent ships with until
   someone draws one. Give the agent a row in COMPAT.md's table, the only place a
   user reads what the app does with it.
-- **A hook stage.** A case in the failure stage, an arm in each of the script
-  and directory lookups, the call from the coordinator in order, an error title
+- **A hook stage.** A case in the hook stage, an arm in each of the script and
+  directory lookups, the call from the coordinator in order, an error title
   saying whether the operation happened, an editor in the Hooks tab, and an
   operation step with its text.
 - **A way a worktree stage can fail.** A failure type naming what is still on
@@ -44,7 +44,7 @@ What each addition needs beyond the code itself.
   and an editor in the Hooks tab.
 - **If a repository may ship that list**, it also needs a field on the shared
   settings, a line in the layering, and the four places trust and containment
-  are spelled out (`keeping(from:)`, `confined(to:)`, `trustedContentText`,
+  are spelled out (`keeping(from:)`, `confined(to:)`, `trustCoveredText`,
   `withoutWhatTrustCovers`), since it names paths on the reader's disk.
 - **An agent's hooks.** An integration naming the file, the events, what each
   says the session is doing, which of two events standing for one thing is
@@ -92,7 +92,7 @@ What each addition needs beyond the code itself.
 - **A fact off a report rather than the workspace** also needs a field on the
   session note, which carries the state it arrived with so it stops being shown
   once the pane has moved on.
-- **An item on a card's context menu.** A line in the card actions: above the
+- **An item on a card's context menu.** A line in the card menu: above the
   section if it acts on the pane, inside the worktree actions if it acts on the
   worktree, which puts it on the sidebar row and detail header too.
 - **A keyboard shortcut.** An entry in the shortcuts table, listed in `all`,
@@ -153,14 +153,17 @@ What each addition needs beyond the code itself.
 - **A field on `Project`** also needs its case in that type's hand-written
   coding keys, `==` and `hash`, which keep this run's read of a repo's file out
   of all three.
+- **A field on `ProjectSettings`** needs a case in its hand-written coding keys,
+  which keep the trust answers under their old key; one left out is never saved.
+  ProjectSettingsTests counts them.
 - **A preference.** In order: the field on the workspace, a setter on the store,
   which must sit in that one file beside the private setter, a method on the
   model doing whatever else the change needs, and the row bound through the
   model's setting accessor.
 - **A project override** is a second field on the project settings and a
   resolver reading those first; if a repository may ship it, a shared-settings
-  field and a line in the layering, plus the four trust places if it names a
-  path (settings.md).
+  field, a line in the layering and an `InheritableSetting` member pairing the
+  two, plus the four trust places if it names a path (settings.md).
 - **A collection, or a reference between collections.** Extend the repair and
   the invariants. Every store operation must leave the invariants true, and the
   seeded random tests find it if not, printing the seed and step to replay.
@@ -173,13 +176,14 @@ What each addition needs beyond the code itself.
   tests, not in a view.
 - **A per-build file.** On the variant pattern, so a debug run never touches the
   installed app's state and two worktrees never touch each other's. A file a
-  hook or the helper reads from outside stays shared, its path handed over in
-  the environment.
+  hook or the helper reads from outside either stays shared, as the helper link
+  does, or has its path handed over in the environment, as the socket does.
 - **A settings row.** Bind through the model's setting accessor, which re-reads
   the stored value; a field with its own binding goes stale against a change
   made elsewhere.
-- **An override is an override section**, naming the key path once. Help goes
-  behind an (i); a caption is only for a value computed live.
+- **An override is an override section**, naming the key path once, or the
+  `InheritableSetting` where a repository may ship it. Help goes behind an (i);
+  a caption is only for a value computed live.
 - **A page that outgrows its window gets another part** in its segmented switch,
   and each part a line in SettingsPageSizeTests. Hooks' Create part has 7 pt
   left under a repository file asking for trust.

@@ -1,5 +1,3 @@
-import Foundation
-
 /// Drives a `TerminalHost` from the store, so no view ever opens a terminal
 /// directly. Call `reconcile()` after any change to the session list.
 @MainActor

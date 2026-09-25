@@ -12,11 +12,8 @@ extension AppModel {
       [TerminalSession.ID: (tab: TerminalTab, position: AgentBoardCard.Position?)] =
         [:]
     for tab in workspace.tabs {
-      for (index, id) in tab.sessionIDs.enumerated() {
-        let position =
-          tab.sessionIDs.count > 1
-          ? AgentBoardCard.Position(index: index + 1, count: tab.sessionIDs.count) : nil
-        tabsBySession[id] = (tab, position)
+      for (offset, id) in tab.sessionIDs.enumerated() {
+        tabsBySession[id] = (tab, .of(paneAt: offset, in: tab))
       }
     }
 
@@ -49,7 +46,7 @@ extension AppModel {
     _ = agentBoardGeneration
     if let cachedAgentBoard { return cachedAgentBoard }
     let board = withObservationTracking {
-      AgentBoard(cards: agentBoardCards, showsShells: showsAllTerminals)
+      AgentBoard(cards: agentBoardCards, showsAllTerminals: showsAllTerminals)
     } onChange: { [weak self] in
       MainActor.assumeIsolated { self?.dropCachedAgentBoard() }
     }
@@ -61,13 +58,6 @@ extension AppModel {
   private func dropCachedAgentBoard() {
     cachedAgentBoard = nil
     agentBoardGeneration &+= 1
-  }
-
-  /// Whether an agent is at this pane's prompt, the report winning over the
-  /// tab's own id. Asked by the board and its counts alike.
-  func isAgentPane(_ session: TerminalSession) -> Bool {
-    reportedAgents[session.id] != nil || commandAgents[session.id] != nil
-      || session.agentID != nil
   }
 
   /// How many cards each column holds, without building one: a card carries
@@ -90,13 +80,7 @@ extension AppModel {
 
   /// Who is at the prompt, by name.
   private func occupant(of session: TerminalSession) -> AgentBoardCard.Occupant {
-    if let reported = reportedAgents[session.id] {
-      return .agent(id: reported.agentID, name: AgentCatalogue.displayName(reported.agentID))
-    }
-    if let running = commandAgents[session.id] {
-      return .agent(id: running, name: AgentCatalogue.displayName(running))
-    }
-    if let agentID = session.agentID {
+    if let agentID = agentAtThePrompt(of: session) {
       return .agent(id: agentID, name: AgentCatalogue.displayName(agentID))
     }
     return .shell(URL(filePath: shellPath(forWorktree: session.worktreeID)).lastPathComponent)
@@ -110,25 +94,19 @@ extension AppModel {
     updatePIDWatch()
   }
 
-  /// The panes are back in front of the user, and the focused one's Done seen.
-  func hideAgentBoard() {
+  /// The panes are back in front of the user, and the focused one's Done seen
+  /// unless the caller does its own seen-clearing. The PID watch is told.
+  func hideAgentBoard(markingFocusedPaneSeen marksSeen: Bool = true) {
     guard showsAgentBoard else { return }
-    leaveAgentBoard()
-    markFocusedPaneSeen()
+    showsAgentBoard = false
+    updatePIDWatch()
+    if marksSeen { markFocusedPaneSeen() }
   }
 
   /// The menu item and its keystroke, which go back to the worktree the
   /// second time rather than doing nothing.
   public func toggleAgentBoard() {
     if showsAgentBoard { hideAgentBoard() } else { showAgentBoard() }
-  }
-
-  /// Puts the panes back without the seen-clearing, for callers doing their
-  /// own. The watch is told, what it polls depending on the board.
-  func leaveAgentBoard() {
-    guard showsAgentBoard else { return }
-    showsAgentBoard = false
-    updatePIDWatch()
   }
 
   public func setShowsAllTerminals(_ shows: Bool) {

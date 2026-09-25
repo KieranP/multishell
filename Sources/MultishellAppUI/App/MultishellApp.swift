@@ -44,7 +44,7 @@ struct MultishellApp: App {
     Window(t("window.project-settings"), id: ProjectSettingsWindow.windowID) {
       // Reachable from the Window menu too, with no project chosen yet: fall
       // back to the current project rather than showing an empty window.
-      if let projectID = model.settingsProjectID ?? model.activeProject?.id {
+      if let projectID = model.settingsProjectID ?? model.selectedProject?.id {
         ProjectSettingsWindow(model: model, platform: platform, projectID: projectID)
       } else {
         Text(t("window.project-settings-empty"))

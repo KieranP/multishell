@@ -1,5 +1,3 @@
-import Foundation
-
 /// What `git status` says about a worktree right now. Runtime only, so no
 /// stale badge survives a relaunch.
 public struct WorktreeStatus: Hashable, Sendable {

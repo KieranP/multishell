@@ -1,16 +1,13 @@
 import MultishellCore
-import MultishellGitKit
 
 /// The create or remove running on each worktree, and who owns an entry where
 /// two meet: the removal takes it, and the hook's later result is dropped.
 public struct WorktreeOperations: Equatable, Sendable {
-  public private(set) var operations: [Worktree.ID: WorktreeOperation] = [:]
-
-  public init() {}
+  private(set) var operations: [Worktree.ID: WorktreeOperation] = [:]
 
   public subscript(id: Worktree.ID) -> WorktreeOperation? { operations[id] }
 
-  public var isEmpty: Bool { operations.isEmpty }
+  var isEmpty: Bool { operations.isEmpty }
 
   /// Something is running on the worktree, or has failed and not been
   /// dismissed. Nothing starts a shell there until then.

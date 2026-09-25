@@ -54,11 +54,11 @@
 - **git 2.36 or newer**, for `-z` on `git worktree list --porcelain`, which
   keeps a path holding a newline from reading as two records. The floor is under
   what the supported macOS ships, so an older git usually comes from a version
-  manager. That git refuses `-z` with status 129 and `WorktreeService` asks for
-  the newline form, losing only such a path
+  manager. That git refuses `-z` with status 129 and `WorktreeGit` asks for the
+  newline form, losing only such a path
   (`aGitThatRefusesTheNulFormIsAskedForTheNewlineOne`). Under 2.31 `rev-parse`
-  echoes `--path-format=absolute` back and answers relative, and
-  `WorktreeService` resolves the answer
+  echoes `--path-format=absolute` back and answers relative, and `WorktreeGit`
+  resolves the answer
   (`aCheckoutIsRemovedWithItsHooksOnAGitThatPredatesPathFormat`).
 - **prettier**, for the Markdown in `make format` and the Claude Code hook, not
   in CI. From Homebrew rather than a `package.json`: there is no Node toolchain

@@ -8,14 +8,14 @@ struct WorktreeOrder: Equatable, Sendable {
   /// the guess git itself makes.
   static let fallbackTrunkNames = ["main", "master"]
 
-  let order: WorktreeSortOrder
+  let sortOrder: WorktreeSortOrder
   let activeFirst: Bool
-  /// The project's trunk, as `DefaultBranch.branch` gives it and without
+  /// The project's trunk, as `DefaultBranch.branchName` gives it and without
   /// the remote in front of it, or `nil` while none is resolved.
   let trunkBranch: String?
 
-  init(order: WorktreeSortOrder, activeFirst: Bool, trunkBranch: String? = nil) {
-    self.order = order
+  init(sortOrder: WorktreeSortOrder, activeFirst: Bool, trunkBranch: String? = nil) {
+    self.sortOrder = sortOrder
     self.activeFirst = activeFirst
     self.trunkBranch = trunkBranch
   }
@@ -76,18 +76,18 @@ struct WorktreeOrder: Equatable, Sendable {
   /// worktrees dated the same second do not swap places between renders.
   private func precedes(_ a: Key, _ b: Key) -> Bool {
     if a.band != b.band { return a.band.rawValue < b.band.rawValue }
-    switch order {
+    switch sortOrder {
     case .alphabetical:
       break
     case .createdNewestFirst, .createdOldestFirst:
       if let byDate = Self.compare(
-        a.createdAt, b.createdAt, newestFirst: order == .createdNewestFirst)
+        a.createdAt, b.createdAt, newestFirst: sortOrder == .createdNewestFirst)
       {
         return byDate
       }
     case .committedNewestFirst, .committedOldestFirst:
       if let byDate = Self.compare(
-        a.lastCommit, b.lastCommit, newestFirst: order == .committedNewestFirst)
+        a.lastCommit, b.lastCommit, newestFirst: sortOrder == .committedNewestFirst)
       {
         return byDate
       }

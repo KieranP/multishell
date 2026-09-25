@@ -3,6 +3,24 @@ import MultishellCore
 import MultishellGitKit
 
 extension AppModel {
+  /// The worktree whose terminals are on screen: the selected one unless the
+  /// board covers them. Everything acting on the tab in front asks here.
+  var worktreeInView: Worktree? {
+    showsAgentBoard ? nil : workspace.selectedWorktree
+  }
+
+  /// The worktree in view when a shell may start in it. `nil` otherwise,
+  /// the missing-directory alert already raised.
+  func worktreeReadyForShell() -> Worktree? {
+    worktreeInView.flatMap { readyForShell($0) ? $0 : nil }
+  }
+
+  /// Whether a shell may start in `worktree`: no create or remove running or
+  /// failed there, and its directory present. Every way of starting one asks.
+  func readyForShell(_ worktree: Worktree) -> Bool {
+    !isBusy(worktree.id) && requireDirectory(of: worktree)
+  }
+
   /// A worktree with no tabs gets one unless `TabOpening` says otherwise, and
   /// this is where the shared-hooks question is asked, a create being asked apart.
   @discardableResult
@@ -14,7 +32,7 @@ extension AppModel {
     }
     // Before anything else, `isShown` having to agree that panes fill the
     // detail area. The seen-clearing is left to the reconcile at the end.
-    leaveAgentBoard()
+    hideAgentBoard(markingFocusedPaneSeen: false)
     store.selectWorktree(worktree.id)
     warmWorktrees.insert(worktree.id)
     if openingFirstTab != .onCreate { askAboutSharedSettingsIfNeeded(for: worktree.projectID) }
@@ -40,7 +58,7 @@ extension AppModel {
 
   /// The menus' Rename: the row swaps its name for a field. The project is
   /// opened first, a collapsed one leaving no row to type into.
-  public func beginRenaming(_ worktree: Worktree) {
+  public func beginRenamingWorktree(_ worktree: Worktree) {
     guard workspace.worktree(worktree.id) != nil else { return }
     if let project = workspace.project(worktree.projectID), !project.isExpanded {
       setExpanded(true, for: project)
@@ -50,14 +68,14 @@ extension AppModel {
 
   /// The field's Return, or the focus leaving it. Ignored once the rename has
   /// ended, so an Escape is not undone by the commit losing focus triggers.
-  public func commitRename(of id: Worktree.ID, to name: String) {
+  public func commitWorktreeRename(of id: Worktree.ID, to name: String) {
     guard renamingWorktreeID == id else { return }
     renamingWorktreeID = nil
     store.setCustomName(name, forWorktree: id)
   }
 
   /// The field's Escape: the name stays as it was.
-  public func cancelRenaming() {
+  public func cancelRenamingWorktree() {
     renamingWorktreeID = nil
   }
 
@@ -105,6 +123,10 @@ extension AppModel {
     store.setHookTimeoutSeconds(seconds)
   }
 
+  public func setWorktreeDefaults(_ defaults: WorktreeSettings) {
+    store.setWorktreeDefaults(defaults)
+  }
+
   /// Checked before anything that starts a shell, a missing directory being
   /// refused. Named for the demand, since it raises the alert itself.
   func requireDirectory(of worktree: Worktree) -> Bool {
@@ -115,9 +137,7 @@ extension AppModel {
     }
     return false
   }
-}
 
-extension AppModel {
   /// The one place per-worktree runtime state is dropped, fed with what the
   /// store discarded. Paths are ids, so a worktree re-made there starts clean.
   func forgetWorktrees(_ ids: [Worktree.ID]) {
@@ -142,7 +162,34 @@ extension AppModel {
       pendingStatusRefreshes[id] = nil
     }
     if let renaming = renamingWorktreeID, gone.contains(renaming) { renamingWorktreeID = nil }
-    if let pending = pendingRemoval, gone.contains(pending.worktree.id) { pendingRemoval = nil }
+    if let pending = pendingWorktreeRemoval, gone.contains(pending.worktree.id) {
+      pendingWorktreeRemoval = nil
+    }
     if let latest = latestRemovalRequest, gone.contains(latest) { latestRemovalRequest = nil }
+  }
+
+  /// The deepest worktree holding the directory. A hook's `cwd` may be the
+  /// resolved path of one added through a symlink, so both spellings are tried.
+  func worktree(atPath path: String) -> Worktree? {
+    let url = URL(fileURLWithPath: path, isDirectory: true)
+    let spellings = [url.standardizedFileURL, url.resolvingSymlinksInPath()].map(\.pathComponents)
+    // Depth is the matching root's, not the written path's: a symlink chain
+    // can spell a shallow worktree long.
+    let matches = workspace.worktrees.compactMap { worktree -> (Worktree, Int)? in
+      let depth = [worktree.path.pathComponents, resolvedComponents(of: worktree)]
+        .filter { root in spellings.contains { $0.starts(with: root) } }
+        .map(\.count).max()
+      return depth.map { (worktree, $0) }
+    }
+    return matches.max { $0.1 < $1.1 }?.0
+  }
+
+  /// Kept per worktree: each report naming only a directory walked every
+  /// worktree's symlinks, on the main actor, a network mount's among them.
+  private func resolvedComponents(of worktree: Worktree) -> [String] {
+    if let known = resolvedWorktreePaths[worktree.id] { return known }
+    let resolved = worktree.path.resolvingSymlinksInPath().pathComponents
+    resolvedWorktreePaths[worktree.id] = resolved
+    return resolved
   }
 }

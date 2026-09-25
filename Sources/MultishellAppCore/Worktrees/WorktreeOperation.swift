@@ -1,6 +1,5 @@
 import MultishellCore
 import MultishellGitKit
-import MultishellProcess
 
 /// A create or remove running on a worktree, shown in its detail pane so no
 /// sheet stays up for a slow hook. A failed stage leaves `failure`.
@@ -15,14 +14,14 @@ public struct WorktreeOperation: Equatable, Sendable {
     case postDeleteHook
     case deletingBranch
 
-    public init(_ placement: WorktreePlacement) {
+    init(_ placement: WorktreeFilePlacement) {
       switch placement {
       case .link: self = .linkingFiles
       case .copy: self = .copyingFiles
       }
     }
 
-    public init(_ removal: WorktreeRemovalStep, trashes: Bool = true) {
+    init(_ removal: WorktreeRemovalStep, trashes: Bool = true) {
       switch removal {
       case .preDeleteHook: self = .preDeleteHook
       case .removingWorktree: self = trashes ? .removingWorktree : .deletingWorktree
@@ -54,16 +53,12 @@ public struct WorktreeOperation: Equatable, Sendable {
   public var failure: String?
   /// The stage failed on the timeout, so the title says it did not finish
   /// rather than that it refused.
-  public var timedOut = false
+  var timedOut = false
 
-  public init(_ step: Step, failure: String? = nil, timedOut: Bool = false) {
+  init(_ step: Step, failure: String? = nil, timedOut: Bool = false) {
     self.step = step
     self.failure = failure
     self.timedOut = timedOut
-  }
-
-  public init(_ step: WorktreeRemovalStep) {
-    self.init(Step(step))
   }
 
   public var isRunning: Bool { failure == nil }

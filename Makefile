@@ -40,7 +40,7 @@ release:
 ## Docs/develop/build.md.
 test:
 	swift build --build-tests
-	$(LOCK) $(SWIFT_TEST)
+	$(LOCK) Scripts/one-test-per-core.sh $(SWIFT_TEST)
 
 ## Compile the macOS app without bundling; catches SwiftUI errors fast.
 test-app:

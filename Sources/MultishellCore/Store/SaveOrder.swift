@@ -1,4 +1,3 @@
-import Foundation
 import Synchronization
 
 /// Writes to one file in order and one at a time, whichever thread runs each;

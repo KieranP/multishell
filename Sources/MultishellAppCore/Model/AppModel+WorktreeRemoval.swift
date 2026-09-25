@@ -20,7 +20,7 @@ extension AppModel {
   /// both questions. Nothing while an operation is already running there.
   /// The task ends once the dialog is up or the removal is over.
   @discardableResult
-  public func requestRemoval(of worktree: Worktree) -> Task<Void, Never>? {
+  public func requestWorktreeRemoval(of worktree: Worktree) -> Task<Void, Never>? {
     guard worktree.isRemovable, !isBusy(worktree.id) else { return nil }
     if case .remove(let deletingBranch) = removalDecision(for: worktree) {
       return Task { await removeWorktree(worktree, deletingBranch: deletingBranch) }
@@ -35,11 +35,11 @@ extension AppModel {
       let isLatest = latestRemovalRequest == worktree.id
       if isLatest { latestRemovalRequest = nil }
       // A late read must not swap the dialog up, or a newer click's, for its own.
-      guard isLatest, pendingRemoval == nil, let current = workspace.worktree(worktree.id),
+      guard isLatest, pendingWorktreeRemoval == nil, let current = workspace.worktree(worktree.id),
         !isBusy(current.id)
       else { return }
       switch removalDecision(for: current) {
-      case .ask(let pending): pendingRemoval = pending
+      case .ask(let pending): pendingWorktreeRemoval = pending
       case .remove(let deletingBranch):
         await removeWorktree(current, deletingBranch: deletingBranch)
       }
@@ -56,12 +56,14 @@ extension AppModel {
 
   /// The dialog's answer, trashing or deleting as its message said even if
   /// the setting changed while it was up.
-  public func confirmRemoval(_ pending: PendingWorktreeRemoval, deletingBranch: Bool) async {
+  public func confirmWorktreeRemoval(
+    _ pending: PendingWorktreeRemoval, deletingBranch: Bool
+  ) async {
     await removeWorktree(pending.worktree, deletingBranch: deletingBranch, trashes: pending.trashes)
   }
 
   /// What the confirmation should warn about, beyond the removal itself.
-  public func removalWarning(for worktree: Worktree) -> String? {
+  public func worktreeRemovalWarning(for worktree: Worktree) -> String? {
     PendingWorktreeRemoval.warning(
       changedFiles: statuses[worktree.id]?.changedFiles ?? 0,
       liveTerminals: liveTerminalCount(in: worktree.id),
@@ -99,32 +101,8 @@ extension AppModel {
           }
         })
     } catch {
-      let failure = RemovalFailure.describe(
-        error, deletingBranch: deletingBranch ? worktree.branch : nil)
-      switch failure {
-      case .stopped:
-        worktreeOperations.clear(worktree.id)
-        return
-      case .vetoed(let message, let timedOut):
-        if !worktreeOperations.fail(
-          .preDeleteHook, on: worktree.id, message: message, timedOut: timedOut)
-        {
-          report(error)
-        }
-        return
-      case .alert(let title, let message, let retry, let worktreeRemoved):
-        var presented = PresentedError(title: title, message: message)
-        if let retry, case .deleteBranchAnyway(let branch) = retry {
-          presented.retry = .init(label: retry.label) { [weak self] in
-            await self?.deleteBranch(branch, of: project, force: true)
-          }
-        }
-        presentedError = presented
-        guard worktreeRemoved else {
-          worktreeOperations.clear(worktree.id)
-          return
-        }
-      }
+      guard handleRemovalFailure(error, of: worktree, deletingBranch: deletingBranch, in: project)
+      else { return }
     }
     worktreeOperations.clear(worktree.id)
     await refresh(project)
@@ -132,11 +110,42 @@ extension AppModel {
     reconcileSessions(takingFocus: true)
   }
 
+  /// Says what went wrong where `RemovalFailure` puts it. `true` where the
+  /// worktree went regardless, so the refresh after a removal still runs.
+  private func handleRemovalFailure(
+    _ error: any Error, of worktree: Worktree, deletingBranch: Bool, in project: Project
+  ) -> Bool {
+    let failure = RemovalFailure(
+      error, deletingBranch: deletingBranch ? worktree.branch : nil)
+    switch failure {
+    case .stopped:
+      worktreeOperations.clear(worktree.id)
+      return false
+    case .vetoed(let message, let timedOut):
+      if !worktreeOperations.fail(
+        .preDeleteHook, on: worktree.id, message: message, timedOut: timedOut)
+      {
+        report(error)
+      }
+      return false
+    case .alert(let title, let message, let retry, let worktreeRemoved):
+      var presented = PresentedError(title: title, message: message)
+      if let retry, case .deleteBranchAnyway(let branch) = retry {
+        presented.retry = .init(label: retry.label) { [weak self] in
+          await self?.deleteBranch(branch, of: project, force: true)
+        }
+      }
+      presentedError = presented
+      if !worktreeRemoved { worktreeOperations.clear(worktree.id) }
+      return worktreeRemoved
+    }
+  }
+
   /// The Trash where it takes the directory, deletion where it will not: the
   /// removal was confirmed either way; see Docs/design/worktrees.md.
   func moveToTrash(_ url: URL) async throws {
     let platform = self.platform
-    let trashed = await Self.offMain { Result { try platform.moveToTrash(url) } }
+    let trashed = await offMain { Result { try platform.moveToTrash(url) } }
     guard case .failure(let error) = trashed else { return }
     platform.log("\(url.path) could not be moved to the Trash (\(error)); deleting it")
     try await Self.delete(url)

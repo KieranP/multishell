@@ -1,4 +1,3 @@
-import Foundation
 import MultishellCore
 
 /// How wide a tab strip draws its tabs, and when it scrolls instead: they
@@ -14,27 +13,9 @@ public struct TabStripLayout: Equatable, Sendable {
   /// `available` is the room the tabs have, the buttons at the end of the
   /// strip already taken off.
   public init(available: Double, count: Int, minimum: Double, maximum: Double) {
-    let floor = max(minimum, 1)
-    let ceiling = max(maximum, floor)
-    // Nothing to draw, or a strip that has not been laid out: the cap, and
-    // no scrolling, which is the kindest first frame.
-    guard count > 0, available.isFinite else {
-      self.tabWidth = ceiling
-      self.scrolls = false
-      return
-    }
-    // A strip with no room at all: reading this as "no scrolling" spills a
-    // full-width tab over the column beside it.
-    guard available > 0 else {
-      self.tabWidth = floor
-      self.scrolls = true
-      return
-    }
-    let share = available / Double(count)
-    self.tabWidth = share.clamped(to: floor...ceiling)
-    // Asked of the share rather than of the total, which for a strip that
-    // divides exactly is a floating-point coin toss.
-    self.scrolls = share < floor
+    let share = EvenShare(available: available, count: count, minimum: minimum, maximum: maximum)
+    self.tabWidth = share.width
+    self.scrolls = share.scrolls
   }
 }
 

@@ -42,6 +42,9 @@ Under `~/Library/Application Support/Multishell`.
   refuses one exactly as a dead socket does.
 - **A symlink to the helper in the current bundle** is refreshed at launch. Hook
   lines reference that path through the home directory.
+- **`/usr/local/bin/multishell` is a link to that link**, made only when the
+  user installs the tool, through an administrator prompt. Every build shares
+  that link, so the tool runs the last copy that started without handing over.
 - **The integration directory is generated at launch**; the drops directory
   holds files a drag promised rather than handed over, swept at launch once old.
 - **The merged Ghostty config lives in the temporary directory**, written by the
@@ -52,10 +55,12 @@ Under `~/Library/Application Support/Multishell`.
   directory; launch leaves alone even one an older build wrote (agents.md).
   Three of them keep a copy of the file as it was the first time; the other two
   are files of ours alone and are deleted to remove.
-- **Sidebar width lives in user defaults.**
+- **Sidebar width lives in user defaults**, in the `io.multishell.app` domain
+  every build shares, debug ones included.
 - **A repository may carry `.multishell.json` at its root**, written by Export,
-  with the same keys as a project's settings. Read at launch, when a project's
-  worktree records change, and on any tick where its modification date moved.
+  with the same keys as a project's settings, less the agent, its flags and the
+  shell. Read at launch, when a project's worktree records change, and on any
+  tick where its modification date moved.
 - **A field it ships fills only a gap the user left**, so adding one means a
   line in the layering, a decode that costs the key and not the file, and an
   override section in the tab.

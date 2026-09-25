@@ -70,7 +70,6 @@
 "error.no-editor-title" = "No editor chosen";
 "error.no-pipe-message" = "A pipe could not be opened: %1$@ (%2$d). Closing some terminals may free one.";
 "error.no-pipe-title" = "A command could not be started";
-"error.no-shell" = "No shell was found to run it with.";
 "error.not-a-repository-message" = "%@ is not inside a repository and is not a bare one, or git could not read it.";
 "error.not-a-repository-title" = "Not a git repository";
 "error.not-a-worktree-title" = "Not a worktree";

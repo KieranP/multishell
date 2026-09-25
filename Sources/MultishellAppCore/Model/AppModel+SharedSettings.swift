@@ -16,6 +16,12 @@ extension AppModel {
     return resolved
   }
 
+  /// A worktree's project with the repository's file layered in: reading
+  /// `project.settings` would pass over what the file says.
+  func resolvedProject(of worktree: Worktree) -> Project? {
+    workspace.project(worktree.projectID).map(resolved)
+  }
+
   /// Where this project's worktrees go and how their branches are named,
   /// after the repository's defaults and the user's overrides.
   public func worktreeSettings(for project: Project) -> WorktreeSettings {
@@ -25,9 +31,9 @@ extension AppModel {
   /// The value in force where this project does not override, and where it
   /// came from. What the settings forms show and seed an override with.
   public func inherited<Value: Equatable & Sendable>(
-    _ keyPath: KeyPath<SharedProjectSettings, Value?>, global: Value, for project: Project
+    _ setting: InheritableSetting<Value>, global: Value, for project: Project
   ) -> InheritedSetting<Value> {
-    if let shared = sharedSettingsInForce(for: project)?[keyPath: keyPath] {
+    if let shared = sharedSettingsInForce(for: project)?[keyPath: setting.shared] {
       return InheritedSetting(value: shared, isFromRepository: true)
     }
     return InheritedSetting(value: global, isFromRepository: false)
@@ -64,7 +70,7 @@ extension AppModel {
 
   /// Every project's file, re-read where its date moved. On the status poll,
   /// the watcher watching only `.git`; an unreachable repository is skipped.
-  func refreshChangedSharedSettings() async {
+  func refreshSharedSettingsIfChanged() async {
     for project in workspace.projects where !missingProjects.contains(project.id) {
       await refreshSharedSettingsIfChanged(project)
     }
@@ -74,11 +80,11 @@ extension AppModel {
   /// only when the records change. One stat per project per tick.
   func refreshSharedSettingsIfChanged(_ project: Project) async {
     let path = project.path
-    let stamp = await Self.offMain {
+    let stamp = await offMain {
       Self.modificationDate(of: SharedProjectSettings.file(in: path))
     }
     guard project.sharedSettings.hasMoved(stamp) else { return }
-    let read = await Self.offMain { Self.readSharedSettings(of: project) }
+    let read = await offMain { Self.readSharedSettings(of: project) }
     guard workspace.project(project.id) != nil else { return }
     noteSharedSettings(read, for: project)
   }
@@ -88,7 +94,7 @@ extension AppModel {
   func reconfineSharedSettings(of project: Project) async -> Project {
     guard let shared = workspace.project(project.id)?.sharedSettings.asWritten
     else { return workspace.project(project.id) ?? project }
-    let confined = await Self.offMain { shared.confined(to: project) }
+    let confined = await offMain { shared.confined(to: project) }
     guard var read = workspace.project(project.id)?.sharedSettings, read.asWritten == shared,
       read.confined != confined
     else { return workspace.project(project.id) ?? project }
@@ -111,7 +117,7 @@ extension AppModel {
       // The date is recorded whatever the bytes say: a touch moves it
       // without changing them, and an unrecorded date is re-read every tick.
       let changed = read.asWritten != shared || firstRead
-      read.note(shared, confined: reading.confined, stamp: stamp)
+      read.recordParsed(shared, confined: reading.confined, modificationDate: stamp)
       store.updateSharedSettings(read, forProject: project.id)
       guard changed else { return }
       // A question already up is about a file the disk no longer has, and
@@ -131,7 +137,7 @@ extension AppModel {
         "error.shared-settings-unreadable", SharedProjectSettings.fileName,
         String(describing: error))
       let isNew = read.problem != problem
-      read.note(problem: problem, stamp: stamp)
+      read.recordFailure(problem: problem, modificationDate: stamp)
       store.updateSharedSettings(read, forProject: project.id)
       if isNew { platform.log("\(project.name): \(problem)") }
     }
@@ -144,7 +150,7 @@ extension AppModel {
     // fight, and the question returns on the next selection.
     guard newWorktreeRequest == nil, worktreeCreationStep == nil else { return }
     guard pendingSharedSettingsTrust == nil, let project = workspace.project(id),
-      let shared = project.sharedSettings.confined, let contents = shared.trustedContentText,
+      let shared = project.sharedSettings.confined, let contents = shared.trustCoveredText,
       let digest = shared.digest, project.settings.needsTrustDecision(for: shared)
     else { return }
     pendingSharedSettingsTrust = PendingSharedSettingsTrust(
@@ -153,16 +159,16 @@ extension AppModel {
 
   /// Stores an answer against the file's sha256. The project is read again,
   /// a settings window outliving the refresh that replaced its record.
-  private func recordSharedSettings(file digest: String, trusted: Bool, for id: Project.ID) {
+  private func recordTrustDecision(digest: String, trusted: Bool, for id: Project.ID) {
     guard var settings = workspace.project(id)?.settings else { return }
-    settings.recordSharedSettings(file: digest, trusted: trusted)
+    settings.recordTrustDecision(digest: digest, trusted: trusted)
     store.updateSettings(settings, forProject: id)
   }
 
   /// The dialog's answer. Either way the question is not asked again for
   /// this file, this branch's or another's.
   public func decideSharedSettings(_ pending: PendingSharedSettingsTrust, trusted: Bool) {
-    recordSharedSettings(file: pending.digest, trusted: trusted, for: pending.projectID)
+    recordTrustDecision(digest: pending.digest, trusted: trusted, for: pending.projectID)
     // The whole value, not its project: a different question that arrived
     // while this one stood is not answered by it.
     if pendingSharedSettingsTrust == pending { pendingSharedSettingsTrust = nil }
@@ -181,7 +187,7 @@ extension AppModel {
     }
     // The write, its date and the confinement off the main actor: on a slow
     // volume each would hold the window.
-    let written = await Self.offMain { Self.write(export) }
+    let written = await offMain { Self.write(export) }
     finishSharedSettingsExport(export, written)
   }
 
@@ -194,16 +200,16 @@ extension AppModel {
     // Every word the user's own answers itself; otherwise the answer given
     // about the file this rewrites travels, and no answer leaves the question.
     let answer =
-      kept.trustedContentText == mine.trustedContentText
+      kept.trustCoveredText == mine.trustCoveredText
       ? true
       : project.sharedSettings.confined.flatMap {
-        project.settings.sharedSettingsDecision(about: $0)
+        project.settings.trustAnswer(about: $0)
       }
     let (data, written) = try kept.fileContents()
     // Stored before the bytes can be read: a poll reading them first would
     // otherwise ask the user to trust what they just exported.
     if written.asksForTrust, let digest = written.digest, let answer {
-      recordSharedSettings(file: digest, trusted: answer, for: project.id)
+      recordTrustDecision(digest: digest, trusted: answer, for: project.id)
     }
     let order = sharedSettingsWrites[project.id] ?? SaveOrder()
     sharedSettingsWrites[project.id] = order
@@ -251,7 +257,7 @@ extension AppModel {
     guard let shared = project.sharedSettings.confined, shared.asksForTrust,
       let digest = shared.digest
     else { return }
-    recordSharedSettings(file: digest, trusted: trusted, for: project.id)
+    recordTrustDecision(digest: digest, trusted: trusted, for: project.id)
     if pendingSharedSettingsTrust?.projectID == project.id { pendingSharedSettingsTrust = nil }
   }
 }

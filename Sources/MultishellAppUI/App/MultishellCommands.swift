@@ -1,4 +1,5 @@
 import AppKit
+import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
@@ -88,7 +89,7 @@ struct MultishellCommands: Commands {
     // AppKit's rather than in it. The board is a place to go, not an action.
     CommandGroup(after: .toolbar) {
       Button(t("label.agents")) { model.toggleAgentBoard() }
-        .keyboardShortcut(AppShortcuts.showAgents)
+        .keyboardShortcut(AppShortcuts.toggleAgentBoard)
     }
 
     CommandMenu(t("menu.terminal")) {

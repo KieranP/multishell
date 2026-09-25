@@ -14,7 +14,7 @@ public struct TerminalSession: Identifiable, Codable, Hashable, Sendable {
   public var agentID: String?
   /// The shell to run when `command` is nil. Runtime only, never saved: a
   /// relaunched tab reads the setting again.
-  public var shell: String?
+  public var shellOverride: String?
 
   /// A plain shell's title is saved empty and put in words here, or a tab
   /// saved under one language kept that language's word under the next.
@@ -27,7 +27,7 @@ public struct TerminalSession: Identifiable, Codable, Hashable, Sendable {
     title: String,
     command: [String]? = nil,
     agentID: String? = nil,
-    shell: String? = nil
+    shellOverride: String? = nil
   ) {
     self.id = id
     self.worktreeID = worktreeID
@@ -35,16 +35,16 @@ public struct TerminalSession: Identifiable, Codable, Hashable, Sendable {
     self.title = title
     self.command = command
     self.agentID = agentID
-    self.shell = shell
+    self.shellOverride = shellOverride
   }
 
-  /// `shell` is left out on purpose; see its doc comment.
+  /// `shellOverride` is left out on purpose; see its doc comment.
   enum CodingKeys: String, CodingKey {
     case id, worktreeID, workingDirectory, title, command, agentID
   }
 
   /// What the session runs as: the chosen shell, else `$SHELL`.
   public var shellPath: String {
-    shell ?? ShellCatalogue.loginShellPath()
+    shellOverride ?? ShellCatalogue.loginShellPath()
   }
 }

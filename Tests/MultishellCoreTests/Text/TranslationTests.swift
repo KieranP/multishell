@@ -71,7 +71,7 @@ struct TranslationTests {
       #expect(isSaid, "\(key) has an entry with nothing in it")
     }
     let file = try #require(
-      Bundle.catalogue.url(forResource: "Localizable", withExtension: "strings"))
+      Bundle.coreResources.url(forResource: "Localizable", withExtension: "strings"))
     let written = try String(contentsOf: file, encoding: .utf8)
       .matches(of: /^"([^"]+)" =/.anchorsMatchLineEndings())
       .map { String($0.output.1) }
@@ -108,7 +108,7 @@ struct TranslationTests {
   /// build compares against a stale copy. `make test` builds first; `--skip-build` does not.
   @Test func theBuiltCatalogueIsNotStale() throws {
     for name in ["Localizable.strings", "Localizable.stringsdict"] {
-      let built = try #require(Bundle.catalogue.url(forResource: name, withExtension: nil))
+      let built = try #require(Bundle.coreResources.url(forResource: name, withExtension: nil))
       let source = Self.checkout
         .appendingPathComponent("Sources/MultishellCore/Resources/en.lproj/\(name)")
       #expect(
@@ -177,12 +177,13 @@ struct TranslationTests {
 
   private static func catalogue() throws -> [String: String] {
     let file = try #require(
-      Bundle.catalogue.url(forResource: "Localizable", withExtension: "strings"))
+      Bundle.coreResources.url(forResource: "Localizable", withExtension: "strings"))
     return try #require(NSDictionary(contentsOf: file) as? [String: String])
   }
 
   private static let countedForms: Set<String> = {
-    guard let file = Bundle.catalogue.url(forResource: "Localizable", withExtension: "stringsdict"),
+    guard
+      let file = Bundle.coreResources.url(forResource: "Localizable", withExtension: "stringsdict"),
       let entries = NSDictionary(contentsOf: file) as? [String: Any]
     else { return [] }
     return Set(entries.keys)

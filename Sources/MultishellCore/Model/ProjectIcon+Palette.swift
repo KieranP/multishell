@@ -1,5 +1,3 @@
-import Foundation
-
 /// The curated palette: every symbol the picker offers, grouped as the picker
 /// draws them.
 extension ProjectIcon {
@@ -146,9 +144,10 @@ extension ProjectIcon {
       ]),
   ]
 
-  /// Every symbol the picker offers, as a set: `kind(of:)` reads it far more
-  /// often than the palette is opened.
-  public static let symbols: [String] = symbolGroups.flatMap(\.glyphs)
+  /// Every symbol the picker offers, in the picker's order.
+  static let symbols: [String] = symbolGroups.flatMap(\.glyphs)
 
+  /// The same as a set: `kind(of:)` reads it far more often than the palette
+  /// is opened.
   static let offered = Set(symbols)
 }

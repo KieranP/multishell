@@ -260,7 +260,7 @@ struct HelperShellIntegrationTests {
       URL(fileURLWithPath: "/bin/sh"),
       [
         "-c",
-        "exec /bin/bash --init-file \(ShellQuoting.quote(initFile.path)) -i < \(ShellQuoting.quote(script.path))",
+        "exec /bin/bash --init-file \(PosixShellQuoting.quote(initFile.path)) -i < \(PosixShellQuoting.quote(script.path))",
       ],
       in: home, environment: env)
 
@@ -304,8 +304,8 @@ struct HelperShellIntegrationTests {
       URL(fileURLWithPath: "/bin/sh"),
       [
         "-c",
-        "exec /bin/bash --init-file \(ShellQuoting.quote(initFile.path)) -i "
-          + "< \(ShellQuoting.quote(script.path))",
+        "exec /bin/bash --init-file \(PosixShellQuoting.quote(initFile.path)) -i "
+          + "< \(PosixShellQuoting.quote(script.path))",
       ], in: home, environment: env)
 
     let theirs = (try? String(contentsOf: marks, encoding: .utf8)) ?? ""
@@ -494,9 +494,9 @@ struct HelperShellIntegrationTests {
   private func countingHelper(in home: URL) throws -> (helper: URL, log: URL) {
     let log = home.appendingPathComponent("spawns.log")
     let helper = try Scratch.script(
-      "echo \"$PPID\" >> \(ShellQuoting.quote(log.path + ".parents"))\n"
-        + "echo \"$$ $1\" >> \(ShellQuoting.quote(log.path))\n"
-        + "exec \(ShellQuoting.quote(try HelperBinary.require().path)) \"$@\"",
+      "echo \"$PPID\" >> \(PosixShellQuoting.quote(log.path + ".parents"))\n"
+        + "echo \"$$ $1\" >> \(PosixShellQuoting.quote(log.path))\n"
+        + "exec \(PosixShellQuoting.quote(try HelperBinary.require().path)) \"$@\"",
       at: home.appendingPathComponent("multishell"))
     return (helper, log)
   }
@@ -553,7 +553,7 @@ struct HelperShellIntegrationTests {
     let depths = home.appendingPathComponent("depths.log")
     try """
     printf() {
-      case "$2" in command-*) echo "$BASH_SUBSHELL ${2%% *}" >> \(ShellQuoting.quote(depths.path)) ;; esac
+      case "$2" in command-*) echo "$BASH_SUBSHELL ${2%% *}" >> \(PosixShellQuoting.quote(depths.path)) ;; esac
       builtin printf "$@"
     }
 
@@ -599,9 +599,9 @@ struct HelperShellIntegrationTests {
     env["MULTISHELL_SESSION"] = UUID().uuidString
     env["MULTISHELL_WORKTREE"] = "/w/repo"
     let script = """
-      while [ ! -s \(ShellQuoting.quote(log.path)) ]; do sleep 0.05; done
-      kill -KILL "$(head -n 1 \(ShellQuoting.quote(log.path + ".parents")))"
-      kill -KILL "$(cut -d' ' -f1 \(ShellQuoting.quote(log.path)))"
+      while [ ! -s \(PosixShellQuoting.quote(log.path)) ]; do sleep 0.05; done
+      kill -KILL "$(head -n 1 \(PosixShellQuoting.quote(log.path + ".parents")))"
+      kill -KILL "$(cut -d' ' -f1 \(PosixShellQuoting.quote(log.path)))"
       sleep 0.3
       _multishell_command_started "ls"; true; _multishell_precmd
       printf 'alive\\n'
@@ -632,10 +632,10 @@ struct HelperShellIntegrationTests {
     let helper = try Scratch.script(
       """
       if [ "$1" = relay ]; then
-        while [ ! -e \(ShellQuoting.quote(written.path)) ]; do sleep 0.05; done
+        while [ ! -e \(PosixShellQuoting.quote(written.path)) ]; do sleep 0.05; done
         exit 2
       fi
-      exec \(ShellQuoting.quote(try HelperBinary.require().path)) "$@"
+      exec \(PosixShellQuoting.quote(try HelperBinary.require().path)) "$@"
       """,
       at: home.appendingPathComponent("multishell"))
     let initFile = home.appendingPathComponent("init.bash")
@@ -647,7 +647,7 @@ struct HelperShellIntegrationTests {
     env["MULTISHELL_SESSION"] = UUID().uuidString
     let script = """
       _multishell_command_started "ls"; true; _multishell_precmd
-      : > \(ShellQuoting.quote(written.path))
+      : > \(PosixShellQuoting.quote(written.path))
       """
 
     _ = try await ProcessRunner().capture(
@@ -673,9 +673,9 @@ struct HelperShellIntegrationTests {
     env["MULTISHELL_SOCKET"] = home.appendingPathComponent("nowhere.sock").path
     env["MULTISHELL_SESSION"] = UUID().uuidString
     let script = """
-      while [ ! -s \(ShellQuoting.quote(log.path)) ]; do sleep 0.05; done
+      while [ ! -s \(PosixShellQuoting.quote(log.path)) ]; do sleep 0.05; done
       sleep 60 </dev/null >/dev/null 2>&1 &
-      echo $! > \(ShellQuoting.quote(childPID.path))
+      echo $! > \(PosixShellQuoting.quote(childPID.path))
       """
 
     _ = try await ProcessRunner().capture(
@@ -698,8 +698,8 @@ struct HelperShellIntegrationTests {
     let parents = home.appendingPathComponent("parents.log")
     let helper = try Scratch.script(
       """
-      if [ "$1" = relay ]; then echo "$PPID" >> \(ShellQuoting.quote(parents.path)); exit 2; fi
-      exec \(ShellQuoting.quote(try HelperBinary.require().path)) "$@"
+      if [ "$1" = relay ]; then echo "$PPID" >> \(PosixShellQuoting.quote(parents.path)); exit 2; fi
+      exec \(PosixShellQuoting.quote(try HelperBinary.require().path)) "$@"
       """,
       at: home.appendingPathComponent("multishell"))
     let initFile = home.appendingPathComponent("init.bash")
@@ -711,9 +711,9 @@ struct HelperShellIntegrationTests {
     env["MULTISHELL_SOCKET"] = home.appendingPathComponent("nowhere.sock").path
     env["MULTISHELL_SESSION"] = UUID().uuidString
     let script = """
-      while [ ! -s \(ShellQuoting.quote(parents.path)) ]; do sleep 0.05; done
+      while [ ! -s \(PosixShellQuoting.quote(parents.path)) ]; do sleep 0.05; done
       sleep 60 </dev/null >/dev/null 2>&1 &
-      echo $! > \(ShellQuoting.quote(childPID.path))
+      echo $! > \(PosixShellQuoting.quote(childPID.path))
       """
 
     _ = try await ProcessRunner().capture(
@@ -775,7 +775,7 @@ struct HelperShellIntegrationTests {
     env["MULTISHELL_SESSION"] = UUID().uuidString
     let script = """
       sleep 60 </dev/null >/dev/null 2>&1 &
-      echo $! > \(ShellQuoting.quote(childPID.path))
+      echo $! > \(PosixShellQuoting.quote(childPID.path))
       _multishell_command_started "ls"; true; _multishell_precmd
       """
 
