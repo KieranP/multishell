@@ -16,8 +16,8 @@ settle it; it is ranked by what it would cost if the reasoning is wrong. Whether
 a feature draws and works in ordinary use is checked by hand as it is built, so
 it gets no entry here.
 
-Code references last checked on 2026-09-24 against the uncommitted tree on
-f302af7. Agent behaviour last checked on 2026-09-23 with claude 2.1.280, codex
+Code references last checked on 2026-09-25 against the uncommitted tree on
+eabde30. Agent behaviour last checked on 2026-09-23 with claude 2.1.280, codex
 0.155.1, gemini 0.46.0, copilot 1.0.87 and opencode 1.18.30.
 
 | #   | Effect | What                                                                                  |
@@ -29,9 +29,11 @@ f302af7. Agent behaviour last checked on 2026-09-23 with claude 2.1.280, codex
 | 005 | Low    | A failed cd in a csh or tcsh hook runs the script where the rc files left it          |
 | 006 | Low    | [Unconfirmed] A worktree path resolved while missing stays unresolved                 |
 | 007 | Low    | [Unconfirmed] Ctrl-C at a bash prompt ends the relay's inline fallback                |
-| 008 | Perf   | The bash relay still forks twice per command                                          |
-| 009 | CI     | [Unconfirmed] The bundle script has run through xcodebuild only under the newer Xcode |
-| 010 | Docs   | libintl is LGPL and linked statically, from a libghostty someone else built           |
+| 008 | Low    | A child that exits as its timeout fires is now and then reported as timed out         |
+| 009 | Low    | [Unconfirmed] A drop landing 250 ms after the button comes up can be refused          |
+| 010 | Perf   | The bash relay still forks twice per command                                          |
+| 011 | CI     | [Unconfirmed] The bundle script has run through xcodebuild only under the newer Xcode |
+| 012 | Docs   | libintl is LGPL and linked statically, from a libghostty someone else built           |
 
 ## Medium
 
@@ -61,14 +63,23 @@ Copilot alone, or let a SessionStart with `source` `clear` or `resume` through.
 
 ### 003. A dead mount can hold every cooperative-pool thread
 
-`WorktreeService.untrackedCounts`, `AppModel.offMain` and the scan in
-`DispatchDirectoryWatcher.watch` run blocking file reads in `Task.detached`,
-which shares the cooperative pool, one thread per core. A probe of 64 blocking
-detached tasks peaked at 12 running on 12 cores. With enough worktrees on a
-mount that stopped answering, those reads can hold every pool thread, and every
-other task in the app waits behind them. `DirectoryProbe` already runs its stat
-on `DispatchQueue.global`, which grows past the core count. Fix = run the other
-three the same way.
+`AppModel.offMain` (`AppModel+OffMain.swift:7`, 16 callers: the save, the Trash,
+the records and shared-settings reads, detection),
+`WorktreeService.untrackedCounts` (`WorktreeService.swift:190`) and the scan in
+`DispatchDirectoryWatcher.watch` (`DispatchDirectoryWatcher.swift:72`) run
+blocking file reads in `Task.detached`, which shares the cooperative pool, one
+thread per core. `WorktreeService.list` (`WorktreeService.swift:61`) stats every
+worktree with no detach at all. A probe of 64 tasks each blocking for a second
+on 12 cores peaked at 12 at once and took 6.3 s, and an unrelated `.utility`
+task waited 5.15 s for a thread. Fix = a concurrent `DispatchQueue` as a
+`TaskExecutor` (macOS 15.4): `offMain` becomes
+`Task(executorPreference: blockingIO, priority: .utility) { work() }.value`, and
+`withTaskExecutorPreference` around the coordinator's list and status calls
+covers what they call. The same probe then peaked at 64, took 1.0 s, and the
+other task waited 25 µs. Cost: a dead mount holds that many GCD threads rather
+than queueing them, and the "Known gap" in `Docs/design/worktrees.md` changes
+with it. Turning on `NonisolatedNonsendingByDefault` first would move these
+stats onto the caller's actor, which for `AppModel` is the main one.
 
 ### 004. [Unconfirmed] Remove waits on a git status that has no timeout
 
@@ -84,7 +95,7 @@ and show the dialog with the status already held when it runs out.
 
 ### 005. A failed cd in a csh or tcsh hook runs the script where the rc files left it
 
-`ShellCommand.entering` (`ShellCommand.swift:103`) prefixes every hook with
+`ShellCommand.entering` (`ShellCommand.swift:91`) prefixes every hook with
 `cd <dir> >/dev/null || exit 1`. csh and tcsh abort the rest of a line whose
 builtin fails, so the `|| exit 1` never runs and the next line does. Run here:
 `tcsh -i -c "cd '/nonexistent/zz' >/dev/null || exit 1<newline>echo after"`
@@ -114,9 +125,37 @@ inline fallback in `init.bash:30`, which runs when the helper is too old for
 loop; lines already in the pipe are lost and each later report pays the EPIPE
 before falling back to a helper launch. Fix = add INT and QUIT to that `trap`.
 
+### 008. A child that exits as its timeout fires is now and then reported as timed out
+
+A stop checks under `RunningChild`'s lock that the child is not a zombie and not
+already exiting (`P_WEXIT`, `ProcessRunner.swift:171`), then sends SIGHUP. A
+child that begins its exit between the check and the signal takes the SIGHUP
+without effect, and `stop` records `.timedOut` beside its own status, 0
+included. The harm is a finished hook or git call reported as timed out. Running
+`sleep 0.05` with a 50 ms timeout, eight at once, misreported about 1 in 60 runs
+before the exiting check and 2 in 3,200 after. Stopping the child first would
+close the gap, a stopped process being unable to start its exit, but Subprocess
+traps on the stop its `waitid` then reports (`Subprocess+Unix.swift:1009` in the
+checkout).
+
+### 009. [Unconfirmed] A drop landing 250 ms after the button comes up can be refused
+
+A tab or project drag whose source view was rebuilt or recycled mid-drag never
+hears its drag session end, so `DragRelease.wait` (`DragRelease.swift:7`) polls
+`NSEvent.pressedMouseButtons` every 100 ms and ends the drag 250 ms after the
+button is seen up (`AppModel+TabGroups.swift:101`,
+`AppModel+Projects.swift:83`). A `performDrop` that arrives later than that, on
+a loaded machine, finds no drag in the air: the tab drop is refused and the tab
+springs back, and a project drop reorders nothing. Nobody has timed how late a
+drop can arrive. Settle it by logging the gap between button-up and
+`performDrop` under load. Fix = own the drag as an AppKit `NSDraggingSource`
+outside the recycled view, whose `draggingSession(_:endedAt:operation:)` arrives
+whatever SwiftUI does to the row. Cost: the tab's click, double click and middle
+click move to AppKit with it (tabs-and-columns.md).
+
 ## Perf
 
-### 008. The bash relay still forks twice per command
+### 010. The bash relay still forks twice per command
 
 The relay exists so a command costs no process launch, and hooks.zsh dropped its
 `$(...)` in the same change because a command substitution forks.
@@ -127,7 +166,7 @@ SIGPIPE ignored only in a subshell that does the write.
 
 ## CI
 
-### 009. [Unconfirmed] The bundle script has run through xcodebuild only under the newer Xcode
+### 011. [Unconfirmed] The bundle script has run through xcodebuild only under the newer Xcode
 
 This machine has only Xcode 27. That the older one writes no build path either
 rests on its accessor having looked in the bundle's resources since packages
@@ -137,7 +176,7 @@ runner and see `verify_binary` pass for both. Fallback = the newer Xcode.
 
 ## Docs
 
-### 010. libintl is LGPL and linked statically, from a libghostty someone else built
+### 012. libintl is LGPL and linked statically, from a libghostty someone else built
 
 GNU gettext 0.24's libintl reaches the executable inside the prebuilt
 `libghostty.a` (Ghostty's Zig object calls `bindtextdomain` and `dgettext`).

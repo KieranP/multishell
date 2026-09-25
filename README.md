@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="Apps/macOS/Resources/icon-256.png" width="128" alt="Multishell icon">
+  <img src="Resources/icon-256.png" width="128" alt="Multishell icon">
 </p>
 
 <h1 align="center">Multishell</h1>
@@ -21,9 +21,10 @@
 
 ## Install
 
-Requires macOS with Xcode 26 or later and `git` on your `PATH`. `make install`
-below goes through `xcodebuild`, which the command line tools alone do not have;
-see [Docs/develop/build.md](Docs/develop/build.md).
+Requires macOS 26 Tahoe or later, Xcode 26 or later (Swift 6.2 or later), and
+`git` on your `PATH`. `make install` below goes through `xcodebuild`, which the
+command line tools alone do not have; see
+[Docs/develop/build.md](Docs/develop/build.md).
 
 ```sh
 git clone https://github.com/KieranP/multishell.git
@@ -39,16 +40,19 @@ make install                                   # release build into /Application
 beside an installed one. The first build downloads libghostty, about 80 MB. Then
 add a repository with the folder button at the top of the sidebar, or Cmd+O.
 
+If a build fails after a pull that moved or renamed files, run `make clean`
+once. It deletes `build/` and `.build/`, and the next build starts from scratch.
+
 **Agent hooks.** For the state dots to follow an agent, it has to report through
-its hooks. Open Settings > Agents: every agent on your PATH that has them gets a
-row with Add, for Claude Code, Codex, Gemini CLI, Copilot CLI and OpenCode.
-Where the file is the agent's own, Multishell appends one entry per event,
-leaves the rest as it is, keeps a copy beside it the first time, and Remove
-takes only its own entries out again. Where the agent reads a directory of hook
-files, or a plugin, Multishell writes a file of its own and deletes it again.
-Codex asks you to trust a new hook once, with `/hooks`. Plain shell commands
-report without any of this. Until an agent's hooks are in, its dots never move
-and the Agents board stays empty.
+its hooks. Open Settings > Agents > Hooks: every agent on your PATH that has
+them gets a row with Add, for Claude Code, Codex, Gemini CLI, Copilot CLI and
+OpenCode. Where the file is the agent's own, Multishell appends one entry per
+event, leaves the rest as it is, keeps a copy beside it the first time, and
+Remove takes only its own entries out again. Where the agent reads a directory
+of hook files, or a plugin, Multishell writes a file of its own and deletes it
+again. Codex asks you to trust a new hook once, with `/hooks`. Plain shell
+commands report without any of this. Until an agent's hooks are in, its dots
+never move and the Agents board stays empty.
 
 Which shells and agents are supported, and how far each one goes, is in
 [COMPAT.md](COMPAT.md).

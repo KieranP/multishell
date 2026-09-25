@@ -53,3 +53,7 @@ What the core is, what it refuses, how work reaches it. Newest at the bottom.
 - **Detection scans the PATH off the main thread.** It is a stat per PATH
   directory per catalogue entry, and each one blocks for the mount's timeout
   where a PATH directory sits on a mount that has gone.
+- **Cancelling the task that awaits a child does not end the child.** A
+  superseded status refresh cancels its task mid-read, and Subprocess answers a
+  cancel with SIGKILL, so a slow `git status` would never land. Only a
+  `ProcessStopper` ends a child.

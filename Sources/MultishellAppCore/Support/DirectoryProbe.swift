@@ -1,8 +1,9 @@
 import Foundation
+import Synchronization
 
 /// Whether a directory exists, answered off the main actor within a bound: a
 /// dead mount costs the window the bound, not the mount's timeout.
-final class DirectoryProbe: @unchecked Sendable {
+final class DirectoryProbe: Sendable {
   enum Answer: Equatable {
     case present
     case missing
@@ -11,8 +12,7 @@ final class DirectoryProbe: @unchecked Sendable {
 
   private let bound: DispatchTimeInterval
   private let exists: @Sendable (String) -> Bool
-  private let lock = NSLock()
-  private var stuck: Set<String> = []
+  private let stuck = Mutex<Set<String>>([])
 
   init(
     bound: DispatchTimeInterval = .seconds(1),
@@ -24,29 +24,28 @@ final class DirectoryProbe: @unchecked Sendable {
 
   func probe(_ path: String) -> Answer {
     // A stat still stuck on this path would only be joined by another thread.
-    guard lock.withLock({ stuck.insert(path).inserted }) else { return .unanswered }
+    guard stuck.withLock({ $0.insert(path).inserted }) else { return .unanswered }
     let answer = ProbeAnswer()
     DispatchQueue.global(qos: .userInteractive).async { [self] in
       let found = exists(path)
-      lock.withLock { _ = stuck.remove(path) }
+      stuck.withLock { _ = $0.remove(path) }
       answer.settle(found)
     }
     return answer.wait(for: bound).map { $0 ? .present : .missing } ?? .unanswered
   }
 }
 
-private final class ProbeAnswer: @unchecked Sendable {
-  private let lock = NSLock()
+private final class ProbeAnswer: Sendable {
   private let done = DispatchSemaphore(value: 0)
-  private var found: Bool?
+  private let found = Mutex<Bool?>(nil)
 
   func settle(_ value: Bool) {
-    lock.withLock { found = value }
+    found.withLock { $0 = value }
     done.signal()
   }
 
   func wait(for bound: DispatchTimeInterval) -> Bool? {
     guard done.wait(timeout: .now() + bound) == .success else { return nil }
-    return lock.withLock { found }
+    return found.withLock { $0 }
   }
 }

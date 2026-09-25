@@ -194,9 +194,13 @@ struct TranslationTests {
     .deletingLastPathComponent()  // Tests
     .deletingLastPathComponent()
 
+  /// Not the app's target, whose `t` answers from a catalogue of its own.
   private static func swiftFiles() throws -> [URL] {
     let start = checkout.appendingPathComponent("Sources")
+    let app = start.appendingPathComponent("MultishellAppUI").path + "/"
     let walk = FileManager.default.enumerator(at: start, includingPropertiesForKeys: nil)
-    return (walk?.allObjects as? [URL] ?? []).filter { $0.pathExtension == "swift" }
+    return (walk?.allObjects as? [URL] ?? []).filter {
+      $0.pathExtension == "swift" && !$0.path.hasPrefix(app)
+    }
   }
 }

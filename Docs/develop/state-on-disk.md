@@ -1,6 +1,6 @@
 # State on disk
 
-Application support on macOS, the XDG config directory on Linux.
+Under `~/Library/Application Support/Multishell`.
 
 - **A debug build keeps its own state file, socket, integration and drops
   directories**; themes and the helper link are shared.
@@ -25,8 +25,8 @@ Application support on macOS, the XDG config directory on Linux.
 - **A broken state file is moved aside with a timestamp.** Where the move itself
   failed the original is still in place and nothing saves over it; once the user
   moves it away, that session saves again (state-and-store.md).
-- **Themes are JSON in a themes folder**, with the examples beside them not
-  loaded.
+- **Themes are JSON in a themes folder**, with the examples in an `examples`
+  folder inside it, not loaded.
 - **The socket is mode 0600**, bound under a staging name and renamed into
   place, so it is never briefly world-readable: the mode comes from the umask at
   bind, and umask is process-wide.

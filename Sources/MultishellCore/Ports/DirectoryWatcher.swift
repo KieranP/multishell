@@ -1,7 +1,7 @@
 import Foundation
 
-/// Tells the core when a set of directories changes. No portable API, so
-/// each platform supplies one; implementations coalesce bursts.
+/// Tells the core when a set of directories changes. A port so the tests can
+/// fake it; implementations coalesce bursts.
 @MainActor
 public protocol DirectoryWatcher: AnyObject {
   /// The directories that fired since the last call, so the core can read

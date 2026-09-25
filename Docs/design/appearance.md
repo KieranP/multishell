@@ -2,14 +2,14 @@
 
 Themes, the focused pane, the window the app draws itself. Newest at the bottom.
 
-- **Themes are hex strings**, so portability and user theme files come free.
-  Cost: a light terminal means a light sidebar whatever the OS mode.
+- **Themes are hex strings**, so the core imports no UI framework and user theme
+  files come free. Cost: a light terminal means a light sidebar whatever the OS
+  mode.
 - **The window chrome is drawn by hand.** Recent macOS renders split-view
   sidebars as floating glass, and the AppKit split sizes children however it
   likes and exposes nothing.
-- **Cost of that**: sidebar keyboard navigation has to be built, the pane split
-  uses an underscored SwiftUI API, and each hand-drawn row needs an
-  accessibility label reading its glyphs in order.
+- **Cost of that**: sidebar keyboard navigation has to be built, and each
+  hand-drawn row needs an accessibility label reading its glyphs in order.
 - **Both headers stand in for the title bar at the metric's height**, the band a
   hidden title bar keeps. Anything shorter, or anything but a header reaching
   into that band, and AppKit paints over it.
@@ -95,3 +95,12 @@ Themes, the focused pane, the window the app draws itself. Newest at the bottom.
 - **Cost of that**: a field added to a row and left out of its `==` never
   redraws the row, and a closure that comes to capture more than the row's own
   project or worktree goes stale. No test catches either.
+- **Every control wears the macOS 26 style**, which linking against that SDK
+  turns on. xcodebuild records a package's deployment target as the SDK it was
+  built against, so the old floor of 14 kept the older style until the floor
+  moved.
+- **A segmented picker in that style is only as wide as its labels**, so each
+  one asks for flexible sizing to span its row: SegmentedPickerWidthTests.
+- **An untinted icon in project settings is the system's grey**, not the
+  theme's: that window follows the system appearance, and a dark theme's grey
+  vanished on a light page. The sidebar keeps the theme's.

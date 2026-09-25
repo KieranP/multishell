@@ -15,10 +15,10 @@ says why these are the rules.
 - **No blocking in the core**: ProcessRunnerTests runs several children per core
   and reads off what each saw running beside it, starved being a thread per core
   at the ceiling.
-- **Four children per core, counted, not timed**: a wall-clock bound was the
-  runner's mood, and no figure both had headroom on one core and caught twelve
-  starving. Starved, at most a thread per core is inside a run; unstarved,
-  nearly all are, the hold being long against a launch.
+- **At least four children per core, and 96, counted, not timed**: a wall-clock
+  bound was the runner's mood, and no figure both had headroom on one core and
+  caught twelve starving. Starved, at most a thread per core is inside a run;
+  unstarved, nearly all are, the hold being long against a launch.
 - **Descriptor exhaustion** lowers the process-wide limit, so
   DescriptorExhaustionTests needs its environment flag and a filter.
 - **Git on a timer reads only**: StatusLockTests.
@@ -80,8 +80,9 @@ says why these are the rules.
 - **A word on screen with no translation, or a translation nothing shows**:
   TranslationTests reads every lookup off the source and checks the keys both
   ways, one per catalogue over its own half.
-- **The two TranslationTests files are a pair**, the package split keeping their
-  scanners apart; a check added to one goes in the other.
+- **The two TranslationTests files are a pair**, the app's suite reaching no
+  shared target keeping their scanners apart; a check added to one goes in the
+  other.
 - **The app's also pins the shadowing the split rests on**, and that the words
   written in both catalogues read the same, which the libraries cannot check,
   not knowing a frontend exists.
@@ -303,9 +304,8 @@ says why these are the rules.
   AgentHooksTests over both sets.
 - **A zero or non-finite split weight is refused on decode and on write**:
   DecodingDefaultsTests and WorkspaceStoreTests.
-- **Foundation-only imports**: checked by hand in a Linux container, Linux being
-  out of CI. A view is tested only for its size or its pixels, laid out in a
-  window never ordered in; a value a view reads is tested as a value.
+- **A view is tested only for its size or its pixels**, laid out in a window
+  never ordered in; a value a view reads is tested as a value.
 - **The terminal host against a real shell is untested**: a surface needs a
   window and a GPU, so the only suite that builds the host is
   GeneratedConfigSweepTests, which opens no surface.
@@ -317,6 +317,8 @@ says why these are the rules.
   over, no poll started, and no file after a change.
 - **Two saves landing out of order**: OrderedSaveTests prepares two, runs the
   later first, and expects the file to hold it.
+- **A stalled write holding the main actor**: SaveOrderTests holds one inside
+  `land` and asks for a ticket and whether one landed from another thread.
 - **Two exports landing out of order, and a poll between an export's write and
   its finish**: SharedSettingsExportTests, the same way, on real git, the second
   also finishing before the first.
@@ -364,6 +366,16 @@ says why these are the rules.
   MergeReadLogTests on the log, AppModelGitTests+Merges for a lone project's
   refresh, and MergeReadWidthTests counting a fake git's cherry processes across
   two projects.
+- **A child with a terminal to stop it, or ended by its task's cancel**:
+  ProcessRunnerTests reads a background grandchild's session id, and cancels the
+  task awaiting a child that then finishes.
+- **A spawn that forks the app to get that session**: ProcessRunnerTests counts
+  the atfork handler's calls, which `posix_spawn` never makes. Anything else in
+  the test process that forks would fail it.
+- **A drag nothing takes or a drop refuses goes back between the neighbours it
+  left, and one a drop took stays**: AbandonedTabDragTests, through the model.
+- **A segmented picker drawn only as wide as its labels**:
+  SegmentedPickerWidthTests, in a window never ordered in.
 
 ## Conventions
 
@@ -374,6 +386,9 @@ says why these are the rules.
 - **Prefer evidence to a clock.** Concurrency is read off what the children
   recorded about each other, not off how long the batch took. Both were
   wall-clock bounds first, and both flaked.
+- **A test never hands the stopper a pid it reaped**: tests run in parallel, and
+  the pid can go to another test's child, which the stop would then hang up.
+  ProcessStopTests uses a pid past PID_MAX for the reaped case.
 - **Waiting for a state is the shared helper**, with the assertion after it; a
   fixed sleep fails on a loaded runner and wastes time on a quiet one.
 - **Never the developer's machine**: a shell runs against a home the test wrote,
@@ -384,9 +399,13 @@ says why these are the rules.
   tests' commands to the developer's own zsh history. `ShellCommand` and the
   login capture empty it themselves; a test starting bash or ksh any other way
   must too, or it truncates or rewrites that history.
+- **An interactive shell starts through `Detached.output`**, never `Process`:
+  `Process` hands on the terminal `make test` runs under, and a shell outside
+  its foreground group stops itself on SIGTTIN, with no timeout to end it. The
+  runner starts every child the same way (dependencies.md).
 - **A hook or the login capture leaves a named history file alone**:
   HookShellTests under bash, sh and ksh, and LoginShellEnvironmentTests.
-- **No test writes outside the build trees and the temporary directories**: a
+- **No test writes outside the build tree and the temporary directories**: a
   suite once took the Claude hooks out of the developer's own settings, and an
   interactive shell rewrote their zsh history. `make test` enforces it with a
   sandbox that refuses every other write, but it holds only there, so a test

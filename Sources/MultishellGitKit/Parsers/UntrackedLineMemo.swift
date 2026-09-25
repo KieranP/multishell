@@ -1,8 +1,9 @@
 import Foundation
+import Synchronization
 
 /// Each untracked file's count by size and date, so an unmoved tree is stat'ed
 /// rather than read; per worktree, only the files the last count saw.
-final class UntrackedLineMemo: @unchecked Sendable {
+final class UntrackedLineMemo: Sendable {
   struct Entry: Sendable {
     let size: Int
     let modified: Date
@@ -10,18 +11,17 @@ final class UntrackedLineMemo: @unchecked Sendable {
     let lines: Int?
   }
 
-  private let lock = NSLock()
-  private var byDirectory: [String: [String: Entry]] = [:]
+  private let byDirectory = Mutex<[String: [String: Entry]]>([:])
 
   func entries(in directory: URL) -> [String: Entry] {
-    lock.withLock { byDirectory[directory.path] ?? [:] }
+    byDirectory.withLock { $0[directory.path] ?? [:] }
   }
 
   func replace(_ entries: [String: Entry], in directory: URL) {
-    lock.withLock { byDirectory[directory.path] = entries }
+    byDirectory.withLock { $0[directory.path] = entries }
   }
 
   func forget(directories: some Sequence<String>) {
-    lock.withLock { for directory in directories { byDirectory[directory] = nil } }
+    byDirectory.withLock { for directory in directories { $0[directory] = nil } }
   }
 }

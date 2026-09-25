@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 import TestScratch
 import Testing
 
@@ -93,6 +94,18 @@ struct ProcessRunnerTests {
         || out.contains(cwd.lastPathComponent))
   }
 
+  /// A superseded status refresh cancels its task mid-read; the stopper, not
+  /// the task, is what ends a child, or a slow `git status` never lands.
+  @Test func cancellingTheTaskThatAwaitsAChildLetsTheChildFinish() async throws {
+    let run = Task { try await runner.capture(sh, ["-c", "sleep 0.3; printf done"], in: cwd) }
+    try await Task.sleep(for: .milliseconds(50))
+    run.cancel()
+    let output = try await run.value
+
+    #expect(output.succeeded, "status \(output.status)")
+    #expect(output.standardOutput == "done")
+  }
+
   /// On this process's terminal, an interactive zsh outside the foreground
   /// group stopped itself on SIGTTIN and sat there until the timeout.
   @Test func aChildRunsInASessionOfItsOwnSoNoTerminalCanStopIt() async throws {
@@ -104,6 +117,17 @@ struct ProcessRunnerTests {
 
     #expect(getsid(background) > 0)
     #expect(getsid(background) != getsid(0))
+  }
+
+  /// A fork copies the whole app on Subprocess's one spawn thread, and a
+  /// refused one is not retried.
+  @Test func aChildGetsItsSessionWithoutTheAppForking() async throws {
+    ForkCount.watch()
+    let before = ForkCount.forks.load(ordering: .relaxed)
+
+    _ = try await runner.capture(sh, ["-c", "true"], in: cwd)
+
+    #expect(ForkCount.forks.load(ordering: .relaxed) == before)
   }
 }
 
@@ -175,6 +199,28 @@ struct ProcessRunnerCompletionTests {
     }
   }
 
+  @Test func aRunLetsGoOfItsPipesWhenItReturnsNotASecondLater() async throws {
+    let group = DispatchGroup()
+    let (outPipe, errPipe) = (try makePipe(), try makePipe())
+    defer {
+      try? outPipe.writing.close()
+      try? errPipe.writing.close()
+    }
+    var out: PipeBuffer? = PipeBuffer(outPipe.reading, group: group)
+    var err: PipeBuffer? = PipeBuffer(errPipe.reading, group: group)
+    weak let releasedOut = out
+    weak let releasedErr = err
+    out?.finish()
+    err?.finish()
+
+    await ProcessRunner.drain(try #require(out), try #require(err), group: group)
+    out = nil
+    err = nil
+
+    #expect(releasedOut == nil)
+    #expect(releasedErr == nil)
+  }
+
   /// Each run opens four descriptors, and the status poll runs one per worktree every five
   /// seconds, so a leak here would exhaust the process within the hour.
   @Test func successfulRunsDoNotLeakFileDescriptors() async throws {
@@ -185,4 +231,15 @@ struct ProcessRunnerCompletionTests {
 
     #expect(after - before < 100, "before \(before), after \(after); a leak would be 400")
   }
+}
+
+/// Counts this process's forks: `fork()` runs the atfork handlers, and
+/// `posix_spawn` does not.
+private enum ForkCount {
+  static let forks = Atomic(0)
+  private static let registered: Void = {
+    pthread_atfork({ ForkCount.forks.add(1, ordering: .relaxed) }, nil, nil)
+  }()
+
+  static func watch() { _ = registered }
 }

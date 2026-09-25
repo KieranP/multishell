@@ -14,11 +14,11 @@ enum WorktreeListParser {
 
     func flush() {
       defer { fields = [:] }
-      // `URL(fileURLWithPath: "")` is the current directory, not nothing.
+      // `URL(filePath: "")` is the current directory, not nothing.
       guard let path = fields["worktree"], !path.isEmpty else { return }
       worktrees.append(
         Worktree(
-          path: URL(fileURLWithPath: path),
+          path: URL(filePath: path, directoryHint: .isDirectory),
           projectID: projectID,
           head: fields["HEAD"] ?? "",
           branch: fields["branch"].map(shortBranchName),

@@ -24,6 +24,21 @@ struct AutosaveTests {
     return try WorkspaceSnapshot(fileURL: file).load()
   }
 
+  /// The autosave loop holds the store and wakes only on a change, so the
+  /// model going is what has to end it.
+  @Test func aModelThatGoesLetsItsStoreGoToo() async throws {
+    let file = stateFile()
+    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+    weak var store: WorkspaceStore?
+    do {
+      let h = Harness(stateFile: file)
+      store = h.store
+    }
+    try await waitUntil { store == nil }
+
+    #expect(store == nil)
+  }
+
   @Test func aChangeReachesDiskWithoutAnyoneAskingAndSoDoesTheNext() async throws {
     let file = stateFile()
     defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }

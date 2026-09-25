@@ -2,8 +2,9 @@
 
 ## Requirements
 
-- **Xcode, at the floor COMPAT.md names**, with Swift 6. The app build runs
-  `xcodebuild`, which the command line tools alone do not have.
+- **Xcode, at the floor COMPAT.md names**, with Swift 6.2, the manifest's tools
+  version. The app build runs `xcodebuild`, which the command line tools alone
+  do not have.
 - **git on PATH**, and **prettier** for the Markdown half of `make format`. CI
   does not run prettier; a Claude Code hook runs it on every `.md` an agent
   writes, and skips it quietly where prettier is missing.
@@ -17,15 +18,16 @@
   bundle, copies the resource bundles in (the engine's terminfo must be there),
   builds the CLI the same way into the bundle's helpers, writes the Info.plist
   and signs both.
-- **Signed with the hardened runtime and the entitlements** in the app's
-  resources (signing.md).
+- **Signed with the hardened runtime and the entitlements** in `Resources/`
+  (signing.md).
 - **The short version is three integers**, the only form Apple's key takes: a
   `vX.Y.Z` tag on HEAD, else the commit's date. An rc tag on the same commit is
   passed over, where `git describe` picked it when annotated. The build number
   is the commit count, and `MultishellCommit` names the commit, with a suffix
   for a modified tree. The About panel shows it beside the build number, so a
   bug report still says what was installed: AboutPanelTests.
-- **The first app build downloads the libghostty xcframework**, which is large.
+- **The first build downloads the libghostty xcframework**, which is large; a
+  test build needs it too, the app being in the same package.
 - **`build-lib.sh` holds the functions `make-app.sh` sources**, not runs: the
   copyright holder, the version, the commit, the build number, the worktree
   variant, the xcodebuild call, the checks and the signing. What stays in
@@ -52,14 +54,15 @@
   briefly.
 - **Running the tests is the exception**, several bounds being wall-clock. So
   `make test` compiles unguarded, then runs under a lock file: a second worktree
-  compiles alongside the first and waits only for its turn to run.
+  compiles alongside the first and waits, silently, only for its turn to run.
+- **`lockf -k` keeps the lock file**, which is what gives the queue its order.
+  Where there is no `lockf`, the suites run unguarded.
 - **A bare `swift test` takes no lock**, and nothing caps the compiler's own
   parallelism, so several full builds at once still oversubscribe the machine.
 - **`make test` runs the suites in a write sandbox**, `Scripts/test-sandbox.sb`
-  through `sandbox-exec`: the build trees, SwiftPM's caches and the temporary
+  through `sandbox-exec`: the build tree, SwiftPM's caches and the temporary
   directories only. A bare `swift test` has none, so run the tests through make.
-  Where there is no `sandbox-exec`, Linux included, `make test` runs the suites
-  unconfined.
+  Where there is no `sandbox-exec`, `make test` runs the suites unconfined.
 - **SwiftPM sandboxes its manifest compile**, and one sandbox cannot be applied
   inside another, so the sandboxed run passes `--disable-sandbox`, which lifts
   only SwiftPM's.
@@ -95,18 +98,17 @@
 - **`-quiet` prints a failure for a compile that only warned**, so each run is
   logged, shown whole on failure and reduced to its warning and error lines on
   success.
-- **Cost**: xcodebuild keeps its own derived directory per package, so both the
-  app and the libraries compile twice for anyone running the tests and the
-  build.
-- **CI runs three jobs in parallel**: build and test for the root package, the
-  same for the app package, and the lint. It calls `swift test` directly, so it
-  takes no lock and has no write sandbox: a test writing outside the temporary
-  directories passes there.
+- **Cost**: xcodebuild keeps a derived directory of its own, so everything
+  compiles twice for anyone running the tests and the build. The app's and the
+  helper's schemes share it.
+- **CI runs two jobs in parallel**: build and test, and the lint. It calls
+  `swift test` directly, so it takes no lock and has no write sandbox: a test
+  writing outside the temporary directories passes there.
 
 ## Before you say something works
 
-- **Format what you touched, then lint, test both packages, build and release.**
-  All pass, no warnings.
+- **Format what you touched, then lint, test, build and release.** All pass, no
+  warnings.
 
 ## What you cannot verify
 

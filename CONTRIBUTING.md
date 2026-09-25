@@ -27,7 +27,7 @@ the change says why and the file is updated with it.
 ```sh
 make format   # rewrite to project style
 make lint     # what CI runs, --strict: a warning fails
-make test     # libraries and model, then the Mac hosts
+make test     # every suite, the app's included
 make build    # bundle it, which CI does not do for you
 ```
 

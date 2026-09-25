@@ -35,7 +35,7 @@ struct ZshIntegrationTests {
 
   private func historyFile(
     userZdotdir: URL? = nil, userZshrc: String? = nil
-  ) throws -> (
+  ) async throws -> (
     file: String, home: URL, integration: URL
   ) {
     let root = try Scratch.directory("histfile")
@@ -57,17 +57,9 @@ struct ZshIntegrationTests {
       "HOME": home.path, "ZDOTDIR": integration.path, "PATH": "/usr/bin:/bin", "TERM": "dumb",
     ]
     environment["MULTISHELL_USER_ZDOTDIR"] = userZdotdir?.path
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: "/bin/zsh")
-    process.arguments = ["-l", "-i", "-c", "print -r -- \"$HISTFILE\""]
-    process.environment = environment
-    process.currentDirectoryURL = home
-    let output = Pipe()
-    process.standardOutput = output
-    process.standardError = FileHandle.nullDevice
-    try process.run()
-    process.waitUntilExit()
-    let file = String(decoding: output.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+    let file = try await Detached.output(
+      of: "/bin/zsh", ["-l", "-i", "-c", "print -r -- \"$HISTFILE\""],
+      environment: environment, in: home, standardError: .discarded)
     return (file.trimmingCharacters(in: .newlines), home, integration)
   }
 
@@ -75,9 +67,9 @@ struct ZshIntegrationTests {
     (try? String(contentsOfFile: "/etc/zshrc", encoding: .utf8))?.contains("HISTFILE=") == true
   }
 
-  @Test func aTabsHistoryGoesWhereTheUsersOwnShellWouldPutIt() throws {
+  @Test func aTabsHistoryGoesWhereTheUsersOwnShellWouldPutIt() async throws {
     guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
-    let plain = try historyFile()
+    let plain = try await historyFile()
     defer { try? FileManager.default.removeItem(at: plain.home.deletingLastPathComponent()) }
     #expect(!plain.file.hasPrefix(plain.integration.path), "\(plain.file)")
     if systemRcSetsHistory {
@@ -87,13 +79,13 @@ struct ZshIntegrationTests {
     let root = try Scratch.directory("histfile-user")
     defer { try? FileManager.default.removeItem(at: root) }
     let own = root.appendingPathComponent("zdot", isDirectory: true)
-    let relocated = try historyFile(userZdotdir: own)
+    let relocated = try await historyFile(userZdotdir: own)
     defer { try? FileManager.default.removeItem(at: relocated.home.deletingLastPathComponent()) }
     if systemRcSetsHistory {
       #expect(relocated.file == own.appendingPathComponent(".zsh_history").path)
     }
 
-    let chosen = try historyFile(userZshrc: "HISTFILE=/elsewhere/history\n")
+    let chosen = try await historyFile(userZshrc: "HISTFILE=/elsewhere/history\n")
     defer { try? FileManager.default.removeItem(at: chosen.home.deletingLastPathComponent()) }
     #expect(chosen.file == "/elsewhere/history", "the user's own setting stands")
   }

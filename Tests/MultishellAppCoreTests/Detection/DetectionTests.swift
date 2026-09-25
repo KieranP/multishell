@@ -7,7 +7,6 @@ import Testing
 @Suite
 struct ShellDetectionTests {
   @Test func shellsComeFromTheSystemListAndThePathWithoutDuplicates() throws {
-    // Only `/bin/sh` is assumed to exist: the Linux CI image has no zsh.
     let bin = try fakeBin(["fish", "zsh", "nu", "bash"])
     defer { try? FileManager.default.removeItem(at: bin) }
     let list = bin.appendingPathComponent("shells")

@@ -1,20 +1,10 @@
 import Foundation
 
-/// Where Multishell keeps its state on each platform, and the only OS branch
-/// in the core; see Docs/develop/state-on-disk.md.
+/// Where Multishell keeps its state; see Docs/develop/state-on-disk.md.
 public enum Paths {
   static var configDirectory: URL {
-    #if os(Linux)
-      let environment = ProcessInfo.processInfo.environment
-      let base =
-        environment["XDG_CONFIG_HOME"].map { URL(fileURLWithPath: $0) }
-        ?? FileManager.default.homeDirectoryForCurrentUser
-        .appendingPathComponent(".config", isDirectory: true)
-      return base.appendingPathComponent("multishell", isDirectory: true)
-    #else
-      let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-      return base.appendingPathComponent("Multishell", isDirectory: true)
-    #endif
+    let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+    return base.appendingPathComponent("Multishell", isDirectory: true)
   }
 
   /// The `Info.plist` key naming the worktree a debug bundle was built from.

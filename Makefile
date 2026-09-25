@@ -5,20 +5,15 @@ CONFIG ?= debug
 APP     = build/Multishell.app
 INSTALL_DIR ?= /Applications
 
-# Several bounds in the suite are wall-clock (waitUntil gives up after 8 s),
-# and what makes them fail is a second suite running at the same time in
-# another worktree. lockf queues that run instead of letting
-# the two oversubscribe the machine; -k keeps the file, which is what gives
-# the queue its order. `make test` in a second worktree therefore waits,
-# silently, until the first has run. Where there is no lockf, Linux included,
-# the suites run unguarded.
+# Queues a second worktree's suites behind the first, whose wall-clock bounds
+# it would break. Why, and why -k: Docs/develop/build.md.
 TEST_LOCK_FILE ?= $(HOME)/Library/Caches/multishell-test.lock
 LOCKF := $(shell command -v lockf 2>/dev/null)
 ifneq ($(LOCKF),)
 LOCK = $(LOCKF) -k "$(TEST_LOCK_FILE)"
 endif
 
-# Tests may write only the build trees and the temporary directories. Why
+# Tests may write only the build tree and the temporary directories. Why
 # --disable-sandbox, and where it runs unconfined: Docs/develop/build.md.
 SANDBOX_EXEC := $(shell command -v sandbox-exec 2>/dev/null)
 ifneq ($(SANDBOX_EXEC),)
@@ -41,19 +36,15 @@ build:
 release:
 	Scripts/make-app.sh release
 
-## Test everything: the portable libraries and the model, then the Mac hosts.
-## Built before the lock and run under it: compiling in two worktrees at once
-## is fine, and holding the lock through a full build would queue the slow
-## half for nothing.
+## Test everything. Built before the lock and run under it; why in
+## Docs/develop/build.md.
 test:
 	swift build --build-tests
 	$(LOCK) $(SWIFT_TEST)
-	swift build --build-tests --package-path Apps/macOS
-	$(LOCK) $(SWIFT_TEST) --package-path Apps/macOS
 
 ## Compile the macOS app without bundling; catches SwiftUI errors fast.
 test-app:
-	swift build --package-path Apps/macOS
+	swift build --target MultishellAppUI
 
 ## Build release and copy into /Applications (or INSTALL_DIR=...).
 install: release
@@ -63,11 +54,11 @@ install: release
 
 ## Report style violations. Same command CI runs; fails on any finding.
 lint:
-	swift format lint --strict --recursive Sources Tests Apps/macOS/Sources Apps/macOS/Tests Package.swift Apps/macOS/Package.swift
+	swift format lint --strict --recursive Sources Tests Package.swift
 
 ## Rewrite files in place to the project style (.swift-format, .prettierrc).
 format: prettier
-	swift format --in-place --recursive Sources Tests Apps/macOS/Sources Apps/macOS/Tests Package.swift Apps/macOS/Package.swift
+	swift format --in-place --recursive Sources Tests Package.swift
 	prettier --write --log-level warn '**/*.md'
 
 ## Markdown goes through prettier, which the toolchain does not ship and CI
@@ -80,4 +71,4 @@ run: build
 	open "$(APP)"
 
 clean:
-	rm -rf build .build Apps/macOS/.build
+	rm -rf build .build

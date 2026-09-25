@@ -206,21 +206,23 @@ extension WorkspaceStore {
 
   /// Moves a tab beside `target`, possibly in another column of the same
   /// worktree; see Docs/design/tabs-and-columns.md.
+  @discardableResult
   public func moveTab(
     _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, _ target: TerminalTab.ID
-  ) {
+  ) -> Bool {
     guard
       let movingIndex = workspace.tabIndex(id),
       let anchorIndex = workspace.tabIndex(target),
       workspace.tabs[movingIndex].worktreeID == workspace.tabs[anchorIndex].worktreeID,
       id != target
-    else { return }
+    else { return false }
 
     // Taking the tab out shifts the anchor down by one where it sat after it.
     let landing = anchorIndex > movingIndex ? anchorIndex - 1 : anchorIndex
     relocate(
       id, into: workspace.tabs[anchorIndex].groupID,
       at: placement == .before ? landing : landing + 1)
+    return true
   }
 
   /// A tab dropped on a strip past its last tab, or on its New Tab button:

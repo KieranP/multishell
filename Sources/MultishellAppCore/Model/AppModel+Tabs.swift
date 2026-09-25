@@ -190,14 +190,17 @@ extension AppModel {
 
   /// Moves `id` beside `target`, possibly in another column. A move leaving
   /// the strip reading the same writes nothing, the shuffle having done it.
+  /// `false` where either tab has gone or they sit in different worktrees.
+  @discardableResult
   public func moveTab(
     _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, _ target: TerminalTab.ID
-  ) {
-    guard changesTheStrip(id, placement, target) else { return }
-    store.moveTab(id, placement, target)
+  ) -> Bool {
+    guard changesTheStrip(id, placement, target) else { return true }
+    guard store.moveTab(id, placement, target) else { return false }
     // The drop activates the tab in its new column, so without this the engine
     // keeps focus on the one now hidden behind it.
     reconcileSessions(takingFocus: true)
+    return true
   }
 
   /// A tab landing in another column always changes something, if only

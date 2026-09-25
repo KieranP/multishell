@@ -6,7 +6,8 @@ enum HelperBinary {
   static let url: URL = {
     let products = Bundle.allBundles.first { $0.bundleURL.pathExtension == "xctest" }?
       .bundleURL.deletingLastPathComponent()
-    return (products ?? URL(fileURLWithPath: ".build/debug")).appendingPathComponent("multishell")
+    return (products ?? URL(fileURLWithPath: ".build/debug")).appendingPathComponent(
+      "multishell-helper")
   }()
 
   /// Named here rather than found out from a launch error in every test.

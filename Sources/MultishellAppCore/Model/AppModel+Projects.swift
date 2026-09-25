@@ -66,6 +66,32 @@ extension AppModel {
     store.moveProject(at: from, to: destination)
   }
 
+  public func beginProjectDrag(_ id: Project.ID) {
+    projectDragReleaseWatch?.cancel()
+    projectDragReleaseWatch = nil
+    draggingProject = id
+  }
+
+  public func endProjectDrag() {
+    projectDragReleaseWatch?.cancel()
+    projectDragReleaseWatch = nil
+    draggingProject = nil
+  }
+
+  /// The dragged project's row was recycled off screen, so its session's end
+  /// reaches no one and the button's release ends the drag instead.
+  public func projectDragSourceLeft(
+    _ id: Project.ID, isPressed: @escaping @MainActor () -> Bool
+  ) {
+    guard draggingProject == id else { return }
+    projectDragReleaseWatch?.cancel()
+    projectDragReleaseWatch = Task { [weak self] in
+      await DragRelease.wait(isPressed: isPressed)
+      guard !Task.isCancelled, self?.draggingProject == id else { return }
+      self?.endProjectDrag()
+    }
+  }
+
   public func setExpanded(_ expanded: Bool, for project: Project) {
     store.setExpanded(expanded, forProject: project.id)
     // A collapsed project's rows went unread; opening reads them now, through

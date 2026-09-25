@@ -1,7 +1,7 @@
 import Foundation
 
-/// No dependencies, so the test targets for the Foundation-only libraries can
-/// use it without linking the git layer that `TestSupport` needs.
+/// None of this package's libraries, so every test target can use it without
+/// linking the git layer that `TestSupport` needs.
 public enum Scratch {
   /// Not created: several tests check that the code under test makes it. `tag` only marks a
   /// stray directory a crashed test left behind; nothing reads it.

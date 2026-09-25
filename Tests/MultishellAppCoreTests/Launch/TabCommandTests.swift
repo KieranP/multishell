@@ -21,7 +21,7 @@ struct TabCommandTests {
     #expect(command.last == "'my agent' --name 'it'\\''s'; exec /opt/homebrew/bin/nu -l")
   }
 
-  @Test func anArgumentWithABangOrBackslashReachesTheAgentUnderInteractiveTcsh() throws {
+  @Test func anArgumentWithABangOrBackslashReachesTheAgentUnderInteractiveTcsh() async throws {
     let tcsh = "/bin/tcsh"
     guard FileManager.default.isExecutableFile(atPath: tcsh) else { return }
     let home = try Scratch.directory("tab-command")
@@ -30,16 +30,9 @@ struct TabCommandTests {
     let command = TabCommand.running(
       ["/usr/bin/printf", "[%s]\\n"] + words,
       shell: (URL(fileURLWithPath: tcsh), ["-f", "-i", "-c"]), exec: "exit")
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: command[0])
-    process.arguments = Array(command.dropFirst())
-    process.environment = ["PATH": "/usr/bin:/bin", "HISTFILE": "", "HOME": home.path]
-    let output = Pipe()
-    process.standardOutput = output
-    process.standardError = output
-    try process.run()
-    let text = String(decoding: output.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
-    process.waitUntilExit()
+    let text = try await Detached.output(
+      of: command[0], Array(command.dropFirst()),
+      environment: ["PATH": "/usr/bin:/bin", "HISTFILE": "", "HOME": home.path])
 
     #expect(text == words.map { "[\($0)]\n" }.joined())
   }
@@ -50,7 +43,7 @@ struct TabCommandTests {
   ])
   func aBranchNameInAFlagReachesTheAgentAsTextAndRunsNothing(
     shell: String, flags: [String]
-  ) throws {
+  ) async throws {
     guard FileManager.default.isExecutableFile(atPath: shell) else { return }
     let home = try Scratch.directory("tab-command")
     defer { Scratch.remove(home) }
@@ -64,16 +57,10 @@ struct TabCommandTests {
       let command = TabCommand.running(
         ["/usr/bin/printf", "[%s]\\n"] + AgentFlags.arguments("--name={{branch}}", values: values),
         shell: (URL(fileURLWithPath: shell), flags), exec: "exit")
-      let process = Process()
-      process.executableURL = URL(fileURLWithPath: command[0])
-      process.arguments = Array(command.dropFirst())
-      process.environment = ["PATH": "/usr/bin:/bin", "HISTFILE": "", "HOME": home.path]
-      let output = Pipe()
-      process.standardOutput = output
-      process.standardError = FileHandle.nullDevice
-      try process.run()
-      let text = String(decoding: output.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
-      process.waitUntilExit()
+      let text = try await Detached.output(
+        of: command[0], Array(command.dropFirst()),
+        environment: ["PATH": "/usr/bin:/bin", "HISTFILE": "", "HOME": home.path],
+        standardError: .discarded)
 
       #expect(text == "[--name=\(hostile)]\n", "\(shell)")
       #expect(!FileManager.default.fileExists(atPath: ran), "\(shell) ran \(hostile)")

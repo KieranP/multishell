@@ -141,7 +141,7 @@ struct RemovalDisposalTests {
     project.settings = ProjectSettings(postCreateHook: "sleep 30")
     let stopper = ProcessStopper()
     Task {
-      try await Task.sleep(for: .milliseconds(300))
+      try? await Task.sleep(for: .milliseconds(300))
       stopper.stop()
     }
 

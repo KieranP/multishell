@@ -54,26 +54,26 @@ struct PromptMarkTests {
 
   /// The generated files are a chain, and a hook dropped from it would leave every
   /// file valid shell, so only a real shell at a prompt shows the claim.
-  @Test func aRealZshWritesTheClaimAtItsPromptUnderGhosttyAndNowhereElse() throws {
+  @Test func aRealZshWritesTheClaimAtItsPromptUnderGhosttyAndNowhereElse() async throws {
     let zsh = "/bin/zsh"
     guard FileManager.default.isExecutableFile(atPath: zsh) else { return }
     let files = try GeneratedIntegration(helper: "/bin/echo")
     defer { files.remove() }
 
-    func output(termProgram: String?) throws -> String {
+    func output(termProgram: String?) async throws -> String {
       var environment = files.environment(termProgram: termProgram)
       environment["ZDOTDIR"] = files.zshDirectory.path
-      return try interactiveShell(zsh, arguments: ["-i"], environment: environment)
+      return try await interactiveShell(zsh, arguments: ["-i"], environment: environment)
     }
 
-    let marked = try output(termProgram: "ghostty")
+    let marked = try await output(termProgram: "ghostty")
     #expect(marked.contains(Marks.claim))
     #expect(marked.contains(Marks.input), "input start, or no cell is one a click can reach")
     #expect(
       marked.contains(Marks.output),
       "output start too, or the claim would stand while a program ran")
 
-    let plain = try output(termProgram: nil)
+    let plain = try await output(termProgram: nil)
     for mark in [Marks.claim, Marks.input, Marks.output] {
       #expect(plain.contains(mark) == false, "a terminal that is not Ghostty is told nothing")
     }
@@ -81,27 +81,27 @@ struct PromptMarkTests {
 
   /// readline drops the end of a screen-wide prompt, where the input mark rides. One machine's
   /// `/etc/bashrc` PS1 reached 80 columns and scrolled the mark off, so the test sets its own.
-  @Test func aRealBashWritesAllThreeMarksUnderGhosttyAndNoneWithoutIt() throws {
+  @Test func aRealBashWritesAllThreeMarksUnderGhosttyAndNoneWithoutIt() async throws {
     let bash = "/bin/bash"
     guard FileManager.default.isExecutableFile(atPath: bash) else { return }
     let files = try GeneratedIntegration(helper: "/bin/echo")
     defer { files.remove() }
     try files.writeHomeFile(".bashrc", "PS1='> '\n")
 
-    func output(termProgram: String?) throws -> String {
+    func output(termProgram: String?) async throws -> String {
       var environment = files.environment(termProgram: termProgram)
       // The marks ride with the hooks, which do nothing outside a tab.
       environment[SessionEnvironment.sessionKey] = "prompt-marks"
-      return try interactiveShell(
+      return try await interactiveShell(
         bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment)
     }
 
-    let marked = try output(termProgram: "ghostty")
+    let marked = try await output(termProgram: "ghostty")
     #expect(marked.contains(Marks.claim), "prompt start")
     #expect(marked.contains("> " + Marks.input), "input start, on the end of PS1")
     #expect(marked.contains(Marks.output), "output start, once the command ran")
 
-    let plain = try output(termProgram: nil)
+    let plain = try await output(termProgram: nil)
     for mark in [Marks.claim, Marks.input, Marks.output] {
       #expect(plain.contains(mark) == false, "a terminal that is not Ghostty is told nothing")
     }
@@ -109,7 +109,7 @@ struct PromptMarkTests {
 
   /// What the generated bash file has to survive: the user's own startup
   /// files, which it sources before adding anything of its own.
-  @Test func aRealBashKeepsWhatTheUsersOwnStartupFilesSetUp() throws {
+  @Test func aRealBashKeepsWhatTheUsersOwnStartupFilesSetUp() async throws {
     let bash = "/bin/bash"
     guard FileManager.default.isExecutableFile(atPath: bash) else { return }
     let files = try GeneratedIntegration(helper: "/bin/echo")
@@ -130,7 +130,7 @@ struct PromptMarkTests {
 
     var environment = files.environment(termProgram: "ghostty")
     environment[SessionEnvironment.sessionKey] = "user-files"
-    let output = try interactiveShell(
+    let output = try await interactiveShell(
       bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment,
       input:
         "echo \"COUNT=$(printf %s \"$MARKER_PATH\" | tr ':' '\\n' | grep -c '^/opt/marker$')\"\nexit\n"
@@ -157,7 +157,7 @@ struct PromptMarkTests {
 
     var environment = files.environment(termProgram: nil)
     environment[SessionEnvironment.sessionKey] = "empty-enter"
-    _ = try interactiveShell(
+    _ = try await interactiveShell(
       bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment,
       input: "\n\ntrue\n\nexit\n")
 
@@ -185,7 +185,7 @@ struct PromptMarkTests {
     var environment = files.environment(termProgram: nil)
     environment[SessionEnvironment.sessionKey] = "typed-agent"
     environment["PATH"] = scratch.path + ":" + (environment["PATH"] ?? "")
-    _ = try interactiveShell(
+    _ = try await interactiveShell(
       bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment,
       input: "\(codex.path) --continue\nFOO=1 \(codex.path)\ntrue\nexit\n")
 
@@ -270,7 +270,7 @@ struct PromptMarkTests {
 
   /// `%{` opens a zero-width span, so a PS1 ending in a bare `%` would take
   /// the mark's brace as a literal percent's and show the rest.
-  @Test func aPromptEndingInAPercentKeepsItAndStillGetsTheInputMark() throws {
+  @Test func aPromptEndingInAPercentKeepsItAndStillGetsTheInputMark() async throws {
     let zsh = "/bin/zsh"
     guard FileManager.default.isExecutableFile(atPath: zsh) else { return }
     let files = try GeneratedIntegration(helper: "/bin/echo")
@@ -279,14 +279,14 @@ struct PromptMarkTests {
     var environment = files.environment(termProgram: "ghostty")
     environment["ZDOTDIR"] = files.zshDirectory.path
 
-    let output = try interactiveShell(zsh, arguments: ["-i"], environment: environment)
+    let output = try await interactiveShell(zsh, arguments: ["-i"], environment: environment)
     #expect(output.contains("ready%" + Marks.input), "the percent shown, then the mark")
     #expect(output.contains("%{") == false, "and no brace leaks into the prompt")
   }
 
   /// Hooks run through `$SHELL -l -i -c`, which reads the rc files, so a mark written
   /// anywhere but a prompt hook would land in the output a hook is judged by.
-  @Test func aShellRunningOneCommandWritesNoMarksIntoItsOutput() throws {
+  @Test func aShellRunningOneCommandWritesNoMarksIntoItsOutput() async throws {
     let zsh = "/bin/zsh"
     guard FileManager.default.isExecutableFile(atPath: zsh) else { return }
     let files = try GeneratedIntegration(helper: "/bin/echo")
@@ -294,7 +294,7 @@ struct PromptMarkTests {
     var environment = files.environment(termProgram: "ghostty")
     environment["ZDOTDIR"] = files.zshDirectory.path
 
-    let output = try interactiveShell(
+    let output = try await interactiveShell(
       zsh, arguments: ["-l", "-i", "-c", "echo starting"], environment: environment, input: "")
     #expect(output.contains("starting"))
     #expect(output.contains("\u{1B}]133;") == false, "nothing a hook's message would carry")
@@ -302,7 +302,7 @@ struct PromptMarkTests {
 
   /// Our marks go back after a framework's entry rebuilds PS1, and the DEBUG trap arms
   /// last. bash 5.1 made `PROMPT_COMMAND` an array; an older one runs only element 0.
-  @Test func theUsersOwnPromptCommandEntriesKeepTheirPlaceBetweenOurs() throws {
+  @Test func theUsersOwnPromptCommandEntriesKeepTheirPlaceBetweenOurs() async throws {
     let bash = "/bin/bash"
     guard FileManager.default.isExecutableFile(atPath: bash) else { return }
     let files = try GeneratedIntegration(helper: "/bin/echo")
@@ -311,7 +311,7 @@ struct PromptMarkTests {
     var environment = files.environment(termProgram: "ghostty")
     environment[SessionEnvironment.sessionKey] = "prompt-command"
 
-    let output = try interactiveShell(
+    let output = try await interactiveShell(
       bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment,
       input: "declare -p PROMPT_COMMAND\nexit\n")
     let declared = try #require(output.range(of: "declare -a PROMPT_COMMAND=")).upperBound
@@ -325,7 +325,8 @@ struct PromptMarkTests {
     #expect(listing.contains("theirs_second"))
   }
 
-  @Test func anArrayPromptCommandStillRunsOurHooksOnABashThatRunsOnlyItsFirstElement() throws {
+  @Test func anArrayPromptCommandStillRunsOurHooksOnABashThatRunsOnlyItsFirstElement() async throws
+  {
     let bash = "/bin/bash"
     guard FileManager.default.isExecutableFile(atPath: bash) else { return }
     let files = try GeneratedIntegration(helper: "/bin/echo")
@@ -334,7 +335,7 @@ struct PromptMarkTests {
     var environment = files.environment(termProgram: "ghostty")
     environment[SessionEnvironment.sessionKey] = "array-prompt-command"
 
-    let output = try interactiveShell(
+    let output = try await interactiveShell(
       bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment,
       input: "true\nexit\n")
     #expect(output.contains(Marks.claim))
@@ -343,7 +344,7 @@ struct PromptMarkTests {
 
   /// A terminal may leave `TERM_PROGRAM` unset. Under `nounset`, reading it makes zsh
   /// print an error at every startup and bash abandon the init file, hooks and all.
-  @Test func aShellRunWithNounsetIsNotTrippedByTheTerminalItIsNotIn() throws {
+  @Test func aShellRunWithNounsetIsNotTrippedByTheTerminalItIsNotIn() async throws {
     let files = try GeneratedIntegration(helper: "/bin/echo")
     defer { files.remove() }
     var environment = files.environment(termProgram: nil)
@@ -351,7 +352,8 @@ struct PromptMarkTests {
     if FileManager.default.isExecutableFile(atPath: "/bin/zsh") {
       try files.writeHomeFile(".zshrc", "setopt nounset\n")
       environment["ZDOTDIR"] = files.zshDirectory.path
-      let output = try interactiveShell("/bin/zsh", arguments: ["-i"], environment: environment)
+      let output = try await interactiveShell(
+        "/bin/zsh", arguments: ["-i"], environment: environment)
       #expect(output.contains("parameter not set") == false, "no error at every startup")
       environment["ZDOTDIR"] = nil
     }
@@ -359,7 +361,7 @@ struct PromptMarkTests {
     guard FileManager.default.isExecutableFile(atPath: "/bin/bash") else { return }
     try files.writeHomeFile(".bashrc", "set -u\n")
     environment[SessionEnvironment.sessionKey] = "nounset"
-    let output = try interactiveShell(
+    let output = try await interactiveShell(
       "/bin/bash", arguments: ["--init-file", files.bashInit.path, "-i"],
       environment: environment,
       // Printed by the hooks' own name, so the echoed line cannot stand in
@@ -371,7 +373,7 @@ struct PromptMarkTests {
 
   /// libghostty's zsh integration loads only through its bootstrap `.zshenv`, and the
   /// engine applies a surface's variables after that, so the session names both.
-  @Test func aFreshTabEntersTheEnginesBootstrapWhichChainsOnToOurs() throws {
+  @Test func aFreshTabEntersTheEnginesBootstrapWhichChainsOnToOurs() async throws {
     let zsh = "/bin/zsh"
     guard FileManager.default.isExecutableFile(atPath: zsh) else { return }
     let files = try GeneratedIntegration(helper: "/bin/echo")
@@ -385,7 +387,7 @@ struct PromptMarkTests {
     ) { _, new in new }
     #expect(environment["ZDOTDIR"] == bootstrap.path)
 
-    let output = try interactiveShell(zsh, arguments: ["-i"], environment: environment)
+    let output = try await interactiveShell(zsh, arguments: ["-i"], environment: environment)
     #expect(output.contains(Marks.input), "the engine's mark, so the chain reached its file")
     #expect(output.contains(Marks.claim), "and ours, so the chain came on to our file")
     let plain = try #require(output.range(of: Marks.plainStart, options: .backwards))
@@ -395,7 +397,7 @@ struct PromptMarkTests {
 
   /// The shell after an exited agent is started by a fragment, not the session's
   /// environment, so it finds both through the variable the engine leaves in every child.
-  @Test func theShellAfterAnAgentEntersTheEnginesBootstrapUnderGhosttyOnly() throws {
+  @Test func theShellAfterAnAgentEntersTheEnginesBootstrapUnderGhosttyOnly() async throws {
     let zsh = "/bin/zsh"
     guard FileManager.default.isExecutableFile(atPath: zsh) else { return }
     let files = try GeneratedIntegration(helper: "/bin/echo")
@@ -409,14 +411,14 @@ struct PromptMarkTests {
 
     var ghostty = files.environment(termProgram: "ghostty")
     ghostty["GHOSTTY_RESOURCES_DIR"] = files.engineResources.path
-    let chained = try interactiveShell(
+    let chained = try await interactiveShell(
       "/bin/sh", arguments: ["-c", "true; \(exec)"], environment: ghostty)
     #expect(chained.contains(Marks.plainStart), "the engine's file was entered")
     #expect(chained.contains(Marks.claim), "and ours after it")
 
     // The login shell running the line may not be POSIX; csh is the one at hand.
     if FileManager.default.isExecutableFile(atPath: "/bin/csh") {
-      let fromCsh = try interactiveShell(
+      let fromCsh = try await interactiveShell(
         "/bin/csh", arguments: ["-c", "true; \(exec)"], environment: ghostty)
       #expect(fromCsh.contains(Marks.plainStart), "the fragment reads the same to csh")
       #expect(fromCsh.contains(Marks.claim))
@@ -425,7 +427,7 @@ struct PromptMarkTests {
     var elsewhere = files.environment(termProgram: nil)
     elsewhere[SessionEnvironment.sessionKey] = "after-agent"
     elsewhere[SessionEnvironment.socketKey] = "/nonexistent.sock"
-    let plain = try interactiveShell(
+    let plain = try await interactiveShell(
       "/bin/sh", arguments: ["-c", "true; \(exec)"], environment: elsewhere,
       input: "(( $+functions[_multishell_precmd] )) && printf 'HOOKS%s\\n' OK\nexit\n")
     #expect(plain.contains(Marks.plainStart) == false, "no engine, no bootstrap")
@@ -515,20 +517,7 @@ private struct GeneratedIntegration {
 private func interactiveShell(
   _ executable: String, arguments: [String], environment: [String: String],
   input: String = "true\nexit\n"
-) throws -> String {
-  let process = Process()
-  process.executableURL = URL(fileURLWithPath: executable)
-  process.arguments = arguments
-  process.environment = environment
-  let stdin = Pipe()
-  let output = Pipe()
-  process.standardInput = stdin
-  process.standardOutput = output
-  process.standardError = output
-  try process.run()
-  stdin.fileHandleForWriting.write(Data(input.utf8))
-  try? stdin.fileHandleForWriting.close()
-  let text = String(decoding: output.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
-  process.waitUntilExit()
-  return text
+) async throws -> String {
+  try await Detached.output(
+    of: executable, arguments, environment: environment, input: input)
 }

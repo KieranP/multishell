@@ -1,14 +1,13 @@
 import Foundation
+import Synchronization
 
 /// At most `width` holders at once, the rest queued in arrival order. Shared
 /// by every copy of the service, so projects read together share one width.
-final class GitSlots: @unchecked Sendable {
-  private let lock = NSLock()
-  private var free: Int
-  private var waiting: [CheckedContinuation<Void, Never>] = []
+final class GitSlots: Sendable {
+  private let slots: Mutex<(free: Int, waiting: [CheckedContinuation<Void, Never>])>
 
   init(width: Int) {
-    free = width
+    slots = Mutex((width, []))
   }
 
   func holding<T: Sendable>(_ work: @Sendable () async -> T) async -> T {
@@ -19,12 +18,12 @@ final class GitSlots: @unchecked Sendable {
 
   private func acquire() async {
     await withCheckedContinuation { continuation in
-      let admitted = lock.withLock {
-        guard free > 0 else {
-          waiting.append(continuation)
+      let admitted = slots.withLock { slots in
+        guard slots.free > 0 else {
+          slots.waiting.append(continuation)
           return false
         }
-        free -= 1
+        slots.free -= 1
         return true
       }
       if admitted { continuation.resume() }
@@ -33,12 +32,12 @@ final class GitSlots: @unchecked Sendable {
 
   /// A slot freed goes straight to the next waiter, never back to the pool.
   private func release() {
-    let next = lock.withLock { () -> CheckedContinuation<Void, Never>? in
-      guard !waiting.isEmpty else {
-        free += 1
+    let next = slots.withLock { slots -> CheckedContinuation<Void, Never>? in
+      guard !slots.waiting.isEmpty else {
+        slots.free += 1
         return nil
       }
-      return waiting.removeFirst()
+      return slots.waiting.removeFirst()
     }
     next?.resume()
   }

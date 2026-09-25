@@ -4,6 +4,10 @@ import Testing
 
 @testable import MultishellProcess
 
+/// Past macOS's PID_MAX of 99999. waitid answers it as it does a reaped child,
+/// and a reaped child's own pid can go to a child another test starts meanwhile.
+private let pidNoProcessHolds: pid_t = 100_000
+
 /// The timeout and the user's stop both go through `ProcessStopper`, so both must end an
 /// interactive shell, which ignores SIGTERM, and the command it is running.
 @Suite
@@ -28,20 +32,56 @@ struct ProcessStopTests {
   }
 
   private func isZombie(_ pid: pid_t) -> Bool {
-    #if os(Linux)
-      guard let stat = try? String(contentsOfFile: "/proc/\(pid)/stat", encoding: .utf8),
-        let close = stat.lastIndex(of: ")")
-      else { return false }
-      return stat[stat.index(after: close)...].trimmingCharacters(in: .whitespaces).hasPrefix("Z")
-    #else
-      var name: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, pid]
-      var info = kinfo_proc()
-      var size = MemoryLayout<kinfo_proc>.size
-      guard sysctl(&name, UInt32(name.count), &info, &size, nil, 0) == 0, size > 0 else {
-        return false
-      }
-      return Int32(info.kp_proc.p_stat) == SZOMB
-    #endif
+    ProcessAncestry.kinfo(pid).map { Int32($0.kp_proc.p_stat) == SZOMB } ?? false
+  }
+
+  private func spawnExitingChild() throws -> pid_t {
+    var pid: pid_t = 0
+    let argv: [UnsafeMutablePointer<CChar>?] = [strdup("/usr/bin/true"), nil]
+    defer { for argument in argv { free(argument) } }
+    try #require(posix_spawn(&pid, "/usr/bin/true", nil, nil, argv, environ) == 0)
+    return pid
+  }
+
+  @Test func aStopReachingAnExitedChildNotYetMarkedSignalsNothing() throws {
+    let pid = try spawnExitingChild()
+    var info = siginfo_t()
+    waitid(P_PID, id_t(pid), &info, WEXITED | WNOWAIT)
+    defer { waitpid(pid, nil, 0) }
+    let child = RunningChild()
+    child.started(pid)
+    let stopper = ProcessStopper()
+    stopper.attach(child)
+
+    stopper.stop(.timedOut(after: .milliseconds(1)))
+    #expect(stopper.reason == nil)
+    #expect(!child.isRunning)
+  }
+
+  @Test func aStopReachingAReapedChildNotYetMarkedSignalsNothing() {
+    let child = RunningChild()
+    child.started(pidNoProcessHolds)
+    let stopper = ProcessStopper()
+    stopper.attach(child)
+
+    stopper.stop()
+    #expect(stopper.reason == nil)
+    #expect(!child.isRunning)
+  }
+
+  @Test func aStopAskedBeforeAChildThatExitedFirstIsAttachedStopsThatRun() throws {
+    let pid = try spawnExitingChild()
+    var info = siginfo_t()
+    waitid(P_PID, id_t(pid), &info, WEXITED | WNOWAIT)
+    defer { waitpid(pid, nil, 0) }
+    let child = RunningChild()
+    child.started(pid)
+    let stopper = ProcessStopper()
+    stopper.stop()
+
+    stopper.attach(child)
+
+    #expect(stopper.reason == .stopped)
   }
 
   @Test func aGroupWhoseLeaderStartedAfterTheHangupIsAStrangers() throws {
@@ -82,7 +122,7 @@ struct ProcessStopTests {
   @Test func theStopperEndsTheChildAndSaysTheUserAsked() async throws {
     let stopper = ProcessStopper()
     Task {
-      try await Task.sleep(for: .milliseconds(300))
+      try? await Task.sleep(for: .milliseconds(300))
       stopper.stop()
     }
     let started = ContinuousClock.now

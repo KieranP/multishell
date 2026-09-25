@@ -1,24 +1,32 @@
 import Foundation
+import Synchronization
 
 /// Listens on a Unix socket and hands each line to `onLine`. Handler-driven,
 /// so no thread waits; the file is mode 0600 and its lines move a dot.
-public final class UnixSocketServer: @unchecked Sendable {
-  public var onLine: (@Sendable (String) -> Void)?
+public final class UnixSocketServer: Sendable {
+  public var onLine: (@Sendable (String) -> Void)? {
+    get { handler.withLock { $0 } }
+    set { handler.withLock { $0 = newValue } }
+  }
 
   /// A connection that sends more than this without a newline is not
   /// speaking the protocol and is dropped.
   static let maximumLineLength = 64 * 1024
 
+  private struct State {
+    /// Held for as long as this instance listens. An `fcntl` record lock dies
+    /// with the process, so holding it is what says the socket's owner is alive.
+    var claim: Int32 = -1
+    var listener: (any DispatchSourceRead)?
+    var connections: [Int32: Connection] = [:]
+    /// Whether the listener is suspended waiting for a descriptor to free.
+    var standingDown = false
+  }
+
   private let path: String
   private let queue: DispatchQueue
-  private let lock = NSLock()
-  /// Held for as long as this instance listens. An `fcntl` record lock dies
-  /// with the process, so holding it is what says the socket's owner is alive.
-  private var claim: Int32 = -1
-  private var listener: (any DispatchSourceRead)?
-  private var connections: [Int32: Connection] = [:]
-  /// Whether the listener is suspended waiting for a descriptor to free.
-  private var standingDown = false
+  private let state = Mutex(State())
+  private let handler = Mutex<(@Sendable (String) -> Void)?>(nil)
 
   public init(path: URL, queue: DispatchQueue = DispatchQueue(label: "multishell.socket")) {
     self.path = path.path
@@ -32,7 +40,7 @@ public final class UnixSocketServer: @unchecked Sendable {
   public func start() throws {
     // Already listening. The probe would find this instance answering, read
     // it as another, and the failure path would let go of a claim still needed.
-    guard lock.withLock({ listener == nil }) else { return }
+    guard state.withLock({ $0.listener == nil }) else { return }
     try FileManager.default.createDirectory(
       at: URL(fileURLWithPath: path).deletingLastPathComponent(),
       withIntermediateDirectories: true)
@@ -84,21 +92,21 @@ public final class UnixSocketServer: @unchecked Sendable {
     let source = DispatchSource.makeReadSource(fileDescriptor: descriptor, queue: queue)
     source.setEventHandler { [weak self] in self?.acceptPending(on: descriptor) }
     source.setCancelHandler { close(descriptor) }
-    lock.withLock { listener = source }
+    state.withLock { $0.listener = source }
     source.resume()
   }
 
   public func stop() {
-    let (listener, connections) = lock.withLock {
+    let (listener, connections) = state.withLock { state in
       defer {
-        self.listener = nil
-        self.connections.removeAll()
-        self.standingDown = false
+        state.listener = nil
+        state.connections.removeAll()
+        state.standingDown = false
       }
       // Put back before it goes: a source released while suspended traps,
       // and its cancel handler, which closes the descriptor, never runs.
-      if standingDown { self.listener?.resume() }
-      return (self.listener, Array(self.connections.values))
+      if state.standingDown { state.listener?.resume() }
+      return (state.listener, Array(state.connections.values))
     }
     // After the socket file has gone, so a launch taking the claim in between
     // finds nothing to probe rather than this instance answering on its way out.
@@ -118,7 +126,7 @@ public final class UnixSocketServer: @unchecked Sendable {
   /// Takes the claim, or refuses to start: a connect alone cannot tell a live
   /// listener with a full backlog from a dead socket; see state-on-disk.md.
   private func claimOrRefuse() throws {
-    guard lock.withLock({ claim < 0 }) else { return }
+    guard state.withLock({ $0.claim < 0 }) else { return }
     let descriptor = open(claimPath, O_CREAT | O_RDWR | O_CLOEXEC, 0o600)
     // A filesystem that will not lock leaves the probe to decide, as before.
     guard descriptor >= 0 else { return }
@@ -130,15 +138,15 @@ public final class UnixSocketServer: @unchecked Sendable {
       guard code == EAGAIN || code == EACCES else { return }
       throw SocketFailure(kind: .inUse, path: path)
     }
-    lock.withLock { claim = descriptor }
+    state.withLock { $0.claim = descriptor }
   }
 
   /// Closing it drops the lock; the file stays, as an empty one is what the
   /// next launch expects to find.
   private func releaseClaim() {
-    lock.withLock {
-      if claim >= 0 { close(claim) }
-      claim = -1
+    state.withLock { state in
+      if state.claim >= 0 { close(state.claim) }
+      state.claim = -1
     }
   }
 
@@ -195,7 +203,7 @@ public final class UnixSocketServer: @unchecked Sendable {
       let connection = Connection(source: source)
       source.setEventHandler { [weak self] in self?.drain(client, into: connection) }
       source.setCancelHandler { close(client) }
-      lock.withLock { connections[client] = connection }
+      state.withLock { $0.connections[client] = connection }
       source.resume()
     }
   }
@@ -203,30 +211,34 @@ public final class UnixSocketServer: @unchecked Sendable {
   /// Suspends the listener and brings it back once, all under the lock:
   /// releasing a suspended source traps, and so does one resume too many.
   private func standDown() {
-    let suspended = lock.withLock { () -> Bool in
-      guard !standingDown, let source = listener else { return false }
-      standingDown = true
+    let suspended = state.withLock { state -> Bool in
+      guard !state.standingDown, let source = state.listener else { return false }
+      state.standingDown = true
       source.suspend()
       return true
     }
     guard suspended else { return }
     queue.asyncAfter(deadline: .now() + Self.descriptorBackoff) { [weak self] in
       guard let self else { return }
-      self.lock.withLock {
-        guard self.standingDown, let source = self.listener else { return }
-        self.standingDown = false
+      self.state.withLock { state in
+        guard state.standingDown, let source = state.listener else { return }
+        state.standingDown = false
         source.resume()
       }
     }
   }
 
   private func drain(_ descriptor: Int32, into connection: Connection) {
+    let onLine = onLine
     var chunk = [UInt8](repeating: 0, count: 4096)
     while true {
       let count = read(descriptor, &chunk, chunk.count)
       if count > 0 {
         connection.buffer.append(contentsOf: chunk[0..<count])
-        deliverLines(from: connection)
+        while let newline = connection.buffer.firstIndex(of: UInt8(ascii: "\n")) {
+          onLine?(String(decoding: connection.buffer[..<newline], as: UTF8.self))
+          connection.buffer.removeSubrange(...newline)
+        }
         if connection.buffer.count > Self.maximumLineLength {
           drop(descriptor, connection)
           return
@@ -249,20 +261,14 @@ public final class UnixSocketServer: @unchecked Sendable {
     }
   }
 
-  private func deliverLines(from connection: Connection) {
-    while let newline = connection.buffer.firstIndex(of: UInt8(ascii: "\n")) {
-      let line = String(decoding: connection.buffer[..<newline], as: UTF8.self)
-      connection.buffer.removeSubrange(...newline)
-      onLine?(line)
-    }
-  }
-
   private func drop(_ descriptor: Int32, _ connection: Connection) {
-    lock.withLock { connections[descriptor] = nil }
+    state.withLock { $0.connections[descriptor] = nil }
     connection.source.cancel()
   }
 
-  private final class Connection {
+  /// Unchecked: `buffer` is touched only by its read source's handler, which
+  /// runs on the server's serial queue.
+  private final class Connection: @unchecked Sendable {
     let source: any DispatchSourceRead
     var buffer: [UInt8] = []
     init(source: any DispatchSourceRead) { self.source = source }

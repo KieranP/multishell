@@ -75,6 +75,12 @@ public final class AppModel<Surface> {
   /// What a tab drag is doing. Here, not in the column tree that draws it,
   /// because a sidebar row takes a drop too and could not reach a `@State`.
   public var tabDrag = TabDragState()
+  /// Ends a drag whose button was rebuilt under it; see `tabDragSourceLeft`.
+  @ObservationIgnored var tabDragReleaseWatch: Task<Void, Never>?
+  /// The project dragged in the sidebar. Here, not in a `@State`, so the
+  /// release watch can end it; see `projectDragSourceLeft`.
+  public internal(set) var draggingProject: Project.ID?
+  @ObservationIgnored var projectDragReleaseWatch: Task<Void, Never>?
 
   /// Whether the board fills the detail area. Runtime state; set through
   /// `showAgentBoard` and `hideAgentBoard`, which do the seen-clearing.
@@ -220,6 +226,7 @@ public final class AppModel<Surface> {
   @ObservationIgnored var latestRemovalRequest: Worktree.ID?
 
   @ObservationIgnored var pendingSave: Task<Void, Never>?
+  @ObservationIgnored var autosave: Task<Void, Never>?
   /// Set where another copy holds the socket: two copies autosaving one file
   /// leave the last writer's, so this one writes nothing; see state-and-store.md.
   @ObservationIgnored var yieldingToRunningInstance = false
@@ -303,6 +310,12 @@ public final class AppModel<Surface> {
       Task { await self?.refreshWorktreesIfRecordsChanged(under: changed) }
     }
     observeForAutosave()
+  }
+
+  deinit {
+    autosave?.cancel()
+    tabDragReleaseWatch?.cancel()
+    projectDragReleaseWatch?.cancel()
   }
 
   /// The view a session draws into, from whichever engine opened it: the one

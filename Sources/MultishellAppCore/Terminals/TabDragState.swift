@@ -1,8 +1,8 @@
 import Foundation
 import MultishellCore
 
-/// What a tab drag is doing, for every column of one worktree at once. Drawn
-/// only from targets the pointer leaving reports, a drag having no end event.
+/// What a tab drag is doing, for every column of one worktree at once, drawn
+/// from what the drop targets report as the pointer comes and goes.
 public struct TabDragState: Equatable, Sendable {
   /// The tab in the air, which the drop that lands has to name. Read only by
   /// a drop, so a stale one moves nothing.
@@ -15,9 +15,8 @@ public struct TabDragState: Equatable, Sendable {
   public var overColumn: TabGroup.ID?
   /// The band the pointer is over, lit while it is.
   public var band: Band?
-  /// Counts drags, and survives their end, so the release of one cannot end
-  /// the next; see `endAbandoned`.
-  public private(set) var generation = 0
+  /// Where the tab sat as the drag began, for a drag nothing takes.
+  private(set) var home: Home?
 
   public init() {}
 
@@ -33,26 +32,23 @@ public struct TabDragState: Equatable, Sendable {
     overColumn == group || band?.groupID == group
   }
 
-  public mutating func begin(_ id: TerminalTab.ID) {
-    let next = generation &+ 1
+  mutating func begin(_ id: TerminalTab.ID, home: Home? = nil) {
     self = TabDragState()
-    generation = next
     tabID = id
+    self.home = home
   }
 
-  /// Every drop path ends here, the ones that moved nothing included: the
-  /// four in `TabDrops` and the sidebar row, which is why `AppModel` holds it.
-  public mutating func end() {
-    let kept = generation
+  /// Every drop that takes the drag ends here, one that then moves nothing
+  /// included, through `AppModel.dropDraggedTab`.
+  mutating func end() {
     self = TabDragState()
-    generation = kept
   }
 
-  /// A drag released where nothing takes it calls no drop, and `.onDrag` has
-  /// no end below macOS 26, so the button coming up ends it; see `DragRelease`.
-  public mutating func endAbandoned(_ generation: Int) {
-    guard isDragging, generation == self.generation else { return }
-    end()
+  /// The tabs either side of the dragged one as the drag began, nearest first.
+  /// A shuffle moves only the dragged tab, so the rest still say where it was.
+  struct Home: Equatable, Sendable {
+    let earlier: [TerminalTab.ID]
+    let later: [TerminalTab.ID]
   }
 
   /// Where a dragged tab would land in a strip: on a tab, and which side.
@@ -76,4 +72,14 @@ public struct TabDragState: Equatable, Sendable {
       self.placement = placement
     }
   }
+}
+
+/// Where a dragged tab is released: on a tab, a strip clear of its tabs, a
+/// column's terminal area, a band down its edge, or a worktree's row.
+public enum TabDrop: Equatable, Sendable {
+  case tab(TerminalTab.ID, TerminalTab.Placement)
+  case strip(TabGroup.ID)
+  case area(TabGroup.ID)
+  case band(TabDragState.Band)
+  case worktree(Worktree.ID)
 }

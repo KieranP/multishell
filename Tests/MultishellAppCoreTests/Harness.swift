@@ -1,6 +1,7 @@
 import Foundation
 import MultishellCore
 import MultishellProcess
+import Synchronization
 import TestScratch
 import Testing
 
@@ -153,27 +154,30 @@ final class FakePlatform: Platform {
 }
 
 /// What the fake Trash was asked, written from whatever thread asked.
-final class TrashRecord: @unchecked Sendable {
-  private let lock = NSLock()
-  private var _destination: URL? = Scratch.path("trash")
-  private var _trashed: [URL] = []
-  private var _onMainThread: [Bool] = []
+final class TrashRecord: Sendable {
+  private struct State {
+    var destination: URL? = Scratch.path("trash")
+    var trashed: [URL] = []
+    var onMainThread: [Bool] = []
+  }
+
+  private let state = Mutex(State())
 
   deinit {
-    if let _destination { Scratch.remove(_destination) }
+    if let destination { Scratch.remove(destination) }
   }
 
   var destination: URL? {
-    get { lock.withLock { _destination } }
-    set { lock.withLock { _destination = newValue } }
+    get { state.withLock { $0.destination } }
+    set { state.withLock { $0.destination = newValue } }
   }
   var trashed: [URL] {
-    get { lock.withLock { _trashed } }
-    set { lock.withLock { _trashed = newValue } }
+    get { state.withLock { $0.trashed } }
+    set { state.withLock { $0.trashed = newValue } }
   }
   var onMainThread: [Bool] {
-    get { lock.withLock { _onMainThread } }
-    set { lock.withLock { _onMainThread = newValue } }
+    get { state.withLock { $0.onMainThread } }
+    set { state.withLock { $0.onMainThread = newValue } }
   }
 }
 

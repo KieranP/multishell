@@ -1,4 +1,6 @@
 import Foundation
+import Subprocess
+import System
 
 /// Runs a user-supplied command line through the platform shell: a hook is
 /// written as a command, not an argv array, so it needs one to interpret it.
@@ -19,29 +21,22 @@ public struct ShellCommand: Sendable {
   ) async throws {
     guard let shell = Self.shell(preferring: shellPath) else { throw ShellUnavailable() }
     let arguments = shell.arguments + [commandLine]
-    let process = Process()
-    process.executableURL = shell.executable
-    process.arguments = arguments
-    process.currentDirectoryURL = directory
     // Not historyless: an editor started here keeps what its terminals inherit.
-    process.environment = ProcessInfo.processInfo.environment
-      .merging(environment) { _, new in new }
-    // Nothing to drain and nothing to fill: a child that writes has it go
-    // nowhere rather than into a buffer this side must keep reading.
-    process.standardInput = FileHandle.nullDevice
-    process.standardOutput = FileHandle.nullDevice
-    process.standardError = FileHandle.nullDevice
-
-    let status = try await withCheckedThrowingContinuation { continuation in
-      // Set before the start: a child that exits first would otherwise find
-      // no handler, and nothing would ever resume this.
-      process.terminationHandler = { continuation.resume(returning: $0.terminationStatus) }
-      do {
-        try process.run()
-      } catch {
-        process.terminationHandler = nil
-        continuation.resume(throwing: error)
-      }
+    // Nothing to drain and nothing to fill: all three are /dev/null.
+    let nullDevice = try DetachedLaunch.NullDevice()
+    defer { nullDevice.close() }
+    let null = nullDevice.descriptor
+    let status = try await DetachedLaunch.shielded {
+      let result = try await Subprocess.run(
+        .path(FilePath(shell.executable.path)), arguments: Arguments(arguments),
+        environment: DetachedLaunch.environment(overriding: environment),
+        workingDirectory: FilePath(directory.path),
+        platformOptions: DetachedLaunch.platformOptions,
+        input: .fileDescriptor(null, closeAfterSpawningProcess: false),
+        output: .fileDescriptor(null, closeAfterSpawningProcess: false),
+        error: .fileDescriptor(null, closeAfterSpawningProcess: false)
+      ) { _ in nullDevice.close() }
+      return DetachedLaunch.status(result.terminationStatus)
     }
     guard status == 0 else {
       throw ProcessFailure(

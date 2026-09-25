@@ -11,8 +11,8 @@ Newest at the bottom.
 - **A prefix is a thing, singular, or a settings page, plural**: `action.` for a
   verb anywhere, `notification.` for a banner and `notifications.` for its page,
   `worktree.` for a fault of one and `worktrees.` for the page.
-- **A language is that folder again under its code**, plus a line in the
-  manifest. Nothing else changes.
+- **A language is each catalogue's folder again under its code**, plus a line
+  for each in the manifest. Nothing else changes.
 - **The key is written at the call site**, not behind a name for it. An enum of
   keys cost the English twice, as a case name and as a value, to buy a compile
   error on a typo.
@@ -35,7 +35,7 @@ Newest at the bottom.
 - **The split falls where the code does**, all but a handful of keys being asked
   for by one half. It is the line between what any frontend needs and what these
   windows need.
-- **The reason is the port.** A Linux frontend shares the model's words and
+- **The reason is the port.** Another frontend would share the model's words and
   needs none of these widgets' labels, so fusing them would make it adopt this
   catalogue whole or fork the lot.
 - **The lookup function is declared twice**, once per catalogue. A function in

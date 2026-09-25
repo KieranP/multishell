@@ -21,9 +21,8 @@ at the bottom.
   one holds its worktree until Dismiss.
 - **Stopped through ProcessStopper**: SIGHUP to the process group then SIGKILL.
   Interactive shells ignore SIGTERM, and a shell with no terminal does not pass
-  SIGHUP on. On macOS the SIGKILL is held back only where the group's leader
-  started after the hangup, the pid being free for reuse once the group empties;
-  Linux asks only whether the group answers.
+  SIGHUP on. The SIGKILL is held back only where the group's leader started
+  after the hangup, the pid being free for reuse once the group empties.
 - **Age alone does not decide it**: a hook's HUP trap can start a child, as
   young as a stranger's. Cost: a stranger's group whose own leader has already
   exited is killed, which needs a pid wrap inside the three-second grace.

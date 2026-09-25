@@ -3,7 +3,7 @@ import Foundation
 /// The curated palette: every symbol the picker offers, grouped as the picker
 /// draws them.
 extension ProjectIcon {
-  /// Symbols that read at sidebar size and exist on macOS 14, the floor.
+  /// Symbols that read at sidebar size and exist on macOS 26, the floor.
   /// `folderSymbol` is first, being the way back to no glyph.
   public static let symbolGroups: [Group] = [
     Group(

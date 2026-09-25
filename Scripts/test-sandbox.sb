@@ -1,11 +1,10 @@
 (version 1)
-; Writes only to the two build trees and the temporary directories, so a test
+; Writes only to the build tree and the temporary directories, so a test
 ; reaching the account's own files fails; see Docs/develop/tests.md.
 (allow default)
 (deny file-write*)
 (allow file-write*
   (subpath (string-append (param "REPO") "/.build"))
-  (subpath (string-append (param "REPO") "/Apps/macOS/.build"))
   (subpath (string-append (param "HOME") "/Library/Caches/org.swift.swiftpm"))
   (subpath (string-append (param "HOME") "/Library/org.swift.swiftpm"))
   (subpath "/private/tmp")

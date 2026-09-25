@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 import TestScratch
 import Testing
 
@@ -575,14 +576,10 @@ extension URL {
 
 /// A `@Sendable` counter, `isStopped` being called from a closure that
 /// cannot capture a mutable local.
-private final class Counter: @unchecked Sendable {
-  private let lock = NSLock()
-  private var value = 0
+private final class Counter: Sendable {
+  private let value = Atomic(0)
 
   func next() -> Int {
-    lock.withLock {
-      defer { value += 1 }
-      return value
-    }
+    value.wrappingAdd(1, ordering: .relaxed).oldValue
   }
 }

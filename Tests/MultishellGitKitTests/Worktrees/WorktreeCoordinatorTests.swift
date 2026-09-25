@@ -1,6 +1,7 @@
 import Foundation
 import MultishellCore
 import MultishellProcess
+import Synchronization
 import TestScratch
 import Testing
 
@@ -338,20 +339,18 @@ struct WorktreeCoordinatorTests {
 }
 
 /// Collects the steps a create reports, from whatever thread they arrive on.
-private final class StepLog: @unchecked Sendable {
-  private let lock = NSLock()
-  private var collected: [WorktreeCreationStep] = []
+private final class StepLog: Sendable {
+  private let collected = Mutex<[WorktreeCreationStep]>([])
 
-  var steps: [WorktreeCreationStep] { lock.withLock { collected } }
-  func add(_ step: WorktreeCreationStep) { lock.withLock { collected.append(step) } }
-  func clear() { lock.withLock { collected = [] } }
+  var steps: [WorktreeCreationStep] { collected.withLock { $0 } }
+  func add(_ step: WorktreeCreationStep) { collected.withLock { $0.append(step) } }
+  func clear() { collected.withLock { $0 = [] } }
 }
 
-final class RemovalStepLog: @unchecked Sendable {
-  private let lock = NSLock()
-  private var collected: [WorktreeRemovalStep] = []
+final class RemovalStepLog: Sendable {
+  private let collected = Mutex<[WorktreeRemovalStep]>([])
 
-  var steps: [WorktreeRemovalStep] { lock.withLock { collected } }
-  func add(_ step: WorktreeRemovalStep) { lock.withLock { collected.append(step) } }
-  func clear() { lock.withLock { collected = [] } }
+  var steps: [WorktreeRemovalStep] { collected.withLock { $0 } }
+  func add(_ step: WorktreeRemovalStep) { collected.withLock { $0.append(step) } }
+  func clear() { collected.withLock { $0 = [] } }
 }

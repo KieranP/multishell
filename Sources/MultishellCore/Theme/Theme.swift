@@ -1,7 +1,7 @@
 import Foundation
 
 /// A colour scheme for terminals and app chrome. Hex strings, not a platform
-/// colour type, so this stays portable; see Docs/design/appearance.md.
+/// colour type, so the core imports no UI framework; see Docs/design/appearance.md.
 public struct Theme: Identifiable, Codable, Hashable, Sendable {
   public var id: String
   public var name: String

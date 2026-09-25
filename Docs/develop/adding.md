@@ -137,9 +137,10 @@ What each addition needs beyond the code itself.
 - **Add it to the searched shells if Homebrew leaves it out of `/etc/shells`**,
   and give it a row in COMPAT.md's table: the picker offers it, so a reader has
   to be told what it does not get.
-- **A platform GUI.** Depend on the library products, fix the model to the
-  platform's view type once, and implement the platform, surface host, directory
-  watcher and notifier ports.
+- **A second frontend.** A target in this package depending on the four
+  libraries, the package exporting no library product; fix the model to its view
+  type once, and implement the platform, surface host, directory watcher and
+  notifier ports.
 - **A port may do less.** Trash may delete outright, handing over to a running
   copy may return and leave the alert standing, and a notifier that needs no
   permission answers unavailable to both questions, which keeps the settings
@@ -193,8 +194,8 @@ What each addition needs beyond the code itself.
   this app's words, and the matching entitlement where the hardened runtime has
   one. Neither stands in for the other (signing.md, permissions.md).
 - **A language.** That code's folder beside the English one in both halves, both
-  files translated, and a line for it in each manifest. The bundling script
-  takes the list from the app half's folders.
+  files translated, and a line for it in each target's resources in the
+  manifest. The bundling script takes the list from the app half's folders.
 - **The permission strings are not in the catalogue**: English stays in the
   Info.plist template, and a translation is an `InfoPlist.strings` in that
   language's folder in the app half, which the script copies into the bundle's

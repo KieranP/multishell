@@ -20,7 +20,7 @@ enum UntrackedLineCounter {
     var unscored = 0
     var read = 0
     for path in paths.prefix(fileLimit) {
-      let url = directory.appendingPathComponent(path)
+      let url = directory.appending(path: path)
       // A symlink is not a regular file, so it is never read: its own size
       // is not its target's and the read would follow it.
       guard

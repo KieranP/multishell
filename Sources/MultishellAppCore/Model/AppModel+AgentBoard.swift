@@ -99,8 +99,7 @@ extension AppModel {
     if let agentID = session.agentID {
       return .agent(id: agentID, name: AgentCatalogue.displayName(agentID))
     }
-    return .shell(
-      URL(fileURLWithPath: shellPath(forWorktree: session.worktreeID)).lastPathComponent)
+    return .shell(URL(filePath: shellPath(forWorktree: session.worktreeID)).lastPathComponent)
   }
 
   /// The board fills the detail area, the selection left alone so its shells

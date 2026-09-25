@@ -30,7 +30,7 @@ struct EditorLaunchTests {
     #expect(action("no-such-editor") == nil)
   }
 
-  @Test func anEditorShimGetsAWorktreePathWithABangUnderInteractiveTcsh() throws {
+  @Test func anEditorShimGetsAWorktreePathWithABangUnderInteractiveTcsh() async throws {
     let tcsh = "/bin/tcsh"
     guard FileManager.default.isExecutableFile(atPath: tcsh) else { return }
     let home = try Scratch.directory("editor-shim")
@@ -45,16 +45,9 @@ struct EditorLaunchTests {
       Issue.record("the shim runs in the background")
       return
     }
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: tcsh)
-    process.arguments = ["-f", "-i", "-c", line]
-    process.environment = ["PATH": "/usr/bin:/bin", "HISTFILE": "", "HOME": home.path]
-    let output = Pipe()
-    process.standardOutput = output
-    process.standardError = output
-    try process.run()
-    let text = String(decoding: output.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
-    process.waitUntilExit()
+    let text = try await Detached.output(
+      of: tcsh, ["-f", "-i", "-c", line],
+      environment: ["PATH": "/usr/bin:/bin", "HISTFILE": "", "HOME": home.path])
 
     #expect(text == worktree.path + "\n")
   }

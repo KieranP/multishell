@@ -30,7 +30,27 @@
   it and its symbols are in the executable. libghostty-spm asks only for
   `from: "2.2.0"`, so `Package.resolved` alone pins it, and a
   `swift package update` can move it without the libghostty pin moving.
-- **`WeightedSplit` uses `_VariadicView`**, an underscored SwiftUI API.
+- **swift-subprocess starts every child but a terminal's**, Apache-2.0, from
+  1.0.0. Each runs in a session of its own, so no child has a controlling
+  terminal: an interactive shell on one, outside its foreground group, stops
+  itself on SIGTTIN. The session is a `POSIX_SPAWN_SETSID` flag, not
+  `createSession`, which forks the whole app before each spawn and retries no
+  refused fork. Four parts stay ours. Its teardown stops once the direct child
+  exits, which let a grandchild trapping SIGHUP live on, so `ProcessStopper`
+  signals the group itself. It offers no hook between a child's exit and its
+  reap, so the runner watches for the exit and marks it first, or a stop could
+  signal a reused pid. Its answer to a cancelled task is SIGKILL, so each run is
+  shielded from cancellation (architecture.md). The runner opens its own pipes:
+  at the descriptor limit Subprocess traps on a pipe it opened when the next
+  open fails (its `Configuration.swift:1115`), where ours throw. Owning them, it
+  reads them too, and gives up a second after exit on an EOF a background
+  grandchild withholds. Subprocess's collectors have stopped at the exit since
+  0.5, so the trap is the whole reason; DescriptorExhaustionTests shows it.
+- **swift-system comes with it**, not named here but linked all the same;
+  Subprocess's paths are Apple's own `System` types, which is what this code
+  imports.
+- **CryptoKit hashes the shared-settings files**, not swift-crypto: on the Mac
+  that package only re-exports CryptoKit, and would add a notice to ship.
 - **git 2.36 or newer**, for `-z` on `git worktree list --porcelain`, which
   keeps a path holding a newline from reading as two records. The floor is under
   what the supported macOS ships, so an older git usually comes from a version
@@ -46,7 +66,3 @@
 - **`proseWrap: always` is what reflows to 80 columns.** Prettier pads a table
   row to its widest cell whatever `printWidth` says, and refuses a symlink, so
   the hook skips one and `CLAUDE.md` is formatted through `AGENTS.md`.
-- **The app package names its path dependency** rather than only pointing at it:
-  SwiftPM takes a local package's identity from its directory, which in a
-  worktree is the branch's name, so every `package: "multishell"` named a
-  package that did not exist and the unnamed form built from the checkout alone.

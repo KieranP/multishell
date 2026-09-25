@@ -2,9 +2,9 @@
 
 ## Layout
 
-- **Root package, four Foundation-only libraries.** MultishellCore: model,
-  store, theme, ports, the libraries' word lookup, and the small extensions
-  every other library reaches for.
+- **One package: four libraries, the helper and the app.** MultishellCore:
+  model, store, theme, ports, the libraries' word lookup, and the small
+  extensions every other library reaches for.
 - **MultishellProcess**: processes and sockets. **MultishellGitKit**: worktree
   operations, the output readers, what a branch is and where it points, and the
   runner above them all.
@@ -14,8 +14,11 @@
 - **Everything about a program someone else wrote is in `Integrations/`**, one
   folder per kind: agents, editors, shells, and the JSON reading the agents
   share. Another agent touches the agents folder and no other.
-- **MultishellCLI is the helper.** `Apps/macOS` is its own package: views, the
-  engine host, the Mac platform port, and a word lookup of its own.
+- **MultishellCLI is the helper**, built as `multishell-helper` and installed in
+  the bundle as `multishell`, since it and the app would share one products path
+  on a case-insensitive disk. **MultishellAppUI is the app**, built as
+  `Multishell`: views, the engine host, the Mac platform port, and a word lookup
+  of its own.
 - **Its views sit under the part of the window they draw.** The rest draw no
   part of one: reused small views, the AppKit modifiers and representables that
   reach under SwiftUI for an event it has no gesture for, the scene and menus.
@@ -23,7 +26,7 @@
 - **Each half's words live in the target that says them.** The libraries' also
   carry the shell-integration scripts; the app's also carries the agent marks. A
   second frontend is a third of these.
-- **`Apps/macOS/Resources` is not one of those**: the icon, the Info.plist
+- **`Resources/` at the root is not one of those**: the icon, the Info.plist
   template and the entitlements, which the bundling script reads and SwiftPM
   never sees.
 - **Each suite's folders mirror the target it tests**, so a file and its tests
@@ -31,11 +34,13 @@
   root, and a file covering several concerns goes by the one it spends most of
   its lines on.
 - **What the suites share sits in plain targets**, a test target not being
-  dependable on. Two of them, split by what they drag in: TestScratch, with no
-  dependencies, that every root suite reaches, and TestSupport, needing GitKit,
-  for the suites that touch a real repository, so a Core or Process suite does
-  not link GitKit for a temporary path.
-- **`Apps/macOS` reaches neither**, being its own package, so its harness is its
+  dependable on. Two of them, split by what they drag in: TestScratch, needing
+  only Process and Subprocess, that every suite but the app's reaches, and
+  TestSupport, needing GitKit, for the suites that touch a real repository, so a
+  Core or Process suite does not link GitKit for a temporary path.
+- **TestScratch starts a child with the runner's own spawn options**, reached
+  with `@testable`, so a test's shell and the app's cannot start differently.
+- **The app's suite, MultishellAppUITests, reaches neither**; its harness is its
   own.
 
 ## Style
@@ -53,15 +58,15 @@
 
 ## Layering rules
 
-- **The four root libraries are Foundation only.** One file in Core may carry an
-  OS conditional; other platform code goes in the process layer or behind the
-  ports folder.
-- **`Apps/macOS` is views, AppKit and the engine host.** Everything else lives
-  in MultishellAppCore, including a plain value beside a view unless it names
-  AppKit, a Mac measurement or the engine.
+- **The four libraries import Foundation, System, Observation, Synchronization
+  and CryptoKit, which Apple ships, and one package, nothing else**:
+  swift-subprocess in the process layer (dependencies.md).
+- **MultishellAppUI is views, AppKit and the engine host.** Everything else
+  lives in MultishellAppCore, including a plain value beside a view unless it
+  names AppKit, a Mac measurement or the engine.
 - **What the model needs from the desktop goes through the platform port**,
   never a direct AppKit call.
-- **Mac and Linux only, no Windows branches.** An OS difference belongs in the
+- **Mac only, with no other platform's branches.** Platform code belongs in the
   process layer or a port implementation, never a model or a view.
 - **Views call AppModel**, never the store, a host or git. A terminal's view
   comes from the model.

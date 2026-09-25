@@ -1,16 +1,14 @@
 import Foundation
 
-/// Waits out a drag the platform gives no end for: until the button is up,
-/// then `grace` more, so a drop that did land has read the drag first.
-public enum DragRelease {
-  public static let poll: Duration = .milliseconds(100)
-  public static let dropGrace: Duration = .milliseconds(250)
-
-  public static func wait(
-    isPressed: @MainActor () -> Bool, every interval: Duration = poll,
-    grace: Duration = dropGrace
+/// Waits out a drag no drag session will end: until the button is up, then
+/// `grace` more, so a drop that did land has read the drag first.
+enum DragRelease {
+  @MainActor
+  static func wait(
+    isPressed: @MainActor () -> Bool, every interval: Duration = .milliseconds(100),
+    grace: Duration = .milliseconds(250)
   ) async {
-    while await isPressed() {
+    while !Task.isCancelled, isPressed() {
       try? await Task.sleep(for: interval)
     }
     try? await Task.sleep(for: grace)

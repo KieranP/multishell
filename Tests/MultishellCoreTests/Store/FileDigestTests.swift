@@ -4,8 +4,7 @@ import Testing
 
 @testable import MultishellCore
 
-/// The core hashes its own bytes, and the padding around a block boundary is where an
-/// implementation of this goes wrong.
+/// A stored trust answer holds this form, so a change to it re-asks every question.
 @Suite
 struct FileDigestTests {
   @Test func theKnownVectorsHold() {
@@ -19,20 +18,6 @@ struct FileDigestTests {
       FileDigest.sha256(of: Data([0x00, 0x01, 0xff, 0xfe]))
         == "5e90fe977790507860b03456633c9ad88ea951cd8a6620d3e37ca43c160c15ae",
       "bytes, not text")
-  }
-
-  /// 55 bytes is the last length whose padding fits its own block, 56 the
-  /// first that takes another, and 64 an exact block.
-  @Test func theLengthsAroundABlockBoundaryHash() {
-    func digest(ofAs count: Int) -> String {
-      FileDigest.sha256(of: Data(String(repeating: "a", count: count).utf8))
-    }
-    #expect(digest(ofAs: 55) == "9f4390f8d30c2dd92ec9f095b65e2b9ae9b0a925a5258e241c9f1e910f734318")
-    #expect(digest(ofAs: 56) == "b35439a4ac6f0948b6d6f9e3c6af0f5f590ce20f1bde7090ef7970686ec6738a")
-    #expect(digest(ofAs: 64) == "ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb")
-    #expect(digest(ofAs: 65) == "635361c48bb9eab14198e76ea8ab7f1a41685d6ad62aa9146d301d4f17eb0ae0")
-    #expect(
-      digest(ofAs: 1000) == "41edece42d63e8d9bf515a9ba6932e1c20cbc9f5a5d134645adb5db1b9737ea3")
   }
 
   /// What the app actually hashes: the bytes of a `.multishell.json`.

@@ -31,26 +31,14 @@ struct AnyShellQuotingTests {
   ])
   func aWordForAnyShellSurvivesATypedLinesHistoryExpansion(
     shell: String, flags: [String]
-  ) throws {
+  ) async throws {
     guard FileManager.default.isExecutableFile(atPath: shell) else { return }
     let home = try Scratch.directory("quoting")
     defer { Scratch.remove(home) }
     let word = "a!b.txt"
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: shell)
-    process.arguments = flags
-    process.environment = ["PATH": "/usr/bin:/bin", "HISTFILE": "", "HOME": home.path]
-    let input = Pipe()
-    let output = Pipe()
-    process.standardInput = input
-    process.standardOutput = output
-    process.standardError = output
-    try process.run()
-    input.fileHandleForWriting.write(
-      Data("/usr/bin/printf '[%s]\\n' \(AnyShellQuoting.quote(word))\nexit\n".utf8))
-    try input.fileHandleForWriting.close()
-    let text = String(decoding: output.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
-    process.waitUntilExit()
+    let text = try await Detached.output(
+      of: shell, flags, environment: ["PATH": "/usr/bin:/bin", "HISTFILE": "", "HOME": home.path],
+      input: "/usr/bin/printf '[%s]\\n' \(AnyShellQuoting.quote(word))\nexit\n")
 
     #expect(text.contains("[\(word)]"), "\(text)")
   }

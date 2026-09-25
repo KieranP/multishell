@@ -9,7 +9,7 @@ public enum ExecutableLookup {
     guard let path = path ?? ProcessInfo.processInfo.environment["PATH"] else { return nil }
     for directory in path.split(separator: ":", omittingEmptySubsequences: true) {
       let candidate = URL(fileURLWithPath: String(directory), isDirectory: true)
-        .appendingPathComponent(name)
+        .appending(path: name)
       if FileManager.default.isExecutableFile(atPath: candidate.path) {
         return candidate
       }

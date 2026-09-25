@@ -39,14 +39,32 @@ bottom.
   no target leaves a highlight with no drag behind it, so a target has to be
   there; lighting every terminal would be a second way to do what the strip
   does.
-- **A drag released over nothing ends when the button is seen up**, polled every
-  100 ms, then 250 ms more so a drop that did land reads the drag first.
-  `.onDrag` has no end below macOS 26, and without this every column kept a
-  clear drop target over its terminal until the next drag began. The drag
-  carries a count, so one drag's release never ends the next.
-- **A band refuses where halving the column would put either half under the pane
-  minimum**, so the drag springs back rather than making two columns nobody can
-  read.
+- **A drag released over nothing ends with its drag session.** No drop runs for
+  it, and without this every column kept a clear drop target over its terminal
+  until the next drag began. AppKit ends the session after any drop has run, so
+  a drop that did land reads the drag first. The session names no items for an
+  `.onDrag` drag, so the tab comes from the drag's start.
+- **A dragged tab closed mid-drag ends the drag with it.** One whose button is
+  rebuilt, as when the strip starts or stops scrolling, keeps it: the session's
+  end reaches only the button that began the drag, so this one ends once the
+  mouse button is seen up, polled every 100 ms, and 250 ms after that so a drop
+  that landed reads it first.
+- **A drag nothing takes, Escape included, puts the tab back**, as does a drop
+  refusing it, at the drop or when the move runs a turn later: a sidebar row, a
+  band, a tab that closed in between, or its own column's terminal area, which
+  lights nothing. The shuffle has moved it by then, so the drag keeps the
+  neighbours it started between.
+- **Its own strip clear of the tabs keeps it** where the shuffle left it, the
+  pointer having passed the last tab to get there.
+- **Every drop reads the tab from the drag, not the payload**, which can load
+  after the session has ended and put the tab back. The payload is empty; only
+  its type is read.
+- **No drag leaves the app.** Finder took a tab or a project and made a file of
+  it, so both refuse every operation outside the app.
+- **No band is drawn where halving the column would put either half under the
+  pane minimum**, rather than make two columns nobody can read. A release there
+  reaches the area beneath, where its own column's tab springs back and another
+  column's joins it.
 - **The active tab is the focused column's**, which is what a keystroke, a split
   and a rename act on. The shown tabs are every column's, which is what "the
   user can see this" means.
@@ -82,9 +100,9 @@ bottom.
 - **Live reordering is within one column only.** A tab crossing into another
   waits for the drop, because a column emptied by the move closes, and closing
   one under the pointer takes the layout out from under a drag still going on.
-- **A reorder is committed as the pointer passes**, so a drag abandoned half-way
-  leaves the tabs where it dragged them rather than springing back. Saves
-  coalesce, so moves in quick succession share a write; a drag that pauses
+- **A reorder is committed as the pointer passes**, so a drag some target takes
+  keeps it, and only one nothing takes or that refuses springs back (above).
+  Saves coalesce, so moves in quick succession share a write; a drag that pauses
   between neighbours writes once per pause.
 - **Nothing follows the cursor outside a strip**, a departure from the Mac
   convention. Bringing a ghost back means owning the drag as an AppKit source,
@@ -197,3 +215,11 @@ bottom.
   uses: that is an AppKit button, which takes a single image from its label and
   draws it at the leading edge, so the chevron vanished and the plus sat in the
   corner of a wide blank.
+- **A tab's own worktree row neither lights nor offers a move**, the drop there
+  being refused. Lit, it promised a move the release would not make. Nor does
+  any row while a create or remove runs, or has failed, on either worktree.
+- **A drop with no tab in the air refuses**, so a drop the session's end beat to
+  the tab reports that nothing moved rather than a move that never ran.
+- **A project drag ends as a rebuilt tab button's does.** The sidebar's rows sit
+  in a `LazyVStack`, which recycles a row scrolled away mid-drag, and the
+  session's end reaches only a source still on screen, so the release ends it.

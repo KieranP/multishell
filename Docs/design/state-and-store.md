@@ -44,13 +44,15 @@ What is written, what is repaired, how it is tested. Newest at the bottom.
   keys, `==` and `hash` to keep this run's read of a repo's file out of all
   three, so a field added later would be silently unsaved.
 - **Saves land off the main actor.** Encoding and writing on it held the window
-  for every divider drag, tab move and rename on a network home directory.
+  for every divider drag, tab move and rename on a network home directory. Cost:
+  a failed save is reported a moment after the change.
 - **And in order.** The store hands out a snapshot with a ticket; a ticket older
   than the last landed is dropped rather than written over newer state. The
-  encode is outside the lock.
+  encode is outside the lock, and so are taking a ticket and asking whether one
+  landed. The main actor does both, and a write stalled on a volume would hold
+  the window.
 - **Quit still writes on the calling thread**, through the same lock, so it
-  lands after whatever was in flight. Cost: a failed save is reported a moment
-  after the change.
+  lands after whatever was in flight.
 - **One copy of a build runs at a time.** Two copies both autosaved, and
   whichever wrote last decided what the next launch opened, losing every tab and
   project added in the other.

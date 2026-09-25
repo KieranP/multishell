@@ -21,11 +21,7 @@ enum UnixSocketAddress {
   static var length: socklen_t { socklen_t(MemoryLayout<sockaddr_un>.size) }
 
   static var streamType: Int32 {
-    #if os(Linux)
-      Int32(SOCK_STREAM.rawValue)
-    #else
-      SOCK_STREAM
-    #endif
+    SOCK_STREAM
   }
 
   static func newSocket(path: String) throws -> Int32 {
@@ -33,12 +29,10 @@ enum UnixSocketAddress {
     guard descriptor >= 0 else {
       throw SocketFailure(kind: .system(operation: "socket", code: errno), path: path)
     }
-    #if !os(Linux)
-      // A write to a peer that has gone would otherwise kill the process
-      // with SIGPIPE; Linux takes MSG_NOSIGNAL on the send instead.
-      var on: Int32 = 1
-      setsockopt(descriptor, SOL_SOCKET, SO_NOSIGPIPE, &on, socklen_t(MemoryLayout<Int32>.size))
-    #endif
+    // A write to a peer that has gone would otherwise kill the process
+    // with SIGPIPE.
+    var on: Int32 = 1
+    setsockopt(descriptor, SOL_SOCKET, SO_NOSIGPIPE, &on, socklen_t(MemoryLayout<Int32>.size))
     return descriptor
   }
 

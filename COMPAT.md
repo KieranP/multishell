@@ -9,7 +9,7 @@ just never updates the state indicator dot.
 
 | Item            | Value                           |
 | --------------- | ------------------------------- |
-| macOS           | 14 Sonoma and newer             |
+| macOS           | 26 Tahoe and newer              |
 | Other platforms | None                            |
 | Build           | Xcode 26 or newer               |
 | git             | 2.36 or newer advised           |

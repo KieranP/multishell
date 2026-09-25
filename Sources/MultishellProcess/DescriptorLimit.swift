@@ -20,18 +20,8 @@ public enum DescriptorLimit {
 
   /// What the soft limit can be raised to.
   static func ceiling(of limit: rlimit) -> rlim_t {
-    #if os(Linux)
-      limit.rlim_max
-    #else
-      min(limit.rlim_max, rlim_t(OPEN_MAX))
-    #endif
+    min(limit.rlim_max, rlim_t(OPEN_MAX))
   }
 
-  #if os(Linux)
-    // Glibc declares the resource as an enum and the functions take its
-    // typedef, so the constant is converted through its raw value.
-    static let resource = __rlimit_resource_t(RLIMIT_NOFILE.rawValue)
-  #else
-    static let resource = RLIMIT_NOFILE
-  #endif
+  static let resource = RLIMIT_NOFILE
 }

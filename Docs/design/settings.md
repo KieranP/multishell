@@ -10,8 +10,8 @@ shipped hook. Newest at the bottom.
   branch, agent flags. They have no other spelling for it. Cost: a stray empty
   key there is an opinion, not a typo.
 - **A repo's `.multishell.json` fills only gaps the user left.** A team default
-  must never override a made choice. Agent flags are the one field it cannot
-  carry (agents.md).
+  must never override a made choice. Of those four, agent flags are the one it
+  cannot carry (agents.md).
 - **What it draws needs no trust; what it names on disk does.**
   `worktreeDirectory`, `linkedPaths` and `copiedPaths` are paths on the reader's
   machine, not pixels.
@@ -113,4 +113,5 @@ shipped hook. Newest at the bottom.
   user to trust hooks they had just exported, and nothing withdrew it.
 - **Exports land in the order they were asked**, through the store's ticket, one
   order per project. Two on a slow volume otherwise landed backwards, the older
-  overwriting the newer, and a late finish recorded the older's bytes.
+  overwriting the newer, and a late finish recorded the older's bytes, even with
+  the newer still being written.

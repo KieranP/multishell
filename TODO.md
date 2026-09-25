@@ -16,7 +16,6 @@ Most pressing first within each heading. A decision that gets made moves to
 - Use Selection for Find: Cmd+F with text highlighted puts that text in the
   search field. Waits on a wrapper release exposing the surface's selection; the
   engine's own binding for it stays bound and does nothing here.
-
 - Subagent nesting. A subagent that launches its own shows in the chip as a flat
   list beside them, every row named `general-purpose`, where Claude shows
   `code-review` with its two workers under it. The roster is by id with no
@@ -25,9 +24,10 @@ Most pressing first within each heading. A decision that gets made moves to
 ## Packaging
 
 - Developer ID signing and notarisation, so another machine will run it. The
-  hardened runtime, the entitlement and the timestamp rule are in already
-  (signing.md). Still unwatched under the runtime: the CLI install's
-  administrator prompt (BUGS.md).
+  hardened runtime, the entitlements and the timestamp rule are in already
+  (signing.md). Nobody has yet watched the CLI install's administrator prompt
+  under the runtime. Step: Install Command Line Tool in Settings > Agents, then
+  `ls -l /usr/local/bin/multishell`.
 - A release workflow: a versioned DMG or zip built from a `vX.Y.Z` tag, which
   `build-lib.sh` already reads as the version.
 - What the README owes someone installing a release rather than building:

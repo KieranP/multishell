@@ -5,12 +5,12 @@ on:
   pull_request:
 
 jobs:
-  core-macos:
+  test:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
-      - run: swift build
-      - run: swift test
+      - run: swift build --build-tests
+      - run: swift test --skip-build
 
   # swift-format ships in the toolchain, so no install step.
   lint:
@@ -18,10 +18,3 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: make lint
-
-  app-macos:
-    runs-on: macos-26
-    steps:
-      - uses: actions/checkout@v4
-      - run: swift build --package-path Apps/macOS
-      - run: swift test --package-path Apps/macOS

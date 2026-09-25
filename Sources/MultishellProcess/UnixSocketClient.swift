@@ -13,11 +13,7 @@ public enum UnixSocketClient {
     var written = 0
     while written < bytes.count {
       let count = bytes[written...].withUnsafeBufferPointer { buffer in
-        #if os(Linux)
-          send(descriptor, buffer.baseAddress, buffer.count, Int32(MSG_NOSIGNAL))
-        #else
-          write(descriptor, buffer.baseAddress, buffer.count)
-        #endif
+        write(descriptor, buffer.baseAddress, buffer.count)
       }
       if count < 0 {
         if errno == EINTR { continue }

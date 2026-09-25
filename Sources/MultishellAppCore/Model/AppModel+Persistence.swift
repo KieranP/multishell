@@ -11,14 +11,19 @@ extension AppModel {
     note(Result { try store.save() })
   }
 
-  /// Saves shortly after any workspace change, whoever made it.
+  /// Saves shortly after any workspace change, whoever made it. The loop only
+  /// wakes on a change, so the model's `deinit` is what ends it.
   func observeForAutosave() {
-    withObservationTracking {
-      _ = store.workspace
-    } onChange: { [weak self] in
-      Task { @MainActor in
+    autosave?.cancel()
+    let armedWith = store.workspace
+    autosave = Task { @MainActor [weak self, store] in
+      // The first value is read when the loop starts, so a change made before
+      // then arrives as it; only the workspace as armed is no change.
+      var isFirst = true
+      for await workspace in Observations({ store.workspace }) {
+        defer { isFirst = false }
+        if isFirst, workspace == armedWith { continue }
         self?.scheduleSave()
-        self?.observeForAutosave()
       }
     }
   }
