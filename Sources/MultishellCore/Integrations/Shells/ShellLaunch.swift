@@ -15,7 +15,7 @@ public enum ShellLaunch {
     bashInit: URL = Paths.bashInitFile
   ) -> String {
     let shell = PosixShellQuoting.quote(shellPath)
-    switch URL(fileURLWithPath: shellPath).lastPathComponent {
+    switch shellName(shellPath) {
     case "zsh" where FileManager.default.fileExists(atPath: zshDirectory.path):
       let ours = PosixShellQuoting.quote(zshDirectory.path)
       let engine = "\"$GHOSTTY_RESOURCES_DIR/shell-integration/zsh\""
@@ -25,7 +25,7 @@ public enum ShellLaunch {
         + "else ZDOTDIR=\(ours) exec \(shell) -l; fi"
       return "exec /bin/sh -c \(PosixShellQuoting.quote(script))"
     case "bash" where FileManager.default.fileExists(atPath: bashInit.path):
-      return "exec \(shell) --init-file \(PosixShellQuoting.quote(bashInit.path)) -i"
+      return bashInitCommand(shell: shellPath, bashInit: bashInit)
     default:
       return "exec \(shell) -l"
     }
@@ -34,7 +34,7 @@ public enum ShellLaunch {
   /// Only zsh and bash are given the marks that say a command finished; see
   /// COMPAT.md.
   public static func reportsFinishedCommands(_ shellPath: String) -> Bool {
-    ["zsh", "bash"].contains(URL(fileURLWithPath: shellPath).lastPathComponent)
+    ["zsh", "bash"].contains(shellName(shellPath))
   }
 
   /// A command line replacing the engine's default shell, `nil` to leave it.
@@ -44,12 +44,9 @@ public enum ShellLaunch {
     loginShell: String = ShellCatalogue.loginShellPath(),
     bashInit: URL = Paths.bashInitFile
   ) -> [String]? {
-    switch URL(fileURLWithPath: shellPath).lastPathComponent {
+    switch shellName(shellPath) {
     case "bash" where FileManager.default.fileExists(atPath: bashInit.path):
-      return [
-        "/bin/sh", "-c",
-        "exec \(PosixShellQuoting.quote(shellPath)) --init-file \(PosixShellQuoting.quote(bashInit.path)) -i",
-      ]
+      return ["/bin/sh", "-c", bashInitCommand(shell: shellPath, bashInit: bashInit)]
     case _ where shellPath != loginShell:
       return [shellPath, "-l"]
     default:
@@ -59,14 +56,13 @@ public enum ShellLaunch {
 
   /// Points a zsh session's `ZDOTDIR` at the generated directory. Under
   /// Ghostty it sets the pair the engine would have; see terminals.md.
-  static func zshIntegration(
-    shellPath: String,
+  static func zshEnvironment(
+    forShell shellPath: String,
     environment: [String: String] = ProcessInfo.processInfo.environment,
     zshDirectory: URL = Paths.zshIntegrationDirectory,
     engineZshBootstrap: URL? = nil
   ) -> [String: String] {
-    let shell = URL(fileURLWithPath: shellPath).lastPathComponent
-    guard shell == "zsh",
+    guard shellName(shellPath) == "zsh",
       FileManager.default.fileExists(atPath: zshDirectory.path)
     else { return [:] }
     var variables = ["ZDOTDIR": zshDirectory.path]
@@ -80,5 +76,13 @@ public enum ShellLaunch {
       variables["MULTISHELL_USER_ZDOTDIR"] = user
     }
     return variables
+  }
+
+  private static func shellName(_ shellPath: String) -> String {
+    URL(fileURLWithPath: shellPath).lastPathComponent
+  }
+
+  private static func bashInitCommand(shell shellPath: String, bashInit: URL) -> String {
+    "exec \(PosixShellQuoting.quote(shellPath)) --init-file \(PosixShellQuoting.quote(bashInit.path)) -i"
   }
 }

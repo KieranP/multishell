@@ -1,8 +1,8 @@
 import Foundation
-import MultishellCore
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellCore
 
 /// What a settings form says about a flag the project leaves alone. The
 /// global stopped being the only answer when the file gained these keys.
@@ -23,7 +23,7 @@ struct InheritedSettingTests {
     let global = h.model.inherited(.autoStartAgentOnCreate, global: true, for: h.project)
     #expect(global == InheritedSetting<Bool>(value: true, isFromRepository: false))
 
-    h.model.noteSharedSettings(
+    h.model.applySharedSettingsReading(
       SharedSettingsReading(
         result: .success(SharedProjectSettings(autoStartAgentOnCreate: false)), stamp: .now,
         project: h.project),
@@ -44,7 +44,7 @@ struct InheritedSettingTests {
     let h = Harness()
     h.model.setWorktreeDefaults(WorktreeSettings(worktreeDirectory: "/global/trees"))
 
-    h.model.noteSharedSettings(
+    h.model.applySharedSettingsReading(
       SharedSettingsReading(
         result: .success(SharedProjectSettings(worktreeDirectory: ".worktrees")), stamp: .now,
         project: h.project),
@@ -62,7 +62,7 @@ struct InheritedSettingTests {
   @Test func theFilesWorktreeDirectoryIsInForceOnceTrusted() {
     let h = Harness()
     h.model.setWorktreeDefaults(WorktreeSettings(worktreeDirectory: "/global/trees"))
-    h.model.noteSharedSettings(
+    h.model.applySharedSettingsReading(
       SharedSettingsReading(
         result: .success(SharedProjectSettings(worktreeDirectory: ".worktrees", digest: "file")),
         stamp: .now, project: h.project),
@@ -86,7 +86,7 @@ struct InheritedSettingTests {
     h.model.setWorktreeDefaults(WorktreeSettings(branchPrefix: "team/"))
     #expect(h.model.worktreeSettings(for: h.project).qualifiedBranch("tabs") == "team/tabs")
 
-    h.model.noteSharedSettings(
+    h.model.applySharedSettingsReading(
       SharedSettingsReading(
         result: .success(SharedProjectSettings(branchPrefix: "")), stamp: .now, project: h.project),
       for: h.project)
@@ -97,5 +97,22 @@ struct InheritedSettingTests {
     #expect(
       h.model.worktreeSettings(for: h.project).qualifiedBranch("tabs") == "tabs",
       "and the branch the sheet would create carries no prefix")
+  }
+
+  @Test func aPathCaptionNamesTheFileOnlyWhileTheFileChoseAndNothingOverridesIt() {
+    let fromFile = InheritedSetting<String>(value: ".worktrees", isFromRepository: true)
+    #expect(
+      fromFile.containerCaption("/r/.worktrees", isOverridden: false)
+        == "Resolves to /r/.worktrees, from .multishell.json.")
+    #expect(fromFile.containerCaption("/r/own", isOverridden: true) == "Resolves to /r/own.")
+    let fromGlobal = InheritedSetting<String>(value: "../trees", isFromRepository: false)
+    #expect(fromGlobal.containerCaption("/trees", isOverridden: false) == "Resolves to /trees.")
+
+    #expect(
+      fromFile.prefixExampleCaption(branch: "me/tabs", path: "/t/me-tabs", isOverridden: false)
+        == "Typing tabs creates me/tabs at /t/me-tabs. The prefix comes from .multishell.json.")
+    #expect(
+      fromFile.prefixExampleCaption(branch: "tabs", path: "/t/tabs", isOverridden: true)
+        == "Typing tabs creates tabs at /t/tabs.")
   }
 }

@@ -21,7 +21,7 @@ final class UntrackedLineMemo: Sendable {
     byDirectory.withLock { $0[directory.path] = entries }
   }
 
-  func forget(directories: some Sequence<String>) {
-    byDirectory.withLock { for directory in directories { $0[directory] = nil } }
+  func forget(directories: some Sequence<URL>) {
+    byDirectory.withLock { for directory in directories { $0[directory.path] = nil } }
   }
 }

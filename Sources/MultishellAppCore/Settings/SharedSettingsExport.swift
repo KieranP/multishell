@@ -2,7 +2,7 @@ import Foundation
 import MultishellCore
 
 /// One export of a repository's file, the bytes decided on the main actor and
-/// written off it by `AppModel.write(_:)`, in the order they were asked.
+/// written off it by `AppModel.writeSharedSettings(_:)`, in the order they were asked.
 struct SharedSettingsExport: Sendable {
   let project: Project
   let data: Data

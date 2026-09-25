@@ -1,286 +1,183 @@
 import Foundation
-import MultishellCore
 import TestScratch
 import Testing
 
 @testable import MultishellAppCore
-@testable import MultishellProcess
+@testable import MultishellCore
 
 @Suite @MainActor
 struct AppModelTests {
-  @Test func launchStartsWithNothingSelectedAndNoShells() {
-    let h = Harness(savedSelection: true)
-    #expect(h.model.workspace.selectedWorktreeID == nil)
-    #expect(h.model.liveTerminalCount == 0)
-    #expect(
-      h.model.presentedError?.title == "git not found", "no git was injected, and that is reported")
-  }
-
-  @Test func selectingAWorktreeOpensATabAndWarmsIt() {
+  @Test(arguments: [3, 4, 6, 9, 12, 17, 25, 33] as [UInt64])
+  func anySequenceOfActionsAndEventsKeepsTheRuntimeConsistent(seed: UInt64) {
+    var rng = SeededGenerator(seed: seed)
     let h = Harness()
-    h.model.select(h.main)
+    let worktrees = [h.main, h.feature]
 
-    #expect(h.model.workspace.selectedWorktreeID == h.main.id)
-    #expect(h.model.workspace.tabs(in: h.main.id).count == 1)
-    #expect(h.model.liveTerminalCount == 1)
-    #expect(h.engine.focused.count == 1)
-    #expect(h.model.liveSessions == h.engine.openSessionIDs)
-  }
-
-  @Test func selectingOpensNoTerminalWhenTheSettingIsOff() {
-    let h = Harness()
-    h.model.setOpensTerminalOnSelect(false)
-
-    h.model.select(h.main)
-
-    #expect(h.model.workspace.selectedWorktreeID == h.main.id, "shown, but empty")
-    #expect(h.model.workspace.tabs(in: h.main.id).isEmpty)
-    #expect(h.model.liveTerminalCount == 0)
-
-    h.model.newTab()
-    #expect(h.model.liveTerminalCount == 1, "the + and Cmd+T still start one")
-
-    h.store.openTab(in: h.feature.id)
-    h.model.select(h.feature)
-    #expect(h.model.liveTerminalCount == 2, "saved tabs still warm up on a visit")
-  }
-
-  @Test func theActionsMenuOpensOneTabInTheWorktreeItWasAskedFor() {
-    // What the menu does: select without the first tab, then its own tab.
-    let h = Harness()
-    h.model.select(h.main)
-    #expect(h.model.select(h.feature, openingFirstTab: .never))
-    h.model.newShellTab()
-
-    #expect(h.model.workspace.selectedWorktreeID == h.feature.id)
-    #expect(h.model.workspace.tabs(in: h.feature.id).count == 1, "not a first tab and then another")
-    #expect(h.model.workspace.tabs(in: h.main.id).count == 1)
-  }
-
-  @Test func withOpenOnSelectOffAWorktreeIsShownEmptyUntilATabIsAskedFor() {
-    let h = Harness()
-    h.model.setOpensTerminalOnSelect(false)
-
-    h.model.select(h.main)
-    #expect(h.model.workspace.tabs(in: h.main.id).isEmpty, "looked at, not started")
-
-    h.model.newTab()
-    #expect(h.model.workspace.tabs(in: h.main.id).count == 1, "a tab asked for still opens")
-  }
-
-  @Test func turningToAWorktreeStartsTheAgentWhereAutoStartOnTabOpenIsOn() {
-    let h = Harness()
-    h.model.setPreferredAgent("claude")
-    h.model.setAutoStartAgent(true)
-
-    h.model.select(h.main)
-
-    let tab = h.model.workspace.activeTab(in: h.main.id)
-    #expect(h.model.workspace.session(tab!.focusedSessionID)?.agentID == "claude")
-  }
-
-  @Test func selectingAMissingWorktreeSaysSoInsteadOfActingOnTheSelectedOne() throws {
-    let h = Harness()
-    h.model.select(h.main)
-    let ghost = Worktree(
-      path: URL(fileURLWithPath: "/nowhere/\(UUID().uuidString)"), projectID: h.project.id,
-      head: "c", branch: "ghost")
-    h.store.replaceWorktrees([h.main, h.feature, ghost], forProject: h.project.id)
-
-    #expect(!h.model.select(ghost, openingFirstTab: .never), "the menu must not open a tab in main")
-    #expect(h.model.workspace.selectedWorktreeID == h.main.id)
-    #expect(h.model.workspace.tabs(in: h.main.id).count == 1)
-  }
-
-  @Test func removingAProjectAsksFirstInTheWindowThatAsked() throws {
-    let h = Harness()
-    h.model.select(h.main)
-    #expect(h.model.liveTerminalCount == 1)
-
-    h.model.requestProjectRemoval(h.project, from: .settings)
-
-    let pending = try #require(h.model.pendingProjectRemoval)
-    #expect(pending.project.id == h.project.id)
-    #expect(pending.source == .settings)
-    #expect(h.model.workspace.projects.count == 1, "nothing removed until confirmed")
-    #expect(
-      h.model.projectRemovalMessage(for: h.project).contains("1 open terminal will be closed"))
-
-    h.model.pendingProjectRemoval = nil
-    h.model.removeProject(h.project)
-    #expect(h.model.workspace.projects.isEmpty)
-    #expect(h.model.liveTerminalCount == 0)
-  }
-
-  @Test func savedTabsInAnUnvisitedWorktreeStayCold() {
-    let h = Harness()
-    h.store.openTab(in: h.feature.id)
-    h.store.openTab(in: h.feature.id)
-    h.model.select(h.main)
-
-    #expect(h.model.workspace.sessions.count == 3)
-    #expect(h.model.liveTerminalCount == 1, "only the selected worktree's shell is live")
-
-    h.model.select(h.feature)
-    #expect(h.model.liveTerminalCount == 3, "visiting warms the saved tabs, and main stays warm")
-  }
-
-  @Test func selectingAWorktreeWhoseDirectoryIsGoneIsRefused() {
-    let h = Harness()
-    let ghost = Worktree(
-      path: URL(fileURLWithPath: "/nowhere/\(UUID().uuidString)"), projectID: h.project.id,
-      head: "c", branch: "ghost")
-    h.store.replaceWorktrees([h.main, h.feature, ghost], forProject: h.project.id)
-    h.model.presentedError = nil
-
-    h.model.select(ghost)
-
-    #expect(h.model.workspace.selectedWorktreeID == nil)
-    #expect(h.model.presentedError?.title == "Worktree directory is missing")
-    #expect(h.model.liveTerminalCount == 0)
-  }
-
-  @Test func selectingAWorktreeOnAVolumeThatDoesNotAnswerIsRefusedWithoutWaitingForIt() {
-    let h = Harness()
-    let stat = HangingStat()
-    defer { stat.release() }
-    h.model.directoryProbe = DirectoryProbe(bound: .milliseconds(50), exists: stat.exists)
-    h.model.presentedError = nil
-
-    h.model.select(h.feature)
-    h.model.select(h.feature)
-
-    #expect(!stat.hasReturned)
-    #expect(stat.calls == 1, "a second stat would pile another thread onto the mount")
-    #expect(h.model.workspace.selectedWorktreeID == nil)
-    #expect(h.model.presentedError?.title == PresentedError.worktreeDirectoryUnanswered("").title)
-    #expect(h.model.liveTerminalCount == 0)
-  }
-
-  @Test func launchRefreshesTheFilesAndSweepsTheDropsOnceAndSaysWhatFailed() async throws {
-    let h = Harness()
-    let calls = LineRecorder()
-    h.model.refreshLaunchFiles = { _ in
-      calls.record("refresh")
-      return CocoaError(.fileWriteNoPermission)
+    for step in 0..<300 {
+      let ws = h.model.workspace
+      let live = Array(h.engine.openSessionIDs)
+      switch Int.random(in: 0..<22, using: &rng) {
+      case 0, 1: h.model.select(worktrees.randomElement(using: &rng)!)
+      case 2: h.model.newTab()
+      case 3: h.model.closeActivePane()
+      case 4: h.model.closeActiveTab()
+      case 5: h.model.splitActivePane(Bool.random(using: &rng) ? .horizontal : .vertical)
+      case 6: if let tab = ws.tabs.randomElement(using: &rng) { h.model.activate(tab) }
+      case 7: Bool.random(using: &rng) ? h.model.activateNextTab() : h.model.activatePreviousTab()
+      case 8:
+        if let id = live.randomElement(using: &rng) {
+          h.engine.delegate?.terminalHost(h.engine, didExit: id)
+        }
+      case 9:
+        if let id = live.randomElement(using: &rng) {
+          h.engine.delegate?.terminalHost(h.engine, didSeeActivityIn: id)
+          h.engine.delegate?.terminalHost(h.engine, didRetitle: id, to: "t\(step)")
+        }
+      case 10:
+        // A click lands only on a visible pane, and the click itself gives
+        // the surface focus, which the fake records as if `focus` had.
+        if let selected = ws.selectedWorktreeID, let shown = ws.activeTab(in: selected),
+          let id = shown.sessionIDs.randomElement(using: &rng)
+        {
+          h.engine.focused.append(id)
+          h.engine.delegate?.terminalHost(h.engine, didFocus: id)
+        }
+      case 11, 12:
+        // A report over the socket: about a live shell, a dead one, an
+        // unknown one, or a directory only.
+        let state = SessionState.allCases.randomElement(using: &rng)!
+        let subject = Int.random(in: 0..<4, using: &rng)
+        let session: TerminalSession.ID? =
+          switch subject {
+          case 0: live.randomElement(using: &rng)
+          case 1: ws.sessions.randomElement(using: &rng)?.id
+          case 2: UUID()
+          default: nil
+          }
+        let cwd = Bool.random(using: &rng) ? worktrees.randomElement(using: &rng)!.path.path : "/x"
+        // Some reports name an agent, as Claude's hooks do; an id this
+        // build does not know is as likely as one it does.
+        let agent = ["claude", "future-agent", nil].randomElement(using: &rng)!
+        h.source.send(
+          SessionStateReport(
+            state: state, sessionID: session, cwd: cwd,
+            pid: Bool.random(using: &rng) ? Int32.random(in: 1...99999, using: &rng) : nil,
+            agent: agent))
+      case 13:
+        if let id = live.randomElement(using: &rng) {
+          h.engine.delegate?.terminalHost(
+            h.engine, didFinishCommandIn: id, exitCode: Int32.random(in: 0...2, using: &rng))
+        }
+      case 14:
+        if Bool.random(using: &rng), let tab = ws.tabs.randomElement(using: &rng) {
+          h.model.clearState(of: tab)
+        } else {
+          h.model.clearState(ofWorktree: worktrees.randomElement(using: &rng)!.id)
+        }
+      case 15:
+        // A tab dragged onto another worktree's row in the sidebar.
+        if let tab = ws.tabs.randomElement(using: &rng) {
+          h.model.moveTab(tab.id, to: worktrees.randomElement(using: &rng)!.id)
+        }
+      case 16:
+        // Move Tab to New Group, from the menu.
+        h.model.moveActiveTabToNewGroup()
+      case 17:
+        // A tab dragged to the band down one edge of a group.
+        if let tab = ws.tabs.randomElement(using: &rng),
+          let group = ws.tabGroups.randomElement(using: &rng)
+        {
+          h.model.moveTab(
+            tab.id, Bool.random(using: &rng) ? .before : .after, toNewGroupOf: group.id)
+        }
+      case 18:
+        // A tab dropped on another group's strip, clear of its tabs.
+        if let tab = ws.tabs.randomElement(using: &rng),
+          let group = ws.tabGroups.randomElement(using: &rng)
+        {
+          h.model.moveTab(tab.id, toEndOf: group.id)
+        }
+      case 19:
+        Bool.random(using: &rng) ? h.model.focusNextGroup() : h.model.focusPreviousGroup()
+      case 20:
+        // The New Tab button of one group, and the divider drag beside it.
+        if let group = ws.tabGroups.randomElement(using: &rng) {
+          Bool.random(using: &rng)
+            ? h.model.newTab(in: group.id)
+            : h.model.setGroupWeights(
+              (0..<Int.random(in: 1...3, using: &rng)).map { _ in
+                Double.random(in: 0.1...3, using: &rng)
+              }, in: group.worktreeID)
+        }
+      default:
+        // A refresh that lost or found a worktree, then the reconcile every
+        // model action ends with.
+        let kept = worktrees.filter { _ in Bool.random(using: &rng) }
+        h.store.replaceWorktrees(kept.isEmpty ? worktrees : kept, forProject: h.project.id)
+        h.model.reconcileSessions(takingFocus: true)
+      }
+      check(h, "seed \(seed) step \(step)")
     }
-    h.model.sweepPromisedDropCopies = { calls.record("sweep") }
-
-    await h.model.start()
-
-    try await waitUntil { calls.received.count == 2 }
-    #expect(calls.received == ["refresh", "sweep"])
-    #expect(
-      h.model.presentedError?.message
-        == PresentedError(CocoaError(.fileWriteNoPermission)).message)
   }
 
-  @Test func launchOpensTerminalsWithoutWaitingForTheDroppedFileSweep() async throws {
-    let h = Harness()
-    let gate = LineRecorder()
-    h.model.sweepPromisedDropCopies = {
-      let giveUp = Date().addingTimeInterval(10)
-      while !gate.received.contains("open"), Date() < giveUp { usleep(1000) }
-      gate.record("finished")
+  private func check(_ h: Harness, _ context: String) {
+    let ws = h.model.workspace
+    let live = h.engine.openSessionIDs
+    let sessionIDs = Set(ws.sessions.map(\.id))
+
+    #expect(h.model.liveSessionIDs == live, "\(context): views see a different live set")
+    #expect(live.isSubset(of: sessionIDs), "\(context): a shell with no session")
+    #expect(Set(h.model.sessionTitles.keys).isSubset(of: live), "\(context): title of a dead shell")
+    #expect(
+      Set(h.model.reportedAgents.keys).isSubset(of: live),
+      "\(context): an agent reported in a dead shell")
+    for key in h.model.sessionStates.states.keys {
+      switch key {
+      case .session(let id): #expect(live.contains(id), "\(context): dot for a dead shell")
+      case .worktree(let id):
+        #expect(ws.worktree(id) != nil, "\(context): state for a missing worktree")
+      }
+    }
+    #expect(
+      Set(h.model.sessionStates.pids.keys).isSubset(of: Set(h.model.sessionStates.states.keys)),
+      "\(context): a pid with no state")
+    if let selected = ws.selectedWorktreeID {
+      // Failed survives being looked at, as Waiting does, so the focused pane
+      // may hold one. Nor is a Done on another pane in view: it waits for focus.
+      #expect(
+        h.model.sessionStates[.worktree(selected)] != .done,
+        "\(context): unseen Done shown")
+      if let focused = ws.activeTab(in: selected)?.focusedSessionID {
+        #expect(
+          h.model.sessionStates[.session(focused)] != .done,
+          "\(context): unseen Done in the focused pane")
+      }
+    }
+    #expect(h.model.liveTerminalCount == live.count, "\(context): quit guard count")
+
+    // Every session of a visited worktree has a shell; unvisited ones none.
+    for session in ws.sessions {
+      let warm = h.model.warmWorktrees.contains(session.worktreeID)
+      #expect(live.contains(session.id) == warm, "\(context): warmth and liveness disagree")
     }
 
-    await h.model.start()
-    let finishedFirst = gate.received.contains("finished")
-    gate.record("open")
-
-    #expect(!finishedFirst)
-    try await waitUntil { gate.received.contains("finished") }
-  }
-
-  @Test func aSecondCopyOfTheAppHandsOverToTheRunningOneAndSavesNothing() async {
-    let file = Scratch.path("second-copy").appendingPathComponent("state.json")
-    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
-    let h = Harness(stateFile: file)
-    h.source.startError = SocketFailure(kind: .inUse, path: "/tmp/multishell.sock")
-
-    await h.model.start()
-
-    #expect(h.platform.handedOverToRunningInstance)
-    #expect(h.model.statusPolling == nil, "this copy does nothing more")
-    h.model.select(h.main)
-    try? await Task.sleep(for: .milliseconds(600))
-    #expect(!FileManager.default.fileExists(atPath: file.path), "the debounce is a writer too")
-    h.model.saveNow()
-    #expect(!FileManager.default.fileExists(atPath: file.path), "two writers of one file")
-  }
-
-  @Test func aCopyThatCouldNotQuitAfterHandingOverStartsNoShell() async {
-    let h = Harness()
-    h.source.startError = SocketFailure(kind: .inUse, path: "/tmp/multishell.sock")
-    await h.model.start()
-
-    h.model.select(h.main)
-    h.model.newTab()
-
-    #expect(h.engine.opened.isEmpty, "its config would outlive its quit")
-    #expect(h.model.liveTerminalCount == 0)
-  }
-
-  @Test func removingTheMainWorktreeIsRefusedBeforeAnyDialog() {
-    let h = Harness()
-    h.model.requestWorktreeRemoval(of: h.main)
-    #expect(h.model.pendingWorktreeRemoval == nil)
-    #expect(h.model.worktreeOperations.isEmpty)
-    #expect(!h.main.isRemovable)
-    #expect(h.feature.isRemovable)
-  }
-
-  @Test func removalAsksUnlessTheGlobalSettingsSettleBothTheWorktreeAndTheBranch() async {
-    let h = Harness()
-    await h.model.requestWorktreeRemoval(of: h.feature)?.value
-    #expect(h.model.pendingWorktreeRemoval?.id == h.feature.id)
-    #expect(h.model.pendingWorktreeRemoval?.choices.count == 2)
-
-    h.model.pendingWorktreeRemoval = nil
-    h.model.setConfirmsWorktreeRemoval(false)
-    await h.model.requestWorktreeRemoval(of: h.feature)?.value
-    #expect(h.model.pendingWorktreeRemoval?.id == h.feature.id, "the branch question is still open")
-    #expect(h.model.pendingWorktreeRemoval?.choices.count == 2)
-
-    h.model.pendingWorktreeRemoval = nil
-    h.model.setDeletesBranchWithWorktree(true)
-    await h.model.requestWorktreeRemoval(of: h.feature)?.value
-    #expect(
-      h.model.pendingWorktreeRemoval == nil,
-      "goes straight to removal, which needs git and so no-ops here")
-
-    h.model.setConfirmsWorktreeRemoval(true)
-    await h.model.requestWorktreeRemoval(of: h.feature)?.value
-    #expect(h.model.pendingWorktreeRemoval?.deletesBranch == true)
-    #expect(h.model.pendingWorktreeRemoval?.choices.count == 1)
-
-    h.model.pendingWorktreeRemoval = nil
-    h.model.setTrashesRemovedWorktrees(false)
-    await h.model.requestWorktreeRemoval(of: h.feature)?.value
-    #expect(h.model.pendingWorktreeRemoval?.message(warning: nil).hasPrefix("Deletes ") == true)
-  }
-
-  @Test func selectedProjectFollowsSelectionOrTheOnlyProject() {
-    let h = Harness()
-    #expect(h.model.selectedProject?.id == h.project.id, "one project, nothing selected")
-    h.store.addProject(at: URL(fileURLWithPath: "/other"))
-    #expect(h.model.selectedProject == nil, "two projects, nothing selected")
-    h.model.select(h.feature)
-    #expect(h.model.selectedProject?.id == h.project.id)
-  }
-
-  @Test func aFailingSaveIsReportedOnceNotAfterEveryChange() async {
-    // A file where a directory is needed: nothing can be created under it.
-    let h = Harness(stateFile: URL(fileURLWithPath: "/dev/null/multishell/state.json"))
-    h.model.presentedError = nil
-
-    h.model.save()
-    let first = await h.presentedErrorArrives()
-    #expect(first != nil)
-
-    h.model.save()
-    h.model.save()
-    h.model.presentedError = nil
-    #expect(await h.presentedErrorArrives() == nil, "the same alert, not a new one each time")
+    if let selected = ws.selectedWorktreeID, let tab = ws.activeTab(in: selected) {
+      #expect(
+        h.engine.focused.last == tab.focusedSessionID,
+        "\(context): engine focus is not the shown pane")
+    }
+    for tab in ws.tabs {
+      #expect(tab.root.contains(tab.focusedSessionID), "\(context): focus outside its tree")
+      #expect(tab.sessionIDs.allSatisfy(sessionIDs.contains), "\(context): pane without a session")
+      #expect(
+        ws.group(tab.groupID)?.worktreeID == tab.worktreeID,
+        "\(context): a tab in another worktree's group, or in none")
+    }
+    for group in ws.tabGroups {
+      #expect(!ws.tabs(in: group.id).isEmpty, "\(context): a group with no tabs")
+      #expect(
+        ws.activeTab(in: group) != nil, "\(context): a group showing nothing")
+      #expect(group.weight.isFinite && group.weight > 0, "\(context): a group with no width")
+    }
   }
 }

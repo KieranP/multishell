@@ -18,7 +18,7 @@ Themes, the focused pane, the window the app draws itself. Newest at the bottom.
 - **Row heights are asked of one place**, by the row that draws it and by the
   sidebar counting a project's block. The two disagreeing puts the drop
   indicator in the wrong half.
-- **One workspace window, `Window` scenes only.** Each surface is one `NSView`,
+- **One workspace window, never a `WindowGroup`.** Each surface is one `NSView`,
   and a second window would steal it.
 - **Project settings is a `Window` too**, because a `WindowGroup` adds its own
   Close and AppKit gives Cmd+W to the first matching item, so that Close beat
@@ -27,8 +27,8 @@ Themes, the focused pane, the window the app draws itself. Newest at the bottom.
   scrolled to the top. SwiftUI reshows the same window, so the close places it
   while nothing is on screen to jump.
 - **The focus ring and the fade are the theme's.** A hairline in the selection
-  colour was the wrong answer at a glance once columns made the question
-  sharper, so both are theme keys.
+  colour was the wrong answer at a glance once groups made the question sharper,
+  so both are theme keys.
 - **The ring may be any colour, or empty for no line**; the fade dims every
   other pane towards the theme's background. The built-ins ring in their own
   blue, the selection colour being mixed to sit under text and reading as a
@@ -100,7 +100,7 @@ Themes, the focused pane, the window the app draws itself. Newest at the bottom.
   built against, so the old floor of 14 kept the older style until the floor
   moved.
 - **A segmented picker in that style is only as wide as its labels**, so each
-  one asks for flexible sizing to span its row: SegmentedPickerWidthTests.
+  one asks for flexible sizing to span its row: ViewSegmentedAcrossRowTests.
 - **An untinted icon in project settings is the system's grey**, not the
   theme's: that window follows the system appearance, and a dark theme's grey
   vanished on a light page. The sidebar keeps the theme's.

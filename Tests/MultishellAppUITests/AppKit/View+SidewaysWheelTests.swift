@@ -6,7 +6,7 @@ import Testing
 @Suite(.serialized) @MainActor
 struct ViewSidewaysWheelTests {
   /// The workspace's shape: a sidebar that scrolls beside a strip that does.
-  /// Needs the window server SettingsPageSizeTests does.
+  /// Needs the window server AppSettingsWindowTests does.
   @Test func theMarkedScrollerIsTheStripsAndTheCatcherStaysOutsideIt() {
     let reference = ScrollerReference()
     let workspace = HStack(spacing: 0) {
@@ -33,11 +33,8 @@ struct ViewSidewaysWheelTests {
     }
     let host = NSHostingView(rootView: workspace)
     host.frame = CGRect(x: 0, y: 0, width: 400, height: 400)
-    let window = NSWindow(
-      contentRect: host.frame, styleMask: [.titled], backing: .buffered, defer: true)
-    window.contentView = host
-    host.layoutSubtreeIfNeeded()
-    settle()
+    let window = OffscreenWindow.holding(host)
+    OffscreenWindow.settle(within: 0.25)
 
     #expect(reference.scroller?.frame.height == 28, "the strip's, 28 high, not the sidebar's 400")
     let catcher = firstCatcher(in: host)
@@ -52,14 +49,5 @@ struct ViewSidewaysWheelTests {
       if let found = firstCatcher(in: subview) { return found }
     }
     return nil
-  }
-
-  /// `run(until:)` returns at once while the main run loop has no source, so
-  /// the wait is looped.
-  private func settle(for limit: TimeInterval = 0.25) {
-    let deadline = Date().addingTimeInterval(limit)
-    while Date() < deadline {
-      RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.01))
-    }
   }
 }

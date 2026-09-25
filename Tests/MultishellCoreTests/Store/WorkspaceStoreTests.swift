@@ -207,4 +207,16 @@ struct WorkspaceStoreTests {
     #expect(store.workspace.tab(tab.id)?.sessionIDs.count == 2)
     #expect(store.workspace.tab(tab.id)?.isSplit == true)
   }
+
+  /// The settings field writes on every keystroke, so the space between two
+  /// flags has to survive being typed; only an empty line drops the entry.
+  @Test func storingFlagsKeepsWhatWasTypedAndClearingRemovesTheEntry() {
+    let store = WorkspaceStore()
+    store.setAgentFlags("--model opus ", for: "claude")
+    #expect(store.workspace.agentFlags["claude"] == "--model opus ")
+    store.setAgentFlags(" ", for: "claude")
+    #expect(store.workspace.agentFlags["claude"] == " ", "a space is a flag half typed")
+    store.setAgentFlags("", for: "claude")
+    #expect(store.workspace.agentFlags["claude"] == nil, "cleared, so nothing is left behind")
+  }
 }

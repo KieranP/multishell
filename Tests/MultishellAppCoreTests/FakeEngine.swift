@@ -12,7 +12,7 @@ final class FakeEngine: TerminalSurfaceHost {
   var pasted: [(id: TerminalSession.ID, text: String)] = []
   /// Every search step, in order, whichever pane it was for.
   var searched: [(id: TerminalSession.ID, command: TerminalSearch)] = []
-  /// What the registry asked for, command line included.
+  /// What the reconciler asked for, command line included.
   var opened: [TerminalSession] = []
   weak var delegate: (any TerminalHostDelegate)?
   /// Every open throws, standing in for a machine out of descriptors.
@@ -40,3 +40,5 @@ final class FakeEngine: TerminalSurfaceHost {
   func view(for id: TerminalSession.ID) -> FakeSurface? { nil }
   func apply(_ theme: Theme, appearance: Appearance) {}
 }
+
+private struct OpenRefused: Error {}

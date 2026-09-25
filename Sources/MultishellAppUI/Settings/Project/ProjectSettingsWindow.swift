@@ -20,29 +20,29 @@ struct ProjectSettingsWindow: View {
       ToolbarTabs(
         tabs: [
           .init(t("settings.general"), symbol: "gearshape") {
-            ProjectGeneralTab(model: model, project: project)
+            ProjectGeneralPage(model: model, project: project)
           },
           .init(t("settings.worktrees"), symbol: "arrow.trianglehead.branch") {
-            ProjectWorktreesTab(model: model, project: project)
+            ProjectWorktreesPage(model: model, project: project)
           },
           .init(t("settings.hooks"), symbol: "bolt.horizontal") {
-            ProjectHooksTab(model: model, project: project)
+            ProjectHooksPage(model: model, project: project)
           },
           .init(t("settings.terminal"), symbol: "terminal") {
-            ProjectTerminalTab(model: model, project: project)
+            ProjectTerminalPage(model: model, project: project)
           },
           .init(t("label.agents"), symbol: "sparkles") {
-            ProjectAgentTab(model: model, project: project)
+            ProjectAgentsPage(model: model, project: project)
           },
         ], firstTabToken: firstTabToken
       )
-      .frame(width: SettingsView.windowSize.width, height: SettingsView.windowSize.height)
+      .frame(width: SettingsWindow.size.width, height: SettingsWindow.size.height)
       .navigationTitle(t("window.project-settings-title", project.name))
       // This window is its own scene, so a removal asked for here has to
       // be confirmed here; the workspace window's dialog would be behind it.
       .projectRemovalDialog(model: model, source: .settings)
       .settingsWindowReset(
-        on: { platform.mainWindow?.screen }, showFirstTab: { firstTabToken = UUID() })
+        on: { platform.mainWindow?.screen }, showFirstPage: { firstTabToken = UUID() })
     } else {
       // The project was removed while this window was open.
       Color.clear.frame(width: 1, height: 1).onAppear { dismiss() }

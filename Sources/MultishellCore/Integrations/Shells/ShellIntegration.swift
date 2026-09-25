@@ -9,14 +9,14 @@ public enum ShellIntegration {
     helper: String = AgentHookCatalogue.helperReference
   ) throws {
     try FileManager.default.createDirectory(at: zshDirectory, withIntermediateDirectories: true)
-    for (name, contents) in ShellStateHooks.zshIntegrationFiles(helper: helper) {
+    for (name, contents) in ShellStateHooks.zshIntegrationScripts(helper: helper) {
       try Data(contents.utf8).write(
         to: zshDirectory.appendingPathComponent(name, isDirectory: false), options: .atomic)
     }
 
     try FileManager.default.createDirectory(
       at: bashInit.deletingLastPathComponent(), withIntermediateDirectories: true)
-    try Data(ShellStateHooks.bashInitFile(helper: helper).utf8).write(
+    try Data(ShellStateHooks.bashInitScript(helper: helper).utf8).write(
       to: bashInit, options: .atomic)
   }
 }

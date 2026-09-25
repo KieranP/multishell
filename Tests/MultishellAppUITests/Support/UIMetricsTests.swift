@@ -83,8 +83,8 @@ struct UIMetricsTests {
         metrics.stripButtonsWidth == metrics.newTabMenuWidth + metrics.splitButtonWidth * 2,
         "the New Tab menu and the two splits are taken off the strip at \(size)")
       #expect(
-        !metrics.stripShowsSplits(in: Double(SplitMetrics.minimumPane)),
-        "a column at its floor has no room for the splits at \(size)")
+        !metrics.stripShowsSplits(in: UIMetrics.minimumPaneLength),
+        "a group at its floor has no room for the splits at \(size)")
       // The width they first show at has to leave the scroller its gutters,
       // else the splits are bought by scrolling a strip with no arrows.
       let showsAt = metrics.stripButtonsWidth + 2 * metrics.tabArrowWidth + metrics.tabMinWidth

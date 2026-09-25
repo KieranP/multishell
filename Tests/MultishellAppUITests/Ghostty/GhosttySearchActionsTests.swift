@@ -7,9 +7,9 @@ import Testing
 /// form libghostty takes them in; a misspelling is a step that does nothing.
 @Suite
 struct GhosttySearchActionsTests {
-  /// A find is the needle alone: a step sent with it runs before the engine
+  /// A find is the find text alone: a step sent with it runs before the engine
   /// has matched anything. From no selection Ghostty's `next` is the newest match.
-  @Test func aFindIsTheNeedleAloneAndNearestIsGhosttysNextFromNoSelection() {
+  @Test func aFindIsTheFindTextAloneAndNearestIsGhosttysNextFromNoSelection() {
     #expect(GhosttySearchActions.actions(for: .find("make -j")) == ["search:make -j"])
     #expect(GhosttySearchActions.actions(for: .find("")) == ["search:"])
     #expect(GhosttySearchActions.actions(for: .nearest) == ["navigate_search:next"])

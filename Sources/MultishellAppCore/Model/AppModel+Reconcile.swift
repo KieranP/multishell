@@ -7,16 +7,16 @@ extension AppModel {
     reconcile()
     guard takingFocus else { return }
     // The keyboard is a pane's now, whatever field held it.
-    findFieldPane = nil
-    registry.focusActiveSession()
-    markFocusedPaneSeen()
+    findFieldSessionID = nil
+    reconciler.focusActiveSession()
+    markInViewSeen()
   }
 
   /// For a control that is leaving, such as the sidebar filter on Escape: the
   /// keyboard would otherwise fall to the window and type into nothing.
   func focusActivePane() {
     guard !showsAgentBoard else { return }
-    registry.focusActiveSession()
+    reconciler.focusActiveSession()
   }
 
   /// Surfaces brought in line with the workspace, the keyboard left alone: a
@@ -25,13 +25,13 @@ extension AppModel {
     // A copy still here after handing over has no socket of its own, and the
     // config a shell's engine writes would outlive its quit; state-and-store.md.
     let warm = yieldingToRunningInstance ? [] : warmWorktrees
-    let failures = registry.reconcile(
-      shouldBeLive: { warm.contains($0.worktreeID) }, prepare: { prepared($0) })
+    let failures = reconciler.reconcile(
+      shouldBeLive: { warm.contains($0.worktreeID) }, prepare: { preparedForLaunch($0) })
     for (index, failure) in failures.enumerated() {
       // One alert slot: four sessions failing at once would otherwise leave
       // one message about the last of them and nothing about the rest.
       if index == 0 {
-        report(failure.error)
+        present(failure.error)
       } else {
         platform.log("a session could not be opened: \(failure.error)")
       }

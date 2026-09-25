@@ -6,31 +6,33 @@ import MultishellProcess
 /// the PATH is searched too, Homebrew not always registering there.
 public struct ShellDetection: Equatable, Sendable {
   /// Paths of the shells found, sorted by name then path.
-  public let installed: [String]
-  public let loginShell: String
+  let found: [String]
+  let loginShell: String
   /// Whether `$SHELL` points at something, read once here rather than per
   /// row: a stat on a dead mount blocks for its timeout.
   let loginShellExists: Bool
 
-  public static let empty = ShellDetection(
-    installed: [], loginShell: ShellCatalogue.loginShellPath())
+  static let empty = ShellDetection(
+    found: [], loginShell: ShellCatalogue.loginShellPath())
 
-  init(installed: [String], loginShell: String) {
-    self.installed = installed
+  init(found: [String], loginShell: String) {
+    self.found = found
     self.loginShell = loginShell
     self.loginShellExists = FileManager.default.isExecutableFile(atPath: loginShell)
   }
 
   init(
-    path: String?,
+    searchPath: String?,
     systemList: URL = URL(fileURLWithPath: "/etc/shells"),
     loginShell: String = ShellCatalogue.loginShellPath()
   ) {
     var found = Set(Self.listed(in: systemList))
     for name in ShellCatalogue.extraShellNamesToSearch {
-      if let executable = ExecutableLookup.find(name, path: path) { found.insert(executable.path) }
+      if let executable = ExecutableLookup.find(name, searchPath: searchPath) {
+        found.insert(executable.path)
+      }
     }
-    self.init(installed: Self.sorted(found), loginShell: loginShell)
+    self.init(found: Self.sorted(found), loginShell: loginShell)
   }
 
   /// Lines of `/etc/shells` that are executables, comments and blanks
@@ -51,9 +53,9 @@ public struct ShellDetection: Equatable, Sendable {
     URL(fileURLWithPath: path).lastPathComponent
   }
 
-  public func isInstalled(_ path: String) -> Bool {
+  func isInstalled(_ path: String) -> Bool {
     path == ShellCatalogue.loginShellID
-      ? loginShellExists : path == ShellCatalogue.customID || installed.contains(path)
+      ? loginShellExists : path == ShellCatalogue.customID || found.contains(path)
   }
 
   /// The login shell first, then every installed shell, then the selected
@@ -61,24 +63,18 @@ public struct ShellDetection: Equatable, Sendable {
   public func options(selected: String?) -> [DetectionOption] {
     var options = [
       DetectionOption(
-        id: ShellCatalogue.loginShellID, label: t("option.login-shell", loginShell),
-        isInstalled: loginShellExists)
+        id: ShellCatalogue.loginShellID, label: t("option.login-shell", loginShell))
     ]
-    for path in installed {
+    for path in found {
       options.append(
-        DetectionOption(
-          id: path, label: t("option.shell-path", Self.name(path), path), isInstalled: true))
+        DetectionOption(id: path, label: t("option.shell-path", Self.name(path), path)))
     }
     if let selected, !isInstalled(selected) {
       options.append(
         DetectionOption(
-          id: selected,
-          label: t("option.shell-not-installed", Self.name(selected), selected),
-          isInstalled: false))
+          id: selected, label: t("option.shell-not-installed", Self.name(selected), selected)))
     }
-    options.append(
-      DetectionOption(
-        id: ShellCatalogue.customID, label: t("option.custom-path"), isInstalled: true))
+    options.append(DetectionOption(id: ShellCatalogue.customID, label: t("option.custom-path")))
     return options
   }
 }

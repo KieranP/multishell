@@ -4,19 +4,19 @@ import Testing
 @testable import MultishellCore
 
 extension WorkspaceStoreTests {
-  @Test func theFirstTabOfAWorktreeOpensAColumnForItself() {
+  @Test func theFirstTabOfAWorktreeOpensAGroupForItself() {
     let (store, _, worktree) = demoStore()
     let tab = store.openTab(in: worktree.id)!
 
-    let columns = store.workspace.groups(in: worktree.id)
-    #expect(columns.count == 1)
-    #expect(columns[0].activeTabID == tab.id)
-    #expect(store.workspace.focusedGroup(in: worktree.id)?.id == columns[0].id)
-    #expect(store.workspace.tab(tab.id)?.groupID == columns[0].id)
+    let groups = store.workspace.groups(in: worktree.id)
+    #expect(groups.count == 1)
+    #expect(groups[0].activeTabID == tab.id)
+    #expect(store.workspace.focusedGroup(in: worktree.id)?.id == groups[0].id)
+    #expect(store.workspace.tab(tab.id)?.groupID == groups[0].id)
     WorkspaceInvariants.check(store.workspace, "first tab")
   }
 
-  @Test func aTabDroppedOnABandGetsAColumnOfItsOwn() {
+  @Test func aTabDroppedOnABandGetsAGroupOfItsOwn() {
     let (store, _, worktree) = demoStore()
     let staying = store.openTab(in: worktree.id)!
     let moving = store.openTab(in: worktree.id)!
@@ -24,19 +24,19 @@ extension WorkspaceStoreTests {
 
     let made = store.moveTabToNewGroup(moving.id, .after, of: first.id)
 
-    let columns = store.workspace.groups(in: worktree.id)
-    #expect(columns.map(\.id) == [first.id, made?.id], "the new column lands to the right")
+    let groups = store.workspace.groups(in: worktree.id)
+    #expect(groups.map(\.id) == [first.id, made?.id], "the new group lands to the right")
     #expect(store.workspace.tabs(in: first.id).map(\.id) == [staying.id])
     #expect(store.workspace.tabs(in: made!.id).map(\.id) == [moving.id])
-    #expect(columns[0].activeTabID == staying.id, "the column it left shows what is left")
-    #expect(columns[1].activeTabID == moving.id)
+    #expect(groups[0].activeTabID == staying.id, "the group it left shows what is left")
+    #expect(groups[1].activeTabID == moving.id)
     #expect(store.workspace.focusedGroup(in: worktree.id)?.id == made?.id)
-    WorkspaceInvariants.check(store.workspace, "new column")
+    WorkspaceInvariants.check(store.workspace, "new group")
   }
 
   /// Weights are relative, so what matters is that the two are equal and the total is what the
-  /// one column had.
-  @Test func aNewColumnTakesHalfTheWidthOfTheOneItLandedBeside() {
+  /// one group had.
+  @Test func aNewGroupTakesHalfTheWidthOfTheOneItLandedBeside() {
     let (store, _, worktree) = demoStore()
     store.openTab(in: worktree.id)
     let moving = store.openTab(in: worktree.id)!
@@ -49,7 +49,7 @@ extension WorkspaceStoreTests {
     #expect(weights == [before / 2, before / 2])
   }
 
-  @Test func aColumnWillNotHandOverItsOnlyTab() {
+  @Test func aGroupWillNotHandOverItsOnlyTab() {
     let (store, _, worktree) = demoStore()
     let tab = store.openTab(in: worktree.id)!
     let only = store.workspace.groups(in: worktree.id)[0]
@@ -57,13 +57,13 @@ extension WorkspaceStoreTests {
 
     #expect(store.moveTabToNewGroup(tab.id, .after, of: only.id) == nil)
     #expect(store.moveTabToNewGroup(UUID(), .after, of: only.id) == nil, "no such tab")
-    #expect(store.moveTabToNewGroup(tab.id, .after, of: UUID()) == nil, "no such column")
+    #expect(store.moveTabToNewGroup(tab.id, .after, of: UUID()) == nil, "no such group")
     #expect(store.workspace == before, "the same layout under a new id is not a move")
   }
 
-  /// Unlike the no-move above, the column it left goes and a new one arrives at the side it was
-  /// dropped on, which is how a column is moved along.
-  @Test func theOnlyTabOfAColumnMayStillLandBesideAnother() {
+  /// Unlike the no-move above, the group it left goes and a new one arrives at the side it was
+  /// dropped on, which is how a group is moved along.
+  @Test func theOnlyTabOfAGroupMayStillLandBesideAnother() {
     let (store, _, worktree) = demoStore()
     let staying = store.openTab(in: worktree.id)!
     let moving = store.openTab(in: worktree.id)!
@@ -73,13 +73,13 @@ extension WorkspaceStoreTests {
     let third = store.moveTabToNewGroup(moving.id, .before, of: first.id)
 
     #expect(third != nil)
-    #expect(store.workspace.group(second.id) == nil, "the column it left is gone")
+    #expect(store.workspace.group(second.id) == nil, "the group it left is gone")
     #expect(store.workspace.groups(in: worktree.id).map(\.id) == [third?.id, first.id])
     #expect(store.workspace.tabs(in: first.id).map(\.id) == [staying.id])
-    WorkspaceInvariants.check(store.workspace, "column moved along")
+    WorkspaceInvariants.check(store.workspace, "group moved along")
   }
 
-  @Test func aColumnGoesWhenItsLastTabLeaves() {
+  @Test func aGroupGoesWhenItsLastTabLeaves() {
     let (store, _, worktree) = demoStore()
     let staying = store.openTab(in: worktree.id)!
     let moving = store.openTab(in: worktree.id)!
@@ -89,13 +89,13 @@ extension WorkspaceStoreTests {
     store.moveTab(moving.id, .before, staying.id)
 
     #expect(store.workspace.groups(in: worktree.id).map(\.id) == [first.id])
-    #expect(store.workspace.group(second.id) == nil, "no column stands empty")
+    #expect(store.workspace.group(second.id) == nil, "no group stands empty")
     #expect(store.workspace.tabs(in: first.id).map(\.id) == [moving.id, staying.id])
     #expect(store.workspace.focusedGroup(in: worktree.id)?.id == first.id)
-    WorkspaceInvariants.check(store.workspace, "column emptied by a move")
+    WorkspaceInvariants.check(store.workspace, "group emptied by a move")
   }
 
-  @Test func closingTheLastTabOfAColumnTakesTheColumnWithIt() {
+  @Test func closingTheLastTabOfAGroupTakesTheGroupWithIt() {
     let (store, _, worktree) = demoStore()
     store.openTab(in: worktree.id)
     let moving = store.openTab(in: worktree.id)!
@@ -106,11 +106,11 @@ extension WorkspaceStoreTests {
 
     #expect(store.workspace.groups(in: worktree.id).map(\.id) == [first.id])
     #expect(store.workspace.focusedGroup(in: worktree.id)?.id == first.id)
-    WorkspaceInvariants.check(store.workspace, "column emptied by a close")
+    WorkspaceInvariants.check(store.workspace, "group emptied by a close")
   }
 
   /// What a tab strip does when the active tab closes, one level out.
-  @Test func theFocusGoesToTheColumnThatTookItsPlace() {
+  @Test func theFocusGoesToTheGroupThatTookItsPlace() {
     let (store, _, worktree) = demoStore()
     let a = store.openTab(in: worktree.id)!
     let b = store.openTab(in: worktree.id)!
@@ -124,7 +124,7 @@ extension WorkspaceStoreTests {
     store.closeTab(b.id)
     #expect(
       store.workspace.focusedGroup(in: worktree.id)?.id == last.id,
-      "the column to its right moved up into the slot")
+      "the group to its right moved up into the slot")
 
     store.focusGroup(last.id)
     store.closeTab(c.id)
@@ -134,7 +134,7 @@ extension WorkspaceStoreTests {
     #expect(store.workspace.tabs.map(\.id) == [a.id])
   }
 
-  @Test func aTabDroppedOnAnotherColumnsTabLandsThereAndShows() {
+  @Test func aTabDroppedOnAnotherGroupsTabLandsThereAndShows() {
     let (store, _, worktree) = demoStore()
     let anchor = store.openTab(in: worktree.id)!
     let neighbour = store.openTab(in: worktree.id)!
@@ -150,10 +150,10 @@ extension WorkspaceStoreTests {
     #expect(
       store.workspace.activeTab(in: worktree.id)?.id == moving.id,
       "a tab dragged somewhere is the one being worked in")
-    WorkspaceInvariants.check(store.workspace, "cross-column drop")
+    WorkspaceInvariants.check(store.workspace, "cross-group drop")
   }
 
-  @Test func aTabDroppedOnAColumnsStripLandsLastThere() {
+  @Test func aTabDroppedOnAGroupsStripLandsLastThere() {
     let (store, _, worktree) = demoStore()
     let settled = store.openTab(in: worktree.id)!
     let moving = store.openTab(in: worktree.id)!
@@ -165,10 +165,10 @@ extension WorkspaceStoreTests {
     #expect(store.workspace.tabs(in: first.id).map(\.id) == [settled.id, moving.id])
     #expect(store.workspace.group(second.id) == nil)
     #expect(store.moveTab(moving.id, toEndOf: first.id) == false, "already there")
-    #expect(store.moveTab(moving.id, toEndOf: UUID()) == false, "no such column")
+    #expect(store.moveTab(moving.id, toEndOf: UUID()) == false, "no such group")
   }
 
-  @Test func reorderingInsideOneColumnLeavesTheActiveTabAlone() {
+  @Test func reorderingInsideOneGroupLeavesTheActiveTabAlone() {
     let (store, _, worktree) = demoStore()
     let first = store.openTab(in: worktree.id)!
     let second = store.openTab(in: worktree.id)!
@@ -180,7 +180,7 @@ extension WorkspaceStoreTests {
     #expect(store.workspace.activeTab(in: worktree.id)?.id == second.id)
   }
 
-  @Test func aNewTabOpensInTheColumnItWasAskedFor() {
+  @Test func aNewTabOpensInTheGroupItWasAskedFor() {
     let (store, _, worktree) = demoStore()
     store.openTab(in: worktree.id)
     let moving = store.openTab(in: worktree.id)!
@@ -193,11 +193,11 @@ extension WorkspaceStoreTests {
     #expect(store.workspace.tabs(in: first.id).last?.id == opened.id, "last in that strip")
     #expect(
       store.workspace.focusedGroup(in: worktree.id)?.id == first.id,
-      "opening a tab in a column is working in it")
-    #expect(store.workspace.group(second.id)?.activeTabID == moving.id, "the other column stands")
+      "opening a tab in a group is working in it")
+    #expect(store.workspace.group(second.id)?.activeTabID == moving.id, "the other group stands")
   }
 
-  @Test func aTabIsNotOpenedInAnotherWorktreesColumn() {
+  @Test func aTabIsNotOpenedInAnotherWorktreesGroup() {
     let (store, project, main) = demoStore()
     let other = Worktree(
       path: URL(fileURLWithPath: "/repos/demo-b"), projectID: project.id, head: "b", branch: "b")
@@ -210,7 +210,7 @@ extension WorkspaceStoreTests {
     #expect(store.workspace.sessions(in: other.id).isEmpty, "no session left behind either")
   }
 
-  @Test func columnWeightsAreWrittenBackInOrder() {
+  @Test func groupWeightsAreWrittenBackInOrder() {
     let (store, _, worktree) = demoStore()
     store.openTab(in: worktree.id)
     let moving = store.openTab(in: worktree.id)!
@@ -228,7 +228,7 @@ extension WorkspaceStoreTests {
       "a count that does not line up, a zero and a non-number are all refused")
   }
 
-  @Test func aClickInAPaneFocusesItsColumn() {
+  @Test func aClickInAPaneFocusesItsGroup() {
     let (store, _, worktree) = demoStore()
     let staying = store.openTab(in: worktree.id)!
     let moving = store.openTab(in: worktree.id)!
@@ -242,7 +242,7 @@ extension WorkspaceStoreTests {
     #expect(store.workspace.activeTab(in: worktree.id)?.id == staying.id)
   }
 
-  @Test func aTabDraggedToAnotherWorktreeLandsInItsFocusedColumn() {
+  @Test func aTabDraggedToAnotherWorktreeLandsInItsFocusedGroup() {
     let (store, project, main) = demoStore()
     let feature = Worktree(
       path: URL(fileURLWithPath: "/repos/demo-b"), projectID: project.id, head: "b",
@@ -250,22 +250,22 @@ extension WorkspaceStoreTests {
     store.replaceWorktrees([main, feature], forProject: project.id)
     let settled = store.openTab(in: feature.id)!
     let second = store.openTab(in: feature.id)!
-    let firstColumn = store.workspace.groups(in: feature.id)[0]
-    let secondColumn = store.moveTabToNewGroup(second.id, .after, of: firstColumn.id)!
-    store.focusGroup(firstColumn.id)
+    let firstGroup = store.workspace.groups(in: feature.id)[0]
+    let secondGroup = store.moveTabToNewGroup(second.id, .after, of: firstGroup.id)!
+    store.focusGroup(firstGroup.id)
     let moving = store.openTab(in: main.id)!
 
     #expect(store.moveTab(moving.id, to: feature.id))
 
-    #expect(store.workspace.tab(moving.id)?.groupID == firstColumn.id)
-    #expect(store.workspace.tabs(in: firstColumn.id).map(\.id) == [settled.id, moving.id])
-    #expect(store.workspace.group(secondColumn.id)?.activeTabID == second.id)
-    #expect(store.workspace.groups(in: main.id).isEmpty, "the column it left went with it")
+    #expect(store.workspace.tab(moving.id)?.groupID == firstGroup.id)
+    #expect(store.workspace.tabs(in: firstGroup.id).map(\.id) == [settled.id, moving.id])
+    #expect(store.workspace.group(secondGroup.id)?.activeTabID == second.id)
+    #expect(store.workspace.groups(in: main.id).isEmpty, "the group it left went with it")
     #expect(store.workspace.focusedGroupByWorktree[main.id] == nil)
     WorkspaceInvariants.check(store.workspace, "moved between worktrees")
   }
 
-  @Test func aRemovedWorktreeTakesItsColumns() {
+  @Test func aRemovedWorktreeTakesItsGroups() {
     let (store, project, worktree) = demoStore()
     store.openTab(in: worktree.id)
     let moving = store.openTab(in: worktree.id)!
@@ -278,7 +278,7 @@ extension WorkspaceStoreTests {
     WorkspaceInvariants.check(store.workspace, "worktree removed")
   }
 
-  @Test func tabCyclingStaysInsideItsColumn() {
+  @Test func tabCyclingStaysInsideItsGroup() {
     let (store, _, worktree) = demoStore()
     let a = store.openTab(in: worktree.id)!
     let b = store.openTab(in: worktree.id)!
@@ -287,13 +287,13 @@ extension WorkspaceStoreTests {
     store.moveTabToNewGroup(c.id, .after, of: first.id)
 
     #expect(store.workspace.tab(after: a.id)?.id == b.id)
-    #expect(store.workspace.tab(after: b.id)?.id == a.id, "wraps within the column")
-    #expect(store.workspace.tab(after: c.id) == nil, "a column of one has nowhere to go")
+    #expect(store.workspace.tab(after: b.id)?.id == a.id, "wraps within the group")
+    #expect(store.workspace.tab(after: c.id) == nil, "a group of one has nowhere to go")
   }
 
-  /// A file hand-edited to name no focused column, read before repair has
-  /// run: the first column answers, so the worktree still draws a strip.
-  @Test func aWorktreeWithNoFocusedColumnFallsBackToItsFirst() {
+  /// A file hand-edited to name no focused group, read before repair has
+  /// run: the first group answers, so the worktree still draws a strip.
+  @Test func aWorktreeWithNoFocusedGroupFallsBackToItsFirst() {
     let (store, _, worktree) = demoStore()
     let tab = store.openTab(in: worktree.id)!
     var workspace = store.workspace
@@ -304,10 +304,10 @@ extension WorkspaceStoreTests {
     #expect(workspace.activeTab(in: worktree.id)?.id == tab.id)
 
     workspace.focusedGroupByWorktree[worktree.id] = UUID()
-    #expect(workspace.focusedGroup(in: worktree.id)?.id == first.id, "and a column that has gone")
+    #expect(workspace.focusedGroup(in: worktree.id)?.id == first.id, "and a group that has gone")
   }
 
-  @Test func onlyOneTabPerColumnCountsAsShown() {
+  @Test func onlyOneTabPerGroupCountsAsShown() {
     let (store, _, worktree) = demoStore()
     let hidden = store.openTab(in: worktree.id)!
     let shown = store.openTab(in: worktree.id)!
@@ -321,7 +321,7 @@ extension WorkspaceStoreTests {
     #expect(!store.workspace.shownTabs(in: worktree.id).contains { $0.id == hidden.id })
   }
 
-  @Test func closingAPaneOfTheLastTabOfAColumnTakesTheColumn() {
+  @Test func closingAPaneOfTheLastTabOfAGroupTakesTheGroup() {
     let (store, _, worktree) = demoStore()
     store.openTab(in: worktree.id)
     let moving = store.openTab(in: worktree.id)!
@@ -331,6 +331,6 @@ extension WorkspaceStoreTests {
     store.closeSession(moving.focusedSessionID)
 
     #expect(store.workspace.groups(in: worktree.id).map(\.id) == [first.id])
-    WorkspaceInvariants.check(store.workspace, "last pane of a column")
+    WorkspaceInvariants.check(store.workspace, "last pane of a group")
   }
 }

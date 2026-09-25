@@ -21,7 +21,7 @@ public struct AgentHookPayload: Hashable, Sendable {
   var conversationID: String?
   var transcriptPath: String?
 
-  public init(
+  init(
     eventName: String, cwd: String? = nil, message: String? = nil, permissionMode: String? = nil,
     notificationType: String? = nil, agentID: String? = nil, agentType: String? = nil,
     conversationID: String? = nil, transcriptPath: String? = nil

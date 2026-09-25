@@ -8,7 +8,7 @@ public final class InputOrExitWatch {
   private let descriptor: Int32
   private let pid: pid_t
   private let kqueueDescriptor: Int32
-  private var alreadyExited = false
+  private var hasExited = false
 
   public init?(descriptor: Int32, pid: pid_t) {
     guard pid > 0 else { return nil }
@@ -33,7 +33,7 @@ public final class InputOrExitWatch {
         close(watching)
         return nil
       }
-      alreadyExited = true
+      hasExited = true
     }
     kqueueDescriptor = watching
   }
@@ -47,14 +47,14 @@ public final class InputOrExitWatch {
   /// Blocks until the descriptor is readable, EOF included, or the process
   /// has gone. An exit is reported first when both are due.
   public func next() -> Event {
-    if alreadyExited { return .exited }
+    if hasExited { return .exited }
     var events: [KernelEvent] = Array(repeating: KernelEvent(), count: 2)
     while true {
       let count = kevent(kqueueDescriptor, nil, 0, &events, Int32(events.count), nil)
       if count < 0, errno == EINTR { continue }
       guard count > 0 else { return .exited }
       if events.prefix(Int(count)).contains(where: { $0.filter == Int16(EVFILT_PROC) }) {
-        alreadyExited = true
+        hasExited = true
         return .exited
       }
       return .input
@@ -63,8 +63,7 @@ public final class InputOrExitWatch {
 
   /// What the pipe holds now, without waiting for more.
   public func drain() -> Data {
-    let flags = fcntl(descriptor, F_GETFL)
-    _ = fcntl(descriptor, F_SETFL, flags | O_NONBLOCK)
+    DescriptorFlags.setNonBlocking(descriptor)
     var drained = Data()
     var buffer = [UInt8](repeating: 0, count: 4096)
     while case let count = read(descriptor, &buffer, buffer.count), count > 0 {

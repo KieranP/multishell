@@ -17,8 +17,10 @@ struct NewWorktreeDraftTests {
     draft.branch = branch
     draft.beginLoading()
     draft.finishLoading(
-      id, hasCommits: true, branches: ["main", "release", "spike"], remoteBranches: ["origin/main"],
-      currentBranch: "main", checkedOut: ["main"])
+      id,
+      with: NewWorktreeBranches(
+        hasCommits: true, localBranches: ["main", "release", "spike"],
+        remoteBranches: ["origin/main"], currentBranch: "main"), checkedOut: ["main"])
     return draft
   }
 
@@ -31,7 +33,9 @@ struct NewWorktreeDraftTests {
     #expect(!draft.canCreate(checkedOut: []), "loading")
 
     draft.finishLoading(
-      a, hasCommits: true, branches: ["main"], remoteBranches: [], currentBranch: "main",
+      a,
+      with: NewWorktreeBranches(
+        hasCommits: true, localBranches: ["main"], remoteBranches: [], currentBranch: "main"),
       checkedOut: ["main"])
     #expect(draft.canCreate(checkedOut: ["main"]))
     #expect(draft.startPoint == "main")
@@ -47,15 +51,19 @@ struct NewWorktreeDraftTests {
     draft.beginLoading()
 
     draft.finishLoading(
-      a, hasCommits: true, branches: ["old"], remoteBranches: [], currentBranch: "old",
+      a,
+      with: NewWorktreeBranches(
+        hasCommits: true, localBranches: ["old"], remoteBranches: [], currentBranch: "old"),
       checkedOut: [])
 
     #expect(!draft.canCreate(checkedOut: []))
-    #expect(draft.branches.isEmpty && draft.baseBranch.isEmpty, "nothing of a's arrived")
+    #expect(draft.localBranches.isEmpty && draft.baseBranch.isEmpty, "nothing of a's arrived")
     #expect(draft.startPoint == nil, "git gets HEAD, never the other project's branch")
 
     draft.finishLoading(
-      b, hasCommits: true, branches: ["dev"], remoteBranches: [], currentBranch: "dev",
+      b,
+      with: NewWorktreeBranches(
+        hasCommits: true, localBranches: ["dev"], remoteBranches: [], currentBranch: "dev"),
       checkedOut: [])
     #expect(draft.canCreate(checkedOut: []))
     #expect(draft.startPoint == "dev")
@@ -67,7 +75,7 @@ struct NewWorktreeDraftTests {
     draft.beginLoading()
 
     #expect(draft.branch == "feat", "the name is the user's")
-    #expect(draft.branches.isEmpty && draft.remoteBranches.isEmpty)
+    #expect(draft.localBranches.isEmpty && draft.remoteBranches.isEmpty)
     #expect(draft.baseBranch.isEmpty && draft.hasCommits)
     #expect(draft.availableBranches(checkedOut: []).isEmpty)
   }
@@ -129,8 +137,10 @@ struct NewWorktreeDraftTests {
     draft.branch = "elsewhere"
     draft.beginLoading()
     draft.finishLoading(
-      a, hasCommits: true, branches: ["main", "release"], remoteBranches: [], currentBranch: "main",
-      checkedOut: ["main"])
+      a,
+      with: NewWorktreeBranches(
+        hasCommits: true, localBranches: ["main", "release"], remoteBranches: [],
+        currentBranch: "main"), checkedOut: ["main"])
     #expect(draft.branch == "release")
   }
 
@@ -139,7 +149,10 @@ struct NewWorktreeDraftTests {
     draft.branch = "feat"
     draft.beginLoading()
     draft.finishLoading(
-      a, hasCommits: false, branches: [], remoteBranches: [], currentBranch: "HEAD", checkedOut: [])
+      a,
+      with: NewWorktreeBranches(
+        hasCommits: false, localBranches: [], remoteBranches: [], currentBranch: "HEAD"),
+      checkedOut: [])
     #expect(!draft.canCreate(checkedOut: []))
   }
 
@@ -157,8 +170,11 @@ struct NewWorktreeDraftTests {
     draft.createBranch = false
     draft.beginLoading()
     draft.finishLoading(
-      a, hasCommits: true, branches: ["main"], remoteBranches: ["origin/main", "origin/feature"],
-      currentBranch: "main", checkedOut: ["main"])
+      a,
+      with: NewWorktreeBranches(
+        hasCommits: true, localBranches: ["main"],
+        remoteBranches: ["origin/main", "origin/feature"], currentBranch: "main"),
+      checkedOut: ["main"])
 
     #expect(
       draft.availableBranches(checkedOut: ["main"]).isEmpty, "remote branches are not offered")
@@ -209,8 +225,10 @@ struct NewWorktreeDraftTests {
     let project = "/w/repo"
     var draft = NewWorktreeDraft(projectID: project)
     draft.finishLoading(
-      project, hasCommits: true, branches: ["main"], remoteBranches: [],
-      currentBranch: "main", checkedOut: [])
+      project,
+      with: NewWorktreeBranches(
+        hasCommits: true, localBranches: ["main"], remoteBranches: [], currentBranch: "main"),
+      checkedOut: [])
 
     for refused in ["my branch", "foo..bar", "feat.lock", "-leading", "a~b"] {
       draft.branch = refused
@@ -223,5 +241,22 @@ struct NewWorktreeDraftTests {
     draft.branch = "  "
     #expect(!draft.canCreate(checkedOut: []))
     #expect(!draft.branchNameIsRefused, "an empty field is not yet wrong")
+  }
+
+  @Test func theAllCheckedOutNoteWaitsForTheLoadAndThenForAnEmptyList() {
+    var draft = NewWorktreeDraft(projectID: a)
+    draft.beginLoading()
+    #expect(!draft.showsAllCheckedOutNote(checkedOut: ["main"]), "loading")
+
+    draft.finishLoading(
+      a,
+      with: NewWorktreeBranches(
+        hasCommits: true, localBranches: ["main"], remoteBranches: [], currentBranch: "main"),
+      checkedOut: ["main"])
+
+    #expect(draft.showsAllCheckedOutNote(checkedOut: ["main"]))
+    #expect(!draft.showsAllCheckedOutNote(checkedOut: []))
+    draft.projectID = nil
+    #expect(!draft.showsAllCheckedOutNote(checkedOut: ["main"]), "no project picked")
   }
 }

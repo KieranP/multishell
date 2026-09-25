@@ -65,15 +65,15 @@ public struct SharedProjectSettings: Equatable, Sendable {
     self.autoStartAgentOnCreate = autoStartAgentOnCreate
     self.opensTerminalOnSelect = opensTerminalOnSelect
     self.opensTerminalOnCreate = opensTerminalOnCreate
-    self.preCreateHook = Self.text(preCreateHook)
-    self.postCreateHook = Self.text(postCreateHook)
-    self.preDeleteHook = Self.text(preDeleteHook)
-    self.postDeleteHook = Self.text(postDeleteHook)
-    self.linkedPaths = Self.text(linkedPaths)
-    self.copiedPaths = Self.text(copiedPaths)
+    self.preCreateHook = Self.nonBlank(preCreateHook)
+    self.postCreateHook = Self.nonBlank(postCreateHook)
+    self.preDeleteHook = Self.nonBlank(preDeleteHook)
+    self.postDeleteHook = Self.nonBlank(postDeleteHook)
+    self.linkedPaths = Self.nonBlank(linkedPaths)
+    self.copiedPaths = Self.nonBlank(copiedPaths)
     self.worktreeSortOrder = worktreeSortOrder
     self.showsActiveWorktreesFirst = showsActiveWorktreesFirst
-    self.iconGlyph = Self.text(iconGlyph)
+    self.iconGlyph = Self.nonBlank(iconGlyph)
     self.iconTint = iconTint
     self.digest = digest
   }
@@ -141,9 +141,9 @@ public struct SharedProjectSettings: Equatable, Sendable {
     {
       confined.worktreeDirectory = nil
     }
-    confined.linkedPaths = RepositoryContainment.holding(
+    confined.linkedPaths = RepositoryContainment.keepingContained(
       listedPaths: linkedPaths, under: project.path)
-    confined.copiedPaths = RepositoryContainment.holding(
+    confined.copiedPaths = RepositoryContainment.keepingContained(
       listedPaths: copiedPaths, under: project.path)
     return confined
   }
@@ -190,25 +190,28 @@ public struct SharedProjectSettings: Equatable, Sendable {
   /// The same file with everything the yes covers dropped: what an untrusted
   /// file is allowed to decide.
   public var withoutWhatTrustCovers: SharedProjectSettings {
-    var drawn = self
-    for (_, field) in Self.trustCovered { drawn[keyPath: field] = nil }
-    return drawn
+    var stripped = self
+    for (_, field) in Self.trustCovered { stripped[keyPath: field] = nil }
+    return stripped
   }
 
   /// What a yes covers, in the order and by the names the user is asked
   /// about them: every field that runs something or puts a path on disk.
   private static var trustCovered: [(name: String, field: WritableKeyPath<Self, String?>)] {
     [
-      ("worktree directory", \.worktreeDirectory),
-      ("pre-create", \.preCreateHook), ("post-create", \.postCreateHook),
-      ("pre-delete", \.preDeleteHook), ("post-delete", \.postDeleteHook),
-      ("linked", \.linkedPaths), ("copied", \.copiedPaths),
+      (t("shared-settings.worktree-directory"), \.worktreeDirectory),
+      (t("shared-settings.pre-create"), \.preCreateHook),
+      (t("shared-settings.post-create"), \.postCreateHook),
+      (t("shared-settings.pre-delete"), \.preDeleteHook),
+      (t("shared-settings.post-delete"), \.postDeleteHook),
+      (t("shared-settings.linked"), \.linkedPaths),
+      (t("shared-settings.copied"), \.copiedPaths),
     ]
   }
 
   /// Blank is absent where "none" and "no opinion" come to the same thing.
   /// The three worktree fields above are the exception; see settings.md.
-  private static func text(_ value: String?) -> String? {
+  private static func nonBlank(_ value: String?) -> String? {
     guard let value, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
       return nil
     }

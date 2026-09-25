@@ -3,7 +3,7 @@ import Foundation
 extension Theme {
   /// The 16 ANSI colours, with any unparsable entry falling back to grey so
   /// a hand-edited theme file cannot leave a terminal unpaintable.
-  public var ansiRGB: [RGB] {
+  var ansiRGB: [RGB] {
     ansi.indices.map(ansiRGB)
   }
 
@@ -18,16 +18,16 @@ extension Theme {
   public var foregroundRGB: RGB {
     HexColor.parse(foreground) ?? .white
   }
-  public var selectionRGB: RGB {
+  public var selectionBackgroundRGB: RGB {
     HexColor.parse(selectionBackground) ?? RGB(red: 64, green: 96, blue: 144)
   }
 
   /// The line round the focused pane: a colour, `""` for none, absent for
   /// the selection colour. A typo reads as absent, not as none.
   public var focusRingRGB: RGB? {
-    guard let focusRing else { return selectionRGB }
+    guard let focusRing else { return selectionBackgroundRGB }
     let text = focusRing.trimmingCharacters(in: .whitespaces)
     guard !text.isEmpty else { return nil }
-    return HexColor.parse(text) ?? selectionRGB
+    return HexColor.parse(text) ?? selectionBackgroundRGB
   }
 }

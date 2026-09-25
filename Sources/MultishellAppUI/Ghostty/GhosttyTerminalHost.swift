@@ -7,60 +7,27 @@ import MultishellCore
 /// config. Three config layers; see Docs/design/terminals.md.
 @MainActor
 final class GhosttyTerminalHost: NSObject, TerminalHost {
+  /// A session's surface, the view the window holds it in, and its observer,
+  /// held here because `TerminalView.delegate` is weak.
+  private struct OpenSurface {
+    let view: TerminalView
+    let container: GhosttySurfaceContainer
+    let observer: SurfaceObserver
+  }
+
   weak var delegate: (any TerminalHostDelegate)?
 
-  private var cachedController: TerminalController?
-  private var pendingTheme: TerminalTheme?
-  /// What the controller was last handed from the user's files, so coming to
-  /// the front rereads them and pushes only a change.
-  private var lastUserConfig = ""
-  private var activationObserver: (any NSObjectProtocol)?
-  /// The generated configs sit in a directory every copy of the build shares,
-  /// so a copy that handed over would sweep a running copy's file with its own.
-  private var ownsSharedFiles = false
-  private var surfaces: [TerminalSession.ID: TerminalView] = [:]
-  private var containers: [TerminalSession.ID: GhosttySurfaceContainer] = [:]
-  /// `TerminalView.delegate` is weak, so the per-surface observers must be
-  /// held here or callbacks stop arriving.
-  private var observers: [TerminalSession.ID: SurfaceObserver] = [:]
+  private let controllerOwner = GhosttyControllerOwner()
+  private var surfaces: [TerminalSession.ID: OpenSurface] = [:]
 
   /// Clears what an earlier run left, before any controller writes its own.
   /// See Docs/design/terminals.md.
   func claimSharedFiles() {
-    ownsSharedFiles = true
-    Self.removeGeneratedConfigs()
-  }
-
-  private var controller: TerminalController {
-    if let cachedController { return cachedController }
-    let base = GhosttyUserConfig.base()
-    let made = TerminalController(configSource: .generated(base))
-    GhosttyUserConfig.repair(made, base: base)
-    cachedController = made
-    lastUserConfig = base
-    if let pendingTheme { _ = made.setTheme(pendingTheme) }
-    // An edit to the user's file is made in another app, so switching back
-    // is when it can have changed.
-    activationObserver = NotificationCenter.default.addObserver(
-      forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main
-    ) { [weak self] _ in
-      MainActor.assumeIsolated { self?.reloadUserConfig() }
-    }
-    return made
-  }
-
-  private func reloadUserConfig() {
-    guard let cachedController else { return }
-    lastUserConfig = GhosttyUserConfig.reload(cachedController, over: lastUserConfig)
+    controllerOwner.claimSharedFiles()
   }
 
   func shutDown() {
-    guard ownsSharedFiles else { return }
-    Self.removeGeneratedConfigs()
-  }
-
-  private static func removeGeneratedConfigs() {
-    try? FileManager.default.removeItem(at: TerminalController.managedConfigDirectory)
+    controllerOwner.shutDown()
   }
 
   /// `MULTISHELL_TERMINAL_DEBUG=1` makes libghostty's wrapper report what it
@@ -77,7 +44,7 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
     guard surfaces[session.id] == nil else { return }
 
     let view = TerminalView(frame: .zero)
-    view.controller = controller
+    view.controller = controllerOwner.controller
     view.configuration = TerminalSurfaceOptions(
       backend: .exec,
       workingDirectory: session.workingDirectory.path,
@@ -88,15 +55,12 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
 
     let observer = SurfaceObserver(sessionID: session.id, host: self)
     view.delegate = observer
-    observers[session.id] = observer
-
-    let container = GhosttySurfaceContainer(surface: view)
-    surfaces[session.id] = view
-    containers[session.id] = container
+    surfaces[session.id] = OpenSurface(
+      view: view, container: GhosttySurfaceContainer(surface: view), observer: observer)
   }
 
   /// libghostty's own zsh startup file, entered before ours so its marks and
-  /// titles are written; see `ShellLaunch.zshIntegration`.
+  /// titles are written; see `ShellLaunch.zshEnvironment`.
   private static let zshBootstrap: URL? = GhosttyRuntimeResources.directoryURL?
     .appendingPathComponent("shell-integration/zsh", isDirectory: true)
 
@@ -109,32 +73,31 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
   }
 
   func close(_ id: TerminalSession.ID) {
-    observers[id] = nil
-    containers.removeValue(forKey: id)?.removeFromSuperview()
+    guard let surface = surfaces.removeValue(forKey: id) else { return }
+    surface.container.removeFromSuperview()
     // Detaching the controller closes the pty rather than waiting on SwiftUI
     // to let the view go. Next turn: this runs inside a close callback.
-    guard let view = surfaces.removeValue(forKey: id) else { return }
-    DispatchQueue.main.async { view.controller = nil }
+    DispatchQueue.main.async { surface.view.controller = nil }
   }
 
   func view(for id: TerminalSession.ID) -> NSView? {
-    containers[id]
+    surfaces[id]?.container
   }
 
   /// libghostty frames this as a paste itself. `false` means the surface is
   /// not created yet, which a session with no shell running is.
   @discardableResult
   func paste(_ text: String, into id: TerminalSession.ID) -> Bool {
-    guard !text.isEmpty, let view = surfaces[id] else { return false }
+    guard !text.isEmpty, let view = surfaces[id]?.view else { return false }
     return view.paste(text: text)
   }
 
   func focus(_ id: TerminalSession.ID) {
-    surfaces[id]?.takeFirstResponder()
+    surfaces[id]?.view.takeFirstResponder()
   }
 
   func search(_ command: TerminalSearch, in id: TerminalSession.ID) -> Bool {
-    guard let view = surfaces[id] else { return false }
+    guard let view = surfaces[id]?.view else { return false }
     var performed = true
     for action in GhosttySearchActions.actions(for: command) {
       performed = view.performBindingAction(action) && performed
@@ -143,26 +106,18 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
   }
 
   func apply(_ theme: Theme, appearance: Appearance) {
-    let configuration = GhosttyThemeConfig.configuration(theme, appearance)
-    // Both slots get the same config: the user picked a theme, so the
-    // terminal should not flip with the system appearance.
-    let applied = TerminalTheme(light: configuration, dark: configuration)
-    pendingTheme = applied
-    // Held rather than pushed where there is no controller yet, so a theme
-    // at launch does not build one before the socket is claimed.
-    guard let cachedController else { return }
-    _ = cachedController.setTheme(applied)
+    controllerOwner.apply(theme, appearance: appearance)
   }
 
   fileprivate func surfaceRetitled(_ id: TerminalSession.ID, to title: String) {
     delegate?.terminalHost(self, didRetitle: id, to: title)
   }
 
-  fileprivate func surfaceClosed(_ id: TerminalSession.ID) {
+  fileprivate func surfaceExited(_ id: TerminalSession.ID) {
     delegate?.terminalHost(self, didExit: id)
   }
 
-  fileprivate func surfaceRang(_ id: TerminalSession.ID) {
+  fileprivate func surfaceSawActivity(_ id: TerminalSession.ID) {
     delegate?.terminalHost(self, didSeeActivityIn: id)
   }
 
@@ -175,7 +130,7 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
   /// SwiftUI's own update, where a store write is undefined behaviour.
   fileprivate func surfaceFocused(_ id: TerminalSession.ID) {
     Task { @MainActor [weak self] in
-      guard let self, let view = surfaces[id], Self.hasKeyboard(view) else { return }
+      guard let self, let view = surfaces[id]?.view, Self.hasKeyboard(view) else { return }
       delegate?.terminalHost(self, didFocus: id)
     }
   }
@@ -212,11 +167,11 @@ private final class SurfaceObserver:
   }
 
   func terminalDidClose(processAlive: Bool) {
-    host?.surfaceClosed(sessionID)
+    host?.surfaceExited(sessionID)
   }
 
   func terminalDidRingBell() {
-    host?.surfaceRang(sessionID)
+    host?.surfaceSawActivity(sessionID)
   }
 
   /// Needs shell integration in the child shell, which zsh and bash get and

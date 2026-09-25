@@ -18,7 +18,7 @@ public struct SharedSettingsSnapshot: Equatable, Sendable {
   /// nothing about trust, so a launch opens with no queue of questions.
   public var hasBeenRead: Bool
 
-  public init(
+  init(
     asWritten: SharedProjectSettings? = nil, confined: SharedProjectSettings? = nil,
     modificationDate: Date = .distantPast, problem: String? = nil, hasBeenRead: Bool = false
   ) {

@@ -2,7 +2,7 @@ import AppKit
 
 /// Answers `hitTest` only while a vertical scroll is routed, so clicks, drags
 /// and a sideways scroll reach what is underneath untouched.
-final class SidewaysWheelView: UnspokenView {
+final class SidewaysWheelView: AccessibilityHiddenView {
   var reference: ScrollerReference?
 
   override func hitTest(_ point: NSPoint) -> NSView? {

@@ -52,7 +52,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
 
   /// Shell override by path. `nil` follows the global;
   /// `ShellCatalogue.loginShellID` means `$SHELL` here whatever it says.
-  public var defaultShell: String?
+  public var preferredShellID: String?
 
   /// The sidebar glyph: an SF Symbol name from `ProjectIcon.symbols`. `nil`,
   /// or any other string, draws the folder.
@@ -63,7 +63,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
 
   /// One answer per `.multishell.json`, against the sha256 of its bytes; see
   /// settings.md.
-  var sharedSettingsDecisions: [SharedSettingsDecision]
+  var trustDecisions: [TrustDecision]
 
   public init(
     worktreeDirectory: String? = nil,
@@ -83,10 +83,10 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     opensTerminalOnCreate: Bool? = nil,
     worktreeSortOrder: WorktreeSortOrder? = nil,
     showsActiveWorktreesFirst: Bool? = nil,
-    defaultShell: String? = nil,
+    preferredShellID: String? = nil,
     iconGlyph: String? = nil,
     iconTint: Int? = nil,
-    sharedSettingsDecisions: [SharedSettingsDecision] = []
+    trustDecisions: [TrustDecision] = []
   ) {
     self.worktreeDirectory = worktreeDirectory
     self.branchPrefix = branchPrefix
@@ -105,22 +105,23 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     self.opensTerminalOnCreate = opensTerminalOnCreate
     self.worktreeSortOrder = worktreeSortOrder
     self.showsActiveWorktreesFirst = showsActiveWorktreesFirst
-    self.defaultShell = defaultShell
+    self.preferredShellID = preferredShellID
     self.iconGlyph = iconGlyph
-    self.iconTint = ProjectIcon.validTint(iconTint)
-    self.sharedSettingsDecisions = sharedSettingsDecisions
+    self.iconTint = ProjectIcon.usableTint(iconTint)
+    self.trustDecisions = trustDecisions
   }
 
   /// The answers keep the key they had when they covered hooks alone, as a new
-  /// one would drop every answer already given.
+  /// one would drop every answer already given; the shell keeps its old key too.
   private enum CodingKeys: String, CodingKey {
     case worktreeDirectory, branchPrefix, defaultBranch
     case preCreateHook, postCreateHook, preDeleteHook, postDeleteHook
     case linkedPaths, copiedPaths
     case preferredAgentID, agentFlags, autoStartAgent, autoStartAgentOnCreate
     case opensTerminalOnSelect, worktreeSortOrder, showsActiveWorktreesFirst, opensTerminalOnCreate
-    case defaultShell, iconGlyph, iconTint
-    case sharedSettingsDecisions = "sharedHooks"
+    case preferredShellID = "defaultShell"
+    case iconGlyph, iconTint
+    case trustDecisions = "sharedHooks"
   }
 
   /// `""` overrides to "none" for the four fields with no other spelling for
@@ -136,9 +137,9 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     postDeleteHook = try container.decode(String.self, forKey: .postDeleteHook, or: "")
     linkedPaths = try container.decode(String.self, forKey: .linkedPaths, or: "")
     copiedPaths = try container.decode(String.self, forKey: .copiedPaths, or: "")
-    preferredAgentID = Self.override(
+    preferredAgentID = Self.nonEmpty(
       try container.decodeIfPresent(String.self, forKey: .preferredAgentID))
-    // No `override(_:)`: `""` is this field's only way to say "no flags here".
+    // No `nonEmpty(_:)`: `""` is this field's only way to say "no flags here".
     agentFlags = try container.decodeIfPresent(String.self, forKey: .agentFlags)
     autoStartAgent = try container.decodeIfPresent(Bool.self, forKey: .autoStartAgent)
     // Absent is "follow the global", not "what `autoStartAgent` says": seeding
@@ -152,17 +153,18 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
       WorktreeSortOrder.self, forKey: .worktreeSortOrder)
     showsActiveWorktreesFirst = try container.decodeIfPresent(
       Bool.self, forKey: .showsActiveWorktreesFirst)
-    defaultShell = Self.override(try container.decodeIfPresent(String.self, forKey: .defaultShell))
-    iconGlyph = Self.override(try container.decodeIfPresent(String.self, forKey: .iconGlyph))
+    preferredShellID = Self.nonEmpty(
+      try container.decodeIfPresent(String.self, forKey: .preferredShellID))
+    iconGlyph = Self.nonEmpty(try container.decodeIfPresent(String.self, forKey: .iconGlyph))
     // Tolerated: a tint that is not a number costs the tint, not the file.
-    iconTint = ProjectIcon.validTint(container.decodeTolerantly(Int.self, forKey: .iconTint))
+    iconTint = ProjectIcon.usableTint(container.decodeTolerantly(Int.self, forKey: .iconTint))
     // Lossy: an answer that will not decode costs that answer and not the
     // project's others, and its hooks are asked about again.
-    sharedSettingsDecisions = container.decodeLossy(
-      SharedSettingsDecision.self, forKey: .sharedSettingsDecisions)
+    trustDecisions = container.decodeLossy(
+      TrustDecision.self, forKey: .trustDecisions)
   }
 
-  private static func override(_ value: String?) -> String? {
+  private static func nonEmpty(_ value: String?) -> String? {
     guard let value, !value.isEmpty else { return nil }
     return value
   }
@@ -186,7 +188,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     result.showsActiveWorktreesFirst =
       showsActiveWorktreesFirst ?? shared.showsActiveWorktreesFirst
     result.iconGlyph = result.iconGlyph ?? ProjectIcon.normalizedGlyph(shared.iconGlyph)
-    result.iconTint = iconTint ?? ProjectIcon.validTint(shared.iconTint)
+    result.iconTint = iconTint ?? ProjectIcon.usableTint(shared.iconTint)
     result.preCreateHook = preCreateHook.isEmpty ? shared.preCreateHook ?? "" : preCreateHook
     result.postCreateHook = postCreateHook.isEmpty ? shared.postCreateHook ?? "" : postCreateHook
     result.preDeleteHook = preDeleteHook.isEmpty ? shared.preDeleteHook ?? "" : preDeleteHook
@@ -198,7 +200,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   }
 
   /// The project's value where it has one, the default otherwise.
-  public func effective(defaults: WorktreeSettings) -> WorktreeSettings {
+  public func effectiveWorktreeSettings(defaults: WorktreeSettings) -> WorktreeSettings {
     WorktreeSettings(
       worktreeDirectory: worktreeDirectory?.trimmingCharacters(in: .whitespaces)
         ?? defaults.worktreeDirectory,

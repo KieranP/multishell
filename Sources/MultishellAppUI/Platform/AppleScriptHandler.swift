@@ -6,7 +6,7 @@ import Foundation
 enum AppleScriptHandler {
   /// Links `/usr/local/bin/multishell` to the stable link. The one script
   /// this app runs with administrator rights.
-  static let installCommandLineTool = """
+  static let installToolScript = """
     on installTool(target, link)
       do shell script "mkdir -p /usr/local/bin && ln -sf " & quoted form of target & " " ¬
         & quoted form of link with administrator privileges

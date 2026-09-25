@@ -25,7 +25,7 @@ struct AgentBoardView: View {
       // board is for, where a page says only that it is not working.
       scrollingColumns(board, metrics: metrics)
       if board.isEmpty {
-        AgentBoardHint(theme: theme, metrics: metrics)
+        AgentBoardEmptyHint(theme: theme, metrics: metrics)
       }
     }
     .background(theme.backgroundColor)

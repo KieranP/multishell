@@ -25,9 +25,9 @@ struct ShellIntegrationTests {
     let written = try FileManager.default.contentsOfDirectory(atPath: zsh.path)
     #expect(Set(written) == [".zshenv", ".zprofile", ".zshrc"])
     let zshrc = try String(contentsOf: zsh.appendingPathComponent(".zshrc"), encoding: .utf8)
-    #expect(zshrc == ShellStateHooks.zshIntegrationFiles(helper: "/new/multishell")[".zshrc"])
+    #expect(zshrc == ShellStateHooks.zshIntegrationScripts(helper: "/new/multishell")[".zshrc"])
     #expect(!zshrc.contains("/old/multishell"), "a moved bundle's path is replaced, not kept")
     let bash = try String(contentsOf: bashInit, encoding: .utf8)
-    #expect(bash == ShellStateHooks.bashInitFile(helper: "/new/multishell"))
+    #expect(bash == ShellStateHooks.bashInitScript(helper: "/new/multishell"))
   }
 }

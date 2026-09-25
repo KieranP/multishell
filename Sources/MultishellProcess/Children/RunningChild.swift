@@ -6,7 +6,7 @@ import Synchronization
 final class RunningChild: Sendable {
   private let state = Mutex<(pid: pid_t, isRunning: Bool)>((0, false))
 
-  var isRunning: Bool { signalling { _ in } != nil }
+  var isRunning: Bool { withLivePID { _ in } != nil }
 
   func started(_ pid: pid_t) {
     state.withLock { $0 = (pid, true) }
@@ -18,7 +18,7 @@ final class RunningChild: Sendable {
 
   /// Runs `body` with the pid while the child is alive, under the lock
   /// `exited()` takes, so the pid cannot be reaped and reused meanwhile.
-  func signalling<Result: Sendable>(_ body: (pid_t) -> Result) -> Result? {
+  func withLivePID<Result: Sendable>(_ body: (pid_t) -> Result) -> Result? {
     state.withLock { state in
       guard state.isRunning, !Self.hasExited(state.pid) else { return nil }
       return body(state.pid)

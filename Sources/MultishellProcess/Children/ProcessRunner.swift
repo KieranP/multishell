@@ -1,5 +1,4 @@
 import Foundation
-import Subprocess
 import System
 
 /// Runs a child process and captures its output.
@@ -41,80 +40,83 @@ public struct ProcessRunner: Sendable {
     stopper: ProcessStopper? = nil
   ) async throws -> ProcessOutput {
     let stopper = stopper ?? ProcessStopper()
-    let nullInput = try DetachedLaunch.NullDevice()
+    let nullInput = try NullDevice()
     defer { nullInput.close() }
-    let outPipe = try PipeBuffer.makePipe()
-    let errPipe: (reading: FileHandle, writing: FileDescriptor)
-    do {
-      errPipe = try PipeBuffer.makePipe()
-    } catch {
-      try? outPipe.reading.close()
-      try? outPipe.writing.close()
-      throw error
-    }
+    let (outputPipe, errorPipe) = try Self.makePipePair()
 
     // Ours, not Subprocess's, which traps at the descriptor limit; see
     // dependencies.md. Both drain at once, or one fills and blocks.
     let drained = DispatchGroup()
-    let out = PipeBuffer(outPipe.reading, group: drained)
-    let err = PipeBuffer(errPipe.reading, group: drained)
+    let standardOutput = PipeBuffer(outputPipe.reading, group: drained)
+    let standardError = PipeBuffer(errorPipe.reading, group: drained)
     let child = RunningChild()
 
-    let status: TerminationStatus
+    let status: Int32
     do {
       // The write ends are Subprocess's to close, failure or not.
-      let (outWriting, errWriting) = (outPipe.writing, errPipe.writing)
-      status = try await DetachedLaunch.shielded {
-        try await Subprocess.run(
-          .path(FilePath(executable.path)), arguments: Arguments(arguments),
-          environment: DetachedLaunch.environment(overriding: environment),
-          workingDirectory: FilePath(directory.path),
-          platformOptions: DetachedLaunch.platformOptions,
-          input: .fileDescriptor(nullInput.descriptor, closeAfterSpawningProcess: false),
-          output: .fileDescriptor(outWriting, closeAfterSpawningProcess: true),
-          error: .fileDescriptor(errWriting, closeAfterSpawningProcess: true)
-        ) { execution in
-          nullInput.close()
-          child.started(execution.processIdentifier.value)
-          stopper.attach(child)
-          if let timeout { Self.arm(timeout, for: child, stopper: stopper) }
-          // Marked before Subprocess reaps it, so no stop signals a reused pid.
-          await child.waitForExit()
-          child.exited()
-        }.terminationStatus
+      status = try await DetachedLaunch.run(
+        executable, arguments, in: directory, environment: environment,
+        input: nullInput.descriptor, output: outputPipe.writing, error: errorPipe.writing,
+        closingOutputsAfterSpawn: true
+      ) { pid in
+        nullInput.close()
+        child.started(pid)
+        stopper.attach(child)
+        if let timeout { Self.armTimeout(timeout, for: child, stopper: stopper) }
+        // Marked before Subprocess reaps it, so no stop signals a reused pid.
+        await child.waitForExit()
+        child.exited()
       }
     } catch {
       // A missing executable or directory fails here, and no EOF will come.
-      out.cancel()
-      err.cancel()
+      standardOutput.cancel()
+      standardError.cancel()
       throw error
     }
 
-    await Self.drain(out, err, group: drained)
+    await Self.awaitEOF(standardOutput, standardError, group: drained)
     return ProcessOutput(
-      standardOutput: String(decoding: out.data, as: UTF8.self),
-      standardError: String(decoding: err.data, as: UTF8.self),
-      status: DetachedLaunch.exitCode(of: status),
+      standardOutput: String(decoding: standardOutput.data, as: UTF8.self),
+      standardError: String(decoding: standardError.data, as: UTF8.self),
+      status: status,
       stop: stopper.reason
     )
   }
 
+  /// Both pipes or neither: the first is closed where the second fails.
+  private static func makePipePair() throws -> (
+    output: PipeBuffer.PipeEnds, error: PipeBuffer.PipeEnds
+  ) {
+    let output = try PipeBuffer.makePipe()
+    do {
+      return (output, try PipeBuffer.makePipe())
+    } catch {
+      try? output.reading.close()
+      try? output.writing.close()
+      throw error
+    }
+  }
+
   /// A descendant that inherited the pipes holds them open after the child
   /// is gone, so EOF may never come; the buffer is already drained.
-  static func drain(_ out: PipeBuffer, _ err: PipeBuffer, group: DispatchGroup) async {
+  static func awaitEOF(
+    _ standardOutput: PipeBuffer, _ standardError: PipeBuffer, group: DispatchGroup
+  ) async {
     // Weak, or each run's read ends stay open until the timer fires. An
     // unfinished buffer keeps itself alive through its readability handler.
     DispatchQueue.global().asyncAfter(deadline: .now() + eofGraceAfterExit) {
-      [weak out, weak err] in
-      out?.finish()
-      err?.finish()
+      [weak standardOutput, weak standardError] in
+      standardOutput?.finish()
+      standardError?.finish()
     }
     await withCheckedContinuation { continuation in
       group.notify(queue: .global()) { continuation.resume() }
     }
   }
 
-  private static func arm(_ timeout: Duration, for child: RunningChild, stopper: ProcessStopper) {
+  private static func armTimeout(
+    _ timeout: Duration, for child: RunningChild, stopper: ProcessStopper
+  ) {
     let seconds =
       Double(timeout.components.seconds) + Double(timeout.components.attoseconds) / 1e18
     DispatchQueue.global().asyncAfter(deadline: .now() + seconds) {

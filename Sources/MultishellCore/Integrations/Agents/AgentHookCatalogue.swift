@@ -31,7 +31,7 @@ public enum AgentHookCatalogue {
 
   /// Whether a hook line is ours. Whole words, not substrings: the user's own
   /// `multishell-agent-hook-logger` spells both names and Remove used to eat it.
-  static func isMultishellHook(_ command: String) -> Bool {
+  static func isOurHook(_ command: String) -> Bool {
     let shellPunctuation = CharacterSet(charactersIn: ";&|()")
     let words =
       command
@@ -42,7 +42,7 @@ public enum AgentHookCatalogue {
     return runsTheHelper && namesASubcommand
   }
 
-  public static func integration(for id: String) -> AgentHookIntegration? {
+  public static func integration(_ id: String) -> AgentHookIntegration? {
     integrations.first { $0.id == id }
   }
 
@@ -59,8 +59,8 @@ public enum AgentHookCatalogue {
     claude, codex, gemini, copilot, openCode,
   ]
 
-  /// Which of Claude's notification types announce rather than ask: fifteen
-  /// in its list and two sent outside it. A deny list; see agents.md.
+  /// The notification types of Claude's that announce rather than ask, out of
+  /// fifteen in its list and two sent outside it. A deny list; see agents.md.
   static let claudeAnnouncements: Set<String> = [
     "idle_prompt", "agent_completed", "auth_success", "quota_auto_resume_fired",
     "computer_use_enter", "computer_use_exit", "elicitation_complete", "elicitation_response",
@@ -75,7 +75,7 @@ public enum AgentHookCatalogue {
     displayPath: "~/.claude/settings.json",
     events: [
       AgentHookEvent("SessionStart", .idle, startsSession: true),
-      AgentHookEvent("UserPromptSubmit", .running, isTurnStart: true),
+      AgentHookEvent("UserPromptSubmit", .running, isPrompt: true),
       AgentHookEvent("PreToolUse", .running),
       AgentHookEvent("PostToolUse", .running),
       AgentHookEvent("PermissionRequest", .attention, onlyWhenPrompting: true, silent: true),
@@ -85,7 +85,7 @@ public enum AgentHookCatalogue {
       AgentHookEvent("SubagentStart", .running, subagentPhase: .started),
       AgentHookEvent("SubagentStop", .running, subagentPhase: .ended),
       AgentHookEvent("Stop", .done),
-      AgentHookEvent("StopFailure", .error),
+      AgentHookEvent("StopFailure", .failed),
       AgentHookEvent("SessionEnd", .idle),
     ],
     format: .sharedSettings(millisecondTimeout: false),
@@ -103,7 +103,7 @@ public enum AgentHookCatalogue {
     displayPath: "~/.codex/hooks.json",
     events: [
       AgentHookEvent("SessionStart", .idle, startsSession: true),
-      AgentHookEvent("UserPromptSubmit", .running, isTurnStart: true),
+      AgentHookEvent("UserPromptSubmit", .running, isPrompt: true),
       AgentHookEvent("PreToolUse", .running),
       AgentHookEvent("PostToolUse", .running),
       AgentHookEvent("PermissionRequest", .attention, onlyWhenPrompting: true, silent: true),
@@ -127,7 +127,7 @@ public enum AgentHookCatalogue {
     displayPath: "~/.gemini/settings.json",
     events: [
       AgentHookEvent("SessionStart", .idle, startsSession: true),
-      AgentHookEvent("BeforeAgent", .running, isTurnStart: true),
+      AgentHookEvent("BeforeAgent", .running, isPrompt: true),
       AgentHookEvent("BeforeTool", .running),
       AgentHookEvent("AfterTool", .running),
       AgentHookEvent("Notification", .attention),
@@ -144,7 +144,7 @@ public enum AgentHookCatalogue {
     displayPath: "~/.copilot/hooks/multishell.json",
     events: [
       AgentHookEvent("SessionStart", .idle, startsSession: true),
-      AgentHookEvent("UserPromptSubmit", .running, isTurnStart: true),
+      AgentHookEvent("UserPromptSubmit", .running, isPrompt: true),
       AgentHookEvent("PreToolUse", .running),
       AgentHookEvent("PostToolUse", .running),
       AgentHookEvent(

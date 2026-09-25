@@ -1,6 +1,6 @@
 public struct ProcessOutput: Sendable {
   public let standardOutput: String
-  public let standardError: String
+  let standardError: String
   public let status: Int32
   /// Set when this side ended the child: the timeout ran out, or the
   /// caller's `ProcessStopper` was used. `status` is then the signal's.

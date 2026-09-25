@@ -1,8 +1,9 @@
 import Foundation
-import MultishellCore
 import TestScratch
 import TestSupport
+import Testing
 
+@testable import MultishellCore
 @testable import MultishellGitKit
 
 /// A throwaway repository under the temp directory, removed on `tearDown`.
@@ -59,7 +60,12 @@ struct RepositoryFixture {
   var coordinator: WorktreeCoordinator {
     WorktreeCoordinator(git: WorktreeGit(runner: git, settlesNewIndex: false))
   }
-  var trees: WorktreeSettings { WorktreeSettings(worktreeDirectory: "../trees") }
+  var worktreeSettings: WorktreeSettings { WorktreeSettings(worktreeDirectory: "../trees") }
+
+  func worktree(onBranch branch: String, in project: Project? = nil) async throws -> Worktree {
+    try #require(
+      try await coordinator.git.list(project ?? self.project).first { $0.branch == branch })
+  }
 
   func tearDown() {
     Scratch.remove(root)

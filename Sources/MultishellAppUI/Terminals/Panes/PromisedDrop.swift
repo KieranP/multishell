@@ -18,14 +18,14 @@ enum PromisedDrop {
 
   /// How long a source is given before the drop is answered without it: room
   /// for a large file, and a bound on one that never answers.
-  static let patience: TimeInterval = 120
+  static let defaultPatience: TimeInterval = 120
 
   /// Takes the copies, then hands over what arrived. What the source failed
   /// to write is left out, so the rest of a drag still delivers.
   static func receive(
     _ receivers: [NSFilePromiseReceiver],
     into destination: URL? = try? PromisedDropCopies.makeDirectory(),
-    givingUpAfter patience: TimeInterval = patience,
+    givingUpAfter patience: TimeInterval = defaultPatience,
     then deliver: @escaping ([URL]) -> Void
   ) {
     guard let directory = destination else { return deliver([]) }
@@ -35,6 +35,7 @@ enum PromisedDrop {
     // arrives in would linger until the sweep. It is this drag's own.
     let collector = PromisedDropCollector(
       expecting: receivers.map { _ in 1 }, recounting: promised,
+      naming: { receivers[$0].fileNames },
       deliver: { urls in
         if urls.isEmpty { try? FileManager.default.removeItem(at: directory) }
         deliver(urls)

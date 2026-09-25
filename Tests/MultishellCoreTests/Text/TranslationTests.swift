@@ -63,6 +63,14 @@ struct TranslationTests {
     #expect(t("quit.terminals-open", 2).hasPrefix("2 terminals"))
   }
 
+  @Test func everyInfoTextFitsTwoHundredCharactersFilledIn() throws {
+    for (key, english) in try Self.catalogue() where key.hasSuffix("-info") {
+      let filled = english.replacing(/%([0-9]+\$)?@/, with: SharedProjectSettings.fileName)
+        .replacing(/%([0-9]+\$)?d/, with: "10")
+      #expect(filled.count <= 200, "\(key) is \(filled.count) characters")
+    }
+  }
+
   /// `NSDictionary` silently keeps one of a key written twice, so the duplicate check reads
   /// the raw file and counts on the convention of one entry per line.
   @Test func noEntryIsBlankOrWrittenTwice() throws {

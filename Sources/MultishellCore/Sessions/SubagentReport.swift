@@ -33,9 +33,8 @@ public struct SubagentReport: Codable, Hashable, Sendable {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     let id = try container.decode(String.self, forKey: .id)
     self.id = id.count <= SessionStateReport.maximumIdentifierLength ? id : Self.anonymousID
-    type = try container.decodeIfPresent(String.self, forKey: .type).map {
-      $0.count > Self.maximumTypeLength ? $0.prefix(Self.maximumTypeLength) + "…" : $0
-    }
+    type = try container.decodeIfPresent(String.self, forKey: .type)?
+      .truncated(to: Self.maximumTypeLength)
     phase = try container.decode(Phase.self, forKey: .phase)
   }
 }

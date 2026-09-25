@@ -70,9 +70,15 @@ public struct AgentHookIntegration: Identifiable, Sendable {
     return false
   }
 
+  /// Whether a payload is one of the asked-for events, which the helper asks
+  /// before it walks its ancestry for a pid.
+  public func handles(_ payload: AgentHookPayload) -> Bool {
+    event(for: payload) != nil
+  }
+
   /// Which asked-for event a payload is, or nothing where it says nothing
   /// about waiting. The hook exits quietly on nothing.
-  public func event(for payload: AgentHookPayload) -> AgentHookEvent? {
+  func event(for payload: AgentHookPayload) -> AgentHookEvent? {
     guard let event = events.first(where: { $0.reportedName == payload.eventName }) else {
       return nil
     }
@@ -91,14 +97,14 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   /// What the helper sends for a payload, or nothing where it says nothing.
   /// `backgroundShells` walks the processes, so it is asked only at a Stop.
   public func report(
-    for payload: AgentHookPayload, session: TerminalSession.ID?, cwd: String?, pid: Int32?,
+    for payload: AgentHookPayload, sessionID: TerminalSession.ID?, cwd: String?, pid: Int32?,
     backgroundShells: (_ marker: String) -> [Int32]? = { _ in nil }
   ) -> SessionStateReport? {
     guard let event = event(for: payload) else { return nil }
     let isStop = event.state == .done
     return SessionStateReport(
       state: event.state,
-      sessionID: session,
+      sessionID: sessionID,
       cwd: payload.cwd ?? cwd,
       pid: pid,
       message: payload.message,
@@ -110,55 +116,5 @@ public struct AgentHookIntegration: Identifiable, Sendable {
       backgroundShells: isStop ? backgroundShellMarker.flatMap(backgroundShells) : nil,
       resumesAfterWorkers: isStop && resumesAfterWorkers ? true : nil,
       conversationID: workersAreConversations ? payload.conversationID : nil)
-  }
-
-  /// The hooks as the file spells them: the whole file for one of ours, the
-  /// object to merge for a file of the user's.
-  func entries(helper: String = AgentHookCatalogue.helperReference) -> [String: Any] {
-    switch format {
-    case .sharedSettings:
-      var hooks: [String: Any] = [:]
-      for event in events { hooks[event.name] = [group(event, helper: helper)] }
-      return ["hooks": hooks]
-    case .ownHookFile:
-      var hooks: [String: Any] = [:]
-      for event in events { hooks[event.name] = [handler(event, helper: helper)] }
-      return ["version": 1, "hooks": hooks]
-    case .plugin:
-      return [:]
-    }
-  }
-
-  /// What the settings window shows and the clipboard gets.
-  public func snippet(helper: String = AgentHookCatalogue.helperReference) -> String {
-    switch format {
-    case .plugin: OpenCodePlugin.source(helper: helper)
-    case .sharedSettings, .ownHookFile: AgentSettingsFile.render(entries(helper: helper))
-    }
-  }
-
-  /// A matcher goes on the group, where the file has groups, and on the
-  /// hook itself where it does not.
-  func group(_ event: AgentHookEvent, helper: String) -> [String: Any] {
-    var group: [String: Any] = ["hooks": [handler(event, helper: helper)]]
-    if let matcher = event.matcher { group["matcher"] = matcher }
-    return group
-  }
-
-  private func handler(_ event: AgentHookEvent, helper: String) -> [String: Any] {
-    var handler: [String: Any] = [
-      "type": "command", "command": AgentHookCatalogue.command(agent: id, helper: helper),
-    ]
-    let timeout = event.timeoutSeconds ?? AgentHookCatalogue.timeoutSeconds
-    switch format {
-    case .sharedSettings(let millisecondTimeout):
-      handler["timeout"] = millisecondTimeout ? timeout * 1000 : timeout
-    case .ownHookFile:
-      handler["timeoutSec"] = timeout
-      if let matcher = event.matcher { handler["matcher"] = matcher }
-    case .plugin:
-      break
-    }
-    return handler
   }
 }

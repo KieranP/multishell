@@ -21,7 +21,7 @@ struct MultishellApp: App {
       RootView(model: model, platform: platform)
         .frame(minWidth: 720, minHeight: 420)
         .task {
-          appDelegate.openTerminalCount = { model.liveTerminalCount }
+          appDelegate.liveTerminalCount = { model.liveTerminalCount }
           appDelegate.workingAgentCount = { model.workingAgentCount }
           appDelegate.willTerminate = {
             model.shutDown()
@@ -36,7 +36,7 @@ struct MultishellApp: App {
     .commands { MultishellCommands(model: model) }
 
     Settings {
-      SettingsView(model: model, platform: platform)
+      AppSettingsWindow(model: model, platform: platform)
     }
 
     // One settings window, retargeted from the sidebar. A `Window`, not a

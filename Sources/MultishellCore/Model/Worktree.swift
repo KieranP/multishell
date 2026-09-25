@@ -3,7 +3,7 @@ import Foundation
 /// A linked checkout belonging to a `Project`. Identity is the path, these
 /// being rediscovered from `git worktree list` on every refresh.
 public struct Worktree: Identifiable, Codable, Hashable, Sendable {
-  /// Normalised by `Project.directory` in both initialisers; see `Project`.
+  /// Normalised by `URL.normalizedDirectory` in both initialisers; see `Project`.
   public private(set) var path: URL
   public var projectID: Project.ID
   public var head: String
@@ -24,7 +24,7 @@ public struct Worktree: Identifiable, Codable, Hashable, Sendable {
   /// directory normalisation from `init` is applied here too.
   public init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
-    self.path = Project.directory(try container.decode(URL.self, forKey: .path))
+    self.path = try container.decode(URL.self, forKey: .path).normalizedDirectory
     self.projectID = try container.decode(Project.ID.self, forKey: .projectID)
     self.head = try container.decode(String.self, forKey: .head, or: "")
     self.branch = try container.decodeIfPresent(String.self, forKey: .branch)
@@ -60,7 +60,7 @@ public struct Worktree: Identifiable, Codable, Hashable, Sendable {
     isBare: Bool = false,
     createdAt: Date? = nil
   ) {
-    self.path = Project.directory(path)
+    self.path = path.normalizedDirectory
     self.projectID = projectID
     self.head = head
     self.branch = branch

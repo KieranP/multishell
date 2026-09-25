@@ -9,7 +9,7 @@ extension WorktreeGitTests {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
     let linked = try await repo.coordinator.create(
-      branch: "side", in: repo.project, settings: repo.trees)
+      branch: "side", in: repo.project, settings: repo.worktreeSettings)
     let subdirectory = repo.project.path.appendingPathComponent("Sources", isDirectory: true)
     try FileManager.default.createDirectory(at: subdirectory, withIntermediateDirectories: true)
 

@@ -15,8 +15,8 @@ struct ProjectSettingsTests {
       linkedPaths: "node_modules", copiedPaths: ".env", preferredAgentID: "codex",
       agentFlags: "--yolo", autoStartAgent: true, autoStartAgentOnCreate: true,
       opensTerminalOnSelect: true, opensTerminalOnCreate: true, worktreeSortOrder: .alphabetical,
-      showsActiveWorktreesFirst: true, defaultShell: "/bin/zsh", iconGlyph: "star", iconTint: 2,
-      sharedSettingsDecisions: [SharedSettingsDecision(digest: "beef", trusted: true)])
+      showsActiveWorktreesFirst: true, preferredShellID: "/bin/zsh", iconGlyph: "star", iconTint: 2,
+      trustDecisions: [TrustDecision(digest: "beef", trusted: true)])
     let fields = Mirror(reflecting: everyField).children.count
     let encoded = try JSONEncoder().encode(everyField)
     let keys = try #require(try JSONSerialization.jsonObject(with: encoded) as? [String: Any]).keys
@@ -25,12 +25,13 @@ struct ProjectSettingsTests {
   }
 
   @Test func nilFieldsFallBackToTheGlobalDefaults() {
-    let effective = ProjectSettings().effective(defaults: defaults)
+    let effective = ProjectSettings().effectiveWorktreeSettings(defaults: defaults)
     #expect(effective == defaults)
   }
 
   @Test func eachFieldOverridesIndependently() {
-    let effective = ProjectSettings(branchPrefix: "kieran/").effective(defaults: defaults)
+    let effective = ProjectSettings(branchPrefix: "kieran/").effectiveWorktreeSettings(
+      defaults: defaults)
     #expect(effective.worktreeDirectory == "/global/trees")
     #expect(effective.branchPrefix == "kieran/")
   }
@@ -38,7 +39,7 @@ struct ProjectSettingsTests {
   @Test func aWhitespaceOverrideMeansNone() {
     // The sheet stores a lone space to opt a project out of a global
     // prefix; it must not end up in the branch name.
-    let effective = ProjectSettings(branchPrefix: " ").effective(defaults: defaults)
+    let effective = ProjectSettings(branchPrefix: " ").effectiveWorktreeSettings(defaults: defaults)
     #expect(effective.branchPrefix == "")
     #expect(effective.qualifiedBranch("tabs") == "tabs")
   }
@@ -54,7 +55,9 @@ struct ProjectSettingsTests {
     #expect(settings.branchPrefix == "")
     #expect(settings.worktreeDirectory == "")
     #expect(settings.defaultBranch == "")
-    #expect(settings.effective(defaults: defaults).branchPrefix == "", "not the global's team/")
+    #expect(
+      settings.effectiveWorktreeSettings(defaults: defaults).branchPrefix == "",
+      "not the global's team/")
   }
 
   /// Read back by someone whose own global has a prefix, the file has to
@@ -71,7 +74,8 @@ struct ProjectSettingsTests {
     #expect(read.branchPrefix == "")
     // The reader leaves it alone, so the file's answer stands over a global
     // that has a prefix of its own.
-    let inEffect = ProjectSettings().layered(over: read).effective(defaults: defaults)
+    let inEffect = ProjectSettings().layered(over: read).effectiveWorktreeSettings(
+      defaults: defaults)
     #expect(inEffect.branchPrefix == "")
     #expect(inEffect.qualifiedBranch("tabs") == "tabs")
   }
@@ -83,7 +87,7 @@ struct ProjectSettingsTests {
     let settings = try JSONDecoder().decode(ProjectSettings.self, from: json)
 
     #expect(settings.preferredAgentID == nil)
-    #expect(settings.defaultShell == nil)
+    #expect(settings.preferredShellID == nil)
     #expect(settings.iconGlyph == nil)
   }
 
@@ -99,6 +103,6 @@ struct ProjectSettingsTests {
     let settings = try #require(restored.project(project.id)?.settings)
 
     #expect(settings.branchPrefix == "", "the project is still pinned to no prefix")
-    #expect(settings.effective(defaults: defaults).branchPrefix == "")
+    #expect(settings.effectiveWorktreeSettings(defaults: defaults).branchPrefix == "")
   }
 }

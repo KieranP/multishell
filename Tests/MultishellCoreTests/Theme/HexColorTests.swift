@@ -31,32 +31,4 @@ struct HexColorTests {
     #expect(HexColor.parse("-abcde") == nil)
   }
 
-  @Test func everyBuiltinThemeParsesCompletely() {
-    for theme in Theme.builtins {
-      #expect(
-        theme.ansi.allSatisfy { HexColor.parse($0) != nil }, "\(theme.id) has a bad ANSI colour")
-      #expect(HexColor.parse(theme.background) != nil)
-      #expect(HexColor.parse(theme.foreground) != nil)
-      #expect(HexColor.parse(theme.cursor) != nil)
-      #expect(HexColor.parse(theme.selectionBackground) != nil)
-      #expect(theme.focusRingRGB != nil, "\(theme.id) draws no focus ring")
-      #expect(
-        theme.focusRingRGB != theme.selectionRGB,
-        "\(theme.id) rings in its selection colour, which is mixed to sit under text")
-      #expect(
-        theme.inactivePaneOpacity > Theme.minimumInactivePaneOpacity
-          && theme.inactivePaneOpacity < 1,
-        "\(theme.id) fades unfocused panes by nothing, or by all")
-    }
-  }
-
-  @Test func oneAnsiSlotReadsAsTheWholeListDoesAndOneOutOfRangeIsGrey() throws {
-    var theme = try #require(Theme.builtins.first)
-    theme.ansi[3] = "not a colour"
-    let grey = RGB(red: 128, green: 128, blue: 128)
-
-    #expect(theme.ansi.indices.allSatisfy { theme.ansiRGB($0) == theme.ansiRGB[$0] })
-    #expect(theme.ansiRGB(3) == grey)
-    #expect(theme.ansiRGB(99) == grey)
-  }
 }

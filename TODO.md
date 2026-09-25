@@ -5,6 +5,9 @@ Most pressing first within each heading. A decision that gets made moves to
 
 ## Features
 
+- Double "Done" notification when subagent finishes, then main agent?
+- "New Shell Tab" in dropdown is missing icon.
+- "Show JSON/Plugin" is formatted badly, maybe we just get rid of it?
 - File tree and git changes diff in a right-hand panel.
 
 ## Refinements

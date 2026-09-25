@@ -1,9 +1,9 @@
 import Foundation
-import MultishellProcess
 import TestScratch
 import Testing
 
 @testable import MultishellCore
+@testable import MultishellProcess
 
 /// The generated zsh and bash files driven by real shells, reporting
 /// through the built helper to a socket standing in for the app.
@@ -13,32 +13,20 @@ struct HelperShellIntegrationTests {
     guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
     let listener = try ReportListener()
     defer { listener.stop() }
-    let path = listener.path
     let recorder = listener.recorder
 
-    let root = URL(fileURLWithPath: "/tmp")
-      .appendingPathComponent("ms-inject-\(UUID().uuidString)", isDirectory: true)
-    defer { try? FileManager.default.removeItem(at: root) }
-    let integration = root.appendingPathComponent("integration", isDirectory: true)
+    let root = try Scratch.directory("inject")
+    defer { Scratch.remove(root) }
+    let integration = try ShellTab.zshIntegrationDirectory(in: root)
     let userZdotdir = root.appendingPathComponent("user", isDirectory: true)
-    try FileManager.default.createDirectory(at: integration, withIntermediateDirectories: true)
     try FileManager.default.createDirectory(at: userZdotdir, withIntermediateDirectories: true)
-    for (name, contents) in try ShellStateHooks.zshIntegrationFiles(
-      helper: HelperBinary.require().path)
-    {
-      try contents.write(
-        to: integration.appendingPathComponent(name), atomically: true, encoding: .utf8)
-    }
     try "export MULTISHELL_USER_RC_LOADED=yes\n".write(
       to: userZdotdir.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
 
     let session = UUID()
-    var env = Scratch.shellEnvironment
+    var env = ShellTab.environment(socket: listener.path, session: session, worktree: "/w/repo")
     env["ZDOTDIR"] = integration.path
     env["MULTISHELL_USER_ZDOTDIR"] = userZdotdir.path
-    env["MULTISHELL_SOCKET"] = path.path
-    env["MULTISHELL_SESSION"] = session.uuidString
-    env["MULTISHELL_WORKTREE"] = "/w/repo"
     // Interactive zsh loads our .zshrc (which sources the user's and adds
     // the hooks); then drive the hooks around a good and a bad command.
     let script = """
@@ -60,7 +48,7 @@ struct HelperShellIntegrationTests {
     try await waitUntil { recorder.received.count >= 4 }
     let states = recorder.received.compactMap { SessionStateReport.parse($0)?.state }
     #expect(states.filter { $0 == .running }.count == 2, "\(states)")
-    #expect(states.contains(.done) && states.contains(.error), "\(states)")
+    #expect(states.contains(.done) && states.contains(.failed), "\(states)")
     #expect(SessionStateReport.parse(recorder.received.first ?? "")?.sessionID == session)
   }
 
@@ -68,12 +56,7 @@ struct HelperShellIntegrationTests {
     guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
     let root = try Scratch.directory("zsh-json")
     defer { Scratch.remove(root) }
-    let integration = root.appendingPathComponent("integration", isDirectory: true)
-    try FileManager.default.createDirectory(at: integration, withIntermediateDirectories: true)
-    for (name, contents) in ShellStateHooks.zshIntegrationFiles(helper: "/bin/echo") {
-      try contents.write(
-        to: integration.appendingPathComponent(name), atomically: true, encoding: .utf8)
-    }
+    let integration = try ShellTab.zshIntegrationDirectory(in: root, helper: "/bin/echo")
     var env = Scratch.shellEnvironment
     env["HOME"] = root.path
     env["ZDOTDIR"] = integration.path
@@ -101,31 +84,19 @@ struct HelperShellIntegrationTests {
 
     let listener = try ReportListener()
     defer { listener.stop() }
-    let path = listener.path
     let recorder = listener.recorder
 
-    let root = URL(fileURLWithPath: "/tmp")
-      .appendingPathComponent("ms-locale-\(UUID().uuidString)", isDirectory: true)
-    defer { try? FileManager.default.removeItem(at: root) }
-    let integration = root.appendingPathComponent("integration", isDirectory: true)
+    let root = try Scratch.directory("locale")
+    defer { Scratch.remove(root) }
+    let integration = try ShellTab.zshIntegrationDirectory(in: root)
     // Empty, so the chain does not reach the developer's own .zshrc, which
     // sets a locale of its own and would decide this test.
     let userZdotdir = root.appendingPathComponent("user", isDirectory: true)
-    try FileManager.default.createDirectory(at: integration, withIntermediateDirectories: true)
     try FileManager.default.createDirectory(at: userZdotdir, withIntermediateDirectories: true)
-    for (name, contents) in try ShellStateHooks.zshIntegrationFiles(
-      helper: HelperBinary.require().path)
-    {
-      try contents.write(
-        to: integration.appendingPathComponent(name), atomically: true, encoding: .utf8)
-    }
 
-    var env = Scratch.shellEnvironment
+    var env = ShellTab.environment(socket: listener.path, worktree: "/w/repo")
     env["ZDOTDIR"] = integration.path
     env["MULTISHELL_USER_ZDOTDIR"] = userZdotdir.path
-    env["MULTISHELL_SOCKET"] = path.path
-    env["MULTISHELL_SESSION"] = UUID().uuidString
-    env["MULTISHELL_WORKTREE"] = "/w/repo"
     env["LC_ALL"] = "de_DE.UTF-8"
     _ = try await ProcessRunner().capture(
       URL(fileURLWithPath: "/bin/zsh"),
@@ -145,22 +116,13 @@ struct HelperShellIntegrationTests {
   @Test func aCommaDecimalLocaleStillGivesBashASaneDuration() async throws {
     let listener = try ReportListener()
     defer { listener.stop() }
-    let path = listener.path
     let recorder = listener.recorder
 
-    let home = URL(fileURLWithPath: "/tmp")
-      .appendingPathComponent("ms-bashloc-\(UUID().uuidString)", isDirectory: true)
-    try FileManager.default.createDirectory(at: home, withIntermediateDirectories: true)
-    defer { try? FileManager.default.removeItem(at: home) }
-    let initFile = home.appendingPathComponent("init.bash")
-    try ShellStateHooks.bashInitFile(helper: HelperBinary.require().path)
-      .write(to: initFile, atomically: true, encoding: .utf8)
+    let home = try Scratch.directory("bashloc")
+    defer { Scratch.remove(home) }
+    let initFile = try ShellTab.bashInitFile(in: home)
 
-    var env = Scratch.shellEnvironment
-    env["HOME"] = home.path
-    env["MULTISHELL_SOCKET"] = path.path
-    env["MULTISHELL_SESSION"] = UUID().uuidString
-    env["MULTISHELL_WORKTREE"] = "/w/repo"
+    let env = ShellTab.environment(socket: listener.path, home: home, worktree: "/w/repo")
     let script = """
       EPOCHREALTIME='1700000000,250000'
       _multishell_command_started
@@ -183,25 +145,17 @@ struct HelperShellIntegrationTests {
   @Test func bashInitLoadsUserConfigAndReportsThroughInjectedHooks() async throws {
     let listener = try ReportListener()
     defer { listener.stop() }
-    let path = listener.path
     let recorder = listener.recorder
 
-    let home = URL(fileURLWithPath: "/tmp")
-      .appendingPathComponent("ms-bash-\(UUID().uuidString)", isDirectory: true)
-    try FileManager.default.createDirectory(at: home, withIntermediateDirectories: true)
-    defer { try? FileManager.default.removeItem(at: home) }
-    let initFile = home.appendingPathComponent("init.bash")
-    try ShellStateHooks.bashInitFile(helper: HelperBinary.require().path)
-      .write(to: initFile, atomically: true, encoding: .utf8)
+    let home = try Scratch.directory("bash")
+    defer { Scratch.remove(home) }
+    let initFile = try ShellTab.bashInitFile(in: home)
     try "export MULTISHELL_USER_RC_LOADED=yes\n".write(
       to: home.appendingPathComponent(".bashrc"), atomically: true, encoding: .utf8)
 
     let session = UUID()
-    var env = Scratch.shellEnvironment
-    env["HOME"] = home.path
-    env["MULTISHELL_SOCKET"] = path.path
-    env["MULTISHELL_SESSION"] = session.uuidString
-    env["MULTISHELL_WORKTREE"] = "/w/repo"
+    let env = ShellTab.environment(
+      socket: listener.path, session: session, home: home, worktree: "/w/repo")
     // An interactive bash reading our init in place of .bashrc, then the
     // hooks driven by hand around a passing and a failing command.
     let script = """
@@ -220,7 +174,7 @@ struct HelperShellIntegrationTests {
     try await waitUntil { recorder.received.count >= 4 }
     let states = recorder.received.compactMap { SessionStateReport.parse($0)?.state }
     #expect(states.filter { $0 == .running }.count == 2, "\(states)")
-    #expect(states.contains(.done) && states.contains(.error), "\(states)")
+    #expect(states.contains(.done) && states.contains(.failed), "\(states)")
     #expect(SessionStateReport.parse(recorder.received.first ?? "")?.sessionID == session)
     let durations = recorder.received.compactMap { SessionStateReport.parse($0)?.duration }
     #expect(durations.count == 2 && durations.allSatisfy { $0 >= 0 }, "\(durations)")
@@ -231,22 +185,13 @@ struct HelperShellIntegrationTests {
   @Test func bashKeepsItsDebugTrapAgainstOneInstalledAfterTheInit() async throws {
     let listener = try ReportListener()
     defer { listener.stop() }
-    let path = listener.path
     let recorder = listener.recorder
 
-    let home = URL(fileURLWithPath: "/tmp")
-      .appendingPathComponent("ms-bashtrap-\(UUID().uuidString)", isDirectory: true)
-    try FileManager.default.createDirectory(at: home, withIntermediateDirectories: true)
-    defer { try? FileManager.default.removeItem(at: home) }
-    let initFile = home.appendingPathComponent("init.bash")
-    try ShellStateHooks.bashInitFile(helper: HelperBinary.require().path)
-      .write(to: initFile, atomically: true, encoding: .utf8)
+    let home = try Scratch.directory("bashtrap")
+    defer { Scratch.remove(home) }
+    let initFile = try ShellTab.bashInitFile(in: home)
 
-    var env = Scratch.shellEnvironment
-    env["HOME"] = home.path
-    env["MULTISHELL_SOCKET"] = path.path
-    env["MULTISHELL_SESSION"] = UUID().uuidString
-    env["MULTISHELL_WORKTREE"] = "/w/repo"
+    let env = ShellTab.environment(socket: listener.path, home: home, worktree: "/w/repo")
     // Read from a pipe rather than `-c`, so PROMPT_COMMAND runs between the
     // late installer and the command, as it would at a real prompt.
     let script = home.appendingPathComponent("drive.sh")
@@ -280,24 +225,17 @@ struct HelperShellIntegrationTests {
   /// `trap -p` prints the body quoted for re-input, so chaining to a trap `.bashrc` set
   /// first means unquoting it as the shell would; eval ran all of it as one word.
   @Test func bashChainsToATrapItsUserInstalledFirst() async throws {
-    let home = URL(fileURLWithPath: "/tmp")
-      .appendingPathComponent("ms-bashprior-\(UUID().uuidString)", isDirectory: true)
-    try FileManager.default.createDirectory(at: home, withIntermediateDirectories: true)
-    defer { try? FileManager.default.removeItem(at: home) }
-    let initFile = home.appendingPathComponent("init.bash")
-    try ShellStateHooks.bashInitFile(helper: HelperBinary.require().path)
-      .write(to: initFile, atomically: true, encoding: .utf8)
+    let home = try Scratch.directory("bashprior")
+    defer { Scratch.remove(home) }
+    let initFile = try ShellTab.bashInitFile(in: home)
     let marks = home.appendingPathComponent("theirs.txt")
     // Several words, as every real one is: bash-preexec's is
     // `__bp_preexec_invoke_exec "$_"`.
     try "trap 'printf x >> \(marks.path)' DEBUG\n".write(
       to: home.appendingPathComponent(".bashrc"), atomically: true, encoding: .utf8)
 
-    var env = Scratch.shellEnvironment
-    env["HOME"] = home.path
-    env["MULTISHELL_SOCKET"] = home.appendingPathComponent("nowhere.sock").path
-    env["MULTISHELL_SESSION"] = UUID().uuidString
-    env["MULTISHELL_WORKTREE"] = "/w/repo"
+    let env = ShellTab.environment(
+      socket: home.appendingPathComponent("nowhere.sock"), home: home, worktree: "/w/repo")
     let script = home.appendingPathComponent("drive.sh")
     try "uname\n".write(to: script, atomically: true, encoding: .utf8)
     let output = try await ProcessRunner().capture(
@@ -320,19 +258,12 @@ struct HelperShellIntegrationTests {
   /// bash does not restore `$?` between PROMPT_COMMAND entries, so a prompt
   /// that shows the last exit code reads whatever ours left behind.
   @Test func bashPrecmdHandsOnTheStatusItWasGiven() async throws {
-    let home = URL(fileURLWithPath: "/tmp")
-      .appendingPathComponent("ms-bashstatus-\(UUID().uuidString)", isDirectory: true)
-    try FileManager.default.createDirectory(at: home, withIntermediateDirectories: true)
-    defer { try? FileManager.default.removeItem(at: home) }
-    let initFile = home.appendingPathComponent("init.bash")
-    try ShellStateHooks.bashInitFile(helper: HelperBinary.require().path)
-      .write(to: initFile, atomically: true, encoding: .utf8)
+    let home = try Scratch.directory("bashstatus")
+    defer { Scratch.remove(home) }
+    let initFile = try ShellTab.bashInitFile(in: home)
 
-    var env = Scratch.shellEnvironment
-    env["HOME"] = home.path
-    env["MULTISHELL_SOCKET"] = home.appendingPathComponent("nowhere.sock").path
-    env["MULTISHELL_SESSION"] = UUID().uuidString
-    env["MULTISHELL_WORKTREE"] = "/w/repo"
+    let env = ShellTab.environment(
+      socket: home.appendingPathComponent("nowhere.sock"), home: home, worktree: "/w/repo")
     let script = """
       _multishell_command_started
       false
@@ -356,35 +287,22 @@ struct HelperShellIntegrationTests {
     guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
     let listener = try ReportListener()
     defer { listener.stop() }
-    let path = listener.path
     let recorder = listener.recorder
 
-    let root = URL(fileURLWithPath: "/tmp")
-      .appendingPathComponent("ms-relocate-\(UUID().uuidString)", isDirectory: true)
-    defer { try? FileManager.default.removeItem(at: root) }
-    let integration = root.appendingPathComponent("integration", isDirectory: true)
+    let root = try Scratch.directory("relocate")
+    defer { Scratch.remove(root) }
+    let integration = try ShellTab.zshIntegrationDirectory(in: root)
     let home = root.appendingPathComponent("home", isDirectory: true)
     let relocated = home.appendingPathComponent(".config/zsh", isDirectory: true)
-    for dir in [integration, relocated] {
-      try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-    }
-    for (name, contents) in try ShellStateHooks.zshIntegrationFiles(
-      helper: HelperBinary.require().path)
-    {
-      try contents.write(
-        to: integration.appendingPathComponent(name), atomically: true, encoding: .utf8)
-    }
+    try FileManager.default.createDirectory(at: relocated, withIntermediateDirectories: true)
     try "export ZDOTDIR=\"$HOME/.config/zsh\"\n".write(
       to: home.appendingPathComponent(".zshenv"), atomically: true, encoding: .utf8)
     try "export MULTISHELL_USER_RC_LOADED=relocated\n".write(
       to: relocated.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
 
-    var env = Scratch.shellEnvironment
-    env["HOME"] = home.path
+    var env = ShellTab.environment(socket: listener.path, home: home)
     env["ZDOTDIR"] = integration.path
     env.removeValue(forKey: "MULTISHELL_USER_ZDOTDIR")
-    env["MULTISHELL_SOCKET"] = path.path
-    env["MULTISHELL_SESSION"] = UUID().uuidString
     let output = try await ProcessRunner().capture(
       URL(fileURLWithPath: "/bin/zsh"),
       [
@@ -407,21 +325,12 @@ struct HelperShellIntegrationTests {
   /// keeps their config too: the profile chain captures what it left.
   @Test func zshIntegrationFollowsAZdotdirSetByTheUsersZprofile() async throws {
     guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
-    let root = URL(fileURLWithPath: "/tmp")
-      .appendingPathComponent("ms-profile-\(UUID().uuidString)", isDirectory: true)
-    defer { try? FileManager.default.removeItem(at: root) }
-    let integration = root.appendingPathComponent("integration", isDirectory: true)
+    let root = try Scratch.directory("profile")
+    defer { Scratch.remove(root) }
+    let integration = try ShellTab.zshIntegrationDirectory(in: root)
     let home = root.appendingPathComponent("home", isDirectory: true)
     let relocated = home.appendingPathComponent(".config/zsh", isDirectory: true)
-    for dir in [integration, relocated] {
-      try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-    }
-    for (name, contents) in try ShellStateHooks.zshIntegrationFiles(
-      helper: HelperBinary.require().path)
-    {
-      try contents.write(
-        to: integration.appendingPathComponent(name), atomically: true, encoding: .utf8)
-    }
+    try FileManager.default.createDirectory(at: relocated, withIntermediateDirectories: true)
     try "export ZDOTDIR=\"$HOME/.config/zsh\"\n".write(
       to: home.appendingPathComponent(".zprofile"), atomically: true, encoding: .utf8)
     try "export MULTISHELL_USER_RC_LOADED=relocated\n".write(
@@ -452,30 +361,18 @@ struct HelperShellIntegrationTests {
     guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
     let listener = try ReportListener()
     defer { listener.stop() }
-    let path = listener.path
     let recorder = listener.recorder
 
-    let root = URL(fileURLWithPath: "/tmp")
-      .appendingPathComponent("ms-cntrl-\(UUID().uuidString)", isDirectory: true)
-    defer { try? FileManager.default.removeItem(at: root) }
-    let integration = root.appendingPathComponent("integration", isDirectory: true)
+    let root = try Scratch.directory("cntrl")
+    defer { Scratch.remove(root) }
+    let integration = try ShellTab.zshIntegrationDirectory(in: root)
     let userZdotdir = root.appendingPathComponent("user", isDirectory: true)
-    try FileManager.default.createDirectory(at: integration, withIntermediateDirectories: true)
     try FileManager.default.createDirectory(at: userZdotdir, withIntermediateDirectories: true)
-    for (name, contents) in try ShellStateHooks.zshIntegrationFiles(
-      helper: HelperBinary.require().path)
-    {
-      try contents.write(
-        to: integration.appendingPathComponent(name), atomically: true, encoding: .utf8)
-    }
 
     let worktree = "/w/re\tpo\nsit\"or\\y"
-    var env = Scratch.shellEnvironment
+    var env = ShellTab.environment(socket: listener.path, worktree: worktree)
     env["ZDOTDIR"] = integration.path
     env["MULTISHELL_USER_ZDOTDIR"] = userZdotdir.path
-    env["MULTISHELL_SOCKET"] = path.path
-    env["MULTISHELL_SESSION"] = UUID().uuidString
-    env["MULTISHELL_WORKTREE"] = worktree
     _ = try await ProcessRunner().capture(
       URL(fileURLWithPath: "/bin/zsh"),
       ["-i", "-c", "_multishell_preexec; true; _multishell_precmd; wait"], in: root,
@@ -489,308 +386,6 @@ struct HelperShellIntegrationTests {
     #expect(reports.allSatisfy { $0.cwd == worktree }, "\(reports.map(\.cwd))")
   }
 
-  /// The helper behind a script noting its pid, parent and first argument, so a test
-  /// can count what a bash tab starts and find the relay; the sandbox refuses `ps`.
-  private func countingHelper(in home: URL) throws -> (helper: URL, log: URL) {
-    let log = home.appendingPathComponent("spawns.log")
-    let helper = try Scratch.script(
-      "echo \"$PPID\" >> \(PosixShellQuoting.quote(log.path + ".parents"))\n"
-        + "echo \"$$ $1\" >> \(PosixShellQuoting.quote(log.path))\n"
-        + "exec \(PosixShellQuoting.quote(try HelperBinary.require().path)) \"$@\"",
-      at: home.appendingPathComponent("multishell"))
-    return (helper, log)
-  }
-
-  private func spawns(_ log: URL) -> [(pid: String, command: String)] {
-    ((try? String(contentsOf: log, encoding: .utf8)) ?? "").split(whereSeparator: \.isNewline)
-      .map { line in
-        let fields = line.split(separator: " ", maxSplits: 1).map(String.init)
-        return (fields[0], fields.count > 1 ? fields[1] : "")
-      }
-  }
-
-  @Test func bashReportsEveryCommandThroughOneRelayRatherThanAHelperEach() async throws {
-    let listener = try ReportListener()
-    defer { listener.stop() }
-    let recorder = listener.recorder
-    let home = try Scratch.directory("bashrelay")
-    defer { Scratch.remove(home) }
-    let (helper, log) = try countingHelper(in: home)
-    let initFile = home.appendingPathComponent("init.bash")
-    try ShellStateHooks.bashInitFile(helper: helper.path)
-      .write(to: initFile, atomically: true, encoding: .utf8)
-
-    var env = Scratch.shellEnvironment
-    env["HOME"] = home.path
-    env["MULTISHELL_SOCKET"] = listener.path.path
-    env["MULTISHELL_SESSION"] = UUID().uuidString
-    env["MULTISHELL_WORKTREE"] = "/w/repo"
-    let script = """
-      _multishell_command_started "claude --resume"; true; _multishell_precmd
-      _multishell_command_started "ls"; false; _multishell_precmd
-      _multishell_command_started "make"; true; _multishell_precmd
-      """
-    _ = try await ProcessRunner().capture(
-      URL(fileURLWithPath: "/bin/bash"), ["--init-file", initFile.path, "-i", "-c", script],
-      in: home, environment: env)
-
-    try await waitUntil { recorder.received.count >= 6 }
-    let reports = recorder.received.compactMap(SessionStateReport.parse)
-    #expect(reports.map(\.state) == [.running, .done, .running, .error, .running, .done])
-    #expect(reports.first?.command == "claude")
-    #expect(reports.first?.pid != nil)
-    #expect(spawns(log).map(\.command) == ["relay"])
-  }
-
-  /// `printf` stood in by a function, so each report says the subshell depth it was written at.
-  @Test(arguments: installedBashes)
-  func bashWritesEachReportToTheRelayWithoutASubshell(bash: String) async throws {
-    let listener = try ReportListener()
-    defer { listener.stop() }
-    let recorder = listener.recorder
-    let home = try Scratch.directory("bashrelayfork")
-    defer { Scratch.remove(home) }
-    let depths = home.appendingPathComponent("depths.log")
-    try """
-    printf() {
-      case "$2" in command-*) echo "$BASH_SUBSHELL ${2%% *}" >> \(PosixShellQuoting.quote(depths.path)) ;; esac
-      builtin printf "$@"
-    }
-
-    """.write(to: home.appendingPathComponent(".bashrc"), atomically: true, encoding: .utf8)
-    let initFile = home.appendingPathComponent("init.bash")
-    try ShellStateHooks.bashInitFile(helper: HelperBinary.require().path)
-      .write(to: initFile, atomically: true, encoding: .utf8)
-    var env = Scratch.shellEnvironment
-    env["HOME"] = home.path
-    env["MULTISHELL_SOCKET"] = listener.path.path
-    env["MULTISHELL_SESSION"] = UUID().uuidString
-
-    _ = try await ProcessRunner().capture(
-      URL(fileURLWithPath: bash),
-      [
-        "--init-file", initFile.path, "-i", "-c",
-        #"_multishell_command_started "ls"; true; _multishell_precmd"#,
-      ],
-      in: home, environment: env, timeout: .seconds(10))
-
-    try await waitUntil { recorder.received.count >= 2 }
-    #expect(
-      try String(contentsOf: depths, encoding: .utf8) == "0 command-started\n0 command-finished\n")
-  }
-
-  /// The relay's parent is killed too, or it reads the pipe once the relay fails
-  /// and the shell never writes to a pipe with no reader.
-  @Test(arguments: installedBashes)
-  func aBashWhoseRelayHasGoneLivesOnAndReportsThroughTheHelper(bash: String) async throws {
-    let listener = try ReportListener()
-    defer { listener.stop() }
-    let recorder = listener.recorder
-    let home = try Scratch.directory("bashrelaygone")
-    defer { Scratch.remove(home) }
-    let (helper, log) = try countingHelper(in: home)
-    let initFile = home.appendingPathComponent("init.bash")
-    try ShellStateHooks.bashInitFile(helper: helper.path)
-      .write(to: initFile, atomically: true, encoding: .utf8)
-
-    var env = Scratch.shellEnvironment
-    env["HOME"] = home.path
-    env["MULTISHELL_SOCKET"] = listener.path.path
-    env["MULTISHELL_SESSION"] = UUID().uuidString
-    env["MULTISHELL_WORKTREE"] = "/w/repo"
-    let script = """
-      while [ ! -s \(PosixShellQuoting.quote(log.path)) ]; do sleep 0.05; done
-      kill -KILL "$(head -n 1 \(PosixShellQuoting.quote(log.path + ".parents")))"
-      kill -KILL "$(cut -d' ' -f1 \(PosixShellQuoting.quote(log.path)))"
-      sleep 0.3
-      _multishell_command_started "ls"; true; _multishell_precmd
-      printf 'alive\\n'
-      printf 'still-heard\\n' >&2
-      """
-    let output = try await ProcessRunner().capture(
-      URL(fileURLWithPath: bash), ["--init-file", initFile.path, "-i", "-c", script],
-      in: home, environment: env)
-
-    #expect(output.standardOutput.contains("alive"), "\(output.standardError)")
-    #expect(output.standardError.contains("still-heard"), "the shell's own stderr went too")
-    try await waitUntil { recorder.received.count >= 2 }
-    let states = recorder.received.compactMap(SessionStateReport.parse).map(\.state)
-    #expect(states == [.running, .done])
-    #expect(spawns(log).map(\.command) == ["relay", "command-started", "command-finished"])
-  }
-
-  /// The stand-in relay is a helper from before `relay` existed, held until the
-  /// reports are in the pipe so its usage error comes after them.
-  @Test(arguments: installedBashes)
-  func aRelayThatEndsWithoutReadingLosesNoReport(bash: String) async throws {
-    let listener = try ReportListener()
-    defer { listener.stop() }
-    let recorder = listener.recorder
-    let home = try Scratch.directory("bashrelayrefused")
-    defer { Scratch.remove(home) }
-    let written = home.appendingPathComponent("written")
-    let helper = try Scratch.script(
-      """
-      if [ "$1" = relay ]; then
-        while [ ! -e \(PosixShellQuoting.quote(written.path)) ]; do sleep 0.05; done
-        exit 2
-      fi
-      exec \(PosixShellQuoting.quote(try HelperBinary.require().path)) "$@"
-      """,
-      at: home.appendingPathComponent("multishell"))
-    let initFile = home.appendingPathComponent("init.bash")
-    try ShellStateHooks.bashInitFile(helper: helper.path)
-      .write(to: initFile, atomically: true, encoding: .utf8)
-    var env = Scratch.shellEnvironment
-    env["HOME"] = home.path
-    env["MULTISHELL_SOCKET"] = listener.path.path
-    env["MULTISHELL_SESSION"] = UUID().uuidString
-    let script = """
-      _multishell_command_started "ls"; true; _multishell_precmd
-      : > \(PosixShellQuoting.quote(written.path))
-      """
-
-    _ = try await ProcessRunner().capture(
-      URL(fileURLWithPath: bash), ["--init-file", initFile.path, "-i", "-c", script],
-      in: home, environment: env, timeout: .seconds(10))
-
-    try await waitUntil { recorder.received.count >= 2 }
-    #expect(
-      recorder.received.compactMap(SessionStateReport.parse).map(\.state) == [.running, .done])
-  }
-
-  @Test(arguments: installedBashes)
-  func aBashRelayEndsWithItsShellThoughABackgroundChildHoldsThePipe(bash: String) async throws {
-    let home = try Scratch.directory("bashrelaychild")
-    defer { Scratch.remove(home) }
-    let (helper, log) = try countingHelper(in: home)
-    let initFile = home.appendingPathComponent("init.bash")
-    try ShellStateHooks.bashInitFile(helper: helper.path)
-      .write(to: initFile, atomically: true, encoding: .utf8)
-    let childPID = home.appendingPathComponent("child.pid")
-    var env = Scratch.shellEnvironment
-    env["HOME"] = home.path
-    env["MULTISHELL_SOCKET"] = home.appendingPathComponent("nowhere.sock").path
-    env["MULTISHELL_SESSION"] = UUID().uuidString
-    let script = """
-      while [ ! -s \(PosixShellQuoting.quote(log.path)) ]; do sleep 0.05; done
-      sleep 60 </dev/null >/dev/null 2>&1 &
-      echo $! > \(PosixShellQuoting.quote(childPID.path))
-      """
-
-    _ = try await ProcessRunner().capture(
-      URL(fileURLWithPath: bash), ["--init-file", initFile.path, "-i", "-c", script],
-      in: home, environment: env, timeout: .seconds(10))
-    let child = try #require(
-      Int32(String(contentsOf: childPID, encoding: .utf8).trimmingCharacters(in: .newlines)))
-    defer { kill(child, SIGKILL) }
-    let relay = try #require(spawns(log).first.flatMap { Int32($0.pid) })
-
-    #expect(kill(child, 0) == 0, "the child that holds the pipe is still running")
-    try await waitUntil { kill(relay, 0) != 0 }
-    #expect(kill(relay, 0) != 0, "the relay outlived its shell")
-  }
-
-  @Test(arguments: installedBashes)
-  func aRefusedRelaysLoopEndsWithItsShellThoughAChildHoldsThePipe(bash: String) async throws {
-    let home = try Scratch.directory("bashloopchild")
-    defer { Scratch.remove(home) }
-    let parents = home.appendingPathComponent("parents.log")
-    let helper = try Scratch.script(
-      """
-      if [ "$1" = relay ]; then echo "$PPID" >> \(PosixShellQuoting.quote(parents.path)); exit 2; fi
-      exec \(PosixShellQuoting.quote(try HelperBinary.require().path)) "$@"
-      """,
-      at: home.appendingPathComponent("multishell"))
-    let initFile = home.appendingPathComponent("init.bash")
-    try ShellStateHooks.bashInitFile(helper: helper.path)
-      .write(to: initFile, atomically: true, encoding: .utf8)
-    let childPID = home.appendingPathComponent("child.pid")
-    var env = Scratch.shellEnvironment
-    env["HOME"] = home.path
-    env["MULTISHELL_SOCKET"] = home.appendingPathComponent("nowhere.sock").path
-    env["MULTISHELL_SESSION"] = UUID().uuidString
-    let script = """
-      while [ ! -s \(PosixShellQuoting.quote(parents.path)) ]; do sleep 0.05; done
-      sleep 60 </dev/null >/dev/null 2>&1 &
-      echo $! > \(PosixShellQuoting.quote(childPID.path))
-      """
-
-    _ = try await ProcessRunner().capture(
-      URL(fileURLWithPath: bash), ["--init-file", initFile.path, "-i", "-c", script],
-      in: home, environment: env, timeout: .seconds(10))
-    let child = try #require(
-      Int32(String(contentsOf: childPID, encoding: .utf8).trimmingCharacters(in: .newlines)))
-    defer { kill(child, SIGKILL) }
-    let loop = try #require(
-      Int32(String(contentsOf: parents, encoding: .utf8).trimmingCharacters(in: .newlines)))
-
-    #expect(kill(child, 0) == 0, "the child that holds the pipe is still running")
-    try await waitUntil { kill(loop, 0) != 0 }
-    #expect(kill(loop, 0) != 0, "the read loop outlived its shell")
-  }
-
-  @Test(arguments: installedBashes)
-  func aPipeTrapSetAfterTheInitSurvivesTheNextReport(bash: String) async throws {
-    let home = try Scratch.directory("bashpipetrap")
-    defer { Scratch.remove(home) }
-    let initFile = home.appendingPathComponent("init.bash")
-    try ShellStateHooks.bashInitFile(helper: HelperBinary.require().path)
-      .write(to: initFile, atomically: true, encoding: .utf8)
-    var env = Scratch.shellEnvironment
-    env["HOME"] = home.path
-    env["MULTISHELL_SOCKET"] = home.appendingPathComponent("nowhere.sock").path
-    env["MULTISHELL_SESSION"] = UUID().uuidString
-    let script = """
-      _multishell_command_started "trap"
-      trap 'echo mine' PIPE
-      _multishell_precmd
-      _multishell_command_started "true"; true
-      trap -p PIPE
-      """
-
-    let output = try await ProcessRunner().capture(
-      URL(fileURLWithPath: bash), ["--init-file", initFile.path, "-i", "-c", script],
-      in: home, environment: env, timeout: .seconds(10))
-
-    #expect(
-      output.standardOutput.contains("trap -- 'echo mine' SIGPIPE"),
-      "\(output.standardOutput) \(output.standardError)")
-  }
-
-  @Test(arguments: installedBashes)
-  func aBashRelayStillSendsWhatItsShellWroteJustBeforeExiting(bash: String) async throws {
-    let listener = try ReportListener()
-    defer { listener.stop() }
-    let recorder = listener.recorder
-    let home = try Scratch.directory("bashrelaydrain")
-    defer { Scratch.remove(home) }
-    let initFile = home.appendingPathComponent("init.bash")
-    try ShellStateHooks.bashInitFile(helper: HelperBinary.require().path)
-      .write(to: initFile, atomically: true, encoding: .utf8)
-    let childPID = home.appendingPathComponent("child.pid")
-    var env = Scratch.shellEnvironment
-    env["HOME"] = home.path
-    env["MULTISHELL_SOCKET"] = listener.path.path
-    env["MULTISHELL_SESSION"] = UUID().uuidString
-    let script = """
-      sleep 60 </dev/null >/dev/null 2>&1 &
-      echo $! > \(PosixShellQuoting.quote(childPID.path))
-      _multishell_command_started "ls"; true; _multishell_precmd
-      """
-
-    _ = try await ProcessRunner().capture(
-      URL(fileURLWithPath: bash), ["--init-file", initFile.path, "-i", "-c", script],
-      in: home, environment: env, timeout: .seconds(10))
-    let child = try #require(
-      Int32(String(contentsOf: childPID, encoding: .utf8).trimmingCharacters(in: .newlines)))
-    defer { kill(child, SIGKILL) }
-
-    try await waitUntil { recorder.received.count >= 2 }
-    #expect(
-      recorder.received.compactMap(SessionStateReport.parse).map(\.state) == [.running, .done])
-  }
-
   /// bash 4.4 and later point $! at a process substitution, and a bare `wait` waits on it.
   /// Only a bash that new shows it; the one macOS ships is 3.2, so this skips without one.
   @Test func aBareWaitInABashTabReturns() async throws {
@@ -800,13 +395,8 @@ struct HelperShellIntegrationTests {
     guard let newer else { return }
     let home = try Scratch.directory("bashwait")
     defer { Scratch.remove(home) }
-    let initFile = home.appendingPathComponent("init.bash")
-    try ShellStateHooks.bashInitFile(helper: HelperBinary.require().path)
-      .write(to: initFile, atomically: true, encoding: .utf8)
-    var env = Scratch.shellEnvironment
-    env["HOME"] = home.path
-    env["MULTISHELL_SOCKET"] = home.appendingPathComponent("nowhere.sock").path
-    env["MULTISHELL_SESSION"] = UUID().uuidString
+    let initFile = try ShellTab.bashInitFile(in: home)
+    let env = ShellTab.environment(socket: home.appendingPathComponent("nowhere.sock"), home: home)
 
     let output = try await ProcessRunner().capture(
       URL(fileURLWithPath: newer),
@@ -816,7 +406,3 @@ struct HelperShellIntegrationTests {
     #expect(output.standardOutput.contains("waited"), "\(output.standardError)")
   }
 }
-
-/// The system's bash 3.2 and any newer one installed, whose `$!` and `wait` differ.
-private let installedBashes = ["/bin/bash", "/opt/homebrew/bin/bash", "/usr/local/bin/bash"]
-  .filter { FileManager.default.isExecutableFile(atPath: $0) }

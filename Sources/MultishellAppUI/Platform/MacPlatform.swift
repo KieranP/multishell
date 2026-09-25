@@ -81,7 +81,7 @@ final class MacPlatform: Platform {
   /// administrator prompt, so the tool survives the app moving.
   func installCommandLineTool() throws {
     try AppleScriptHandler.call(
-      AppleScriptHandler.installCommandLineTool, handler: "installTool",
+      AppleScriptHandler.installToolScript, handler: "installTool",
       arguments: [Paths.helperLink.path, HelperLink.commandLineToolLink.path])
   }
 

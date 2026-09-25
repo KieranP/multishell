@@ -31,7 +31,7 @@ enum NotificationPolicy {
     switch state {
     case .attention: return t("notification.attention")
     case .done: return t("notification.done")
-    case .error: return t("notification.error")
+    case .failed: return t("notification.error")
     case .running, .idle: return state.displayName
     }
   }

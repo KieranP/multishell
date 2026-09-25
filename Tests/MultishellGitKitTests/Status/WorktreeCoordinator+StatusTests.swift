@@ -1,11 +1,12 @@
 import Foundation
 import MultishellCore
 import MultishellProcess
+import TestSupport
 import Testing
 
 @testable import MultishellGitKit
 
-@Suite
+@Suite(.serialized)
 struct WorktreeCoordinatorStatusTests {
   /// Each run holds its slot for a second: at half a second, a runner slow to spawn the next
   /// eight shells saw each wave leave before the next arrived, and read as serial.
@@ -39,5 +40,18 @@ struct WorktreeCoordinatorStatusTests {
     #expect(peaks.count == 20, "every run recorded a peak")
     #expect(peaks.max() ?? 0 <= SharedGitReads.maxConcurrentReads, "\(peaks)")
     #expect(peaks.max() ?? 0 >= 4, "runs did not overlap: \(peaks)")
+  }
+
+  @Test func statusesOmitWorktreesWhoseDirectoryIsGone() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    let path = try await repo.coordinator.create(
+      branch: "ghost", in: repo.project, settings: repo.worktreeSettings)
+    let worktrees = try await repo.coordinator.git.list(repo.project)
+    try FileManager.default.removeItem(at: path)
+
+    let statuses = await repo.coordinator.readStatuses(of: worktrees).mapValues(\.status)
+
+    #expect(statuses.keys.sorted() == [repo.project.id])
   }
 }

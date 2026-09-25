@@ -20,9 +20,9 @@ struct FindBar: View {
     let metrics = model.metrics
     HStack(spacing: 4) {
       well(metrics)
-      step("chevron.up", t("find.previous")) { model.findPrevious(in: sessionID) }
-      step("chevron.down", t("find.next")) { model.findNext(in: sessionID) }
-      step("xmark", t("find.close")) { model.closeFind(in: sessionID) }
+      button("chevron.up", t("find.previous")) { model.findPrevious(in: sessionID) }
+      button("chevron.down", t("find.next")) { model.findNext(in: sessionID) }
+      button("xmark", t("find.close")) { model.closeFind(in: sessionID) }
     }
     .padding(Self.inset)
     .frame(maxWidth: Self.width)
@@ -39,7 +39,7 @@ struct FindBar: View {
   /// The text sits in a well one step back from the panel, the way a
   /// terminal's own colour sits behind its chrome.
   private func well(_ metrics: UIMetrics) -> some View {
-    TextField(t("find.prompt"), text: needle)
+    TextField(t("find.prompt"), text: findText)
       .textFieldStyle(.plain)
       .font(.system(size: metrics.body))
       .foregroundStyle(theme.textPrimary)
@@ -50,7 +50,8 @@ struct FindBar: View {
       .padding(.horizontal, 10)
       .frame(height: metrics.findControlSize)
       .background(theme.backgroundColor, in: RoundedRectangle(cornerRadius: Self.corner - 3))
-      .overlay(RoundedRectangle(cornerRadius: Self.corner - 3).strokeBorder(theme.findWellBorder))
+      .overlay(
+        RoundedRectangle(cornerRadius: Self.corner - 3).strokeBorder(theme.findWellBorderColor))
   }
 
   private func claimField() {
@@ -67,19 +68,21 @@ struct FindBar: View {
     }
   }
 
-  private var needle: Binding<String> {
+  private var findText: Binding<String> {
     Binding(
       get: { model.findText(of: sessionID) }, set: { model.setFindText($0, of: sessionID) })
   }
 
-  private func step(_ symbol: String, _ label: String, action: @escaping () -> Void) -> some View {
-    StepButton(symbol: symbol, label: label, theme: theme, metrics: model.metrics, action: action)
+  private func button(_ symbol: String, _ label: String, action: @escaping () -> Void) -> some View
+  {
+    FindBarButton(
+      symbol: symbol, label: label, theme: theme, metrics: model.metrics, action: action)
   }
 }
 
 /// One glyph of the bar, lit on hover so the three read as buttons rather
 /// than marks.
-private struct StepButton: View {
+private struct FindBarButton: View {
   let symbol: String
   let label: String
   let theme: Theme

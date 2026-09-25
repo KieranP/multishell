@@ -1,3 +1,4 @@
+import Foundation
 import MultishellCore
 
 /// Many worktrees' statuses read side by side, and what those reads remember.
@@ -7,7 +8,7 @@ extension WorktreeCoordinator {
   public func readStatuses(
     of worktrees: [Worktree], counting indicator: GitStatusIndicator = .default
   ) async -> [Worktree.ID: StatusReading] {
-    let readings = await worktrees.filter { !$0.isBare }.concurrentMap(
+    let readings = await worktrees.filter { !$0.isBare }.mapConcurrentlyUnordered(
       width: SharedGitReads.maxConcurrentReads
     ) { worktree in
       let started = ContinuousClock.now
@@ -21,8 +22,10 @@ extension WorktreeCoordinator {
       uniquingKeysWith: { _, last in last })
   }
 
-  /// Drops what the status reads remember about worktrees that have gone.
+  /// Drops what the status reads remember about worktrees that have gone,
+  /// by path, which is what a worktree's id is.
   public func forgetStatusReads(of ids: [Worktree.ID]) {
-    git.shared.untrackedMemo.forget(directories: ids)
+    git.shared.untrackedMemo.forget(
+      directories: ids.map { URL(fileURLWithPath: $0, isDirectory: true) })
   }
 }

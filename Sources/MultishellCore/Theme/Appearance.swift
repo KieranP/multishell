@@ -8,10 +8,10 @@ public struct Appearance: Codable, Hashable, Sendable {
   /// Sidebar, tabs and header. Every chrome measurement scales from it.
   public var uiFontSize: Double
 
-  public static let defaultFontSize = 13.0
-  public static let defaultUIFontSize = 13.0
+  static let defaultFontSize = 13.0
+  static let defaultUIFontSize = 13.0
 
-  public init(
+  init(
     themeID: Theme.ID = Theme.multishellDark.id,
     fontName: String? = nil,
     fontSize: Double = Appearance.defaultFontSize,

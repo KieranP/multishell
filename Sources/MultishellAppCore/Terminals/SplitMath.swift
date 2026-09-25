@@ -33,7 +33,7 @@ public enum SplitMath {
   }
 
   /// Whether that length halves and leaves both halves at the minimum. What
-  /// a drop making a new column asks before it offers itself.
+  /// a drop making a new group asks before it offers itself.
   public static func canHalve(_ length: Double, minimumPane: Double, divider: Double) -> Bool {
     guard length.isFinite, minimumPane.isFinite, divider.isFinite else { return false }
     return length - divider >= minimumPane * 2

@@ -4,7 +4,7 @@ public enum TerminalSearch: Equatable, Sendable {
   /// Search for this text, replacing any search running; the engine highlights
   /// and selects nothing until a step. Empty ends the search and its highlights.
   case find(String)
-  /// The match nearest the prompt, for the first step after a needle.
+  /// The match nearest the prompt, for the first step after a new find text.
   case nearest
   /// The match after the selected one, down the scrollback towards the
   /// prompt, wrapping to the oldest past the newest.

@@ -30,25 +30,8 @@ public struct AgentBoardCard: Identifiable, Equatable, Sendable {
     }
   }
 
-  /// Which pane of a split this card is. A renamed tab gives both its panes
-  /// one title, so the card says which it is; `nil` for a tab with one pane.
-  public struct Position: Equatable, Sendable {
-    public let index: Int
-    public let count: Int
-
-    init(index: Int, count: Int) {
-      self.index = index
-      self.count = count
-    }
-
-    /// The pane at `offset` in `tab`, or `nil` where the tab has only the one.
-    public static func of(paneAt offset: Int, in tab: TerminalTab) -> Position? {
-      tab.sessionIDs.count > 1 ? Position(index: offset + 1, count: tab.sessionIDs.count) : nil
-    }
-  }
-
   public let id: TerminalSession.ID
-  public let tabID: TerminalTab.ID
+  let tabID: TerminalTab.ID
   public let worktreeID: Worktree.ID
   public let occupant: Occupant
   /// What the tab strip calls this pane's tab, which for a shell running a
@@ -59,24 +42,25 @@ public struct AgentBoardCard: Identifiable, Equatable, Sendable {
   /// `nil` for a pane with nothing to report, which is what Idle means.
   public let state: SessionState?
   /// When it entered that state, absent for a pane that has never left it.
-  public let since: Date?
+  let since: Date?
   let note: SessionNote?
   public let status: WorktreeStatus?
   /// The workers the occupant has out, oldest first. Empty is no chip.
   public var subagents: [Subagent] = []
-  public var position: Position?
+  /// `nil` for a tab with one pane.
+  public var position: PanePosition?
 
-  public var lane: AgentBoardLane { AgentBoardLane.of(state) }
+  var lane: AgentBoardLane { AgentBoardLane.of(state) }
 
   /// What the occupant last said about itself, or what a finished command
   /// amounted to. Absent for a pane that has said nothing.
   public var message: String? {
-    guard let note = note?.describing(state) else { return nil }
+    guard let note = note?.matching(state) else { return nil }
     if let message = note.message, !message.isEmpty { return message }
     guard let duration = note.duration, let text = ElapsedText.precise(duration) else { return nil }
     switch note.state {
     case .done: return t("card.done", text)
-    case .error: return t("card.failed", text)
+    case .failed: return t("card.failed", text)
     case .running, .attention, .idle: return nil
     }
   }

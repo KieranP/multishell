@@ -46,7 +46,7 @@ struct AgentBoardTests {
 
   @Test func aFailureWaitsWithTheRestRatherThanSittingInDone() {
     #expect(AgentBoardLane.of(.attention) == .waiting)
-    #expect(AgentBoardLane.of(.error) == .waiting, "a failure wants the user")
+    #expect(AgentBoardLane.of(.failed) == .waiting, "a failure wants the user")
     #expect(AgentBoardLane.of(.running) == .working)
     #expect(AgentBoardLane.of(.done) == .done)
     #expect(AgentBoardLane.of(nil) == .idle)
@@ -65,7 +65,7 @@ struct AgentBoardTests {
     let cards = [
       card("Claude Code", state: .attention),
       card("zsh", agent: false, state: .running, title: "make release"),
-      card("zsh", agent: false, state: .error, title: "swift test"),
+      card("zsh", agent: false, state: .failed, title: "swift test"),
     ]
 
     let agentsOnly = AgentBoard(cards: cards, showsAllTerminals: false)
@@ -113,9 +113,9 @@ struct AgentBoardTests {
     let done = SessionNote(state: .done, duration: 194)
     #expect((card("zsh", state: .done, note: done)).message == "Done · 3m 14s")
 
-    let failed = SessionNote(state: .error, duration: 72)
+    let failed = SessionNote(state: .failed, duration: 72)
     #expect(
-      (card("zsh", state: .error, note: failed)).message == "Failed · 1m 12s")
+      (card("zsh", state: .failed, note: failed)).message == "Failed · 1m 12s")
 
     let working = SessionNote(state: .running, duration: 5)
     #expect(

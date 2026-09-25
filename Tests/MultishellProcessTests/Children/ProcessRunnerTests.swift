@@ -128,6 +128,11 @@ struct ProcessRunnerTests {
 
     #expect(ForkCount.forks.load(ordering: .relaxed) == before)
   }
+
+  @Test func aChildThatReadsStdinGetsEOFNotTheApps() async throws {
+    let out = try await runner.run(sh, ["-c", "cat; printf done"], in: cwd)
+    #expect(out == "done")
+  }
 }
 
 /// Counts this process's forks: `fork()` runs the atfork handlers, and

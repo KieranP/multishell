@@ -10,15 +10,13 @@ public struct WorkspaceFile: Sendable {
     self.fileURL = fileURL
   }
 
-  public typealias Ticket = SaveOrder.Ticket
-
-  func ticket() -> Ticket {
+  func ticket() -> SaveOrder.Ticket {
     order.issue()
   }
 
   /// A file that will not read or decode is moved aside, never overwritten.
   /// The read is inside the `do` for that; see Docs/design/state-and-store.md.
-  public func load() throws -> Workspace {
+  func load() throws -> Workspace {
     guard FileManager.default.fileExists(atPath: fileURL.path) else { return Workspace() }
     do {
       return try JSONDecoder().decode(Workspace.self, from: try Data(contentsOf: fileURL))
@@ -28,16 +26,17 @@ public struct WorkspaceFile: Sendable {
       let backup = backupURL
       do {
         try FileManager.default.moveItem(at: fileURL, to: backup)
-      } catch let move {
-        throw UnmovedState(file: fileURL, underlying: error, move: move)
+      } catch _ {
+        // `_` leaves `error` the decode failure, which both errors report.
+        throw UnmovableStateFile(file: fileURL, underlying: error)
       }
-      throw UnreadableState(backup: backup, underlying: error)
+      throw UnreadableStateFile(backup: backup, underlying: error)
     }
   }
 
   /// Whether a file stands where `save` would write. Asked after a failed
   /// load, when what is still there is the user's own state.
-  var holdsFile: Bool {
+  var existsOnDisk: Bool {
     FileManager.default.fileExists(atPath: fileURL.path)
   }
 
@@ -46,13 +45,13 @@ public struct WorkspaceFile: Sendable {
     return fileURL.deletingPathExtension().appendingPathExtension("\(stamp).broken.json")
   }
 
-  public func save(_ workspace: Workspace) throws {
+  func save(_ workspace: Workspace) throws {
     try save(workspace, as: ticket())
   }
 
   /// The encode is outside the lock, so two saves encode side by side and
   /// only the writes queue.
-  public func save(_ workspace: Workspace, as ticket: Ticket) throws {
+  func save(_ workspace: Workspace, as ticket: SaveOrder.Ticket) throws {
     let data = try JSONEncoder.forFile().encode(workspace)
     try order.land(ticket) {
       try FileManager.default.createDirectory(

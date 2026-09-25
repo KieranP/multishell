@@ -7,15 +7,10 @@ import SwiftUI
 struct WeightedSplit<Content: View>: View {
   let axis: SplitAxis
   let weights: [Double]
-  let divider: Color
-  let background: Color
+  let dividerColor: Color
+  let gutterColor: Color
   let onWeightsChange: ([Double]) -> Void
   @ViewBuilder let content: () -> Content
-
-  // Constants live outside the generic type: static stored properties are
-  // not allowed inside one.
-  private var dividerThickness: CGFloat { SplitMetrics.dividerThickness }
-  private var minimumPane: CGFloat { SplitMetrics.minimumPane }
 
   @State private var dragStartWeights: [Double]?
   /// The weights as the drag has them, handed to the model once at its end:
@@ -27,7 +22,7 @@ struct WeightedSplit<Content: View>: View {
     GeometryReader { geometry in
       let length = axis == .horizontal ? geometry.size.width : geometry.size.height
       let available = SplitMath.available(
-        Double(length), panes: weights.count, divider: Double(dividerThickness))
+        Double(length), panes: weights.count, divider: UIMetrics.splitDividerThickness)
       let sizes = SplitMath.sizes(of: weights, sharing: available).map { CGFloat($0) }
 
       layout(sizes: sizes, available: CGFloat(available))
@@ -38,8 +33,9 @@ struct WeightedSplit<Content: View>: View {
   private func layout(sizes: [CGFloat], available: CGFloat) -> some View {
     Group(subviews: content()) { subviews in
       SplitPanes(
-        subviews: subviews, axis: axis, sizes: sizes, divider: divider, background: background,
-        thickness: dividerThickness
+        subviews: subviews, axis: axis, sizes: sizes, dividerColor: dividerColor,
+        gutterColor: gutterColor,
+        thickness: CGFloat(UIMetrics.splitDividerThickness)
       ) { index, translation in
         resize(dividerAfter: index, by: translation, available: available)
       } onDragEnded: {
@@ -57,7 +53,7 @@ struct WeightedSplit<Content: View>: View {
     if dragStartWeights == nil { dragStartWeights = start }
     let updated = SplitMath.transferring(
       Double(translation), acrossDividerAfter: index, in: start,
-      available: Double(available), minimumPane: Double(minimumPane))
+      available: Double(available), minimumPane: UIMetrics.minimumPaneLength)
     if updated != (liveWeights ?? start) { liveWeights = updated }
   }
 }
@@ -68,8 +64,8 @@ private struct SplitPanes: View {
   let subviews: SubviewsCollection
   let axis: SplitAxis
   let sizes: [CGFloat]
-  let divider: Color
-  let background: Color
+  let dividerColor: Color
+  let gutterColor: Color
   let thickness: CGFloat
   let onDrag: (Int, CGFloat) -> Void
   let onDragEnded: () -> Void
@@ -103,7 +99,7 @@ private struct SplitPanes: View {
 
   private func handle(after index: Int) -> some View {
     SplitHandle(
-      axis: axis, thickness: thickness, divider: divider, background: background,
+      axis: axis, thickness: thickness, dividerColor: dividerColor, gutterColor: gutterColor,
       onDrag: { onDrag(index, $0) }, onDragEnded: onDragEnded)
   }
 }
@@ -113,22 +109,22 @@ private struct SplitPanes: View {
 private struct SplitHandle: View {
   let axis: SplitAxis
   let thickness: CGFloat
-  let divider: Color
-  let background: Color
+  let dividerColor: Color
+  let gutterColor: Color
   let onDrag: (CGFloat) -> Void
   let onDragEnded: () -> Void
 
   @GestureState private var isDragging = false
 
   var body: some View {
-    background
+    gutterColor
       .frame(
         width: axis == .horizontal ? thickness : nil, height: axis == .vertical ? thickness : nil
       )
       .overlay {
-        divider.frame(
-          width: axis == .horizontal ? SplitMetrics.lineThickness : nil,
-          height: axis == .vertical ? SplitMetrics.lineThickness : nil
+        dividerColor.frame(
+          width: axis == .horizontal ? CGFloat(UIMetrics.splitLineThickness) : nil,
+          height: axis == .vertical ? CGFloat(UIMetrics.splitLineThickness) : nil
         )
       }
       .contentShape(.rect)

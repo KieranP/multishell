@@ -31,7 +31,7 @@ struct RemovalFailureTests {
           message: "still going\n\nStopped after 60 seconds, the hook timeout.", timedOut: true))
 
     let stopped = ProcessFailure(
-      executable: "zsh", arguments: [], status: 129, message: "", stop: .stopped)
+      executable: "zsh", arguments: [], status: 129, message: "", stop: .byUser)
     #expect(
       RemovalFailure(
         HookFailure(stage: .preDelete, underlying: stopped), deletingBranch: nil)

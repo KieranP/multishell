@@ -1,11 +1,11 @@
-import MultishellCore
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellCore
 
 @Suite
 struct NotificationPolicyTests {
-  private let everyState = NotificationPreference(attention: true, error: true, done: true)
+  private let everyState = NotificationPreference(attention: true, failed: true, done: true)
   private let waitingOnly = NotificationPreference(attention: true)
 
   @Test func aPaneOnScreenIsNotWorthABanner() {

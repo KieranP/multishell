@@ -25,9 +25,9 @@ struct ExecutableLookupTests {
       to: directory.appendingPathComponent("codex"), atomically: true, encoding: .utf8)
 
     let path = "/nowhere:\(directory.path):/bin"
-    #expect(ExecutableLookup.find("claude", path: path)?.path == fake.path)
-    #expect(ExecutableLookup.find("codex", path: path) == nil, "present but not executable")
-    #expect(ExecutableLookup.find("sh", path: path) != nil)
-    #expect(ExecutableLookup.find("claude", path: "/usr/bin") == nil)
+    #expect(ExecutableLookup.find("claude", searchPath: path)?.path == fake.path)
+    #expect(ExecutableLookup.find("codex", searchPath: path) == nil, "present but not executable")
+    #expect(ExecutableLookup.find("sh", searchPath: path) != nil)
+    #expect(ExecutableLookup.find("claude", searchPath: "/usr/bin") == nil)
   }
 }

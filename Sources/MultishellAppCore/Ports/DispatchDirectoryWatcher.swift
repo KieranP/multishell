@@ -20,15 +20,16 @@ public final class DispatchDirectoryWatcher: DirectoryWatcher {
     let inode: ino_t
 
     init?(ofDescriptor descriptor: Int32) {
-      var status = stat()
-      guard fstat(descriptor, &status) == 0 else { return nil }
-      self.device = status.st_dev
-      self.inode = status.st_ino
+      self.init { fstat(descriptor, &$0) }
     }
 
     init?(ofPath path: String) {
+      self.init { stat(path, &$0) }
+    }
+
+    private init?(reading read: (inout stat) -> Int32) {
       var status = stat()
-      guard stat(path, &status) == 0 else { return nil }
+      guard read(&status) == 0 else { return nil }
       self.device = status.st_dev
       self.inode = status.st_ino
     }

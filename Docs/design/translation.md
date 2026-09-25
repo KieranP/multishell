@@ -115,3 +115,6 @@ Newest at the bottom.
   plural rules by it: English words under a Russian region read `21 subagent`.
   Formatting the one fraction apart fixed it but was more code than the comma is
   worth.
+- **The literal scan reads the frontend's views alone.** A word a library holds
+  as a bare string reaches the screen in English and no test sees it; the trust
+  question named its fields that way.

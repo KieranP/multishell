@@ -1,21 +1,20 @@
 /// Which reported states post a notification for a tab nobody is looking at.
 /// Not running or idle: a banner per tool call would be noise.
 public struct NotificationPreference: Codable, Hashable, Sendable {
-  /// The states a banner can be asked for, in the order the settings tab
+  /// The states a banner can be asked for, in the order the settings page
   /// lists them, most urgent first.
-  public static let notifiableStates: [SessionState] = [.attention, .error, .done]
+  public static let notifiableStates: [SessionState] = [.attention, .failed, .done]
 
   public var attention: Bool
-  public var error: Bool
+  public var failed: Bool
   public var done: Bool
 
   /// Off until asked for, which is also where the permission prompt belongs.
-  public static let off = NotificationPreference()
-  static let `default` = NotificationPreference.off
+  static let off = NotificationPreference()
 
-  public init(attention: Bool = false, error: Bool = false, done: Bool = false) {
+  init(attention: Bool = false, failed: Bool = false, done: Bool = false) {
     self.attention = attention
-    self.error = error
+    self.failed = failed
     self.done = done
   }
 
@@ -25,7 +24,7 @@ public struct NotificationPreference: Codable, Hashable, Sendable {
     get {
       switch state {
       case .attention: attention
-      case .error: error
+      case .failed: failed
       case .done: done
       case .running, .idle: false
       }
@@ -33,7 +32,7 @@ public struct NotificationPreference: Codable, Hashable, Sendable {
     set {
       switch state {
       case .attention: attention = newValue
-      case .error: error = newValue
+      case .failed: failed = newValue
       case .done: done = newValue
       case .running, .idle: break
       }
@@ -42,7 +41,7 @@ public struct NotificationPreference: Codable, Hashable, Sendable {
 
   enum CodingKeys: String, CodingKey {
     case attention
-    case error
+    case failed = "error"
     case done
   }
 
@@ -53,7 +52,7 @@ public struct NotificationPreference: Codable, Hashable, Sendable {
       switch legacy {
       case "attentionOnly": self = NotificationPreference(attention: true)
       case "attentionAndDone":
-        self = NotificationPreference(attention: true, error: true, done: true)
+        self = NotificationPreference(attention: true, failed: true, done: true)
       default: self = .off
       }
       return
@@ -62,7 +61,7 @@ public struct NotificationPreference: Codable, Hashable, Sendable {
     // Tolerated per state: a hand-edited file with one bad value costs
     // that toggle and not the other two.
     attention = container.decodeTolerantly(Bool.self, forKey: .attention, or: false)
-    error = container.decodeTolerantly(Bool.self, forKey: .error, or: false)
+    failed = container.decodeTolerantly(Bool.self, forKey: .failed, or: false)
     done = container.decodeTolerantly(Bool.self, forKey: .done, or: false)
   }
 }

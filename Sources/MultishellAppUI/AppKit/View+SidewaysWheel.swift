@@ -8,7 +8,7 @@ extension View {
   }
 
   /// Turns a wheel's vertical scrolling sideways for the marked scroller. Goes
-  /// outside the scroller, over it; see Docs/design/tabs-and-columns.md.
+  /// outside the scroller, over it; see Docs/design/tabs-and-groups.md.
   func wheelScrollsSideways(_ reference: ScrollerReference) -> some View {
     overlay { SidewaysWheel(reference: reference) }
   }
@@ -24,7 +24,7 @@ private struct ScrollerMarker: NSViewRepresentable {
 
 /// Nothing is drawn or clicked here: it is in the scroller's content to say
 /// where the scroller is, and takes no part in an event.
-private final class ScrollerMarkerView: UnspokenView {
+private final class ScrollerMarkerView: AccessibilityHiddenView {
   var reference: ScrollerReference? {
     didSet { publish() }
   }

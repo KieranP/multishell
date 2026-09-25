@@ -16,7 +16,7 @@ struct DetectionPicker: View {
     InfoLabeledContent(label, info: info) {
       Picker(label, selection: $selection) {
         ForEach(options(selection)) { option in
-          if option.id == FontDetection.dividerID {
+          if option.id == DetectionOption.dividerID {
             Divider()
           } else {
             Text(option.label).tag(option.id)
@@ -24,7 +24,7 @@ struct DetectionPicker: View {
         }
       }
       .disabled(!isEnabled)
-      IconButton.refresh(action: refresh).controlSize(.small).disabled(!isEnabled)
+      SymbolButton.refresh(action: refresh).controlSize(.small).disabled(!isEnabled)
     }
   }
 }

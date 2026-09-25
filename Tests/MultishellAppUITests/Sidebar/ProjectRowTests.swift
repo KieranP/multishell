@@ -1,8 +1,8 @@
 import Foundation
-import MultishellCore
 import Testing
 
 @testable import MultishellAppUI
+@testable import MultishellCore
 
 @Suite @MainActor
 struct ProjectRowTests {

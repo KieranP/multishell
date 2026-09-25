@@ -19,7 +19,7 @@ extension ShellCommandTests {
         to: home.appendingPathComponent(file), atomically: true, encoding: .utf8)
     }
 
-    let out = try await ShellCommand().runScript(
+    let out = try await ShellCommand.runScript(
       "printf '%s' \"$MULTISHELL_RC\"", in: home,
       environment: ["HOME": home.path, "ZDOTDIR": home.path], shellPath: "/bin/zsh")
 
@@ -35,7 +35,7 @@ extension ShellCommandTests {
     try "cd /\nchpwd() { echo noise; }\n".write(
       to: home.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
 
-    let out = try await ShellCommand().runScript(
+    let out = try await ShellCommand.runScript(
       "pwd -P", in: worktree, environment: ["HOME": home.path, "ZDOTDIR": home.path],
       shellPath: "/bin/zsh")
 
@@ -52,7 +52,7 @@ extension ShellCommandTests {
       to: home.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
 
     let failure = await #expect(throws: ProcessFailure.self) {
-      try await ShellCommand().runScript(
+      try await ShellCommand.runScript(
         "echo 'hook failed' >&2\nexit 3", in: home,
         environment: ["HOME": home.path, "ZDOTDIR": home.path], shellPath: "/bin/zsh")
     }
@@ -67,7 +67,7 @@ extension ShellCommandTests {
     try "chpwd() { false; }\n".write(
       to: home.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
 
-    let out = try await ShellCommand().runScript(
+    let out = try await ShellCommand.runScript(
       "printf ran", in: home, environment: ["HOME": home.path, "ZDOTDIR": home.path],
       shellPath: "/bin/zsh")
 
@@ -85,7 +85,7 @@ extension ShellCommandTests {
       to: home.appendingPathComponent(rcFile), atomically: true, encoding: .utf8)
 
     await #expect(throws: ProcessFailure.self) {
-      try await ShellCommand().runScript(
+      try await ShellCommand.runScript(
         "touch \(AnyShellQuoting.quote(marker.path))", in: worktree,
         environment: ["HOME": home.path, "ZDOTDIR": home.path], shellPath: shell)
     }
@@ -104,7 +104,7 @@ extension ShellCommandTests {
       try "cd /\n".write(to: home.appendingPathComponent(rc), atomically: true, encoding: .utf8)
     }
 
-    let out = try await ShellCommand().runScript(
+    let out = try await ShellCommand.runScript(
       "pwd", in: worktree, environment: ["HOME": home.path, "ZDOTDIR": home.path],
       shellPath: shell)
 
@@ -124,18 +124,11 @@ extension ShellCommandTests {
         to: home.appendingPathComponent(rc), atomically: true, encoding: .utf8)
     }
 
-    _ = try await ShellCommand().runScript(
+    _ = try await ShellCommand.runScript(
       "true", in: home, environment: ["HOME": home.path, "HISTFILE": history.path],
       shellPath: shell)
 
     #expect(try String(contentsOf: history, encoding: .utf8) == lines)
-  }
-
-  @Test func aChildThatReadsStdinGetsEOFNotTheApps() async throws {
-    let out = try await ProcessRunner().run(
-      URL(fileURLWithPath: "/bin/sh"), ["-c", "cat; printf done"],
-      in: URL(fileURLWithPath: NSTemporaryDirectory()))
-    #expect(out == "done")
   }
 
   @Test(arguments: ["/bin/zsh", "/bin/bash", "/bin/sh", "/bin/tcsh"] + fishPaths)
@@ -146,7 +139,7 @@ extension ShellCommandTests {
     let scratch = try Scratch.directory("script")
     defer { try? FileManager.default.removeItem(at: scratch) }
     func run(_ script: String) async throws -> String {
-      try await ShellCommand().runScript(
+      try await ShellCommand.runScript(
         script, in: scratch, environment: shell.environment, shellPath: shell.path)
     }
 
@@ -171,7 +164,7 @@ extension ShellCommandTests {
     let shell = try ScratchShell(path)
     defer { shell.tearDown() }
 
-    let out = try await ShellCommand().runScript(
+    let out = try await ShellCommand.runScript(
       "for f in *.nomatch; do :; done; for f in a b; do printf %s \"$f\"; done", in: shell.home,
       environment: shell.environment, shellPath: shell.path)
 
@@ -185,7 +178,7 @@ extension ShellCommandTests {
     try "setenv MULTISHELL_RC tcshrc\n".write(
       to: shell.home.appendingPathComponent(".tcshrc"), atomically: true, encoding: .utf8)
 
-    let out = try await ShellCommand().runScript(
+    let out = try await ShellCommand.runScript(
       "printf '%s' \"$MULTISHELL_RC\"", in: shell.home, environment: shell.environment,
       shellPath: shell.path)
 
@@ -196,7 +189,7 @@ extension ShellCommandTests {
     let shell = try ScratchShell()
     defer { shell.tearDown() }
 
-    let out = try await ShellCommand().runScript(
+    let out = try await ShellCommand.runScript(
       "env | grep -c MULTISHELL_SCRIPT || true", in: shell.home,
       environment: shell.environment, shellPath: shell.path)
 
@@ -222,7 +215,7 @@ extension ShellCommandTests {
     ]
     for (script, message) in cases {
       do {
-        _ = try await ShellCommand().runScript(
+        _ = try await ShellCommand.runScript(
           script, in: shell.home, environment: shell.environment, shellPath: shell.path)
         Issue.record("the script did not fail")
       } catch let failure as ProcessFailure {
@@ -251,26 +244,4 @@ extension ShellCommandTests {
     #expect(ShellCommand.scriptOutput(fromStderr: "no marker here") == "no marker here")
   }
 
-  @Test func onlyKnownShellsGetTheInteractiveLoginFormOthersFallBackToSh() {
-    #expect(ShellCommand.shell(named: "/bin/zsh").arguments == ["-l", "-i", "-c"])
-    #expect(ShellCommand.shell(named: "/bin/zsh").executable.path == "/bin/zsh")
-    for odd in ["/usr/local/bin/nu", "/opt/homebrew/bin/xonsh", "/no/such/zsh", ""] {
-      let fallback = ShellCommand.shell(named: odd)
-      #expect(fallback.executable.path == "/bin/sh", "\(odd)")
-      #expect(fallback.arguments == ["-c"], "\(odd)")
-    }
-  }
-
-  @Test func theCshFamilyIsNotGivenTheLoginFlagItRefusesBesideC() async throws {
-    #expect(ShellCommand.shell(named: "/bin/tcsh").arguments == ["-i", "-c"])
-    #expect(ShellCommand.shell(named: "/bin/csh").arguments == ["-i", "-c"])
-    guard FileManager.default.isExecutableFile(atPath: "/bin/tcsh") else { return }
-    let home = try Scratch.directory("home")
-    defer { try? FileManager.default.removeItem(at: home) }
-
-    let out = try await ShellCommand().runScript(
-      "printf ok", in: home, environment: ["HOME": home.path], shellPath: "/bin/tcsh")
-
-    #expect(out == "ok")
-  }
 }

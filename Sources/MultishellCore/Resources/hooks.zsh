@@ -62,7 +62,7 @@ if [ -n "${MULTISHELL_SESSION-}" ] && [ -n "${MULTISHELL_SOCKET-}" ]; then
     _multishell_ran=1
     _multishell_started=${EPOCHREALTIME:-$SECONDS}
     # The program being started, sent only where it is an agent: the
-    # expanded line, its words, past any prefix. Docs/design/terminals.md.
+    # expanded line, its words, past any prefix. Docs/design/agents.md.
     local -a _multishell_words
     _multishell_words=(${(z)${2:-$1}})
     local _multishell_i=1

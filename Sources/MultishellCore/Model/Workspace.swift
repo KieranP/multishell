@@ -5,12 +5,12 @@ public struct Workspace: Codable, Hashable, Sendable {
   public var worktrees: [Worktree] = []
   public var sessions: [TerminalSession] = []
   public var tabs: [TerminalTab] = []
-  /// The columns of tabs each worktree is divided into, in display order
+  /// The groups of tabs each worktree is divided into, in display order
   /// left to right; see `TabGroup`. A worktree with tabs has at least one.
   var tabGroups: [TabGroup] = []
 
   public var selectedWorktreeID: Worktree.ID?
-  /// Which column a worktree's keystrokes go to. Here and not on `Worktree`
+  /// Which group a worktree's keystrokes go to. Here and not on `Worktree`
   /// for the same reason `worktreeNames` is.
   var focusedGroupByWorktree: [Worktree.ID: TabGroup.ID] = [:]
   /// The user's own name for a worktree. Here and not on `Worktree`, whose
@@ -19,7 +19,7 @@ public struct Workspace: Codable, Hashable, Sendable {
 
   public var appearance = Appearance()
   public var worktreeDefaults = WorktreeSettings()
-  public var notifications = NotificationPreference.default
+  public var notifications = NotificationPreference.off
   /// Catalogue id of the agent New Agent Tab starts, or `nil` for none.
   /// Projects may override it in `ProjectSettings`.
   public var preferredAgentID: String?
@@ -36,7 +36,7 @@ public struct Workspace: Codable, Hashable, Sendable {
   public var autoStartAgentOnCreate = false
   /// Path of the shell new tabs run, `ShellCatalogue.customID` for the one
   /// typed in `customShellPath`, or `nil` for `$SHELL`.
-  public var defaultShell: String?
+  public var preferredShellID: String?
   /// What `ShellCatalogue.customID` runs, as the user typed it.
   public var customShellPath = ""
   /// Catalogue id of the editor Open in Editor uses, or `nil` for none.
@@ -72,6 +72,11 @@ public struct Workspace: Codable, Hashable, Sendable {
 
   static let defaultHookTimeoutSeconds = 60
 
+  /// `hookTimeoutSeconds` as the runner takes it; `nil` for no limit.
+  public var hookTimeout: Duration? {
+    hookTimeoutSeconds > 0 ? .seconds(hookTimeoutSeconds) : nil
+  }
+
   public init() {}
 
   /// Every field defaults, and every collection but projects is lossy;
@@ -93,7 +98,7 @@ public struct Workspace: Codable, Hashable, Sendable {
     worktreeDefaults = try container.decode(
       WorktreeSettings.self, forKey: .worktreeDefaults, or: WorktreeSettings())
     notifications = container.decodeTolerantly(
-      NotificationPreference.self, forKey: .notifications, or: .default)
+      NotificationPreference.self, forKey: .notifications, or: .off)
     preferredAgentID = try container.decodeIfPresent(String.self, forKey: .preferredAgentID)
     customAgentCommand = try container.decode(String.self, forKey: .customAgentCommand, or: "")
     agentFlags = try container.decode([String: String].self, forKey: .agentFlags, or: [:])
@@ -101,7 +106,7 @@ public struct Workspace: Codable, Hashable, Sendable {
     // State from before the two were split says one thing about both.
     autoStartAgentOnCreate = try container.decode(
       Bool.self, forKey: .autoStartAgentOnCreate, or: autoStartAgent)
-    defaultShell = try container.decodeIfPresent(String.self, forKey: .defaultShell)
+    preferredShellID = try container.decodeIfPresent(String.self, forKey: .preferredShellID)
     customShellPath = try container.decode(String.self, forKey: .customShellPath, or: "")
     preferredEditorID = try container.decodeIfPresent(String.self, forKey: .preferredEditorID)
     customEditorCommand = try container.decode(String.self, forKey: .customEditorCommand, or: "")
@@ -130,12 +135,25 @@ public struct Workspace: Codable, Hashable, Sendable {
     gitStatusIndicator = container.decodeTolerantly(
       GitStatusIndicator.self, forKey: .gitStatusIndicator, or: .default)
 
-    // A file written before columns names no group but says which tab was
+    // A file written before groups names no group but says which tab was
     // active. Read here, or `repairReferences` falls back to the last tab.
     let legacy = try? decoder.container(keyedBy: LegacyKeys.self)
     let wasActive = legacy?.decodeTolerantly(
       [Worktree.ID: TerminalTab.ID].self, forKey: .activeTabByWorktree)
     adoptUngroupedTabs(activeByWorktree: wasActive ?? [:])
+  }
+
+  /// `preferredShellID` keeps `defaultShell`, the key it was written under.
+  private enum CodingKeys: String, CodingKey {
+    case projects, worktrees, sessions, tabs, tabGroups
+    case selectedWorktreeID, focusedGroupByWorktree, worktreeNames
+    case appearance, worktreeDefaults, notifications
+    case preferredAgentID, customAgentCommand, agentFlags, autoStartAgent, autoStartAgentOnCreate
+    case preferredShellID = "defaultShell"
+    case customShellPath, preferredEditorID, customEditorCommand
+    case opensTerminalOnSelect, opensTerminalOnCreate, worktreeSortOrder, showsActiveWorktreesFirst
+    case confirmsWorktreeRemoval, deletesBranchWithWorktree, trashesRemovedWorktrees
+    case hookTimeoutSeconds, gitStatusIndicator
   }
 
   /// Keys no property answers to any more, read only to carry what an older

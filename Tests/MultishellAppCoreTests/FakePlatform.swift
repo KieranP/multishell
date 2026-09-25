@@ -23,25 +23,25 @@ final class FakePlatform: Platform {
   /// Where `moveToTrash` puts things, standing in for the Trash; `nil`
   /// makes it refuse.
   var trash: URL? {
-    get { trashRecord.destination }
-    set { trashRecord.destination = newValue }
+    get { fakeTrash.destination }
+    set { fakeTrash.destination = newValue }
   }
-  var trashed: [URL] { trashRecord.trashed }
+  var trashed: [URL] { fakeTrash.trashed }
   /// Per call, whether it came on the main thread, which it must not.
-  var trashCallsOnMainThread: [Bool] { trashRecord.onMainThread }
-  nonisolated let trashRecord = TrashRecord()
+  var trashCallsOnMainThread: [Bool] { fakeTrash.onMainThread }
+  private nonisolated let fakeTrash = FakeTrash()
 
   func closeKeyWindow() { closedKeyWindows += 1 }
   func chooseDirectory(prompt: String) async -> URL? { directoryToChoose }
   func revealInFileBrowser(_ url: URL) { revealed.append(url) }
   func copyToClipboard(_ text: String) { clipboard.append(text) }
   nonisolated func moveToTrash(_ url: URL) throws {
-    trashRecord.onMainThread.append(Thread.isMainThread)
-    guard let trash = trashRecord.destination else { throw TrashRefused() }
+    fakeTrash.onMainThread.append(Thread.isMainThread)
+    guard let trash = fakeTrash.destination else { throw TrashRefused() }
     try FileManager.default.createDirectory(at: trash, withIntermediateDirectories: true)
     try FileManager.default.moveItem(
       at: url, to: trash.appendingPathComponent(url.lastPathComponent))
-    trashRecord.trashed.append(url)
+    fakeTrash.trashed.append(url)
   }
   func applicationURL(forIdentifier identifier: String) -> URL? { applications[identifier] }
   func open(_ directory: URL, withApplication application: URL) async throws {
@@ -55,4 +55,34 @@ final class FakePlatform: Platform {
   func setBadgeCount(_ count: Int?) { badges.append(count) }
   var notificationSettingsLocation: String? = "System Settings > Notifications"
   func log(_ message: String) { logged.append(message) }
+}
+
+private struct TrashRefused: Error {}
+
+/// What the fake Trash was asked, written from whatever thread asked.
+private final class FakeTrash: Sendable {
+  private struct State {
+    var destination: URL? = Scratch.path("trash")
+    var trashed: [URL] = []
+    var onMainThread: [Bool] = []
+  }
+
+  private let state = Mutex(State())
+
+  deinit {
+    if let destination { Scratch.remove(destination) }
+  }
+
+  var destination: URL? {
+    get { state.withLock { $0.destination } }
+    set { state.withLock { $0.destination = newValue } }
+  }
+  var trashed: [URL] {
+    get { state.withLock { $0.trashed } }
+    set { state.withLock { $0.trashed = newValue } }
+  }
+  var onMainThread: [Bool] {
+    get { state.withLock { $0.onMainThread } }
+    set { state.withLock { $0.onMainThread = newValue } }
+  }
 }

@@ -5,30 +5,30 @@ import MultishellProcess
 /// Which catalogue agents are on a PATH, and how the dropdown lists them.
 public struct AgentDetection: Equatable, Sendable {
   /// Agent id to the executable found for it.
-  public let found: [String: URL]
+  let found: [String: URL]
 
-  public static let empty = AgentDetection(found: [:])
+  static let empty = AgentDetection(found: [:])
 
   init(found: [String: URL]) {
     self.found = found
   }
 
-  init(path: String?) {
+  init(searchPath: String?) {
     var found: [String: URL] = [:]
     for agent in AgentCatalogue.agents {
-      if let executable = ExecutableLookup.find(agent.executable, path: path) {
+      if let executable = ExecutableLookup.find(agent.executable, searchPath: searchPath) {
         found[agent.id] = executable
       }
     }
     self.found = found
   }
 
-  public func isInstalled(_ id: String) -> Bool {
+  func isInstalled(_ id: String) -> Bool {
     id == AgentCatalogue.customID || found[id] != nil
   }
 
   public func options(selected: String?) -> [DetectionOption] {
-    DetectionOption.catalogue(
+    DetectionOption.catalogueOptions(
       AgentCatalogue.agents.map { ($0.id, $0.name) },
       installed: { found[$0] != nil },
       selected: selected,

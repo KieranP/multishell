@@ -21,4 +21,13 @@ struct WorktreeSortOrderTests {
     #expect(WorktreeSortOrder(rawValue: "alphabetical") == .alphabetical)
     #expect(WorktreeSortOrder.default == .alphabetical)
   }
+
+  /// The raw values travel in a committed file, so a case renamed rather than added breaks it.
+  @Test func theStoredNamesAreTheFileFormat() {
+    #expect(
+      WorktreeSortOrder.allCases.map(\.rawValue) == [
+        "alphabetical", "createdNewestFirst", "createdOldestFirst", "committedNewestFirst",
+        "committedOldestFirst",
+      ])
+  }
 }

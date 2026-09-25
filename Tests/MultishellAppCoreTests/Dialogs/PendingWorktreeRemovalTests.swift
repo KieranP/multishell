@@ -32,15 +32,16 @@ struct PendingWorktreeRemovalTests {
   @Test func withConfirmationOnTheDialogAsksAboutTheBranchUnlessASettingSettlesIt() throws {
     let pending = try asked(branched, confirms: true, alwaysDeletesBranch: false)
     #expect(pending.choices.count == 2, "one button for the branch, one without it")
-    #expect(!pending.deletesBranch)
-    #expect(pending.removeLabel == "Remove Worktree")
+    #expect(pending.branchHandling == .asks)
+    #expect(pending.primaryRemoveLabel == "Remove Worktree")
     #expect(pending.removeWithBranchLabel == "Remove Worktree and Branch")
     #expect(pending.title == "Remove worktree feat?")
 
     let settled = try asked(branched, confirms: true, alwaysDeletesBranch: true)
     #expect(settled.choices.count == 1)
-    #expect(settled.deletesBranch)
-    #expect(settled.removeLabel == "Remove Worktree and Branch", "one button, saying what it does")
+    #expect(settled.branchHandling == .decided(deletes: true))
+    #expect(
+      settled.primaryRemoveLabel == "Remove Worktree and Branch", "one button, saying what it does")
   }
 
   /// The dialog names the row the user right-clicked. The branch is still
@@ -50,6 +51,7 @@ struct PendingWorktreeRemovalTests {
       branched, customName: "Checkout flow", confirms: true, alwaysDeletesBranch: false)
     guard case .ask(let pending) = decision else { throw RemovalTestFailure(decision: decision) }
     #expect(pending.title == "Remove worktree Checkout flow?")
+    #expect(pending.message(warning: nil).hasPrefix("Moves Checkout flow to the Trash"))
     #expect(pending.message(warning: nil).contains("The branch feat is kept unless"))
   }
 
@@ -66,8 +68,8 @@ struct PendingWorktreeRemovalTests {
 
   @Test func aDetachedWorktreeNeverHasItsBranchDeleted() throws {
     let pending = try asked(detached, confirms: true, alwaysDeletesBranch: true)
-    #expect(!pending.deletesBranch && pending.choices.count == 1)
-    #expect(pending.removeLabel == "Remove Worktree")
+    #expect(pending.branchHandling == .decided(deletes: false) && pending.choices.count == 1)
+    #expect(pending.primaryRemoveLabel == "Remove Worktree")
     #expect(!pending.message(warning: nil).contains("branch"))
   }
 
@@ -86,22 +88,23 @@ struct PendingWorktreeRemovalTests {
   }
 
   @Test func withTheTrashOffTheMessageAndWarningSayTheDirectoryIsDeleted() {
-    let deletes = PendingWorktreeRemoval(worktree: branched, branch: .asks, trashes: false)
-    #expect(deletes.message(warning: nil).hasPrefix("Deletes /trees/feat and removes it from git."))
+    let deletes = PendingWorktreeRemoval(worktree: branched, branchHandling: .asks, trashes: false)
+    #expect(deletes.message(warning: nil).hasPrefix("Deletes feat and removes it from git."))
     #expect(
       PendingWorktreeRemoval.warning(changedFiles: 2, liveTerminals: 0, trashes: false)
         == "It has 2 changed files, deleted with the directory.")
   }
 
-  @Test func theMessageNamesThePathTheBranchsFateAndTheWarning() {
-    let asks = PendingWorktreeRemoval(worktree: branched, branch: .asks)
+  @Test func theMessageNamesTheWorktreeTheBranchsFateAndTheWarning() {
+    let asks = PendingWorktreeRemoval(worktree: branched, branchHandling: .asks)
     #expect(
       asks.message(warning: "2 open terminals will be closed.")
-        == "Moves /trees/feat to the Trash and removes it from git.\n\nThe branch feat is kept unless you remove it too.\n\n2 open terminals will be closed."
+        == "Moves feat to the Trash and removes it from git.\n\nThe branch feat is kept unless you remove it too.\n\n2 open terminals will be closed."
     )
-    let deletes = PendingWorktreeRemoval(worktree: branched, branch: .decided(deletes: true))
+    let deletes = PendingWorktreeRemoval(
+      worktree: branched, branchHandling: .decided(deletes: true))
     #expect(deletes.message(warning: nil).hasSuffix("The branch feat is deleted with it."))
-    let keeps = PendingWorktreeRemoval(worktree: branched, branch: .decided(deletes: false))
+    let keeps = PendingWorktreeRemoval(worktree: branched, branchHandling: .decided(deletes: false))
     #expect(keeps.message(warning: nil).hasSuffix("The branch feat is kept."))
   }
 

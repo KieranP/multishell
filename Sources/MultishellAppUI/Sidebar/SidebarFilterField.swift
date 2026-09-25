@@ -5,7 +5,7 @@ import SwiftUI
 /// The field the tree is filtered by, folded away until asked for. It takes
 /// the keyboard as it appears, so the magnifier is one click.
 struct SidebarFilterField: View {
-  @Binding var filter: String
+  @Binding var text: String
   let theme: Theme
   let metrics: UIMetrics
   let close: () -> Void
@@ -14,7 +14,7 @@ struct SidebarFilterField: View {
 
   var body: some View {
     HStack(spacing: 6) {
-      TextField(t("sidebar.filter"), text: $filter)
+      TextField(t("sidebar.filter"), text: $text)
         .textFieldStyle(.plain)
         .font(.system(size: metrics.secondary))
         .foregroundStyle(theme.textPrimary)
@@ -23,9 +23,9 @@ struct SidebarFilterField: View {
         // installed yet.
         .task { isFocused = true }
         .onExitCommand(perform: close)
-      if SidebarFilter(filter).isActive {
+      if SidebarFilter(text).isActive {
         Button {
-          filter = ""
+          text = ""
           isFocused = true
         } label: {
           Image(systemName: "xmark.circle.fill")

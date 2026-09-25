@@ -14,10 +14,15 @@ extension WorktreeGitBranchesTests {
       try await repo.coordinator.git.localBranches(repo.project).sorted() == ["feature", "main"])
   }
 
-  @Test func aRepositoryIsRecognisedAndItsParentIsNot() async throws {
+  @Test func remoteBranchesComeFromRefsRemotesWithoutHEAD() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    #expect(await repo.coordinator.git.isRepository(repo.project.path))
-    #expect(await repo.coordinator.git.isRepository(repo.root) == false)
+    let upstream = repo.project
+    _ = try await repo.git.run(["branch", "feature"], in: upstream.path)
+    let clone = repo.root.appendingPathComponent("clone", isDirectory: true)
+    _ = try await repo.git.run(["clone", "-q", upstream.path.path, clone.path], in: repo.root)
+
+    let branches = try await WorktreeGit(runner: repo.git).remoteBranches(Project(path: clone))
+    #expect(branches.sorted() == ["origin/feature", "origin/main"])
   }
 }

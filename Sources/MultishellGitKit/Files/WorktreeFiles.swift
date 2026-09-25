@@ -35,15 +35,17 @@ public enum WorktreeFiles {
       // first, so `.env` on a checkout without one is not an escape.
       guard manager.fileExists(atPath: source.path) else { continue }
       let landsInWorktree = Self.isInside(
-        worktreeBase, destination.deletingLastPathComponent().splitAtDeepestExisting().existing)
+        destination.deletingLastPathComponent().splitAtDeepestExisting().existing,
+        under: worktreeBase)
       if heldToRepository {
         // Each end as on disk, the source itself included: `copyItem` carries
         // a symlink rather than following it. See Docs/design/hooks.md.
         guard landsInWorktree,
-          Self.isInside(repositoryBase, source.deletingLastPathComponent()),
-          Self.isInside(repositoryBase, source)
+          Self.isInside(source.deletingLastPathComponent(), under: repositoryBase),
+          Self.isInside(source, under: repositoryBase)
         else {
-          failures.append(WorktreeFileFailure.Item(path: path, underlying: WorktreeFileEscape()))
+          failures.append(
+            WorktreeFileFailure.PathFailure(path: path, underlying: WorktreeFileEscape()))
           continue
         }
       } else if !landsInWorktree {
@@ -67,7 +69,7 @@ public enum WorktreeFiles {
       } catch is WorktreeFileStopped {
         throw WorktreeFileStopped(failures: failures, skipped: skipped)
       } catch {
-        failures.append(WorktreeFileFailure.Item(path: path, underlying: error))
+        failures.append(WorktreeFileFailure.PathFailure(path: path, underlying: error))
       }
     }
     guard failures.isEmpty else {
@@ -80,14 +82,15 @@ public enum WorktreeFiles {
   /// than skipped for not existing under the repository. See settings.md.
   private static func spellingCheck(
     _ paths: [String], under repository: URL
-  ) -> (listed: [String], escapes: [WorktreeFileFailure.Item]) {
+  ) -> (listed: [String], escapes: [WorktreeFileFailure.PathFailure]) {
     var listed: [String] = []
-    var escapes: [WorktreeFileFailure.Item] = []
+    var escapes: [WorktreeFileFailure.PathFailure] = []
     for path in paths {
       if RepositoryContainment.holds(listedPath: path, under: repository) {
         listed.append(path)
       } else {
-        escapes.append(WorktreeFileFailure.Item(path: path, underlying: WorktreeFileEscape()))
+        escapes.append(
+          WorktreeFileFailure.PathFailure(path: path, underlying: WorktreeFileEscape()))
       }
     }
     return (listed, escapes)
@@ -154,7 +157,7 @@ public enum WorktreeFiles {
   }
 
   /// Whether `url`, symlinks resolved, is `base` or something under it.
-  private static func isInside(_ base: URL, _ url: URL) -> Bool {
+  private static func isInside(_ url: URL, under base: URL) -> Bool {
     url.resolvingSymlinksInPath().pathComponents(under: base) != nil
   }
 }

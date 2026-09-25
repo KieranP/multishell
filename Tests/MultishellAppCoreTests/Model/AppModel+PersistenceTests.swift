@@ -4,6 +4,7 @@ import TestScratch
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellCore
 
 @Suite(.serialized) @MainActor
 struct AppModelPersistenceTests {
@@ -104,5 +105,20 @@ struct AppModelPersistenceTests {
     #expect(h.model.pendingSave == nil)
     let after = try FileManager.default.attributesOfItem(atPath: file.path)[.modificationDate]
     #expect(written as? Date == after as? Date, "a prompt rewrote the state file")
+  }
+
+  @Test func aFailingSaveIsReportedOnceNotAfterEveryChange() async {
+    // A file where a directory is needed: nothing can be created under it.
+    let h = Harness(stateFile: URL(fileURLWithPath: "/dev/null/multishell/state.json"))
+    h.model.presentedError = nil
+
+    h.model.save()
+    let first = await h.presentedErrorArrives()
+    #expect(first != nil)
+
+    h.model.save()
+    h.model.save()
+    h.model.presentedError = nil
+    #expect(await h.presentedErrorArrives() == nil, "the same alert, not a new one each time")
   }
 }

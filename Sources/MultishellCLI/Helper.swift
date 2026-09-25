@@ -41,7 +41,7 @@ enum Helper {
       multishell agent-hook --agent ID
           Read that agent's hook payload from stdin and report the state its
           event stands for. Always exits 0. Known agents:
-          \(knownAgents).
+          \(knownAgentList).
       multishell install-agent-hooks --agent ID [--print]
           Write the hooks into that agent's own file, or print them.
       multishell remove-agent-hooks --agent ID
@@ -49,7 +49,7 @@ enum Helper {
 
     """
 
-  static let knownAgents = AgentHookCatalogue.integrations.map(\.id).joined(separator: ", ")
+  static let knownAgentList = AgentHookCatalogue.integrations.map(\.id).joined(separator: ", ")
 
   static func run(
     _ arguments: [String], environment: [String: String], standardInput: FileHandle
@@ -59,34 +59,33 @@ enum Helper {
     do {
       switch arguments.first {
       case "state":
-        return try state(Array(arguments.dropFirst()), environment: environment)
+        return try reportState(Array(arguments.dropFirst()), environment: environment)
       case "command-started":
-        let options = try CommandOptions(arguments.dropFirst())
-        reportShellState(
-          SessionState.running, environment: environment, pid: options.int32("pid"),
-          command: options["command"])
+        let options = try CommandOptions(arguments.dropFirst(), valued: ["pid", "command"])
+        reportCommandStarted(
+          environment: environment, shellPID: options.int32("pid"), command: options["command"])
         return 0
       case "command-finished":
-        let options = try CommandOptions(arguments.dropFirst())
-        reportShellState(
-          SessionState.finished(exitCode: options.int32("exit")), environment: environment,
+        let options = try CommandOptions(arguments.dropFirst(), valued: ["exit", "duration"])
+        reportCommandFinished(
+          environment: environment, exitCode: options.int32("exit"),
           duration: options.double("duration"))
         return 0
       case "relay":
-        let options = try CommandOptions(arguments.dropFirst())
+        let options = try CommandOptions(arguments.dropFirst(), valued: ["pid"])
         relay(environment: environment, input: standardInput, shellPID: options.int32("pid"))
         return 0
       // `claude-hook` stays: builds before the rename wrote it into
       // settings files that are on disk now and run this line.
       case "agent-hook", "claude-hook":
-        agentHook(agentID(in: arguments), environment: environment, input: standardInput)
+        reportAgentHook(agentID(in: arguments), environment: environment, input: standardInput)
         return 0
       case "install-agent-hooks":
-        let options = try CommandOptions(arguments.dropFirst(), names: ["agent"], flags: ["print"])
+        let options = try CommandOptions(arguments.dropFirst(), valued: ["agent"], flags: ["print"])
         return installHooks(try requiredIntegration(options), print: options.has("print"))
       case "remove-agent-hooks":
         return removeHooks(
-          try requiredIntegration(CommandOptions(arguments.dropFirst(), names: ["agent"])))
+          try requiredIntegration(CommandOptions(arguments.dropFirst(), valued: ["agent"])))
       case "--version", "version":
         print("multishell helper, protocol version \(SessionStateReport.protocolVersion)")
         return 0
@@ -97,15 +96,15 @@ enum Helper {
         throw UsageError("unknown command \(arguments[0])")
       }
     } catch let error as UsageError {
-      fail("\(error.message)\n\n\(usage)")
+      printError("\(error.message)\n\n\(usage)")
       return 2
     } catch {
-      fail("\(error)")
+      printError("\(error)")
       return 1
     }
   }
 
-  static func fail(_ message: String) {
+  static func printError(_ message: String) {
     FileHandle.standardError.write(Data("multishell: \(message)\n".utf8))
   }
 }

@@ -12,10 +12,10 @@ at the bottom.
   keyboard, and the app in front. A pane can be focused for hours with the
   window behind another app.
 - **A click into a pane moves the keyboard through the engine**, not through a
-  reconcile, so the registry hands that focus back and the model marks the pane
-  seen from there.
+  reconcile, so the reconciler hands that focus back and the model marks the
+  pane seen from there.
 - **Not every pane on screen counts as seen.** A split's other pane and the
-  other column's tab are in view and not looked at, where clearing on the
+  other group's tab are in view and not looked at, where clearing on the
   worktree's selection took a finished agent's dot away before anyone read it.
 - **The banner keeps the wider notion**: any pane on screen raises none and
   loses one it had. So a Done can stand on a pane in view with no banner, and
@@ -28,8 +28,8 @@ at the bottom.
 - **Red until the source reports again or the user clears it.** Cost: a failure
   nobody deals with holds its dot until the shell is closed, which is the point.
 - **An interrupt sends no stop**, so reports carry a pid the app polls. No
-  timeout, a long task not being a stale one. Cost: closing a working pane asks
-  first.
+  timeout, a long task not being a stale one. Cost: closing a pane whose agent
+  is working asks first (agents.md).
 - **The shell's own end-of-command outranks a report.** It settles background
   workers, the owed Done and which agent is at the prompt, whatever was in the
   foreground having returned (agents.md).
@@ -191,9 +191,9 @@ at the bottom.
   terminal on create and not on select got nothing.
 - **A user's Ghostty config is the middle of three layers**: this app's terminal
   defaults first, their file over them, the theme over both.
-- **So their file decides font family, cursor, scrollback and padding**, and
-  cannot decide the colours the chrome is painted to match or the font size a
-  settings row owns.
+- **So their file decides cursor, scrollback and padding**, and font family
+  while the font row says System monospace, and cannot decide the colours the
+  chrome is painted to match or the font size a settings row owns.
 - **Keybinds arrive as written**, less the app's own combinations and the keys
   it releases, unbound by name as before, so a binding they put over a menu item
   is theirs no longer.
@@ -305,13 +305,13 @@ at the bottom.
 - **Find is the engine's search under a bar of ours**, driven by its three
   search actions. The bar is the app's, the engine's own being a GUI the
   embedding never shows.
-- **A bar is a pane's own**, keyed by session with its own needle, and nothing
-  about one reaches another: one left up in another worktree is still up when
-  the user comes back.
+- **A bar is a pane's own**, keyed by session with its own find text, and
+  nothing about one reaches another: one left up in another worktree is still up
+  when the user comes back.
 - **The first cut had one bar in the window that followed the keystroke**, and
   Find Next in a second worktree pulled a search out from under the first.
-- **The needle is kept per pane across closes**, as the Mac's find field is, and
-  reopening searches it again so the matches light up.
+- **The find text is kept per pane across closes**, as the Mac's find field is,
+  and reopening searches it again so the matches light up.
 - **Every find keystroke acts on the bar whose field has the keyboard**, else on
   the focused pane of the tab in front, and the next and previous items are
   disabled while that pane has no bar.
@@ -326,11 +326,11 @@ at the bottom.
 - **Next walks towards the prompt and Previous away**, as a stock terminal does,
   wrapping in the engine's own arithmetic. The engine's own next walks the other
   way, so the host crosses them.
-- **Typing highlights and selects nothing**, and the first step after a needle,
-  whichever arrow asked, lands on the match nearest the prompt, which is the one
-  nearest what is on screen.
+- **Typing highlights and selects nothing**, and the first step after a new find
+  text, whichever arrow asked, lands on the match nearest the prompt, which is
+  the one nearest what is on screen.
 - **The model keeps which panes have a selected match**, the engine reporting
-  nothing back, and a new needle or a reopened bar starts over. Cost: typing
+  nothing back, and a new find text or a reopened bar starts over. Cost: typing
   alone scrolls nowhere, and the first step wraps to the top of the scrollback.
 - **Four of the engine's own bindings meet this**, unbound like every other menu
   shortcut, one of them opening a bar this embedding never shows and another
@@ -341,17 +341,17 @@ at the bottom.
 - **The engine's search-for-selection is left bound and does nothing here**, its
   whole effect being an action the wrapper drops, and the app cannot offer it,
   the wrapper keeping the selection internal.
-- **The same needle set again is nothing to the model.** The field commits on
+- **The same find text set again is nothing to the model.** The field commits on
   Return as well as on each keystroke, and a repeat taken as a change would send
-  the needle again and start the selection over.
-- **Three engine facts decide that shape.** A needle change highlights and
+  the find text again and start the selection over.
+- **Three engine facts decide that shape.** A find text change highlights and
   selects none, nothing scrolling until a navigate arrives.
-- **A navigate sent with the needle selects nothing either**: both go through
+- **A navigate sent with the find text selects nothing either**: both go through
   one mailbox, which drains before the thread has matched anything, so the first
   step is the model's to send and to remember.
-- **A needle differing only in case is unchanged to the engine**, so the
+- **Find text differing only in case is unchanged to the engine**, so the
   selection stands and the step after it moves on by one.
-- **An empty needle ends the engine's search outright**, so an emptied field
+- **An empty find text ends the engine's search outright**, so an emptied field
   sends a search with nothing after it and the bar's close sends the end action,
   which also tells the engine's own bar.
 - **Cost: no "3 of 12".** The engine reports its match count and which is
@@ -385,9 +385,10 @@ at the bottom.
 - **A banner is taken back when what it said stops being true**: the state
   moving on, or the user reaching the pane. Waiting survives being looked at,
   its question still standing.
-- **Reaching it is one flag, computed once per report.** Two flags let a turn
-  ending in a shown pane while the user was in another app raise a banner and
-  clear the dot in the same breath, each right by its own rule.
+- **Reaching it is read once per report, and both of its flags need the app in
+  front.** Flags that disagreed on that let a turn ending in a shown pane while
+  the user was in another app raise a banner and clear the dot in the same
+  breath, each right by its own rule.
 - **So returning to the app is a look**, alongside selecting, activating and
   closing the board; a shell exiting while the user is elsewhere is not.
 - **Taking back removes the pending request too**, delivery landing a moment
@@ -412,3 +413,6 @@ at the bottom.
 - **"Built a controller" was the earlier test and did not hold**: a copy that
   handed over once kept its terminals until it quit, and built one too. The
   controller is still built on first use, the theme held until there is one.
+- **An item's files are pasted in the order it names them**, a name it did not
+  give going last. They land in whatever order its queue runs, so an item naming
+  several pasted them out of order: `PromisedDropTests`.

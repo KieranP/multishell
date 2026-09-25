@@ -1,8 +1,8 @@
 import Foundation
-import MultishellCore
 import TestScratch
 
 @testable import MultishellAppCore
+@testable import MultishellCore
 @testable import MultishellProcess
 
 @MainActor
@@ -38,10 +38,10 @@ final class Harness {
     if savedSelection { store.selectWorktree(main.id) }
 
     model = AppModel(
-      store: store, host: engine, worktrees: nil, watcher: watcher, platform: platform,
+      store: store, host: engine, coordinator: nil, watcher: watcher, platform: platform,
       stateSource: source, notifier: notifier)
     model.statusReads.pace = .unpaced
-    model.refreshLaunchFiles = { _ in nil }
+    model.refreshAppLaunchFiles = { _ in nil }
     model.sweepPromisedDropCopies = {}
     let path = tmp.appendingPathComponent("bin").path
     model.captureLoginEnvironment = {
@@ -70,9 +70,7 @@ final class Harness {
   /// The alert a save that ran off the main actor raised, waiting up to a
   /// second for the write to come back; `nil` where none did.
   func presentedErrorArrives() async -> PresentedError? {
-    for _ in 0..<100 where model.presentedError == nil {
-      try? await Task.sleep(for: .milliseconds(10))
-    }
+    try? await waitUntil({ model.presentedError != nil }, seconds: 1)
     return model.presentedError
   }
 }

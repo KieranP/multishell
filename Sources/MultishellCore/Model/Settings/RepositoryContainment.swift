@@ -27,7 +27,7 @@ public enum RepositoryContainment {
 
   /// The entries the root may name, as one text; `nil` where none is left. A
   /// list with nothing to drop comes back as written, since export rewrites it.
-  static func holding(listedPaths list: String?, under repository: URL) -> String? {
+  static func keepingContained(listedPaths list: String?, under repository: URL) -> String? {
     guard let list else { return nil }
     let entries = LineList.entries(in: list)
     let kept = entries.filter { holds(listedPath: $0, under: repository) }

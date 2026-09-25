@@ -4,6 +4,6 @@ extension ProjectSettings {
   public func takesIconFromSharedFile(_ shared: SharedProjectSettings?) -> Bool {
     (ProjectIcon.normalizedGlyph(iconGlyph) == nil
       && ProjectIcon.normalizedGlyph(shared?.iconGlyph) != nil)
-      || (iconTint == nil && ProjectIcon.validTint(shared?.iconTint) != nil)
+      || (iconTint == nil && ProjectIcon.usableTint(shared?.iconTint) != nil)
   }
 }

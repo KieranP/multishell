@@ -4,7 +4,6 @@ public struct AgentDescriptor: Identifiable, Hashable, Sendable {
   public let name: String
   /// Looked up on the login shell's PATH.
   public let executable: String
-  public let launchArguments: [String]
   /// How to resume the last conversation when a saved agent tab comes back.
   /// `nil` means the tab returns as a plain shell.
   public let resumeArguments: [String]?
@@ -17,15 +16,14 @@ public struct AgentDescriptor: Identifiable, Hashable, Sendable {
   /// colour, which is what a project mark that is black or white wants.
   let markTint: String?
 
-  public init(
-    id: String, name: String, executable: String, launchArguments: [String] = [],
+  init(
+    id: String, name: String, executable: String,
     resumeArguments: [String]? = nil, fileMentionPrefix: String? = nil,
     mark: AgentMark, markTint: String? = nil
   ) {
     self.id = id
     self.name = name
     self.executable = executable
-    self.launchArguments = launchArguments
     self.resumeArguments = resumeArguments
     self.fileMentionPrefix = fileMentionPrefix
     self.mark = mark

@@ -2,11 +2,11 @@
 /// `project.settings`, so the project must be the one `AppModel.resolved` made.
 extension Workspace {
   public func worktreeSettings(for project: Project) -> WorktreeSettings {
-    project.settings.effective(defaults: worktreeDefaults)
+    project.settings.effectiveWorktreeSettings(defaults: worktreeDefaults)
   }
 
   /// The agent New Agent Tab starts in this project, or `nil` for none.
-  public func preferredAgentID(for project: Project) -> String? {
+  public func effectiveAgentID(for project: Project) -> String? {
     AgentCatalogue.effectiveID(
       global: preferredAgentID, override: project.settings.preferredAgentID)
   }
@@ -20,19 +20,19 @@ extension Workspace {
   /// The global flag line of the agent this project runs, which its own
   /// override may have chosen: what a flags override falls back to.
   public func globalAgentFlags(for project: Project) -> String {
-    preferredAgentID(for: project).map { agentFlags[$0] ?? "" } ?? ""
+    effectiveAgentID(for: project).map { agentFlags[$0] ?? "" } ?? ""
   }
 
   /// Whether a new tab in this project starts its agent: the project's say
   /// when it has one, else the global, and only when an agent is in force.
   public func autoStartsAgent(for project: Project) -> Bool {
-    (project.settings.autoStartAgent ?? autoStartAgent) && preferredAgentID(for: project) != nil
+    (project.settings.autoStartAgent ?? autoStartAgent) && effectiveAgentID(for: project) != nil
   }
 
   /// The same for the tab a worktree created here opens.
   public func autoStartsAgentOnCreate(for project: Project) -> Bool {
     (project.settings.autoStartAgentOnCreate ?? autoStartAgentOnCreate)
-      && preferredAgentID(for: project) != nil
+      && effectiveAgentID(for: project) != nil
   }
 
   /// Whether a worktree in this project opens a terminal when it is turned
@@ -58,18 +58,14 @@ extension Workspace {
   }
 
   /// The shell a new tab in this project runs, or `nil` for `$SHELL`.
-  public func defaultShell(for project: Project) -> String? {
+  public func effectiveShellPath(for project: Project) -> String? {
     ShellCatalogue.effectivePath(
-      global: defaultShell, override: project.settings.defaultShell, customPath: customShellPath)
+      global: preferredShellID, override: project.settings.preferredShellID,
+      customPath: customShellPath)
   }
 
   /// The editor Open in Editor uses, or `nil` for none.
   public var effectiveEditorID: String? {
     EditorCatalogue.effectiveID(preferredEditorID)
-  }
-
-  /// `hookTimeoutSeconds` as the runner takes it; `nil` for no limit.
-  public var hookTimeout: Duration? {
-    hookTimeoutSeconds > 0 ? .seconds(hookTimeoutSeconds) : nil
   }
 }

@@ -1,9 +1,9 @@
 import Foundation
-import MultishellProcess
 import TestScratch
 import Testing
 
 @testable import MultishellCore
+@testable import MultishellProcess
 
 /// The built `multishell` binary against a real socket: what a hook does,
 /// end to end, minus Claude itself.
@@ -53,6 +53,33 @@ struct HelperTests {
     #expect(report?.cwd == "/w/repo")
     #expect(report?.pid == 4242)
     #expect(report?.version == SessionStateReport.protocolVersion)
+  }
+
+  @Test func everyOptionTheIntegrationsPassReachesTheReport() async throws {
+    let listener = try ReportListener()
+    defer { listener.stop() }
+    let recorder = listener.recorder
+    let session = UUID()
+
+    let output = try await run(
+      [
+        "state", "error", "--session", session.uuidString, "--cwd", "/w/repo", "--pid", "4242",
+        "--message", "build failed", "--agent", "opencode", "--shell", "true", "--new-turn",
+        "true",
+      ],
+      environment: ["MULTISHELL_SOCKET": listener.path.path])
+
+    #expect(output.succeeded, "\(output.standardError)")
+    try await waitUntil { !recorder.received.isEmpty }
+    let report = SessionStateReport.parse(recorder.received.first ?? "")
+    #expect(report?.state == .failed)
+    #expect(report?.sessionID == session)
+    #expect(report?.cwd == "/w/repo")
+    #expect(report?.pid == 4242)
+    #expect(report?.message == "build failed")
+    #expect(report?.agent == "opencode")
+    #expect(report?.isShell == true)
+    #expect(report?.startsTurn == true)
   }
 
   @Test func anAgentHookPayloadBecomesTheMatchingReportAndAlwaysExitsZero() async throws {
@@ -300,7 +327,7 @@ struct HelperTests {
 
     try await waitUntil { recorder.received.count == 4 }
     let states = recorder.received.compactMap { SessionStateReport.parse($0)?.state }
-    #expect(states == [.running, .done, .error, .done], "signals are not failures")
+    #expect(states == [.running, .done, .failed, .done], "signals are not failures")
     #expect(SessionStateReport.parse(recorder.received[1])?.duration == 3.5)
     #expect(SessionStateReport.parse(recorder.received[2])?.duration == nil)
     #expect(SessionStateReport.parse(recorder.received[0])?.sessionID == session)
@@ -335,12 +362,29 @@ struct HelperTests {
     #expect(version.succeeded && version.standardOutput.contains("protocol version 1"))
   }
 
+  @Test func aMisspeltOptionWithAValueIsAUsageErrorForEveryReportingCommand() async throws {
+    let environment = ["MULTISHELL_SOCKET": "/tmp/ms-nobody.sock"]
+    let lines = [
+      ["state", "running", "--sesion", UUID().uuidString],
+      ["command-started", "--pdi", "4242"],
+      ["command-finished", "--exit", "0", "--duraton", "3"],
+      ["relay", "--pdi", "4242"],
+    ]
+    for line in lines {
+      let output = try await run(line, environment: environment)
+      #expect(output.status == 2, "\(line)")
+      #expect(output.standardError.contains("unexpected argument --"), "\(line)")
+    }
+  }
+
   @Test func printingTheHooksGivesTheSnippetWithoutTouchingAnyFile() async throws {
     let claude = try await run(["install-agent-hooks", "--agent", "claude", "--print"])
     #expect(claude.succeeded)
     let object =
       try JSONSerialization.jsonObject(with: Data(claude.standardOutput.utf8)) as? [String: Any]
-    #expect(AgentHookCatalogue.claude.isInstalled(in: object ?? [:]))
+    let hooks = object?["hooks"] as? [String: Any] ?? [:]
+    #expect(Set(hooks.keys) == Set(AgentHookCatalogue.claude.events.map(\.name)))
+    #expect(AgentHookCatalogue.claude.holdsAnyOfOurs(object ?? [:]))
 
     let copilot = try await run(["install-agent-hooks", "--agent", "copilot", "--print"])
     #expect(copilot.succeeded)
@@ -383,11 +427,11 @@ struct HelperTests {
     let installed = try await run(
       ["install-agent-hooks", "--agent", "codex"], environment: ["HOME": home.path])
     #expect(installed.succeeded, "\(installed.standardError)")
-    #expect(AgentHookCatalogue.codex.isInstalled(in: file))
+    #expect(AgentHookCatalogue.codex.installation(in: file) != .absent)
 
     let removed = try await run(
       ["remove-agent-hooks", "--agent", "codex"], environment: ["HOME": home.path])
     #expect(removed.succeeded, "\(removed.standardError)")
-    #expect(!AgentHookCatalogue.codex.isInstalled(in: file))
+    #expect(AgentHookCatalogue.codex.installation(in: file) == .absent)
   }
 }

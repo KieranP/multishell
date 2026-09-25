@@ -5,7 +5,7 @@ import MultishellCore
 public struct InheritedSetting<Value: Equatable & Sendable>: Equatable, Sendable {
   public let value: Value
   /// The repository's file supplies it, rather than the user's global.
-  public let isFromRepository: Bool
+  let isFromRepository: Bool
 
   init(value: Value, isFromRepository: Bool) {
     self.value = value
@@ -24,6 +24,28 @@ public struct InheritedSetting<Value: Equatable & Sendable>: Equatable, Sendable
 extension InheritedSetting where Value == Bool {
   public var caption: String {
     caption(value ? t("inherited.on") : t("inherited.off"))
+  }
+}
+
+extension InheritedSetting where Value == String {
+  /// Where the project's worktrees land, naming the repository's file while
+  /// it chose the directory and no override has replaced it.
+  public func containerCaption(_ container: String, isOverridden: Bool) -> String {
+    namesRepositoryFile(isOverridden: isOverridden)
+      ? t("project.resolves-to-shared", container, SharedProjectSettings.fileName)
+      : t("project.resolves-to", container)
+  }
+
+  /// What a typed branch would become and where, naming the file the prefix
+  /// came from on the same terms.
+  public func prefixExampleCaption(branch: String, path: String, isOverridden: Bool) -> String {
+    namesRepositoryFile(isOverridden: isOverridden)
+      ? t("project.prefix-example-shared", branch, path, SharedProjectSettings.fileName)
+      : t("project.prefix-example", branch, path)
+  }
+
+  private func namesRepositoryFile(isOverridden: Bool) -> Bool {
+    !isOverridden && isFromRepository
   }
 }
 

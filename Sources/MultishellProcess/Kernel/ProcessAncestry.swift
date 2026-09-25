@@ -5,9 +5,8 @@ import Foundation
 public enum ProcessAncestry {
   /// Shells an agent might run a hook through. `login` is what a terminal
   /// puts under itself.
-  static let shells: Set<String> = [
-    "sh", "bash", "zsh", "dash", "fish", "ksh", "mksh", "tcsh", "csh", "login",
-  ]
+  static let shells: Set<String> = ShellInvocation.interactiveLoginShells
+    .union(ShellInvocation.loginFlagRefusers).union(["login"])
 
   /// `stoppingAt` is the app's own pid: from a prompt in one of its tabs
   /// nothing between the shell and it is a program, so the shell is named.

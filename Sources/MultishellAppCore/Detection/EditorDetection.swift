@@ -5,9 +5,9 @@ import MultishellProcess
 /// Which catalogue editors this machine has. Mostly applications, so each is
 /// looked up by platform identifier and then by its shim on the PATH.
 public struct EditorDetection: Equatable, Sendable {
-  public struct Found: Equatable, Sendable {
-    public let application: URL?
-    public let command: URL?
+  struct Found: Equatable, Sendable {
+    let application: URL?
+    let command: URL?
 
     init(application: URL?, command: URL?) {
       self.application = application
@@ -15,19 +15,19 @@ public struct EditorDetection: Equatable, Sendable {
     }
   }
 
-  public let found: [String: Found]
+  let found: [String: Found]
 
-  public static let empty = EditorDetection(found: [:])
+  static let empty = EditorDetection(found: [:])
 
   init(found: [String: Found]) {
     self.found = found
   }
 
-  init(path: String?, applicationLookup: (String) -> URL?) {
+  init(searchPath: String?, applicationLookup: (String) -> URL?) {
     var found: [String: Found] = [:]
     for editor in EditorCatalogue.editors {
       let application = editor.bundleIdentifier.flatMap(applicationLookup)
-      let command = editor.command.flatMap { ExecutableLookup.find($0, path: path) }
+      let command = editor.command.flatMap { ExecutableLookup.find($0, searchPath: searchPath) }
       if application != nil || command != nil {
         found[editor.id] = Found(application: application, command: command)
       }
@@ -35,12 +35,8 @@ public struct EditorDetection: Equatable, Sendable {
     self.found = found
   }
 
-  public func isInstalled(_ id: String) -> Bool {
-    id == EditorCatalogue.customID || found[id] != nil
-  }
-
   public func options(selected: String?) -> [DetectionOption] {
-    DetectionOption.catalogue(
+    DetectionOption.catalogueOptions(
       EditorCatalogue.editors.map { ($0.id, $0.name) },
       installed: { found[$0] != nil },
       selected: selected,

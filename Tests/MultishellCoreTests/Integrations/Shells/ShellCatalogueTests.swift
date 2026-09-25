@@ -38,23 +38,4 @@ struct ShellCatalogueTests {
     #expect(ShellCatalogue.loginShellPath(environment: ["SHELL": ""]) == "/bin/zsh")
   }
 
-  @Test func aWorkspaceResolvesAProjectsShellThroughItsOverride() {
-    var workspace = Workspace()
-    workspace.defaultShell = "/bin/bash"
-    let plain = Project(path: URL(fileURLWithPath: "/repos/a"))
-    let fish = Project(
-      path: URL(fileURLWithPath: "/repos/b"),
-      settings: ProjectSettings(defaultShell: "/usr/local/bin/fish"))
-    let login = Project(
-      path: URL(fileURLWithPath: "/repos/c"),
-      settings: ProjectSettings(defaultShell: ShellCatalogue.loginShellID))
-    #expect(workspace.defaultShell(for: plain) == "/bin/bash")
-    #expect(workspace.defaultShell(for: fish) == "/usr/local/bin/fish")
-    #expect(workspace.defaultShell(for: login) == nil)
-
-    workspace.defaultShell = ShellCatalogue.customID
-    workspace.customShellPath = "/opt/homebrew/bin/nu"
-    #expect(workspace.defaultShell(for: plain) == "/opt/homebrew/bin/nu")
-    #expect(workspace.defaultShell(for: fish) == "/usr/local/bin/fish")
-  }
 }

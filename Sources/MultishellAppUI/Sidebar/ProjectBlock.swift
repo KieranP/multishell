@@ -10,7 +10,7 @@ struct ProjectBlock: View {
   let project: Project
   /// The rows of the block, in the order its settings ask for.
   let worktrees: [Worktree]
-  let forcedOpen: Bool
+  let isForcedOpen: Bool
   let sessions: WorktreeSessions
   let theme: Theme
   @Binding var projectDropTarget: ProjectDropTarget?
@@ -20,21 +20,20 @@ struct ProjectBlock: View {
 
   var body: some View {
     let metrics = model.metrics
-    let expanded = project.isExpanded || forcedOpen
+    let expanded = project.isExpanded || isForcedOpen
     let shownWorktrees = expanded ? worktrees : []
 
     VStack(spacing: UIMetrics.sidebarRowSpacing) {
       projectRow(expanded: expanded, metrics: metrics)
       ForEach(shownWorktrees) { worktree in
         worktreeRow(worktree, metrics: metrics)
-        // Only the selected worktree's panes, so one set takes room at a time.
-        if isSelected(worktree) {
+        if model.sidebarPaneCount(of: worktree) > 0 {
           PaneRows(model: model, worktree: worktree, theme: theme, metrics: metrics)
         }
       }
     }
     .overlay(alignment: projectDropTarget?.placement == .below ? .bottom : .top) {
-      if model.draggingProject != nil, let target = projectDropTarget,
+      if model.draggedProjectID != nil, let target = projectDropTarget,
         target.projectID == project.id
       {
         InsertionLine(axis: .horizontal, isAfter: target.placement != .above)
@@ -55,17 +54,13 @@ struct ProjectBlock: View {
       ))
   }
 
-  private func isSelected(_ worktree: Worktree) -> Bool {
-    !model.showsAgentBoard && model.workspace.selectedWorktreeID == worktree.id
-  }
-
   private func blockHeight(of shownWorktrees: [Worktree], metrics: UIMetrics) -> CGFloat {
     metrics.projectBlockHeight(
       worktreeRows: shownWorktrees.map { worktree in
         (
           isNamed: model.customName(of: worktree) != nil,
           isRenaming: model.renamingWorktreeID == worktree.id,
-          paneCount: isSelected(worktree) ? model.workspace.paneCount(in: worktree.id) : 0
+          paneCount: model.sidebarPaneCount(of: worktree)
         )
       })
   }
@@ -86,7 +81,7 @@ struct ProjectBlock: View {
       newWorktree: { model.requestNewWorktree(in: project) }
     )
     .equatable()
-    .contextMenu { ProjectMenu(model: model, project: project) }
+    .contextMenu { ProjectActions(model: model, project: project) }
     .inAppDragSource(
       begin: {
         projectDropTarget = nil
@@ -106,7 +101,7 @@ struct ProjectBlock: View {
       terminalCount: sessions[worktree.id].count,
       state: model.state(ofWorktree: worktree.id, sessions: sessions),
       operation: model.worktreeOperations[worktree.id],
-      isSelected: isSelected(worktree),
+      isSelected: model.isInView(worktree),
       isDropTarget: tabDropTarget == worktree.id,
       status: model.statuses[worktree.id],
       mergeState: model.mergeState(of: worktree),

@@ -31,6 +31,12 @@ struct PromisedDropTests {
   /// is empty until the promise is called in, per NSFilePromiseReceiver.h.
   private final class TwoFilePromise: NSFilePromiseReceiver {
     private var calledIn = false
+    private var landing: [String] = ["one.png", "two.png"]
+
+    convenience init(landing: [String]) {
+      self.init()
+      self.landing = landing
+    }
 
     override var fileNames: [String] { calledIn ? ["one.png", "two.png"] : [] }
 
@@ -42,20 +48,28 @@ struct PromisedDropTests {
       calledIn = true
       // AppKit's own signature is not `@Sendable`, though it calls the reader off the main actor.
       nonisolated(unsafe) let reader = reader
-      for name in ["one.png", "two.png"] {
-        let url = destination.appendingPathComponent(name)
-        operationQueue.addOperation { reader(url, nil) }
-      }
+      let urls = landing.map { destination.appendingPathComponent($0) }
+      operationQueue.addOperation { for url in urls { reader(url, nil) } }
     }
   }
 
   @Test func anItemNamingTwoFilesOnceCalledInDeliversBoth() async throws {
     let delivery = Delivery()
-    let directory = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("ms-promised-\(UUID().uuidString)", isDirectory: true)
-    defer { try? FileManager.default.removeItem(at: directory) }
+    let directory = ScratchDirectory.path("promised")
+    defer { ScratchDirectory.remove(directory) }
 
     PromisedDrop.receive([TwoFilePromise()], into: directory) { delivery.answer($0) }
+
+    #expect(try await awaitDelivery(delivery).map(\.lastPathComponent) == ["one.png", "two.png"])
+  }
+
+  @Test func anItemsFilesLandingOutOfOrderArePastedInTheOrderItNamesThem() async throws {
+    let delivery = Delivery()
+    let directory = ScratchDirectory.path("promised")
+    defer { ScratchDirectory.remove(directory) }
+
+    let promise = TwoFilePromise(landing: ["two.png", "one.png"])
+    PromisedDrop.receive([promise], into: directory) { delivery.answer($0) }
 
     #expect(try await awaitDelivery(delivery).map(\.lastPathComponent) == ["one.png", "two.png"])
   }
@@ -63,8 +77,7 @@ struct PromisedDropTests {
   @Test func aDragWithNoPromisesIsAnsweredAtOnce() {
     let delivery = Delivery()
     // Its own directory, since `receive` deletes what it was given when nothing arrives.
-    let directory = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("ms-promised-\(UUID().uuidString)", isDirectory: true)
+    let directory = ScratchDirectory.path("promised")
     PromisedDrop.receive([], into: directory) { delivery.answer($0) }
     #expect(delivery.urls == [])
   }
@@ -80,10 +93,8 @@ struct PromisedDropTests {
   /// The directory exists before the sources are asked, and an empty one would otherwise
   /// sit in the state directory until the sweep a week later.
   @Test func aDropThatDeliversNothingTakesItsDirectoryBack() throws {
-    let directory = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("ms-promised-\(UUID().uuidString)", isDirectory: true)
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-    defer { try? FileManager.default.removeItem(at: directory) }
+    let directory = try ScratchDirectory.make("promised")
+    defer { ScratchDirectory.remove(directory) }
 
     PromisedDrop.receive([], into: directory) { _ in }
 
@@ -92,8 +103,7 @@ struct PromisedDropTests {
 
   @Test func aDropAnsweredAtOnceIsNotAnsweredAgainWhenThePatienceRunsOut() async throws {
     let delivery = Delivery()
-    let directory = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("ms-promised-\(UUID().uuidString)", isDirectory: true)
+    let directory = ScratchDirectory.path("promised")
 
     PromisedDrop.receive([], into: directory, givingUpAfter: 0.05) { delivery.answer($0) }
     #expect(delivery.answers == 1)

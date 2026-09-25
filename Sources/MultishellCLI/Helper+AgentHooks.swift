@@ -5,19 +5,19 @@ import MultishellProcess
 extension Helper {
   /// Nothing this prints or returns may disturb the agent: exit 0, no
   /// stdout, and an event that stands for nothing costs one silent process.
-  static func agentHook(
+  static func reportAgentHook(
     _ id: String, environment: [String: String], input: FileHandle
   ) {
     let data = input.readDataToEndOfFile()
-    guard let integration = AgentHookCatalogue.integration(for: id),
-      let payload = AgentHookPayload(json: data), integration.event(for: payload) != nil
+    guard let integration = AgentHookCatalogue.integration(id),
+      let payload = AgentHookPayload(json: data), integration.handles(payload)
     else { return }
     let pid = reportingProcess(environment)
     guard
       let report = integration.report(
         for: payload,
-        session: sessionID(from: environment[SessionEnvironment.sessionKey]),
-        cwd: environment[SessionEnvironment.worktreeKey], pid: pid,
+        sessionID: sessionID(from: environment[SessionEnvironment.sessionKey]),
+        cwd: environment[SessionEnvironment.workingDirectoryKey], pid: pid,
         backgroundShells: { backgroundShells(of: pid, marker: $0) })
     else { return }
     try? send(report, environment: environment)
@@ -42,9 +42,9 @@ extension Helper {
   /// A person typed this line, so a missing agent is refused, not guessed.
   static func requiredIntegration(_ options: CommandOptions) throws -> AgentHookIntegration {
     guard let id = options["agent"] else { throw UsageError("--agent is required") }
-    guard let integration = AgentHookCatalogue.integration(for: id) else {
+    guard let integration = AgentHookCatalogue.integration(id) else {
       throw UsageError(
-        "no hooks for \(id); known agents: \(knownAgents)")
+        "no hooks for \(id); known agents: \(knownAgentList)")
     }
     return integration
   }
@@ -63,7 +63,7 @@ extension Helper {
       print("\(integration.name) hooks added to \(integration.file.path)")
       return 0
     } catch {
-      fail("\(error)")
+      printError("\(error)")
       return 1
     }
   }
@@ -74,7 +74,7 @@ extension Helper {
       print("\(integration.name) hooks removed from \(integration.file.path)")
       return 0
     } catch {
-      fail("\(error)")
+      printError("\(error)")
       return 1
     }
   }

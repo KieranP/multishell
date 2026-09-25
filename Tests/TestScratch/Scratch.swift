@@ -1,7 +1,9 @@
 import Foundation
 
-/// None of this package's libraries, so every test target can use it without
-/// linking the git layer that `TestSupport` needs.
+@testable import MultishellProcess
+
+/// No git layer, so every test target can use it without linking the
+/// GitKit that `TestSupport` needs.
 public enum Scratch {
   /// Not created: several tests check that the code under test makes it. `tag` only marks a
   /// stray directory a crashed test left behind; nothing reads it.
@@ -40,7 +42,7 @@ public enum Scratch {
   /// An exported `HISTFILE` had an interactive bash append each test's commands to the
   /// developer's own. Empty, not absent, as `ProcessRunner` merges it over its own environment.
   public static var shellEnvironment: [String: String] {
-    ProcessInfo.processInfo.environment.merging(["HISTFILE": ""]) { _, new in new }
+    ShellInvocation.historyless(ProcessInfo.processInfo.environment)
   }
 
   /// Removes a path if it is there, for a `defer` or a `tearDown`.

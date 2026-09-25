@@ -1,9 +1,9 @@
 import GhosttyTerminal
-import MultishellCore
 import SwiftUI
 import Testing
 
 @testable import MultishellAppUI
+@testable import MultishellCore
 
 /// A menu shortcut also needs a `keybind=…=unbind` on the terminal surface, or
 /// the surface eats the keystroke before the menu bar sees it.
@@ -49,12 +49,12 @@ struct AppShortcutTests {
     #expect(controller.lastConfigurationIssue == nil, "\(controller.lastConfigurationIssue ?? "")")
   }
 
-  /// The same for the whole theme layer, which carries the unbinds and now
+  /// The same for the whole app layer, which carries the unbinds and now
   /// the four search colours: every built-in theme, rendered and offered.
   @MainActor
   @Test func everyBuiltInThemesConfigurationIsOneThePinnedLibghosttyAccepts() {
     for theme in Theme.builtins {
-      let rendered = GhosttyThemeConfig.configuration(theme, Appearance()).rendered
+      let rendered = GhosttyAppLayer.configuration(theme, Appearance()).rendered
       #expect(rendered.contains("search-background = #"), "\(theme.name)")
       #expect(rendered.contains("search-selected-background = #"), "\(theme.name)")
       // Match text is the dark one of the pair: a light theme's background is

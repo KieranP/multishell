@@ -1,8 +1,8 @@
 import AppKit
 import MultishellAppCore
-import MultishellCore
 
 @testable import MultishellAppUI
+@testable import MultishellCore
 
 /// The Mac model with no git, watcher or engine behind it, for tests that only
 /// read and write settings or lay a view out.
@@ -18,8 +18,7 @@ final class ModelHarness {
   private let directory: URL
 
   init() {
-    let directory = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("multishell-harness-\(UUID().uuidString)", isDirectory: true)
+    let directory = ScratchDirectory.path("harness")
     self.directory = directory
     try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     let store = WorkspaceStore(
@@ -29,15 +28,9 @@ final class ModelHarness {
     model = MultishellAppUI.AppModel(
       store: store,
       host: NoEngine(),
-      worktrees: nil,
+      coordinator: nil,
       watcher: NoWatcher())
   }
 
-  deinit { try? FileManager.default.removeItem(at: directory) }
-
-  /// The project's own settings, the repository's not layered in, which is
-  /// what the settings forms edit.
-  func settings(of project: Project) -> ProjectSettings {
-    model.settings(of: project)
-  }
+  deinit { ScratchDirectory.remove(directory) }
 }

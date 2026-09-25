@@ -19,7 +19,7 @@
   builds the CLI the same way into the bundle's helpers, writes the Info.plist
   and signs both.
 - **Signed with the hardened runtime and the entitlements** in `Resources/`
-  (signing.md).
+  (design/signing.md).
 - **The short version is three integers**, the only form Apple's key takes: a
   `vX.Y.Z` tag on HEAD, else the commit's date. An rc tag on the same commit is
   passed over, where `git describe` picked it when annotated. The build number
@@ -33,7 +33,7 @@
   variant, the xcodebuild call, the checks and the signing. What stays in
   `make-app.sh` is the paths and the order of the steps.
 - **The Info.plist is a template filled in by placeholder**, and
-  BundleDeclarationTests reads it out of the checkout (tests.md). Substitution
+  InfoPlistTemplateTests reads it out of the checkout (tests.md). Substitution
   is bash's own, so a value may hold a newline or an ampersand unescaped. The
   replacement is quoted because bash 5.2 and later read an unquoted `&` as the
   placeholder, and the assignment is not, because 3.2 then keeps the quotes.
@@ -119,7 +119,7 @@
   not try, and do not ask for those permissions.
 - **You can lay a view out in-process.** A hosting view inside a window that is
   never ordered in measures and renders, asking for nothing, and the sizing
-  options give the size SwiftUI would refuse to go below. SettingsPageSizeTests
+  options give the size SwiftUI would refuse to go below. AppSettingsWindowTests
   is the pattern.
 - **It still needs a window server**, which is a session rather than a
   permission; CI's runner has one.

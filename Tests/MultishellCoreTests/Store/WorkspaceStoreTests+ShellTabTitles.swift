@@ -18,11 +18,4 @@ extension WorkspaceStoreTests {
     #expect(session.displayTitle == t("tab.shell"))
     #expect(store.workspace.title(of: tab) == t("tab.shell"))
   }
-
-  @Test func aProgramsTabKeepsTheProgramsName() throws {
-    let session = TerminalSession(
-      worktreeID: "/w", workingDirectory: URL(fileURLWithPath: "/w"), title: "nvim")
-
-    #expect(session.displayTitle == "nvim")
-  }
 }

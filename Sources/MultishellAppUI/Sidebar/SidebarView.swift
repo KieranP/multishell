@@ -24,19 +24,19 @@ struct SidebarView: View {
     let shownProjects = filteredProjects
     VStack(spacing: 0) {
       SidebarHeader(
-        isFiltering: model.showsSidebarFilter,
+        showsFilterField: model.showsSidebarFilter,
         theme: theme,
-        toggleFilter: { model.setSidebarFilterOpen(!model.showsSidebarFilter) },
+        toggleFilter: { model.setShowsSidebarFilter(!model.showsSidebarFilter) },
         addProject: { Task { await model.chooseProject() } }
       )
       if model.showsSidebarFilter {
         SidebarFilterField(
-          filter: Bindable(model).sidebarFilterText, theme: theme, metrics: metrics,
-          close: { model.setSidebarFilterOpen(false) })
+          text: Bindable(model).sidebarFilterText, theme: theme, metrics: metrics,
+          close: { model.setShowsSidebarFilter(false) })
       }
       ScrollView {
         LazyVStack(spacing: 1) {
-          AgentsRow(
+          AgentBoardRow(
             counts: model.agentSidebarCounts,
             isSelected: model.showsAgentBoard,
             theme: theme,
@@ -53,7 +53,7 @@ struct SidebarView: View {
               model: model,
               project: entry.project,
               worktrees: orderedWorktrees(of: entry, sessions: sessions),
-              forcedOpen: entry.forcedOpen,
+              isForcedOpen: entry.isForcedOpen,
               sessions: sessions,
               theme: theme,
               projectDropTarget: $projectDropTarget,
@@ -84,7 +84,7 @@ struct SidebarView: View {
       }
       SidebarFooter(
         worktreeCount: model.workspace.worktrees.count,
-        sessionCount: model.workspace.sessions.count,
+        terminalCount: model.workspace.sessions.count,
         theme: theme,
         metrics: metrics
       )
@@ -105,6 +105,6 @@ struct SidebarView: View {
   private func orderedWorktrees(
     of entry: SidebarFilter.Entry, sessions: WorktreeSessions
   ) -> [Worktree] {
-    model.ordered(entry.worktrees, in: entry.project, sessions: sessions)
+    model.orderedWorktrees(entry.worktrees, in: entry.project, sessions: sessions)
   }
 }

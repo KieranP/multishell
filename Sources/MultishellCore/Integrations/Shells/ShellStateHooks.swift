@@ -10,18 +10,18 @@ enum ShellStateHooks {
 
   /// The zsh startup files placed in the directory set as a session's
   /// `ZDOTDIR`. Each chains to the user's own first, editing no file of theirs.
-  static func zshIntegrationFiles(
+  static func zshIntegrationScripts(
     helper: String = AgentHookCatalogue.helperReference
   )
     -> [String: String]
   {
     [
       ".zshenv": zshChain(
-        userFile: ".zshenv", restoreToSelf: true, capturesUserZdotdir: true, appending: nil),
+        userFile: ".zshenv", restoresToSelf: true, capturesUserZdotdir: true, appending: nil),
       ".zprofile": zshChain(
-        userFile: ".zprofile", restoreToSelf: true, capturesUserZdotdir: true, appending: nil),
+        userFile: ".zprofile", restoresToSelf: true, capturesUserZdotdir: true, appending: nil),
       ".zshrc": zshChain(
-        userFile: ".zshrc", restoreToSelf: false, restoresHistory: true,
+        userFile: ".zshrc", restoresToSelf: false, restoresHistory: true,
         appending: script("hooks", extension: "zsh", helper: helper)),
     ]
   }
@@ -29,7 +29,7 @@ enum ShellStateHooks {
   /// Sources the user's `file` under their own `ZDOTDIR`. The last file hands
   /// it back so nested shells skip the chain; the first two may relocate it.
   private static func zshChain(
-    userFile: String, restoreToSelf: Bool, capturesUserZdotdir: Bool = false,
+    userFile: String, restoresToSelf: Bool, capturesUserZdotdir: Bool = false,
     restoresHistory: Bool = false, appending extra: String?
   ) -> String {
     let header = """
@@ -48,7 +48,7 @@ enum ShellStateHooks {
       \(capturesUserZdotdir ? "[ -n \"${ZDOTDIR-}\" ] && export MULTISHELL_USER_ZDOTDIR=\"$ZDOTDIR\"" : "")
       """
     let footer =
-      restoreToSelf
+      restoresToSelf
       ? """
       export ZDOTDIR="$_multishell_self_zdotdir"
       """
@@ -73,7 +73,7 @@ enum ShellStateHooks {
 
   /// A bash init file for `--init-file`, which is read instead of `.bashrc`
   /// and skips the profile chain, so this reproduces that chain first.
-  static func bashInitFile(helper: String = AgentHookCatalogue.helperReference) -> String {
+  static func bashInitScript(helper: String = AgentHookCatalogue.helperReference) -> String {
     script("init", extension: "bash", helper: helper) + "\n"
   }
 

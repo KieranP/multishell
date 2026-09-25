@@ -453,7 +453,7 @@ at the bottom.
   tab names every pane alike and two plain shells both read as the shell.
 - **The worktree row drops its terminal count**, the rows under it being the
   count.
-- **The active tab's focused pane is bold, one per worktree**: with two columns
+- **The active tab's focused pane is bold, one per worktree**: with two groups
   two tabs are on screen, and two bold rows read as two selections.
 - **A click shows another and hands it the keyboard**, the way a board card
   does.
@@ -521,9 +521,10 @@ at the bottom.
 - **Matched on the executable alone**, so a wrapper invocation is nobody: the
   word is the command. A leading assignment, `command`, `env` or `exec` is
   stepped over first.
-- **A word needing JSON escapes is left out of the shell's own line** rather
-  than escaped, no agent's name needing one. Cost: a script of the user's named
-  after an agent marks its pane as that agent.
+- **Only a word naming an agent's executable goes on the shell's own line**, the
+  shell matching it against the list it was generated with, so no word needs a
+  JSON escape. Cost: a script of the user's named after an agent marks its pane
+  as that agent.
 - **The state dot badges the mark instead of taking the slot.** A tab has one
   leading slot, which used to hold either the dot or the tab's kind.
 - **The dot sits on the mark's lower-right corner, ringed in what is behind
@@ -590,3 +591,8 @@ at the bottom.
 - **A worker on the roster ends the wait too**, holding the Done itself, and the
   last one out starts the wait again: the woken turn's subagent can be heard
   from before its main thread, and the deadline paid a Done over it.
+- **The close guard and the quit alert count an agent's Working, not the
+  shell's.** When they counted any running command, a plain `make` asked to be
+  confirmed. An agent typed with no hooks installed counts, the command having
+  named it (`closingATabRunningAPlainCommandAsksNothing`,
+  `anAgentTypedAtThePromptWithNoHooksCountsAsWorking`).

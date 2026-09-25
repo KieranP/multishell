@@ -28,7 +28,7 @@ struct WorktreeHeader: View {
         .foregroundStyle(theme.textTertiary)
       Text(model.displayName(of: worktree))
         .font(.system(size: model.metrics.mono, weight: .medium, design: .monospaced))
-        .foregroundStyle(theme.ansiRGB(6).color)
+        .foregroundStyle(theme.worktreeNameColor)
         .lineLimit(1)
         .layoutPriority(1)
       // A renamed worktree still says which branch it is: every git command

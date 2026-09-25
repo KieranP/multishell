@@ -17,7 +17,7 @@ private struct MiddleClickCatcher: NSViewRepresentable {
 
 /// Answers `hitTest` only while a middle-button event is routed, so what is
 /// drawn underneath keeps its clicks. The action runs on mouse up inside.
-private final class MiddleClickView: UnspokenView {
+private final class MiddleClickView: AccessibilityHiddenView {
   var action: (() -> Void)?
 
   override func hitTest(_ point: NSPoint) -> NSView? {

@@ -7,11 +7,12 @@ public struct WorktreeOperations: Equatable, Sendable {
 
   public subscript(id: Worktree.ID) -> WorktreeOperation? { operations[id] }
 
+  /// Whether nothing is held, for the tests.
   var isEmpty: Bool { operations.isEmpty }
 
   /// Something is running on the worktree, or has failed and not been
   /// dismissed. Nothing starts a shell there until then.
-  public func isBusy(_ id: Worktree.ID) -> Bool {
+  func isBusy(_ id: Worktree.ID) -> Bool {
     operations[id] != nil
   }
 

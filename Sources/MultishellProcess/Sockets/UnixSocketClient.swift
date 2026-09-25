@@ -5,7 +5,7 @@ import Foundation
 public enum UnixSocketClient {
   public static func send(_ text: String, to path: URL) throws {
     let path = path.path
-    let descriptor = try UnixSocket.newSocket(path: path)
+    let descriptor = try UnixSocket.newSocket(reportingAs: path)
     defer { close(descriptor) }
     try UnixSocket.connectSocket(descriptor, to: path)
 

@@ -4,7 +4,7 @@ import SwiftUI
 /// What the workspace holds, under a hairline at the foot of the tree.
 struct SidebarFooter: View {
   let worktreeCount: Int
-  let sessionCount: Int
+  let terminalCount: Int
   let theme: Theme
   let metrics: UIMetrics
 
@@ -13,7 +13,7 @@ struct SidebarFooter: View {
       Text(
         t(
           "sidebar.counts", t("count.worktrees", worktreeCount),
-          t("count.terminals", sessionCount))
+          t("count.terminals", terminalCount))
       )
       .font(.system(size: metrics.caption))
       .foregroundStyle(theme.textTertiary)

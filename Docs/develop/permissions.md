@@ -2,6 +2,9 @@
 
 - **An alert provoked by a command in a pane names Multishell**, macOS holding
   the spawning app responsible.
+- **The app asks for two things of its own**: Notifications, when a notification
+  is turned on in Settings, and an administrator's password to link the CLI into
+  `/usr/local/bin`.
 - **Two places say what a pane may ask for**: the usage strings in the
   Info.plist template, and the entitlement beside them in the entitlements file
   where the hardened runtime has one. Extend both when a pane reaches somewhere
@@ -11,7 +14,7 @@
 - **What a missing string costs depends on the service.** A folder is denied
   with no reason named; the device services kill the process that asked, with a
   privacy-violation abort and nothing shown.
-- **An empty string counts as missing.** `BundleDeclarationTests`
+- **An empty string counts as missing.** `InfoPlistTemplateTests`
   `theMicrophoneUsageStringIsDeclaredInTheBundleTheScriptWrites` holds the
   microphone's to having words, a pane's dictation being the common case.
 - **A grant is keyed to the designated requirement**, so an ad-hoc build's bare

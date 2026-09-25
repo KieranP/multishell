@@ -25,7 +25,8 @@ What has no other file to go in. Newest at the bottom.
   it is pressed.
 - **macOS 27's alert button keeps no bezel colour**, and draws a destructive one
   red itself, the one taking Return solid in a key window and the rest pale; so
-  the test reads the drawing there, offscreen.
+  `theLeadChoiceIsPaintedRedOverTheDefaultButtonsAccent` reads the drawing
+  there, offscreen.
 - **Clearing the pending value takes the sheet down with it.** A worktree
   removed outside the app clears `pendingWorktreeRemoval`, and a sheet left
   standing would confirm a removal on a path git no longer knows (worktrees.md).
@@ -37,5 +38,6 @@ What has no other file to go in. Newest at the bottom.
   keystroke meant for the window behind must not be what trusts it.
 - **The quit alert is AppKit's own.** `NSAlert` gives Return to its first
   button, and Escape only to one titled exactly "Cancel", so the app sets the
-  key equivalent by hand: a translated title would leave that alert with no way
-  out.
+  key equivalent by hand, as `DestructiveAlert` does on its Cancel: a translated
+  title would leave that alert with no way out
+  (`theCancelButtonTakesEscapeWhateverItIsCalled`).

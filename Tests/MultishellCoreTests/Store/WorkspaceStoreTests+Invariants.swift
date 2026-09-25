@@ -80,14 +80,14 @@ extension WorkspaceStoreTests {
         }
         store.updateSettings(settings, forProject: project.id)
       case 12:
-        // A tab dragged to the band down one edge of a column.
+        // A tab dragged to the band down one edge of a group.
         if let tab = ws.tabs.randomElement(using: &rng),
           let group = ws.tabGroups.randomElement(using: &rng)
         {
           store.moveTabToNewGroup(tab.id, Bool.random(using: &rng) ? .before : .after, of: group.id)
         }
       case 13:
-        // A tab dropped on a column's strip clear of its tabs.
+        // A tab dropped on a group's strip clear of its tabs.
         if let tab = ws.tabs.randomElement(using: &rng),
           let group = ws.tabGroups.randomElement(using: &rng)
         {
@@ -96,8 +96,8 @@ extension WorkspaceStoreTests {
       case 14:
         if let group = ws.tabGroups.randomElement(using: &rng) { store.focusGroup(group.id) }
       case 15:
-        // The divider between two columns, dragged; a count that does not
-        // line up with the columns is refused.
+        // The divider between two groups, dragged; a count that does not
+        // line up with the groups is refused.
         if let worktree = worktrees.randomElement(using: &rng) {
           store.setGroupWeights(
             (0..<Int.random(in: 1...3, using: &rng)).map { _ in

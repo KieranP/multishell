@@ -66,7 +66,7 @@ the way they are. Pull requests are collaborators only, which
 ## Features
 
 - Projects in a sidebar, every worktree under them, bare clones included.
-- Tabs, splits and side-by-side columns per worktree; drag a tab to another.
+- Tabs, splits and side-by-side groups per worktree; drag a tab to another.
 - Terminals keep running while you look elsewhere.
 - New worktree and branch in one step, with a terminal or agent already open.
 - Removing a worktree moves it to the Trash, or deletes it if you would rather.

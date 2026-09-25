@@ -3,19 +3,19 @@ import Foundation
 /// Raised when a list could not be finished. The worktree exists and
 /// everything else on the list is in it; only these paths are missing.
 public struct WorktreeFileFailure: Error, CustomStringConvertible {
-  public struct Item: Sendable {
-    public let path: String
-    public let underlying: any Error
+  public struct PathFailure: Sendable {
+    let path: String
+    let underlying: any Error
   }
 
   /// Which list it was, so what is said about it can say linked or copied.
   public let placement: WorktreeFilePlacement
-  public let failures: [Item]
+  public let failures: [PathFailure]
   /// Entries skipped for naming somewhere else, by any list, kept apart from
   /// `failures`: the title says this list failed to place those.
   public let skipped: [String]
 
-  public init(placement: WorktreeFilePlacement, failures: [Item], skipped: [String] = []) {
+  public init(placement: WorktreeFilePlacement, failures: [PathFailure], skipped: [String] = []) {
     self.placement = placement
     self.failures = failures
     self.skipped = skipped

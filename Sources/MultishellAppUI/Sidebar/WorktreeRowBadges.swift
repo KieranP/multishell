@@ -23,7 +23,7 @@ struct WorktreeRowBadges: View {
       } else {
         Image(systemName: "exclamationmark.triangle.fill")
           .font(.system(size: metrics.badge))
-          .foregroundStyle(theme.ansiRGB(1).color)
+          .foregroundStyle(theme.failureColor)
           .help(operation.title)
       }
     }
@@ -38,13 +38,13 @@ struct WorktreeRowBadges: View {
     if mergeState.showsBadge(with: status) {
       Image(systemName: "arrow.triangle.merge")
         .font(.system(size: metrics.badge))
-        .foregroundStyle(theme.ansiRGB(2).color)
+        .foregroundStyle(theme.mergedColor)
         .help(mergeState.tooltip)
     }
     // Git changes sit left of the terminal count, so the count stays at
     // the row's right edge and lines up with rows that have no changes.
     if let status, !status.isClean {
-      ChangeCounts(status: status, theme: theme, size: metrics.badge, tint: theme.textSecondary)
+      ChangeBadge(status: status, theme: theme, size: metrics.badge, tint: theme.textSecondary)
     }
     if terminalCount > 0 {
       Text("\(terminalCount)")

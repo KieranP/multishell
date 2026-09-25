@@ -40,14 +40,24 @@ struct BranchRef: Hashable, Sendable {
   /// ambiguity warning goes to stderr, which `runner.output` throws away.
   static func localRef(_ branch: String) -> String { localPrefix + branch }
 
+  /// `refs/heads/feat` as `feat`, and any other name as it is.
+  static func shortLocalName(_ ref: String) -> String {
+    ref.hasPrefix(localPrefix) ? String(ref.dropFirst(localPrefix.count)) : ref
+  }
+
+  /// Local branches by short name, the first of any repeat kept.
+  static func localBranchesByName(_ refs: [BranchRef]) -> [String: BranchRef] {
+    Dictionary(
+      refs.filter(\.isLocal).map { ($0.shortName, $0) }, uniquingKeysWith: { first, _ in first })
+  }
+
   var isLocal: Bool { fullName.hasPrefix(Self.localPrefix) }
   var isRemote: Bool { fullName.hasPrefix(Self.remotePrefix) }
 
   /// What git would print for `%(refname:short)`: `feat`, `origin/main`.
   var shortName: String {
-    if isLocal { return String(fullName.dropFirst(Self.localPrefix.count)) }
     if isRemote { return String(fullName.dropFirst(Self.remotePrefix.count)) }
-    return fullName
+    return Self.shortLocalName(fullName)
   }
 
   /// The branch with no remote in front of it, so the trunk's own checkout

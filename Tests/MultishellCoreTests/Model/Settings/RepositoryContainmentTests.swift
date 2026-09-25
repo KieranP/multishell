@@ -80,7 +80,8 @@ struct RepositoryContainmentTests {
 
     let layered = ProjectSettings().layered(over: shared)
     let defaults = WorktreeSettings(worktreeDirectory: "/global/trees")
-    #expect(layered.effective(defaults: defaults).worktreeDirectory == "/global/trees")
+    #expect(
+      layered.effectiveWorktreeSettings(defaults: defaults).worktreeDirectory == "/global/trees")
   }
 
   @Test func aDirectoryUnderTheCheckoutSurvivesConfinement() {

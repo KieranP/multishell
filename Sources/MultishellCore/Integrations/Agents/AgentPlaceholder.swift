@@ -29,17 +29,17 @@ public enum AgentPlaceholder: String, CaseIterable, Sendable {
     }
   }
 
-  /// `name` is what the sidebar shows, `Workspace.displayName(of:)`, which
-  /// the worktree record cannot answer on its own.
+  /// `worktreeName` is what the sidebar shows, `Workspace.displayName(of:)`,
+  /// which the worktree record cannot answer on its own.
   public static func values(
-    project: Project, worktree: Worktree, name: String
+    project: Project, worktree: Worktree, worktreeName: String
   ) -> [AgentPlaceholder: String] {
     var values: [AgentPlaceholder: String] = [:]
     for placeholder in allCases {
       values[placeholder] =
         switch placeholder {
         case .branch: worktree.branch ?? worktree.name
-        case .worktree: name
+        case .worktree: worktreeName
         case .worktreePath: worktree.path.path
         case .project: project.name
         case .projectPath: project.path.path

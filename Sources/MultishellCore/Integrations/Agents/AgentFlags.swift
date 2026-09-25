@@ -11,18 +11,6 @@ public enum AgentFlags {
     split(line).map { expanded($0, values: values) }
   }
 
-  /// The custom agent command, which runs as written: each placeholder reads
-  /// a variable, so no value is ever shell text. See Docs/design/agents.md.
-  public static func customCommandLine(
-    _ line: String, values: [AgentPlaceholder: String]
-  ) -> ShellLine {
-    var tokens: [String: (variable: String, value: String)] = [:]
-    for (placeholder, value) in values {
-      tokens[placeholder.token] = (placeholder.variable, value)
-    }
-    return ShellLine(line, substituting: tokens)
-  }
-
   /// One pass over what was typed. A token appearing in a value is text the
   /// user named something, not a placeholder; see Docs/design/agents.md.
   private static func expanded(_ text: String, values: [AgentPlaceholder: String]) -> String {

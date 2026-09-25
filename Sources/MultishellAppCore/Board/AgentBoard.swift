@@ -13,11 +13,11 @@ public struct AgentBoard: Equatable, Sendable {
     columns = AgentBoardLane.allCases.map { AgentBoardColumn(lane: $0, cards: byLane[$0] ?? []) }
   }
 
-  public func column(_ lane: AgentBoardLane) -> AgentBoardColumn {
+  func column(_ lane: AgentBoardLane) -> AgentBoardColumn {
     columns.first { $0.lane == lane } ?? AgentBoardColumn(lane: lane, cards: [])
   }
 
-  public func count(of lane: AgentBoardLane) -> Int {
+  func count(of lane: AgentBoardLane) -> Int {
     column(lane).count
   }
 

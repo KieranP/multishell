@@ -34,26 +34,26 @@ extension WorktreeGit {
     if indicator == .stagedAndUnstaged,
       let output = await runner.output(numstat + ["HEAD"], in: path)
     {
-      counts = DiffStatParser.parse(output)
+      counts = NumstatParser.parse(output)
     } else if let cached = await runner.output(numstat + ["--cached"], in: path) {
-      counts = DiffStatParser.parse(cached)
+      counts = NumstatParser.parse(cached)
     }
     guard indicator == .stagedAndUnstaged, untracked > 0 else { return counts }
     let loose = await untrackedCounts(in: path)
-    counts.insertions += loose.lines
+    counts.insertions += loose.insertions
     counts.unscored += loose.unscored
     return counts
   }
 
   /// The reads block, on a dead mount until it times out. Detached keeps them off
   /// the main actor but not off the cooperative pool; see worktrees.md.
-  private func untrackedCounts(in path: URL) async -> (lines: Int, unscored: Int) {
+  private func untrackedCounts(in path: URL) async -> LineCounts {
     guard
       let output = await runner.output(
         ["--no-optional-locks", "ls-files", "--others", "--exclude-standard", "-z"], in: path)
-    else { return (0, 0) }
-    let paths = UntrackedLineCounter.paths(from: output)
-    guard !paths.isEmpty else { return (0, 0) }
+    else { return LineCounts() }
+    let paths = UntrackedPathParser.parse(output, limit: UntrackedLineCounter.fileLimit)
+    guard !paths.isEmpty else { return LineCounts() }
     let memo = shared.untrackedMemo
     return await Task.detached(priority: .utility) {
       UntrackedLineCounter.count(paths: paths, in: path, memo: memo)

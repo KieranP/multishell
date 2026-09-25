@@ -50,11 +50,13 @@ final class PipeBuffer: Sendable {
     try? handle.close()
   }
 
-  /// Both ends of a new pipe, or `PipeUnavailable`. Not `Pipe()`, which cannot
+  typealias PipeEnds = (reading: FileHandle, writing: FileDescriptor)
+
+  /// Both ends of a new pipe, or `DescriptorUnavailable`. Not `Pipe()`, which cannot
   /// fail and so returns two handles on descriptor 0 at the limit.
-  static func makePipe() throws -> (reading: FileHandle, writing: FileDescriptor) {
+  static func makePipe() throws -> PipeEnds {
     var descriptors: [Int32] = [-1, -1]
-    guard pipe(&descriptors) == 0 else { throw PipeUnavailable(code: errno) }
+    guard pipe(&descriptors) == 0 else { throw DescriptorUnavailable(code: errno) }
     // macOS has no pipe2, so a fork between the two calls still inherits them.
     for descriptor in descriptors { _ = fcntl(descriptor, F_SETFD, FD_CLOEXEC) }
     return (

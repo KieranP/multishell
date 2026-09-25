@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import TestSupport
 import Testing
 
 @testable import MultishellGitKit
@@ -11,13 +12,13 @@ struct WorktreeGitRemovalTests {
   @Test func removingOneWorktreeKeepsAnotherWhoseDirectoryIsAway() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    try await repo.coordinator.create(branch: "gone", in: repo.project, settings: repo.trees)
+    try await repo.coordinator.create(
+      branch: "gone", in: repo.project, settings: repo.worktreeSettings)
     let away = try await repo.coordinator.create(
-      branch: "away", in: repo.project, settings: repo.trees)
+      branch: "away", in: repo.project, settings: repo.worktreeSettings)
     let aside = away.deletingLastPathComponent().appendingPathComponent("away-aside")
     try FileManager.default.moveItem(at: away, to: aside)
-    let gone = try #require(
-      try await repo.coordinator.git.list(repo.project).first { $0.branch == "gone" })
+    let gone = try await repo.worktree(onBranch: "gone")
 
     try await repo.coordinator.remove(gone, in: repo.project)
 
@@ -31,11 +32,10 @@ struct WorktreeGitRemovalTests {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
     let path = try await repo.coordinator.create(
-      branch: "old", in: repo.project, settings: repo.trees)
+      branch: "old", in: repo.project, settings: repo.worktreeSettings)
     let away = try await repo.coordinator.create(
-      branch: "away", in: repo.project, settings: repo.trees)
-    let stale = try #require(
-      try await repo.coordinator.git.list(repo.project).first { $0.branch == "old" })
+      branch: "away", in: repo.project, settings: repo.worktreeSettings)
+    let stale = try await repo.worktree(onBranch: "old")
     try FileManager.default.removeItem(at: path)
     try FileManager.default.createDirectory(at: path, withIntermediateDirectories: false)
     let aside = away.deletingLastPathComponent().appendingPathComponent("away-aside")
@@ -53,9 +53,8 @@ struct WorktreeGitRemovalTests {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
     let path = try await repo.coordinator.create(
-      branch: "old", in: repo.project, settings: repo.trees)
-    let stale = try #require(
-      try await repo.coordinator.git.list(repo.project).first { $0.branch == "old" })
+      branch: "old", in: repo.project, settings: repo.worktreeSettings)
+    let stale = try await repo.worktree(onBranch: "old")
     try FileManager.default.removeItem(at: path)
     try FileManager.default.createDirectory(at: path, withIntermediateDirectories: false)
     let notes = path.appendingPathComponent("notes.txt")
@@ -72,9 +71,8 @@ struct WorktreeGitRemovalTests {
     defer { repo.tearDown() }
     var project = repo.project
     let path = try await repo.coordinator.create(
-      branch: "old", in: project, settings: repo.trees)
-    let stale = try #require(
-      try await repo.coordinator.git.list(project).first { $0.branch == "old" })
+      branch: "old", in: project, settings: repo.worktreeSettings)
+    let stale = try await repo.worktree(onBranch: "old", in: project)
     try FileManager.default.removeItem(at: path)
     try FileManager.default.createDirectory(at: path, withIntermediateDirectories: false)
     project.settings = ProjectSettings(
@@ -91,11 +89,10 @@ struct WorktreeGitRemovalTests {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
     let path = try await repo.coordinator.create(
-      branch: "old", in: repo.project, settings: repo.trees)
+      branch: "old", in: repo.project, settings: repo.worktreeSettings)
     _ = try await repo.git.run(
       ["worktree", "lock", "--reason", "external drive", path.path], in: repo.project.path)
-    let stale = try #require(
-      try await repo.coordinator.git.list(repo.project).first { $0.branch == "old" })
+    let stale = try await repo.worktree(onBranch: "old")
     try FileManager.default.removeItem(at: path)
     try FileManager.default.createDirectory(at: path, withIntermediateDirectories: false)
     let notes = path.appendingPathComponent("notes.txt")
@@ -113,9 +110,8 @@ struct WorktreeGitRemovalTests {
     defer { repo.tearDown() }
     var project = repo.project
     let path = try await repo.coordinator.create(
-      branch: "unread", in: project, settings: repo.trees)
-    let worktree = try #require(
-      try await repo.coordinator.git.list(project).first { $0.branch == "unread" })
+      branch: "unread", in: project, settings: repo.worktreeSettings)
+    let worktree = try await repo.worktree(onBranch: "unread", in: project)
     let fake = try FakeGit.make(
       """
       case "$*" in *--show-toplevel*) exit 128 ;; esac
@@ -141,9 +137,8 @@ struct WorktreeGitRemovalTests {
     defer { repo.tearDown() }
     var project = repo.project
     let path = try await repo.coordinator.create(
-      branch: "older", in: project, settings: repo.trees)
-    let worktree = try #require(
-      try await repo.coordinator.git.list(project).first { $0.branch == "older" })
+      branch: "older", in: project, settings: repo.worktreeSettings)
+    let worktree = try await repo.worktree(onBranch: "older", in: project)
     let fake = try FakeGit.make(
       """
       if [ "$1" = rev-parse ]; then
@@ -179,8 +174,7 @@ struct WorktreeGitRemovalTests {
     let spelled = repo.root.appendingPathComponent("casedir/wt")
     _ = try await repo.git.run(
       ["worktree", "add", "-q", "-b", "cased", spelled.path], in: repo.project.path)
-    let cased = try #require(
-      try await repo.coordinator.git.list(repo.project).first { $0.branch == "cased" })
+    let cased = try await repo.worktree(onBranch: "cased")
 
     try await repo.coordinator.remove(cased, in: repo.project)
 
@@ -192,9 +186,8 @@ struct WorktreeGitRemovalTests {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
     let path = try await repo.coordinator.create(
-      branch: "old", in: repo.project, settings: repo.trees)
-    let stale = try #require(
-      try await repo.coordinator.git.list(repo.project).first { $0.branch == "old" })
+      branch: "old", in: repo.project, settings: repo.worktreeSettings)
+    let stale = try await repo.worktree(onBranch: "old")
     try FileManager.default.removeItem(at: path)
     _ = try await repo.git.run(
       ["clone", "-q", repo.project.path.path, path.path], in: repo.root)
@@ -210,11 +203,10 @@ struct WorktreeGitRemovalTests {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
     let path = try await repo.coordinator.create(
-      branch: "pinned", in: repo.project, settings: repo.trees)
+      branch: "pinned", in: repo.project, settings: repo.worktreeSettings)
     _ = try await repo.git.run(
       ["worktree", "lock", "--reason", "external drive", path.path], in: repo.project.path)
-    let pinned = try #require(
-      try await repo.coordinator.git.list(repo.project).first { $0.branch == "pinned" })
+    let pinned = try await repo.worktree(onBranch: "pinned")
     #expect(pinned.isLocked)
 
     await #expect(throws: TrashFailure.self) {
@@ -222,8 +214,7 @@ struct WorktreeGitRemovalTests {
         pinned, in: repo.project, trash: { _ in throw CocoaError(.fileWriteNoPermission) })
     }
 
-    let after = try #require(
-      try await repo.coordinator.git.list(repo.project).first { $0.branch == "pinned" })
+    let after = try await repo.worktree(onBranch: "pinned")
     #expect(after.isLocked, "the lock and its reason are the user's")
     let listed = try await repo.git.run(["worktree", "list", "--porcelain"], in: repo.project.path)
     #expect(listed.contains("locked external drive"))
@@ -235,11 +226,10 @@ struct WorktreeGitRemovalTests {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
     let path = try await repo.coordinator.create(
-      branch: "untouched", in: repo.project, settings: repo.trees)
+      branch: "untouched", in: repo.project, settings: repo.worktreeSettings)
     try "work\n".write(
       to: path.appendingPathComponent("wip.txt"), atomically: true, encoding: .utf8)
-    let worktree = try #require(
-      try await repo.coordinator.git.list(repo.project).first { $0.branch == "untouched" })
+    let worktree = try await repo.worktree(onBranch: "untouched")
 
     await #expect(throws: TrashFailure.self) {
       try await repo.coordinator.remove(worktree, in: repo.project, trash: { _ in })
@@ -253,13 +243,117 @@ struct WorktreeGitRemovalTests {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
     let path = try await repo.coordinator.create(
-      branch: "locked", in: repo.project, settings: repo.trees)
+      branch: "locked", in: repo.project, settings: repo.worktreeSettings)
     _ = try await repo.git.run(["worktree", "lock", path.path], in: repo.project.path)
-    let locked = try #require(
-      try await repo.coordinator.git.list(repo.project).first { $0.branch == "locked" })
+    let locked = try await repo.worktree(onBranch: "locked")
 
     try await repo.coordinator.remove(locked, in: repo.project)
 
     #expect(try await repo.coordinator.git.list(repo.project).map(\.branch) == ["main"])
+  }
+
+  @Test func removingAWorktreeWhoseDirectoryIsGonePrunesIt() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    let project = repo.project
+    let coordinator = repo.coordinator
+    let path = try await coordinator.create(
+      branch: "ghost", in: project, settings: repo.worktreeSettings)
+    try FileManager.default.removeItem(at: path)
+
+    let ghost = try await repo.worktree(onBranch: "ghost")
+    try await coordinator.remove(ghost, in: project)
+
+    #expect(try await coordinator.git.list(project).count == 1)
+  }
+
+  /// Both fail: the directory is in the Trash by then, so the caller has to
+  /// be able to tell this from a Trash that refused.
+  @Test func aRecordNeitherRemoveNorPruneLetsGoOfIsItsOwnFailure() async throws {
+    let fake = try FakeGit.make("exit 128")
+    defer { fake.tearDown() }
+    let project = Project(path: fake.directory)
+    let worktree = Worktree(
+      path: fake.directory.appendingPathComponent("gone"), projectID: project.id, head: "a",
+      branch: "gone")
+
+    await #expect(throws: WorktreeForgetFailure.self) {
+      try await WorktreeGit(runner: fake.runner).forget(worktree, in: project)
+    }
+  }
+
+  /// `prune` exits 0 having removed nothing, so its success cannot stand in
+  /// for the record going: `remove` then reports a removal that never was.
+  @Test func aPruneThatLeavesTheRecordListedIsStillAFailure() async throws {
+    let fake = try FakeGit.make(
+      """
+      case "$1 $2" in
+        "worktree remove") exit 128 ;;
+        "worktree prune") exit 0 ;;
+        "worktree list") printf 'worktree %s/gone\\0HEAD a\\0branch refs/heads/gone\\0\\0' "$SCRATCH" ;;
+      esac
+      """)
+    defer { fake.tearDown() }
+    let project = Project(path: fake.directory)
+    let worktree = Worktree(
+      path: fake.directory.appendingPathComponent("gone"), projectID: project.id, head: "a",
+      branch: "gone")
+
+    await #expect(throws: WorktreeForgetFailure.self) {
+      try await WorktreeGit(runner: fake.runner).forget(worktree, in: project)
+    }
+  }
+
+  /// Every repository has its main worktree, so a list of none is git failing
+  /// quietly, which `list` treats the same way.
+  @Test func aListOfNoWorktreesAtAllIsNotProofTheRecordWent() async throws {
+    let fake = try FakeGit.make(
+      """
+      case "$1 $2" in
+        "worktree remove") exit 128 ;;
+      esac
+      """)
+    defer { fake.tearDown() }
+    let project = Project(path: fake.directory)
+    let worktree = Worktree(
+      path: fake.directory.appendingPathComponent("gone"), projectID: project.id, head: "a",
+      branch: "gone")
+
+    await #expect(throws: WorktreeForgetFailure.self) {
+      try await WorktreeGit(runner: fake.runner).forget(worktree, in: project)
+    }
+  }
+
+  @Test func aPruneThatTakesTheRecordIsASuccess() async throws {
+    let fake = try FakeGit.make(
+      """
+      case "$1 $2" in
+        "worktree remove") exit 128 ;;
+        "worktree prune") exit 0 ;;
+        "worktree list") printf 'worktree %s\\0HEAD a\\0branch refs/heads/main\\0\\0' "$SCRATCH" ;;
+      esac
+      """)
+    defer { fake.tearDown() }
+    let project = Project(path: fake.directory)
+    let worktree = Worktree(
+      path: fake.directory.appendingPathComponent("gone"), projectID: project.id, head: "a",
+      branch: "gone")
+
+    try await WorktreeGit(runner: fake.runner).forget(worktree, in: project)
+  }
+
+  @Test func aForgetOnAGitThatRefusesTheNulFormStillReadsWhetherTheRecordWent() async throws {
+    let fake = try FakeGit.make(
+      """
+      case " $* " in *" -z "*) echo "error: unknown switch \\`z'" >&2; exit 129 ;; esac
+      case "$1 $2" in "worktree remove") exit 128 ;; esac
+      printf 'worktree /repos/demo\\nHEAD 1111111\\nbranch refs/heads/main\\n\\n'
+      """)
+    defer { fake.tearDown() }
+    let gone = Worktree(
+      path: URL(fileURLWithPath: "/repos/demo-trees/gone"), projectID: fake.directory.path,
+      head: "2222222", branch: "gone")
+
+    try await WorktreeGit(runner: fake.runner).forget(gone, in: Project(path: fake.directory))
   }
 }

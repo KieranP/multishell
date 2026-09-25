@@ -9,7 +9,7 @@ public struct NewWorktreeDraft: Equatable, Sendable {
   public var branch = ""
   public var createBranch = true
   public var baseBranch = ""
-  public var branches: [String] = []
+  public var localBranches: [String] = []
   public var remoteBranches: [String] = []
   public var hasCommits = true
   public var isCreating = false
@@ -19,7 +19,7 @@ public struct NewWorktreeDraft: Equatable, Sendable {
 
   /// The project whose branches are on screen. Create waits for it to match
   /// the picker, so a stale load cannot enable it.
-  public private(set) var loadedProjectID: Project.ID?
+  private(set) var loadedProjectID: Project.ID?
 
   public init(projectID: Project.ID?) {
     self.projectID = projectID
@@ -28,7 +28,7 @@ public struct NewWorktreeDraft: Equatable, Sendable {
   /// The picker landed on a project; nothing is known about it yet. The
   /// typed branch name is the user's and stays.
   public mutating func beginLoading() {
-    branches = []
+    localBranches = []
     remoteBranches = []
     baseBranch = ""
     hasCommits = true
@@ -38,18 +38,13 @@ public struct NewWorktreeDraft: Equatable, Sendable {
   /// What git said about `id`, ignored once the picker has moved on.
   /// `checkedOut` is what the existing-branch list must not offer.
   public mutating func finishLoading(
-    _ id: Project.ID,
-    hasCommits: Bool,
-    branches: [String],
-    remoteBranches: [String],
-    currentBranch: String,
-    checkedOut: Set<String>
+    _ id: Project.ID, with read: NewWorktreeBranches, checkedOut: Set<String>
   ) {
     guard id == projectID else { return }
-    self.hasCommits = hasCommits
-    self.branches = branches
-    self.remoteBranches = remoteBranches
-    baseBranch = currentBranch
+    hasCommits = read.hasCommits
+    localBranches = read.localBranches
+    remoteBranches = read.remoteBranches
+    baseBranch = read.currentBranch
     // Recorded before the fix-up below, which reads the available branches
     // and sees none for a project not yet marked loaded.
     loadedProjectID = id
@@ -61,7 +56,7 @@ public struct NewWorktreeDraft: Equatable, Sendable {
   /// Git refuses to check a branch out twice, so those are not offered.
   public func availableBranches(checkedOut: Set<String>) -> [String] {
     guard loadedProjectID != nil else { return [] }
-    return branches.filter { !checkedOut.contains($0) }
+    return localBranches.filter { !checkedOut.contains($0) }
   }
 
   /// The field and the picker share `branch`. Coming back restores what was
@@ -82,6 +77,13 @@ public struct NewWorktreeDraft: Equatable, Sendable {
     if let projectID, !ids.contains(projectID) { self.projectID = nil }
   }
 
+  /// Whether the existing-branch picker gives way to a note that every local
+  /// branch is checked out. Not while loading, when nothing is known yet.
+  public func showsAllCheckedOutNote(checkedOut: Set<String>) -> Bool {
+    guard let projectID, loadedProjectID == projectID else { return false }
+    return availableBranches(checkedOut: checkedOut).isEmpty
+  }
+
   public func canCreate(checkedOut: Set<String>) -> Bool {
     guard let projectID, loadedProjectID == projectID, hasCommits, !isCreating else {
       return false
@@ -95,8 +97,12 @@ public struct NewWorktreeDraft: Equatable, Sendable {
   /// so. An empty field is not yet wrong.
   public var branchNameIsRefused: Bool {
     guard createBranch else { return false }
-    let typed = branch.trimmingCharacters(in: .whitespaces)
-    return !typed.isEmpty && !GitRefName.isValidBranch(typed)
+    return !trimmedBranch.isEmpty && !GitRefName.isValidBranch(trimmedBranch)
+  }
+
+  /// The name as git would be handed it, the field's stray spaces dropped.
+  var trimmedBranch: String {
+    branch.trimmingCharacters(in: .whitespaces)
   }
 
   /// What the new branch starts from; `nil` lets git use HEAD. Never the

@@ -4,10 +4,14 @@ import SwiftUI
 /// The agent at a prompt, as its own mark where the app draws one and two
 /// letters where it does not. A shell keeps the caller's terminal glyph.
 struct AgentMarkView: View {
+  static let terminalSymbol = "apple.terminal"
+  /// A split tab's glyph, which the split button and a pane's badge share.
+  static let splitSymbol = "rectangle.split.2x1"
+
   /// `nil` is a shell, or a pane nothing has reported an agent for.
   let agentID: String?
-  /// Drawn in place of a mark: the tab's kind, the card's terminal.
-  let shellSymbol: String
+  /// Drawn in place of a mark: the tab's kind, else the terminal.
+  var shellSymbol = AgentMarkView.terminalSymbol
   /// A mark with no colour of its own, the letters and the shell glyph all
   /// take the row's own text colour.
   let plainTint: Color

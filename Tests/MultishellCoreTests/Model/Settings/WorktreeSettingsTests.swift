@@ -44,7 +44,7 @@ struct WorktreeSettingsTests {
         settings.worktreeContainer(for: project).path == "/Users/dev/Work/multishell-worktrees",
         "\(text.debugDescription)")
     }
-    let overridden = ProjectSettings(worktreeDirectory: " ").effective(
+    let overridden = ProjectSettings(worktreeDirectory: " ").effectiveWorktreeSettings(
       defaults: WorktreeSettings(worktreeDirectory: "/global/trees"))
     #expect(
       overridden.worktreeContainer(for: project).path == "/Users/dev/Work/multishell-worktrees")
@@ -75,5 +75,10 @@ struct WorktreeSettingsTests {
 
   @Test func anEmptyPrefixLeavesTheNameAlone() {
     #expect(WorktreeSettings().qualifiedBranch(" tabs ") == "tabs")
+  }
+
+  @Test func anEmptyObjectDecodesAsTheDefaultWorktreeSettings() throws {
+    let settings = try decodeJSON(WorktreeSettings.self, "{}")
+    #expect(settings == WorktreeSettings())
   }
 }

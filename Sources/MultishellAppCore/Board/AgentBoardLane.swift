@@ -34,9 +34,9 @@ public enum AgentBoardLane: String, CaseIterable, Sendable {
   /// cards rest.
   static let summarised: [AgentBoardLane] = [.waiting, .working, .done]
 
-  public static func of(_ state: SessionState?) -> AgentBoardLane {
+  static func of(_ state: SessionState?) -> AgentBoardLane {
     switch state {
-    case .attention, .error: .waiting
+    case .attention, .failed: .waiting
     case .running: .working
     case .done: .done
     case .idle, nil: .idle

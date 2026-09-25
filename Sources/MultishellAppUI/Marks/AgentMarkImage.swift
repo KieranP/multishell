@@ -7,7 +7,7 @@ import SwiftUI
 enum AgentMarkImage {
   /// Sized against a menu title, not a tab: the marks run to the edges of
   /// their square, so 15 drew larger than the items read for.
-  static let size: Double = 13
+  private static let size: Double = 13
 
   /// Keyed by the scale it was drawn at too: a window moved to a display of
   /// another one keeps the marks it rendered, and they would be soft there.
@@ -26,7 +26,7 @@ enum AgentMarkImage {
     let tint = AgentCatalogue.markTintRGB(agentID)
     let renderer = ImageRenderer(
       content: AgentMarkView(
-        agentID: agentID, shellSymbol: "apple.terminal", plainTint: .black, size: size))
+        agentID: agentID, plainTint: .black, size: size))
     renderer.scale = key.scale
     guard let nsImage = renderer.nsImage else { return nil }
     nsImage.isTemplate = tint == nil

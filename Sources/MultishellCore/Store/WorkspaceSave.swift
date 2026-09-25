@@ -3,7 +3,7 @@
 public struct WorkspaceSave: Sendable {
   let workspace: Workspace
   let file: WorkspaceFile
-  let ticket: WorkspaceFile.Ticket
+  let ticket: SaveOrder.Ticket
 
   public func run() throws {
     try file.save(workspace, as: ticket)

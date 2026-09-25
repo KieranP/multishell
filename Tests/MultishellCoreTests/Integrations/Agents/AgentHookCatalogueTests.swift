@@ -5,20 +5,14 @@ import Testing
 @testable import MultishellCore
 
 @Suite
-struct AgentHookCatalogueTests {
-  let helper = "$HOME/Library/Application Support/Multishell/bin/multishell"
-
-  func temporaryDirectory() -> URL {
-    Scratch.path("hooks")
-  }
-
+struct AgentHookCatalogueTests: AgentHookFixtures {
   @Test func theCommandRunsTheHelperNamesTheAgentAndExitsCleanlyWithoutIt() {
     let command = AgentHookCatalogue.command(agent: "codex", helper: helper)
     #expect(
       command == "[ -x \"\(helper)\" ] && \"\(helper)\" agent-hook --agent codex; exit 0")
     #expect(!command.contains("="), "fish does not parse VAR=value")
-    #expect(AgentHookCatalogue.isMultishellHook(command))
-    #expect(!AgentHookCatalogue.isMultishellHook("curl -sf http://127.0.0.1:9/hook"))
+    #expect(AgentHookCatalogue.isOurHook(command))
+    #expect(!AgentHookCatalogue.isOurHook("curl -sf http://127.0.0.1:9/hook"))
   }
 
   /// Copilot denies a tool call when a preToolUse hook exits non-zero, and Claude blocks one on
@@ -59,7 +53,7 @@ struct AgentHookCatalogueTests {
   /// missed it would append a second one beside it.
   @Test func theLineAnOlderBuildWroteIsStillOurs() {
     let old = "[ -x \"\(helper)\" ] && exec \"\(helper)\" claude-hook; exit 0"
-    #expect(AgentHookCatalogue.isMultishellHook(old))
+    #expect(AgentHookCatalogue.isOurHook(old))
     #expect(
       AgentHookCatalogue.claude.isInstalled(in: ["hooks": groups(claudeEvents, command: old)]))
   }
@@ -75,54 +69,16 @@ struct AgentHookCatalogueTests {
       "run claude-hooks",
     ]
     for command in theirs {
-      #expect(!AgentHookCatalogue.isMultishellHook(command), "\(command.debugDescription)")
+      #expect(!AgentHookCatalogue.isOurHook(command), "\(command.debugDescription)")
     }
-  }
-
-  @Test func removeLeavesAUserHookNamedAfterUs() {
-    let theirs = "~/bin/multishell-agent-hook-logger"
-    let ours = AgentHookCatalogue.command(agent: AgentCatalogue.claudeID, helper: helper)
-    let settings: [String: Any] = [
-      "hooks": [
-        "Stop": [
-          ["hooks": [["type": "command", "command": theirs]]],
-          ["hooks": [["type": "command", "command": ours]]],
-        ]
-      ]
-    ]
-
-    let removed = AgentHookCatalogue.claude.removing(from: settings)
-    let stop = ((removed["hooks"] as? [String: Any])?["Stop"] as? [[String: Any]]) ?? []
-    let commands = stop.flatMap { group in
-      (group["hooks"] as? [[String: Any]] ?? []).compactMap { $0["command"] as? String }
-    }
-    #expect(commands == [theirs])
-  }
-
-  /// A user hook under one event used to read as ours, so Add skipped that
-  /// event and Install reported a success that never fired.
-  @Test func addStillWritesOursUnderAnEventHoldingAUserHookNamedAfterUs() {
-    let theirs = "~/bin/multishell-agent-hook-logger"
-    let settings: [String: Any] = [
-      "hooks": ["Stop": [["hooks": [["type": "command", "command": theirs]]]]]
-    ]
-
-    let added = AgentHookCatalogue.claude.adding(to: settings, helper: helper)
-    let stop = ((added["hooks"] as? [String: Any])?["Stop"] as? [[String: Any]]) ?? []
-    let commands = stop.flatMap { group in
-      (group["hooks"] as? [[String: Any]] ?? []).compactMap { $0["command"] as? String }
-    }
-    #expect(commands.count == 2)
-    #expect(commands.contains(theirs))
-    #expect(commands.contains(where: AgentHookCatalogue.isMultishellHook))
   }
 
   @Test func everyIntegrationIsAnAgentTheCatalogueKnows() {
     for integration in AgentHookCatalogue.integrations {
       #expect(AgentCatalogue.agent(integration.id) != nil, "\(integration.id) is not launchable")
-      #expect(AgentHookCatalogue.integration(for: integration.id)?.name == integration.name)
+      #expect(AgentHookCatalogue.integration(integration.id)?.name == integration.name)
     }
-    #expect(AgentHookCatalogue.integration(for: "nonesuch") == nil)
+    #expect(AgentHookCatalogue.integration("nonesuch") == nil)
     #expect(
       AgentHookCatalogue.integrations.map(\.id) == [
         "claude", "codex", "gemini", "copilot", "opencode",

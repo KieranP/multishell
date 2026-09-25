@@ -20,7 +20,7 @@ enum UnixSocket {
 
   static var length: socklen_t { socklen_t(MemoryLayout<sockaddr_un>.size) }
 
-  static func newSocket(path: String) throws -> Int32 {
+  static func newSocket(reportingAs path: String) throws -> Int32 {
     let descriptor = socket(AF_UNIX, SOCK_STREAM, 0)
     guard descriptor >= 0 else {
       throw SocketFailure(kind: .system(operation: "socket", code: errno), path: path)
@@ -33,31 +33,23 @@ enum UnixSocket {
   }
 
   static func connectSocket(_ descriptor: Int32, to path: String) throws {
-    var socketAddress = try address(for: path)
-    let result = withUnsafePointer(to: &socketAddress) { pointer in
-      pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) {
-        connect(descriptor, $0, length)
-      }
-    }
-    guard result == 0 else {
-      throw SocketFailure(kind: .system(operation: "connect", code: errno), path: path)
-    }
+    try call("connect", withAddressOf: path) { connect(descriptor, $0, length) }
   }
 
   static func bindSocket(_ descriptor: Int32, to path: String) throws {
-    var socketAddress = try address(for: path)
-    let result = withUnsafePointer(to: &socketAddress) { pointer in
-      pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) {
-        bind(descriptor, $0, length)
-      }
-    }
-    guard result == 0 else {
-      throw SocketFailure(kind: .system(operation: "bind", code: errno), path: path)
-    }
+    try call("bind", withAddressOf: path) { bind(descriptor, $0, length) }
   }
 
-  static func setNonBlocking(_ descriptor: Int32) {
-    let flags = fcntl(descriptor, F_GETFL)
-    _ = fcntl(descriptor, F_SETFL, flags | O_NONBLOCK)
+  /// `operation` names the call in the failure, which reads its errno.
+  private static func call(
+    _ operation: String, withAddressOf path: String, _ body: (UnsafePointer<sockaddr>) -> Int32
+  ) throws {
+    var socketAddress = try address(for: path)
+    let result = withUnsafePointer(to: &socketAddress) { pointer in
+      pointer.withMemoryRebound(to: sockaddr.self, capacity: 1, body)
+    }
+    guard result == 0 else {
+      throw SocketFailure(kind: .system(operation: operation, code: errno), path: path)
+    }
   }
 }

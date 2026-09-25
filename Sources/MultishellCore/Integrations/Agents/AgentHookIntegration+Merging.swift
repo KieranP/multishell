@@ -3,24 +3,16 @@ import Foundation
 /// Adding an agent's hooks to a settings object and taking them out again,
 /// without touching the disk; see Docs/design/agents.md.
 extension AgentHookIntegration {
-
-  func isInstalled(in settings: [String: Any]) -> Bool {
-    // An agent with no events has no hooks in any file; without this every
-    // settings object would satisfy an empty list.
-    guard !events.isEmpty else { return false }
-    return events.allSatisfy(holdsOurs(in: settings))
-  }
-
-  /// Whether any hook of ours is in there at all. Not `isInstalled`, which
-  /// wants one under every event and so answers no to a half-written file.
+  /// Whether any hook of ours is in there at all, so a half-written file
+  /// still counts.
   func holdsAnyOfOurs(_ settings: [String: Any]) -> Bool {
-    events.contains(where: holdsOurs(in: settings))
+    events.contains(where: ourHookPredicate(in: settings))
   }
 
-  private func holdsOurs(in settings: [String: Any]) -> (AgentHookEvent) -> Bool {
+  func ourHookPredicate(in settings: [String: Any]) -> (AgentHookEvent) -> Bool {
     let hooks = hooksSection(settings) ?? [:]
     return { event in
-      groups(hooks[event.name])?.contains(where: isMultishellGroup) ?? false
+      groups(hooks[event.name])?.contains(where: holdsOurHook) ?? false
     }
   }
 
@@ -37,7 +29,7 @@ extension AgentHookIntegration {
     guard var hooks = hooksSection(settings) else { return result }
     for event in events {
       guard var existing = groups(hooks[event.name]) else { continue }
-      if !existing.contains(where: isMultishellGroup) {
+      if !existing.contains(where: holdsOurHook) {
         existing.append(group(event, helper: helper))
       }
       hooks[event.name] = existing
@@ -56,7 +48,7 @@ extension AgentHookIntegration {
       var changed = false
       var kept: [[String: Any]] = []
       for group in groups {
-        guard isMultishellGroup(group) else {
+        guard holdsOurHook(group) else {
           kept.append(group)
           continue
         }
@@ -92,26 +84,26 @@ extension AgentHookIntegration {
   }
 
   /// One entry of the file, whichever of the two shapes it is in: a group
-  /// of hooks, or a hook on its own.
-  func isMultishellGroup(_ group: [String: Any]) -> Bool {
-    var commands = (group["hooks"] as? [[String: Any]] ?? []).compactMap {
+  /// of hooks, or a hook on its own. A mixed group holds one too.
+  func holdsOurHook(_ entry: [String: Any]) -> Bool {
+    var commands = (entry["hooks"] as? [[String: Any]] ?? []).compactMap {
       $0["command"] as? String
     }
-    if let command = group["command"] as? String { commands.append(command) }
-    return commands.contains(where: AgentHookCatalogue.isMultishellHook)
+    if let command = entry["command"] as? String { commands.append(command) }
+    return commands.contains(where: AgentHookCatalogue.isOurHook)
   }
 
   /// Ours out of one group, `nil` where nothing of the user's is left; a mixed
   /// group, ours never, keeps theirs. See Docs/design/agents.md.
   private func withoutOurHooks(_ group: [String: Any]) -> [String: Any]? {
     var trimmed = group
-    if let command = group["command"] as? String, AgentHookCatalogue.isMultishellHook(command) {
+    if let command = group["command"] as? String, AgentHookCatalogue.isOurHook(command) {
       for key in Self.bareHookKeys { trimmed[key] = nil }
     }
     if let entries = group["hooks"] as? [[String: Any]] {
       let kept = entries.filter { entry in
         guard let command = entry["command"] as? String else { return true }
-        return !AgentHookCatalogue.isMultishellHook(command)
+        return !AgentHookCatalogue.isOurHook(command)
       }
       trimmed["hooks"] = kept.isEmpty ? nil : kept
     }

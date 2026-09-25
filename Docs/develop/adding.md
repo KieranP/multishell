@@ -8,9 +8,9 @@ What each addition needs beyond the code itself.
 - **Two theme keys are not colours the terminal draws**: the focus ring, a
   colour or empty for no line, and the inactive-pane fade, which clamps before a
   pane looks broken. Both are drawn per pane.
-- **A terminal engine.** There is one and the model names its host outright
-  (design/terminals.md). A replacement implements the surface-host protocol and
-  is passed to the model in the Mac half.
+- **A terminal engine.** There is one, named outright where the Mac half builds
+  the model (design/terminals.md). A replacement implements the surface-host
+  protocol and is passed to the model in the Mac half.
 - **What a host owes**: the session environment to the child, a finished command
   reported if the engine can tell, paste framed as a bracketed paste, anything
   outside its sessions dropped at shutdown, and a shared directory cleared only
@@ -32,7 +32,7 @@ What each addition needs beyond the code itself.
   user reads what the app does with it.
 - **A hook stage.** A case in the hook stage, an arm in each of the script and
   directory lookups, the call from the coordinator in order, an error title
-  saying whether the operation happened, an editor in the Hooks tab, and an
+  saying whether the operation happened, an editor on the Hooks page, and an
   operation step with its text.
 - **A way a worktree stage can fail.** A failure type naming what is still on
   disk, an error title, and an arm in the removal describer saying whether the
@@ -41,15 +41,17 @@ What each addition needs beyond the code itself.
   default and the row comes back.
 - **A list of files a new worktree is given.** A case in the placement with the
   settings field it reads, an operation step with its titles and Cancel help,
-  and an editor in the Hooks tab.
+  and an editor on the Hooks page.
 - **If a repository may ship that list**, it also needs a field on the shared
   settings, a line in the layering, and the four places trust and containment
   are spelled out (`keeping(from:)`, `confined(to:)`, `trustCoveredText`,
-  `withoutWhatTrustCovers`), since it names paths on the reader's disk.
-- **An agent's hooks.** An integration naming the file, the events, what each
-  says the session is doing, which of two events standing for one thing is
-  silent, which two are a subagent's start and end, which is the prompt that
-  starts a turn, and which is its session starting.
+  `withoutWhatTrustCovers`), since it names paths on the reader's disk, and its
+  name in the trust question as a `shared-settings.` key in the libraries'
+  catalogue.
+- **An agent's hooks.** An integration in the hook catalogue's list, naming the
+  file, the events, what each says the session is doing, which of two events
+  standing for one thing is silent, which two are a subagent's start and end,
+  which is the prompt that starts a turn, and which is its session starting.
 - **An event's timeout goes below five seconds where the agent caps it**, as
   Codex does its two exit events at three, warning at every start otherwise.
 - **Every agent with events needs the turn-starting one.** Most agents fire no
@@ -60,11 +62,12 @@ What each addition needs beyond the code itself.
   still counts as one, taking an unnamed place.
 - **An agent reporting through a plugin** names a worker through the helper's
   subagent flags and starts a turn through its new-turn flag. It also needs a
-  catalogue row, the tab offering hooks for agents detection found.
+  catalogue row, the Agents page's Hooks part offering hooks for agents
+  detection found.
 - **An agent with no hooks at all needs a plugin**, as one already has. A file
   that is ours alone is written whole and deleted to remove.
 - **A variable a hook receives.** A case in the hook variables, which both
-  builds the environment and draws the Hooks tab's table.
+  builds the environment and draws the Hooks page's table.
 - **A placeholder an agent's flags may use.** A case with its value and the
   variable a custom command reads it from. The settings rows name one as an
   example rather than the list, and no page in the repository lists them yet, so
@@ -124,7 +127,7 @@ What each addition needs beyond the code itself.
   committed order into the default.
 - **Anything not on the worktree is passed to the sort as a closure**, as the
   active flag and the last commit are, and lands on the sort key. The order memo
-  compares keys to skip a sort, so a comparison reading anything off the key
+  compares keys to skip a sort, so a comparison reading anything not on the key
   serves the old order. No order lifts a row above the main worktree or the
   trunk, which the bands place first.
 - **A shell with command-status hooks.** A script in the libraries' resources
@@ -146,7 +149,7 @@ What each addition needs beyond the code itself.
   permission answers unavailable to both questions, which keeps the settings
   page from promising a dialog.
 - **A persisted field.** Decode with a default, an unknown enum value included,
-  and add a case to the decoding-defaults tests.
+  and add a decoding case to that type's own tests.
 - **The verb carries the choice**: the strict decode where a wrong type should
   fail the file, the tolerant one where a value this build cannot read must cost
   that value alone. A lossy array drops a broken element; projects stay strict.
@@ -154,8 +157,10 @@ What each addition needs beyond the code itself.
   coding keys, `==` and `hash`, which keep this run's read of a repo's file out
   of all three.
 - **A field on `ProjectSettings`** needs a case in its hand-written coding keys,
-  which keep the trust answers under their old key; one left out is never saved.
-  ProjectSettingsTests counts them.
+  which keep the shell and the trust answers under their old keys; one left out
+  is never saved. ProjectSettingsTests counts them.
+- **A field on `Workspace`** needs a case in its hand-written coding keys too,
+  which keep the shell under its old key. WorkspaceTests counts them.
 - **A preference.** In order: the field on the workspace, a setter on the store,
   which must sit in that one file beside the private setter, a method on the
   model doing whatever else the change needs, and the row bound through the
@@ -163,7 +168,7 @@ What each addition needs beyond the code itself.
 - **A project override** is a second field on the project settings and a
   resolver reading those first; if a repository may ship it, a shared-settings
   field, a line in the layering and an `InheritableSetting` member pairing the
-  two, plus the four trust places if it names a path (settings.md).
+  two, plus the four trust places if it names a path (design/settings.md).
 - **A collection, or a reference between collections.** Extend the repair and
   the invariants. Every store operation must leave the invariants true, and the
   seeded random tests find it if not, printing the seed and step to replay.
@@ -185,7 +190,7 @@ What each addition needs beyond the code itself.
   `InheritableSetting` where a repository may ship it. Help goes behind an (i);
   a caption is only for a value computed live.
 - **A page that outgrows its window gets another part** in its segmented switch,
-  and each part a line in SettingsPageSizeTests. Hooks' Create part has 7 pt
+  and each part a line in AppSettingsWindowTests. Hooks' Create part has 7 pt
   left under a repository file asking for trust.
 - **A user-visible string.** A line in the catalogue of the half that says it,
   in key order under its thing's prefix (design/translation.md), and the lookup
@@ -196,7 +201,7 @@ What each addition needs beyond the code itself.
   are numbered so a translation may reorder them.
 - **A service a pane can reach.** A usage string in the Info.plist template, in
   this app's words, and the matching entitlement where the hardened runtime has
-  one. Neither stands in for the other (signing.md, permissions.md).
+  one. Neither stands in for the other (design/signing.md, permissions.md).
 - **A language.** That code's folder beside the English one in both halves, both
   files translated, and a line for it in each target's resources in the
   manifest. The bundling script takes the list from the app half's folders.
@@ -206,4 +211,7 @@ What each addition needs beyond the code itself.
   resources on its own.
 - **A notified state.** A toggle in the notification preference, whose subscript
   answers for every state so a caller can hand it whatever was reported, and a
-  place in `notifiableStates`, the order the settings tab lists them in.
+  place in `notifiableStates`, the order the settings page lists them in. It
+  also needs a case in the preference's hand-written coding keys, which keep
+  Failed under `error`, and a line in its decode; one left out of the keys is
+  never saved.

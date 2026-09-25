@@ -2,8 +2,7 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// The selected worktree's panes, one row each: dot, position in a split,
-/// title, chip. Bold is the one focused pane; see Docs/design/agents.md.
+/// The selected worktree's panes, one `PaneRow` each, in tab order.
 struct PaneRows: View {
   let model: AppModel
   let worktree: Worktree
@@ -28,49 +27,22 @@ struct PaneRows: View {
   }
 
   private func row(
-    _ session: TerminalSession, in tab: TerminalTab, position: AgentBoardCard.Position?,
+    _ session: TerminalSession, in tab: TerminalTab, position: PanePosition?,
     isFocusedPane: Bool
   ) -> some View {
-    let state = model.state(ofPane: session.id)
-    let subagents = model.subagents(ofPane: session.id)
-    let title = model.title(ofPane: session, in: tab)
     let agentID = model.agentAtThePrompt(of: session)
-    return HStack(spacing: 7) {
-      PaneGlyph(
-        agentID: agentID,
-        shellSymbol: "apple.terminal",
-        state: state ?? .idle,
-        surface: theme.sidebarColor,
-        plainTint: isFocusedPane ? theme.textPrimary : theme.textSecondary,
-        theme: theme,
-        size: metrics.icon + 2
-      )
-      .help((state ?? .idle).displayName)
-      if let position {
-        PanePositionBadge(index: position.index, metrics: metrics, theme: theme)
-      }
-      Text(title)
-        .font(.system(size: metrics.badge, weight: isFocusedPane ? .semibold : .regular))
-        .foregroundStyle(isFocusedPane ? theme.textPrimary : theme.textSecondary)
-        .lineLimit(1)
-        .truncationMode(.tail)
-      Spacer(minLength: 4)
-      if !subagents.isEmpty {
-        SubagentChip(subagents: subagents, theme: theme, metrics: metrics)
-      }
-    }
-    // The pane's glyph sits under the worktree's name, one step in from its dot.
-    .padding(.leading, metrics.indent + metrics.icon + 2)
-    .padding(.trailing, 8)
-    .frame(height: metrics.paneRowHeight)
-    .contentShape(.rect)
-    .onTapGesture { model.show(pane: session.id) }
-    .accessibilityElement(children: .ignore)
-    .accessibilityLabel(
-      AccessibilityText.pane(
-        title: title, position: position, isFocusedPane: isFocusedPane, state: state,
-        subagents: subagents, agent: agentID.map(model.agentDisplayName))
+    return PaneRow(
+      title: model.title(ofPane: session, in: tab),
+      position: position,
+      isFocusedPane: isFocusedPane,
+      state: model.state(ofPane: session.id),
+      subagents: model.subagents(ofPane: session.id),
+      agentID: agentID,
+      agentName: agentID.map(model.agentDisplayName),
+      theme: theme,
+      metrics: metrics,
+      select: { [model] in model.show(pane: session.id) }
     )
-    .accessibilityAddTraits(isFocusedPane ? [.isButton, .isSelected] : .isButton)
+    .equatable()
   }
 }

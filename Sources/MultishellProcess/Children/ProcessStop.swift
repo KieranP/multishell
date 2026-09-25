@@ -3,5 +3,5 @@ public enum ProcessStop: Equatable, Sendable {
   /// It was still running when `timeout` ran out.
   case timedOut(after: Duration)
   /// `ProcessStopper.stop()` was called: the user asked.
-  case stopped
+  case byUser
 }

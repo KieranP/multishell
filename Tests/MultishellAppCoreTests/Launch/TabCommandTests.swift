@@ -13,13 +13,13 @@ struct TabCommandTests {
 
   @Test func theAgentRunsInTheLoginShellAndAShellTakesOverAfterIt() {
     let command = TabCommand.running(
-      ["claude", "--continue"], shell: zsh, exec: "exec /bin/zsh -l")
+      ["claude", "--continue"], shell: zsh, handOver: "exec /bin/zsh -l")
     #expect(command == ["/bin/zsh", "-l", "-i", "-c", "claude --continue; exec /bin/zsh -l"])
   }
 
   @Test func argumentsWithSpacesAreQuotedAndTheUsersShellIsExecd() {
     let command = TabCommand.running(
-      ["my agent", "--name", "it's"], shell: zsh, exec: "exec /opt/homebrew/bin/nu -l")
+      ["my agent", "--name", "it's"], shell: zsh, handOver: "exec /opt/homebrew/bin/nu -l")
     #expect(command.last == "'my agent' --name 'it'\\''s'; exec /opt/homebrew/bin/nu -l")
   }
 
@@ -32,7 +32,7 @@ struct TabCommandTests {
     let command = TabCommand.running(
       ["/usr/bin/printf", "[%s]\\n"] + words,
       shell: ShellInvocation(
-        executable: URL(fileURLWithPath: tcsh), arguments: ["-f", "-i", "-c"]), exec: "exit")
+        executable: URL(fileURLWithPath: tcsh), arguments: ["-f", "-i", "-c"]), handOver: "exit")
     let text = try await Detached.output(
       of: command[0], Array(command.dropFirst()),
       environment: ["PATH": "/usr/bin:/bin", "HISTFILE": "", "HOME": home.path])
@@ -56,11 +56,12 @@ struct TabCommandTests {
       let worktree = Worktree(
         path: URL(fileURLWithPath: "/repos/demo-worktrees/w"), projectID: project.id, head: "a",
         branch: hostile)
-      let values = AgentPlaceholder.values(project: project, worktree: worktree, name: hostile)
+      let values = AgentPlaceholder.values(
+        project: project, worktree: worktree, worktreeName: hostile)
       let command = TabCommand.running(
         ["/usr/bin/printf", "[%s]\\n"] + AgentFlags.arguments("--name={{branch}}", values: values),
         shell: ShellInvocation(executable: URL(fileURLWithPath: shell), arguments: flags),
-        exec: "exit")
+        handOver: "exit")
       let text = try await Detached.output(
         of: command[0], Array(command.dropFirst()),
         environment: ["PATH": "/usr/bin:/bin", "HISTFILE": "", "HOME": home.path],
@@ -73,12 +74,13 @@ struct TabCommandTests {
 
   @Test func aCustomLineIsUsedAsTypedAndBlankMeansNothing() {
     #expect(
-      TabCommand.running(customLine: ShellLine(text: "  "), shell: zsh, exec: "exec /bin/zsh -l")
+      TabCommand.running(
+        customLine: ShellLine(text: "  "), shell: zsh, handOver: "exec /bin/zsh -l")
         == nil)
     #expect(
       TabCommand.running(
         customLine: ShellLine(text: " my-agent --model x \n"), shell: zsh,
-        exec: "exec /bin/zsh -l")
+        handOver: "exec /bin/zsh -l")
         == ["/bin/zsh", "-l", "-i", "-c", "my-agent --model x; exec /bin/zsh -l"])
   }
 
@@ -87,7 +89,7 @@ struct TabCommandTests {
       text: #"my-agent --name "$MULTISHELL_BRANCH""#,
       environment: ["MULTISHELL_BRANCH": "feat$(x)", "MULTISHELL_PROJECT_NAME": "demo"])
     #expect(
-      TabCommand.running(customLine: line, shell: zsh, exec: "exec /bin/zsh -l") == [
+      TabCommand.running(customLine: line, shell: zsh, handOver: "exec /bin/zsh -l") == [
         "/usr/bin/env", "MULTISHELL_BRANCH=feat$(x)", "MULTISHELL_PROJECT_NAME=demo",
         "/bin/zsh", "-l", "-i", "-c", #"my-agent --name "$MULTISHELL_BRANCH"; exec /bin/zsh -l"#,
       ])

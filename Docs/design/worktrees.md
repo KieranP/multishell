@@ -48,7 +48,8 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   gone next tick. It is cleared wherever the store forgets a worktree.
 - **The branch is never replaced, only demoted**: every git command in that
   directory acts on it, so a row that hid it would lie. The removal dialog names
-  branch and path in its body, where what cannot be undone belongs.
+  the worktree as its row does, and the branch in its body, where what cannot be
+  undone belongs.
 - **The trunk row holds the top whatever the sort says.** Rows sort in bands
   first: git's main worktree, a linked worktree on the trunk, the busy ones if
   asked for, then the rest.
@@ -83,7 +84,7 @@ Discovery, naming, ordering, removal. Newest at the bottom.
 - **The glyph is a mark rather than a control**, badge-sized and dimmer than the
   caption. It uses the strip's plain menu style, the borderless AppKit one
   drawing the image at its own size and tint whatever the label asked
-  (tabs-and-columns.md).
+  (tabs-and-groups.md).
 - **A removed worktree goes to the Trash**, not `git worktree remove`, which
   refuses a dirty tree and whose force unlinks the files. The one time someone
   removes the wrong worktree is the time that matters.
@@ -243,8 +244,8 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   between the sheet and the add used to judge it, so a bad name ran the
   pre-create hook before git refused at the end of it.
 - **The rules are git's own, in Swift, less the ones about slashes** that apply
-  only to a full refname, the sheet asking on every keystroke. A test holds it
-  against real git over a table of names.
+  only to a full refname, the sheet asking on every keystroke. `GitRefNameTests`
+  holds it against real git over a table of names.
 - **An existing branch is held to the same rules**: the check used to run only
   when creating one, so an API caller with an empty name ran the hook and was
   refused after. Cost: a detached checkout git would have allowed is refused

@@ -16,7 +16,7 @@ struct EditorLaunchTests {
   ) -> EditorLaunch.Action? {
     EditorLaunch.action(
       editorID: id, found: found, customTemplate: custom, directory: directory, shell: zsh,
-      exec: "exec /bin/zsh -l")
+      handOver: "exec /bin/zsh -l")
   }
 
   @Test func anApplicationIsPreferredOverItsShimAndTheShimRunsInTheBackground() {
@@ -41,7 +41,7 @@ struct EditorLaunchTests {
     guard
       case .runInBackground(let line) = EditorLaunch.action(
         editorID: "vscode", found: .init(application: nil, command: shim), customTemplate: "",
-        directory: worktree, shell: zsh, exec: "exit")
+        directory: worktree, shell: zsh, handOver: "exit")
     else {
       Issue.record("the shim runs in the background")
       return

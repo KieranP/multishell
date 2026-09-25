@@ -58,13 +58,14 @@ What is written, what is repaired, how it is tested. Newest at the bottom.
   project added in the other.
 - **The held socket is what tells the second copy**, so it hands over: the
   running copy comes forward, this one quits and writes nothing meanwhile. The
-  socket is per build variant and per worktree, so a debug build beside the
-  installed app is not a second copy.
+  socket is per build variant, and a debug build's per worktree too, so a debug
+  build beside the installed app is not a second copy.
 - **A copy that failed to quit starts no shell.** Its tabs' reports would reach
   the running copy's socket, and the engine config each one writes is named by
   the wrapper, so its quit could not tell those files from the running copy's.
-- **Debug builds keep their own state file, socket and directories**, so a debug
-  run beside the installed app touches none of them.
+- **Debug builds keep their own state file, socket, integration and drops
+  directories**, so a debug run beside the installed app touches none of them.
+  Themes and the helper link are shared (state-on-disk.md).
 - **`WorkspaceStore` only grows**: `private(set) var workspace` keeps every
   writer inside it, so each new mutation is another method there. Lookups it
   repeats belong on `Workspace`, where the store's methods share them.
@@ -76,3 +77,8 @@ What is written, what is repaired, how it is tested. Newest at the bottom.
   preference falls back. Kept, it raised an install alert at every run for an
   agent the app no longer offers. Cost: the next save drops the id, so an older
   build that still has the agent opens those tabs as shells.
+- **A renamed field keeps the key it was saved under**, as the preferred shell
+  keeps `defaultShell` and the failed notification toggle `error`: a new key
+  reads every earlier file as missing it, and the default replaces the user's
+  choice. `WorkspaceTests` counts `Workspace`'s keys against its fields, so a
+  field left out of the coding keys fails there rather than going unsaved.

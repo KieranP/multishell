@@ -19,10 +19,10 @@ struct ShellDetectionTests {
     /no/such/shell
     """.write(to: list, atomically: true, encoding: .utf8)
 
-    let detection = ShellDetection(path: bin.path, systemList: list, loginShell: "/bin/sh")
+    let detection = ShellDetection(searchPath: bin.path, systemList: list, loginShell: "/bin/sh")
 
     #expect(
-      detection.installed == [
+      detection.found == [
         bin.appendingPathComponent("bash").path, bin.appendingPathComponent("fish").path,
         bin.appendingPathComponent("nu").path, "/bin/sh", bin.appendingPathComponent("zsh").path,
       ], "sorted by name then path, listed once, the missing one dropped")
@@ -32,7 +32,7 @@ struct ShellDetectionTests {
   }
 
   @Test func theDropdownLeadsWithTheLoginShellAndKeepsAStaleChoice() {
-    let detection = ShellDetection(installed: ["/bin/bash", "/bin/zsh"], loginShell: "/bin/zsh")
+    let detection = ShellDetection(found: ["/bin/bash", "/bin/zsh"], loginShell: "/bin/zsh")
 
     let plain = detection.options(selected: nil)
     #expect(plain.map(\.id) == ["login", "/bin/bash", "/bin/zsh", "custom"])
@@ -44,28 +44,26 @@ struct ShellDetectionTests {
     #expect(
       stale.map(\.id) == ["login", "/bin/bash", "/bin/zsh", "/opt/homebrew/bin/fish", "custom"])
     #expect(stale[3].label == "fish  /opt/homebrew/bin/fish (not installed)")
-    #expect(stale[3].isInstalled == false)
     #expect(detection.options(selected: "/bin/bash").count == 4, "an installed choice adds nothing")
     #expect(detection.options(selected: "custom").count == 4, "and neither does the custom path")
     #expect(detection.isInstalled(ShellCatalogue.customID))
   }
 
   /// Every other row is checked against the disk. `$SHELL` pointing at an
-  /// uninstalled fish showed an unmarked row, and each new tab died silently.
-  @Test func aLoginShellThatIsNotThereIsMarkedLikeAnyOtherMissingOne() {
-    let gone = ShellDetection(installed: ["/bin/zsh"], loginShell: "/opt/gone/fish")
+  /// uninstalled fish passed as installed, and each new tab died silently.
+  @Test func aLoginShellThatIsNotThereCountsAsNotInstalled() {
+    let gone = ShellDetection(found: ["/bin/zsh"], loginShell: "/opt/gone/fish")
     #expect(!gone.isInstalled(ShellCatalogue.loginShellID))
-    #expect(gone.options(selected: nil)[0].isInstalled == false)
 
-    let there = ShellDetection(installed: ["/bin/zsh"], loginShell: "/bin/sh")
+    let there = ShellDetection(found: ["/bin/zsh"], loginShell: "/bin/sh")
     #expect(there.isInstalled(ShellCatalogue.loginShellID))
-    #expect(there.options(selected: nil)[0].isInstalled)
   }
 
   @Test func aMissingSystemListIsNotAnError() {
     let detection = ShellDetection(
-      path: "/nowhere", systemList: URL(fileURLWithPath: "/no/such/shells"), loginShell: "/bin/sh")
-    #expect(detection.installed.isEmpty)
+      searchPath: "/nowhere", systemList: URL(fileURLWithPath: "/no/such/shells"),
+      loginShell: "/bin/sh")
+    #expect(detection.found.isEmpty)
     #expect(detection.options(selected: nil).map(\.id) == ["login", "custom"])
   }
 }

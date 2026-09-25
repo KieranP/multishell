@@ -19,7 +19,7 @@ extension Theme {
   /// The find bar: the sidebar's lift on a dark theme, a third of it on a
   /// light one, whose well then needs a line of its own; see appearance.md.
   var findPanelColor: Color { isDark ? sidebarColor : columnColor }
-  var findWellBorder: Color { isDark ? .clear : hairline }
+  var findWellBorderColor: Color { isDark ? .clear : hairline }
 
   var textPrimary: Color { foregroundColor.opacity(0.92) }
   var textSecondary: Color { foregroundColor.opacity(0.6) }
@@ -29,6 +29,23 @@ extension Theme {
 
   var colorScheme: ColorScheme { isDark ? .dark : .light }
 
+  /// A worktree's name beside its project's, on the header and a card.
+  var worktreeNameColor: Color { ansiRGB(6).color }
+
+  /// The git badge's lines added and removed, and its files with no line.
+  var insertionsColor: Color { ansiRGB(2).color }
+  var deletionsColor: Color { ansiRGB(1).color }
+  var unscoredFilesColor: Color { ansiRGB(3).color }
+
+  /// A create or remove that failed, and a branch that landed.
+  var failureColor: Color { ansiRGB(1).color }
+  var mergedColor: Color { ansiRGB(2).color }
+
+  /// A project icon's tint slot, or `untinted` for an icon without one.
+  func iconTint(_ slot: Int?, untinted: Color) -> Color {
+    slot.map { ansiRGB($0).color } ?? untinted
+  }
+
   /// Working yellow, Waiting blue, Done green, Failed red, idle grey. The
   /// dirty-files dot is the same yellow, so the two never sit together.
   func color(for state: SessionState) -> Color {
@@ -36,7 +53,7 @@ extension Theme {
     case .running: ansiRGB(3).color
     case .attention: ansiRGB(4).color
     case .done: ansiRGB(2).color
-    case .error: ansiRGB(1).color
+    case .failed: ansiRGB(1).color
     case .idle: textTertiary
     }
   }

@@ -65,16 +65,16 @@ enum WorkspaceInvariants {
     for tab in ws.tabs {
       #expect(
         ws.group(tab.groupID)?.worktreeID == tab.worktreeID,
-        "\(context): a tab in another worktree's column, or in none")
+        "\(context): a tab in another worktree's group, or in none")
     }
     for (worktreeID, groupID) in ws.focusedGroupByWorktree {
       #expect(
         ws.group(groupID)?.worktreeID == worktreeID,
-        "\(context): the focused column is not the worktree's")
+        "\(context): the focused group is not the worktree's")
     }
     for worktreeID in Set(ws.tabGroups.map(\.worktreeID)) {
       #expect(
-        ws.focusedGroupByWorktree[worktreeID] != nil, "\(context): columns but none focused")
+        ws.focusedGroupByWorktree[worktreeID] != nil, "\(context): groups but none focused")
     }
   }
 

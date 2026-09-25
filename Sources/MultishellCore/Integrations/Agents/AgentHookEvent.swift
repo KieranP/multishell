@@ -1,6 +1,6 @@
 /// One event an agent's hooks are asked for, and what it says the session
 /// is doing.
-public struct AgentHookEvent: Hashable, Sendable {
+struct AgentHookEvent: Hashable, Sendable {
   /// What the settings file calls the event.
   let name: String
   /// What the payload calls it, usually the same word. Copilot takes
@@ -24,7 +24,7 @@ public struct AgentHookEvent: Hashable, Sendable {
   let subagentPhase: SubagentReport.Phase?
   /// Whether the event is a prompt starting a turn, after which nothing of
   /// the last turn is still out.
-  let isTurnStart: Bool
+  let isPrompt: Bool
   /// Where the agent caps this event's hooks below the usual timeout.
   let timeoutSeconds: Int?
   /// Whether this is the agent's session starting, which moves nothing from
@@ -35,7 +35,7 @@ public struct AgentHookEvent: Hashable, Sendable {
     _ name: String, _ state: SessionState, reportedName: String? = nil, matcher: String? = nil,
     ignoredNotificationTypes: Set<String> = [], onlyWhenPrompting: Bool = false,
     silent: Bool = false, subagentPhase: SubagentReport.Phase? = nil,
-    isTurnStart: Bool = false, startsSession: Bool = false, timeoutSeconds: Int? = nil
+    isPrompt: Bool = false, startsSession: Bool = false, timeoutSeconds: Int? = nil
   ) {
     self.name = name
     self.reportedName = reportedName ?? name
@@ -45,7 +45,7 @@ public struct AgentHookEvent: Hashable, Sendable {
     self.onlyWhenPrompting = onlyWhenPrompting
     self.silent = silent
     self.subagentPhase = subagentPhase
-    self.isTurnStart = isTurnStart
+    self.isPrompt = isPrompt
     self.timeoutSeconds = timeoutSeconds
     self.startsSession = startsSession
   }
@@ -53,7 +53,7 @@ public struct AgentHookEvent: Hashable, Sendable {
   /// Whether this is the agent's own prompt starting a turn: one inside a
   /// worker, should an agent ever send one, starts nothing of the agent's.
   func startsTurn(for payload: AgentHookPayload) -> Bool {
-    isTurnStart && subagentChange(for: payload) == nil
+    isPrompt && subagentChange(for: payload) == nil
   }
 
   /// The roster change this event and payload amount to, or nothing for the

@@ -13,13 +13,6 @@ public struct DefaultBranch: Hashable, Sendable {
   /// short form and wins it; see Docs/design/merged-branch.md.
   let fullName: String
 
-  init(shortName: String, branchName: String, tip: String, fullName: String) {
-    self.shortName = shortName
-    self.branchName = branchName
-    self.tip = tip
-    self.fullName = fullName
-  }
-
   /// The refs to try, in order. A remote-tracking ref beats a local branch
   /// of the same name; an override falls back to no default at all.
   static func candidateRefs(override: String?, originHead: String?) -> [String] {

@@ -21,7 +21,7 @@ enum WorktreeListParser {
           path: URL(filePath: path, directoryHint: .isDirectory),
           projectID: projectID,
           head: fields["HEAD"] ?? "",
-          branch: fields["branch"].map(shortBranchName),
+          branch: fields["branch"].map(BranchRef.shortLocalName),
           isPrimary: worktrees.isEmpty,
           isLocked: fields["locked"] != nil,
           isInitializing: fields["locked"] == "initializing",
@@ -47,9 +47,5 @@ enum WorktreeListParser {
   private static func split(_ line: String) -> (key: String, value: String) {
     guard let space = line.firstIndex(of: " ") else { return (line, "") }
     return (String(line[line.startIndex..<space]), String(line[line.index(after: space)...]))
-  }
-
-  private static func shortBranchName(_ ref: String) -> String {
-    ref.hasPrefix(BranchRef.localPrefix) ? String(ref.dropFirst(BranchRef.localPrefix.count)) : ref
   }
 }

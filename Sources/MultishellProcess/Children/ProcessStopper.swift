@@ -15,7 +15,7 @@ public final class ProcessStopper: Sendable {
   public init() {}
 
   public func stop() {
-    stop(.stopped)
+    stop(.byUser)
   }
 
   /// The reason this stopper ended the child it was attached to, once it
@@ -40,7 +40,7 @@ public final class ProcessStopper: Sendable {
       // A child already gone was not stopped by this: a timeout dies with the
       // run that armed it, the user's ask carries to the next child.
       guard Self.hangUp(child) else {
-        if reason == .stopped { state.pending = reason }
+        if reason == .byUser { state.pending = reason }
         return
       }
       state.applied = reason
@@ -65,12 +65,12 @@ public final class ProcessStopper: Sendable {
   /// False for a child already gone. Not Subprocess's teardown, which stops once
   /// the child exits: a grandchild trapping SIGHUP would outlive the shell.
   private static func hangUp(_ child: RunningChild) -> Bool {
-    let hungUp = {
+    let hangupTime = {
       var now = timeval()
       gettimeofday(&now, nil)
       return now
     }()
-    let signalled = child.signalling { pid in
+    let signalled = child.withLivePID { pid in
       // The group where the child leads one, as its own session's leader does;
       // the child alone where the signal says it does not.
       let leadsGroup = kill(-pid, SIGHUP) == 0
@@ -80,12 +80,12 @@ public final class ProcessStopper: Sendable {
     guard let (pid, leadsGroup) = signalled else { return false }
     DispatchQueue.global().asyncAfter(deadline: .now() + killGrace) {
       guard leadsGroup else {
-        _ = child.signalling { kill($0, SIGKILL) }
+        _ = child.withLivePID { kill($0, SIGKILL) }
         return
       }
       // The group, not the shell: a grandchild trapping SIGHUP outlives it.
       // The pid may have been reused by then, so the group is checked first.
-      guard ProcessGroup.isStillOurs(hungUpAt: hungUp, group: pid) else { return }
+      guard ProcessGroup.isStillOurs(hungUpAt: hangupTime, group: pid) else { return }
       kill(-pid, SIGKILL)
     }
     return true

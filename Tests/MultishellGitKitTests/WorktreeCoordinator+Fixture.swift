@@ -31,7 +31,7 @@ extension WorktreeCoordinator {
       settings: settings, shellPath: shellPath, timeout: timeout, stopper: stopper, onStep: onStep)
     try await runPostCreate(
       for: project, worktreePath: path,
-      branch: Self.branchName(rawBranch, createBranch: createBranch, settings: settings),
+      branch: Self.qualifiedBranchName(rawBranch, createBranch: createBranch, settings: settings),
       shellPath: shellPath, timeout: timeout, stopper: stopper)
     return path
   }

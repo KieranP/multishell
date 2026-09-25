@@ -39,7 +39,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   public var silent: Bool?
   /// The count a helper from before workers had names wrote: `1` started, `-1`
   /// ended. Read as an unnamed worker; see Docs/design/agents.md.
-  public var subagents: Int?
+  var legacySubagentCount: Int?
   /// A subagent starting, calling a tool or ending. The app keeps the
   /// roster; see Docs/design/agents.md.
   public var subagent: SubagentReport?
@@ -70,7 +70,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     case command
     case isShell = "shell"
     case silent
-    case subagents
+    case legacySubagentCount = "subagents"
     case subagent
     case startsTurn = "turn"
     case startsSession = "start"
@@ -90,7 +90,6 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     command: String? = nil,
     isShell: Bool? = nil,
     silent: Bool? = nil,
-    subagents: Int? = nil,
     subagent: SubagentReport? = nil,
     startsTurn: Bool? = nil,
     startsSession: Bool? = nil,
@@ -103,19 +102,19 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     self.sessionID = sessionID
     self.cwd = Self.boundedPath(cwd)
     self.pid = pid
-    self.message = Self.truncated(message)
-    self.duration = Self.bounded(duration)
-    self.agent = Self.identifier(agent)
+    self.message = Self.truncatedMessage(message)
+    self.duration = Self.boundedDuration(duration)
+    self.agent = Self.boundedIdentifier(agent)
     self.command = Self.commandWord(command)
     self.isShell = isShell
     self.silent = silent
-    self.subagents = subagents ?? Self.count(of: subagent)
+    self.legacySubagentCount = Self.count(of: subagent)
     self.subagent = subagent
     self.startsTurn = startsTurn
     self.startsSession = startsSession
-    self.backgroundShells = backgroundShells.map { Array($0.prefix(Self.rosterLimit)) }
+    self.backgroundShells = backgroundShells.map { Array($0.prefix(Self.maximumWorkerCount)) }
     self.resumesAfterWorkers = resumesAfterWorkers
-    self.conversationID = Self.identifier(conversationID)
+    self.conversationID = Self.boundedIdentifier(conversationID)
   }
 
   /// What an app that reads only the count should make of a worker. A tool
@@ -137,20 +136,20 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     pid = try container.decodeIfPresent(Int32.self, forKey: .pid)
     // Truncated on the way in as well as out: any process of the user's may
     // write a line, so the cap is the reader's rule.
-    message = Self.truncated(try container.decodeIfPresent(String.self, forKey: .message))
-    duration = Self.bounded(try container.decodeIfPresent(Double.self, forKey: .duration))
-    agent = Self.identifier(try container.decodeIfPresent(String.self, forKey: .agent))
+    message = Self.truncatedMessage(try container.decodeIfPresent(String.self, forKey: .message))
+    duration = Self.boundedDuration(try container.decodeIfPresent(Double.self, forKey: .duration))
+    agent = Self.boundedIdentifier(try container.decodeIfPresent(String.self, forKey: .agent))
     command = Self.commandWord(try container.decodeIfPresent(String.self, forKey: .command))
     isShell = try container.decodeIfPresent(Bool.self, forKey: .isShell)
     silent = try container.decodeIfPresent(Bool.self, forKey: .silent)
-    subagents = try container.decodeIfPresent(Int.self, forKey: .subagents)
+    legacySubagentCount = try container.decodeIfPresent(Int.self, forKey: .legacySubagentCount)
     subagent = try container.decodeIfPresent(SubagentReport.self, forKey: .subagent)
     startsTurn = try container.decodeIfPresent(Bool.self, forKey: .startsTurn)
     startsSession = try container.decodeIfPresent(Bool.self, forKey: .startsSession)
     backgroundShells = try container.decodeIfPresent([Int32].self, forKey: .backgroundShells)
-      .map { Array($0.prefix(Self.rosterLimit)) }
+      .map { Array($0.prefix(Self.maximumWorkerCount)) }
     resumesAfterWorkers = try container.decodeIfPresent(Bool.self, forKey: .resumesAfterWorkers)
-    conversationID = Self.identifier(
+    conversationID = Self.boundedIdentifier(
       try container.decodeIfPresent(String.self, forKey: .conversationID))
   }
 
@@ -158,7 +157,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   /// an unnamed worker starting or ending.
   public var subagentChange: SubagentReport? {
     if let subagent { return subagent }
-    switch subagents {
+    switch legacySubagentCount {
     case .some(let count) where count > 0:
       return SubagentReport(id: SubagentReport.anonymousID, phase: .started)
     case .some(let count) where count < 0:
@@ -174,7 +173,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     guard let word = command?.split(whereSeparator: \.isWhitespace).first,
       let name = word.split(separator: "/").last
     else { return nil }
-    return identifier(String(name))
+    return boundedIdentifier(String(name))
   }
 
   /// macOS's PATH_MAX; a longer one is no directory a worktree could be.
@@ -187,7 +186,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
 
   /// A duration outside what a command could have taken is a writer's
   /// number rather than a clock's, and is dropped as the message is capped.
-  private static func bounded(_ duration: Double?) -> Double? {
+  private static func boundedDuration(_ duration: Double?) -> Double? {
     guard let duration, duration.isFinite, duration >= 0, duration <= maximumDuration
     else { return nil }
     return duration
@@ -199,16 +198,15 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
 
   /// The places a model's roster holds and the shells a report names, or an agent
   /// never ending its workers or a Stop naming thousands grows it for good.
-  public static let rosterLimit = 64
+  public static let maximumWorkerCount = 64
 
-  private static func identifier(_ id: String?) -> String? {
+  private static func boundedIdentifier(_ id: String?) -> String? {
     guard let id, !id.isEmpty, id.count <= maximumIdentifierLength else { return nil }
     return id
   }
 
-  private static func truncated(_ message: String?) -> String? {
-    guard let message, message.count > maximumMessageLength else { return message }
-    return message.prefix(maximumMessageLength) + "…"
+  private static func truncatedMessage(_ message: String?) -> String? {
+    message?.truncated(to: maximumMessageLength)
   }
 
   /// `nil` for anything that is not one well-formed report: any process may

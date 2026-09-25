@@ -3,10 +3,11 @@
 ## Layout
 
 - **One package: four libraries, the helper and the app.** MultishellCore:
-  model, with what a user or a repository sets under `Model/Settings/`; store;
-  theme; ports; the sessions and the reports about them; the decoding every
-  persisted type leans on; the libraries' word lookup; and, under `Support/`,
-  the small extensions and helpers every other library reaches for.
+  model, with what a user or a repository sets under `Model/Settings/` and a
+  worktree's tabs and panes under `Model/Tabs/`; store; theme; ports; the
+  sessions and the reports about them; the decoding every persisted type leans
+  on; the libraries' word lookup; and, under `Support/`, the small extensions
+  and helpers every other library reaches for.
 - **MultishellProcess**: processes and sockets. **MultishellGitKit**: worktree
   operations, a project's hooks and file lists, the output readers, what a
   branch is, where it points and whether it landed, a worktree's status, and the
@@ -16,6 +17,12 @@
   when to notify, every decision a view makes; what a screen reader is told;
   what it needs from the app, and its own implementations of Core's ports, under
   `Ports/`; and, under `Support/`, the pieces that belong to no concern.
+- **AppModel's extensions sit under `Model/` by concern**: agents, tabs,
+  worktrees, git reads, projects, and the tools it drives. What spans them all
+  stays at the root beside the type, since the concerns are too many for one
+  alphabetical listing to keep a concern's files together.
+- **AppCore's `Integrations/` is the app's own side of them**: the helper and
+  shell-integration files it installs, and each agent's hooks as installed.
 - **Everything about a program someone else wrote is in Core's
   `Integrations/`**, one folder per kind: agents, editors, shells, and the
   settings files the agents share the reading of. Another agent touches the
@@ -26,11 +33,15 @@
   `Multishell`: views, the engine host, the Mac platform port, and a word lookup
   of its own.
 - **Its views sit under the part of the window they draw**: the sidebar, the
-  detail area, a column of tabs or a pane in it, the board, a settings window, a
-  dialog. The rest draw no part of one: reused small views, the agent marks, the
-  AppKit modifiers and representables that reach under SwiftUI for an event it
-  has no gesture for, the scene and menus. The engine host and the platform port
-  each have a folder; what draws nothing at all sits under `Support/`.
+  detail area, a group of tabs or a pane in it, the board, a settings window, a
+  dialog. The rest draw no part of one: reused small views under `Shared/`, or
+  `Settings/Controls/` where only the settings windows use them, the agent
+  marks, the AppKit modifiers and representables that reach under SwiftUI for an
+  event it has no gesture for, the scene and menus. The engine host and the
+  platform port each have a folder. What draws nothing sits under `Support/`,
+  the in-app drag's pieces under `Support/Drag/`, unless one part alone reads
+  it: the mark parser sits with the marks, a dialog's AppKit alert with the
+  dialogs, and what both settings windows share at `Settings/`'s root.
 - **Each half's words live in the target that says them.** The libraries' also
   carry the shell-integration scripts; the app's also carries the agent marks. A
   second frontend is a third of these.
@@ -57,8 +68,9 @@
   not `private` gets a file named for it, an error type and a null object
   included; an extension of another type goes in `<Type>+<Concern>.swift`.
 - **A `private` helper type is its file's own and stays in it**, since moving it
-  out would widen it. A dialog is a `View` extension in a file named for it,
-  attached by the scene that asked.
+  out would widen it. One that is reused, or long enough to bury the type it
+  serves, gets its own file and goes internal. A dialog is a `View` extension in
+  a file named for it, attached by the scene that asked.
 - **No `MARK` banners**: a file is the grouping. Tests are swift-testing, named
   as sentences about behaviour, one suite to a file named for it.
 
@@ -87,4 +99,4 @@
   an internal type's members carry no `public` either.
 - **No user-visible literal outside a catalogue**, wherever it is written, and
   in the catalogue of the half that says it. A view never reads the libraries'
-  words; one they both say is written in both (translation.md).
+  words; one they both say is written in both (design/translation.md).

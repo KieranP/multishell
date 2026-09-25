@@ -1,6 +1,8 @@
 import Foundation
 import MultishellCore
 import MultishellProcess
+import TestScratch
+import TestSupport
 import Testing
 
 @testable import MultishellGitKit
@@ -17,22 +19,6 @@ struct WorktreeGitTests {
     await #expect(throws: ProcessFailure.self) {
       try await WorktreeGit(runner: fake.runner).list(project)
     }
-  }
-
-  @Test func aPathBelowADanglingLinkResolvesItsParentsAsGitDoes() throws {
-    let root = FileManager.default.temporaryDirectory
-      .appendingPathComponent(UUID().uuidString, isDirectory: true)
-    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-    defer { try? FileManager.default.removeItem(at: root) }
-    let link = root.appendingPathComponent("link")
-    try FileManager.default.createSymbolicLink(
-      at: link, withDestinationURL: root.appendingPathComponent("nowhere"))
-    let resolvedRoot = try #require(realpath(root.path, nil))
-    defer { free(resolvedRoot) }
-
-    #expect(
-      WorktreeGit.realPath(of: link.appendingPathComponent("wt"))
-        == String(cString: resolvedRoot) + "/link/wt")
   }
 
   @Test func aListWithTheMainWorktreeIsFine() async throws {
@@ -62,26 +48,11 @@ struct WorktreeGitTests {
     #expect(main.path == "/repos/demo")
   }
 
-  @Test func aForgetOnAGitThatRefusesTheNulFormStillReadsWhetherTheRecordWent() async throws {
-    let fake = try FakeGit.make(
-      """
-      case " $* " in *" -z "*) echo "error: unknown switch \\`z'" >&2; exit 129 ;; esac
-      case "$1 $2" in "worktree remove") exit 128 ;; esac
-      printf 'worktree /repos/demo\\nHEAD 1111111\\nbranch refs/heads/main\\n\\n'
-      """)
-    defer { fake.tearDown() }
-    let gone = Worktree(
-      path: URL(fileURLWithPath: "/repos/demo-trees/gone"), projectID: fake.directory.path,
-      head: "2222222", branch: "gone")
-
-    try await WorktreeGit(runner: fake.runner).forget(gone, in: Project(path: fake.directory))
-  }
-
   @Test func aWorktreeLockedWithNoIndexYetIsBeingMadeInWhateverLanguageGitSaysSo() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
     let path = try await repo.coordinator.create(
-      branch: "making", in: repo.project, settings: repo.trees)
+      branch: "making", in: repo.project, settings: repo.worktreeSettings)
     let admin = repo.project.path.appendingPathComponent(".git/worktrees/making")
     let lock = admin.appendingPathComponent("locked")
     try "initialisiere".write(to: lock, atomically: true, encoding: .utf8)
@@ -151,7 +122,8 @@ struct WorktreeGitTests {
     defer { repo.tearDown() }
     let reasons = ["killed": "initializing", "worded": "initialisiere"]
     for (branch, reason) in reasons {
-      try await repo.coordinator.create(branch: branch, in: repo.project, settings: repo.trees)
+      try await repo.coordinator.create(
+        branch: branch, in: repo.project, settings: repo.worktreeSettings)
       let admin = repo.project.path.appendingPathComponent(".git/worktrees/\(branch)")
       let lock = admin.appendingPathComponent("locked")
       try reason.write(to: lock, atomically: true, encoding: .utf8)
@@ -169,15 +141,72 @@ struct WorktreeGitTests {
   }
 
   @Test func aCancelledCreateSkipsTheIndexRefresh() async throws {
-    let fake = try FakeGit.make(#"echo "$*" >> "$SCRATCH/calls""#)
+    let fake = try FakeGit.make("", loggingCalls: true)
     defer { fake.tearDown() }
     let stopper = ProcessStopper()
     stopper.stop()
 
-    await WorktreeGit(runner: fake.runner).refreshIndex(of: fake.directory, stopper: stopper)
+    await WorktreeGit(runner: fake.runner).settleIndex(of: fake.directory, stopper: stopper)
 
-    let calls = try? String(
-      contentsOf: fake.directory.appendingPathComponent("calls"), encoding: .utf8)
-    #expect(calls?.contains("update-index") != true)
+    #expect(!FakeGit.calls(in: fake.directory).contains { $0.contains("update-index") })
+  }
+
+  /// git records no creation date, so this is the birth time of the directory that
+  /// `git worktree add` made, and the second worktree must not read as the older.
+  @Test func listStampsEachWorktreeWithItsDirectorysCreationDate() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    let project = repo.project
+    let coordinator = repo.coordinator
+    try await coordinator.create(branch: "first", in: project, settings: repo.worktreeSettings)
+    try await coordinator.create(branch: "second", in: project, settings: repo.worktreeSettings)
+
+    let listed = try await WorktreeGit(runner: repo.git).list(project)
+    let dates = try listed.map { try #require($0.createdAt, "no date for \($0.name)") }
+    let byBranch = Dictionary(uniqueKeysWithValues: zip(listed.map(\.name), dates))
+
+    #expect(byBranch["first"]! <= byBranch["second"]!)
+    #expect(byBranch["main"]! <= byBranch["first"]!, "the repository predates its worktrees")
+  }
+
+  @Test func aRepositoryIsRecognisedAndItsParentAndAnEmptyDirectoryAreNot() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    let empty = try Scratch.directory("empty")
+    defer { Scratch.remove(empty) }
+
+    #expect(await repo.coordinator.git.isRepository(repo.project.path))
+    #expect(await repo.coordinator.git.isRepository(repo.root) == false)
+    #expect(await WorktreeGit(runner: try GitRunner()).isRepository(empty) == false)
+  }
+
+  @Test func hasCommitsIsFalseUntilTheFirstCommit() async throws {
+    let repo = try await RepositoryFixture.make(commit: false)
+    defer { repo.tearDown() }
+    let project = repo.project
+    let coordinator = repo.coordinator
+
+    #expect(await coordinator.git.hasCommits(project) == false)
+    try "x\n".write(to: project.path.appendingPathComponent("f"), atomically: true, encoding: .utf8)
+    _ = try await repo.git.run(["add", "."], in: project.path)
+    _ = try await repo.git.run(["commit", "-m", "first"], in: project.path)
+    #expect(await coordinator.git.hasCommits(project) == true)
+  }
+
+  /// git's own docs call the non-`-z` porcelain unsafe for paths with
+  /// newlines: the second half reads as another attribute line.
+  @Test func aWorktreePathHoldingANewlineIsStillOneWorktree() async throws {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let odd = fixture.root.appendingPathComponent("my\nrepo", isDirectory: true)
+    _ = try await fixture.git.run(
+      ["worktree", "add", "-q", "-b", "odd", odd.path], in: fixture.project.path)
+
+    let worktrees = try await WorktreeGit(runner: fixture.git).list(fixture.project)
+
+    #expect(worktrees.count == 2, "got \(worktrees.map(\.path.path))")
+    let listed = worktrees.first { !$0.isPrimary }
+    #expect(listed?.path.lastPathComponent == "my\nrepo")
+    #expect(listed?.branch == "odd")
   }
 }

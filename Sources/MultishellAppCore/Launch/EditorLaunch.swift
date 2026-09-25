@@ -23,11 +23,11 @@ enum EditorLaunch {
     customTemplate: String,
     directory: URL,
     shell: ShellInvocation,
-    exec: String
+    handOver: String
   ) -> Action? {
     if editorID == EditorCatalogue.customID {
       guard let line = EditorCatalogue.customCommandLine(customTemplate, path: directory),
-        let command = TabCommand.running(customLine: line, shell: shell, exec: exec)
+        let command = TabCommand.running(customLine: line, shell: shell, handOver: handOver)
       else { return nil }
       return .openTab(title: title(of: line.text), command: command)
     }
@@ -42,7 +42,7 @@ enum EditorLaunch {
       guard let command = found?.command else { return nil }
       return .openTab(
         title: editor.name,
-        command: TabCommand.running([command.path, "."], shell: shell, exec: exec))
+        command: TabCommand.running([command.path, "."], shell: shell, handOver: handOver))
     }
   }
 

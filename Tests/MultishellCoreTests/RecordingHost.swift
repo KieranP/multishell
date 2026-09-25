@@ -2,15 +2,20 @@ import Foundation
 
 @testable import MultishellCore
 
-/// Records what the registry asks of a host, in order.
+/// Records what the reconciler asks of a host, in order.
 @MainActor
 final class RecordingHost: TerminalHost {
   var openSessionIDs: Set<TerminalSession.ID> = []
+  var opened: [TerminalSession] = []
   var log: [String] = []
+  /// Sessions whose open throws, as a pty the system would not give.
+  var failing: Set<TerminalSession.ID> = []
   weak var delegate: (any TerminalHostDelegate)?
 
   func open(_ session: TerminalSession) throws {
+    if failing.contains(session.id) { throw NSError(domain: "pty", code: 12) }
     openSessionIDs.insert(session.id)
+    opened.append(session)
     log.append("open")
   }
 

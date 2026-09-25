@@ -12,7 +12,7 @@ struct WorktreeRecordsTests {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
     let path = try await repo.coordinator.create(
-      branch: "work", in: repo.project, settings: repo.trees)
+      branch: "work", in: repo.project, settings: repo.worktreeSettings)
     let common = try await repo.coordinator.git.commonGitDirectory(repo.project)
     let before = WorktreeRecords.read(commonDirectory: common)
     #expect(before.files.keys.contains("worktrees/work/HEAD"))
@@ -31,7 +31,7 @@ struct WorktreeRecordsTests {
     let empty = WorktreeRecords.read(commonDirectory: common)
 
     let path = try await repo.coordinator.create(
-      branch: "work", in: repo.project, settings: repo.trees)
+      branch: "work", in: repo.project, settings: repo.worktreeSettings)
     let added = WorktreeRecords.read(commonDirectory: common)
     #expect(added != empty)
 
@@ -45,5 +45,24 @@ struct WorktreeRecordsTests {
 
     _ = try await repo.git.run(["checkout", "-q", "-b", "main-moved"], in: repo.project.path)
     #expect(WorktreeRecords.read(commonDirectory: common) != locked, "the main HEAD counts too")
+  }
+
+  @Test func watchPathsMoveFromDotGitToWorktreesOnceOneExists() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    let project = repo.project
+    let coordinator = repo.coordinator
+
+    // Asked the way the app asks: the common directory once, then the
+    // directories read off it without spawning git for each watcher tick.
+    let common = try await coordinator.git.commonGitDirectory(project)
+
+    let before = WorktreeRecords.directoriesToWatch(in: common)
+    #expect(before.map(\.lastPathComponent) == [".git"])
+
+    try await coordinator.create(
+      branch: "one", in: project, settings: repo.worktreeSettings)
+    let after = WorktreeRecords.directoriesToWatch(in: common)
+    #expect(after.map(\.lastPathComponent) == ["worktrees", "one"])
   }
 }

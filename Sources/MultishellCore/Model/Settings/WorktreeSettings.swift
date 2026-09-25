@@ -10,9 +10,9 @@ public struct WorktreeSettings: Codable, Hashable, Sendable {
   /// Prepended to branch names typed in the new-worktree sheet.
   public var branchPrefix: String
 
-  public static let defaultWorktreeDirectory = "../{project}-worktrees"
+  static let defaultWorktreeDirectory = "../{project}-worktrees"
 
-  public init(
+  init(
     worktreeDirectory: String = WorktreeSettings.defaultWorktreeDirectory,
     branchPrefix: String = ""
   ) {

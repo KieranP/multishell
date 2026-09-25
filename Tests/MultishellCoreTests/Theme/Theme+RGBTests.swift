@@ -22,13 +22,23 @@ struct ThemeRGBTests {
   }
 
   @Test func theKeyLeftOutIsTheSelectionColour() {
-    #expect(theme(ring: nil).focusRingRGB == Theme.multishellDark.selectionRGB)
+    #expect(theme(ring: nil).focusRingRGB == Theme.multishellDark.selectionBackgroundRGB)
   }
 
   /// A typo costs the colour, not the ring: reading it as off would
   /// silently remove the thing the key was setting.
   @Test func aColourThatWillNotParseFallsBackRatherThanTurningTheRingOff() {
-    #expect(theme(ring: "cornflower").focusRingRGB == Theme.multishellDark.selectionRGB)
-    #expect(theme(ring: "#12345").focusRingRGB == Theme.multishellDark.selectionRGB)
+    #expect(theme(ring: "cornflower").focusRingRGB == Theme.multishellDark.selectionBackgroundRGB)
+    #expect(theme(ring: "#12345").focusRingRGB == Theme.multishellDark.selectionBackgroundRGB)
+  }
+
+  @Test func oneAnsiSlotReadsAsTheWholeListDoesAndOneOutOfRangeIsGrey() throws {
+    var theme = try #require(Theme.builtins.first)
+    theme.ansi[3] = "not a colour"
+    let grey = RGB(red: 128, green: 128, blue: 128)
+
+    #expect(theme.ansi.indices.allSatisfy { theme.ansiRGB($0) == theme.ansiRGB[$0] })
+    #expect(theme.ansiRGB(3) == grey)
+    #expect(theme.ansiRGB(99) == grey)
   }
 }

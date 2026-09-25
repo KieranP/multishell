@@ -21,8 +21,25 @@ extension Workspace {
     tabGroups.removeAll { !worktreeIDs.contains($0.worktreeID) }
     tabGroups = tabGroups.uniqued(by: \.id)
 
-    // One pass in display order drops missing and repeated sessions and
-    // collapses the splits that leaves: one shell, two views, otherwise.
+    repairPanes()
+    reassignSessionsToTheirTabs()
+
+    // A name outliving its worktree returns if one is made at that path
+    // again; a blank one draws an empty line over the branch.
+    worktreeNames = worktreeNames.filter { id, name in
+      worktreeIDs.contains(id) && !name.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    repairGroups()
+
+    if let selected = selectedWorktreeID, !worktreeIDs.contains(selected) {
+      selectedWorktreeID = nil
+    }
+  }
+
+  /// One pass in display order drops missing and repeated sessions and
+  /// collapses the splits that leaves: one shell, two views, otherwise.
+  private mutating func repairPanes() {
     let sessionIDs = Set(sessions.map(\.id))
     var shown: Set<TerminalSession.ID> = []
     tabs = tabs.compactMap { tab in
@@ -38,7 +55,11 @@ extension Workspace {
       }
       return repaired
     }
+  }
 
+  /// Drops a session no tab shows, and moves one listed under another
+  /// worktree than its tab's to the tab's.
+  private mutating func reassignSessionsToTheirTabs() {
     var owner: [TerminalSession.ID: Worktree.ID] = [:]
     for tab in tabs {
       for id in tab.sessionIDs { owner[id] = tab.worktreeID }
@@ -54,44 +75,32 @@ extension Workspace {
       // starts in another worktree's checkout.
       if let path = pathOfWorktree[worktree] { sessions[index].workingDirectory = path }
     }
-
-    // A name outliving its worktree returns if one is made at that path
-    // again; a blank one draws an empty line over the branch.
-    worktreeNames = worktreeNames.filter { id, name in
-      worktreeIDs.contains(id) && !name.trimmingCharacters(in: .whitespaces).isEmpty
-    }
-
-    repairGroups()
-
-    if let selected = selectedWorktreeID, !worktreeIDs.contains(selected) {
-      selectedWorktreeID = nil
-    }
   }
 
-  /// Puts the columns right once the passes above have settled the tabs. A
-  /// missing column loses the column, not the tab: one is a layout.
+  /// Puts the groups right once the passes above have settled the tabs. A
+  /// missing group loses the group, not the tab: one is a layout.
   private mutating func repairGroups() {
     adoptUngroupedTabs()
 
-    // An empty column draws a strip with no tabs over a pane with no
+    // An empty group draws a strip with no tabs over a pane with no
     // terminal, and nothing else here would take it away.
     let occupied = Set(tabs.map(\.groupID))
     tabGroups.removeAll { !occupied.contains($0.id) }
 
     for index in tabGroups.indices {
-      // A width of zero is a column nothing can be laid out in. Decoding
+      // A width of zero is a group nothing can be laid out in. Decoding
       // makes the same substitution; a half-written save can leave one.
-      tabGroups[index].weight = TabGroup.usableWeight(tabGroups[index].weight)
+      tabGroups[index].weight = LayoutWeight.usable(tabGroups[index].weight)
       let tabsHere = tabs(in: tabGroups[index].id)
       if let active = tabGroups[index].activeTabID, tabsHere.contains(where: { $0.id == active }) {
         continue
       }
-      // Any of them will do, nothing on disk saying which the column showed:
+      // Any of them will do, nothing on disk saying which the group showed:
       // unlike `settle`, there is no vacated place to hand on.
       tabGroups[index].activeTabID = tabsHere.last?.id
     }
 
-    // An entry with no columns left, or naming another worktree's, hides
+    // An entry with no groups left, or naming another worktree's, hides
     // the strip of the worktree it names.
     focusedGroupByWorktree = focusedGroupByWorktree.filter { worktreeID, groupID in
       group(groupID)?.worktreeID == worktreeID
@@ -101,8 +110,8 @@ extension Workspace {
     }
   }
 
-  /// Gives every tab that names no column one to sit in: a file from before
-  /// tab groups, or one whose group was dropped. The first column takes them.
+  /// Gives every tab that names no group one to sit in: a file from before
+  /// tab groups, or one whose group was dropped. The first group takes them.
   mutating func adoptUngroupedTabs(activeByWorktree: [Worktree.ID: TerminalTab.ID] = [:]) {
     let known = Dictionary(
       tabGroups.map { ($0.id, $0.worktreeID) }, uniquingKeysWith: { a, _ in a })

@@ -1,6 +1,5 @@
 import Foundation
 import Subprocess
-import Synchronization
 import System
 
 /// How every child here is started, and what its ending reads as.
@@ -21,44 +20,44 @@ enum DetachedLaunch {
     return options
   }
 
+  /// Starts a child on descriptors the caller opened and returns its exit
+  /// code, `whileRunning` being handed its pid between spawn and exit.
+  static func run(
+    _ executable: URL, _ arguments: [String], in directory: URL,
+    environment: [String: String],
+    input: FileDescriptor, output: FileDescriptor, error: FileDescriptor,
+    closingOutputsAfterSpawn: Bool,
+    whileRunning: @escaping @Sendable (pid_t) async -> Void
+  ) async throws -> Int32 {
+    try await shielded {
+      let result = try await Subprocess.run(
+        .path(FilePath(executable.path)), arguments: Arguments(arguments),
+        environment: Self.environment(overriding: environment),
+        workingDirectory: FilePath(directory.path),
+        platformOptions: platformOptions,
+        input: .fileDescriptor(input, closeAfterSpawningProcess: false),
+        output: .fileDescriptor(output, closeAfterSpawningProcess: closingOutputsAfterSpawn),
+        error: .fileDescriptor(error, closeAfterSpawningProcess: closingOutputsAfterSpawn)
+      ) { execution in await whileRunning(execution.processIdentifier.value) }
+      return exitCode(of: result.terminationStatus)
+    }
+  }
+
   /// Out of reach of the caller's cancellation, which Subprocess answers with
   /// SIGKILL: `ProcessStopper` is what ends a child here.
-  static func shielded<Value: Sendable>(
+  private static func shielded<Value: Sendable>(
     _ body: @escaping @Sendable () async throws -> Value
   ) async throws -> Value {
     try await Task { try await body() }.value
   }
 
-  /// Ours, not Subprocess's `.none` or `.discarded`: it opens `/dev/null` after
-  /// taking the output descriptors, and traps on them when that open fails.
-  final class NullDevice: Sendable {
-    let descriptor: FileDescriptor
-    private let isOpen = Mutex(true)
-
-    init() throws {
-      let descriptor = open("/dev/null", O_RDWR | O_CLOEXEC)
-      guard descriptor >= 0 else { throw PipeUnavailable(code: errno) }
-      self.descriptor = FileDescriptor(rawValue: descriptor)
-    }
-
-    /// Called once the child has it and again as the run ends; closes on the
-    /// first.
-    func close() {
-      let wasOpen = isOpen.withLock { isOpen in
-        defer { isOpen = false }
-        return isOpen
-      }
-      if wasOpen { try? descriptor.close() }
-    }
-  }
-
-  static func environment(overriding values: [String: String]) -> Environment {
+  private static func environment(overriding values: [String: String]) -> Environment {
     .inherit.updating(
       Dictionary(uniqueKeysWithValues: values.map { (Environment.Key(stringLiteral: $0), $1) }))
   }
 
   /// The exit status, or the signal's number, as `Process` reported it.
-  static func exitCode(of status: TerminationStatus) -> Int32 {
+  private static func exitCode(of status: TerminationStatus) -> Int32 {
     switch status {
     case .exited(let code), .signaled(let code): code
     }

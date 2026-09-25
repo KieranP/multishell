@@ -57,7 +57,7 @@ extension AppModel {
       // would otherwise put the same alert up after each keystroke.
       guard !saveFailureReported else { return }
       saveFailureReported = true
-      report(error)
+      present(error)
     }
   }
 }

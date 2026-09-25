@@ -23,7 +23,7 @@ enum AgentSettingsFile {
 
   static func write(_ settings: [String: Any], to file: URL) throws {
     try backUp(file)
-    try writeOurs(render(settings), to: file)
+    try writeWhole(render(settings), to: file)
   }
 
   /// Where a write lands. A link at the end of the path is written through,
@@ -37,7 +37,7 @@ enum AgentSettingsFile {
 
   /// A file of ours alone: written whole, with no copy kept, because there
   /// was nothing of the user's in it to keep.
-  static func writeOurs(_ contents: String, to file: URL) throws {
+  static func writeWhole(_ contents: String, to file: URL) throws {
     try FileManager.default.createDirectory(
       at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
     try Data(contents.utf8).write(to: destination(of: file), options: .atomic)

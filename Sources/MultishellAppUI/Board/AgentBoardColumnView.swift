@@ -18,7 +18,7 @@ struct AgentBoardColumnView: View {
       ScrollView(.vertical, showsIndicators: false) {
         LazyVStack(spacing: 8) {
           ForEach(column.cards) { card in
-            AgentCardView(
+            AgentBoardCardView(
               model: model, card: card, now: now, theme: theme, metrics: metrics)
           }
         }

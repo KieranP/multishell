@@ -14,15 +14,15 @@ public final class AppModel<Surface> {
   let host: any TerminalSurfaceHost<Surface>
   let platform: any Platform
   @ObservationIgnored let store: WorkspaceStore
-  @ObservationIgnored let registry: SessionRegistry
+  @ObservationIgnored let reconciler: SessionReconciler
   @ObservationIgnored let stateSource: any SessionStateSource
   @ObservationIgnored let notifier: any SessionNotifier
   @ObservationIgnored let watcher: any DirectoryWatcher
   /// `var`: git is looked up again once the login shell's PATH is known, which
   /// is after this is built. See `refreshLoginEnvironment`.
-  @ObservationIgnored var worktrees: WorktreeCoordinator?
+  @ObservationIgnored var coordinator: WorktreeCoordinator?
   /// Sessions that came off disk this run. Their agent tabs resume rather
-  /// than start afresh; see `prepared`.
+  /// than start afresh; see `preparedForLaunch`.
   @ObservationIgnored let restoredSessionIDs: Set<TerminalSession.ID>
 
   public var presentedError: PresentedError?
@@ -44,7 +44,7 @@ public final class AppModel<Surface> {
       if !sidebarFilterText.isEmpty { showsSidebarFilter = true }
     }
   }
-  /// Up whenever there is text, and down only through `setSidebarFilterOpen`,
+  /// Up whenever there is text, and down only through `setShowsSidebarFilter`,
   /// so emptying the field never takes the keyboard away with it.
   public internal(set) var showsSidebarFilter = false
   /// Which project the settings window shows.
@@ -58,27 +58,27 @@ public final class AppModel<Surface> {
   /// The panes with a find bar up, each pane's its own; see `showFind`.
   /// Runtime state, dropped with the session.
   public internal(set) var findingSessionIDs: Set<TerminalSession.ID> = []
-  /// Each pane's needle, kept across closes so Cmd+F then Return repeats the
+  /// Each pane's find text, kept across closes so Cmd+F then Return repeats the
   /// last search there; read through `findText(of:)`.
-  var findNeedles: [TerminalSession.ID: String] = [:]
+  var findTexts: [TerminalSession.ID: String] = [:]
   /// Panes whose bar has a Cmd+F to answer, claimed through `takeFindFieldRequest`;
   /// a bar a worktree switch brings back has none. See terminals.md.
   public internal(set) var findFieldRequests: Set<TerminalSession.ID> = []
-  /// Panes whose search has a selected match: a step has gone since the needle.
-  /// The first step after a needle lands nearest the prompt; terminals.md.
-  var findSelections: Set<TerminalSession.ID> = []
+  /// Panes whose search has a selected match: a step has gone since the find text was set.
+  /// The first step after a new find text lands nearest the prompt; terminals.md.
+  var findSelectedSessionIDs: Set<TerminalSession.ID> = []
   /// The pane whose bar's field has the keyboard, which the menu's find items
   /// act on ahead of the focused pane, a field taking no store focus.
-  var findFieldPane: TerminalSession.ID?
+  var findFieldSessionID: TerminalSession.ID?
 
-  /// What a tab drag is doing. Here, not in the column tree that draws it,
+  /// What a tab drag is doing. Here, not in the group tree that draws it,
   /// because a sidebar row takes a drop too and could not reach a `@State`.
   public var tabDrag = TabDragState()
   /// Ends a drag whose button was rebuilt under it; see `tabDragSourceLeft`.
   @ObservationIgnored var tabDragReleaseWatch: Task<Void, Never>?
   /// The project dragged in the sidebar. Here, not in a `@State`, so the
   /// release watch can end it; see `projectDragSourceLeft`.
-  public internal(set) var draggingProject: Project.ID?
+  public internal(set) var draggedProjectID: Project.ID?
   @ObservationIgnored var projectDragReleaseWatch: Task<Void, Never>?
 
   /// Whether the board fills the detail area. Runtime state; set through
@@ -102,13 +102,14 @@ public final class AppModel<Surface> {
   /// The create or remove running on each worktree, shown in its detail pane;
   /// see `WorktreeOperations` for who owns an entry.
   public internal(set) var worktreeOperations = WorktreeOperations()
-  /// The work building a worktree. Not observed: the pane draws from
-  /// `worktreeOperations` beside it.
-  @ObservationIgnored var workInFlight = WorktreeWorkInFlight()
+  /// The work building a worktree, and the paths it is building at. Not
+  /// observed: the pane draws from `worktreeOperations` beside them.
+  @ObservationIgnored var stageHandles = WorktreeStageHandles()
+  @ObservationIgnored var pathClaims = WorktreePathClaims()
 
   /// Sessions with a running shell, mirrored from the host after each
   /// reconcile so views can observe it; the host itself is not observable.
-  public internal(set) var liveSessions: Set<TerminalSession.ID> = []
+  public internal(set) var liveSessionIDs: Set<TerminalSession.ID> = []
   /// What each running shell last said its title was. Kept apart from the
   /// workspace so a prompt does not re-render the sidebar or schedule a save.
   var sessionTitles: [TerminalSession.ID: String] = [:]
@@ -120,7 +121,7 @@ public final class AppModel<Surface> {
   var reportedAgents: [TerminalSession.ID: ReportedAgent] = [:]
   /// The agent a shell said it was starting, kept only while that command
   /// runs. What marks a pane where nobody installed the agent's hooks.
-  var commandAgents: [TerminalSession.ID: String] = [:]
+  var commandAgentIDs: [TerminalSession.ID: String] = [:]
   /// Keys whose banner may still be on screen, so one is taken back only
   /// where there is one to take back. A key leaves as its banner does.
   @ObservationIgnored var notifiedKeys: Set<SessionStates.Key> = []
@@ -145,15 +146,15 @@ public final class AppModel<Surface> {
     await LoginShellEnvironment.capture(shellPath: ShellCatalogue.loginShellPath())
   }
   /// A harness stands in for both, the real ones writing the account's own files.
-  @ObservationIgnored var refreshLaunchFiles: @Sendable (_ helper: URL?) -> (any Error)? =
-    LaunchFiles.refresh
+  @ObservationIgnored var refreshAppLaunchFiles: @Sendable (_ helper: URL?) -> (any Error)? =
+    AppLaunchFiles.refresh
   @ObservationIgnored var sweepPromisedDropCopies: @Sendable () -> Void = {
     PromisedDropCopies.sweep()
   }
 
   /// The environment of the user's interactive login shell, once captured.
   /// `nil` until the shell has answered and its PATH has been scanned.
-  public internal(set) var loginEnvironment: LoginShellEnvironment?
+  var loginEnvironment: LoginShellEnvironment?
   /// Which catalogue agents that environment's PATH has.
   public internal(set) var agentDetection = AgentDetection.empty {
     didSet { refreshInstalledAgents() }
@@ -184,7 +185,7 @@ public final class AppModel<Surface> {
   var mergeStates: [Worktree.ID: WorktreeMergeState] = [:]
   /// The branch each project's merges are measured against, `origin/main`
   /// and the like. Absent for a project with none to measure against.
-  var mergeBases: [Project.ID: DefaultBranch] = [:]
+  var defaultBranches: [Project.ID: DefaultBranch] = [:]
   /// When each worktree's branch was last committed to. Runtime only: the
   /// workspace must not be rewritten because someone committed.
   var lastCommits: [Worktree.ID: Date] = [:]
@@ -202,7 +203,7 @@ public final class AppModel<Surface> {
   @ObservationIgnored var mergeReads = MergeReadLog()
   /// Each worktree's path with its symlinks resolved, for placing a report
   /// that names only a directory. Stale only if a link on the way is repointed.
-  @ObservationIgnored var resolvedWorktreePaths: [Worktree.ID: [String]] = [:]
+  @ObservationIgnored var resolvedWorktreeComponents: [Worktree.ID: [String]] = [:]
   /// `git rev-parse --git-common-dir` per project, asked once. The watcher
   /// and the records check run from it without spawning git.
   @ObservationIgnored var commonGitDirectories: [Project.ID: URL] = [:]
@@ -242,7 +243,7 @@ public final class AppModel<Surface> {
   public init(
     store: WorkspaceStore,
     host: any TerminalSurfaceHost<Surface>,
-    worktrees: WorktreeCoordinator?,
+    coordinator: WorktreeCoordinator?,
     watcher: any DirectoryWatcher,
     platform: any Platform = NullPlatform(),
     stateSource: any SessionStateSource = NullStateSource(),
@@ -252,8 +253,8 @@ public final class AppModel<Surface> {
     self.store = store
     self.host = host
     self.platform = platform
-    self.registry = SessionRegistry(store: store, host: host)
-    self.worktrees = worktrees
+    self.reconciler = SessionReconciler(store: store, host: host)
+    self.coordinator = coordinator
     self.watcher = watcher
     self.stateSource = stateSource
     self.notifier = notifier
@@ -265,9 +266,9 @@ public final class AppModel<Surface> {
     // Said on the process's PATH alone. `refreshLoginEnvironment` looks again
     // on the login shell's and takes this back if it finds git there.
     if let loadError {
-      report(loadError)
-    } else if worktrees == nil {
-      report(GitUnavailable())
+      present(loadError)
+    } else if coordinator == nil {
+      present(GitUnavailable())
     }
 
     // Nothing is selected at launch, so no shell starts until the user picks
@@ -283,7 +284,7 @@ public final class AppModel<Surface> {
     projectDragReleaseWatch?.cancel()
   }
 
-  /// What the platform, the registry, the socket, the notifier and the
+  /// What the platform, the reconciler, the socket, the notifier and the
   /// watcher report back, each routed to the model.
   private func wireCallbacks() {
     // Statuses poll only while frontmost, so a return would show badges five
@@ -293,32 +294,32 @@ public final class AppModel<Surface> {
       self?.refreshNotificationAuthorization()
       // Coming back is seeing the focused pane: a Done raised there while
       // the user was elsewhere clears now, and its banner goes with it.
-      self?.markFocusedPaneSeen()
+      self?.markInViewSeen()
     }
 
-    registry.onActivity = { [weak self] id in self?.noteActivity(in: id) }
-    registry.onCommandFinished = { [weak self] id, code in
+    reconciler.onActivity = { [weak self] id in self?.noteActivity(in: id) }
+    reconciler.onCommandFinished = { [weak self] id, code in
       self?.noteCommandFinished(in: id, exitCode: code)
     }
-    registry.onRetitle = { [weak self] id, title in self?.noteTitle(title, of: id) }
+    reconciler.onRetitle = { [weak self] id, title in self?.noteTitle(title, of: id) }
     // A click into a pane is looking at it: seen is the pane with the
     // keyboard, and a click is how the keyboard moves without a reconcile.
-    registry.onFocus = { [weak self] _ in self?.markFocusedPaneSeen() }
-    registry.onLiveSessionsChanged = { [weak self] in
+    reconciler.onFocus = { [weak self] _ in self?.markInViewSeen() }
+    reconciler.onLiveSessionsChanged = { [weak self] in
       guard let self else { return }
-      let live = registry.liveSessionIDs
-      setIfChanged(\.liveSessions, live)
+      let live = reconciler.liveSessionIDs
+      setIfChanged(\.liveSessionIDs, live)
       setIfChanged(\.sessionTitles, sessionTitles.filter { live.contains($0.key) })
       setIfChanged(\.reportedAgents, reportedAgents.filter { live.contains($0.key) })
-      setIfChanged(\.commandAgents, commandAgents.filter { live.contains($0.key) })
+      setIfChanged(\.commandAgentIDs, commandAgentIDs.filter { live.contains($0.key) })
       pruneStates()
       pruneFind()
       // A shell exiting can bring another pane the keyboard; it is being
       // looked at now, whatever happened in it before.
-      markFocusedPaneSeen()
+      markInViewSeen()
     }
     stateSource.onReport = { [weak self] report in self?.apply(report) }
-    notifier.onActivate = { [weak self] key in self?.reveal(key) }
+    notifier.onActivate = { [weak self] key in self?.revealNotificationSubject(key) }
     watcher.onChange = { [weak self] changed in
       Task { await self?.refreshWorktreesIfRecordsChanged(under: changed) }
     }
@@ -331,35 +332,15 @@ public final class AppModel<Surface> {
   }
 
   /// The user clicked into a surface's frame: the engine makes it first
-  /// responder and reports the focus back through the registry.
+  /// responder and reports the focus back through the reconciler.
   public func focusSurface(_ id: TerminalSession.ID) {
     host.focus(id)
   }
 
   /// Shells actually running, as opposed to saved tabs waiting to be opened.
-  public var liveTerminalCount: Int { liveSessions.count }
+  public var liveTerminalCount: Int { liveSessionIDs.count }
 
   func liveTerminalCount(in worktree: Worktree.ID) -> Int {
-    workspace.sessions(in: worktree).filter { liveSessions.contains($0.id) }.count
-  }
-
-  public var currentTheme: Theme {
-    workspace.appearance.theme(from: themes)
-  }
-
-  /// Restores the sidebar from disk, then asks git what each project
-  /// actually has. Terminals are not restored; only the tree is.
-  public func start() async {
-    guard startStateSource() else { return }
-    host.claimSharedFiles()
-    // On the main actor, before `start` first yields, so no tab can open ahead.
-    if let failure = refreshLaunchFiles(platform.bundledHelper) { report(failure) }
-    // All that bounds the drops directory; no terminal waits on it.
-    let sweep = sweepPromisedDropCopies
-    Task { await offMain(sweep) }
-    await refreshAll()
-    reconcileSessions(takingFocus: true)
-    startStatusPolling()
-    await refreshLoginEnvironment()
+    workspace.sessions(in: worktree).filter { liveSessionIDs.contains($0.id) }.count
   }
 }

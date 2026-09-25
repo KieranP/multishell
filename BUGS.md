@@ -94,7 +94,7 @@ and show the dialog with the status already held when it runs out.
 
 ### 005. [Unconfirmed] A worktree path resolved while missing stays unresolved
 
-`AppModel.resolvedComponents` (`AppModel+Worktrees.swift:189`) caches
+`AppModel.resolvedComponents` (`AppModel+Worktrees.swift:195`) caches
 `resolvingSymlinksInPath()` per worktree on first use, for every worktree each
 time a report is placed by directory. Foundation returns a missing or dangling
 path unchanged, so a worktree whose directory is absent then, on an unmounted
@@ -106,8 +106,8 @@ worktree is forgotten. Fix = cache only a resolution of a path that exists.
 ### 006. [Unconfirmed] Ctrl-C at a bash prompt ends the relay's inline fallback
 
 The relay runs in the bash shell's process group, so a Ctrl-C at the prompt
-reaches it. The helper ignores INT and QUIT (`Helper.relayIgnores`), but the
-inline fallback in `init.bash:30`, which runs when the helper is too old for
+reaches it. The helper ignores INT and QUIT (`Helper.relayIgnoredSignals`), but
+the inline fallback in `init.bash:30`, which runs when the helper is too old for
 `relay`, traps only HUP, TSTP, TTIN and TTOU. A Ctrl-C at the prompt ends that
 loop; lines already in the pipe are lost and each later report pays the EPIPE
 before falling back to a helper launch. Fix = add INT and QUIT to that `trap`.
@@ -138,7 +138,7 @@ a drop can arrive. Settle it by logging the gap between button-up and
 `performDrop` under load. Fix = own the drag as an AppKit `NSDraggingSource`
 outside the recycled view, whose `draggingSession(_:endedAt:operation:)` arrives
 whatever SwiftUI does to the row. Cost: the tab's click, double click and middle
-click move to AppKit with it (tabs-and-columns.md).
+click move to AppKit with it (tabs-and-groups.md).
 
 ## Perf
 

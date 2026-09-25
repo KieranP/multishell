@@ -16,7 +16,7 @@ struct DescriptorExhaustionTests {
         let output = try await ProcessRunner().capture(
           URL(fileURLWithPath: "/bin/sh"), ["-c", "printf real"], in: cwd)
         Issue.record("ran with output \(output.standardOutput.debugDescription) at the limit")
-      } catch is PipeUnavailable {
+      } catch is DescriptorUnavailable {
       } catch {
         Issue.record("wrong error: \(error)")
       }
@@ -40,7 +40,7 @@ struct DescriptorExhaustionTests {
   @Test(.enabled(if: ProcessInfo.processInfo.environment["MULTISHELL_EXHAUST_DESCRIPTORS"] != nil))
   func aLaunchWithOneDescriptorLeftReturnsOrThrowsRatherThanTrapping() async throws {
     try await withFreeDescriptors(1) {
-      _ = try? await ShellCommand().launch(
+      _ = try? await ShellCommand.launch(
         "true", in: URL(fileURLWithPath: NSTemporaryDirectory()), shellPath: "/bin/sh")
     }
   }

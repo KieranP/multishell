@@ -14,7 +14,7 @@ public final class WorkspaceStore {
   /// it deletes the user's sidebar. See Docs/design/state-and-store.md.
   @ObservationIgnored private(set) var refusesToSave = false
 
-  public init(workspace: Workspace = Workspace(), file: WorkspaceFile = WorkspaceFile()) {
+  init(workspace: Workspace = Workspace(), file: WorkspaceFile = WorkspaceFile()) {
     self.workspace = workspace
     self.file = file
   }
@@ -31,7 +31,7 @@ public final class WorkspaceStore {
       return (WorkspaceStore(workspace: workspace, file: file), nil)
     } catch {
       let store = WorkspaceStore(workspace: Workspace(), file: file)
-      store.refusesToSave = file.holdsFile
+      store.refusesToSave = file.existsOnDisk
       return (store, error)
     }
   }
@@ -39,7 +39,7 @@ public final class WorkspaceStore {
   /// A file the user moved away is no longer in the way, so saving resumes;
   /// one stat, and only while refusing. A readable one still waits for relaunch.
   private func stillRefusesToSave() -> Bool {
-    if refusesToSave, !file.holdsFile { refusesToSave = false }
+    if refusesToSave, !file.existsOnDisk { refusesToSave = false }
     return refusesToSave
   }
 
@@ -173,8 +173,8 @@ extension WorkspaceStore {
 }
 
 extension WorkspaceStore {
-  /// Opens a tab in one column: the one named, else the worktree's focused
-  /// column, else a first column made for it.
+  /// Opens a tab in one group: the one named, else the worktree's focused
+  /// group, else a first group made for it.
   @discardableResult
   public func openTab(
     in worktreeID: Worktree.ID,
@@ -185,15 +185,15 @@ extension WorkspaceStore {
   ) -> TerminalTab? {
     guard
       let session = makeSession(in: worktreeID, title: title, command: command, agentID: agentID),
-      let column = resolvedGroup(group, in: worktreeID)
+      let groupID = resolvedGroup(group, in: worktreeID)
     else { return nil }
     workspace.sessions.append(session)
     // `tabs(in:)` filters in array order, so appending is landing last in
-    // this column's strip whichever column it is.
-    let tab = TerminalTab(worktreeID: worktreeID, groupID: column, session: session.id)
+    // this group's strip whichever group it is.
+    let tab = TerminalTab(worktreeID: worktreeID, groupID: groupID, session: session.id)
     workspace.tabs.append(tab)
-    setActiveTab(tab.id, ofGroup: column)
-    workspace.focusedGroupByWorktree[worktreeID] = column
+    setActiveTab(tab.id, ofGroup: groupID)
+    workspace.focusedGroupByWorktree[worktreeID] = groupID
     return tab
   }
 
@@ -202,8 +202,8 @@ extension WorkspaceStore {
     removeTab(at: index)
   }
 
-  /// Moves a tab beside `target`, possibly in another column of the same
-  /// worktree; see Docs/design/tabs-and-columns.md.
+  /// Moves a tab beside `target`, possibly in another group of the same
+  /// worktree; see Docs/design/tabs-and-groups.md.
   @discardableResult
   public func moveTab(
     _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, _ target: TerminalTab.ID
@@ -238,17 +238,17 @@ extension WorkspaceStore {
   }
 
   /// Moves a tab, panes and all, to another worktree. The shells keep
-  /// running; see Docs/design/tabs-and-columns.md.
+  /// running; see Docs/design/tabs-and-groups.md.
   @discardableResult
   public func moveTab(_ id: TerminalTab.ID, to worktreeID: Worktree.ID) -> Bool {
     guard
       let index = workspace.tabIndex(id),
       let destination = workspace.worktree(worktreeID),
       workspace.tabs[index].worktreeID != worktreeID,
-      let column = resolvedGroup(nil, in: worktreeID)
+      let groupID = resolvedGroup(nil, in: worktreeID)
     else { return false }
     let moving = Set(workspace.tabs[index].sessionIDs)
-    relocate(id, into: column)
+    relocate(id, into: groupID)
     for index in workspace.sessions.indices where moving.contains(workspace.sessions[index].id) {
       workspace.sessions[index].worktreeID = worktreeID
       workspace.sessions[index].workingDirectory = destination.path
@@ -256,20 +256,20 @@ extension WorkspaceStore {
     return true
   }
 
-  /// What the three moves share: the tab retagged for `column` and put back
-  /// at `index`, else last; a tab leaving its column settles it and is shown.
-  private func relocate(_ id: TerminalTab.ID, into column: TabGroup.ID, at index: Int? = nil) {
+  /// What the three moves share: the tab retagged for `groupID` and put back
+  /// at `index`, else last; a tab leaving its group settles it and is shown.
+  private func relocate(_ id: TerminalTab.ID, into groupID: TabGroup.ID, at index: Int? = nil) {
     guard let movingIndex = workspace.tabIndex(id),
-      let destination = workspace.group(column)
+      let destination = workspace.group(groupID)
     else { return }
     let vacated = slot(of: id)
     var tab = workspace.tabs.remove(at: movingIndex)
     let source = tab.groupID
     tab.worktreeID = destination.worktreeID
-    tab.groupID = column
+    tab.groupID = groupID
     // `tabs(in:)` filters in array order, so appending is landing last.
     workspace.tabs.insert(tab, at: index ?? workspace.tabs.endIndex)
-    guard source != column else { return }
+    guard source != groupID else { return }
     settle(group: source, vacating: vacated)
     activateTab(id)
   }
@@ -282,7 +282,7 @@ extension WorkspaceStore {
     workspace.tabs[index].customTitle = trimmed.isEmpty ? nil : trimmed
   }
 
-  /// Shows a tab in its own column and hands that column the focus: the tab
+  /// Shows a tab in its own group and hands that group the focus: the tab
   /// the user just clicked is the one they are working in.
   public func activateTab(_ id: TerminalTab.ID) {
     guard let tab = workspace.tab(id) else { return }
@@ -303,7 +303,7 @@ extension WorkspaceStore {
 }
 
 extension WorkspaceStore {
-  /// Moves a tab into a column of its own beside `neighbour`, which gives up
+  /// Moves a tab into a group of its own beside `neighbour`, which gives up
   /// half its width. `nil` when nothing moved, so the drag springs back.
   @discardableResult
   public func moveTabToNewGroup(
@@ -311,7 +311,7 @@ extension WorkspaceStore {
   ) -> TabGroup? {
     guard
       let tabIndex = workspace.tabIndex(id),
-      let groupIndex = workspace.tabGroups.firstIndex(where: { $0.id == neighbour }),
+      let groupIndex = workspace.groupIndex(neighbour),
       workspace.tabGroups[groupIndex].worktreeID == workspace.tabs[tabIndex].worktreeID,
       workspace.tabs[tabIndex].groupID != neighbour || workspace.tabs(in: neighbour).count > 1
     else { return nil }
@@ -319,7 +319,7 @@ extension WorkspaceStore {
     let source = workspace.tabs[tabIndex].groupID
     let vacated = slot(of: id)
     let worktreeID = workspace.tabGroups[groupIndex].worktreeID
-    let share = TabGroup.usableWeight(workspace.tabGroups[groupIndex].weight / 2)
+    let share = LayoutWeight.usable(workspace.tabGroups[groupIndex].weight / 2)
     workspace.tabGroups[groupIndex].weight = share
     let group = TabGroup(worktreeID: worktreeID, weight: share, activeTabID: id)
     // Beside the neighbour in the flat array, which is what puts it beside
@@ -331,11 +331,11 @@ extension WorkspaceStore {
     return group
   }
 
-  /// Written back when the divider between two columns is dragged, so a
+  /// Written back when the divider between two groups is dragged, so a
   /// layout survives relaunch. Relative shares, like a split's weights.
   public func setGroupWeights(_ weights: [Double], in worktreeID: Worktree.ID) {
-    let columns = workspace.groups(in: worktreeID)
-    guard weights.count == columns.count, LayoutWeight.allUsable(weights) else {
+    let groups = workspace.groups(in: worktreeID)
+    guard weights.count == groups.count, LayoutWeight.allUsable(weights) else {
       return
     }
     var next = weights.makeIterator()
@@ -345,15 +345,15 @@ extension WorkspaceStore {
     }
   }
 
-  /// Which column the worktree's keystrokes go to. A click in a pane does
-  /// this through `focusSession`; the menu items name a column outright.
+  /// Which group the worktree's keystrokes go to. A click in a pane does
+  /// this through `focusSession`; the menu items name a group outright.
   public func focusGroup(_ id: TabGroup.ID) {
     guard let group = workspace.group(id) else { return }
     workspace.focusedGroupByWorktree[group.worktreeID] = id
   }
 
-  /// The column an operation acts on: the one named, the worktree's focused
-  /// one, or a first column made for it.
+  /// The group an operation acts on: the one named, the worktree's focused
+  /// one, or a first group made for it.
   private func resolvedGroup(_ id: TabGroup.ID?, in worktreeID: Worktree.ID) -> TabGroup.ID? {
     guard workspace.worktree(worktreeID) != nil else { return nil }
     if let id {
@@ -367,23 +367,23 @@ extension WorkspaceStore {
   }
 
   private func setActiveTab(_ id: TerminalTab.ID?, ofGroup groupID: TabGroup.ID) {
-    guard let index = workspace.tabGroups.firstIndex(where: { $0.id == groupID }),
+    guard let index = workspace.groupIndex(groupID),
       workspace.tabGroups[index].activeTabID != id
     else { return }
     workspace.tabGroups[index].activeTabID = id
   }
 
-  /// Where in its column a tab sits, read before it is taken out so `settle`
+  /// Where in its group a tab sits, read before it is taken out so `settle`
   /// knows which tab slid into its place.
   private func slot(of id: TerminalTab.ID) -> Int? {
     guard let tab = workspace.tab(id) else { return nil }
     return workspace.tabs(in: tab.groupID).firstIndex { $0.id == id }
   }
 
-  /// A column after a tab left it: another showing, or the column gone, with
-  /// `vacating` the place it held, read first. See Docs/design/tabs-and-columns.md.
+  /// A group after a tab left it: another showing, or the group gone, with
+  /// `vacating` the place it held, read first. See Docs/design/tabs-and-groups.md.
   private func settle(group groupID: TabGroup.ID, vacating slot: Int?) {
-    guard let index = workspace.tabGroups.firstIndex(where: { $0.id == groupID }) else { return }
+    guard let index = workspace.groupIndex(groupID) else { return }
     let worktreeID = workspace.tabGroups[index].worktreeID
     let remaining = workspace.tabs(in: groupID)
 
@@ -413,7 +413,7 @@ extension WorkspaceStore {
   /// Closes one terminal. If it was the tab's only pane the tab goes with it;
   /// otherwise the pane tree collapses around it.
   public func closeSession(_ id: TerminalSession.ID) {
-    guard let index = workspace.tabs.firstIndex(where: { $0.root.contains(id) }) else { return }
+    guard let index = workspace.tabIndex(owning: id) else { return }
     workspace.sessions.removeAll { $0.id == id }
 
     guard let remaining = workspace.tabs[index].root.removing(id) else {
@@ -427,9 +427,9 @@ extension WorkspaceStore {
   }
 
   /// A click in a pane, reported back by the engine: the pane takes the
-  /// focus, and its tab and column take it with it.
+  /// focus, and its tab and group take it with it.
   public func focusSession(_ id: TerminalSession.ID) {
-    guard let index = workspace.tabs.firstIndex(where: { $0.root.contains(id) }) else { return }
+    guard let index = workspace.tabIndex(owning: id) else { return }
     // Guarded, here and below: the engine reports focus on every click and
     // every showing, and each write re-runs the views and re-arms autosave.
     if workspace.tabs[index].focusedSessionID != id { workspace.tabs[index].focusedSessionID = id }
@@ -532,8 +532,8 @@ extension WorkspaceStore {
 }
 
 extension WorkspaceStore {
-  public func setDefaultShell(_ path: String?) {
-    workspace.defaultShell = path
+  public func setPreferredShell(_ id: String?) {
+    workspace.preferredShellID = id
   }
 
   public func setCustomShellPath(_ path: String) {

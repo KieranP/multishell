@@ -38,9 +38,9 @@ extension WorktreeGit {
     else {
       // git refusing the directory, over ownership or a timeout, proves nothing
       // about whose it is; the `.git` file git wrote there does.
-      guard let admin = Self.adminDirectory(named: worktree.path) else { return false }
+      guard let record = Self.recordDirectory(namedBy: worktree.path) else { return false }
       return Self.samePath(
-        admin.deletingLastPathComponent(), common.appendingPathComponent("worktrees"))
+        record.deletingLastPathComponent(), WorktreeRecords.recordsDirectory(in: common))
     }
     let lines = Self.absolutePaths(in: output, from: worktree.path)
     // The top level too: a plain directory inside the main checkout answers
@@ -54,13 +54,14 @@ extension WorktreeGit {
       == b.resolvingSymlinksInPath().standardizedFileURL.path
   }
 
-  /// A record whose path is now someone else's directory. Its own admin
-  /// directory goes, not every record prune would take; see worktrees.md.
+  /// A record whose path is now someone else's directory. That record alone
+  /// goes, not every one prune would take; see worktrees.md.
   func forgetStale(_ worktree: Worktree, in project: Project) async throws {
     // A `.git` there is another repository's, which prune would keep too.
     let taken = FileManager.default.fileExists(
       atPath: worktree.path.appendingPathComponent(".git").path)
-    guard !taken, let record = try await record(of: worktree.path, in: project) else {
+    guard !taken, let record = try await recordDirectory(pointingAt: worktree.path, in: project)
+    else {
       throw NotTheCheckout(path: worktree.path)
     }
     try FileManager.default.removeItem(at: record)
@@ -71,9 +72,10 @@ extension WorktreeGit {
 
   /// The directory under `<common>/worktrees` whose `gitdir` names `checkout`,
   /// absolute or, as `worktree.useRelativePaths` writes it, relative to itself.
-  private func record(of checkout: URL, in project: Project) async throws -> URL? {
-    let records = try await commonGitDirectory(project)
-      .appendingPathComponent("worktrees", isDirectory: true)
+  private func recordDirectory(
+    pointingAt checkout: URL, in project: Project
+  ) async throws -> URL? {
+    let records = WorktreeRecords.recordsDirectory(in: try await commonGitDirectory(project))
     let names =
       (try? FileManager.default.contentsOfDirectory(
         at: records, includingPropertiesForKeys: nil)) ?? []

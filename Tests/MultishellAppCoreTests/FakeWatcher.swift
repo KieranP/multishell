@@ -6,7 +6,6 @@ import MultishellCore
 final class FakeWatcher: DirectoryWatcher {
   var onChange: (@MainActor ([URL]) -> Void)?
   var watched: [URL] = []
-  var stopped = false
   func watch(_ directories: [URL]) { watched = directories }
-  func stop() { stopped = true }
+  func stop() {}
 }

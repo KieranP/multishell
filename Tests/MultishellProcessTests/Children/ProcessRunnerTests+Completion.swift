@@ -46,7 +46,7 @@ extension ProcessRunnerTests {
     out?.finish()
     err?.finish()
 
-    await ProcessRunner.drain(try #require(out), try #require(err), group: group)
+    await ProcessRunner.awaitEOF(try #require(out), try #require(err), group: group)
     out = nil
     err = nil
 

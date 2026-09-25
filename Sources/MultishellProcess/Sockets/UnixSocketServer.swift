@@ -23,7 +23,7 @@ public final class UnixSocketServer: Sendable {
     var standingDown = false
   }
 
-  private let path: String
+  let path: String
   private let queue: DispatchQueue
   private let state = Mutex(State())
   private let handler = Mutex<(@Sendable (String) -> Void)?>(nil)
@@ -66,7 +66,7 @@ public final class UnixSocketServer: Sendable {
     guard staging.utf8.count <= UnixSocket.capacity else {
       throw SocketFailure(kind: .pathTooLong, path: path)
     }
-    let descriptor = try UnixSocket.newSocket(path: staging)
+    let descriptor = try UnixSocket.newSocket(reportingAs: staging)
     do {
       unlink(staging)
       try UnixSocket.bindSocket(descriptor, to: staging)
@@ -87,7 +87,7 @@ public final class UnixSocketServer: Sendable {
       unlink(path)
       throw SocketFailure(kind: .system(operation: "listen", code: code), path: path)
     }
-    UnixSocket.setNonBlocking(descriptor)
+    DescriptorFlags.setNonBlocking(descriptor)
 
     let source = DispatchSource.makeReadSource(fileDescriptor: descriptor, queue: queue)
     source.setEventHandler { [weak self] in self?.acceptPending(on: descriptor) }
@@ -152,7 +152,7 @@ public final class UnixSocketServer: Sendable {
 
   private func probeAndUnlinkStale() throws {
     guard FileManager.default.fileExists(atPath: path) else { return }
-    let probe = try UnixSocket.newSocket(path: path)
+    let probe = try UnixSocket.newSocket(reportingAs: path)
     defer { close(probe) }
     do {
       try UnixSocket.connectSocket(probe, to: path)
@@ -164,10 +164,10 @@ public final class UnixSocketServer: Sendable {
     }
   }
 
-  /// What a failed `accept` means. Every case but `drained` leaves the
-  /// connection in the backlog, and the read source fires again on it.
+  /// What a failed `accept` means. Every case but `waitForNextEvent` leaves
+  /// the connection in the backlog, and the read source fires again on it.
   enum AcceptOutcome: Equatable {
-    case drained
+    case waitForNextEvent
     case again
     case outOfDescriptors
 
@@ -175,7 +175,7 @@ public final class UnixSocketServer: Sendable {
       switch code {
       case EINTR, ECONNABORTED, EPROTO: self = .again
       case EMFILE, ENFILE, ENOBUFS, ENOMEM: self = .outOfDescriptors
-      default: self = .drained
+      default: self = .waitForNextEvent
       }
     }
   }
@@ -189,7 +189,7 @@ public final class UnixSocketServer: Sendable {
       let client = accept(descriptor, nil, nil)
       guard client >= 0 else {
         switch AcceptOutcome(errno: errno) {
-        case .drained: return
+        case .waitForNextEvent: return
         case .again: continue
         case .outOfDescriptors:
           // The pending connection stays in the backlog and the source is
@@ -198,10 +198,10 @@ public final class UnixSocketServer: Sendable {
           return
         }
       }
-      UnixSocket.setNonBlocking(client)
+      DescriptorFlags.setNonBlocking(client)
       let source = DispatchSource.makeReadSource(fileDescriptor: client, queue: queue)
       let connection = Connection(source: source)
-      source.setEventHandler { [weak self] in self?.drain(client, into: connection) }
+      source.setEventHandler { [weak self] in self?.readLines(from: client, into: connection) }
       source.setCancelHandler { close(client) }
       state.withLock { $0.connections[client] = connection }
       source.resume()
@@ -228,7 +228,7 @@ public final class UnixSocketServer: Sendable {
     }
   }
 
-  private func drain(_ descriptor: Int32, into connection: Connection) {
+  private func readLines(from descriptor: Int32, into connection: Connection) {
     let onLine = onLine
     var chunk = [UInt8](repeating: 0, count: 4096)
     while true {

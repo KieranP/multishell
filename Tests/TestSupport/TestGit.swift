@@ -1,4 +1,4 @@
-import MultishellGitKit
+@testable import MultishellGitKit
 
 /// How a test gets git.
 public enum TestGit {

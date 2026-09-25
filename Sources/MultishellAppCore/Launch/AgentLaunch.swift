@@ -8,6 +8,6 @@ enum AgentLaunch {
     if resume {
       return agent.resumeArguments.map { [agent.executable] + $0 }
     }
-    return [agent.executable] + agent.launchArguments
+    return [agent.executable]
   }
 }

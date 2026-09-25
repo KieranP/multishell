@@ -67,7 +67,7 @@ if [ -n "${MULTISHELL_SESSION-}" ] && [ -x "__MULTISHELL_HELPER__" ]; then
     _multishell_started=${EPOCHREALTIME:-$SECONDS}
     if [ "$_multishell_marks" = 1 ]; then printf '\033]133;C\007'; fi
     # The program being started, sent only where it is an agent: the words
-    # of the line, past any prefix. Docs/design/terminals.md.
+    # of the line, past any prefix. Docs/design/agents.md.
     local line="$1" cmd=""
     while [ -n "$line" ]; do
       cmd="${line%% *}"

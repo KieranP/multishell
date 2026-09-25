@@ -10,25 +10,25 @@ struct PaneTreeView: View {
   let node: PaneNode
   var path: [Int] = []
   let focusedSessionID: TerminalSession.ID
-  /// Whether this tree is in the column the keystrokes go to. One pane in
-  /// the window is the focused one, and it is in the focused column.
-  let isFocusedColumn: Bool
+  /// Whether this tree is in the group the keystrokes go to. One pane in
+  /// the window is the focused one, and it is in the focused group.
+  let isFocusedGroup: Bool
   /// Whether the focused pane wears the theme's ring: only where there is
-  /// something to tell it apart from, a split or a second column.
+  /// something to tell it apart from, a split or a second group.
   let showsFocusRing: Bool
   let theme: Theme
 
   var body: some View {
     switch node {
     case .terminal(let id):
-      // One pane in the window asks for the keyboard, not one per column:
+      // One pane in the window asks for the keyboard, not one per group:
       // a surface reports focus back, so two would trade it between renders.
-      let isFocusedPane = isFocusedColumn && id == focusedSessionID
-      SurfaceView(
+      let isFocusedPane = isFocusedGroup && id == focusedSessionID
+      PaneSurface(
         model: model,
         sessionID: id,
         isFocused: isFocusedPane,
-        isLive: model.liveSessions.contains(id)
+        isLive: model.liveSessionIDs.contains(id)
       )
       .overlay { fade(isFocusedPane: isFocusedPane) }
       .overlay { ring(isFocusedPane: isFocusedPane) }
@@ -42,8 +42,8 @@ struct PaneTreeView: View {
       WeightedSplit(
         axis: axis,
         weights: weights,
-        divider: theme.hairline,
-        background: theme.chromeColor,
+        dividerColor: theme.hairline,
+        gutterColor: theme.chromeColor,
         onWeightsChange: { model.setSplitWeights($0, at: path, ofTab: tabID) },
         content: {
           ForEach(children.indices, id: \.self) { index in
@@ -53,7 +53,7 @@ struct PaneTreeView: View {
               node: children[index],
               path: path + [index],
               focusedSessionID: focusedSessionID,
-              isFocusedColumn: isFocusedColumn,
+              isFocusedGroup: isFocusedGroup,
               showsFocusRing: showsFocusRing,
               theme: theme
             )

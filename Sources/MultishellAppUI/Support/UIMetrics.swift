@@ -55,7 +55,7 @@ struct UIMetrics: Equatable {
   var menuChevron: Double { (icon * 0.6).rounded() }
   var menuChevronGap: Double { 2 }
   /// A split's width plus the chevron, less one gap; the ink either side
-  /// differs from its box. See Docs/design/tabs-and-columns.md.
+  /// differs from its box. See Docs/design/tabs-and-groups.md.
   var newTabMenuWidth: Double { splitButtonWidth + menuChevron - menuChevronGap }
   /// A split glyph's inset, which the menu's plus shares.
   var stripGlyphInset: Double { (splitButtonWidth - icon) / 2 }
@@ -63,7 +63,7 @@ struct UIMetrics: Equatable {
   /// is measured, so nothing measures itself.
   var stripButtonsWidth: Double { newTabMenuWidth + splitButtonWidth * 2 }
   /// Splits go only where they cost neither a whole tab nor the arrows; a
-  /// lower bar buys them by silent scrolling. See tabs-and-columns.md.
+  /// lower bar buys them by silent scrolling. See tabs-and-groups.md.
   func stripShowsSplits(in width: Double) -> Bool {
     width.isFinite && width >= stripButtonsWidth + 2 * tabArrowWidth + tabMinWidth
   }
@@ -75,7 +75,7 @@ struct UIMetrics: Equatable {
   /// kept either way, so the tabs do not shift under the pointer.
   var tabArrowWidth: Double { (body * 1.7).rounded() }
   /// Each end's gutter in a scrolling strip with that room. None without room
-  /// for both and a tab besides, or two arrows draw over the column beside it.
+  /// for both and a tab besides, or two arrows draw over the group beside it.
   func tabArrowGutter(forRoom room: Double) -> Double {
     room >= 2 * tabArrowWidth + tabMinWidth ? tabArrowWidth : 0
   }
@@ -91,7 +91,15 @@ struct UIMetrics: Equatable {
   var boardGap: Double { (body * 0.8).rounded() }
   var boardPadding: Double { (body * 0.9).rounded() }
 
-  /// How wide a drop band down a column's edge is; see `ColumnDropBands`. Wide
+  /// Layout space a split's divider takes, wider than its line: the panes are
+  /// NSViews and take mouse events before a SwiftUI overlay.
+  static let splitDividerThickness: Double = 6
+  static let splitLineThickness: Double = 1
+  /// The least a split gives one pane, read by the layout and by the drop
+  /// that would make a group.
+  static let minimumPaneLength: Double = 80
+
+  /// How wide a drop band down a group's edge is; see `GroupDropBands`. Wide
   /// enough to aim at without hiding what is under it.
   static let dropBandWidth: Double = 74
 

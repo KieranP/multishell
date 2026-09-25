@@ -3,19 +3,12 @@ import Foundation
 /// Putting an agent's hooks into its file on disk and taking them out again;
 /// the merging itself is in `+Merging`. See Docs/design/agents.md.
 extension AgentHookIntegration {
-  func isInstalled(in file: URL? = nil) -> Bool {
-    let file = file ?? self.file
-    if format.isOursAlone { return ownFileText(file) != nil }
-    guard let settings = try? AgentSettingsFile.read(file) else { return false }
-    return isInstalled(in: settings)
-  }
-
   public func install(
     into file: URL? = nil, helper: String = AgentHookCatalogue.helperReference
   ) throws {
     let file = file ?? self.file
     if format.isOursAlone {
-      try AgentSettingsFile.writeOurs(snippet(helper: helper), to: file)
+      try AgentSettingsFile.writeWhole(snippet(helper: helper), to: file)
     } else {
       let settings = try AgentSettingsFile.read(file)
       guard hooksSection(settings) != nil else { throw UnreadableHookSection(file: file) }
@@ -33,7 +26,7 @@ extension AgentHookIntegration {
     let file = file ?? self.file
     guard FileManager.default.fileExists(atPath: file.path) else { return }
     if format.isOursAlone {
-      guard isInstalled(in: file) else { return }
+      guard ourFileContents(file) != nil else { return }
       try FileManager.default.removeItem(at: file)
     } else {
       // Nothing of ours in it: the write would sort its keys, re-indent it and
@@ -45,7 +38,7 @@ extension AgentHookIntegration {
   }
 
   /// A file that is ours alone, `nil` where it is absent or names no helper.
-  func ownFileText(_ file: URL) -> String? {
+  func ourFileContents(_ file: URL) -> String? {
     guard let contents = try? String(contentsOf: file, encoding: .utf8),
       contents.contains(AgentHookCatalogue.helperName)
     else { return nil }

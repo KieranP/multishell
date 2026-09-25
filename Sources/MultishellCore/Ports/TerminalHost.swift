@@ -19,7 +19,7 @@ public protocol TerminalHost: AnyObject {
   @discardableResult
   func search(_ command: TerminalSearch, in id: TerminalSession.ID) -> Bool
 
-  /// Sessions the host currently has open. `SessionRegistry` reconciles
+  /// Sessions the host currently has open. `SessionReconciler` reconciles
   /// against this rather than keeping its own copy.
   var openSessionIDs: Set<TerminalSession.ID> { get }
 

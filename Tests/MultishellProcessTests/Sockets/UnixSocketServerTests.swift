@@ -73,7 +73,7 @@ struct UnixSocketServerTests {
     defer { for descriptor in pending { close(descriptor) } }
     var refused = false
     while pending.count < 64, !refused {
-      let descriptor = try UnixSocket.newSocket(path: path.path)
+      let descriptor = try UnixSocket.newSocket(reportingAs: path.path)
       do {
         try UnixSocket.connectSocket(descriptor, to: path.path)
         pending.append(descriptor)
@@ -300,7 +300,6 @@ extension UnixSocketServer {
   /// Leaves the socket file behind with nothing listening, the way a
   /// crashed instance does. Closing the descriptors without unlinking.
   fileprivate func abandonForTesting() {
-    let path = Mirror(reflecting: self).children.first { $0.label == "path" }!.value as! String
     stop()
     // `stop` unlinked it; put a dead socket file back.
     let descriptor = socket(AF_UNIX, SOCK_STREAM, 0)

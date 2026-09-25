@@ -18,17 +18,17 @@ struct ProjectBlockDropDelegate: DropDelegate {
   }
 
   func dropEntered(info: DropInfo) {
-    enter(info)
+    track(info)
   }
 
   func dropUpdated(info: DropInfo) -> DropProposal? {
-    enter(info)
+    track(info)
     return DropProposal(operation: .move)
   }
 
   /// Written only on a change: an update arrives at pointer rate, and each
   /// write to the sidebar's state may rebuild the whole of it.
-  private func enter(_ info: DropInfo) {
+  private func track(_ info: DropInfo) {
     let next = ProjectDropTarget(projectID: projectID, placement: placement(for: info))
     if target != next { target = next }
   }

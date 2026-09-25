@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import TestSupport
 import Testing
 
 @testable import MultishellGitKit
@@ -32,19 +33,13 @@ struct WorktreeGitBranchesTests {
   /// asked once.
   @Test func aGitThatAnswersIsAskedOnce() async throws {
     let fake = try FakeGit.make(
-      """
-      echo x >> "$SCRATCH/calls"
-      printf 'refs/heads/main\\t111\\t\\t\\t\\t1700000000\\n'
-      """)
+      #"printf 'refs/heads/main\t111\t\t\t\t1700000000\n'"#, loggingCalls: true)
     defer { fake.tearDown() }
 
     let refs = try #require(
       await WorktreeGit(runner: fake.runner).branchRefs(Project(path: fake.directory)))
-    let calls =
-      (try? String(contentsOf: fake.directory.appendingPathComponent("calls"), encoding: .utf8))
-      ?? ""
 
     #expect(refs.first?.committedAt == Date(timeIntervalSince1970: 1_700_000_000))
-    #expect(calls.split(whereSeparator: \.isNewline).count == 1)
+    #expect(FakeGit.calls(in: fake.directory).count == 1)
   }
 }

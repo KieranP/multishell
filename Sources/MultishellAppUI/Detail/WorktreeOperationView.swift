@@ -11,17 +11,16 @@ struct WorktreeOperationView: View {
   let dismiss: () -> Void
 
   var body: some View {
-    VStack(spacing: 0) {
+    DetailPlaceholder(title: operation.title, caption: operation.detail, theme: theme) {
       if operation.isRunning {
         ProgressView()
           .controlSize(.large)
       } else {
         Image(systemName: "exclamationmark.triangle.fill")
           .font(.system(size: 34, weight: .light))
-          .foregroundStyle(theme.ansiRGB(1).color)
+          .foregroundStyle(theme.failureColor)
       }
-      Text(operation.title).placeholderTitle(theme)
-      Text(operation.detail).placeholderCaption(theme)
+    } extra: {
       if operation.isRunning, let help = operation.step.cancelHelp {
         Button(t("action.cancel"), action: cancel)
           .padding(.top, 18)
@@ -46,7 +45,5 @@ struct WorktreeOperationView: View {
           .padding(.top, 18)
       }
     }
-    .padding(48)
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
   }
 }

@@ -16,9 +16,9 @@ struct PresentedErrorTests {
     #expect(!branch.message.contains("InvalidBranchName"))
     #expect(!branch.title.isEmpty)
 
-    let main = PresentedError(NotAWorktree(path: URL(fileURLWithPath: "/w/repo")))
+    let main = PresentedError(WorktreeNotRemovable(path: URL(fileURLWithPath: "/w/repo")))
     #expect(main.message.hasPrefix("/w/repo is the repository itself"))
-    #expect(!main.message.contains("NotAWorktree"))
+    #expect(!main.message.contains("WorktreeNotRemovable"))
     #expect(!main.title.isEmpty)
   }
 
@@ -66,7 +66,8 @@ struct PresentedErrorTests {
         WorktreeFileFailure(
           placement: placement,
           failures: [
-            WorktreeFileFailure.Item(path: "../outside/key", underlying: WorktreeFileEscape())
+            WorktreeFileFailure.PathFailure(
+              path: "../outside/key", underlying: WorktreeFileEscape())
           ]
         ))
       #expect(presented.title == expected)
@@ -127,7 +128,7 @@ struct PresentedErrorTests {
   @Test func unreadableStateNamesTheBackupFile() {
     let backup = URL(fileURLWithPath: "/tmp/state.2026.broken.json")
     let presented = PresentedError(
-      UnreadableState(backup: backup, underlying: CocoaError(.coderReadCorrupt)))
+      UnreadableStateFile(backup: backup, underlying: CocoaError(.coderReadCorrupt)))
     #expect(presented.title == "Saved state could not be read")
     #expect(presented.message.contains("state.2026.broken.json"))
   }
@@ -135,9 +136,7 @@ struct PresentedErrorTests {
   @Test func unmovedStateNamesTheFileStillStandingThere() {
     let file = URL(fileURLWithPath: "/tmp/state.json")
     let presented = PresentedError(
-      UnmovedState(
-        file: file, underlying: CocoaError(.coderReadCorrupt),
-        move: CocoaError(.fileWriteNoPermission)))
+      UnmovableStateFile(file: file, underlying: CocoaError(.coderReadCorrupt)))
     #expect(presented.title == "Saved state could not be read")
     #expect(presented.message.contains("/tmp/state.json"))
     #expect(presented.message.contains("Nothing will be saved over it"))
@@ -164,10 +163,10 @@ struct PresentedErrorTests {
   /// `MultishellProcess` depends on nothing and so has no catalogue to
   /// reach; the words for its failures live here. See translation.md.
   @Test func theProcessLayersFailuresAreTranslatedRatherThanPrintedAsWritten() {
-    let noPipe = PresentedError(PipeUnavailable(code: EMFILE))
-    #expect(noPipe.title == "A command could not be started")
-    #expect(noPipe.message.hasPrefix("A pipe could not be opened:"))
-    #expect(noPipe.message.contains(String(cString: strerror(EMFILE))))
+    let noDescriptor = PresentedError(DescriptorUnavailable(code: EMFILE))
+    #expect(noDescriptor.title == "A command could not be started")
+    #expect(noDescriptor.message.hasPrefix("The app has too many files open:"))
+    #expect(noDescriptor.message.contains(String(cString: strerror(EMFILE))))
 
     let tooLong = PresentedError(
       SocketFailure(kind: .pathTooLong, path: "/very/long/path.sock"))
@@ -189,7 +188,8 @@ struct PresentedErrorTests {
     let failure = WorktreeFileFailure(
       placement: .copy,
       failures: [
-        WorktreeFileFailure.Item(path: ".env", underlying: CocoaError(.fileWriteNoPermission))
+        WorktreeFileFailure.PathFailure(
+          path: ".env", underlying: CocoaError(.fileWriteNoPermission))
       ]
     ).including(skipped: ["~/.aws"])
     let presented = PresentedError(failure)

@@ -9,9 +9,9 @@ struct ProjectIconSection: View {
   let project: Project
 
   var body: some View {
-    let own = model.settings(of: project)
+    let own = model.ownSettings(of: project)
     let settings = model.effectiveSettings(for: project)
-    let kind = ProjectIcon.kind(of: settings.iconGlyph)
+    let kind = settings.iconKind
     let fromFile = own.takesIconFromSharedFile(project.sharedSettings.confined)
     Section(t("project.icon")) {
       InfoLabeledContent(t("project.icon-label"), info: t("project.icon-info")) {
@@ -36,7 +36,7 @@ struct ProjectIconSection: View {
   /// Untinted, the system's grey, not the theme's: this window follows the
   /// system appearance, and a dark theme's grey vanished on a light page.
   private func tint(_ settings: ProjectSettings) -> Color {
-    settings.iconTint.map { model.currentTheme.ansiRGB($0).color } ?? .secondary
+    model.currentTheme.iconTint(settings.iconTint, untinted: .secondary)
   }
 
   private func swatch(_ slot: Int?, shown: ProjectSettings, color: Color) -> some View {

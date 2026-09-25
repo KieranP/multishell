@@ -17,7 +17,7 @@ public struct PendingProjectRemoval: Identifiable, Equatable, Sendable {
 
   /// Names what goes and what stays. The repository is never touched: the
   /// project is a sidebar entry, and its worktrees are git's.
-  public static func message(liveTerminals: Int) -> String {
+  static func message(liveTerminals: Int) -> String {
     var notes = [t("project-removal.takes")]
     if liveTerminals > 0 {
       notes.append(t("removal.terminals-closed", liveTerminals))

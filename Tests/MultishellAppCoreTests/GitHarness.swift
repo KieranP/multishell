@@ -1,9 +1,9 @@
 import Foundation
-import MultishellCore
 import TestScratch
 import TestSupport
 
 @testable import MultishellAppCore
+@testable import MultishellCore
 @testable import MultishellGitKit
 
 /// The model on real git in a throwaway repository, with a fake engine and
@@ -30,7 +30,7 @@ struct GitHarness {
     model = AppModel(
       store: store,
       host: self.engine,
-      worktrees: WorktreeCoordinator(
+      coordinator: WorktreeCoordinator(
         git: WorktreeGit(runner: git, settlesNewIndex: false)),
       watcher: watcher, platform: platform)
     model.statusReads.pace = .unpaced
@@ -40,9 +40,7 @@ struct GitHarness {
   /// Waits for the removal that `requestWorktreeRemoval` or a dialog started, up to
   /// a few seconds, by watching the operation entry.
   func awaitOperationEnd(on id: Worktree.ID) async {
-    for _ in 0..<200 where model.worktreeOperations[id]?.isRunning == true {
-      try? await Task.sleep(for: .milliseconds(50))
-    }
+    try? await waitUntil({ model.worktreeOperations[id]?.isRunning != true }, seconds: 10)
   }
 
   var project: Project { model.workspace.projects[0] }
@@ -67,18 +65,12 @@ struct GitHarness {
   /// A second model on the same store, with `body` as a shell script standing
   /// in for git.
   func modelOnFakeGit(_ body: String) throws -> AppModel<FakeSurface> {
-    let script = root.appendingPathComponent("fake-git-\(UUID().uuidString)")
-    try Scratch.script(
-      """
-      SCRATCH="\(root.path)"
-      echo "$*" >> "$SCRATCH/calls"
-      \(body)
-      """, at: script)
+    let fake = try FakeGit.make(body, in: root, loggingCalls: true)
     let model = AppModel(
       store: store,
       host: self.engine,
-      worktrees: WorktreeCoordinator(
-        git: WorktreeGit(runner: try GitRunner(executable: script), settlesNewIndex: false)),
+      coordinator: WorktreeCoordinator(
+        git: WorktreeGit(runner: fake.runner, settlesNewIndex: false)),
       watcher: watcher)
     model.statusReads.pace = .unpaced
     model.presentedError = nil
@@ -86,8 +78,12 @@ struct GitHarness {
   }
 
   func gitCalls() -> [String] {
-    (try? String(contentsOf: root.appendingPathComponent("calls"), encoding: .utf8))?
-      .split(whereSeparator: \.isNewline).map(String.init) ?? []
+    FakeGit.calls(in: root)
+  }
+
+  /// How many `git status` runs a model on fake git has logged.
+  func statusRunCount() -> Int {
+    gitCalls().filter { $0.contains("status") }.count
   }
 
   func worktree(onBranch branch: String) -> Worktree? {

@@ -40,12 +40,13 @@
   signals the group itself. It offers no hook between a child's exit and its
   reap, so the runner watches for the exit and marks it first, or a stop could
   signal a reused pid. Its answer to a cancelled task is SIGKILL, so each run is
-  shielded from cancellation (architecture.md). The runner opens its own pipes:
-  at the descriptor limit Subprocess traps on a pipe it opened when the next
-  open fails (its `Configuration.swift:1115`), where ours throw. Owning them, it
-  reads them too, and gives up a second after exit on an EOF a background
-  grandchild withholds. Subprocess's collectors have stopped at the exit since
-  0.5, so the trap is the whole reason; DescriptorExhaustionTests shows it.
+  shielded from cancellation (design/architecture.md). The runner opens its own
+  pipes: at the descriptor limit Subprocess traps on a pipe it opened when the
+  next open fails (its `Configuration.swift:1115`), where ours throw. Owning
+  them, it reads them too, and gives up a second after exit on an EOF a
+  background grandchild withholds. Subprocess's collectors have stopped at the
+  exit since 0.5, so the trap is the whole reason; DescriptorExhaustionTests
+  shows it.
 - **swift-system comes with it**, not named here but linked all the same;
   Subprocess's paths are Apple's own `System` types, which is what this code
   imports.

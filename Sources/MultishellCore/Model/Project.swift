@@ -3,8 +3,8 @@ import Foundation
 /// A git repository the user has added to the sidebar. Identity is the path;
 /// see Docs/design/architecture.md.
 public struct Project: Identifiable, Codable, Hashable, Sendable {
-  /// Always the normalised form from `directory`, so `id` can read it
-  /// directly rather than standardise again on every comparison.
+  /// Always the normalised form from `URL.normalizedDirectory`, so `id` can
+  /// read it directly rather than standardise again on every comparison.
   public private(set) var path: URL
   public var isExpanded: Bool
   /// The user's own, as the settings forms edit them.
@@ -27,7 +27,7 @@ public struct Project: Identifiable, Codable, Hashable, Sendable {
   }
 
   public init(path: URL, isExpanded: Bool = true, settings: ProjectSettings = ProjectSettings()) {
-    self.path = Self.directory(path)
+    self.path = path.normalizedDirectory
     self.isExpanded = isExpanded
     self.settings = settings
   }
@@ -48,17 +48,11 @@ public struct Project: Identifiable, Codable, Hashable, Sendable {
     hasher.combine(settings)
   }
 
-  /// A directory URL whether or not it exists now: `URL(fileURLWithPath:)`
-  /// asks the filesystem, and a missing one resolves as a file.
-  static func directory(_ url: URL) -> URL {
-    URL(fileURLWithPath: url.path, isDirectory: true).standardizedFileURL
-  }
-
   /// Decoded with defaults so state written by an older build still loads
   /// when a setting is added.
   public init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
-    self.path = Self.directory(try container.decode(URL.self, forKey: .path))
+    self.path = try container.decode(URL.self, forKey: .path).normalizedDirectory
     self.isExpanded = try container.decode(Bool.self, forKey: .isExpanded, or: true)
     self.settings = try container.decode(
       ProjectSettings.self, forKey: .settings, or: ProjectSettings())

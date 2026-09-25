@@ -24,7 +24,7 @@ public struct Theme: Identifiable, Codable, Hashable, Sendable {
   /// rather than unfocused.
   static let minimumInactivePaneOpacity = 0.25
 
-  public init(
+  init(
     id: String,
     name: String,
     isDark: Bool,
@@ -95,7 +95,7 @@ extension Theme {
 
   public static let builtins: [Theme] = [.multishellDark, .multishellLight]
 
-  public static let multishellDark = Theme(
+  static let multishellDark = Theme(
     id: "multishell.dark",
     name: "Multishell Dark",
     isDark: true,

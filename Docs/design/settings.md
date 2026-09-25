@@ -77,9 +77,10 @@ shipped hook. Newest at the bottom.
 - **Export writes the settings in force back over the file**, but keeps the
   file's own words where the user wrote none, or exporting would silently drop a
   teammate's committed hook.
-- **Export carries the trust answer to the new digest**, and records none where
-  none was given. Comparing the two alone made trusting a file and then
-  exporting it revoke the yes.
+- **Export carries the trust answer to the new digest**, records a yes where
+  every word the yes covers is the user's own, and none where no answer was
+  given. Comparing the two alone made trusting a file and then exporting it
+  revoke the yes.
 - **`keeping(from:)` covers every gated field, not the hooks alone.** Gating the
   directory and the lists on trust blanked them for an untrusted file, and
   export then wrote the file without those keys at all.
@@ -93,6 +94,9 @@ shipped hook. Newest at the bottom.
   can read it changes it.
 - **Help goes behind an (i).** Captions doubled every form's height and were
   read once. A caption is left only for a value computed live.
+- **An (i) holds at most 200 characters once filled in.** What another row's (i)
+  says is left to it. The translation tests and AgentHooksRowTests hold the
+  count.
 - **A page taller than its window is split, not scrolled.** A grouped form's
   scroller is an overlay, so what is below the fold says nothing, and forcing
   the indicators changes nothing there. Project Hooks shows Create, Delete or

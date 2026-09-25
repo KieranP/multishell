@@ -9,7 +9,7 @@ public struct LoginShellEnvironment: Sendable, Equatable {
     case processFallback(reason: String)
   }
 
-  public let variables: [String: String]
+  let variables: [String: String]
   public let source: Source
 
   init(variables: [String: String], source: Source) {
@@ -26,16 +26,16 @@ public struct LoginShellEnvironment: Sendable, Equatable {
   /// `home` and `inherited` stand in for the home and what the app was
   /// started with, so a test runs a real shell of its own.
   public static func capture(
-    runner: ProcessRunner = ProcessRunner(), timeout: Duration = timeout,
-    shellPath: String, home: URL? = nil, inherited: [String: String] = [:]
+    timeout: Duration = timeout, shellPath: String, home: URL? = nil,
+    inherited: [String: String] = [:]
   ) async -> LoginShellEnvironment {
     let fallback = ProcessInfo.processInfo.environment
-    let shell = ShellCommand.shell(named: shellPath)
+    let shell = ShellInvocation.userShell(at: shellPath)
     let directory = home ?? FileManager.default.homeDirectoryForCurrentUser
-    let environment = ShellCommand.historyless(
+    let environment = ShellInvocation.historyless(
       inherited.merging(home.map { ["HOME": $0.path, "ZDOTDIR": $0.path] } ?? [:]) { $1 })
     do {
-      let output = try await runner.capture(
+      let output = try await ProcessRunner().capture(
         shell.executable, shell.arguments + ["printf '\\n%s\\n' \(startMarker); env -0"],
         in: directory, environment: environment,
         timeout: timeout)

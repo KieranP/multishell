@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellCore
@@ -33,7 +34,7 @@ struct SessionStateReportTests {
     #expect(report?.command == nil)
     #expect(report?.subagent?.id == SubagentReport.anonymousID)
     #expect(report?.subagent?.type?.count == SubagentReport.maximumTypeLength + 1)
-    #expect(report?.backgroundShells?.count == SessionStateReport.rosterLimit)
+    #expect(report?.backgroundShells?.count == SessionStateReport.maximumWorkerCount)
   }
 
   @Test func boundedStringsWithinTheirLimitsAreKeptWhole() {
@@ -80,61 +81,6 @@ struct SessionStateReportTests {
   ])
   func aMalformedLineIsDroppedNotCrashedOn(line: String) {
     #expect(SessionStateReport.parse(line) == nil)
-  }
-
-  @Test func theMostUrgentStateWinsAndIdleIsNothing() {
-    #expect(SessionState.mostUrgent([.done, .attention, .running]) == .attention)
-    #expect(SessionState.mostUrgent([.done, .running]) == .running)
-    #expect(SessionState.mostUrgent([.running, .error]) == .error, "a failure outranks work")
-    #expect(
-      SessionState.mostUrgent([.attention, .error]) == .error,
-      "and a question: a row with a failed tab is red whatever the others ask")
-    #expect(SessionState.mostUrgent([.idle, .done]) == .done, "one finished tab is enough")
-    #expect(SessionState.mostUrgent([.idle, .idle]) == nil, "idle only when every tab is")
-    #expect(SessionState.mostUrgent([.idle]) == nil)
-    #expect(SessionState.mostUrgent([]) == nil)
-    #expect(SessionState.idle.nonIdle == nil)
-    #expect(SessionState.done.nonIdle == .done)
-  }
-
-  @Test func eachNotifiedStateIsAskedForOnItsOwnAndRunningNeverBanners() {
-    let all = NotificationPreference(attention: true, error: true, done: true)
-    #expect(!all[.running], "a banner per tool call would be noise")
-    #expect(!all[.idle])
-    #expect(NotificationPreference.notifiableStates == [.attention, .error, .done])
-
-    for state in NotificationPreference.notifiableStates {
-      var one = NotificationPreference.off
-      one[state] = true
-      #expect(one[state], "\(state)")
-      for other in NotificationPreference.notifiableStates where other != state {
-        #expect(!one[other], "\(state) does not turn on \(other)")
-      }
-    }
-    #expect(NotificationPreference.notifiableStates.allSatisfy { !NotificationPreference.off[$0] })
-  }
-
-  @Test func exitCodesBecomeDoneOrFailedAndSignalsAreNotFailures() {
-    #expect(SessionState.finished(exitCode: 0) == .done)
-    #expect(SessionState.finished(exitCode: nil) == .done)
-    #expect(SessionState.finished(exitCode: 1) == .error)
-    #expect(SessionState.finished(exitCode: 127) == .error)
-    #expect(SessionState.finished(exitCode: 130) == .done, "Ctrl+C is the user's own doing")
-    #expect(SessionState.error.isFinished && SessionState.done.isFinished)
-    #expect(!SessionState.running.isFinished)
-  }
-
-  @Test func theEnvironmentNamesTheSessionTheWorktreeAndTheSocket() {
-    let session = TerminalSession(
-      worktreeID: "/w", workingDirectory: URL(fileURLWithPath: "/w/repo"), title: "Shell")
-    let variables = SessionEnvironment.variables(
-      for: session, socket: URL(fileURLWithPath: "/state/multishell.sock"))
-    #expect(variables["MULTISHELL_SESSION"] == session.id.uuidString)
-    #expect(variables["MULTISHELL_WORKTREE"] == "/w/repo")
-    #expect(variables["MULTISHELL_SOCKET"] == "/state/multishell.sock")
-    #expect(
-      variables["MULTISHELL_APP_PID"] == String(ProcessInfo.processInfo.processIdentifier),
-      "so the helper's walk up from a prompt knows where to stop")
   }
 
   /// The channel drops a line over 64 KB, so an overlong message would lose the state too:
@@ -217,5 +163,51 @@ struct SessionStateReportTests {
     #expect(sent.isShell == true)
     let scripted = try #require(SessionStateReport.parse(#"{"v":1,"state":"done"}"#))
     #expect(scripted.isShell == nil, "a line that does not claim it is not a shell's")
+  }
+
+  /// The field a worker rides on, both directions: an older helper and an older
+  /// app each have to meet a newer one over the shared helper link.
+  @Test func aSubagentSurvivesTheWireBothWays() throws {
+    let worker = SubagentReport(id: "agent_1", type: "Explore", phase: .working)
+    let sent = SessionStateReport(state: .running, agent: "claude", subagent: worker)
+    let line = try sent.encodedLine()
+    #expect(line.contains(#""subagent":{"id":"agent_1","phase":"working","type":"Explore"}"#))
+    #expect(try #require(SessionStateReport.parse(line)) == sent)
+    #expect(SessionStateReport.parse(line)?.subagentChange == worker)
+
+    let quiet = try SessionStateReport(state: .done).encodedLine()
+    #expect(!quiet.contains("subagent"), "a report that is not about them says nothing")
+    #expect(SessionStateReport.parse(quiet)?.subagentChange == nil)
+
+    // What an older helper writes: a count, read as an unnamed worker.
+    let old = #"{"v":1,"state":"done","agent":"claude"}"#
+    #expect(SessionStateReport.parse(old)?.subagentChange == nil, "absent reads as no change")
+    let counted = #"{"v":1,"state":"running","subagents":1,"somethingLater":true}"#
+    #expect(
+      SessionStateReport.parse(counted)?.subagentChange
+        == SubagentReport(id: SubagentReport.anonymousID, phase: .started))
+    let uncounted = #"{"v":1,"state":"running","subagents":-1}"#
+    #expect(
+      SessionStateReport.parse(uncounted)?.subagentChange
+        == SubagentReport(id: SubagentReport.anonymousID, phase: .ended))
+  }
+
+  /// The other direction: a newer helper writing to an older app, which reads
+  /// the count and ignores the object. A tool call carries no count.
+  @Test func aNewHelpersWorkerIsCountedForAnOlderApp() throws {
+    func line(_ phase: SubagentReport.Phase) throws -> String {
+      try SessionStateReport(
+        state: .running, subagent: SubagentReport(id: "agent_1", type: "Explore", phase: phase)
+      ).encodedLine()
+    }
+    #expect(try line(.started).contains(#""subagents":1"#))
+    #expect(try line(.ended).contains(#""subagents":-1"#))
+    #expect(try !line(.working).contains(#""subagents""#))
+
+    let start = try line(.started)
+    #expect(
+      SessionStateReport.parse(start)?.subagentChange
+        == SubagentReport(id: "agent_1", type: "Explore", phase: .started),
+      "a new app still reads the named worker, not the count")
   }
 }

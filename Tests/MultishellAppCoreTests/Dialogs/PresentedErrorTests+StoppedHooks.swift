@@ -14,7 +14,7 @@ extension PresentedErrorTests {
     #expect(presented.message == "installing\n\nStopped after 1 second, the hook timeout.")
 
     let stopped = ProcessFailure(
-      executable: "zsh", arguments: [], status: 129, message: "", stop: .stopped)
+      executable: "zsh", arguments: [], status: 129, message: "", stop: .byUser)
     let byUser = PresentedError(HookFailure(stage: .preCreate, underlying: stopped))
     #expect(byUser.title == "Worktree not created: its pre-create hook was stopped")
     #expect(byUser.message == "Stopped by you and printed nothing.")

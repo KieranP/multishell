@@ -14,14 +14,10 @@ struct RootView: View {
   /// `onEnded`, and this resets either way; see `SplitHandle`.
   @GestureState private var dragStartWidth: Double?
 
-  private static let minimumSidebarWidth = 180.0
-  /// What the sidebar leaves of the window, so the divider stays in reach.
-  static let minimumDetailWidth = 50.0
-
   var body: some View {
     let theme = model.currentTheme
     GeometryReader { window in
-      let range = Self.sidebarRange(inWindowOfWidth: window.size.width)
+      let range = SidebarWidth.range(inWindowOfWidth: window.size.width)
       HStack(spacing: 0) {
         SidebarView(model: model)
           .frame(width: sidebarWidth.clamped(to: range))
@@ -38,10 +34,6 @@ struct RootView: View {
     .pendingCloseDialog(model: model)
     .newWorktreeSheet(model: model)
     .presentedErrorAlert(model: model)
-  }
-
-  private static func sidebarRange(inWindowOfWidth width: Double) -> ClosedRange<Double> {
-    minimumSidebarWidth...max(minimumSidebarWidth, width - minimumDetailWidth)
   }
 
   /// The hairline between sidebar and detail, with an 8 pt grab area over it.

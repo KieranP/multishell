@@ -121,12 +121,6 @@ extension WorkspaceStoreTests {
     #expect(store.workspace == before)
   }
 
-  @Test func aMissingThemeFallsBackToDark() {
-    var appearance = Appearance()
-    appearance.themeID = "gone"
-    #expect(appearance.theme() == .multishellDark)
-  }
-
   @Test func updateSettingsOnlyTouchesThatProject() {
     let store = WorkspaceStore()
     let a = store.addProject(at: URL(fileURLWithPath: "/repos/a"))

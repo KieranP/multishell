@@ -13,7 +13,7 @@ final class SurfaceFrame: NSView {
   private var highlight: NSView?
   /// Whether this drag holds files, asked once per drag rather than once per
   /// mouse move: each ask reads the pasteboard.
-  fileprivate var filesInDrag: (sequence: Int, hasFiles: Bool)?
+  private var filesInDrag: (sequence: Int, hasFiles: Bool)?
 
   init() {
     super.init(frame: .zero)
@@ -106,7 +106,7 @@ extension SurfaceFrame {
   override func performDragOperation(_ sender: any NSDraggingInfo) -> Bool {
     hideHighlight()
     let urls = Self.fileURLs(from: sender)
-    let own = PromisedDropCopies.own(among: urls)
+    let originals = PromisedDropCopies.originals(among: urls)
     let promises =
       PromisedDropCopies.needsPromise(for: urls) ? PromisedDrop.receivers(from: sender) : []
     // Held from here rather than read when the files land: this frame
@@ -118,7 +118,7 @@ extension SurfaceFrame {
     }
     // A drag of both kinds: the user's own go in now and the copies follow.
     // Two pastes, rather than losing the files nobody promised.
-    if !own.isEmpty { _ = drop?(own, true) }
+    if !originals.isEmpty { _ = drop?(originals, true) }
     PromisedDrop.receive(promises) { [weak self] urls in
       guard !urls.isEmpty else { return }
       // Focus only if this pane is still on screen: a slow copy must not

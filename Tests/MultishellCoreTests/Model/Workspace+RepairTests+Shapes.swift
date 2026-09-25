@@ -4,7 +4,7 @@ import Testing
 
 @testable import MultishellCore
 
-/// Left unrepaired, `SessionRegistry` opens a second shell for a pane already shown, or a view
+/// Left unrepaired, `SessionReconciler` opens a second shell for a pane already shown, or a view
 /// divides by zero laying out an empty split.
 extension WorkspaceRepairTests {
   private func workspace(tabs: [TerminalTab], sessions: [TerminalSession]) -> Workspace {
@@ -13,7 +13,7 @@ extension WorkspaceRepairTests {
     ws.worktrees = [worktree]
     ws.sessions = sessions
     ws.tabs = tabs
-    // The tabs name no column, the shape of every state file written before columns existed.
+    // The tabs name no group, the shape of every state file written before groups existed.
     return ws
   }
 

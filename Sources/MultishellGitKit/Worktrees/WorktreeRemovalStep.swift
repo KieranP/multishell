@@ -9,7 +9,7 @@ public enum WorktreeRemovalStep: Sendable, Equatable {
   case postDeleteHook
   case deletingBranch
 
-  /// Where a remove of this worktree under these settings starts, so a
+  /// Where a remove of a worktree in this project starts, so a
   /// caller can show the first stage before the first report arrives.
   public static func first(for project: Project) -> WorktreeRemovalStep {
     WorktreeHooks.hasScript(.preDelete, in: project.settings) ? .preDeleteHook : .removingWorktree

@@ -110,17 +110,20 @@ struct LoginShellEnvironmentTests {
     #expect(LoginShellEnvironment.parse(nulSeparated: text) == ["HOME": "/u", "PATH": "/bin"])
   }
 
-  @Test func aShellThatHangsFallsBackWithinTheTimeout() async throws {
-    // A runner whose "shell" never exits: the fallback must arrive, and
-    // soon. Stand-in via a timeout on a real sleeping child.
+  @Test func aShellThatHangsFallsBackToTheAppsOwnEnvironmentWithinTheTimeout() async throws {
+    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
+    let home = try Scratch.directory("home")
+    defer { Scratch.remove(home) }
+    try "sleep 30\n".write(
+      to: home.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
+
     let started = ContinuousClock.now
-    let output = try await ProcessRunner().capture(
-      URL(fileURLWithPath: "/bin/sh"), ["-c", "sleep 30"], in: URL(fileURLWithPath: "/tmp"),
-      timeout: .milliseconds(300))
+    let environment = await LoginShellEnvironment.capture(
+      timeout: .milliseconds(300), shellPath: "/bin/zsh", home: home)
     let elapsed = ContinuousClock.now - started
-    #expect(!output.succeeded)
-    // Ten against the child's thirty: the two answers are the timeout
-    // firing and it not firing at all, and no runner is between them.
+
+    #expect(environment.variables == ProcessInfo.processInfo.environment)
+    // Ten against the rc file's thirty: the timeout firing, or not at all.
     #expect(elapsed < .seconds(10), "took \(elapsed)")
   }
 }
