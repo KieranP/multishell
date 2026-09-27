@@ -42,11 +42,15 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   /// Whether a subagent is a conversation of its own, firing its own prompt
   /// and Stop, which only its conversation id tells apart; see agents.md.
   let workersAreConversations: Bool
+  /// Whether the agent's transcript records its background workers ending,
+  /// which a Stop reads in case a hook came late or never; see agents.md.
+  let transcriptRecordsWorkers: Bool
 
   init(
     id: String, file: URL, displayPath: String, events: [AgentHookEvent],
     format: Format, trustNote: String? = nil, backgroundShellMarker: String? = nil,
-    resumesAfterWorkers: Bool = false, workersAreConversations: Bool = false
+    resumesAfterWorkers: Bool = false, workersAreConversations: Bool = false,
+    transcriptRecordsWorkers: Bool = false
   ) {
     self.id = id
     self.file = file
@@ -57,6 +61,7 @@ public struct AgentHookIntegration: Identifiable, Sendable {
     self.backgroundShellMarker = backgroundShellMarker
     self.resumesAfterWorkers = resumesAfterWorkers
     self.workersAreConversations = workersAreConversations
+    self.transcriptRecordsWorkers = transcriptRecordsWorkers
   }
 
   public var name: String { AgentCatalogue.agent(id)?.name ?? id }
@@ -115,6 +120,15 @@ public struct AgentHookIntegration: Identifiable, Sendable {
       startsSession: event.startsSession ? true : nil,
       backgroundShells: isStop ? backgroundShellMarker.flatMap(backgroundShells) : nil,
       resumesAfterWorkers: isStop && resumesAfterWorkers ? true : nil,
-      conversationID: workersAreConversations ? payload.conversationID : nil)
+      conversationID: workersAreConversations ? payload.conversationID : nil,
+      endedWorkers: isStop ? endedWorkers(for: payload) : nil)
+  }
+
+  /// `nil` for none, keeping the line short.
+  private func endedWorkers(for payload: AgentHookPayload) -> [String]? {
+    guard transcriptRecordsWorkers, let path = payload.transcriptPath,
+      let ended = ClaudeTranscript.endedWorkers(atPath: path), !ended.isEmpty
+    else { return nil }
+    return ended
   }
 }

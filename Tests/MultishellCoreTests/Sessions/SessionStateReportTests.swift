@@ -37,6 +37,15 @@ struct SessionStateReportTests {
     #expect(report?.backgroundShells?.count == SessionStateReport.maximumWorkerCount)
   }
 
+  @Test func aStopNamesAtMostSixtyFourEndedWorkersTheMostRecentKept() {
+    let ended = (1...100).map { #""w\#($0)""# }.joined(separator: ",")
+    let long = String(repeating: "x", count: 200)
+    let report = SessionStateReport.parse(#"{"state":"done","ended":["\#(long)",\#(ended)]}"#)
+    #expect(report?.endedWorkers?.count == SessionStateReport.maximumWorkerCount)
+    #expect(report?.endedWorkers?.first == "w37")
+    #expect(report?.endedWorkers?.last == "w100")
+  }
+
   @Test func boundedStringsWithinTheirLimitsAreKeptWhole() {
     let report = SessionStateReport.parse(
       #"{"state":"running","agent":"codex","cwd":"/w/repo","command":"/bin/make all","#

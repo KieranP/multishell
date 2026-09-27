@@ -324,9 +324,8 @@ struct AppModelSessionReportsTests {
     return child.processIdentifier
   }
 
-  @Test func aResumeThatComesInTimeIsTheOnlyDoneAnnounced() async throws {
+  @Test func aShellExitingBeforeTheWokenTurnAnnouncesOnlyThatTurnsStop() throws {
     let h = Harness()
-    h.model.resumeGrace = .milliseconds(100)
     h.model.setNotifications(NotificationPreference(attention: true, failed: true, done: true))
     h.model.select(h.main)
     let tab = h.model.workspace.activeTab(in: h.main.id)!
@@ -341,19 +340,18 @@ struct AppModelSessionReportsTests {
         resumesAfterWorkers: true))
     h.model.sweepGonePIDs()
     #expect(h.model.state(ofPane: session) == .running, "waiting on the turn the exit starts")
+    #expect(h.notifier.posted.isEmpty)
 
     h.source.send(SessionStateReport(state: .running, sessionID: session, agent: "claude"))
     h.source.send(
       SessionStateReport(
         state: .done, sessionID: session, agent: "claude", resumesAfterWorkers: true))
-    try await Task.sleep(for: .milliseconds(400))
     #expect(h.model.state(ofPane: session) == .done)
     #expect(h.notifier.posted.count == 1)
   }
 
-  @Test func aResumeThatNeverComesIsPaidAndAnnouncedWhenOverdue() async throws {
+  @Test func aWokenTurnStoppingBeforeThePollSeesItsShellGoIsStillDone() throws {
     let h = Harness()
-    h.model.resumeGrace = .milliseconds(100)
     h.model.setNotifications(NotificationPreference(attention: true, failed: true, done: true))
     h.model.select(h.main)
     let tab = h.model.workspace.activeTab(in: h.main.id)!
@@ -366,9 +364,71 @@ struct AppModelSessionReportsTests {
       SessionStateReport(
         state: .done, sessionID: session, pid: me, agent: "claude", backgroundShells: [shell],
         resumesAfterWorkers: true))
-    h.model.sweepGonePIDs()
+    h.source.send(
+      SessionStateReport(
+        state: .done, sessionID: session, pid: me, agent: "claude", backgroundShells: [],
+        resumesAfterWorkers: true))
+    #expect(h.model.state(ofPane: session) == .done)
+    #expect(h.model.subagents(ofPane: session).isEmpty)
+    #expect(h.notifier.posted.count == 1)
+  }
+
+  @Test func aSubagentStartLandingAfterTheStopTakesBackThatDoneAndLeavesOneStanding() {
+    let h = Harness()
+    h.model.setNotifications(NotificationPreference(attention: true, failed: true, done: true))
+    h.model.select(h.main)
+    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    h.model.newTab()
+    let session = tab.focusedSessionID
+
+    h.source.send(
+      SessionStateReport(
+        state: .done, sessionID: session, agent: "claude", resumesAfterWorkers: true))
+    h.source.send(
+      SessionStateReport(
+        state: .running, sessionID: session, agent: "claude",
+        subagent: SubagentReport(id: "w1", type: "Explore", phase: .started)))
+    #expect(h.notifier.withdrawn.count == 1, "the Done was not true")
+    h.source.send(
+      SessionStateReport(
+        state: .running, sessionID: session, agent: "claude",
+        subagent: SubagentReport(id: "w1", phase: .ended)))
+    #expect(h.model.state(ofPane: session) == .running)
+    #expect(h.notifier.posted.count == 1)
+
+    h.source.send(
+      SessionStateReport(
+        state: .done, sessionID: session, agent: "claude", resumesAfterWorkers: true))
+    #expect(h.model.state(ofPane: session) == .done)
+    #expect(h.notifier.posted.count == 2)
+    #expect(h.notifier.withdrawn.count == 1)
+  }
+
+  @Test func aSubagentEndingBeforeTheWokenTurnAnnouncesOnlyThatTurnsStop() {
+    let h = Harness()
+    h.model.setNotifications(NotificationPreference(attention: true, failed: true, done: true))
+    h.model.select(h.main)
+    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    h.model.newTab()
+    let session = tab.focusedSessionID
+
+    h.source.send(
+      SessionStateReport(
+        state: .running, sessionID: session, agent: "claude",
+        subagent: SubagentReport(id: "w1", type: "Explore", phase: .started)))
+    h.source.send(
+      SessionStateReport(
+        state: .done, sessionID: session, agent: "claude", resumesAfterWorkers: true))
+    h.source.send(
+      SessionStateReport(
+        state: .running, sessionID: session, agent: "claude",
+        subagent: SubagentReport(id: "w1", phase: .ended)))
+    #expect(h.model.state(ofPane: session) == .running, "the woken turn is still writing")
     #expect(h.notifier.posted.isEmpty)
-    try await waitUntil({ h.model.state(ofPane: session) == .done }, seconds: 2)
+
+    h.source.send(
+      SessionStateReport(
+        state: .done, sessionID: session, agent: "claude", resumesAfterWorkers: true))
     #expect(h.model.state(ofPane: session) == .done)
     #expect(h.notifier.posted.count == 1)
   }

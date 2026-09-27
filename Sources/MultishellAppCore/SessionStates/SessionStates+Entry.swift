@@ -22,17 +22,15 @@ extension SessionStates {
     /// Who raised the prompts on screen, since only that thread's next tool
     /// call, or its end, says its own was answered.
     var waitingRaisers: Set<Raiser> = []
-    /// Whether the agent whose Stop is owed takes a turn when its workers
-    /// end. Read only while `displaced` is `.stop`.
+    /// Whether the agent whose last Stop this turn heard takes a turn when
+    /// its workers end.
     var stopResumes = false
-    /// The last worker is out and that turn has not reported yet.
-    var awaitingResume = false
 
     enum Displaced: Equatable {
       case nothing
       case done
       /// A Done the agent's own Stop owes, which its later reports do not
-      /// take back: only the last worker out pays it.
+      /// take back: only the last worker out settles it.
       case stop
       /// The failure's own note and age, put back with it: the prompt that
       /// covered it rewrote both, and a card reads a note only for its state.
@@ -56,7 +54,7 @@ extension SessionStates {
 
     var isEmpty: Bool {
       state == nil && pid == nil && since == nil && note == nil && roster.isEmpty
-        && displaced == nil && waitingRaisers.isEmpty && !awaitingResume
+        && displaced == nil && waitingRaisers.isEmpty
     }
 
     /// A report about a worker recorded on the roster, an unnamed end taking the
@@ -72,7 +70,9 @@ extension SessionStates {
       guard displaced == nil else { return }
       switch state {
       case nil: displaced = .nothing
-      case .done: displaced = .done
+      // A worker heard after a resuming agent's Stop was out at it, its start
+      // landing late, so that Stop's Done is owed to the turn its end wakes.
+      case .done: displaced = stopResumes ? .stop : .done
       case .failed where byPrompt: displaced = .failed(note, since: since)
       default: break
       }
@@ -83,7 +83,7 @@ extension SessionStates {
       roster = SubagentRoster()
       displaced = nil
       waitingRaisers = []
-      awaitingResume = false
+      stopResumes = false
     }
 
     /// One prompt answered, `true` when no other is asking. A shared place

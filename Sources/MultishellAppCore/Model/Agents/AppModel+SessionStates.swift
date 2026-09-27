@@ -21,10 +21,8 @@ extension AppModel {
     // Before the assignment, so the comparison is against what the banners
     // were posted about.
     let moved = notifiedKeys.filter { changed[$0] != sessionStates[$0] }
-    let resuming = changed.keysAwaitingResume.subtracting(sessionStates.keysAwaitingResume)
     sessionStates = changed
     for key in moved { withdrawNotification(about: key) }
-    for key in resuming { scheduleResumeDeadline(for: key) }
     updateDockBadge()
   }
 

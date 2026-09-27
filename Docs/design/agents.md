@@ -578,19 +578,44 @@ at the bottom.
   again seconds later, with two banners.
 - **The Stop says so**, the integration being the only place an agent is known,
   and the entry keeps it beside the Done it owes.
-- **Anything the agent says ends the wait**: its tool call, its prompt, its
-  Stop. A new turn, a failure or the agent going settle it like the rest.
-- **A wait that nothing ends is paid after fifteen seconds**, for a wake-up that
-  never comes. Cost: that Done arrives late, and the figure is a guess longer
-  than a woken turn takes to call a tool or stop.
+- **No timer pays it either**, the user's rule being that only the agent's own
+  Stop with nothing out is Done. A fifteen-second fallback was tried: 15 of 266
+  woken turns in real transcripts took longer to report, up to 58 seconds, so
+  the timer announced a Done mid-turn and 13 of them announced another at the
+  Stop.
+- **Cost: a wake-up that never comes leaves the pane Working** until the next
+  prompt, the agent exiting or the user's clear, as an interrupt does. In the
+  same transcripts 128 of 129 background launches woke the agent, and the last
+  was stopped by the agent itself mid-turn.
+- **That Stop sweeps for gone processes first**: a shell's exit reaches the
+  agent at once and the poll up to two seconds later, and a Stop held for a
+  shell already gone would leave nothing to pay the Done.
+- **A worker heard after a resuming agent's Stop was out at it**, its start
+  landing late, the agent launching workers only inside a turn. The Done that
+  Stop announced goes back with the banner, and the turn the worker's end wakes
+  pays it: paid at the last one out, a late start meant three banners.
+- **Claude's Stop reads its own transcript for the workers it has ended**: a
+  completion notice or a TaskStop ends one, a message sent to it afterwards
+  starts it again. The app takes those off the roster before the Stop lands.
+- **Because a hook cannot be relied on for it.** Nothing documents whether a
+  subagent's end is awaited before the parent hears of it, or whether TaskStop
+  fires one at all; without this a Stop held for a worker already gone left the
+  pane Working until the next prompt.
+- **Only the lines that are a notice, not a mention**: a notice is one of three
+  entries that begin with it, so a command quoting one ends nothing.
+- **The last 4 MB, not the file**: a transcript here ran to 23 MB, and the end
+  of any worker still on a roster is recent. Measured at 15 to 22 ms a Stop.
+- **Not a contract, so a changed format finds nothing**, which leaves the hooks
+  alone deciding, as before.
+- **The hooks' `agent_id` is the transcript's id.** Claude 2.1.283 names a
+  subagent's task by the id it launches it under and its transcript
+  `agent-<agent_id>.jsonl`, read from the binary; the notice's `task-id` and
+  TaskStop's `task_id` are that task's id.
 - **Shells and subagents are counted apart** wherever the workers are counted, a
   shell not being a subagent to anyone reading the label.
 - **A sweep takes every dead agent before any dead shell.** An agent gone with
   its shell takes the shell with it; checked in a set's order, the shell was
   sometimes first and announced a Done for a dead agent.
-- **A worker on the roster ends the wait too**, holding the Done itself, and the
-  last one out starts the wait again: the woken turn's subagent can be heard
-  from before its main thread, and the deadline paid a Done over it.
 - **The close guard and the quit alert count an agent's Working, not the
   shell's.** When they counted any running command, a plain `make` asked to be
   confirmed. An agent typed with no hooks installed counts, the command having

@@ -6,6 +6,25 @@ import Testing
 
 @Suite
 struct AgentHookIntegrationTests: AgentHookFixtures {
+  @Test func onlyClaudesStopNamesTheWorkersItsTranscriptSaysEnded() throws {
+    let directory = temporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let transcript = directory.appendingPathComponent("session.jsonl")
+    try Data(
+      #"{"type":"user","message":{"content":"<task-notification><task-id>a1</task-id>"}}"#.utf8
+    ).write(to: transcript)
+    func ended(_ integration: AgentHookIntegration, _ event: String) -> [String]? {
+      let payload = AgentHookPayload(
+        json: Data(
+          #"{"hook_event_name":"\#(event)","transcript_path":"\#(transcript.path)"}"#.utf8))!
+      return integration.report(for: payload, sessionID: nil, cwd: nil, pid: nil)?.endedWorkers
+    }
+    #expect(ended(AgentHookCatalogue.claude, "Stop") == ["a1"])
+    #expect(ended(AgentHookCatalogue.claude, "PreToolUse") == nil, "only a Stop reads it")
+    #expect(ended(AgentHookCatalogue.codex, "Stop") == nil, "Claude's format alone")
+  }
+
   /// Claude names the subagent on every event of its own, so each says which
   /// worker it is about; an event naming none is the main thread's.
   @Test func anEventInsideASubagentNamesIt() throws {

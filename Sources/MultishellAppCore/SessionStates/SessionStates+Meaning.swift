@@ -14,11 +14,7 @@ extension SessionStates {
       return meaningOfOwnReport(state, entry: entries[key] ?? Entry(), for: key)
     }
     var place = SubagentRoster.Place(id: subagent.id)
-    update(key) {
-      place = $0.record(subagent)
-      // A worker out holds the Done itself; the last one out waits again.
-      if !$0.roster.subagents.isEmpty { $0.awaitingResume = false }
-    }
+    update(key) { place = $0.record(subagent) }
     let entry = entries[key] ?? Entry()
     let raiser = Entry.Raiser.worker(place.id)
     switch state {
@@ -76,8 +72,6 @@ extension SessionStates {
   private mutating func meaningOfOwnReport(
     _ state: SessionState, entry: Entry, for key: Key
   ) -> SessionState? {
-    // Any report of the agent's own is the turn it was awaited for.
-    update(key) { $0.awaitingResume = false }
     switch state {
     case .running:
       // The claim goes whether or not another thread's prompt still holds the
@@ -136,25 +130,11 @@ extension SessionStates {
   ) -> SessionState? {
     guard displaced == .stop, entry.stopResumes else { return restore(displaced, for: key) }
     update(key) {
-      $0.awaitingResume = true
+      $0.displaced = nil
       $0.waitingRaisers = []
     }
     return entry.state == .running ? nil : .running
   }
-
-  /// The awaited turn never came, so its Done is paid now.
-  mutating func payOverdueResume(_ key: Key, isSeen: Bool) -> SessionState? {
-    guard entries[key]?.awaitingResume == true, let displaced = entries[key]?.displaced else {
-      return nil
-    }
-    update(key) { $0.awaitingResume = false }
-    guard let state = restore(displaced, for: key) else { return nil }
-    landFinished(state, on: key, isSeen: isSeen)
-    noteIfStanding(SessionNote(state: state, message: nil, duration: nil), on: key)
-    return state
-  }
-
-  var keysAwaitingResume: Set<Key> { Set(entries.filter(\.value.awaitingResume).keys) }
 
   /// The last worker out puts back what the first displaced: a Done is paid
   /// and announced, nothing is cleared, a failure was announced when it happened.

@@ -57,6 +57,9 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   /// The agent's own id for the conversation, from an agent that runs a
   /// subagent as a conversation of its own; see Docs/design/agents.md.
   public var conversationID: String?
+  /// The subagents a Stop's own record says have ended, most recent last,
+  /// whatever their hooks said; see Docs/design/agents.md.
+  public var endedWorkers: [String]?
 
   enum CodingKeys: String, CodingKey {
     case version = "v"
@@ -77,6 +80,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     case backgroundShells = "shells"
     case resumesAfterWorkers = "resumes"
     case conversationID = "conversation"
+    case endedWorkers = "ended"
   }
 
   public init(
@@ -95,7 +99,8 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     startsSession: Bool? = nil,
     backgroundShells: [Int32]? = nil,
     resumesAfterWorkers: Bool? = nil,
-    conversationID: String? = nil
+    conversationID: String? = nil,
+    endedWorkers: [String]? = nil
   ) {
     self.version = Self.protocolVersion
     self.state = state
@@ -115,6 +120,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     self.backgroundShells = backgroundShells.map { Array($0.prefix(Self.maximumWorkerCount)) }
     self.resumesAfterWorkers = resumesAfterWorkers
     self.conversationID = Self.boundedIdentifier(conversationID)
+    self.endedWorkers = Self.boundedIdentifiers(endedWorkers)
   }
 
   /// What an app that reads only the count should make of a worker. A tool
@@ -151,6 +157,8 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     resumesAfterWorkers = try container.decodeIfPresent(Bool.self, forKey: .resumesAfterWorkers)
     conversationID = Self.boundedIdentifier(
       try container.decodeIfPresent(String.self, forKey: .conversationID))
+    endedWorkers = Self.boundedIdentifiers(
+      try container.decodeIfPresent([String].self, forKey: .endedWorkers))
   }
 
   /// The roster change the report carries, an older helper's count read as
@@ -203,6 +211,11 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   private static func boundedIdentifier(_ id: String?) -> String? {
     guard let id, !id.isEmpty, id.count <= maximumIdentifierLength else { return nil }
     return id
+  }
+
+  /// The most recent ones, each bounded as one id is.
+  private static func boundedIdentifiers(_ ids: [String]?) -> [String]? {
+    ids.map { Array($0.compactMap(boundedIdentifier).suffix(maximumWorkerCount)) }
   }
 
   private static func truncatedMessage(_ message: String?) -> String? {

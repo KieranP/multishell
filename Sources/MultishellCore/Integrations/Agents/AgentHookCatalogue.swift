@@ -89,7 +89,8 @@ public enum AgentHookCatalogue {
       AgentHookEvent("SessionEnd", .idle),
     ],
     format: .sharedSettings(millisecondTimeout: false),
-    backgroundShellMarker: claudeShellMarker, resumesAfterWorkers: true)
+    backgroundShellMarker: claudeShellMarker, resumesAfterWorkers: true,
+    transcriptRecordsWorkers: true)
 
   /// Every Bash tool shell sources a snapshot under the config directory,
   /// wherever that is set to. Not a documented contract; see agents.md.
