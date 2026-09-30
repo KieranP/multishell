@@ -30,7 +30,8 @@ public struct SessionStates: Equatable, Sendable {
     _ state: SessionState, pid: Int32?, message: String? = nil, duration: Double? = nil,
     subagent: SubagentReport? = nil, startsTurn: Bool = false, startsSession: Bool = false,
     backgroundShells: [Int32] = [], fromShell: Bool = false,
-    resumesAfterWorkers: Bool = false, endedWorkers: [String] = [],
+    resumesAfterWorkers: Bool = false, workersOut: [SubagentReport]? = nil,
+    turnFollows: Bool = false,
     conversationID: String? = nil, for key: Key, isSeen: Bool
   ) -> SessionState? {
     // Copilot's prompt mode starts its session after the first prompt. Before
@@ -44,20 +45,23 @@ public struct SessionStates: Equatable, Sendable {
       conversation: conversationID, named: subagent, reporting: state, for: key)
     // A prompt starts a turn, so whatever the last one left out is gone: an
     // agent interrupted, Codex aside, fires no hook and its workers send no stop.
-    if startsTurn, !isAnotherConversation { update(key) { $0.settleTurn() } }
+    if startsTurn, !isAnotherConversation { update(key) { $0.startTurn() } }
     let isOwnStop = state == .done && subagent == nil
     if isOwnStop {
       update(key) {
-        $0.roster.keepShells(backgroundShells)
-        $0.stopResumes = resumesAfterWorkers
-        // The agent's own record outranks a hook that is late or never came.
-        for id in endedWorkers {
-          $0.roster.forget(id)
-          $0.waitingRaisers.remove(.worker(id))
+        if let workersOut, workersOut.count < SessionStateReport.maximumListedWorkers {
+          let gone = $0.roster.keepOnly(workersOut, shells: backgroundShells)
+          for id in gone { $0.waitingRaisers.remove(.worker(id)) }
+        } else {
+          $0.roster.keepShells(backgroundShells)
         }
+        $0.stopResumes = resumesAfterWorkers
       }
     }
-    guard let state = meaning(of: state, subagent: subagent, for: key) else { return nil }
+    guard
+      let state = meaning(
+        of: state, subagent: subagent, turnFollows: isOwnStop && turnFollows, for: key)
+    else { return nil }
     switch state {
     case .idle:
       clear(key)

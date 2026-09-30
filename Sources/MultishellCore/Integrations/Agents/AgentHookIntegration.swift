@@ -38,19 +38,29 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   let backgroundShellMarker: String?
   /// Whether the agent takes another turn when the work it left out at its
   /// Stop ends, which then pays the Done; see Docs/design/agents.md.
-  public let resumesAfterWorkers: Bool
+  enum Resumption: Sendable {
+    case never
+    case always
+    /// Only where the user's settings turn it on, read at each Done.
+    case whenGeminiSettingsSay
+  }
+
+  let resumption: Resumption
   /// Whether a subagent is a conversation of its own, firing its own prompt
   /// and Stop, which only its conversation id tells apart; see agents.md.
   let workersAreConversations: Bool
-  /// Whether the agent's transcript records its background workers ending,
-  /// which a Stop reads in case a hook came late or never; see agents.md.
-  let transcriptRecordsWorkers: Bool
+  /// The kinds of listed work whose end reaches the model and wakes it. One
+  /// counted that never wakes it holds the pane Working for good; see agents.md.
+  let wakingTaskTypes: Set<String>
+  /// Whether the agent's transcript shows a finished task's notice still
+  /// queued at a Stop, which starts a turn straight after; see agents.md.
+  let transcriptQueuesNotices: Bool
 
   init(
     id: String, file: URL, displayPath: String, events: [AgentHookEvent],
     format: Format, trustNote: String? = nil, backgroundShellMarker: String? = nil,
-    resumesAfterWorkers: Bool = false, workersAreConversations: Bool = false,
-    transcriptRecordsWorkers: Bool = false
+    resumption: Resumption = .never, workersAreConversations: Bool = false,
+    wakingTaskTypes: Set<String> = [], transcriptQueuesNotices: Bool = false
   ) {
     self.id = id
     self.file = file
@@ -59,9 +69,10 @@ public struct AgentHookIntegration: Identifiable, Sendable {
     self.format = format
     self.trustNote = trustNote
     self.backgroundShellMarker = backgroundShellMarker
-    self.resumesAfterWorkers = resumesAfterWorkers
+    self.resumption = resumption
     self.workersAreConversations = workersAreConversations
-    self.transcriptRecordsWorkers = transcriptRecordsWorkers
+    self.wakingTaskTypes = wakingTaskTypes
+    self.transcriptQueuesNotices = transcriptQueuesNotices
   }
 
   public var name: String { AgentCatalogue.agent(id)?.name ?? id }
@@ -118,17 +129,36 @@ public struct AgentHookIntegration: Identifiable, Sendable {
       subagent: event.subagentChange(for: payload),
       startsTurn: event.startsTurn(for: payload) ? true : nil,
       startsSession: event.startsSession ? true : nil,
-      backgroundShells: isStop ? backgroundShellMarker.flatMap(backgroundShells) : nil,
-      resumesAfterWorkers: isStop && resumesAfterWorkers ? true : nil,
+      backgroundShells: isStop && payload.backgroundTasks == nil
+        ? backgroundShellMarker.flatMap(backgroundShells) : nil,
+      resumesAfterWorkers: isStop && resumes(at: payload) ? true : nil,
       conversationID: workersAreConversations ? payload.conversationID : nil,
-      endedWorkers: isStop ? endedWorkers(for: payload) : nil)
+      workersOut: isStop ? payload.backgroundTasks.map(workers(from:)) : nil,
+      turnFollows: isStop && noticeQueued(at: payload) ? true : nil)
   }
 
-  /// `nil` for none, keeping the line short.
-  private func endedWorkers(for payload: AgentHookPayload) -> [String]? {
-    guard transcriptRecordsWorkers, let path = payload.transcriptPath,
-      let ended = ClaudeTranscript.endedWorkers(atPath: path), !ended.isEmpty
-    else { return nil }
-    return ended
+  private func noticeQueued(at payload: AgentHookPayload) -> Bool {
+    guard transcriptQueuesNotices, let path = payload.transcriptPath else { return false }
+    return ClaudeTranscript.turnFollows(atPath: path)
+  }
+
+  private func resumes(at payload: AgentHookPayload) -> Bool {
+    switch resumption {
+    case .never: false
+    case .always: true
+    case .whenGeminiSettingsSay:
+      GeminiSettings.wakesForBackgroundShells(
+        environment: ProcessInfo.processInfo.environment, workspace: payload.cwd)
+    }
+  }
+
+  /// A listed shell is named by the agent's id for it; a subagent by its
+  /// kind where the list says, and anything else by what the agent calls it.
+  private func workers(from tasks: [AgentHookPayload.BackgroundTask]) -> [SubagentReport] {
+    tasks.filter { wakingTaskTypes.contains($0.type) }.map { task in
+      task.type == "shell"
+        ? SubagentReport(id: task.id, phase: .working, isShell: true)
+        : SubagentReport(id: task.id, type: task.agentType ?? task.type, phase: .working)
+    }
   }
 }

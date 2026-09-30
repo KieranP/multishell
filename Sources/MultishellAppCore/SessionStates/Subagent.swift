@@ -7,7 +7,7 @@ public struct Subagent: Identifiable, Equatable, Sendable {
   public let id: String
   /// What the agent calls the kind, `nil` for a worker an older helper
   /// counted without naming.
-  let type: String?
+  var type: String?
   /// When it started. Handed in by `stampChanges`, never read from a clock.
   var since: Date?
   /// How many workers share this roster place. Above one only where an agent
@@ -15,6 +15,20 @@ public struct Subagent: Identifiable, Equatable, Sendable {
   var occurrences = 1
   /// Set on a shell the agent backgrounded, whose exit is its end.
   var pid: Int32?
+  /// A shell a Stop named by the agent's own id, which the next Stop's list
+  /// ends by leaving it out.
+  var isListedShell = false
+  /// Put on by a Stop's list before its start landed, so that start is
+  /// this worker's own rather than a second one under its id.
+  var awaitsStart = false
+  /// On the roster when a Stop was held for it, so a background worker and
+  /// not one an interrupt could have killed without a word.
+  var outAtStop = false
+  /// Reported since the last held Stop, so a Stop that finds it silent does
+  /// not vouch for it: its end may have been lost.
+  var heardSinceStop = true
+
+  var isShell: Bool { pid != nil || isListedShell }
 
   init(id: String, type: String?, since: Date? = nil) {
     self.id = id
@@ -38,7 +52,7 @@ public struct Subagent: Identifiable, Equatable, Sendable {
   var isAnonymous: Bool { id.hasPrefix(Self.anonymousPrefix) }
 
   public var displayName: String {
-    type ?? (pid == nil ? t("subagent.unnamed") : t("subagent.background-shell"))
+    type ?? (isShell ? t("subagent.background-shell") : t("subagent.unnamed"))
   }
 
   /// How many workers this place stands for, where that is more than one.

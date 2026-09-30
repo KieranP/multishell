@@ -89,12 +89,14 @@ public enum AgentHookCatalogue {
       AgentHookEvent("SessionEnd", .idle),
     ],
     format: .sharedSettings(millisecondTimeout: false),
-    backgroundShellMarker: claudeShellMarker, resumesAfterWorkers: true,
-    transcriptRecordsWorkers: true)
+    resumption: .always, wakingTaskTypes: claudeWakingTaskTypes,
+    transcriptQueuesNotices: true)
 
-  /// Every Bash tool shell sources a snapshot under the config directory,
-  /// wherever that is set to. Not a documented contract; see agents.md.
-  static let claudeShellMarker = "/shell-snapshots/snapshot-"
+  /// Claude's own labels for work whose end is announced to the model, read
+  /// from its binary; the rest never end or end unannounced. See agents.md.
+  static let claudeWakingTaskTypes: Set<String> = [
+    "subagent", "shell", "workflow", "MCP task", "cloud session",
+  ]
 
   /// Codex: `~/.codex/hooks.json`, the JSON half of a file it also accepts as
   /// `[hooks]` in `config.toml`, which is not ours to rewrite.
@@ -135,7 +137,12 @@ public enum AgentHookCatalogue {
       AgentHookEvent("AfterAgent", .done),
       AgentHookEvent("SessionEnd", .idle),
     ],
-    format: .sharedSettings(millisecondTimeout: true))
+    format: .sharedSettings(millisecondTimeout: true),
+    backgroundShellMarker: geminiShellMarker, resumption: .whenGeminiSettingsSay)
+
+  /// In the wrapper every shell-tool command runs in and nothing else does, so
+  /// no MCP server matches. Not a documented contract; see agents.md.
+  static let geminiShellMarker = "/gemini-shell-"
 
   /// Copilot CLI reads every JSON file in `~/.copilot/hooks`, so ours is a
   /// file of its own. Event names are its Visual Studio Code spelling.
@@ -157,7 +164,7 @@ public enum AgentHookCatalogue {
       AgentHookEvent("Stop", .done),
       AgentHookEvent("SessionEnd", .idle),
     ],
-    format: .ownHookFile, workersAreConversations: true)
+    format: .ownHookFile, resumption: .always, workersAreConversations: true)
 
   /// OpenCode has no hooks in its settings: what a session is doing shows only
   /// to a plugin, so it is given one.

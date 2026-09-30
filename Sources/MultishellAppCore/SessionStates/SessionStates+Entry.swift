@@ -25,6 +25,9 @@ extension SessionStates {
     /// Whether the agent whose last Stop this turn heard takes a turn when
     /// its workers end.
     var stopResumes = false
+    /// A turn of the agent's is running, or an end has woken one, so a Stop
+    /// is coming that pays whatever is owed.
+    var turnUnderway = false
 
     enum Displaced: Equatable {
       case nothing
@@ -54,7 +57,7 @@ extension SessionStates {
 
     var isEmpty: Bool {
       state == nil && pid == nil && since == nil && note == nil && roster.isEmpty
-        && displaced == nil && waitingRaisers.isEmpty
+        && displaced == nil && waitingRaisers.isEmpty && !turnUnderway
     }
 
     /// A report about a worker recorded on the roster, an unnamed end taking the
@@ -84,6 +87,15 @@ extension SessionStates {
       displaced = nil
       waitingRaisers = []
       stopResumes = false
+      turnUnderway = false
+    }
+
+    /// A new turn: what the last one owed or asked goes, and so does a worker
+    /// no Stop saw out, which an interrupt may have killed without a word.
+    mutating func startTurn() {
+      let kept = roster.keepingOutAtStop()
+      settleTurn()
+      roster = kept
     }
 
     /// One prompt answered, `true` when no other is asking. A shared place

@@ -6,23 +6,71 @@ import Testing
 
 @Suite
 struct AgentHookIntegrationTests: AgentHookFixtures {
-  @Test func onlyClaudesStopNamesTheWorkersItsTranscriptSaysEnded() throws {
+  @Test func claudesStopSaysATurnFollowsWhereItsTranscriptHasANoticeQueued() throws {
     let directory = temporaryDirectory()
     defer { try? FileManager.default.removeItem(at: directory) }
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     let transcript = directory.appendingPathComponent("session.jsonl")
     try Data(
-      #"{"type":"user","message":{"content":"<task-notification><task-id>a1</task-id>"}}"#.utf8
+      (#"{"type":"queue-operation","operation":"enqueue","timestamp":"2026-09-30T10:00:05.000Z","#
+        + #""content":"<task-notification><task-id>a1</task-id>"}"#).utf8
     ).write(to: transcript)
-    func ended(_ integration: AgentHookIntegration, _ event: String) -> [String]? {
+    func follows(_ integration: AgentHookIntegration, _ event: String) -> Bool? {
       let payload = AgentHookPayload(
         json: Data(
           #"{"hook_event_name":"\#(event)","transcript_path":"\#(transcript.path)"}"#.utf8))!
-      return integration.report(for: payload, sessionID: nil, cwd: nil, pid: nil)?.endedWorkers
+      return integration.report(for: payload, sessionID: nil, cwd: nil, pid: nil)?.turnFollows
     }
-    #expect(ended(AgentHookCatalogue.claude, "Stop") == ["a1"])
-    #expect(ended(AgentHookCatalogue.claude, "PreToolUse") == nil, "only a Stop reads it")
-    #expect(ended(AgentHookCatalogue.codex, "Stop") == nil, "Claude's format alone")
+    #expect(follows(AgentHookCatalogue.claude, "Stop") == true)
+    #expect(follows(AgentHookCatalogue.claude, "PreToolUse") == nil, "only a Stop reads it")
+    #expect(follows(AgentHookCatalogue.codex, "Stop") == nil, "Claude's transcript alone")
+  }
+
+  @Test func anAgentThatWakesForItsWorkersSaysSoAtItsStop() {
+    func resumes(_ integration: AgentHookIntegration, _ event: String) -> Bool? {
+      let payload = AgentHookPayload(json: Data(#"{"hook_event_name":"\#(event)"}"#.utf8))!
+      return integration.report(for: payload, sessionID: nil, cwd: nil, pid: nil)?
+        .resumesAfterWorkers
+    }
+    #expect(resumes(AgentHookCatalogue.claude, "Stop") == true)
+    #expect(resumes(AgentHookCatalogue.copilot, "Stop") == true, "its runtime wakes it")
+    #expect(resumes(AgentHookCatalogue.codex, "Stop") == nil, "a child's answer starts no turn")
+  }
+
+  @Test func claudesStopListsWhatIsOutShellsIncluded() {
+    func stop(_ tasks: String) -> (report: SessionStateReport?, walked: Bool) {
+      let payload = AgentHookPayload(
+        json: Data(#"{"hook_event_name":"Stop","background_tasks":\#(tasks)}"#.utf8))!
+      var walked = false
+      let report = AgentHookCatalogue.claude.report(
+        for: payload, sessionID: nil, cwd: nil, pid: 7,
+        backgroundShells: { _ in
+          walked = true
+          return [500]
+        })
+      return (report, walked)
+    }
+    let subagent =
+      #"{"id":"a1","type":"subagent","status":"running","description":"d","agent_type":"Explore"}"#
+    let monitor = #"{"id":"m1","type":"monitor","status":"running","description":"d"}"#
+    let shell = #"{"id":"b1","type":"shell","status":"running","description":"d","command":"x"}"#
+    let dream = #"{"id":"d1","type":"dream","status":"running","description":"dreaming"}"#
+    let cloud = #"{"id":"r1","type":"cloud session","status":"running","description":"d"}"#
+    let scan = #"{"id":"s1","type":"auto-mode scan","status":"running","description":"d"}"#
+
+    let quiet = stop("[]")
+    #expect(quiet.report?.workersOut == [], "nothing out is said, not left unsaid")
+    #expect(!quiet.walked)
+
+    let busy = stop("[\(subagent),\(dream),\(monitor),\(scan),\(cloud),\(shell)]")
+    #expect(
+      busy.report?.workersOut == [
+        SubagentReport(id: "a1", type: "Explore", phase: .working),
+        SubagentReport(id: "r1", type: "cloud session", phase: .working),
+        SubagentReport(id: "b1", phase: .working, isShell: true),
+      ], "a watcher that never ends and housekeeping ending unannounced hold nothing")
+    #expect(!busy.walked, "the list names the shell")
+    #expect(busy.report?.backgroundShells == nil)
   }
 
   /// Claude names the subagent on every event of its own, so each says which

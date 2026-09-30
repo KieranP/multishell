@@ -20,11 +20,26 @@ public struct SubagentReport: Codable, Hashable, Sendable {
   /// What the agent calls the kind: `Explore`, `Plan`, a custom agent's name.
   public var type: String?
   public var phase: Phase
+  /// `false` on an end the agent takes no turn over, a cancelled worker's,
+  /// so the last one out pays the Done; see Docs/design/agents.md.
+  public var wakesAgent: Bool?
+  /// Set on a shell a Stop lists by the agent's own id for it, not a pid.
+  public var isShell: Bool?
 
-  public init(id: String, type: String? = nil, phase: Phase) {
+  enum CodingKeys: String, CodingKey {
+    case id, type, phase
+    case wakesAgent = "wakes"
+    case isShell = "shell"
+  }
+
+  public init(
+    id: String, type: String? = nil, phase: Phase, wakesAgent: Bool? = nil, isShell: Bool? = nil
+  ) {
     self.id = id
     self.type = type
     self.phase = phase
+    self.wakesAgent = wakesAgent
+    self.isShell = isShell
   }
 
   /// Any process may write a line, so the reader bounds both strings. An id
@@ -36,5 +51,7 @@ public struct SubagentReport: Codable, Hashable, Sendable {
     type = try container.decodeIfPresent(String.self, forKey: .type)?
       .truncated(to: Self.maximumTypeLength)
     phase = try container.decode(Phase.self, forKey: .phase)
+    wakesAgent = try container.decodeIfPresent(Bool.self, forKey: .wakesAgent)
+    isShell = try container.decodeIfPresent(Bool.self, forKey: .isShell)
   }
 }

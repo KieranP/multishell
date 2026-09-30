@@ -4,7 +4,7 @@ import MultishellCore
 extension Helper {
   private static let stateOptionNames: Set<String> = [
     "session", "cwd", "pid", "message", "agent", "subagent", "subagent-phase", "subagent-type",
-    "new-turn", "shell",
+    "new-turn", "shell", "resumes", "subagent-wakes", "out",
   ]
 
   static func reportState(_ arguments: [String], environment: [String: String]) throws -> Int32 {
@@ -23,7 +23,11 @@ extension Helper {
       agent: options["agent"],
       isShell: options["shell"] == "true" ? true : nil,
       subagent: try subagent(options),
-      startsTurn: options["new-turn"] == "true" ? true : nil)
+      startsTurn: options["new-turn"] == "true" ? true : nil,
+      resumesAfterWorkers: options["resumes"] == "true" ? true : nil,
+      workersOut: options["out"].map { list in
+        list.split(separator: ",").map { SubagentReport(id: String($0), phase: .working) }
+      })
     do {
       try send(report, environment: environment)
       return 0
@@ -35,7 +39,10 @@ extension Helper {
 
   private static func subagent(_ options: CommandOptions) throws -> SubagentReport? {
     guard let id = options["subagent"] else {
-      if let orphan = ["subagent-phase", "subagent-type"].first(where: { options[$0] != nil }) {
+      let orphan = ["subagent-phase", "subagent-type", "subagent-wakes"].first {
+        options[$0] != nil
+      }
+      if let orphan {
         throw UsageError("--\(orphan) needs --subagent")
       }
       return nil
@@ -46,7 +53,9 @@ extension Helper {
         "--subagent needs --subagent-phase, one of: "
           + SubagentReport.Phase.allCases.map(\.rawValue).joined(separator: ", "))
     }
-    return SubagentReport(id: id, type: options["subagent-type"], phase: phase)
+    return SubagentReport(
+      id: id, type: options["subagent-type"], phase: phase,
+      wakesAgent: options["subagent-wakes"] == "false" ? false : nil)
   }
 
   /// For a preexec hook, from the command line or a relayed line alike. The

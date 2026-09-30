@@ -20,6 +20,16 @@ public struct AgentHookPayload: Hashable, Sendable {
   /// conversation of its own, whose id its SubagentStop names as `agent_id`.
   var conversationID: String?
   var transcriptPath: String?
+  /// What Claude's Stop says is still in flight, `nil` from an agent or a
+  /// version that does not say; see Docs/design/agents.md.
+  var backgroundTasks: [BackgroundTask]?
+
+  struct BackgroundTask: Hashable, Sendable {
+    var id: String
+    /// `subagent`, `shell`, `monitor` and so on, the agent's own label.
+    var type: String
+    var agentType: String?
+  }
 
   init(
     eventName: String, cwd: String? = nil, message: String? = nil, permissionMode: String? = nil,
@@ -51,6 +61,14 @@ public struct AgentHookPayload: Hashable, Sendable {
     self.agentType = object["agent_type"] as? String
     self.conversationID = object["session_id"] as? String
     self.transcriptPath = object["transcript_path"] as? String
+    self.backgroundTasks = (object["background_tasks"] as? [Any]).map { tasks in
+      tasks.compactMap { task in
+        guard let task = task as? [String: Any], let id = task["id"] as? String,
+          let type = task["type"] as? String
+        else { return nil }
+        return BackgroundTask(id: id, type: type, agentType: task["agent_type"] as? String)
+      }
+    }
   }
 
   /// Whether the transcript is another conversation's: Copilot files a

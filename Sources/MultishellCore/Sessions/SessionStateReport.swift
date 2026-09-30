@@ -43,7 +43,8 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   /// A subagent starting, calling a tool or ending. The app keeps the
   /// roster; see Docs/design/agents.md.
   public var subagent: SubagentReport?
-  /// Set on the prompt that starts a turn, which empties the roster.
+  /// Set on the prompt that starts a turn, which keeps only the workers a held
+  /// Stop saw out; see Docs/design/agents.md.
   public var startsTurn: Bool?
   /// Set on an agent's session start, which one agent sends after its first
   /// prompt; see Docs/design/agents.md.
@@ -57,9 +58,12 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   /// The agent's own id for the conversation, from an agent that runs a
   /// subagent as a conversation of its own; see Docs/design/agents.md.
   public var conversationID: String?
-  /// The subagents a Stop's own record says have ended, most recent last,
-  /// whatever their hooks said; see Docs/design/agents.md.
-  public var endedWorkers: [String]?
+  /// Everything a Stop says is still out, shells aside, which outranks what
+  /// the hooks said; see Docs/design/agents.md.
+  public var workersOut: [SubagentReport]?
+  /// Set on a Stop the agent takes another turn straight after, a finished
+  /// task's notice still being queued; see Docs/design/agents.md.
+  public var turnFollows: Bool?
 
   enum CodingKeys: String, CodingKey {
     case version = "v"
@@ -80,7 +84,8 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     case backgroundShells = "shells"
     case resumesAfterWorkers = "resumes"
     case conversationID = "conversation"
-    case endedWorkers = "ended"
+    case workersOut = "out"
+    case turnFollows = "follows"
   }
 
   public init(
@@ -100,7 +105,8 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     backgroundShells: [Int32]? = nil,
     resumesAfterWorkers: Bool? = nil,
     conversationID: String? = nil,
-    endedWorkers: [String]? = nil
+    workersOut: [SubagentReport]? = nil,
+    turnFollows: Bool? = nil
   ) {
     self.version = Self.protocolVersion
     self.state = state
@@ -120,7 +126,8 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     self.backgroundShells = backgroundShells.map { Array($0.prefix(Self.maximumWorkerCount)) }
     self.resumesAfterWorkers = resumesAfterWorkers
     self.conversationID = Self.boundedIdentifier(conversationID)
-    self.endedWorkers = Self.boundedIdentifiers(endedWorkers)
+    self.workersOut = Self.boundedWorkers(workersOut)
+    self.turnFollows = turnFollows
   }
 
   /// What an app that reads only the count should make of a worker. A tool
@@ -157,8 +164,9 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     resumesAfterWorkers = try container.decodeIfPresent(Bool.self, forKey: .resumesAfterWorkers)
     conversationID = Self.boundedIdentifier(
       try container.decodeIfPresent(String.self, forKey: .conversationID))
-    endedWorkers = Self.boundedIdentifiers(
-      try container.decodeIfPresent([String].self, forKey: .endedWorkers))
+    workersOut = Self.boundedWorkers(
+      try container.decodeIfPresent([SubagentReport].self, forKey: .workersOut))
+    turnFollows = try container.decodeIfPresent(Bool.self, forKey: .turnFollows)
   }
 
   /// The roster change the report carries, an older helper's count read as
@@ -208,14 +216,21 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   /// never ending its workers or a Stop naming thousands grows it for good.
   public static let maximumWorkerCount = 64
 
+  /// A roster's places and the ids its overflow place folds, so a Stop can
+  /// list all it holds; a list this long may have been cut, and prunes nothing.
+  public static let maximumListedWorkers = 1024
+
   private static func boundedIdentifier(_ id: String?) -> String? {
     guard let id, !id.isEmpty, id.count <= maximumIdentifierLength else { return nil }
     return id
   }
 
-  /// The most recent ones, each bounded as one id is.
-  private static func boundedIdentifiers(_ ids: [String]?) -> [String]? {
-    ids.map { Array($0.compactMap(boundedIdentifier).suffix(maximumWorkerCount)) }
+  /// Named ones only: an id past the limit decodes as unnamed, which is no
+  /// worker a list can name.
+  private static func boundedWorkers(_ workers: [SubagentReport]?) -> [SubagentReport]? {
+    workers.map {
+      Array($0.filter { $0.id != SubagentReport.anonymousID }.prefix(maximumListedWorkers))
+    }
   }
 
   private static func truncatedMessage(_ message: String?) -> String? {

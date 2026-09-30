@@ -17,9 +17,11 @@ extension AppModel {
     // An older helper's walk from a prompt ends at this process, whose pid
     // never goes while it is looking; see Docs/design/agents.md.
     let pid = report.pid == ProcessInfo.processInfo.processIdentifier ? nil : report.pid
-    // A shell's exit can wake the agent before the poll sees it go, and only
-    // this Stop would pay the Done; see Docs/design/agents.md.
-    if report.state == .done, report.resumesAfterWorkers == true { sweepGonePIDs() }
+    // A shell's exit can wake the agent before the poll sees it go, where no
+    // list of what is out says so; see Docs/design/agents.md.
+    if report.state == .done, report.resumesAfterWorkers == true, report.workersOut == nil {
+      sweepGonePIDs()
+    }
     if let id = report.sessionID {
       guard liveSessionIDs.contains(id), workspace.session(id) != nil else { return }
       // Who is at that prompt, so a drop is written as that agent reads a file.
@@ -67,7 +69,8 @@ extension AppModel {
         startsSession: report.startsSession == true,
         backgroundShells: report.backgroundShells ?? [], fromShell: report.isShell == true,
         resumesAfterWorkers: report.resumesAfterWorkers == true,
-        endedWorkers: report.endedWorkers ?? [], conversationID: report.conversationID, for: key,
+        workersOut: report.workersOut, turnFollows: report.turnFollows == true,
+        conversationID: report.conversationID, for: key,
         isSeen: visibility.isSeen)
     }
     if let meant {

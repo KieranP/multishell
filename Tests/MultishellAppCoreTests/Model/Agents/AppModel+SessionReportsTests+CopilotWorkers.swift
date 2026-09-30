@@ -130,7 +130,7 @@ extension AppModelSessionReportsTests {
     #expect(pane.state == .done)
   }
 
-  @Test func aSubagentOutlivingTheTurnHoldsTheDoneUntilItEnds() {
+  @Test func aSubagentOutlivingTheTurnHoldsTheDoneUntilTheTurnItsEndWakes() {
     let pane = CopilotPane()
     for json in [
       CopilotPayload.sessionStart, CopilotPayload.prompt, CopilotPayload.taskCall,
@@ -144,7 +144,9 @@ extension AppModelSessionReportsTests {
     pane.hook(CopilotPayload.childStop)
     #expect(pane.state == .running)
     pane.hook(CopilotPayload.subagentStop)
-    #expect(pane.state == .done, "the last one out pays it")
+    #expect(pane.state == .running, "its end wakes the parent")
+    pane.hook(CopilotPayload.stop)
+    #expect(pane.state == .done)
   }
 
   @Test func aNewConversationWithNoSessionStartIsThePanesOwnByItsStop() {

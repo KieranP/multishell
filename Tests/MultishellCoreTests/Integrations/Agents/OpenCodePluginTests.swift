@@ -13,14 +13,32 @@ struct OpenCodePluginTests {
   private struct Step: Encodable {
     var hook: String
     var input: [String: String]?
-    var output: [String: [String: String]]?
+    var output: [String: AnyEncodable]?
     var event: [String: AnyEncodable]?
 
     static func message(session: String?, inSecondArgument: Bool = false) -> Step {
       guard let session else { return Step(hook: "chat.message", input: [:]) }
       return inSecondArgument
-        ? Step(hook: "chat.message", input: [:], output: ["message": ["sessionID": session]])
+        ? Step(
+          hook: "chat.message", input: [:],
+          output: ["message": AnyEncodable(["sessionID": session])])
         : Step(hook: "chat.message", input: ["sessionID": session])
+    }
+
+    /// The prompt OpenCode sends itself when a background child ends.
+    static func synthetic(session: String) -> Step {
+      let part = AnyEncodable([
+        "type": AnyEncodable("text"), "synthetic": AnyEncodable(true), "text": AnyEncodable("done"),
+      ])
+      return Step(
+        hook: "chat.message", input: ["sessionID": session],
+        output: ["parts": AnyEncodable([part])])
+    }
+
+    static func error(_ session: String, name: String) -> Step {
+      event(
+        "session.error",
+        ["sessionID": AnyEncodable(session), "error": AnyEncodable(["name": name])])
     }
 
     static func tool(session: String) -> Step {
@@ -71,6 +89,8 @@ struct OpenCodePluginTests {
     init(_ value: [String: String]) { encode = { try value.encode(to: $0) } }
     init(_ value: [String: AnyEncodable]) { encode = { try value.encode(to: $0) } }
     init(_ value: [String]) { encode = { try value.encode(to: $0) } }
+    init(_ value: [AnyEncodable]) { encode = { try value.encode(to: $0) } }
+    init(_ value: Bool) { encode = { try value.encode(to: $0) } }
 
     func encode(to encoder: Encoder) throws { try encode(encoder) }
   }
@@ -83,10 +103,11 @@ struct OpenCodePluginTests {
     try run(steps, sessions: sessions).reports
   }
 
-  /// The reports, and how many of the plugin's bounded waits on a lookup began.
+  /// The reports, how many of the plugin's bounded waits on a lookup began,
+  /// and every line in order, a helper's exit included.
   private func run(
     _ steps: [Step], sessions: [String: [String: String]] = [:]
-  ) throws -> (reports: [[String]], waits: Int) {
+  ) throws -> (reports: [[String]], waits: Int, lines: [String]) {
     let node = try #require(openCodeNode)
     let directory = Scratch.path("opencode-plugin")
     defer { try? FileManager.default.removeItem(at: directory) }
@@ -124,7 +145,7 @@ struct OpenCodePluginTests {
     }
     return (
       lines.compactMap { try? JSONDecoder().decode([String].self, from: Data($0.utf8)) },
-      waits.last ?? 0
+      waits.last ?? 0, lines.map(String.init)
     )
   }
 
@@ -138,6 +159,75 @@ struct OpenCodePluginTests {
       }
     }
     return parts.joined(separator: " ")
+  }
+
+  private func value(_ report: [String], _ flag: String) -> String? {
+    report.firstIndex(of: flag).flatMap { $0 + 1 < report.count ? report[$0 + 1] : nil }
+  }
+
+  /// Each report is its own process, so two started together can land in either
+  /// order; a cancelled child's end landing after the Done that left it out
+  /// put it back on the roster for good.
+  @Test func eachReportIsSentOnlyOnceTheOneBeforeItHasExited() throws {
+    let lines = try run([
+      .message(session: "parent"),
+      .created(child: "a", of: "parent", agent: "Explore"),
+      .error("parent/a", name: "MessageAbortedError"),
+      .idle("parent"),
+    ]).lines.filter { !$0.contains("waits") }
+    #expect(lines.count == 8)
+    #expect(
+      lines.enumerated().allSatisfy { index, line in (index % 2 == 1) == line.contains("exited") },
+      "\(lines)")
+  }
+
+  /// A helper that cannot reach the app holds each report two seconds, so a burst
+  /// of tool calls would queue minutes of reports that all say the same thing.
+  @Test func aRunOfPlainWorkingReportsWaitingToBeSentIsSentOnce() throws {
+    let out = try reports(of: [
+      .message(session: "parent"),
+      .tool(session: "parent"), .tool(session: "parent"), .tool(session: "parent"),
+      .tool(session: "parent"), .idle("parent"),
+    ])
+    #expect(out.map(said) == ["running true", "running", "done"])
+    #expect(out.map(said).last == "done")
+  }
+
+  @Test func theParentsDoneSaysItResumesAndListsTheChildrenStillBusy() throws {
+    let out = try reports(of: [
+      .message(session: "parent"),
+      .created(child: "a", of: "parent", agent: "Explore"),
+      .created(child: "b", of: "parent", agent: "Plan"),
+      .idle("parent/b"),
+      .idle("parent"),
+    ])
+    let done = try #require(out.last)
+    #expect(value(done, "--resumes") == "true")
+    #expect(value(done, "--out") == "parent/a")
+  }
+
+  @Test func theParentsDoneWithNoChildOutListsNone() throws {
+    let out = try reports(of: [.message(session: "parent"), .idle("parent")])
+    #expect(value(try #require(out.last), "--out") == "")
+  }
+
+  @Test func anAbortedChildsEndWakesNoTurnAndAFailedOnesDoes() throws {
+    let out = try reports(of: [
+      .message(session: "parent"),
+      .created(child: "a", of: "parent", agent: "Explore"),
+      .created(child: "b", of: "parent", agent: "Plan"),
+      .error("parent/a", name: "MessageAbortedError"),
+      .error("parent/b", name: "UnknownError"),
+    ])
+    let ends = out.filter { value($0, "--subagent-phase") == "ended" }
+    #expect(ends.map { value($0, "--subagent-wakes") } == ["false", nil])
+  }
+
+  @Test func aPromptOfOnlySyntheticPartsIsTheWokenTurnNotANewOne() throws {
+    let out = try reports(of: [
+      .message(session: "parent"), .idle("parent"), .synthetic(session: "parent"),
+    ])
+    #expect(out.map(said) == ["running true", "done", "running"])
   }
 
   @Test func aPromptInTheParentStartsATurnAndOneInAChildIsItsWork() throws {
@@ -274,7 +364,7 @@ struct OpenCodePluginTests {
         .idle("parent"),
       ],
       sessions: sessions)
-    #expect(out.reports.map(said) == ["running true", "running", "running", "done"])
+    #expect(out.reports.map(said) == ["running true", "running", "done"], "the second collapses")
     #expect(out.waits == 1)
   }
 
@@ -311,10 +401,27 @@ struct OpenCodePluginTests {
 
     """
 
+  /// Helpers exit only once every step has run, so what the plugin queues
+  /// behind the first does not hang on a race; each says when it exits.
   private static let stub = """
+    let started = 0
+    let released = false
+    const held = []
+    globalThis.releaseHelpers = () => {
+      released = true
+      for (const exit of held.splice(0)) exit()
+    }
     export const spawn = (command, args) => {
+      const id = ++started
       process.stdout.write(JSON.stringify(args) + "\\n")
-      return { on: () => {}, unref: () => {} }
+      const exits = []
+      const exit = () => setTimeout(() => {
+        process.stdout.write(JSON.stringify({ exited: id }) + "\\n")
+        for (const callback of exits) callback(0)
+      }, 1)
+      if (released) exit()
+      else held.push(exit)
+      return { on: (event, callback) => { if (event === "exit") exits.push(callback) }, unref: () => {} }
     }
 
     """
@@ -349,6 +456,9 @@ struct OpenCodePluginTests {
       else if (step.hook === "event") await plugin.event({ event: step.event })
       else await plugin[step.hook](step.input, step.output)
     }
+    globalThis.releaseHelpers()
+    // Long enough for every report the plugin queued to be sent.
+    await new Promise((resolve) => timeout(resolve, 300))
     process.stdout.write(JSON.stringify({ waits }) + "\\n")
 
     """

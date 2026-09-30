@@ -9,7 +9,9 @@ enum Helper {
       multishell state <running|attention|done|error|idle> [--session ID] [--cwd PATH]
                        [--pid PID] [--message TEXT] [--agent ID]
                        [--subagent ID --subagent-phase <started|working|ended>
-                        [--subagent-type NAME]] [--new-turn true] [--shell true]
+                        [--subagent-type NAME] [--subagent-wakes false]]
+                       [--new-turn true] [--shell true] [--resumes true]
+                       [--out ID,ID...]
           Report a state for the terminal this runs in. Defaults come from the
           environment the app sets: MULTISHELL_SESSION, MULTISHELL_WORKTREE,
           MULTISHELL_SOCKET, MULTISHELL_APP_PID. The pid defaults to the
@@ -19,6 +21,10 @@ enum Helper {
           agent's pane from a plain shell; the agents' own hooks set it.
           --subagent names a worker the agent has out, so the app can list
           it: started and ended are its ends, working a tool call inside it.
+          --subagent-wakes false marks an end the agent takes no turn over,
+          such as a cancelled worker's. --resumes true on a done says the
+          agent takes a turn when the work it left out ends, and --out
+          lists every worker still out at it, empty for none.
           --new-turn marks the prompt starting a turn, after which no worker
           of the last one is still out. --shell says the injected shell
           integration sent this, which is what may take back the mark a

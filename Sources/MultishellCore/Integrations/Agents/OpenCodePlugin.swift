@@ -36,16 +36,51 @@ enum OpenCodePlugin {
         if (cwd) args.push("--cwd", cwd)
         if (message) args.push("--message", message)
         if (newTurn) args.push("--new-turn", "true")
+        // A child ending wakes the parent for a turn, so its Done says what is
+        // still out; a report can overtake another, and the list outranks them.
+        if (!worker && state === "done") args.push("--resumes", "true", "--out", busy().join(","))
         if (worker) {
           args.push("--subagent", worker.id, "--subagent-phase", worker.phase)
           if (worker.type) args.push("--subagent-type", worker.type)
+          if (worker.wakes === false) args.push("--subagent-wakes", "false")
         }
+        send(args)
+      }
+      // One helper at a time, each once the last has exited: started together
+      // they land in either order; see Docs/design/agents.md.
+      const pending = []
+      let sending = false
+      const plain = (args) =>
+        args[1] === "running" && !["--subagent", "--new-turn", "--message"].some((flag) => args.includes(flag))
+      const send = (args) => {
+        // A plain Working behind another says nothing the first will not.
+        const last = pending[pending.length - 1]
+        if (last && plain(last) && plain(args)) return
+        pending.push(args)
+        if (!sending) pump()
+      }
+      const pump = () => {
+        const args = pending.shift()
+        sending = args !== undefined
+        if (!sending) return
+        let finished = false
+        const next = () => {
+          if (finished) return
+          finished = true
+          clearTimeout(timer)
+          pump()
+        }
+        // A helper that never exits holds the rest no longer than this.
+        const timer = setTimeout(next, 2000)
+        if (timer.unref) timer.unref()
         try {
           const child = spawn(helper, args, { stdio: "ignore", detached: true })
-          child.on("error", () => {})
+          child.on("error", next)
+          child.on("exit", next)
           child.unref()
-        } catch {}
+        } catch { next() }
       }
+      const busy = () => [...workers].filter(([, entry]) => !entry.done).map(([id]) => id)
       const worker = (id, phase) => {
         const entry = workers.get(id)
         return entry && !entry.done ? { id, phase, type: entry.type } : undefined
@@ -105,14 +140,15 @@ enum OpenCodePlugin {
         else if (!workers.has(id)) report("running", undefined, undefined, newTurn)
       }
       return {
-        // A prompt in the parent starts a turn; one in a child is its work.
-        // With no session in either argument, no new turn: that empties the roster.
+        // A parent's prompt starts a turn unless OpenCode sent it over a child's end,
+        // and one naming no session starts none; a child's is its work (agents.md).
         "chat.message": async (input, output) => {
           const message = output && output.message
           const id = (input && input.sessionID) || (message && message.sessionID)
           if (!id) return report("running")
           await recognise(id, input && input.agent)
-          under(id, true)
+          const parts = (output && output.parts) || []
+          under(id, !(parts.length > 0 && parts.every((part) => part && part.synthetic)))
         },
         "tool.execute.before": async (input) => {
           const id = input && input.sessionID
@@ -138,6 +174,9 @@ enum OpenCodePlugin {
             if (idle || event.type === "session.error") {
               const child = worker(id, "ended")
               if (child) {
+                // A cancelled background child is reported to nobody, so no turn follows.
+                const error = properties.error
+                if (error && error.name === "MessageAbortedError") child.wakes = false
                 report("running", undefined, child)
                 finish(id)
               }

@@ -34,6 +34,9 @@ at the bottom.
   every lifecycle event with the same three fields. What differs is the file,
   what each calls an event and how that file spells a hook.
 - **The app knows no agent by name anywhere else.**
+- **Only the last month of each agent's releases is supported.** A feature every
+  release of that month has is relied on outright, with no branch for older
+  ones; this is the agents' releases, not the helper's own protocol.
 - **Each is asked in its own spelling**: one has a permission request where
   another has a notification, one has both and is asked for both, and one is
   asked in the spelling whose payload names its event.
@@ -96,9 +99,10 @@ at the bottom.
 - **What is outstanding is a roster the app keeps**, a hook being a fresh
   process with nothing to remember. An agent that reports no workers never
   enters that arm and keeps stop meaning Done outright.
-- **A worker left on the roster costs the Done banner and nothing else.** Idle,
-  Failed, the process going or the shell's own command returning clears it, the
-  agent having been that command.
+- **A worker left on the roster holds the pane Working in place of Done**, a
+  Stop saw it out surviving the next prompt too. Idle, Failed, the process
+  going, the shell's own command returning, the user's clear or a Stop's list
+  that leaves it out clears it.
 - **A worker's start and end carry Working and are bookkeeping, not news**: they
   leave a Waiting or a Failed where it is, or a background worker ending while a
   prompt was up withdrew the banner with the prompt still on screen.
@@ -307,13 +311,23 @@ at the bottom.
   stop**, so an interrupted fan-out left its chip standing. Codex's `Interrupt`
   reports Idle, which clears the pane and its roster.
 - **What says the last turn is over is the prompt that starts the next**, so
-  that event empties the roster, nothing owed and nothing lifted, before its own
-  Working lands.
-- **Cost: the chip stands from the interrupt to the next prompt**, however long
-  that is; the pid poll cannot help, the agent being alive at its prompt.
-- **A background worker that outlives its turn drops off the chip at the next
-  prompt** until its own next tool call puts it back; its stop still takes it
-  off, so nothing is owed twice.
+  that event clears what the turn owed or asked, before its own Working lands.
+- **It keeps the workers a held Stop saw out**, which are background ones, a
+  foreground worker always ending before its agent's Stop. Emptied at the
+  prompt, a Copilot or Codex pane went Done while one still ran, their Stops
+  listing nothing, and Copilot's woke for a second.
+- **A Stop vouches only for a worker heard from since the last one**, by a hook,
+  or by the Stop finding it running: a worker whose end was lost falls silent,
+  and kept on every Stop's word it held a Codex or Copilot pane Working for
+  good.
+- **It drops any other**, which an interrupt could have killed without a word.
+  Cost: the chip stands from the interrupt to the next prompt, however long that
+  is; the pid poll cannot help, the agent being alive at its prompt.
+- **A kept worker that was killed goes by what the agent says next**: Claude's
+  Stop lists it no longer, OpenCode's Done leaves it out, Codex's `Interrupt`
+  clears everything. Cost: where nothing says so, as for a Copilot worker
+  cancelled from its task list if that fires no stop, it holds the pane Working
+  until the pane is cleared or the agent exits.
 - **A worker out is work, the user's rule**: a pane showing Done, or nothing,
   shows Working while any is out.
 - **What the worker's report stood over is remembered once**, and the last
@@ -550,34 +564,42 @@ at the bottom.
 - **No hook says a background shell ended**, and none of the notification types
   covers it, so its end is its exit: the pid goes on the roster and the pid poll
   takes it off, paying the Done as the last worker out would.
-- **The Stop names them**, there being no tool call in flight at a Stop, so any
-  tool shell still alive under the agent is one it backgrounded. The helper
-  lists the agent's children and keeps those whose command line holds the
-  agent's shell marker.
+- **Where a Stop does not list them, the helper finds them for Gemini**, there
+  being no tool call in flight at a Stop, so any tool shell still alive under
+  the agent is one it backgrounded. It lists the agent's children and keeps
+  those whose command line holds the agent's shell marker.
 - **The marker, not "any child"**: MCP servers and the agent's other helpers are
   children for the whole session and would hold every Done forever.
-- **Claude's marker is the snapshot every Bash tool shell sources**, matched
-  below the config directory so a moved one still matches. It is how the agent
-  happens to start a shell, not a contract: if it changes, nothing matches and a
-  pane goes Done early, as before, rather than Working for good.
+- **Gemini's marker is the wrapper every shell-tool command runs in**, its
+  `/gemini-shell-` temporary directory in the argv, which its `!` shell mode and
+  MCP servers lack. It is how the agent happens to start a shell, not a
+  contract: if it changes, nothing matches and a pane goes Done early, as
+  before, rather than Working for good.
 - **One place per pid however many Stops name it**, since a turn woken by the
   shell's output stops again with the shell still listed until the poll sees it
   go.
-- **The prompt starting a turn drops them with the rest of the roster**, and the
-  next Stop lists them again: during the turn the pane is Working anyway.
+- **The prompt starting a turn keeps them**, as it keeps every worker a held
+  Stop saw out.
 - **An unnamed worker's end never takes a shell's place.** A shell is never a
   hook's to end, and one taken that way would be off the roster and unpolled.
 - **Cost: a pid reused before the poll looks holds the Done** until the new
   process goes, the poll seeing only that the number is alive.
-- **Claude takes another turn when work it left out ends**, a background shell's
-  exit or a subagent's end reaching the model as a message, and that turn ends
-  in a Stop of its own: seen in a session's own transcript, every such wake-up
-  followed by the hook.
-- **So the last worker out pays that agent nothing, and its woken turn's Stop
-  pays the Done.** Paying it at the exit announced Done, then Working, then Done
-  again seconds later, with two banners.
+- **An agent that takes another turn when work it left out ends is paid its Done
+  by that turn's Stop, never by the last worker out.** Paying it at the exit
+  announced Done, then Working, then Done again seconds later, with two banners.
+- **Claude and Copilot always do**, the work's end reaching the model as a
+  message; OpenCode for a background child; Gemini only where steering is on and
+  a finished shell injects or notifies, read from its settings at each Done in
+  Gemini's order, system defaults first and a project's own only in a folder
+  Gemini trusts, by its own rule.
+- **Codex does not**: a child's answer is recorded with `trigger_turn: false`,
+  so its last worker out pays.
 - **The Stop says so**, the integration being the only place an agent is known,
   and the entry keeps it beside the Done it owes.
+- **A cancelled worker wakes nobody, so its end says so**, and last out it pays
+  the Done unless a turn is underway: one an earlier end woke, or one the agent
+  is already reporting from. That turn's Stop pays it instead, or a cancel
+  mid-turn announced a Done the turn's own Stop announced again.
 - **No timer pays it either**, the user's rule being that only the agent's own
   Stop with nothing out is Done. A fifteen-second fallback was tried: 15 of 266
   woken turns in real transcripts took longer to report, up to 58 seconds, so
@@ -587,30 +609,66 @@ at the bottom.
   prompt, the agent exiting or the user's clear, as an interrupt does. In the
   same transcripts 128 of 129 background launches woke the agent, and the last
   was stopped by the agent itself mid-turn.
-- **That Stop sweeps for gone processes first**: a shell's exit reaches the
-  agent at once and the poll up to two seconds later, and a Stop held for a
-  shell already gone would leave nothing to pay the Done.
+- **A resuming agent's Stop with no list sweeps for gone processes first**: a
+  shell's exit reaches the agent at once and the poll up to two seconds later,
+  and a Stop held for a shell already gone would leave nothing to pay the Done.
 - **A worker heard after a resuming agent's Stop was out at it**, its start
   landing late, the agent launching workers only inside a turn. The Done that
   Stop announced goes back with the banner, and the turn the worker's end wakes
   pays it: paid at the last one out, a late start meant three banners.
-- **Claude's Stop reads its own transcript for the workers it has ended**: a
-  completion notice or a TaskStop ends one, a message sent to it afterwards
-  starts it again. The app takes those off the roster before the Stop lands.
+- **Claude's Stop lists what is still out**, its `background_tasks`, and the
+  roster is made that list: a worker it leaves out has ended whatever its hooks
+  said, and one it names is out though its start has not landed.
 - **Because a hook cannot be relied on for it.** Nothing documents whether a
   subagent's end is awaited before the parent hears of it, or whether TaskStop
-  fires one at all; without this a Stop held for a worker already gone left the
-  pane Working until the next prompt.
-- **Only the lines that are a notice, not a mention**: a notice is one of three
-  entries that begin with it, so a command quoting one ends nothing.
-- **The last 4 MB, not the file**: a transcript here ran to 23 MB, and the end
-  of any worker still on a roster is recent. Measured at 15 to 22 ms a Stop.
-- **Not a contract, so a changed format finds nothing**, which leaves the hooks
-  alone deciding, as before.
-- **The hooks' `agent_id` is the transcript's id.** Claude 2.1.283 names a
+  fires one at all; a Stop held for a worker already gone left the pane Working
+  until the next prompt.
+- **Reading the transcript for which workers ended was tried first** and dropped
+  for the list, a hook field Claude documents for telling a finished session
+  from one waiting on its work. The transcript is still read at a Stop, but only
+  for what the list cannot say: a notice queued and not delivered.
+- **Its shells come in the list under Claude's own id for them**, so no process
+  is walked for Claude, and the next Stop's list is a shell's end, Claude waking
+  at each exit.
+- **A task can finish too late for its notice to join the turn and too early for
+  the list**, its notice queued as the model writes its last words: the Stop
+  lists it no longer and Claude starts a turn over it milliseconds after. In
+  real transcripts 87 of 241 woken turns began under two seconds after the Stop,
+  each a second Done.
+- **So Claude's Stop reads its own transcript for a notice queued since the last
+  Stop and not yet delivered**, taken off the queue or handed to the model, and
+  one there holds the Done as a worker out would. Replayed over every Stop in
+  those transcripts it caught all 80 queued before the Stop began, and the list
+  held the rest; every Stop it held was followed by a turn.
+- **Not a contract, so a changed format finds nothing**, which is the second
+  Done again rather than Working for good.
+- **Only the kinds whose end is announced to the model count**: subagents,
+  shells, workflows, MCP tasks and cloud sessions, each read from Claude's
+  binary to end in a task notice to the main agent. The Monitor tool is a shell
+  and counts with them, holding the pane Working while it runs.
+- **Left out, because counted they would hold the pane Working for good**: an
+  MCP or websocket monitor, which includes the ambient artifact watchers that
+  never end; a teammate, listed while idle and announcing its idle rather than
+  its end; memory dreaming and the auto-mode scan, which end unannounced. A kind
+  Claude adds later is left out too: an early Done is the lesser harm.
+- **A subagent's own shells go with it**: Claude kills them as it exits and
+  sends the main agent what they would have told it, so the main agent is woken
+  for what its Stop listed.
+- **The list's ids are the hooks' `agent_id`.** Claude 2.1.283 names a
   subagent's task by the id it launches it under and its transcript
-  `agent-<agent_id>.jsonl`, read from the binary; the notice's `task-id` and
-  TaskStop's `task_id` are that task's id.
+  `agent-<agent_id>.jsonl`, read from the binary.
+- **OpenCode's plugin sends its own list at the parent's Done**, the children it
+  saw start and not end, which outranks what a missed event left behind.
+- **And one report at a time, each once the helper before has exited**, with a
+  two-second bound on a helper that never does. Started together they landed in
+  either order, and a cancelled child's end landing after the Done that left it
+  out put it back on the roster for good.
+- **A plain Working waiting behind another is dropped**, it saying nothing the
+  first will not: with the app unreachable each helper holds the queue two
+  seconds, and a burst of tool calls queued minutes of reports.
+- **OpenCode's woken turn is a prompt of synthetic parts only**, which the
+  plugin reads as the turn a child's end woke rather than the user's: read as a
+  new turn it emptied the roster of the children still out.
 - **Shells and subagents are counted apart** wherever the workers are counted, a
   shell not being a subagent to anyone reading the label.
 - **A sweep takes every dead agent before any dead shell.** An agent gone with

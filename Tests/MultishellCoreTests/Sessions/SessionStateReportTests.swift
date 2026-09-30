@@ -37,13 +37,14 @@ struct SessionStateReportTests {
     #expect(report?.backgroundShells?.count == SessionStateReport.maximumWorkerCount)
   }
 
-  @Test func aStopNamesAtMostSixtyFourEndedWorkersTheMostRecentKept() {
-    let ended = (1...100).map { #""w\#($0)""# }.joined(separator: ",")
+  @Test func aStopNamesAsManyWorkersOutAsARosterHoldsAndOnlyNamedOnes() {
+    let count = SessionStateReport.maximumListedWorkers + 10
+    let out = (1...count).map { #"{"id":"w\#($0)","phase":"working"}"# }.joined(separator: ",")
     let long = String(repeating: "x", count: 200)
-    let report = SessionStateReport.parse(#"{"state":"done","ended":["\#(long)",\#(ended)]}"#)
-    #expect(report?.endedWorkers?.count == SessionStateReport.maximumWorkerCount)
-    #expect(report?.endedWorkers?.first == "w37")
-    #expect(report?.endedWorkers?.last == "w100")
+    let report = SessionStateReport.parse(
+      #"{"state":"done","out":[{"id":"\#(long)","phase":"working"},\#(out)]}"#)
+    #expect(report?.workersOut?.count == 1024, "as many as a roster's places and folds")
+    #expect(report?.workersOut?.first?.id == "w1", "the unnamed one is dropped")
   }
 
   @Test func boundedStringsWithinTheirLimitsAreKeptWhole() {

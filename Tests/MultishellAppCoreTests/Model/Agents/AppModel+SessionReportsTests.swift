@@ -404,6 +404,35 @@ struct AppModelSessionReportsTests {
     #expect(h.notifier.withdrawn.count == 1)
   }
 
+  @Test func aStopListingABackgroundSubagentAnnouncesNothingUntilTheStopListingNone() {
+    let h = Harness()
+    h.model.setNotifications(NotificationPreference(attention: true, failed: true, done: true))
+    h.model.select(h.main)
+    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    h.model.newTab()
+    let session = tab.focusedSessionID
+    func stop(_ out: [String]) {
+      h.source.send(
+        SessionStateReport(
+          state: .done, sessionID: session, agent: "claude", resumesAfterWorkers: true,
+          workersOut: out.map { SubagentReport(id: $0, type: "Explore", phase: .working) }))
+    }
+
+    stop(["w1"])
+    #expect(h.model.state(ofPane: session) == .running)
+    #expect(h.model.subagents(ofPane: session).map(\.id) == ["w1"], "its start not heard yet")
+    h.source.send(
+      SessionStateReport(
+        state: .running, sessionID: session, agent: "claude",
+        subagent: SubagentReport(id: "w1", phase: .ended)))
+    #expect(h.model.state(ofPane: session) == .running)
+    #expect(h.notifier.posted.isEmpty)
+
+    stop([])
+    #expect(h.model.state(ofPane: session) == .done)
+    #expect(h.notifier.posted.count == 1)
+  }
+
   @Test func aSubagentEndingBeforeTheWokenTurnAnnouncesOnlyThatTurnsStop() {
     let h = Harness()
     h.model.setNotifications(NotificationPreference(attention: true, failed: true, done: true))

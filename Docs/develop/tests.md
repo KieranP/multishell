@@ -157,9 +157,9 @@ says why these are the rules.
 - **A background shell is held for by pid and ended by its exit**:
   SessionStatesTests+BackgroundShells, and ProcessAncestryTests finds one among
   real children by its command line.
-- **A resuming agent's Done is paid once**, by the woken turn or the deadline,
-  never with a worker out: SessionStatesTests+ResumingAgents, and
-  AppModelSessionReportsTests through the socket with the banner counted.
+- **A resuming agent's Done is paid once**, by the woken turn or a cancelled
+  last worker's end, never with a worker out: SessionStatesTests+ResumingAgents,
+  and AppModelSessionReportsTests from the report source up, the banner counted.
 - **An agent dying with its shell announces nothing in either sweep order**:
   AppModelSessionReportsTests over twelve pairs, a set's order meeting both.
 - **Each agent names a worker in its own spelling**:
@@ -174,8 +174,8 @@ says why these are the rules.
   JavaScript with spawn replaced and reads back what the helper would have been
   called with, a source test passing whatever it was rewritten to.
 - **The chip reads the same roster on the row and on the card**, and a Done
-  gives way to a worker and comes back once: AppModelSessionReportsTests,
-  through the socket, the banner counted.
+  gives way to a worker and comes back once: AppModelSessionReportsTests, from
+  the report source up, the banner counted.
 - **Export keeps a hook the user refused** and does not trust it into the
   bargain, and keeps the directory and path lists an unanswered file holds:
   AppModelSharedSettingsTests, against the real file on disk.

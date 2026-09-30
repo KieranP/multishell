@@ -521,9 +521,9 @@ extension SessionStatesTests {
     #expect(report(&states, .done) == .done, "the held Done went with the process")
   }
 
-  /// Claude fires no hook on Ctrl+C and the killed workers send no stop, so the
-  /// next turn's prompt is what says the last turn's roster is gone.
-  @Test func aNewTurnClearsWhatTheLastTurnLeftOut() {
+  /// An agent fires no hook on Ctrl+C and the workers it killed send no stop, so
+  /// the next prompt drops a worker no Stop saw out.
+  @Test func aNewTurnClearsWhatTheLastTurnOwedButKeepsWhatItsStopSawOut() {
     var states = SessionStates()
     _ = report(&states, .running, started("w1"))
     _ = report(&states, .done)
@@ -532,8 +532,9 @@ extension SessionStatesTests {
     #expect(
       states.report(.running, pid: 99, startsTurn: true, for: .session(a), isSeen: false)
         == .running)
-    #expect(out(states).isEmpty)
-    #expect(report(&states, .done) == .done, "the new turn owes nothing from the last")
+    #expect(out(states) == ["w1"], "a background worker outlives the turn")
+    #expect(report(&states, .done) == .running, "and holds the next Stop")
+    #expect(report(&states, .running, ended("w1")) == .done, "until it ends")
 
     var lifted = SessionStates()
     _ = report(&lifted, .running, started("w1"))

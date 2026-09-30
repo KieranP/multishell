@@ -1,78 +1,76 @@
 import Foundation
 
-/// What Claude's undocumented transcript says of its background workers, read
-/// at a Stop since a hook can land late or never come; see agents.md.
+/// Whether Claude has a finished task's notice still queued at its Stop,
+/// which starts a turn of its own after it; see Docs/design/agents.md.
 enum ClaudeTranscript {
-  /// Far more than was written since any worker still on a roster ended,
-  /// and a read of a few milliseconds where a whole file runs to 23 MB.
+  /// Far more than a turn writes, and a read of a few milliseconds where a
+  /// whole transcript runs to 23 MB.
   static let tailBytes = 4 << 20
 
   private static let noticeOpening = "<task-notification>"
-  private static let markers = [noticeOpening, "TaskStop", "SendMessage"].map { Data($0.utf8) }
+  private static let markers = [noticeOpening, "stop_hook_summary"].map { Data($0.utf8) }
 
-  /// `nil` where the file cannot be read.
-  static func endedWorkers(atPath path: String) -> [String]? {
-    guard let handle = FileHandle(forReadingAtPath: path) else { return nil }
+  /// `false` where the file cannot be read, which is what an older build said.
+  static func turnFollows(atPath path: String) -> Bool {
+    guard let handle = FileHandle(forReadingAtPath: path) else { return false }
     defer { try? handle.close() }
-    guard let end = try? handle.seekToEnd() else { return nil }
+    guard let end = try? handle.seekToEnd() else { return false }
     let start = end > UInt64(tailBytes) ? end - UInt64(tailBytes) : 0
     guard (try? handle.seek(toOffset: start)) != nil, let data = try? handle.readToEnd() else {
-      return nil
+      return false
     }
-    return endedWorkers(in: data, fromStart: start == 0)
+    return turnFollows(in: data, fromStart: start == 0)
   }
 
-  /// Most recent last. A notice or a TaskStop ends a worker, and a message
-  /// sent to it afterwards starts it again.
-  static func endedWorkers(in data: Data, fromStart: Bool) -> [String] {
+  /// A notice queued since the last Stop and neither taken off the queue nor
+  /// handed to the model; by timestamp, the file's order not being time's.
+  static func turnFollows(in data: Data, fromStart: Bool) -> Bool {
     var lines = data.split(separator: UInt8(ascii: "\n"))
     if !fromStart, !lines.isEmpty { lines.removeFirst() }
-    var ended: [String] = []
+    var lastStop = ""
+    var queued: [String: String] = [:]
+    var delivered: [String: String] = [:]
     for line in lines where markers.contains(where: { line.range(of: $0) != nil }) {
-      guard let entry = try? JSONSerialization.jsonObject(with: Data(line)) as? [String: Any]
+      guard let entry = try? JSONSerialization.jsonObject(with: Data(line)) as? [String: Any],
+        let time = entry["timestamp"] as? String
       else { continue }
-      if let id = noticedTask(in: entry) {
-        ended.removeAll { $0 == id }
-        ended.append(id)
-      }
-      for (name, input) in toolCalls(in: entry) {
-        if name == "TaskStop", let id = input["task_id"] as? String {
-          ended.removeAll { $0 == id }
-          ended.append(id)
-        } else if name == "SendMessage", let id = input["to"] as? String {
-          ended.removeAll { $0 == id }
+      if entry["type"] as? String == "system", entry["subtype"] as? String == "stop_hook_summary" {
+        lastStop = max(lastStop, time)
+      } else if let (id, isQueued) = notice(in: entry) {
+        if isQueued {
+          queued[id] = max(queued[id] ?? "", time)
+        } else {
+          delivered[id] = max(delivered[id] ?? "", time)
         }
       }
     }
-    return ended
+    return queued.contains { id, time in time > lastStop && (delivered[id] ?? "") < time }
   }
 
-  /// The task a completion notice names, in the three places one is written:
-  /// queued, handed to the model as a prompt, or folded into a running turn.
-  private static func noticedTask(in entry: [String: Any]) -> String? {
-    let text: Any? =
-      switch entry["type"] as? String {
-      case "queue-operation": entry["content"]
-      case "user": (entry["message"] as? [String: Any])?["content"]
-      case "attachment": (entry["attachment"] as? [String: Any])?["prompt"]
-      default: nil
-      }
+  /// The task a notice names, and whether this entry queues it rather than
+  /// takes it off the queue or hands it to the model as a prompt or an aside.
+  private static func notice(in entry: [String: Any]) -> (String, Bool)? {
+    let text: Any?
+    let isQueued: Bool
+    switch entry["type"] as? String {
+    case "queue-operation":
+      let operation = entry["operation"] as? String
+      guard operation == "enqueue" || operation == "remove" else { return nil }
+      text = entry["content"]
+      isQueued = operation == "enqueue"
+    case "user":
+      text = (entry["message"] as? [String: Any])?["content"]
+      isQueued = false
+    case "attachment":
+      text = (entry["attachment"] as? [String: Any])?["prompt"]
+      isQueued = false
+    default:
+      return nil
+    }
     guard let text = text as? String,
       text.drop(while: \.isWhitespace).hasPrefix(noticeOpening),
       let match = text.firstMatch(of: /<task-id>\s*([^<\s]+)\s*<\/task-id>/)
     else { return nil }
-    return String(match.1)
-  }
-
-  private static func toolCalls(in entry: [String: Any]) -> [(String, [String: Any])] {
-    guard entry["type"] as? String == "assistant",
-      let blocks = (entry["message"] as? [String: Any])?["content"] as? [[String: Any]]
-    else { return [] }
-    return blocks.compactMap { block in
-      guard block["type"] as? String == "tool_use", let name = block["name"] as? String,
-        let input = block["input"] as? [String: Any]
-      else { return nil }
-      return (name, input)
-    }
+    return (String(match.1), isQueued)
   }
 }

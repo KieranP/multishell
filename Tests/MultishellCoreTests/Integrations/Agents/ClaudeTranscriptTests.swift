@@ -9,49 +9,58 @@ struct ClaudeTranscriptTests: AgentHookFixtures {
     "<task-notification>\\n<task-id>\(id)</task-id>\\n<status>completed</status>"
   }
 
-  private func toolCall(_ name: String, _ input: String) -> String {
-    #"{"type":"assistant","message":{"content":[{"type":"tool_use","name":""#
-      + name + #"","input":"# + input + "}]}}"
+  private func queued(_ id: String, at time: String) -> String {
+    #"{"type":"queue-operation","operation":"enqueue","timestamp":"\#(time)","content":"\#(notice(id))"}"#
+  }
+
+  private func stopped(at time: String) -> String {
+    #"{"type":"system","subtype":"stop_hook_summary","timestamp":"\#(time)"}"#
   }
 
   private func lines(_ lines: [String]) -> Data { Data(lines.joined(separator: "\n").utf8) }
 
-  @Test func aNoticeInAnyOfItsThreeShapesOrATaskStopEndsAWorker() {
+  @Test func aNoticeQueuedSinceTheLastStopAndNotYetDeliveredMeansATurnFollows() {
     let data = lines([
-      #"{"type":"queue-operation","operation":"enqueue","content":"\#(notice("a1"))"}"#,
-      #"{"type":"user","message":{"role":"user","content":"\#(notice("a2"))"}}"#,
-      #"{"type":"attachment","attachment":{"type":"queued_command","prompt":"\#(notice("a3"))"}}"#,
-      toolCall("TaskStop", #"{"task_id":"a4"}"#),
+      stopped(at: "2026-09-30T10:00:00.000Z"),
+      queued("a1", at: "2026-09-30T10:00:05.000Z"),
     ])
-    #expect(ClaudeTranscript.endedWorkers(in: data, fromStart: true) == ["a1", "a2", "a3", "a4"])
+    #expect(ClaudeTranscript.turnFollows(in: data, fromStart: true))
   }
 
-  @Test func aMessageSentToAnEndedWorkerStartsItAgainUntilItsNextNotice() {
-    let data = lines([
-      #"{"type":"user","message":{"content":"\#(notice("a1"))"}}"#,
-      #"{"type":"user","message":{"content":"\#(notice("a2"))"}}"#,
-      toolCall("SendMessage", #"{"to":"a1","message":"go on"}"#),
-      toolCall("SendMessage", #"{"to":"a2","message":"go on"}"#),
-      #"{"type":"queue-operation","operation":"enqueue","content":"\#(notice("a2"))"}"#,
-    ])
-    #expect(ClaudeTranscript.endedWorkers(in: data, fromStart: true) == ["a2"])
+  @Test func aNoticeDeliveredInAnyOfItsThreeWaysMeansNoTurnFollows() {
+    let deliveries = [
+      #"{"type":"queue-operation","operation":"remove","timestamp":"2026-09-30T10:00:06.000Z","content":"\#(notice("a1"))"}"#,
+      #"{"type":"attachment","timestamp":"2026-09-30T10:00:06.000Z","attachment":{"type":"queued_command","prompt":"\#(notice("a1"))"}}"#,
+      #"{"type":"user","timestamp":"2026-09-30T10:00:06.000Z","message":{"content":"\#(notice("a1"))"}}"#,
+    ]
+    for delivery in deliveries {
+      let data = lines([queued("a1", at: "2026-09-30T10:00:05.000Z"), delivery])
+      #expect(!ClaudeTranscript.turnFollows(in: data, fromStart: true), "\(delivery)")
+    }
   }
 
-  @Test func aNoticeQuotedInsideSomethingElseEndsNothing() {
+  @Test func aNoticeQueuedBeforeTheLastStopIsThatStopsAndNotThisOnes() {
     let data = lines([
-      toolCall("Bash", #"{"command":"echo '\#(notice("a1"))'"}"#),
-      #"{"type":"user","message":{"content":"see \#(notice("a2"))"}}"#,
-      #"{"type":"user","message":{"content":[{"type":"tool_result","content":"\#(notice("a3"))"}]}}"#,
+      queued("a1", at: "2026-09-30T10:00:05.000Z"),
+      stopped(at: "2026-09-30T10:00:06.000Z"),
     ])
-    #expect(ClaudeTranscript.endedWorkers(in: data, fromStart: true).isEmpty)
+    #expect(!ClaudeTranscript.turnFollows(in: data, fromStart: true))
+  }
+
+  @Test func aNoticeQuotedInsideSomethingElseQueuesNothing() {
+    let data = lines([
+      #"{"type":"assistant","timestamp":"2026-09-30T10:00:05.000Z","message":{"content":[{"type":"tool_use","name":"Bash","input":{"command":"echo '\#(notice("a1"))'"}}]}}"#,
+      #"{"type":"queue-operation","operation":"enqueue","timestamp":"2026-09-30T10:00:05.000Z","content":"see \#(notice("a2"))"}"#,
+    ])
+    #expect(!ClaudeTranscript.turnFollows(in: data, fromStart: true))
   }
 
   @Test func aTailThatStartsMidLineSkipsThatLine() {
     let data = lines([
-      #"":"\#(notice("a1"))"}"#,
-      #"{"type":"user","message":{"content":"\#(notice("a2"))"}}"#,
+      #"mary","timestamp":"2026-09-30T10:00:09.000Z"}"#,
+      queued("a1", at: "2026-09-30T10:00:05.000Z"),
     ])
-    #expect(ClaudeTranscript.endedWorkers(in: data, fromStart: false) == ["a2"])
+    #expect(ClaudeTranscript.turnFollows(in: data, fromStart: false))
   }
 
   @Test func aFileIsReadFromItsTailAndAMissingOneSaysNothing() throws {
@@ -59,14 +68,15 @@ struct ClaudeTranscriptTests: AgentHookFixtures {
     defer { try? FileManager.default.removeItem(at: directory) }
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     let file = directory.appendingPathComponent("session.jsonl")
-    let filler = String(repeating: "x", count: ClaudeTranscript.tailBytes)
+    let filler =
+      #"{"type":"user","message":{"content":""#
+      + String(
+        repeating: "x", count: ClaudeTranscript.tailBytes) + #""}}"#
     try lines([
-      #"{"type":"user","message":{"content":"\#(notice("a1"))"}}"#,
-      #"{"type":"user","message":{"content":"\#(filler)"}}"#,
-      #"{"type":"user","message":{"content":"\#(notice("a2"))"}}"#,
-    ]).write(to: file)
-    #expect(ClaudeTranscript.endedWorkers(atPath: file.path) == ["a2"], "a1 is past the tail")
-    #expect(
-      ClaudeTranscript.endedWorkers(atPath: directory.appendingPathComponent("none").path) == nil)
+      stopped(at: "2026-09-30T10:00:00.000Z"), filler, queued("a1", at: "2026-09-30T10:00:05.000Z"),
+    ])
+    .write(to: file)
+    #expect(ClaudeTranscript.turnFollows(atPath: file.path))
+    #expect(!ClaudeTranscript.turnFollows(atPath: directory.appendingPathComponent("none").path))
   }
 }

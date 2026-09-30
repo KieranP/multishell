@@ -56,7 +56,8 @@ What each addition needs beyond the code itself.
   Codex does its two exit events at three, warning at every start otherwise.
 - **Every agent with events needs the turn-starting one.** Most agents fire no
   hook on an interrupt, and the workers it killed send no stop, so the next
-  prompt is the only thing that empties the roster.
+  prompt is the only thing that clears them, dropping every worker no Stop saw
+  out.
 - **A payload names a worker by id and type**, or that agent's own spelling,
   which needs a line in the payload reader. A start or end naming no worker
   still counts as one, taking an unnamed place.

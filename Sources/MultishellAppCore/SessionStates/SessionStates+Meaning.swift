@@ -6,15 +6,26 @@ extension SessionStates {
   /// What a report means once the roster is kept, `nil` for one that moves
   /// nothing. See Docs/design/agents.md.
   mutating func meaning(
-    of state: SessionState, subagent: SubagentReport?, for key: Key
+    of state: SessionState, subagent: SubagentReport?, turnFollows: Bool = false, for key: Key
   ) -> SessionState? {
     // A Stop, a failure or an end naming a worker, which no agent documents,
     // is the agent's own and puts no phantom on the roster.
     guard let subagent, !state.isFinished, state != .idle else {
-      return meaningOfOwnReport(state, entry: entries[key] ?? Entry(), for: key)
+      return meaningOfOwnReport(
+        state, entry: entries[key] ?? Entry(), turnFollows: turnFollows, for: key)
     }
     var place = SubagentRoster.Place(id: subagent.id)
-    update(key) { place = $0.record(subagent) }
+    update(key) {
+      let before = $0.roster.workerCount
+      place = $0.record(subagent)
+      // An idle agent takes a turn over this end, and that turn's Stop pays;
+      // an end that took nobody off woke nothing.
+      if subagent.phase == .ended, subagent.wakesAgent != false, $0.displaced == .stop,
+        $0.roster.workerCount < before
+      {
+        $0.turnUnderway = true
+      }
+    }
     let entry = entries[key] ?? Entry()
     let raiser = Entry.Raiser.worker(place.id)
     switch state {
@@ -70,8 +81,11 @@ extension SessionStates {
   /// The agent's own report. Its Working answers its own prompt and takes
   /// the dot back from a worker; its Stop is held while workers are out.
   private mutating func meaningOfOwnReport(
-    _ state: SessionState, entry: Entry, for key: Key
+    _ state: SessionState, entry: Entry, turnFollows: Bool, for key: Key
   ) -> SessionState? {
+    // Its Working is a turn running and its Stop the end of one; its prompt
+    // says neither, and may be a worker's filed as its own.
+    if state != .attention { update(key) { $0.turnUnderway = state == .running } }
     switch state {
     case .running:
       // The claim goes whether or not another thread's prompt still holds the
@@ -89,13 +103,18 @@ extension SessionStates {
         $0.waitingRaisers.insert(.agent)
       }
       return state
-    case .done where !entry.roster.subagents.isEmpty:
+    // A turn starting straight after the Stop is work out as a worker is.
+    case .done where !entry.roster.subagents.isEmpty || turnFollows:
+      update(key) { $0.roster.markOutAtStop() }
       // A failure is left alone whether a worker's prompt covered it or it is
       // still standing, or the Done would be paid over it.
       guard entry.state != .failed else { return nil }
       // The main loop stopping is not the turn finishing: the Done is owed to
       // the last worker out, and a worker's prompt still up stays on the dot.
-      update(key) { if $0.displaced?.isFailure != true { $0.displaced = .stop } }
+      update(key) {
+        if $0.displaced?.isFailure != true { $0.displaced = .stop }
+        if turnFollows { $0.turnUnderway = true }
+      }
       if entry.state == .attention, entry.waitingRaisers.contains(where: { $0 != .agent }) {
         update(key) { _ = $0.answer(.agent) }
         return nil
@@ -123,12 +142,14 @@ extension SessionStates {
     return answered
   }
 
-  /// The last worker out pays what its agent's Stop owed, unless that agent
-  /// takes a turn when its workers end: that turn's Stop pays it instead.
+  /// The last worker out pays what its agent's Stop owed, unless an end woke
+  /// that agent for a turn: that turn's Stop pays it instead.
   private mutating func lastOut(
     _ displaced: Entry.Displaced, entry: Entry, for key: Key
   ) -> SessionState? {
-    guard displaced == .stop, entry.stopResumes else { return restore(displaced, for: key) }
+    guard displaced == .stop, entry.stopResumes, entry.turnUnderway else {
+      return restore(displaced, for: key)
+    }
     update(key) {
       $0.displaced = nil
       $0.waitingRaisers = []

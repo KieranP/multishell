@@ -82,6 +82,50 @@ struct HelperTests {
     #expect(report?.startsTurn == true)
   }
 
+  @Test func stateCanSayTheAgentResumesAndThatAnEndWakesNoTurn() async throws {
+    let listener = try ReportListener()
+    defer { listener.stop() }
+    let recorder = listener.recorder
+    let environment = ["MULTISHELL_SOCKET": listener.path.path]
+
+    let stop = try await run(
+      ["state", "done", "--agent", "opencode", "--resumes", "true"], environment: environment)
+    #expect(stop.succeeded, "\(stop.standardError)")
+    let end = try await run(
+      [
+        "state", "running", "--agent", "opencode", "--subagent", "ses_1", "--subagent-phase",
+        "ended", "--subagent-wakes", "false",
+      ], environment: environment)
+    #expect(end.succeeded, "\(end.standardError)")
+    let orphan = try await run(
+      ["state", "running", "--subagent-wakes", "false"], environment: environment)
+    #expect(orphan.status == 2)
+    #expect(orphan.standardError.contains("--subagent-wakes"))
+
+    try await waitUntil { recorder.received.count == 2 }
+    let reports = recorder.received.map(SessionStateReport.parse)
+    #expect(reports[0]?.resumesAfterWorkers == true)
+    #expect(reports[1]?.subagent == SubagentReport(id: "ses_1", phase: .ended, wakesAgent: false))
+  }
+
+  @Test func stateCanListWhatIsStillOutIncludingNothing() async throws {
+    let listener = try ReportListener()
+    defer { listener.stop() }
+    let recorder = listener.recorder
+    let environment = ["MULTISHELL_SOCKET": listener.path.path]
+
+    for out in ["ses_1,ses_2", ""] {
+      let stop = try await run(
+        ["state", "done", "--agent", "opencode", "--out", out], environment: environment)
+      #expect(stop.succeeded, "\(stop.standardError)")
+    }
+
+    try await waitUntil { recorder.received.count == 2 }
+    let reports = recorder.received.map(SessionStateReport.parse)
+    #expect(reports[0]?.workersOut?.map(\.id) == ["ses_1", "ses_2"])
+    #expect(reports[1]?.workersOut == [], "nothing out is said, not left unsaid")
+  }
+
   @Test func anAgentHookPayloadBecomesTheMatchingReportAndAlwaysExitsZero() async throws {
     let listener = try ReportListener()
     defer { listener.stop() }
@@ -160,42 +204,53 @@ struct HelperTests {
     #expect(recorder.received.count == 3)
   }
 
-  /// Here the test process stands in for Claude, the helper's first
-  /// non-shell ancestor, and the marked shell for a task it backgrounded.
-  @Test func claudesStopNamesTheBackgroundShellsItLeftRunning() async throws {
+  /// Here the test process stands in for Gemini, the helper's first
+  /// non-shell ancestor, and the marked shell for one its shell tool left running.
+  @Test func geminisDoneNamesTheShellsItLeftRunningAndResumesOnlyWhenSetTo() async throws {
     let listener = try ReportListener()
     defer { listener.stop() }
-    let path = listener.path
     let recorder = listener.recorder
+    let home = Scratch.path("gemini-home")
+    defer { try? FileManager.default.removeItem(at: home) }
+    let settings = home.appendingPathComponent(".gemini/settings.json")
+    try FileManager.default.createDirectory(
+      at: settings.deletingLastPathComponent(), withIntermediateDirectories: true)
+    let environment = [
+      "MULTISHELL_SOCKET": listener.path.path, "GEMINI_CLI_HOME": home.path,
+      "GEMINI_CLI_SYSTEM_SETTINGS_PATH": home.appendingPathComponent("system.json").path,
+    ]
     let shell = Process()
     shell.executableURL = URL(fileURLWithPath: "/bin/sh")
-    shell.arguments = ["-c", "read line # ~/.claude/shell-snapshots/snapshot-zsh-test.sh"]
+    shell.arguments = ["-c", "read line # _bgpids_file=/tmp/gemini-shell-test/bgpids.tmp"]
     shell.standardInput = Pipe()
     try shell.run()
     defer { shell.terminate() }
+    func hook(_ agent: String, _ payload: String) async throws {
+      let output = try await run(
+        ["agent-hook", "--agent", agent], environment: environment, stdin: payload)
+      #expect(output.succeeded && output.standardOutput.isEmpty)
+    }
 
-    let stop = try await run(
-      ["agent-hook", "--agent", "claude"], environment: ["MULTISHELL_SOCKET": path.path],
-      stdin: #"{"hook_event_name":"Stop","cwd":"/w/repo"}"#)
-    #expect(stop.succeeded && stop.standardOutput.isEmpty)
-    let tool = try await run(
-      ["agent-hook", "--agent", "claude"], environment: ["MULTISHELL_SOCKET": path.path],
-      stdin: #"{"hook_event_name":"PreToolUse","cwd":"/w/repo"}"#)
-    #expect(tool.succeeded)
-    let gemini = try await run(
-      ["agent-hook", "--agent", "gemini"], environment: ["MULTISHELL_SOCKET": path.path],
-      stdin: #"{"hook_event_name":"AfterAgent","cwd":"/w/repo"}"#)
-    #expect(gemini.succeeded)
+    try await hook("gemini", #"{"hook_event_name":"AfterAgent","cwd":"/w/repo"}"#)
+    try await hook("gemini", #"{"hook_event_name":"BeforeTool","cwd":"/w/repo"}"#)
+    try await hook("claude", #"{"hook_event_name":"Stop","cwd":"/w/repo"}"#)
+    try #"""
+    {
+      // Both are needed before a shell's end starts a turn.
+      "experimental": { "modelSteering": true },
+      "tools": { "shell": { "backgroundCompletionBehavior": "inject" } }
+    }
+    """#.write(to: settings, atomically: true, encoding: .utf8)
+    try await hook("gemini", #"{"hook_event_name":"AfterAgent","cwd":"/w/repo"}"#)
 
-    try await waitUntil { recorder.received.count == 3 }
+    try await waitUntil { recorder.received.count == 4 }
     let reports = recorder.received.map(SessionStateReport.parse)
     #expect(reports[0]?.state == .done)
     #expect(reports[0]?.backgroundShells?.contains(shell.processIdentifier) == true)
-    #expect(reports[0]?.resumesAfterWorkers == true, "Claude takes a turn when they end")
-    #expect(reports[1]?.backgroundShells == nil, "only a Stop looks")
-    #expect(reports[1]?.resumesAfterWorkers == nil)
-    #expect(reports[2]?.backgroundShells == nil, "and only for an agent with a signature")
-    #expect(reports[2]?.resumesAfterWorkers == nil)
+    #expect(reports[0]?.resumesAfterWorkers == nil, "a shell's end is silent by default")
+    #expect(reports[1]?.backgroundShells == nil, "only a Done looks")
+    #expect(reports[2]?.backgroundShells == nil, "Claude's own Stop lists its shells")
+    #expect(reports[3]?.resumesAfterWorkers == true)
   }
 
   /// Any tool can say which agent is at the prompt, the way Claude's hooks

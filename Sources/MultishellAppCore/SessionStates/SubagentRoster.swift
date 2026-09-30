@@ -52,11 +52,18 @@ struct SubagentRoster: Equatable, Sendable {
       guard let index = subagents.firstIndex(where: { $0.id == id }) else {
         guard folded[id] != nil else { return add(Subagent(id: id, type: report.type)) }
         if report.phase == .started { _ = fold(id) }
+        if let overflow = overflowIndex { subagents[overflow].heardSinceStop = true }
         return overflowPlace
       }
       // A tool call from one already out says nothing; a second start under
       // its id is a second worker an agent named without an id.
-      if report.phase == .started { subagents[index].occurrences += 1 }
+      subagents[index].heardSinceStop = true
+      if report.phase == .started, subagents[index].awaitsStart {
+        subagents[index].awaitsStart = false
+        if let type = report.type { subagents[index].type = type }
+      } else if report.phase == .started {
+        subagents[index].occurrences += 1
+      }
       return place(at: index)
     }
   }
@@ -73,7 +80,7 @@ struct SubagentRoster: Equatable, Sendable {
   }
 
   private var firstNamedPlace: Int? {
-    subagents.firstIndex { $0.pid == nil && $0.id != Subagent.overflowID }
+    subagents.firstIndex { !$0.isShell && $0.id != Subagent.overflowID }
   }
 
   /// The folded worker an end takes, in `endingPlace`'s order: an unnamed
@@ -104,10 +111,63 @@ struct SubagentRoster: Equatable, Sendable {
 
   /// One place per pid, however many Stops name it.
   mutating func keepShells(_ pids: [Int32]) {
+    // A Stop that finds one still running has heard from it.
+    for index in subagents.indices where subagents[index].pid.map(pids.contains) == true {
+      subagents[index].heardSinceStop = true
+    }
     var kept = Set(subagents.compactMap(\.pid))
     for pid in pids where kept.insert(pid).inserted {
       add(Subagent(id: Subagent.shellPrefix + String(pid), type: nil, pid: pid))
     }
+  }
+
+  /// A Stop that lists what is out outranks the hooks: whatever it leaves out
+  /// has ended, and whatever it names is out. Returns the ids taken off.
+  mutating func keepOnly(_ out: [SubagentReport], shells: [Int32]) -> [String] {
+    let listed = Set(out.map(\.id))
+    let live = Set(shells)
+    let gone = subagents.filter { worker in
+      if let pid = worker.pid { return !live.contains(pid) }
+      return worker.id != Subagent.overflowID && !listed.contains(worker.id)
+    }.map(\.id)
+    subagents.removeAll { gone.contains($0.id) }
+    for index in subagents.indices where listed.contains(subagents[index].id) {
+      subagents[index].heardSinceStop = true
+    }
+    let foldedGone = folded.keys.filter { !listed.contains($0) }
+    for id in foldedGone { forget(id) }
+    for worker in out where !isOut(worker.id) {
+      var listedWorker = Subagent(id: worker.id, type: worker.type)
+      listedWorker.isListedShell = worker.isShell == true
+      listedWorker.awaitsStart = worker.isShell != true
+      add(listedWorker)
+    }
+    keepShells(shells)
+    return gone + foldedGone
+  }
+
+  /// A Stop vouches only for workers heard from since the last one.
+  mutating func markOutAtStop() {
+    for index in subagents.indices {
+      subagents[index].outAtStop = subagents[index].heardSinceStop
+      subagents[index].heardSinceStop = false
+    }
+  }
+
+  /// Only the workers a Stop saw out, which a new turn leaves standing, the
+  /// folded ones with the overflow place that stands for them.
+  func keepingOutAtStop() -> SubagentRoster {
+    var kept = SubagentRoster()
+    kept.subagents = subagents.filter(\.outAtStop)
+    if kept.subagents.contains(where: { $0.id == Subagent.overflowID }) { kept.folded = folded }
+    return kept
+  }
+
+  /// How many workers the places stand for, folded ones included.
+  var workerCount: Int { subagents.reduce(0) { $0 + $1.occurrences } }
+
+  private func isOut(_ id: String) -> Bool {
+    folded[id] != nil || subagents.contains { $0.id == id }
   }
 
   /// Past the limit a worker shares one overflow place, so none still out is
