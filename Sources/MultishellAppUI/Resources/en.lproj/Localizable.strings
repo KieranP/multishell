@@ -62,8 +62,6 @@
 "board.show-all-terminals" = "Show all terminals";
 "board.show-all-terminals-info" = "Show terminals with no agent at the prompt";
 "card.go-to-terminal" = "Go to Terminal";
-"close.pane-button" = "Close Pane";
-"close.tab-button" = "Close Tab";
 "dialog.agent-still-working" = "An agent here reported that it is still working. Closing ends it.";
 "dialog.decide-later" = "Decide Later";
 "dialog.remove-project" = "Remove Project";
@@ -109,6 +107,8 @@
 "menu.about" = "About Multishell";
 "menu.add-project" = "Add Project…";
 "menu.close-find" = "Close Find";
+"menu.close-pane" = "Close Pane";
+"menu.close-tab" = "Close Tab";
 "menu.cut" = "Cut";
 "menu.find" = "Find";
 "menu.find-item" = "Find…";
@@ -154,8 +154,6 @@
 "project.icon-from-shared" = "From %@. A choice here replaces it.";
 "project.icon-info" = "Drawn in the sidebar, the header and the project picker in place of the folder. The arrows walk the grid and Return picks.";
 "project.icon-label" = "Icon:";
-"project.merges-measured" = "Merges are measured against %@.";
-"project.no-merge-base" = "No branch to measure merges against, so no worktree is badged as merged.";
 "project.no-tint" = "No tint";
 "project.open-on-create-info" = "Whether a worktree created here opens a terminal once the create, and any post-create hook, is done, whatever the global says.";
 "project.open-on-select-info" = "Whether turning to a worktree here with no tabs starts its first shell, whatever the global says. A worktree just created is the setting below's to decide.";
@@ -192,11 +190,10 @@
 "sheet.branch-refused" = "git will not take that as a branch name.";
 "sheet.choose-project" = "Choose a project";
 "sheet.create-worktree" = "Create Worktree";
-"sheet.creates-from" = "Creates a linked checkout of %@.";
-"sheet.creates-from-chosen" = "Creates a linked checkout of the chosen project.";
+"sheet.creates-from" = "Creates a linked checkout of %@. Location and branch prefix come from project settings.";
+"sheet.creates-from-chosen" = "Creates a linked checkout of the chosen project. Location and branch prefix come from project settings.";
 "sheet.existing-branch" = "Existing branch";
 "sheet.location" = "Location:";
-"sheet.location-note" = "Location and branch prefix come from project settings.";
 "sheet.new-branch" = "New branch";
 "sheet.new-worktree" = "New Worktree";
 "sheet.no-commits" = "This repository has no commits yet. A worktree needs a commit to start from; make the first one, then come back.";
@@ -220,6 +217,8 @@
 "sidebar.nothing-matches" = "Nothing matches";
 "sidebar.projects" = "Projects";
 "sidebar.sort-worktrees" = "Sort Worktrees";
+"status.ahead" = "↑%d";
+"status.behind" = "↓%d";
 "status.deletions" = "−%d";
 "status.insertions" = "+%d";
 "status.unscored-badge" = "~%d";

@@ -110,7 +110,7 @@ struct OpenCodePluginTests {
   ) throws -> (reports: [[String]], waits: Int, lines: [String]) {
     let node = try #require(openCodeNode)
     let directory = Scratch.path("opencode-plugin")
-    defer { try? FileManager.default.removeItem(at: directory) }
+    defer { Scratch.remove(directory) }
     let plugin = directory.appendingPathComponent("multishell.js")
     try AgentHookCatalogue.openCode.install(into: plugin, helper: "$HOME/bin/multishell")
     try Self.driver.write(
@@ -165,9 +165,8 @@ struct OpenCodePluginTests {
     report.firstIndex(of: flag).flatMap { $0 + 1 < report.count ? report[$0 + 1] : nil }
   }
 
-  /// Each report is its own process, so two started together can land in either
-  /// order; a cancelled child's end landing after the Done that left it out
-  /// put it back on the roster for good.
+  /// Two report processes can land in either order: a cancelled child's end after
+  /// the Done that left it out put it back on the roster for good.
   @Test func eachReportIsSentOnlyOnceTheOneBeforeItHasExited() throws {
     let lines = try run([
       .message(session: "parent"),
@@ -181,8 +180,8 @@ struct OpenCodePluginTests {
       "\(lines)")
   }
 
-  /// A helper that cannot reach the app holds each report two seconds, so a burst
-  /// of tool calls would queue minutes of reports that all say the same thing.
+  /// A helper that hangs holds each report two seconds, so a burst of tool
+  /// calls would queue minutes of reports that all say the same thing.
   @Test func aRunOfPlainWorkingReportsWaitingToBeSentIsSentOnce() throws {
     let out = try reports(of: [
       .message(session: "parent"),
@@ -462,18 +461,4 @@ struct OpenCodePluginTests {
     process.stdout.write(JSON.stringify({ waits }) + "\\n")
 
     """
-}
-
-/// Node as the suite's trait reads it, before the type exists.
-private let openCodeNode: URL? = {
-  ["/usr/local/bin/node", "/opt/homebrew/bin/node", "/usr/bin/node"]
-    .map(URL.init(fileURLWithPath:))
-    .first { FileManager.default.isExecutableFile(atPath: $0.path) }
-    ?? which("node")
-}()
-
-private func which(_ name: String) -> URL? {
-  let paths = ProcessInfo.processInfo.environment["PATH"]?.split(separator: ":") ?? []
-  return paths.map { URL(fileURLWithPath: String($0)).appendingPathComponent(name) }
-    .first { FileManager.default.isExecutableFile(atPath: $0.path) }
 }

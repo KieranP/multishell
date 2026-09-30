@@ -12,8 +12,7 @@ struct TerminalSettingsPage: View {
       Section {
         DetectionPicker(
           label: t("terminal.default-shell"),
-          selection: model.setting(
-            \.preferredShellID, or: ShellCatalogue.loginShellID, write: model.setPreferredShell),
+          selection: Binding(get: { model.globalShellID }, set: { model.setPreferredShell($0) }),
           options: model.shellDetection.options(selected:),
           rescanning: model,
           info: t("terminal.default-shell-info")

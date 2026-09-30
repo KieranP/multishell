@@ -3,9 +3,9 @@ import Foundation
 /// Runs a user-supplied command line as sh, started from the user's shell so
 /// their startup files set its environment; see Docs/design/hooks.md.
 public enum ShellCommand {
-  /// Starts a command with no pipes and no timeout, waiting only to hear how
-  /// it ended: an editor shim may hold this open; see terminals.md.
-  public static func launch(
+  /// Runs a command line to its end with no pipes and no timeout, throwing on
+  /// a failure: an editor shim may hold this open; see terminals.md.
+  public static func runUncaptured(
     _ commandLine: String,
     in directory: URL,
     environment: [String: String] = [:],
@@ -82,17 +82,17 @@ public enum ShellCommand {
   /// anywhere; then `set -e`, then the marker its stderr is read from.
   static func prologue(entering directory: URL) -> String {
     "cd \(AnyShellQuoting.quote(directory.path)) >/dev/null || exit 1\nset -e\n"
-      + "printf '%s\\n' '\(outputMarker)' >&2\n"
+      + "printf '%s\\n' '\(stderrStartMarker)' >&2\n"
   }
 
   /// Where the script's stderr begins. Written by the script itself, so it
   /// comes after whatever the rc files printed.
-  static let outputMarker = "--multishell-hook-output--"
+  static let stderrStartMarker = "--multishell-hook-output--"
 
   /// The part of a failure's stderr after the marker, or all of it where the
   /// script ended before writing one. The login shell `exec`s, so says no `logout`.
   static func scriptOutput(fromStderr text: String) -> String {
-    let script = text.range(of: outputMarker).map { String(text[$0.upperBound...]) } ?? text
+    let script = text.range(of: stderrStartMarker).map { String(text[$0.upperBound...]) } ?? text
     return script.trimmingCharacters(in: .whitespacesAndNewlines)
   }
 }

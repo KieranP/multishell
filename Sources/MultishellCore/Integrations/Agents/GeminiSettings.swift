@@ -10,7 +10,7 @@ enum GeminiSettings {
     var steering = false
     var completion = "silent"
     // Gemini's merge order, the last word winning.
-    for settings in merged(environment: environment, workspace: workspace) {
+    for settings in layersInMergeOrder(environment: environment, workspace: workspace) {
       if let value = (settings["experimental"] as? [String: Any])?["modelSteering"] as? Bool {
         steering = value
       }
@@ -22,7 +22,7 @@ enum GeminiSettings {
 
   /// System defaults, user, project, system; the project's only where Gemini
   /// trusts it.
-  private static func merged(
+  private static func layersInMergeOrder(
     environment: [String: String], workspace: String?
   ) -> [[String: Any]] {
     let geminiDirectory = geminiDirectory(environment)

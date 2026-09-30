@@ -20,45 +20,6 @@ extension AppModel {
       settings: worktreeSettings(for: project))
   }
 
-  /// Where the sheet's draft would put its worktree, or a dash while there
-  /// is no project or no name to place.
-  public func plannedLocation(for draft: NewWorktreeDraft) -> String {
-    let name = draft.trimmedBranch
-    guard let project = draft.projectID.flatMap(workspace.project), !name.isEmpty,
-      let url = plannedPath(forBranch: name, createBranch: draft.createBranch, in: project)
-    else { return "\u{2014}" }
-    return url.path.abbreviatingHomeDirectory()
-  }
-
-  /// The sheet's reads, `nil` once the task asking is cancelled: a project
-  /// switch cancels it but not the call inside, so each step checks.
-  public func newWorktreeBranches(of project: Project) async -> NewWorktreeBranches? {
-    let hasCommits = await hasCommits(project)
-    guard !Task.isCancelled else { return nil }
-    let (local, remote) = await branches(of: project)
-    guard !Task.isCancelled else { return nil }
-    let current = await currentBranch(of: project)
-    guard !Task.isCancelled else { return nil }
-    return NewWorktreeBranches(
-      hasCommits: hasCommits, localBranches: local, remoteBranches: remote,
-      currentBranch: current)
-  }
-
-  private func hasCommits(_ project: Project) async -> Bool {
-    await coordinator?.git.hasCommits(project) ?? false
-  }
-
-  private func branches(of project: Project) async -> (local: [String], remote: [String]) {
-    (
-      (try? await coordinator?.git.localBranches(project)) ?? [],
-      (try? await coordinator?.git.remoteBranches(project)) ?? []
-    )
-  }
-
-  private func currentBranch(of project: Project) async -> String {
-    (try? await coordinator?.git.currentBranch(project)) ?? "HEAD"
-  }
-
   /// The sheet's Cancel while the pre-create hook or git runs. A stopped
   /// add takes back the branch and directories it made; see worktrees.md.
   public func cancelWorktreeCreation() {
@@ -87,27 +48,27 @@ extension AppModel {
     // verdict cached at the read is asked of the disk again; see settings.md.
     let project = await reconfineSharedSettings(of: project)
     guard workspace.project(project.id) != nil else { return }
-    let resolved = withEffectiveSettings(project)
+    let effective = withEffectiveSettings(project)
     let settings = worktreeSettings(for: project)
     let shell = workspace.effectiveShellPath(for: project)
     // The row can arrive mid-checkout: git writes its record before the
     // first file, and that directory is watched. See worktrees.md.
     let claimed = plannedPath(forBranch: branch, createBranch: createBranch, in: project)
-      .flatMap(claimConstruction(of:))
+      .flatMap(claimPath(_:))
     let stopper = ProcessStopper()
     stageHandles.beginCreation(with: stopper)
     defer {
       if stageHandles.isCreating(with: stopper) { worktreeCreationStep = nil }
       stageHandles.endCreation(with: stopper)
-      if let claimed { releaseConstruction(of: claimed, in: project) }
+      if let claimed { releasePathClaim(claimed, in: project) }
     }
     let path: URL
     do {
-      path = try await coordinator.add(
+      path = try await coordinator.create(
         branch: branch,
         basedOn: startPoint,
         createBranch: createBranch,
-        in: resolved,
+        in: effective,
         settings: settings,
         shellPath: shell,
         timeout: workspace.hookTimeout,
@@ -120,14 +81,14 @@ extension AppModel {
       reportUnlessStopped(error)
       return
     }
-    await refresh(project)
+    await refreshWorktrees(of: project)
     await rearmWatcher()
     let name = WorktreeCoordinator.qualifiedBranchName(
       branch, createBranch: createBranch, settings: settings)
     guard let created = createdWorktree(at: path, branchName: name, in: project) else { return }
     beginWorktreeSetup(
-      of: created, branch: name, in: resolved, shellPath: shell,
-      lists: fileLists(of: project, resolvedBy: resolved))
+      of: created, branch: name, in: effective, shellPath: shell,
+      lists: fileLists(of: project, inEffect: effective))
     select(created, openingFirstTab: .onCreate)
   }
 
@@ -145,8 +106,8 @@ extension AppModel {
   }
 
   /// A path already listed is someone's row, and a doomed create must not
-  /// blank it. Returns what was claimed, for `releaseConstruction`.
-  func claimConstruction(of planned: URL) -> Worktree.ID? {
+  /// blank it. Returns what was claimed, for `releasePathClaim`.
+  func claimPath(_ planned: URL) -> Worktree.ID? {
     let id = planned.standardizedFileURL.path
     guard workspace.worktree(id) == nil else { return nil }
     pathClaims.claim(id)
@@ -155,8 +116,8 @@ extension AppModel {
 
   /// One claim let go, not the path: another create may still hold it.
   /// A stage that has begun reads when it ends instead.
-  func releaseConstruction(of id: Worktree.ID, in project: Project) {
+  func releasePathClaim(_ id: Worktree.ID, in project: Project) {
     pathClaims.release(id)
-    if !worktreeOperations.isUnderWay(id) { refreshBadges(of: id, in: project.id) }
+    if !worktreeOperations.isRunning(id) { refreshBadges(of: id, in: project.id) }
   }
 }

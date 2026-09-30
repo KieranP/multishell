@@ -11,7 +11,7 @@ final class Harness {
   let store: WorkspaceStore
   let engine = FakeEngine()
   let watcher = FakeWatcher()
-  let source = FakeStateSource()
+  let stateSource = FakeStateSource()
   let notifier = FakeNotifier()
   let platform = FakePlatform()
   /// Live, not the copy made at setup: `Project` is a value and its shared
@@ -22,16 +22,15 @@ final class Harness {
   let root: URL
 
   init(savedSelection: Bool = false, stateFile: URL? = nil) {
-    let tmp = Scratch.path("appmodel")
-    root = tmp
-    try? FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+    root = Scratch.path("appmodel")
+    try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
     store = WorkspaceStore(
       file: WorkspaceFile(
-        fileURL: stateFile ?? tmp.appendingPathComponent("state.json")))
-    let added = store.addProject(at: tmp)  // exists on disk, so `select` accepts it
-    main = Worktree(path: tmp, projectID: added.id, head: "a", branch: "main", isPrimary: true)
+        fileURL: stateFile ?? root.appendingPathComponent("state.json")))
+    let added = store.addProject(at: root)  // exists on disk, so `select` accepts it
+    main = Worktree(path: root, projectID: added.id, head: "a", branch: "main", isPrimary: true)
     feature = Worktree(
-      path: tmp.appendingPathComponent("feature"), projectID: added.id, head: "b",
+      path: root.appendingPathComponent("feature"), projectID: added.id, head: "b",
       branch: "feature")
     try? FileManager.default.createDirectory(at: feature.path, withIntermediateDirectories: true)
     store.replaceWorktrees([main, feature], forProject: added.id)
@@ -39,14 +38,14 @@ final class Harness {
 
     model = AppModel(
       store: store, host: engine, coordinator: nil, watcher: watcher, platform: platform,
-      stateSource: source, notifier: notifier)
+      stateSource: stateSource, notifier: notifier)
     model.statusReads.pace = .unpaced
-    model.refreshAppLaunchFiles = { _ in nil }
+    model.refreshAppLaunchFiles = { _ in }
     model.sweepPromisedDropCopies = {}
-    let path = tmp.appendingPathComponent("bin").path
-    model.captureLoginEnvironment = {
+    let path = root.appendingPathComponent("bin").path
+    model.captureLoginEnvironment = { [root] in
       LoginShellEnvironment(
-        variables: ["PATH": path, "HOME": tmp.path],
+        variables: ["PATH": path, "HOME": root.path],
         source: .loginShell(URL(fileURLWithPath: "/bin/zsh")))
     }
   }

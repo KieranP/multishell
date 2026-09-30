@@ -30,8 +30,8 @@ extension AppModel {
       return
     }
     guard requireShellReady(worktree) else { return }
-    let (shell, handOver) = TabCommand.loginShell(
-      handingOverTo: shellPath(forWorktree: worktree.id))
+    let shellPath = shellPath(for: worktree)
+    let (shell, handOver) = TabCommand.loginShell(handingOverTo: shellPath)
     let action = EditorLaunch.action(
       editorID: editorID,
       found: editorDetection.found[editorID],
@@ -39,6 +39,12 @@ extension AppModel {
       directory: worktree.path,
       shell: shell,
       handOver: handOver)
+    runEditorAction(action, editorID: editorID, in: worktree, shellPath: shellPath)
+  }
+
+  private func runEditorAction(
+    _ action: EditorLaunch.Action?, editorID: String, in worktree: Worktree, shellPath: String
+  ) {
     switch action {
     case .openApplication(let application):
       Task { [weak self] in
@@ -49,10 +55,9 @@ extension AppModel {
         }
       }
     case .runInBackground(let line):
-      let shellPath = shellPath(for: worktree)
       Task { [weak self] in
         do {
-          try await ShellCommand.launch(line, in: worktree.path, shellPath: shellPath)
+          try await ShellCommand.runUncaptured(line, in: worktree.path, shellPath: shellPath)
         } catch {
           self?.present(error)
         }

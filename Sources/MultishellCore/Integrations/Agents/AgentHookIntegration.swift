@@ -7,7 +7,7 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   enum Format: Sendable {
     /// `hooks` in a file the user keeps their own settings in, ours merged
     /// in and back out. Gemini counts the timeout in milliseconds.
-    case sharedSettings(millisecondTimeout: Bool)
+    case userSettingsFile(millisecondTimeout: Bool)
     /// Copilot reads every JSON file in its hooks directory, so ours is a
     /// file of its own: written whole, deleted to remove it.
     case ownHookFile
@@ -17,9 +17,16 @@ public struct AgentHookIntegration: Identifiable, Sendable {
 
     /// Whether the file holds nothing but what Multishell wrote.
     var isOursAlone: Bool {
-      if case .sharedSettings = self { return false }
+      if case .userSettingsFile = self { return false }
       return true
     }
+  }
+
+  enum Resumption: Sendable {
+    case never
+    case always
+    /// Only where the user's settings turn it on, read at each Done.
+    case whenGeminiSettingsSay
   }
 
   /// The agent's catalogue id, which the hook line carries so a report says
@@ -38,13 +45,6 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   let backgroundShellMarker: String?
   /// Whether the agent takes another turn when the work it left out at its
   /// Stop ends, which then pays the Done; see Docs/design/agents.md.
-  enum Resumption: Sendable {
-    case never
-    case always
-    /// Only where the user's settings turn it on, read at each Done.
-    case whenGeminiSettingsSay
-  }
-
   let resumption: Resumption
   /// Whether a subagent is a conversation of its own, firing its own prompt
   /// and Stop, which only its conversation id tells apart; see agents.md.
@@ -84,81 +84,5 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   public var isPlugin: Bool {
     if case .plugin = format { return true }
     return false
-  }
-
-  /// Whether a payload is one of the asked-for events, which the helper asks
-  /// before it walks its ancestry for a pid.
-  public func handles(_ payload: AgentHookPayload) -> Bool {
-    event(for: payload) != nil
-  }
-
-  /// Which asked-for event a payload is, or nothing where it says nothing
-  /// about waiting. The hook exits quietly on nothing.
-  func event(for payload: AgentHookPayload) -> AgentHookEvent? {
-    guard let event = events.first(where: { $0.reportedName == payload.eventName }) else {
-      return nil
-    }
-    if event.onlyWhenPrompting, !payload.promptsForPermission { return nil }
-    if let type = payload.notificationType, event.ignoredNotificationTypes.contains(type) {
-      return nil
-    }
-    // A subagent's own Stop, which its SubagentStop follows: read as the
-    // agent's, it put the pane at Done in the middle of the turn.
-    if workersAreConversations, event.state.isFinished, payload.isFiledUnderAnotherConversation {
-      return nil
-    }
-    return event
-  }
-
-  /// What the helper sends for a payload, or nothing where it says nothing.
-  /// `backgroundShells` walks the processes, so it is asked only at a Stop.
-  public func report(
-    for payload: AgentHookPayload, sessionID: TerminalSession.ID?, cwd: String?, pid: Int32?,
-    backgroundShells: (_ marker: String) -> [Int32]? = { _ in nil }
-  ) -> SessionStateReport? {
-    guard let event = event(for: payload) else { return nil }
-    let isStop = event.state == .done
-    return SessionStateReport(
-      state: event.state,
-      sessionID: sessionID,
-      cwd: payload.cwd ?? cwd,
-      pid: pid,
-      message: payload.message,
-      agent: id,
-      silent: event.silent ? true : nil,
-      subagent: event.subagentChange(for: payload),
-      startsTurn: event.startsTurn(for: payload) ? true : nil,
-      startsSession: event.startsSession ? true : nil,
-      backgroundShells: isStop && payload.backgroundTasks == nil
-        ? backgroundShellMarker.flatMap(backgroundShells) : nil,
-      resumesAfterWorkers: isStop && resumes(at: payload) ? true : nil,
-      conversationID: workersAreConversations ? payload.conversationID : nil,
-      workersOut: isStop ? payload.backgroundTasks.map(workers(from:)) : nil,
-      turnFollows: isStop && noticeQueued(at: payload) ? true : nil)
-  }
-
-  private func noticeQueued(at payload: AgentHookPayload) -> Bool {
-    guard transcriptQueuesNotices, let path = payload.transcriptPath else { return false }
-    return ClaudeTranscript.turnFollows(atPath: path)
-  }
-
-  private func resumes(at payload: AgentHookPayload) -> Bool {
-    switch resumption {
-    case .never: false
-    case .always: true
-    case .whenGeminiSettingsSay:
-      GeminiSettings.wakesForBackgroundShells(
-        environment: ProcessInfo.processInfo.environment, workspace: payload.cwd)
-    }
-  }
-
-  /// A listed shell is named by the agent's id for it; a subagent by its
-  /// kind where the list says, and anything else by what the agent calls it.
-  private func workers(from tasks: [AgentHookPayload.BackgroundTask]) -> [SubagentReport] {
-    tasks.filter { wakingTaskTypes.contains($0.type) }.map { task in
-      task.type == "shell"
-        ? SubagentReport(id: task.id, phase: .working, isShell: true)
-        : SubagentReport(id: task.id, type: task.agentType ?? task.type, phase: .working)
-    }
   }
 }

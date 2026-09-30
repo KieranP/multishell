@@ -71,7 +71,7 @@ extension AppModelStatusPollingTests {
       _ = try await h.git.run(
         ["worktree", "add", "-q", "-b", branch, path.path], in: h.project.path)
     }
-    await h.model.refresh(h.project)
+    await h.model.refreshWorktrees(of: h.project)
     let side = try #require(h.worktree(onBranch: "side"))
     let other = try #require(h.worktree(onBranch: "other"))
     h.model.select(try #require(h.worktree(onBranch: "main")))

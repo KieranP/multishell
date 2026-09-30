@@ -33,8 +33,8 @@ struct AppSettingsWindow: View {
         .tabItem { Label(t("settings.appearance"), systemImage: "paintpalette") }
         .tag(Page.appearance)
     }
-    .frame(width: SettingsWindow.size.width, height: SettingsWindow.size.height)
+    .frame(width: SettingsWindowSize.fixed.width, height: SettingsWindowSize.fixed.height)
     .settingsWindowReset(
-      on: { platform.mainWindow?.screen }, showFirstPage: { page = .general })
+      on: { platform.workspaceWindow?.screen }, showFirstPage: { page = .general })
   }
 }

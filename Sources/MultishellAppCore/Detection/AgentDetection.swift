@@ -24,13 +24,13 @@ public struct AgentDetection: Equatable, Sendable {
   }
 
   func isInstalled(_ id: String) -> Bool {
-    id == AgentCatalogue.customID || found[id] != nil
+    found[id] != nil
   }
 
   public func options(selected: String?) -> [DetectionOption] {
     DetectionOption.catalogueOptions(
       AgentCatalogue.agents.map { ($0.id, $0.name) },
-      installed: { found[$0] != nil },
+      installed: isInstalled,
       selected: selected,
       noneID: AgentCatalogue.noneID,
       customID: AgentCatalogue.customID)

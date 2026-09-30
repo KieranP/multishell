@@ -36,13 +36,13 @@ struct ProjectSettingsWindow: View {
           },
         ], firstTabToken: firstTabToken
       )
-      .frame(width: SettingsWindow.size.width, height: SettingsWindow.size.height)
+      .frame(width: SettingsWindowSize.fixed.width, height: SettingsWindowSize.fixed.height)
       .navigationTitle(t("window.project-settings-title", project.name))
       // This window is its own scene, so a removal asked for here has to
       // be confirmed here; the workspace window's dialog would be behind it.
       .projectRemovalDialog(model: model, source: .settings)
       .settingsWindowReset(
-        on: { platform.mainWindow?.screen }, showFirstPage: { firstTabToken = UUID() })
+        on: { platform.workspaceWindow?.screen }, showFirstPage: { firstTabToken = UUID() })
     } else {
       // The project was removed while this window was open.
       Color.clear.frame(width: 1, height: 1).onAppear { dismiss() }

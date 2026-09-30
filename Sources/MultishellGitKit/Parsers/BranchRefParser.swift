@@ -16,15 +16,14 @@ enum BranchRefParser {
     let name = fields[0]
     let tip = fields[1]
     guard !name.isEmpty, !tip.isEmpty else { return nil }
-    let upstream = fields.count > 2 && !fields[2].isEmpty ? fields[2] : nil
+    let tracksUpstream = fields.count > 2 && !fields[2].isEmpty
     let track = fields.count > 3 ? fields[3] : ""
     let symref = fields.count > 4 && !fields[4].isEmpty ? fields[4] : nil
     // Seconds since the epoch. A field missing or not a number is no date
     // rather than a dropped row; the badges do not read it.
     let committed = fields.count > 5 ? TimeInterval(fields[5]) : nil
     return BranchRef(
-      fullName: name, tip: tip, upstream: upstream,
-      isUpstreamGone: upstream != nil && track.contains("gone"), symref: symref,
-      committedAt: committed.map(Date.init(timeIntervalSince1970:)))
+      fullName: name, tip: tip, isUpstreamGone: tracksUpstream && track.contains("gone"),
+      symref: symref, committedAt: committed.map(Date.init(timeIntervalSince1970:)))
   }
 }

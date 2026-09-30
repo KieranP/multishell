@@ -11,13 +11,6 @@ public struct PendingSharedSettingsTrust: Identifiable, Equatable, Sendable {
   /// against, and what says whether the file has moved on.
   let digest: String
 
-  init(projectID: Project.ID, projectName: String, trustCoveredText: String, digest: String) {
-    self.projectID = projectID
-    self.projectName = projectName
-    self.trustCoveredText = trustCoveredText
-    self.digest = digest
-  }
-
   public var id: String { projectID }
 
   public var title: String {

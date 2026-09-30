@@ -81,16 +81,14 @@ enum Helper {
         let options = try CommandOptions(arguments.dropFirst(), valued: ["pid"])
         relay(environment: environment, input: standardInput, shellPID: options.int32("pid"))
         return 0
-      // `claude-hook` stays: builds before the rename wrote it into
-      // settings files that are on disk now and run this line.
-      case "agent-hook", "claude-hook":
+      case AgentHookCatalogue.subcommand, AgentHookCatalogue.legacySubcommand:
         reportAgentHook(agentID(in: arguments), environment: environment, input: standardInput)
         return 0
       case "install-agent-hooks":
         let options = try CommandOptions(arguments.dropFirst(), valued: ["agent"], flags: ["print"])
-        return installHooks(try requiredIntegration(options), print: options.has("print"))
+        return try installHooks(try requiredIntegration(options), print: options.has("print"))
       case "remove-agent-hooks":
-        return removeHooks(
+        return try removeHooks(
           try requiredIntegration(CommandOptions(arguments.dropFirst(), valued: ["agent"])))
       case "--version", "version":
         print("multishell helper, protocol version \(SessionStateReport.protocolVersion)")

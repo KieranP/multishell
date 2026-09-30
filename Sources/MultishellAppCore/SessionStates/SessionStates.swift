@@ -27,29 +27,30 @@ public struct SessionStates: Equatable, Sendable {
   /// it meant once the roster is kept, `nil` for a bookkeeping tick.
   @discardableResult
   mutating func report(
-    _ state: SessionState, pid: Int32?, message: String? = nil, duration: Double? = nil,
-    subagent: SubagentReport? = nil, startsTurn: Bool = false, startsSession: Bool = false,
-    backgroundShells: [Int32] = [], fromShell: Bool = false,
-    resumesAfterWorkers: Bool = false, workersOut: [SubagentReport]? = nil,
-    turnFollows: Bool = false,
-    conversationID: String? = nil, for key: Key, isSeen: Bool
+    _ report: SessionStateReport, pid: Int32?, for key: Key, isSeen: Bool
   ) -> SessionState? {
+    let backgroundShells = report.backgroundShells ?? []
+    let resumesAfterWorkers = report.resumesAfterWorkers == true
     // Copilot's prompt mode starts its session after the first prompt. Before
     // the conversation is read, or a dropped start re-points the pane's own.
-    if startsSession, subagent == nil, entries[key]?.workingIsShellCommand != true,
+    if report.startsSession == true, report.subagentChange == nil,
+      entries[key]?.workingIsShellCommand != true,
       [.running, .attention].contains(entries[key]?.state)
     {
       return nil
     }
     let (subagent, isAnotherConversation) = workerAfterReading(
-      conversation: conversationID, named: subagent, reporting: state, for: key)
+      conversation: report.conversationID, named: report.subagentChange,
+      reporting: report.state, for: key)
     // A prompt starts a turn, so whatever the last one left out is gone: an
     // agent interrupted, Codex aside, fires no hook and its workers send no stop.
-    if startsTurn, !isAnotherConversation { update(key) { $0.startTurn() } }
-    let isOwnStop = state == .done && subagent == nil
+    if report.startsTurn == true, !isAnotherConversation { update(key) { $0.startTurn() } }
+    let isOwnStop = report.state == .done && subagent == nil
     if isOwnStop {
       update(key) {
-        if let workersOut, workersOut.count < SessionStateReport.maximumListedWorkers {
+        if let workersOut = report.workersOut,
+          workersOut.count < SessionStateReport.maximumWorkersOut
+        {
           let gone = $0.roster.keepOnly(workersOut, shells: backgroundShells)
           for id in gone { $0.waitingRaisers.remove(.worker(id)) }
         } else {
@@ -60,7 +61,8 @@ public struct SessionStates: Equatable, Sendable {
     }
     guard
       let state = meaning(
-        of: state, subagent: subagent, turnFollows: isOwnStop && turnFollows, for: key)
+        of: report.state, subagent: subagent,
+        turnFollows: isOwnStop && report.turnFollows == true, for: key)
     else { return nil }
     switch state {
     case .idle:
@@ -75,8 +77,11 @@ public struct SessionStates: Equatable, Sendable {
         if let pid { $0.pid = pid }
       }
     }
-    update(key) { $0.workingIsShellCommand = fromShell && $0.state == .running }
-    noteIfStanding(SessionNote(state: state, message: message, duration: duration), on: key)
+    update(key) {
+      $0.workingIsShellCommand = report.isFromShellIntegration == true && $0.state == .running
+    }
+    noteIfStanding(
+      SessionNote(state: state, message: report.message, duration: report.duration), on: key)
     return state
   }
 

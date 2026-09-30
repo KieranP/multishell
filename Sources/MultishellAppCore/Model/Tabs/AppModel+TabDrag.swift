@@ -4,7 +4,7 @@ extension AppModel {
   public func beginTabDrag(_ id: TerminalTab.ID) {
     tabDragReleaseWatch?.cancel()
     tabDragReleaseWatch = nil
-    let strip = workspace.tab(id).map { workspace.tabs(in: $0.groupID).map(\.id) } ?? []
+    let strip = workspace.tab(id).map { workspace.tabs(inGroup: $0.groupID).map(\.id) } ?? []
     guard let index = strip.firstIndex(of: id) else { return tabDrag.begin(id) }
     tabDrag.begin(
       id,
@@ -85,7 +85,7 @@ extension AppModel {
       return moveTab(id, band.placement, toNewGroupOf: band.groupID)
     case .worktree(let worktreeID):
       // A missing directory raises its alert; a busy worktree refuses quietly.
-      return moveTab(id, to: worktreeID)
+      return moveTab(id, toWorktree: worktreeID)
     }
   }
 

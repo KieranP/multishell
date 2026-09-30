@@ -52,8 +52,8 @@ struct IconPalette: View {
         }
       }
       .padding(.horizontal, 8)
-      // The search field used to carry the top of the popover; the grid does
-      // now, or the first row of symbols sits against its edge.
+      // The grid carries the popover's top inset, or its first row sits
+      // against the edge.
       .padding(.vertical, 8)
     }
     .focusable()

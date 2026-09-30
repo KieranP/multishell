@@ -18,7 +18,7 @@ struct AgentBoardCardMessage: View {
       .padding(.leading, 6)
       .padding(.vertical, 4)
       .padding(.trailing, 4)
-      .background(theme.rowHover, in: RoundedRectangle(cornerRadius: 4))
+      .background(theme.faintFill, in: RoundedRectangle(cornerRadius: 4))
       .overlay(alignment: .leading) {
         Rectangle()
           .fill(theme.hairline)

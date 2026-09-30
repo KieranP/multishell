@@ -34,7 +34,7 @@ extension ProcessRunnerTests {
 
   @Test func aRunLetsGoOfItsPipesWhenItReturnsNotASecondLater() async throws {
     let group = DispatchGroup()
-    let (outPipe, errPipe) = (try PipeBuffer.makePipe(), try PipeBuffer.makePipe())
+    let (outPipe, errPipe) = (try PipeDescriptors.make(), try PipeDescriptors.make())
     defer {
       try? outPipe.writing.close()
       try? errPipe.writing.close()
@@ -46,7 +46,7 @@ extension ProcessRunnerTests {
     out?.finish()
     err?.finish()
 
-    await ProcessRunner.awaitEOF(try #require(out), try #require(err), group: group)
+    await ProcessRunner.awaitDrained(try #require(out), try #require(err), group: group)
     out = nil
     err = nil
 

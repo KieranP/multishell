@@ -19,7 +19,7 @@ extension AgentHookIntegration {
     }
     // Any of ours, not one under every event: an older build's file lacks the
     // events added since, and that is the update this is here to offer.
-    guard let settings = try? AgentSettingsFile.read(file), holdsAnyOfOurs(settings) else {
+    guard let settings = try? AgentSettingsFile.read(file), holdsAnyOfOurHooks(settings) else {
       return .absent
     }
     return isCurrent(in: settings, helper: helper) ? .current : .stale
@@ -33,10 +33,10 @@ extension AgentHookIntegration {
     else { return false }
     // Rendered, as a file's numbers are read as marked literals.
     return Set(hooks.keys).union(wanted.keys).allSatisfy { event in
-      let ours = ((hooks[event] as? [[String: Any]]) ?? []).filter(holdsOurHook)
-      let theirs = (wanted[event] as? [[String: Any]]) ?? []
-      return AgentSettingsFile.render(["hooks": ours])
-        == AgentSettingsFile.render(["hooks": theirs])
+      let installed = ((hooks[event] as? [[String: Any]]) ?? []).filter(holdsOurHook)
+      let expected = (wanted[event] as? [[String: Any]]) ?? []
+      return AgentSettingsFile.render(["hooks": installed])
+        == AgentSettingsFile.render(["hooks": expected])
     }
   }
 }

@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellAppCore
@@ -7,7 +8,7 @@ import Testing
 struct AgentDetectionTests {
   @Test func agentsAreFoundOnTheGivenPathOnly() throws {
     let bin = try fakeBin(["claude", "codex"])
-    defer { try? FileManager.default.removeItem(at: bin) }
+    defer { Scratch.remove(bin) }
 
     let detection = AgentDetection(searchPath: "/usr/bin:\(bin.path)")
     #expect(Set(detection.found.keys) == ["claude", "codex"])
@@ -20,7 +21,7 @@ struct AgentDetectionTests {
 
   @Test func theDropdownListsInstalledAgentsTheStaleChoiceAndCustom() throws {
     let bin = try fakeBin(["codex"])
-    defer { try? FileManager.default.removeItem(at: bin) }
+    defer { Scratch.remove(bin) }
     let detection = AgentDetection(searchPath: bin.path)
 
     let plain = detection.options(selected: nil).map(\.id)
@@ -32,7 +33,6 @@ struct AgentDetectionTests {
 
     let unknown = detection.options(selected: "future-agent")
     #expect(unknown.map(\.id).contains("future-agent"), "a newer build's id still shows")
-    #expect(detection.isInstalled("custom"))
     #expect(!detection.isInstalled("claude"))
   }
 }

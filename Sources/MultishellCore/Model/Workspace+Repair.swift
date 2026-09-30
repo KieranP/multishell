@@ -22,12 +22,12 @@ extension Workspace {
     tabGroups = tabGroups.uniqued(by: \.id)
 
     repairPanes()
-    reassignSessionsToTheirTabs()
+    pruneAndReassignSessions()
 
     // A name outliving its worktree returns if one is made at that path
     // again; a blank one draws an empty line over the branch.
     worktreeNames = worktreeNames.filter { id, name in
-      worktreeIDs.contains(id) && !name.trimmingCharacters(in: .whitespaces).isEmpty
+      worktreeIDs.contains(id) && name.trimmedOrNil != nil
     }
 
     repairGroups()
@@ -59,7 +59,7 @@ extension Workspace {
 
   /// Drops a session no tab shows, and moves one listed under another
   /// worktree than its tab's to the tab's.
-  private mutating func reassignSessionsToTheirTabs() {
+  private mutating func pruneAndReassignSessions() {
     var owner: [TerminalSession.ID: Worktree.ID] = [:]
     for tab in tabs {
       for id in tab.sessionIDs { owner[id] = tab.worktreeID }
@@ -91,13 +91,13 @@ extension Workspace {
       // A width of zero is a group nothing can be laid out in. Decoding
       // makes the same substitution; a half-written save can leave one.
       tabGroups[index].weight = LayoutWeight.usable(tabGroups[index].weight)
-      let tabsHere = tabs(in: tabGroups[index].id)
-      if let active = tabGroups[index].activeTabID, tabsHere.contains(where: { $0.id == active }) {
+      let tabsHere = tabs(inGroup: tabGroups[index].id)
+      if let shown = tabGroups[index].shownTabID, tabsHere.contains(where: { $0.id == shown }) {
         continue
       }
       // Any of them will do, nothing on disk saying which the group showed:
       // unlike `settle`, there is no vacated place to hand on.
-      tabGroups[index].activeTabID = tabsHere.last?.id
+      tabGroups[index].shownTabID = tabsHere.last?.id
     }
 
     // An entry with no groups left, or naming another worktree's, hides
@@ -126,7 +126,7 @@ extension Workspace {
         continue
       }
       let group = TabGroup(
-        worktreeID: tab.worktreeID, activeTabID: activeByWorktree[tab.worktreeID] ?? tab.id)
+        worktreeID: tab.worktreeID, shownTabID: activeByWorktree[tab.worktreeID] ?? tab.id)
       tabGroups.append(group)
       minted[tab.worktreeID] = group.id
       tabs[index].groupID = group.id
@@ -134,12 +134,5 @@ extension Workspace {
         focusedGroupByWorktree[tab.worktreeID] = group.id
       }
     }
-  }
-}
-
-extension Array {
-  fileprivate func uniqued<ID: Hashable>(by id: (Element) -> ID) -> [Element] {
-    var seen: Set<ID> = []
-    return filter { seen.insert(id($0)).inserted }
   }
 }

@@ -7,7 +7,7 @@ import Testing
 /// A stored trust answer holds this form, so a change to it re-asks every question.
 @Suite
 struct FileDigestTests {
-  @Test func theKnownVectorsHold() {
+  @Test func theDigestIsLowercaseHexSHA256OfTheBytes() {
     #expect(
       FileDigest.sha256(of: Data())
         == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
@@ -23,7 +23,7 @@ struct FileDigestTests {
   /// What the app actually hashes: the bytes of a `.multishell.json`.
   @Test func aFilesBytesHashToTheSameDigestAsItsContents() throws {
     let directory = try Scratch.directory("digest")
-    defer { try? FileManager.default.removeItem(at: directory) }
+    defer { Scratch.remove(directory) }
     let file = directory.appendingPathComponent("settings.json")
     try #"{ "postCreateHook": "npm ci" }"#.appending("\n")
       .write(to: file, atomically: true, encoding: .utf8)

@@ -1,6 +1,7 @@
 import Foundation
 import MultishellCore
 import MultishellProcess
+import TestScratch
 import Testing
 
 @testable import MultishellAppCore
@@ -23,10 +24,11 @@ struct AppModelLoginEnvironmentTests {
 
   /// A saved agent tab clicked while PATH is still being scanned must not read as missing,
   /// so the environment and what was found on it land together.
-  @Test func theEnvironmentIsNotKnownBeforeItsPathHasBeenScanned() async {
+  @Test func theEnvironmentIsNotKnownBeforeItsPathHasBeenScanned() async throws {
     let h = Harness()
     let refresh = Task { await h.model.refreshLoginEnvironment() }
-    while h.model.loginEnvironment == nil { try? await Task.sleep(for: .milliseconds(1)) }
+    try await waitUntil { h.model.loginEnvironment != nil }
+    #expect(h.model.loginEnvironment != nil)
     #expect(h.model.shellDetection != .empty, "/etc/shells alone fills this")
     #expect(h.model.agentDetection == AgentDetection(searchPath: h.model.loginEnvironment?.path))
     await refresh.value

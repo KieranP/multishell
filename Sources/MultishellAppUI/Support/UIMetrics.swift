@@ -1,3 +1,5 @@
+import MultishellAppCore
+
 /// Every chrome size, derived from one number so the UI font slider scales
 /// the sidebar, tabs and header together and rows never clip their text.
 struct UIMetrics: Equatable {
@@ -20,22 +22,28 @@ struct UIMetrics: Equatable {
 
   /// How tall a worktree's row is. Asked here, the row and the sidebar's
   /// block height disagreeing putting the drop indicator in the wrong half.
-  func worktreeRowHeight(isNamed: Bool, isRenaming: Bool) -> Double {
-    isNamed || isRenaming ? namedRowHeight : rowHeight
+  func worktreeRowHeight(hasCustomName: Bool, isRenaming: Bool) -> Double {
+    hasCustomName || isRenaming ? namedRowHeight : rowHeight
   }
   /// The gap between the sidebar's rows.
   static let sidebarRowSpacing: Double = 1
+  /// The + on a project's row, and the sort menu above it sharing its column.
+  static let sidebarRowButtonWidth: Double = 24
 
   /// How tall a project's block is, which the drop delegate halves: its row,
   /// each worktree's, and the pane rows under the one that shows them.
-  func projectBlockHeight(
-    worktreeRows: [(isNamed: Bool, isRenaming: Bool, paneCount: Int)]
-  ) -> Double {
+  func projectBlockHeight(worktreeRows: [SidebarWorktree]) -> Double {
     worktreeRows.reduce(rowHeight) { total, row in
       total + Self.sidebarRowSpacing
-        + worktreeRowHeight(isNamed: row.isNamed, isRenaming: row.isRenaming)
-        + Double(row.paneCount) * (paneRowHeight + Self.sidebarRowSpacing)
+        + worktreeRowHeight(hasCustomName: row.hasCustomName, isRenaming: row.isRenaming)
+        + Double(row.panes.count) * (paneRowHeight + Self.sidebarRowSpacing)
     }
+  }
+
+  /// The badge on a glyph's corner, a pane's state or a missing project's
+  /// mark: 0.6 of the glyph in whole points, and never below a legible seven.
+  static func cornerBadgeSize(onGlyphOf size: Double) -> Double {
+    max(7, (size * 0.6).rounded())
   }
 
   /// A pane's row under the selected worktree: one line of badge-sized text,

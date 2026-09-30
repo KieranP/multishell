@@ -21,7 +21,7 @@ struct AppModelLifecycleTests {
     let calls = LineRecorder()
     h.model.refreshAppLaunchFiles = { _ in
       calls.record("refresh")
-      return CocoaError(.fileWriteNoPermission)
+      throw CocoaError(.fileWriteNoPermission)
     }
     h.model.sweepPromisedDropCopies = { calls.record("sweep") }
 
@@ -53,9 +53,9 @@ struct AppModelLifecycleTests {
 
   @Test func aSecondCopyOfTheAppHandsOverToTheRunningOneAndSavesNothing() async {
     let file = Scratch.path("second-copy").appendingPathComponent("state.json")
-    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+    defer { Scratch.remove(file.deletingLastPathComponent()) }
     let h = Harness(stateFile: file)
-    h.source.startError = SocketFailure(kind: .inUse, path: "/tmp/multishell.sock")
+    h.stateSource.startError = SocketFailure(kind: .inUse, path: "/tmp/multishell.sock")
 
     await h.model.start()
 
@@ -70,7 +70,7 @@ struct AppModelLifecycleTests {
 
   @Test func aCopyThatCouldNotQuitAfterHandingOverStartsNoShell() async {
     let h = Harness()
-    h.source.startError = SocketFailure(kind: .inUse, path: "/tmp/multishell.sock")
+    h.stateSource.startError = SocketFailure(kind: .inUse, path: "/tmp/multishell.sock")
     await h.model.start()
 
     h.model.select(h.main)

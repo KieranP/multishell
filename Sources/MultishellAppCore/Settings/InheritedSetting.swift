@@ -7,11 +7,6 @@ public struct InheritedSetting<Value: Equatable & Sendable>: Equatable, Sendable
   /// The repository's file supplies it, rather than the user's global.
   let isFromRepository: Bool
 
-  init(value: Value, isFromRepository: Bool) {
-    self.value = value
-    self.isFromRepository = isFromRepository
-  }
-
   /// The caption under the row while the override is off. `shown` is the
   /// value as the row writes it, so one sentence serves every setting.
   public func caption(_ shown: String) -> String {

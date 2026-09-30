@@ -15,7 +15,7 @@ extension WorktreeCoordinator {
   /// Both halves of a create in `AppModel`'s order, awaited together; the app keeps them apart so
   /// a worktree can be worked in while a slow hook still runs.
   @discardableResult
-  func create(
+  func createThenRunPostCreate(
     branch rawBranch: String,
     basedOn startPoint: String? = nil,
     createBranch: Bool = true,
@@ -26,7 +26,7 @@ extension WorktreeCoordinator {
     stopper: ProcessStopper? = nil,
     onStep: (@Sendable (WorktreeCreationStep) -> Void)? = nil
   ) async throws -> URL {
-    let path = try await add(
+    let path = try await create(
       branch: rawBranch, basedOn: startPoint, createBranch: createBranch, in: project,
       settings: settings, shellPath: shellPath, timeout: timeout, stopper: stopper, onStep: onStep)
     try await runPostCreate(

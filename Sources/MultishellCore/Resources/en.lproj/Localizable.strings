@@ -180,6 +180,8 @@
 "project-removal.nothing-on-disk" = "Nothing on disk is touched; the repository and its worktrees stay where they are.";
 "project-removal.takes" = "Takes the project and its worktrees out of the sidebar.";
 "project-removal.title" = "Remove project %@?";
+"project.merges-measured" = "Merges are measured against %@.";
+"project.no-merge-base" = "No branch to measure merges against, so no worktree is badged as merged.";
 "project.prefix-example" = "Typing tabs creates %1$@ at %2$@.";
 "project.prefix-example-shared" = "Typing tabs creates %1$@ at %2$@. The prefix comes from %3$@.";
 "project.resolves-to" = "Resolves to %@.";

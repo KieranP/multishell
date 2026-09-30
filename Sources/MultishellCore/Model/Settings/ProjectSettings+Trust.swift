@@ -19,6 +19,11 @@ extension ProjectSettings {
     trustDecision(about: shared) == true
   }
 
+  /// `shared` as it applies here: what the yes covers dropped until it is given.
+  public func sharedSettingsInForce(_ shared: SharedProjectSettings) -> SharedProjectSettings {
+    trustsSharedSettings(of: shared) ? shared : shared.withoutWhatTrustCovers
+  }
+
   /// The answer already given about `shared`, `nil` where none was. Export
   /// carries it onto the bytes it writes; see Docs/design/settings.md.
   public func trustDecision(about shared: SharedProjectSettings) -> Bool? {

@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellCore
@@ -6,9 +7,9 @@ import Testing
 /// A file an older build wrote, told apart from what this build writes.
 @Suite
 struct AgentHookIntegrationStatusTests: AgentHookFixtures {
-  @Test func oneReadAnswersInstalledAndCurrentAsTheTwoReadsDo() throws {
+  @Test func anInstallationReadsAbsentThenCurrentThenStale() throws {
     let directory = temporaryDirectory()
-    defer { try? FileManager.default.removeItem(at: directory) }
+    defer { Scratch.remove(directory) }
     let ours = directory.appendingPathComponent("hooks/multishell.json")
     let shared = directory.appendingPathComponent(".codex/hooks.json")
     try FileManager.default.createDirectory(
@@ -32,7 +33,7 @@ struct AgentHookIntegrationStatusTests: AgentHookFixtures {
 
   @Test func aFileOfOursAnOlderBuildWroteOrTheUserEditedIsStaleUntilUpdate() throws {
     let directory = temporaryDirectory()
-    defer { try? FileManager.default.removeItem(at: directory) }
+    defer { Scratch.remove(directory) }
     let file = directory.appendingPathComponent("hooks/multishell.json")
     let copilot = AgentHookCatalogue.copilot
     try FileManager.default.createDirectory(
@@ -47,7 +48,7 @@ struct AgentHookIntegrationStatusTests: AgentHookFixtures {
 
   @Test func aSharedFileMissingAnEventThisBuildAddedIsStaleNotAbsent() throws {
     let directory = temporaryDirectory()
-    defer { try? FileManager.default.removeItem(at: directory) }
+    defer { Scratch.remove(directory) }
     let file = directory.appendingPathComponent(".claude/settings.json")
     try FileManager.default.createDirectory(
       at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -74,7 +75,7 @@ struct AgentHookIntegrationStatusTests: AgentHookFixtures {
 
   @Test func installingOverAStaleInstallReplacesOursAndKeepsTheirs() throws {
     let directory = temporaryDirectory()
-    defer { try? FileManager.default.removeItem(at: directory) }
+    defer { Scratch.remove(directory) }
     let file = directory.appendingPathComponent(".codex/hooks.json")
     try FileManager.default.createDirectory(
       at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -102,7 +103,7 @@ struct AgentHookIntegrationStatusTests: AgentHookFixtures {
     agent: AgentHookIntegration
   ) throws {
     let directory = temporaryDirectory()
-    defer { try? FileManager.default.removeItem(at: directory) }
+    defer { Scratch.remove(directory) }
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     let file = directory.appendingPathComponent("settings.json")
     let original = #"{"hooks":null,"model":"opus"}"#

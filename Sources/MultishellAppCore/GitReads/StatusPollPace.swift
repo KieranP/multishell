@@ -10,11 +10,6 @@ struct StatusPollPace: Sendable {
   /// Every worktree every tick, for a test that reads right after a change.
   static let unpaced = StatusPollPace(interval: .seconds(5), costMultiple: 0)
 
-  init(interval: Duration, costMultiple: Int) {
-    self.interval = interval
-    self.costMultiple = costMultiple
-  }
-
   func isDue(
     lastRead: ContinuousClock.Instant?, took: Duration?, at now: ContinuousClock.Instant
   ) -> Bool {

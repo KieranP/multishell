@@ -8,17 +8,17 @@ import Testing
 struct AppModelNotificationsTests {
   @Test func notificationsFollowThePreferenceAndTheShownTab() {
     let h = Harness()
-    h.source.send(SessionStateReport(state: .attention, cwd: h.main.path.path))
+    h.stateSource.send(SessionStateReport(state: .attention, cwd: h.main.path.path))
     #expect(h.notifier.posted.isEmpty, "off until turned on")
     h.model.setNotifications(NotificationPreference(attention: true, failed: true, done: true))
     h.model.select(h.main)
     let first = h.model.workspace.activeTab(in: h.main.id)!
     h.model.newTab()
 
-    h.source.send(SessionStateReport(state: .running, sessionID: first.focusedSessionID))
+    h.stateSource.send(SessionStateReport(state: .running, sessionID: first.focusedSessionID))
     #expect(h.notifier.posted.isEmpty, "working is never a banner")
 
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
         state: .attention, sessionID: first.focusedSessionID, message: "Needs Bash"))
     #expect(h.notifier.posted.count == 1)
@@ -27,11 +27,11 @@ struct AppModelNotificationsTests {
     #expect(h.notifier.posted.first?.key == .session(first.focusedSessionID))
 
     h.model.setNotifications(NotificationPreference(attention: true))
-    h.source.send(SessionStateReport(state: .done, sessionID: first.focusedSessionID))
+    h.stateSource.send(SessionStateReport(state: .done, sessionID: first.focusedSessionID))
     #expect(h.notifier.posted.count == 1)
 
     h.model.setNotifications(.off)
-    h.source.send(SessionStateReport(state: .attention, sessionID: first.focusedSessionID))
+    h.stateSource.send(SessionStateReport(state: .attention, sessionID: first.focusedSessionID))
     #expect(h.notifier.posted.count == 1)
 
     // A click on the banner brings the tab back.
@@ -49,15 +49,15 @@ struct AppModelNotificationsTests {
     let session = tab.focusedSessionID
     h.model.newTab()
 
-    h.source.send(SessionStateReport(state: .attention, sessionID: session))
+    h.stateSource.send(SessionStateReport(state: .attention, sessionID: session))
     #expect(h.notifier.posted.count == 1)
     #expect(h.notifier.withdrawn.isEmpty, "nothing has changed yet")
 
-    h.source.send(SessionStateReport(state: .running, sessionID: session))
+    h.stateSource.send(SessionStateReport(state: .running, sessionID: session))
     #expect(h.notifier.withdrawn == [.session(session)])
     #expect(h.notifier.posted.count == 1, "working raises none of its own")
 
-    h.source.send(SessionStateReport(state: .running, sessionID: session))
+    h.stateSource.send(SessionStateReport(state: .running, sessionID: session))
     #expect(h.notifier.withdrawn.count == 1, "taken back once, not on every report after")
   }
 
@@ -71,7 +71,7 @@ struct AppModelNotificationsTests {
     let session = tab.focusedSessionID
     h.model.newTab()
 
-    h.source.send(SessionStateReport(state: .attention, sessionID: session))
+    h.stateSource.send(SessionStateReport(state: .attention, sessionID: session))
     #expect(h.notifier.posted.count == 1)
 
     h.model.activate(tab)
@@ -89,7 +89,7 @@ struct AppModelNotificationsTests {
     let session = tab.focusedSessionID
 
     h.platform.isActive = false
-    h.source.send(SessionStateReport(state: .done, sessionID: session))
+    h.stateSource.send(SessionStateReport(state: .done, sessionID: session))
     #expect(h.notifier.posted.count == 1, "shown, but nobody is looking")
     #expect(h.model.sessionStates[.session(session)] == .done, "and the dot says so too")
 
@@ -111,7 +111,7 @@ struct AppModelNotificationsTests {
     let session = first.focusedSessionID
     h.model.newTab()
 
-    h.source.send(SessionStateReport(state: .done, sessionID: session))
+    h.stateSource.send(SessionStateReport(state: .done, sessionID: session))
     #expect(h.notifier.posted.count == 1)
 
     h.model.closeTab(first.id)

@@ -59,16 +59,18 @@ rather than from its hooks. Any other shell reports only what you send it with
 | ---------------- | ----- | ------- | ------ | ------- | --- |
 | Claude Code      | Yes   | Yes     | Yes    | Yes     | Yes |
 | Codex            | Yes   | Yes     | No     | Yes     | No  |
-| Gemini CLI       | Yes   | Yes     | No     | No      | No  |
+| Gemini CLI       | Yes   | Yes     | No     | Shells  | No  |
 | Copilot CLI      | Yes   | Yes     | No     | Yes     | No  |
 | OpenCode         | Yes   | Yes     | Yes    | Yes     | No  |
 | A custom command | No    | No      | No     | No      | No  |
 
 Waiting is a dot for an agent stopped at a permission prompt, Workers the chip
-counting the subagents it has out, `@` a dropped file arriving as `@path` rather
-than a quoted one. Codex runs no hook until you trust it once with `/hooks`.
-OpenCode is given a plugin, and is the only one that reports your answer, so its
-Waiting clears then rather than at the next tool call.
+counting the subagents and background shells it has out, `@` a dropped file
+arriving as `@path` rather than a quoted one. Gemini has no subagent hooks, so
+its chip counts only the shells it backgrounded. Codex runs no hook until you
+trust it once with `/hooks`. OpenCode is given a plugin, and is the only one
+that reports your answer, so its Waiting clears then rather than at the next
+tool call.
 
 | Agent       | File                                      | Ours alone |
 | ----------- | ----------------------------------------- | ---------- |

@@ -57,7 +57,7 @@ struct HelperRelayTests {
   }
 
   /// `printf` stood in by a function, so each report says the subshell depth it was written at.
-  @Test(arguments: installedBashes)
+  @Test(arguments: InstalledBashes.all)
   func bashWritesEachReportToTheRelayWithoutASubshell(bash: String) async throws {
     let listener = try ReportListener()
     defer { listener.stop() }
@@ -90,7 +90,7 @@ struct HelperRelayTests {
 
   /// The relay's parent is killed too, or it reads the pipe once the relay fails
   /// and the shell never writes to a pipe with no reader.
-  @Test(arguments: installedBashes)
+  @Test(arguments: InstalledBashes.all)
   func aBashWhoseRelayHasGoneLivesOnAndReportsThroughTheHelper(bash: String) async throws {
     let listener = try ReportListener()
     defer { listener.stop() }
@@ -124,7 +124,7 @@ struct HelperRelayTests {
 
   /// The stand-in relay is a helper from before `relay` existed, held until the
   /// reports are in the pipe so its usage error comes after them.
-  @Test(arguments: installedBashes)
+  @Test(arguments: InstalledBashes.all)
   func aRelayThatEndsWithoutReadingLosesNoReport(bash: String) async throws {
     let listener = try ReportListener()
     defer { listener.stop() }
@@ -157,7 +157,7 @@ struct HelperRelayTests {
       recorder.received.compactMap(SessionStateReport.parse).map(\.state) == [.running, .done])
   }
 
-  @Test(arguments: installedBashes)
+  @Test(arguments: InstalledBashes.all)
   func aBashRelayEndsWithItsShellThoughABackgroundChildHoldsThePipe(bash: String) async throws {
     let home = try Scratch.directory("bashrelaychild")
     defer { Scratch.remove(home) }
@@ -184,7 +184,7 @@ struct HelperRelayTests {
     #expect(kill(relay, 0) != 0, "the relay outlived its shell")
   }
 
-  @Test(arguments: installedBashes)
+  @Test(arguments: InstalledBashes.all)
   func aRefusedRelaysLoopEndsWithItsShellThoughAChildHoldsThePipe(bash: String) async throws {
     let home = try Scratch.directory("bashloopchild")
     defer { Scratch.remove(home) }
@@ -218,7 +218,7 @@ struct HelperRelayTests {
     #expect(kill(loop, 0) != 0, "the read loop outlived its shell")
   }
 
-  @Test(arguments: installedBashes)
+  @Test(arguments: InstalledBashes.all)
   func aPipeTrapSetAfterTheInitSurvivesTheNextReport(bash: String) async throws {
     let home = try Scratch.directory("bashpipetrap")
     defer { Scratch.remove(home) }
@@ -241,7 +241,7 @@ struct HelperRelayTests {
       "\(output.standardOutput) \(output.standardError)")
   }
 
-  @Test(arguments: installedBashes)
+  @Test(arguments: InstalledBashes.all)
   func aBashRelayStillSendsWhatItsShellWroteJustBeforeExiting(bash: String) async throws {
     let listener = try ReportListener()
     defer { listener.stop() }
@@ -269,7 +269,3 @@ struct HelperRelayTests {
       recorder.received.compactMap(SessionStateReport.parse).map(\.state) == [.running, .done])
   }
 }
-
-/// The system's bash 3.2 and any newer one installed, whose `$!` and `wait` differ.
-private let installedBashes = ["/bin/bash", "/opt/homebrew/bin/bash", "/usr/local/bin/bash"]
-  .filter { FileManager.default.isExecutableFile(atPath: $0) }

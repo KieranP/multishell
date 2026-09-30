@@ -47,8 +47,7 @@ struct AgentsSettingsPage: View {
     Section {
       DetectionPicker(
         label: t("agents.preferred-agent"),
-        selection: model.setting(
-          \.preferredAgentID, or: AgentCatalogue.noneID, write: model.setPreferredAgent),
+        selection: Binding(get: { model.globalAgentID }, set: { model.setPreferredAgent($0) }),
         options: model.agentDetection.options(selected:),
         rescanning: model,
         info: model.agentPathNote
@@ -58,11 +57,11 @@ struct AgentsSettingsPage: View {
           label: t("label.command"), info: t("agents.command-info"),
           prompt: t("agents.command-prompt"),
           text: model.setting(\.customAgentCommand, write: model.setCustomAgentCommand))
-      } else if let agentID = model.workspace.preferredAgentID, agentID != AgentCatalogue.noneID {
+      } else if model.hasPreferredAgent {
         InfoLabeledContent(t("agents.flags"), info: t("agents.flags-info")) {
           // No prompt text: a greyed example in an empty field reads as a
           // default the agent is already being started with.
-          TextField(t("agents.flags"), text: model.agentFlagsSetting(for: agentID))
+          TextField(t("agents.flags"), text: model.agentFlagsSetting(for: model.globalAgentID))
         }
       }
       InfoToggle(

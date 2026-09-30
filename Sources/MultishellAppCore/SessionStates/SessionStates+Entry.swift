@@ -84,10 +84,15 @@ extension SessionStates {
     /// The turn is over, however it ended: nothing out, displaced or asked.
     mutating func settleTurn() {
       roster = SubagentRoster()
-      displaced = nil
-      waitingRaisers = []
+      clearDisplaced()
       stopResumes = false
       turnUnderway = false
+    }
+
+    /// Nothing displaced, and nothing asked that it was holding.
+    mutating func clearDisplaced() {
+      displaced = nil
+      waitingRaisers = []
     }
 
     /// A new turn: what the last one owed or asked goes, and so does a worker

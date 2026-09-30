@@ -5,7 +5,7 @@ extension AppModel {
   /// What the shell says it started, while it runs. An agent naming itself
   /// is left alone; see Docs/design/agents.md.
   private func noteCommandAgent(_ report: SessionStateReport, of id: TerminalSession.ID) {
-    guard report.isShell == true, report.agent == nil else { return }
+    guard report.isFromShellIntegration == true, report.agent == nil else { return }
     setIfChanged(
       \.commandAgentIDs[id], report.command.flatMap { AgentCatalogue.agent(runningCommand: $0)?.id }
     )
@@ -36,26 +36,18 @@ extension AppModel {
     updatePIDWatch()
   }
 
-  /// `isSeen` is the focused pane and clears a Done; `isOnScreen` is any pane
-  /// in view and holds the banner. See Docs/design/terminals.md.
-  private struct Visibility {
-    var worktreeID: Worktree.ID
-    var isSeen: Bool
-    var isOnScreen: Bool
-  }
-
-  private func visibility(of key: SessionStates.Key) -> Visibility? {
+  private func visibility(of key: SessionStates.Key) -> SessionVisibility? {
     switch key {
     case .session(let id):
       guard let session = workspace.session(id) else { return nil }
-      return Visibility(
+      return SessionVisibility(
         worktreeID: session.worktreeID, isSeen: isSeen(id),
         isOnScreen: isPaneInView(id) && platform.isActive)
     case .worktree(let id):
       // Gated on the board as `isPaneInView` is, the worktree being selected
       // with nothing of it on screen; and on frontmost as `isSeen`.
       let seen = worktreeIDInView == id && platform.isActive
-      return Visibility(worktreeID: id, isSeen: seen, isOnScreen: seen)
+      return SessionVisibility(worktreeID: id, isSeen: seen, isOnScreen: seen)
     }
   }
 
@@ -63,15 +55,7 @@ extension AppModel {
     guard let visibility = visibility(of: key) else { return }
     var meant: SessionState?
     mutateStates {
-      meant = $0.report(
-        report.state, pid: pid, message: report.message, duration: report.duration,
-        subagent: report.subagentChange, startsTurn: report.startsTurn == true,
-        startsSession: report.startsSession == true,
-        backgroundShells: report.backgroundShells ?? [], fromShell: report.isShell == true,
-        resumesAfterWorkers: report.resumesAfterWorkers == true,
-        workersOut: report.workersOut, turnFollows: report.turnFollows == true,
-        conversationID: report.conversationID, for: key,
-        isSeen: visibility.isSeen)
+      meant = $0.report(report, pid: pid, for: key, isSeen: visibility.isSeen)
     }
     if let meant {
       notifyIfNeeded(

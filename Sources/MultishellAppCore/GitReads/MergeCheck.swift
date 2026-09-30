@@ -4,6 +4,6 @@ struct MergeCheck: Equatable, Sendable {
   let base: String
   let baseTip: String
   let branch: String
-  let tip: String
+  let branchTip: String
   let upstreamIsGone: Bool
 }

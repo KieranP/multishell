@@ -21,17 +21,12 @@ struct WorktreeActions: View {
     Button(t("action.copy-path")) { model.copyToClipboard(worktree.path.path) }
     Button(t("action.copy-branch")) { model.copyToClipboard(worktree.name) }
     Divider()
-    // Selected first, so the tab opens where it was asked for. Always a
-    // shell: the agent has its own item, so auto-start does not apply.
-    Button(t("menu.new-shell-tab")) {
-      if model.select(worktree, openingFirstTab: .never) { model.newShellTab() }
-    }
-    .disabled(model.isBusy(worktree.id))
-    if model.preferredAgentID(for: worktree) != nil {
-      Button(t("menu.new-agent-tab")) {
-        if model.select(worktree, openingFirstTab: .never) { model.newAgentTab() }
-      }
+    // Always a shell: the agent has its own item, so auto-start does not apply.
+    Button(t("menu.new-shell-tab")) { model.newShellTab(selecting: worktree) }
       .disabled(model.isBusy(worktree.id))
+    if model.effectiveAgentID(for: worktree) != nil {
+      Button(t("menu.new-agent-tab")) { model.newAgentTab(selecting: worktree) }
+        .disabled(model.isBusy(worktree.id))
     }
     if model.state(ofWorktree: worktree.id) != nil {
       Divider()

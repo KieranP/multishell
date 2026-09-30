@@ -11,13 +11,13 @@ struct AppModelAgentsTests {
   @Test func theProjectOverrideBeatsTheGlobalAndNoneMeansNoAgent() {
     let h = Harness()
     h.model.setPreferredAgent("claude")
-    #expect(h.model.preferredAgentID(for: h.main) == "claude")
+    #expect(h.model.effectiveAgentID(for: h.main) == "claude")
 
     h.model.updateSettings(ProjectSettings(preferredAgentID: "codex"), for: h.project)
-    #expect(h.model.preferredAgentID(for: h.main) == "codex")
+    #expect(h.model.effectiveAgentID(for: h.main) == "codex")
 
     h.model.updateSettings(ProjectSettings(preferredAgentID: "none"), for: h.project)
-    #expect(h.model.preferredAgentID(for: h.main) == nil)
+    #expect(h.model.effectiveAgentID(for: h.main) == nil)
     h.model.select(h.main)
     let tabs = h.model.workspace.tabs(in: h.main.id).count
     h.model.presentedError = nil
@@ -28,17 +28,17 @@ struct AppModelAgentsTests {
 
   @Test func theNewTabMenuListsWhatWasFoundAndTheCustomCommandOnlyWhenTyped() throws {
     let bin = try fakeBin(["codex", "claude"])
-    defer { try? FileManager.default.removeItem(at: bin) }
+    defer { Scratch.remove(bin) }
     let h = Harness()
     h.model.agentDetection = AgentDetection(searchPath: bin.path)
 
-    #expect(h.model.installedAgentIDs == ["claude", "codex"], "catalogue order")
+    #expect(h.model.newTabAgentIDs == ["claude", "codex"], "catalogue order")
 
     h.model.setCustomAgentCommand("  ")
-    #expect(h.model.installedAgentIDs == ["claude", "codex"], "a blank line is no agent")
+    #expect(h.model.newTabAgentIDs == ["claude", "codex"], "a blank line is no agent")
 
     h.model.setCustomAgentCommand("my-agent --fast")
-    #expect(h.model.installedAgentIDs == ["claude", "codex", "custom"])
+    #expect(h.model.newTabAgentIDs == ["claude", "codex", "custom"])
 
     // Its own store: a second model over the harness's would deselect the
     // worktree under it, `init` clearing the selection.
@@ -48,7 +48,7 @@ struct AppModelAgentsTests {
     saved.setCustomAgentCommand("my-agent --fast")
     let relaunched = AppModel(
       store: saved, host: FakeEngine(), coordinator: nil, watcher: FakeWatcher())
-    #expect(relaunched.installedAgentIDs == ["custom"], "the saved command, before any PATH scan")
+    #expect(relaunched.newTabAgentIDs == ["custom"], "the saved command, before any PATH scan")
   }
 
   @Test func theFlagsFooterSaysWhenTheGlobalLineIsEmpty() {

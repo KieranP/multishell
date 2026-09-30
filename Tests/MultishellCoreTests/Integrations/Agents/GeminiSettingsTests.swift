@@ -52,7 +52,7 @@ struct GeminiSettingsTests {
 
   @Test func steeringAndAnInjectingOrNotifyingShellBothAreNeeded() throws {
     let files = Files()
-    defer { try? FileManager.default.removeItem(at: files.root) }
+    defer { Scratch.remove(files.root) }
     try files.user(steering)
     #expect(!files.wakes, "a shell's end is silent by default")
     try files.user(
@@ -63,7 +63,7 @@ struct GeminiSettingsTests {
 
   @Test func theProjectFillsWhatTheUserLeftAndTheSystemFileHasTheLastWord() throws {
     let files = Files()
-    defer { try? FileManager.default.removeItem(at: files.root) }
+    defer { Scratch.remove(files.root) }
     try files.user(steering)
     try files.project(injecting)
     try files.trust([files.workspace.path: "TRUST_FOLDER"])
@@ -74,7 +74,7 @@ struct GeminiSettingsTests {
 
   @Test func anUntrustedProjectsSettingsAreNotReadAsGeminiDoesNot() throws {
     let files = Files()
-    defer { try? FileManager.default.removeItem(at: files.root) }
+    defer { Scratch.remove(files.root) }
     try files.user(steering)
     try files.project(injecting)
     #expect(!files.wakes, "no rule names it")
@@ -84,7 +84,7 @@ struct GeminiSettingsTests {
 
   @Test func theLongestRuleDecidesAndTrustParentCoversTheRulesParent() throws {
     let files = Files()
-    defer { try? FileManager.default.removeItem(at: files.root) }
+    defer { Scratch.remove(files.root) }
     try files.user(steering)
     try files.project(injecting)
     let sibling = files.root.appendingPathComponent("o").path
@@ -96,7 +96,7 @@ struct GeminiSettingsTests {
 
   @Test func withFolderTrustOffEveryProjectIsTrusted() throws {
     let files = Files()
-    defer { try? FileManager.default.removeItem(at: files.root) }
+    defer { Scratch.remove(files.root) }
     try files.user(
       #"{"experimental":{"modelSteering":true},"security":{"folderTrust":{"enabled":false}}}"#)
     try files.project(injecting)
@@ -105,7 +105,7 @@ struct GeminiSettingsTests {
 
   @Test func theSystemDefaultsBesideTheSystemFileAreTheFirstLayer() throws {
     let files = Files()
-    defer { try? FileManager.default.removeItem(at: files.root) }
+    defer { Scratch.remove(files.root) }
     try files.write(steering, to: files.defaults)
     try files.user(injecting)
     #expect(files.wakes)
@@ -117,7 +117,7 @@ struct GeminiSettingsTests {
 
   @Test func commentsAreReadPastAndASlashInsideAStringIsKept() throws {
     let files = Files()
-    defer { try? FileManager.default.removeItem(at: files.root) }
+    defer { Scratch.remove(files.root) }
     try files.user(
       """
       {

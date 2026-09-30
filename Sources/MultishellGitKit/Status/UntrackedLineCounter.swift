@@ -6,18 +6,18 @@ enum UntrackedLineCounter {
   /// A poll's share of the disk: how many files it opens, how big one may be,
   /// and how much it reads in all before it stops counting.
   static let fileLimit = 500
-  static let byteLimit = 1 << 20
+  static let perFileByteLimit = 1 << 20
   static let totalByteLimit = 8 << 20
 
-  /// Every line an insertion; `unscored` is the files with no line to show:
-  /// binary, empty, or unread. Never one past `fileLimit`; see worktrees.md.
+  /// Every line an insertion; a binary, empty or unread file unscored. Never one
+  /// past `fileLimit`; see worktrees.md.
   static func count(
     paths: [String], in directory: URL, memo: UntrackedLineMemo? = nil
   ) -> LineCounts {
     let known = memo?.entries(in: directory) ?? [:]
     var seen: [String: UntrackedLineMemo.Entry] = [:]
     var counts = LineCounts()
-    var read = 0
+    var bytesCharged = 0
     for path in paths.prefix(fileLimit) {
       let url = directory.appending(path: path)
       // A symlink is not a regular file, so it is never read: its own size
@@ -25,10 +25,10 @@ enum UntrackedLineCounter {
       guard
         let values = try? url.resourceValues(
           forKeys: [.fileSizeKey, .isRegularFileKey, .contentModificationDateKey]),
-        values.isRegularFile == true, let size = values.fileSize, size <= byteLimit,
-        read + size <= totalByteLimit
+        values.isRegularFile == true, let size = values.fileSize, size <= perFileByteLimit,
+        bytesCharged + size <= totalByteLimit
       else {
-        counts.unscored += 1
+        counts.unscoredFiles += 1
         continue
       }
       let modified = values.contentModificationDate ?? .distantPast
@@ -39,13 +39,13 @@ enum UntrackedLineCounter {
         counted = Self.lines(in: data)
       } else {
         // Unread is not remembered: a file made readable keeps its date.
-        counts.unscored += 1
+        counts.unscoredFiles += 1
         continue
       }
       // Charged whether read or remembered, so the budget skips what it did.
-      read += size
+      bytesCharged += size
       seen[path] = UntrackedLineMemo.Entry(size: size, modified: modified, lines: counted)
-      if let counted { counts.insertions += counted } else { counts.unscored += 1 }
+      if let counted { counts.insertions += counted } else { counts.unscoredFiles += 1 }
     }
     memo?.replace(seen, in: directory)
     return counts

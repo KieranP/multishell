@@ -10,8 +10,8 @@ struct WorktreeOrder: Equatable, Sendable {
 
   let sortOrder: WorktreeSortOrder
   let activeFirst: Bool
-  /// The project's trunk, as `DefaultBranch.branchName` gives it and without
-  /// the remote in front of it, or `nil` while none is resolved.
+  /// The project's trunk, as `DefaultBranch.nameWithoutRemote` gives it, or `nil`
+  /// while none is resolved.
   let trunkBranch: String?
 
   init(sortOrder: WorktreeSortOrder, activeFirst: Bool, trunkBranch: String? = nil) {

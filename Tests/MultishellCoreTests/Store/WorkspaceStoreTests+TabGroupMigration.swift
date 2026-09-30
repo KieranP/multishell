@@ -10,7 +10,7 @@ extension WorkspaceStoreTests {
   @Test func aStateFileWrittenBeforeTabGroupsComesBackAsOneGroupPerWorktree() throws {
     let file = Scratch.path("scratch")
       .appendingPathComponent("state.json")
-    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+    defer { Scratch.remove(file.deletingLastPathComponent()) }
     try FileManager.default.createDirectory(
       at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
 
@@ -49,26 +49,26 @@ extension WorkspaceStoreTests {
     ).write(to: file)
 
     let (store, error) = WorkspaceStore.restored(from: WorkspaceFile(fileURL: file))
-    let ws = store.workspace
+    let workspace = store.workspace
 
     #expect(error == nil, "\(String(describing: error))")
-    WorkspaceInvariants.check(ws, "migrated")
+    WorkspaceInvariants.check(workspace, "migrated")
 
-    #expect(ws.groups(in: "/repos/demo").count == 1)
-    #expect(ws.groups(in: "/repos/demo-feat").count == 1)
-    let group = ws.groups(in: "/repos/demo")[0]
-    #expect(ws.tabs(in: group.id).map(\.id) == [shellTab, agentTab, splitTab])
+    #expect(workspace.groups(in: "/repos/demo").count == 1)
+    #expect(workspace.groups(in: "/repos/demo-feat").count == 1)
+    let group = workspace.groups(in: "/repos/demo")[0]
+    #expect(workspace.tabs(inGroup: group.id).map(\.id) == [shellTab, agentTab, splitTab])
 
     // What the user was looking at, which is the whole reason the old key is
     // still read.
-    #expect(ws.activeTab(in: "/repos/demo")?.id == agentTab)
-    #expect(ws.activeTab(in: "/repos/demo-feat")?.id == featureTab, "its only tab")
+    #expect(workspace.activeTab(in: "/repos/demo")?.id == agentTab)
+    #expect(workspace.activeTab(in: "/repos/demo-feat")?.id == featureTab, "its only tab")
 
-    #expect(ws.tab(agentTab)?.customTitle == "build")
-    #expect(ws.tab(splitTab)?.isSplit == true)
-    #expect(ws.tab(splitTab)?.focusedSessionID == right)
-    #expect(ws.sessions.count == 5)
-    #expect(ws.groups(in: "/repos/demo")[0].weight == 1)
+    #expect(workspace.tab(agentTab)?.customTitle == "build")
+    #expect(workspace.tab(splitTab)?.isSplit == true)
+    #expect(workspace.tab(splitTab)?.focusedSessionID == right)
+    #expect(workspace.sessions.count == 5)
+    #expect(workspace.groups(in: "/repos/demo")[0].weight == 1)
   }
 
 }

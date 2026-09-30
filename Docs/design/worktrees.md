@@ -202,9 +202,9 @@ Discovery, naming, ordering, removal. Newest at the bottom.
 - **A tree still being built wears no badge.** The add writes the record
   directory before checking a file out, and that is what is watched, so a tick
   lands mid-checkout where status counts every file not there yet.
-- **So status is skipped while under construction**: every path a running add
-  was given, and any worktree with a stage running. A failed stage is not one,
-  nothing writing there until the Dismiss.
+- **So status is skipped while a tree is being written**: every path a running
+  add was given, and any worktree with a create's or a removal's stage running.
+  A failed stage is not one, nothing writing there until the Dismiss.
 - **A claimed path forgets its status and its merged badge**, the last checkout
   there being gone and paths being ids.
 - **A stage on a listed worktree keeps both and is asked nothing new**, or a

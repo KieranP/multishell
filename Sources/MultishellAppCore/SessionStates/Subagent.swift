@@ -5,8 +5,7 @@ import MultishellCore
 /// it. Runtime only, kept by `SessionStates`; see Docs/design/agents.md.
 public struct Subagent: Identifiable, Equatable, Sendable {
   public let id: String
-  /// What the agent calls the kind, `nil` for a worker an older helper
-  /// counted without naming.
+  /// What the agent calls the kind, `nil` where no report said.
   var type: String?
   /// When it started. Handed in by `stampChanges`, never read from a clock.
   var since: Date?
@@ -28,7 +27,7 @@ public struct Subagent: Identifiable, Equatable, Sendable {
   /// not vouch for it: its end may have been lost.
   var heardSinceStop = true
 
-  var isShell: Bool { pid != nil || isListedShell }
+  var isBackgroundShell: Bool { pid != nil || isListedShell }
 
   init(id: String, type: String?, since: Date? = nil) {
     self.id = id
@@ -46,13 +45,13 @@ public struct Subagent: Identifiable, Equatable, Sendable {
   /// The place every worker started past the roster limit shares.
   static let overflowID = "overflow:"
 
-  /// Ids given to workers an older helper counted without naming, so its
-  /// `-1` takes one of those and never a named one.
+  /// Ids given to workers reported without one, so an unnamed end takes one of
+  /// those and never a named one.
   static let anonymousPrefix = "anonymous:"
   var isAnonymous: Bool { id.hasPrefix(Self.anonymousPrefix) }
 
   public var displayName: String {
-    type ?? (isShell ? t("subagent.background-shell") : t("subagent.unnamed"))
+    type ?? (isBackgroundShell ? t("subagent.background-shell") : t("subagent.unnamed"))
   }
 
   /// How many workers this place stands for, where that is more than one.

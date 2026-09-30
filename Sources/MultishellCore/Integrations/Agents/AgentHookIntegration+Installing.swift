@@ -32,7 +32,7 @@ extension AgentHookIntegration {
       // Nothing of ours in it: the write would sort its keys, re-indent it and
       // leave a backup beside it, all for an edit that changes nothing.
       let settings = try AgentSettingsFile.read(file)
-      guard holdsAnyOfOurs(settings) else { return }
+      guard holdsAnyOfOurHooks(settings) else { return }
       try AgentSettingsFile.write(removing(from: settings), to: file)
     }
   }
@@ -40,7 +40,7 @@ extension AgentHookIntegration {
   /// A file that is ours alone, `nil` where it is absent or names no helper.
   func ourFileContents(_ file: URL) -> String? {
     guard let contents = try? String(contentsOf: file, encoding: .utf8),
-      contents.contains(AgentHookCatalogue.helperName)
+      contents.contains(Paths.helperName)
     else { return nil }
     return contents
   }

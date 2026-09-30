@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import TestScratch
 import Testing
 
 @testable import MultishellAppCore
@@ -8,7 +9,7 @@ import Testing
 struct ShellDetectionTests {
   @Test func shellsComeFromTheSystemListAndThePathWithoutDuplicates() throws {
     let bin = try fakeBin(["fish", "zsh", "nu", "bash"])
-    defer { try? FileManager.default.removeItem(at: bin) }
+    defer { Scratch.remove(bin) }
     let list = bin.appendingPathComponent("shells")
     try """
     # List of acceptable shells for chpass(1).

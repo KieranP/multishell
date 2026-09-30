@@ -1,5 +1,5 @@
 import Foundation
-import Synchronization
+import TestScratch
 import Testing
 
 @testable import MultishellProcess
@@ -10,7 +10,7 @@ struct ProcessRunnerTests {
   let sh = URL(fileURLWithPath: "/bin/sh")
   let cwd = URL(fileURLWithPath: NSTemporaryDirectory())
 
-  @Test func capturesStandardOutput() async throws {
+  @Test func runReturnsWhatTheChildWroteToStandardOutput() async throws {
     let out = try await runner.run(sh, ["-c", "printf hello"], in: cwd)
     #expect(out == "hello")
   }
@@ -38,7 +38,7 @@ struct ProcessRunnerTests {
 
   /// The deadlock this guards against: a child that fills both pipes past
   /// 64 KiB blocks forever if the parent drains them one after the other.
-  @Test func drainsLargeOutputOnBothPipesWithoutDeadlocking() async throws {
+  @Test func aChildFillingBothPipesPastTheirBuffersStillFinishes() async throws {
     let output = try await runner.capture(
       sh,
       ["-c", "head -c 300000 /dev/zero | tr '\\0' a; head -c 300000 /dev/zero | tr '\\0' b >&2"],
@@ -51,9 +51,8 @@ struct ProcessRunnerTests {
   /// Starved, the cooperative pool holds at most a thread per core inside a run, so each child
   /// counts the runs beside it instead of timing the batch; see Docs/develop/tests.md.
   @Test func manyConcurrentProcessesDoNotStarveEachOther() async throws {
-    let running = cwd.appendingPathComponent("ms-overlap-\(UUID().uuidString)", isDirectory: true)
-    try FileManager.default.createDirectory(at: running, withIntermediateDirectories: true)
-    defer { try? FileManager.default.removeItem(at: running) }
+    let running = try Scratch.directory("overlap")
+    defer { Scratch.remove(running) }
     let script = """
       : > "\(running.path)/$$"
       ls "\(running.path)" | wc -l
@@ -84,7 +83,7 @@ struct ProcessRunnerTests {
     #expect(out.hasPrefix("yes-/"))
   }
 
-  @Test func runsInTheGivenDirectory() async throws {
+  @Test func aChildStartsInTheDirectoryItIsGiven() async throws {
     let out = try await runner.run(sh, ["-c", "pwd"], in: cwd)
     #expect(
       URL(fileURLWithPath: out.trimmingCharacters(in: .whitespacesAndNewlines)).standardizedFileURL
@@ -133,15 +132,4 @@ struct ProcessRunnerTests {
     let out = try await runner.run(sh, ["-c", "cat; printf done"], in: cwd)
     #expect(out == "done")
   }
-}
-
-/// Counts this process's forks: `fork()` runs the atfork handlers, and
-/// `posix_spawn` does not.
-private enum ForkCount {
-  static let forks = Atomic(0)
-  private static let registered: Void = {
-    pthread_atfork({ ForkCount.forks.add(1, ordering: .relaxed) }, nil, nil)
-  }()
-
-  static func watch() { _ = registered }
 }

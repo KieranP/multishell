@@ -176,8 +176,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     // the two disagree over the same stored value.
     var result = self
     result.iconGlyph = ProjectIcon.normalizedGlyph(iconGlyph)
-    guard var shared else { return result }
-    if !trustsSharedSettings(of: shared) { shared = shared.withoutWhatTrustCovers }
+    guard let shared = shared.map(sharedSettingsInForce) else { return result }
     result.branchPrefix = branchPrefix ?? shared.branchPrefix
     result.defaultBranch = defaultBranch ?? shared.defaultBranch
     result.autoStartAgent = autoStartAgent ?? shared.autoStartAgent
@@ -200,7 +199,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   }
 
   /// The project's value where it has one, the default otherwise.
-  public func effectiveWorktreeSettings(defaults: WorktreeSettings) -> WorktreeSettings {
+  func effectiveWorktreeSettings(defaults: WorktreeSettings) -> WorktreeSettings {
     WorktreeSettings(
       worktreeDirectory: worktreeDirectory?.trimmingCharacters(in: .whitespaces)
         ?? defaults.worktreeDirectory,

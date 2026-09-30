@@ -85,15 +85,8 @@ struct InfoPlistTemplateTests {
       .deletingLastPathComponent()
     let template = checkout.appendingPathComponent("Resources/Info.plist.in")
     guard FileManager.default.fileExists(atPath: template.path) else {
-      throw TemplateNotFound(path: template.path)
+      throw InfoPlistTemplateNotFound(path: template.path)
     }
     return try String(contentsOf: template, encoding: .utf8)
   }
-}
-
-/// Thrown rather than returning empty, so a different checkout layout fails naming where it
-/// looked instead of passing on an empty string.
-private struct TemplateNotFound: Error, CustomStringConvertible {
-  let path: String
-  var description: String { "Info.plist.in not found at \(path)" }
 }

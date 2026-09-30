@@ -3,8 +3,7 @@ import MultishellCore
 /// What a report means once the roster of workers is kept, and the Done a
 /// Stop owes while workers are out; see Docs/design/agents.md.
 extension SessionStates {
-  /// What a report means once the roster is kept, `nil` for one that moves
-  /// nothing. See Docs/design/agents.md.
+  /// `nil` for a report that moves nothing.
   mutating func meaning(
     of state: SessionState, subagent: SubagentReport?, turnFollows: Bool = false, for key: Key
   ) -> SessionState? {
@@ -16,12 +15,12 @@ extension SessionStates {
     }
     var place = SubagentRoster.Place(id: subagent.id)
     update(key) {
-      let before = $0.roster.workerCount
+      let before = $0.roster.subagents.workerCount
       place = $0.record(subagent)
       // An idle agent takes a turn over this end, and that turn's Stop pays;
       // an end that took nobody off woke nothing.
       if subagent.phase == .ended, subagent.wakesAgent != false, $0.displaced == .stop,
-        $0.roster.workerCount < before
+        $0.roster.subagents.workerCount < before
       {
         $0.turnUnderway = true
       }
@@ -122,10 +121,7 @@ extension SessionStates {
       update(key) { $0.waitingRaisers = [] }
       return .running
     case .done:
-      update(key) {
-        $0.displaced = nil
-        $0.waitingRaisers = []
-      }
+      update(key) { $0.clearDisplaced() }
       return state
     case .idle, .failed:
       update(key) { $0.settleTurn() }
@@ -150,20 +146,14 @@ extension SessionStates {
     guard displaced == .stop, entry.stopResumes, entry.turnUnderway else {
       return restore(displaced, for: key)
     }
-    update(key) {
-      $0.displaced = nil
-      $0.waitingRaisers = []
-    }
+    update(key) { $0.clearDisplaced() }
     return entry.state == .running ? nil : .running
   }
 
   /// The last worker out puts back what the first displaced: a Done is paid
   /// and announced, nothing is cleared, a failure was announced when it happened.
   private mutating func restore(_ displaced: Entry.Displaced, for key: Key) -> SessionState? {
-    update(key) {
-      $0.displaced = nil
-      $0.waitingRaisers = []
-    }
+    update(key) { $0.clearDisplaced() }
     switch displaced {
     case .nothing: return .idle
     case .done, .stop: return .done

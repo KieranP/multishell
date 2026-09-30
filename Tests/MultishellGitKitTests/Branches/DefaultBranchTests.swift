@@ -53,7 +53,7 @@ struct DefaultBranchTests {
     #expect(
       resolved
         == DefaultBranch(
-          shortName: "origin/main", branchName: "main", tip: "remote",
+          shortName: "origin/main", nameWithoutRemote: "main", tip: "remote",
           fullName: "refs/remotes/origin/main"))
 
     // Local only: a repository that has never had a remote.

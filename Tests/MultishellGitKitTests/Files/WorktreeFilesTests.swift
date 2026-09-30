@@ -1,5 +1,4 @@
 import Foundation
-import Synchronization
 import TestScratch
 import Testing
 
@@ -222,7 +221,7 @@ final class WorktreeFilesTests {
     try WorktreeFiles.place("vendor", as: .link, from: repository, to: worktree)
 
     // The stop lands after the first path, which is the one that failed.
-    let seen = Counter()
+    let seen = CallCounter()
     let stopped = #expect(throws: WorktreeFileStopped.self) {
       try WorktreeFiles.place(
         "vendor/dep\nafter.txt", as: .copy, from: repository, to: worktree,
@@ -429,7 +428,7 @@ final class WorktreeFilesTests {
     for index in 0..<200 {
       try "x".write(to: cache.appending(path: "f\(index)"), atomically: true, encoding: .utf8)
     }
-    let asked = Counter()
+    let asked = CallCounter()
 
     #expect(throws: WorktreeFileStopped.self) {
       try WorktreeFiles.place(
@@ -541,15 +540,5 @@ final class WorktreeFilesTests {
       try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
     }
     return (repository, worktree)
-  }
-}
-
-/// A `@Sendable` counter, `isStopped` being called from a closure that
-/// cannot capture a mutable local.
-private final class Counter: Sendable {
-  private let value = Atomic(0)
-
-  func next() -> Int {
-    value.wrappingAdd(1, ordering: .relaxed).oldValue
   }
 }

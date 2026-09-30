@@ -22,7 +22,7 @@ struct WorktreeGitStatusTests {
       to: repo.project.path.appendingPathComponent("README.md"), atomically: true, encoding: .utf8)
     let main = try await repo.coordinator.git.list(repo.project)[0]
 
-    let status = try await WorktreeGit(runner: repo.git).status(of: main)
+    let status = try await WorktreeGit(runner: repo.runner).status(of: main)
 
     #expect(status.unstaged == 1, "the change was seen")
     #expect(try indexModified() == before, "the index was rewritten")
@@ -31,11 +31,11 @@ struct WorktreeGitStatusTests {
         atPath: repo.project.path.appendingPathComponent(".git/index.lock").path))
   }
 
-  @Test func statusReflectsWorkingTreeChangesAndBranch() async throws {
+  @Test func aChangedFileAndANewOneAreCountedApartAndTheStatusNamesTheBranch() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
     let project = repo.project
-    let worktreeGit = WorktreeGit(runner: repo.git)
+    let worktreeGit = WorktreeGit(runner: repo.runner)
     let main = try await worktreeGit.list(project)[0]
 
     #expect(try await worktreeGit.status(of: main).isClean)
@@ -55,7 +55,7 @@ struct WorktreeGitStatusTests {
   @Test func statusCountsLinesAddedAndRemovedAgainstHead() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    let worktreeGit = WorktreeGit(runner: repo.git)
+    let worktreeGit = WorktreeGit(runner: repo.runner)
     try await repo.commit("seed", file: "counted.txt", content: "a\nb\nc\n")
     let main = try await worktreeGit.list(repo.project)[0]
 
@@ -77,7 +77,7 @@ struct WorktreeGitStatusTests {
   @Test func aModeChangeAndANewBinaryFileCountAsFilesWithNoLines() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    let worktreeGit = WorktreeGit(runner: repo.git)
+    let worktreeGit = WorktreeGit(runner: repo.runner)
     let script = repo.project.path.appendingPathComponent("run.sh")
     try await repo.commit("seed", file: "run.sh", content: "echo hi\n")
     let main = try await worktreeGit.list(repo.project)[0]
@@ -98,7 +98,7 @@ struct WorktreeGitStatusTests {
   @Test func anUntrackedDirectoryIsOneEntryWhoseLinesAreStillCounted() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    let worktreeGit = WorktreeGit(runner: repo.git)
+    let worktreeGit = WorktreeGit(runner: repo.runner)
     try await repo.commit("seed", file: "counted.txt", content: "a\n")
     let main = try await worktreeGit.list(repo.project)[0]
     let fresh = repo.project.path.appendingPathComponent("fresh", isDirectory: true)
@@ -121,13 +121,13 @@ struct WorktreeGitStatusTests {
   @Test func aConflictedFileIsNotCountedAsAFileWithNoLines() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    let worktreeGit = WorktreeGit(runner: repo.git)
+    let worktreeGit = WorktreeGit(runner: repo.runner)
     try await repo.commit("seed", file: "f.txt", content: "a\nb\n")
-    _ = try await repo.git.run(["checkout", "-q", "-b", "other"], in: repo.project.path)
+    _ = try await repo.runner.run(["checkout", "-q", "-b", "other"], in: repo.project.path)
     try await repo.commit("theirs", file: "f.txt", content: "x\nb\n")
-    _ = try await repo.git.run(["checkout", "-q", "main"], in: repo.project.path)
+    _ = try await repo.runner.run(["checkout", "-q", "main"], in: repo.project.path)
     try await repo.commit("mine", file: "f.txt", content: "y\nb\n")
-    _ = try? await repo.git.run(["merge", "other"], in: repo.project.path)
+    _ = try? await repo.runner.run(["merge", "other"], in: repo.project.path)
     let main = try await worktreeGit.list(repo.project)[0]
 
     let staged = try await worktreeGit.status(of: main, counting: .stagedOnly)
@@ -139,7 +139,7 @@ struct WorktreeGitStatusTests {
   @Test func stagedOnlyCountsTheIndexAndNoUntrackedFile() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    let worktreeGit = WorktreeGit(runner: repo.git)
+    let worktreeGit = WorktreeGit(runner: repo.runner)
     try await repo.commit("seed", file: "counted.txt", content: "a\nb\nc\n")
     let main = try await worktreeGit.list(repo.project)[0]
 
@@ -152,7 +152,7 @@ struct WorktreeGitStatusTests {
     let unstaged = try await worktreeGit.status(of: main, counting: .stagedOnly)
     #expect(unstaged.insertions == 0 && unstaged.deletions == 0 && unstaged.unscoredFiles == 0)
 
-    _ = try await repo.git.run(["add", "counted.txt"], in: repo.project.path)
+    _ = try await repo.runner.run(["add", "counted.txt"], in: repo.project.path)
     let staged = try await worktreeGit.status(of: main, counting: .stagedOnly)
     #expect(staged.insertions == 3)
     #expect(staged.deletions == 2)

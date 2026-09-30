@@ -3,29 +3,6 @@ import MultishellCore
 import MultishellGitKit
 
 extension AppModel {
-  /// The worktree whose terminals are on screen: the selected one unless the
-  /// board covers them. Everything acting on the tab in front asks here.
-  var worktreeInView: Worktree? {
-    showsAgentBoard ? nil : workspace.selectedWorktree
-  }
-
-  /// `worktreeInView`'s id, for asking without a lookup.
-  var worktreeIDInView: Worktree.ID? {
-    showsAgentBoard ? nil : workspace.selectedWorktreeID
-  }
-
-  /// Whether the detail area is this worktree's, which its sidebar row and
-  /// pane rows follow: selected, and not covered by the board.
-  public func isInView(_ worktree: Worktree) -> Bool {
-    worktreeIDInView == worktree.id
-  }
-
-  /// The pane rows under this worktree's sidebar row: only the one in view has
-  /// them, so one set takes room at a time. The rows and the block height both ask.
-  public func sidebarPaneCount(of worktree: Worktree) -> Int {
-    isInView(worktree) ? workspace.paneCount(in: worktree.id) : 0
-  }
-
   /// The worktree in view when a shell may start in it. `nil` otherwise,
   /// the missing-directory alert already raised.
   func requireWorktreeForShell() -> Worktree? {
@@ -53,9 +30,7 @@ extension AppModel {
     store.selectWorktree(worktree.id)
     warmWorktrees.insert(worktree.id)
     if openingFirstTab != .onCreate { askAboutSharedSettingsIfNeeded(for: worktree.projectID) }
-    if !isBusy(worktree.id), workspace.tabs(in: worktree.id).isEmpty,
-      opensTab(in: worktree, on: openingFirstTab)
-    {
+    if wantsFirstTab(in: worktree, on: openingFirstTab) {
       addDefaultTab(in: worktree, on: openingFirstTab)
     }
     reconcileSessions(takingFocus: true)
@@ -68,20 +43,20 @@ extension AppModel {
     worktreeOperations.isBusy(id)
   }
 
-  /// The checkout, the file lists or the post-create hook are still
-  /// filling it, so git reads a half-made tree; see worktrees.md.
-  func isUnderConstruction(_ id: Worktree.ID) -> Bool {
-    isBeingBuilt(id) || workspace.worktree(id)?.isInitializing == true
+  /// A checkout, a file list or a hook of a create or a removal is writing
+  /// there, so git reads a half-made tree; see worktrees.md.
+  func isBeingWritten(_ id: Worktree.ID) -> Bool {
+    hasStageWriting(id) || workspace.worktree(id)?.isInitializing == true
   }
 
   /// The same for a worktree in hand, which the poll asks of every row: the
   /// lookup by id scans the list, and a round asking it per row went quadratic.
-  func isUnderConstruction(_ worktree: Worktree) -> Bool {
-    isBeingBuilt(worktree.id) || worktree.isInitializing
+  func isBeingWritten(_ worktree: Worktree) -> Bool {
+    hasStageWriting(worktree.id) || worktree.isInitializing
   }
 
-  private func isBeingBuilt(_ id: Worktree.ID) -> Bool {
-    pathClaims.isClaimed(id) || worktreeOperations.isUnderWay(id)
+  private func hasStageWriting(_ id: Worktree.ID) -> Bool {
+    pathClaims.isClaimed(id) || worktreeOperations.isRunning(id)
   }
 
   /// The pane's Dismiss after a failed stage. A dismissed create stage
@@ -122,10 +97,8 @@ extension AppModel {
     guard !ids.isEmpty else { return }
     let gone = Set(ids)
     setIfChanged(\.statuses, statuses.filter { !gone.contains($0.key) })
-    setIfChanged(\.mergeStates, mergeStates.filter { !gone.contains($0.key) })
-    setIfChanged(\.lastCommits, lastCommits.filter { !gone.contains($0.key) })
-    mergeChecks = mergeChecks.filter { !gone.contains($0.key) }
-    mergeReads.forget(gone)
+    forgetMergeStates(ofWorktrees: gone)
+    setIfChanged(\.lastCommitDates, lastCommitDates.filter { !gone.contains($0.key) })
     resolvedWorktreeComponents = resolvedWorktreeComponents.filter { !gone.contains($0.key) }
     // Their sessions went with them, so a worktree re-made at the path starts cold.
     warmWorktrees.subtract(gone)

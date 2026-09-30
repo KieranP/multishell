@@ -16,15 +16,15 @@ extension Helper {
     let report = SessionStateReport(
       state: state,
       sessionID: sessionID(from: options["session"] ?? environment[SessionEnvironment.sessionKey]),
-      cwd: options["cwd"] ?? environment[SessionEnvironment.workingDirectoryKey]
+      cwd: options["cwd"] ?? environment[SessionEnvironment.worktreeKey]
         ?? FileManager.default.currentDirectoryPath,
       pid: options.int32("pid") ?? reportingProcess(environment),
       message: options["message"],
       agent: options["agent"],
-      isShell: options["shell"] == "true" ? true : nil,
-      subagent: try subagent(options),
-      startsTurn: options["new-turn"] == "true" ? true : nil,
-      resumesAfterWorkers: options["resumes"] == "true" ? true : nil,
+      isFromShellIntegration: options.onlyIfTrue("shell"),
+      subagent: try subagentReport(from: options),
+      startsTurn: options.onlyIfTrue("new-turn"),
+      resumesAfterWorkers: options.onlyIfTrue("resumes"),
       workersOut: options["out"].map { list in
         list.split(separator: ",").map { SubagentReport(id: String($0), phase: .working) }
       })
@@ -37,7 +37,7 @@ extension Helper {
     }
   }
 
-  private static func subagent(_ options: CommandOptions) throws -> SubagentReport? {
+  private static func subagentReport(from options: CommandOptions) throws -> SubagentReport? {
     guard let id = options["subagent"] else {
       let orphan = ["subagent-phase", "subagent-type", "subagent-wakes"].first {
         options[$0] != nil
@@ -55,7 +55,7 @@ extension Helper {
     }
     return SubagentReport(
       id: id, type: options["subagent-type"], phase: phase,
-      wakesAgent: options["subagent-wakes"] == "false" ? false : nil)
+      wakesAgent: options.onlyIfFalse("subagent-wakes"))
   }
 
   /// For a preexec hook, from the command line or a relayed line alike. The
@@ -81,11 +81,11 @@ extension Helper {
     let report = SessionStateReport(
       state: state,
       sessionID: sessionID(from: environment[SessionEnvironment.sessionKey]),
-      cwd: environment[SessionEnvironment.workingDirectoryKey],
+      cwd: environment[SessionEnvironment.worktreeKey],
       pid: pid,
       duration: duration,
       command: command,
-      isShell: true)
+      isFromShellIntegration: true)
     // A shell hook must never make the prompt print an error.
     try? send(report, environment: environment)
   }

@@ -29,7 +29,9 @@ extension AppModelWorktreeOrderTests {
 
     await harness.model.refreshMergeStates()
 
-    let dated = harness.model.workspace.worktrees.filter { harness.model.lastCommits[$0.id] != nil }
+    let dated = harness.model.workspace.worktrees.filter {
+      harness.model.lastCommitDates[$0.id] != nil
+    }
     #expect(dated.count == 3, "every branch got a date, keyed by the worktree the sidebar asks for")
 
     let all = harness.model.workspace.worktrees

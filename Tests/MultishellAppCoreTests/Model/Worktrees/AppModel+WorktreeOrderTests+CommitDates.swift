@@ -9,22 +9,22 @@ extension AppModelWorktreeOrderTests {
   /// before it left would order its rows until the first poll answered.
   @Test func removingAProjectForgetsItsCommitDates() {
     let harness = Harness()
-    harness.model.lastCommits[harness.main.id] = Date(timeIntervalSince1970: 1000)
-    harness.model.lastCommits[harness.feature.id] = Date(timeIntervalSince1970: 2000)
+    harness.model.lastCommitDates[harness.main.id] = Date(timeIntervalSince1970: 1000)
+    harness.model.lastCommitDates[harness.feature.id] = Date(timeIntervalSince1970: 2000)
 
     harness.model.removeProject(harness.project)
-    #expect(harness.model.lastCommits.isEmpty)
+    #expect(harness.model.lastCommitDates.isEmpty)
   }
 
   /// The same call forgets the merge badges; losing the dates too would leave a trunk-less
   /// repository with nothing to order by.
   @Test func losingTheDefaultBranchKeepsTheCommitDates() {
     let harness = Harness()
-    harness.model.lastCommits[harness.feature.id] = Date(timeIntervalSince1970: 2000)
+    harness.model.lastCommitDates[harness.feature.id] = Date(timeIntervalSince1970: 2000)
     harness.model.mergeStates[harness.feature.id] = .unmerged
 
     harness.model.forgetMergeStates(ofProject: harness.project.id)
     #expect(harness.model.mergeStates.isEmpty, "the badges go")
-    #expect(harness.model.lastCommits.count == 1, "the dates stay")
+    #expect(harness.model.lastCommitDates.count == 1, "the dates stay")
   }
 }

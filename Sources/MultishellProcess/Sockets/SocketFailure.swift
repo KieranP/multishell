@@ -7,7 +7,8 @@ public struct SocketFailure: Error, CustomStringConvertible, Sendable {
     /// `sun_path` holds 104 bytes; a state directory under a long home
     /// path can exceed it.
     case pathTooLong
-    /// Another process answered on the socket: a second instance of the app.
+    /// Another process holds the socket's lock file or answered on the socket:
+    /// a second instance of the app.
     case inUse
     case system(operation: String, code: Int32)
   }

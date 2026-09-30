@@ -23,7 +23,7 @@ extension SessionStatesTests {
   private func report(
     _ states: inout SessionStates, _ state: SessionState, _ subagent: SubagentReport? = nil
   ) -> SessionState? {
-    states.report(state, pid: 99, subagent: subagent, for: .session(a), isSeen: false)
+    states.report(.init(state: state, subagent: subagent), pid: 99, for: .session(a), isSeen: false)
   }
 
   private func out(_ states: SessionStates) -> [String] {
@@ -114,15 +114,17 @@ extension SessionStatesTests {
   @Test func aStopNamingAsManyShellsAsTheWireCarriesKeepsEveryOne() {
     var states = SessionStates()
     _ = states.report(
-      .done, pid: 99, backgroundShells: Array(1...64), for: .session(a), isSeen: false)
+      .init(state: .done, backgroundShells: Array(1...64)), pid: 99, for: .session(a), isSeen: false
+    )
 
     #expect(out(states).count == 64)
   }
 
   @Test func aStopNamingThousandsOfShellsKeepsNoMoreThanTheRosterHolds() {
     var states = SessionStates()
-    _ = states.report(
-      .done, pid: 99, backgroundShells: Array(1...5000), for: .session(a), isSeen: false)
+    var stop = SessionStateReport(state: .done)
+    stop.backgroundShells = Array(1...5000)
+    _ = states.report(stop, pid: 99, for: .session(a), isSeen: false)
 
     #expect(out(states).count <= 64)
   }
@@ -182,7 +184,7 @@ extension SessionStatesTests {
   @Test func aStrayWorkerEndingLeavesNothingOwedAndMovesNothing() {
     var states = SessionStates()
     #expect(report(&states, .running, ended("w1")) == nil)
-    #expect(states.isEmpty)
+    #expect(states.showsNothing)
     #expect(report(&states, .done) == .done)
   }
 
@@ -202,7 +204,7 @@ extension SessionStatesTests {
     _ = report(&overNothing, .running, started("w1"))
     _ = report(&overNothing, .attention, SubagentReport(id: "w1", phase: .working))
     #expect(report(&overNothing, .running, ended("w1")) == .idle)
-    #expect(overNothing.isEmpty)
+    #expect(overNothing.showsNothing)
   }
 
   /// The main loop stopping over a worker's prompt does not answer it: the
@@ -251,7 +253,7 @@ extension SessionStatesTests {
   @Test func twoWorkersUnderOneNameTakeTwoEndsToPayADone() {
     var states = SessionStates()
     _ = report(&states, .running)
-    states.report(.done, pid: 99, for: .session(a), isSeen: false)
+    states.report(.init(state: .done), pid: 99, for: .session(a), isSeen: false)
 
     _ = report(&states, .running, started("code-review"))
     _ = report(&states, .running, started("code-review"))
@@ -342,7 +344,8 @@ extension SessionStatesTests {
   @Test func aWorkerOutLiftsADoneToWorkingAndTheLastOutPaysItBack() {
     var states = SessionStates()
     _ = report(&states, .running)
-    states.report(.done, pid: 99, message: "all green", for: .session(a), isSeen: false)
+    states.report(
+      .init(state: .done, message: "all green"), pid: 99, for: .session(a), isSeen: false)
 
     #expect(report(&states, .running, started("w1")) == .running)
     #expect(states[.session(a)] == .running)
@@ -359,7 +362,7 @@ extension SessionStatesTests {
     #expect(states[.session(a)] == .running)
     #expect(report(&states, .running, ended("w1")) == .idle)
     #expect(states[.session(a)] == nil)
-    #expect(states.isEmpty, "nothing left behind")
+    #expect(states.showsNothing, "nothing left behind")
   }
 
   @Test func anAgentsOwnWorkingOutlivesTheWorkerThatLiftedIt() {
@@ -393,7 +396,7 @@ extension SessionStatesTests {
     var states = SessionStates()
     _ = report(&states, .running, started("w1"))
     states.report(
-      .attention, pid: 99, message: "Needs Bash", for: .session(a), isSeen: false)
+      .init(state: .attention, message: "Needs Bash"), pid: 99, for: .session(a), isSeen: false)
     #expect(states.notes[.session(a)]?.message == "Needs Bash")
 
     _ = report(&states, .running, ended("w1"))
@@ -436,7 +439,7 @@ extension SessionStatesTests {
     _ = report(&states, .running, working("w1"))
     #expect(states[.session(a)] == .running)
     #expect(report(&states, .running, ended("w1")) == .idle, "the agent never spoke")
-    #expect(states.isEmpty)
+    #expect(states.showsNothing)
   }
 
   /// Failed is about the user: a worker's tool call leaves it standing, and
@@ -466,7 +469,7 @@ extension SessionStatesTests {
     var overNothing = SessionStates()
     #expect(report(&overNothing, .running, working("w1")) == .running)
     #expect(report(&overNothing, .running, ended("w1")) == .idle)
-    #expect(overNothing.isEmpty)
+    #expect(overNothing.showsNothing)
   }
 
   /// The Done its agent owed is still paid at the last worker out, a Waiting
@@ -485,7 +488,8 @@ extension SessionStatesTests {
     for finished in [SessionState.done, .failed] {
       var states = SessionStates()
       _ = report(&states, .running)
-      states.report(finished, pid: 99, message: "all green", for: .session(a), isSeen: false)
+      states.report(
+        .init(state: finished, message: "all green"), pid: 99, for: .session(a), isSeen: false)
 
       #expect(report(&states, .running, ended("w1")) == nil, "\(finished): no news")
       #expect(states[.session(a)] == finished)
@@ -530,7 +534,8 @@ extension SessionStatesTests {
     #expect(states[.session(a)] == .running, "held for the worker")
 
     #expect(
-      states.report(.running, pid: 99, startsTurn: true, for: .session(a), isSeen: false)
+      states.report(
+        .init(state: .running, startsTurn: true), pid: 99, for: .session(a), isSeen: false)
         == .running)
     #expect(out(states) == ["w1"], "a background worker outlives the turn")
     #expect(report(&states, .done) == .running, "and holds the next Stop")
@@ -538,7 +543,8 @@ extension SessionStatesTests {
 
     var lifted = SessionStates()
     _ = report(&lifted, .running, started("w1"))
-    _ = lifted.report(.running, pid: 99, startsTurn: true, for: .session(a), isSeen: false)
+    _ = lifted.report(
+      .init(state: .running, startsTurn: true), pid: 99, for: .session(a), isSeen: false)
     #expect(lifted[.session(a)] == .running, "the agent's own Working now")
     #expect(report(&lifted, .running, ended("w1")) == .running, "a late end takes nothing back")
   }
@@ -612,7 +618,7 @@ extension SessionStatesTests {
   @Test func theAgentsOwnWorkingGivesUpWhatAWorkerDisplacedEvenUnanswered() {
     var overDone = SessionStates()
     _ = report(&overDone, .running)
-    overDone.report(.done, pid: 99, for: .session(a), isSeen: false)
+    overDone.report(.init(state: .done), pid: 99, for: .session(a), isSeen: false)
     _ = report(&overDone, .running, started("w1"))
     _ = report(&overDone, .running, started("w2"))
     _ = report(&overDone, .attention, SubagentReport(id: "w1", phase: .working))
@@ -637,8 +643,9 @@ extension SessionStatesTests {
     _ = report(&byEnd, .running, started("code-review"))
     _ = report(&byEnd, .running, started("code-review"))
     byEnd.report(
-      .attention, pid: 99, message: "Needs Bash",
-      subagent: SubagentReport(id: "code-review", phase: .working), for: .session(a),
+      .init(
+        state: .attention, message: "Needs Bash",
+        subagent: SubagentReport(id: "code-review", phase: .working)), pid: 99, for: .session(a),
       isSeen: false)
     #expect(byEnd[.session(a)] == .attention)
 
@@ -660,11 +667,14 @@ extension SessionStatesTests {
   @Test func aRestoredFailureKeepsWhatTheFailureSaid() {
     var states = SessionStates()
     _ = report(&states, .running, started("w1"))
-    states.report(.failed, pid: 99, message: "build failed", for: .session(a), isSeen: false)
+    states.report(
+      .init(state: .failed, message: "build failed"), pid: 99, for: .session(a), isSeen: false)
     _ = report(&states, .running, working("w1"))
     states.report(
-      .attention, pid: 99, message: "Needs Bash",
-      subagent: SubagentReport(id: "w1", phase: .working), for: .session(a), isSeen: false)
+      .init(
+        state: .attention, message: "Needs Bash",
+        subagent: SubagentReport(id: "w1", phase: .working)), pid: 99, for: .session(a),
+      isSeen: false)
     _ = report(&states, .running, working("w1"))
 
     #expect(report(&states, .running, ended("w1")) == nil, "put back without a banner")
@@ -683,11 +693,16 @@ extension SessionStatesTests {
     }
 
     step { _ = report(&$0, .running, started("w1")) }
-    step { $0.report(.failed, pid: 99, message: "build failed", for: .session(a), isSeen: false) }
     step {
       $0.report(
-        .attention, pid: 99, message: "Needs Bash",
-        subagent: SubagentReport(id: "w1", phase: .working), for: .session(a), isSeen: false)
+        .init(state: .failed, message: "build failed"), pid: 99, for: .session(a), isSeen: false)
+    }
+    step {
+      $0.report(
+        .init(
+          state: .attention, message: "Needs Bash",
+          subagent: SubagentReport(id: "w1", phase: .working)), pid: 99, for: .session(a),
+        isSeen: false)
     }
     step { _ = report(&$0, .running, working("w1")) }
     step { _ = report(&$0, .running, ended("w1")) }
@@ -703,6 +718,6 @@ extension SessionStatesTests {
     _ = report(&states, .running, started("w1"))
     states.clear(.session(a))
     #expect(out(states).isEmpty)
-    #expect(states.isEmpty)
+    #expect(states.showsNothing)
   }
 }

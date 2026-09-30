@@ -27,7 +27,7 @@ struct DetailView: View {
         // Clears the title-bar band, like the header does.
         Color.clear.windowHeader()
         NoSelectionPlaceholder(hasProjects: hasProjects, theme: theme) {
-          Task { await model.chooseProject() }
+          Task { await model.addProjectFromPicker() }
         }
       }
     }

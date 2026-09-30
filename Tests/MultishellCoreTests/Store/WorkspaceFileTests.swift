@@ -12,7 +12,7 @@ struct WorkspaceFileTests {
 
   @Test func stateWrittenBeforeAFieldExistedStillLoads() throws {
     let file = scratchFile()
-    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+    defer { Scratch.remove(file.deletingLastPathComponent()) }
     try FileManager.default.createDirectory(
       at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
     // Only what the very first build wrote: no appearance, no engine, no tabs.
@@ -31,7 +31,7 @@ struct WorkspaceFileTests {
   @Test func unreadableStateIsMovedAsideNotOverwritten() throws {
     let file = scratchFile()
     let directory = file.deletingLastPathComponent()
-    defer { try? FileManager.default.removeItem(at: directory) }
+    defer { Scratch.remove(directory) }
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     try Data("not json".utf8).write(to: file)
 
@@ -60,7 +60,7 @@ struct WorkspaceFileTests {
   @Test func stateThatWillNotOpenIsMovedAsideAsWellAsStateThatWillNotDecode() throws {
     let file = scratchFile()
     let directory = file.deletingLastPathComponent()
-    defer { try? FileManager.default.removeItem(at: directory) }
+    defer { Scratch.remove(directory) }
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     try Data(#"{"projects":[{"path":"file:///repos/demo/"}]}"#.utf8).write(to: file)
     // Readable to nobody, as a restore from a backup under sudo leaves it.
@@ -88,7 +88,7 @@ struct WorkspaceFileTests {
     defer {
       try? FileManager.default.setAttributes(
         [.posixPermissions: 0o755], ofItemAtPath: directory.path)
-      try? FileManager.default.removeItem(at: directory)
+      Scratch.remove(directory)
     }
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     try Data(#"{"projects":[{"path":"file:///repos/demo/"}]}"#.utf8).write(to: file)
@@ -115,7 +115,7 @@ struct WorkspaceFileTests {
     defer {
       try? FileManager.default.setAttributes(
         [.posixPermissions: 0o755], ofItemAtPath: directory.path)
-      try? FileManager.default.removeItem(at: directory)
+      Scratch.remove(directory)
     }
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     let original = #"{"projects":[{"path":"file:///repos/demo/"}]}"#
@@ -142,7 +142,7 @@ struct WorkspaceFileTests {
 
   @Test @MainActor func restoringRepairsDanglingReferencesBeforeTheStoreSeesThem() throws {
     let file = scratchFile()
-    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+    defer { Scratch.remove(file.deletingLastPathComponent()) }
 
     var workspace = Workspace()
     let project = Project(path: URL(fileURLWithPath: "/repos/demo"))
@@ -170,7 +170,7 @@ struct WorkspaceFileTests {
   /// workspace far larger than anyone keeps must still save in a blink.
   @Test func aLargeWorkspaceSavesLoadsAndRepairsWithoutAQuadratic() throws {
     let file = scratchFile()
-    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+    defer { Scratch.remove(file.deletingLastPathComponent()) }
     var workspace = Workspace()
     for p in 0..<20 {
       let project = Project(path: URL(fileURLWithPath: "/repos/p\(p)"))
@@ -193,7 +193,7 @@ struct WorkspaceFileTests {
               root: .split(axis: .horizontal, children: [.terminal(a.id), .terminal(b.id)]),
               focusedSessionID: a.id))
         }
-        group.activeTabID = workspace.tabs.last?.id
+        group.shownTabID = workspace.tabs.last?.id
         workspace.tabGroups.append(group)
         workspace.focusedGroupByWorktree[worktree.id] = group.id
       }
@@ -224,9 +224,9 @@ struct WorkspaceFileTests {
     #expect(repairTime < .seconds(5), "repair took \(repairTime)")
   }
 
-  @Test func roundTripPreservesEverything() throws {
+  @Test func everySavedFieldLoadsBackAsItWasSaved() throws {
     let file = scratchFile()
-    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+    defer { Scratch.remove(file.deletingLastPathComponent()) }
 
     // Every scalar is off its default, so a field the decoder forgets fails here. The pairs
     // seeded from each other (auto-start, opens-terminal) differ, or a dropped key passes.
@@ -272,7 +272,7 @@ struct WorkspaceFileTests {
   @Test @MainActor func aStateFileWithOneUnreadableTabRestoresEverythingElse() throws {
     let file = Scratch.path("scratch")
       .appendingPathComponent("state.json")
-    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+    defer { Scratch.remove(file.deletingLastPathComponent()) }
     try FileManager.default.createDirectory(
       at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
 

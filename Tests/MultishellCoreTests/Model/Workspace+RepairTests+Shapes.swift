@@ -8,13 +8,13 @@ import Testing
 /// divides by zero laying out an empty split.
 extension WorkspaceRepairTests {
   private func workspace(tabs: [TerminalTab], sessions: [TerminalSession]) -> Workspace {
-    var ws = Workspace()
-    ws.projects = [project]
-    ws.worktrees = [worktree]
-    ws.sessions = sessions
-    ws.tabs = tabs
+    var workspace = Workspace()
+    workspace.projects = [project]
+    workspace.worktrees = [worktree]
+    workspace.sessions = sessions
+    workspace.tabs = tabs
     // The tabs name no group, the shape of every state file written before groups existed.
-    return ws
+    return workspace
   }
 
   @Test func aSessionInTwoTabsStaysInTheFirstOnly() {
@@ -26,13 +26,13 @@ extension WorkspaceRepairTests {
       worktreeID: worktree.id, groupID: TabGroup.unassigned,
       root: .split(axis: .horizontal, children: [.terminal(own.id), .terminal(shared.id)]),
       focusedSessionID: shared.id)
-    var ws = workspace(tabs: [first, second], sessions: [shared, own])
+    var workspace = self.workspace(tabs: [first, second], sessions: [shared, own])
 
-    ws.repairReferences()
+    workspace.repairReferences()
 
-    WorkspaceInvariants.check(ws, "shared session")
-    #expect(ws.tabs.map(\.root) == [.terminal(shared.id), .terminal(own.id)])
-    #expect(ws.tabs[1].focusedSessionID == own.id)
+    WorkspaceInvariants.check(workspace, "shared session")
+    #expect(workspace.tabs.map(\.root) == [.terminal(shared.id), .terminal(own.id)])
+    #expect(workspace.tabs[1].focusedSessionID == own.id)
   }
 
   @Test func aSessionTwiceInOneTreeKeepsItsFirstPane() {
@@ -44,28 +44,29 @@ extension WorkspaceRepairTests {
         axis: .vertical,
         children: [.terminal(twice.id), .terminal(other.id), .terminal(twice.id)]),
       focusedSessionID: twice.id)
-    var ws = workspace(tabs: [tab], sessions: [twice, other])
+    var workspace = self.workspace(tabs: [tab], sessions: [twice, other])
 
-    ws.repairReferences()
+    workspace.repairReferences()
 
-    WorkspaceInvariants.check(ws, "duplicate pane")
-    #expect(ws.tabs[0].root.sessionIDs == [twice.id, other.id])
-    #expect(ws.sessions.count == 2)
+    WorkspaceInvariants.check(workspace, "duplicate pane")
+    #expect(workspace.tabs[0].root.sessionIDs == [twice.id, other.id])
+    #expect(workspace.sessions.count == 2)
   }
 
   @Test func aNestedSplitWithNoChildrenIsRemovedAndTheTabKept() {
-    let s = session()
+    let survivor = session()
     let tab = TerminalTab(
       worktreeID: worktree.id, groupID: TabGroup.unassigned,
       root: .split(
-        axis: .horizontal, children: [.terminal(s.id), .split(axis: .vertical, children: [])]),
-      focusedSessionID: s.id)
-    var ws = workspace(tabs: [tab], sessions: [s])
+        axis: .horizontal,
+        children: [.terminal(survivor.id), .split(axis: .vertical, children: [])]),
+      focusedSessionID: survivor.id)
+    var workspace = self.workspace(tabs: [tab], sessions: [survivor])
 
-    ws.repairReferences()
+    workspace.repairReferences()
 
-    WorkspaceInvariants.check(ws, "empty nested split")
-    #expect(ws.tabs[0].root == .terminal(s.id))
+    WorkspaceInvariants.check(workspace, "empty nested split")
+    #expect(workspace.tabs[0].root == .terminal(survivor.id))
   }
 
   @Test func aNestedSplitWithOneChildCollapsesIntoIt() {
@@ -78,13 +79,13 @@ extension WorkspaceRepairTests {
         children: [.terminal(a.id), .split(axis: .vertical, children: [.terminal(b.id)])],
         weights: [3, 1]),
       focusedSessionID: b.id)
-    var ws = workspace(tabs: [tab], sessions: [a, b])
+    var workspace = self.workspace(tabs: [tab], sessions: [a, b])
 
-    ws.repairReferences()
+    workspace.repairReferences()
 
-    WorkspaceInvariants.check(ws, "single-child nested split")
+    WorkspaceInvariants.check(workspace, "single-child nested split")
     #expect(
-      ws.tabs[0].root
+      workspace.tabs[0].root
         == .split(
           axis: .horizontal, children: [.terminal(a.id), .terminal(b.id)], weights: [3, 1]))
   }
@@ -117,13 +118,13 @@ extension WorkspaceRepairTests {
           worktreeID: worktree.id, groupID: TabGroup.unassigned, root: root,
           focusedSessionID: root.sessionIDs.randomElement(using: &rng) ?? ghost))
     }
-    var ws = workspace(tabs: tabs, sessions: pool)
+    var workspace = self.workspace(tabs: tabs, sessions: pool)
 
-    ws.repairReferences()
+    workspace.repairReferences()
 
-    WorkspaceInvariants.check(ws, "seed \(seed)")
-    var again = ws
+    WorkspaceInvariants.check(workspace, "seed \(seed)")
+    var again = workspace
     again.repairReferences()
-    #expect(again == ws, "seed \(seed): repair is not idempotent")
+    #expect(again == workspace, "seed \(seed): repair is not idempotent")
   }
 }

@@ -2,11 +2,11 @@ import Foundation
 
 /// Reads and writes a `Workspace` as JSON. Running processes are not
 /// persisted; only the sidebar's shape and which tabs should exist.
-public struct WorkspaceFile: Sendable {
+struct WorkspaceFile: Sendable {
   private let fileURL: URL
   private let order = SaveOrder()
 
-  public init(fileURL: URL = Paths.stateFile) {
+  init(fileURL: URL = Paths.stateFile) {
     self.fileURL = fileURL
   }
 

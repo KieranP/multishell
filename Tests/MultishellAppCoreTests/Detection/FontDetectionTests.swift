@@ -6,7 +6,7 @@ import Testing
 @Suite
 struct FontDetectionTests {
   private let fonts = FontDetection(
-    monospaced: ["Menlo", "JetBrains Mono"], others: ["Helvetica", "Avenir"])
+    monospaced: ["Menlo", "JetBrains Mono"], otherFamilies: ["Helvetica", "Avenir"])
 
   @Test func systemFirstThenMonospacedThenADividerThenTheRestSorted() {
     let ids = fonts.options(selected: nil).map(\.id)
@@ -30,7 +30,7 @@ struct FontDetectionTests {
   }
 
   @Test func withNoOtherFamiliesThereIsNoDivider() {
-    let only = FontDetection(monospaced: ["Menlo"], others: [])
+    let only = FontDetection(monospaced: ["Menlo"], otherFamilies: [])
     #expect(!only.options(selected: nil).map(\.id).contains(DetectionOption.dividerID))
   }
 }

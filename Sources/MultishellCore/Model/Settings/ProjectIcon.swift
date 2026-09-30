@@ -38,9 +38,9 @@ public enum ProjectIcon {
   /// Picking it stores nothing, so the two share a picture, not a state.
   public static let folderSymbol = "folder"
 
-  /// The theme has sixteen slots; anything else is no tint.
+  /// A slot the theme lacks is no tint.
   static func usableTint(_ slot: Int?) -> Int? {
-    guard let slot, (0..<16).contains(slot) else { return nil }
+    guard let slot, (0..<Theme.ansiSlotCount).contains(slot) else { return nil }
     return slot
   }
 

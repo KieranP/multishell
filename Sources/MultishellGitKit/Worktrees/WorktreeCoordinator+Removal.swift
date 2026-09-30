@@ -17,7 +17,7 @@ extension WorktreeCoordinator {
       throw WorktreeNotRemovable(path: worktree.path)
     }
     let path = worktree.path
-    let branch = worktree.branch ?? worktree.head
+    let branchOrHead = worktree.branch ?? worktree.head
     let isThere = FileManager.default.fileExists(atPath: path.path)
     // Whatever took a stale record's path since is not ours: not trashed,
     // and no hook runs, each being handed that path; see worktrees.md.
@@ -26,7 +26,7 @@ extension WorktreeCoordinator {
       try await git.forgetStale(worktree, in: project)
     } else {
       try await WorktreeHooks.run(
-        .preDelete, for: project, worktreePath: path, branch: branch, shellPath: shellPath,
+        .preDelete, for: project, worktreePath: path, branch: branchOrHead, shellPath: shellPath,
         timeout: timeout, stopper: stopper, willRun: { onStep?(.preDeleteHook) })
       onStep?(.removingWorktree)
       if isThere {
@@ -42,21 +42,12 @@ extension WorktreeCoordinator {
       }
       try await git.forget(worktree, in: project)
       try await WorktreeHooks.run(
-        .postDelete, for: project, worktreePath: path, branch: branch, shellPath: shellPath,
+        .postDelete, for: project, worktreePath: path, branch: branchOrHead, shellPath: shellPath,
         timeout: timeout, stopper: stopper, willRun: { onStep?(.postDeleteHook) })
     }
     if deletingBranch, let branch = worktree.branch {
       onStep?(.deletingBranch)
       try await deleteBranch(branch, in: project)
-    }
-  }
-
-  public func deleteBranch(_ branch: String, force: Bool = false, in project: Project) async throws
-  {
-    do {
-      try await git.deleteBranch(branch, force: force, in: project)
-    } catch {
-      throw BranchDeletionFailure(branch: branch, underlying: error)
     }
   }
 }

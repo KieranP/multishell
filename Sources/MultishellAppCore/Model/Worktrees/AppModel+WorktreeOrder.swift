@@ -14,18 +14,18 @@ extension AppModel {
       worktrees,
       displayName: { self.workspace.displayName(of: $0) },
       isActive: { self.hasActivity($0.id, sessions: sessions) },
-      lastCommit: { self.lastCommits[$0.id] })
+      lastCommit: { self.lastCommitDates[$0.id] })
     return worktreeOrderMemo.rows(of: project.id, keys: keys, order: order)
   }
 
   /// The rule in force for a project, measured against the merge badges'
   /// trunk. Looked up again, the settings window being its own scene.
   private func worktreeOrder(for project: Project) -> WorktreeOrder {
-    let resolved = withEffectiveSettings(workspace.project(project.id) ?? project)
+    let effective = withEffectiveSettings(currentCopy(of: project))
     return WorktreeOrder(
-      sortOrder: workspace.worktreeSortOrder(for: resolved),
-      activeFirst: workspace.showsActiveWorktreesFirst(for: resolved),
-      trunkBranch: defaultBranch(of: project)?.branchName)
+      sortOrder: workspace.worktreeSortOrder(for: effective),
+      activeFirst: workspace.showsActiveWorktreesFirst(for: effective),
+      trunkBranch: defaultBranch(of: project)?.nameWithoutRemote)
   }
 
   /// Whether anything is going on in a worktree: a terminal open in it, or

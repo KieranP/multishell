@@ -25,7 +25,7 @@ under `Docs/design/` is binding, not background: if a change contradicts one,
 the change says why and the file is updated with it.
 
 ```sh
-make format   # rewrite to project style
+make format   # rewrite Swift and Markdown to project style, needs prettier
 make lint     # what CI runs, --strict: a warning fails
 make test     # every suite, the app's included
 make build    # bundle it, which CI does not do for you

@@ -5,7 +5,7 @@ import MultishellGitKit
 extension AppModel {
   /// What the project settings window shows when opened with no project
   /// named: the selected worktree's project, or the only project.
-  public var selectedProject: Project? { project(of: workspace.selectedWorktree) }
+  var selectedProject: Project? { project(of: workspace.selectedWorktree) }
 
   /// The project a command should act on while nothing else names one: the
   /// worktree in view's, or the only project. The board names none.
@@ -16,7 +16,13 @@ extension AppModel {
     return workspace.projects.count == 1 ? workspace.projects.first : nil
   }
 
-  public func chooseProject() async {
+  /// The workspace's copy, or `project` once it has gone: a caller's copy can
+  /// predate a write it would then undo.
+  func currentCopy(of project: Project) -> Project {
+    workspace.project(project.id) ?? project
+  }
+
+  public func addProjectFromPicker() async {
     guard let url = await platform.chooseDirectory(prompt: t("action.add-project")) else { return }
     await addProject(at: url)
   }
@@ -31,7 +37,7 @@ extension AppModel {
     // as its own project would list the same worktrees twice.
     let root = (try? await coordinator.git.mainWorktree(containing: url)) ?? url
     let project = store.addProject(at: root)
-    await refresh(project)
+    await refreshWorktrees(of: project)
     await rearmWatcher()
   }
 
@@ -58,7 +64,7 @@ extension AppModel {
     dismissSharedSettingsTrust(for: project.id)
     // Or the settings window's fallback to the current project never fires:
     // a stale id wins over it, and the window opens only to dismiss itself.
-    if settingsProjectID == project.id { settingsProjectID = nil }
+    if requestedSettingsProjectID == project.id { requestedSettingsProjectID = nil }
     // The sheet this project's windows left standing, the settings window
     // being its own scene. A stale sheet's Create would add a real worktree.
     if newWorktreeRequest?.projectID == project.id { newWorktreeRequest = nil }

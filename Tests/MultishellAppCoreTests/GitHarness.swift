@@ -19,7 +19,7 @@ struct GitHarness {
   let platform = FakePlatform()
 
   init() async throws {
-    git = try TestGit.build()
+    git = try TestGit.runner()
     root = Scratch.path("appgit")
     let repository = root.appendingPathComponent("demo", isDirectory: true)
     try await TestRepository.initialise(at: repository, using: git)
@@ -57,7 +57,7 @@ struct GitHarness {
       at: project.path.appendingPathComponent("link"), withDestinationURL: outside)
   }
 
-  func shipSharedSettings(_ json: String) throws {
+  func writeSharedSettings(_ json: String) throws {
     try json.write(
       to: SharedProjectSettings.file(in: project.path), atomically: true, encoding: .utf8)
   }

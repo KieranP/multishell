@@ -10,7 +10,7 @@ extension WorkspaceRepairTests {
   /// The same as the tab case below, one collection up: the dead copy is the
   /// one kept, the prune then drops it, and its tabs and sessions go too.
   @Test func aWorktreeIdListedTwiceKeepsTheCopyWhoseProjectIsStillThere() throws {
-    var ws = try JSONDecoder().decode(
+    var workspace = try JSONDecoder().decode(
       Workspace.self,
       from: Data(
         #"""
@@ -19,12 +19,12 @@ extension WorkspaceRepairTests {
             { "path": "file:///repos/demo/", "projectID": "/repos/gone", "head": "a", "branch": "dead" },
             { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "a", "branch": "live" } ] }
         """#.utf8))
-    #expect(ws.worktrees.count == 2, "decoding keeps both; repair is where they meet")
+    #expect(workspace.worktrees.count == 2, "decoding keeps both; repair is where they meet")
 
-    ws.repairReferences()
+    workspace.repairReferences()
 
-    WorkspaceInvariants.check(ws, "duplicate worktree")
-    #expect(ws.worktrees.map(\.branch) == ["live"], "the dead copy was kept and then pruned")
+    WorkspaceInvariants.check(workspace, "duplicate worktree")
+    #expect(workspace.worktrees.map(\.branch) == ["live"], "the dead copy was kept and then pruned")
   }
 
   /// First entry wins, so deduping before the dangling prune can keep the
@@ -33,7 +33,7 @@ extension WorkspaceRepairTests {
     let tab = UUID().uuidString
     let dead = UUID().uuidString
     let live = UUID().uuidString
-    var ws = try JSONDecoder().decode(
+    var workspace = try JSONDecoder().decode(
       Workspace.self,
       from: Data(
         #"""
@@ -49,17 +49,18 @@ extension WorkspaceRepairTests {
             { "id": "\#(live)", "worktreeID": "/repos/demo",
               "workingDirectory": "file:///repos/demo/", "title": "Shell" } ] }
         """#.utf8))
-    #expect(ws.tabs.count == 2, "decoding keeps both; repair is where they meet")
+    #expect(workspace.tabs.count == 2, "decoding keeps both; repair is where they meet")
 
-    ws.repairReferences()
+    workspace.repairReferences()
 
-    WorkspaceInvariants.check(ws, "duplicate tab")
-    #expect(ws.tabs.map(\.worktreeID) == ["/repos/demo"], "the dead copy was kept and then pruned")
-    #expect(ws.sessions.map(\.id.uuidString) == [live], "its session went with it")
+    WorkspaceInvariants.check(workspace, "duplicate tab")
+    #expect(
+      workspace.tabs.map(\.worktreeID) == ["/repos/demo"], "the dead copy was kept and then pruned")
+    #expect(workspace.sessions.map(\.id.uuidString) == [live], "its session went with it")
   }
 
   @Test func aProjectListedTwiceKeepsItsFirstEntryAndItsWorktrees() throws {
-    var ws = try JSONDecoder().decode(
+    var workspace = try JSONDecoder().decode(
       Workspace.self,
       from: Data(
         #"""
@@ -70,13 +71,13 @@ extension WorkspaceRepairTests {
             { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "a", "branch": "main" },
             { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "a", "branch": "main" } ] }
         """#.utf8))
-    #expect(ws.projects.count == 2, "decoding keeps both; repair is where they meet")
+    #expect(workspace.projects.count == 2, "decoding keeps both; repair is where they meet")
 
-    ws.repairReferences()
+    workspace.repairReferences()
 
-    WorkspaceInvariants.check(ws, "duplicate project")
-    #expect(ws.projects.map(\.id) == ["/repos/demo"])
-    #expect(ws.projects[0].settings.branchPrefix == "k/", "the first entry is the one kept")
-    #expect(ws.worktrees.map(\.id) == ["/repos/demo"])
+    WorkspaceInvariants.check(workspace, "duplicate project")
+    #expect(workspace.projects.map(\.id) == ["/repos/demo"])
+    #expect(workspace.projects[0].settings.branchPrefix == "k/", "the first entry is the one kept")
+    #expect(workspace.worktrees.map(\.id) == ["/repos/demo"])
   }
 }

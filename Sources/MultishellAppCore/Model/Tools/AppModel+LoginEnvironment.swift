@@ -22,6 +22,14 @@ extension AppModel {
     if case .processFallback(let reason) = environment.source {
       platform.log("login shell environment unavailable, using the process's own: \(reason)")
     }
+    await detectTools(on: environment)
+    await adoptGit(on: environment.path)
+    recordInstallState(await offMain { IntegrationInstallState.read() })
+  }
+
+  /// Agents, shells and editors, scanned off the main thread and recorded
+  /// with the environment they were found on.
+  private func detectTools(on environment: LoginShellEnvironment) async {
     // The bundle lookups answer from LaunchServices' own database and need
     // the platform, so they stay; it is the PATH that has to be left.
     let applications = EditorCatalogue.editors.reduce(into: [String: URL]()) { found, editor in
@@ -45,20 +53,21 @@ extension AppModel {
     agentDetection = detected.agents
     shellDetection = detected.shells
     editorDetection = detected.editors
-    // Rebuilt even where launch found git: that PATH is what git's own
-    // children are looked up on; see Docs/design/architecture.md.
+  }
+
+  /// Rebuilt even where launch found git: that PATH is what git's own
+  /// children are looked up on; see Docs/design/architecture.md.
+  private func adoptGit(on searchPath: String?) async {
     let hadGit = coordinator != nil
-    if let found = try? await WorktreeCoordinator.resolved(
-      searchPath: environment.path, replacing: coordinator)
-    {
-      coordinator = found
-      if !hadGit {
-        if presentedError?.saysGitIsMissing == true { presentedError = nil }
-        // `start` refreshed before this ran and found no git, so every project
-        // listed nothing; the sidebar stays empty until something asks again.
-        await refreshAll()
-      }
-    }
-    recordInstallState(await offMain { Self.installState() })
+    guard
+      let found = try? await WorktreeCoordinator.resolved(
+        searchPath: searchPath, replacing: coordinator)
+    else { return }
+    coordinator = found
+    guard !hadGit else { return }
+    if presentedError?.saysGitIsMissing == true { presentedError = nil }
+    // `start` refreshed before this ran and found no git, so every project
+    // listed nothing; the sidebar stays empty until something asks again.
+    await refreshAll()
   }
 }

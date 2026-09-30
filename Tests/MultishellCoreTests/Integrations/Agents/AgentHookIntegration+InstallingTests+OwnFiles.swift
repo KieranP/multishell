@@ -10,7 +10,7 @@ extension AgentHookIntegrationInstallingTests {
   /// file of its own: one flat list of hooks per event, and a version.
   @Test func copilotGetsAFileOfItsOwnWrittenWholeAndDeletedToRemoveIt() throws {
     let directory = temporaryDirectory()
-    defer { try? FileManager.default.removeItem(at: directory) }
+    defer { Scratch.remove(directory) }
     let file = directory.appendingPathComponent("hooks/multishell.json")
     let copilot = AgentHookCatalogue.copilot
 
@@ -24,23 +24,23 @@ extension AgentHookIntegrationInstallingTests {
     #expect(stop.count == 1, "a hook on its own, not a group of them")
     #expect(AgentHookCatalogue.isOurHook(stop[0]["command"] as? String ?? ""))
     #expect(stop[0]["timeoutSec"] as? Int == 5, "Copilot counts it under its own key")
-    #expect(copilot.isInstalled(in: file))
+    #expect(copilot.hasOurHookUnderEveryEvent(in: file))
 
     try copilot.remove(from: file)
     #expect(!FileManager.default.fileExists(atPath: file.path))
-    #expect(!copilot.isInstalled(in: file))
+    #expect(!copilot.hasOurHookUnderEveryEvent(in: file))
   }
 
   /// The name is ours; the file on disk decides. Removing must not delete
   /// something else that happens to be called that.
   @Test func aFileOfOursThatIsNotOursIsLeftWhereItIs() throws {
     let directory = temporaryDirectory()
-    defer { try? FileManager.default.removeItem(at: directory) }
+    defer { Scratch.remove(directory) }
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     let file = directory.appendingPathComponent("multishell.json")
     try #"{"version":1,"hooks":{}}"#.write(to: file, atomically: true, encoding: .utf8)
 
-    #expect(!AgentHookCatalogue.copilot.isInstalled(in: file))
+    #expect(!AgentHookCatalogue.copilot.hasOurHookUnderEveryEvent(in: file))
     try AgentHookCatalogue.copilot.remove(from: file)
     #expect(FileManager.default.fileExists(atPath: file.path))
   }
@@ -49,7 +49,7 @@ extension AgentHookIntegrationInstallingTests {
   /// states spelled as the helper takes them.
   @Test func openCodeGetsAPluginThatCallsTheHelper() throws {
     let directory = temporaryDirectory()
-    defer { try? FileManager.default.removeItem(at: directory) }
+    defer { Scratch.remove(directory) }
     let file = directory.appendingPathComponent("plugin/multishell.js")
     let openCode = AgentHookCatalogue.openCode
 
@@ -90,7 +90,7 @@ extension AgentHookIntegrationInstallingTests {
     #expect(
       !source.contains("\"permission.ask\":"),
       "listening on both would report one prompt twice")
-    #expect(openCode.isInstalled(in: file))
+    #expect(openCode.hasOurHookUnderEveryEvent(in: file))
     #expect(openCode.entries(helper: helper).isEmpty, "a plugin is not a hooks object")
 
     try openCode.remove(from: file)

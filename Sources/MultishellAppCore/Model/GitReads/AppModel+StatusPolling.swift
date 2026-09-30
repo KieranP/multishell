@@ -56,7 +56,7 @@ extension AppModel {
   /// Whether git may be asked about this worktree's status, and whether an
   /// answer may land: both reads ask it before and after git runs.
   private func mayReadStatus(of worktree: Worktree) -> Bool {
-    !isUnderConstruction(worktree) && !missingProjects.contains(worktree.projectID)
+    !isBeingWritten(worktree) && !missingProjects.contains(worktree.projectID)
   }
 
   /// Only rows on screen are polled, bar the main one, the selected one and any
@@ -106,9 +106,7 @@ extension AppModel {
   /// so the list is read again each round, where the lock's age is judged.
   private func refreshProjectsWithUnfinishedAdds() async {
     let marked = Set(workspace.worktrees.filter(\.isInitializing).map(\.projectID))
-    for id in marked where !missingProjects.contains(id) {
-      if let project = workspace.project(id) { await refresh(project) }
-    }
+    await refreshWorktrees(ofProjects: marked.lazy.filter { !self.missingProjects.contains($0) })
   }
 
   /// A `git checkout` in the main worktree touches `.git/HEAD`, which is not
@@ -120,8 +118,12 @@ extension AppModel {
         drifted.insert(worktree.projectID)
       }
     }
-    for id in drifted {
-      if let project = workspace.project(id) { await refresh(project) }
+    await refreshWorktrees(ofProjects: drifted)
+  }
+
+  private func refreshWorktrees(ofProjects ids: some Sequence<Project.ID>) async {
+    for id in ids {
+      if let project = workspace.project(id) { await refreshWorktrees(of: project) }
     }
   }
 
@@ -167,7 +169,7 @@ extension AppModel {
   func refreshBadges(of id: Worktree.ID, in projectID: Project.ID) {
     scheduleStatusRefresh(of: id)
     Task { @MainActor [weak self] in
-      guard let self, !isUnderConstruction(id), let project = workspace.project(projectID)
+      guard let self, !isBeingWritten(id), let project = workspace.project(projectID)
       else { return }
       await refreshMergeStates(of: project)
     }

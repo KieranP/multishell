@@ -10,7 +10,7 @@ public struct AgentBoardCard: Identifiable, Equatable, Sendable {
     case agent(id: String, name: String)
     case shell(String)
 
-    public var name: String {
+    var name: String {
       switch self {
       case .agent(_, let name): name
       case .shell(let name): name

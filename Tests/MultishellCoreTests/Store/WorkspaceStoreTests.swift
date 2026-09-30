@@ -111,7 +111,7 @@ struct WorkspaceStoreTests {
     let moving = store.openTab(in: main.id)!
     store.splitFocusedPane(of: moving.id, axis: .vertical)
 
-    #expect(store.moveTab(moving.id, to: feature.id))
+    #expect(store.moveTab(moving.id, toWorktree: feature.id))
 
     #expect(store.workspace.tab(moving.id)?.worktreeID == feature.id)
     #expect(store.workspace.tabs(in: feature.id).map(\.id) == [settled.id, moving.id])
@@ -131,7 +131,7 @@ struct WorkspaceStoreTests {
     store.replaceWorktrees([main, feature], forProject: project.id)
     let tab = store.openTab(in: main.id)!
 
-    store.moveTab(tab.id, to: feature.id)
+    store.moveTab(tab.id, toWorktree: feature.id)
 
     #expect(store.workspace.session(tab.focusedSessionID)?.workingDirectory == feature.path)
   }
@@ -145,10 +145,10 @@ struct WorkspaceStoreTests {
     let first = store.openTab(in: main.id)!
     let second = store.openTab(in: main.id)!
 
-    store.moveTab(second.id, to: feature.id)
+    store.moveTab(second.id, toWorktree: feature.id)
     #expect(store.workspace.activeTab(in: main.id)?.id == first.id)
 
-    store.moveTab(first.id, to: feature.id)
+    store.moveTab(first.id, toWorktree: feature.id)
     #expect(store.workspace.activeTab(in: main.id)?.id == nil, "no tabs, no active one")
   }
 
@@ -156,9 +156,9 @@ struct WorkspaceStoreTests {
     let (store, _, worktree) = demoStore()
     let tab = store.openTab(in: worktree.id)!
 
-    #expect(store.moveTab(tab.id, to: "/repos/nowhere") == false)
-    #expect(store.moveTab(tab.id, to: worktree.id) == false, "already there")
-    #expect(store.moveTab(UUID(), to: worktree.id) == false, "no such tab")
+    #expect(store.moveTab(tab.id, toWorktree: "/repos/nowhere") == false)
+    #expect(store.moveTab(tab.id, toWorktree: worktree.id) == false, "already there")
+    #expect(store.moveTab(UUID(), toWorktree: worktree.id) == false, "no such tab")
     #expect(store.workspace.tab(tab.id)?.worktreeID == worktree.id)
   }
 

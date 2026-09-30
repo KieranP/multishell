@@ -8,7 +8,7 @@ import Testing
 /// what a hook decision is held against.
 func writtenAndReadBack(_ settings: SharedProjectSettings) throws -> SharedProjectSettings {
   let root = try Scratch.directory("shared")
-  defer { try? FileManager.default.removeItem(at: root) }
+  defer { Scratch.remove(root) }
   try settings.write(to: root)
   return try #require(try SharedProjectSettings.load(from: root))
 }

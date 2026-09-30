@@ -6,10 +6,8 @@ import Testing
 
 @Suite
 struct GitExecutableTests {
-  private func scratch() throws -> URL { try Scratch.directory("git-executable") }
-
   @Test func theShimIsResolvedThroughXcrunToTheGitItRuns() async throws {
-    let root = try scratch()
+    let root = try Scratch.directory("git-executable")
     defer { Scratch.remove(root) }
     let shim = try Scratch.script("exit 0", at: root.appendingPathComponent("git"))
     let real = try Scratch.script("exit 0", at: root.appendingPathComponent("real-git"))
@@ -23,7 +21,7 @@ struct GitExecutableTests {
   }
 
   @Test func anXcrunThatFailsLeavesTheShim() async throws {
-    let root = try scratch()
+    let root = try Scratch.directory("git-executable")
     defer { Scratch.remove(root) }
     let shim = try Scratch.script("exit 0", at: root.appendingPathComponent("git"))
     let xcrun = try Scratch.script("exit 1", at: root.appendingPathComponent("xcrun"))
@@ -35,7 +33,7 @@ struct GitExecutableTests {
   }
 
   @Test func aGitThatIsNotTheShimIsUsedAsFoundAndXcrunIsNotRun() async throws {
-    let root = try scratch()
+    let root = try Scratch.directory("git-executable")
     defer { Scratch.remove(root) }
     let git = try Scratch.script("exit 0", at: root.appendingPathComponent("git"))
     let marker = root.appendingPathComponent("ran")
@@ -51,7 +49,7 @@ struct GitExecutableTests {
   }
 
   @Test func withNoDeveloperToolsXcrunIsNotAskedAndTheShimStays() async throws {
-    let root = try scratch()
+    let root = try Scratch.directory("git-executable")
     defer { Scratch.remove(root) }
     let shim = try Scratch.script("exit 0", at: root.appendingPathComponent("git"))
     let marker = root.appendingPathComponent("ran")

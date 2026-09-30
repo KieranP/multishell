@@ -17,8 +17,6 @@ public struct TabDragState: Equatable, Sendable {
   /// Where the tab sat as the drag began, for a drag nothing takes.
   private(set) var home: Home?
 
-  init() {}
-
   public var isDragging: Bool { tabID != nil }
 
   /// Whether the drag is over something that would take it, and what a strip
@@ -63,7 +61,7 @@ public struct TabDragState: Equatable, Sendable {
 
   /// Where a dragged tab would make a group: beside this one, on this side.
   public struct Band: Equatable, Sendable {
-    public let groupID: TabGroup.ID
+    let groupID: TabGroup.ID
     public let placement: TerminalTab.Placement
 
     public init(groupID: TabGroup.ID, placement: TerminalTab.Placement) {

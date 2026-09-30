@@ -27,7 +27,7 @@ struct SidebarView: View {
         showsFilterField: model.showsSidebarFilter,
         theme: theme,
         toggleFilter: { model.setShowsSidebarFilter(!model.showsSidebarFilter) },
-        addProject: { Task { await model.chooseProject() } }
+        addProject: { Task { await model.addProjectFromPicker() } }
       )
       if model.showsSidebarFilter {
         SidebarFilterField(
@@ -36,7 +36,7 @@ struct SidebarView: View {
       }
       ScrollView {
         LazyVStack(spacing: 1) {
-          AgentBoardRow(
+          SidebarAgentsRow(
             counts: model.agentSidebarCounts,
             isSelected: model.showsAgentBoard,
             theme: theme,
@@ -46,7 +46,7 @@ struct SidebarView: View {
           .equatable()
           .padding(.bottom, 4)
 
-          ProjectsHeader(model: model, theme: theme, metrics: metrics)
+          ProjectsSectionHeader(model: model, theme: theme, metrics: metrics)
 
           ForEach(shownProjects, id: \.project.id) { entry in
             ProjectBlock(
@@ -58,7 +58,7 @@ struct SidebarView: View {
               theme: theme,
               projectDropTarget: $projectDropTarget,
               tabDropTarget: $tabDropTarget,
-              endDrag: endDrag)
+              endProjectDrag: endProjectDrag)
           }
         }
         .padding(.horizontal, 8)
@@ -66,12 +66,8 @@ struct SidebarView: View {
         .padding(.bottom, 12)
       }
       .overlay {
-        if model.workspace.projects.isEmpty {
-          Text(t("sidebar.no-projects"))
-            .font(.system(size: metrics.secondary))
-            .foregroundStyle(theme.textTertiary)
-        } else if shownProjects.isEmpty {
-          Text(t("sidebar.nothing-matches"))
+        if let message = emptyMessage(showing: shownProjects) {
+          Text(message)
             .font(.system(size: metrics.secondary))
             .foregroundStyle(theme.textTertiary)
         }
@@ -79,7 +75,7 @@ struct SidebarView: View {
       // A drop that misses every project block still ends the drag, so the
       // indicator and the dragged id are cleared here.
       .onDrop(of: [.text], isTargeted: nil) { _ in
-        endDrag()
+        endProjectDrag()
         return false
       }
       SidebarFooter(
@@ -92,9 +88,15 @@ struct SidebarView: View {
     .background(theme.sidebarColor)
   }
 
-  private func endDrag() {
+  private func endProjectDrag() {
     projectDropTarget = nil
     model.endProjectDrag()
+  }
+
+  /// What the list says in place of rows, `nil` while it has some.
+  private func emptyMessage(showing shownProjects: [SidebarFilter.Entry]) -> String? {
+    if model.workspace.projects.isEmpty { return t("sidebar.no-projects") }
+    return shownProjects.isEmpty ? t("sidebar.nothing-matches") : nil
   }
 
   private var filteredProjects: [SidebarFilter.Entry] {

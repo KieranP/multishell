@@ -25,8 +25,8 @@ struct InheritedSettingTests {
 
     h.model.applySharedSettingsReading(
       SharedSettingsReading(
-        result: .success(SharedProjectSettings(autoStartAgentOnCreate: false)), stamp: .now,
-        project: h.project),
+        loaded: .success(SharedProjectSettings(autoStartAgentOnCreate: false)),
+        modificationDate: .now, project: h.project),
       for: h.project)
     let file = h.model.inherited(.autoStartAgentOnCreate, global: true, for: h.project)
     #expect(
@@ -46,8 +46,8 @@ struct InheritedSettingTests {
 
     h.model.applySharedSettingsReading(
       SharedSettingsReading(
-        result: .success(SharedProjectSettings(worktreeDirectory: ".worktrees")), stamp: .now,
-        project: h.project),
+        loaded: .success(SharedProjectSettings(worktreeDirectory: ".worktrees")),
+        modificationDate: .now, project: h.project),
       for: h.project)
 
     let directory = h.model.inherited(
@@ -64,8 +64,8 @@ struct InheritedSettingTests {
     h.model.setWorktreeDefaults(WorktreeSettings(worktreeDirectory: "/global/trees"))
     h.model.applySharedSettingsReading(
       SharedSettingsReading(
-        result: .success(SharedProjectSettings(worktreeDirectory: ".worktrees", digest: "file")),
-        stamp: .now, project: h.project),
+        loaded: .success(SharedProjectSettings(worktreeDirectory: ".worktrees", digest: "file")),
+        modificationDate: .now, project: h.project),
       for: h.project)
 
     h.model.setTrustsSharedSettings(true, for: h.project)
@@ -88,7 +88,8 @@ struct InheritedSettingTests {
 
     h.model.applySharedSettingsReading(
       SharedSettingsReading(
-        result: .success(SharedProjectSettings(branchPrefix: "")), stamp: .now, project: h.project),
+        loaded: .success(SharedProjectSettings(branchPrefix: "")), modificationDate: .now,
+        project: h.project),
       for: h.project)
 
     let prefix = h.model.inherited(

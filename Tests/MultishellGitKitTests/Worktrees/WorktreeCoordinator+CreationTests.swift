@@ -16,7 +16,7 @@ struct WorktreeCoordinatorCreationTests {
 
     let planned = repo.coordinator.plannedPath(
       forBranch: "feat/tabs", in: repo.project, settings: repo.worktreeSettings)
-    let created = try await repo.coordinator.create(
+    let created = try await repo.coordinator.createThenRunPostCreate(
       branch: "feat/tabs", in: repo.project, settings: repo.worktreeSettings)
 
     #expect(created == planned)
@@ -29,9 +29,9 @@ struct WorktreeCoordinatorCreationTests {
     defer { repo.tearDown() }
     let first = try await repo.head(of: repo.project.path)
     try await repo.commit("second", file: "b.txt", content: "b\n")
-    _ = try await repo.git.run(["branch", "release", first], in: repo.project.path)
+    _ = try await repo.runner.run(["branch", "release", first], in: repo.project.path)
 
-    let path = try await repo.coordinator.create(
+    let path = try await repo.coordinator.createThenRunPostCreate(
       branch: "hotfix", basedOn: "release", in: repo.project, settings: repo.worktreeSettings)
 
     #expect(try await repo.head(of: path) == first)
@@ -41,7 +41,7 @@ struct WorktreeCoordinatorCreationTests {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
 
-    let path = try await repo.coordinator.create(
+    let path = try await repo.coordinator.createThenRunPostCreate(
       branch: "x", in: repo.project, settings: repo.worktreeSettings)
 
     #expect(try await repo.head(of: path) == repo.head(of: repo.project.path))
@@ -50,12 +50,12 @@ struct WorktreeCoordinatorCreationTests {
   @Test func anExistingBranchIsCheckedOutNotRecreated() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    _ = try await repo.git.run(["branch", "existing"], in: repo.project.path)
+    _ = try await repo.runner.run(["branch", "existing"], in: repo.project.path)
 
-    let path = try await repo.coordinator.create(
+    let path = try await repo.coordinator.createThenRunPostCreate(
       branch: "existing", createBranch: false, in: repo.project, settings: repo.worktreeSettings)
 
-    let onBranch = try await repo.git.run(["rev-parse", "--abbrev-ref", "HEAD"], in: path)
+    let onBranch = try await repo.runner.run(["rev-parse", "--abbrev-ref", "HEAD"], in: path)
     #expect(onBranch.trimmingCharacters(in: .whitespacesAndNewlines) == "existing")
     #expect(try await repo.branches() == ["existing", "main"])
   }
@@ -65,8 +65,10 @@ struct WorktreeCoordinatorCreationTests {
     defer { repo.tearDown() }
     let settings = WorktreeSettings(worktreeDirectory: "../trees", branchPrefix: "k/")
 
-    let a = try await repo.coordinator.create(branch: "one", in: repo.project, settings: settings)
-    let b = try await repo.coordinator.create(branch: "k/two", in: repo.project, settings: settings)
+    let a = try await repo.coordinator.createThenRunPostCreate(
+      branch: "one", in: repo.project, settings: settings)
+    let b = try await repo.coordinator.createThenRunPostCreate(
+      branch: "k/two", in: repo.project, settings: settings)
 
     #expect(a.lastPathComponent == "k-one")
     #expect(b.lastPathComponent == "k-two")
@@ -76,17 +78,17 @@ struct WorktreeCoordinatorCreationTests {
   @Test func thePrefixIsNotAppliedToAnExistingBranch() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    _ = try await repo.git.run(["branch", "release"], in: repo.project.path)
+    _ = try await repo.runner.run(["branch", "release"], in: repo.project.path)
     let settings = WorktreeSettings(worktreeDirectory: "../trees", branchPrefix: "k/")
 
     let planned = repo.coordinator.plannedPath(
       forBranch: "release", createBranch: false, in: repo.project, settings: settings)
-    let path = try await repo.coordinator.create(
+    let path = try await repo.coordinator.createThenRunPostCreate(
       branch: "release", createBranch: false, in: repo.project, settings: settings)
 
     #expect(path == planned)
     #expect(path.lastPathComponent == "release", "no k- in the directory either")
-    let onBranch = try await repo.git.run(["rev-parse", "--abbrev-ref", "HEAD"], in: path)
+    let onBranch = try await repo.runner.run(["rev-parse", "--abbrev-ref", "HEAD"], in: path)
     #expect(onBranch.trimmingCharacters(in: .whitespacesAndNewlines) == "release")
     #expect(try await repo.branches() == ["main", "release"], "nothing was created")
   }
@@ -96,7 +98,8 @@ struct WorktreeCoordinatorCreationTests {
     defer { repo.tearDown() }
     let settings = WorktreeSettings(worktreeDirectory: "../deep/er/trees")
 
-    let path = try await repo.coordinator.create(branch: "n", in: repo.project, settings: settings)
+    let path = try await repo.coordinator.createThenRunPostCreate(
+      branch: "n", in: repo.project, settings: settings)
 
     #expect(path.path.hasSuffix("/deep/er/trees/n"))
     #expect(FileManager.default.fileExists(atPath: path.appendingPathComponent("README.md").path))
@@ -105,11 +108,12 @@ struct WorktreeCoordinatorCreationTests {
   @Test func aRefusedCreateLeavesNoContainerDirectory() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    _ = try await repo.git.run(["branch", "taken"], in: repo.project.path)
+    _ = try await repo.runner.run(["branch", "taken"], in: repo.project.path)
     let settings = WorktreeSettings(worktreeDirectory: "../deep/er/trees")
 
     await #expect(throws: ProcessFailure.self) {
-      try await repo.coordinator.create(branch: "taken", in: repo.project, settings: settings)
+      try await repo.coordinator.createThenRunPostCreate(
+        branch: "taken", in: repo.project, settings: settings)
     }
 
     let deep = repo.root.appendingPathComponent("deep", isDirectory: true)
@@ -121,14 +125,14 @@ struct WorktreeCoordinatorCreationTests {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
     try await repo.commit("slow", files: [".gitattributes": "*.dat filter=slow\n", "a.dat": "x\n"])
-    _ = try await repo.git.run(
+    _ = try await repo.runner.run(
       ["config", "filter.slow.smudge", "sleep 30; cat"], in: repo.project.path)
     let settings = WorktreeSettings(worktreeDirectory: "../deep/er/trees")
     let stopper = ProcessStopper()
     let coordinator = repo.coordinator
     let project = repo.project
     let add = Task {
-      try await coordinator.add(
+      try await coordinator.create(
         branch: "held", in: project, settings: settings, stopper: stopper)
     }
     let record = project.path.appendingPathComponent(".git/worktrees/held")
@@ -139,8 +143,9 @@ struct WorktreeCoordinatorCreationTests {
 
     #expect(try await repo.branches() == ["main"])
     #expect(!FileManager.default.fileExists(atPath: repo.root.appendingPathComponent("deep").path))
-    _ = try await repo.git.run(["config", "--unset", "filter.slow.smudge"], in: project.path)
-    try await repo.coordinator.create(branch: "held", in: project, settings: settings)
+    _ = try await repo.runner.run(["config", "--unset", "filter.slow.smudge"], in: project.path)
+    try await repo.coordinator.createThenRunPostCreate(
+      branch: "held", in: project, settings: settings)
   }
 
   /// The add exits just past a second boundary, so the index wait after it
@@ -164,7 +169,8 @@ struct WorktreeCoordinatorCreationTests {
     let project = repo.project
     let settings = repo.worktreeSettings
     let add = Task {
-      try await coordinator.add(branch: "held", in: project, settings: settings, stopper: stopper)
+      try await coordinator.create(
+        branch: "held", in: project, settings: settings, stopper: stopper)
     }
     let added = fake.directory.appendingPathComponent("added")
     try await waitUntil { FileManager.default.fileExists(atPath: added.path) }
@@ -196,7 +202,8 @@ struct WorktreeCoordinatorCreationTests {
     let project = repo.project
     let settings = repo.worktreeSettings
     let add = Task {
-      try await coordinator.add(branch: "held", in: project, settings: settings, stopper: stopper)
+      try await coordinator.create(
+        branch: "held", in: project, settings: settings, stopper: stopper)
     }
     let added = fake.directory.appendingPathComponent("added")
     try await waitUntil { FileManager.default.fileExists(atPath: added.path) }
@@ -230,7 +237,8 @@ struct WorktreeCoordinatorCreationTests {
       withIntermediateDirectories: true)
     let stopper = ProcessStopper()
     let add = Task {
-      try await coordinator.add(branch: "held", in: project, settings: settings, stopper: stopper)
+      try await coordinator.create(
+        branch: "held", in: project, settings: settings, stopper: stopper)
     }
     let added = fake.directory.appendingPathComponent("added")
     try await waitUntil { FileManager.default.fileExists(atPath: added.path) }
@@ -245,16 +253,16 @@ struct WorktreeCoordinatorCreationTests {
   @Test func aStoppedCreateLeavesAWorktreeAlreadyRegisteredAtItsPath() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    let away = try await repo.coordinator.create(
+    let away = try await repo.coordinator.createThenRunPostCreate(
       branch: "away", in: repo.project, settings: repo.worktreeSettings)
     let aside = away.deletingLastPathComponent().appendingPathComponent("away-aside")
     try FileManager.default.moveItem(at: away, to: aside)
-    _ = try await repo.git.run(["branch", "-m", "away", "renamed"], in: repo.project.path)
+    _ = try await repo.runner.run(["branch", "-m", "away", "renamed"], in: repo.project.path)
     let stopper = ProcessStopper()
     stopper.stop()
 
     await #expect(throws: (any Error).self) {
-      try await repo.coordinator.add(
+      try await repo.coordinator.create(
         branch: "away", in: repo.project, settings: repo.worktreeSettings, stopper: stopper)
     }
 
@@ -265,14 +273,14 @@ struct WorktreeCoordinatorCreationTests {
   @Test func aCreateStoppedBeforeGitRanLeavesABranchThatWasAlreadyThere() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    _ = try await repo.git.run(["checkout", "-q", "-b", "mywork"], in: repo.project.path)
+    _ = try await repo.runner.run(["checkout", "-q", "-b", "mywork"], in: repo.project.path)
     try await repo.commit("mine", file: "mine.txt", content: "x\n")
-    _ = try await repo.git.run(["checkout", "-q", "main"], in: repo.project.path)
+    _ = try await repo.runner.run(["checkout", "-q", "main"], in: repo.project.path)
     let stopper = ProcessStopper()
     stopper.stop()
 
     await #expect(throws: (any Error).self) {
-      try await repo.coordinator.add(
+      try await repo.coordinator.create(
         branch: "mywork", in: repo.project, settings: repo.worktreeSettings, stopper: stopper)
     }
 
@@ -296,7 +304,7 @@ struct WorktreeCoordinatorCreationTests {
     stopper.stop()
 
     await #expect(throws: (any Error).self) {
-      try await coordinator.add(
+      try await coordinator.create(
         branch: "mywork", in: Project(path: fake.directory),
         settings: WorktreeSettings(worktreeDirectory: "../trees"), stopper: stopper)
     }
@@ -310,11 +318,11 @@ struct WorktreeCoordinatorCreationTests {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
 
-    let settling = WorktreeCoordinator(git: WorktreeGit(runner: repo.git))
-    let path = try await settling.create(
+    let settling = WorktreeCoordinator(git: WorktreeGit(runner: repo.runner))
+    let path = try await settling.createThenRunPostCreate(
       branch: "fresh", in: repo.project, settings: repo.worktreeSettings)
 
-    let index = try await repo.git.run(
+    let index = try await repo.runner.run(
       ["rev-parse", "--path-format=absolute", "--git-path", "index"], in: path
     )
     .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -329,10 +337,10 @@ struct WorktreeCoordinatorCreationTests {
   @Test func aBranchThatAlreadyExistsIsAGitErrorNotACrash() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    _ = try await repo.git.run(["branch", "taken"], in: repo.project.path)
+    _ = try await repo.runner.run(["branch", "taken"], in: repo.project.path)
 
     await #expect(throws: ProcessFailure.self) {
-      try await repo.coordinator.create(
+      try await repo.coordinator.createThenRunPostCreate(
         branch: "taken", in: repo.project, settings: repo.worktreeSettings)
     }
     #expect(
@@ -350,7 +358,7 @@ struct WorktreeCoordinatorCreationTests {
     try "x".write(to: target.appendingPathComponent("file"), atomically: true, encoding: .utf8)
 
     await #expect(throws: ProcessFailure.self) {
-      try await repo.coordinator.create(
+      try await repo.coordinator.createThenRunPostCreate(
         branch: "busy", in: project, settings: repo.worktreeSettings)
     }
     #expect(
@@ -369,7 +377,7 @@ struct WorktreeCoordinatorCreationTests {
 
     for name in ["", "  ", "my branch", "HEAD"] {
       await #expect(throws: InvalidBranchName.self, "\(name.debugDescription)") {
-        try await repo.coordinator.create(
+        try await repo.coordinator.createThenRunPostCreate(
           branch: name, createBranch: false, in: project, settings: repo.worktreeSettings)
       }
       #expect(!FileManager.default.fileExists(atPath: marker.path), "the hook did not run")
@@ -383,8 +391,76 @@ struct WorktreeCoordinatorCreationTests {
 
     // `main` is checked out in the primary worktree already.
     await #expect(throws: ProcessFailure.self) {
-      try await repo.coordinator.create(
+      try await repo.coordinator.createThenRunPostCreate(
         branch: "main", createBranch: false, in: repo.project, settings: repo.worktreeSettings)
     }
+  }
+
+  @Test func aWorktreeLandsWhereTheSettingsSayOnAPrefixedBranchAndThePostCreateHookRunsInIt()
+    async throws
+  {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+
+    var project = repo.project
+    project.settings = ProjectSettings(postCreateHook: "echo created > hook.txt")
+    let settings = WorktreeSettings(worktreeDirectory: "../trees", branchPrefix: "kieran/")
+
+    let coordinator = repo.coordinator
+    let path = try await coordinator.createThenRunPostCreate(
+      branch: "tabs", in: project, settings: settings)
+
+    #expect(path.lastPathComponent == "kieran-tabs")
+    #expect(path.deletingLastPathComponent().lastPathComponent == "trees")
+    #expect(FileManager.default.fileExists(atPath: path.appendingPathComponent("hook.txt").path))
+
+    let worktrees = try await coordinator.git.list(project)
+    #expect(worktrees.count == 2)
+    #expect(worktrees.contains { $0.branch == "kieran/tabs" })
+  }
+
+  @Test func creationReportsEachStepAndSkipsHooksWithNoScript() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    let steps = StepLog<WorktreeCreationStep>()
+
+    try await repo.coordinator.createThenRunPostCreate(
+      branch: "plain", in: repo.project, settings: repo.worktreeSettings, onStep: { steps.add($0) })
+    #expect(steps.steps == [.addingWorktree], "no hooks, so no hook steps")
+
+    var hooked = repo.project
+    hooked.settings = ProjectSettings(preCreateHook: "true", postCreateHook: "true")
+    steps.clear()
+    try await repo.coordinator.createThenRunPostCreate(
+      branch: "hooked", in: hooked, settings: repo.worktreeSettings, onStep: { steps.add($0) })
+    #expect(steps.steps == [.preCreateHook, .addingWorktree])
+
+    var refused = repo.project
+    refused.settings = ProjectSettings(preCreateHook: "exit 1", postCreateHook: "true")
+    steps.clear()
+    await #expect(throws: HookFailure.self) {
+      try await repo.coordinator.createThenRunPostCreate(
+        branch: "refused", in: refused, settings: repo.worktreeSettings, onStep: { steps.add($0) })
+    }
+    #expect(steps.steps == [.preCreateHook], "nothing past the veto")
+  }
+
+  @Test func createStopsBeforeThePostHookWhichRunPostCreateThenRuns() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+    var project = repo.project
+    project.settings = ProjectSettings(
+      preCreateHook: "echo pre > pre.txt", postCreateHook: "echo post > post.txt")
+
+    let path = try await repo.coordinator.create(
+      branch: "halves", in: project, settings: repo.worktreeSettings)
+
+    #expect(
+      FileManager.default.fileExists(atPath: project.path.appendingPathComponent("pre.txt").path))
+    #expect(try await repo.coordinator.git.list(project).count == 2, "the worktree exists")
+    #expect(!FileManager.default.fileExists(atPath: path.appendingPathComponent("post.txt").path))
+
+    try await repo.coordinator.runPostCreate(for: project, worktreePath: path, branch: "halves")
+    #expect(FileManager.default.fileExists(atPath: path.appendingPathComponent("post.txt").path))
   }
 }

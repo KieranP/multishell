@@ -29,17 +29,13 @@ struct SidebarSortMenu: View {
       Image(systemName: "arrow.up.arrow.down")
         .font(.system(size: metrics.badge))
         .foregroundStyle(isHovered ? theme.textSecondary : theme.textTertiary.opacity(0.7))
-        .frame(width: 24, height: 22)
+        .frame(width: UIMetrics.sidebarRowButtonWidth, height: 22)
         // Painted: a menu is hit-tested by its label's ink, and the glyph
         // alone is a small target. As the strip's + does.
         .background(theme.sidebarColor)
         .contentShape(.rect)
     }
-    // Not `.borderlessButton`: that AppKit button draws the image at its own
-    // size and tint, so no font or colour set here reaches it.
-    .menuStyle(.button)
-    .buttonStyle(.plain)
-    .menuIndicator(.hidden)
+    .glyphMenuStyle()
     .fixedSize()
     .onHover { isHovered = $0 }
     .help(t("sidebar.sort-worktrees"))

@@ -15,9 +15,9 @@
   `test`, `test-app`, `build`, `release`, `run`, `install`, `format` and `lint`.
   Each carries a comment line above it in the Makefile saying what it does.
 - **`make-app.sh` builds the app binary with `xcodebuild`**, wraps it in a
-  bundle, copies the resource bundles in (the engine's terminfo must be there),
-  builds the CLI the same way into the bundle's helpers, writes the Info.plist
-  and signs both.
+  bundle, builds the CLI the same way into the bundle's helpers, copies the
+  resource bundles in (the engine's terminfo must be there), writes the
+  Info.plist and signs both.
 - **Signed with the hardened runtime and the entitlements** in `Resources/`
   (design/signing.md).
 - **The short version is three integers**, the only form Apple's key takes: a
@@ -30,8 +30,9 @@
   test build needs it too, the app being in the same package.
 - **`build-lib.sh` holds the functions `make-app.sh` sources**, not runs: the
   copyright holder, the version, the commit, the build number, the worktree
-  variant, the xcodebuild call, the checks and the signing. What stays in
-  `make-app.sh` is the paths and the order of the steps.
+  variant, the xcodebuild call, the checks, the resource copying, the Info.plist
+  rendering, the entitlements and the signing. What stays in `make-app.sh` is
+  the paths and the order of the steps.
 - **The Info.plist is a template filled in by placeholder**, and
   InfoPlistTemplateTests reads it out of the checkout (tests.md). Substitution
   is bash's own, so a value may hold a newline or an ampersand unescaped. The
@@ -119,8 +120,8 @@
   not try, and do not ask for those permissions.
 - **You can lay a view out in-process.** A hosting view inside a window that is
   never ordered in measures and renders, asking for nothing, and the sizing
-  options give the size SwiftUI would refuse to go below. AppSettingsWindowTests
-  is the pattern.
+  options give the size SwiftUI would refuse to go below.
+  SettingsWindowSizeTests is the pattern.
 - **It still needs a window server**, which is a session rather than a
   permission; CI's runner has one.
 - **A tab band is drawn outside the AppKit hierarchy**: in no bitmap and in no

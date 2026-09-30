@@ -24,71 +24,74 @@ struct ProjectRow: View {
 
   var body: some View {
     HStack(spacing: 6) {
-      // Only the chevron, icon and name toggle. A row-wide target made a
-      // slightly-missed click on the + collapse the project instead.
-      HStack(spacing: 6) {
-        Image(systemName: "chevron.right")
-          .font(.system(size: metrics.badge - 1, weight: .bold))
-          .rotationEffect(.degrees(project.isExpanded ? 90 : 0))
-          .foregroundStyle(theme.textTertiary)
-          .frame(width: 10)
-          .help(project.isExpanded ? t("sidebar.collapse") : t("sidebar.expand"))
-
-        if isFetching {
-          // The icon's own slot, like the dot below it, so nothing shifts
-          // and no control is taken away while it spins.
-          ProgressView()
-            .controlSize(.mini)
-            .scaleEffect(0.7)
-            .frame(width: metrics.icon + 6)
-            .help(t("sidebar.fetching"))
-        } else if let state {
-          StateDot(state: state, theme: theme)
-            .frame(width: metrics.icon + 6)
-            .help(t("sidebar.collapsed-state", state.displayName))
-        } else {
-          ProjectIconView(
-            settings: settings, isMissing: isMissing, theme: theme, size: metrics.icon
-          )
-          .help(project.path.path)
-        }
-
-        Text(project.name)
-          .font(.system(size: metrics.body, weight: .medium))
-          .foregroundStyle(theme.textPrimary)
-          .lineLimit(1)
-          .opacity(isMissing ? 0.5 : 1)
-          .help(isMissing ? t("sidebar.not-reachable", project.path.path) : "")
-      }
-      .frame(height: metrics.rowHeight)
-      .contentShape(.rect)
-      .onTapGesture(perform: toggle)
-      .accessibilityElement(children: .ignore)
-      .accessibilityLabel(
-        AccessibilityText.project(
-          name: project.name, isExpanded: project.isExpanded, isMissing: isMissing, state: state,
-          worktreeCount: worktreeCount, isFetching: isFetching)
-      )
-      .accessibilityAddTraits(.isButton)
-      .accessibilityAction(
-        named: project.isExpanded ? t("sidebar.collapse") : t("sidebar.expand"), toggle)
+      toggleArea
 
       Spacer(minLength: 4)
 
-      rowButton("plus", help: t("sidebar.new-worktree"), action: newWorktree)
+      newWorktreeButton
     }
     .padding(.horizontal, 8)
     .frame(height: metrics.rowHeight)
     .onHover { isHovered = $0 }
   }
 
-  private func rowButton(_ symbol: String, help: String, action: @escaping () -> Void) -> some View
-  {
-    GlyphButton(help: help, action: action) {
-      Image(systemName: symbol)
+  /// Only the chevron, icon and name toggle. A row-wide target made a
+  /// slightly-missed click on the + collapse the project instead.
+  private var toggleArea: some View {
+    HStack(spacing: 6) {
+      Image(systemName: "chevron.right")
+        .font(.system(size: metrics.badge - 1, weight: .bold))
+        .rotationEffect(.degrees(project.isExpanded ? 90 : 0))
+        .foregroundStyle(theme.textTertiary)
+        .frame(width: 10)
+        .help(project.isExpanded ? t("sidebar.collapse") : t("sidebar.expand"))
+
+      if isFetching {
+        // The icon's own slot, like the dot below it, so nothing shifts
+        // and no control is taken away while it spins.
+        ProgressView()
+          .controlSize(.mini)
+          .scaleEffect(0.7)
+          .frame(width: metrics.icon + 6)
+          .help(t("sidebar.fetching"))
+      } else if let state {
+        StateDot(state: state, theme: theme)
+          .frame(width: metrics.icon + 6)
+          .help(t("sidebar.collapsed-state", state.displayName))
+      } else {
+        ProjectIconView(
+          settings: settings, isMissing: isMissing, theme: theme, size: metrics.icon
+        )
+        .help(project.path.path)
+      }
+
+      Text(project.name)
+        .font(.system(size: metrics.body, weight: .medium))
+        .foregroundStyle(theme.textPrimary)
+        .lineLimit(1)
+        .opacity(isMissing ? 0.5 : 1)
+        .help(isMissing ? t("sidebar.not-reachable", project.path.path) : "")
+    }
+    .frame(height: metrics.rowHeight)
+    .contentShape(.rect)
+    .onTapGesture(perform: toggle)
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel(
+      AccessibilityText.project(
+        name: project.name, isExpanded: project.isExpanded, isMissing: isMissing, state: state,
+        worktreeCount: worktreeCount, isFetching: isFetching)
+    )
+    .accessibilityAddTraits(.isButton)
+    .accessibilityAction(
+      named: project.isExpanded ? t("sidebar.collapse") : t("sidebar.expand"), toggle)
+  }
+
+  private var newWorktreeButton: some View {
+    PlainGlyphButton(help: t("sidebar.new-worktree"), action: newWorktree) {
+      Image(systemName: "plus")
         .font(.system(size: metrics.icon))
         .foregroundStyle(isHovered ? theme.textSecondary : theme.textTertiary)
-        .frame(width: 24, height: 24)
+        .frame(width: UIMetrics.sidebarRowButtonWidth, height: UIMetrics.sidebarRowButtonWidth)
     }
   }
 }

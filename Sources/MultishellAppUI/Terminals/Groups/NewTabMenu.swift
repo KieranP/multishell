@@ -18,7 +18,7 @@ struct NewTabMenu: View {
       } label: {
         itemLabel(t("menu.new-shell-tab"), agentID: nil)
       }
-      ForEach(model.installedAgentIDs, id: \.self) { id in
+      ForEach(model.newTabAgentIDs, id: \.self) { id in
         Button {
           model.newAgentTab(id, in: groupID)
         } label: {
@@ -28,11 +28,7 @@ struct NewTabMenu: View {
     } label: {
       newTabLabel
     }
-    // Not `.borderlessButton`: that one is an AppKit button, which keeps one
-    // image of the label and drops the chevron. See Docs/design/tabs-and-groups.md.
-    .menuStyle(.button)
-    .buttonStyle(.plain)
-    .menuIndicator(.hidden)
+    .glyphMenuStyle()
     .frame(width: model.metrics.newTabMenuWidth, height: model.metrics.tabHeight)
     // Every item opens in this group. Only the focused one need not say so,
     // being where the keyboard already is.

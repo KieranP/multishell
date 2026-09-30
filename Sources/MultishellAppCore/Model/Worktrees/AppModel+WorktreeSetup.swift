@@ -6,9 +6,9 @@ import MultishellProcess
 extension AppModel {
   /// The lists to place, in run order. Only the repository's is held to the
   /// checkout, and a blank list of the user's own is what lets it stand.
-  func fileLists(of project: Project, resolvedBy resolved: Project) -> [WorktreeFileList] {
+  func fileLists(of project: Project, inEffect effective: Project) -> [WorktreeFileList] {
     WorktreeFilePlacement.allCases.compactMap { placement in
-      let listText = placement.listText(in: resolved.settings)
+      let listText = placement.listText(in: effective.settings)
       guard !WorktreeFiles.paths(in: listText).isEmpty else { return nil }
       return WorktreeFileList(
         placement: placement, listText: listText,
@@ -48,9 +48,9 @@ extension AppModel {
   ) async {
     var skipped: [String] = []
     for (index, list) in lists.enumerated() {
-      let placement = list.placement
-      let stage = WorktreeOperation.Step(placement)
-      if index > 0 { worktreeOperations.advance(to: stage, on: worktree.id) }
+      if index > 0 {
+        worktreeOperations.advance(to: WorktreeOperation.Step(list.placement), on: worktree.id)
+      }
       let placed = await placeListedFiles(
         list, into: worktree.path, for: project, stopper: stopper)
       guard let failure = placed.failure else {
@@ -58,25 +58,7 @@ extension AppModel {
         continue
       }
       endSetup(of: worktree, stopper: stopper)
-      // The user's Cancel: the worktree is theirs, as after a stopped hook.
-      // What had already failed is still said, Cancel excusing only the rest.
-      if let stopped = failure as? WorktreeFileStopped {
-        skipped += stopped.skipped
-        if stopped.failures.isEmpty {
-          reportSkipped(skipped)
-          finishStage(stage, of: worktree)
-        } else {
-          failStage(
-            stage, of: worktree,
-            WorktreeFileFailure(placement: placement, failures: stopped.failures)
-              .including(skipped: skipped))
-        }
-      } else if let failed = failure as? WorktreeFileFailure {
-        failStage(stage, of: worktree, failed.including(skipped: skipped))
-      } else {
-        reportSkipped(skipped)
-        failStage(stage, of: worktree, failure)
-      }
+      endFileListStage(of: worktree, placing: list.placement, failure, skipped: skipped)
       return
     }
     // Said and gone past: an entry of the user's own naming elsewhere is a
@@ -94,9 +76,36 @@ extension AppModel {
       for: worktree, branch: branch, in: project, shellPath: shellPath, stopper: stopper)
   }
 
+  /// A file list that stopped short, with what the lists before it skipped.
+  private func endFileListStage(
+    of worktree: Worktree, placing placement: WorktreeFilePlacement, _ failure: any Error,
+    skipped: [String]
+  ) {
+    let stage = WorktreeOperation.Step(placement)
+    // The user's Cancel: the worktree is theirs, as after a stopped hook.
+    // What had already failed is still said, Cancel excusing only the rest.
+    if let stopped = failure as? WorktreeFileStopped {
+      let skipped = skipped + stopped.skipped
+      if stopped.failures.isEmpty {
+        reportSkipped(skipped)
+        finishStage(stage, of: worktree)
+      } else {
+        failStage(
+          stage, of: worktree,
+          WorktreeFileFailure(placement: placement, failures: stopped.failures)
+            .including(skipped: skipped))
+      }
+    } else if let failed = failure as? WorktreeFileFailure {
+      failStage(stage, of: worktree, failed.including(skipped: skipped))
+    } else {
+      reportSkipped(skipped)
+      failStage(stage, of: worktree, failure)
+    }
+  }
+
   /// Lets go of the task and its stop handle, whichever stage ended.
   private func endSetup(of worktree: Worktree, stopper: ProcessStopper) {
-    stageHandles.end(worktree.id, ifStillHeldBy: stopper)
+    stageHandles.endSetup(worktree.id, ifStillHeldBy: stopper)
     refreshBadges(of: worktree.id, in: worktree.projectID)
   }
 
@@ -168,9 +177,8 @@ extension AppModel {
   /// The first tab held back while the hook ran opens now under the create
   /// settings, and its shell starts even out of view; see terminals.md.
   func openHeldBackTab(of worktree: Worktree) {
-    guard let current = workspace.worktree(worktree.id), !isBusy(current.id),
-      workspace.tabs(in: current.id).isEmpty, opensTab(in: current, on: .onCreate),
-      requireDirectory(of: current)
+    guard let current = workspace.worktree(worktree.id),
+      wantsFirstTab(in: current, on: .onCreate), requireDirectory(of: current)
     else { return }
     addDefaultTab(in: current, on: .onCreate)
     warmWorktrees.insert(current.id)

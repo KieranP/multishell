@@ -2,7 +2,7 @@ import Foundation
 
 /// Where Multishell keeps its state; see Docs/develop/state-on-disk.md.
 public enum Paths {
-  static var configDirectory: URL {
+  static var stateDirectory: URL {
     let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
     return base.appendingPathComponent("Multishell", isDirectory: true)
   }
@@ -53,23 +53,23 @@ public enum Paths {
   }
 
   public static var stateFile: URL {
-    configDirectory.appendingPathComponent("state\(variant).json", isDirectory: false)
+    stateDirectory.appendingPathComponent("state\(variant).json", isDirectory: false)
   }
 
   public static var themesDirectory: URL {
-    configDirectory.appendingPathComponent("themes", isDirectory: true)
+    stateDirectory.appendingPathComponent("themes", isDirectory: true)
   }
 
   /// Where the app listens for session-state reports. In the state
   /// directory, not `$TMPDIR`, so a hook can find it without being told.
   public static var socketFile: URL {
-    configDirectory.appendingPathComponent("multishell\(variant).sock", isDirectory: false)
+    stateDirectory.appendingPathComponent("multishell\(variant).sock", isDirectory: false)
   }
 
   /// Where generated shell-integration files live, so the command-status
   /// hooks reach these terminals only and never the user's own rc files.
   static var integrationDirectory: URL {
-    configDirectory.appendingPathComponent("integration\(variant)", isDirectory: true)
+    stateDirectory.appendingPathComponent("integration\(variant)", isDirectory: true)
   }
 
   public static var zshIntegrationDirectory: URL {
@@ -84,13 +84,17 @@ public enum Paths {
   /// Where a drag's promised files are copied. macOS materialises one into a
   /// per-drag directory the pane's own shell is refused; see terminals.md.
   public static var dropsDirectory: URL {
-    configDirectory.appendingPathComponent("drops\(variant)", isDirectory: true)
+    stateDirectory.appendingPathComponent("drops\(variant)", isDirectory: true)
   }
+
+  /// What every hook line and every file of ours names, and how one is told
+  /// from a hook of the user's own.
+  static let helperName = "multishell"
 
   /// A stable path to the helper binary, refreshed at every launch: a hook
   /// holding the bundle's own path breaks when the app moves.
   public static var helperLink: URL {
-    configDirectory.appendingPathComponent("bin", isDirectory: true)
-      .appendingPathComponent("multishell", isDirectory: false)
+    stateDirectory.appendingPathComponent("bin", isDirectory: true)
+      .appendingPathComponent(helperName, isDirectory: false)
   }
 }

@@ -6,10 +6,6 @@ import Testing
 
 @Suite(.serialized) @MainActor
 struct DispatchDirectoryWatcherTests {
-  private func scratch() throws -> URL {
-    try Scratch.directory("watch")
-  }
-
   /// Call before the change: the watcher delivers once per coalesced burst, so a
   /// callback with no listener is lost. An `async let` around the change lost that race.
   private func changes(of watcher: DispatchDirectoryWatcher) -> Changes {
@@ -20,21 +16,15 @@ struct DispatchDirectoryWatcherTests {
 
   @MainActor final class Changes {
     var count = 0
-
-    /// The event and this loop share a busy main actor, so the wait is far above the
-    /// 400 ms coalesce; a loaded runner has taken over ten seconds to deliver.
-    func arrived(within seconds: Double = 30) async -> Bool {
-      let deadline = ContinuousClock.now + .seconds(seconds)
-      while count == 0, ContinuousClock.now < deadline {
-        try? await Task.sleep(for: .milliseconds(20))
-      }
-      return count > 0
-    }
   }
 
+  /// The event and the wait share a busy main actor, so this is far above the
+  /// 400 ms coalesce; a loaded runner has taken over ten seconds to deliver.
+  private let deliveryBound: Double = 30
+
   @Test func aFileCreatedInAWatchedDirectoryFires() async throws {
-    let dir = try scratch()
-    defer { try? FileManager.default.removeItem(at: dir) }
+    let dir = try Scratch.directory("watch")
+    defer { Scratch.remove(dir) }
     let watcher = DispatchDirectoryWatcher()
     await watcher.watch([dir])
     defer { watcher.stop() }
@@ -42,14 +32,15 @@ struct DispatchDirectoryWatcherTests {
     let changed = changes(of: watcher)
     try "x".write(to: dir.appendingPathComponent("new.txt"), atomically: true, encoding: .utf8)
 
-    #expect(await changed.arrived())
+    try await waitUntil({ changed.count > 0 }, seconds: deliveryBound)
+    #expect(changed.count > 0)
   }
 
   /// `git worktree remove foo` then `add ... foo` inside one coalesce window keeps the
   /// path wanted but leaves the descriptor on the unlinked inode, never firing again.
   @Test func aDirectoryDeletedAndRemadeAtOnePathIsWatchedAgain() async throws {
-    let parent = try scratch()
-    defer { try? FileManager.default.removeItem(at: parent) }
+    let parent = try Scratch.directory("watch")
+    defer { Scratch.remove(parent) }
     let dir = parent.appendingPathComponent("worktree", isDirectory: true)
     try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
 
@@ -69,12 +60,13 @@ struct DispatchDirectoryWatcherTests {
     let changed = changes(of: watcher)
     try "x".write(to: dir.appendingPathComponent("new.txt"), atomically: true, encoding: .utf8)
 
-    #expect(await changed.arrived(), "the source is still on the unlinked inode")
+    try await waitUntil({ changed.count > 0 }, seconds: deliveryBound)
+    #expect(changed.count > 0, "the source is still on the unlinked inode")
   }
 
   @Test func burstsAreCoalescedIntoOneCallback() async throws {
-    let dir = try scratch()
-    defer { try? FileManager.default.removeItem(at: dir) }
+    let dir = try Scratch.directory("watch")
+    defer { Scratch.remove(dir) }
     let watcher = DispatchDirectoryWatcher()
     await watcher.watch([dir])
     defer { watcher.stop() }
@@ -84,17 +76,18 @@ struct DispatchDirectoryWatcherTests {
       try "x".write(to: dir.appendingPathComponent("f\(i)"), atomically: true, encoding: .utf8)
     }
 
-    #expect(await changed.arrived(), "the burst arrived")
+    try await waitUntil({ changed.count > 0 }, seconds: deliveryBound)
+    #expect(changed.count > 0, "the burst arrived")
     try await Task.sleep(for: .seconds(1))
     #expect(changed.count == 1, "as one callback")
   }
 
   @Test func replacingTheWatchedSetStopsOldDirectoriesAndKeepsMissingOnesOut() async throws {
-    let a = try scratch()
-    let b = try scratch()
+    let a = try Scratch.directory("watch")
+    let b = try Scratch.directory("watch")
     defer {
-      try? FileManager.default.removeItem(at: a)
-      try? FileManager.default.removeItem(at: b)
+      Scratch.remove(a)
+      Scratch.remove(b)
     }
     let watcher = DispatchDirectoryWatcher()
     await watcher.watch([a, URL(fileURLWithPath: "/definitely/not/here")])
@@ -103,19 +96,21 @@ struct DispatchDirectoryWatcherTests {
 
     let forA = changes(of: watcher)
     try "x".write(to: a.appendingPathComponent("ignored"), atomically: true, encoding: .utf8)
-    #expect(await forA.arrived(within: 1) == false)
+    try await waitUntil({ forA.count > 0 }, seconds: 1)
+    #expect(forA.count == 0)
 
     let forB = changes(of: watcher)
     try "x".write(to: b.appendingPathComponent("seen"), atomically: true, encoding: .utf8)
-    #expect(await forB.arrived())
+    try await waitUntil({ forB.count > 0 }, seconds: deliveryBound)
+    #expect(forB.count > 0)
   }
 
   /// Every refresh re-arms the watcher and each source holds a descriptor until its
   /// cancel handler runs, so a leak there exhausts the process within a day of ticks.
   @Test func rearmingRepeatedlyDoesNotLeakDescriptors() async throws {
-    let dirs = try (0..<4).map { _ in try scratch() }
+    let dirs = try (0..<4).map { _ in try Scratch.directory("watch") }
     defer {
-      for dir in dirs { try? FileManager.default.removeItem(at: dir) }
+      for dir in dirs { Scratch.remove(dir) }
     }
     let watcher = DispatchDirectoryWatcher()
     await watcher.watch(dirs)
@@ -147,8 +142,8 @@ struct DispatchDirectoryWatcherTests {
   }
 
   @Test func directoriesAreOpenedOffTheMainThread() async throws {
-    let dir = try scratch()
-    defer { try? FileManager.default.removeItem(at: dir) }
+    let dir = try Scratch.directory("watch")
+    defer { Scratch.remove(dir) }
     let onMain = LineRecorder()
     let watcher = DispatchDirectoryWatcher { path in
       onMain.record(Thread.isMainThread ? "main" : "off")
@@ -162,11 +157,11 @@ struct DispatchDirectoryWatcherTests {
   }
 
   @Test func aWatchSupersededWhileItsDirectoriesOpenedArmsNothing() async throws {
-    let a = try scratch()
-    let b = try scratch()
+    let a = try Scratch.directory("watch")
+    let b = try Scratch.directory("watch")
     defer {
-      try? FileManager.default.removeItem(at: a)
-      try? FileManager.default.removeItem(at: b)
+      Scratch.remove(a)
+      Scratch.remove(b)
     }
     let opened = LineRecorder()
     let gate = DispatchSemaphore(value: 0)
@@ -185,12 +180,13 @@ struct DispatchDirectoryWatcherTests {
 
     let forA = changes(of: watcher)
     try "x".write(to: a.appendingPathComponent("ignored"), atomically: true, encoding: .utf8)
-    #expect(await forA.arrived(within: 1) == false)
+    try await waitUntil({ forA.count > 0 }, seconds: 1)
+    #expect(forA.count == 0)
   }
 
   @Test func stopSilencesTheWatcher() async throws {
-    let dir = try scratch()
-    defer { try? FileManager.default.removeItem(at: dir) }
+    let dir = try Scratch.directory("watch")
+    defer { Scratch.remove(dir) }
     let watcher = DispatchDirectoryWatcher()
     await watcher.watch([dir])
     watcher.stop()
@@ -199,6 +195,7 @@ struct DispatchDirectoryWatcherTests {
     try "x".write(
       to: dir.appendingPathComponent("after-stop"), atomically: true, encoding: .utf8)
 
-    #expect(await changed.arrived(within: 1) == false)
+    try await waitUntil({ changed.count > 0 }, seconds: 1)
+    #expect(changed.count == 0)
   }
 }

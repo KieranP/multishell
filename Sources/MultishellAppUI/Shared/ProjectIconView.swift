@@ -16,7 +16,7 @@ struct ProjectIconView: View {
       .overlay(alignment: .bottomTrailing) {
         if isMissing {
           Image(systemName: "questionmark.circle.fill")
-            .font(.system(size: max(7, size * 0.6), weight: .bold))
+            .font(.system(size: UIMetrics.cornerBadgeSize(onGlyphOf: size), weight: .bold))
             .foregroundStyle(theme.textSecondary, theme.sidebarColor)
             .offset(x: 3, y: 2)
         }

@@ -15,7 +15,7 @@ struct CopyButton: View {
   }
 
   var body: some View {
-    GlyphButton(help: t("action.copy-value", text), action: copy) {
+    PlainGlyphButton(help: t("action.copy-value", text), action: copy) {
       Image(systemName: copied ? "checkmark" : "doc.on.doc")
         .foregroundStyle(.secondary)
         .frame(width: 20, height: 20)

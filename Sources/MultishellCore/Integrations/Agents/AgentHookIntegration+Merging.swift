@@ -5,14 +5,14 @@ import Foundation
 extension AgentHookIntegration {
   /// Whether any hook of ours is in there at all, so a half-written file
   /// still counts.
-  func holdsAnyOfOurs(_ settings: [String: Any]) -> Bool {
-    events.contains(where: ourHookPredicate(in: settings))
+  func holdsAnyOfOurHooks(_ settings: [String: Any]) -> Bool {
+    events.contains(where: eventHoldsOurHook(in: settings))
   }
 
-  func ourHookPredicate(in settings: [String: Any]) -> (AgentHookEvent) -> Bool {
+  func eventHoldsOurHook(in settings: [String: Any]) -> (AgentHookEvent) -> Bool {
     let hooks = hooksSection(settings) ?? [:]
     return { event in
-      groups(hooks[event.name])?.contains(where: holdsOurHook) ?? false
+      existingGroups(hooks[event.name])?.contains(where: holdsOurHook) ?? false
     }
   }
 
@@ -28,9 +28,9 @@ extension AgentHookIntegration {
     // refuses such a file rather than reaching here.
     guard var hooks = hooksSection(settings) else { return result }
     for event in events {
-      guard var existing = groups(hooks[event.name]) else { continue }
+      guard var existing = existingGroups(hooks[event.name]) else { continue }
       if !existing.contains(where: holdsOurHook) {
-        existing.append(group(event, helper: helper))
+        existing.append(ourGroup(for: event, helper: helper))
       }
       hooks[event.name] = existing
     }
@@ -44,7 +44,7 @@ extension AgentHookIntegration {
     var result = settings
     guard var hooks = settings["hooks"] as? [String: Any] else { return result }
     for (event, value) in hooks {
-      guard let groups = groups(value) else { continue }
+      guard let groups = existingGroups(value) else { continue }
       var changed = false
       var kept: [[String: Any]] = []
       for group in groups {
@@ -64,7 +64,7 @@ extension AgentHookIntegration {
 
   /// What one event holds, `nil` where the file has a shape this cannot
   /// read. Absent reads as an empty list to add to; unreadable does not.
-  private func groups(_ value: Any?) -> [[String: Any]]? {
+  private func existingGroups(_ value: Any?) -> [[String: Any]]? {
     guard let value else { return [] }
     return value as? [[String: Any]]
   }
@@ -73,7 +73,7 @@ extension AgentHookIntegration {
   /// answer for every file the agents themselves write.
   func unreadableEvents(in settings: [String: Any]) -> [String] {
     let hooks = hooksSection(settings) ?? [:]
-    return events.filter { groups(hooks[$0.name]) == nil }.map(\.name)
+    return events.filter { existingGroups(hooks[$0.name]) == nil }.map(\.name)
   }
 
   /// The file's `hooks`, `nil` where it is not an object of events. Absent

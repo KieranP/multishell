@@ -34,7 +34,7 @@ struct RepositoryContainmentTests {
 
   @Test func aCommittedSymlinkCannotCarryTheDirectoryOutOfTheCheckout() throws {
     let root = try Scratch.directory("confined")
-    defer { try? FileManager.default.removeItem(at: root) }
+    defer { Scratch.remove(root) }
     let repository = root.appendingPathComponent("repo", isDirectory: true)
     let elsewhere = root.appendingPathComponent("elsewhere", isDirectory: true)
     try FileManager.default.createDirectory(at: repository, withIntermediateDirectories: true)
@@ -48,7 +48,7 @@ struct RepositoryContainmentTests {
 
   @Test func aCommittedSymlinkCannotCarryADirectoryNotYetMadeOutOfTheCheckout() throws {
     let root = try Scratch.directory("confined-unmade")
-    defer { try? FileManager.default.removeItem(at: root) }
+    defer { Scratch.remove(root) }
     let repository = root.appendingPathComponent("repo", isDirectory: true)
     let elsewhere = root.appendingPathComponent("elsewhere", isDirectory: true)
     try FileManager.default.createDirectory(at: repository, withIntermediateDirectories: true)
@@ -139,7 +139,7 @@ struct RepositoryContainmentTests {
 
   @Test func confiningLeavesTheDigestAloneSoAHookAnswerStillHolds() throws {
     let root = try Scratch.directory("confined-digest")
-    defer { try? FileManager.default.removeItem(at: root) }
+    defer { Scratch.remove(root) }
     try SharedProjectSettings(worktreeDirectory: "/tmp/trees", postCreateHook: "npm ci")
       .write(to: root)
     let read = try #require(try SharedProjectSettings.load(from: root))

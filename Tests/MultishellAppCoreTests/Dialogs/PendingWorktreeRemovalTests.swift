@@ -32,16 +32,16 @@ struct PendingWorktreeRemovalTests {
   @Test func withConfirmationOnTheDialogAsksAboutTheBranchUnlessASettingSettlesIt() throws {
     let pending = try asked(branched, confirms: true, alwaysDeletesBranch: false)
     #expect(pending.choices.count == 2, "one button for the branch, one without it")
-    #expect(pending.branchHandling == .asks)
-    #expect(pending.primaryRemoveLabel == "Remove Worktree")
-    #expect(pending.removeWithBranchLabel == "Remove Worktree and Branch")
+    #expect(pending.branchHandling == .offersBoth)
+    #expect(pending.choices.map(\.label) == ["Remove Worktree", "Remove Worktree and Branch"])
     #expect(pending.title == "Remove worktree feat?")
 
     let settled = try asked(branched, confirms: true, alwaysDeletesBranch: true)
     #expect(settled.choices.count == 1)
     #expect(settled.branchHandling == .decided(deletes: true))
     #expect(
-      settled.primaryRemoveLabel == "Remove Worktree and Branch", "one button, saying what it does")
+      settled.choices.map(\.label) == ["Remove Worktree and Branch"],
+      "one button, saying what it does")
   }
 
   /// The dialog names the row the user right-clicked. The branch is still
@@ -69,7 +69,7 @@ struct PendingWorktreeRemovalTests {
   @Test func aDetachedWorktreeNeverHasItsBranchDeleted() throws {
     let pending = try asked(detached, confirms: true, alwaysDeletesBranch: true)
     #expect(pending.branchHandling == .decided(deletes: false) && pending.choices.count == 1)
-    #expect(pending.primaryRemoveLabel == "Remove Worktree")
+    #expect(pending.choices.map(\.label) == ["Remove Worktree"])
     #expect(!pending.message(warning: nil).contains("branch"))
   }
 
@@ -88,7 +88,8 @@ struct PendingWorktreeRemovalTests {
   }
 
   @Test func withTheTrashOffTheMessageAndWarningSayTheDirectoryIsDeleted() {
-    let deletes = PendingWorktreeRemoval(worktree: branched, branchHandling: .asks, trashes: false)
+    let deletes = PendingWorktreeRemoval(
+      worktree: branched, branchHandling: .offersBoth, trashes: false)
     #expect(deletes.message(warning: nil).hasPrefix("Deletes feat and removes it from git."))
     #expect(
       PendingWorktreeRemoval.warning(changedFiles: 2, liveTerminals: 0, trashes: false)
@@ -96,9 +97,9 @@ struct PendingWorktreeRemovalTests {
   }
 
   @Test func theMessageNamesTheWorktreeTheBranchsFateAndTheWarning() {
-    let asks = PendingWorktreeRemoval(worktree: branched, branchHandling: .asks)
+    let offersBoth = PendingWorktreeRemoval(worktree: branched, branchHandling: .offersBoth)
     #expect(
-      asks.message(warning: "2 open terminals will be closed.")
+      offersBoth.message(warning: "2 open terminals will be closed.")
         == "Moves feat to the Trash and removes it from git.\n\nThe branch feat is kept unless you remove it too.\n\n2 open terminals will be closed."
     )
     let deletes = PendingWorktreeRemoval(

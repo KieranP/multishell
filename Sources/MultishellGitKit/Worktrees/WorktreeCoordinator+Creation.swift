@@ -27,7 +27,7 @@ extension WorktreeCoordinator {
   /// The pre-create hook and `git worktree add`, `runPostCreate` being
   /// separate so a slow hook does not hold the sheet. See hooks.md.
   @discardableResult
-  public func add(
+  public func create(
     branch rawBranch: String,
     basedOn startPoint: String? = nil,
     createBranch: Bool = true,
@@ -60,11 +60,6 @@ extension WorktreeCoordinator {
     // An unforced remove still forgets a registered worktree whose directory is
     // away. Asked even where the path exists: git fills an empty directory.
     let madeHere = await !git.isListed(path, in: project)
-    let takeBackTheAdd = {
-      await takeBack(
-        path, madeHere: madeHere, branch: branchIsNew ? branch : nil, through: firstMade,
-        in: project)
-    }
     do {
       try await git.add(
         branch: branch,
@@ -74,16 +69,17 @@ extension WorktreeCoordinator {
         in: project,
         stopper: stopper
       )
-    } catch  where stopper?.isStopped == true {
-      await takeBackTheAdd()
+      await git.settleIndex(of: path, stopper: stopper)
+      // A Cancel during that wait comes after git finished; see worktrees.md.
+      if stopper?.isStopRequested == true {
+        throw ProcessFailure.git(
+          ["worktree", "add"], message: "stopped while the new index settled", stop: .byUser)
+      }
+    } catch  where stopper?.isStopRequested == true {
+      await takeBack(
+        path, madeHere: madeHere, branch: branchIsNew ? branch : nil, through: firstMade,
+        in: project)
       throw error
-    }
-    await git.settleIndex(of: path, stopper: stopper)
-    // A Cancel during that wait comes after git finished; see worktrees.md.
-    if stopper?.isStopped == true {
-      await takeBackTheAdd()
-      throw ProcessFailure.git(
-        ["worktree", "add"], message: "stopped while the new index settled", stop: .byUser)
     }
     return path
   }
@@ -116,18 +112,6 @@ extension WorktreeCoordinator {
       if manager.fileExists(atPath: directory.path), rmdir(directory.path) != 0 { return }
       directory = directory.deletingLastPathComponent()
     }
-  }
-
-  /// Links or copies the project's listed files in before the post-create
-  /// hook, so the hook and the first terminal both find them.
-  @discardableResult
-  public func placeFiles(
-    _ list: WorktreeFileList, for project: Project, into worktreePath: URL,
-    stopper: ProcessStopper? = nil
-  ) throws -> [String] {
-    try WorktreeFiles.place(
-      list.listText, as: list.placement, from: project.path, to: worktreePath,
-      heldToRepository: list.heldToRepository, isStopped: { stopper?.isStopped == true })
   }
 
   /// The other half of a create. Returns at once when the hook is blank.

@@ -8,11 +8,6 @@ public struct EditorDetection: Equatable, Sendable {
   struct Found: Equatable, Sendable {
     let application: URL?
     let command: URL?
-
-    init(application: URL?, command: URL?) {
-      self.application = application
-      self.command = command
-    }
   }
 
   let found: [String: Found]

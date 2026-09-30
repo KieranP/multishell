@@ -3,6 +3,10 @@ import System
 
 /// Runs a child process and captures its output.
 public struct ProcessRunner: Sendable {
+  /// A pipe's 64 KiB buffer is all a child can leave unread when it exits, and
+  /// one readability callback takes it. The margin is for a loaded machine.
+  private static let eofGraceAfterExit: TimeInterval = 1
+
   public init() {}
 
   /// Throws `ProcessFailure` on a non-zero exit.
@@ -74,22 +78,22 @@ public struct ProcessRunner: Sendable {
       throw error
     }
 
-    await Self.awaitEOF(standardOutput, standardError, group: drained)
+    await Self.awaitDrained(standardOutput, standardError, group: drained)
     return ProcessOutput(
       standardOutput: String(decoding: standardOutput.data, as: UTF8.self),
       standardError: String(decoding: standardError.data, as: UTF8.self),
       status: status,
-      stop: stopper.reason
+      stop: stopper.appliedStop
     )
   }
 
   /// Both pipes or neither: the first is closed where the second fails.
   private static func makePipePair() throws -> (
-    output: PipeBuffer.PipeEnds, error: PipeBuffer.PipeEnds
+    output: PipeDescriptors.Ends, error: PipeDescriptors.Ends
   ) {
-    let output = try PipeBuffer.makePipe()
+    let output = try PipeDescriptors.make()
     do {
-      return (output, try PipeBuffer.makePipe())
+      return (output, try PipeDescriptors.make())
     } catch {
       try? output.reading.close()
       try? output.writing.close()
@@ -99,12 +103,12 @@ public struct ProcessRunner: Sendable {
 
   /// A descendant that inherited the pipes holds them open after the child
   /// is gone, so EOF may never come; the buffer is already drained.
-  static func awaitEOF(
+  static func awaitDrained(
     _ standardOutput: PipeBuffer, _ standardError: PipeBuffer, group: DispatchGroup
   ) async {
     // Weak, or each run's read ends stay open until the timer fires. An
     // unfinished buffer keeps itself alive through its readability handler.
-    DispatchQueue.global().asyncAfter(deadline: .now() + eofGraceAfterExit) {
+    DispatchQueue.global().asyncAfter(deadline: .now() + Self.eofGraceAfterExit) {
       [weak standardOutput, weak standardError] in
       standardOutput?.finish()
       standardError?.finish()
@@ -124,7 +128,3 @@ public struct ProcessRunner: Sendable {
     }
   }
 }
-
-/// A pipe's 64 KiB buffer is all a child can leave unread when it exits, and
-/// one readability callback takes it. The margin is for a loaded machine.
-private let eofGraceAfterExit: TimeInterval = 1

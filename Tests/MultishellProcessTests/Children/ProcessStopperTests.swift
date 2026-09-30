@@ -3,14 +3,14 @@ import Testing
 
 @testable import MultishellProcess
 
-/// Past macOS's PID_MAX of 99999. waitid answers it as it does a reaped child,
-/// and a reaped child's own pid can go to a child another test starts meanwhile.
-private let pidNoProcessHolds: pid_t = 100_000
-
 /// The timeout and the user's stop both go through `ProcessStopper`, so both must end an
 /// interactive shell, which ignores SIGTERM, and the command it is running.
 @Suite
 struct ProcessStopperTests {
+  /// Past macOS's PID_MAX of 99999. waitid answers it as it does a reaped child,
+  /// and a reaped child's own pid can go to a child another test starts meanwhile.
+  private static let pidNoProcessHolds: pid_t = 100_000
+
   private let runner = ProcessRunner()
   private let cwd = URL(fileURLWithPath: NSTemporaryDirectory())
 
@@ -53,18 +53,18 @@ struct ProcessStopperTests {
     stopper.attach(child)
 
     stopper.stop(.timedOut(after: .milliseconds(1)))
-    #expect(stopper.reason == nil)
+    #expect(stopper.appliedStop == nil)
     #expect(!child.isRunning)
   }
 
   @Test func aStopReachingAReapedChildNotYetMarkedSignalsNothing() {
     let child = RunningChild()
-    child.started(pidNoProcessHolds)
+    child.started(Self.pidNoProcessHolds)
     let stopper = ProcessStopper()
     stopper.attach(child)
 
     stopper.stop()
-    #expect(stopper.reason == nil)
+    #expect(stopper.appliedStop == nil)
     #expect(!child.isRunning)
   }
 
@@ -80,7 +80,7 @@ struct ProcessStopperTests {
 
     stopper.attach(child)
 
-    #expect(stopper.reason == .byUser)
+    #expect(stopper.appliedStop == .byUser)
   }
 
   @Test func aTimeoutEndsAnInteractiveShellAndTheCommandItRuns() async throws {
@@ -141,7 +141,7 @@ struct ProcessStopperTests {
       URL(fileURLWithPath: "/bin/sh"), ["-c", "printf ok"], in: cwd, timeout: .seconds(5),
       stopper: stopper)
     #expect(output.stop == nil && output.succeeded)
-    #expect(stopper.reason == nil)
+    #expect(stopper.appliedStop == nil)
   }
 
   /// `WorktreeCoordinator.remove` gives one stopper to both delete hooks; a Cancel between
@@ -153,8 +153,8 @@ struct ProcessStopperTests {
     #expect(first.succeeded)
 
     stopper.stop()
-    #expect(stopper.reason == nil, "nothing was signalled: the first child had already exited")
-    #expect(stopper.isStopped, "but the ask stands for whatever runs next")
+    #expect(stopper.appliedStop == nil, "nothing was signalled: the first child had already exited")
+    #expect(stopper.isStopRequested, "but the ask stands for whatever runs next")
 
     let started = ContinuousClock.now
     let second = try await runner.capture(
@@ -173,8 +173,8 @@ struct ProcessStopperTests {
 
     // The race, run outright: the child is gone, and its timer fires anyway.
     stopper.stop(.timedOut(after: .milliseconds(1)))
-    #expect(stopper.reason == nil)
-    #expect(!stopper.isStopped, "a timeout dies with the run that armed it")
+    #expect(stopper.appliedStop == nil)
+    #expect(!stopper.isStopRequested, "a timeout dies with the run that armed it")
 
     let second = try await runner.capture(
       URL(fileURLWithPath: "/bin/sh"), ["-c", "printf two"], in: cwd, stopper: stopper)

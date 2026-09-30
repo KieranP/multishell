@@ -15,7 +15,7 @@ extension AppModel {
     }
     // The write, its date and the confinement off the main actor: on a slow
     // volume each would hold the window.
-    let written = await offMain { Self.writeSharedSettings(export) }
+    let written = await offMain { export.write() }
     finishSharedSettingsExport(export, written)
   }
 
@@ -24,7 +24,7 @@ extension AppModel {
   func prepareSharedSettingsExport(for project: Project) throws -> SharedSettingsExport? {
     guard let project = workspace.project(project.id) else { return nil }
     let mine = SharedProjectSettings(exporting: effectiveSettings(for: project))
-    let kept = mine.keeping(from: project.sharedSettings.asWritten)
+    let kept = mine.carryingOver(from: project.sharedSettings.asWritten)
     // Every word the user's own answers itself; otherwise the answer given
     // about the file this rewrites travels, and no answer leaves the question.
     let answer =
@@ -39,26 +39,10 @@ extension AppModel {
     if written.asksForTrust, let digest = written.digest, let answer {
       recordTrustDecision(digest: digest, trusted: answer, for: project.id)
     }
-    let order = sharedSettingsWrites[project.id] ?? SaveOrder()
-    sharedSettingsWrites[project.id] = order
+    let order = sharedSettingsExportOrders[project.id] ?? SaveOrder()
+    sharedSettingsExportOrders[project.id] = order
     return SharedSettingsExport(
-      project: project, data: data, written: written, order: order, ticket: order.issue())
-  }
-
-  /// `nil` where a later export landed first, which leaves the file to it.
-  nonisolated static func writeSharedSettings(
-    _ export: SharedSettingsExport
-  ) -> Result<SharedSettingsReading?, any Error> {
-    let file = SharedProjectSettings.file(in: export.project.path)
-    return Result {
-      let stamp = try export.order.land(export.ticket) {
-        try export.data.write(to: file, options: .atomic)
-        return modificationDate(of: file)
-      }
-      return stamp.map {
-        SharedSettingsReading(result: .success(export.written), stamp: $0, project: export.project)
-      }
-    }
+      project: project, contents: data, written: written, order: order, ticket: order.issue())
   }
 
   func finishSharedSettingsExport(

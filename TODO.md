@@ -12,7 +12,7 @@ Most pressing first within each heading. A decision that gets made moves to
 - Keyboard focus. Nothing moves focus inside a tab, so a split pane is
   mouse-only and the terminal takes every keystroke. The sidebar filter, folded
   behind the header's glass, is mouse-only too. Each new binding is an
-  `AppShortcut` in `AppShortcuts.all`.
+  `AppShortcut` in `AppShortcutCatalogue.all`.
 - Use Selection for Find: Cmd+F with text highlighted puts that text in the
   search field. Waits on a wrapper release exposing the surface's selection; the
   engine's own binding for it stays bound and does nothing here.

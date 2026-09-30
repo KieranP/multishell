@@ -10,7 +10,7 @@ public struct TabGroup: Identifiable, Codable, Hashable, Sendable {
   public var weight: Double
   /// The tab this group shows. Never `nil` for a group the store kept: a
   /// group whose last tab left is removed rather than left standing empty.
-  public var activeTabID: TerminalTab.ID?
+  public var shownTabID: TerminalTab.ID?
 
   /// The group id a tab written before groups existed carries.
   /// `Workspace.adoptUngroupedTabs` resolves every one into a real group.
@@ -20,15 +20,21 @@ public struct TabGroup: Identifiable, Codable, Hashable, Sendable {
     id: UUID = UUID(),
     worktreeID: Worktree.ID,
     weight: Double = 1,
-    activeTabID: TerminalTab.ID? = nil
+    shownTabID: TerminalTab.ID? = nil
   ) {
     self.id = id
     self.worktreeID = worktreeID
     self.weight = LayoutWeight.usable(weight)
-    self.activeTabID = activeTabID
+    self.shownTabID = shownTabID
   }
 
-  /// Weight and active tab default; id and worktree do not, a group
+  /// `shownTabID` keeps the key it was saved under; see state-and-store.md.
+  enum CodingKeys: String, CodingKey {
+    case id, worktreeID, weight
+    case shownTabID = "activeTabID"
+  }
+
+  /// Weight and shown tab default; id and worktree do not, a group
   /// belonging to nothing being no group. Costs that group alone.
   public init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -36,6 +42,6 @@ public struct TabGroup: Identifiable, Codable, Hashable, Sendable {
     self.worktreeID = try container.decode(Worktree.ID.self, forKey: .worktreeID)
     self.weight = LayoutWeight.usable(
       container.decodeTolerantly(Double.self, forKey: .weight, or: 1))
-    self.activeTabID = container.decodeTolerantly(TerminalTab.ID.self, forKey: .activeTabID)
+    self.shownTabID = container.decodeTolerantly(TerminalTab.ID.self, forKey: .shownTabID)
   }
 }

@@ -108,8 +108,8 @@ at the bottom.
 - **The engine points the shell at its own bootstrap**, which never claims, so a
   zsh session names both, ours behind the engine's variable.
 - **The zsh claim rides at the front of the prompt string**, a plain mark
-  printed later withdrawing it; bash prints the whole set instead, or readline
-  edits at the wrong column.
+  printed later withdrawing it; bash writes the whole set itself and prints its
+  start mark, or readline edits at the wrong column.
 - **No end mark**: the exit code is the socket's. And only where the terminal
   names itself, half a set opening a prompt that never ends. Cost: no
   click-to-move on the later lines of a multi-line buffer.
@@ -332,7 +332,8 @@ at the bottom.
   the one nearest what is on screen.
 - **The model keeps which panes have a selected match**, the engine reporting
   nothing back, and a new find text or a reopened bar starts over. Cost: typing
-  alone scrolls nowhere, and the first step wraps to the top of the scrollback.
+  alone scrolls nowhere, and the first Next after the nearest match wraps to the
+  top of the scrollback.
 - **Four of the engine's own bindings meet this**, unbound like every other menu
   shortcut, one of them opening a bar this embedding never shows and another
   ending a search under a bar of ours that stayed up.

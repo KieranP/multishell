@@ -3,12 +3,12 @@ import MultishellCore
 extension AppModel {
   /// Cmd+W closes the focused pane; the tab goes with its last pane.
   public func closeActivePane() {
-    closeInShownTab { .pane($0.focusedSessionID) }
+    closeInTabInView { .pane($0.focusedSessionID) }
   }
 
   /// Cmd+Shift+W closes the whole tab, panes and all.
   public func closeActiveTab() {
-    closeInShownTab { .tab($0.id) }
+    closeInTabInView { .tab($0.id) }
   }
 
   /// A middle click on a tab, closing it active or not. No key-window dance:
@@ -37,15 +37,11 @@ extension AppModel {
     if let renaming = renamingTabID, workspace.tab(renaming) == nil { renamingTabID = nil }
   }
 
-  // The three entry points above meet here, the keystrokes through
-  // `closeInShownTab`, which has to find the tab first.
-
   /// Both keystrokes. One issued in a settings window closes that window
   /// instead, and nothing happens with no tab on screen.
-  private func closeInShownTab(_ closing: (TerminalTab) -> PendingClose) {
+  private func closeInTabInView(_ closing: (TerminalTab) -> PendingClose) {
     guard platform.workspaceWindowIsKey else { return platform.closeKeyWindow() }
-    guard let worktree = worktreeInView?.id, let tab = workspace.activeTab(in: worktree)
-    else { return }
+    guard let tab = tabInView else { return }
     requestClose(closing(tab), in: tab)
   }
 

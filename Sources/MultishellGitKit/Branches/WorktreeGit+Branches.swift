@@ -33,28 +33,11 @@ extension WorktreeGit {
       environment: ["GIT_TERMINAL_PROMPT": "0"], timeout: timeout)
   }
 
-  public func localBranches(_ project: Project) async throws -> [String] {
-    let output = try await runner.run(
-      ["for-each-ref", "--format=%(refname:short)", "refs/heads"],
-      in: project.path
-    )
-    return output.split(whereSeparator: \.isNewline)
-      .map { $0.trimmingCharacters(in: .whitespaces) }
-      .filter { !$0.isEmpty }
-  }
-
-  /// Remote branches with the symbolic `origin/HEAD` dropped. Full ref names,
-  /// `%(refname:short)` abbreviating that one to `origin`.
-  public func remoteBranches(_ project: Project) async throws -> [String] {
-    let output = try await runner.run(
-      ["for-each-ref", "--format=%(refname)", "refs/remotes"],
-      in: project.path
-    )
-    let prefix = BranchRef.remotePrefix
-    return output.split(whereSeparator: \.isNewline)
-      .map { $0.trimmingCharacters(in: .whitespaces) }
-      .filter { $0.hasPrefix(prefix) && !$0.hasSuffix("/HEAD") }
-      .map { String($0.dropFirst(prefix.count)) }
+  /// The names a new worktree can start from, symbolic refs such as
+  /// `origin/HEAD` dropped. `nil` is a failed read.
+  public func branchNames(_ project: Project) async -> (local: [String], remote: [String])? {
+    guard let refs = await branchRefs(project)?.filter({ $0.symref == nil }) else { return nil }
+    return (refs.filter(\.isLocal).map(\.shortName), refs.filter(\.isRemote).map(\.shortName))
   }
 
   public func currentBranch(_ project: Project) async throws -> String {

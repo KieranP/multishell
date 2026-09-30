@@ -3,9 +3,9 @@ extension AgentHookIntegration {
   /// object to merge for a file of the user's.
   func entries(helper: String = AgentHookCatalogue.helperReference) -> [String: Any] {
     switch format {
-    case .sharedSettings:
+    case .userSettingsFile:
       var hooks: [String: Any] = [:]
-      for event in events { hooks[event.name] = [group(event, helper: helper)] }
+      for event in events { hooks[event.name] = [ourGroup(for: event, helper: helper)] }
       return ["hooks": hooks]
     case .ownHookFile:
       var hooks: [String: Any] = [:]
@@ -20,13 +20,13 @@ extension AgentHookIntegration {
   public func snippet(helper: String = AgentHookCatalogue.helperReference) -> String {
     switch format {
     case .plugin: OpenCodePlugin.source(helper: helper)
-    case .sharedSettings, .ownHookFile: AgentSettingsFile.render(entries(helper: helper))
+    case .userSettingsFile, .ownHookFile: AgentSettingsFile.render(entries(helper: helper))
     }
   }
 
   /// A matcher goes on the group, where the file has groups, and on the
   /// hook itself where it does not.
-  func group(_ event: AgentHookEvent, helper: String) -> [String: Any] {
+  func ourGroup(for event: AgentHookEvent, helper: String) -> [String: Any] {
     var group: [String: Any] = ["hooks": [handler(event, helper: helper)]]
     if let matcher = event.matcher { group["matcher"] = matcher }
     return group
@@ -38,7 +38,7 @@ extension AgentHookIntegration {
     ]
     let timeout = event.timeoutSeconds ?? AgentHookCatalogue.timeoutSeconds
     switch format {
-    case .sharedSettings(let millisecondTimeout):
+    case .userSettingsFile(let millisecondTimeout):
       handler["timeout"] = millisecondTimeout ? timeout * 1000 : timeout
     case .ownHookFile:
       handler["timeoutSec"] = timeout

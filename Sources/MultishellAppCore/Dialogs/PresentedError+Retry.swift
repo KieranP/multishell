@@ -4,10 +4,5 @@ extension PresentedError {
   public struct Retry {
     public let label: String
     public let action: @MainActor () async -> Void
-
-    init(label: String, action: @escaping @MainActor () async -> Void) {
-      self.label = label
-      self.action = action
-    }
   }
 }

@@ -5,15 +5,16 @@ import Foundation
 public struct BranchScan: Hashable, Sendable {
   /// The last commit on each local branch, by the name a worktree has as
   /// its own branch. A branch whose ref carried no date is absent.
-  public let lastCommits: [String: Date]
+  public let lastCommitDates: [String: Date]
   /// `nil` for a repository with no branch to measure merges against; see
   /// `DefaultBranch.resolve`.
   public let mergeInputs: MergeInputs?
 
   /// The override is the project's `defaultBranch` setting, `nil` to detect.
   init(refs: [BranchRef], defaultBranchOverride override: String?) {
-    lastCommits = BranchRef.localBranchesByName(refs).compactMapValues(\.committedAt)
+    let branches = BranchRef.localBranchesByName(refs)
+    lastCommitDates = branches.compactMapValues(\.committedAt)
     mergeInputs = DefaultBranch.resolve(from: refs, override: override)
-      .map { MergeInputs(base: $0, refs: refs) }
+      .map { MergeInputs(base: $0, branches: branches) }
   }
 }

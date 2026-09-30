@@ -59,16 +59,16 @@ struct AgentHookEvent: Hashable, Sendable {
   /// The roster change this event and payload amount to, or nothing for the
   /// main thread's.
   func subagentChange(for payload: AgentHookPayload) -> SubagentReport? {
-    let type = payload.agentType
+    let type = payload.subagentType
     guard let phase = subagentPhase else {
       // Any other event is a tool call, which is a worker's only where one
       // is named: an agent's own carries no id.
-      guard let id = payload.agentID else { return nil }
+      guard let id = payload.subagentID else { return nil }
       return SubagentReport(id: id, type: type, phase: .working)
     }
     // A start or an end moved the roster by one, so one naming nobody takes
     // an unnamed place; read as the agent's own it leaves a worker over.
-    let id = payload.agentID ?? SubagentReport.anonymousID
+    let id = payload.subagentID ?? SubagentReport.anonymousID
     return SubagentReport(id: id, type: type, phase: phase)
   }
 }

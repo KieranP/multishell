@@ -30,7 +30,7 @@ enum GhosttyUserConfig {
   }
 
   static func base(userContents: [String]) -> String {
-    ([defaults.rendered] + userContents.map(usable)).joined(separator: "\n")
+    ([defaults.rendered] + userContents.map(allowedSettings)).joined(separator: "\n")
   }
 
   /// What a user's file may set; everything else is dropped. An allow list,
@@ -97,7 +97,7 @@ enum GhosttyUserConfig {
     }
   }
 
-  private static func usable(_ contents: String) -> String {
+  private static func allowedSettings(_ contents: String) -> String {
     GhosttyConfigIncludes.lines(of: contents)
       .filter { isAllowed(key(of: $0)) }
       .joined(separator: "\n")

@@ -11,7 +11,9 @@
 - **MultishellProcess**: processes and sockets. **MultishellGitKit**: worktree
   operations, a project's hooks and file lists, the output readers, what a
   branch is, where it points and whether it landed, a worktree's status, and the
-  runner above them all.
+  runner above them all. WorktreeGit and WorktreeCoordinator sit at its root
+  with their extensions under each concern, since five concerns extend them and
+  none owns them, beside the state every WorktreeGit a launch builds shares.
 - **MultishellAppCore**: AppModel, detections, dialogs, error mapping, settings
   as inherited, what a tab runs, what each session is doing, when to read git,
   when to notify, every decision a view makes; what a screen reader is told;
@@ -39,9 +41,12 @@
   marks, the AppKit modifiers and representables that reach under SwiftUI for an
   event it has no gesture for, the scene and menus. The engine host and the
   platform port each have a folder. What draws nothing sits under `Support/`,
-  the in-app drag's pieces under `Support/Drag/`, unless one part alone reads
-  it: the mark parser sits with the marks, a dialog's AppKit alert with the
-  dialogs, and what both settings windows share at `Settings/`'s root.
+  the in-app drag's pieces under `Support/Drag/`, unless it is by nature a piece
+  of one part: the mark parser sits with the marks, a dialog's AppKit alert with
+  the dialogs, and what both settings windows share at `Settings/`'s root.
+- **A file's folder follows what it is, never how many places call it.** A
+  generic extension stays in `Support/` when one concern alone calls it; a file
+  moves only when the folder it is in is wrong for what it holds.
 - **Each half's words live in the target that says them.** The libraries' also
   carry the shell-integration scripts; the app's also carries the agent marks. A
   second frontend is a third of these.
@@ -64,13 +69,14 @@
 
 ## Style
 
-- **`swift-format` from the toolchain with the root config.** Every type that is
-  not `private` gets a file named for it, an error type and a null object
-  included; an extension of another type goes in `<Type>+<Concern>.swift`.
-- **A `private` helper type is its file's own and stays in it**, since moving it
-  out would widen it. One that is reused, or long enough to bury the type it
-  serves, gets its own file and goes internal. A dialog is a `View` extension in
-  a file named for it, attached by the scene that asked.
+- **`swift-format` from the toolchain with the root config.** Every top-level
+  type gets a file named for it, an error type, a null object and a test's
+  helper included; an extension of another type goes in
+  `<Type>+<Concern>.swift`.
+- **A helper that would be `private` goes internal in a file of its own**,
+  beside the type it serves, or at the suite's root for a test's, so a file
+  never holds two. A type nested inside another stays with it. A dialog is a
+  `View` extension in a file named for it, attached by the scene that asked.
 - **No `MARK` banners**: a file is the grouping. Tests are swift-testing, named
   as sentences about behaviour, one suite to a file named for it.
 

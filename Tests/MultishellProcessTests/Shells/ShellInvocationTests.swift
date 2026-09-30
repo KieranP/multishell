@@ -20,7 +20,7 @@ struct ShellInvocationTests {
     #expect(ShellInvocation.userShell(at: "/bin/csh").arguments == ["-i", "-c"])
     guard FileManager.default.isExecutableFile(atPath: "/bin/tcsh") else { return }
     let home = try Scratch.directory("home")
-    defer { try? FileManager.default.removeItem(at: home) }
+    defer { Scratch.remove(home) }
 
     let out = try await ShellCommand.runScript(
       "printf ok", in: home, environment: ["HOME": home.path], shellPath: "/bin/tcsh")

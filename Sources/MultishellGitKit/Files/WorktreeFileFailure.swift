@@ -10,7 +10,7 @@ public struct WorktreeFileFailure: Error, CustomStringConvertible {
 
   /// Which list it was, so what is said about it can say linked or copied.
   public let placement: WorktreeFilePlacement
-  public let failures: [PathFailure]
+  let failures: [PathFailure]
   /// Entries skipped for naming somewhere else, by any list, kept apart from
   /// `failures`: the title says this list failed to place those.
   public let skipped: [String]

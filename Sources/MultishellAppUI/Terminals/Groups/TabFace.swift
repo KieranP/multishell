@@ -12,23 +12,24 @@ struct TabFace: View {
   let canLeaveGroup: Bool
   let theme: Theme
 
-  private var isActive: Bool { tab.id == group.activeTabID }
+  private var isShown: Bool { tab.id == group.shownTabID }
   private var isRenaming: Bool { model.renamingTabID == tab.id }
 
   var body: some View {
-    let isFront = isActive && isFocusedGroup
-    let text = isFront ? theme.textPrimary : theme.textSecondary
+    let isFront = isShown && isFocusedGroup
+    let textColor = isFront ? theme.textPrimary : theme.textSecondary
     let state = model.state(of: tab)
     let agentID = model.agentAtThePrompt(of: tab)
+    let title = model.title(of: tab)
     return HStack(spacing: 7) {
-      leadingGlyph(state, agentID: agentID, text: text)
+      leadingGlyph(state, agentID: agentID, textColor: textColor)
 
       if isRenaming {
-        titleField
+        titleField(initial: title)
       } else {
-        Text(model.title(of: tab))
-          .font(.system(size: model.metrics.secondary, weight: isActive ? .medium : .regular))
-          .foregroundStyle(text)
+        Text(title)
+          .font(.system(size: model.metrics.secondary, weight: isShown ? .medium : .regular))
+          .foregroundStyle(textColor)
           .lineLimit(1)
           .truncationMode(.tail)
       }
@@ -39,9 +40,9 @@ struct TabFace: View {
     }
     .padding(.horizontal, 10)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .background(isActive ? theme.backgroundColor : .clear)
+    .background(isShown ? theme.backgroundColor : .clear)
     .overlay(alignment: .trailing) {
-      if !isActive { theme.hairline.frame(width: 0.5).padding(.vertical, 8) }
+      if !isShown { theme.hairline.frame(width: 0.5).padding(.vertical, 8) }
     }
     .contentShape(.rect)
     // Simultaneous, not sequential: a plain double-tap makes SwiftUI hold
@@ -55,10 +56,10 @@ struct TabFace: View {
     .accessibilityElement(children: .contain)
     .accessibilityLabel(
       AccessibilityText.tab(
-        title: model.title(of: tab), isActive: isActive, isSplit: tab.isSplit, state: state,
-        agent: agentID.map(model.agentDisplayName))
+        title: title, isShown: isShown, isSplit: tab.isSplit, state: state,
+        agentName: agentID.map(model.agentDisplayName))
     )
-    .accessibilityAddTraits(isActive ? [.isButton, .isSelected] : .isButton)
+    .accessibilityAddTraits(isShown ? [.isButton, .isSelected] : .isButton)
     .accessibilityAction(named: t("action.rename-spoken")) { beginRenaming() }
     .contextMenu {
       TabActions(model: model, group: group, tab: tab, canLeaveGroup: canLeaveGroup)
@@ -68,13 +69,15 @@ struct TabFace: View {
   /// What the tab is running. A button while there is a state, so a click
   /// clears a stale Working one without activating the tab.
   @ViewBuilder
-  private func leadingGlyph(_ state: SessionState?, agentID: String?, text: Color) -> some View {
+  private func leadingGlyph(
+    _ state: SessionState?, agentID: String?, textColor: Color
+  ) -> some View {
     let glyph = PaneGlyph(
       agentID: agentID,
-      shellSymbol: tab.isSplit ? AgentMarkView.splitSymbol : AgentMarkView.terminalSymbol,
+      unmarkedSymbol: tab.isSplit ? AgentMarkView.splitSymbol : AgentMarkView.terminalSymbol,
       state: state,
-      ringFill: isActive ? theme.backgroundColor : theme.chromeColor,
-      plainTint: text,
+      ringFill: isShown ? theme.backgroundColor : theme.chromeColor,
+      plainTint: textColor,
       theme: theme,
       size: model.metrics.icon + 2)
     if let state {
@@ -111,9 +114,9 @@ struct TabFace: View {
 
   /// An empty name clears the custom title rather than storing a blank one;
   /// `InlineNameField` has the keyboard contract.
-  private var titleField: some View {
+  private func titleField(initial: String) -> some View {
     InlineNameField(
-      initial: tab.customTitle ?? model.title(of: tab),
+      initial: initial,
       prompt: t("tab.name-prompt"),
       font: .system(size: model.metrics.secondary, weight: .medium),
       color: theme.textPrimary,

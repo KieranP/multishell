@@ -7,7 +7,7 @@ public struct DefaultBranch: Hashable, Sendable {
   public let shortName: String
   /// The branch with no remote in front of it, which is what a worktree
   /// sitting on the trunk has as its own branch.
-  public let branchName: String
+  public let nameWithoutRemote: String
   public let tip: String
   /// What git is handed: a tag named `main` or `origin/main` ties with the
   /// short form and wins it; see Docs/design/merged-branch.md.
@@ -44,7 +44,8 @@ public struct DefaultBranch: Hashable, Sendable {
     for candidate in candidateRefs(override: override, originHead: originHead) {
       guard let ref = byName[candidate] else { continue }
       return DefaultBranch(
-        shortName: ref.shortName, branchName: ref.branchName, tip: ref.tip, fullName: ref.fullName)
+        shortName: ref.shortName, nameWithoutRemote: ref.nameWithoutRemote, tip: ref.tip,
+        fullName: ref.fullName)
     }
     return nil
   }

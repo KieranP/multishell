@@ -1,5 +1,8 @@
+import Foundation
+import MultishellCore
 import Testing
 
+@testable import MultishellAppCore
 @testable import MultishellAppUI
 
 @Suite
@@ -17,7 +20,7 @@ struct UIMetricsTests {
 
   /// Written out rather than recomputed from `UIMetrics`: with the same
   /// expression on both sides the test cannot see the widths change.
-  @Test func theSplitThresholdIsTheWidthTheDocsQuote() {
+  @Test func theSplitsShowAtTheThresholdAndNotAPointEarlier() {
     for (size, threshold) in [(10.0, 193.0), (13.0, 252.0), (18.0, 351.0)] {
       let metrics = UIMetrics(fontSize: size)
       #expect(metrics.stripShowsSplits(in: threshold), "the splits never show at \(size)")
@@ -41,12 +44,24 @@ struct UIMetricsTests {
   @Test func aProjectsBlockIsItsRowAndEachWorktreesWithTheSelectedOnesPanes() {
     let metrics = UIMetrics(fontSize: 13)
 
+    let plain = Worktree(path: URL(fileURLWithPath: "/repo"), projectID: "/repo", head: "a")
+    let named = Worktree(path: URL(fileURLWithPath: "/repo/b"), projectID: "/repo", head: "b")
+    let pane = SidebarPane(
+      id: UUID(), title: "zsh", position: nil, isFocused: false, state: nil, subagents: [],
+      agentID: nil, agentName: nil)
+
     let height = metrics.projectBlockHeight(worktreeRows: [
-      (isNamed: false, isRenaming: false, paneCount: 0),
-      (isNamed: true, isRenaming: false, paneCount: 2),
+      SidebarWorktree(worktree: plain, customName: nil, isRenaming: false, panes: []),
+      SidebarWorktree(worktree: named, customName: "B", isRenaming: false, panes: [pane, pane]),
     ])
 
     #expect(height == 148)
+  }
+
+  @Test func aCornerBadgeIsSixTenthsOfItsGlyphInWholePointsAndNeverUnderSeven() {
+    #expect(UIMetrics.cornerBadgeSize(onGlyphOf: 8) == 7)
+    #expect(UIMetrics.cornerBadgeSize(onGlyphOf: 13) == 8)
+    #expect(UIMetrics.cornerBadgeSize(onGlyphOf: 16) == 10)
   }
 
   @Test func rowsAreTallEnoughForTheirText() {

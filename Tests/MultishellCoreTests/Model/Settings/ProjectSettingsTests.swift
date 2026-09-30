@@ -64,7 +64,7 @@ struct ProjectSettingsTests {
   /// still say none, or the team gets the opposite of what was shared.
   @Test func aBlankOverrideSurvivesAnExportAndTheFileItIsWrittenTo() throws {
     let repository = try Scratch.directory("export")
-    defer { try? FileManager.default.removeItem(at: repository) }
+    defer { Scratch.remove(repository) }
 
     let exported = SharedProjectSettings(exporting: ProjectSettings(branchPrefix: ""))
     #expect(exported.branchPrefix == "")

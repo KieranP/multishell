@@ -12,7 +12,7 @@ struct ChangeBadge: View {
 
   var body: some View {
     // Narrower forms only where the whole one will not fit; see
-    // `ChangeBadgeDetail`. Beyond the narrowest it overflows, as it did.
+    // `ChangeBadgeDetail`. Beyond the narrowest it overflows.
     ViewThatFits(in: .horizontal) {
       counts(.full)
       counts(.withoutFiles)
@@ -39,8 +39,8 @@ struct ChangeBadge: View {
           .foregroundStyle(theme.unscoredFilesColor)
       }
       if detail.showsArrows(of: status) {
-        if status.ahead > 0 { Text("↑\(status.ahead)") }
-        if status.behind > 0 { Text("↓\(status.behind)") }
+        if status.ahead > 0 { Text(t("status.ahead", status.ahead)) }
+        if status.behind > 0 { Text(t("status.behind", status.behind)) }
       }
     }
     .fixedSize()

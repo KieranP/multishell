@@ -7,14 +7,14 @@ public struct FontDetection: Equatable, Sendable {
   /// The id of the "System monospace" entry, the `nil` font name.
   static let systemID = ""
 
-  public let monospaced: [String]
+  let monospaced: [String]
   let otherFamilies: [String]
 
-  public init(monospaced: [String], others: [String]) {
+  public init(monospaced: [String], otherFamilies: [String]) {
     self.monospaced = monospaced.sorted {
       $0.localizedCaseInsensitiveCompare($1) == .orderedAscending
     }
-    self.otherFamilies = others.sorted {
+    self.otherFamilies = otherFamilies.sorted {
       $0.localizedCaseInsensitiveCompare($1) == .orderedAscending
     }
   }

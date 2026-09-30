@@ -91,7 +91,7 @@ struct AppModelActivityTests {
 
     h.engine.delegate?.terminalHost(h.engine, didExit: first.focusedSessionID)
 
-    #expect(h.model.sessionStates.isEmpty, "nothing left to look at")
+    #expect(h.model.sessionStates.showsNothing, "nothing left to look at")
   }
 
   @Test func aProcessExitDropsTheTabAndTheLiveCount() {
@@ -129,7 +129,8 @@ struct AppModelActivityTests {
     h.model.select(h.main)
     let first = h.model.workspace.activeTab(in: h.main.id)!
     h.model.newTab()
-    h.source.send(SessionStateReport(state: .running, sessionID: first.focusedSessionID, pid: 1))
+    h.stateSource.send(
+      SessionStateReport(state: .running, sessionID: first.focusedSessionID, pid: 1))
 
     h.engine.delegate?.terminalHost(h.engine, didRetitle: first.focusedSessionID, to: "claude")
     #expect(h.model.state(of: first) == .running, "a title change is not evidence of an exit")

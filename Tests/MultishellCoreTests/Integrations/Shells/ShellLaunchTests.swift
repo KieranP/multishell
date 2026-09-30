@@ -13,9 +13,9 @@ struct ShellLaunchTests {
     return url
   }
 
-  @Test func zshLaunchesPlainlyAndCarriesHooksThroughTheEnvironment() throws {
+  @Test func zshAsTheLoginShellNeedsNoOverrideCommand() throws {
     let bashInit = try bashInitThatExists()
-    defer { try? FileManager.default.removeItem(at: bashInit) }
+    defer { Scratch.remove(bashInit) }
     #expect(
       ShellLaunch.overrideCommand(forShell: "/bin/zsh", loginShell: "/bin/zsh", bashInit: bashInit)
         == nil)
@@ -23,7 +23,7 @@ struct ShellLaunchTests {
 
   @Test func aChosenShellThatIsNotTheLoginShellIsNamedOutright() throws {
     let bashInit = try bashInitThatExists()
-    defer { try? FileManager.default.removeItem(at: bashInit) }
+    defer { Scratch.remove(bashInit) }
     #expect(
       ShellLaunch.overrideCommand(
         forShell: "/opt/homebrew/bin/fish", loginShell: "/bin/zsh", bashInit: bashInit)
@@ -40,7 +40,7 @@ struct ShellLaunchTests {
 
   @Test func bashLaunchesWithTheGeneratedInitFile() throws {
     let bashInit = try bashInitThatExists()
-    defer { try? FileManager.default.removeItem(at: bashInit) }
+    defer { Scratch.remove(bashInit) }
     #expect(
       ShellLaunch.overrideCommand(forShell: "/bin/bash", bashInit: bashInit)
         == [
@@ -59,7 +59,7 @@ struct ShellLaunchTests {
 
   @Test func anUnknownShellIsLaunchedPlainly() throws {
     let bashInit = try bashInitThatExists()
-    defer { try? FileManager.default.removeItem(at: bashInit) }
+    defer { Scratch.remove(bashInit) }
     #expect(
       ShellLaunch.overrideCommand(
         forShell: "/usr/local/bin/fish", loginShell: "/usr/local/bin/fish", bashInit: bashInit)
@@ -68,9 +68,9 @@ struct ShellLaunchTests {
 
   @Test func theExecAfterAnAgentCarriesTheIntegrationBackIn() throws {
     let bashInit = try bashInitThatExists()
-    defer { try? FileManager.default.removeItem(at: bashInit) }
+    defer { Scratch.remove(bashInit) }
     let zshDir = try Scratch.directory("zdot")
-    defer { try? FileManager.default.removeItem(at: zshDir) }
+    defer { Scratch.remove(zshDir) }
 
     let ours = PosixShellQuoting.quote(zshDir.path)
     let script =

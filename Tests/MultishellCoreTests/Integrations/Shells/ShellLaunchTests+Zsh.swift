@@ -12,7 +12,7 @@ extension ShellLaunchTests {
 
   @Test func theSessionGetsZDOTDIROnlyWhenGeneratedAndTheShellIsZsh() throws {
     let dir = try directoryThatExists()
-    defer { try? FileManager.default.removeItem(at: dir) }
+    defer { Scratch.remove(dir) }
 
     let zsh = ShellLaunch.zshEnvironment(
       forShell: "/bin/zsh", environment: ["ZDOTDIR": "/home/me/.zsh"], zshDirectory: dir)
@@ -48,9 +48,9 @@ extension ShellLaunchTests {
   /// variables on top, so ours would replace it and its integration would never load.
   @Test func theEnginesBootstrapIsEnteredFirstWhenItHasOne() throws {
     let ours = try directoryThatExists()
-    defer { try? FileManager.default.removeItem(at: ours) }
+    defer { Scratch.remove(ours) }
     let bootstrap = try directoryThatExists()
-    defer { try? FileManager.default.removeItem(at: bootstrap) }
+    defer { Scratch.remove(bootstrap) }
     try Data().write(to: bootstrap.appendingPathComponent(".zshenv"))
 
     let chained = ShellLaunch.zshEnvironment(
@@ -61,7 +61,7 @@ extension ShellLaunchTests {
     #expect(chained["MULTISHELL_USER_ZDOTDIR"] == "/u", "and ours still chains to the user's")
 
     let empty = try directoryThatExists()
-    defer { try? FileManager.default.removeItem(at: empty) }
+    defer { Scratch.remove(empty) }
     let unbootstrapped = ShellLaunch.zshEnvironment(
       forShell: "/bin/zsh", environment: [:], zshDirectory: ours, engineZshBootstrap: empty)
     #expect(unbootstrapped["ZDOTDIR"] == ours.path, "a bootstrap with no startup file is no chain")

@@ -40,7 +40,7 @@ extension Workspace {
     of id: TerminalTab.ID, _ direction: CycleDirection
   ) -> TerminalTab? {
     guard let current = tab(id) else { return nil }
-    return tabs(in: current.groupID).neighbour(of: id, direction)
+    return tabs(inGroup: current.groupID).neighbour(of: id, direction)
   }
 
   /// The name the user gave this worktree, or `nil` where they gave none.
@@ -65,7 +65,7 @@ extension Workspace {
 
   /// One group's tabs, in strip order. `tabs` is one flat array whose
   /// order is display order, so a move places rather than reorders.
-  public func tabs(in group: TabGroup.ID) -> [TerminalTab] {
+  public func tabs(inGroup group: TabGroup.ID) -> [TerminalTab] {
     tabs.filter { $0.groupID == group }
   }
 
@@ -109,26 +109,20 @@ extension Workspace {
     selectedWorktreeID.flatMap(worktree)
   }
 
-  /// The tab a group shows.
-  public func activeTab(in group: TabGroup) -> TerminalTab? {
-    group.activeTabID.flatMap { tab($0) }
+  public func shownTab(in group: TabGroup) -> TerminalTab? {
+    group.shownTabID.flatMap { tab($0) }
   }
 
   /// The tab the user is working in: the focused group's. What Cmd+T,
   /// Close Pane, a split and a rename all act on.
   public func activeTab(in worktree: Worktree.ID) -> TerminalTab? {
-    focusedGroup(in: worktree).flatMap { activeTab(in: $0) }
+    focusedGroup(in: worktree).flatMap { shownTab(in: $0) }
   }
 
   /// Every tab on screen for a worktree, one per group. Anything meaning
   /// "the user can see this" asks here, not `activeTab`.
   public func shownTabs(in worktree: Worktree.ID) -> [TerminalTab] {
-    groups(in: worktree).compactMap { activeTab(in: $0) }
-  }
-
-  /// Every pane across a worktree's tabs, whichever group each is in.
-  public func paneCount(in worktree: Worktree.ID) -> Int {
-    tabs(in: worktree).reduce(0) { $0 + $1.sessionIDs.count }
+    groups(in: worktree).compactMap { shownTab(in: $0) }
   }
 
   /// The branches a project's worktrees have checked out, which git refuses

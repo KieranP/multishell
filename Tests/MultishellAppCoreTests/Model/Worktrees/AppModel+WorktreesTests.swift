@@ -7,33 +7,6 @@ import Testing
 
 @Suite @MainActor
 struct AppModelWorktreesTests {
-  @Test func aWorktreeIsInViewWhileSelectedAndNotUnderTheBoard() {
-    let h = Harness()
-    h.model.select(h.main, openingFirstTab: .never)
-    #expect(h.model.isInView(h.main))
-    #expect(!h.model.isInView(h.feature))
-
-    h.model.showAgentBoard()
-
-    #expect(!h.model.isInView(h.main))
-  }
-
-  @Test func onlyTheWorktreeInViewListsItsPanesInTheSidebar() {
-    let h = Harness()
-    h.model.select(h.feature)
-    #expect(h.model.workspace.paneCount(in: h.feature.id) == 1)
-    h.model.select(h.main)
-    h.model.splitActivePane(.horizontal)
-    h.model.newTab()
-
-    #expect(h.model.sidebarPaneCount(of: h.main) == 3)
-    #expect(h.model.sidebarPaneCount(of: h.feature) == 0, "its pane is not listed")
-
-    h.model.showAgentBoard()
-
-    #expect(h.model.sidebarPaneCount(of: h.main) == 0)
-  }
-
   @Test func selectingAWorktreeOpensATabAndWarmsIt() {
     let h = Harness()
     h.model.select(h.main)

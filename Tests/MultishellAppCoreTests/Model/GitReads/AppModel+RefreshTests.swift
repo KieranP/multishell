@@ -61,7 +61,7 @@ struct AppModelRefreshTests {
     #expect(h.model.worktreeRecords[project.id] != nil)
 
     h.model.removeProject(project)
-    await h.model.refresh(project)
+    await h.model.refreshWorktrees(of: project)
 
     #expect(h.model.workspace.projects.isEmpty)
     #expect(h.model.workspace.worktrees.isEmpty)
@@ -83,7 +83,7 @@ struct AppModelRefreshTests {
       esac
       """)
 
-    let refresh = Task { await failing.refresh(project) }
+    let refresh = Task { await failing.refreshWorktrees(of: project) }
     try await waitUntil { h.gitCalls().contains { $0.hasPrefix("worktree list") } }
     failing.removeProject(project)
     try "".write(to: h.root.appendingPathComponent("go"), atomically: true, encoding: .utf8)
@@ -102,15 +102,15 @@ struct AppModelRefreshTests {
     let created = try #require(h.worktree(onBranch: "gone"))
 
     h.model.mergeStates[created.id] = .merged(.ancestor, into: "main")
-    h.model.lastCommits[created.id] = Date(timeIntervalSince1970: 1000)
+    h.model.lastCommitDates[created.id] = Date(timeIntervalSince1970: 1000)
 
     _ = try await h.git.run(
       ["worktree", "remove", "--force", created.path.path], in: h.project.path)
-    await h.model.refresh(h.project)
+    await h.model.refreshWorktrees(of: h.project)
 
     #expect(h.worktree(onBranch: "gone") == nil, "git no longer lists it")
     #expect(h.model.mergeStates[created.id] == nil)
-    #expect(h.model.lastCommits[created.id] == nil)
+    #expect(h.model.lastCommitDates[created.id] == nil)
     #expect(h.model.mergeChecks[created.id] == nil)
   }
 
@@ -121,7 +121,7 @@ struct AppModelRefreshTests {
     defer { h.tearDown() }
     let project = h.project
     try FileManager.default.removeItem(at: project.path.appendingPathComponent(".git"))
-    await h.model.refresh(project)
+    await h.model.refreshWorktrees(of: project)
     #expect(h.model.missingProjects == [project.id])
 
     h.model.presentedError = nil
@@ -139,14 +139,14 @@ struct AppModelRefreshTests {
     let project = h.project
     try FileManager.default.removeItem(at: project.path.appendingPathComponent(".git"))
 
-    await h.model.refresh(project)
+    await h.model.refreshWorktrees(of: project)
     let first = try #require(h.model.presentedError)
     #expect(first.title.hasPrefix("git worktree list failed"))
     #expect(h.model.missingProjects == [project.id])
 
     h.model.presentedError = nil
     await h.model.refreshWorktreesIfRecordsChanged()
-    await h.model.refresh(project)
+    await h.model.refreshWorktrees(of: project)
 
     #expect(h.model.presentedError == nil, "the same failure on every tick is one alert, not many")
     #expect(h.model.workspace.projects.count == 1)
@@ -163,7 +163,7 @@ struct AppModelRefreshTests {
 
     let muted = try h.modelOnFakeGit("exit 0")
 
-    await muted.refresh(project)
+    await muted.refreshWorktrees(of: project)
 
     #expect(muted.workspace.worktrees(of: project.id).count == 1, "nothing was dropped")
     #expect(muted.workspace.tabs.count == 1)
@@ -205,13 +205,13 @@ struct AppModelRefreshTests {
     defer { h.tearDown() }
     let project = h.project
     try FileManager.default.removeItem(at: project.path.appendingPathComponent(".git"))
-    await h.model.refresh(project)
+    await h.model.refreshWorktrees(of: project)
     #expect(h.model.presentedError != nil)
     h.model.presentedError = nil
-    await h.model.refresh(project)
+    await h.model.refreshWorktrees(of: project)
     #expect(h.model.presentedError == nil, "a tick stays quiet")
 
-    await h.model.refreshOnRequest(project)
+    await h.model.refreshWorktreesOnRequest(of: project)
 
     #expect(h.model.presentedError != nil, "the user asked, so the answer is shown again")
     #expect(h.model.missingProjects == [project.id])
@@ -245,14 +245,14 @@ struct AppModelRefreshTests {
   }
 
   /// Identity is the path, so a worktree made where one was removed takes
-  /// its id, and with it whatever badge and removal warning were left over.
-  @Test func aWorktreeRemadeAtTheSamePathDoesNotInheritTheOldOnesBadge() async throws {
+  /// its id, and with it whatever badge was left over.
+  @Test func aWorktreeRemovedOutsideTheAppTakesItsBadgeWithIt() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
     let path = h.root.appendingPathComponent("demo-feature", isDirectory: true)
     _ = try await h.git.run(
       ["worktree", "add", "-b", "feature", path.path], in: h.project.path)
-    await h.model.refresh(h.project)
+    await h.model.refreshWorktrees(of: h.project)
     let feature = try #require(h.worktree(onBranch: "feature"))
     try "work\n".write(
       to: path.appendingPathComponent("a.txt"), atomically: true, encoding: .utf8)
@@ -260,7 +260,7 @@ struct AppModelRefreshTests {
     #expect(h.model.statuses[feature.id]?.changedFiles == 1)
 
     _ = try await h.git.run(["worktree", "remove", "--force", path.path], in: h.project.path)
-    await h.model.refresh(h.project)
+    await h.model.refreshWorktrees(of: h.project)
 
     #expect(h.model.statuses[feature.id] == nil, "the reading went with the worktree")
   }
@@ -272,7 +272,7 @@ struct AppModelRefreshTests {
     defer { h.tearDown() }
     let path = h.root.appendingPathComponent("demo-gone", isDirectory: true)
     _ = try await h.git.run(["worktree", "add", "-b", "gone", path.path], in: h.project.path)
-    await h.model.refresh(h.project)
+    await h.model.refreshWorktrees(of: h.project)
     let doomed = try #require(h.worktree(onBranch: "gone"))
     let main = try #require(h.worktree(onBranch: "main"))
     // A git slow enough that the removal lands while the round is inside it.
@@ -300,7 +300,7 @@ struct AppModelRefreshTests {
     h.model.select(h.worktree(onBranch: "main")!)
     try FileManager.default.removeItem(at: project.path)
 
-    await h.model.refresh(project)
+    await h.model.refreshWorktrees(of: project)
 
     #expect(h.model.workspace.projects.count == 1, "an unmounted drive must not delete the setup")
     #expect(h.model.missingProjects == [project.id])
@@ -316,12 +316,12 @@ struct AppModelRefreshTests {
     try "a\nb\n".write(
       to: side.path.appendingPathComponent("new.txt"), atomically: true, encoding: .utf8)
     await h.model.refreshStatus(of: side.id, forced: true)
-    let memo = try #require(h.model.coordinator).git.shared.untrackedMemo
+    let memo = try #require(h.model.coordinator).git.readState.untrackedMemo
     #expect(!memo.entries(in: side.path).isEmpty)
 
     _ = try await h.git.run(
       ["worktree", "remove", "--force", side.path.path], in: h.project.path)
-    await h.model.refresh(h.project)
+    await h.model.refreshWorktrees(of: h.project)
 
     #expect(h.worktree(onBranch: "side") == nil)
     #expect(memo.entries(in: side.path).isEmpty)
@@ -341,8 +341,8 @@ struct AppModelRefreshTests {
     await h.model.refreshLoginEnvironment()
 
     let rebuilt = try #require(h.model.coordinator).git
-    #expect(rebuilt.shared.untrackedMemo === launched.shared.untrackedMemo)
-    #expect(rebuilt.shared.mergeSlots === launched.shared.mergeSlots)
+    #expect(rebuilt.readState.untrackedMemo === launched.readState.untrackedMemo)
+    #expect(rebuilt.readState.mergeSlots === launched.readState.mergeSlots)
   }
 
   @Test func aRemovalDialogClosesWhenGitStopsListingItsWorktree() async throws {
@@ -355,7 +355,7 @@ struct AppModelRefreshTests {
 
     _ = try await h.git.run(
       ["worktree", "remove", "--force", created.path.path], in: h.project.path)
-    await h.model.refresh(h.project)
+    await h.model.refreshWorktrees(of: h.project)
 
     #expect(h.model.workspace.worktree(created.id) == nil)
     #expect(
@@ -375,7 +375,7 @@ struct AppModelRefreshTests {
     _ = try await h.git.run(
       ["worktree", "remove", "--force", created.path.path], in: h.project.path)
     h.engine.focused.removeAll()
-    await h.model.refresh(h.project)
+    await h.model.refreshWorktrees(of: h.project)
 
     #expect(h.model.workspace.worktree(created.id) == nil)
     #expect(h.engine.openSessionIDs.isEmpty, "the shells outlived the row they belonged to")
@@ -400,7 +400,7 @@ struct AppModelRefreshTests {
 
     _ = try await h.git.run(
       ["worktree", "remove", "--force", created.path.path], in: h.project.path)
-    await h.model.refresh(h.project)
+    await h.model.refreshWorktrees(of: h.project)
     #expect(h.worktree(onBranch: "setup") == nil, "git no longer lists it")
     await setup?.value
 

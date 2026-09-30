@@ -12,24 +12,16 @@ struct AppModelPersistenceTests {
     Scratch.path("autosave").appendingPathComponent("state.json")
   }
 
-  /// The debounce is 300 ms. Polling keeps this fast on a quiet machine and honest on a
-  /// loaded CI runner, where the other suites in this process compete for the main actor.
-  private func saved(_ file: URL, until done: (Workspace) -> Bool) async throws -> Workspace {
-    for _ in 0..<160 {
-      if FileManager.default.fileExists(atPath: file.path) {
-        let workspace = try WorkspaceFile(fileURL: file).load()
-        if done(workspace) { return workspace }
-      }
-      try await Task.sleep(for: .milliseconds(50))
-    }
-    return try WorkspaceFile(fileURL: file).load()
+  private func onDisk(_ file: URL) -> Workspace? {
+    guard FileManager.default.fileExists(atPath: file.path) else { return nil }
+    return try? WorkspaceFile(fileURL: file).load()
   }
 
   /// The autosave loop holds the store and wakes only on a change, so the
   /// model going is what has to end it.
   @Test func aModelThatGoesLetsItsStoreGoToo() async throws {
     let file = stateFile()
-    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+    defer { Scratch.remove(file.deletingLastPathComponent()) }
     weak var store: WorkspaceStore?
     do {
       let h = Harness(stateFile: file)
@@ -42,24 +34,26 @@ struct AppModelPersistenceTests {
 
   @Test func aChangeReachesDiskWithoutAnyoneAskingAndSoDoesTheNext() async throws {
     let file = stateFile()
-    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+    defer { Scratch.remove(file.deletingLastPathComponent()) }
     let h = Harness(stateFile: file)
 
     h.model.select(h.main)
-    let first = try await saved(file) { $0.selectedWorktreeID != nil }
+    try await waitUntil { onDisk(file)?.selectedWorktreeID != nil }
+    let first = try #require(onDisk(file))
     #expect(first.selectedWorktreeID == h.main.id)
     #expect(first.tabs.count == 1)
 
     // The observation has to be re-armed after it fires, or only the first
     // change of a session would ever be saved.
     h.model.newTab()
-    let second = try await saved(file) { $0.tabs.count == 2 }
+    try await waitUntil { onDisk(file)?.tabs.count == 2 }
+    let second = try #require(onDisk(file))
     #expect(second.tabs.count == 2)
   }
 
   @Test func aBurstOfChangesIsOneWriteAndTheLastStateWins() async throws {
     let file = stateFile()
-    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+    defer { Scratch.remove(file.deletingLastPathComponent()) }
     let h = Harness(stateFile: file)
 
     h.model.select(h.main)
@@ -67,13 +61,14 @@ struct AppModelPersistenceTests {
     h.model.closeActiveTab()
     #expect(!FileManager.default.fileExists(atPath: file.path), "nothing written mid-burst")
 
-    let written = try await saved(file) { $0.tabs.count == 5 }
+    try await waitUntil { onDisk(file)?.tabs.count == 5 }
+    let written = try #require(onDisk(file))
     #expect(written.tabs.count == 5)
   }
 
   @Test func saveNowFlushesWhatTheDebounceStillHolds() throws {
     let file = stateFile()
-    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+    defer { Scratch.remove(file.deletingLastPathComponent()) }
     let h = Harness(stateFile: file)
 
     h.model.select(h.main)
@@ -85,10 +80,11 @@ struct AppModelPersistenceTests {
 
   @Test func shellTitlesAndStatusesNeverTriggerASave() async throws {
     let file = stateFile()
-    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+    defer { Scratch.remove(file.deletingLastPathComponent()) }
     let h = Harness(stateFile: file)
     h.model.select(h.main)
-    _ = try await saved(file) { $0.selectedWorktreeID != nil }
+    try await waitUntil { onDisk(file)?.selectedWorktreeID != nil }
+    #expect(onDisk(file)?.selectedWorktreeID == h.main.id)
     let written = try FileManager.default.attributesOfItem(atPath: file.path)[.modificationDate]
     // A finished task stays in place, so clear it: anything below that
     // schedules a save would put a new one here.
@@ -112,12 +108,12 @@ struct AppModelPersistenceTests {
     let h = Harness(stateFile: URL(fileURLWithPath: "/dev/null/multishell/state.json"))
     h.model.presentedError = nil
 
-    h.model.save()
+    h.model.saveOffMain()
     let first = await h.presentedErrorArrives()
     #expect(first != nil)
 
-    h.model.save()
-    h.model.save()
+    h.model.saveOffMain()
+    h.model.saveOffMain()
     h.model.presentedError = nil
     #expect(await h.presentedErrorArrives() == nil, "the same alert, not a new one each time")
   }

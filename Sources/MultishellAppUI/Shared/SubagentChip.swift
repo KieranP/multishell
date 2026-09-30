@@ -15,7 +15,7 @@ struct SubagentChip: View {
 
   /// Long enough to cross from the chip onto the list without it closing,
   /// short enough that it goes with the pointer.
-  private static let lingers: Duration = .milliseconds(250)
+  private static let hideDelay: Duration = .milliseconds(250)
 
   var body: some View {
     HStack(spacing: 3) {
@@ -31,25 +31,25 @@ struct SubagentChip: View {
     .contentShape(.rect)
     .onHover { hovering in
       isHovered = hovering
-      keepList(hovering)
+      hoverChanged(hovering)
     }
     .popover(isPresented: $showsList, arrowEdge: .bottom) {
       SubagentList(subagents: subagents, theme: theme, metrics: metrics)
-        .onHover(perform: keepList)
+        .onHover(perform: hoverChanged)
     }
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(AccessibilityText.subagents(subagents))
     .onDisappear { hideTask?.cancel() }
   }
 
-  private func keepList(_ hovering: Bool) {
+  private func hoverChanged(_ hovering: Bool) {
     hideTask?.cancel()
     guard !hovering else {
       showsList = true
       return
     }
     hideTask = Task { @MainActor in
-      try? await Task.sleep(for: Self.lingers)
+      try? await Task.sleep(for: Self.hideDelay)
       guard !Task.isCancelled else { return }
       showsList = false
     }

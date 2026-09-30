@@ -7,7 +7,7 @@ extension [Subagent] {
 
   /// Subagents and background shells counted apart.
   public var countText: String {
-    let shells = filter(\.isShell).workerCount
+    let shells = filter(\.isBackgroundShell).workerCount
     let subagents = workerCount - shells
     return [
       subagents > 0 ? t("count.subagents", subagents) : nil,

@@ -11,7 +11,7 @@ extension WorktreeGit {
       throw ProcessFailure.git(
         ["worktree", "list"], message: "git listed no worktrees for \(project.path.path)")
     }
-    return worktrees.map(Self.datedByDirectory).map(Self.markedIfUnfinished)
+    return worktrees.map(Self.datedByDirectory).map(Self.markedIfStillAdding)
   }
 
   /// A lock older than this is an add that died mid-checkout, git's own
@@ -20,15 +20,15 @@ extension WorktreeGit {
 
   /// git's `initializing` is in the user's language, so a lock from before
   /// `gitdir` over files with no index yet counts too; see worktrees.md.
-  private static func markedIfUnfinished(_ worktree: Worktree) -> Worktree {
+  private static func markedIfStillAdding(_ worktree: Worktree) -> Worktree {
     guard worktree.isLocked else { return worktree }
-    let record = Self.recordDirectory(namedBy: worktree.path)
+    let record = Self.recordDirectoryFromGitFile(in: worktree.path)
     let lockedAt =
-      record.flatMap { modified($0.appendingPathComponent("locked")) } ?? worktree.createdAt
+      record.flatMap { $0.appendingPathComponent("locked").modificationDate } ?? worktree.createdAt
     if !worktree.isInitializing {
       guard let record,
         !FileManager.default.fileExists(atPath: record.appendingPathComponent("index").path),
-        let lockedAt, let linkedAt = modified(record.appendingPathComponent("gitdir")),
+        let lockedAt, let linkedAt = record.appendingPathComponent("gitdir").modificationDate,
         lockedAt <= linkedAt, hasCheckedOutFiles(worktree.path)
       else { return worktree }
     }
@@ -42,10 +42,6 @@ extension WorktreeGit {
   private static func hasCheckedOutFiles(_ checkout: URL) -> Bool {
     let entries = (try? FileManager.default.contentsOfDirectory(atPath: checkout.path)) ?? []
     return entries.contains { $0 != ".git" }
-  }
-
-  private static func modified(_ file: URL) -> Date? {
-    try? file.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
   }
 
   /// `-z` came in git 2.36, and an older one refuses the switch with 129; its

@@ -14,13 +14,13 @@ struct AppModelFindTests {
 
     h.model.showFind()
 
-    #expect(h.model.findingSessionIDs == [pane])
+    #expect(h.model.findBarSessionIDs == [pane])
     #expect(h.engine.searched.isEmpty, "nothing typed, nothing searched")
   }
 
   @Test func typingSearchesThePaneAndClearingTheFieldEndsTheEnginesSearch() {
     let h = Harness()
-    let pane = h.paneWithFindOpen()
+    let pane = paneWithFindOpen(h)
 
     h.model.setFindText("make", of: pane)
     h.model.setFindText("", of: pane)
@@ -34,7 +34,7 @@ struct AppModelFindTests {
   /// with a step in the engine: sent twice, Return skipped every other match.
   @Test func theSameFindTextAgainIsNotSearchedAgain() {
     let h = Harness()
-    let pane = h.paneWithFindOpen()
+    let pane = paneWithFindOpen(h)
 
     h.model.setFindText("make", of: pane)
     h.model.setFindText("make", of: pane)
@@ -47,7 +47,7 @@ struct AppModelFindTests {
   /// before it has matched, so the first step lands nearest the prompt instead.
   @Test func theFirstStepAfterANewFindTextLandsNearestThePromptWhicheverArrowAsked() {
     let h = Harness()
-    let pane = h.paneWithFindOpen()
+    let pane = paneWithFindOpen(h)
 
     h.model.setFindText("make", of: pane)
     h.model.findPrevious()
@@ -66,7 +66,7 @@ struct AppModelFindTests {
 
   @Test func reopeningABarStartsItsSearchAgainFromNearestThePrompt() {
     let h = Harness()
-    let pane = h.paneWithFindOpen()
+    let pane = paneWithFindOpen(h)
     h.model.setFindText("make", of: pane)
     h.model.findNext()
     h.model.closeFind(in: pane)
@@ -81,7 +81,7 @@ struct AppModelFindTests {
   /// items would act on another pane's bar while the user types in this one.
   @Test func theMenuActsOnTheBarWhoseFieldHasTheKeyboard() {
     let h = Harness()
-    let first = h.paneWithFindOpen()
+    let first = paneWithFindOpen(h)
     h.model.setFindText("make", of: first)
     h.model.splitActivePane(.horizontal)
     let second = h.model.workspace.activeTab(in: h.main.id)!.focusedSessionID
@@ -95,7 +95,7 @@ struct AppModelFindTests {
 
     h.model.closeFind()
     #expect(
-      h.model.findingSessionIDs == [second], "the field's own bar closed, not the focused pane's")
+      h.model.findBarSessionIDs == [second], "the field's own bar closed, not the focused pane's")
     #expect(h.engine.focused.last == first)
 
     h.model.noteFindField(focused: false, of: first)
@@ -105,7 +105,7 @@ struct AppModelFindTests {
 
   @Test func nextAndPreviousMoveOnlyOnceSomethingIsTyped() {
     let h = Harness()
-    let pane = h.paneWithFindOpen()
+    let pane = paneWithFindOpen(h)
 
     h.model.findNext()
     h.model.findPrevious()
@@ -117,21 +117,21 @@ struct AppModelFindTests {
     #expect(h.engine.searched.map(\.command) == [.find("make"), .nearest, .previous])
   }
 
-  @Test func hidingEndsTheSearchAndHandsTheKeyboardBackToThePane() {
+  @Test func closingEndsTheSearchAndHandsTheKeyboardBackToThePane() {
     let h = Harness()
-    let pane = h.paneWithFindOpen()
+    let pane = paneWithFindOpen(h)
     h.model.setFindText("make", of: pane)
     let focusedBefore = h.engine.focused.count
 
     h.model.closeFind(in: pane)
 
-    #expect(h.model.findingSessionIDs.isEmpty)
+    #expect(h.model.findBarSessionIDs.isEmpty)
     #expect(h.engine.searched.last?.command == .end)
     #expect(h.engine.focused.count == focusedBefore + 1)
     #expect(h.model.findText(of: pane) == "make", "the find text waits for the next open")
   }
 
-  @Test func hidingAPaneWithNoBarDoesNothing() {
+  @Test func closingFindInAPaneWithNoBarDoesNothing() {
     let h = Harness()
     h.model.select(h.main)
     let pane = h.model.workspace.activeTab(in: h.main.id)!.focusedSessionID
@@ -145,7 +145,7 @@ struct AppModelFindTests {
 
   @Test func openingAgainSearchesTheKeptFindTextSoItsMatchesLightUp() {
     let h = Harness()
-    let pane = h.paneWithFindOpen()
+    let pane = paneWithFindOpen(h)
     h.model.setFindText("make", of: pane)
     h.model.closeFind(in: pane)
 
@@ -156,7 +156,7 @@ struct AppModelFindTests {
 
   @Test func findNextWithTheBarClosedDoesNothingAndTheMenuItemSaysSo() {
     let h = Harness()
-    let pane = h.paneWithFindOpen()
+    let pane = paneWithFindOpen(h)
     h.model.setFindText("make", of: pane)
     #expect(h.model.findIsOpenInView)
     h.model.closeFind(in: pane)
@@ -165,13 +165,13 @@ struct AppModelFindTests {
     h.model.findNext()
     h.model.findPrevious()
 
-    #expect(h.model.findingSessionIDs.isEmpty)
+    #expect(h.model.findBarSessionIDs.isEmpty)
     #expect(h.engine.searched.last?.command == .end)
   }
 
   @Test func closeFindTakesDownThePaneInViewsBarAndNoOther() {
     let h = Harness()
-    let first = h.paneWithFindOpen()
+    let first = paneWithFindOpen(h)
     h.model.setFindText("make", of: first)
     h.model.splitActivePane(.horizontal)
     let second = h.model.workspace.activeTab(in: h.main.id)!.focusedSessionID
@@ -180,18 +180,18 @@ struct AppModelFindTests {
 
     h.model.closeFind()
 
-    #expect(h.model.findingSessionIDs == [first])
+    #expect(h.model.findBarSessionIDs == [first])
     #expect(h.engine.searched.last?.id == second)
     #expect(h.engine.searched.last?.command == .end)
     #expect(h.engine.focused.count == focusedBefore + 1)
 
     h.model.closeFind()
-    #expect(h.model.findingSessionIDs == [first], "no bar on the pane in view, nothing to close")
+    #expect(h.model.findBarSessionIDs == [first], "no bar on the pane in view, nothing to close")
   }
 
   @Test func findAsksForTheFieldOnceAndAgainOnEveryCmdFAndSearchesNothingTwice() {
     let h = Harness()
-    let pane = h.paneWithFindOpen()
+    let pane = paneWithFindOpen(h)
     h.model.setFindText("make", of: pane)
     #expect(h.model.takeFindFieldRequest(pane))
     #expect(!h.model.takeFindFieldRequest(pane), "one Cmd+F, one claim")
@@ -204,19 +204,19 @@ struct AppModelFindTests {
 
   @Test func aBarShownAgainByAWorktreeSwitchLeavesTheKeyboardInThePane() {
     let h = Harness()
-    let pane = h.paneWithFindOpen()
+    let pane = paneWithFindOpen(h)
     _ = h.model.takeFindFieldRequest(pane)
 
     h.model.select(h.feature)
     h.model.select(h.main)
 
-    #expect(h.model.findingSessionIDs.contains(pane), "the bar is still up")
+    #expect(h.model.findBarSessionIDs.contains(pane), "the bar is still up")
     #expect(!h.model.takeFindFieldRequest(pane), "and nothing asked for its field")
   }
 
   @Test func escapeInABarHandsTheKeyboardToThatBarsPaneNotTheFocusedOne() {
     let h = Harness()
-    let first = h.paneWithFindOpen()
+    let first = paneWithFindOpen(h)
     h.model.splitActivePane(.horizontal)
     let second = h.model.workspace.activeTab(in: h.main.id)!.focusedSessionID
     #expect(h.engine.focused.last == second)
@@ -228,7 +228,7 @@ struct AppModelFindTests {
 
   @Test func findOnASecondPaneOpensItsOwnBarAndLeavesTheFirstsSearchRunning() {
     let h = Harness()
-    let first = h.paneWithFindOpen()
+    let first = paneWithFindOpen(h)
     h.model.setFindText("make", of: first)
     h.model.splitActivePane(.horizontal)
     let second = h.model.workspace.activeTab(in: h.main.id)!.focusedSessionID
@@ -237,7 +237,7 @@ struct AppModelFindTests {
     h.model.showFind()
     h.model.setFindText("grep", of: second)
 
-    #expect(h.model.findingSessionIDs == [first, second])
+    #expect(h.model.findBarSessionIDs == [first, second])
     #expect(h.model.findText(of: first) == "make")
     #expect(h.model.findText(of: second) == "grep")
     #expect(h.engine.searched.map(\.id) == [first, second])
@@ -246,7 +246,7 @@ struct AppModelFindTests {
 
   @Test func aBarsOwnArrowsStepItsOwnPaneWhileAnotherPaneHasTheKeyboard() {
     let h = Harness()
-    let first = h.paneWithFindOpen()
+    let first = paneWithFindOpen(h)
     h.model.setFindText("make", of: first)
     h.model.splitActivePane(.horizontal)
     let second = h.model.workspace.activeTab(in: h.main.id)!.focusedSessionID
@@ -257,24 +257,24 @@ struct AppModelFindTests {
 
     #expect(h.engine.searched.map(\.id) == [first, first, first])
     #expect(h.engine.searched.map(\.command) == [.find("make"), .nearest, .previous])
-    #expect(h.model.findingSessionIDs == [first], "the second pane has no bar and gets none")
+    #expect(h.model.findBarSessionIDs == [first], "the second pane has no bar and gets none")
   }
 
   @Test func findNextInAnotherWorktreeIsDisabledAndLeavesTheFirstPanesSearchAlone() {
     let h = Harness()
-    let first = h.paneWithFindOpen()
+    let first = paneWithFindOpen(h)
     h.model.setFindText("make", of: first)
     h.model.select(h.feature)
     let other = h.model.workspace.activeTab(in: h.feature.id)!.focusedSessionID
 
     #expect(!h.model.findIsOpenInView)
     h.model.findNext()
-    #expect(h.model.findingSessionIDs == [first])
+    #expect(h.model.findBarSessionIDs == [first])
     #expect(
       h.engine.searched.map(\.id) == [first], "the first pane's search was neither moved nor ended")
 
     h.model.showFind()
-    #expect(h.model.findingSessionIDs == [first, other])
+    #expect(h.model.findBarSessionIDs == [first, other])
     #expect(
       h.model.findText(of: other) == "", "a new bar starts empty, not with another pane's find text"
     )
@@ -282,13 +282,13 @@ struct AppModelFindTests {
 
   @Test func closingThePaneTakesItsBarAndFindTextWithIt() {
     let h = Harness()
-    let pane = h.paneWithFindOpen()
+    let pane = paneWithFindOpen(h)
     h.model.setFindText("make", of: pane)
     h.engine.searched = []
 
     h.model.closeActivePane()
 
-    #expect(h.model.findingSessionIDs.isEmpty)
+    #expect(h.model.findBarSessionIDs.isEmpty)
     #expect(h.model.findText(of: pane) == "")
     #expect(h.engine.searched.isEmpty, "a gone pane is told nothing")
   }
@@ -297,17 +297,17 @@ struct AppModelFindTests {
     let h = Harness()
     h.model.select(h.main)
     h.model.splitActivePane(.horizontal)
-    let gone = h.paneWithFindOpen()
+    let gone = paneWithFindOpen(h)
     h.model.setFindText("make", of: gone)
 
     h.engine.delegate?.terminalHost(h.engine, didExit: gone)
 
-    #expect(h.model.findingSessionIDs.isEmpty)
+    #expect(h.model.findBarSessionIDs.isEmpty)
     #expect(!h.model.findIsOpenInView)
     h.model.showFind()
     let live = h.model.workspace.activeTab(in: h.main.id)!.focusedSessionID
     #expect(live != gone)
-    #expect(h.model.findingSessionIDs == [live])
+    #expect(h.model.findBarSessionIDs == [live])
   }
 
   @Test func findIsOfferedOnlyWhileATerminalTabIsInView() {
@@ -330,7 +330,7 @@ struct AppModelFindTests {
   /// field's pane must not keep the menu on a bar that is gone.
   @Test func closingTheFieldsBarHandsTheMenuBackToTheFocusedPanesBar() {
     let h = Harness()
-    let first = h.paneWithFindOpen()
+    let first = paneWithFindOpen(h)
     h.model.setFindText("make", of: first)
     h.model.splitActivePane(.horizontal)
     let second = h.model.workspace.activeTab(in: h.main.id)!.focusedSessionID
@@ -350,7 +350,7 @@ struct AppModelFindTests {
   /// it, and a stale field would keep the menu on the wrong pane's bar.
   @Test func handingTheKeyboardToAPaneForgetsWhichFieldHadIt() {
     let h = Harness()
-    let first = h.paneWithFindOpen()
+    let first = paneWithFindOpen(h)
     h.model.noteFindField(focused: true, of: first)
 
     h.model.select(h.feature)
@@ -360,7 +360,7 @@ struct AppModelFindTests {
 
   @Test func cmdFInAFieldAsksForThatFieldAgainRatherThanOpeningTheFocusedPanesBar() {
     let h = Harness()
-    let first = h.paneWithFindOpen()
+    let first = paneWithFindOpen(h)
     _ = h.model.takeFindFieldRequest(first)
     h.model.splitActivePane(.horizontal)
     let second = h.model.workspace.activeTab(in: h.main.id)!.focusedSessionID
@@ -368,9 +368,9 @@ struct AppModelFindTests {
 
     h.model.showFind()
 
-    #expect(h.model.findingSessionIDs == [first], "no bar opened on the focused pane")
+    #expect(h.model.findBarSessionIDs == [first], "no bar opened on the focused pane")
     #expect(h.model.takeFindFieldRequest(first))
-    #expect(!h.model.findingSessionIDs.contains(second))
+    #expect(!h.model.findBarSessionIDs.contains(second))
   }
 
   @Test func findDoesNothingUnderTheBoardOrFromAnotherWindow() {
@@ -380,22 +380,19 @@ struct AppModelFindTests {
     h.model.showAgentBoard()
     h.model.showFind()
     h.model.findNext()
-    #expect(h.model.findingSessionIDs.isEmpty)
+    #expect(h.model.findBarSessionIDs.isEmpty)
     #expect(!h.model.findIsOpenInView)
 
     h.model.hideAgentBoard()
     h.platform.workspaceWindowIsKey = false
     h.model.showFind()
     h.model.findNext()
-    #expect(h.model.findingSessionIDs.isEmpty)
+    #expect(h.model.findBarSessionIDs.isEmpty)
   }
-}
 
-extension Harness {
-  /// The main worktree selected and its focused pane's bar up.
-  fileprivate func paneWithFindOpen() -> TerminalSession.ID {
-    if model.workspace.selectedWorktreeID == nil { model.select(main) }
-    model.showFind()
-    return model.workspace.activeTab(in: main.id)!.focusedSessionID
+  private func paneWithFindOpen(_ h: Harness) -> TerminalSession.ID {
+    if h.model.workspace.selectedWorktreeID == nil { h.model.select(h.main) }
+    h.model.showFind()
+    return h.model.workspace.activeTab(in: h.main.id)!.focusedSessionID
   }
 }

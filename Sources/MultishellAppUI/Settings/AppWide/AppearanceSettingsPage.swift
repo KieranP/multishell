@@ -14,15 +14,10 @@ struct AppearanceSettingsPage: View {
   var body: some View {
     Form {
       Section {
-        Picker(
-          t("appearance.theme"),
-          selection: model.setting(\.appearance.themeID, write: model.setTheme)
-        ) {
-          ForEach(model.themes) { Text($0.name).tag($0.id) }
-        }
+        ThemePicker(title: t("appearance.theme"), model: model)
         InfoLabeledContent(t("appearance.theme-files"), info: t("appearance.theme-files-info")) {
           Button(t("appearance.open-folder")) { model.revealThemesFolder() }
-          SymbolButton.refresh(help: t("appearance.reload-themes")) { model.reloadThemes() }
+          SettingsSymbolButton.refresh(help: t("appearance.reload-themes")) { model.reloadThemes() }
         }
         .controlSize(.small)
       }

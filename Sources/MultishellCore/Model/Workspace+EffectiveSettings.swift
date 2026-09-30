@@ -1,5 +1,5 @@
 /// A project's override where it has one, else the global. These read
-/// `project.settings`, so the project must be the one `AppModel.resolved` made.
+/// `project.settings`, so the project must be the one `AppModel.withEffectiveSettings(_:)` made.
 extension Workspace {
   public func worktreeSettings(for project: Project) -> WorktreeSettings {
     project.settings.effectiveWorktreeSettings(defaults: worktreeDefaults)

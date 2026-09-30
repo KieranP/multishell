@@ -7,8 +7,7 @@ extension ShellCatalogue {
   static func displayName(_ id: String?, customPath: String, loginShell: String) -> String {
     guard let id, id != loginShellID else { return t("shell.named-login-shell", loginShell) }
     guard id == customID else { return id }
-    let path = customPath.trimmingCharacters(in: .whitespaces)
-    return path.isEmpty
-      ? t("shell.named-custom-blank") : t("shell.named-custom-path", path)
+    guard let path = runnablePath(customPath) else { return t("shell.named-custom-blank") }
+    return t("shell.named-custom-path", path)
   }
 }

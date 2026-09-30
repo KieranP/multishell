@@ -47,7 +47,7 @@ struct AppModelFileDropTests {
     let session = h.model.workspace.sessions(in: h.main.id)[0]
     #expect(session.agentID == nil, "a plain shell tab")
 
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
         state: .idle, sessionID: session.id, pid: ProcessInfo.processInfo.processIdentifier,
         agent: AgentCatalogue.claudeID))
@@ -65,7 +65,7 @@ struct AppModelFileDropTests {
     let session = h.model.workspace.sessions(in: h.main.id)[0]
 
     // Above the highest pid the kernel hands out, so it is certainly gone.
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
         state: .done, sessionID: session.id, pid: 999_999, agent: AgentCatalogue.claudeID))
     h.model.dropFiles([h.main.path.appendingPathComponent("a.swift")], into: session.id)
@@ -78,7 +78,7 @@ struct AppModelFileDropTests {
     h.model.select(h.main)
     let session = h.model.workspace.sessions(in: h.main.id)[0]
 
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
         state: .running, sessionID: session.id,
         pid: ProcessInfo.processInfo.processIdentifier, agent: "future-agent"))

@@ -18,7 +18,7 @@ public struct WorktreeOperations: Equatable, Sendable {
 
   /// A stage is writing there now. A failed one is not: nothing writes
   /// until the Dismiss.
-  func isUnderWay(_ id: Worktree.ID) -> Bool {
+  func isRunning(_ id: Worktree.ID) -> Bool {
     operations[id]?.isRunning == true
   }
 

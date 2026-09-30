@@ -9,8 +9,8 @@ public struct SubagentReport: Codable, Hashable, Sendable {
     case ended
   }
 
-  /// The id a report carries when the helper counted a worker without
-  /// naming one, from a build before workers had names.
+  /// The id of a worker whose hook named none, whose id was too long, or that an
+  /// older helper only counted.
   public static let anonymousID = ""
 
   /// Display only, so cut rather than dropped, as the message is.
@@ -24,22 +24,23 @@ public struct SubagentReport: Codable, Hashable, Sendable {
   /// so the last one out pays the Done; see Docs/design/agents.md.
   public var wakesAgent: Bool?
   /// Set on a shell a Stop lists by the agent's own id for it, not a pid.
-  public var isShell: Bool?
+  public var isBackgroundShell: Bool?
 
   enum CodingKeys: String, CodingKey {
     case id, type, phase
     case wakesAgent = "wakes"
-    case isShell = "shell"
+    case isBackgroundShell = "shell"
   }
 
   public init(
-    id: String, type: String? = nil, phase: Phase, wakesAgent: Bool? = nil, isShell: Bool? = nil
+    id: String, type: String? = nil, phase: Phase, wakesAgent: Bool? = nil,
+    isBackgroundShell: Bool? = nil
   ) {
     self.id = id
     self.type = type
     self.phase = phase
     self.wakesAgent = wakesAgent
-    self.isShell = isShell
+    self.isBackgroundShell = isBackgroundShell
   }
 
   /// Any process may write a line, so the reader bounds both strings. An id
@@ -52,6 +53,6 @@ public struct SubagentReport: Codable, Hashable, Sendable {
       .truncated(to: Self.maximumTypeLength)
     phase = try container.decode(Phase.self, forKey: .phase)
     wakesAgent = try container.decodeIfPresent(Bool.self, forKey: .wakesAgent)
-    isShell = try container.decodeIfPresent(Bool.self, forKey: .isShell)
+    isBackgroundShell = try container.decodeIfPresent(Bool.self, forKey: .isBackgroundShell)
   }
 }

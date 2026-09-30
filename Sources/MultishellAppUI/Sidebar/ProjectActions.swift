@@ -12,14 +12,14 @@ struct ProjectActions: View {
 
   var body: some View {
     Button(t("action.new-worktree")) { model.requestNewWorktree(in: project) }
-    Button(t("action.refresh")) { Task { await model.refreshOnRequest(project) } }
+    Button(t("action.refresh")) { Task { await model.refreshWorktreesOnRequest(of: project) } }
     // Refresh asks git what is on disk; Fetch asks the remote, which is
     // what the merged badges are measured against.
     Button(t("action.fetch")) { Task { await model.fetch(project) } }
       .disabled(model.isFetching(project))
     Divider()
     Button(t("action.project-settings")) {
-      model.settingsProjectID = project.id
+      model.requestedSettingsProjectID = project.id
       openWindow(id: ProjectSettingsWindow.windowID)
     }
     Button(t("action.reveal-in-finder")) { model.revealInFileBrowser(project.path) }

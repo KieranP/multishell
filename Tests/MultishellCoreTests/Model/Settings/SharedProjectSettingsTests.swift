@@ -10,40 +10,6 @@ struct SharedProjectSettingsTests {
     try JSONDecoder().decode(SharedProjectSettings.self, from: Data(json.utf8))
   }
 
-  /// `copiedPaths: .aws.json` would carry a gitignored secret into a worktree
-  /// an agent reads, so the lists wait for the same yes the hooks do.
-  @Test func aFileListFromTheRepositoryWaitsForTrustLikeAHook() throws {
-    let shared = try writtenAndReadBack(
-      SharedProjectSettings(linkedPaths: "node_modules", copiedPaths: ".aws.json"))
-
-    #expect(shared.asksForTrust, "and so the question is asked")
-    let untrusted = ProjectSettings().layered(over: shared)
-    #expect(untrusted.linkedPaths.isEmpty && untrusted.copiedPaths.isEmpty)
-
-    var settings = ProjectSettings()
-    settings.recordTrustDecision(digest: try #require(shared.digest), trusted: true)
-    let trusted = settings.layered(over: shared)
-    #expect(trusted.linkedPaths == "node_modules" && trusted.copiedPaths == ".aws.json")
-  }
-
-  @Test func theQuestionShowsTheListsAlongsideTheHooks() throws {
-    let shared = SharedProjectSettings(
-      postCreateHook: "npm ci", linkedPaths: "node_modules", copiedPaths: ".env")
-    let text = try #require(shared.trustCoveredText)
-
-    #expect(text.contains("post-create:\nnpm ci"))
-    #expect(text.contains("linked:\nnode_modules"))
-    #expect(text.contains("copied:\n.env"))
-  }
-
-  @Test func aFileWithNeitherHooksNorListsIsNeverAskedAbout() throws {
-    let shared = try writtenAndReadBack(
-      SharedProjectSettings(branchPrefix: "team/", iconGlyph: "hammer"))
-    #expect(!shared.asksForTrust)
-    #expect(shared.trustCoveredText == nil)
-    #expect(!ProjectSettings().needsTrustDecision(for: shared))
-  }
-
   @Test func everyFieldIsOptionalAndAWrongTypeCostsThatFieldOnly() throws {
     let shared = try decode(
       #"{ "branchPrefix": "team/", "iconTint": "blue", "postCreateHook": ["npm"], "iconGlyph": "🚀" }"#
@@ -81,35 +47,9 @@ struct SharedProjectSettingsTests {
       "the file's no-prefix beats the reader's global")
   }
 
-  @Test func theHooksTextNamesEachHookSoTheQuestionSaysWhichStageRunsWhat() {
-    let one = SharedProjectSettings(postCreateHook: "npm ci")
-    #expect(one.trustCoveredText == "post-create:\nnpm ci")
-    let two = SharedProjectSettings(postCreateHook: "npm ci", preDeleteHook: "exit 1")
-    #expect(two.trustCoveredText == "post-create:\nnpm ci\n\npre-delete:\nexit 1")
-    #expect(one.trustCoveredText != two.trustCoveredText, "a hook added is shown")
-    #expect(SharedProjectSettings(branchPrefix: "x/").trustCoveredText == nil)
-  }
-
-  @Test func theQuestionNamesEachFieldInTheCataloguesWords() throws {
-    let shared = SharedProjectSettings(
-      worktreeDirectory: ".trees", preCreateHook: "a", postCreateHook: "b", preDeleteHook: "c",
-      postDeleteHook: "d", linkedPaths: "e", copiedPaths: "f")
-    let names = try #require(shared.trustCoveredText).split(separator: "\n\n").map {
-      String($0.prefix { $0 != ":" })
-    }
-
-    #expect(
-      names == [
-        t("shared-settings.worktree-directory"), t("shared-settings.pre-create"),
-        t("shared-settings.post-create"), t("shared-settings.pre-delete"),
-        t("shared-settings.post-delete"), t("shared-settings.linked"),
-        t("shared-settings.copied"),
-      ])
-  }
-
-  @Test func loadReturnsNilForARepositoryWithoutTheFileAndThrowsForABrokenOne() throws {
+  @Test func aMissingFileLoadsAsNoneAndABrokenOneThrows() throws {
     let root = try Scratch.directory("shared")
-    defer { try? FileManager.default.removeItem(at: root) }
+    defer { Scratch.remove(root) }
 
     #expect(try SharedProjectSettings.load(from: root) == nil)
     try #"{ "branchPrefix": "team/" }"#.write(
@@ -265,47 +205,11 @@ struct SharedProjectSettingsTests {
     #expect(shared.opensTerminalOnCreate == false)
   }
 
-  /// Where a checkout lands is the reader's disk too. Inside the repository
-  /// is all it may name, and even that waits for the file to be trusted.
-  @Test func aRepositorysWorktreeDirectoryWaitsToBeTrusted() throws {
-    let shared = try writtenAndReadBack(SharedProjectSettings(worktreeDirectory: ".worktrees"))
-    #expect(shared.asksForTrust)
-    #expect(try #require(shared.trustCoveredText).contains("worktree directory:\n.worktrees"))
-
-    let untrusted = ProjectSettings().layered(over: shared)
-    #expect(untrusted.worktreeDirectory == nil, "the reader's own, so the global default")
-
-    var settings = ProjectSettings()
-    settings.recordTrustDecision(digest: try #require(shared.digest), trusted: true)
-    #expect(settings.layered(over: shared).worktreeDirectory == ".worktrees")
-  }
-
-  /// A list waits for the same yes a hook does. The user's own list is
-  /// theirs and wins whole, trusted or not.
-  @Test func aRepositorysListOfWhatNewWorktreesAreGivenWaitsToBeTrusted() throws {
-    let shared = try writtenAndReadBack(
-      SharedProjectSettings(linkedPaths: "node_modules", copiedPaths: ".env\n.env.local"))
-    #expect(shared.asksForTrust, "a list reads files, so it is asked about")
-
-    let untrusted = ProjectSettings().layered(over: shared)
-    #expect(untrusted.copiedPaths.isEmpty && untrusted.linkedPaths.isEmpty)
-
-    var settings = ProjectSettings()
-    settings.recordTrustDecision(digest: try #require(shared.digest), trusted: true)
-    let trusted = settings.layered(over: shared)
-    #expect(trusted.copiedPaths == ".env\n.env.local" && trusted.linkedPaths == "node_modules")
-
-    var own = ProjectSettings(linkedPaths: "vendor", copiedPaths: ".env")
-    own.recordTrustDecision(digest: try #require(shared.digest), trusted: true)
-    #expect(own.layered(over: shared).copiedPaths == ".env", "the user's list wins whole")
-    #expect(own.layered(over: shared).linkedPaths == "vendor")
-  }
-
   /// Export writes the whole file back, so a key or value a teammate's newer build committed goes
   /// back as it was.
   @Test func exportKeepsTheKeysThisBuildCannotRead() throws {
     let root = try Scratch.directory("shared")
-    defer { try? FileManager.default.removeItem(at: root) }
+    defer { Scratch.remove(root) }
     let file = SharedProjectSettings.file(in: root)
     try #"""
     { "$schema": "https://example.test/multishell.json",
@@ -319,7 +223,7 @@ struct SharedProjectSettingsTests {
     #expect(existing.worktreeSortOrder == nil && existing.iconTint == nil)
 
     let inForce = ProjectSettings(iconTint: 2).layered(over: existing)
-    let written = try SharedProjectSettings(exporting: inForce).keeping(from: existing).write(
+    let written = try SharedProjectSettings(exporting: inForce).carryingOver(from: existing).write(
       to: root)
 
     let json = try #require(

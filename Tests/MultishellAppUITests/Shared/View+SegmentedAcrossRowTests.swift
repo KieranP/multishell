@@ -17,35 +17,24 @@ struct ViewSegmentedAcrossRowTests {
       ),
     ]
     for (name, page) in pages {
-      let widths = page.segmentedControlWidths(inWindowOf: SettingsWindow.size.width)
+      let width = SettingsWindowSize.fixed.width
+      let widths = OffscreenHost.read(
+        page, atWidth: width, windowSize: CGSize(width: width, height: 600)
+      ) { $0.descendants(of: NSSegmentedControl.self).map(\.frame.width) }
       #expect(
-        widths.count == 1 && widths[0] > SettingsWindow.size.width * 0.75,
-        "\(name): \(widths) in \(SettingsWindow.size.width)pt")
+        widths.count == 1 && widths[0] > width * 0.75, "\(name): \(widths) in \(width)pt")
     }
   }
 
   @Test func theNewWorktreeBranchPickerSpansTheSheet() {
     let harness = ModelHarness()
-    let sheet = NewWorktreeSheet(model: harness.model, initialProjectID: harness.project.id)
+    let sheet = NewWorktreeForm(model: harness.model, initialProjectID: harness.project.id)
     let width: CGFloat = 520
 
-    let widths = sheet.segmentedControlWidths(inWindowOf: width)
+    let widths = OffscreenHost.read(
+      sheet, atWidth: width, windowSize: CGSize(width: width, height: 600)
+    ) { $0.descendants(of: NSSegmentedControl.self).map(\.frame.width) }
 
     #expect(widths.count == 1 && widths[0] > width * 0.75, "\(widths) in \(width)pt")
   }
-}
-
-extension View {
-  @MainActor
-  fileprivate func segmentedControlWidths(inWindowOf width: CGFloat) -> [CGFloat] {
-    let host = NSHostingView(rootView: frame(width: width))
-    let window = OffscreenWindow.holding(
-      host, rect: NSRect(x: 0, y: 0, width: width, height: 600), deferred: false)
-    return withExtendedLifetime(window) { segmentedControls(in: host).map(\.frame.width) }
-  }
-}
-
-@MainActor
-private func segmentedControls(in view: NSView) -> [NSSegmentedControl] {
-  (view as? NSSegmentedControl).map { [$0] } ?? view.subviews.flatMap(segmentedControls)
 }

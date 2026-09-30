@@ -40,5 +40,3 @@ final class FakeEngine: TerminalSurfaceHost {
   func view(for id: TerminalSession.ID) -> FakeSurface? { nil }
   func apply(_ theme: Theme, appearance: Appearance) {}
 }
-
-private struct OpenRefused: Error {}

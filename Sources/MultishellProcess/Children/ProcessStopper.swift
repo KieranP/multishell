@@ -20,13 +20,13 @@ public final class ProcessStopper: Sendable {
 
   /// The reason this stopper ended the child it was attached to, once it
   /// has; `nil` while the child runs or after it exited on its own.
-  var reason: ProcessStop? {
+  var appliedStop: ProcessStop? {
     state.withLock { $0.applied }
   }
 
   /// Whether a stop has been asked for, child or no child: work with no
   /// process to signal reads this to end itself.
-  public var isStopped: Bool {
+  public var isStopRequested: Bool {
     state.withLock { $0.pending != nil || $0.applied != nil }
   }
 

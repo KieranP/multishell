@@ -43,11 +43,10 @@ What each addition needs beyond the code itself.
   settings field it reads, an operation step with its titles and Cancel help,
   and an editor on the Hooks page.
 - **If a repository may ship that list**, it also needs a field on the shared
-  settings, a line in the layering, and the four places trust and containment
-  are spelled out (`keeping(from:)`, `confined(to:)`, `trustCoveredText`,
-  `withoutWhatTrustCovers`), since it names paths on the reader's disk, and its
-  name in the trust question as a `shared-settings.` key in the libraries'
-  catalogue.
+  settings, a line in the layering, and the two places trust and containment are
+  spelled out (`trustCovered`, `confined(to:)`), since it names paths on the
+  reader's disk, and its name in the trust question in `trustCoveredNames`, at
+  the same position, as a `shared-settings.` key in the libraries' catalogue.
 - **An agent's hooks.** An integration in the hook catalogue's list, naming the
   file, the events, what each says the session is doing, which of two events
   standing for one thing is silent, which two are a subagent's start and end,
@@ -61,14 +60,21 @@ What each addition needs beyond the code itself.
 - **A payload names a worker by id and type**, or that agent's own spelling,
   which needs a line in the payload reader. A start or end naming no worker
   still counts as one, taking an unnamed place.
+- **Whether the agent takes a turn when work it left out ends goes on the
+  integration too**, beside whether a worker is a conversation of its own and
+  which listed kinds wake it. All default to no, so nothing forces them: a
+  resuming agent left at the default pays Done at its last worker out and again
+  at the woken turn's Stop (design/agents.md).
 - **An agent reporting through a plugin** names a worker through the helper's
-  subagent flags and starts a turn through its new-turn flag. It also needs a
-  catalogue row, the Agents page's Hooks part offering hooks for agents
+  subagent flags, starts a turn through its new-turn flag, and at a Stop that
+  resumes lists what is still out through its resumes and out flags. It also
+  needs a catalogue row, the Agents page's Hooks part offering hooks for agents
   detection found.
 - **An agent with no hooks at all needs a plugin**, as one already has. A file
   that is ours alone is written whole and deleted to remove.
 - **A variable a hook receives.** A case in the hook variables, which both
-  builds the environment and draws the Hooks page's table.
+  builds the environment and draws the Hooks page's table, and a placeholder
+  whose variable is spelled the same: HookVariableTests.
 - **A placeholder an agent's flags may use.** A case with its value and the
   variable a custom command reads it from. The settings rows name one as an
   example rather than the list, and no page in the repository lists them yet, so
@@ -88,7 +94,7 @@ What each addition needs beyond the code itself.
 - **A column on the Agents board.** A case in the lane enum in draw order, its
   title, the state whose colour its header wears, and a line in the lane lookup,
   total over the state so a state with no column is a compile error. The
-  sidebar's counts are a separate list, `summarised`, which nothing forces.
+  sidebar's counts are a separate list, `sidebarLanes`, which nothing forces.
 - **Each further column asks for another column's width and gap**, and four
   already ask for more window than the app's minimum.
 - **A fact on a board card.** A field on the card, filled where cards are built,
@@ -169,7 +175,7 @@ What each addition needs beyond the code itself.
 - **A project override** is a second field on the project settings and a
   resolver reading those first; if a repository may ship it, a shared-settings
   field, a line in the layering and an `InheritableSetting` member pairing the
-  two, plus the four trust places if it names a path (design/settings.md).
+  two, plus the two trust places if it names a path (design/settings.md).
 - **A collection, or a reference between collections.** Extend the repair and
   the invariants. Every store operation must leave the invariants true, and the
   seeded random tests find it if not, printing the seed and step to replay.
@@ -191,7 +197,7 @@ What each addition needs beyond the code itself.
   `InheritableSetting` where a repository may ship it. Help goes behind an (i);
   a caption is only for a value computed live.
 - **A page that outgrows its window gets another part** in its segmented switch,
-  and each part a line in AppSettingsWindowTests. Hooks' Create part has 7 pt
+  and each part a line in SettingsWindowSizeTests. Hooks' Create part has 7 pt
   left under a repository file asking for trust.
 - **A user-visible string.** A line in the catalogue of the half that says it,
   in key order under its thing's prefix (design/translation.md), and the lookup

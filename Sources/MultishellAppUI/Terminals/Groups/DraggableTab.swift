@@ -79,8 +79,8 @@ struct DraggableTab: View {
   }
 }
 
-/// Everything but the model, which is one object, and the binding, compared
-/// by its value; the body's reads of the model are observed on their own.
+/// Every field, the model by identity and the binding by its value; the
+/// body's reads of the model are observed on their own.
 extension DraggableTab: @MainActor Equatable {
   static func == (a: DraggableTab, b: DraggableTab) -> Bool {
     a.model === b.model && a.group == b.group && a.tab == b.tab

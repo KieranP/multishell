@@ -18,18 +18,9 @@ struct AgentBoardTests {
     note: SessionNote? = nil,
     title: String = "claude"
   ) -> AgentBoardCard {
-    AgentBoardCard(
-      id: UUID(),
-      tabID: UUID(),
-      worktreeID: "/w",
-      occupant: agent ? .agent(id: "claude", name: name) : .shell(name),
-      title: title,
-      projectName: "multishell",
-      worktreeName: "main",
-      state: state,
-      since: secondsAgo.map { start.addingTimeInterval(-$0) },
-      note: note,
-      status: nil)
+    .sample(
+      occupant: agent ? .agent(id: "claude", name: name) : .shell(name), title: title,
+      state: state, since: secondsAgo.map { start.addingTimeInterval(-$0) }, note: note)
   }
 
   @Test func everyOpenPaneHasExactlyOneCard() {
@@ -156,7 +147,7 @@ struct AgentBoardTests {
   /// The sidebar entry leaves Idle off: it is where most cards rest, so its
   /// number says nothing about whether the board is worth opening.
   @Test func theSidebarSummarisesEveryLaneButIdle() {
-    #expect(AgentBoardLane.summarised == [.waiting, .working, .done])
+    #expect(AgentBoardLane.sidebarLanes == [.waiting, .working, .done])
   }
 
   /// The columns read left to right, most urgent first.

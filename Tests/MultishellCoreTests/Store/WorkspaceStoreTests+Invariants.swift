@@ -25,29 +25,35 @@ extension WorkspaceStoreTests {
     }
 
     for step in 0..<400 {
-      let ws = store.workspace
+      let workspace = store.workspace
       switch Int.random(in: 0..<17, using: &rng) {
       case 0, 1:
         if let worktree = worktrees.randomElement(using: &rng) {
           store.openTab(in: worktree.id)
         }
       case 2:
-        if let tab = ws.tabs.randomElement(using: &rng) { store.closeTab(tab.id) }
+        if let tab = workspace.tabs.randomElement(using: &rng) { store.closeTab(tab.id) }
       case 3, 4:
-        if let tab = ws.tabs.randomElement(using: &rng) {
+        if let tab = workspace.tabs.randomElement(using: &rng) {
           store.splitFocusedPane(
             of: tab.id, axis: Bool.random(using: &rng) ? .horizontal : .vertical)
         }
       case 5:
-        if let session = ws.sessions.randomElement(using: &rng) { store.closeSession(session.id) }
+        if let session = workspace.sessions.randomElement(using: &rng) {
+          store.closeSession(session.id)
+        }
       case 6:
-        if let session = ws.sessions.randomElement(using: &rng) { store.focusSession(session.id) }
+        if let session = workspace.sessions.randomElement(using: &rng) {
+          store.focusSession(session.id)
+        }
       case 7:
-        if let a = ws.tabs.randomElement(using: &rng), let b = ws.tabs.randomElement(using: &rng) {
-          store.moveTab(a.id, Bool.random(using: &rng) ? .before : .after, b.id)
+        if let a = workspace.tabs.randomElement(using: &rng),
+          let b = workspace.tabs.randomElement(using: &rng)
+        {
+          store.moveTab(a.id, Bool.random(using: &rng) ? .before : .after, anchor: b.id)
         }
       case 8:
-        if let tab = ws.tabs.randomElement(using: &rng) {
+        if let tab = workspace.tabs.randomElement(using: &rng) {
           store.setSplitWeights(
             [Double.random(in: 0.1...3, using: &rng), Double.random(in: 0.1...3, using: &rng)],
             at: [], ofTab: tab.id)
@@ -62,16 +68,16 @@ extension WorkspaceStoreTests {
         }
       case 10:
         // A tab dragged onto another worktree's row.
-        if let tab = ws.tabs.randomElement(using: &rng),
+        if let tab = workspace.tabs.randomElement(using: &rng),
           let worktree = worktrees.randomElement(using: &rng)
         {
-          store.moveTab(tab.id, to: worktree.id)
+          store.moveTab(tab.id, toWorktree: worktree.id)
         }
       case 11:
         // The project settings forms, where whitespace opts out of a global. A blank
         // override must come back as an override, which the round-trip check proves.
         let project = projects.randomElement(using: &rng)!
-        var settings = ws.project(project.id)?.settings ?? ProjectSettings()
+        var settings = workspace.project(project.id)?.settings ?? ProjectSettings()
         let value = ["team/", "", "  ", "../trees"].randomElement(using: &rng)!
         switch Int.random(in: 0..<3, using: &rng) {
         case 0: settings.branchPrefix = Bool.random(using: &rng) ? value : nil
@@ -81,20 +87,20 @@ extension WorkspaceStoreTests {
         store.updateSettings(settings, forProject: project.id)
       case 12:
         // A tab dragged to the band down one edge of a group.
-        if let tab = ws.tabs.randomElement(using: &rng),
-          let group = ws.tabGroups.randomElement(using: &rng)
+        if let tab = workspace.tabs.randomElement(using: &rng),
+          let group = workspace.tabGroups.randomElement(using: &rng)
         {
-          store.moveTabToNewGroup(tab.id, Bool.random(using: &rng) ? .before : .after, of: group.id)
+          store.moveTab(tab.id, Bool.random(using: &rng) ? .before : .after, toNewGroupOf: group.id)
         }
       case 13:
         // A tab dropped on a group's strip clear of its tabs.
-        if let tab = ws.tabs.randomElement(using: &rng),
-          let group = ws.tabGroups.randomElement(using: &rng)
+        if let tab = workspace.tabs.randomElement(using: &rng),
+          let group = workspace.tabGroups.randomElement(using: &rng)
         {
           store.moveTab(tab.id, toEndOf: group.id)
         }
       case 14:
-        if let group = ws.tabGroups.randomElement(using: &rng) { store.focusGroup(group.id) }
+        if let group = workspace.tabGroups.randomElement(using: &rng) { store.focusGroup(group.id) }
       case 15:
         // The divider between two groups, dragged; a count that does not
         // line up with the groups is refused.

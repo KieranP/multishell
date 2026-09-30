@@ -11,7 +11,7 @@ struct WorktreeCoordinatorRemovalTests {
   @Test func removingKeepsTheBranch() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    try await repo.coordinator.create(
+    try await repo.coordinator.createThenRunPostCreate(
       branch: "keep", in: repo.project, settings: repo.worktreeSettings)
     let worktree = try await repo.worktree(onBranch: "keep")
 
@@ -24,7 +24,7 @@ struct WorktreeCoordinatorRemovalTests {
   @Test func aDirtyWorktreeIsHandedToTheTrashNotRefused() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    let path = try await repo.coordinator.create(
+    let path = try await repo.coordinator.createThenRunPostCreate(
       branch: "dirty", in: repo.project, settings: repo.worktreeSettings)
     try "uncommitted\n".write(
       to: path.appendingPathComponent("work.txt"), atomically: true, encoding: .utf8)
@@ -49,7 +49,7 @@ struct WorktreeCoordinatorRemovalTests {
     defer { repo.tearDown() }
     var project = repo.project
     project.settings = ProjectSettings(postDeleteHook: "echo gone > deleted.txt")
-    let path = try await repo.coordinator.create(
+    let path = try await repo.coordinator.createThenRunPostCreate(
       branch: "dirty", in: project, settings: repo.worktreeSettings)
     try "work\n".write(
       to: path.appendingPathComponent("wip.txt"), atomically: true, encoding: .utf8)
@@ -79,7 +79,7 @@ struct WorktreeCoordinatorRemovalTests {
   @Test func aTrashThatRefusesLeavesTheWorktreeRegisteredAndInPlace() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    let path = try await repo.coordinator.create(
+    let path = try await repo.coordinator.createThenRunPostCreate(
       branch: "kept", in: repo.project, settings: repo.worktreeSettings)
     let worktree = try await repo.worktree(onBranch: "kept")
 
@@ -91,7 +91,7 @@ struct WorktreeCoordinatorRemovalTests {
     #expect(try await repo.coordinator.git.list(repo.project).count == 2, "nothing was pruned")
   }
 
-  @Test func removesAWorktreeAndRunsTheDeleteHook() async throws {
+  @Test func aRemovedWorktreeIsNoLongerListedAndThePostDeleteHookRunsInTheProject() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
 
@@ -100,7 +100,8 @@ struct WorktreeCoordinatorRemovalTests {
     let settings = repo.worktreeSettings
 
     let coordinator = repo.coordinator
-    try await coordinator.create(branch: "scratch", in: project, settings: settings)
+    try await coordinator.createThenRunPostCreate(
+      branch: "scratch", in: project, settings: settings)
 
     let worktree = try await repo.worktree(onBranch: "scratch", in: project)
     try await coordinator.remove(worktree, in: project)
@@ -117,7 +118,8 @@ struct WorktreeCoordinatorRemovalTests {
     var project = repo.project
     project.settings = ProjectSettings(
       postDeleteHook: "git rev-parse --verify \"$MULTISHELL_BRANCH\" > hook-saw-branch.txt")
-    try await repo.coordinator.create(branch: "done", in: project, settings: repo.worktreeSettings)
+    try await repo.coordinator.createThenRunPostCreate(
+      branch: "done", in: project, settings: repo.worktreeSettings)
     let worktree = try await repo.worktree(onBranch: "done", in: project)
 
     try await repo.coordinator.remove(worktree, deletingBranch: true, in: project)
@@ -131,11 +133,11 @@ struct WorktreeCoordinatorRemovalTests {
   @Test func aBranchWithItsOwnCommitsIsRefusedThenForced() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    let path = try await repo.coordinator.create(
+    let path = try await repo.coordinator.createThenRunPostCreate(
       branch: "unmerged", in: repo.project, settings: repo.worktreeSettings)
     try "work\n".write(to: path.appendingPathComponent("w.txt"), atomically: true, encoding: .utf8)
-    _ = try await repo.git.run(["add", "."], in: path)
-    _ = try await repo.git.run(["commit", "-q", "-m", "unmerged"], in: path)
+    _ = try await repo.runner.run(["add", "."], in: path)
+    _ = try await repo.runner.run(["commit", "-q", "-m", "unmerged"], in: path)
     let worktree = try await repo.worktree(onBranch: "unmerged")
 
     await #expect(throws: BranchDeletionFailure.self) {
@@ -156,7 +158,7 @@ struct WorktreeCoordinatorRemovalTests {
     let path = repo.worktreeSettings.worktreePath(forBranch: "detached", in: repo.project)
     try FileManager.default.createDirectory(
       at: path.deletingLastPathComponent(), withIntermediateDirectories: true)
-    _ = try await repo.git.run(
+    _ = try await repo.runner.run(
       ["worktree", "add", "-q", "--detach", path.path], in: repo.project.path)
     let worktree = try #require(
       try await repo.coordinator.git.list(repo.project).first {
@@ -172,7 +174,7 @@ struct WorktreeCoordinatorRemovalTests {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
     let steps = StepLog<WorktreeRemovalStep>()
-    try await repo.coordinator.create(
+    try await repo.coordinator.createThenRunPostCreate(
       branch: "plain", in: repo.project, settings: repo.worktreeSettings)
     let plain = try await repo.worktree(onBranch: "plain")
 
@@ -182,7 +184,8 @@ struct WorktreeCoordinatorRemovalTests {
 
     var hooked = repo.project
     hooked.settings = ProjectSettings(preDeleteHook: "true", postDeleteHook: "true")
-    try await repo.coordinator.create(branch: "hooked", in: hooked, settings: repo.worktreeSettings)
+    try await repo.coordinator.createThenRunPostCreate(
+      branch: "hooked", in: hooked, settings: repo.worktreeSettings)
     let worktree = try await repo.worktree(onBranch: "hooked", in: hooked)
     steps.clear()
     try await repo.coordinator.remove(
@@ -190,5 +193,23 @@ struct WorktreeCoordinatorRemovalTests {
     #expect(
       steps.steps == [.preDeleteHook, .removingWorktree, .postDeleteHook, .deletingBranch])
     #expect(WorktreeRemovalStep.first(for: hooked) == .preDeleteHook)
+  }
+
+  @Test func theListReflectsCreateAndRemove() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+
+    try await repo.coordinator.createThenRunPostCreate(
+      branch: "a", in: repo.project, settings: repo.worktreeSettings)
+    try await repo.coordinator.createThenRunPostCreate(
+      branch: "b", in: repo.project, settings: repo.worktreeSettings)
+    var listed = try await repo.coordinator.git.list(repo.project)
+    #expect(listed.map(\.branch) == ["main", "a", "b"])
+    #expect(listed[0].isPrimary && !listed[1].isPrimary)
+    #expect(listed.allSatisfy { $0.projectID == repo.project.id })
+
+    try await repo.coordinator.remove(listed[1], in: repo.project)
+    listed = try await repo.coordinator.git.list(repo.project)
+    #expect(listed.map(\.branch) == ["main", "b"])
   }
 }

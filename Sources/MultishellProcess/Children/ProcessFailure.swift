@@ -1,5 +1,5 @@
-/// A child that exited non-zero. `message` is its stderr, so git's own words
-/// reach the alert rather than a description of this struct.
+/// A run that did not succeed: a non-zero exit, a stop, or an answer that
+/// proves nothing. `message` is what an alert shows: stderr, a script's output, or the app's words.
 public struct ProcessFailure: Error, CustomStringConvertible {
   public let executable: String
   public let arguments: [String]

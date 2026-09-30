@@ -10,7 +10,7 @@ extension WorkspaceStoreTests {
 
     let groups = store.workspace.groups(in: worktree.id)
     #expect(groups.count == 1)
-    #expect(groups[0].activeTabID == tab.id)
+    #expect(groups[0].shownTabID == tab.id)
     #expect(store.workspace.focusedGroup(in: worktree.id)?.id == groups[0].id)
     #expect(store.workspace.tab(tab.id)?.groupID == groups[0].id)
     WorkspaceInvariants.check(store.workspace, "first tab")
@@ -22,14 +22,14 @@ extension WorkspaceStoreTests {
     let moving = store.openTab(in: worktree.id)!
     let first = store.workspace.groups(in: worktree.id)[0]
 
-    let made = store.moveTabToNewGroup(moving.id, .after, of: first.id)
+    let made = store.moveTab(moving.id, .after, toNewGroupOf: first.id)
 
     let groups = store.workspace.groups(in: worktree.id)
     #expect(groups.map(\.id) == [first.id, made?.id], "the new group lands to the right")
-    #expect(store.workspace.tabs(in: first.id).map(\.id) == [staying.id])
-    #expect(store.workspace.tabs(in: made!.id).map(\.id) == [moving.id])
-    #expect(groups[0].activeTabID == staying.id, "the group it left shows what is left")
-    #expect(groups[1].activeTabID == moving.id)
+    #expect(store.workspace.tabs(inGroup: first.id).map(\.id) == [staying.id])
+    #expect(store.workspace.tabs(inGroup: made!.id).map(\.id) == [moving.id])
+    #expect(groups[0].shownTabID == staying.id, "the group it left shows what is left")
+    #expect(groups[1].shownTabID == moving.id)
     #expect(store.workspace.focusedGroup(in: worktree.id)?.id == made?.id)
     WorkspaceInvariants.check(store.workspace, "new group")
   }
@@ -43,7 +43,7 @@ extension WorkspaceStoreTests {
     let first = store.workspace.groups(in: worktree.id)[0]
     let before = first.weight
 
-    store.moveTabToNewGroup(moving.id, .before, of: first.id)
+    store.moveTab(moving.id, .before, toNewGroupOf: first.id)
 
     let weights = store.workspace.groups(in: worktree.id).map(\.weight)
     #expect(weights == [before / 2, before / 2])
@@ -55,9 +55,9 @@ extension WorkspaceStoreTests {
     let only = store.workspace.groups(in: worktree.id)[0]
     let before = store.workspace
 
-    #expect(store.moveTabToNewGroup(tab.id, .after, of: only.id) == nil)
-    #expect(store.moveTabToNewGroup(UUID(), .after, of: only.id) == nil, "no such tab")
-    #expect(store.moveTabToNewGroup(tab.id, .after, of: UUID()) == nil, "no such group")
+    #expect(store.moveTab(tab.id, .after, toNewGroupOf: only.id) == nil)
+    #expect(store.moveTab(UUID(), .after, toNewGroupOf: only.id) == nil, "no such tab")
+    #expect(store.moveTab(tab.id, .after, toNewGroupOf: UUID()) == nil, "no such group")
     #expect(store.workspace == before, "the same layout under a new id is not a move")
   }
 
@@ -68,14 +68,14 @@ extension WorkspaceStoreTests {
     let staying = store.openTab(in: worktree.id)!
     let moving = store.openTab(in: worktree.id)!
     let first = store.workspace.groups(in: worktree.id)[0]
-    let second = store.moveTabToNewGroup(moving.id, .after, of: first.id)!
+    let second = store.moveTab(moving.id, .after, toNewGroupOf: first.id)!
 
-    let third = store.moveTabToNewGroup(moving.id, .before, of: first.id)
+    let third = store.moveTab(moving.id, .before, toNewGroupOf: first.id)
 
     #expect(third != nil)
     #expect(store.workspace.group(second.id) == nil, "the group it left is gone")
     #expect(store.workspace.groups(in: worktree.id).map(\.id) == [third?.id, first.id])
-    #expect(store.workspace.tabs(in: first.id).map(\.id) == [staying.id])
+    #expect(store.workspace.tabs(inGroup: first.id).map(\.id) == [staying.id])
     WorkspaceInvariants.check(store.workspace, "group moved along")
   }
 
@@ -84,13 +84,13 @@ extension WorkspaceStoreTests {
     let staying = store.openTab(in: worktree.id)!
     let moving = store.openTab(in: worktree.id)!
     let first = store.workspace.groups(in: worktree.id)[0]
-    let second = store.moveTabToNewGroup(moving.id, .after, of: first.id)!
+    let second = store.moveTab(moving.id, .after, toNewGroupOf: first.id)!
 
-    store.moveTab(moving.id, .before, staying.id)
+    store.moveTab(moving.id, .before, anchor: staying.id)
 
     #expect(store.workspace.groups(in: worktree.id).map(\.id) == [first.id])
     #expect(store.workspace.group(second.id) == nil, "no group stands empty")
-    #expect(store.workspace.tabs(in: first.id).map(\.id) == [moving.id, staying.id])
+    #expect(store.workspace.tabs(inGroup: first.id).map(\.id) == [moving.id, staying.id])
     #expect(store.workspace.focusedGroup(in: worktree.id)?.id == first.id)
     WorkspaceInvariants.check(store.workspace, "group emptied by a move")
   }
@@ -100,7 +100,7 @@ extension WorkspaceStoreTests {
     store.openTab(in: worktree.id)
     let moving = store.openTab(in: worktree.id)!
     let first = store.workspace.groups(in: worktree.id)[0]
-    store.moveTabToNewGroup(moving.id, .after, of: first.id)
+    store.moveTab(moving.id, .after, toNewGroupOf: first.id)
 
     store.closeTab(moving.id)
 
@@ -116,8 +116,8 @@ extension WorkspaceStoreTests {
     let b = store.openTab(in: worktree.id)!
     let c = store.openTab(in: worktree.id)!
     let first = store.workspace.groups(in: worktree.id)[0]
-    let middle = store.moveTabToNewGroup(b.id, .after, of: first.id)!
-    let last = store.moveTabToNewGroup(c.id, .after, of: middle.id)!
+    let middle = store.moveTab(b.id, .after, toNewGroupOf: first.id)!
+    let last = store.moveTab(c.id, .after, toNewGroupOf: middle.id)!
     #expect(store.workspace.groups(in: worktree.id).map(\.id) == [first.id, middle.id, last.id])
 
     store.focusGroup(middle.id)
@@ -140,12 +140,13 @@ extension WorkspaceStoreTests {
     let neighbour = store.openTab(in: worktree.id)!
     let moving = store.openTab(in: worktree.id)!
     let first = store.workspace.groups(in: worktree.id)[0]
-    let second = store.moveTabToNewGroup(moving.id, .after, of: first.id)!
+    let second = store.moveTab(moving.id, .after, toNewGroupOf: first.id)!
     store.focusGroup(second.id)
 
-    store.moveTab(moving.id, .after, anchor.id)
+    store.moveTab(moving.id, .after, anchor: anchor.id)
 
-    #expect(store.workspace.tabs(in: first.id).map(\.id) == [anchor.id, moving.id, neighbour.id])
+    #expect(
+      store.workspace.tabs(inGroup: first.id).map(\.id) == [anchor.id, moving.id, neighbour.id])
     #expect(store.workspace.group(second.id) == nil)
     #expect(
       store.workspace.activeTab(in: worktree.id)?.id == moving.id,
@@ -158,11 +159,11 @@ extension WorkspaceStoreTests {
     let settled = store.openTab(in: worktree.id)!
     let moving = store.openTab(in: worktree.id)!
     let first = store.workspace.groups(in: worktree.id)[0]
-    let second = store.moveTabToNewGroup(moving.id, .after, of: first.id)!
+    let second = store.moveTab(moving.id, .after, toNewGroupOf: first.id)!
 
     #expect(store.moveTab(moving.id, toEndOf: first.id))
 
-    #expect(store.workspace.tabs(in: first.id).map(\.id) == [settled.id, moving.id])
+    #expect(store.workspace.tabs(inGroup: first.id).map(\.id) == [settled.id, moving.id])
     #expect(store.workspace.group(second.id) == nil)
     #expect(store.moveTab(moving.id, toEndOf: first.id) == false, "already there")
     #expect(store.moveTab(moving.id, toEndOf: UUID()) == false, "no such group")
@@ -174,7 +175,7 @@ extension WorkspaceStoreTests {
     let second = store.openTab(in: worktree.id)!
     #expect(store.workspace.activeTab(in: worktree.id)?.id == second.id)
 
-    store.moveTab(first.id, .after, second.id)
+    store.moveTab(first.id, .after, anchor: second.id)
 
     #expect(store.workspace.tabs(in: worktree.id).map(\.id) == [second.id, first.id])
     #expect(store.workspace.activeTab(in: worktree.id)?.id == second.id)
@@ -185,16 +186,16 @@ extension WorkspaceStoreTests {
     store.openTab(in: worktree.id)
     let moving = store.openTab(in: worktree.id)!
     let first = store.workspace.groups(in: worktree.id)[0]
-    let second = store.moveTabToNewGroup(moving.id, .after, of: first.id)!
+    let second = store.moveTab(moving.id, .after, toNewGroupOf: first.id)!
 
     let opened = store.openTab(in: worktree.id, group: first.id)!
 
     #expect(store.workspace.tab(opened.id)?.groupID == first.id)
-    #expect(store.workspace.tabs(in: first.id).last?.id == opened.id, "last in that strip")
+    #expect(store.workspace.tabs(inGroup: first.id).last?.id == opened.id, "last in that strip")
     #expect(
       store.workspace.focusedGroup(in: worktree.id)?.id == first.id,
       "opening a tab in a group is working in it")
-    #expect(store.workspace.group(second.id)?.activeTabID == moving.id, "the other group stands")
+    #expect(store.workspace.group(second.id)?.shownTabID == moving.id, "the other group stands")
   }
 
   @Test func aTabIsNotOpenedInAnotherWorktreesGroup() {
@@ -215,7 +216,7 @@ extension WorkspaceStoreTests {
     store.openTab(in: worktree.id)
     let moving = store.openTab(in: worktree.id)!
     let first = store.workspace.groups(in: worktree.id)[0]
-    store.moveTabToNewGroup(moving.id, .after, of: first.id)
+    store.moveTab(moving.id, .after, toNewGroupOf: first.id)
 
     store.setGroupWeights([3, 1], in: worktree.id)
     #expect(store.workspace.groups(in: worktree.id).map(\.weight) == [3, 1])
@@ -233,7 +234,7 @@ extension WorkspaceStoreTests {
     let staying = store.openTab(in: worktree.id)!
     let moving = store.openTab(in: worktree.id)!
     let first = store.workspace.groups(in: worktree.id)[0]
-    let second = store.moveTabToNewGroup(moving.id, .after, of: first.id)!
+    let second = store.moveTab(moving.id, .after, toNewGroupOf: first.id)!
     #expect(store.workspace.focusedGroup(in: worktree.id)?.id == second.id)
 
     store.focusSession(staying.focusedSessionID)
@@ -251,15 +252,15 @@ extension WorkspaceStoreTests {
     let settled = store.openTab(in: feature.id)!
     let second = store.openTab(in: feature.id)!
     let firstGroup = store.workspace.groups(in: feature.id)[0]
-    let secondGroup = store.moveTabToNewGroup(second.id, .after, of: firstGroup.id)!
+    let secondGroup = store.moveTab(second.id, .after, toNewGroupOf: firstGroup.id)!
     store.focusGroup(firstGroup.id)
     let moving = store.openTab(in: main.id)!
 
-    #expect(store.moveTab(moving.id, to: feature.id))
+    #expect(store.moveTab(moving.id, toWorktree: feature.id))
 
     #expect(store.workspace.tab(moving.id)?.groupID == firstGroup.id)
-    #expect(store.workspace.tabs(in: firstGroup.id).map(\.id) == [settled.id, moving.id])
-    #expect(store.workspace.group(secondGroup.id)?.activeTabID == second.id)
+    #expect(store.workspace.tabs(inGroup: firstGroup.id).map(\.id) == [settled.id, moving.id])
+    #expect(store.workspace.group(secondGroup.id)?.shownTabID == second.id)
     #expect(store.workspace.groups(in: main.id).isEmpty, "the group it left went with it")
     #expect(store.workspace.focusedGroupByWorktree[main.id] == nil)
     WorkspaceInvariants.check(store.workspace, "moved between worktrees")
@@ -269,7 +270,7 @@ extension WorkspaceStoreTests {
     let (store, project, worktree) = demoStore()
     store.openTab(in: worktree.id)
     let moving = store.openTab(in: worktree.id)!
-    store.moveTabToNewGroup(moving.id, .after, of: store.workspace.groups(in: worktree.id)[0].id)
+    store.moveTab(moving.id, .after, toNewGroupOf: store.workspace.groups(in: worktree.id)[0].id)
 
     store.replaceWorktrees([], forProject: project.id)
 
@@ -284,7 +285,7 @@ extension WorkspaceStoreTests {
     let b = store.openTab(in: worktree.id)!
     let c = store.openTab(in: worktree.id)!
     let first = store.workspace.groups(in: worktree.id)[0]
-    store.moveTabToNewGroup(c.id, .after, of: first.id)
+    store.moveTab(c.id, .after, toNewGroupOf: first.id)
 
     #expect(store.workspace.tab(after: a.id)?.id == b.id)
     #expect(store.workspace.tab(after: b.id)?.id == a.id, "wraps within the group")
@@ -313,7 +314,7 @@ extension WorkspaceStoreTests {
     let shown = store.openTab(in: worktree.id)!
     let moving = store.openTab(in: worktree.id)!
     let first = store.workspace.groups(in: worktree.id)[0]
-    store.moveTabToNewGroup(moving.id, .after, of: first.id)
+    store.moveTab(moving.id, .after, toNewGroupOf: first.id)
     store.activateTab(shown.id)
 
     #expect(
@@ -326,7 +327,7 @@ extension WorkspaceStoreTests {
     store.openTab(in: worktree.id)
     let moving = store.openTab(in: worktree.id)!
     let first = store.workspace.groups(in: worktree.id)[0]
-    store.moveTabToNewGroup(moving.id, .after, of: first.id)
+    store.moveTab(moving.id, .after, toNewGroupOf: first.id)
 
     store.closeSession(moving.focusedSessionID)
 

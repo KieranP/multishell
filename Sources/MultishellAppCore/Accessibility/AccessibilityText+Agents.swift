@@ -33,7 +33,7 @@ extension AccessibilityText {
   }
 
   /// The sidebar's Agents entry, which carries the counts.
-  public static func agentsRow(_ counts: [(lane: AgentBoardLane, count: Int)]) -> String {
+  public static func agentsRow(_ counts: [AgentLaneCount]) -> String {
     let said = counts.filter { $0.count > 0 }
       .map { t("spoken.lane-count", $0.count, $0.lane.title(inSentence: true)) }
     let tail = said.isEmpty ? [t("spoken.nothing-running")] : said

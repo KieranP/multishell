@@ -34,11 +34,11 @@ struct SessionStateReportTests {
     #expect(report?.command == nil)
     #expect(report?.subagent?.id == SubagentReport.anonymousID)
     #expect(report?.subagent?.type?.count == SubagentReport.maximumTypeLength + 1)
-    #expect(report?.backgroundShells?.count == SessionStateReport.maximumWorkerCount)
+    #expect(report?.backgroundShells?.count == SessionStateReport.rosterCapacity)
   }
 
   @Test func aStopNamesAsManyWorkersOutAsARosterHoldsAndOnlyNamedOnes() {
-    let count = SessionStateReport.maximumListedWorkers + 10
+    let count = SessionStateReport.maximumWorkersOut + 10
     let out = (1...count).map { #"{"id":"w\#($0)","phase":"working"}"# }.joined(separator: ",")
     let long = String(repeating: "x", count: 200)
     let report = SessionStateReport.parse(
@@ -169,10 +169,12 @@ struct SessionStateReportTests {
   /// that says a shell sent one has to survive the wire both ways.
   @Test func aShellSaysSoOnItsOwnReportsAndNobodyElseDoes() throws {
     let sent = try #require(
-      SessionStateReport.parse(SessionStateReport(state: .done, isShell: true).encodedLine()))
-    #expect(sent.isShell == true)
+      SessionStateReport.parse(
+        SessionStateReport(state: .done, isFromShellIntegration: true).encodedLine()))
+    #expect(sent.isFromShellIntegration == true)
     let scripted = try #require(SessionStateReport.parse(#"{"v":1,"state":"done"}"#))
-    #expect(scripted.isShell == nil, "a line that does not claim it is not a shell's")
+    #expect(
+      scripted.isFromShellIntegration == nil, "a line that does not claim it is not a shell's")
   }
 
   /// The field a worker rides on, both directions: an older helper and an older

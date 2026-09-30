@@ -5,7 +5,7 @@ extension AppModel {
   /// bar asked for again. Find text typed there before is searched again.
   public func showFind() {
     guard let id = keystrokeFindPane else { return }
-    if findingSessionIDs.insert(id).inserted, !findText(of: id).isEmpty {
+    if findBarSessionIDs.insert(id).inserted, !findText(of: id).isEmpty {
       search(findText(of: id), in: id)
     }
     findFieldRequests.insert(id)
@@ -35,27 +35,26 @@ extension AppModel {
   public func setFindText(_ text: String, of id: TerminalSession.ID) {
     guard text != findText(of: id) else { return }
     findTexts[id] = text
-    guard findingSessionIDs.contains(id) else { return }
+    guard findBarSessionIDs.contains(id) else { return }
     search(text, in: id)
   }
 
   /// A new find text selects nothing in the engine, so the next step starts over.
   private func search(_ text: String, in id: TerminalSession.ID) {
-    findSelectedSessionIDs.remove(id)
+    steppedFindSessionIDs.remove(id)
     host.search(.find(text), in: id)
   }
 
   /// Whether there is a pane to find in: the menu's Find… is enabled on it.
   public var findIsAvailable: Bool {
-    guard let worktree = worktreeInView?.id else { return false }
-    return workspace.activeTab(in: worktree) != nil
+    tabInView != nil
   }
 
   /// Whether the menu's pane has a bar up, enabling Find Next, Previous and Close
   /// Find. Read off the workspace, so a menu re-evaluates when it changes.
   public var findIsOpenInView: Bool {
     guard let id = menuFindPane else { return false }
-    return findingSessionIDs.contains(id)
+    return findBarSessionIDs.contains(id)
   }
 
   /// The menu's, on the field's bar where one has the keyboard, else the pane in
@@ -83,27 +82,26 @@ extension AppModel {
   /// The first step after a new find text lands nearest the prompt whichever arrow
   /// asked: the engine selected nothing on the find text. See terminals.md.
   private func step(_ direction: TerminalSearch, in id: TerminalSession.ID) {
-    guard findingSessionIDs.contains(id), !findText(of: id).isEmpty else { return }
-    host.search(findSelectedSessionIDs.insert(id).inserted ? .nearest : direction, in: id)
+    guard findBarSessionIDs.contains(id), !findText(of: id).isEmpty else { return }
+    host.search(steppedFindSessionIDs.insert(id).inserted ? .nearest : direction, in: id)
   }
 
   /// Escape or the close: the keyboard goes to the bar's own pane, not the focused
   /// one, since clicking into a field moved the store's focus nowhere; terminals.md.
   public func closeFind(in id: TerminalSession.ID) {
-    guard findingSessionIDs.remove(id) != nil else { return }
-    findSelectedSessionIDs.remove(id)
+    guard findBarSessionIDs.remove(id) != nil else { return }
+    steppedFindSessionIDs.remove(id)
     // The torn-down field may never say it lost the keyboard.
     if findFieldSessionID == id { findFieldSessionID = nil }
     host.search(.end, in: id)
     host.focus(id)
   }
 
-  /// The pane a find keystroke acts on: the bar whose field has the keyboard,
-  /// if it is one of the tab in front's, else the focused pane.
+  /// The pane the menu's find items act on, whichever window is key: the bar
+  /// whose field has the keyboard, if it is one of the tab in front's, else its focused pane.
   private var menuFindPane: TerminalSession.ID? {
-    guard let worktree = worktreeInView?.id, let tab = workspace.activeTab(in: worktree)
-    else { return nil }
-    if let field = findFieldSessionID, findingSessionIDs.contains(field),
+    guard let tab = tabInView else { return nil }
+    if let field = findFieldSessionID, findBarSessionIDs.contains(field),
       tab.sessionIDs.contains(field)
     {
       return field
@@ -111,25 +109,25 @@ extension AppModel {
     return tab.focusedSessionID
   }
 
-  /// The focused pane of the tab in front; none under the board or from a
-  /// settings window, as with a close. Every find keystroke asks it first.
-  private var paneInView: TerminalSession.ID? {
-    guard platform.workspaceWindowIsKey, let worktree = worktreeInView?.id else { return nil }
-    return workspace.activeTab(in: worktree)?.focusedSessionID
+  /// A tab in front while the workspace window is key; not under the board
+  /// or from a settings window, as with a close.
+  private var paneTakesKeystrokes: Bool {
+    platform.workspaceWindowIsKey && tabInView != nil
   }
 
-  /// `menuFindPane`, but only while there is a pane in view to take a keystroke.
+  /// The pane a find keystroke acts on: `menuFindPane`, but only while there is
+  /// a pane in view to take a keystroke.
   private var keystrokeFindPane: TerminalSession.ID? {
-    paneInView == nil ? nil : menuFindPane
+    paneTakesKeystrokes ? menuFindPane : nil
   }
 
   /// Bars and find texts whose pane has gone. From the reconcile, as `pruneTabPrompts`
   /// is, and from a shell exiting, which closes its session without one.
   func pruneFind() {
-    setIfChanged(\.findingSessionIDs, findingSessionIDs.filter { workspace.session($0) != nil })
+    setIfChanged(\.findBarSessionIDs, findBarSessionIDs.filter { workspace.session($0) != nil })
     setIfChanged(\.findTexts, findTexts.filter { workspace.session($0.key) != nil })
     setIfChanged(\.findFieldRequests, findFieldRequests.filter { workspace.session($0) != nil })
-    findSelectedSessionIDs = findSelectedSessionIDs.filter { workspace.session($0) != nil }
+    steppedFindSessionIDs = steppedFindSessionIDs.filter { workspace.session($0) != nil }
     if let field = findFieldSessionID, workspace.session(field) == nil { findFieldSessionID = nil }
   }
 }

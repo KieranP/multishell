@@ -31,4 +31,10 @@ struct CommandOptions {
   func int32(_ name: String) -> Int32? { values[name].flatMap { Int32($0) } }
 
   func double(_ name: String) -> Double? { values[name].flatMap { Double($0) } }
+
+  /// `nil` unless the value spells the one answer a hook sends, so a report
+  /// leaves the field out rather than sending the default.
+  func onlyIfTrue(_ name: String) -> Bool? { values[name] == "true" ? true : nil }
+
+  func onlyIfFalse(_ name: String) -> Bool? { values[name] == "false" ? false : nil }
 }

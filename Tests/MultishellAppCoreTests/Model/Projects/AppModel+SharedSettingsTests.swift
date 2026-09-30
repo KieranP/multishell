@@ -1,10 +1,10 @@
 import Foundation
-import MultishellCore
 import MultishellProcess
 import TestScratch
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellCore
 @testable import MultishellGitKit
 
 @Suite(.serialized) @MainActor
@@ -12,11 +12,11 @@ struct AppModelSharedSettingsTests {
   @Test func theRepositorysSettingsFileFillsTheGapsAndItsHooksWaitForTrust() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
-    try
+    try h.writeSharedSettings(
       #"{ "branchPrefix": "team/", "worktreeDirectory": ".shared-trees", "postCreateHook": "echo shared > hook.txt", "iconGlyph": "hammer" }"#
-      .write(to: SharedProjectSettings.file(in: h.project.path), atomically: true, encoding: .utf8)
+    )
 
-    await h.model.refresh(h.project)
+    await h.model.refreshWorktrees(of: h.project)
 
     #expect(
       h.model.workspace.project(h.project.id)?.sharedSettings.asWritten?.branchPrefix == "team/")
@@ -40,7 +40,7 @@ struct AppModelSharedSettingsTests {
     #expect(h.model.stageHandles.setup(of: a.id) == nil)
     #expect(!FileManager.default.fileExists(atPath: a.path.appendingPathComponent("hook.txt").path))
 
-    h.model.decideSharedSettings(pending, trusted: true)
+    h.model.answerSharedSettingsTrust(pending, trusted: true)
     #expect(h.model.pendingSharedSettingsTrust == nil)
     #expect(h.model.trustsSharedSettings(of: h.project))
     #expect(
@@ -57,9 +57,8 @@ struct AppModelSharedSettingsTests {
       h.model.workspace.project(h.project.id)!.settings.with { $0.branchPrefix = "me/" },
       for: h.project)
     #expect(h.model.worktreeSettings(for: h.project).branchPrefix == "me/")
-    try #"{ "postCreateHook": "echo changed" }"#
-      .write(to: SharedProjectSettings.file(in: h.project.path), atomically: true, encoding: .utf8)
-    await h.model.refresh(h.project)
+    try h.writeSharedSettings(#"{ "postCreateHook": "echo changed" }"#)
+    await h.model.refreshWorktrees(of: h.project)
     #expect(!h.model.trustsSharedSettings(of: h.project))
     h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
     #expect(h.model.pendingSharedSettingsTrust?.trustCoveredText == "post-create:\necho changed")
@@ -76,14 +75,14 @@ struct AppModelSharedSettingsTests {
       { "worktreeDirectory": "~/.claude/skills", \
       "linkedPaths": "\(key)\\nvendor", "copiedPaths": "../../.aws/credentials" }
       """
-    try json.write(
-      to: SharedProjectSettings.file(in: h.project.path), atomically: true, encoding: .utf8)
+    try h.writeSharedSettings(json)
 
-    await h.model.refresh(h.project)
+    await h.model.refreshWorktrees(of: h.project)
     // Trusted, so what is dropped here is dropped for reaching out and not
     // for waiting on an answer.
     h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
-    h.model.decideSharedSettings(try #require(h.model.pendingSharedSettingsTrust), trusted: true)
+    h.model.answerSharedSettingsTrust(
+      try #require(h.model.pendingSharedSettingsTrust), trusted: true)
 
     let effective = h.model.effectiveSettings(for: h.project)
     #expect(effective.worktreeDirectory == nil, "the reader's own directory stands")
@@ -111,10 +110,9 @@ struct AppModelSharedSettingsTests {
   @Test func theQuestionLeavesOutWhatConfinementHasAlreadyDropped() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
-    try #"{ "linkedPaths": "~/.ssh/id_ed25519\nvendor" }"#
-      .write(to: SharedProjectSettings.file(in: h.project.path), atomically: true, encoding: .utf8)
+    try h.writeSharedSettings(#"{ "linkedPaths": "~/.ssh/id_ed25519\nvendor" }"#)
 
-    await h.model.refresh(h.project)
+    await h.model.refreshWorktrees(of: h.project)
     h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
 
     let pending = try #require(h.model.pendingSharedSettingsTrust)
@@ -127,10 +125,10 @@ struct AppModelSharedSettingsTests {
   @Test func aFileWhoseEveryPathIsRefusedIsNeverAskedAbout() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
-    try #"{ "linkedPaths": "~/.ssh/id_ed25519", "copiedPaths": "/etc/passwd" }"#
-      .write(to: SharedProjectSettings.file(in: h.project.path), atomically: true, encoding: .utf8)
+    try h.writeSharedSettings(
+      #"{ "linkedPaths": "~/.ssh/id_ed25519", "copiedPaths": "/etc/passwd" }"#)
 
-    await h.model.refresh(h.project)
+    await h.model.refreshWorktrees(of: h.project)
     h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
 
     #expect(h.model.pendingSharedSettingsTrust == nil)
@@ -150,13 +148,14 @@ struct AppModelSharedSettingsTests {
 
     h.model.applySharedSettingsReading(
       SharedSettingsReading(
-        result: .success(shared), stamp: Date(timeIntervalSince1970: 1), project: h.project),
+        loaded: .success(shared), modificationDate: Date(timeIntervalSince1970: 1),
+        project: h.project),
       for: h.project)
     h.model.applySharedSettingsReading(
-      SharedSettingsReading(result: .success(shared), stamp: later, project: h.project),
+      SharedSettingsReading(loaded: .success(shared), modificationDate: later, project: h.project),
       for: h.project)
 
-    #expect(!h.project.sharedSettings.hasMoved(later), "so the next tick spends no read")
+    #expect(!h.project.sharedSettings.needsRead(at: later), "so the next tick spends no read")
   }
 
   /// The answer is held against the file's sha256, so a switch back asks
@@ -173,9 +172,10 @@ struct AppModelSharedSettingsTests {
     }
 
     try await commit(#"{ "postCreateHook": "echo main" }"#, "main hooks")
-    await h.model.refresh(h.project)
+    await h.model.refreshWorktrees(of: h.project)
     h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
-    h.model.decideSharedSettings(try #require(h.model.pendingSharedSettingsTrust), trusted: true)
+    h.model.answerSharedSettingsTrust(
+      try #require(h.model.pendingSharedSettingsTrust), trusted: true)
     #expect(h.model.effectiveSettings(for: h.project).postCreateHook == "echo main")
 
     // The other branch's file: bytes nobody has answered for, so asked.
@@ -184,7 +184,7 @@ struct AppModelSharedSettingsTests {
     await h.model.refreshSharedSettingsIfChanged()
     let feature = try #require(h.model.pendingSharedSettingsTrust)
     #expect(feature.trustCoveredText == "post-create:\necho feature")
-    h.model.decideSharedSettings(feature, trusted: false)
+    h.model.answerSharedSettingsTrust(feature, trusted: false)
     #expect(!h.model.trustsSharedSettings(of: h.model.workspace.project(h.project.id)!))
 
     // Back to the first branch: the yes it was given stands, unasked.
@@ -217,7 +217,7 @@ struct AppModelSharedSettingsTests {
     defer { h.tearDown() }
     let file = SharedProjectSettings.file(in: h.project.path)
     try #"{ "postCreateHook": "echo one" }"#.write(to: file, atomically: true, encoding: .utf8)
-    await h.model.refresh(h.project)
+    await h.model.refreshWorktrees(of: h.project)
     #expect(h.model.pendingSharedSettingsTrust == nil, "the first read of a project says nothing")
 
     // No worktree comes or goes, so the records are the same and the file's
@@ -241,7 +241,7 @@ struct AppModelSharedSettingsTests {
       pending.trustCoveredText == "post-create:\necho two and a half",
       "the question up was about text the file no longer has")
 
-    h.model.decideSharedSettings(pending, trusted: true)
+    h.model.answerSharedSettingsTrust(pending, trusted: true)
     #expect(h.model.trustsSharedSettings(of: h.model.workspace.project(h.project.id)!))
     #expect(stale.trustCoveredText != pending.trustCoveredText)
 
@@ -271,9 +271,8 @@ struct AppModelSharedSettingsTests {
   @Test func aBrokenSettingsFileIsAProblemOnTheHooksTabNotAnAlert() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
-    try "not json".write(
-      to: SharedProjectSettings.file(in: h.project.path), atomically: true, encoding: .utf8)
-    await h.model.refresh(h.project)
+    try h.writeSharedSettings("not json")
+    await h.model.refreshWorktrees(of: h.project)
     #expect(h.model.presentedError == nil)
     #expect(
       h.model.workspace.project(h.project.id)?.sharedSettings.problem?.hasPrefix(
@@ -290,7 +289,7 @@ struct AppModelSharedSettingsTests {
     defer { h.tearDown() }
     let file = SharedProjectSettings.file(in: h.project.path)
     try #"{ "postCreateHook": "echo one" }"#.write(to: file, atomically: true, encoding: .utf8)
-    await h.model.refresh(h.project)
+    await h.model.refreshWorktrees(of: h.project)
     h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
     #expect(h.model.pendingSharedSettingsTrust != nil)
 
@@ -315,10 +314,10 @@ struct AppModelSharedSettingsTests {
     defer { h.tearDown() }
     let file = SharedProjectSettings.file(in: h.project.path)
     try #"{ "worktreeDirectory": "trees" }"#.write(to: file, atomically: true, encoding: .utf8)
-    await h.model.refresh(h.project)
+    await h.model.refreshWorktrees(of: h.project)
     h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
     let asked = try #require(h.model.pendingSharedSettingsTrust)
-    h.model.decideSharedSettings(asked, trusted: true)
+    h.model.answerSharedSettingsTrust(asked, trusted: true)
 
     let elsewhere = h.root.appendingPathComponent("elsewhere", isDirectory: true)
     try FileManager.default.createDirectory(at: elsewhere, withIntermediateDirectories: true)
@@ -341,9 +340,10 @@ struct AppModelSharedSettingsTests {
     defer { h.tearDown() }
     let file = SharedProjectSettings.file(in: h.project.path)
     try #"{ "worktreeDirectory": "trees" }"#.write(to: file, atomically: true, encoding: .utf8)
-    await h.model.refresh(h.project)
+    await h.model.refreshWorktrees(of: h.project)
     h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
-    h.model.decideSharedSettings(try #require(h.model.pendingSharedSettingsTrust), trusted: true)
+    h.model.answerSharedSettingsTrust(
+      try #require(h.model.pendingSharedSettingsTrust), trusted: true)
     let link = h.project.path.appendingPathComponent("trees")
     let elsewhere = h.root.appendingPathComponent("elsewhere", isDirectory: true)
     try FileManager.default.createDirectory(at: elsewhere, withIntermediateDirectories: true)

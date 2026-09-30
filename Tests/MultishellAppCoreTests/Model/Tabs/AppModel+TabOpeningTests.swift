@@ -84,7 +84,7 @@ struct AppModelTabOpeningTests {
     h.model.newTab()
     h.model.moveActiveTabToNewGroup()
     let groups = h.model.workspace.groups(in: h.main.id)
-    #expect(h.model.preferredAgentID(for: h.main) == nil)
+    #expect(h.model.effectiveAgentID(for: h.main) == nil)
     h.model.presentedError = nil
 
     h.model.newAgentTab("opencode", in: groups[0].id)

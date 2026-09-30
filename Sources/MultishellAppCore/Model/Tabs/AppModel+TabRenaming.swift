@@ -18,8 +18,7 @@ extension AppModel {
   /// ended, so an Escape is not undone by the commit losing focus triggers.
   public func commitTabRename(of id: TerminalTab.ID, to title: String?) {
     guard renamingTabID == id else { return }
-    renamingTabID = nil
-    store.setCustomTitle(title, forTab: id)
+    renameTab(id, to: title)
   }
 
   /// The field's Escape: the title stays as it was.

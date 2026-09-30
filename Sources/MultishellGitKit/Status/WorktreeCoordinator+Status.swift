@@ -9,7 +9,7 @@ extension WorktreeCoordinator {
     of worktrees: [Worktree], counting indicator: GitStatusIndicator = .default
   ) async -> [Worktree.ID: StatusReading] {
     let readings = await worktrees.filter { !$0.isBare }.mapConcurrentlyUnordered(
-      width: SharedGitReads.maxConcurrentReads
+      width: SharedReadState.maxConcurrentReads
     ) { worktree in
       let started = ContinuousClock.now
       let status = try? await git.status(of: worktree, counting: indicator)
@@ -25,7 +25,7 @@ extension WorktreeCoordinator {
   /// Drops what the status reads remember about worktrees that have gone,
   /// by path, which is what a worktree's id is.
   public func forgetStatusReads(of ids: [Worktree.ID]) {
-    git.shared.untrackedMemo.forget(
+    git.readState.untrackedMemo.forget(
       directories: ids.map { URL(fileURLWithPath: $0, isDirectory: true) })
   }
 }

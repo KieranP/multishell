@@ -106,8 +106,7 @@ struct AppModelProjectsTests {
 
     // A `.multishell.json` and a second worktree give the shared-settings cache, the merge scan
     // and the record check something to hold before the project goes.
-    try #"{"branchPrefix": "team/"}"#.write(
-      to: SharedProjectSettings.file(in: project.path), atomically: true, encoding: .utf8)
+    try h.writeSharedSettings(#"{"branchPrefix": "team/"}"#)
     await h.model.createWorktree(
       branch: "second", basedOn: nil, createBranch: true, in: project)
     await h.model.refreshAll()
@@ -116,7 +115,7 @@ struct AppModelProjectsTests {
     // The references a window and a row hold, which no refresh will come
     // back to clear once the project has left.
     h.model.beginRenamingWorktree(worktrees[0])
-    h.model.settingsProjectID = project.id
+    h.model.requestedSettingsProjectID = project.id
     // The dialogs a second scene can leave standing over a removal.
     h.model.requestNewWorktree(in: project)
     await h.model.requestWorktreeRemoval(of: worktrees[1])?.value
@@ -199,7 +198,7 @@ struct AppModelProjectsTests {
   @Test func aCancelledDirectoryPickerAddsNothing() async {
     let h = Harness()
     h.platform.directoryToChoose = nil
-    await h.model.chooseProject()
+    await h.model.addProjectFromPicker()
     #expect(h.model.workspace.projects.count == 1)
   }
 }

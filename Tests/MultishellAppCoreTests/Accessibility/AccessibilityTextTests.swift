@@ -15,11 +15,10 @@ struct AccessibilityTextTests {
     occupant: AgentBoardCard.Occupant, state: SessionState?, secondsAgo: Double? = nil,
     note: SessionNote? = nil, status: WorktreeStatus? = nil
   ) -> AgentBoardCard {
-    AgentBoardCard(
-      id: UUID(), tabID: UUID(), worktreeID: "/r", occupant: occupant,
-      title: "claude — repairReferences", projectName: "multishell", worktreeName: "agents-view",
-      state: state, since: secondsAgo.map { now.addingTimeInterval(-$0) }, note: note,
-      status: status)
+    .sample(
+      occupant: occupant, title: "claude — repairReferences", worktreeID: "/r",
+      worktreeName: "agents-view", state: state,
+      since: secondsAgo.map { now.addingTimeInterval(-$0) }, note: note, status: status)
   }
 
   @Test func aBoardCardReadsInTheOrderItIsDrawn() {
@@ -49,11 +48,15 @@ struct AccessibilityTextTests {
 
   @Test func theBoardRowReadsItsCounts() {
     #expect(
-      AccessibilityText.agentsRow([(.waiting, 2), (.working, 3), (.done, 0)])
+      AccessibilityText.agentsRow([
+        AgentLaneCount(.waiting, 2), AgentLaneCount(.working, 3), AgentLaneCount(.done, 0),
+      ])
         == "Agents, 2 waiting for you, 3 working",
       "a lane with nothing in it is not said")
     #expect(
-      AccessibilityText.agentsRow([(.waiting, 0), (.working, 0), (.done, 0)])
+      AccessibilityText.agentsRow([
+        AgentLaneCount(.waiting, 0), AgentLaneCount(.working, 0), AgentLaneCount(.done, 0),
+      ])
         == "Agents, nothing running")
   }
 
@@ -96,13 +99,13 @@ struct AccessibilityTextTests {
     #expect(
       AccessibilityText.pane(
         title: "claude", position: nil, isFocusedPane: false, state: .running, subagents: out,
-        agent: "Claude Code")
+        agentName: "Claude Code")
         == "claude, tab, Claude Code, agent, Working, 2 subagents")
     #expect(
       AccessibilityText.pane(
         title: "fix tests", position: PanePosition(index: 2, count: 2),
         isFocusedPane: true, state: nil, subagents: [],
-        agent: nil)
+        agentName: nil)
         == "fix tests, pane 2 of 2, selected",
       "a renamed tab names every pane alike, so the position tells them apart")
   }
@@ -121,7 +124,7 @@ struct AccessibilityTextTests {
     #expect(
       AccessibilityText.pane(
         title: "claude", position: nil, isFocusedPane: false, state: .running, subagents: out,
-        agent: nil)
+        agentName: nil)
         == "claude, tab, Working, 1 subagent, 2 background shells")
   }
 
@@ -189,16 +192,17 @@ struct AccessibilityTextTests {
         name: "acme", isExpanded: true, isMissing: false, state: nil, worktreeCount: 4,
         isFetching: true) == "acme, project, expanded, 4 worktrees, fetching")
     #expect(
-      AccessibilityText.tab(title: "zsh", isActive: true, isSplit: true, state: .done, agent: nil)
+      AccessibilityText.tab(
+        title: "zsh", isShown: true, isSplit: true, state: .done, agentName: nil)
         == "zsh, tab, selected, split, Done")
     #expect(
       AccessibilityText.tab(
-        title: "claude", isActive: false, isSplit: false, state: nil, agent: "Claude Code")
+        title: "claude", isShown: false, isSplit: false, state: nil, agentName: "Claude Code")
         == "claude, tab, Claude Code, agent",
       "the mark is drawn, so it is said")
     #expect(
       AccessibilityText.tab(
-        title: "Claude Code", isActive: false, isSplit: false, state: nil, agent: "Claude Code")
+        title: "Claude Code", isShown: false, isSplit: false, state: nil, agentName: "Claude Code")
         == "Claude Code, tab",
       "and not twice where the title is already the agent's name")
   }

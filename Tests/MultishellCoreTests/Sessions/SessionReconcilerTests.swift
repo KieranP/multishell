@@ -57,4 +57,45 @@ struct SessionReconcilerTests {
     #expect(titles.count == 1 && titles[0].0 == tab.focusedSessionID && titles[0].1 == "vim")
     #expect(store.workspace == before, "a prompt must not schedule a save or re-render the world")
   }
+
+  @Test func aRetitleIsItsOwnCallbackNotActivity() {
+    let tab = store.openTab(in: worktree.id)!
+    var seen: [TerminalSession.ID] = []
+    var titled: [String] = []
+    reconciler.onActivity = { seen.append($0) }
+    reconciler.onRetitle = { titled.append($1) }
+
+    host.delegate?.terminalHost(host, didRetitle: tab.focusedSessionID, to: "make")
+    host.delegate?.terminalHost(host, didSeeActivityIn: tab.focusedSessionID)
+
+    #expect(seen == [tab.focusedSessionID])
+    #expect(titled == ["make"])
+  }
+
+  @Test func aFinishedCommandIsItsOwnCallbackNotActivity() {
+    let tab = store.openTab(in: worktree.id)!
+    var activity: [TerminalSession.ID] = []
+    var finished: [(TerminalSession.ID, Int32?)] = []
+    reconciler.onActivity = { activity.append($0) }
+    reconciler.onCommandFinished = { finished.append(($0, $1)) }
+
+    host.delegate?.terminalHost(host, didFinishCommandIn: tab.focusedSessionID, exitCode: 2)
+
+    #expect(finished.count == 1 && finished[0].0 == tab.focusedSessionID && finished[0].1 == 2)
+    #expect(activity.isEmpty)
+  }
+
+  @Test func prepareDecidesWhatTheHostOpensWithoutTouchingTheStore() {
+    let tab = store.openTab(in: worktree.id, title: "Claude Code", agentID: "claude")!
+
+    reconciler.reconcile(prepare: { session in
+      var prepared = session
+      prepared.command = ["/bin/zsh", "-l", "-c", "claude"]
+      return prepared
+    })
+
+    #expect(host.opened.first?.command == ["/bin/zsh", "-l", "-c", "claude"])
+    #expect(host.opened.first?.agentID == "claude")
+    #expect(store.workspace.session(tab.focusedSessionID)?.command == nil, "the store keeps the id")
+  }
 }

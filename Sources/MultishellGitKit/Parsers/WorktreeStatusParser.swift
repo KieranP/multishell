@@ -13,10 +13,10 @@ enum WorktreeStatusParser {
         continue
       }
       guard line.count >= 2 else { continue }
-      let x = line[line.startIndex]
-      let y = line[line.index(after: line.startIndex)]
+      let indexState = line[line.startIndex]
+      let workTreeState = line[line.index(after: line.startIndex)]
 
-      switch (x, y) {
+      switch (indexState, workTreeState) {
       case ("!", "!"):
         continue
       case ("?", "?"):
@@ -24,8 +24,8 @@ enum WorktreeStatusParser {
       case ("U", _), (_, "U"), ("A", "A"), ("D", "D"):
         status.conflicted += 1
       default:
-        if x != " " { status.staged += 1 }
-        if y != " " { status.unstaged += 1 }
+        if indexState != " " { status.staged += 1 }
+        if workTreeState != " " { status.unstaged += 1 }
       }
       status.changedFiles += 1
     }

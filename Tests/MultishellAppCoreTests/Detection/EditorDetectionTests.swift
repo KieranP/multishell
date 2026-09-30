@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellAppCore
@@ -7,7 +8,7 @@ import Testing
 struct EditorDetectionTests {
   @Test func editorsAreFoundByBundleIdOrByShimAndTerminalOnesByShimOnly() throws {
     let bin = try fakeBin(["code", "nvim"])
-    defer { try? FileManager.default.removeItem(at: bin) }
+    defer { Scratch.remove(bin) }
     let apps = ["dev.zed.Zed": URL(fileURLWithPath: "/Applications/Zed.app")]
 
     let detection = EditorDetection(searchPath: bin.path) { apps[$0] }

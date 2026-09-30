@@ -21,7 +21,7 @@ extension AppModel {
   /// agent id; the command line is built when the shell starts.
   public func newAgentTab() {
     guard let worktree = requireWorktreeForShell() else { return }
-    guard let agentID = preferredAgentID(for: worktree) else {
+    guard let agentID = effectiveAgentID(for: worktree) else {
       presentedError = .noAgentChosen
       return
     }
@@ -49,7 +49,7 @@ extension AppModel {
   /// What a new tab is by default here, and the first tab a worktree gets
   /// when selected or created.
   func addDefaultTab(in worktree: Worktree, on opening: TabOpening, group: TabGroup.ID? = nil) {
-    if let project = resolvedProject(of: worktree),
+    if let project = effectiveProject(of: worktree),
       autoStartsAgent(in: project, on: opening),
       let agentID = workspace.effectiveAgentID(for: project)
     {
@@ -59,23 +59,23 @@ extension AppModel {
     }
   }
 
+  /// Nothing running there, no tab yet, and the setting for this reason says
+  /// open one.
+  func wantsFirstTab(in worktree: Worktree, on opening: TabOpening) -> Bool {
+    !isBusy(worktree.id) && workspace.tabs(in: worktree.id).isEmpty
+      && opensTab(in: worktree, on: opening)
+  }
+
   /// Whether a worktree with no tabs gets one for this reason. A worktree
   /// whose project has gone follows the global.
-  func opensTab(in worktree: Worktree, on opening: TabOpening) -> Bool {
-    switch opening {
+  private func opensTab(in worktree: Worktree, on opening: TabOpening) -> Bool {
+    let project = effectiveProject(of: worktree)
+    return switch opening {
     case .byUser: true
     case .onSelect:
-      if let project = resolvedProject(of: worktree) {
-        workspace.opensTerminalOnSelect(for: project)
-      } else {
-        workspace.opensTerminalOnSelect
-      }
+      project.map(workspace.opensTerminalOnSelect(for:)) ?? workspace.opensTerminalOnSelect
     case .onCreate:
-      if let project = resolvedProject(of: worktree) {
-        workspace.opensTerminalOnCreate(for: project)
-      } else {
-        workspace.opensTerminalOnCreate
-      }
+      project.map(workspace.opensTerminalOnCreate(for:)) ?? workspace.opensTerminalOnCreate
     case .never: false
     }
   }

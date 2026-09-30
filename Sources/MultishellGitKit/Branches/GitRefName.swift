@@ -23,14 +23,12 @@ public enum GitRefName {
       else { return false }
     }
     return !name.contains { character in
-      forbidden.contains(character) || character.isASCIIControl || character == "\u{7f}"
+      forbidden.contains(character) || isASCIIControl(character)
     }
   }
-}
 
-extension Character {
-  fileprivate var isASCIIControl: Bool {
-    guard let ascii = asciiValue else { return false }
-    return ascii < 0x20
+  private static func isASCIIControl(_ character: Character) -> Bool {
+    guard let ascii = character.asciiValue else { return false }
+    return ascii < 0x20 || ascii == 0x7f
   }
 }

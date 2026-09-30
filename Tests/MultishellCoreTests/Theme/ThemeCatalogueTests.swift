@@ -8,7 +8,7 @@ import Testing
 struct ThemeCatalogueTests {
   @Test func userFilesAreAddedAndCanReplaceBuiltins() throws {
     let directory = Scratch.path("themes")
-    defer { try? FileManager.default.removeItem(at: directory) }
+    defer { Scratch.remove(directory) }
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
     var custom = Theme.multishellDark
@@ -31,7 +31,7 @@ struct ThemeCatalogueTests {
 
   @Test func aThemeFileWithTooFewColoursIsAProblemNotACrash() throws {
     let directory = Scratch.path("themes")
-    defer { try? FileManager.default.removeItem(at: directory) }
+    defer { Scratch.remove(directory) }
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     var short = Theme.multishellDark
     short.id = "user.short"
@@ -43,12 +43,12 @@ struct ThemeCatalogueTests {
     #expect(catalogue.themes.map(\.id) == Theme.builtins.map(\.id))
     #expect(catalogue.problems.count == 1)
     #expect(catalogue.problems[0].hasPrefix("short.json:"))
-    #expect(catalogue.themes.allSatisfy { $0.ansiRGB.count == 16 })
+    #expect(catalogue.themes.allSatisfy { $0.ansi.count == 16 })
   }
 
   @Test func loadAloneRelocatesStrayExamples() throws {
     let directory = Scratch.path("themes")
-    defer { try? FileManager.default.removeItem(at: directory) }
+    defer { Scratch.remove(directory) }
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     try JSONEncoder().encode(Theme.multishellDark).write(
       to: directory.appendingPathComponent("example.multishell.dark.json"))
@@ -63,7 +63,7 @@ struct ThemeCatalogueTests {
 
   @Test func examplesAreWrittenBesideTheThemesNotAmongThem() throws {
     let directory = Scratch.path("themes")
-    defer { try? FileManager.default.removeItem(at: directory) }
+    defer { Scratch.remove(directory) }
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     // A leftover from the earlier layout, which loaded as a duplicate.
     try JSONEncoder().encode(Theme.multishellDark).write(

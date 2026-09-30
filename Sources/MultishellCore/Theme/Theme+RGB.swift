@@ -1,13 +1,8 @@
 import Foundation
 
 extension Theme {
-  /// The 16 ANSI colours, with any unparsable entry falling back to grey so
-  /// a hand-edited theme file cannot leave a terminal unpaintable.
-  var ansiRGB: [RGB] {
-    ansi.indices.map(ansiRGB)
-  }
-
-  /// One of them, parsing that one alone: a row draws a few, a render many.
+  /// One of the 16 ANSI colours, only that slot parsed: a row asks for a few, a render
+  /// many. Grey when unparsable, so a hand-edited theme cannot leave a terminal unpainted.
   public func ansiRGB(_ slot: Int) -> RGB {
     let grey = RGB(red: 128, green: 128, blue: 128)
     guard ansi.indices.contains(slot) else { return grey }
@@ -26,8 +21,7 @@ extension Theme {
   /// the selection colour. A typo reads as absent, not as none.
   public var focusRingRGB: RGB? {
     guard let focusRing else { return selectionBackgroundRGB }
-    let text = focusRing.trimmingCharacters(in: .whitespaces)
-    guard !text.isEmpty else { return nil }
+    guard let text = focusRing.trimmedOrNil else { return nil }
     return HexColor.parse(text) ?? selectionBackgroundRGB
   }
 }

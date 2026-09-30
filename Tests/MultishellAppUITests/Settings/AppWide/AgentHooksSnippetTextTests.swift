@@ -19,21 +19,12 @@ struct AgentHooksSnippetTextTests {
     let rep = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
     host.cacheDisplay(in: host.bounds, to: rep)
     let scale = Double(rep.pixelsWide) / host.bounds.width
-    let firstLineLeft = try #require(firstLineLeftmostInk(rep, lineHeight: Int(8 * scale)))
+    let firstLineLeft = try #require(
+      InkedPixels(rep).firstLineLeftmostColumn(lineHeight: Int(8 * scale)))
 
     #expect(
       Double(firstLineLeft) / scale < 10,
       "the first line's ink starts \(Double(firstLineLeft) / scale)pt in")
     withExtendedLifetime(window) {}
   }
-}
-
-@MainActor
-private func firstLineLeftmostInk(_ rep: NSBitmapImageRep, lineHeight: Int) -> Int? {
-  func inked(_ x: Int, _ y: Int) -> Bool { (rep.colorAt(x: x, y: y)?.alphaComponent ?? 0) > 0.3 }
-  let columns = 0..<rep.pixelsWide
-  guard let top = (0..<rep.pixelsHigh).first(where: { y in columns.contains { inked($0, y) } })
-  else { return nil }
-  let band = top..<min(top + lineHeight, rep.pixelsHigh)
-  return columns.first { x in band.contains { inked(x, $0) } }
 }

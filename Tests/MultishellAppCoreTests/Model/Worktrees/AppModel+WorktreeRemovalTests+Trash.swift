@@ -33,7 +33,7 @@ extension AppModelWorktreeRemovalTests {
     await h.model.createWorktree(branch: "locked", basedOn: nil, createBranch: true, in: h.project)
     var worktree = try #require(h.worktree(onBranch: "locked"))
     _ = try await h.git.run(["worktree", "lock", worktree.path.path], in: h.project.path)
-    await h.model.refresh(h.project)
+    await h.model.refreshWorktrees(of: h.project)
     worktree = try #require(h.worktree(onBranch: "locked"))
     #expect(worktree.isLocked)
 

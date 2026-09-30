@@ -77,7 +77,7 @@ public struct Workspace: Codable, Hashable, Sendable {
     hookTimeoutSeconds > 0 ? .seconds(hookTimeoutSeconds) : nil
   }
 
-  public init() {}
+  init() {}
 
   /// Every field defaults, and every collection but projects is lossy;
   /// see Docs/design/state-and-store.md.

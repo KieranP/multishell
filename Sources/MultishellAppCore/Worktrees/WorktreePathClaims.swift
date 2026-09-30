@@ -6,10 +6,8 @@ struct WorktreePathClaims: Sendable {
   /// Counted, not a set: two creates can name one path; see worktrees.md.
   private var claims: [Worktree.ID: Int] = [:]
 
-  init() {}
-
   /// A path is being checked out into. The caller has already found no
-  /// worktree listed there; see `AppModel.claimConstruction`.
+  /// worktree listed there; see `AppModel.claimPath`.
   mutating func claim(_ id: Worktree.ID) {
     claims[id, default: 0] += 1
   }

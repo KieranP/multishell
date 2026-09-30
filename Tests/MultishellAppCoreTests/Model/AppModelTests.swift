@@ -58,7 +58,7 @@ struct AppModelTests {
         // Some reports name an agent, as Claude's hooks do; an id this
         // build does not know is as likely as one it does.
         let agent = ["claude", "future-agent", nil].randomElement(using: &rng)!
-        h.source.send(
+        h.stateSource.send(
           SessionStateReport(
             state: state, sessionID: session, cwd: cwd,
             pid: Bool.random(using: &rng) ? Int32.random(in: 1...99999, using: &rng) : nil,
@@ -77,7 +77,7 @@ struct AppModelTests {
       case 15:
         // A tab dragged onto another worktree's row in the sidebar.
         if let tab = ws.tabs.randomElement(using: &rng) {
-          h.model.moveTab(tab.id, to: worktrees.randomElement(using: &rng)!.id)
+          h.model.moveTab(tab.id, toWorktree: worktrees.randomElement(using: &rng)!.id)
         }
       case 16:
         // Move Tab to New Group, from the menu.
@@ -116,11 +116,11 @@ struct AppModelTests {
         h.store.replaceWorktrees(kept.isEmpty ? worktrees : kept, forProject: h.project.id)
         h.model.reconcileSessions(takingFocus: true)
       }
-      check(h, "seed \(seed) step \(step)")
+      expectRuntimeConsistent(h, "seed \(seed) step \(step)")
     }
   }
 
-  private func check(_ h: Harness, _ context: String) {
+  private func expectRuntimeConsistent(_ h: Harness, _ context: String) {
     let ws = h.model.workspace
     let live = h.engine.openSessionIDs
     let sessionIDs = Set(ws.sessions.map(\.id))
@@ -174,9 +174,9 @@ struct AppModelTests {
         "\(context): a tab in another worktree's group, or in none")
     }
     for group in ws.tabGroups {
-      #expect(!ws.tabs(in: group.id).isEmpty, "\(context): a group with no tabs")
+      #expect(!ws.tabs(inGroup: group.id).isEmpty, "\(context): a group with no tabs")
       #expect(
-        ws.activeTab(in: group) != nil, "\(context): a group showing nothing")
+        ws.shownTab(in: group) != nil, "\(context): a group showing nothing")
       #expect(group.weight.isFinite && group.weight > 0, "\(context): a group with no width")
     }
   }

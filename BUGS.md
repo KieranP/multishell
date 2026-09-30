@@ -16,23 +16,26 @@ settle it; it is ranked by what it would cost if the reasoning is wrong. Whether
 a feature draws and works in ordinary use is checked by hand as it is built, so
 it gets no entry here.
 
-Code references last checked on 2026-09-25 against the uncommitted tree on
-eabde30. Agent behaviour last checked on 2026-09-23 with claude 2.1.280, codex
-0.155.1, gemini 0.46.0, copilot 1.0.87 and opencode 1.18.30.
+Code references last checked on 2026-09-30 against the uncommitted tree
+on 2164042. Agent behaviour last checked on 2026-09-23 with claude 2.1.280,
+codex 0.155.1, gemini 0.46.0, copilot 1.0.87 and opencode 1.18.30.
 
 | #   | Effect | What                                                                                  |
 | --- | ------ | ------------------------------------------------------------------------------------- |
 | 001 | Medium | [Unconfirmed] Parts of three agents' hook files have never been watched               |
 | 002 | Medium | [Unconfirmed] A /clear after an interrupted turn leaves the pane Working              |
-| 003 | Low    | A dead mount can hold every cooperative-pool thread                                   |
-| 004 | Low    | [Unconfirmed] Remove waits on a git status that has no timeout                        |
-| 005 | Low    | [Unconfirmed] A worktree path resolved while missing stays unresolved                 |
-| 006 | Low    | [Unconfirmed] Ctrl-C at a bash prompt ends the relay's inline fallback                |
-| 007 | Low    | A child that exits as its timeout fires is now and then reported as timed out         |
-| 008 | Low    | [Unconfirmed] A drop landing 250 ms after the button comes up can be refused          |
-| 009 | Perf   | The bash relay still forks twice per command                                          |
-| 010 | CI     | [Unconfirmed] The bundle script has run through xcodebuild only under the newer Xcode |
-| 011 | Docs   | libintl is LGPL and linked statically, from a libghostty someone else built           |
+| 003 | Medium | [Unconfirmed] A collapsed project the filter opens still says it is collapsed         |
+| 004 | Low    | A dead mount can hold every cooperative-pool thread                                   |
+| 005 | Low    | [Unconfirmed] Remove waits on a git status that has no timeout                        |
+| 006 | Low    | [Unconfirmed] A worktree path resolved while missing stays unresolved                 |
+| 007 | Low    | [Unconfirmed] Ctrl-C at a bash prompt ends the relay's inline fallback                |
+| 008 | Low    | A child that exits as its timeout fires is now and then reported as timed out         |
+| 009 | Low    | [Unconfirmed] A drop landing 250 ms after the button comes up can be refused          |
+| 010 | Low    | [Unconfirmed] An empty `$HOME` points Gemini's settings at the working directory      |
+| 011 | Perf   | The bash relay still forks twice per command                                          |
+| 012 | CI     | [Unconfirmed] The bundle script has run through xcodebuild only under the newer Xcode |
+| 013 | UI/UX  | [Unconfirmed] A missing project's badge in the header is ringed in the sidebar colour |
+| 014 | Docs   | libintl is LGPL and linked statically, from a libghostty someone else built           |
 
 ## Medium
 
@@ -49,7 +52,7 @@ once with `/hooks` in Codex and start a session without the bypass flag.
 ### 002. [Unconfirmed] A /clear after an interrupted turn leaves the pane Working
 
 Every agent's SessionStart now carries `startsSession`, and
-`SessionStates.report` (`SessionStates.swift:45`) drops such a report while the
+`SessionStates.report` (`SessionStates.swift:29`) drops such a report while the
 pane is Running or Waiting and the shell did not report the Working. Claude
 fires no hook when Esc interrupts a turn, so the pane stays Running; a `/clear`
 or `/resume` then sends SessionStart, which used to reset it to Idle and is now
@@ -58,19 +61,32 @@ prompt mode as the reason, but the flag is on all four agents. Step: interrupt a
 Claude turn with Esc, run `/clear`, watch the dot. Fix = set `startsSession` for
 Copilot alone, or let a SessionStart with `source` `clear` or `resume` through.
 
+### 003. [Unconfirmed] A collapsed project the filter opens still says it is collapsed
+
+While the sidebar filter has text, a collapsed project with a match shows its
+rows (`project.isExpanded || isForcedOpen`, `ProjectBlock.swift:23`), but
+`ProjectRow` reads `project.isExpanded` alone for the chevron, its help, the
+spoken label and the action name (`ProjectRow.swift:44`, `:47`, `:81`, `:86`).
+The chevron points right over open rows and VoiceOver says collapsed. Clicking
+it sets the stored flag to expanded and nothing on screen moves. Found by
+reading; nobody has looked. Step: collapse a project, type a filter one of its
+worktrees matches, look at the chevron. Fix = decide the shown expansion in
+AppCore beside `SidebarFilter.Entry` and pass it to the row; what a click should
+do while the filter holds the project open is a choice still to make.
+
 ## Low
 
-### 003. A dead mount can hold every cooperative-pool thread
+### 004. A dead mount can hold every cooperative-pool thread
 
 `offMain` (`OffMain.swift:5`, 17 callers: the save, the Trash, the records and
 shared-settings reads, detection, the scan in `DispatchDirectoryWatcher.watch`)
-and `WorktreeGit.untrackedCounts` (`WorktreeGit+Status.swift:51`) run blocking
+and `WorktreeGit.untrackedCounts` (`WorktreeGit+Status.swift:50`) run blocking
 file reads in `Task.detached`, which shares the cooperative pool, one thread per
-core. `WorktreeGit.list` (`WorktreeGit.swift:43`) stats every worktree with no
-detach at all. A probe of 64 tasks each blocking for a second on 12 cores peaked
-at 12 at once and took 6.3 s, and an unrelated `.utility` task waited 5.15 s for
-a thread. Fix = a concurrent `DispatchQueue` as a `TaskExecutor` (macOS 15.4):
-`offMain` becomes
+core. `WorktreeGit.list` (`WorktreeGit+Listing.swift:8`) stats every worktree
+with no detach at all. A probe of 64 tasks each blocking for a second on 12
+cores peaked at 12 at once and took 6.3 s, and an unrelated `.utility` task
+waited 5.15 s for a thread. Fix = a concurrent `DispatchQueue` as a
+`TaskExecutor` (macOS 15.4): `offMain` becomes
 `Task(executorPreference: blockingIO, priority: .utility) { work() }.value`, and
 `withTaskExecutorPreference` around `WorktreeGit.list` and the coordinator's
 status reads covers what they call. The same probe then peaked at 64, took 1.0
@@ -80,21 +96,21 @@ threads rather than queueing them, and the "Known gap" in
 `NonisolatedNonsendingByDefault` first would move these stats onto the caller's
 actor, which for `AppModel` is the main one.
 
-### 004. [Unconfirmed] Remove waits on a git status that has no timeout
+### 005. [Unconfirmed] Remove waits on a git status that has no timeout
 
-`requestWorktreeRemoval` (`AppModel+WorktreeRemoval.swift:33`) now awaits
+`requestWorktreeRemoval` (`AppModel+WorktreeRemoval.swift:23`) now awaits
 `refreshStatus(of:forced: true)` before it shows the confirmation. That read is
 `git status` through `GitRunner.output`, which passes no timeout. On a worktree
 whose mount stopped answering the read never returns, so the dialog never
-appears, and `removalReads` swallows every further click on that row. Before,
-the dialog came up at once. A large repository delays it by the length of its
-status with nothing on screen. Step: remove a worktree on an unplugged SMB
-share. Fix = bound the forced read, a second is what `DirectoryProbe` allows,
-and show the dialog with the status already held when it runs out.
+appears, and `removalsAwaitingStatus` swallows every further click on that row.
+Before, the dialog came up at once. A large repository delays it by the length
+of its status with nothing on screen. Step: remove a worktree on an unplugged
+SMB share. Fix = bound the forced read, a second is what `DirectoryProbe`
+allows, and show the dialog with the status already held when it runs out.
 
-### 005. [Unconfirmed] A worktree path resolved while missing stays unresolved
+### 006. [Unconfirmed] A worktree path resolved while missing stays unresolved
 
-`AppModel.resolvedComponents` (`AppModel+Worktrees.swift:195`) caches
+`AppModel.resolvedComponents` (`AppModel+Worktrees.swift:172`) caches
 `resolvingSymlinksInPath()` per worktree on first use, for every worktree each
 time a report is placed by directory. Foundation returns a missing or dangling
 path unchanged, so a worktree whose directory is absent then, on an unmounted
@@ -103,7 +119,7 @@ directory is back, a report whose `cwd` is the resolved spelling
 (`/private/tmp/...` for a `/tmp/...` worktree) matches no worktree until the
 worktree is forgotten. Fix = cache only a resolution of a path that exists.
 
-### 006. [Unconfirmed] Ctrl-C at a bash prompt ends the relay's inline fallback
+### 007. [Unconfirmed] Ctrl-C at a bash prompt ends the relay's inline fallback
 
 The relay runs in the bash shell's process group, so a Ctrl-C at the prompt
 reaches it. The helper ignores INT and QUIT (`Helper.relayIgnoredSignals`), but
@@ -112,7 +128,7 @@ the inline fallback in `init.bash:30`, which runs when the helper is too old for
 loop; lines already in the pipe are lost and each later report pays the EPIPE
 before falling back to a helper launch. Fix = add INT and QUIT to that `trap`.
 
-### 007. A child that exits as its timeout fires is now and then reported as timed out
+### 008. A child that exits as its timeout fires is now and then reported as timed out
 
 A stop checks under `RunningChild`'s lock that the child is not a zombie and not
 already exiting (`P_WEXIT`, `RunningChild.swift:48`), then sends SIGHUP. A child
@@ -125,7 +141,7 @@ gap, a stopped process being unable to start its exit, but Subprocess traps on
 the stop its `waitid` then reports (`Subprocess+Unix.swift:1009` in the
 checkout).
 
-### 008. [Unconfirmed] A drop landing 250 ms after the button comes up can be refused
+### 009. [Unconfirmed] A drop landing 250 ms after the button comes up can be refused
 
 A tab or project drag whose source view was rebuilt or recycled mid-drag never
 hears its drag session end, so `DragRelease.wait` (`DragRelease.swift:7`) polls
@@ -140,9 +156,20 @@ outside the recycled view, whose `draggingSession(_:endedAt:operation:)` arrives
 whatever SwiftUI does to the row. Cost: the tab's click, double click and middle
 click move to AppKit with it (tabs-and-groups.md).
 
+### 010. [Unconfirmed] An empty `$HOME` points Gemini's settings at the working directory
+
+`GeminiSettings.geminiDirectory` (`GeminiSettings.swift:46`) skips an empty
+`GEMINI_CLI_HOME` but takes `HOME` as written, so an empty one gives
+`URL(fileURLWithPath: "")`, the process's working directory, and the user
+settings are read from `./.gemini/settings.json`. `AgentHookCatalogue.underHome`
+drops an empty `HOME` for the account's home. Whether Gemini itself does either
+is not known, so which one is wrong is open. Step: run Gemini with `HOME=` and
+see which `settings.json` it reads. Fix = one home lookup shared by both,
+matching Gemini's.
+
 ## Perf
 
-### 009. The bash relay still forks twice per command
+### 011. The bash relay still forks twice per command
 
 The relay exists so a command costs no process launch, and hooks.zsh dropped its
 `$(...)` in the same change because a command substitution forks.
@@ -153,7 +180,7 @@ SIGPIPE ignored only in a subshell that does the write.
 
 ## CI
 
-### 010. [Unconfirmed] The bundle script has run through xcodebuild only under the newer Xcode
+### 012. [Unconfirmed] The bundle script has run through xcodebuild only under the newer Xcode
 
 This machine has only Xcode 27. That the older one writes no build path either
 rests on its accessor having looked in the bundle's resources since packages
@@ -161,9 +188,22 @@ could carry them, not on a run; the helper comes the same way. Step: run
 `make build` under `DEVELOPER_DIR=/Applications/Xcode_26.0.1.app` on a macos-26
 runner and see `verify_binary` pass for both. Fallback = the newer Xcode.
 
+## UI/UX
+
+### 013. [Unconfirmed] A missing project's badge in the header is ringed in the sidebar colour
+
+`ProjectIconView` (`ProjectIconView.swift:20`) draws the question mark on a
+missing project's glyph with `theme.sidebarColor` as its second layer, the ring
+that parts it from the glyph. The worktree header draws the same view
+(`WorktreeHeader.swift:16`) on `theme.chromeColor`, so where a theme's two
+colours differ the ring shows as a disc of the wrong colour. `PaneGlyph` takes
+its ring colour as a parameter for this reason. Step: select a worktree of a
+project whose directory is gone, under a theme whose chrome and sidebar differ,
+and look at the header's icon. Fix = a `ringFill` parameter, as `PaneGlyph` has.
+
 ## Docs
 
-### 011. libintl is LGPL and linked statically, from a libghostty someone else built
+### 014. libintl is LGPL and linked statically, from a libghostty someone else built
 
 GNU gettext 0.24's libintl reaches the executable inside the prebuilt
 `libghostty.a` (Ghostty's Zig object calls `bindtextdomain` and `dgettext`).

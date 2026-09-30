@@ -43,7 +43,7 @@ struct LoginShellEnvironmentTests {
       to: home.appendingPathComponent(".bash_profile"), atomically: true, encoding: .utf8)
 
     _ = await LoginShellEnvironment.capture(
-      shellPath: "/bin/bash", home: home, inherited: ["HISTFILE": history.path])
+      shellPath: "/bin/bash", home: home, extraEnvironment: ["HISTFILE": history.path])
 
     #expect(try String(contentsOf: history, encoding: .utf8) == lines)
   }

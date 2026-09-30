@@ -24,7 +24,7 @@ struct DetectionPicker: View {
         }
       }
       .disabled(!isEnabled)
-      SymbolButton.refresh(action: refresh).controlSize(.small).disabled(!isEnabled)
+      SettingsSymbolButton.refresh(action: refresh).controlSize(.small).disabled(!isEnabled)
     }
   }
 }

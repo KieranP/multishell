@@ -10,7 +10,7 @@ struct ShellStateHooksTests {
   /// silently defines no hooks; the shells' own parsers are the check.
   @Test func everyGeneratedFileParsesInItsShell() throws {
     let directory = try Scratch.directory("syntax")
-    defer { try? FileManager.default.removeItem(at: directory) }
+    defer { Scratch.remove(directory) }
     var files: [(String, String)] = ShellStateHooks.zshIntegrationScripts(helper: "/x/multishell")
       .map { ("/bin/zsh", $0.value) }
     files.append(("/bin/bash", ShellStateHooks.bashInitScript(helper: "/x/multishell")))
@@ -118,23 +118,23 @@ struct ShellStateHooksTests {
   @Test func aTabsHistoryGoesWhereTheUsersOwnShellWouldPutIt() async throws {
     guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
     let plain = try await historyFile()
-    defer { try? FileManager.default.removeItem(at: plain.home.deletingLastPathComponent()) }
+    defer { Scratch.remove(plain.home.deletingLastPathComponent()) }
     #expect(!plain.file.hasPrefix(plain.integration.path), "\(plain.file)")
     if systemRcSetsHistory {
       #expect(plain.file == plain.home.appendingPathComponent(".zsh_history").path)
     }
 
     let root = try Scratch.directory("histfile-user")
-    defer { try? FileManager.default.removeItem(at: root) }
+    defer { Scratch.remove(root) }
     let own = root.appendingPathComponent("zdot", isDirectory: true)
     let relocated = try await historyFile(userZdotdir: own)
-    defer { try? FileManager.default.removeItem(at: relocated.home.deletingLastPathComponent()) }
+    defer { Scratch.remove(relocated.home.deletingLastPathComponent()) }
     if systemRcSetsHistory {
       #expect(relocated.file == own.appendingPathComponent(".zsh_history").path)
     }
 
     let chosen = try await historyFile(userZshrc: "HISTFILE=/elsewhere/history\n")
-    defer { try? FileManager.default.removeItem(at: chosen.home.deletingLastPathComponent()) }
+    defer { Scratch.remove(chosen.home.deletingLastPathComponent()) }
     #expect(chosen.file == "/elsewhere/history", "the user's own setting stands")
   }
 }

@@ -81,7 +81,7 @@ Newest at the bottom.
   which holds no resource bundle, so a lookup there finds no catalogue and the
   accessor traps.
 - **Proper names stay**: the engine, the agents, the built-in themes. The icon
-  picker's group names are the only words in it.
+  picker's group names and its Folder are the only words in it.
 - **The permission strings are in the Info.plist, not the catalogue.** A
   translation of them is an `InfoPlist.strings` beside the same language's
   catalogue, which the bundling script copies into the bundle's resources.

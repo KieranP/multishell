@@ -15,17 +15,17 @@ extension WorktreeGit {
     var status = WorktreeStatusParser.parse(output)
     guard status.isDirty else { return status }
     let counts = await lineCounts(
-      in: worktree.path, counting: indicator, untracked: status.untracked)
+      in: worktree.path, counting: indicator, untrackedFiles: status.untracked)
     status.insertions = counts.insertions
     status.deletions = counts.deletions
-    status.unscoredFiles = counts.unscored
+    status.unscoredFiles = counts.unscoredFiles
     return status
   }
 
   /// `--cached` is the index alone, and the fallback wherever the diff
   /// against HEAD fails, which an unborn HEAD does; see worktrees.md.
   private func lineCounts(
-    in path: URL, counting indicator: GitStatusIndicator, untracked: Int
+    in path: URL, counting indicator: GitStatusIndicator, untrackedFiles: Int
   ) async -> LineCounts {
     // `--diff-filter=u` drops unmerged paths, which print `0 0` from
     // `--cached` and read as a file with nothing to count.
@@ -38,10 +38,10 @@ extension WorktreeGit {
     } else if let cached = await runner.output(numstat + ["--cached"], in: path) {
       counts = NumstatParser.parse(cached)
     }
-    guard indicator == .stagedAndUnstaged, untracked > 0 else { return counts }
-    let loose = await untrackedCounts(in: path)
-    counts.insertions += loose.insertions
-    counts.unscored += loose.unscored
+    guard indicator == .stagedAndUnstaged, untrackedFiles > 0 else { return counts }
+    let untrackedLines = await untrackedCounts(in: path)
+    counts.insertions += untrackedLines.insertions
+    counts.unscoredFiles += untrackedLines.unscoredFiles
     return counts
   }
 
@@ -54,7 +54,7 @@ extension WorktreeGit {
     else { return LineCounts() }
     let paths = UntrackedPathParser.parse(output, limit: UntrackedLineCounter.fileLimit)
     guard !paths.isEmpty else { return LineCounts() }
-    let memo = shared.untrackedMemo
+    let memo = readState.untrackedMemo
     return await Task.detached(priority: .utility) {
       UntrackedLineCounter.count(paths: paths, in: path, memo: memo)
     }.value

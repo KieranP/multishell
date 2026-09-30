@@ -3,5 +3,5 @@
 struct LineCounts: Equatable, Sendable {
   var insertions = 0
   var deletions = 0
-  var unscored = 0
+  var unscoredFiles = 0
 }

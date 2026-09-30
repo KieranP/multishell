@@ -13,7 +13,7 @@ extension WorktreeSettingsTests {
     #expect(WorktreeSettings(worktreeDirectory: "~").worktreeContainer(for: project).path == home)
   }
 
-  @Test func projectPlaceholderWorksInAbsolutePaths() {
+  @Test func theProjectPlaceholderIsFilledInAnAbsoluteDirectoryToo() {
     let project = Project(path: URL(fileURLWithPath: "/w/repo"))
     let settings = WorktreeSettings(worktreeDirectory: "/srv/trees/{project}")
     #expect(settings.worktreeContainer(for: project).path == "/srv/trees/repo")

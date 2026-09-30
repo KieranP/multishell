@@ -1,6 +1,5 @@
 import MultishellAppCore
 import MultishellCore
-import MultishellGitKit
 import SwiftUI
 
 struct ProjectWorktreesPage: View {
@@ -51,9 +50,7 @@ struct ProjectWorktreesPage: View {
           prompt: Text(verbatim: AppModel.usualDefaultBranchName)
         )
         .disabled(!isOverridden)
-        SettingsCaption(
-          model.defaultBranch(of: project).map { t("project.merges-measured", $0.shortName) }
-            ?? t("project.no-merge-base"))
+        SettingsCaption(model.defaultBranchCaption(for: project))
       }
     }
     .formStyle(.grouped)

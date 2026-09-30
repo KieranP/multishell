@@ -2,7 +2,7 @@ import MultishellCore
 import SwiftUI
 
 /// The strip above the tree, leaving room for the traffic lights: the title
-/// bar is hidden. Folder-plus, three identical glyphs otherwise reading as one.
+/// bar is hidden. Add Project is a folder-plus so it does not read as a row's +.
 struct SidebarHeader: View {
   let showsFilterField: Bool
   let theme: Theme
@@ -23,7 +23,7 @@ struct SidebarHeader: View {
   private func button(
     _ symbol: String, help: String, action: @escaping () -> Void
   ) -> some View {
-    GlyphButton(help: help, action: action) {
+    PlainGlyphButton(help: help, action: action) {
       Image(systemName: symbol)
         .font(.system(size: 13, weight: .medium))
         .frame(width: 28, height: 28)

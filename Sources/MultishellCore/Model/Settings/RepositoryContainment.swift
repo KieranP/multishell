@@ -16,10 +16,10 @@ public enum RepositoryContainment {
   /// Resolved against the root and required to land strictly under it, `..`
   /// resolved rather than counted; the disk is not asked. See settings.md.
   public static func holds(listedPath path: String, under repository: URL) -> Bool {
-    let text = path.trimmingCharacters(in: .whitespaces)
     // A leading `$` only: nothing runs a shell on these, so `$HOME` further
     // in is a directory name the containment check settles like any other.
-    guard !text.isEmpty, !text.hasPrefix("/"), !text.hasPrefix("~"), !text.hasPrefix("$")
+    guard let text = path.trimmedOrNil,
+      !text.hasPrefix("/"), !text.hasPrefix("~"), !text.hasPrefix("$")
     else { return false }
     let resolved = repository.appendingPathComponent(text).standardizedFileURL
     return resolved.pathComponents(under: repository.standardizedFileURL)?.isEmpty == false

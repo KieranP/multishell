@@ -25,7 +25,7 @@ struct RootView: View {
         DetailView(model: model)
       }
     }
-    .background(WindowAccessor { platform.mainWindow = $0 })
+    .background(WindowAccessor { platform.workspaceWindow = $0 })
     .ignoresSafeArea()
     .preferredColorScheme(theme.colorScheme)
     .worktreeRemovalDialog(model: model)

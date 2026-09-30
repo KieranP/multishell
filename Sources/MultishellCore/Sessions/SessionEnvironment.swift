@@ -4,7 +4,7 @@ import Foundation
 /// script inside it can name its tab when it reports a state.
 public enum SessionEnvironment {
   public static let sessionKey = "MULTISHELL_SESSION"
-  public static let workingDirectoryKey = "MULTISHELL_WORKTREE"
+  public static let worktreeKey = "MULTISHELL_WORKTREE"
   public static let socketKey = "MULTISHELL_SOCKET"
   /// The app's own pid, where the helper's walk up from a prompt stops; see
   /// Docs/design/agents.md.
@@ -17,7 +17,7 @@ public enum SessionEnvironment {
   ) -> [String: String] {
     var variables = [
       sessionKey: session.id.uuidString,
-      workingDirectoryKey: session.workingDirectory.path,
+      worktreeKey: session.workingDirectory.path,
       socketKey: socket.path,
       appPIDKey: String(ProcessInfo.processInfo.processIdentifier),
     ]

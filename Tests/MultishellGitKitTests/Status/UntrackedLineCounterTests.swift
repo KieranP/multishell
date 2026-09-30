@@ -15,7 +15,7 @@ struct UntrackedLineCounterTests {
 
     let counted = UntrackedLineCounter.count(paths: ["one.txt", "two.txt"], in: root)
     #expect(counted.insertions == 5)
-    #expect(counted.unscored == 0)
+    #expect(counted.unscoredFiles == 0)
   }
 
   @Test func aFileUnchangedSinceTheLastCountIsNotReadAgain() throws {
@@ -34,7 +34,7 @@ struct UntrackedLineCounterTests {
     let counted = UntrackedLineCounter.count(paths: ["one.txt"], in: root, memo: memo)
 
     #expect(counted.insertions == 2, "the unreadable file was not read")
-    #expect(counted.unscored == 0)
+    #expect(counted.unscoredFiles == 0)
   }
 
   @Test func aFileRewrittenToANewSizeIsCountedAgain() throws {
@@ -56,7 +56,7 @@ struct UntrackedLineCounterTests {
 
     let counted = UntrackedLineCounter.count(paths: ["icon.png", "gone.txt"], in: root)
     #expect(counted.insertions == 0)
-    #expect(counted.unscored == 2, "a new png and a path that went away both still changed")
+    #expect(counted.unscoredFiles == 2, "a new png and a path that went away both still changed")
   }
 
   /// `git worktree list` says nothing about the URL being a directory, and a
@@ -77,7 +77,7 @@ struct UntrackedLineCounterTests {
     try Data().write(to: root.appendingPathComponent("empty.txt"))
 
     let counted = UntrackedLineCounter.count(paths: ["empty.txt"], in: root)
-    #expect(counted.insertions == 0 && counted.unscored == 1)
+    #expect(counted.insertions == 0 && counted.unscoredFiles == 1)
   }
 
   /// `.fileSizeKey` is the link's own bytes while the read follows it, so a
@@ -92,7 +92,7 @@ struct UntrackedLineCounterTests {
 
     let counted = UntrackedLineCounter.count(paths: ["link.txt"], in: root)
     #expect(counted.insertions == 0, "git stores the link, not the lines it points at")
-    #expect(counted.unscored == 1)
+    #expect(counted.unscoredFiles == 1)
   }
 
   @Test func aFileThatWouldCrossTheTotalBudgetIsSkippedAndTheRestAreStillCounted() throws {
@@ -102,9 +102,12 @@ struct UntrackedLineCounterTests {
       try String(repeating: "x\n", count: bytes / 2).write(
         to: root.appendingPathComponent(name), atomically: true, encoding: .utf8)
     }
-    let full = UntrackedLineCounter.totalByteLimit / UntrackedLineCounter.byteLimit - 1
-    for index in 0..<full { try write("\(index).txt", bytes: UntrackedLineCounter.byteLimit) }
-    let headroom = UntrackedLineCounter.totalByteLimit - full * UntrackedLineCounter.byteLimit
+    let full = UntrackedLineCounter.totalByteLimit / UntrackedLineCounter.perFileByteLimit - 1
+    for index in 0..<full {
+      try write("\(index).txt", bytes: UntrackedLineCounter.perFileByteLimit)
+    }
+    let headroom =
+      UntrackedLineCounter.totalByteLimit - full * UntrackedLineCounter.perFileByteLimit
     try write("nearly-full.txt", bytes: headroom - 2048)
     try write("crosses.txt", bytes: 4096)
     try write("after.txt", bytes: 4)
@@ -113,14 +116,15 @@ struct UntrackedLineCounterTests {
       paths: (0..<full).map { "\($0).txt" } + ["nearly-full.txt", "crosses.txt", "after.txt"],
       in: root)
 
-    let counting = full * UntrackedLineCounter.byteLimit + headroom - 2048 + 4
+    let counting = full * UntrackedLineCounter.perFileByteLimit + headroom - 2048 + 4
     #expect(counted.insertions == counting / 2)
-    #expect(counted.unscored == 1, "the file that would not fit, and not the small one after it")
+    #expect(
+      counted.unscoredFiles == 1, "the file that would not fit, and not the small one after it")
   }
 
   @Test func aFileThatCouldNotBeReadLeavesTheBudgetToTheRest() throws {
     let root = try Scratch.directory("untracked")
-    let full = UntrackedLineCounter.totalByteLimit / UntrackedLineCounter.byteLimit
+    let full = UntrackedLineCounter.totalByteLimit / UntrackedLineCounter.perFileByteLimit
     let unreadable = (0..<full).map { root.appendingPathComponent("locked\($0).txt") }
     defer {
       for file in unreadable {
@@ -129,7 +133,7 @@ struct UntrackedLineCounterTests {
       Scratch.remove(root)
     }
     for file in unreadable {
-      try String(repeating: "x\n", count: UntrackedLineCounter.byteLimit / 2).write(
+      try String(repeating: "x\n", count: UntrackedLineCounter.perFileByteLimit / 2).write(
         to: file, atomically: true, encoding: .utf8)
       try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: file.path)
     }
@@ -140,7 +144,7 @@ struct UntrackedLineCounterTests {
       paths: unreadable.map(\.lastPathComponent) + ["after.txt"], in: root)
 
     #expect(counted.insertions == 2)
-    #expect(counted.unscored == full)
+    #expect(counted.unscoredFiles == full)
   }
 
   /// Counted as files with no lines, a directory nobody had gitignored put
@@ -157,6 +161,6 @@ struct UntrackedLineCounterTests {
       paths: (0..<(UntrackedLineCounter.fileLimit + 20)).map { "\($0).txt" }, in: root)
 
     #expect(counted.insertions == UntrackedLineCounter.fileLimit)
-    #expect(counted.unscored == 0)
+    #expect(counted.unscoredFiles == 0)
   }
 }

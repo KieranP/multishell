@@ -18,19 +18,9 @@ struct WorktreeHeader: View {
           isMissing: model.missingProjects.contains(project.id),
           theme: theme, size: model.metrics.icon)
       }
-      Text(project?.name ?? "")
-        .font(.system(size: model.metrics.body, weight: .semibold))
-        .foregroundStyle(theme.textPrimary)
-        .lineLimit(1)
-        .layoutPriority(1)
-      Image(systemName: "chevron.right")
-        .font(.system(size: 9, weight: .bold))
-        .foregroundStyle(theme.textTertiary)
-      Text(model.displayName(of: worktree))
-        .font(.system(size: model.metrics.mono, weight: .medium, design: .monospaced))
-        .foregroundStyle(theme.worktreeNameColor)
-        .lineLimit(1)
-        .layoutPriority(1)
+      WorktreeBreadcrumb(
+        projectName: project?.name ?? "", worktreeName: model.displayName(of: worktree),
+        style: .header, theme: theme, metrics: model.metrics)
       // A renamed worktree still says which branch it is: every git command
       // the user runs here acts on that, not on the name they chose.
       if model.customName(of: worktree) != nil {

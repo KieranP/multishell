@@ -15,7 +15,7 @@ public struct WorktreeRecords: Hashable, Sendable {
     }
 
     readFile("HEAD")
-    let worktrees = recordsDirectory(in: commonDirectory)
+    let worktrees = worktreesDirectory(in: commonDirectory)
     let entries =
       (try? FileManager.default.contentsOfDirectory(atPath: worktrees.path))?.sorted() ?? []
     for entry in entries {
@@ -29,7 +29,7 @@ public struct WorktreeRecords: Hashable, Sendable {
   /// Directories that change when worktrees do. Never the common `.git` once
   /// `worktrees/` exists; see Docs/design/worktrees.md.
   public static func directoriesToWatch(in common: URL) -> [URL] {
-    let worktrees = recordsDirectory(in: common)
+    let worktrees = worktreesDirectory(in: common)
     guard FileManager.default.fileExists(atPath: worktrees.path) else { return [common] }
     let entries =
       (try? FileManager.default.contentsOfDirectory(at: worktrees, includingPropertiesForKeys: nil))
@@ -38,7 +38,7 @@ public struct WorktreeRecords: Hashable, Sendable {
   }
 
   /// `<common>/worktrees`, which holds one record directory per linked checkout.
-  static func recordsDirectory(in common: URL) -> URL {
+  static func worktreesDirectory(in common: URL) -> URL {
     common.appendingPathComponent("worktrees", isDirectory: true)
   }
 }

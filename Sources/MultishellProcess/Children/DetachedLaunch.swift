@@ -56,7 +56,7 @@ enum DetachedLaunch {
       Dictionary(uniqueKeysWithValues: values.map { (Environment.Key(stringLiteral: $0), $1) }))
   }
 
-  /// The exit status, or the signal's number, as `Process` reported it.
+  /// The exit status, or the signal's number, folded into one `Int32`.
   private static func exitCode(of status: TerminationStatus) -> Int32 {
     switch status {
     case .exited(let code), .signaled(let code): code

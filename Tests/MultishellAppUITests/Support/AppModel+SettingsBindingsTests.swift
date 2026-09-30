@@ -5,18 +5,18 @@ import Testing
 @testable import MultishellAppUI
 @testable import MultishellCore
 
-/// For a `Bool` setting `hasOverride` and `overrideValue` take the same arguments and
+/// For a `Bool` setting `overrideToggle` and `overrideField` take the same arguments and
 /// return the same type, so a swapped pair compiles. The form is an untested view.
 @Suite @MainActor
 struct AppModelSettingsBindingsTests {
-  /// A swapped pair fails this: bound to `overrideValue`, ticking "override" would write
+  /// A swapped pair fails this: bound to `overrideField`, ticking "override" would write
   /// `true` into the setting and the project would start auto-starting an agent.
   @Test func turningAnOverrideOnSeedsItWithWhatWasInForce() {
     let harness = ModelHarness()
     let project = harness.project
     #expect(harness.model.workspace.autoStartAgent == false, "the global this inherits from")
 
-    let toggle = harness.model.hasOverride(\.autoStartAgent, of: project, fallback: false)
+    let toggle = harness.model.overrideToggle(\.autoStartAgent, of: project, fallback: false)
     #expect(toggle.wrappedValue == false, "no override yet")
 
     toggle.wrappedValue = true
@@ -24,17 +24,18 @@ struct AppModelSettingsBindingsTests {
       harness.model.ownSettings(of: project).autoStartAgent == false,
       "seeded with the inherited false, not with the toggle's own true")
     #expect(
-      harness.model.hasOverride(\.autoStartAgent, of: project, fallback: false).wrappedValue,
+      harness.model.overrideToggle(\.autoStartAgent, of: project, fallback: false).wrappedValue,
       "and the row now reads as overridden")
   }
 
   @Test func turningAnOverrideOffClearsItRatherThanStoringWhatWasShown() {
     let harness = ModelHarness()
     let project = harness.project
-    harness.model.overrideValue(\.autoStartAgent, of: project, fallback: false).wrappedValue = true
+    harness.model.overrideField(\.autoStartAgent, of: project, fallback: false).wrappedValue = true
     #expect(harness.model.ownSettings(of: project).autoStartAgent == true)
 
-    harness.model.hasOverride(\.autoStartAgent, of: project, fallback: false).wrappedValue = false
+    harness.model.overrideToggle(\.autoStartAgent, of: project, fallback: false).wrappedValue =
+      false
     #expect(
       harness.model.ownSettings(of: project).autoStartAgent == nil,
       "off means follow the global, which is a nil override and not a stored false")
@@ -46,7 +47,7 @@ struct AppModelSettingsBindingsTests {
     let harness = ModelHarness()
     let project = harness.project
 
-    let field = harness.model.overrideValue(
+    let field = harness.model.overrideField(
       \.worktreeDirectory, of: project, fallback: "../inherited-worktrees")
     #expect(field.wrappedValue == "../inherited-worktrees")
     #expect(
@@ -64,11 +65,11 @@ struct AppModelSettingsBindingsTests {
     let project = harness.project
     harness.model.setWorktreeDefaults(WorktreeSettings(branchPrefix: "team/"))
 
-    let field = harness.model.overrideValue(\.branchPrefix, of: project, fallback: "team/")
+    let field = harness.model.overrideField(\.branchPrefix, of: project, fallback: "team/")
     field.wrappedValue = ""
     #expect(harness.model.ownSettings(of: project).branchPrefix == "")
     #expect(
-      harness.model.hasOverride(\.branchPrefix, of: project, fallback: "team/").wrappedValue,
+      harness.model.overrideToggle(\.branchPrefix, of: project, fallback: "team/").wrappedValue,
       "blank is still the project having its say")
     #expect(
       harness.model.worktreeSettings(for: harness.live).qualifiedBranch("tabs") == "tabs",
@@ -105,7 +106,7 @@ struct AppModelSettingsBindingsTests {
 
     // Something else changes the project while the window holds `stale`.
     harness.model.setExpanded(false, for: stale)
-    harness.model.overrideValue(\.autoStartAgent, of: stale, fallback: false).wrappedValue = true
+    harness.model.overrideField(\.autoStartAgent, of: stale, fallback: false).wrappedValue = true
 
     #expect(
       harness.model.workspace.project(stale.id)?.isExpanded == false,

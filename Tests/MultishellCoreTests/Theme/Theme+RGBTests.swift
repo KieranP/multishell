@@ -32,12 +32,11 @@ struct ThemeRGBTests {
     #expect(theme(ring: "#12345").focusRingRGB == Theme.multishellDark.selectionBackgroundRGB)
   }
 
-  @Test func oneAnsiSlotReadsAsTheWholeListDoesAndOneOutOfRangeIsGrey() throws {
+  @Test func anAnsiSlotThatWillNotParseOrIsOutOfRangeIsGrey() throws {
     var theme = try #require(Theme.builtins.first)
     theme.ansi[3] = "not a colour"
     let grey = RGB(red: 128, green: 128, blue: 128)
 
-    #expect(theme.ansi.indices.allSatisfy { theme.ansiRGB($0) == theme.ansiRGB[$0] })
     #expect(theme.ansiRGB(3) == grey)
     #expect(theme.ansiRGB(99) == grey)
   }

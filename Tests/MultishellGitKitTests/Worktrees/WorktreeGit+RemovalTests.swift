@@ -12,9 +12,9 @@ struct WorktreeGitRemovalTests {
   @Test func removingOneWorktreeKeepsAnotherWhoseDirectoryIsAway() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    try await repo.coordinator.create(
+    try await repo.coordinator.createThenRunPostCreate(
       branch: "gone", in: repo.project, settings: repo.worktreeSettings)
-    let away = try await repo.coordinator.create(
+    let away = try await repo.coordinator.createThenRunPostCreate(
       branch: "away", in: repo.project, settings: repo.worktreeSettings)
     let aside = away.deletingLastPathComponent().appendingPathComponent("away-aside")
     try FileManager.default.moveItem(at: away, to: aside)
@@ -31,9 +31,9 @@ struct WorktreeGitRemovalTests {
   @Test func forgettingAStaleRecordKeepsAnotherWorktreeWhoseDirectoryIsAway() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    let path = try await repo.coordinator.create(
+    let path = try await repo.coordinator.createThenRunPostCreate(
       branch: "old", in: repo.project, settings: repo.worktreeSettings)
-    let away = try await repo.coordinator.create(
+    let away = try await repo.coordinator.createThenRunPostCreate(
       branch: "away", in: repo.project, settings: repo.worktreeSettings)
     let stale = try await repo.worktree(onBranch: "old")
     try FileManager.default.removeItem(at: path)
@@ -52,7 +52,7 @@ struct WorktreeGitRemovalTests {
   @Test func aDirectoryThatTookAStaleRecordsPathIsNotTrashed() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    let path = try await repo.coordinator.create(
+    let path = try await repo.coordinator.createThenRunPostCreate(
       branch: "old", in: repo.project, settings: repo.worktreeSettings)
     let stale = try await repo.worktree(onBranch: "old")
     try FileManager.default.removeItem(at: path)
@@ -70,7 +70,7 @@ struct WorktreeGitRemovalTests {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
     var project = repo.project
-    let path = try await repo.coordinator.create(
+    let path = try await repo.coordinator.createThenRunPostCreate(
       branch: "old", in: project, settings: repo.worktreeSettings)
     let stale = try await repo.worktree(onBranch: "old", in: project)
     try FileManager.default.removeItem(at: path)
@@ -88,9 +88,9 @@ struct WorktreeGitRemovalTests {
   @Test func aLockedStaleRecordIsForgottenAndTheDirectoryAtItsPathKept() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    let path = try await repo.coordinator.create(
+    let path = try await repo.coordinator.createThenRunPostCreate(
       branch: "old", in: repo.project, settings: repo.worktreeSettings)
-    _ = try await repo.git.run(
+    _ = try await repo.runner.run(
       ["worktree", "lock", "--reason", "external drive", path.path], in: repo.project.path)
     let stale = try await repo.worktree(onBranch: "old")
     try FileManager.default.removeItem(at: path)
@@ -109,7 +109,7 @@ struct WorktreeGitRemovalTests {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
     var project = repo.project
-    let path = try await repo.coordinator.create(
+    let path = try await repo.coordinator.createThenRunPostCreate(
       branch: "unread", in: project, settings: repo.worktreeSettings)
     let worktree = try await repo.worktree(onBranch: "unread", in: project)
     let fake = try FakeGit.make(
@@ -136,7 +136,7 @@ struct WorktreeGitRemovalTests {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
     var project = repo.project
-    let path = try await repo.coordinator.create(
+    let path = try await repo.coordinator.createThenRunPostCreate(
       branch: "older", in: project, settings: repo.worktreeSettings)
     let worktree = try await repo.worktree(onBranch: "older", in: project)
     let fake = try FakeGit.make(
@@ -172,7 +172,7 @@ struct WorktreeGitRemovalTests {
     let container = repo.root.appendingPathComponent("CaseDir", isDirectory: true)
     try FileManager.default.createDirectory(at: container, withIntermediateDirectories: true)
     let spelled = repo.root.appendingPathComponent("casedir/wt")
-    _ = try await repo.git.run(
+    _ = try await repo.runner.run(
       ["worktree", "add", "-q", "-b", "cased", spelled.path], in: repo.project.path)
     let cased = try await repo.worktree(onBranch: "cased")
 
@@ -185,11 +185,11 @@ struct WorktreeGitRemovalTests {
   @Test func aCloneThatTookAStaleRecordsPathIsNotTrashed() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    let path = try await repo.coordinator.create(
+    let path = try await repo.coordinator.createThenRunPostCreate(
       branch: "old", in: repo.project, settings: repo.worktreeSettings)
     let stale = try await repo.worktree(onBranch: "old")
     try FileManager.default.removeItem(at: path)
-    _ = try await repo.git.run(
+    _ = try await repo.runner.run(
       ["clone", "-q", repo.project.path.path, path.path], in: repo.root)
 
     await #expect(throws: NotTheCheckout.self) {
@@ -202,9 +202,9 @@ struct WorktreeGitRemovalTests {
   @Test func aLockedWorktreeWhoseTrashRefusesStaysLocked() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    let path = try await repo.coordinator.create(
+    let path = try await repo.coordinator.createThenRunPostCreate(
       branch: "pinned", in: repo.project, settings: repo.worktreeSettings)
-    _ = try await repo.git.run(
+    _ = try await repo.runner.run(
       ["worktree", "lock", "--reason", "external drive", path.path], in: repo.project.path)
     let pinned = try await repo.worktree(onBranch: "pinned")
     #expect(pinned.isLocked)
@@ -216,7 +216,8 @@ struct WorktreeGitRemovalTests {
 
     let after = try await repo.worktree(onBranch: "pinned")
     #expect(after.isLocked, "the lock and its reason are the user's")
-    let listed = try await repo.git.run(["worktree", "list", "--porcelain"], in: repo.project.path)
+    let listed = try await repo.runner.run(
+      ["worktree", "list", "--porcelain"], in: repo.project.path)
     #expect(listed.contains("locked external drive"))
   }
 
@@ -225,7 +226,7 @@ struct WorktreeGitRemovalTests {
   @Test func aTrashThatTookNothingStopsBeforeGitIsAsked() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    let path = try await repo.coordinator.create(
+    let path = try await repo.coordinator.createThenRunPostCreate(
       branch: "untouched", in: repo.project, settings: repo.worktreeSettings)
     try "work\n".write(
       to: path.appendingPathComponent("wip.txt"), atomically: true, encoding: .utf8)
@@ -242,9 +243,9 @@ struct WorktreeGitRemovalTests {
   @Test func aLockedWorktreeIsRemovedLockAndAll() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    let path = try await repo.coordinator.create(
+    let path = try await repo.coordinator.createThenRunPostCreate(
       branch: "locked", in: repo.project, settings: repo.worktreeSettings)
-    _ = try await repo.git.run(["worktree", "lock", path.path], in: repo.project.path)
+    _ = try await repo.runner.run(["worktree", "lock", path.path], in: repo.project.path)
     let locked = try await repo.worktree(onBranch: "locked")
 
     try await repo.coordinator.remove(locked, in: repo.project)
@@ -257,7 +258,7 @@ struct WorktreeGitRemovalTests {
     defer { repo.tearDown() }
     let project = repo.project
     let coordinator = repo.coordinator
-    let path = try await coordinator.create(
+    let path = try await coordinator.createThenRunPostCreate(
       branch: "ghost", in: project, settings: repo.worktreeSettings)
     try FileManager.default.removeItem(at: path)
 

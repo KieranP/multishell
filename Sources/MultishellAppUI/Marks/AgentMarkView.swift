@@ -11,7 +11,7 @@ struct AgentMarkView: View {
   /// `nil` is a shell, or a pane nothing has reported an agent for.
   let agentID: String?
   /// Drawn in place of a mark: the tab's kind, else the terminal.
-  var shellSymbol = AgentMarkView.terminalSymbol
+  var unmarkedSymbol = AgentMarkView.terminalSymbol
   /// A mark with no colour of its own, the letters and the shell glyph all
   /// take the row's own text colour.
   let plainTint: Color
@@ -22,7 +22,7 @@ struct AgentMarkView: View {
       if let agentID {
         mark(AgentCatalogue.mark(agentID), tint: AgentCatalogue.markTintRGB(agentID)?.color)
       } else {
-        Image(systemName: shellSymbol)
+        Image(systemName: unmarkedSymbol)
           .font(.system(size: size))
           .foregroundStyle(plainTint)
       }

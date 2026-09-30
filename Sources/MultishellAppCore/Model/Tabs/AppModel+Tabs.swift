@@ -40,7 +40,7 @@ extension AppModel {
   private func tabToSplit(in group: TabGroup.ID?, of worktree: Worktree) -> TerminalTab? {
     guard let group else { return workspace.activeTab(in: worktree.id) }
     guard let named = workspace.group(group), named.worktreeID == worktree.id else { return nil }
-    return workspace.activeTab(in: named)
+    return workspace.shownTab(in: named)
   }
 
   public func setSplitWeights(_ weights: [Double], at path: [Int], ofTab tabID: TerminalTab.ID) {
@@ -53,8 +53,7 @@ extension AppModel {
   /// The tab one place along the strip, wrapping at either end.
   private func activateAdjacentTab(_ direction: CycleDirection) {
     guard
-      let worktree = worktreeInView?.id,
-      let current = workspace.activeTab(in: worktree),
+      let current = tabInView,
       let next = direction == .next
         ? workspace.tab(after: current.id) : workspace.tab(before: current.id)
     else { return }
@@ -69,7 +68,7 @@ extension AppModel {
 
   /// One pane's, a split holding several: the user's name for the tab, else
   /// what this pane's shell last reported, else its starting title.
-  public func title(ofPane session: TerminalSession, in tab: TerminalTab) -> String {
+  func title(ofPane session: TerminalSession, in tab: TerminalTab) -> String {
     tab.customTitle ?? sessionTitles[session.id] ?? session.displayTitle
   }
 

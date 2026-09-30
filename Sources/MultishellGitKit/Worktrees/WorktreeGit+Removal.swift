@@ -38,20 +38,17 @@ extension WorktreeGit {
     else {
       // git refusing the directory, over ownership or a timeout, proves nothing
       // about whose it is; the `.git` file git wrote there does.
-      guard let record = Self.recordDirectory(namedBy: worktree.path) else { return false }
-      return Self.samePath(
-        record.deletingLastPathComponent(), WorktreeRecords.recordsDirectory(in: common))
+      guard let record = Self.recordDirectoryFromGitFile(in: worktree.path) else {
+        return false
+      }
+      return Self.sameResolvedPath(
+        record.deletingLastPathComponent(), WorktreeRecords.worktreesDirectory(in: common))
     }
     let lines = Self.absolutePaths(in: output, from: worktree.path)
     // The top level too: a plain directory inside the main checkout answers
     // with the main repository's common directory.
-    return lines.count == 2 && Self.samePath(lines[0], worktree.path)
-      && Self.samePath(lines[1], common)
-  }
-
-  private static func samePath(_ a: URL, _ b: URL) -> Bool {
-    a.resolvingSymlinksInPath().standardizedFileURL.path
-      == b.resolvingSymlinksInPath().standardizedFileURL.path
+    return lines.count == 2 && Self.sameResolvedPath(lines[0], worktree.path)
+      && Self.sameResolvedPath(lines[1], common)
   }
 
   /// A record whose path is now someone else's directory. That record alone
@@ -60,7 +57,8 @@ extension WorktreeGit {
     // A `.git` there is another repository's, which prune would keep too.
     let taken = FileManager.default.fileExists(
       atPath: worktree.path.appendingPathComponent(".git").path)
-    guard !taken, let record = try await recordDirectory(pointingAt: worktree.path, in: project)
+    guard !taken,
+      let record = try await recordDirectory(whoseGitdirNames: worktree.path, in: project)
     else {
       throw NotTheCheckout(path: worktree.path)
     }
@@ -73,9 +71,9 @@ extension WorktreeGit {
   /// The directory under `<common>/worktrees` whose `gitdir` names `checkout`,
   /// absolute or, as `worktree.useRelativePaths` writes it, relative to itself.
   private func recordDirectory(
-    pointingAt checkout: URL, in project: Project
+    whoseGitdirNames checkout: URL, in project: Project
   ) async throws -> URL? {
-    let records = WorktreeRecords.recordsDirectory(in: try await commonGitDirectory(project))
+    let records = WorktreeRecords.worktreesDirectory(in: try await commonGitDirectory(project))
     let names =
       (try? FileManager.default.contentsOfDirectory(
         at: records, includingPropertiesForKeys: nil)) ?? []
@@ -86,7 +84,7 @@ extension WorktreeGit {
         let line = gitdir.split(whereSeparator: \.isNewline).first
       else { return false }
       let target = Self.directoryURL(String(line), relativeTo: record)
-      return Self.samePath(target.deletingLastPathComponent(), checkout)
+      return Self.sameResolvedPath(target.deletingLastPathComponent(), checkout)
     }
   }
 

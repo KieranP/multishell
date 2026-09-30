@@ -6,7 +6,7 @@ import Testing
 @Suite(.serialized) @MainActor
 struct ViewSidewaysWheelTests {
   /// The workspace's shape: a sidebar that scrolls beside a strip that does.
-  /// Needs the window server AppSettingsWindowTests does.
+  /// Needs the window server SettingsWindowSizeTests does.
   @Test func theMarkedScrollerIsTheStripsAndTheCatcherStaysOutsideIt() {
     let reference = ScrollerReference()
     let workspace = HStack(spacing: 0) {
@@ -37,17 +37,9 @@ struct ViewSidewaysWheelTests {
     OffscreenWindow.settle(within: 0.25)
 
     #expect(reference.scroller?.frame.height == 28, "the strip's, 28 high, not the sidebar's 400")
-    let catcher = firstCatcher(in: host)
+    let catcher = host.descendants(of: SidewaysWheelView.self).first
     #expect(catcher != nil, "the catcher is in the hierarchy")
     #expect(catcher?.enclosingScrollView == nil, "and outside the scroller, or it is never called")
     withExtendedLifetime(window) {}
-  }
-
-  private func firstCatcher(in view: NSView) -> SidewaysWheelView? {
-    if let found = view as? SidewaysWheelView { return found }
-    for subview in view.subviews {
-      if let found = firstCatcher(in: subview) { return found }
-    }
-    return nil
   }
 }

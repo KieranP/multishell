@@ -13,7 +13,7 @@ func soundWorkspace() -> (workspace: Workspace, tab: TerminalTab) {
     worktreeID: worktree.id, workingDirectory: worktree.path, title: "sh")
   var group = TabGroup(worktreeID: worktree.id)
   let tab = TerminalTab(worktreeID: worktree.id, groupID: group.id, session: session.id)
-  group.activeTabID = tab.id
+  group.shownTabID = tab.id
   workspace.projects = [project]
   workspace.worktrees = [worktree]
   workspace.sessions = [session]

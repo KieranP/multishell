@@ -13,7 +13,7 @@ struct WindowAccessor: NSViewRepresentable {
 
   func updateNSView(_ view: Reporter, context: Context) {}
 
-  final class Reporter: NSView {
+  final class Reporter: AccessibilityHiddenView {
     var onWindow: ((NSWindow?) -> Void)?
 
     override func viewDidMoveToWindow() {

@@ -78,7 +78,7 @@ struct AppModelTabClosingTests {
     h.model.newTab()
     let working = h.model.workspace.activeTab(in: h.main.id)!
     h.model.select(h.feature)
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(state: .running, sessionID: working.focusedSessionID, cwd: nil, pid: nil))
 
     h.model.closeTab(working.id)
@@ -95,9 +95,10 @@ struct AppModelTabClosingTests {
     h.model.select(h.main)
     h.model.newTab()
     let building = h.model.workspace.activeTab(in: h.main.id)!
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
-        state: .running, sessionID: building.focusedSessionID, command: "make", isShell: true))
+        state: .running, sessionID: building.focusedSessionID, command: "make",
+        isFromShellIntegration: true))
 
     h.model.closeTab(building.id)
 
@@ -109,7 +110,7 @@ struct AppModelTabClosingTests {
     let h = Harness()
     h.model.select(h.main)
     let tab = h.model.workspace.activeTab(in: h.main.id)!
-    h.source.send(SessionStateReport(state: .running, sessionID: tab.focusedSessionID))
+    h.stateSource.send(SessionStateReport(state: .running, sessionID: tab.focusedSessionID))
 
     h.model.closeActivePane()
     #expect(h.model.pendingClose == .pane(tab.focusedSessionID))
@@ -131,7 +132,7 @@ struct AppModelTabClosingTests {
     let h = Harness()
     h.model.select(h.main)
     let tab = h.model.workspace.activeTab(in: h.main.id)!
-    h.source.send(SessionStateReport(state: .running, sessionID: tab.focusedSessionID))
+    h.stateSource.send(SessionStateReport(state: .running, sessionID: tab.focusedSessionID))
 
     h.model.closeActiveTab()
     #expect(h.model.pendingClose == .tab(tab.id))

@@ -13,19 +13,19 @@ struct WorktreeCoordinatorMergesTests {
   /// and then deleted on the remote the way a merge does.
   private func withRemote(_ fixture: RepositoryFixture) async throws {
     let origin = fixture.root.appendingPathComponent("origin.git", isDirectory: true)
-    _ = try await fixture.git.run(
+    _ = try await fixture.runner.run(
       ["clone", "-q", "--bare", fixture.project.path.path, origin.path], in: fixture.root)
-    _ = try await fixture.git.run(
+    _ = try await fixture.runner.run(
       ["remote", "add", "origin", origin.path], in: fixture.project.path)
-    _ = try await fixture.git.run(["fetch", "-q", "origin"], in: fixture.project.path)
+    _ = try await fixture.runner.run(["fetch", "-q", "origin"], in: fixture.project.path)
   }
 
   private func mergeInputs(
     _ fixture: RepositoryFixture, override: String? = nil
   ) async throws -> MergeInputs {
-    let branches = try #require(
+    let scan = try #require(
       await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: override))
-    return try #require(branches.mergeInputs)
+    return try #require(scan.mergeInputs)
   }
 
   /// Two commits, so the one the forge squashes them into shares a patch id with neither and
@@ -34,25 +34,26 @@ struct WorktreeCoordinatorMergesTests {
     _ branch: String, work: [(file: String, content: String)], in fixture: RepositoryFixture
   ) async throws {
     let path = fixture.project.path
-    _ = try await fixture.git.run(["checkout", "-q", "-b", branch], in: path)
+    _ = try await fixture.runner.run(["checkout", "-q", "-b", branch], in: path)
     for (index, change) in work.enumerated() {
       try await fixture.commit(
         index == 0 ? "work" : "more work", file: change.file, content: change.content)
     }
-    _ = try await fixture.git.run(["push", "-q", "-u", "origin", branch], in: path)
-    _ = try await fixture.git.run(["checkout", "-q", "main"], in: path)
+    _ = try await fixture.runner.run(["push", "-q", "-u", "origin", branch], in: path)
+    _ = try await fixture.runner.run(["checkout", "-q", "main"], in: path)
     try await fixture.commit(
       "squashed work",
       files: Dictionary(work.map { ($0.file, $0.content) }, uniquingKeysWith: { _, last in last }))
-    _ = try await fixture.git.run(["push", "-q", "origin", "main"], in: path)
-    _ = try await fixture.git.run(["push", "-q", "origin", "--delete", branch], in: path)
-    _ = try await fixture.git.run(["fetch", "-q", "--prune", "origin"], in: path)
+    _ = try await fixture.runner.run(["push", "-q", "origin", "main"], in: path)
+    _ = try await fixture.runner.run(["push", "-q", "origin", "--delete", branch], in: path)
+    _ = try await fixture.runner.run(["fetch", "-q", "--prune", "origin"], in: path)
   }
 
   func stubInputs(baseTip: String, refs: [BranchRef] = []) -> MergeInputs {
     MergeInputs(
-      base: DefaultBranch(shortName: "main", branchName: "main", tip: baseTip, fullName: "main"),
-      refs: refs)
+      base: DefaultBranch(
+        shortName: "main", nameWithoutRemote: "main", tip: baseTip, fullName: "main"),
+      branches: BranchRef.localBranchesByName(refs))
   }
 
   @Test func aBranchMergedWithAMergeCommitIsFoundByAncestry() async throws {
@@ -60,10 +61,10 @@ struct WorktreeCoordinatorMergesTests {
     defer { fixture.tearDown() }
     let path = fixture.project.path
 
-    _ = try await fixture.git.run(["checkout", "-q", "-b", "feat"], in: path)
+    _ = try await fixture.runner.run(["checkout", "-q", "-b", "feat"], in: path)
     try await fixture.commit("work", file: "feat.txt", content: "a\n")
-    _ = try await fixture.git.run(["checkout", "-q", "main"], in: path)
-    _ = try await fixture.git.run(["merge", "-q", "--no-ff", "-m", "merge", "feat"], in: path)
+    _ = try await fixture.runner.run(["checkout", "-q", "main"], in: path)
+    _ = try await fixture.runner.run(["merge", "-q", "--no-ff", "-m", "merge", "feat"], in: path)
 
     let inputs = try await mergeInputs(fixture)
     #expect(inputs.base.shortName == "main")
@@ -77,22 +78,22 @@ struct WorktreeCoordinatorMergesTests {
     defer { fixture.tearDown() }
     let path = fixture.project.path
 
-    _ = try await fixture.git.run(["checkout", "-q", "-b", "rebased"], in: path)
+    _ = try await fixture.runner.run(["checkout", "-q", "-b", "rebased"], in: path)
     try await fixture.commit("work", file: "rebased.txt", content: "a\n")
     let commit = try await fixture.head(of: path)
-    _ = try await fixture.git.run(["checkout", "-q", "main"], in: path)
+    _ = try await fixture.runner.run(["checkout", "-q", "main"], in: path)
     // Main moves first, so the cherry-pick lands on a different parent and
     // cannot come out as the very same commit object.
     try await fixture.commit("elsewhere", file: "other.txt", content: "b\n")
     // What a rebase-merge leaves: the same patch, a different commit.
-    _ = try await fixture.git.run(["cherry-pick", commit], in: path)
+    _ = try await fixture.runner.run(["cherry-pick", commit], in: path)
 
     let inputs = try await mergeInputs(fixture)
     let states = await fixture.coordinator.mergeStates(
       of: ["rebased"], in: fixture.project, inputs: inputs)
     #expect(states["rebased"] == .merged(.patchEquivalent, into: "main"))
     // Ancestry alone would have missed it.
-    let merged = await WorktreeGit(runner: fixture.git).mergedBranches(
+    let merged = await WorktreeGit(runner: fixture.runner).mergedBranches(
       into: "main", in: fixture.project)
     #expect(merged?.contains("rebased") == false)
   }
@@ -120,11 +121,11 @@ struct WorktreeCoordinatorMergesTests {
     defer { fixture.tearDown() }
     let path = fixture.project.path
     let tree = fixture.root.appendingPathComponent("trees/behind", isDirectory: true)
-    _ = try await fixture.git.run(
+    _ = try await fixture.runner.run(
       ["worktree", "add", "-q", "-b", "behind", tree.path, "HEAD"], in: path)
     // The trunk moves, and the worktree pulls it in.
     try await fixture.commit("trunk moves on", file: "trunk.txt", content: "a\n")
-    _ = try await fixture.git.run(["merge", "-q", "--ff-only", "main"], in: tree)
+    _ = try await fixture.runner.run(["merge", "-q", "--ff-only", "main"], in: tree)
 
     let inputs = try await mergeInputs(fixture)
     #expect(inputs.tip(of: "behind") == inputs.base.tip, "carried up to the trunk")
@@ -140,10 +141,10 @@ struct WorktreeCoordinatorMergesTests {
     defer { fixture.tearDown() }
     let path = fixture.project.path
     let tree = fixture.root.appendingPathComponent("trees/rebased", isDirectory: true)
-    _ = try await fixture.git.run(
+    _ = try await fixture.runner.run(
       ["worktree", "add", "-q", "-b", "rebased", tree.path, "HEAD"], in: path)
     try await fixture.commit("trunk moves on", file: "trunk.txt", content: "a\n")
-    _ = try await fixture.git.run(["rebase", "-q", "main"], in: tree)
+    _ = try await fixture.runner.run(["rebase", "-q", "main"], in: tree)
 
     let inputs = try await mergeInputs(fixture)
     #expect(inputs.tip(of: "rebased") == inputs.base.tip, "carried up to the trunk")
@@ -159,14 +160,14 @@ struct WorktreeCoordinatorMergesTests {
     defer { fixture.tearDown() }
     let path = fixture.project.path
     let tree = fixture.root.appendingPathComponent("trees/merged-in", isDirectory: true)
-    _ = try await fixture.git.run(
+    _ = try await fixture.runner.run(
       ["worktree", "add", "-q", "-b", "merged-in", tree.path, "HEAD"], in: path)
     try await fixture.commit("trunk moves on", file: "trunk.txt", content: "a\n")
-    _ = try await fixture.git.run(
+    _ = try await fixture.runner.run(
       ["merge", "-q", "--no-ff", "-m", "merge the trunk", "main"], in: tree)
 
     let inputs = try await mergeInputs(fixture)
-    let cherry = await WorktreeGit(runner: fixture.git).isPatchEquivalent(
+    let cherry = await WorktreeGit(runner: fixture.runner).isPatchEquivalent(
       "merged-in", against: "main", in: fixture.project)
     #expect(cherry == false, "nothing printed is not every patch landed")
     let states = await fixture.coordinator.mergeStates(
@@ -191,9 +192,9 @@ struct WorktreeCoordinatorMergesTests {
     #expect(states["squashed"] == .merged(.upstreamGone, into: "origin/main"))
 
     // Work carried on in the same worktree after the pull request landed.
-    _ = try await fixture.git.run(["checkout", "-q", "squashed"], in: path)
+    _ = try await fixture.runner.run(["checkout", "-q", "squashed"], in: path)
     try await fixture.commit("carrying on", file: "squashed.txt", content: "a\nand more\n")
-    _ = try await fixture.git.run(["checkout", "-q", "main"], in: path)
+    _ = try await fixture.runner.run(["checkout", "-q", "main"], in: path)
 
     let after = try await mergeInputs(fixture)
     #expect(after.upstreamIsGone("squashed"), "still gone, and still says nothing about this")
@@ -210,10 +211,11 @@ struct WorktreeCoordinatorMergesTests {
     let path = fixture.project.path
     try await fixture.commit("a directory to collide with", file: "docs/notes.md", content: "a\n")
 
-    _ = try await fixture.git.run(["checkout", "-q", "-b", "docs"], in: path)
+    _ = try await fixture.runner.run(["checkout", "-q", "-b", "docs"], in: path)
     try await fixture.commit("work", file: "docs/one.md", content: "one\n")
-    _ = try await fixture.git.run(["checkout", "-q", "main"], in: path)
-    _ = try await fixture.git.run(["merge", "-q", "--no-ff", "-m", "merge docs", "docs"], in: path)
+    _ = try await fixture.runner.run(["checkout", "-q", "main"], in: path)
+    _ = try await fixture.runner.run(
+      ["merge", "-q", "--no-ff", "-m", "merge docs", "docs"], in: path)
 
     let inputs = try await mergeInputs(fixture)
     let states = await fixture.coordinator.mergeStates(
@@ -230,16 +232,16 @@ struct WorktreeCoordinatorMergesTests {
     let path = fixture.project.path
     // The tag sits on the first commit, so judging by it would read the
     // branch as holding nothing of its own.
-    _ = try await fixture.git.run(["tag", "release"], in: path)
-    _ = try await fixture.git.run(["checkout", "-q", "-b", "release"], in: path)
+    _ = try await fixture.runner.run(["tag", "release"], in: path)
+    _ = try await fixture.runner.run(["checkout", "-q", "-b", "release"], in: path)
     try await fixture.commit("work", file: "one.md", content: "one\n")
-    _ = try await fixture.git.run(["checkout", "-q", "main"], in: path)
+    _ = try await fixture.runner.run(["checkout", "-q", "main"], in: path)
     // By refname, or git merges the tag: the ambiguity this is about reaches
     // the setup as readily as the reads.
-    _ = try await fixture.git.run(
+    _ = try await fixture.runner.run(
       ["merge", "-q", "--no-ff", "-m", "merge release", "refs/heads/release"], in: path)
 
-    let worktreeGit = WorktreeGit(runner: fixture.git)
+    let worktreeGit = WorktreeGit(runner: fixture.runner)
     let merged = await worktreeGit.mergedBranches(into: "main", in: fixture.project)
     #expect(merged?.contains("release") == true, "got \(merged ?? [])")
 
@@ -253,10 +255,10 @@ struct WorktreeCoordinatorMergesTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let path = fixture.project.path
-    _ = try await fixture.git.run(["checkout", "-q", "-b", "feat"], in: path)
+    _ = try await fixture.runner.run(["checkout", "-q", "-b", "feat"], in: path)
     try await fixture.commit("work", file: "feat.txt", content: "a\n")
-    _ = try await fixture.git.run(["checkout", "-q", "main"], in: path)
-    _ = try await fixture.git.run(["tag", "main", "feat"], in: path)
+    _ = try await fixture.runner.run(["checkout", "-q", "main"], in: path)
+    _ = try await fixture.runner.run(["tag", "main", "feat"], in: path)
 
     let inputs = try await mergeInputs(fixture)
     let states = await fixture.coordinator.mergeStates(
@@ -270,10 +272,10 @@ struct WorktreeCoordinatorMergesTests {
     defer { fixture.tearDown() }
     let path = fixture.project.path
     try await withRemote(fixture)
-    _ = try await fixture.git.run(["checkout", "-q", "-b", "feat"], in: path)
+    _ = try await fixture.runner.run(["checkout", "-q", "-b", "feat"], in: path)
     try await fixture.commit("work", file: "feat.txt", content: "a\n")
-    _ = try await fixture.git.run(["checkout", "-q", "main"], in: path)
-    _ = try await fixture.git.run(["tag", "origin/main", "feat"], in: path)
+    _ = try await fixture.runner.run(["checkout", "-q", "main"], in: path)
+    _ = try await fixture.runner.run(["tag", "origin/main", "feat"], in: path)
 
     let inputs = try await mergeInputs(fixture)
     #expect(inputs.base.shortName == "origin/main")
@@ -310,13 +312,13 @@ struct WorktreeCoordinatorMergesTests {
     let cutFrom = try await fixture.head(of: checkout)
     try await TestRepository.commit(
       "the trunk moves on", files: ["later.txt": "the trunk moves on\n"], in: checkout,
-      using: fixture.git)
+      using: fixture.runner)
 
     let old = fixture.root.appendingPathComponent("trees/old", isDirectory: true)
-    _ = try await fixture.git.run(
+    _ = try await fixture.runner.run(
       ["worktree", "add", "-q", "-b", "old", old.path, cutFrom], in: bare)
 
-    let worktreeGit = WorktreeGit(runner: fixture.git)
+    let worktreeGit = WorktreeGit(runner: fixture.runner)
     #expect(
       await worktreeGit.hasWorkOfItsOwn("old", in: fixture.project) == false,
       "a bare repository logs no branch creation, so it has nothing to show for itself")
@@ -329,11 +331,11 @@ struct WorktreeCoordinatorMergesTests {
 
     // A commit is logged even here, so a branch that landed keeps its badge.
     let work = fixture.root.appendingPathComponent("trees/work", isDirectory: true)
-    _ = try await fixture.git.run(
+    _ = try await fixture.runner.run(
       ["worktree", "add", "-q", "-b", "work", work.path, "main"], in: bare)
     try await TestRepository.commit(
-      "work of its own", files: ["work.txt": "work of its own\n"], in: work, using: fixture.git)
-    _ = try await fixture.git.run(
+      "work of its own", files: ["work.txt": "work of its own\n"], in: work, using: fixture.runner)
+    _ = try await fixture.runner.run(
       ["merge", "-q", "--no-ff", "-m", "merge work", "work"], in: checkout)
 
     let landed = try await mergeInputs(fixture)
@@ -391,10 +393,11 @@ struct WorktreeCoordinatorMergesTests {
     try await withRemote(fixture)
 
     // What the branch that had the name before left behind.
-    _ = try await fixture.git.run(["config", "branch.reused.remote", "origin"], in: path)
-    _ = try await fixture.git.run(["config", "branch.reused.merge", "refs/heads/reused"], in: path)
+    _ = try await fixture.runner.run(["config", "branch.reused.remote", "origin"], in: path)
+    _ = try await fixture.runner.run(
+      ["config", "branch.reused.merge", "refs/heads/reused"], in: path)
     let tree = fixture.root.appendingPathComponent("trees/reused", isDirectory: true)
-    _ = try await fixture.git.run(
+    _ = try await fixture.runner.run(
       ["worktree", "add", "-q", "-b", "reused", tree.path, "HEAD"], in: path)
 
     let cut = try await mergeInputs(fixture)
@@ -403,7 +406,7 @@ struct WorktreeCoordinatorMergesTests {
       of: ["reused"], in: fixture.project, inputs: cut)
     #expect(states["reused"] == .unmerged, "cut from the trunk and not written in")
 
-    _ = try await fixture.git.run(["commit", "-q", "--allow-empty", "-m", "work"], in: tree)
+    _ = try await fixture.runner.run(["commit", "-q", "--allow-empty", "-m", "work"], in: tree)
     let committed = try await mergeInputs(fixture)
     states = await fixture.coordinator.mergeStates(
       of: ["reused"], in: fixture.project, inputs: committed)
@@ -418,12 +421,12 @@ struct WorktreeCoordinatorMergesTests {
     let path = fixture.project.path
     try await fixture.commit("second", file: "b.txt", content: "b\n")
     let tree = fixture.root.appendingPathComponent("trees/fresh", isDirectory: true)
-    _ = try await fixture.git.run(
+    _ = try await fixture.runner.run(
       ["worktree", "add", "-q", "-b", "fresh", tree.path, "HEAD"], in: path)
 
     let inputs = try await mergeInputs(fixture)
     // git itself calls it merged, which is the whole trap.
-    let merged = await WorktreeGit(runner: fixture.git).mergedBranches(
+    let merged = await WorktreeGit(runner: fixture.runner).mergedBranches(
       into: inputs.base.shortName, in: fixture.project)
     #expect(merged?.contains("fresh") == true)
 
@@ -439,12 +442,12 @@ struct WorktreeCoordinatorMergesTests {
     defer { fixture.tearDown() }
     let path = fixture.project.path
     let tree = fixture.root.appendingPathComponent("trees/ff", isDirectory: true)
-    _ = try await fixture.git.run(
+    _ = try await fixture.runner.run(
       ["worktree", "add", "-q", "-b", "ff", tree.path, "HEAD"], in: path)
     try "a\n".write(to: tree.appendingPathComponent("a.txt"), atomically: true, encoding: .utf8)
-    _ = try await fixture.git.run(["add", "."], in: tree)
-    _ = try await fixture.git.run(["commit", "-q", "-m", "work"], in: tree)
-    _ = try await fixture.git.run(["merge", "-q", "--ff-only", "ff"], in: path)
+    _ = try await fixture.runner.run(["add", "."], in: tree)
+    _ = try await fixture.runner.run(["commit", "-q", "-m", "work"], in: tree)
+    _ = try await fixture.runner.run(["merge", "-q", "--ff-only", "ff"], in: path)
 
     let inputs = try await mergeInputs(fixture)
     #expect(
@@ -459,9 +462,9 @@ struct WorktreeCoordinatorMergesTests {
     defer { fixture.tearDown() }
     let path = fixture.project.path
 
-    _ = try await fixture.git.run(["checkout", "-q", "-b", "feat"], in: path)
+    _ = try await fixture.runner.run(["checkout", "-q", "-b", "feat"], in: path)
     try await fixture.commit("work", file: "feat.txt", content: "a\n")
-    _ = try await fixture.git.run(["checkout", "-q", "main"], in: path)
+    _ = try await fixture.runner.run(["checkout", "-q", "main"], in: path)
 
     let inputs = try await mergeInputs(fixture)
     let states = await fixture.coordinator.mergeStates(
@@ -474,11 +477,11 @@ struct WorktreeCoordinatorMergesTests {
     defer { fixture.tearDown() }
     let path = fixture.project.path
 
-    _ = try await fixture.git.run(["checkout", "-q", "-b", "feat"], in: path)
+    _ = try await fixture.runner.run(["checkout", "-q", "-b", "feat"], in: path)
     try await fixture.commit("work", file: "feat.txt", content: "a\n")
-    _ = try await fixture.git.run(["checkout", "-q", "main"], in: path)
-    _ = try await fixture.git.run(["merge", "-q", "--no-ff", "-m", "merge", "feat"], in: path)
-    _ = try await fixture.git.run(["checkout", "-q", "feat"], in: path)
+    _ = try await fixture.runner.run(["checkout", "-q", "main"], in: path)
+    _ = try await fixture.runner.run(["merge", "-q", "--no-ff", "-m", "merge", "feat"], in: path)
+    _ = try await fixture.runner.run(["checkout", "-q", "feat"], in: path)
     try await fixture.commit("more", file: "feat.txt", content: "b\n")
 
     let inputs = try await mergeInputs(fixture)
@@ -494,15 +497,15 @@ struct WorktreeCoordinatorMergesTests {
     defer { fixture.tearDown() }
     let path = fixture.project.path
     try await withRemote(fixture)
-    _ = try await fixture.git.run(["checkout", "-q", "-b", "develop"], in: path)
+    _ = try await fixture.runner.run(["checkout", "-q", "-b", "develop"], in: path)
     try await fixture.commit("dev", file: "dev.txt", content: "a\n")
-    _ = try await fixture.git.run(["checkout", "-q", "main"], in: path)
+    _ = try await fixture.runner.run(["checkout", "-q", "main"], in: path)
 
     // The clone recorded origin/HEAD, and the remote wins over a local main
     // that a pull has not caught up with.
     let detected = try await mergeInputs(fixture)
     #expect(detected.base.shortName == "origin/main")
-    #expect(detected.base.branchName == "main")
+    #expect(detected.base.nameWithoutRemote == "main")
 
     // The user's own name, which exists only locally.
     let overridden = try await mergeInputs(fixture, override: "develop")
@@ -512,7 +515,7 @@ struct WorktreeCoordinatorMergesTests {
     let missing = try #require(
       await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: "nowhere"))
     #expect(missing.mergeInputs == nil)
-    #expect(missing.lastCommits["main"] != nil, "the dates come back with no base to measure")
+    #expect(missing.lastCommitDates["main"] != nil, "the dates come back with no base to measure")
   }
 
   @Test func aScanOfNoBranchesAsksGitNothingAndAnswersNothing() async throws {

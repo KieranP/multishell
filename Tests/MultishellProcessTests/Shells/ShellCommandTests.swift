@@ -5,7 +5,7 @@ import Testing
 
 @Suite
 struct ShellCommandTests {
-  @Test func runsACommandLineThroughTheShellWithEnvironment() async throws {
+  @Test func aScriptRunsInTheUsersShellAndSeesTheEnvironmentItIsGiven() async throws {
     let shell = try ScratchShell()
     defer { shell.tearDown() }
     let out = try await ShellCommand.runScript(
@@ -19,7 +19,7 @@ struct ShellCommandTests {
     let shell = try ScratchShell()
     defer { shell.tearDown() }
     func launch(_ command: String, in directory: URL) async throws {
-      try await ShellCommand.launch(
+      try await ShellCommand.runUncaptured(
         command, in: directory, environment: shell.environment, shellPath: shell.path)
     }
     try await launch("true", in: shell.home)
@@ -34,7 +34,7 @@ struct ShellCommandTests {
     let shell = try ScratchShell("/bin/zsh")
     defer { shell.tearDown() }
 
-    try await ShellCommand.launch(
+    try await ShellCommand.runUncaptured(
       "for f in *.nomatch; do :; done; true", in: shell.home, environment: shell.environment,
       shellPath: shell.path)
   }
@@ -46,7 +46,7 @@ struct ShellCommandTests {
     defer { shell.tearDown() }
     for stream in ["1", "2"] {
       await #expect(throws: ProcessFailure.self, "stream \(stream)") {
-        try await ShellCommand.launch(
+        try await ShellCommand.runUncaptured(
           "test -p /dev/fd/\(stream)", in: shell.home, environment: shell.environment,
           shellPath: shell.path)
       }

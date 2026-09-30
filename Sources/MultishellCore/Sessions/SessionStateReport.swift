@@ -11,7 +11,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   /// of what `Int(_:)` cannot hold.
   static let maximumDuration: Double = 7 * 24 * 60 * 60
 
-  public var version: Int
+  var version: Int
   public var state: SessionState
   /// The tab, from `MULTISHELL_SESSION` in the terminal's environment. A
   /// report without one can still name a worktree through `cwd`.
@@ -33,7 +33,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   public var command: String?
   /// Set on the reports the injected shell integration sends, which are the
   /// only ones that take an agent's mark back; see Docs/design/agents.md.
-  public var isShell: Bool?
+  public var isFromShellIntegration: Bool?
   /// Set where the report moves a dot and another about the same thing will
   /// raise the banner. Absent keeps an older helper's banners.
   public var silent: Bool?
@@ -75,7 +75,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     case duration
     case agent
     case command
-    case isShell = "shell"
+    case isFromShellIntegration = "shell"
     case silent
     case legacySubagentCount = "subagents"
     case subagent
@@ -97,7 +97,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     duration: Double? = nil,
     agent: String? = nil,
     command: String? = nil,
-    isShell: Bool? = nil,
+    isFromShellIntegration: Bool? = nil,
     silent: Bool? = nil,
     subagent: SubagentReport? = nil,
     startsTurn: Bool? = nil,
@@ -117,13 +117,13 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     self.duration = Self.boundedDuration(duration)
     self.agent = Self.boundedIdentifier(agent)
     self.command = Self.commandWord(command)
-    self.isShell = isShell
+    self.isFromShellIntegration = isFromShellIntegration
     self.silent = silent
-    self.legacySubagentCount = Self.count(of: subagent)
+    self.legacySubagentCount = Self.legacyCount(of: subagent)
     self.subagent = subagent
     self.startsTurn = startsTurn
     self.startsSession = startsSession
-    self.backgroundShells = backgroundShells.map { Array($0.prefix(Self.maximumWorkerCount)) }
+    self.backgroundShells = Self.boundedShells(backgroundShells)
     self.resumesAfterWorkers = resumesAfterWorkers
     self.conversationID = Self.boundedIdentifier(conversationID)
     self.workersOut = Self.boundedWorkers(workersOut)
@@ -132,7 +132,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
 
   /// What an app that reads only the count should make of a worker. A tool
   /// call counts for nothing: each would otherwise add a worker to its roster.
-  private static func count(of subagent: SubagentReport?) -> Int? {
+  private static func legacyCount(of subagent: SubagentReport?) -> Int? {
     switch subagent?.phase {
     case .started: 1
     case .ended: -1
@@ -153,14 +153,15 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     duration = Self.boundedDuration(try container.decodeIfPresent(Double.self, forKey: .duration))
     agent = Self.boundedIdentifier(try container.decodeIfPresent(String.self, forKey: .agent))
     command = Self.commandWord(try container.decodeIfPresent(String.self, forKey: .command))
-    isShell = try container.decodeIfPresent(Bool.self, forKey: .isShell)
+    isFromShellIntegration = try container.decodeIfPresent(
+      Bool.self, forKey: .isFromShellIntegration)
     silent = try container.decodeIfPresent(Bool.self, forKey: .silent)
     legacySubagentCount = try container.decodeIfPresent(Int.self, forKey: .legacySubagentCount)
     subagent = try container.decodeIfPresent(SubagentReport.self, forKey: .subagent)
     startsTurn = try container.decodeIfPresent(Bool.self, forKey: .startsTurn)
     startsSession = try container.decodeIfPresent(Bool.self, forKey: .startsSession)
-    backgroundShells = try container.decodeIfPresent([Int32].self, forKey: .backgroundShells)
-      .map { Array($0.prefix(Self.maximumWorkerCount)) }
+    backgroundShells = Self.boundedShells(
+      try container.decodeIfPresent([Int32].self, forKey: .backgroundShells))
     resumesAfterWorkers = try container.decodeIfPresent(Bool.self, forKey: .resumesAfterWorkers)
     conversationID = Self.boundedIdentifier(
       try container.decodeIfPresent(String.self, forKey: .conversationID))
@@ -214,11 +215,11 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
 
   /// The places a model's roster holds and the shells a report names, or an agent
   /// never ending its workers or a Stop naming thousands grows it for good.
-  public static let maximumWorkerCount = 64
+  public static let rosterCapacity = 64
 
   /// A roster's places and the ids its overflow place folds, so a Stop can
   /// list all it holds; a list this long may have been cut, and prunes nothing.
-  public static let maximumListedWorkers = 1024
+  public static let maximumWorkersOut = 1024
 
   private static func boundedIdentifier(_ id: String?) -> String? {
     guard let id, !id.isEmpty, id.count <= maximumIdentifierLength else { return nil }
@@ -229,8 +230,12 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   /// worker a list can name.
   private static func boundedWorkers(_ workers: [SubagentReport]?) -> [SubagentReport]? {
     workers.map {
-      Array($0.filter { $0.id != SubagentReport.anonymousID }.prefix(maximumListedWorkers))
+      Array($0.filter { $0.id != SubagentReport.anonymousID }.prefix(maximumWorkersOut))
     }
+  }
+
+  private static func boundedShells(_ pids: [Int32]?) -> [Int32]? {
+    pids.map { Array($0.prefix(rosterCapacity)) }
   }
 
   private static func truncatedMessage(_ message: String?) -> String? {

@@ -35,4 +35,10 @@ struct AgentCatalogueTests {
     #expect(AgentCatalogue.agent("wezterm-agent") == nil)
   }
 
+  /// A dropped file is named to the agent the way its prompt reads one;
+  /// the catalogue says so only where that is known.
+  @Test func theCatalogueSaysWhichAgentsReadFileMentions() {
+    #expect(AgentCatalogue.agent("claude")?.fileMentionPrefix == "@")
+    #expect(AgentCatalogue.agent("codex")?.fileMentionPrefix == nil)
+  }
 }

@@ -14,9 +14,9 @@ struct WorktreeStageHandlesTests {
     handles.arm(first, on: a)
     handles.arm(second, on: a)
 
-    handles.end(a, ifStillHeldBy: first)
+    handles.endSetup(a, ifStillHeldBy: first)
     #expect(handles.stopper(of: a) === second, "the later stage keeps its own")
-    handles.end(a, ifStillHeldBy: second)
+    handles.endSetup(a, ifStillHeldBy: second)
     #expect(handles.stopper(of: a) == nil)
   }
 
@@ -32,7 +32,7 @@ struct WorktreeStageHandlesTests {
     #expect(handles.stopper(of: a) == nil)
     #expect(handles.setup(of: a) != nil, "the removal drops no create's task")
 
-    handles.end(a, ifStillHeldBy: stopper)
+    handles.endSetup(a, ifStillHeldBy: stopper)
     #expect(handles.setup(of: a) == nil)
   }
 
@@ -61,6 +61,6 @@ struct WorktreeStageHandlesTests {
     handles.endCreation(with: first)
     #expect(handles.isCreating(with: second))
     handles.cancelCreation()
-    #expect(second.isStopped)
+    #expect(second.isStopRequested)
   }
 }

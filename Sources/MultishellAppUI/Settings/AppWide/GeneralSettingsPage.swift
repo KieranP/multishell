@@ -29,7 +29,7 @@ struct GeneralSettingsPage: View {
       Section {
         InfoLabeledContent(t("general.state-file"), info: t("general.state-file-info")) {
           PathText(Paths.stateFile.path)
-          SymbolButton.reveal { model.revealInFileBrowser(Paths.stateFile) }
+          SettingsSymbolButton.reveal { model.revealInFileBrowser(Paths.stateFile) }
             .controlSize(.small)
         }
       }

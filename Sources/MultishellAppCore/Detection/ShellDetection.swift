@@ -44,8 +44,8 @@ public struct ShellDetection: Equatable, Sendable {
 
   private static func sorted(_ paths: Set<String>) -> [String] {
     paths.sorted { a, b in
-      let (na, nb) = (Self.name(a), Self.name(b))
-      return na == nb ? a < b : na < nb
+      let (nameA, nameB) = (Self.name(a), Self.name(b))
+      return nameA == nameB ? a < b : nameA < nameB
     }
   }
 

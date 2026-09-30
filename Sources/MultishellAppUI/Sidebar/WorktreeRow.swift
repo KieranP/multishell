@@ -34,7 +34,7 @@ struct WorktreeRow: View {
   private var shownTerminalCount: Int { isSelected ? 0 : terminalCount }
 
   private var height: Double {
-    metrics.worktreeRowHeight(isNamed: customName != nil, isRenaming: isRenaming)
+    metrics.worktreeRowHeight(hasCustomName: customName != nil, isRenaming: isRenaming)
   }
 
   var body: some View {
@@ -129,7 +129,7 @@ struct WorktreeRow: View {
 }
 
 /// Everything but the closures, which are rebuilt on every sidebar render and
-/// capture nothing the rest does not already say; see `SidebarView`.
+/// capture nothing the rest does not already say.
 extension WorktreeRow: @MainActor Equatable {
   static func == (a: WorktreeRow, b: WorktreeRow) -> Bool {
     a.worktree == b.worktree && a.customName == b.customName && a.isRenaming == b.isRenaming

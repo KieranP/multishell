@@ -18,11 +18,11 @@ struct AppModelSeenTests {
     let focused = tab.focusedSessionID
     let other = tab.sessionIDs.first { $0 != focused }!
 
-    h.source.send(SessionStateReport(state: .done, sessionID: other))
+    h.stateSource.send(SessionStateReport(state: .done, sessionID: other))
     #expect(h.model.state(ofPane: other) == .done, "on screen, but nobody is in it")
     #expect(h.notifier.posted.isEmpty, "and on screen, so no banner")
 
-    h.source.send(SessionStateReport(state: .done, sessionID: focused))
+    h.stateSource.send(SessionStateReport(state: .done, sessionID: focused))
     #expect(h.model.state(ofPane: focused) == nil, "the focused pane's Done is seen at once")
 
     h.model.show(pane: other)
@@ -54,7 +54,7 @@ struct AppModelSeenTests {
     h.model.splitActivePane(.horizontal)
     let tab = h.model.workspace.activeTab(in: h.main.id)!
     let other = tab.sessionIDs.first { $0 != tab.focusedSessionID }!
-    h.source.send(SessionStateReport(state: .done, sessionID: other))
+    h.stateSource.send(SessionStateReport(state: .done, sessionID: other))
     #expect(h.model.state(ofPane: other) == .done)
 
     h.engine.delegate?.terminalHost(h.engine, didFocus: other)

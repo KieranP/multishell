@@ -47,26 +47,27 @@ public final class AppModel<Surface> {
   /// Up whenever there is text, and down only through `setShowsSidebarFilter`,
   /// so emptying the field never takes the keyboard away with it.
   public internal(set) var showsSidebarFilter = false
-  /// Which project the settings window shows.
-  public var settingsProjectID: Project.ID?
+  /// The project a menu asked the settings window for; `settingsWindowProjectID`
+  /// is the one it shows.
+  public var requestedSettingsProjectID: Project.ID?
   /// The worktree showing its name field. Runtime state, so the menu that
   /// starts a rename and the row that draws it need not know each other.
-  public internal(set) var renamingWorktreeID: Worktree.ID?
+  var renamingWorktreeID: Worktree.ID?
   /// The tab whose strip shows a name field, for the same reason the worktree
   /// above has one: a commit arriving after the edit ended must be ignored.
   public internal(set) var renamingTabID: TerminalTab.ID?
   /// The panes with a find bar up, each pane's its own; see `showFind`.
   /// Runtime state, dropped with the session.
-  public internal(set) var findingSessionIDs: Set<TerminalSession.ID> = []
+  public internal(set) var findBarSessionIDs: Set<TerminalSession.ID> = []
   /// Each pane's find text, kept across closes so Cmd+F then Return repeats the
   /// last search there; read through `findText(of:)`.
   var findTexts: [TerminalSession.ID: String] = [:]
   /// Panes whose bar has a Cmd+F to answer, claimed through `takeFindFieldRequest`;
   /// a bar a worktree switch brings back has none. See terminals.md.
   public internal(set) var findFieldRequests: Set<TerminalSession.ID> = []
-  /// Panes whose search has a selected match: a step has gone since the find text was set.
-  /// The first step after a new find text lands nearest the prompt; terminals.md.
-  var findSelectedSessionIDs: Set<TerminalSession.ID> = []
+  /// Panes whose search has a selected match: a step has gone since the find text
+  /// was set. See `step(_:in:)`.
+  var steppedFindSessionIDs: Set<TerminalSession.ID> = []
   /// The pane whose bar's field has the keyboard, which the menu's find items
   /// act on ahead of the focused pane, a field taking no store focus.
   var findFieldSessionID: TerminalSession.ID?
@@ -130,7 +131,7 @@ public final class AppModel<Surface> {
   @ObservationIgnored var warmWorktrees: Set<Worktree.ID> = []
   /// Each project's exports of its repository's file, landing in the order
   /// they were asked.
-  @ObservationIgnored var sharedSettingsWrites: [Project.ID: SaveOrder] = [:]
+  @ObservationIgnored var sharedSettingsExportOrders: [Project.ID: SaveOrder] = [:]
   /// Settable so a test stands in a mount that never answers.
   @ObservationIgnored var directoryProbe = DirectoryProbe()
   @ObservationIgnored var pidWatch: Task<Void, Never>?
@@ -143,7 +144,7 @@ public final class AppModel<Surface> {
     await LoginShellEnvironment.capture(shellPath: ShellCatalogue.loginShellPath())
   }
   /// A harness stands in for both, the real ones writing the account's own files.
-  @ObservationIgnored var refreshAppLaunchFiles: @Sendable (_ helper: URL?) -> (any Error)? =
+  @ObservationIgnored var refreshAppLaunchFiles: @Sendable (_ helper: URL?) throws -> Void =
     AppLaunchFiles.refresh
   @ObservationIgnored var sweepPromisedDropCopies: @Sendable () -> Void = {
     PromisedDropCopies.sweep()
@@ -154,11 +155,11 @@ public final class AppModel<Surface> {
   var loginEnvironment: LoginShellEnvironment?
   /// Which catalogue agents that environment's PATH has.
   public internal(set) var agentDetection = AgentDetection.empty {
-    didSet { refreshInstalledAgents() }
+    didSet { refreshNewTabAgents() }
   }
   /// The agents a New Tab menu lists, held rather than worked out: a strip's
-  /// body reads it on every render. Rebuilt by `refreshInstalledAgents`.
-  public internal(set) var installedAgentIDs: [String] = []
+  /// body reads it on every render. Rebuilt by `refreshNewTabAgents`.
+  public internal(set) var newTabAgentIDs: [String] = []
   /// Which shells the machine has, from `/etc/shells` and that PATH.
   public internal(set) var shellDetection = ShellDetection.empty
   /// Which catalogue editors are installed, by application id or shim.
@@ -185,7 +186,7 @@ public final class AppModel<Surface> {
   var defaultBranches: [Project.ID: DefaultBranch] = [:]
   /// When each worktree's branch was last committed to. Runtime only: the
   /// workspace must not be rewritten because someone committed.
-  var lastCommits: [Worktree.ID: Date] = [:]
+  var lastCommitDates: [Worktree.ID: Date] = [:]
   /// Projects with a `git fetch` running, which the sidebar shows and a
   /// second Fetch waits for. Runtime state, like the statuses beside it.
   var fetchingProjects: Set<Project.ID> = []
@@ -221,7 +222,7 @@ public final class AppModel<Surface> {
   @ObservationIgnored var pendingRevealedRowsRead:
     (polledThroughout: Set<Worktree.ID>, task: Task<Void, Never>)?
   /// Worktrees whose removal is reading their status, and the latest asked.
-  @ObservationIgnored var removalReads: Set<Worktree.ID> = []
+  @ObservationIgnored var removalsAwaitingStatus: Set<Worktree.ID> = []
   @ObservationIgnored var latestRemovalRequest: Worktree.ID?
 
   @ObservationIgnored var pendingSave: Task<Void, Never>?
@@ -258,7 +259,7 @@ public final class AppModel<Surface> {
     self.restoredSessionIDs = Set(store.workspace.sessions.map(\.id))
 
     reloadThemes()
-    refreshInstalledAgents()
+    refreshNewTabAgents()
     host.apply(currentTheme, appearance: store.workspace.appearance)
     // Said on the process's PATH alone. `refreshLoginEnvironment` looks again
     // on the login shell's and takes this back if it finds git there.

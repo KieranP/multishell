@@ -27,9 +27,9 @@ extension WorktreeCoordinator {
     }
 
     let readings = await branches.mapConcurrentlyUnordered(
-      width: SharedGitReads.maxConcurrentReads
+      width: SharedReadState.maxConcurrentReads
     ) { branch in
-      await git.shared.mergeSlots.holding {
+      await git.readState.mergeSlots.holding {
         let started = ContinuousClock.now
         let state = await verdict(for: branch, merged: merged, inputs: inputs, in: project)
         return (branch, MergeReading(state: state, took: started.duration(to: .now)))
@@ -43,25 +43,25 @@ extension WorktreeCoordinator {
   private func verdict(
     for branch: String, merged: Set<String>, inputs: MergeInputs, in project: Project
   ) async -> WorktreeMergeState? {
-    let base = inputs.base.fullName
-    let named = inputs.base.shortName
+    let baseRef = inputs.base.fullName
+    let baseShortName = inputs.base.shortName
     if merged.contains(branch) {
       // A branch the base can reach has landed or never left, the reflog
       // separating them.
       guard let hasWork = await git.hasWorkOfItsOwn(branch, in: project) else { return nil }
-      return hasWork ? .merged(.ancestor, into: named) : .unmerged
+      return hasWork ? .merged(.ancestor, into: baseShortName) : .unmerged
     }
-    guard let equivalent = await git.isPatchEquivalent(branch, against: base, in: project)
+    guard let equivalent = await git.isPatchEquivalent(branch, against: baseRef, in: project)
     else { return nil }
-    if equivalent { return .merged(.patchEquivalent, into: named) }
+    if equivalent { return .merged(.patchEquivalent, into: baseShortName) }
 
     // A gone upstream is not enough alone; see Docs/design/merged-branch.md.
     // `branch.<name>` config outlives its branch.
     guard inputs.upstreamIsGone(branch) else { return .unmerged }
-    guard let behind = await git.isBehind(branch, of: base, in: project) else { return nil }
+    guard let behind = await git.isBehind(branch, of: baseRef, in: project) else { return nil }
     guard behind else { return .unmerged }
-    guard let landed = await git.changesAreOnBase(branch, against: base, in: project)
+    guard let landed = await git.changesAreOnBase(branch, against: baseRef, in: project)
     else { return nil }
-    return landed ? .merged(.upstreamGone, into: named) : .unmerged
+    return landed ? .merged(.upstreamGone, into: baseShortName) : .unmerged
   }
 }

@@ -14,7 +14,7 @@ struct EditorCatalogueTests {
     #expect(EditorCatalogue.editor("nvim")?.kind == .terminal)
   }
 
-  @Test func idsAreUnique() {
+  @Test func noTwoEditorsShareAnIdAndNoneTakesAReservedOne() {
     let ids = EditorCatalogue.editors.map(\.id)
     #expect(Set(ids).count == ids.count)
     #expect(!ids.contains(EditorCatalogue.noneID) && !ids.contains(EditorCatalogue.customID))

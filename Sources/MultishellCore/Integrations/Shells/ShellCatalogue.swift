@@ -22,8 +22,13 @@ public enum ShellCatalogue {
     guard let chosen = ChosenID.inForce(global: global, override: override, none: loginShellID)
     else { return nil }
     guard chosen == customID else { return chosen }
-    let path = customPath.trimmingCharacters(in: .whitespaces)
-    return path.isEmpty ? nil : path
+    return runnablePath(customPath)
+  }
+
+  /// The typed custom path as a tab runs it, `nil` where it is blank. The
+  /// caption and the dropdown read it too, so all three agree on what was typed.
+  public static func runnablePath(_ customPath: String) -> String? {
+    customPath.trimmedOrNil
   }
 
   /// `$SHELL`, or `/bin/zsh` where the environment has none, which is what

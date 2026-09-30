@@ -45,7 +45,8 @@ struct UnixSocketServerTests {
     #expect(FileManager.default.fileExists(atPath: path.path), "the live socket was not unlinked")
 
     // The first instance goes away without cleaning up, as a crash would.
-    first.abandonForTesting()
+    first.stop()
+    try plantDeadSocket(at: first.path)
     #expect(FileManager.default.fileExists(atPath: path.path))
     try second.start()
     second.stop()
@@ -97,9 +98,7 @@ struct UnixSocketServerTests {
     }
     // A socket file with nothing listening: what a crashed instance leaves,
     // and what a live one with a full backlog is indistinguishable from.
-    let dead = socket(AF_UNIX, SOCK_STREAM, 0)
-    try UnixSocket.bindSocket(dead, to: path.path)
-    close(dead)
+    try plantDeadSocket(at: path.path)
     // A server that never started unlinks nothing.
     defer { unlink(path.path) }
 
@@ -113,7 +112,7 @@ struct UnixSocketServerTests {
       fcntl.lockf(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
       print('held', flush=True)
       time.sleep(60)
-      """, server.claimPath,
+      """, server.claim.lockFilePath,
     ]
     let output = Pipe()
     holder.standardOutput = output
@@ -211,7 +210,7 @@ struct UnixSocketServerTests {
           print('took', flush=True)
       except OSError:
           print('refused', flush=True)
-      """, server.claimPath,
+      """, server.claim.lockFilePath,
     ]
     let output = Pipe()
     taker.standardOutput = output
@@ -294,16 +293,10 @@ struct UnixSocketServerTests {
     try await waitUntil { recorder.received.contains("after") }
     #expect(recorder.received == ["after"], "the flood produced no line")
   }
-}
 
-extension UnixSocketServer {
-  /// Leaves the socket file behind with nothing listening, the way a
-  /// crashed instance does. Closing the descriptors without unlinking.
-  fileprivate func abandonForTesting() {
-    stop()
-    // `stop` unlinked it; put a dead socket file back.
+  private func plantDeadSocket(at path: String) throws {
     let descriptor = socket(AF_UNIX, SOCK_STREAM, 0)
-    try? UnixSocket.bindSocket(descriptor, to: path)
-    close(descriptor)
+    defer { close(descriptor) }
+    try UnixSocket.bindSocket(descriptor, to: path)
   }
 }

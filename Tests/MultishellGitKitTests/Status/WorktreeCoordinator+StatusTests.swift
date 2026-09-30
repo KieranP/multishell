@@ -38,14 +38,14 @@ struct WorktreeCoordinatorStatusTests {
       ).trimmingCharacters(in: .whitespacesAndNewlines)
     }.compactMap(Int.init)
     #expect(peaks.count == 20, "every run recorded a peak")
-    #expect(peaks.max() ?? 0 <= SharedGitReads.maxConcurrentReads, "\(peaks)")
+    #expect(peaks.max() ?? 0 <= SharedReadState.maxConcurrentReads, "\(peaks)")
     #expect(peaks.max() ?? 0 >= 4, "runs did not overlap: \(peaks)")
   }
 
   @Test func statusesOmitWorktreesWhoseDirectoryIsGone() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    let path = try await repo.coordinator.create(
+    let path = try await repo.coordinator.createThenRunPostCreate(
       branch: "ghost", in: repo.project, settings: repo.worktreeSettings)
     let worktrees = try await repo.coordinator.git.list(repo.project)
     try FileManager.default.removeItem(at: path)

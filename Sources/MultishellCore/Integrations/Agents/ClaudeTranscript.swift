@@ -49,7 +49,7 @@ enum ClaudeTranscript {
 
   /// The task a notice names, and whether this entry queues it rather than
   /// takes it off the queue or hands it to the model as a prompt or an aside.
-  private static func notice(in entry: [String: Any]) -> (String, Bool)? {
+  private static func notice(in entry: [String: Any]) -> (id: String, isQueued: Bool)? {
     let text: Any?
     let isQueued: Bool
     switch entry["type"] as? String {

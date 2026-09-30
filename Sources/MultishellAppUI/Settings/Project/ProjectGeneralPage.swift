@@ -13,15 +13,15 @@ struct ProjectGeneralPage: View {
         LabeledContent(t("project.repository")) {
           HStack {
             PathText(project.path.path)
-            SymbolButton.reveal { model.revealInFileBrowser(project.path) }
+            SettingsSymbolButton.reveal { model.revealInFileBrowser(project.path) }
               .controlSize(.small)
           }
         }
         LabeledContent(t("project.worktrees-label")) {
           HStack {
             Text(t("project.worktrees-discovered", worktrees.count))
-            SymbolButton.refresh(help: t("project.refresh-from-git")) {
-              Task { await model.refreshOnRequest(project) }
+            SettingsSymbolButton.refresh(help: t("project.refresh-from-git")) {
+              Task { await model.refreshWorktreesOnRequest(of: project) }
             }
             .controlSize(.small)
           }

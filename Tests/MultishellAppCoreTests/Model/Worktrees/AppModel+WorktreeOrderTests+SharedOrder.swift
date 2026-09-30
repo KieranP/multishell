@@ -17,10 +17,8 @@ extension AppModelWorktreeOrderTests {
         branch: branch, basedOn: nil, createBranch: true, in: harness.project)
       try? await Task.sleep(for: .milliseconds(1100))
     }
-    try #"{ "worktreeSortOrder": "createdOldestFirst" }"#
-      .write(
-        to: SharedProjectSettings.file(in: harness.project.path), atomically: true, encoding: .utf8)
-    await harness.model.refresh(harness.project)
+    try harness.writeSharedSettings(#"{ "worktreeSortOrder": "createdOldestFirst" }"#)
+    await harness.model.refreshWorktrees(of: harness.project)
 
     let all = harness.model.workspace.worktrees
     #expect(harness.model.workspace.worktreeSortOrder == .alphabetical, "the user's global")

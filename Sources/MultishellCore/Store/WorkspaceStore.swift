@@ -21,9 +21,12 @@ public final class WorkspaceStore {
 
   /// Loads saved state. `loadError` is set, not thrown, so the app still
   /// starts and can tell the user what happened.
-  public static func restored(
-    from file: WorkspaceFile = WorkspaceFile()
-  ) -> (store: WorkspaceStore, loadError: (any Error)?) {
+  public static func restored() -> (store: WorkspaceStore, loadError: (any Error)?) {
+    restored(from: WorkspaceFile())
+  }
+
+  static func restored(from file: WorkspaceFile) -> (store: WorkspaceStore, loadError: (any Error)?)
+  {
     do {
       var workspace = try file.load()
       workspace.repairReferences()
@@ -97,12 +100,12 @@ extension WorkspaceStore {
   /// This run's read of a project's `.multishell.json`. A read saying what the
   /// last one did touches nothing: a mutation here is a whole-workspace save.
   public func updateSharedSettings(
-    _ read: SharedSettingsSnapshot, forProject id: Project.ID
+    _ snapshot: SharedSettingsSnapshot, forProject id: Project.ID
   ) {
     guard let index = workspace.projects.firstIndex(where: { $0.id == id }),
-      workspace.projects[index].sharedSettings != read
+      workspace.projects[index].sharedSettings != snapshot
     else { return }
-    workspace.projects[index].sharedSettings = read
+    workspace.projects[index].sharedSettings = snapshot
   }
 
   private func update(project id: Project.ID, _ change: (inout Project) -> Void) {
@@ -153,8 +156,7 @@ extension WorkspaceStore {
   /// Empty or whitespace clears it, so the branch takes over again.
   public func setCustomName(_ name: String?, forWorktree id: Worktree.ID) {
     guard workspace.worktree(id) != nil else { return }
-    let trimmed = name?.trimmingCharacters(in: .whitespaces) ?? ""
-    workspace.worktreeNames[id] = trimmed.isEmpty ? nil : trimmed
+    workspace.worktreeNames[id] = name?.trimmedOrNil
   }
 
   /// Forgets a worktree and everything hanging off it. Removing the
@@ -185,14 +187,14 @@ extension WorkspaceStore {
   ) -> TerminalTab? {
     guard
       let session = makeSession(in: worktreeID, title: title, command: command, agentID: agentID),
-      let groupID = resolvedGroup(group, in: worktreeID)
+      let groupID = findOrMakeGroup(group, in: worktreeID)
     else { return nil }
     workspace.sessions.append(session)
-    // `tabs(in:)` filters in array order, so appending is landing last in
-    // this group's strip whichever group it is.
+    // `tabs(inGroup:)` filters in array order, so appending is landing last
+    // in this group's strip whichever group it is.
     let tab = TerminalTab(worktreeID: worktreeID, groupID: groupID, session: session.id)
     workspace.tabs.append(tab)
-    setActiveTab(tab.id, ofGroup: groupID)
+    setShownTab(tab.id, ofGroup: groupID)
     workspace.focusedGroupByWorktree[worktreeID] = groupID
     return tab
   }
@@ -206,7 +208,7 @@ extension WorkspaceStore {
   /// worktree; see Docs/design/tabs-and-groups.md.
   @discardableResult
   public func moveTab(
-    _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, _ target: TerminalTab.ID
+    _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, anchor target: TerminalTab.ID
   ) -> Bool {
     guard
       let movingIndex = workspace.tabIndex(id),
@@ -240,12 +242,12 @@ extension WorkspaceStore {
   /// Moves a tab, panes and all, to another worktree. The shells keep
   /// running; see Docs/design/tabs-and-groups.md.
   @discardableResult
-  public func moveTab(_ id: TerminalTab.ID, to worktreeID: Worktree.ID) -> Bool {
+  public func moveTab(_ id: TerminalTab.ID, toWorktree worktreeID: Worktree.ID) -> Bool {
     guard
       let index = workspace.tabIndex(id),
       let destination = workspace.worktree(worktreeID),
       workspace.tabs[index].worktreeID != worktreeID,
-      let groupID = resolvedGroup(nil, in: worktreeID)
+      let groupID = findOrMakeGroup(nil, in: worktreeID)
     else { return false }
     let moving = Set(workspace.tabs[index].sessionIDs)
     relocate(id, into: groupID)
@@ -267,7 +269,7 @@ extension WorkspaceStore {
     let source = tab.groupID
     tab.worktreeID = destination.worktreeID
     tab.groupID = groupID
-    // `tabs(in:)` filters in array order, so appending is landing last.
+    // `tabs(inGroup:)` filters in array order, so appending is landing last.
     workspace.tabs.insert(tab, at: index ?? workspace.tabs.endIndex)
     guard source != groupID else { return }
     settle(group: source, vacating: vacated)
@@ -278,15 +280,14 @@ extension WorkspaceStore {
   /// again.
   public func setCustomTitle(_ title: String?, forTab id: TerminalTab.ID) {
     guard let index = workspace.tabIndex(id) else { return }
-    let trimmed = title?.trimmingCharacters(in: .whitespaces) ?? ""
-    workspace.tabs[index].customTitle = trimmed.isEmpty ? nil : trimmed
+    workspace.tabs[index].customTitle = title?.trimmedOrNil
   }
 
   /// Shows a tab in its own group and hands that group the focus: the tab
   /// the user just clicked is the one they are working in.
   public func activateTab(_ id: TerminalTab.ID) {
     guard let tab = workspace.tab(id) else { return }
-    setActiveTab(id, ofGroup: tab.groupID)
+    setShownTab(id, ofGroup: tab.groupID)
     if workspace.focusedGroupByWorktree[tab.worktreeID] != tab.groupID {
       workspace.focusedGroupByWorktree[tab.worktreeID] = tab.groupID
     }
@@ -306,14 +307,14 @@ extension WorkspaceStore {
   /// Moves a tab into a group of its own beside `neighbour`, which gives up
   /// half its width. `nil` when nothing moved, so the drag springs back.
   @discardableResult
-  public func moveTabToNewGroup(
-    _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, of neighbour: TabGroup.ID
+  public func moveTab(
+    _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, toNewGroupOf neighbour: TabGroup.ID
   ) -> TabGroup? {
     guard
       let tabIndex = workspace.tabIndex(id),
       let groupIndex = workspace.groupIndex(neighbour),
       workspace.tabGroups[groupIndex].worktreeID == workspace.tabs[tabIndex].worktreeID,
-      workspace.tabs[tabIndex].groupID != neighbour || workspace.tabs(in: neighbour).count > 1
+      workspace.tabs[tabIndex].groupID != neighbour || workspace.tabs(inGroup: neighbour).count > 1
     else { return nil }
 
     let source = workspace.tabs[tabIndex].groupID
@@ -321,7 +322,7 @@ extension WorkspaceStore {
     let worktreeID = workspace.tabGroups[groupIndex].worktreeID
     let share = LayoutWeight.usable(workspace.tabGroups[groupIndex].weight / 2)
     workspace.tabGroups[groupIndex].weight = share
-    let group = TabGroup(worktreeID: worktreeID, weight: share, activeTabID: id)
+    let group = TabGroup(worktreeID: worktreeID, weight: share, shownTabID: id)
     // Beside the neighbour in the flat array, which is what puts it beside
     // it on screen; a group of another worktree in between changes nothing.
     workspace.tabGroups.insert(group, at: placement == .before ? groupIndex : groupIndex + 1)
@@ -354,7 +355,7 @@ extension WorkspaceStore {
 
   /// The group an operation acts on: the one named, the worktree's focused
   /// one, or a first group made for it.
-  private func resolvedGroup(_ id: TabGroup.ID?, in worktreeID: Worktree.ID) -> TabGroup.ID? {
+  private func findOrMakeGroup(_ id: TabGroup.ID?, in worktreeID: Worktree.ID) -> TabGroup.ID? {
     guard workspace.worktree(worktreeID) != nil else { return nil }
     if let id {
       return workspace.group(id)?.worktreeID == worktreeID ? id : nil
@@ -366,46 +367,55 @@ extension WorkspaceStore {
     return group.id
   }
 
-  private func setActiveTab(_ id: TerminalTab.ID?, ofGroup groupID: TabGroup.ID) {
+  private func setShownTab(_ id: TerminalTab.ID?, ofGroup groupID: TabGroup.ID) {
     guard let index = workspace.groupIndex(groupID),
-      workspace.tabGroups[index].activeTabID != id
+      workspace.tabGroups[index].shownTabID != id
     else { return }
-    workspace.tabGroups[index].activeTabID = id
+    workspace.tabGroups[index].shownTabID = id
   }
 
   /// Where in its group a tab sits, read before it is taken out so `settle`
   /// knows which tab slid into its place.
   private func slot(of id: TerminalTab.ID) -> Int? {
     guard let tab = workspace.tab(id) else { return nil }
-    return workspace.tabs(in: tab.groupID).firstIndex { $0.id == id }
+    return workspace.tabs(inGroup: tab.groupID).firstIndex { $0.id == id }
   }
 
   /// A group after a tab left it: another showing, or the group gone, with
   /// `vacating` the place it held, read first. See Docs/design/tabs-and-groups.md.
   private func settle(group groupID: TabGroup.ID, vacating slot: Int?) {
     guard let index = workspace.groupIndex(groupID) else { return }
-    let worktreeID = workspace.tabGroups[index].worktreeID
-    let remaining = workspace.tabs(in: groupID)
+    let remaining = workspace.tabs(inGroup: groupID)
+    if remaining.isEmpty {
+      removeEmptiedGroup(at: index)
+    } else {
+      reselectShownTab(ofGroupAt: index, among: remaining, vacating: slot)
+    }
+  }
 
-    guard remaining.isEmpty else {
-      if let active = workspace.tabGroups[index].activeTabID,
-        remaining.contains(where: { $0.id == active })
-      {
-        return
-      }
-      // The tab that slid into the vacated place, which is the one to its
-      // right; the last where the tab that left was itself last.
-      workspace.tabGroups[index].activeTabID =
-        remaining[min(slot ?? remaining.count - 1, remaining.count - 1)].id
+  private func reselectShownTab(
+    ofGroupAt index: Int, among remaining: [TerminalTab], vacating slot: Int?
+  ) {
+    if let shown = workspace.tabGroups[index].shownTabID,
+      remaining.contains(where: { $0.id == shown })
+    {
       return
     }
+    // The tab that slid into the vacated place, which is the one to its
+    // right; the last where the tab that left was itself last.
+    workspace.tabGroups[index].shownTabID =
+      remaining[min(slot ?? remaining.count - 1, remaining.count - 1)].id
+  }
 
-    let slot = workspace.groups(in: worktreeID).firstIndex { $0.id == groupID } ?? 0
+  private func removeEmptiedGroup(at index: Int) {
+    let groupID = workspace.tabGroups[index].id
+    let worktreeID = workspace.tabGroups[index].worktreeID
+    let groupSlot = workspace.groups(in: worktreeID).firstIndex { $0.id == groupID } ?? 0
     workspace.tabGroups.remove(at: index)
     guard workspace.focusedGroupByWorktree[worktreeID] == groupID else { return }
     let survivors = workspace.groups(in: worktreeID)
     workspace.focusedGroupByWorktree[worktreeID] =
-      survivors.isEmpty ? nil : survivors[min(slot, survivors.count - 1)].id
+      survivors.isEmpty ? nil : survivors[min(groupSlot, survivors.count - 1)].id
   }
 }
 

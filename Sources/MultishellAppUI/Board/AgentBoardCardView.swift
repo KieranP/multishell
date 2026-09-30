@@ -77,17 +77,9 @@ struct AgentBoardCardView: View {
         plainTint: theme.textSecondary,
         theme: theme,
         size: metrics.badge + 4)
-      Text(card.projectName)
-        .foregroundStyle(theme.textSecondary)
-        .lineLimit(1)
-      Image(systemName: "chevron.right")
-        .font(.system(size: metrics.badge - 3, weight: .bold))
-        .foregroundStyle(theme.textTertiary)
-      Text(card.worktreeName)
-        .font(.system(size: metrics.badge, design: .monospaced))
-        .foregroundStyle(theme.worktreeNameColor)
-        .lineLimit(1)
-        .truncationMode(.middle)
+      WorktreeBreadcrumb(
+        projectName: card.projectName, worktreeName: card.worktreeName, style: .card,
+        theme: theme, metrics: metrics)
       if let status = card.status, !status.isClean {
         Spacer(minLength: 6)
         ChangeBadge(status: status, theme: theme, size: metrics.badge, tint: theme.textTertiary)

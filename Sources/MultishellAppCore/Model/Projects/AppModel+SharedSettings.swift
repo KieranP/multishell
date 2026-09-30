@@ -2,21 +2,6 @@ import Foundation
 import MultishellCore
 
 extension AppModel {
-  /// The file, the confinement and the date it had, the date taken first so a
-  /// write landing mid-read is caught by the next tick. Off the main actor.
-  nonisolated static func readSharedSettings(of project: Project) -> SharedSettingsReading {
-    let stamp = modificationDate(of: SharedProjectSettings.file(in: project.path))
-    let result = Result { try SharedProjectSettings.load(from: project.path) }
-    return SharedSettingsReading(result: result, stamp: stamp, project: project)
-  }
-
-  /// `.distantPast` for a file that is not there, so its arrival reads as a
-  /// change like any other.
-  nonisolated static func modificationDate(of file: URL) -> Date {
-    (try? file.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate)
-      ?? .distantPast
-  }
-
   /// Every project's file, re-read where its date moved. On the status poll,
   /// the watcher watching only `.git`; an unreachable repository is skipped.
   func refreshSharedSettingsIfChanged() async {
@@ -25,15 +10,15 @@ extension AppModel {
     }
   }
 
-  /// A tick's check for a file edited while the app is up, `refresh` running
+  /// A tick's check for a file edited while the app is up, `refreshWorktrees` running
   /// only when the records change. One stat per project per tick.
   func refreshSharedSettingsIfChanged(_ project: Project) async {
     let path = project.path
     let stamp = await offMain {
-      Self.modificationDate(of: SharedProjectSettings.file(in: path))
+      SharedSettingsReading.modificationDate(of: SharedProjectSettings.file(in: path))
     }
-    guard project.sharedSettings.hasMoved(stamp) else { return }
-    let reading = await offMain { Self.readSharedSettings(of: project) }
+    guard project.sharedSettings.needsRead(at: stamp) else { return }
+    let reading = await offMain { SharedSettingsReading.read(from: project) }
     guard workspace.project(project.id) != nil else { return }
     applySharedSettingsReading(reading, for: project)
   }
@@ -42,14 +27,14 @@ extension AppModel {
   /// file is read, and a branch can add a symlink without moving its bytes.
   func reconfineSharedSettings(of project: Project) async -> Project {
     guard let shared = workspace.project(project.id)?.sharedSettings.asWritten
-    else { return workspace.project(project.id) ?? project }
+    else { return currentCopy(of: project) }
     let confined = await offMain { shared.confined(to: project) }
     guard var snapshot = workspace.project(project.id)?.sharedSettings,
       snapshot.asWritten == shared, snapshot.confined != confined
-    else { return workspace.project(project.id) ?? project }
+    else { return currentCopy(of: project) }
     snapshot.confined = confined
     store.updateSharedSettings(snapshot, forProject: project.id)
-    return workspace.project(project.id) ?? project
+    return currentCopy(of: project)
   }
 
   /// What a refresh read, a file that will not parse costing the shared
@@ -57,38 +42,51 @@ extension AppModel {
   func applySharedSettingsReading(_ reading: SharedSettingsReading, for project: Project) {
     // The workspace's copy, not the caller's: a refresh reads the file, then
     // awaits git, and a tick's read landing meanwhile is not this one to undo.
-    let project = workspace.project(project.id) ?? project
+    let project = currentCopy(of: project)
+    switch reading.loaded {
+    case .success(let shared):
+      applyParsedSharedSettings(shared, from: reading, for: project)
+    case .failure(let error):
+      applyUnreadableSharedSettings(error, from: reading, for: project)
+    }
+  }
+
+  private func applyParsedSharedSettings(
+    _ shared: SharedProjectSettings?, from reading: SharedSettingsReading, for project: Project
+  ) {
     var snapshot = project.sharedSettings
     let firstRead = !snapshot.hasBeenRead
-    let stamp = reading.stamp
-    switch reading.result {
-    case .success(let shared):
-      // The date is recorded whatever the bytes say: a touch moves it
-      // without changing them, and an unrecorded date is re-read every tick.
-      let changed = snapshot.asWritten != shared || firstRead
-      snapshot.recordParsed(shared, confined: reading.confined, modificationDate: stamp)
-      store.updateSharedSettings(snapshot, forProject: project.id)
-      guard changed else { return }
-      // A question already up is about a file the disk no longer has, and
-      // trusting it would store an answer for bytes nobody committed.
-      let wasAsking = pendingSharedSettingsTrust?.projectID == project.id
-      if wasAsking, pendingSharedSettingsTrust?.digest != shared?.digest {
-        pendingSharedSettingsTrust = nil
-      }
-      if !firstRead, wasAsking || workspace.selectedWorktree?.projectID == project.id {
-        askAboutSharedSettingsIfNeeded(for: project.id)
-      }
-    case .failure(let error):
-      // A question up names hooks the app no longer has, so it goes the way
-      // a deleted file's does, and returns if the file parses again.
-      dismissSharedSettingsTrust(for: project.id)
-      let problem = t(
-        "error.shared-settings-unreadable", SharedProjectSettings.fileName,
-        String(describing: error))
-      let isNew = snapshot.problem != problem
-      snapshot.recordFailure(problem: problem, modificationDate: stamp)
-      store.updateSharedSettings(snapshot, forProject: project.id)
-      if isNew { platform.log("\(project.name): \(problem)") }
+    // The date is recorded whatever the bytes say: a touch moves it
+    // without changing them, and an unrecorded date is re-read every tick.
+    let changed = snapshot.asWritten != shared || firstRead
+    snapshot.recordParsed(
+      shared, confined: reading.confined, modificationDate: reading.modificationDate)
+    store.updateSharedSettings(snapshot, forProject: project.id)
+    guard changed else { return }
+    // A question already up is about a file the disk no longer has, and
+    // trusting it would store an answer for bytes nobody committed.
+    let wasAsking = pendingSharedSettingsTrust?.projectID == project.id
+    if wasAsking, pendingSharedSettingsTrust?.digest != shared?.digest {
+      pendingSharedSettingsTrust = nil
     }
+    if !firstRead, wasAsking || workspace.selectedWorktree?.projectID == project.id {
+      askAboutSharedSettingsIfNeeded(for: project.id)
+    }
+  }
+
+  private func applyUnreadableSharedSettings(
+    _ error: any Error, from reading: SharedSettingsReading, for project: Project
+  ) {
+    // A question up names hooks the app no longer has, so it goes the way
+    // a deleted file's does, and returns if the file parses again.
+    dismissSharedSettingsTrust(for: project.id)
+    var snapshot = project.sharedSettings
+    let problem = t(
+      "error.shared-settings-unreadable", SharedProjectSettings.fileName,
+      String(describing: error))
+    let isNew = snapshot.problem != problem
+    snapshot.recordFailure(problem: problem, modificationDate: reading.modificationDate)
+    store.updateSharedSettings(snapshot, forProject: project.id)
+    if isNew { platform.log("\(project.name): \(problem)") }
   }
 }

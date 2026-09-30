@@ -9,7 +9,7 @@ public enum PosixShellQuoting {
 
   /// Single quotes pass everything through untouched except a single quote,
   /// which ends the quoting, adds an escaped one, and starts again.
-  public static func quote(_ argument: String) -> String {
+  static func quote(_ argument: String) -> String {
     let safe = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_./=:@%+,"))
     if !argument.isEmpty, argument.unicodeScalars.allSatisfy(safe.contains) {
       return argument

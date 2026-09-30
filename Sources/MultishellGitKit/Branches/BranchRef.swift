@@ -6,9 +6,6 @@ struct BranchRef: Hashable, Sendable {
   /// `refs/heads/feat`, `refs/remotes/origin/main`.
   let fullName: String
   let tip: String
-  /// The full name of the upstream a local branch tracks, whether or not
-  /// that upstream still exists; `nil` for a branch that tracks nothing.
-  let upstream: String?
   /// The upstream is configured and no longer there: `git`'s `[gone]`.
   let isUpstreamGone: Bool
   /// What this ref points at when symbolic, as `refs/remotes/origin/HEAD`
@@ -19,12 +16,11 @@ struct BranchRef: Hashable, Sendable {
   let committedAt: Date?
 
   init(
-    fullName: String, tip: String, upstream: String? = nil, isUpstreamGone: Bool = false,
-    symref: String? = nil, committedAt: Date? = nil
+    fullName: String, tip: String, isUpstreamGone: Bool = false, symref: String? = nil,
+    committedAt: Date? = nil
   ) {
     self.fullName = fullName
     self.tip = tip
-    self.upstream = upstream
     self.isUpstreamGone = isUpstreamGone
     self.symref = symref
     self.committedAt = committedAt
@@ -54,7 +50,8 @@ struct BranchRef: Hashable, Sendable {
   var isLocal: Bool { fullName.hasPrefix(Self.localPrefix) }
   var isRemote: Bool { fullName.hasPrefix(Self.remotePrefix) }
 
-  /// What git would print for `%(refname:short)`: `feat`, `origin/main`.
+  /// `feat`, `origin/main`: `%(refname:lstrip=2)`, never `:short`'s `heads/feat`
+  /// where a tag ties.
   var shortName: String {
     if isRemote { return String(fullName.dropFirst(Self.remotePrefix.count)) }
     return Self.shortLocalName(fullName)
@@ -62,7 +59,7 @@ struct BranchRef: Hashable, Sendable {
 
   /// The branch with no remote in front of it, so the trunk's own checkout
   /// is not badged. Only the remote's first component is dropped.
-  var branchName: String {
+  var nameWithoutRemote: String {
     guard isRemote else { return shortName }
     let short = shortName
     guard let slash = short.firstIndex(of: "/") else { return short }

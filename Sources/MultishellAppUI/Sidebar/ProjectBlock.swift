@@ -14,21 +14,20 @@ struct ProjectBlock: View {
   let sessions: WorktreeSessions
   let theme: Theme
   @Binding var projectDropTarget: ProjectDropTarget?
-  /// The worktree a dragged tab is hovering over, drawn on its row.
   @Binding var tabDropTarget: Worktree.ID?
-  let endDrag: () -> Void
+  let endProjectDrag: () -> Void
 
   var body: some View {
     let metrics = model.metrics
     let expanded = project.isExpanded || isForcedOpen
-    let shownWorktrees = expanded ? worktrees : []
+    let rows = expanded ? worktrees.map(model.sidebarWorktree) : []
 
     VStack(spacing: UIMetrics.sidebarRowSpacing) {
       projectRow(expanded: expanded, metrics: metrics)
-      ForEach(shownWorktrees) { worktree in
-        worktreeRow(worktree, metrics: metrics)
-        if model.sidebarPaneCount(of: worktree) > 0 {
-          PaneRows(model: model, worktree: worktree, theme: theme, metrics: metrics)
+      ForEach(rows) { row in
+        worktreeRow(row, metrics: metrics)
+        if !row.panes.isEmpty {
+          SelectedWorktreePanes(model: model, panes: row.panes, theme: theme, metrics: metrics)
         }
       }
     }
@@ -43,26 +42,15 @@ struct ProjectBlock: View {
       of: [.text],
       delegate: ProjectBlockDropDelegate(
         projectID: project.id,
-        blockHeight: blockHeight(of: shownWorktrees, metrics: metrics),
+        blockHeight: metrics.projectBlockHeight(worktreeRows: rows),
         target: $projectDropTarget,
         drop: { moving, placement in
           // `moveProject` looks the id up, so a drop carrying anything but a
           // project of ours moves nothing.
           if let moving { model.moveProject(moving, placement, project.id) }
-          endDrag()
+          endProjectDrag()
         }
       ))
-  }
-
-  private func blockHeight(of shownWorktrees: [Worktree], metrics: UIMetrics) -> CGFloat {
-    metrics.projectBlockHeight(
-      worktreeRows: shownWorktrees.map { worktree in
-        (
-          isNamed: model.customName(of: worktree) != nil,
-          isRenaming: model.renamingWorktreeID == worktree.id,
-          paneCount: model.sidebarPaneCount(of: worktree)
-        )
-      })
   }
 
   private func projectRow(expanded: Bool, metrics: UIMetrics) -> some View {
@@ -88,16 +76,17 @@ struct ProjectBlock: View {
         model.beginProjectDrag(project.id)
         return NSItemProvider(object: project.id as NSString)
       },
-      ended: endDrag,
+      ended: endProjectDrag,
       sourceLeft: { model.projectDragSourceLeft(project.id, isPressed: $0) }
     )
   }
 
-  private func worktreeRow(_ worktree: Worktree, metrics: UIMetrics) -> some View {
-    WorktreeRow(
+  private func worktreeRow(_ row: SidebarWorktree, metrics: UIMetrics) -> some View {
+    let worktree = row.worktree
+    return WorktreeRow(
       worktree: worktree,
-      customName: model.customName(of: worktree),
-      isRenaming: model.renamingWorktreeID == worktree.id,
+      customName: row.customName,
+      isRenaming: row.isRenaming,
       terminalCount: sessions[worktree.id].count,
       state: model.state(ofWorktree: worktree.id, sessions: sessions),
       operation: model.worktreeOperations[worktree.id],

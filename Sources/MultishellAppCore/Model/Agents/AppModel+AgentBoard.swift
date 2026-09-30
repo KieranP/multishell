@@ -71,16 +71,16 @@ extension AppModel {
   }
 
   /// The counts the sidebar entry carries, in the order it draws them; see
-  /// `AgentBoardLane.summarised`.
-  public var agentSidebarCounts: [(lane: AgentBoardLane, count: Int)] {
+  /// `AgentBoardLane.sidebarLanes`.
+  public var agentSidebarCounts: [AgentLaneCount] {
     let counts = agentLaneCounts
-    return AgentBoardLane.summarised.map { ($0, counts[$0] ?? 0) }
+    return AgentBoardLane.sidebarLanes.map { AgentLaneCount($0, counts[$0] ?? 0) }
   }
 
   /// Who is at the prompt, by name.
   private func occupant(of session: TerminalSession) -> AgentBoardCard.Occupant {
     if let agentID = agentAtThePrompt(of: session) {
-      return .agent(id: agentID, name: AgentCatalogue.displayName(agentID))
+      return .agent(id: agentID, name: agentDisplayName(agentID))
     }
     return .shell(URL(filePath: shellPath(forWorktree: session.worktreeID)).lastPathComponent)
   }

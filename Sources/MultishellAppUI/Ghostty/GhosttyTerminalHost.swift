@@ -12,7 +12,7 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
   private struct OpenSurface {
     let view: TerminalView
     let container: GhosttySurfaceContainer
-    let observer: SurfaceObserver
+    let observer: GhosttySurfaceObserver
   }
 
   weak var delegate: (any TerminalHostDelegate)?
@@ -20,7 +20,6 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
   private let controllerOwner = GhosttyControllerOwner()
   private var surfaces: [TerminalSession.ID: OpenSurface] = [:]
 
-  /// Clears what an earlier run left, before any controller writes its own.
   /// See Docs/design/terminals.md.
   func claimSharedFiles() {
     controllerOwner.claimSharedFiles()
@@ -53,7 +52,7 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
       command: Self.command(for: session)
     )
 
-    let observer = SurfaceObserver(sessionID: session.id, host: self)
+    let observer = GhosttySurfaceObserver(sessionID: session.id, host: self)
     view.delegate = observer
     surfaces[session.id] = OpenSurface(
       view: view, container: GhosttySurfaceContainer(surface: view), observer: observer)
@@ -98,37 +97,33 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
 
   func search(_ command: TerminalSearch, in id: TerminalSession.ID) -> Bool {
     guard let view = surfaces[id]?.view else { return false }
-    var performed = true
-    for action in GhosttySearchActions.actions(for: command) {
-      performed = view.performBindingAction(action) && performed
-    }
-    return performed
+    return view.performBindingAction(GhosttySearchActions.action(for: command))
   }
 
   func apply(_ theme: Theme, appearance: Appearance) {
     controllerOwner.apply(theme, appearance: appearance)
   }
 
-  fileprivate func surfaceRetitled(_ id: TerminalSession.ID, to title: String) {
+  func surfaceRetitled(_ id: TerminalSession.ID, to title: String) {
     delegate?.terminalHost(self, didRetitle: id, to: title)
   }
 
-  fileprivate func surfaceExited(_ id: TerminalSession.ID) {
+  func surfaceExited(_ id: TerminalSession.ID) {
     delegate?.terminalHost(self, didExit: id)
   }
 
-  fileprivate func surfaceSawActivity(_ id: TerminalSession.ID) {
+  func surfaceSawActivity(_ id: TerminalSession.ID) {
     delegate?.terminalHost(self, didSeeActivityIn: id)
   }
 
-  fileprivate func surfaceFinishedCommand(_ id: TerminalSession.ID, exitCode: Int?) {
+  func surfaceFinishedCommand(_ id: TerminalSession.ID, exitCode: Int?) {
     delegate?.terminalHost(
       self, didFinishCommandIn: id, exitCode: exitCode.flatMap { Int32(exactly: $0) })
   }
 
   /// A turn later, and only while still true: a frame raises this inside
   /// SwiftUI's own update, where a store write is undefined behaviour.
-  fileprivate func surfaceFocused(_ id: TerminalSession.ID) {
+  func surfaceFocused(_ id: TerminalSession.ID) {
     Task { @MainActor [weak self] in
       guard let self, let view = surfaces[id]?.view, Self.hasKeyboard(view) else { return }
       delegate?.terminalHost(self, didFocus: id)
@@ -143,44 +138,3 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
 }
 
 extension GhosttyTerminalHost: TerminalSurfaceHost {}
-
-/// libghostty's callbacks do not identify the surface that raised them, so one
-/// observer is bound to each session.
-@MainActor
-private final class SurfaceObserver:
-  TerminalSurfaceTitleDelegate,
-  TerminalSurfaceCloseDelegate,
-  TerminalSurfaceBellDelegate,
-  TerminalSurfaceCommandFinishedDelegate,
-  TerminalSurfaceFocusDelegate
-{
-  private let sessionID: TerminalSession.ID
-  private weak var host: GhosttyTerminalHost?
-
-  init(sessionID: TerminalSession.ID, host: GhosttyTerminalHost) {
-    self.sessionID = sessionID
-    self.host = host
-  }
-
-  func terminalDidChangeTitle(_ title: String) {
-    host?.surfaceRetitled(sessionID, to: title)
-  }
-
-  func terminalDidClose(processAlive: Bool) {
-    host?.surfaceExited(sessionID)
-  }
-
-  func terminalDidRingBell() {
-    host?.surfaceSawActivity(sessionID)
-  }
-
-  /// Needs shell integration in the child shell, which zsh and bash get and
-  /// fish and nu do not; see COMPAT.md.
-  func terminalDidFinishCommand(exitCode: Int?, durationNanos: UInt64) {
-    host?.surfaceFinishedCommand(sessionID, exitCode: exitCode)
-  }
-
-  func terminalDidChangeFocus(_ focused: Bool) {
-    if focused { host?.surfaceFocused(sessionID) }
-  }
-}

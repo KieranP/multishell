@@ -15,6 +15,6 @@ struct ScratchShell {
   var environment: [String: String] { ["HOME": home.path, "ZDOTDIR": home.path] }
 
   func tearDown() {
-    try? FileManager.default.removeItem(at: home)
+    Scratch.remove(home)
   }
 }

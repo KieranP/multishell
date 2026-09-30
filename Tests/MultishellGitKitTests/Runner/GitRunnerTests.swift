@@ -14,7 +14,7 @@ struct GitRunnerTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let repository = fixture.project.path
-    let git = try TestGit.build(configuration: ["user.name": "From the runner"])
+    let git = try TestGit.runner(configuration: ["user.name": "From the runner"])
 
     try "second\n".write(
       to: repository.appendingPathComponent("README.md"), atomically: true, encoding: .utf8)
@@ -24,7 +24,8 @@ struct GitRunnerTests {
     let author = try await git.run(["log", "-1", "--format=%an"], in: repository)
     #expect(author.trimmingCharacters(in: .whitespacesAndNewlines) == "From the runner")
     // The fixture's own runner passes no name, so the repository's answers.
-    let first = try await fixture.git.run(["log", "-1", "--format=%an", "HEAD~1"], in: repository)
+    let first = try await fixture.runner.run(
+      ["log", "-1", "--format=%an", "HEAD~1"], in: repository)
     #expect(first.trimmingCharacters(in: .whitespacesAndNewlines) == "Multishell Tests")
   }
 
@@ -62,13 +63,13 @@ struct GitRunnerTests {
 
     // An alias git runs through a shell, which is how a filter or credential
     // helper is reached: it is found only on the PATH the runner carries.
-    let git = try TestGit.build(
+    let git = try TestGit.runner(
       searchPath: bin.path + ":" + (ProcessInfo.processInfo.environment["PATH"] ?? ""),
       configuration: ["alias.helped": "!ms-test-helper"])
     let output = try await git.run(["helped"], in: fixture.project.path)
     #expect(output.contains("found the helper"))
 
-    let blind = try TestGit.build(configuration: ["alias.helped": "!ms-test-helper"])
+    let blind = try TestGit.runner(configuration: ["alias.helped": "!ms-test-helper"])
     await #expect(throws: (any Error).self) {
       try await blind.run(["helped"], in: fixture.project.path)
     }
@@ -80,7 +81,7 @@ struct GitRunnerTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let repository = fixture.project.path
-    _ = try await fixture.git.run(["config", "status.showUntrackedFiles", "no"], in: repository)
+    _ = try await fixture.runner.run(["config", "status.showUntrackedFiles", "no"], in: repository)
     try "wip\n".write(
       to: repository.appendingPathComponent("scratch.txt"), atomically: true, encoding: .utf8)
 
@@ -93,6 +94,8 @@ struct GitRunnerTests {
     #expect(status.insertions == 1, "and its line is counted, the badge reading from the same list")
   }
 
+  /// From the Finder the process PATH is the system directories alone, so a
+  /// git from a version manager is found only on the login shell's.
   @Test func aRunnerGivenOnlyASearchPathRunsTheGitOnIt() async throws {
     let directory = try Scratch.directory("gitsearchpath")
     defer { Scratch.remove(directory) }
@@ -108,19 +111,6 @@ struct GitRunnerTests {
     #expect(named.contains("the named git"))
     #expect(throws: GitUnavailable.self) {
       _ = try GitRunner(searchPath: directory.appendingPathComponent("empty").path)
-    }
-  }
-
-  /// From the Finder the process PATH is the system directories alone, so a
-  /// git from a version manager is found only on the login shell's.
-  @Test func gitIsLookedUpOnThePathItIsGiven() throws {
-    let directory = try Scratch.directory("gitpath")
-    defer { Scratch.remove(directory) }
-    try Scratch.script("exit 0", at: directory.appendingPathComponent("git"))
-
-    #expect(throws: Never.self) { _ = try WorktreeGit(searchPath: directory.path) }
-    #expect(throws: GitUnavailable.self) {
-      _ = try WorktreeGit(searchPath: directory.appendingPathComponent("empty").path)
     }
   }
 }

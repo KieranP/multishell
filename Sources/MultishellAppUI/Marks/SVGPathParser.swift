@@ -91,15 +91,15 @@ enum SVGPathParser {
     while let opening = text.range(of: "\(name)=\"", range: from..<text.endIndex) {
       from = opening.upperBound
       let before = opening.lowerBound
-      if before == text.startIndex || !text[text.index(before: before)].isNameCharacter {
+      if before == text.startIndex || !isNameCharacter(text[text.index(before: before)]) {
         guard let closing = text[from...].firstIndex(of: "\"") else { return nil }
         return String(text[from..<closing])
       }
     }
     return nil
   }
-}
 
-extension Character {
-  fileprivate var isNameCharacter: Bool { isLetter || isNumber || self == "-" || self == "_" }
+  private static func isNameCharacter(_ character: Character) -> Bool {
+    character.isLetter || character.isNumber || character == "-" || character == "_"
+  }
 }

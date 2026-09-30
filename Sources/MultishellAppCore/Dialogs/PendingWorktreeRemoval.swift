@@ -9,7 +9,7 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
     /// deletes the branch every time.
     case decided(deletes: Bool)
     /// The dialog offers both.
-    case asks
+    case offersBoth
   }
 
   /// How a removal request proceeds under the settings.
@@ -22,16 +22,10 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
   public struct Choice: Equatable, Sendable {
     public let label: String
     public let deletesBranch: Bool
-
-    init(label: String, deletesBranch: Bool) {
-      self.label = label
-      self.deletesBranch = deletesBranch
-    }
   }
 
   public let worktree: Worktree
   let branchHandling: BranchHandling
-  /// The name the user gave this worktree, or `nil` for none.
   let customName: String?
   /// Whether the branch has landed, which decides the button the dialog
   /// leads with and adds a line to what it says.
@@ -58,12 +52,7 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
     t("worktree-removal.title", customName ?? worktree.name)
   }
 
-  /// The one button when the branch is decided; the keep-branch button when
-  /// the dialog asks, beside `removeWithBranchLabel`.
-  var primaryRemoveLabel: String {
-    if case .decided(deletes: true) = branchHandling { return removeWithBranchLabel }
-    return t("worktree-removal.remove")
-  }
+  var removeLabel: String { t("worktree-removal.remove") }
 
   var removeWithBranchLabel: String { t("worktree-removal.remove-with-branch") }
 
@@ -72,9 +61,10 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
   public var choices: [Choice] {
     switch branchHandling {
     case .decided(let deletes):
-      return [Choice(label: primaryRemoveLabel, deletesBranch: deletes)]
-    case .asks:
-      let keep = Choice(label: primaryRemoveLabel, deletesBranch: false)
+      let label = deletes ? removeWithBranchLabel : removeLabel
+      return [Choice(label: label, deletesBranch: deletes)]
+    case .offersBoth:
+      let keep = Choice(label: removeLabel, deletesBranch: false)
       let delete = Choice(label: removeWithBranchLabel, deletesBranch: true)
       return mergeState.isCertain ? [delete, keep] : [keep, delete]
     }
@@ -90,7 +80,8 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
     guard confirms || asksAboutBranch else { return .remove(deletingBranch: deletes) }
     return .ask(
       PendingWorktreeRemoval(
-        worktree: worktree, branchHandling: asksAboutBranch ? .asks : .decided(deletes: deletes),
+        worktree: worktree,
+        branchHandling: asksAboutBranch ? .offersBoth : .decided(deletes: deletes),
         customName: customName, mergeState: mergeState, trashes: trashes))
   }
 
@@ -101,14 +92,14 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
     var notes = [
       trashes ? t("worktree-removal.moves", name) : t("worktree-removal.deletes", name)
     ]
-    if let name = worktree.branch {
+    if let branch = worktree.branch {
       switch branchHandling {
-      case .asks: notes.append(t("worktree-removal.branch-asked", name))
-      case .decided(deletes: true): notes.append(t("worktree-removal.branch-deleted", name))
-      case .decided(deletes: false): notes.append(t("worktree-removal.branch-kept", name))
+      case .offersBoth: notes.append(t("worktree-removal.branch-asked", branch))
+      case .decided(deletes: true): notes.append(t("worktree-removal.branch-deleted", branch))
+      case .decided(deletes: false): notes.append(t("worktree-removal.branch-kept", branch))
       }
     }
-    if let name = worktree.branch, let note = mergeState.removalNote(branch: name) {
+    if let branch = worktree.branch, let note = mergeState.removalNote(branch: branch) {
       notes.append(note)
     }
     if let warning { notes.append(warning) }

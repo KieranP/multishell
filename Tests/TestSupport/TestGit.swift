@@ -4,7 +4,7 @@
 public enum TestGit {
   /// Signing is off, or a signing agent that asks for the key asks once per fixture commit. It
   /// rides on the runner, so a clone or bare repository a later test adds is covered too.
-  public static func build(
+  public static func runner(
     searchPath: String? = nil, configuration: [String: String] = [:]
   ) throws -> GitRunner {
     try GitRunner(

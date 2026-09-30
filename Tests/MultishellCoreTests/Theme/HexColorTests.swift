@@ -4,16 +4,16 @@ import Testing
 
 @Suite
 struct HexColorTests {
-  @Test func parsesSixDigitHexWithAndWithoutHash() {
+  @Test func aSixDigitColourReadsTheSameWithOrWithoutAHash() {
     #expect(HexColor.parse("#5aa9f8") == RGB(red: 0x5a, green: 0xa9, blue: 0xf8))
     #expect(HexColor.parse("5aa9f8") == RGB(red: 0x5a, green: 0xa9, blue: 0xf8))
   }
 
-  @Test func expandsThreeDigitShorthand() {
+  @Test func aThreeDigitColourDoublesEachDigit() {
     #expect(HexColor.parse("#f0a") == RGB(red: 0xff, green: 0x00, blue: 0xaa))
   }
 
-  @Test func rejectsMalformedInput() {
+  @Test func anEmptyShortOrNonHexColourIsRefused() {
     #expect(HexColor.parse("") == nil)
     #expect(HexColor.parse("#12345") == nil)
     #expect(HexColor.parse("#gggggg") == nil)

@@ -664,8 +664,9 @@ at the bottom.
   either order, and a cancelled child's end landing after the Done that left it
   out put it back on the roster for good.
 - **A plain Working waiting behind another is dropped**, it saying nothing the
-  first will not: with the app unreachable each helper holds the queue two
-  seconds, and a burst of tool calls queued minutes of reports.
+  first will not: each helper that hangs holds the queue two seconds, and a
+  burst of tool calls queued minutes of reports. An app gone or with a full
+  backlog costs nothing here, macOS refusing the connect at once.
 - **OpenCode's woken turn is a prompt of synthetic parts only**, which the
   plugin reads as the turn a child's end woke rather than the user's: read as a
   new turn it emptied the roster of the children still out.

@@ -1,7 +1,7 @@
 import Foundation
 
-/// Where worktrees go and how their branches are named: both the app-wide
-/// defaults and a project's effective settings. Never read `ProjectSettings`.
+/// Where worktrees go and how their branches are named, global or a project's in
+/// effect. Path and branch decisions read this, never `ProjectSettings` directly.
 public struct WorktreeSettings: Codable, Hashable, Sendable {
   /// Directory that will hold a project's worktrees. Absolute, or relative
   /// to the repository root. `~` and `{project}` are expanded.
@@ -39,9 +39,7 @@ extension WorktreeSettings {
   /// The directory new worktrees are created in. Blank is the default: an
   /// empty path resolves to the repository itself.
   public func worktreeContainer(for project: Project) -> URL {
-    let text = worktreeDirectory.trimmingCharacters(in: .whitespaces)
-    let expanded =
-      (text.isEmpty ? Self.defaultWorktreeDirectory : text)
+    let expanded = (worktreeDirectory.trimmedOrNil ?? Self.defaultWorktreeDirectory)
       .replacingOccurrences(of: "{project}", with: project.name)
     return URL(
       fileURLWithPath: Self.expandingTilde(expanded), isDirectory: true, relativeTo: project.path

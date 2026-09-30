@@ -73,14 +73,12 @@ struct EditorLaunchTests {
             "/bin/zsh", "-l", "-i", "-c",
             #"code-insiders "$MULTISHELL_WORKTREE_PATH"; exec /bin/zsh -l"#,
           ]))
-    #expect(action("custom", custom: "/usr/local/bin/micro")?.self.title == "micro")
+    #expect(openTabTitle(action("custom", custom: "/usr/local/bin/micro")) == "micro")
     #expect(action("custom", custom: "   ") == nil, "nothing typed")
   }
-}
 
-extension EditorLaunch.Action {
-  fileprivate var title: String? {
-    if case .openTab(let title, _) = self { return title }
+  private func openTabTitle(_ action: EditorLaunch.Action?) -> String? {
+    if case .openTab(let title, _) = action { return title }
     return nil
   }
 }

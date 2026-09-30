@@ -34,7 +34,7 @@ struct AppModelWorktreeOrderTests {
     var settings = harness.model.workspace.project(harness.project.id)!.settings
     settings.worktreeSortOrder = WorktreeSortOrder.committedNewestFirst
     harness.model.updateSettings(settings, for: harness.project)
-    harness.model.lastCommits[harness.feature.id] = Date(timeIntervalSince1970: 2000)
+    harness.model.lastCommitDates[harness.feature.id] = Date(timeIntervalSince1970: 2000)
 
     let all = harness.model.workspace.worktrees
     #expect(
@@ -50,7 +50,7 @@ struct AppModelWorktreeOrderTests {
     harness.store.openTab(in: harness.feature.id)
     #expect(harness.model.hasActivity(harness.feature.id), "a terminal is enough")
 
-    harness.source.send(SessionStateReport(state: .attention, cwd: extra.path.path))
+    harness.stateSource.send(SessionStateReport(state: .attention, cwd: extra.path.path))
     #expect(harness.model.hasActivity(extra.id), "so is a state with no terminal")
   }
 

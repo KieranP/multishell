@@ -5,7 +5,7 @@ import SwiftUI
 /// rather than the system appearance; see Docs/design/appearance.md.
 extension Theme {
   var backgroundColor: Color { backgroundRGB.color }
-  var foregroundColor: Color { foregroundRGB.color }
+  private var foregroundColor: Color { foregroundRGB.color }
 
   /// Sidebar sits furthest from the terminal, toolbar and tab strip between.
   var sidebarColor: Color { lifted(0.09) }
@@ -25,7 +25,7 @@ extension Theme {
   var textSecondary: Color { foregroundColor.opacity(0.6) }
   var textTertiary: Color { foregroundColor.opacity(0.38) }
   var hairline: Color { foregroundColor.opacity(0.09) }
-  var rowHover: Color { foregroundColor.opacity(0.06) }
+  var faintFill: Color { foregroundColor.opacity(0.06) }
 
   var colorScheme: ColorScheme { isDark ? .dark : .light }
 

@@ -10,7 +10,7 @@ extension WorkspaceStoreTests {
   @Test func thePickersLastRungComesBackAsThreeTogglesAndIsSavedThatWay() throws {
     let file = Scratch.path("scratch")
       .appendingPathComponent("state.json")
-    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+    defer { Scratch.remove(file.deletingLastPathComponent()) }
     try FileManager.default.createDirectory(
       at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
     try Data(

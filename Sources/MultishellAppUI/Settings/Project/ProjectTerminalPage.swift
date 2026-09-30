@@ -9,7 +9,7 @@ struct ProjectTerminalPage: View {
   let project: Project
 
   var body: some View {
-    let globalShellID = model.workspace.preferredShellID ?? ShellCatalogue.loginShellID
+    let globalShellID = model.globalShellID
     Form {
       OverrideSection(
         model: model, project: project, setting: \.preferredShellID,

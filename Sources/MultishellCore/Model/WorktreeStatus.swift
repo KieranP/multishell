@@ -29,7 +29,7 @@ public struct WorktreeStatus: Hashable, Sendable {
   public var isDirty: Bool { changedFiles > 0 }
   public var isClean: Bool { changedFiles == 0 && ahead == 0 && behind == 0 }
 
-  /// One line for a tooltip: "3 changed · 1 untracked · ↑2".
+  /// One line for a tooltip: "+12 −3 · 2 modified · 1 untracked · ↑2".
   public var summary: String {
     var parts: [String] = []
     if isDirty { parts.append(t("status.lines", insertions, deletions)) }

@@ -7,9 +7,9 @@ struct MergeReadLog: Sendable {
   /// one a project, so a fetch that moved every branch's base does not start them all.
   var budget: Duration = .seconds(2)
   /// What a branch never read is taken to cost against the round.
-  var unmeasuredCost: Duration = .milliseconds(250)
+  static let unmeasuredCost: Duration = .milliseconds(250)
 
-  private var reads = ReadCosts()
+  private var reads = LastReads()
   private var spent = Duration.zero
 
   /// The poll's round asks every project; each project's re-asks draw on what
@@ -24,7 +24,7 @@ struct MergeReadLog: Sendable {
     var used = sharingRound ? spent : .zero
     let unread = ids.filter { reads[$0] == nil }
     var admitted = Set(unread)
-    used += unmeasuredCost * unread.count
+    used += Self.unmeasuredCost * unread.count
     let answered = ids.enumerated().compactMap { offset, id in
       reads[id].map { (id: id, offset: offset, at: $0.at, took: $0.took) }
     }

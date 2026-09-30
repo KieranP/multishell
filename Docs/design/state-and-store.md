@@ -65,7 +65,7 @@ What is written, what is repaired, how it is tested. Newest at the bottom.
   the wrapper, so its quit could not tell those files from the running copy's.
 - **Debug builds keep their own state file, socket, integration and drops
   directories**, so a debug run beside the installed app touches none of them.
-  Themes and the helper link are shared (state-on-disk.md).
+  Themes and the helper link are shared (develop/state-on-disk.md).
 - **`WorkspaceStore` only grows**: `private(set) var workspace` keeps every
   writer inside it, so each new mutation is another method there. Lookups it
   repeats belong on `Workspace`, where the store's methods share them.

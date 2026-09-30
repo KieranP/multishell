@@ -18,16 +18,16 @@ struct WeightedSplit<Content: View>: View {
   @State private var liveWeights: [Double]?
 
   var body: some View {
-    let weights = liveWeights ?? weights
+    let shownWeights = liveWeights ?? weights
     GeometryReader { geometry in
       let length = axis == .horizontal ? geometry.size.width : geometry.size.height
       let available = SplitMath.available(
-        Double(length), panes: weights.count, divider: UIMetrics.splitDividerThickness)
-      let sizes = SplitMath.sizes(of: weights, sharing: available).map { CGFloat($0) }
+        Double(length), panes: shownWeights.count, divider: UIMetrics.splitDividerThickness)
+      let sizes = SplitMath.sizes(of: shownWeights, sharing: available).map { CGFloat($0) }
 
       layout(sizes: sizes, available: CGFloat(available))
     }
-    .onChange(of: self.weights) { liveWeights = nil }
+    .onChange(of: weights) { liveWeights = nil }
   }
 
   private func layout(sizes: [CGFloat], available: CGFloat) -> some View {
@@ -55,91 +55,5 @@ struct WeightedSplit<Content: View>: View {
       Double(translation), acrossDividerAfter: index, in: start,
       available: Double(available), minimumPane: UIMetrics.minimumPaneLength)
     if updated != (liveWeights ?? start) { liveWeights = updated }
-  }
-}
-
-/// Places the split's children with explicit sizes and a divider between
-/// each pair. Built from subviews so `WeightedSplit` can take a `ForEach`.
-private struct SplitPanes: View {
-  let subviews: SubviewsCollection
-  let axis: SplitAxis
-  let sizes: [CGFloat]
-  let dividerColor: Color
-  let gutterColor: Color
-  let thickness: CGFloat
-  let onDrag: (Int, CGFloat) -> Void
-  let onDragEnded: () -> Void
-
-  var body: some View {
-    if axis == .horizontal {
-      HStack(spacing: 0) { panes }
-    } else {
-      VStack(spacing: 0) { panes }
-    }
-  }
-
-  private var panes: some View {
-    ForEach(Array(subviews.enumerated()), id: \.element.id) { index, child in
-      sized(child, index)
-      if index < subviews.count - 1 {
-        handle(after: index)
-      }
-    }
-  }
-
-  @ViewBuilder
-  private func sized(_ child: Subview, _ index: Int) -> some View {
-    let size = sizes.indices.contains(index) ? sizes[index] : 0
-    if axis == .horizontal {
-      child.frame(width: size)
-    } else {
-      child.frame(height: size)
-    }
-  }
-
-  private func handle(after index: Int) -> some View {
-    SplitHandle(
-      axis: axis, thickness: thickness, dividerColor: dividerColor, gutterColor: gutterColor,
-      onDrag: { onDrag(index, $0) }, onDragEnded: onDragEnded)
-  }
-}
-
-/// One divider. The end of a drag is read off the gesture state resetting,
-/// which a cancelled gesture does too where `onEnded` would stay silent.
-private struct SplitHandle: View {
-  let axis: SplitAxis
-  let thickness: CGFloat
-  let dividerColor: Color
-  let gutterColor: Color
-  let onDrag: (CGFloat) -> Void
-  let onDragEnded: () -> Void
-
-  @GestureState private var isDragging = false
-
-  var body: some View {
-    gutterColor
-      .frame(
-        width: axis == .horizontal ? thickness : nil, height: axis == .vertical ? thickness : nil
-      )
-      .overlay {
-        dividerColor.frame(
-          width: axis == .horizontal ? CGFloat(UIMetrics.splitLineThickness) : nil,
-          height: axis == .vertical ? CGFloat(UIMetrics.splitLineThickness) : nil
-        )
-      }
-      .contentShape(.rect)
-      .pointerStyle(
-        axis == .horizontal ? .columnResize(directions: .all) : .rowResize(directions: .all)
-      )
-      .gesture(
-        DragGesture(minimumDistance: 1, coordinateSpace: .global)
-          .updating($isDragging) { _, dragging, _ in dragging = true }
-          .onChanged { value in
-            onDrag(axis == .horizontal ? value.translation.width : value.translation.height)
-          }
-      )
-      .onChange(of: isDragging) { _, dragging in
-        if !dragging { onDragEnded() }
-      }
   }
 }

@@ -21,14 +21,14 @@ struct TabGroupView: View {
       TabStrip(
         model: model,
         group: group,
-        tabs: model.workspace.tabs(in: group.id),
+        tabs: model.workspace.tabs(inGroup: group.id),
         isFocusedGroup: isFocusedGroup,
         groupLabel: AccessibilityText.tabGroup(
           position: position, of: groupCount, isFocused: isFocusedGroup),
         theme: theme,
         drag: $drag
       )
-      if let tab = model.workspace.activeTab(in: group) {
+      if let tab = model.workspace.shownTab(in: group) {
         panes(of: tab)
       } else {
         Spacer()

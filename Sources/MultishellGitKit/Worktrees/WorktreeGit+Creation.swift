@@ -27,10 +27,10 @@ extension WorktreeGit {
     let now = Date().timeIntervalSince1970
     let settled = ContinuousClock.now + .seconds(now.rounded(.down) + 1.01 - now)
     // In slices, so the sheet's Cancel ends the wait rather than sitting it out.
-    while stopper?.isStopped != true, ContinuousClock.now < settled {
+    while stopper?.isStopRequested != true, ContinuousClock.now < settled {
       try? await Task.sleep(for: min(.milliseconds(50), settled - .now))
     }
-    guard stopper?.isStopped != true else { return }
+    guard stopper?.isStopRequested != true else { return }
     _ = await runner.output(["update-index", "-q", "--refresh"], in: worktree)
   }
 }

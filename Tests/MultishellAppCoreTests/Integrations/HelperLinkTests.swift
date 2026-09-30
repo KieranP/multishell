@@ -8,7 +8,7 @@ import Testing
 struct HelperLinkTests {
   @Test func refreshPointsTheLinkAtTheHelperAndReplacesAStaleOne() throws {
     let root = Scratch.path("helperlink")
-    defer { try? FileManager.default.removeItem(at: root) }
+    defer { Scratch.remove(root) }
     let link = root.appendingPathComponent("bin/multishell")
     let old = root.appendingPathComponent("old/multishell")
     let new = root.appendingPathComponent("new/multishell")

@@ -52,6 +52,21 @@ struct AppModelEditorTests {
     #expect(try String(contentsOf: ran, encoding: .utf8).contains(code.path))
   }
 
+  @Test func anInstalledApplicationIsHandedTheWorktreesDirectory() async throws {
+    let h = Harness()
+    let vscode = URL(fileURLWithPath: "/Applications/Visual Studio Code.app", isDirectory: true)
+    h.platform.applications["com.microsoft.VSCode"] = vscode
+    await h.model.refreshLoginEnvironment()
+    h.model.setPreferredEditor("vscode")
+
+    h.model.openInEditor(h.main)
+
+    try await waitUntil { !h.platform.opened.isEmpty }
+    #expect(h.platform.opened.map { $0.directory } == [h.main.path])
+    #expect(h.platform.opened.map { $0.application } == [vscode])
+    #expect(h.model.workspace.tabs.isEmpty, "the application opens it, not a tab")
+  }
+
   @Test func openInEditorFromTheMenuOverTheBoardOpensNothing() {
     let h = Harness()
     h.model.setPreferredEditor(EditorCatalogue.customID)

@@ -16,16 +16,16 @@ struct AppModelSessionReportsTests {
     let first = h.model.workspace.activeTab(in: h.main.id)!
     h.model.newTab()
 
-    h.source.send(SessionStateReport(state: .running, sessionID: first.focusedSessionID))
+    h.stateSource.send(SessionStateReport(state: .running, sessionID: first.focusedSessionID))
     #expect(h.model.state(of: first) == .running)
     #expect(h.model.state(ofWorktree: h.main.id) == .running)
     #expect(h.model.workingAgentCount == 1)
 
-    h.source.send(SessionStateReport(state: .attention, sessionID: first.focusedSessionID))
+    h.stateSource.send(SessionStateReport(state: .attention, sessionID: first.focusedSessionID))
     h.model.activate(first)
     #expect(h.model.state(of: first) == .attention, "looking is not answering")
 
-    h.source.send(SessionStateReport(state: .done, sessionID: first.focusedSessionID))
+    h.stateSource.send(SessionStateReport(state: .done, sessionID: first.focusedSessionID))
     #expect(h.model.state(of: first) == nil, "done for the shown tab has been seen")
   }
 
@@ -34,12 +34,13 @@ struct AppModelSessionReportsTests {
     h.model.select(h.main)
     let id = h.model.workspace.activeTab(in: h.main.id)!.focusedSessionID
 
-    h.source.send(
-      SessionStateReport(state: .running, sessionID: id, command: "make", isShell: true))
+    h.stateSource.send(
+      SessionStateReport(
+        state: .running, sessionID: id, command: "make", isFromShellIntegration: true))
     #expect(h.model.state(ofPane: id) == .running)
     #expect(h.model.workingAgentCount == 0)
 
-    h.source.send(SessionStateReport(state: .running, sessionID: id, agent: "claude"))
+    h.stateSource.send(SessionStateReport(state: .running, sessionID: id, agent: "claude"))
     #expect(h.model.workingAgentCount == 1)
   }
 
@@ -48,8 +49,9 @@ struct AppModelSessionReportsTests {
     h.model.select(h.main)
     let id = h.model.workspace.activeTab(in: h.main.id)!.focusedSessionID
 
-    h.source.send(
-      SessionStateReport(state: .running, sessionID: id, command: "codex", isShell: true))
+    h.stateSource.send(
+      SessionStateReport(
+        state: .running, sessionID: id, command: "codex", isFromShellIntegration: true))
     #expect(h.model.workingAgentCount == 1)
   }
 
@@ -59,27 +61,29 @@ struct AppModelSessionReportsTests {
     let cold = h.model.workspace.sessions(in: h.feature.id)[0]
     h.model.select(h.main)
 
-    h.source.send(SessionStateReport(state: .running, sessionID: UUID(), cwd: h.main.path.path))
-    h.source.send(SessionStateReport(state: .running, sessionID: cold.id, cwd: h.main.path.path))
+    h.stateSource.send(
+      SessionStateReport(state: .running, sessionID: UUID(), cwd: h.main.path.path))
+    h.stateSource.send(
+      SessionStateReport(state: .running, sessionID: cold.id, cwd: h.main.path.path))
 
-    #expect(h.model.sessionStates.isEmpty, "an id the app cannot place is not matched by cwd")
+    #expect(h.model.sessionStates.showsNothing, "an id the app cannot place is not matched by cwd")
   }
 
   @Test func aReportWithOnlyADirectoryMarksTheWorktree() {
     let h = Harness()
     h.model.select(h.main)
 
-    h.source.send(SessionStateReport(state: .attention, cwd: h.feature.path.path))
+    h.stateSource.send(SessionStateReport(state: .attention, cwd: h.feature.path.path))
     #expect(h.model.state(ofWorktree: h.feature.id) == .attention)
     #expect(h.model.state(ofWorktree: h.main.id) == nil)
-    h.source.send(SessionStateReport(state: .done, cwd: h.feature.path.path + "/"))
+    h.stateSource.send(SessionStateReport(state: .done, cwd: h.feature.path.path + "/"))
     #expect(h.model.state(ofWorktree: h.feature.id) == .done)
 
     h.model.select(h.feature)
     #expect(h.model.state(ofWorktree: h.feature.id) == nil, "selecting the worktree is seeing it")
 
-    h.source.send(SessionStateReport(state: .running, cwd: "/nowhere/at/all"))
-    #expect(h.model.sessionStates.isEmpty)
+    h.stateSource.send(SessionStateReport(state: .running, cwd: "/nowhere/at/all"))
+    #expect(h.model.sessionStates.showsNothing)
   }
 
   /// Claude Code started outside the app in a package directory reports that directory. The
@@ -88,13 +92,13 @@ struct AppModelSessionReportsTests {
     let h = Harness()
     h.model.select(h.main)
 
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
         state: .attention, cwd: h.feature.path.appendingPathComponent("packages/api").path))
     #expect(h.model.state(ofWorktree: h.feature.id) == .attention)
     #expect(h.model.state(ofWorktree: h.main.id) == nil, "the deepest worktree, not the first")
 
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(state: .failed, cwd: h.main.path.appendingPathComponent("featurette").path)
     )
     #expect(h.model.state(ofWorktree: h.main.id) == .failed, "a sibling by name is not inside")
@@ -109,7 +113,7 @@ struct AppModelSessionReportsTests {
     let tab = h.model.workspace.activeTab(in: h.main.id)!
     let me = ProcessInfo.processInfo.processIdentifier
 
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
         state: .running, sessionID: tab.focusedSessionID, pid: me, agent: AgentCatalogue.claudeID))
 
@@ -126,7 +130,7 @@ struct AppModelSessionReportsTests {
     h.model.setNotifications(NotificationPreference(attention: true, failed: true, done: true))
     h.model.renameWorktree(h.feature.id, to: "Checkout flow")
 
-    h.source.send(SessionStateReport(state: .attention, cwd: h.feature.path.path))
+    h.stateSource.send(SessionStateReport(state: .attention, cwd: h.feature.path.path))
 
     #expect(h.notifier.posted.count == 1)
     #expect(h.notifier.posted.first?.title.contains("Checkout flow") == true)
@@ -142,15 +146,15 @@ struct AppModelSessionReportsTests {
     let tab = h.model.workspace.activeTab(in: h.main.id)!
     h.model.newTab()
     let session = tab.focusedSessionID
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
         state: .running, sessionID: session,
         subagent: SubagentReport(id: "w1", type: "Explore", phase: .started)))
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(state: .attention, sessionID: session, message: "Needs Bash"))
     #expect(h.notifier.posted.count == 1)
 
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
         state: .running, sessionID: session, subagent: SubagentReport(id: "w1", phase: .ended)))
 
@@ -168,16 +172,16 @@ struct AppModelSessionReportsTests {
     let tab = h.model.workspace.activeTab(in: h.main.id)!
     h.model.newTab()
     let session = tab.focusedSessionID
-    h.source.send(SessionStateReport(state: .running, sessionID: session, agent: "claude"))
-    h.source.send(SessionStateReport(state: .done, sessionID: session, agent: "claude"))
+    h.stateSource.send(SessionStateReport(state: .running, sessionID: session, agent: "claude"))
+    h.stateSource.send(SessionStateReport(state: .done, sessionID: session, agent: "claude"))
     #expect(h.model.state(ofWorktree: h.main.id) == .done)
     #expect(h.notifier.posted.count == 1)
 
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
         state: .running, sessionID: session, agent: "claude",
         subagent: SubagentReport(id: "w1", type: "Explore", phase: .started)))
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
         state: .running, cwd: h.main.path.path, agent: "claude",
         subagent: SubagentReport(id: "w2", type: "Plan", phase: .working)))
@@ -192,11 +196,11 @@ struct AppModelSessionReportsTests {
     #expect(card?.subagents.map(\.type) == ["Explore"], "a card has its own pane's only")
     #expect(card?.subagents.first?.since != nil, "stamped by the model's clock")
 
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
         state: .running, sessionID: session, agent: "claude",
         subagent: SubagentReport(id: "w1", phase: .ended)))
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
         state: .running, cwd: h.main.path.path, agent: "claude",
         subagent: SubagentReport(id: "w2", phase: .ended)))
@@ -213,24 +217,24 @@ struct AppModelSessionReportsTests {
     let id = tab.focusedSessionID
 
     // The shell hook fires as `claude` starts: a command is running.
-    h.source.send(SessionStateReport(state: .running, sessionID: id))
+    h.stateSource.send(SessionStateReport(state: .running, sessionID: id))
     #expect(h.model.state(of: tab) == .running)
 
     // Claude's SessionStart hook: it is up and waiting for a prompt, not
     // working. Back to grey.
-    h.source.send(SessionStateReport(state: .idle, sessionID: id))
+    h.stateSource.send(SessionStateReport(state: .idle, sessionID: id))
     #expect(h.model.state(of: tab) == nil, "an agent at its prompt is idle")
 
     // A prompt: working again (UserPromptSubmit / PreToolUse).
-    h.source.send(SessionStateReport(state: .running, sessionID: id))
+    h.stateSource.send(SessionStateReport(state: .running, sessionID: id))
     #expect(h.model.state(of: tab) == .running)
 
     // A permission prompt: waiting.
-    h.source.send(SessionStateReport(state: .attention, sessionID: id, message: "Needs Bash"))
+    h.stateSource.send(SessionStateReport(state: .attention, sessionID: id, message: "Needs Bash"))
     #expect(h.model.state(of: tab) == .attention)
 
     // The turn ends: done.
-    h.source.send(SessionStateReport(state: .done, sessionID: id))
+    h.stateSource.send(SessionStateReport(state: .done, sessionID: id))
     #expect(h.model.state(of: tab) == .done)
   }
 
@@ -241,10 +245,10 @@ struct AppModelSessionReportsTests {
     h.model.newTab()
     let id = tab.focusedSessionID
 
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
-        state: .running, sessionID: id, pid: 4242, command: "claude", isShell: true))
-    h.source.send(SessionStateReport(state: .idle, sessionID: id, startsSession: true))
+        state: .running, sessionID: id, pid: 4242, command: "claude", isFromShellIntegration: true))
+    h.stateSource.send(SessionStateReport(state: .idle, sessionID: id, startsSession: true))
 
     #expect(h.model.state(of: tab) == nil)
   }
@@ -263,7 +267,8 @@ struct AppModelSessionReportsTests {
     child.waitUntilExit()
     let gone = child.processIdentifier
 
-    h.source.send(SessionStateReport(state: .running, sessionID: tab.focusedSessionID, pid: gone))
+    h.stateSource.send(
+      SessionStateReport(state: .running, sessionID: tab.focusedSessionID, pid: gone))
     #expect(h.model.state(of: tab) == .running)
     #expect(h.model.pidWatch != nil)
 
@@ -272,7 +277,7 @@ struct AppModelSessionReportsTests {
     #expect(h.model.pidWatch == nil, "nothing left to watch")
 
     // A live process keeps its state.
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
         state: .running, sessionID: tab.focusedSessionID,
         pid: ProcessInfo.processInfo.processIdentifier))
@@ -298,8 +303,9 @@ struct AppModelSessionReportsTests {
     try shell.run()
     defer { shell.terminate() }
 
-    h.source.send(SessionStateReport(state: .running, sessionID: session, pid: me, agent: "claude"))
-    h.source.send(
+    h.stateSource.send(
+      SessionStateReport(state: .running, sessionID: session, pid: me, agent: "claude"))
+    h.stateSource.send(
       SessionStateReport(
         state: .done, sessionID: session, pid: me, agent: "claude",
         backgroundShells: [shell.processIdentifier]))
@@ -334,7 +340,7 @@ struct AppModelSessionReportsTests {
     let me = ProcessInfo.processInfo.processIdentifier
     let shell = try exitedProcess()
 
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
         state: .done, sessionID: session, pid: me, agent: "claude", backgroundShells: [shell],
         resumesAfterWorkers: true))
@@ -342,8 +348,8 @@ struct AppModelSessionReportsTests {
     #expect(h.model.state(ofPane: session) == .running, "waiting on the turn the exit starts")
     #expect(h.notifier.posted.isEmpty)
 
-    h.source.send(SessionStateReport(state: .running, sessionID: session, agent: "claude"))
-    h.source.send(
+    h.stateSource.send(SessionStateReport(state: .running, sessionID: session, agent: "claude"))
+    h.stateSource.send(
       SessionStateReport(
         state: .done, sessionID: session, agent: "claude", resumesAfterWorkers: true))
     #expect(h.model.state(ofPane: session) == .done)
@@ -360,11 +366,11 @@ struct AppModelSessionReportsTests {
     let me = ProcessInfo.processInfo.processIdentifier
     let shell = try exitedProcess()
 
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
         state: .done, sessionID: session, pid: me, agent: "claude", backgroundShells: [shell],
         resumesAfterWorkers: true))
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
         state: .done, sessionID: session, pid: me, agent: "claude", backgroundShells: [],
         resumesAfterWorkers: true))
@@ -381,22 +387,22 @@ struct AppModelSessionReportsTests {
     h.model.newTab()
     let session = tab.focusedSessionID
 
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
         state: .done, sessionID: session, agent: "claude", resumesAfterWorkers: true))
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
         state: .running, sessionID: session, agent: "claude",
         subagent: SubagentReport(id: "w1", type: "Explore", phase: .started)))
     #expect(h.notifier.withdrawn.count == 1, "the Done was not true")
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
         state: .running, sessionID: session, agent: "claude",
         subagent: SubagentReport(id: "w1", phase: .ended)))
     #expect(h.model.state(ofPane: session) == .running)
     #expect(h.notifier.posted.count == 1)
 
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
         state: .done, sessionID: session, agent: "claude", resumesAfterWorkers: true))
     #expect(h.model.state(ofPane: session) == .done)
@@ -412,7 +418,7 @@ struct AppModelSessionReportsTests {
     h.model.newTab()
     let session = tab.focusedSessionID
     func stop(_ out: [String]) {
-      h.source.send(
+      h.stateSource.send(
         SessionStateReport(
           state: .done, sessionID: session, agent: "claude", resumesAfterWorkers: true,
           workersOut: out.map { SubagentReport(id: $0, type: "Explore", phase: .working) }))
@@ -421,7 +427,7 @@ struct AppModelSessionReportsTests {
     stop(["w1"])
     #expect(h.model.state(ofPane: session) == .running)
     #expect(h.model.subagents(ofPane: session).map(\.id) == ["w1"], "its start not heard yet")
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
         state: .running, sessionID: session, agent: "claude",
         subagent: SubagentReport(id: "w1", phase: .ended)))
@@ -441,21 +447,21 @@ struct AppModelSessionReportsTests {
     h.model.newTab()
     let session = tab.focusedSessionID
 
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
         state: .running, sessionID: session, agent: "claude",
         subagent: SubagentReport(id: "w1", type: "Explore", phase: .started)))
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
         state: .done, sessionID: session, agent: "claude", resumesAfterWorkers: true))
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
         state: .running, sessionID: session, agent: "claude",
         subagent: SubagentReport(id: "w1", phase: .ended)))
     #expect(h.model.state(ofPane: session) == .running, "the woken turn is still writing")
     #expect(h.notifier.posted.isEmpty)
 
-    h.source.send(
+    h.stateSource.send(
       SessionStateReport(
         state: .done, sessionID: session, agent: "claude", resumesAfterWorkers: true))
     #expect(h.model.state(ofPane: session) == .done)
@@ -474,8 +480,8 @@ struct AppModelSessionReportsTests {
     for _ in 0..<12 {
       let agent = try exitedProcess()
       let shell = try exitedProcess()
-      h.source.send(SessionStateReport(state: .running, sessionID: session, pid: agent))
-      h.source.send(
+      h.stateSource.send(SessionStateReport(state: .running, sessionID: session, pid: agent))
+      h.stateSource.send(
         SessionStateReport(
           state: .done, sessionID: session, pid: agent, backgroundShells: [shell]))
       h.model.sweepGonePIDs()

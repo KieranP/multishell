@@ -28,19 +28,18 @@ extension AppModel {
     }
   }
 
-  /// Terminal titles change on every prompt, so writes are coalesced.
   private func scheduleSave() {
     pendingSave?.cancel()
     pendingSave = Task { @MainActor [weak self] in
       try? await Task.sleep(for: .milliseconds(300))
       guard !Task.isCancelled else { return }
-      self?.save()
+      self?.saveOffMain()
     }
   }
 
   /// Encoded and written off the main actor, a stalled volume otherwise
   /// holding the window; the store keeps the writes in order.
-  func save() {
+  func saveOffMain() {
     guard !yieldingToRunningInstance, let save = store.prepareSave() else { return }
     Task { @MainActor [weak self] in
       let outcome = await offMain { Result { try save.run() } }

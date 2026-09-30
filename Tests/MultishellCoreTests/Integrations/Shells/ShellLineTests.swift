@@ -34,7 +34,7 @@ struct ShellLineTests {
   func aPlaceholderTheUserQuotedStillArrivesAsText(shell: String, hostile: String) throws {
     guard FileManager.default.isExecutableFile(atPath: shell) else { return }
     let directory = try Scratch.directory("custom-line")
-    defer { try? FileManager.default.removeItem(at: directory) }
+    defer { Scratch.remove(directory) }
     let expectations = [
       "printf '%s|' {{branch}}": "\(hostile)|",
       "printf '%s|' \"on {{branch}}\"": "on \(hostile)|",
@@ -53,7 +53,7 @@ struct ShellLineTests {
   func theEditorsPathArrivesAsTextWhereverItIsWritten(shell: String) throws {
     guard FileManager.default.isExecutableFile(atPath: shell) else { return }
     let directory = try Scratch.directory("custom-editor")
-    defer { try? FileManager.default.removeItem(at: directory) }
+    defer { Scratch.remove(directory) }
     let path = URL(fileURLWithPath: "/w/feat$(date>ran) 'x\"")
     let expectations = [
       "printf '%s|' {path}": "\(path.path)|",

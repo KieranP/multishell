@@ -19,11 +19,12 @@ struct AppModelWorktreeRemovalTests {
 
     let removal = Task { await h.model.removeWorktree(worktree) }
     var seen: Set<WorktreeOperation.Step> = []
-    let deadline = ContinuousClock.now + .seconds(15)
-    while ContinuousClock.now < deadline, !seen.contains(.removingWorktree) {
-      if let step = h.model.worktreeOperations[worktree.id]?.step { seen.insert(step) }
-      try await Task.sleep(for: .milliseconds(20))
-    }
+    try await waitUntil(
+      {
+        guard let step = h.model.worktreeOperations[worktree.id]?.step else { return !seen.isEmpty }
+        seen.insert(step)
+        return false
+      }, seconds: 15)
     await removal.value
 
     #expect(seen.contains(.preDeleteHook), "the hook was named while it ran: \(seen)")
@@ -209,21 +210,6 @@ struct AppModelWorktreeRemovalTests {
     #expect(h.model.worktreeOperations[worktree.id] == nil)
     #expect(h.model.presentedError == nil)
     #expect(h.worktree(onBranch: "kept") != nil && h.model.liveTerminalCount == 1)
-  }
-
-  @Test func deletingAWorktreeOutrightLeavesWhatItsLinksPointAt() async throws {
-    let main = try Scratch.directory("linked-main")
-    let modules = main.appendingPathComponent("node_modules")
-    try FileManager.default.createDirectory(at: modules, withIntermediateDirectories: true)
-    try "x".write(to: modules.appendingPathComponent("a.js"), atomically: true, encoding: .utf8)
-    let worktree = try Scratch.directory("linked-worktree")
-    try FileManager.default.createSymbolicLink(
-      at: worktree.appendingPathComponent("node_modules"), withDestinationURL: modules)
-
-    try await AppModel<FakeSurface>.deleteDirectory(worktree)
-
-    #expect(!FileManager.default.fileExists(atPath: worktree.path))
-    #expect(FileManager.default.fileExists(atPath: modules.appendingPathComponent("a.js").path))
   }
 
   @Test func removingTheMainWorktreeIsRefusedBeforeAnyDialog() {

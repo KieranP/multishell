@@ -68,14 +68,15 @@ extension AppModelWorktreeSetupTests {
     try h.divertARepositoryPathWithASymlink()
     try "SECRET=1".write(
       to: h.project.path.appendingPathComponent(".env"), atomically: true, encoding: .utf8)
-    try h.shipSharedSettings(
+    try h.writeSharedSettings(
       #"""
       { "linkedPaths": "link/key", "copiedPaths": ".env",
         "postCreateHook": "echo ran > hook.txt" }
       """#)
-    await h.model.refresh(h.project)
+    await h.model.refreshWorktrees(of: h.project)
     h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
-    h.model.decideSharedSettings(try #require(h.model.pendingSharedSettingsTrust), trusted: true)
+    h.model.answerSharedSettingsTrust(
+      try #require(h.model.pendingSharedSettingsTrust), trusted: true)
 
     await h.model.createWorktree(branch: "stuck", basedOn: nil, createBranch: true, in: h.project)
     let created = try #require(h.worktree(onBranch: "stuck"))
@@ -104,10 +105,9 @@ extension AppModelWorktreeSetupTests {
     defer { h.tearDown() }
     try FileManager.default.createDirectory(
       at: h.project.path.appendingPathComponent("node_modules"), withIntermediateDirectories: true)
-    try #"{ "linkedPaths": "node_modules", "postCreateHook": "echo ran > hook.txt" }"#
-      .write(
-        to: SharedProjectSettings.file(in: h.project.path), atomically: true, encoding: .utf8)
-    await h.model.refresh(h.project)
+    try h.writeSharedSettings(
+      #"{ "linkedPaths": "node_modules", "postCreateHook": "echo ran > hook.txt" }"#)
+    await h.model.refreshWorktrees(of: h.project)
 
     await h.model.createWorktree(branch: "shared", basedOn: nil, createBranch: true, in: h.project)
     let created = try #require(h.worktree(onBranch: "shared"))
@@ -123,7 +123,8 @@ extension AppModelWorktreeSetupTests {
     #expect(h.model.worktreeOperations[created.id] == nil, "the link stage ended")
 
     h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
-    h.model.decideSharedSettings(try #require(h.model.pendingSharedSettingsTrust), trusted: true)
+    h.model.answerSharedSettingsTrust(
+      try #require(h.model.pendingSharedSettingsTrust), trusted: true)
     await h.model.createWorktree(branch: "trusted", basedOn: nil, createBranch: true, in: h.project)
     let second = try #require(h.worktree(onBranch: "trusted"))
     await h.model.stageHandles.setup(of: second.id)?.value
@@ -170,10 +171,9 @@ extension AppModelWorktreeSetupTests {
     defer { h.tearDown() }
     try "SECRET=1".write(
       to: h.project.path.appendingPathComponent(".env"), atomically: true, encoding: .utf8)
-    try #"{ "copiedPaths": ".env", "postCreateHook": "echo ran > hook.txt" }"#
-      .write(
-        to: SharedProjectSettings.file(in: h.project.path), atomically: true, encoding: .utf8)
-    await h.model.refresh(h.project)
+    try h.writeSharedSettings(
+      #"{ "copiedPaths": ".env", "postCreateHook": "echo ran > hook.txt" }"#)
+    await h.model.refreshWorktrees(of: h.project)
 
     await h.model.createWorktree(branch: "shared", basedOn: nil, createBranch: true, in: h.project)
     let created = try #require(h.worktree(onBranch: "shared"))
@@ -197,11 +197,12 @@ extension AppModelWorktreeSetupTests {
     let h = try await GitHarness()
     defer { h.tearDown() }
     try h.divertARepositoryPathWithASymlink()
-    try h.shipSharedSettings(
+    try h.writeSharedSettings(
       #"{ "copiedPaths": "link/key", "postCreateHook": "echo ran > hook.txt" }"#)
-    await h.model.refresh(h.project)
+    await h.model.refreshWorktrees(of: h.project)
     h.model.select(h.model.workspace.worktrees(of: h.project.id)[0])
-    h.model.decideSharedSettings(try #require(h.model.pendingSharedSettingsTrust), trusted: true)
+    h.model.answerSharedSettingsTrust(
+      try #require(h.model.pendingSharedSettingsTrust), trusted: true)
 
     await h.model.createWorktree(branch: "escaped", basedOn: nil, createBranch: true, in: h.project)
     let created = try #require(h.worktree(onBranch: "escaped"))
@@ -293,8 +294,8 @@ extension AppModelWorktreeSetupTests {
     try "SECRET=1".write(to: secret, atomically: true, encoding: .utf8)
     try FileManager.default.createSymbolicLink(
       at: h.project.path.appendingPathComponent(".env"), withDestinationURL: secret)
-    try h.shipSharedSettings(#"{ "copiedPaths": "vendor" }"#)
-    await h.model.refresh(h.project)
+    try h.writeSharedSettings(#"{ "copiedPaths": "vendor" }"#)
+    await h.model.refreshWorktrees(of: h.project)
     h.model.updateSettings(
       h.project.settings.with { $0.copiedPaths = ".env" }, for: h.project)
 

@@ -1,7 +1,7 @@
-import MultishellAppCore
 import MultishellCore
 import Testing
 
+@testable import MultishellAppCore
 @testable import MultishellAppUI
 
 @Suite @MainActor

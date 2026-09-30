@@ -7,7 +7,7 @@ import Testing
 extension WorkspaceStoreTests {
   @Test func aSavePreparedEarlierNeverLandsOverOnePreparedLater() throws {
     let file = Scratch.path("ordered-save").appendingPathComponent("state.json")
-    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+    defer { Scratch.remove(file.deletingLastPathComponent()) }
     let store = WorkspaceStore(file: WorkspaceFile(fileURL: file))
     store.addProject(at: URL(fileURLWithPath: "/repos/a"))
     let first = try #require(store.prepareSave())

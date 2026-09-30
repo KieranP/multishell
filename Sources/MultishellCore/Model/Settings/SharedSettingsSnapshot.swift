@@ -30,12 +30,12 @@ public struct SharedSettingsSnapshot: Equatable, Sendable {
   }
 
   /// A project whose file has not been read. Every field is the right answer
-  /// for that, `modificationDate` included: `hasMoved` says yes to it.
-  public static let unread = SharedSettingsSnapshot()
+  /// for that, `modificationDate` included: `needsRead` says yes to it.
+  static let unread = SharedSettingsSnapshot()
 
   /// Whether the file's date has moved since it was read, which is what a
   /// tick asks before spending a read. True for a project never read.
-  public func hasMoved(_ modificationDate: Date) -> Bool {
+  public func needsRead(at modificationDate: Date) -> Bool {
     self.modificationDate != modificationDate || !hasBeenRead
   }
 }

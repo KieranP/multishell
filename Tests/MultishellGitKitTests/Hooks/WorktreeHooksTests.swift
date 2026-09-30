@@ -25,7 +25,7 @@ struct WorktreeHooksTests {
         "printf \"%s|%s|%s|%s\" \"$MULTISHELL_PROJECT_PATH\" \"$MULTISHELL_PROJECT_NAME\" \"$MULTISHELL_WORKTREE_PATH\" \"$MULTISHELL_BRANCH\" > env.txt"
     )
     let coordinator = repo.coordinator
-    let path = try await coordinator.create(
+    let path = try await coordinator.createThenRunPostCreate(
       branch: "hooked", in: project, settings: repo.worktreeSettings)
 
     let recorded = try String(contentsOf: path.appendingPathComponent("env.txt"), encoding: .utf8)
@@ -42,7 +42,7 @@ struct WorktreeHooksTests {
     var project = repo.project
     project.settings = ProjectSettings(
       postDeleteHook: "printf \"%s|%s\" \"$PWD\" \"$MULTISHELL_WORKTREE_PATH\" > deleted.txt")
-    let path = try await repo.coordinator.create(
+    let path = try await repo.coordinator.createThenRunPostCreate(
       branch: "bye", in: project, settings: repo.worktreeSettings)
     let worktree = try await repo.worktree(onBranch: "bye", in: project)
 
@@ -67,7 +67,7 @@ struct WorktreeHooksTests {
     // message was rc noise with nothing of the hook's in it.
     let timeout = Duration.seconds(3)
     do {
-      try await repo.coordinator.create(
+      try await repo.coordinator.createThenRunPostCreate(
         branch: "slow", in: project, settings: repo.worktreeSettings, timeout: timeout)
       Issue.record("the hook was not stopped")
     } catch let failure as HookFailure {
@@ -91,7 +91,7 @@ struct WorktreeHooksTests {
     }
 
     do {
-      try await repo.coordinator.create(
+      try await repo.coordinator.createThenRunPostCreate(
         branch: "stopped", in: project, settings: repo.worktreeSettings, stopper: stopper)
       Issue.record("the hook was not stopped")
     } catch let failure as HookFailure {
@@ -110,7 +110,8 @@ struct WorktreeHooksTests {
 
     let coordinator = repo.coordinator
     await #expect(throws: HookFailure.self) {
-      try await coordinator.create(branch: "doomed", in: project, settings: settings)
+      try await coordinator.createThenRunPostCreate(
+        branch: "doomed", in: project, settings: settings)
     }
     #expect(try await coordinator.git.list(project).contains { $0.branch == "doomed" })
   }
@@ -122,7 +123,7 @@ struct WorktreeHooksTests {
     project.settings = ProjectSettings(preCreateHook: "echo refused >&2\nexit 7")
 
     await #expect(throws: HookFailure.self) {
-      try await repo.coordinator.create(
+      try await repo.coordinator.createThenRunPostCreate(
         branch: "refused", in: project, settings: repo.worktreeSettings)
     }
 
@@ -140,7 +141,7 @@ struct WorktreeHooksTests {
     project.settings = ProjectSettings(
       preCreateHook: "pwd > pre.txt\nprintf '%s' \"$MULTISHELL_WORKTREE_PATH\" > planned.txt")
 
-    let path = try await repo.coordinator.create(
+    let path = try await repo.coordinator.createThenRunPostCreate(
       branch: "planned", in: project, settings: repo.worktreeSettings)
 
     let ran = try String(
@@ -158,7 +159,7 @@ struct WorktreeHooksTests {
     defer { repo.tearDown() }
     var project = repo.project
     project.settings = ProjectSettings(preDeleteHook: "exit 1")
-    let path = try await repo.coordinator.create(
+    let path = try await repo.coordinator.createThenRunPostCreate(
       branch: "kept", in: project, settings: repo.worktreeSettings)
     let worktree = try await repo.worktree(onBranch: "kept", in: project)
 
@@ -176,7 +177,7 @@ struct WorktreeHooksTests {
     var project = repo.project
     project.settings = ProjectSettings(
       preDeleteHook: "pwd > \"$MULTISHELL_PROJECT_PATH/where.txt\"")
-    let path = try await repo.coordinator.create(
+    let path = try await repo.coordinator.createThenRunPostCreate(
       branch: "leaving", in: project, settings: repo.worktreeSettings)
     let worktree = try await repo.worktree(onBranch: "leaving", in: project)
 
@@ -193,7 +194,7 @@ struct WorktreeHooksTests {
     defer { repo.tearDown() }
     var project = repo.project
     project.settings = ProjectSettings(preDeleteHook: "pwd > where.txt")
-    let path = try await repo.coordinator.create(
+    let path = try await repo.coordinator.createThenRunPostCreate(
       branch: "vanished", in: project, settings: repo.worktreeSettings)
     let worktree = try await repo.worktree(onBranch: "vanished", in: project)
     try FileManager.default.removeItem(at: path)
@@ -215,7 +216,7 @@ struct WorktreeHooksTests {
     )
 
     await #expect(throws: HookFailure.self) {
-      try await repo.coordinator.create(
+      try await repo.coordinator.createThenRunPostCreate(
         branch: "lines", in: project, settings: repo.worktreeSettings)
     }
 
@@ -235,7 +236,7 @@ struct WorktreeHooksTests {
     for name in ["zsh", "bash"] {
       let shell = try Scratch.script(
         "printf %s \(name) > shell.txt", at: shells.appendingPathComponent(name))
-      let created = try await repo.coordinator.create(
+      let created = try await repo.coordinator.createThenRunPostCreate(
         branch: name, in: project, settings: repo.worktreeSettings, shellPath: shell.path)
       #expect(
         try String(contentsOf: created.appendingPathComponent("shell.txt"), encoding: .utf8)

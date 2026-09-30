@@ -16,9 +16,8 @@ extension AppModel {
     store.setTrashesRemovedWorktrees(enabled)
   }
 
-  /// Entry point from the UI, asking first unless the settings have settled
-  /// both questions. Nothing while an operation is already running there.
-  /// The task ends once the dialog is up or the removal is over.
+  /// Asks first unless the settings have settled both questions; nothing while an
+  /// operation runs there. The task ends once the dialog is up or the removal is over.
   @discardableResult
   public func requestWorktreeRemoval(of worktree: Worktree) -> Task<Void, Never>? {
     guard worktree.isRemovable, !isBusy(worktree.id) else { return nil }
@@ -26,12 +25,12 @@ extension AppModel {
       return Task { await removeWorktree(worktree, deletingBranch: deletingBranch) }
     }
     latestRemovalRequest = worktree.id
-    guard removalReads.insert(worktree.id).inserted else { return nil }
+    guard removalsAwaitingStatus.insert(worktree.id).inserted else { return nil }
     // Any row's status may be as old as the pace allows, and the dialog,
     // built once, warns of the changed files that status counts.
     return Task {
       await refreshStatus(of: worktree.id, forced: true)
-      removalReads.remove(worktree.id)
+      removalsAwaitingStatus.remove(worktree.id)
       let isLatest = latestRemovalRequest == worktree.id
       if isLatest { latestRemovalRequest = nil }
       // A late read must not swap the dialog up, or a newer click's, for its own.
@@ -71,7 +70,7 @@ extension AppModel {
   }
 
   /// The pane shows each stage while this runs. What a failed stage does is
-  /// `RemovalFailure`'s decision; this attaches the retry it names.
+  /// `WorktreeRemovalFailure`'s decision; this attaches the retry it names.
   func removeWorktree(
     _ worktree: Worktree, deletingBranch: Bool = false, trashes: Bool? = nil
   ) async {
@@ -80,22 +79,22 @@ extension AppModel {
       !isBusy(worktree.id)
     else { return }
     if renamingWorktreeID == worktree.id { renamingWorktreeID = nil }
-    let resolved = withEffectiveSettings(project)
+    let effective = withEffectiveSettings(project)
     let trashes = trashes ?? workspace.trashesRemovedWorktrees
     worktreeOperations.begin(
-      .init(WorktreeRemovalStep.first(for: resolved), trashes: trashes), on: worktree.id)
+      .init(WorktreeRemovalStep.first(for: effective), trashes: trashes), on: worktree.id)
     let stopper = ProcessStopper()
     stageHandles.arm(stopper, on: worktree.id)
     defer { stageHandles.disarm(worktree.id, ifStillHeldBy: stopper) }
     do {
       try await coordinator.remove(
-        worktree, deletingBranch: deletingBranch, in: resolved,
+        worktree, deletingBranch: deletingBranch, in: effective,
         shellPath: workspace.effectiveShellPath(for: project),
         trash: { [weak self] url in
           if trashes {
-            try await self?.moveToTrash(url)
+            try await self?.trashOrDelete(url)
           } else {
-            try await Self.deleteDirectory(url)
+            try await deleteDirectory(url)
           }
         },
         timeout: workspace.hookTimeout, stopper: stopper,
@@ -105,21 +104,22 @@ extension AppModel {
           }
         })
     } catch {
-      guard handleRemovalFailure(error, of: worktree, deletingBranch: deletingBranch, in: project)
-      else { return }
+      let worktreeIsGone = reportRemovalFailure(
+        error, of: worktree, deletingBranch: deletingBranch, in: project)
+      guard worktreeIsGone else { return }
     }
     worktreeOperations.clear(worktree.id)
-    await refresh(project)
+    await refreshWorktrees(of: project)
     await rearmWatcher()
     reconcileSessions(takingFocus: true)
   }
 
-  /// Says what went wrong where `RemovalFailure` puts it. `true` where the
+  /// Says what went wrong where `WorktreeRemovalFailure` puts it. `true` where the
   /// worktree went regardless, so the refresh after a removal still runs.
-  private func handleRemovalFailure(
+  private func reportRemovalFailure(
     _ error: any Error, of worktree: Worktree, deletingBranch: Bool, in project: Project
   ) -> Bool {
-    let failure = RemovalFailure(
+    let failure = WorktreeRemovalFailure(
       error, deletingBranch: deletingBranch ? worktree.branch : nil)
     switch failure {
     case .stopped:
@@ -147,16 +147,12 @@ extension AppModel {
 
   /// The Trash where it takes the directory, deletion where it will not: the
   /// removal was confirmed either way; see Docs/design/worktrees.md.
-  private func moveToTrash(_ url: URL) async throws {
+  private func trashOrDelete(_ url: URL) async throws {
     let platform = self.platform
     let trashed = await offMain { Result { try platform.moveToTrash(url) } }
     guard case .failure(let error) = trashed else { return }
     platform.log("\(url.path) could not be moved to the Trash (\(error)); deleting it")
-    try await Self.deleteDirectory(url)
-  }
-
-  nonisolated static func deleteDirectory(_ url: URL) async throws {
-    try await offMain { Result { try FileManager.default.removeItem(at: url) } }.get()
+    try await deleteDirectory(url)
   }
 
   /// The branch alone, after a removal that left it behind.

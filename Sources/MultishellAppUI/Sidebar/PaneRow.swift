@@ -50,7 +50,7 @@ struct PaneRow: View {
     .accessibilityLabel(
       AccessibilityText.pane(
         title: title, position: position, isFocusedPane: isFocusedPane, state: state,
-        subagents: subagents, agent: agentName)
+        subagents: subagents, agentName: agentName)
     )
     .accessibilityAddTraits(isFocusedPane ? [.isButton, .isSelected] : .isButton)
   }

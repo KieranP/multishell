@@ -31,7 +31,6 @@ struct GitRunner: Sendable {
   ) throws {
     guard let executable else { throw GitUnavailable() }
     self.executable = executable
-    // Never empty now, `isolation` being in every runner, so no guard on it.
     let configuration = Self.isolation.merging(configuration) { _, callers in callers }
     var overrides = ["GIT_CONFIG_COUNT": String(configuration.count)]
     for (index, entry) in configuration.sorted(by: { $0.key < $1.key }).enumerated() {

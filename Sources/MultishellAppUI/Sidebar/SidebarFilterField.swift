@@ -38,7 +38,7 @@ struct SidebarFilterField: View {
     }
     .padding(.horizontal, 8)
     .frame(height: (metrics.body * 1.85).rounded())
-    .background(theme.rowHover, in: RoundedRectangle(cornerRadius: 6))
+    .background(theme.faintFill, in: RoundedRectangle(cornerRadius: 6))
     .padding(.horizontal, 8)
   }
 }

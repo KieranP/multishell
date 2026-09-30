@@ -6,8 +6,4 @@ import MultishellCore
 public struct NewWorktreeRequest: Identifiable, Sendable {
   public let id = UUID()
   public let projectID: Project.ID?
-
-  init(projectID: Project.ID?) {
-    self.projectID = projectID
-  }
 }

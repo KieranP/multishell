@@ -25,7 +25,7 @@ extension AppModel {
         await refreshSharedSettingsIfChanged(project)
         continue
       }
-      await refresh(project)
+      await refreshWorktrees(of: project)
       refreshed = true
     }
     if refreshed { await rearmWatcher() }
@@ -33,12 +33,12 @@ extension AppModel {
 
   /// Refresh chosen by the user. A failure already shown for this project is
   /// shown again: the click asked for an answer.
-  public func refreshOnRequest(_ project: Project) async {
+  public func refreshWorktreesOnRequest(of project: Project) async {
     missingProjects.remove(project.id)
-    await refresh(project)
+    await refreshWorktrees(of: project)
   }
 
-  func refresh(_ project: Project) async {
+  func refreshWorktrees(of project: Project) async {
     guard let coordinator else { return }
     let path = project.path
     guard await offMain({ FileManager.default.fileExists(atPath: path.path) }) else {
@@ -51,7 +51,7 @@ extension AppModel {
     if let common = await commonGitDirectory(of: project) {
       records = await offMain { WorktreeRecords.read(commonDirectory: common) }
     }
-    let shared = await offMain { Self.readSharedSettings(of: project) }
+    let shared = await offMain { SharedSettingsReading.read(from: project) }
     do {
       let discovered = try await coordinator.git.list(project)
       guard isStillListedElseForgetCache(project.id) else { return }
@@ -117,7 +117,7 @@ extension AppModel {
       present(error)
       return
     }
-    await refresh(project)
+    await refreshWorktrees(of: project)
     await refreshStatuses()
     await refreshMergeStates(of: project)
   }

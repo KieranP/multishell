@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellCore
@@ -65,7 +66,7 @@ struct ClaudeTranscriptTests: AgentHookFixtures {
 
   @Test func aFileIsReadFromItsTailAndAMissingOneSaysNothing() throws {
     let directory = temporaryDirectory()
-    defer { try? FileManager.default.removeItem(at: directory) }
+    defer { Scratch.remove(directory) }
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     let file = directory.appendingPathComponent("session.jsonl")
     let filler =

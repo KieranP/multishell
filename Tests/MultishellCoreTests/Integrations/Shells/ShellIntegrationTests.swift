@@ -8,14 +8,9 @@ import Testing
 /// `--init-file` point.
 @Suite
 struct ShellIntegrationTests {
-  private func scratch() throws -> URL {
-    let url = try Scratch.directory("integration")
-    return url
-  }
-
   @Test func refreshWritesEveryFileAndRewritesAStaleOne() throws {
-    let root = try scratch()
-    defer { try? FileManager.default.removeItem(at: root) }
+    let root = try Scratch.directory("integration")
+    defer { Scratch.remove(root) }
     let zsh = root.appendingPathComponent("zsh", isDirectory: true)
     let bashInit = root.appendingPathComponent("bash/init.bash")
 

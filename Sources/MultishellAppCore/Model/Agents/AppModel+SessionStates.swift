@@ -40,12 +40,12 @@ extension AppModel {
   }
 
   /// One pane's own state, for its sidebar row.
-  public func state(ofPane id: TerminalSession.ID) -> SessionState? {
+  func state(ofPane id: TerminalSession.ID) -> SessionState? {
     sessionStates[.session(id)]
   }
 
   /// The workers out under one pane, for its row's chip. Empty is no chip.
-  public func subagents(ofPane id: TerminalSession.ID) -> [Subagent] {
+  func subagents(ofPane id: TerminalSession.ID) -> [Subagent] {
     sessionStates.subagents(.session(id))
   }
 

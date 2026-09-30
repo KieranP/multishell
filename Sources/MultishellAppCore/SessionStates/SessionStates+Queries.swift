@@ -48,10 +48,4 @@ extension SessionStates {
     guard let entry = entries[.session(id)], entry.state == .running else { return false }
     return !entry.workingIsShellCommand || commandIsAgent
   }
-
-  /// Nothing showing and nothing out. A stamp and a note outlive the state
-  /// they were about, so neither counts; a roster does.
-  var isEmpty: Bool {
-    !entries.values.contains { $0.state != nil || !$0.roster.subagents.isEmpty }
-  }
 }

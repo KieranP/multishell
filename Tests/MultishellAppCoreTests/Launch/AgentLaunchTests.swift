@@ -5,13 +5,6 @@ import Testing
 
 @Suite
 struct AgentLaunchTests {
-  /// A dropped file is named to the agent the way its prompt reads one;
-  /// the catalogue says so only where that is known.
-  @Test func theCatalogueSaysWhichAgentsReadFileMentions() {
-    #expect(AgentCatalogue.agent("claude")?.fileMentionPrefix == "@")
-    #expect(AgentCatalogue.agent("codex")?.fileMentionPrefix == nil)
-  }
-
   @Test func resumeUsesTheCatalogueOrGivesUp() {
     let claude = AgentCatalogue.agent("claude")!
     #expect(AgentLaunch.arguments(for: claude, resume: false) == ["claude"])

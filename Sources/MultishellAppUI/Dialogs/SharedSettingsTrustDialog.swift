@@ -13,8 +13,8 @@ extension View {
       titleVisibility: .visible,
       presenting: model.pendingSharedSettingsTrust
     ) { pending in
-      Button(pending.trustLabel) { model.decideSharedSettings(pending, trusted: true) }
-      Button(pending.declineLabel) { model.decideSharedSettings(pending, trusted: false) }
+      Button(pending.trustLabel) { model.answerSharedSettingsTrust(pending, trusted: true) }
+      Button(pending.declineLabel) { model.answerSharedSettingsTrust(pending, trusted: false) }
         .keyboardShortcut(.defaultAction)
       // Escape: asked again next time, since nothing was decided.
       Button(t("dialog.decide-later"), role: .cancel) { model.pendingSharedSettingsTrust = nil }

@@ -4,15 +4,7 @@ extension AppModel {
   /// Whose hooks and whether the command-line tool are installed. Six files,
   /// read here on the main actor: the settings rows ask after writing one.
   public func refreshInstallState() {
-    recordInstallState(Self.installState())
-  }
-
-  nonisolated static func installState() -> IntegrationInstallState {
-    let installations = AgentHookCatalogue.integrations.map { ($0.id, $0.installation()) }
-    return IntegrationInstallState(
-      installedHooks: Set(installations.filter { $0.1 != .absent }.map(\.0)),
-      staleHooks: Set(installations.filter { $0.1 == .stale }.map(\.0)),
-      commandLineToolInstalled: HelperLink.isCommandLineToolInstalled)
+    recordInstallState(IntegrationInstallState.read())
   }
 
   func recordInstallState(_ state: IntegrationInstallState) {
@@ -35,27 +27,21 @@ extension AppModel {
 
   public func installAgentHooks(_ id: String) {
     guard let integration = AgentHookCatalogue.integration(id) else { return }
-    do {
-      try integration.install()
-    } catch {
-      present(error)
-    }
-    refreshInstallState()
+    changeInstallState { try integration.install() }
   }
 
   public func removeAgentHooks(_ id: String) {
     guard let integration = AgentHookCatalogue.integration(id) else { return }
-    do {
-      try integration.remove()
-    } catch {
-      present(error)
-    }
-    refreshInstallState()
+    changeInstallState { try integration.remove() }
   }
 
   public func installCommandLineTool() {
+    changeInstallState { try platform.installCommandLineTool() }
+  }
+
+  private func changeInstallState(_ change: () throws -> Void) {
     do {
-      try platform.installCommandLineTool()
+      try change()
     } catch {
       present(error)
     }

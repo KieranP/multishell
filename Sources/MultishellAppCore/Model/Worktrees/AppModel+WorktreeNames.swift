@@ -26,8 +26,7 @@ extension AppModel {
   /// ended, so an Escape is not undone by the commit losing focus triggers.
   public func commitWorktreeRename(of id: Worktree.ID, to name: String) {
     guard renamingWorktreeID == id else { return }
-    renamingWorktreeID = nil
-    store.setCustomName(name, forWorktree: id)
+    renameWorktree(id, to: name)
   }
 
   /// The field's Escape: the name stays as it was.

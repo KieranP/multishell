@@ -17,7 +17,7 @@ extension WorkspaceStoreTests {
     store.closeTab(tabs[1].id)
 
     #expect(
-      group(of: worktree.id, in: store).activeTabID == tabs[2].id,
+      group(of: worktree.id, in: store).shownTabID == tabs[2].id,
       "the tab that slid into the closed one's place, not the rightmost")
     WorkspaceInvariants.check(store.workspace, "closed middle tab")
   }
@@ -29,7 +29,7 @@ extension WorkspaceStoreTests {
 
     store.closeTab(tabs[2].id)
 
-    #expect(group(of: worktree.id, in: store).activeTabID == tabs[1].id)
+    #expect(group(of: worktree.id, in: store).shownTabID == tabs[1].id)
   }
 
   @Test func draggingTheShownTabAwayLeavesItsNeighbourShowing() {
@@ -38,9 +38,9 @@ extension WorkspaceStoreTests {
     let first = group(of: worktree.id, in: store)
     store.activateTab(tabs[1].id)
 
-    store.moveTabToNewGroup(tabs[1].id, .after, of: first.id)
+    store.moveTab(tabs[1].id, .after, toNewGroupOf: first.id)
 
-    #expect(store.workspace.group(first.id)?.activeTabID == tabs[2].id)
+    #expect(store.workspace.group(first.id)?.shownTabID == tabs[2].id)
     WorkspaceInvariants.check(store.workspace, "dragged shown tab out")
   }
 
@@ -48,13 +48,13 @@ extension WorkspaceStoreTests {
     let (store, _, worktree) = demoStore()
     let tabs = (0..<4).map { _ in store.openTab(in: worktree.id)! }
     let first = group(of: worktree.id, in: store)
-    let made = store.moveTabToNewGroup(tabs[3].id, .after, of: first.id)!
+    let made = store.moveTab(tabs[3].id, .after, toNewGroupOf: first.id)!
     store.activateTab(tabs[1].id)
 
-    store.moveTab(tabs[1].id, .before, tabs[3].id)
+    store.moveTab(tabs[1].id, .before, anchor: tabs[3].id)
 
-    #expect(store.workspace.group(first.id)?.activeTabID == tabs[2].id)
-    #expect(store.workspace.tabs(in: made.id).map(\.id) == [tabs[1].id, tabs[3].id])
+    #expect(store.workspace.group(first.id)?.shownTabID == tabs[2].id)
+    #expect(store.workspace.tabs(inGroup: made.id).map(\.id) == [tabs[1].id, tabs[3].id])
     WorkspaceInvariants.check(store.workspace, "moved shown tab across groups")
   }
 
@@ -65,6 +65,6 @@ extension WorkspaceStoreTests {
 
     store.closeTab(tabs[0].id)
 
-    #expect(group(of: worktree.id, in: store).activeTabID == tabs[2].id)
+    #expect(group(of: worktree.id, in: store).shownTabID == tabs[2].id)
   }
 }

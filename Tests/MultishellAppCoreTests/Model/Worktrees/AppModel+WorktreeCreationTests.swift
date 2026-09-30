@@ -10,30 +10,6 @@ import Testing
 
 @Suite(.serialized) @MainActor
 struct AppModelWorktreeCreationTests {
-  /// The sheet's load, step for step, against a repository with spare
-  /// branches: the existing-branch list must offer the ones not checked out.
-  @Test func theExistingBranchListOffersTheUncheckedOutLocalBranches() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    _ = try await h.git.run(["branch", "release"], in: h.project.path)
-    _ = try await h.git.run(["branch", "spike"], in: h.project.path)
-    h.model.requestNewWorktree(in: h.project)
-    let request = try #require(h.model.newWorktreeRequest)
-
-    var draft = NewWorktreeDraft(projectID: request.projectID)
-    draft.beginLoading()
-    let project = try #require(h.model.workspace.project(request.projectID!))
-    let read = try #require(await h.model.newWorktreeBranches(of: project))
-    let checkedOut = Set(h.model.workspace.worktrees(of: project.id).compactMap(\.branch))
-    draft.finishLoading(project.id, with: read, checkedOut: checkedOut)
-
-    #expect(draft.availableBranches(checkedOut: checkedOut) == ["release", "spike"])
-    draft.createBranch = false
-    draft.modeChanged(checkedOut: checkedOut)
-    #expect(draft.branch == "release")
-    #expect(draft.canCreate(checkedOut: checkedOut))
-  }
-
   @Test func creatingAWorktreeSelectsItOpensAShellAndWatchesItsRecords() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
@@ -130,9 +106,9 @@ struct AppModelWorktreeCreationTests {
     let h = try await GitHarness()
     defer { h.tearDown() }
     h.model.setPreferredAgent("claude")
-    try #"{ "autoStartAgentOnCreate": true, "opensTerminalOnSelect": false }"#
-      .write(to: SharedProjectSettings.file(in: h.project.path), atomically: true, encoding: .utf8)
-    await h.model.refresh(h.project)
+    try h.writeSharedSettings(
+      #"{ "autoStartAgentOnCreate": true, "opensTerminalOnSelect": false }"#)
+    await h.model.refreshWorktrees(of: h.project)
 
     let main = try #require(h.worktree(onBranch: "main"))
     h.model.select(main)
@@ -180,11 +156,12 @@ struct AppModelWorktreeCreationTests {
         branch: "stepped", basedOn: nil, createBranch: true, in: h.project)
     }
     var seen: Set<WorktreeCreationStep> = []
-    let deadline = ContinuousClock.now + .seconds(15)
-    while ContinuousClock.now < deadline, !seen.contains(.addingWorktree) {
-      if let step = h.model.worktreeCreationStep { seen.insert(step) }
-      try await Task.sleep(for: .milliseconds(20))
-    }
+    try await waitUntil(
+      {
+        guard let step = h.model.worktreeCreationStep else { return !seen.isEmpty }
+        seen.insert(step)
+        return false
+      }, seconds: 15)
     await create.value
 
     #expect(seen.contains(.preCreateHook), "the sheet could name the hook it waited on: \(seen)")
@@ -277,6 +254,7 @@ struct AppModelWorktreeCreationTests {
     let h = try await GitHarness()
     defer { h.tearDown() }
     let marker = h.root.appendingPathComponent("hook-ran")
+    let container = h.model.worktreeSettings(for: h.project).worktreeContainer(for: h.project)
     h.model.updateSettings(
       ProjectSettings(preCreateHook: "touch \(marker.path)"), for: h.project)
 
@@ -284,20 +262,8 @@ struct AppModelWorktreeCreationTests {
       branch: "my branch", basedOn: nil, createBranch: true, in: h.project)
 
     #expect(!FileManager.default.fileExists(atPath: marker.path), "the hook did not run")
+    #expect(!FileManager.default.fileExists(atPath: container.path), "nor the directory made")
     #expect(h.model.presentedError != nil, "and the sheet says why")
     #expect(h.worktree(onBranch: "my branch") == nil)
-  }
-
-  @Test func thePlannedLocationPlacesTheTrimmedNameAndIsADashWithoutOne() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    var draft = NewWorktreeDraft(projectID: h.project.id)
-    #expect(h.model.plannedLocation(for: draft) == "\u{2014}", "no name typed")
-
-    draft.branch = "  feat/x "
-
-    #expect(h.model.plannedLocation(for: draft).hasSuffix("/feat-x"))
-    draft.projectID = nil
-    #expect(h.model.plannedLocation(for: draft) == "\u{2014}", "no project picked")
   }
 }

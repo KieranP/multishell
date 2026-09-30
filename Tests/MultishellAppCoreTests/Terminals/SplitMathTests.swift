@@ -39,7 +39,7 @@ struct SplitMathTests {
     a.count == b.count && zip(a, b).allSatisfy { abs($0 - $1) < 1e-9 }
   }
 
-  @Test func twoPanesTooSmallForTheMinimumSplitEvenlyInsteadOfGoingNegative() {
+  @Test func twoPanesTooSmallForTheMinimumSplitStayPutRatherThanGoingNegative() {
     // Fourteen panes in 600 points are 43 each; the old clamp made the
     // second share negative, and that was written to disk.
     let weights = Array(repeating: 1.0, count: 14)

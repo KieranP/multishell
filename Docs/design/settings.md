@@ -66,7 +66,7 @@ shipped hook. Newest at the bottom.
   `worktreeSettings(for:)`, never `project.settings`. The override forms are the
   exception, where blank must keep meaning "follow the global".
 - **The gate is one line.** `layered` drops what the yes covers, the same fields
-  the dialog names, then puts the rest over the user's, rather than each field
+  the dialog names, then puts the user's over the rest, rather than each field
   asking.
 - **The forms read that same view through `inherited`**, or a caption saying
   "from .multishell.json" names a value the layering left out, which it did for
@@ -81,9 +81,9 @@ shipped hook. Newest at the bottom.
   every word the yes covers is the user's own, and none where no answer was
   given. Comparing the two alone made trusting a file and then exporting it
   revoke the yes.
-- **`keeping(from:)` covers every gated field, not the hooks alone.** Gating the
-  directory and the lists on trust blanked them for an untrusted file, and
-  export then wrote the file without those keys at all.
+- **`carryingOver(from:)` covers every gated field, not the hooks alone.**
+  Gating the directory and the lists on trust blanked them for an untrusted
+  file, and export then wrote the file without those keys at all.
 - **Grey in a hook editor means inherited, nothing else.**
 - **Odd shapes, each from a bug**: no prefix on an existing branch; blank
   worktree directory is the default; `.`, `..` and an empty slug become `_`; a

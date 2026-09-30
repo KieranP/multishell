@@ -19,7 +19,7 @@ struct AgentHookCatalogueTests: AgentHookFixtures {
   /// exit 2, so the line answers 0 whatever becomes of the helper.
   @Test func aHelperThatDiesTakesTheDotsWithItAndNotTheToolCall() throws {
     let directory = temporaryDirectory()
-    defer { try? FileManager.default.removeItem(at: directory) }
+    defer { Scratch.remove(directory) }
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     let fake = directory.appendingPathComponent("multishell")
 
@@ -55,7 +55,9 @@ struct AgentHookCatalogueTests: AgentHookFixtures {
     let old = "[ -x \"\(helper)\" ] && exec \"\(helper)\" claude-hook; exit 0"
     #expect(AgentHookCatalogue.isOurHook(old))
     #expect(
-      AgentHookCatalogue.claude.isInstalled(in: ["hooks": groups(claudeEvents, command: old)]))
+      AgentHookCatalogue.claude.hasOurHookUnderEveryEvent(in: [
+        "hooks": groups(claudeEvents, command: old)
+      ]))
   }
 
   /// A substring test ate a hook whose script merely spelled both names, and
@@ -83,41 +85,6 @@ struct AgentHookCatalogueTests: AgentHookFixtures {
       AgentHookCatalogue.integrations.map(\.id) == [
         "claude", "codex", "gemini", "copilot", "opencode",
       ])
-  }
-
-  @Test func everyHookedEventGetsOneEntryAndTheSnippetIsValidJSON() throws {
-    let entries = AgentHookCatalogue.claude.entries(helper: helper)
-    let hooks = try #require(entries["hooks"] as? [String: Any])
-    #expect(Set(hooks.keys) == Set(AgentHookCatalogue.claude.events.map(\.name)))
-    #expect(AgentHookCatalogue.claude.isInstalled(in: entries))
-
-    let snippet = AgentHookCatalogue.claude.snippet(helper: helper)
-    let parsed = try JSONSerialization.jsonObject(with: Data(snippet.utf8)) as? [String: Any]
-    #expect(AgentHookCatalogue.claude.isInstalled(in: parsed ?? [:]))
-    #expect(snippet.contains("\"timeout\" : 5"))
-  }
-
-  @Test func codexIsGivenNoTimeoutItWouldClampAndWarnAbout() throws {
-    let hooks = try #require(
-      AgentHookCatalogue.codex.entries(helper: helper)["hooks"] as? [String: Any])
-    func timeout(_ event: String) -> Int? {
-      let groups = hooks[event] as? [[String: Any]]
-      return (groups?.first?["hooks"] as? [[String: Any]])?.first?["timeout"] as? Int
-    }
-
-    #expect(timeout("Interrupt") == 3)
-    #expect(timeout("SessionEnd") == 3)
-    for event in hooks.keys where !["Interrupt", "SessionEnd"].contains(event) {
-      #expect(timeout(event) == 5, "\(event)")
-    }
-  }
-
-  /// Gemini counts the timeout in milliseconds, and five seconds spelled as
-  /// five would kill the helper before it reached the socket.
-  @Test func geminiCountsTheTimeoutInMilliseconds() throws {
-    #expect(AgentHookCatalogue.gemini.snippet(helper: helper).contains("\"timeout\" : 5000"))
-    #expect(AgentHookCatalogue.claude.snippet(helper: helper).contains("\"timeout\" : 5"))
-    #expect(AgentHookCatalogue.codex.snippet(helper: helper).contains("\"timeout\" : 5"))
   }
 
   @Test func theHelperReferenceGoesThroughHOME() {

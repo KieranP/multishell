@@ -42,9 +42,7 @@ struct MultishellApp: App {
     // One settings window, retargeted from the sidebar. A `Window`, not a
     // `WindowGroup`, whose own Cmd+W would win over Close Pane.
     Window(t("window.project-settings"), id: ProjectSettingsWindow.windowID) {
-      // Reachable from the Window menu too, with no project chosen yet: fall
-      // back to the current project rather than showing an empty window.
-      if let projectID = model.settingsProjectID ?? model.selectedProject?.id {
+      if let projectID = model.settingsWindowProjectID {
         ProjectSettingsWindow(model: model, platform: platform, projectID: projectID)
       } else {
         Text(t("window.project-settings-empty"))

@@ -53,7 +53,7 @@ struct WorktreeRowBadges: View {
         .foregroundStyle(theme.textSecondary)
         .padding(.horizontal, 6)
         .padding(.vertical, 1)
-        .background(theme.rowHover, in: Capsule())
+        .background(theme.faintFill, in: Capsule())
         .help(t("count.terminals", terminalCount))
     }
   }

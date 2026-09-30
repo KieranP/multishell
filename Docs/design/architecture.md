@@ -35,8 +35,10 @@ What the core is, what it refuses, how work reaches it. Newest at the bottom.
 - **The rebuilt coordinator keeps the launch one's line counts and merge
   slots**: merge reads still in flight hold the old slots, and a fresh set let
   sixteen git processes run where the width is eight.
-- **Nothing in the core blocks a thread.** Waits inside `Task`s held a pool
-  thread per core until GCD ran out and the suite hung.
+- **Nothing in the core blocks a pool thread.** Waits inside `Task`s held a pool
+  thread per core until GCD ran out and the suite hung. Blocking file work goes
+  through `offMain` to Dispatch; the untracked line counts are the gap,
+  worktrees.md has it.
 - **The directory check before a shell starts is the one wait**, a second at
   most on the main thread and never on a pool thread; worktrees.md has why.
 - **Both pipes drain at once**, or the second fills its buffer and blocks the

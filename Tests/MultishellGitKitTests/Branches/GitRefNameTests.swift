@@ -20,7 +20,7 @@ struct GitRefNameTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     for name in Self.names {
-      let accepted = await Self.gitAccepts(name, in: fixture.project.path, using: fixture.git)
+      let accepted = await Self.gitAccepts(name, in: fixture.project.path, using: fixture.runner)
       #expect(GitRefName.isValidBranch(name) == accepted, "\(name)")
     }
   }

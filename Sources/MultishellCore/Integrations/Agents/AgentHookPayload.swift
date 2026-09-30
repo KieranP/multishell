@@ -4,8 +4,8 @@ import Foundation
 /// this reads; see Docs/design/agents.md.
 public struct AgentHookPayload: Hashable, Sendable {
   var eventName: String
-  public var cwd: String?
-  public var message: String?
+  var cwd: String?
+  var message: String?
   /// The approval mode the agent is in, where it says: `default`,
   /// `dontAsk` and the rest. Claude Code and Codex are the ones that say.
   var permissionMode: String?
@@ -14,8 +14,8 @@ public struct AgentHookPayload: Hashable, Sendable {
   var notificationType: String?
   /// The subagent the event fired inside, or the one a start or stop names.
   /// Claude Code and Codex set it on every event of a subagent's.
-  public var agentID: String?
-  var agentType: String?
+  var subagentID: String?
+  var subagentType: String?
   /// The agent's own id for the conversation. Copilot runs a subagent as a
   /// conversation of its own, whose id its SubagentStop names as `agent_id`.
   var conversationID: String?
@@ -28,12 +28,12 @@ public struct AgentHookPayload: Hashable, Sendable {
     var id: String
     /// `subagent`, `shell`, `monitor` and so on, the agent's own label.
     var type: String
-    var agentType: String?
+    var subagentType: String?
   }
 
   init(
     eventName: String, cwd: String? = nil, message: String? = nil, permissionMode: String? = nil,
-    notificationType: String? = nil, agentID: String? = nil, agentType: String? = nil,
+    notificationType: String? = nil, subagentID: String? = nil, subagentType: String? = nil,
     conversationID: String? = nil, transcriptPath: String? = nil
   ) {
     self.eventName = eventName
@@ -41,8 +41,8 @@ public struct AgentHookPayload: Hashable, Sendable {
     self.message = message
     self.permissionMode = permissionMode
     self.notificationType = notificationType
-    self.agentID = agentID
-    self.agentType = agentType
+    self.subagentID = subagentID
+    self.subagentType = subagentType
     self.conversationID = conversationID
     self.transcriptPath = transcriptPath
   }
@@ -57,8 +57,8 @@ public struct AgentHookPayload: Hashable, Sendable {
     self.message = object["message"] as? String
     self.permissionMode = object["permission_mode"] as? String
     self.notificationType = object["notification_type"] as? String
-    self.agentID = object["agent_id"] as? String
-    self.agentType = object["agent_type"] as? String
+    self.subagentID = object["agent_id"] as? String
+    self.subagentType = object["agent_type"] as? String
     self.conversationID = object["session_id"] as? String
     self.transcriptPath = object["transcript_path"] as? String
     self.backgroundTasks = (object["background_tasks"] as? [Any]).map { tasks in
@@ -66,7 +66,7 @@ public struct AgentHookPayload: Hashable, Sendable {
         guard let task = task as? [String: Any], let id = task["id"] as? String,
           let type = task["type"] as? String
         else { return nil }
-        return BackgroundTask(id: id, type: type, agentType: task["agent_type"] as? String)
+        return BackgroundTask(id: id, type: type, subagentType: task["agent_type"] as? String)
       }
     }
   }

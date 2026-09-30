@@ -10,7 +10,13 @@
   what the linker kept from the archive's members (`lipo -thin`, then `ar -t`),
   the undefined symbols of its Zig object (`nm -u libghostty_zcu.o`), and
   strings a library leaves in the executable, such as a font's name table or a
-  library's error messages. Moving the libghostty pin means redoing that.
+  library's error messages. The debug build's executable is not stripped, so
+  `nm --defined-only` on it answers directly. Moving the libghostty pin means
+  redoing that.
+- **The archive also holds FreeType, libpng and zlib, which the linker drops**:
+  at `1.6.20260922` the debug executable defines none of `FT_Init_FreeType`,
+  `png_create_read_struct`, `inflate` or `deflate`, while it keeps `onig_new`.
+  So the notices leave them out.
 - **libghostty via `Lakr233/libghostty-spm`**, MIT, pinned to an exact tag, the
   embedding API not being stable. Prebuilt by a third party with patches; build
   it from source before distributing.

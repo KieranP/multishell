@@ -58,7 +58,7 @@ extension AppModel {
   }
 
   /// The board's one filter, held by the model rather than the workspace.
-  var showsAllTerminalsBinding: Binding<Bool> {
+  var showsAllTerminalsSetting: Binding<Bool> {
     Binding(get: { self.showsAllTerminals }, set: { self.setShowsAllTerminals($0) })
   }
 
@@ -78,8 +78,8 @@ extension AppModel {
   }
 
   /// Whether the project overrides `keyPath`, seeded with what the row was
-  /// showing. Named well apart from `overrideValue`, which it type-matches.
-  func hasOverride<Value: Equatable & Sendable>(
+  /// showing. Named well apart from `overrideField`, which it type-matches.
+  func overrideToggle<Value: Equatable & Sendable>(
     _ keyPath: WritableKeyPath<ProjectSettings, Value?>, of project: Project, fallback: Value
   ) -> Binding<Bool> {
     let source = setting(keyPath, of: project)
@@ -91,7 +91,7 @@ extension AppModel {
 
   /// The overridden value, reading as `fallback` while the override is off so
   /// the disabled control shows what is in effect.
-  func overrideValue<Value: Equatable & Sendable>(
+  func overrideField<Value: Equatable & Sendable>(
     _ keyPath: WritableKeyPath<ProjectSettings, Value?>, of project: Project, fallback: Value
   ) -> Binding<Value> {
     let source = setting(keyPath, of: project)

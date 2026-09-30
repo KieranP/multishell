@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellCore
@@ -9,7 +10,7 @@ struct URLDeepestExistingTests {
     let root = FileManager.default.temporaryDirectory
       .appendingPathComponent(UUID().uuidString, isDirectory: true)
     try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-    defer { try? FileManager.default.removeItem(at: root) }
+    defer { Scratch.remove(root) }
     let link = root.appendingPathComponent("link")
     try FileManager.default.createSymbolicLink(
       at: link, withDestinationURL: root.appendingPathComponent("nowhere"))
@@ -29,7 +30,7 @@ struct URLDeepestExistingTests {
     let root = FileManager.default.temporaryDirectory
       .appendingPathComponent(UUID().uuidString, isDirectory: true)
     try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-    defer { try? FileManager.default.removeItem(at: root) }
+    defer { Scratch.remove(root) }
     let real = try #require(realpath(root.path, nil))
     defer { free(real) }
     let resolvedRoot = String(cString: real)

@@ -23,7 +23,6 @@ struct BranchRefParserTests {
     #expect(byName["refs/heads/feat"]?.tip == "cd2")
     #expect(byName["refs/heads/feat"]?.isUpstreamGone == false)
     #expect(byName["refs/heads/squashed"]?.isUpstreamGone == true)
-    #expect(byName["refs/heads/local-only"]?.upstream == nil)
     #expect(byName["refs/heads/local-only"]?.isUpstreamGone == false)
     #expect(byName["refs/remotes/origin/main"]?.isRemote == true)
     // The date is the sixth field, so every row written before it existed

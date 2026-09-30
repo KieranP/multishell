@@ -33,11 +33,7 @@ struct SubagentRoster: Equatable, Sendable {
         return Place(id: report.id)
       }
       let place = self.place(at: index)
-      if subagents[index].occurrences > 1 {
-        subagents[index].occurrences -= 1
-      } else {
-        subagents.remove(at: index)
-      }
+      removeOne(at: index)
       return place
     case .working where isAnonymous:
       // A tool call names no worker either, so it is one already out, and
@@ -80,7 +76,7 @@ struct SubagentRoster: Equatable, Sendable {
   }
 
   private var firstNamedPlace: Int? {
-    subagents.firstIndex { !$0.isShell && $0.id != Subagent.overflowID }
+    subagents.firstIndex { !$0.isBackgroundShell && $0.id != Subagent.overflowID }
   }
 
   /// The folded worker an end takes, in `endingPlace`'s order: an unnamed
@@ -138,8 +134,8 @@ struct SubagentRoster: Equatable, Sendable {
     for id in foldedGone { forget(id) }
     for worker in out where !isOut(worker.id) {
       var listedWorker = Subagent(id: worker.id, type: worker.type)
-      listedWorker.isListedShell = worker.isShell == true
-      listedWorker.awaitsStart = worker.isShell != true
+      listedWorker.isListedShell = worker.isBackgroundShell == true
+      listedWorker.awaitsStart = worker.isBackgroundShell != true
       add(listedWorker)
     }
     keepShells(shells)
@@ -163,9 +159,6 @@ struct SubagentRoster: Equatable, Sendable {
     return kept
   }
 
-  /// How many workers the places stand for, folded ones included.
-  var workerCount: Int { subagents.reduce(0) { $0 + $1.occurrences } }
-
   private func isOut(_ id: String) -> Bool {
     folded[id] != nil || subagents.contains { $0.id == id }
   }
@@ -175,7 +168,7 @@ struct SubagentRoster: Equatable, Sendable {
   @discardableResult
   private mutating func add(_ worker: Subagent) -> Place {
     let placed = subagents.count - (overflowIndex == nil ? 0 : 1)
-    guard placed >= SessionStateReport.maximumWorkerCount else {
+    guard placed >= SessionStateReport.rosterCapacity else {
       subagents.append(worker)
       return Place(id: worker.id)
     }
@@ -205,14 +198,17 @@ struct SubagentRoster: Equatable, Sendable {
   private mutating func unfold(_ id: String) -> Place {
     let place = overflowPlace
     folded[id] = folded[id].flatMap { $0 > 1 ? $0 - 1 : nil }
-    if let overflow = overflowIndex {
-      if subagents[overflow].occurrences > 1 {
-        subagents[overflow].occurrences -= 1
-      } else {
-        subagents.remove(at: overflow)
-      }
-    }
+    if let overflow = overflowIndex { removeOne(at: overflow) }
     return place
+  }
+
+  /// One of a place's occurrences, and the place itself with its last.
+  private mutating func removeOne(at index: Int) {
+    if subagents[index].occurrences > 1 {
+      subagents[index].occurrences -= 1
+    } else {
+      subagents.remove(at: index)
+    }
   }
 
   var hasUnstampedStarts: Bool { subagents.contains { $0.since == nil } }

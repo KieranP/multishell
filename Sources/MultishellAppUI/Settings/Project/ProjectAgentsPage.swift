@@ -8,7 +8,7 @@ struct ProjectAgentsPage: View {
   let project: Project
 
   var body: some View {
-    let globalAgentID = model.workspace.preferredAgentID ?? AgentCatalogue.noneID
+    let globalAgentID = model.globalAgentID
     let globalFlags = model.workspace.globalAgentFlags(for: project)
     Form {
       OverrideSection(

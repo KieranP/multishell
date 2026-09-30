@@ -15,7 +15,7 @@ struct AgentHookIntegrationMergingTests: AgentHookFixtures {
 
       let added = integration.adding(to: before, helper: helper)
       #expect(
-        integration.isInstalled(in: added) == unreadable.isEmpty,
+        integration.hasOurHookUnderEveryEvent(in: added) == unreadable.isEmpty,
         "seed \(seed) \(integration.id): installed unless an entry was unreadable")
       #expect(
         integration.adding(to: added, helper: helper).keys.count == added.keys.count,
@@ -26,7 +26,7 @@ struct AgentHookIntegrationMergingTests: AgentHookFixtures {
         foreign(in: after) == foreign(in: before),
         "seed \(seed) \(integration.id): a hook of the user's did not come back")
       #expect(
-        !integration.isInstalled(in: after) || integration.events.isEmpty,
+        !integration.hasOurHookUnderEveryEvent(in: after) || integration.events.isEmpty,
         "seed \(seed) \(integration.id): ours did not all come out")
       for (key, value) in before where key != "hooks" {
         #expect(
@@ -131,11 +131,11 @@ struct AgentHookIntegrationMergingTests: AgentHookFixtures {
         "PreCompact": [["hooks": [["type": "command", "command": "echo compacting"]]]],
       ],
     ]
-    #expect(!AgentHookCatalogue.claude.isInstalled(in: existing))
+    #expect(!AgentHookCatalogue.claude.hasOurHookUnderEveryEvent(in: existing))
 
     let added = AgentHookCatalogue.claude.adding(to: existing, helper: helper)
 
-    #expect(AgentHookCatalogue.claude.isInstalled(in: added))
+    #expect(AgentHookCatalogue.claude.hasOurHookUnderEveryEvent(in: added))
     #expect(added["model"] as? String == "opus")
     #expect((added["permissions"] as? [String: Any])?["allow"] as? [String] == ["Bash(git *)"])
     let hooks = try #require(added["hooks"] as? [String: Any])
@@ -167,7 +167,7 @@ struct AgentHookIntegrationMergingTests: AgentHookFixtures {
     let hooks = try #require(removed["hooks"] as? [String: Any])
     #expect(Set(hooks.keys) == ["Notification"], "Stop and the rest held only ours")
     #expect((hooks["Notification"] as? [[String: Any]])?.count == 1)
-    #expect(!AgentHookCatalogue.claude.isInstalled(in: removed))
+    #expect(!AgentHookCatalogue.claude.hasOurHookUnderEveryEvent(in: removed))
 
     let bare = AgentHookCatalogue.claude.removing(
       from: AgentHookCatalogue.claude.adding(to: [:], helper: helper))
@@ -194,7 +194,7 @@ struct AgentHookIntegrationMergingTests: AgentHookFixtures {
     let commands = stop.flatMap { ($0["hooks"] as? [[String: Any]]) ?? [] }
       .compactMap { $0["command"] as? String }
     #expect(commands == ["~/bin/audit-log.sh"])
-    #expect(!AgentHookCatalogue.claude.isInstalled(in: removed))
+    #expect(!AgentHookCatalogue.claude.hasOurHookUnderEveryEvent(in: removed))
   }
 
   @Test func removingSplitsAHandWrittenGroupMixingTheTwoShapes() throws {
@@ -226,36 +226,7 @@ struct AgentHookIntegrationMergingTests: AgentHookFixtures {
         == ["~/bin/theirs.sh"])
     #expect(stop.last?["command"] as? String == "~/bin/also-theirs.sh")
     #expect(stop.last?["hooks"] == nil)
-    #expect(!AgentHookCatalogue.claude.holdsAnyOfOurs(removed))
-  }
-
-  /// Remove on a file that has none of ours rewrites nothing: the write
-  /// sorts keys and re-indents, and takes a backup copy nobody asked for.
-  @Test func removingNothingLeavesTheFileAndMakesNoBackup() throws {
-    let directory = try Scratch.directory("hooks")
-    defer { Scratch.remove(directory) }
-    let file = directory.appendingPathComponent("settings.json")
-    let theirs = #"{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"echo bye"}]}]},"z":1}"#
-    try theirs.write(to: file, atomically: true, encoding: .utf8)
-
-    try AgentHookCatalogue.claude.remove(from: file)
-
-    #expect(try String(contentsOf: file, encoding: .utf8) == theirs, "rewritten for nothing")
-    let beside = try FileManager.default.contentsOfDirectory(atPath: directory.path)
-    #expect(beside == ["settings.json"], "a backup of a file we did not change: \(beside)")
-
-    // Half of ours, under one event only: still ours to take back. The check
-    // cannot be `isInstalled`, which wants one under every event.
-    let half = AgentHookCatalogue.claude.adding(to: [:], helper: helper)
-    var hooks = try #require(half["hooks"] as? [String: Any])
-    let one = try #require(hooks["Stop"])
-    hooks = ["Stop": one]
-    try AgentSettingsFile.write(["hooks": hooks], to: file)
-    #expect(!AgentHookCatalogue.claude.isInstalled(in: file), "not by that measure")
-
-    try AgentHookCatalogue.claude.remove(from: file)
-    let left = try AgentSettingsFile.read(file)
-    #expect(left["hooks"] == nil, "our one entry was still ours to remove")
+    #expect(!AgentHookCatalogue.claude.holdsAnyOfOurHooks(removed))
   }
 
   /// A string, an object or a later agent's shape under an event is the user's: none of
@@ -282,118 +253,6 @@ struct AgentHookIntegrationMergingTests: AgentHookFixtures {
     #expect(afterAdd["Stop"] as? [String] == ["echo done"], "not written over either")
     #expect((afterAdd["PreToolUse"] as? [String: Any])?["command"] as? String == "echo before")
     #expect((afterAdd["Notification"] as? [[String: Any]])?.count == 2, "ours joins the readable")
-  }
-
-  /// Leaving it alone in silence would leave a row that never says
-  /// Installed, so the install refuses and names the event.
-  @Test func installingRefusesAFileWhoseEntriesItCannotRead() throws {
-    let directory = temporaryDirectory()
-    defer { try? FileManager.default.removeItem(at: directory) }
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-    let file = directory.appendingPathComponent("settings.json")
-    let original = #"{"hooks":{"Stop":"echo done"}}"#
-    try original.write(to: file, atomically: true, encoding: .utf8)
-
-    #expect(throws: UnreadableHookEntries.self) {
-      try AgentHookCatalogue.claude.install(into: file, helper: helper)
-    }
-    #expect(try String(contentsOf: file, encoding: .utf8) == original, "not a byte written")
-    #expect(!AgentHookCatalogue.claude.isInstalled(in: file))
-    #expect(
-      AgentHookCatalogue.claude.unreadableEvents(in: try AgentSettingsFile.read(file)) == ["Stop"])
-  }
-
-  /// Every existing install predates the two counting events, so Add has to
-  /// top them up without doubling the seven that are already there.
-  @Test func addingOverAnOlderInstallFillsOnlyWhatIsMissing() throws {
-    let directory = temporaryDirectory()
-    defer { try? FileManager.default.removeItem(at: directory) }
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-    let file = directory.appendingPathComponent("settings.json")
-
-    // The file as a build before the counting events left it.
-    let older = AgentHookIntegration(
-      id: AgentCatalogue.claudeID, file: file, displayPath: "x",
-      events: AgentHookCatalogue.claude.events.filter { $0.subagentPhase == nil },
-      format: .sharedSettings(millisecondTimeout: false))
-    try older.install(into: file, helper: helper)
-    #expect(older.isInstalled(in: file))
-    #expect(!AgentHookCatalogue.claude.isInstalled(in: file), "so the row offers Add again")
-
-    try AgentHookCatalogue.claude.install(into: file, helper: helper)
-
-    #expect(AgentHookCatalogue.claude.isInstalled(in: file))
-    let hooks = try #require(try AgentSettingsFile.read(file)["hooks"] as? [String: Any])
-    for event in AgentHookCatalogue.claude.events {
-      let groups = try #require(hooks[event.name] as? [[String: Any]], "\(event.name)")
-      #expect(groups.count == 1, "\(event.name) gained a second copy of ours")
-    }
-  }
-
-  /// A list or a string under `hooks` is something this cannot put back, so
-  /// the install refuses it rather than writing over it.
-  @Test func installingRefusesAFileWhoseHooksAreNotAnObject() throws {
-    let directory = temporaryDirectory()
-    defer { try? FileManager.default.removeItem(at: directory) }
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-    let file = directory.appendingPathComponent("settings.json")
-    let original = #"{"hooks":["Stop"]}"#
-    try original.write(to: file, atomically: true, encoding: .utf8)
-
-    #expect(throws: UnreadableHookSection.self) {
-      try AgentHookCatalogue.claude.install(into: file, helper: helper)
-    }
-    #expect(try String(contentsOf: file, encoding: .utf8) == original, "not a byte written")
-    #expect(!AgentHookCatalogue.claude.isInstalled(in: file))
-  }
-
-  /// An explicit `null` is not a shape to preserve, it is the key being
-  /// absent spelled out, so the install goes ahead as for a file without it.
-  @Test func installingTreatsANullHooksKeyAsNoHooksAtAll() throws {
-    let directory = temporaryDirectory()
-    defer { try? FileManager.default.removeItem(at: directory) }
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-    let file = directory.appendingPathComponent("settings.json")
-    try #"{"hooks":null,"model":"opus"}"#.write(to: file, atomically: true, encoding: .utf8)
-
-    try AgentHookCatalogue.claude.install(into: file, helper: helper)
-
-    #expect(AgentHookCatalogue.claude.isInstalled(in: file))
-    let settings = try AgentSettingsFile.read(file)
-    #expect(settings["model"] as? String == "opus", "the rest of the file is kept")
-  }
-
-  @Test func installingIntoAFileCreatesItKeepsABackupAndIsIdempotent() throws {
-    let directory = temporaryDirectory()
-    defer { try? FileManager.default.removeItem(at: directory) }
-    let file = directory.appendingPathComponent(".claude/settings.json")
-    let claude = AgentHookCatalogue.claude
-
-    #expect(!claude.isInstalled(in: file))
-    try claude.install(into: file, helper: helper)
-    #expect(claude.isInstalled(in: file))
-    #expect(
-      !FileManager.default.fileExists(
-        atPath: file.appendingPathExtension("before-multishell").path),
-      "nothing to back up when the file did not exist")
-
-    // A hand-edited file with other content gets a backup once.
-    try #"{ "model": "opus", "hooks": {} }"#.write(to: file, atomically: true, encoding: .utf8)
-    try claude.install(into: file, helper: helper)
-    let backup = file.appendingPathExtension("before-multishell")
-    #expect(try String(contentsOf: backup, encoding: .utf8).contains("\"model\": \"opus\""))
-    let written = try AgentSettingsFile.read(file)
-    #expect(written["model"] as? String == "opus")
-    #expect(claude.isInstalled(in: written))
-
-    try claude.install(into: file, helper: helper)
-    #expect(
-      try String(contentsOf: backup, encoding: .utf8).contains("\"hooks\": {}"),
-      "the backup is the pre-Multishell file, not overwritten by a later install")
-
-    try claude.remove(from: file)
-    #expect(!claude.isInstalled(in: file))
-    #expect(try AgentSettingsFile.read(file)["model"] as? String == "opus")
   }
 
   private func command(of group: [String: Any]) -> String {

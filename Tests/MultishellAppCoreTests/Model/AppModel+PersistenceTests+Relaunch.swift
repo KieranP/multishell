@@ -1,16 +1,16 @@
 import Foundation
-import MultishellCore
 import MultishellGitKit
 import TestScratch
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellCore
 
 extension AppModelPersistenceTests {
   @Test func aSavedWorkspaceComesBackAndWarmsOnTheFirstVisit() throws {
     let file = Scratch.path("relaunch")
       .appendingPathComponent("state.json")
-    defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+    defer { Scratch.remove(file.deletingLastPathComponent()) }
 
     let before = Harness(stateFile: file)
     before.model.select(before.main)

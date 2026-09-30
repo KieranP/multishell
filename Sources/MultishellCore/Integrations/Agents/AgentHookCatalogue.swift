@@ -3,13 +3,10 @@ import Foundation
 /// The agents whose hooks Multishell knows how to write, and the one line they
 /// all run. See Docs/design/agents.md for why each event was chosen.
 public enum AgentHookCatalogue {
-  static let subcommand = "agent-hook"
-  /// What every hook line and every file of ours names, and how one is told
-  /// from a hook of the user's own.
-  static let helperName = "multishell"
+  public static let subcommand = "agent-hook"
   /// What builds before this one wrote into a settings file. Those lines are
   /// still there after an update, and still work.
-  static let claudeSubcommand = "claude-hook"
+  public static let legacySubcommand = "claude-hook"
   /// An agent kills a hook that runs longer than this. The helper connects,
   /// writes one line and exits; anything longer means the app is wedged.
   static let timeoutSeconds = 5
@@ -37,8 +34,10 @@ public enum AgentHookCatalogue {
       command
       .split(whereSeparator: { $0.isWhitespace || $0 == "\"" || $0 == "'" })
       .map { $0.trimmingCharacters(in: shellPunctuation) }
-    let runsTheHelper = words.contains { $0 == helperName || $0.hasSuffix("/" + helperName) }
-    let namesASubcommand = words.contains { $0 == subcommand || $0 == claudeSubcommand }
+    let runsTheHelper = words.contains {
+      $0 == Paths.helperName || $0.hasSuffix("/" + Paths.helperName)
+    }
+    let namesASubcommand = words.contains { $0 == subcommand || $0 == legacySubcommand }
     return runsTheHelper && namesASubcommand
   }
 
@@ -88,7 +87,7 @@ public enum AgentHookCatalogue {
       AgentHookEvent("StopFailure", .failed),
       AgentHookEvent("SessionEnd", .idle),
     ],
-    format: .sharedSettings(millisecondTimeout: false),
+    format: .userSettingsFile(millisecondTimeout: false),
     resumption: .always, wakingTaskTypes: claudeWakingTaskTypes,
     transcriptQueuesNotices: true)
 
@@ -117,7 +116,7 @@ public enum AgentHookCatalogue {
       AgentHookEvent("Interrupt", .idle, timeoutSeconds: codexExitTimeoutSeconds),
       AgentHookEvent("SessionEnd", .idle, timeoutSeconds: codexExitTimeoutSeconds),
     ],
-    format: .sharedSettings(millisecondTimeout: false),
+    format: .userSettingsFile(millisecondTimeout: false),
     trustNote:
       t("agent-hooks.codex-trust")
   )
@@ -137,7 +136,7 @@ public enum AgentHookCatalogue {
       AgentHookEvent("AfterAgent", .done),
       AgentHookEvent("SessionEnd", .idle),
     ],
-    format: .sharedSettings(millisecondTimeout: true),
+    format: .userSettingsFile(millisecondTimeout: true),
     backgroundShellMarker: geminiShellMarker, resumption: .whenGeminiSettingsSay)
 
   /// In the wrapper every shell-tool command runs in and nothing else does, so

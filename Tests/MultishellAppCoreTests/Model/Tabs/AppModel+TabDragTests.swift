@@ -259,8 +259,8 @@ struct AppModelTabDragTests {
     _ = threeTabs(h)
     h.model.moveActiveTabToNewGroup()
     let groupIDs = h.model.workspace.groups(in: h.main.id).map(\.id)
-    let first = h.model.workspace.tabs(in: groupIDs[0]).map(\.id)
-    let anchor = h.model.workspace.tabs(in: groupIDs[1]).map(\.id)[0]
+    let first = h.model.workspace.tabs(inGroup: groupIDs[0]).map(\.id)
+    let anchor = h.model.workspace.tabs(inGroup: groupIDs[1]).map(\.id)[0]
     h.model.beginTabDrag(first[0])
     h.model.shuffleTab(first[0], .after, past: first[1])
 
@@ -268,7 +268,7 @@ struct AppModelTabDragTests {
     h.model.closeTab(anchor)
     await h.settled()
 
-    #expect(h.model.workspace.tabs(in: groupIDs[0]).map(\.id) == first)
+    #expect(h.model.workspace.tabs(inGroup: groupIDs[0]).map(\.id) == first)
   }
 
   @Test func aTabDroppedOnItsOwnGroupsTerminalAreaGoesBackWhereTheDragFoundIt() async throws {
@@ -337,5 +337,57 @@ struct AppModelTabDragTests {
 
     #expect(model == nil)
     #expect(watch.isCancelled)
+  }
+
+  /// Dragging a tab along its own strip moves it as the pointer passes each
+  /// neighbour, so the tabs make room instead of jumping on release.
+  @Test func aTabShufflesAlongItsOwnStripAsItIsDragged() {
+    let h = Harness()
+    h.model.select(h.main)
+    h.model.newTab()
+    h.model.newTab()
+    let order = h.model.workspace.tabs(in: h.main.id)
+    let (first, last) = (order[0], order[order.count - 1])
+
+    h.model.shuffleTab(last.id, .before, past: first.id)
+
+    #expect(h.model.workspace.tabs(in: h.main.id).first?.id == last.id)
+    #expect(
+      h.model.workspace.activeTab(in: h.main.id)?.id == last.id,
+      "reordering does not change which tab is showing")
+  }
+
+  /// Repeating the move the pointer is already sitting on must not write the
+  /// workspace again: this runs on every few pixels of a drag.
+  @Test func shufflingToWhereTheTabAlreadySitsChangesNothing() {
+    let h = Harness()
+    h.model.select(h.main)
+    h.model.newTab()
+    let order = h.model.workspace.tabs(in: h.main.id)
+    let before = h.model.workspace
+
+    h.model.shuffleTab(order[1].id, .after, past: order[0].id)
+    h.model.shuffleTab(order[0].id, .before, past: order[1].id)
+    h.model.shuffleTab(order[0].id, .after, past: order[0].id)
+
+    #expect(h.model.workspace == before)
+  }
+
+  /// Moving a tab into another group live would close the group it left
+  /// mid-drag, taking the layout out from under the pointer.
+  @Test func aTabDoesNotShuffleIntoAnotherGroup() {
+    let h = Harness()
+    _ = threeTabs(h)
+    h.model.moveActiveTabToNewGroup()
+    let groups = h.model.workspace.groups(in: h.main.id)
+    let staying = h.model.workspace.shownTab(in: groups[0])!
+    let moving = h.model.workspace.shownTab(in: groups[1])!
+
+    h.model.shuffleTab(moving.id, .before, past: staying.id)
+
+    #expect(h.model.workspace.tab(moving.id)?.groupID == groups[1].id)
+    #expect(
+      !h.model.workspace.tabs(inGroup: groups[0].id).contains { $0.id == moving.id },
+      "it stays out of the group it was dragged over")
   }
 }

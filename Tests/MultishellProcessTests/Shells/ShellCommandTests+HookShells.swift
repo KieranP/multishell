@@ -10,7 +10,7 @@ extension ShellCommandTests {
   @Test func aHookRunsInAnInteractiveLoginShellThatReadsItsRcFiles() async throws {
     guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
     let home = try Scratch.directory("home")
-    defer { try? FileManager.default.removeItem(at: home) }
+    defer { Scratch.remove(home) }
     for (file, marker) in [
       (".zshrc", "zshrc"), (".zprofile", "zprofile"), (".bashrc", "bashrc"),
       (".bash_profile", "bash_profile"), (".profile", "profile"),
@@ -29,9 +29,9 @@ extension ShellCommandTests {
   @Test func aHookRunsInItsDirectoryWhereverTheRcFilesLeftTheShell() async throws {
     guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
     let home = try Scratch.directory("home")
-    defer { try? FileManager.default.removeItem(at: home) }
+    defer { Scratch.remove(home) }
     let worktree = try Scratch.directory("it's here")
-    defer { try? FileManager.default.removeItem(at: worktree) }
+    defer { Scratch.remove(worktree) }
     try "cd /\nchpwd() { echo noise; }\n".write(
       to: home.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
 
@@ -47,7 +47,7 @@ extension ShellCommandTests {
   @Test func aChpwdHooksStderrIsNotTakenForTheFailingHooksMessage() async throws {
     guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
     let home = try Scratch.directory("home")
-    defer { try? FileManager.default.removeItem(at: home) }
+    defer { Scratch.remove(home) }
     try "chpwd() { echo 'direnv: loading .envrc' >&2; }\n".write(
       to: home.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
 
@@ -63,7 +63,7 @@ extension ShellCommandTests {
   @Test func aChpwdHookWithAFailingCommandDoesNotEndTheHook() async throws {
     guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
     let home = try Scratch.directory("home")
-    defer { try? FileManager.default.removeItem(at: home) }
+    defer { Scratch.remove(home) }
     try "chpwd() { false; }\n".write(
       to: home.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
 
@@ -78,7 +78,7 @@ extension ShellCommandTests {
   func aWorktreeThatCannotBeEnteredRunsNothing(shell: String, rcFile: String) async throws {
     guard FileManager.default.isExecutableFile(atPath: shell) else { return }
     let home = try Scratch.directory("home")
-    defer { try? FileManager.default.removeItem(at: home) }
+    defer { Scratch.remove(home) }
     let worktree = try Scratch.directory("worktree")
     let marker = home.appendingPathComponent("ran")
     try "rmdir \(AnyShellQuoting.quote(worktree.path))\n".write(
@@ -97,9 +97,9 @@ extension ShellCommandTests {
   func aWorktreePathWithAnyPunctuationIsEnteredByEveryShell(shell: String) async throws {
     guard FileManager.default.isExecutableFile(atPath: shell) else { return }
     let home = try Scratch.directory("home")
-    defer { try? FileManager.default.removeItem(at: home) }
+    defer { Scratch.remove(home) }
     let worktree = try Scratch.directory(#"it's here!x a\b"#)
-    defer { try? FileManager.default.removeItem(at: worktree) }
+    defer { Scratch.remove(worktree) }
     for rc in [".zshrc", ".bash_profile", ".profile", ".tcshrc"] {
       try "cd /\n".write(to: home.appendingPathComponent(rc), atomically: true, encoding: .utf8)
     }
@@ -115,7 +115,7 @@ extension ShellCommandTests {
   func aHookLeavesAHistoryFileTheEnvironmentNamesAlone(shell: String) async throws {
     guard FileManager.default.isExecutableFile(atPath: shell) else { return }
     let home = try Scratch.directory("home")
-    defer { try? FileManager.default.removeItem(at: home) }
+    defer { Scratch.remove(home) }
     let history = home.appendingPathComponent("zsh_history")
     let lines = (1...600).map { ": 1700000000:0;command \($0)\n" }.joined()
     try lines.write(to: history, atomically: true, encoding: .utf8)
@@ -137,7 +137,7 @@ extension ShellCommandTests {
     let shell = try ScratchShell(path)
     defer { shell.tearDown() }
     let scratch = try Scratch.directory("script")
-    defer { try? FileManager.default.removeItem(at: scratch) }
+    defer { Scratch.remove(scratch) }
     func run(_ script: String) async throws -> String {
       try await ShellCommand.runScript(
         script, in: scratch, environment: shell.environment, shellPath: shell.path)
@@ -227,7 +227,7 @@ extension ShellCommandTests {
   }
 
   @Test func aFailureMessageIsStdoutThenTheScriptsStderr() {
-    let marker = ShellCommand.outputMarker
+    let marker = ShellCommand.stderrStartMarker
     #expect(
       ShellCommand.failureMessage(standardOutput: "hey\n", standardError: "noise\n\(marker)\nbad\n")
         == "hey\nbad")
@@ -237,8 +237,8 @@ extension ShellCommandTests {
     #expect(ShellCommand.failureMessage(standardOutput: "  hey  ", standardError: "") == "hey")
   }
 
-  @Test func theMarkerSplitsStderr() {
-    let marker = ShellCommand.outputMarker
+  @Test func aScriptsOutputIsTheStderrAfterTheMarkerOrAllOfItWithoutOne() {
+    let marker = ShellCommand.stderrStartMarker
     #expect(ShellCommand.scriptOutput(fromStderr: "noise\n\(marker)\nmine\n") == "mine")
     #expect(ShellCommand.scriptOutput(fromStderr: "noise\n\(marker)\n") == "")
     #expect(ShellCommand.scriptOutput(fromStderr: "no marker here") == "no marker here")

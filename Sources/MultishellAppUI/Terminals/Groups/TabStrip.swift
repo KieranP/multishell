@@ -62,7 +62,7 @@ struct TabStrip: View {
             layout: layout,
             available: available,
             tabIDs: tabs.map(\.id),
-            activeID: group.activeTabID
+            shownTabID: group.shownTabID
           ) {
             tabViews(layout)
           }

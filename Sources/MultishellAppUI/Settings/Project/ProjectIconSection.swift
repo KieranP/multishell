@@ -15,14 +15,12 @@ struct ProjectIconSection: View {
     let fromFile = own.takesIconFromSharedFile(project.sharedSettings.confined)
     Section(t("project.icon")) {
       InfoLabeledContent(t("project.icon-label"), info: t("project.icon-info")) {
-        IconPicker(kind: kind, tint: tint(settings)) { glyph in
-          model.setting(\.iconGlyph, of: project).wrappedValue = glyph
-        }
+        IconPicker(kind: kind, tint: tint(settings)) { model.setIconGlyph($0, for: project) }
       }
       InfoLabeledContent(t("project.tint-label"), info: t("project.tint-info")) {
         HStack(spacing: 5) {
           swatch(nil, shown: settings, color: model.currentTheme.textSecondary)
-          ForEach(0..<16, id: \.self) { slot in
+          ForEach(0..<Theme.ansiSlotCount, id: \.self) { slot in
             swatch(slot, shown: settings, color: model.currentTheme.ansiRGB(slot).color)
           }
         }
@@ -41,8 +39,9 @@ struct ProjectIconSection: View {
 
   private func swatch(_ slot: Int?, shown: ProjectSettings, color: Color) -> some View {
     let selected = shown.iconTint == slot
+    let name = slot.map { Theme.ansiSlotNames[$0] } ?? t("project.no-tint")
     return Button {
-      model.setting(\.iconTint, of: project).wrappedValue = slot
+      model.setIconTint(slot, for: project)
     } label: {
       ZStack {
         // Outlined, or the theme's white vanishes on a light page and its
@@ -60,8 +59,8 @@ struct ProjectIconSection: View {
       .contentShape(.rect)
     }
     .buttonStyle(.plain)
-    .help(slot.map { Theme.ansiSlotNames[$0] } ?? t("project.no-tint"))
-    .accessibilityLabel(slot.map { Theme.ansiSlotNames[$0] } ?? t("project.no-tint"))
+    .help(name)
+    .accessibilityLabel(name)
     .accessibilityAddTraits(selected ? .isSelected : [])
   }
 }

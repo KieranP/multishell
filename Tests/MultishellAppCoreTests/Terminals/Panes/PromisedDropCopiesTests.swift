@@ -22,7 +22,7 @@ struct PromisedDropCopiesTests {
 
   @Test func eachDragGetsItsOwnDirectorySoTwoOfANameCannotCollide() throws {
     let parent = try makeParent()
-    defer { try? FileManager.default.removeItem(at: parent) }
+    defer { Scratch.remove(parent) }
 
     let one = try PromisedDropCopies.makeDirectory(in: parent)
     let two = try PromisedDropCopies.makeDirectory(in: parent)
@@ -90,7 +90,7 @@ struct PromisedDropCopiesTests {
   /// drop that could not make it delivers nothing at all.
   @Test func theFirstDragMakesTheDirectoryItself() throws {
     let parent = Scratch.path("drops")
-    defer { try? FileManager.default.removeItem(at: parent) }
+    defer { Scratch.remove(parent) }
     #expect(!FileManager.default.fileExists(atPath: parent.path))
 
     let directory = try PromisedDropCopies.makeDirectory(in: parent)
@@ -100,7 +100,7 @@ struct PromisedDropCopiesTests {
 
   @Test func aSweepTakesTheDragsPastKeepingAndLeavesTheRest() throws {
     let parent = try makeParent()
-    defer { try? FileManager.default.removeItem(at: parent) }
+    defer { Scratch.remove(parent) }
     let now = Date()
     let old = try drop("old", in: parent, modified: now.addingTimeInterval(-8 * 24 * 60 * 60))
     let recent = try drop("recent", in: parent, modified: now.addingTimeInterval(-60))

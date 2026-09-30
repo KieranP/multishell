@@ -6,9 +6,9 @@ public struct MergeInputs: Hashable, Sendable {
   /// default branch has been resolved from them.
   let branches: [String: BranchRef]
 
-  init(base: DefaultBranch, refs: [BranchRef]) {
+  init(base: DefaultBranch, branches: [String: BranchRef]) {
     self.base = base
-    self.branches = BranchRef.localBranchesByName(refs)
+    self.branches = branches
   }
 
   public func tip(of branch: String) -> String? { branches[branch]?.tip }

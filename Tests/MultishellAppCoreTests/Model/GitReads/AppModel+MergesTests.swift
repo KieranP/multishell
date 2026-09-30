@@ -196,7 +196,7 @@ struct AppModelMergesTests {
 
   /// The ref read answers two questions, so a failure taken as an answer drops every badge,
   /// the base, and every commit date the rows are ordered by.
-  @Test func aFailedRefReadLeavesTheBaseAndTheBadgesWhereTheyWere() async throws {
+  @Test func aFailedRefReadLeavesTheBaseWhereItWas() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
     let model = try h.modelOnFakeGit(
@@ -393,7 +393,7 @@ struct AppModelMergesTests {
     #expect(h.model.defaultBranchName(of: h.project) == "main", "nothing detected yet")
 
     h.model.defaultBranches[h.project.id] = DefaultBranch(
-      shortName: "origin/trunk", branchName: "trunk", tip: "abc",
+      shortName: "origin/trunk", nameWithoutRemote: "trunk", tip: "abc",
       fullName: "refs/remotes/origin/trunk")
 
     #expect(h.model.defaultBranchName(of: h.project) == "trunk")

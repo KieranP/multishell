@@ -10,12 +10,11 @@ struct WorktreeStageHandles: Sendable {
   /// before there is a worktree to key a handle by.
   private var creation: ProcessStopper?
 
-  init() {}
-
   /// The file lists and post-create hook still running on `id`, as one task,
   /// so a test can await it.
   func setup(of id: Worktree.ID) -> Task<Void, Never>? { setups[id] }
 
+  /// The stop handle held for `id`, so a test can see an ended stage let it go.
   func stopper(of id: Worktree.ID) -> ProcessStopper? { stoppers[id] }
 
   /// Behind the pane's Cancel: a hook by signal, a file list between files.
@@ -40,7 +39,7 @@ struct WorktreeStageHandles: Sendable {
   }
 
   /// A setup stage ended: its task and, if still its own, its stop handle.
-  mutating func end(_ id: Worktree.ID, ifStillHeldBy stopper: ProcessStopper) {
+  mutating func endSetup(_ id: Worktree.ID, ifStillHeldBy stopper: ProcessStopper) {
     setups[id] = nil
     disarm(id, ifStillHeldBy: stopper)
   }

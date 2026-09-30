@@ -33,7 +33,7 @@ extension AppModel {
 
   /// The dialog's answer. Either way the question is not asked again for
   /// this file, this branch's or another's.
-  public func decideSharedSettings(_ pending: PendingSharedSettingsTrust, trusted: Bool) {
+  public func answerSharedSettingsTrust(_ pending: PendingSharedSettingsTrust, trusted: Bool) {
     recordTrustDecision(digest: pending.digest, trusted: trusted, for: pending.projectID)
     // The whole value, not its project: a different question that arrived
     // while this one stood is not answered by it.
@@ -45,7 +45,7 @@ extension AppModel {
   public func setTrustsSharedSettings(_ trusted: Bool, for project: Project) {
     // A button's action runs after the render that built it, so this one
     // copy can be a read behind; the digest decides what trust is stored.
-    let project = workspace.project(project.id) ?? project
+    let project = currentCopy(of: project)
     guard let shared = project.sharedSettings.confined, shared.asksForTrust,
       let digest = shared.digest
     else { return }

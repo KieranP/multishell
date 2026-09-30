@@ -1,5 +1,4 @@
 import Foundation
-import Synchronization
 import TestScratch
 
 @testable import MultishellAppCore
@@ -55,34 +54,4 @@ final class FakePlatform: Platform {
   func setBadgeCount(_ count: Int?) { badges.append(count) }
   var notificationSettingsLocation: String? = "System Settings > Notifications"
   func log(_ message: String) { logged.append(message) }
-}
-
-private struct TrashRefused: Error {}
-
-/// What the fake Trash was asked, written from whatever thread asked.
-private final class FakeTrash: Sendable {
-  private struct State {
-    var destination: URL? = Scratch.path("trash")
-    var trashed: [URL] = []
-    var onMainThread: [Bool] = []
-  }
-
-  private let state = Mutex(State())
-
-  deinit {
-    if let destination { Scratch.remove(destination) }
-  }
-
-  var destination: URL? {
-    get { state.withLock { $0.destination } }
-    set { state.withLock { $0.destination = newValue } }
-  }
-  var trashed: [URL] {
-    get { state.withLock { $0.trashed } }
-    set { state.withLock { $0.trashed = newValue } }
-  }
-  var onMainThread: [Bool] {
-    get { state.withLock { $0.onMainThread } }
-    set { state.withLock { $0.onMainThread = newValue } }
-  }
 }

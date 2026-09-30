@@ -1,9 +1,8 @@
 import Foundation
 import UniformTypeIdentifiers
 
-/// A tab on the drag pasteboard, with a type of its own: one type for this
-/// and a project would offer every target to both drags. Only the type is
-/// read; every drop takes the tab from `AppModel.tabDrag`.
+/// A tab on the drag pasteboard, typed apart from a project's so neither drag is
+/// offered the other's targets. Every drop takes the tab from `AppModel.tabDrag`.
 enum TabTransfer {
   /// Declared as an exported type in the bundle's `Info.plist`; see
   /// `Resources/Info.plist.in`.

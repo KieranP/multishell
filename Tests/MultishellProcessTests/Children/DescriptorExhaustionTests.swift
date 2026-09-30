@@ -40,7 +40,7 @@ struct DescriptorExhaustionTests {
   @Test(.enabled(if: ProcessInfo.processInfo.environment["MULTISHELL_EXHAUST_DESCRIPTORS"] != nil))
   func aLaunchWithOneDescriptorLeftReturnsOrThrowsRatherThanTrapping() async throws {
     try await withFreeDescriptors(1) {
-      _ = try? await ShellCommand.launch(
+      _ = try? await ShellCommand.runUncaptured(
         "true", in: URL(fileURLWithPath: NSTemporaryDirectory()), shellPath: "/bin/sh")
     }
   }

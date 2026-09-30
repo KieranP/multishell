@@ -5,13 +5,11 @@ import MultishellCore
 struct StatusReadLog: Sendable {
   var pace = StatusPollPace.standard
 
-  private var reads = ReadCosts()
+  private var reads = LastReads()
   private var generation = 0
-  private var reading: [Worktree.ID: Int] = [:]
+  private var inFlightSerial: [Worktree.ID: Int] = [:]
   private var askedAgain: Set<Worktree.ID> = []
   private var serial = 0
-
-  init() {}
 
   /// Whether nothing is held, for the tests.
   var isEmpty: Bool { reads.isEmpty }
@@ -33,7 +31,7 @@ struct StatusReadLog: Sendable {
   }
 
   /// Whether a read that still counts is under way for this worktree.
-  func isReading(_ id: Worktree.ID) -> Bool { reading[id] != nil }
+  func isReading(_ id: Worktree.ID) -> Bool { inFlightSerial[id] != nil }
 
   /// A refresh asked for while this worktree is being read: the change behind
   /// it may postdate what that read sees, so it is read again once it lands.
@@ -49,14 +47,14 @@ struct StatusReadLog: Sendable {
   /// A read begins, its rows held against another until `finish`.
   mutating func begin(_ ids: [Worktree.ID]) -> Ticket {
     serial += 1
-    for id in ids { reading[id] = serial }
+    for id in ids { inFlightSerial[id] = serial }
     return Ticket(generation: generation, serial: serial, ids: ids)
   }
 
   /// Git answered: the rows go free, bar any a later read has taken, and the
   /// result says whether the answer still counts.
   mutating func finish(_ ticket: Ticket) -> Bool {
-    for id in ticket.ids where reading[id] == ticket.serial { reading[id] = nil }
+    for id in ticket.ids where inFlightSerial[id] == ticket.serial { inFlightSerial[id] = nil }
     return ticket.generation == generation
   }
 
@@ -65,7 +63,7 @@ struct StatusReadLog: Sendable {
   mutating func invalidate() {
     generation += 1
     reads.removeAll()
-    reading.removeAll()
+    inFlightSerial.removeAll()
   }
 
   struct Ticket: Sendable {

@@ -1,0 +1,1 @@
+struct TrashRefused: Error {}

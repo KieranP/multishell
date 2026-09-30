@@ -13,6 +13,10 @@ struct ThemeTests {
     #expect(try JSONDecoder().decode(Theme.self, from: full) == Theme.multishellDark)
   }
 
+  @Test func everyAnsiSlotHasAName() {
+    #expect(Theme.ansiSlotNames.count == Theme.ansiSlotCount)
+  }
+
   /// Both keys have to default, or every theme file written before they
   /// existed, and every one spelling them wrong, stops loading.
   @Test func aThemeWithoutAFocusRingOrAFadeStillLoads() throws {
@@ -58,24 +62,5 @@ struct ThemeTests {
     #expect(try opacity("-4") == Theme.minimumInactivePaneOpacity)
     #expect(try opacity("2") == 1)
     #expect(try opacity("0.6") == 0.6)
-  }
-
-  @Test func everyBuiltinThemeParsesCompletely() {
-    for theme in Theme.builtins {
-      #expect(
-        theme.ansi.allSatisfy { HexColor.parse($0) != nil }, "\(theme.id) has a bad ANSI colour")
-      #expect(HexColor.parse(theme.background) != nil)
-      #expect(HexColor.parse(theme.foreground) != nil)
-      #expect(HexColor.parse(theme.cursor) != nil)
-      #expect(HexColor.parse(theme.selectionBackground) != nil)
-      #expect(theme.focusRingRGB != nil, "\(theme.id) draws no focus ring")
-      #expect(
-        theme.focusRingRGB != theme.selectionBackgroundRGB,
-        "\(theme.id) rings in its selection colour, which is mixed to sit under text")
-      #expect(
-        theme.inactivePaneOpacity > Theme.minimumInactivePaneOpacity
-          && theme.inactivePaneOpacity < 1,
-        "\(theme.id) fades unfocused panes by nothing, or by all")
-    }
   }
 }

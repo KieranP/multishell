@@ -10,7 +10,7 @@ extension AppModel {
     host.apply(currentTheme, appearance: workspace.appearance)
   }
 
-  public func setFont(name: String?, size: Double) {
+  func setFont(name: String?, size: Double) {
     store.setFont(name: name, size: size)
     host.apply(currentTheme, appearance: workspace.appearance)
   }

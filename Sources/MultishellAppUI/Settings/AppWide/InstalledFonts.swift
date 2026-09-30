@@ -27,7 +27,7 @@ enum InstalledFonts {
         others.append(family)
       }
     }
-    return FontDetection(monospaced: monospaced, others: others)
+    return FontDetection(monospaced: monospaced, otherFamilies: others)
   }
 
   /// Fixed pitch by the family's first face. Some programming fonts are not

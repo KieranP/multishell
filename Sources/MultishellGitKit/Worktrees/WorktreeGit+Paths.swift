@@ -19,7 +19,7 @@ extension WorktreeGit {
   }
 
   /// Where a linked checkout's `.git` file says its record is, relative or absolute.
-  static func recordDirectory(namedBy checkout: URL) -> URL? {
+  static func recordDirectoryFromGitFile(in checkout: URL) -> URL? {
     guard
       let gitFile = try? String(
         contentsOf: checkout.appendingPathComponent(".git"), encoding: .utf8),
@@ -31,5 +31,11 @@ extension WorktreeGit {
   /// A dangling link kept by name, as git lists a worktree below one.
   static func realPath(of url: URL) -> String {
     (url.resolvedAsFarAsItExists(keepingDanglingLinks: true) ?? url.standardizedFileURL).path
+  }
+
+  /// Whether both name one place once each side's symlinks are resolved.
+  static func sameResolvedPath(_ a: URL, _ b: URL) -> Bool {
+    a.resolvingSymlinksInPath().standardizedFileURL.path
+      == b.resolvingSymlinksInPath().standardizedFileURL.path
   }
 }

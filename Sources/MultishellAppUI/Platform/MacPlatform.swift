@@ -8,7 +8,7 @@ import os
 final class MacPlatform: Platform {
   /// The workspace window, so window-scoped commands can tell whether they
   /// were issued there or in a settings window. Set by `WindowAccessor`.
-  weak var mainWindow: NSWindow?
+  weak var workspaceWindow: NSWindow?
   var onDidBecomeActive: (@MainActor () -> Void)?
 
   /// The bundle identifier `make-app.sh` writes, which `log show` matches on.
@@ -31,7 +31,7 @@ final class MacPlatform: Platform {
   /// under `swift test`; no app means no other window can be key.
   var workspaceWindowIsKey: Bool {
     guard let key = NSApp?.keyWindow else { return true }
-    return key === mainWindow
+    return key === workspaceWindow
   }
 
   func closeKeyWindow() {
@@ -80,8 +80,8 @@ final class MacPlatform: Platform {
   /// Links `/usr/local/bin/multishell` to the stable link, through an
   /// administrator prompt, so the tool survives the app moving.
   func installCommandLineTool() throws {
-    try AppleScriptHandler.call(
-      AppleScriptHandler.installToolScript, handler: "installTool",
+    try AppleScriptRunner.call(
+      AppleScriptRunner.installToolScript, handler: "installTool",
       arguments: [Paths.helperLink.path, HelperLink.commandLineToolLink.path])
   }
 

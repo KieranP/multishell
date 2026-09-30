@@ -8,16 +8,16 @@ extension Helper {
   static func reportAgentHook(
     _ id: String, environment: [String: String], input: FileHandle
   ) {
-    let data = input.readDataToEndOfFile()
+    let payloadJSON = input.readDataToEndOfFile()
     guard let integration = AgentHookCatalogue.integration(id),
-      let payload = AgentHookPayload(json: data), integration.handles(payload)
+      let payload = AgentHookPayload(json: payloadJSON), integration.handles(payload)
     else { return }
     let pid = reportingProcess(environment)
     guard
       let report = integration.report(
         for: payload,
         sessionID: sessionID(from: environment[SessionEnvironment.sessionKey]),
-        cwd: environment[SessionEnvironment.workingDirectoryKey], pid: pid,
+        cwd: environment[SessionEnvironment.worktreeKey], pid: pid,
         backgroundShells: { backgroundShells(of: pid, marker: $0) })
     else { return }
     try? send(report, environment: environment)
@@ -51,31 +51,21 @@ extension Helper {
 
   static func installHooks(
     _ integration: AgentHookIntegration, print shouldPrint: Bool
-  )
+  ) throws
     -> Int32
   {
     if shouldPrint {
       print(integration.snippet(), terminator: "")
       return 0
     }
-    do {
-      try integration.install()
-      print("\(integration.name) hooks added to \(integration.file.path)")
-      return 0
-    } catch {
-      printError("\(error)")
-      return 1
-    }
+    try integration.install()
+    print("\(integration.name) hooks added to \(integration.file.path)")
+    return 0
   }
 
-  static func removeHooks(_ integration: AgentHookIntegration) -> Int32 {
-    do {
-      try integration.remove()
-      print("\(integration.name) hooks removed from \(integration.file.path)")
-      return 0
-    } catch {
-      printError("\(error)")
-      return 1
-    }
+  static func removeHooks(_ integration: AgentHookIntegration) throws -> Int32 {
+    try integration.remove()
+    print("\(integration.name) hooks removed from \(integration.file.path)")
+    return 0
   }
 }
