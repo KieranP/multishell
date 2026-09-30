@@ -16,13 +16,13 @@ struct NewTabMenu: View {
       Button {
         model.newShellTab(in: groupID)
       } label: {
-        Label(t("menu.new-shell-tab"), systemImage: AgentMarkView.terminalSymbol)
+        itemLabel(t("menu.new-shell-tab"), agentID: nil)
       }
       ForEach(model.installedAgentIDs, id: \.self) { id in
         Button {
           model.newAgentTab(id, in: groupID)
         } label: {
-          itemLabel(id)
+          itemLabel(itemTitle(id), agentID: id)
         }
       }
     } label: {
@@ -58,18 +58,18 @@ struct NewTabMenu: View {
     .contentShape(.rect)
   }
 
-  /// The agent's mark beside its item. A menu is AppKit's, which draws a
-  /// title and an image, so the mark is rendered rather than laid out.
+  /// The item's mark, rendered: a menu is AppKit's, which draws a title and an
+  /// image, and the shell's symbol label showed no icon there.
   @ViewBuilder
-  private func itemLabel(_ id: String) -> some View {
-    if let image = AgentMarkImage.image(for: id) {
+  private func itemLabel(_ title: String, agentID: String?) -> some View {
+    if let image = AgentMarkImage.image(for: agentID) {
       Label {
-        Text(itemTitle(id))
+        Text(title)
       } icon: {
         image
       }
     } else {
-      Text(itemTitle(id))
+      Text(title)
     }
   }
 

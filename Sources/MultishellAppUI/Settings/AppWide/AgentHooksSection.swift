@@ -58,10 +58,7 @@ struct AgentHooksSection: View {
           .controlSize(.small)
       }
       ScrollView(.vertical) {
-        Text(model.agentHooksSnippet(row.id))
-          .font(.system(size: 10, design: .monospaced))
-          .textSelection(.enabled)
-          .frame(maxWidth: .infinity, alignment: .leading)
+        AgentHooksSnippetText(snippet: model.agentHooksSnippet(row.id))
       }
       .frame(height: 240)
     }

@@ -194,6 +194,10 @@ bottom.
   only ways left to the auto-start answer.
 - **The items open in the group the menu sits in**, as the split buttons do, so
   a click never acts in the group the keyboard happens to be in.
+- **Every item's icon is a rendered image**, the shell's terminal glyph as well
+  as the agents' marks: the shell's item as a symbol label drew no icon. The
+  glyph is scaled into the marks' square, being wider than it, since the
+  renderer clips what a tab lets spill over.
 - **The list is held on the model**, rebuilt when detection answers or the
   custom command is edited: a menu's content is built with the view around it,
   and every group has one.

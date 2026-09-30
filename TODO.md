@@ -5,8 +5,6 @@ Most pressing first within each heading. A decision that gets made moves to
 
 ## Features
 
-- "New Shell Tab" in dropdown is missing icon.
-- "Show JSON/Plugin" is formatted badly (right aligned text, not indented)
 - File tree and git changes diff in a right-hand panel.
 
 ## Refinements

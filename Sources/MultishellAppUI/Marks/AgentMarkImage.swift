@@ -1,7 +1,7 @@
 import MultishellCore
 import SwiftUI
 
-/// An agent's mark as an `Image`, for the one place a drawn view will not do:
+/// An agent's mark or the shell's glyph as an `Image`, for where a view won't do:
 /// an AppKit menu, which takes a title and an image and nothing else.
 @MainActor
 enum AgentMarkImage {
@@ -14,24 +14,42 @@ enum AgentMarkImage {
   private static var rendered: [Key: Image] = [:]
 
   private struct Key: Hashable {
-    let agentID: String
+    let agentID: String?
     let scale: CGFloat
   }
 
   /// A mark with a colour of its own keeps it; the rest are templates, which
-  /// the menu tints itself.
-  static func image(for agentID: String) -> Image? {
+  /// the menu tints itself. `nil` is the shell's terminal glyph.
+  static func image(for agentID: String?) -> Image? {
     let key = Key(agentID: agentID, scale: NSScreen.main?.backingScaleFactor ?? 2)
     if let cached = rendered[key] { return cached }
-    let tint = AgentCatalogue.markTintRGB(agentID)
-    let renderer = ImageRenderer(
-      content: AgentMarkView(
-        agentID: agentID, plainTint: .black, size: size))
-    renderer.scale = key.scale
-    guard let nsImage = renderer.nsImage else { return nil }
-    nsImage.isTemplate = tint == nil
+    guard let nsImage = nsImage(for: agentID, scale: key.scale) else { return nil }
     let image = Image(nsImage: nsImage)
     rendered[key] = image
     return image
+  }
+
+  static func nsImage(for agentID: String?, scale: CGFloat) -> NSImage? {
+    let tint = agentID.flatMap(AgentCatalogue.markTintRGB)
+    let renderer = ImageRenderer(content: content(for: agentID))
+    renderer.scale = scale
+    guard let nsImage = renderer.nsImage else { return nil }
+    nsImage.isTemplate = tint == nil
+    return nsImage
+  }
+
+  /// The terminal glyph is wider than the square, which a tab lets it spill
+  /// past but the renderer clips to, so here it is scaled to fit.
+  @ViewBuilder
+  private static func content(for agentID: String?) -> some View {
+    if let agentID {
+      AgentMarkView(agentID: agentID, plainTint: .black, size: size)
+    } else {
+      Image(systemName: AgentMarkView.terminalSymbol)
+        .resizable()
+        .scaledToFit()
+        .foregroundStyle(.black)
+        .frame(width: size, height: size)
+    }
   }
 }
