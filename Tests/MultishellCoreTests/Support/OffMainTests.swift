@@ -2,7 +2,7 @@ import Foundation
 import TestScratch
 import Testing
 
-@testable import MultishellAppCore
+@testable import MultishellCore
 
 @Suite
 struct OffMainTests {

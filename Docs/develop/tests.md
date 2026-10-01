@@ -261,6 +261,9 @@ says why these are the rules.
 - **The model's half**: AppModelSessionReportsTests, a report naming the app's
   pid tracking none, beside one from a subdirectory marking the deepest worktree
   containing it.
+- **A worktree resolved while its directory was missing resolves again once the
+  directory is seen**: AppModelWorktreeLookupTests, a worktree added through a
+  symlink whose target appears mid-test.
 - **Removing the main worktree is refused before the hook and the Trash**:
   AppModel+WorktreeRemovalTests+Trash. Without the guard that test bins the
   fixture.
@@ -287,6 +290,10 @@ says why these are the rules.
   the rows the filter brought back, a late removal read leaves the dialog up and
   a repeated click reads once**: the same two suites, the last two on a fake git
   holding one read open.
+- **A removal whose status read hangs or fails still asks, saying the changes
+  went unread**, and a second ask while the read hangs starts no other:
+  AppModel+WorktreeRemovalTests+StatusReads, the hang a fake git held on a gate
+  with the wait cut to 100 ms, the failure one exiting 128.
 - **A row the poll is reading is not read again, but a prompt's refresh asked
   for meanwhile is read once it lands**: AppModelStatusPollingTests, a fake git
   holding the first read open.
@@ -387,6 +394,13 @@ says why these are the rules.
 - **Emptying the sidebar filter leaves the field up, and only closing hands the
   keyboard back**: AppModelSidebarFilterTests, through the fake engine's
   recorded focus.
+- **A project folded under the filter stays folded until the text changes, and
+  its rows are read once it opens**: AppModelSidebarFilterTests and
+  AppModel+StatusPollingTests+VisibleRows. SidebarViewTests holds the chevron to
+  it, drawing a collapsed project the filter opens and an expanded one and
+  comparing the pixels.
+- **A header badge ringed in the sidebar's colour**: WorktreeHeaderTests draws
+  the header for a missing project and looks for any patch of that colour.
 - **A worktree on a volume that does not answer is refused without waiting on
   it, and asked once**: AppModelWorktreesTests, through a stat that blocks until
   released.
@@ -402,6 +416,10 @@ says why these are the rules.
 - **A spawn that forks the app to get that session**: ProcessRunnerTests counts
   the atfork handler's calls, which `posix_spawn` never makes. Anything else in
   the test process that forks would fail it.
+- **A timeout whose child exits 0 is withdrawn and frees its stopper**:
+  ProcessStopperTests stages the race rather than timing it, a perl child that
+  blocks SIGHUP, writes a ready file and exits 0 once the test, having sent the
+  timeout's signal, writes a go-file.
 - **A drag nothing takes or a drop refuses goes back between the neighbours it
   left, and one a drop took stays**: AppModelTabDragTests, through the model.
 - **A segmented picker drawn only as wide as its labels**:
@@ -449,6 +467,9 @@ says why these are the rules.
   `Process` hands on the terminal `make test` runs under, and a shell outside
   its foreground group stops itself on SIGTTIN, with no timeout to end it. The
   runner starts every child the same way (dependencies.md).
+- **A bash behaviour runs under every installed bash**, `InstalledBashes.all` in
+  TestScratch, which the Core and CLI suites share: the system's 3.2 and a newer
+  one differ in `$!`, `wait` and, from 5.3, how the PIPE trap is read.
 - **A hook or the login capture leaves a named history file alone**:
   ShellCommandTests+HookShells under bash, sh and ksh, and
   LoginShellEnvironmentTests.
@@ -461,6 +482,10 @@ says why these are the rules.
   account's; a model the harness builds stubs every launch write.
 - **Every scratch directory and socket is removed** by the test or its harness,
   and the socket helper takes the claim file the server keeps.
+- **A fake git that waits on a gate file also stops once the scratch root is
+  gone** wherever the read can outlive the test: one started after teardown
+  finds no gate to wait for and would spin for good. The hung-read tests in
+  AppModel+WorktreeRemovalTests+StatusReads do this.
 - **A bound that is left tells one outcome from another**, not a fast machine
   from a slow one: the child sleeps far longer than the bound, so what fails it
   is the stop never arriving.

@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 
 /// What the app calls: git operations plus the project's hooks, with the
 /// project's settings deciding branch names and where worktrees live.
@@ -22,7 +23,9 @@ public struct WorktreeCoordinator: Sendable {
   public static func resolved(
     searchPath: String?, replacing previous: WorktreeCoordinator? = nil
   ) async throws -> WorktreeCoordinator {
-    let executable = await GitExecutable.resolve(searchPath: searchPath)
+    let executable = await GitExecutable.resolve(
+      searchPath: searchPath,
+      developerDirectory: await offMain { GitExecutable.selectedDeveloperDirectory() })
     let runner = try GitRunner(executable: executable, searchPath: searchPath)
     // Reads still in flight on the previous git hold slots the new one must count.
     guard let previous else { return WorktreeCoordinator(git: WorktreeGit(runner: runner)) }

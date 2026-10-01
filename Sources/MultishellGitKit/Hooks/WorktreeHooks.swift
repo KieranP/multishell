@@ -18,9 +18,12 @@ public enum WorktreeHooks {
 
     let environment = HookVariable.environment(
       project: project, worktreePath: worktreePath, branch: branch)
+    let directory = await offMain {
+      Self.directory(stage, project: project, worktreePath: worktreePath)
+    }
     do {
       _ = try await ShellCommand.runScript(
-        script, in: Self.directory(stage, project: project, worktreePath: worktreePath),
+        script, in: directory,
         environment: environment, shellPath: shellPath ?? ShellCatalogue.loginShellPath(),
         timeout: timeout, stopper: stopper)
     } catch {

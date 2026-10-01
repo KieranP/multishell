@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellProcess
@@ -179,6 +180,61 @@ struct ProcessStopperTests {
     let second = try await runner.capture(
       URL(fileURLWithPath: "/bin/sh"), ["-c", "printf two"], in: cwd, stopper: stopper)
     #expect(second.stop == nil && second.standardOutput == "two")
+  }
+
+  /// A child with SIGHUP blocked takes the timeout's signal as one already exiting
+  /// does: it arrives and changes nothing. The child says when it has blocked it.
+  private func startChildBlockingSIGHUP(
+    stopper: ProcessStopper, in scratch: URL
+  ) -> Task<ProcessOutput, any Error> {
+    let ready = scratch.appendingPathComponent("ready").path
+    let go = scratch.appendingPathComponent("go").path
+    let script =
+      "sigprocmask(SIG_BLOCK, POSIX::SigSet->new(SIGHUP)); open(my $f, '>', '\(ready)');"
+      + " close($f); select(undef, undef, undef, 0.02) until -e '\(go)'; exit 0"
+    return Task {
+      try await runner.capture(
+        URL(fileURLWithPath: "/usr/bin/perl"), ["-MPOSIX", "-e", script], in: cwd,
+        stopper: stopper)
+    }
+  }
+
+  @Test func aChildThatExitsCleanlyAsItsTimeoutFiresIsNotReportedAsTimedOut() async throws {
+    let scratch = try Scratch.directory("timeout-race")
+    defer { Scratch.remove(scratch) }
+    let stopper = ProcessStopper()
+    let run = startChildBlockingSIGHUP(stopper: stopper, in: scratch)
+    try await waitUntil {
+      FileManager.default.fileExists(atPath: scratch.appendingPathComponent("ready").path)
+    }
+
+    stopper.stop(.timedOut(after: .milliseconds(1)))
+    #expect(stopper.appliedStop != nil, "the signal was sent")
+    try Data().write(to: scratch.appendingPathComponent("go"))
+    let output = try await run.value
+
+    #expect(output.stop == nil && output.succeeded)
+    #expect(!stopper.isStopRequested, "the stage it belongs to carries on with it")
+  }
+
+  @Test func aCancelWhileAWithdrawnTimeoutStoodCarriesToTheNextChild() async throws {
+    let scratch = try Scratch.directory("timeout-race-cancel")
+    defer { Scratch.remove(scratch) }
+    let stopper = ProcessStopper()
+    let run = startChildBlockingSIGHUP(stopper: stopper, in: scratch)
+    try await waitUntil {
+      FileManager.default.fileExists(atPath: scratch.appendingPathComponent("ready").path)
+    }
+    stopper.stop(.timedOut(after: .milliseconds(1)))
+
+    stopper.stop()
+    try Data().write(to: scratch.appendingPathComponent("go"))
+    _ = try await run.value
+
+    #expect(stopper.isStopRequested)
+    let next = try await runner.capture(
+      URL(fileURLWithPath: "/bin/sh"), ["-c", "sleep 30"], in: cwd, stopper: stopper)
+    #expect(next.stop == .byUser)
   }
 
   /// SIGHUP reaches the group, so the shell goes at once and the guard on it

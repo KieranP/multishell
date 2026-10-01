@@ -46,4 +46,59 @@ struct AppModelSidebarFilterTests {
     #expect(h.model.showsSidebarFilter)
     #expect(h.engine.focused.isEmpty)
   }
+
+  @Test func theChevronFoldsAProjectTheFilterHoldsOpenUntilTheTextChanges() {
+    let h = Harness()
+    h.model.setExpanded(false, for: h.project)
+    h.model.sidebarFilterText = "feat"
+    #expect(h.model.sidebarEntries.first?.isExpanded == true)
+
+    h.model.toggleExpansion(of: h.project)
+
+    #expect(h.model.sidebarEntries.first?.isExpanded == false)
+    #expect(!h.project.isExpanded, "the stored flag is left for after the filter")
+    h.model.sidebarFilterText = "featu"
+    #expect(h.model.sidebarEntries.first?.isExpanded == true)
+  }
+
+  @Test func withNoFilterTheChevronSetsTheStoredFlag() {
+    let h = Harness()
+    h.model.setExpanded(true, for: h.project)
+
+    h.model.toggleExpansion(of: h.project)
+
+    #expect(!h.project.isExpanded)
+    #expect(h.model.sidebarEntries.first?.isExpanded == false)
+  }
+
+  @Test func renamingARowOfAProjectFoldedUnderTheFilterUnfoldsIt() {
+    let h = Harness()
+    h.model.sidebarFilterText = "feat"
+    h.model.toggleExpansion(of: h.project)
+
+    h.model.beginRenamingWorktree(h.feature)
+
+    #expect(h.model.sidebarEntries.first?.isExpanded == true)
+  }
+
+  @Test func removingAProjectDropsItsFoldWhileFiltering() {
+    let h = Harness()
+    h.model.sidebarFilterText = "feat"
+    h.model.toggleExpansion(of: h.project)
+
+    h.model.removeProject(h.project)
+
+    #expect(h.model.projectsFoldedWhileFiltering.isEmpty)
+  }
+
+  @Test func renamingARowTheFilterShowsLeavesTheStoredFlagAlone() {
+    let h = Harness()
+    h.model.setExpanded(false, for: h.project)
+    h.model.sidebarFilterText = "feat"
+
+    h.model.beginRenamingWorktree(h.feature)
+
+    #expect(!h.project.isExpanded)
+    #expect(h.model.sidebarEntries.first?.isExpanded == true)
+  }
 }

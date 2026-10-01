@@ -73,3 +73,6 @@ at the bottom.
 - **A hook runs in the worktree only where one exists at its stage**, since in a
   missing directory it fails at its `cd`. Pre-create and post-delete run in the
   repository, as does the pre-delete of a worktree removed by hand.
+- **A list drops blank lines and `#` lines**, the grammar of `/etc/shells`, so
+  one reader serves both. Cost: a name starting with `#` is reached only by a
+  pattern, `?` in place of the `#`.

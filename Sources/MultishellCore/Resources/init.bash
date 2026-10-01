@@ -47,12 +47,18 @@ if [ -n "${MULTISHELL_SESSION-}" ] && [ -x "__MULTISHELL_HELPER__" ]; then
   if { exec 62> >(_multishell_relay_or_inline <&0 >/dev/null 2>&1 &); } 2>/dev/null; then
     _multishell_relay=1
   fi
+  # bash 5.3 captures output without a fork; older ones pay one per report.
+  if (( BASH_VERSINFO[0] > 5 || (BASH_VERSINFO[0] == 5 && BASH_VERSINFO[1] >= 3) )); then
+    _multishell_read_pipe_trap='theirs=${ trap -p PIPE; }'
+  else
+    _multishell_read_pipe_trap='theirs="$(trap -p PIPE)"'
+  fi
   # SIGPIPE from a gone relay would kill the shell, so it is ignored around the
   # write and the trap standing then is put back; a failure sends the rest inline.
   _multishell_relayed() {
     [ "$_multishell_relay" = 1 ] || return 1
     local sent=0 theirs
-    theirs="$(trap -p PIPE)"
+    eval "$_multishell_read_pipe_trap"
     trap '' PIPE
     printf '%s\n' "$1" 2>/dev/null >&62 || sent=1
     eval "${theirs:-trap - PIPE}"

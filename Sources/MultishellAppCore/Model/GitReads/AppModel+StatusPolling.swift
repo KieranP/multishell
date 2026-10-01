@@ -47,6 +47,7 @@ extension AppModel {
     let kept = readings.filter { current[$0.key].map(mayReadStatus) == true }
     statusReads.remember(kept.mapValues(\.took))
     let fresh = kept.mapValues(\.status)
+    for id in fresh.keys { noteDirectoryPresent(of: id) }
     var merged = statuses.filter { known.contains($0.key) }
     merged.merge(fresh) { _, new in new }
     setIfChanged(\.statuses, merged)
@@ -70,17 +71,18 @@ extension AppModel {
 
   /// The rows the sidebar draws, once a round: asked per row, the filter
   /// looked up the project and folded the text for every worktree.
-  private func sidebarRowIDs(filteredBy text: String? = nil) -> Set<Worktree.ID> {
-    let filter = SidebarFilter(text ?? sidebarFilterText)
-    guard !filter.isActive else {
-      return Set(filter.apply(to: workspace).flatMap { $0.worktrees.map(\.id) })
-    }
-    let closed = Set(workspace.projects.filter { !$0.isExpanded }.map(\.id))
-    return Set(workspace.worktrees.filter { !closed.contains($0.projectID) }.map(\.id))
+  private func sidebarRowIDs(
+    filteredBy text: String? = nil, folding folded: Set<Project.ID>? = nil
+  ) -> Set<Worktree.ID> {
+    let entries = SidebarFilter(text ?? sidebarFilterText)
+      .apply(to: workspace, folding: folded ?? projectsFoldedWhileFiltering)
+    return Set(entries.filter(\.isExpanded).flatMap { $0.worktrees.map(\.id) })
   }
 
-  private func polledRowIDs(filteredBy text: String? = nil) -> Set<Worktree.ID> {
-    let onSidebar = sidebarRowIDs(filteredBy: text)
+  private func polledRowIDs(
+    filteredBy text: String? = nil, folding folded: Set<Project.ID>? = nil
+  ) -> Set<Worktree.ID> {
+    let onSidebar = sidebarRowIDs(filteredBy: text, folding: folded)
     return Set(workspace.worktrees.filter { isStatusWanted($0, onSidebar: onSidebar) }.map(\.id))
   }
 
@@ -127,31 +129,37 @@ extension AppModel {
     }
   }
 
-  /// Paced like the poll, terminal output arriving in bursts. `forced` is a read
-  /// that must start after its cause, a click or a change; see worktrees.md.
-  func refreshStatus(of worktreeID: Worktree.ID, forced: Bool = false) async {
+  /// Paced like the poll; `forced` must start after its cause, see worktrees.md.
+  /// `true` where a status landed, which a failed git or a skipped read is not.
+  @discardableResult
+  func refreshStatus(of worktreeID: Worktree.ID, forced: Bool = false) async -> Bool {
     guard let coordinator, let worktree = workspace.worktree(worktreeID),
       mayReadStatus(of: worktree)
-    else { return }
+    else { return false }
     if !forced, statusReads.isReading(worktreeID) {
-      return statusReads.askAgain(worktreeID)
+      statusReads.askAgain(worktreeID)
+      return false
     }
-    guard forced || statusReads.isDue(worktreeID, at: .now) else { return }
+    guard forced || statusReads.isDue(worktreeID, at: .now) else { return false }
     let readings = await readStatuses(of: [worktree], with: coordinator)
     // Gone while git ran: paths are ids, so a worktree re-made at this path
     // would otherwise wear the old checkout's badge until the next poll.
-    guard let still = workspace.worktree(worktreeID), mayReadStatus(of: still) else { return }
-    statusReads.remember(readings.mapValues(\.took))
-    if let reading = readings[worktreeID] {
-      setIfChanged(\.statuses[worktreeID], reading.status)
+    guard let still = workspace.worktree(worktreeID), mayReadStatus(of: still) else {
+      return false
     }
+    statusReads.remember(readings.mapValues(\.took))
+    guard let reading = readings[worktreeID] else { return false }
+    noteDirectoryPresent(of: worktreeID)
+    setIfChanged(\.statuses[worktreeID], reading.status)
+    return true
   }
 
   /// Rows the filter hid went unread, so those it brings back are read, as
   /// opening a project's are; after a pause, not at every keystroke.
-  func scheduleRevealedRowsRead(from oldText: String) {
+  func scheduleRevealedRowsRead(from oldText: String, folding oldFolds: Set<Project.ID>) {
     let polledBefore =
-      pendingRevealedRowsRead?.polledThroughout ?? polledRowIDs(filteredBy: oldText)
+      pendingRevealedRowsRead?.polledThroughout
+      ?? polledRowIDs(filteredBy: oldText, folding: oldFolds)
     let polledThroughout = polledBefore.intersection(polledRowIDs())
     pendingRevealedRowsRead?.task.cancel()
     let task = Task { @MainActor [weak self] in

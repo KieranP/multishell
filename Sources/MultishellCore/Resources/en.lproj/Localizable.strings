@@ -189,6 +189,8 @@
 "project.using-global-flags" = "Using the global flags, %@.";
 "project.using-global-flags-none" = "Using the global flags, which are none.";
 "removal.branch-was-kept" = "The branch %@ was kept.";
+"removal.changes-unread" = "Its changes could not be read in time; any it has are kept in the Trash with the directory.";
+"removal.changes-unread-deleted" = "Its changes could not be read in time; any it has are deleted with the directory.";
 "removal.force-deletion" = "Force Deletion";
 "shared-settings.copied" = "copied";
 "shared-settings.decline" = "Ignore";

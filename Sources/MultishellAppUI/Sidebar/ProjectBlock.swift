@@ -10,7 +10,8 @@ struct ProjectBlock: View {
   let project: Project
   /// The rows of the block, in the order its settings ask for.
   let worktrees: [Worktree]
-  let isForcedOpen: Bool
+  /// What the chevron shows, the filter's word over the project's own.
+  let isExpanded: Bool
   let sessions: WorktreeSessions
   let theme: Theme
   @Binding var projectDropTarget: ProjectDropTarget?
@@ -19,11 +20,10 @@ struct ProjectBlock: View {
 
   var body: some View {
     let metrics = model.metrics
-    let expanded = project.isExpanded || isForcedOpen
-    let rows = expanded ? worktrees.map(model.sidebarWorktree) : []
+    let rows = isExpanded ? worktrees.map(model.sidebarWorktree) : []
 
     VStack(spacing: UIMetrics.sidebarRowSpacing) {
-      projectRow(expanded: expanded, metrics: metrics)
+      projectRow(metrics: metrics)
       ForEach(rows) { row in
         worktreeRow(row, metrics: metrics)
         if !row.panes.isEmpty {
@@ -53,19 +53,20 @@ struct ProjectBlock: View {
       ))
   }
 
-  private func projectRow(expanded: Bool, metrics: UIMetrics) -> some View {
+  private func projectRow(metrics: UIMetrics) -> some View {
     ProjectRow(
       project: project,
+      isExpanded: isExpanded,
       settings: model.effectiveSettings(for: project),
       isMissing: model.missingProjects.contains(project.id),
       // The worktree rows carry the dots while they are visible; the folder
       // stands in for them only once they are folded away.
-      state: expanded ? nil : model.state(ofProject: project.id, sessions: sessions),
+      state: isExpanded ? nil : model.state(ofProject: project.id, sessions: sessions),
       worktreeCount: worktrees.count,
       isFetching: model.isFetching(project),
       theme: theme,
       metrics: metrics,
-      toggle: { model.setExpanded(!project.isExpanded, for: project) },
+      toggle: { model.toggleExpansion(of: project) },
       newWorktree: { model.requestNewWorktree(in: project) }
     )
     .equatable()

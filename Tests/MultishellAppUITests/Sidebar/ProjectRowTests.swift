@@ -15,7 +15,8 @@ struct ProjectRowTests {
     -> ProjectRow
   {
     ProjectRow(
-      project: project, settings: ProjectSettings(), isMissing: false, state: nil,
+      project: project, isExpanded: true, settings: ProjectSettings(), isMissing: false,
+      state: nil,
       worktreeCount: 2, isFetching: isFetching, theme: .multishellDark, metrics: metrics,
       toggle: toggle, newWorktree: {})
   }

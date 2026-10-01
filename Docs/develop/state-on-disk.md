@@ -14,8 +14,9 @@ Under `~/Library/Application Support/Multishell`.
 - **`state.json`**: sidebar, tabs, the groups they sit in with their widths and
   active tab, pane trees, worktree names and creation dates, every setting.
 - **Not in it**: processes, shell titles, the shell a tab resolved to, a
-  branch's last commit time, or anything about the Agents board, which is
-  runtime state, so its filter is off after a relaunch.
+  branch's last commit time, the sidebar filter or a project folded under it, or
+  anything about the Agents board, which is runtime state, so its filter is off
+  after a relaunch.
 - **A file written before groups existed names no group**, and carries a key for
   the active tab this build has no property for; the repair gathers each
   worktree's ungrouped tabs into the one group they were saved as.
@@ -33,9 +34,11 @@ Under `~/Library/Application Support/Multishell`.
 - **So the longest path that binds is two bytes shorter than `sun_path`
   allows**, the `.b` of the staging name, and the refusal names the socket
   rather than the staging file, which is no concern of the user's.
-- **A lock file beside it is never removed.** A running instance holds an
-  exclusive record lock on it while it listens, which is what tells a second
-  launch the socket has a live owner (design/state-and-store.md).
+- **A lock file beside it is never removed**: unlinked at quit, a launch that
+  opened it just before would lock the orphan while the next made a fresh one,
+  and both would own the socket. A running instance holds an exclusive record
+  lock on it while it listens, which is what tells a second launch the socket
+  has a live owner (design/state-and-store.md).
 - **A record lock, not `flock`**: a child forked while one is held keeps it
   until it execs, and this process spawns freely.
 - **A connect alone cannot tell**: a listener whose accept backlog is full
@@ -54,13 +57,21 @@ Under `~/Library/Application Support/Multishell`.
 - **Agent hooks are written only when asked**, each in that agent's own config
   directory; launch leaves alone even one an older build wrote
   (design/agents.md). Three of them keep a copy of the file as it was the first
-  time; the other two are files of ours alone and are deleted to remove.
+  time, beside it with `.before-multishell` added; the other two are files of
+  ours alone and are deleted to remove.
+- **Those directories are under `$HOME`**, as the agents read it, and under the
+  account's home only where `HOME` is unset or empty: the account's home alone
+  sent a test's helper into the developer's own files.
+- **Gemini's own settings are read where Gemini reads them**, to tell whether a
+  shell's end starts a turn, so an empty `HOME` there means the temporary
+  directory. The hook file does not follow it.
 - **Sidebar width lives in user defaults**, in the `io.multishell.app` domain
   every build shares, debug ones included.
 - **A repository may carry `.multishell.json` at its root**, written by Export,
   with the same keys as a project's settings, less the agent, its flags and the
   shell. Read at launch, when a project's worktree records change, and on any
-  tick where its modification date moved.
+  tick where its modification date moved. What it said is never saved in the
+  state file, where a restored copy would trust a file nobody looked at.
 - **A field it ships fills only a gap the user left**, so adding one means a
   line in the layering, a decode that costs the key and not the file, and an
   override section on the page.

@@ -8,6 +8,7 @@ public final class ProcessStopper: Sendable {
     var child: RunningChild?
     var pending: ProcessStop?
     var applied: ProcessStop?
+    var appliedTo: RunningChild?
   }
 
   private let state = Mutex(State())
@@ -32,7 +33,11 @@ public final class ProcessStopper: Sendable {
 
   func stop(_ reason: ProcessStop) {
     state.withLock { state in
-      guard state.applied == nil else { return }
+      // Kept for the next child: a timeout standing here may yet be withdrawn.
+      guard state.applied == nil else {
+        if case .timedOut = state.applied, reason == .byUser { state.pending = reason }
+        return
+      }
       guard let child = state.child else {
         state.pending = reason
         return
@@ -44,6 +49,17 @@ public final class ProcessStopper: Sendable {
         return
       }
       state.applied = reason
+      state.appliedTo = child
+    }
+  }
+
+  /// A timeout whose signal met `child` already on its way out stopped nothing,
+  /// so the stopper is left as if it never fired; see Docs/design/architecture.md.
+  func withdrawTimeout(from child: RunningChild) {
+    state.withLock { state in
+      guard case .timedOut = state.applied, state.appliedTo === child else { return }
+      state.applied = nil
+      state.appliedTo = nil
     }
   }
 
@@ -56,6 +72,7 @@ public final class ProcessStopper: Sendable {
       _ = Self.hangUp(child)
       state.pending = nil
       state.applied = pending
+      state.appliedTo = child
     }
   }
 

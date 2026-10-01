@@ -11,7 +11,8 @@ extension WorktreeGit {
       throw ProcessFailure.git(
         ["worktree", "list"], message: "git listed no worktrees for \(project.path.path)")
     }
-    return worktrees.map(Self.datedByDirectory).map(Self.markedIfStillAdding)
+    // Stats, each of which a dead mount holds; see worktrees.md.
+    return await offMain { worktrees.map(Self.datedByDirectory).map(Self.markedIfStillAdding) }
   }
 
   /// A lock older than this is an add that died mid-checkout, git's own
@@ -80,7 +81,9 @@ extension WorktreeGit {
     guard let listed = try? await parsedList(in: project.path, projectID: project.id),
       !listed.isEmpty
     else { return true }
-    let wanted = Self.realPath(of: path)
-    return listed.contains { Self.realPath(of: $0.path) == wanted }
+    return await offMain {
+      let wanted = Self.realPath(of: path)
+      return listed.contains { Self.realPath(of: $0.path) == wanted }
+    }
   }
 }

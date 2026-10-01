@@ -242,6 +242,27 @@ struct HelperRelayTests {
   }
 
   @Test(arguments: InstalledBashes.all)
+  func aBashFromFiveThreeOnReadsThePipeTrapInTheShell(bash: String) async throws {
+    let home = try Scratch.directory("bashpipetrapread")
+    defer { Scratch.remove(home) }
+    let initFile = try ShellTab.bashInitFile(in: home)
+    let env = ShellTab.environment(socket: home.appendingPathComponent("nowhere.sock"), home: home)
+    let script =
+      #"echo "version=$(( BASH_VERSINFO[0] * 100 + BASH_VERSINFO[1] ))"; "#
+      + #"echo "read=$_multishell_read_pipe_trap""#
+
+    let output = try await ProcessRunner().capture(
+      URL(fileURLWithPath: bash), ["--init-file", initFile.path, "-i", "-c", script],
+      in: home, environment: env, timeout: .seconds(10))
+
+    let lines = output.standardOutput.split(whereSeparator: \.isNewline)
+    let version = try #require(
+      lines.first { $0.hasPrefix("version=") }.flatMap { Int($0.dropFirst("version=".count)) })
+    let read = try #require(lines.first { $0.hasPrefix("read=") })
+    #expect(read.contains("${ trap -p PIPE; }") == (version >= 503), "\(bash): \(read)")
+  }
+
+  @Test(arguments: InstalledBashes.all)
   func aBashRelayStillSendsWhatItsShellWroteJustBeforeExiting(bash: String) async throws {
     let listener = try ReportListener()
     defer { listener.stop() }

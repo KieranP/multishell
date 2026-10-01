@@ -21,7 +21,7 @@ struct SidebarView: View {
     // Once per render, not per row: forty rows scanning every session four
     // times each was most of what a render cost.
     let sessions = model.worktreeSessions
-    let shownProjects = filteredProjects
+    let shownProjects = model.sidebarEntries
     VStack(spacing: 0) {
       SidebarHeader(
         showsFilterField: model.showsSidebarFilter,
@@ -53,7 +53,7 @@ struct SidebarView: View {
               model: model,
               project: entry.project,
               worktrees: orderedWorktrees(of: entry, sessions: sessions),
-              isForcedOpen: entry.isForcedOpen,
+              isExpanded: entry.isExpanded,
               sessions: sessions,
               theme: theme,
               projectDropTarget: $projectDropTarget,
@@ -97,10 +97,6 @@ struct SidebarView: View {
   private func emptyMessage(showing shownProjects: [SidebarFilter.Entry]) -> String? {
     if model.workspace.projects.isEmpty { return t("sidebar.no-projects") }
     return shownProjects.isEmpty ? t("sidebar.nothing-matches") : nil
-  }
-
-  private var filteredProjects: [SidebarFilter.Entry] {
-    SidebarFilter(model.sidebarFilterText).apply(to: model.workspace)
   }
 
   /// The rows of one project's block, in the order its settings ask for.

@@ -104,3 +104,7 @@ Themes, the focused pane, the window the app draws itself. Newest at the bottom.
 - **An untinted icon in project settings is the system's grey**, not the
   theme's: that window follows the system appearance, and a dark theme's grey
   vanished on a light page. The sidebar keeps the theme's.
+- **A missing project's badge is ringed in what the icon sits on**, the
+  sidebar's colour in a row and the header's in the header, as a pane's state
+  dot is. One fill for both drew a patch of sidebar on the header:
+  WorktreeHeaderTests.

@@ -45,6 +45,25 @@ struct GeminiSettingsTests {
   private let steering = #"{"experimental":{"modelSteering":true}}"#
   private let injecting = #"{"tools":{"shell":{"backgroundCompletionBehavior":"inject"}}}"#
 
+  @Test(arguments: ["TMPDIR", "TMP", "TEMP"])
+  func anEmptyHomeReadsTheUserSettingsUnderTheTemporaryDirectory(variable: String) throws {
+    let files = Files()
+    defer { Scratch.remove(files.root) }
+    let temporary = files.root.appendingPathComponent("temporary")
+    try files.write(
+      #"{"experimental":{"modelSteering":true},"#
+        + #""tools":{"shell":{"backgroundCompletionBehavior":"inject"}}}"#,
+      to: temporary.appendingPathComponent(".gemini/settings.json"))
+    let environment = [
+      "HOME": "", variable: temporary.path + "/",
+      "GEMINI_CLI_SYSTEM_SETTINGS_PATH": files.system.path,
+    ]
+
+    #expect(
+      GeminiSettings.wakesForBackgroundShells(
+        environment: environment, workspace: files.workspace.path))
+  }
+
   @Test func withNoSettingsAShellsEndWakesNothing() {
     let files = Files()
     #expect(!files.wakes)

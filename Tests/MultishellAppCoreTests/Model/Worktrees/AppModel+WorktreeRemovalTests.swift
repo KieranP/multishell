@@ -90,7 +90,7 @@ struct AppModelWorktreeRemovalTests {
     let pending = PendingWorktreeRemoval(
       worktree: worktree, branchHandling: .decided(deletes: false))
     #expect(
-      pending.message(warning: h.model.worktreeRemovalWarning(for: worktree))
+      pending.message(warning: h.model.worktreeRemovalWarning(for: pending))
         .contains("1 changed file, kept in the Trash"))
 
     await h.model.removeWorktree(worktree)
@@ -104,6 +104,16 @@ struct AppModelWorktreeRemovalTests {
     #expect(h.model.liveTerminalCount == 0)
   }
 
+  @Test func theWarningSaysWhereTheDialogSendsTheDirectoryNotWhereTheSettingNowDoes() {
+    let h = Harness()
+    h.model.setTrashesRemovedWorktrees(false)
+    let pending = PendingWorktreeRemoval(
+      worktree: h.feature, branchHandling: .decided(deletes: false), trashes: true,
+      changesUnread: true)
+
+    #expect(h.model.worktreeRemovalWarning(for: pending)?.contains("kept in the Trash") == true)
+  }
+
   @Test func withTheTrashOffARemovedWorktreeIsDeletedOutright() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
@@ -113,8 +123,10 @@ struct AppModelWorktreeRemovalTests {
     try "uncommitted\n".write(
       to: worktree.path.appendingPathComponent("work.txt"), atomically: true, encoding: .utf8)
     await h.model.refreshStatuses()
+    let pending = PendingWorktreeRemoval(
+      worktree: worktree, branchHandling: .decided(deletes: false), trashes: false)
     #expect(
-      h.model.worktreeRemovalWarning(for: worktree)?.contains("deleted with the directory") == true)
+      h.model.worktreeRemovalWarning(for: pending)?.contains("deleted with the directory") == true)
 
     await h.model.removeWorktree(worktree)
 

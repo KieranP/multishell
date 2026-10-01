@@ -24,13 +24,13 @@ bottom.
   tree of groups holding trees of panes would be two layouts doing one job.
 - **A group is a record of its own**, not a field on the tab, because it
   outlives the tabs passing through it: its width and which tab it shows survive
-  the last tab moving out.
-- **It holds its own active tab**, where that was once a dictionary on the
+  a tab moving out.
+- **It holds the tab it shows**, where that was once a dictionary on the
   workspace: git hands back worktree records every refresh, and nothing
   rediscovers a group.
 - **A group never stands empty.** Its last tab leaving takes it with it and
   hands focus to the group that slid into its place, as a strip does when the
-  active tab closes.
+  tab it shows closes.
 - **Weights are relative**, so the rest come back in proportion with nothing to
   renormalise.
 - **Only a band down each edge of a terminal area is a target**, and a drop

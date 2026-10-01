@@ -24,25 +24,39 @@ struct SidebarFilterTests {
     return ws
   }
 
-  @Test func noFilterShowsEverythingUnforced() {
-    let entries = SidebarFilter("  ").apply(to: workspace)
+  @Test func noFilterShowsEverythingAsEachProjectIsStored() {
+    var ws = workspace
+    ws.projects[1].isExpanded = false
+    let entries = SidebarFilter("  ").apply(to: ws, folding: [ws.projects[0].id])
     #expect(entries.map(\.project.name) == ["acme-web", "acme-api"])
-    #expect(entries.allSatisfy { !$0.isForcedOpen && $0.worktrees.count == 2 })
+    #expect(entries.map(\.isExpanded) == [true, false])
+    #expect(entries.allSatisfy { $0.worktrees.count == 2 })
     #expect(!SidebarFilter("").isActive)
+  }
+
+  @Test func theFilterHoldsACollapsedProjectOpenUnlessItWasFoldedUnderIt() {
+    var ws = workspace
+    ws.projects = ws.projects.map { project in
+      var collapsed = project
+      collapsed.isExpanded = false
+      return collapsed
+    }
+    let entries = SidebarFilter("main").apply(to: ws, folding: [ws.projects[1].id])
+    #expect(entries.map(\.isExpanded) == [true, false])
   }
 
   @Test func aProjectNameMatchKeepsAllItsWorktrees() {
     let entries = SidebarFilter("WEB").apply(to: workspace)
     #expect(entries.count == 1)
     #expect(entries[0].worktrees.map(\.name) == ["main", "feat/checkout"])
-    #expect(entries[0].isForcedOpen)
+    #expect(entries[0].isExpanded)
   }
 
   @Test func aBranchMatchKeepsOnlyMatchingWorktrees() {
     let entries = SidebarFilter("rate").apply(to: workspace)
     #expect(entries.map(\.project.name) == ["acme-api"])
     #expect(entries[0].worktrees.map(\.name) == ["kieran/rate-limits"])
-    #expect(entries[0].isForcedOpen)
+    #expect(entries[0].isExpanded)
   }
 
   /// Branch and directory names are not the reader's language, so folding

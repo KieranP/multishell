@@ -10,11 +10,12 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   catches a checkout, the selected one, any the sidebar filter shows and any on
   the board. While the filter has text it decides alone, so an open project's
   hidden rows wait too. The filter's text is the model's for that reason. A
-  removal reads its worktree first, slow checkout or not, the dialog warning of
-  what the status says. Opening a project reads that project's rows alone: every
-  project's, and a few clicks ran full rounds beside the poll's. A change to the
-  filter's text reads a quarter second after typing stops, or the rows it brings
-  back showed whatever they had when hidden until the next tick.
+  removal reads its worktree first, slow checkout or not, for up to three
+  seconds, the dialog warning of what the status says. Opening a project reads
+  that project's rows alone: every project's, and a few clicks ran full rounds
+  beside the poll's. A change to the filter's text reads a quarter second after
+  typing stops, or the rows it brings back showed whatever they had when hidden
+  until the next tick.
 - **A removal reads its worktree on screen too.** A row there kept a status as
   old as the pace allowed, ten times a slow read, and a dialog built on it
   warned of nothing while Remove deleted the edits. One that will not ask reads
@@ -22,6 +23,14 @@ Discovery, naming, ordering, removal. Newest at the bottom.
 - **A read landing after another removal was asked for, or under a dialog
   already up, opens nothing**: it replaced that dialog, so the click meant for
   one confirmed the other. A click repeated while its read runs starts none.
+- **A removal waits three seconds for its read, then asks anyway**, saying the
+  changes could not be read rather than showing a count from before the click. A
+  read git refused says the same, its count being as old. `git status` has no
+  timeout, and on a dead mount the dialog never came up. The read runs on, and a
+  removal asked again waits it out rather than start another git on the same
+  mount, then reads afresh in the time left, the old read having begun before
+  this click. Cost: a status slower than that on a large repository opens the
+  dialog without its count.
 - **The filter reads only the rows it brings back**, those not polled through
   every keystroke since the pause before: it ran a full round at each pause.
 - **A row being read is not read again beside it.** Opening a project or
@@ -316,10 +325,11 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   faults past the end, which is a signal and not an error a `try?` can catch.
 - **All of it runs only where status already said the worktree is dirty**, paced
   by the same rule as the status read it follows.
-- **The reads are synchronous, and detaching them does not leave the cooperative
-  pool**: `Task.detached` runs there too, so a dead mount holds one pool thread
-  per worktree read at once. The pool is as wide as the cores; a probe of 64
-  blocking detached tasks peaked at 12 on 12 cores. Known gap.
+- **The reads are synchronous, so they run on Dispatch through `offMain`**, as
+  the list's stats of each worktree do. `Task.detached` runs on the cooperative
+  pool, which is as wide as the cores: a probe of 64 blocking detached tasks
+  peaked at 12 on 12 cores, and an unrelated task waited 5.15 s for a thread.
+  Cost: a dead mount holds a GCD thread per read rather than queueing them.
 - **Past a cap the files are not counted at all**, and only those paths become
   strings.
 - **The two numbers come from different git calls**: status collapses an
@@ -380,6 +390,13 @@ Discovery, naming, ordering, removal. Newest at the bottom.
 - **Closing hands the keyboard to the active pane**, or first responder drops to
   the window and typing reaches nothing. Cost: the filter is a click further
   away, with no keyboard route to it.
+- **While the filter has text it holds every project it shows open**, and the
+  chevron says so. A click folds the project for that text alone, as Xcode's
+  navigator does, and leaves the stored flag for after the filter. Reading the
+  flag, the chevron pointed right over open rows and its click moved nothing.
+- **A fold lasts until the text changes**, being about the rows that text found.
+  The rows a text change brings back out of a fold are read, as those it brings
+  back out of hiding are.
 - **Whether the field is up is the model's, as its text is**, and only closing
   folds it. Held by the view, a reopened window showed the field for the text
   left in the model, and emptying that text removed the field with the keyboard

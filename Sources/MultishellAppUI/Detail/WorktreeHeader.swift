@@ -16,7 +16,7 @@ struct WorktreeHeader: View {
         ProjectIconView(
           settings: model.effectiveSettings(for: project),
           isMissing: model.missingProjects.contains(project.id),
-          theme: theme, size: model.metrics.icon)
+          ringFill: theme.chromeColor, theme: theme, size: model.metrics.icon)
       }
       WorktreeBreadcrumb(
         projectName: project?.name ?? "", worktreeName: model.displayName(of: worktree),

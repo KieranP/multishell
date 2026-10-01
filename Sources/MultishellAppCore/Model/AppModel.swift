@@ -40,10 +40,15 @@ public final class AppModel<Surface> {
   public var sidebarFilterText = "" {
     didSet {
       guard sidebarFilterText != oldValue else { return }
-      scheduleRevealedRowsRead(from: oldValue)
+      let foldedBefore = projectsFoldedWhileFiltering
+      setIfChanged(\.projectsFoldedWhileFiltering, [])
+      scheduleRevealedRowsRead(from: oldValue, folding: foldedBefore)
       if !sidebarFilterText.isEmpty { showsSidebarFilter = true }
     }
   }
+  /// Projects folded by their chevron while the filter holds them open. A
+  /// fold lasts until the text changes; the stored flag is left alone.
+  var projectsFoldedWhileFiltering: Set<Project.ID> = []
   /// Up whenever there is text, and down only through `setShowsSidebarFilter`,
   /// so emptying the field never takes the keyboard away with it.
   public internal(set) var showsSidebarFilter = false
@@ -199,9 +204,14 @@ public final class AppModel<Surface> {
   /// What each verdict cost, which spreads a re-ask of every branch over
   /// several rounds; a test sets `budget` to see them spread.
   @ObservationIgnored var mergeReads = MergeReadLog()
-  /// Each worktree's path with its symlinks resolved, for placing a report
-  /// that names only a directory. Stale only if a link on the way is repointed.
+  /// Each worktree's path with its symlinks resolved, for placing a report that
+  /// names only a directory. Stale where a link is repointed or the path was away.
   @ObservationIgnored var resolvedWorktreeComponents: [Worktree.ID: [String]] = [:]
+  /// Worktrees whose kept resolution was made while their directory was away.
+  @ObservationIgnored var worktreesResolvedWhileMissing: Set<Worktree.ID> = []
+  /// Those being looked at again, one at a time each, so a hung mount holds a
+  /// thread per worktree on it and no other worktree waits on it.
+  @ObservationIgnored var resolutionsBeingRechecked: Set<Worktree.ID> = []
   /// `git rev-parse --git-common-dir` per project, asked once. The watcher
   /// and the records check run from it without spawning git.
   @ObservationIgnored var commonGitDirectories: [Project.ID: URL] = [:]
@@ -223,6 +233,11 @@ public final class AppModel<Surface> {
     (polledThroughout: Set<Worktree.ID>, task: Task<Void, Never>)?
   /// Worktrees whose removal is reading their status, and the latest asked.
   @ObservationIgnored var removalsAwaitingStatus: Set<Worktree.ID> = []
+  /// Each removal's read until git answers, which outlives the removal's wait
+  /// on a dead mount; a later removal waits on it rather than start another.
+  @ObservationIgnored var removalStatusReads: [Worktree.ID: Task<Bool, Never>] = [:]
+  /// How long a removal waits for that read before it asks anyway.
+  @ObservationIgnored var removalStatusWait: Duration = .seconds(3)
   @ObservationIgnored var latestRemovalRequest: Worktree.ID?
 
   @ObservationIgnored var pendingSave: Task<Void, Never>?

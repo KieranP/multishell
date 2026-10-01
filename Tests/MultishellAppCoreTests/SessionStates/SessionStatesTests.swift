@@ -30,6 +30,18 @@ struct SessionStatesTests {
     #expect(states.trackedPIDs == [10, 11])
   }
 
+  /// Claude and Gemini end the old session before starting the new one on
+  /// `/clear`, and Esc having interrupted the turn fired no hook.
+  @Test func aClearAfterAnInterruptedTurnLeavesThePaneIdle() {
+    var states = SessionStates()
+    states.report(.init(state: .running, startsTurn: true), pid: 10, for: .session(a), isSeen: true)
+
+    states.report(.init(state: .idle), pid: 10, for: .session(a), isSeen: true)
+    states.report(.init(state: .idle, startsSession: true), pid: 10, for: .session(a), isSeen: true)
+
+    #expect(states[.session(a)] == nil)
+  }
+
   /// A failure asks to be dealt with, so only the source reporting something
   /// else, or the user's own clear, takes it.
   @Test func failedSurvivesALookAndTheProcessThatFailed() {

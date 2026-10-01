@@ -6,6 +6,9 @@ import SwiftUI
 struct ProjectIconView: View {
   let settings: ProjectSettings
   let isMissing: Bool
+  /// What the missing badge's disc is filled with: what the icon sits on, as
+  /// `PaneGlyph`'s ring is.
+  let ringFill: Color
   let theme: Theme
   let size: Double
 
@@ -17,7 +20,7 @@ struct ProjectIconView: View {
         if isMissing {
           Image(systemName: "questionmark.circle.fill")
             .font(.system(size: UIMetrics.cornerBadgeSize(onGlyphOf: size), weight: .bold))
-            .foregroundStyle(theme.textSecondary, theme.sidebarColor)
+            .foregroundStyle(theme.textSecondary, ringFill)
             .offset(x: 3, y: 2)
         }
       }

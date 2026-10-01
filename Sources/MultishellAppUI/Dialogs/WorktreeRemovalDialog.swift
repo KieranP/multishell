@@ -10,7 +10,7 @@ extension View {
       // that deletes it. See `PendingWorktreeRemoval.choices`.
       DestructiveAlert.make(
         title: pending.title,
-        message: pending.message(warning: model.worktreeRemovalWarning(for: pending.worktree)),
+        message: pending.message(warning: model.worktreeRemovalWarning(for: pending)),
         choices: pending.choices.map(\.label),
         cancel: t("action.cancel"))
     } answer: { pending, choice in

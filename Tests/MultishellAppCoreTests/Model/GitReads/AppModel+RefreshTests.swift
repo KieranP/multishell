@@ -35,7 +35,7 @@ struct AppModelRefreshTests {
     // One turn: the refresh has asked git and is waiting on the answer.
     await Task.yield()
     h.store.replaceWorktrees([], forProject: h.project.id)
-    await refresh.value
+    _ = await refresh.value
 
     #expect(h.model.statuses[main.id] == nil)
   }

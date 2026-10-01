@@ -75,6 +75,37 @@ extension ShellStateHooksTests {
       "and nothing of what else the user runs: \(lines)")
   }
 
+  /// bash-preexec, which Atuin ships, sets its DEBUG trap from the prompt
+  /// command it adds, after the init file has run.
+  @Test(arguments: InstalledBashes.all)
+  func aDebugTrapTheUsersPromptSetsLateStillFiresBesideTheReports(bash: String) async throws {
+    let scratch = try Scratch.directory("late-debug")
+    defer { Scratch.remove(scratch) }
+    let log = scratch.appendingPathComponent("log")
+    let helper = try relayLogging(to: log, in: scratch)
+    let files = try GeneratedIntegration(helper: helper.path)
+    defer { files.tearDown() }
+    try files.writeHomeFile(
+      ".bashrc",
+      """
+      PS1='> '
+      theirs() { echo "[theirs:$BASH_COMMAND]"; }
+      PROMPT_COMMAND='[ -n "$installed" ] || { trap theirs DEBUG; installed=1; }'
+
+      """)
+
+    var environment = files.environment(termProgram: nil)
+    environment[SessionEnvironment.sessionKey] = "late-debug"
+    let output = try await interactiveShell(
+      bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment,
+      input: "true\nexit\n")
+
+    #expect(output.contains("[theirs:true]"), "\(output)")
+    #expect(!output.contains("[theirs:trap -p PIPE"), "their trap never sees our reads: \(output)")
+    try await waitUntil { Self.lines(of: log).contains { $0.hasPrefix("command-started") } }
+    #expect(Self.lines(of: log).contains { $0.hasPrefix("command-started") })
+  }
+
   /// zsh writes the report's JSON itself, so its own line is the only place
   /// the field can be malformed.
   @Test func zshWritesTheAgentIntoTheLineItSendsAndLeavesTheRestOut() throws {

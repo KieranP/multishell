@@ -88,7 +88,7 @@ struct AppModelStatusPollingTests {
     let stale = Task { await fake.refreshStatus(of: main.id) }
     await Task.yield()
     fake.setGitStatusIndicator(.stagedOnly)
-    await stale.value
+    _ = await stale.value
 
     try await waitUntil { fake.statuses[main.id] != nil }
     #expect(
@@ -107,7 +107,7 @@ struct AppModelStatusPollingTests {
     let discarded = Task { await fake.refreshStatus(of: main.id) }
     await Task.yield()
     fake.pathClaims.claim(main.id)
-    await discarded.value
+    _ = await discarded.value
     fake.pathClaims.release(main.id)
     await fake.refreshStatus(of: main.id)
 

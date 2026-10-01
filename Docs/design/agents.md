@@ -17,6 +17,11 @@ at the bottom.
 - **One naming only a directory marks the deepest worktree containing it**, so
   an agent started in a subfolder says that folder, and a worktree nested in
   another is the one meant.
+- **Each worktree's resolved path is kept, missing or not**: walked per report,
+  a mount answering only after its timeout stalled the window each time.
+  Foundation leaves a missing path's links unresolved, so one kept then is made
+  again once a status read, the directory check or the next report's look off
+  the main actor sees the directory.
 - **The pid a report names is what the app polls** to clear a Working the agent
   never took back.
 - **The app hands each session its own pid**, or the helper's walk past the
@@ -400,6 +405,10 @@ at the bottom.
 - **A session start over Working or Waiting moves nothing**: one agent's prompt
   mode sends it after the first prompt, and its idle cleared Working until the
   first tool call. Over anything else it clears, as a fresh session should.
+- **A `/clear` after an interrupted turn still clears**: Claude and Gemini fire
+  their session end, which is not held, before the start, as Claude does for
+  `/resume`. Read from claude 2.1.286 and gemini 0.46.0, not watched; Copilot's
+  is unread.
 - **The shell's own Working is not one of those**: it stands from the moment the
   user types the agent's name, so a start held off by it left every agent
   launched from a prompt Working until its first turn ended.
@@ -594,6 +603,9 @@ at the bottom.
   Gemini trusts, by its own rule.
 - **Codex does not**: a child's answer is recorded with `trigger_turn: false`,
   so its last worker out pays.
+- **Under an empty `HOME` Gemini's settings are read from Node's temporary
+  directory**, where Gemini reads them. Read from anywhere else, steering went
+  unseen and a Done came at the shell's exit and again at the turn's Stop.
 - **The Stop says so**, the integration being the only place an agent is known,
   and the entry keeps it beside the Done it owes.
 - **A cancelled worker wakes nobody, so its end says so**, and last out it pays

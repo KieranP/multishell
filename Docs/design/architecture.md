@@ -37,8 +37,8 @@ What the core is, what it refuses, how work reaches it. Newest at the bottom.
   sixteen git processes run where the width is eight.
 - **Nothing in the core blocks a pool thread.** Waits inside `Task`s held a pool
   thread per core until GCD ran out and the suite hung. Blocking file work goes
-  through `offMain` to Dispatch; the untracked line counts are the gap,
-  worktrees.md has it.
+  through `offMain` to Dispatch, the git library's stats, reads and line counts
+  included; worktrees.md has the cost.
 - **The directory check before a shell starts is the one wait**, a second at
   most on the main thread and never on a pool thread; worktrees.md has why.
 - **Both pipes drain at once**, or the second fills its buffer and blocks the
@@ -59,3 +59,12 @@ What the core is, what it refuses, how work reaches it. Newest at the bottom.
   superseded status refresh cancels its task mid-read, and Subprocess answers a
   cancel with SIGKILL, so a slow `git status` would never land. Only a
   `ProcessStopper` ends a child.
+- **A timeout whose child exits 0 is withdrawn.** A child that begins its exit
+  between the stopper's check and its SIGHUP takes the signal to no effect, and
+  a finished hook or git call read as timed out: 2 runs in 3,200 at a 50 ms
+  timeout. A SIGHUP death is never 0: bash, sh, ksh and dash re-raise it, zsh,
+  tcsh and csh exit 1. fish is untried.
+- **The stopper goes back to unused**, or the stage that lent it to a hook read
+  it as stopped and took back the worktree it had just made. A Cancel made while
+  the timeout stood is kept for the next child. Cost: a script that traps SIGHUP
+  and exits 0 reads as finished, which is what it said.

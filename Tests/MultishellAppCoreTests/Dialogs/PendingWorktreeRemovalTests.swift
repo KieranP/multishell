@@ -87,6 +87,17 @@ struct PendingWorktreeRemovalTests {
     )
   }
 
+  @Test func changesThatWentUnreadAreWarnedOfWhereverTheDirectoryGoes() {
+    #expect(
+      PendingWorktreeRemoval.warning(changedFiles: 0, changesUnread: true, liveTerminals: 0)
+        == "Its changes could not be read in time; any it has are kept in the Trash with the directory."
+    )
+    #expect(
+      PendingWorktreeRemoval.warning(
+        changedFiles: 0, changesUnread: true, liveTerminals: 0, trashes: false)
+        == "Its changes could not be read in time; any it has are deleted with the directory.")
+  }
+
   @Test func withTheTrashOffTheMessageAndWarningSayTheDirectoryIsDeleted() {
     let deletes = PendingWorktreeRemoval(
       worktree: branched, branchHandling: .offersBoth, trashes: false)

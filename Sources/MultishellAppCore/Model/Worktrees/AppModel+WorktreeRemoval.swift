@@ -29,7 +29,7 @@ extension AppModel {
     // Any row's status may be as old as the pace allows, and the dialog,
     // built once, warns of the changed files that status counts.
     return Task {
-      await refreshStatus(of: worktree.id, forced: true)
+      let changesUnread = await !readsFreshStatusInTime(of: worktree.id)
       removalsAwaitingStatus.remove(worktree.id)
       let isLatest = latestRemovalRequest == worktree.id
       if isLatest { latestRemovalRequest = nil }
@@ -37,7 +37,7 @@ extension AppModel {
       guard isLatest, pendingWorktreeRemoval == nil, let current = workspace.worktree(worktree.id),
         !isBusy(current.id)
       else { return }
-      switch removalDecision(for: current) {
+      switch removalDecision(for: current, changesUnread: changesUnread) {
       case .ask(let pending): pendingWorktreeRemoval = pending
       case .remove(let deletingBranch):
         await removeWorktree(current, deletingBranch: deletingBranch)
@@ -45,12 +45,36 @@ extension AppModel {
     }
   }
 
-  private func removalDecision(for worktree: Worktree) -> PendingWorktreeRemoval.Decision {
+  /// Whether a read begun after the click landed within the wait. An earlier
+  /// removal's read still running is waited out first rather than stacked on.
+  private func readsFreshStatusInTime(of id: Worktree.ID) async -> Bool {
+    let deadline = ContinuousClock.now + removalStatusWait
+    if let earlier = removalStatusReads[id], await earlier.value(within: removalStatusWait) == nil {
+      return false
+    }
+    return await startRemovalStatusRead(of: id).value(within: deadline - .now) == true
+  }
+
+  private func startRemovalStatusRead(of id: Worktree.ID) -> Task<Bool, Never> {
+    let statusRead = Task { await refreshStatus(of: id, forced: true) }
+    removalStatusReads[id] = statusRead
+    // A worktree re-made at the path may have a read of its own by then.
+    Task {
+      _ = await statusRead.value
+      if removalStatusReads[id] == statusRead { removalStatusReads[id] = nil }
+    }
+    return statusRead
+  }
+
+  private func removalDecision(
+    for worktree: Worktree, changesUnread: Bool = false
+  ) -> PendingWorktreeRemoval.Decision {
     PendingWorktreeRemoval.decide(
       worktree, customName: customName(of: worktree),
       confirms: workspace.confirmsWorktreeRemoval,
       alwaysDeletesBranch: workspace.deletesBranchWithWorktree,
-      trashes: workspace.trashesRemovedWorktrees, mergeState: mergeState(of: worktree))
+      trashes: workspace.trashesRemovedWorktrees, mergeState: mergeState(of: worktree),
+      changesUnread: changesUnread)
   }
 
   /// The dialog's answer, trashing or deleting as its message said even if
@@ -62,11 +86,12 @@ extension AppModel {
   }
 
   /// What the confirmation should warn about, beyond the removal itself.
-  public func worktreeRemovalWarning(for worktree: Worktree) -> String? {
+  public func worktreeRemovalWarning(for pending: PendingWorktreeRemoval) -> String? {
     PendingWorktreeRemoval.warning(
-      changedFiles: statuses[worktree.id]?.changedFiles ?? 0,
-      liveTerminals: liveTerminalCount(in: worktree.id),
-      trashes: workspace.trashesRemovedWorktrees)
+      changedFiles: statuses[pending.worktree.id]?.changedFiles ?? 0,
+      changesUnread: pending.changesUnread,
+      liveTerminals: liveTerminalCount(in: pending.worktree.id),
+      trashes: pending.trashes)
   }
 
   /// The pane shows each stage while this runs. What a failed stage does is

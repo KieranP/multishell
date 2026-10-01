@@ -32,16 +32,20 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
   let mergeState: WorktreeMergeState
   /// Whether the directory goes to the Trash or is deleted outright.
   let trashes: Bool
+  /// The status read had not answered when the dialog was built, so the
+  /// changed files it would count are unknown.
+  let changesUnread: Bool
 
   init(
     worktree: Worktree, branchHandling: BranchHandling, customName: String? = nil,
-    mergeState: WorktreeMergeState = .unknown, trashes: Bool = true
+    mergeState: WorktreeMergeState = .unknown, trashes: Bool = true, changesUnread: Bool = false
   ) {
     self.worktree = worktree
     self.branchHandling = branchHandling
     self.customName = customName
     self.mergeState = mergeState
     self.trashes = trashes
+    self.changesUnread = changesUnread
   }
 
   public var id: String { worktree.id }
@@ -72,7 +76,7 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
 
   static func decide(
     _ worktree: Worktree, customName: String? = nil, confirms: Bool, alwaysDeletesBranch: Bool,
-    trashes: Bool = true, mergeState: WorktreeMergeState = .unknown
+    trashes: Bool = true, mergeState: WorktreeMergeState = .unknown, changesUnread: Bool = false
   ) -> Decision {
     let hasBranch = worktree.branch != nil
     let deletes = hasBranch && alwaysDeletesBranch
@@ -82,7 +86,8 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
       PendingWorktreeRemoval(
         worktree: worktree,
         branchHandling: asksAboutBranch ? .offersBoth : .decided(deletes: deletes),
-        customName: customName, mergeState: mergeState, trashes: trashes))
+        customName: customName, mergeState: mergeState, trashes: trashes,
+        changesUnread: changesUnread))
   }
 
   /// Names the worktree as the title does and where it goes, says what
@@ -106,15 +111,17 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
     return notes.joined(separator: "\n\n")
   }
 
-  /// What the confirmation warns about beyond the removal: uncommitted files
-  /// bound for the Trash or deletion, and the shells still running there.
+  /// What the confirmation warns about beyond the removal: uncommitted files,
+  /// or that they went unread, and the shells still running there.
   static func warning(
-    changedFiles: Int, liveTerminals: Int, trashes: Bool = true
+    changedFiles: Int, changesUnread: Bool = false, liveTerminals: Int, trashes: Bool = true
   )
     -> String?
   {
     var notes: [String] = []
-    if changedFiles > 0 {
+    if changesUnread {
+      notes.append(trashes ? t("removal.changes-unread") : t("removal.changes-unread-deleted"))
+    } else if changedFiles > 0 {
       notes.append(
         trashes
           ? t("removal.changed-files", changedFiles)

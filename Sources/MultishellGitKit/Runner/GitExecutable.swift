@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 import MultishellProcess
 
 /// Which git to run. Apple's `/usr/bin/git` is a shim that looks up the
@@ -11,11 +12,13 @@ enum GitExecutable {
     xcrun: URL = URL(fileURLWithPath: "/usr/bin/xcrun"),
     developerDirectory: URL? = selectedDeveloperDirectory()
   ) async -> URL? {
-    guard let found = ExecutableLookup.find("git", searchPath: searchPath) else { return nil }
+    // Each PATH directory is a stat, which a dead mount holds.
+    let found = await offMain { ExecutableLookup.find("git", searchPath: searchPath) }
+    guard let found else { return nil }
     guard found.standardizedFileURL.path == shim.standardizedFileURL.path else { return found }
     // With no developer tools xcrun may raise their install dialog, at every launch.
     guard let developerDirectory,
-      FileManager.default.fileExists(atPath: developerDirectory.path)
+      await offMain({ FileManager.default.fileExists(atPath: developerDirectory.path) })
     else { return found }
     guard
       let output = try? await ProcessRunner().capture(
@@ -23,9 +26,9 @@ enum GitExecutable {
       output.succeeded
     else { return found }
     let resolved = output.standardOutput.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !resolved.isEmpty, FileManager.default.isExecutableFile(atPath: resolved) else {
-      return found
-    }
+    guard !resolved.isEmpty,
+      await offMain({ FileManager.default.isExecutableFile(atPath: resolved) })
+    else { return found }
     return URL(fileURLWithPath: resolved)
   }
 

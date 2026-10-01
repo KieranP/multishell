@@ -53,7 +53,7 @@ extension WorktreeCoordinator {
     onStep?(.addingWorktree)
     // No container directory made here: `git worktree add` makes the leading
     // directories itself, and a refused add then leaves none behind.
-    let firstMade = Self.highestMissingAncestor(of: path)
+    let firstMade = await offMain { Self.highestMissingAncestor(of: path) }
     // Asked first: a stop can land before git has made anything, and the
     // name may be a branch of the user's that the add was refusing.
     let branchIsNew = createBranch ? await git.lacksBranch(branch, in: project) : false
@@ -91,7 +91,9 @@ extension WorktreeCoordinator {
   ) async {
     if madeHere { await git.removeUnchanged(path, in: project) }
     if let branch { await git.deleteBranchIfUnlisted(branch, in: project) }
-    if let firstMade { Self.removeEmptyDirectories(from: path, through: firstMade) }
+    if let firstMade {
+      await offMain { Self.removeEmptyDirectories(from: path, through: firstMade) }
+    }
   }
 
   /// The topmost directory on the way to `path` that is not there yet.

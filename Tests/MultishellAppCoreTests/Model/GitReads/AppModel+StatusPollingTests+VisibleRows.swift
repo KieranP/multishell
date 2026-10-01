@@ -109,6 +109,54 @@ extension AppModelStatusPollingTests {
     #expect(h.model.statuses[side.id]?.changedFiles == 1)
   }
 
+  @Test func aRowFoldedUnderTheFilterIsNotReadAndUnfoldingReadsIt() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let path = h.root.appendingPathComponent("demo-side", isDirectory: true)
+    _ = try await h.git.run(["worktree", "add", "-q", "-b", "side", path.path], in: h.project.path)
+    await h.model.refreshWorktrees(of: h.project)
+    let side = try #require(h.worktree(onBranch: "side"))
+    h.model.select(try #require(h.worktree(onBranch: "main")))
+    h.model.sidebarFilterText = "side"
+    await h.model.pendingRevealedRowsRead?.task.value
+    try "x".write(
+      to: side.path.appendingPathComponent("dirty.txt"), atomically: true, encoding: .utf8)
+    for pending in h.model.pendingStatusRefreshes.values { pending.cancel() }
+    h.model.pendingStatusRefreshes = [:]
+    h.model.statuses = [:]
+
+    h.model.toggleExpansion(of: h.project)
+    await h.model.refreshStatuses()
+    #expect(h.model.statuses[side.id] == nil)
+
+    h.model.toggleExpansion(of: h.project)
+    try await waitUntil { h.model.statuses[side.id] != nil }
+    #expect(h.model.statuses[side.id]?.changedFiles == 1)
+  }
+
+  @Test func aTextChangeReadsTheRowsOfAProjectFoldedUnderTheOldText() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let path = h.root.appendingPathComponent("demo-side", isDirectory: true)
+    _ = try await h.git.run(["worktree", "add", "-q", "-b", "side", path.path], in: h.project.path)
+    await h.model.refreshWorktrees(of: h.project)
+    let side = try #require(h.worktree(onBranch: "side"))
+    h.model.select(try #require(h.worktree(onBranch: "main")))
+    h.model.sidebarFilterText = "side"
+    await h.model.pendingRevealedRowsRead?.task.value
+    h.model.toggleExpansion(of: h.project)
+    try "x".write(
+      to: side.path.appendingPathComponent("dirty.txt"), atomically: true, encoding: .utf8)
+    for pending in h.model.pendingStatusRefreshes.values { pending.cancel() }
+    h.model.pendingStatusRefreshes = [:]
+    h.model.statuses = [:]
+
+    h.model.sidebarFilterText = "sid"
+    await h.model.pendingRevealedRowsRead?.task.value
+
+    #expect(h.model.statuses[side.id]?.changedFiles == 1)
+  }
+
   @Test func clearingTheFilterReadsTheRowsItBringsBack() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }

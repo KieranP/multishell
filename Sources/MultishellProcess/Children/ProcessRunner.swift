@@ -78,6 +78,9 @@ public struct ProcessRunner: Sendable {
       throw error
     }
 
+    // A signal is never a status of 0, so the child finished on its own; see
+    // Docs/design/architecture.md.
+    if status == 0 { stopper.withdrawTimeout(from: child) }
     await Self.awaitDrained(standardOutput, standardError, group: drained)
     return ProcessOutput(
       standardOutput: String(decoding: standardOutput.data, as: UTF8.self),

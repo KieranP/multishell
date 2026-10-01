@@ -84,7 +84,9 @@ extension AppModel {
   /// refused. Named for the demand, since it raises the alert itself.
   func requireDirectory(of worktree: Worktree) -> Bool {
     switch directoryProbe.probe(worktree.path.path) {
-    case .present: return true
+    case .present:
+      noteDirectoryPresent(of: worktree.id)
+      return true
     case .missing: presentedError = .worktreeDirectoryMissing(worktree.path.path)
     case .unanswered: presentedError = .worktreeDirectoryUnanswered(worktree.path.path)
     }
@@ -100,6 +102,8 @@ extension AppModel {
     forgetMergeStates(ofWorktrees: gone)
     setIfChanged(\.lastCommitDates, lastCommitDates.filter { !gone.contains($0.key) })
     resolvedWorktreeComponents = resolvedWorktreeComponents.filter { !gone.contains($0.key) }
+    worktreesResolvedWhileMissing.subtract(gone)
+    removalStatusReads = removalStatusReads.filter { !gone.contains($0.key) }
     // Their sessions went with them, so a worktree re-made at the path starts cold.
     warmWorktrees.subtract(gone)
     statusReads.forget(gone)
@@ -117,30 +121,5 @@ extension AppModel {
       pendingWorktreeRemoval = nil
     }
     if let latest = latestRemovalRequest, gone.contains(latest) { latestRemovalRequest = nil }
-  }
-
-  /// The deepest worktree holding the directory. A hook's `cwd` may be the
-  /// resolved path of one added through a symlink, so both spellings are tried.
-  func worktree(atPath path: String) -> Worktree? {
-    let url = URL(fileURLWithPath: path, isDirectory: true)
-    let spellings = [url.standardizedFileURL, url.resolvingSymlinksInPath()].map(\.pathComponents)
-    // Depth is the matching root's, not the written path's: a symlink chain
-    // can spell a shallow worktree long.
-    let matches = workspace.worktrees.compactMap { worktree -> (Worktree, Int)? in
-      let depth = [worktree.path.pathComponents, resolvedComponents(of: worktree)]
-        .filter { root in spellings.contains { $0.starts(with: root) } }
-        .map(\.count).max()
-      return depth.map { (worktree, $0) }
-    }
-    return matches.max { $0.1 < $1.1 }?.0
-  }
-
-  /// Kept per worktree: each report naming only a directory walked every
-  /// worktree's symlinks, on the main actor, a network mount's among them.
-  private func resolvedComponents(of worktree: Worktree) -> [String] {
-    if let known = resolvedWorktreeComponents[worktree.id] { return known }
-    let resolved = worktree.path.resolvingSymlinksInPath().pathComponents
-    resolvedWorktreeComponents[worktree.id] = resolved
-    return resolved
   }
 }

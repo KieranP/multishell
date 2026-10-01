@@ -43,11 +43,23 @@ enum GeminiSettings {
     return [defaults, user, project, system].compactMap { $0 }
   }
 
+  /// An empty `HOME` is Gemini's cue for the temporary directory, unlike
+  /// `underHome`'s fallback to the account's home.
   private static func geminiDirectory(_ environment: [String: String]) -> URL {
     let home =
       environment["GEMINI_CLI_HOME"].flatMap { $0.isEmpty ? nil : $0 }
       ?? environment["HOME"] ?? NSHomeDirectory()
-    return URL(fileURLWithPath: home).appendingPathComponent(".gemini")
+    let base = home.isEmpty ? nodeTemporaryDirectory(environment) : home
+    return URL(fileURLWithPath: base).appendingPathComponent(".gemini")
+  }
+
+  /// Node's `os.tmpdir()`: the first set of three variables, its trailing
+  /// slash dropped, else `/tmp`.
+  private static func nodeTemporaryDirectory(_ environment: [String: String]) -> String {
+    let named = ["TMPDIR", "TMP", "TEMP"].lazy.compactMap { environment[$0] }
+    guard let directory = named.first(where: { !$0.isEmpty }) else { return "/tmp" }
+    return directory.count > 1 && directory.hasSuffix("/")
+      ? String(directory.dropLast()) : directory
   }
 
   /// Gemini's own rule: the longest rule path naming the folder decides, a

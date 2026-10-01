@@ -6,6 +6,8 @@ import SwiftUI
 /// starts a new worktree. Its worktrees are `WorktreeRow`s below it.
 struct ProjectRow: View {
   let project: Project
+  /// What is on screen, which the filter can hold open over the stored flag.
+  let isExpanded: Bool
   /// The project's settings with its repository's own filled in, for the
   /// icon.
   let settings: ProjectSettings
@@ -41,10 +43,10 @@ struct ProjectRow: View {
     HStack(spacing: 6) {
       Image(systemName: "chevron.right")
         .font(.system(size: metrics.badge - 1, weight: .bold))
-        .rotationEffect(.degrees(project.isExpanded ? 90 : 0))
+        .rotationEffect(.degrees(isExpanded ? 90 : 0))
         .foregroundStyle(theme.textTertiary)
         .frame(width: 10)
-        .help(project.isExpanded ? t("sidebar.collapse") : t("sidebar.expand"))
+        .help(isExpanded ? t("sidebar.collapse") : t("sidebar.expand"))
 
       if isFetching {
         // The icon's own slot, like the dot below it, so nothing shifts
@@ -60,7 +62,8 @@ struct ProjectRow: View {
           .help(t("sidebar.collapsed-state", state.displayName))
       } else {
         ProjectIconView(
-          settings: settings, isMissing: isMissing, theme: theme, size: metrics.icon
+          settings: settings, isMissing: isMissing, ringFill: theme.sidebarColor, theme: theme,
+          size: metrics.icon
         )
         .help(project.path.path)
       }
@@ -78,12 +81,12 @@ struct ProjectRow: View {
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(
       AccessibilityText.project(
-        name: project.name, isExpanded: project.isExpanded, isMissing: isMissing, state: state,
+        name: project.name, isExpanded: isExpanded, isMissing: isMissing, state: state,
         worktreeCount: worktreeCount, isFetching: isFetching)
     )
     .accessibilityAddTraits(.isButton)
     .accessibilityAction(
-      named: project.isExpanded ? t("sidebar.collapse") : t("sidebar.expand"), toggle)
+      named: isExpanded ? t("sidebar.collapse") : t("sidebar.expand"), toggle)
   }
 
   private var newWorktreeButton: some View {
@@ -100,7 +103,8 @@ struct ProjectRow: View {
 /// `WorktreeRow`'s.
 extension ProjectRow: @MainActor Equatable {
   static func == (a: ProjectRow, b: ProjectRow) -> Bool {
-    a.project == b.project && a.settings == b.settings && a.isMissing == b.isMissing
+    a.project == b.project && a.isExpanded == b.isExpanded && a.settings == b.settings
+      && a.isMissing == b.isMissing
       && a.state == b.state && a.worktreeCount == b.worktreeCount
       && a.isFetching == b.isFetching && a.theme == b.theme && a.metrics == b.metrics
   }

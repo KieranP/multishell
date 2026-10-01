@@ -18,7 +18,7 @@ extension WorktreeCoordinator {
     }
     let path = worktree.path
     let branchOrHead = worktree.branch ?? worktree.head
-    let isThere = FileManager.default.fileExists(atPath: path.path)
+    let isThere = await offMain { FileManager.default.fileExists(atPath: path.path) }
     // Whatever took a stale record's path since is not ours: not trashed,
     // and no hook runs, each being handed that path; see worktrees.md.
     if isThere, try await !git.isCheckout(of: worktree, in: project) {
@@ -36,7 +36,7 @@ extension WorktreeCoordinator {
           throw TrashFailure(path: path, underlying: error)
         }
         // `forget` would unlink a directory still here; only the Trash may take it.
-        guard !FileManager.default.fileExists(atPath: path.path) else {
+        guard await !offMain({ FileManager.default.fileExists(atPath: path.path) }) else {
           throw TrashFailure(path: path, underlying: TrashTookNothing())
         }
       }

@@ -38,31 +38,36 @@ extension WorktreeGit {
     else {
       // git refusing the directory, over ownership or a timeout, proves nothing
       // about whose it is; the `.git` file git wrote there does.
-      guard let record = Self.recordDirectoryFromGitFile(in: worktree.path) else {
-        return false
+      return await offMain {
+        guard let record = Self.recordDirectoryFromGitFile(in: worktree.path) else {
+          return false
+        }
+        return Self.sameResolvedPath(
+          record.deletingLastPathComponent(), WorktreeRecords.worktreesDirectory(in: common))
       }
-      return Self.sameResolvedPath(
-        record.deletingLastPathComponent(), WorktreeRecords.worktreesDirectory(in: common))
     }
     let lines = Self.absolutePaths(in: output, from: worktree.path)
     // The top level too: a plain directory inside the main checkout answers
     // with the main repository's common directory.
-    return lines.count == 2 && Self.sameResolvedPath(lines[0], worktree.path)
-      && Self.sameResolvedPath(lines[1], common)
+    return await offMain {
+      lines.count == 2 && Self.sameResolvedPath(lines[0], worktree.path)
+        && Self.sameResolvedPath(lines[1], common)
+    }
   }
 
   /// A record whose path is now someone else's directory. That record alone
   /// goes, not every one prune would take; see worktrees.md.
   func forgetStale(_ worktree: Worktree, in project: Project) async throws {
     // A `.git` there is another repository's, which prune would keep too.
-    let taken = FileManager.default.fileExists(
-      atPath: worktree.path.appendingPathComponent(".git").path)
+    let taken = await offMain {
+      FileManager.default.fileExists(atPath: worktree.path.appendingPathComponent(".git").path)
+    }
     guard !taken,
       let record = try await recordDirectory(whoseGitdirNames: worktree.path, in: project)
     else {
       throw NotTheCheckout(path: worktree.path)
     }
-    try FileManager.default.removeItem(at: record)
+    try await offMain { Result { try FileManager.default.removeItem(at: record) } }.get()
     guard await !isListed(worktree.path, in: project) else {
       throw NotTheCheckout(path: worktree.path)
     }
@@ -74,17 +79,19 @@ extension WorktreeGit {
     whoseGitdirNames checkout: URL, in project: Project
   ) async throws -> URL? {
     let records = WorktreeRecords.worktreesDirectory(in: try await commonGitDirectory(project))
-    let names =
-      (try? FileManager.default.contentsOfDirectory(
-        at: records, includingPropertiesForKeys: nil)) ?? []
-    return names.first { record in
-      guard
-        let gitdir = try? String(
-          contentsOf: record.appendingPathComponent("gitdir"), encoding: .utf8),
-        let line = gitdir.split(whereSeparator: \.isNewline).first
-      else { return false }
-      let target = Self.directoryURL(String(line), relativeTo: record)
-      return Self.sameResolvedPath(target.deletingLastPathComponent(), checkout)
+    return await offMain {
+      let names =
+        (try? FileManager.default.contentsOfDirectory(
+          at: records, includingPropertiesForKeys: nil)) ?? []
+      return names.first { record in
+        guard
+          let gitdir = try? String(
+            contentsOf: record.appendingPathComponent("gitdir"), encoding: .utf8),
+          let line = gitdir.split(whereSeparator: \.isNewline).first
+        else { return false }
+        let target = Self.directoryURL(String(line), relativeTo: record)
+        return Self.sameResolvedPath(target.deletingLastPathComponent(), checkout)
+      }
     }
   }
 

@@ -35,9 +35,10 @@ shipped hook. Newest at the bottom.
 - **Three guards come first**, or the resolve would land inside:
   `appendingPathComponent` takes `/etc/passwd` as relative, `~` is not expanded,
   and a leading `$` is refused because nothing runs a shell.
-- **A refused value is dropped whole and the user's stands.** Pointing outside
-  is the user's to do in settings, not the repository's. Cost: a repo can no
-  longer ship `../{project}-worktrees`, and the drop is silent.
+- **A refused value is dropped whole and the user's stands.** In a list the
+  value is the entry, the rest of the list kept. Pointing outside is the user's
+  to do in settings, not the repository's. Cost: a repo can no longer ship
+  `../{project}-worktrees`, and the drop is silent.
 - **Refusal reaches only what the file ships.** `place` takes
   `heldToRepository`, false for a user's list: an entry of theirs spelled to
   leave the root is skipped and named rather than failing the create (hooks.md),

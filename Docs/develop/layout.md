@@ -10,10 +10,11 @@
   and helpers every other library reaches for.
 - **MultishellProcess**: processes and sockets. **MultishellGitKit**: worktree
   operations, a project's hooks and file lists, the output readers, what a
-  branch is, where it points and whether it landed, a worktree's status, and the
-  runner above them all. WorktreeGit and WorktreeCoordinator sit at its root
-  with their extensions under each concern, since five concerns extend them and
-  none owns them, beside the state every WorktreeGit a launch builds shares.
+  branch is, where it points and whether it landed, a worktree's status, the
+  runner above them all, and, under `Support/`, what belongs to no concern.
+  WorktreeGit and WorktreeCoordinator sit at its root with their extensions
+  under each concern, since five concerns extend them and none owns them, beside
+  the state every WorktreeGit a launch builds shares.
 - **MultishellAppCore**: AppModel, detections, dialogs, error mapping, settings
   as inherited, what a tab runs, what each session is doing, when to read git,
   when to notify, every decision a view makes; what a screen reader is told;

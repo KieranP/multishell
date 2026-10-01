@@ -45,8 +45,8 @@ extension WorktreeGit {
     return counts
   }
 
-  /// The reads block, on a dead mount until it times out. Detached keeps them off
-  /// the main actor but not off the cooperative pool; see worktrees.md.
+  /// The reads block, on a dead mount until it times out, so they run on
+  /// Dispatch and not on a cooperative pool thread; see worktrees.md.
   private func untrackedCounts(in path: URL) async -> LineCounts {
     guard
       let output = await runner.output(
@@ -55,8 +55,6 @@ extension WorktreeGit {
     let paths = UntrackedPathParser.parse(output, limit: UntrackedLineCounter.fileLimit)
     guard !paths.isEmpty else { return LineCounts() }
     let memo = readState.untrackedMemo
-    return await Task.detached(priority: .utility) {
-      UntrackedLineCounter.count(paths: paths, in: path, memo: memo)
-    }.value
+    return await offMain { UntrackedLineCounter.count(paths: paths, in: path, memo: memo) }
   }
 }

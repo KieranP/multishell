@@ -144,6 +144,110 @@ extension AppModelWorktreeRemovalTests {
     #expect(h.statusRunCount() == 1)
   }
 
+  @Test func aRemovalWhoseStatusReadHangsStillOpensItsDialog() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    await h.model.createWorktree(branch: "hung", basedOn: nil, createBranch: true, in: h.project)
+    let hung = try #require(h.worktree(onBranch: "hung"))
+    h.model.select(try #require(h.worktree(onBranch: "main")))
+    h.model.setExpanded(false, for: h.project)
+    let gate = h.root.appendingPathComponent("go")
+    defer { try? Data().write(to: gate) }
+    let fake = try h.modelOnFakeGit(
+      """
+      case "$*" in
+        *status*) while [ ! -f "\(gate.path)" ] && [ -d "\(h.root.path)" ]; do sleep 0.02; done
+          printf '## hung\\n' ;;
+      esac
+      """)
+    fake.removalStatusWait = .milliseconds(100)
+
+    fake.requestWorktreeRemoval(of: hung)
+
+    try await waitUntil { fake.pendingWorktreeRemoval != nil }
+    let pending = try #require(fake.pendingWorktreeRemoval)
+    let warning = fake.worktreeRemovalWarning(for: pending)
+    #expect(pending.message(warning: warning).contains("could not be read"))
+  }
+
+  @Test func askingAgainWhileTheLastRemovalsReadStillHangsStartsNoOtherRead() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    await h.model.createWorktree(branch: "hung", basedOn: nil, createBranch: true, in: h.project)
+    let hung = try #require(h.worktree(onBranch: "hung"))
+    h.model.select(try #require(h.worktree(onBranch: "main")))
+    h.model.setExpanded(false, for: h.project)
+    let gate = h.root.appendingPathComponent("go")
+    defer { try? Data().write(to: gate) }
+    let fake = try h.modelOnFakeGit(
+      """
+      case "$*" in
+        *status*) while [ ! -f "\(gate.path)" ] && [ -d "\(h.root.path)" ]; do sleep 0.02; done
+          printf '## hung\\n' ;;
+      esac
+      """)
+    fake.removalStatusWait = .milliseconds(100)
+    await fake.requestWorktreeRemoval(of: hung)?.value
+    fake.pendingWorktreeRemoval = nil
+    let firstRead = try #require(fake.removalStatusReads[hung.id])
+
+    await fake.requestWorktreeRemoval(of: hung)?.value
+
+    #expect(fake.pendingWorktreeRemoval != nil)
+    #expect(fake.removalStatusReads[hung.id] == firstRead)
+  }
+
+  @Test func anEarlierRemovalsReadLandingDuringTheNextStillLeavesAReadAfterTheClick()
+    async throws
+  {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    await h.model.createWorktree(branch: "slow", basedOn: nil, createBranch: true, in: h.project)
+    let slow = try #require(h.worktree(onBranch: "slow"))
+    h.model.select(try #require(h.worktree(onBranch: "main")))
+    h.model.setExpanded(false, for: h.project)
+    let gate = h.root.appendingPathComponent("go")
+    defer { try? Data().write(to: gate) }
+    let fake = try h.modelOnFakeGit(
+      """
+      case "$*" in
+        *status*) while [ ! -f "\(gate.path)" ] && [ -d "\(h.root.path)" ]; do sleep 0.02; done
+          printf '## slow\\n' ;;
+      esac
+      """)
+    fake.removalStatusWait = .milliseconds(100)
+    await fake.requestWorktreeRemoval(of: slow)?.value
+    fake.pendingWorktreeRemoval = nil
+    fake.removalStatusWait = .seconds(8)
+
+    let second = fake.requestWorktreeRemoval(of: slow)
+    try Data().write(to: gate)
+    await second?.value
+
+    #expect(h.statusRunCount() == 2, "the earlier read began before this click")
+    #expect(fake.pendingWorktreeRemoval?.changesUnread == false)
+  }
+
+  @Test func aRemovalWhoseStatusReadFailsSaysTheChangesWentUnread() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    await h.model.createWorktree(branch: "refused", basedOn: nil, createBranch: true, in: h.project)
+    let refused = try #require(h.worktree(onBranch: "refused"))
+    h.model.select(try #require(h.worktree(onBranch: "main")))
+    h.model.setExpanded(false, for: h.project)
+    let fake = try h.modelOnFakeGit(
+      """
+      case "$*" in
+        *status*) exit 128 ;;
+      esac
+      """)
+
+    await fake.requestWorktreeRemoval(of: refused)?.value
+
+    let pending = try #require(fake.pendingWorktreeRemoval)
+    #expect(pending.changesUnread)
+  }
+
   @Test func aPollLandingAfterARemovalBeganIsDropped() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }

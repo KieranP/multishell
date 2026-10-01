@@ -65,6 +65,10 @@ What each addition needs beyond the code itself.
   which listed kinds wake it. All default to no, so nothing forces them: a
   resuming agent left at the default pays Done at its last worker out and again
   at the woken turn's Stop (design/agents.md).
+- **An agent whose Stop does not list the shells it backgrounded names a shell
+  marker on the integration**, text only such a shell's command line holds.
+  Nothing forces it either: without one a pane waiting on the shell goes Done
+  early (design/agents.md).
 - **An agent reporting through a plugin** names a worker through the helper's
   subagent flags, starts a turn through its new-turn flag, and at a Stop that
   resumes lists what is still out through its resumes and out flags. It also

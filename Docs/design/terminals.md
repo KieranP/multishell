@@ -285,8 +285,13 @@ at the bottom.
   write sends that report and every later one inline.
 - **What is put back is the handler standing at that write**, read each time.
   Read once at startup, a `trap … PIPE` set later was lost at the next report.
-  Cost: the read is a command substitution, a fork per report, about 0.5 ms,
+- **bash 5.3 reads it with `${ …; }`**, which runs in the shell: 0.14 ms a read
+  against 0.47 ms. Cost before 5.3: a command substitution, a fork per report,
   which is what a subshell per write cost.
+- **The prompt's read of the DEBUG trap keeps its fork, 5.3 included.** At the
+  top level of the prompt command `${ …; }` runs the user's DEBUG trap on the
+  read and captures what it prints, so bash-preexec took our read for a command.
+  Cost: a fork a prompt. The PIPE read runs in a function, where it fires none.
 - **A relay that exits in failure hands its pipe to a shell loop**, a helper
   launched per line. A helper older than `relay` exits 2 without reading, so
   what the shell wrote before that went nowhere, and only a later write's EPIPE
@@ -298,11 +303,16 @@ at the bottom.
   Cost: a wake a second while the loop runs, and a timeout taken for EOF sends
   the rest inline.
 - **The relay ignores interrupt, quit, job-control and hang-up**, sharing the
-  shell's process group at the prompt, so a Ctrl-C there would end it. Cost: a
+  shell's process group at the prompt, where a Ctrl-C reaches it. Cost: a
   resident process per bash tab.
-- **It ends at EOF or when the shell's pid exits**, whichever is first. bash has
-  no close-on-exec, so every command inherits descriptor 62, and an editor or
-  server started in the tab held the pipe open long after the tab closed.
+- **The inline loop traps neither interrupt nor quit**: bash starts an `&` job
+  with both ignored where job control is off, as inside the substitution, and
+  the helper inherits that. A Ctrl-C at the prompt left the loop running under
+  bash 3.2 and 5.3; one with interrupt reset to default lost every later line.
+- **The relay ends at EOF or when the shell's pid exits**, whichever is first.
+  bash has no close-on-exec, so every command inherits descriptor 62, and an
+  editor or server started in the tab held the pipe open long after the tab
+  closed.
 - **Find is the engine's search under a bar of ours**, driven by its three
   search actions. The bar is the app's, the engine's own being a GUI the
   embedding never shows.
