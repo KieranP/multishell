@@ -47,20 +47,20 @@ extension AppModel {
     }
     recordDefaultBranch(inputs.base, of: project.id)
 
-    let plan = planMergeChecks(of: project.id, against: inputs)
+    let plan = planMergeReads(of: project.id, against: inputs)
     forgetMergeStates(ofWorktrees: plan.unbadgeable)
-    // The rest keep their stale check, so the next round asks them. A branch
+    // The rest keep their stale basis, so the next round asks them. A branch
     // checked out in two worktrees is asked about once.
     let admitted = mergeReads.admit(plan.toAsk.map(\.id), sharingRound: sharingRound)
     let asking = Set(plan.toAsk.filter { admitted.contains($0.id) }.map(\.branch))
     let fresh = await coordinator.readMerges(of: asking.sorted(), in: project, inputs: inputs)
-    recordMergeReadings(fresh, checks: plan.checks, of: project.id)
+    recordMergeReadings(fresh, verdictBases: plan.verdictBases, of: project.id)
   }
 
   /// What each of the project's worktrees would be checked against, which of
   /// those have moved since their answer, and which can carry no badge.
-  private func planMergeChecks(of id: Project.ID, against inputs: MergeInputs) -> MergeCheckPlan {
-    var plan = MergeCheckPlan()
+  private func planMergeReads(of id: Project.ID, against inputs: MergeInputs) -> MergeReadPlan {
+    var plan = MergeReadPlan()
     for worktree in workspace.worktrees(of: id) {
       // A stage keeps what it earned and is asked nothing; a claimed path
       // forgets, the last checkout there being gone. See worktrees.md.
@@ -72,12 +72,14 @@ extension AppModel {
         plan.unbadgeable.append(worktree.id)
         continue
       }
-      let check = MergeCheck(
+      let basis = MergeVerdictBasis(
         base: inputs.base.shortName, baseTip: inputs.base.tip, branch: branch, branchTip: tip,
         upstreamIsGone: inputs.upstreamIsGone(branch))
-      plan.checks[worktree.id] = check
+      plan.verdictBases[worktree.id] = basis
       // Nothing has moved since the answer we have, so nothing to ask.
-      guard mergeChecks[worktree.id] != check || mergeStates[worktree.id] == nil else { continue }
+      guard mergeVerdictBases[worktree.id] != basis || mergeStates[worktree.id] == nil else {
+        continue
+      }
       plan.toAsk.append((worktree.id, branch))
     }
     return plan
@@ -86,19 +88,20 @@ extension AppModel {
   /// The worktrees may have changed under the git calls; only what is still
   /// there and still on the branch it was checked on is kept.
   private func recordMergeReadings(
-    _ fresh: [String: MergeReading], checks: [Worktree.ID: MergeCheck], of id: Project.ID
+    _ fresh: [String: MergeReading], verdictBases: [Worktree.ID: MergeVerdictBasis],
+    of id: Project.ID
   ) {
     for worktree in workspace.worktrees(of: id) {
-      guard let check = checks[worktree.id], check.branch == worktree.branch,
-        let reading = fresh[check.branch], !isBeingWritten(worktree)
+      guard let basis = verdictBases[worktree.id], basis.branch == worktree.branch,
+        let reading = fresh[basis.branch], !isBeingWritten(worktree)
       else { continue }
       // A failed read is logged too, or it sorts first every round at the guess.
       mergeReads.remember([worktree.id: reading.took])
-      // Only an answer settles it: stamping the check for a failed read
+      // Only an answer settles it: stamping the basis for a failed read
       // pins the old verdict to the new tip for good.
       guard let state = reading.state else { continue }
       setIfChanged(\.mergeStates[worktree.id], state)
-      mergeChecks[worktree.id] = check
+      mergeVerdictBases[worktree.id] = basis
     }
   }
 
@@ -118,13 +121,13 @@ extension AppModel {
   func forgetMergeStates(ofWorktrees ids: some Sequence<Worktree.ID>) {
     let gone = Set(ids)
     setIfChanged(\.mergeStates, mergeStates.filter { !gone.contains($0.key) })
-    mergeChecks = mergeChecks.filter { !gone.contains($0.key) }
+    mergeVerdictBases = mergeVerdictBases.filter { !gone.contains($0.key) }
     mergeReads.forget(gone)
   }
 
   /// Where a project's default branch has gone: its badges are about a base
   /// that no longer applies. A removed project goes through `forgetWorktrees`.
-  func forgetMergeStates(ofProject project: Project.ID) {
-    forgetMergeStates(ofWorktrees: workspace.worktrees(of: project).map(\.id))
+  func forgetMergeStates(ofProject id: Project.ID) {
+    forgetMergeStates(ofWorktrees: workspace.worktrees(of: id).map(\.id))
   }
 }

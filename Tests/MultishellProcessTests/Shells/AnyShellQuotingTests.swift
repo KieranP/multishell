@@ -7,23 +7,15 @@ import Testing
 @Suite
 struct AnyShellQuotingTests {
   @Test(arguments: ["/bin/sh", "/bin/zsh", "/bin/bash", "/bin/dash", "/bin/tcsh"])
-  func aWordQuotedForAnyShellReadsTheSameInEach(shell: String) throws {
+  func aWordQuotedForAnyShellReadsTheSameInEach(shell: String) async throws {
     guard FileManager.default.isExecutableFile(atPath: shell) else { return }
     let words = [#"a\"#, "it's", #"\'"#, #"back\slash"#, "My Projects", "$HOME", "plain"]
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: shell)
-    process.arguments = [
-      "-c",
-      "/usr/bin/printf '%s\\n' " + words.map(AnyShellQuoting.quote).joined(separator: " "),
-    ]
-    process.environment = ["PATH": "/usr/bin:/bin", "HISTFILE": ""]
-    let pipe = Pipe()
-    process.standardOutput = pipe
-    try process.run()
-    let data = pipe.fileHandleForReading.readDataToEndOfFile()
-    process.waitUntilExit()
+    let output = try await Detached.output(
+      of: shell,
+      ["-c", "/usr/bin/printf '%s\\n' " + words.map(AnyShellQuoting.quote).joined(separator: " ")],
+      environment: ["PATH": "/usr/bin:/bin", "HISTFILE": ""], standardError: .discarded)
 
-    #expect(String(decoding: data, as: UTF8.self) == words.map { $0 + "\n" }.joined())
+    #expect(output == words.map { $0 + "\n" }.joined())
   }
 
   @Test(arguments: [
@@ -37,7 +29,7 @@ struct AnyShellQuotingTests {
     defer { Scratch.remove(home) }
     let word = "a!b.txt"
     let text = try await Detached.output(
-      of: shell, flags, environment: ["PATH": "/usr/bin:/bin", "HISTFILE": "", "HOME": home.path],
+      of: shell, flags, environment: Scratch.bareShellEnvironment(home: home),
       input: "/usr/bin/printf '[%s]\\n' \(AnyShellQuoting.quote(word))\nexit\n")
 
     #expect(text.contains("[\(word)]"), "\(text)")

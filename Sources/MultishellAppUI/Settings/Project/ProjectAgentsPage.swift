@@ -34,13 +34,13 @@ struct ProjectAgentsPage: View {
       }
 
       OverrideSection(
-        model: model, project: project, setting: .autoStartAgent, global: \.autoStartAgent,
+        model: model, project: project, setting: .autoStartsAgent, global: \.autoStartsAgent,
         label: t("agents.auto-start-tab"),
         info: t("project.auto-start-tab-info"))
 
       OverrideSection(
-        model: model, project: project, setting: .autoStartAgentOnCreate,
-        global: \.autoStartAgentOnCreate,
+        model: model, project: project, setting: .autoStartsAgentOnCreate,
+        global: \.autoStartsAgentOnCreate,
         label: t("agents.auto-start-create"),
         info: t("project.auto-start-create-info"))
     }

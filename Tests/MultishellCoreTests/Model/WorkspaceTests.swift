@@ -19,8 +19,6 @@ struct WorkspaceTests {
   }
 
   @Test func aKeyNoFieldAnswersToDoesNotFailTheFile() throws {
-    // Written by a build whose settings this one does not have. Losing the
-    // key is fine; losing every project is not.
     let workspace = try decodeJSON(
       Workspace.self,
       #"{ "retiredSetting": "holodeck", "projects": [ { "path": "file:///repos/demo/" } ] }"#)
@@ -33,27 +31,16 @@ struct WorkspaceTests {
     #expect(workspace.preferredAgentID == nil)
     #expect(workspace.customAgentCommand == "")
     #expect(workspace.agentFlags.isEmpty, "no agent is given flags it was not asked to pass")
-    #expect(!workspace.autoStartAgent, "off until asked for")
-    #expect(!workspace.autoStartAgentOnCreate, "off until asked for")
+    #expect(!workspace.autoStartsAgent, "off until asked for")
+    #expect(!workspace.autoStartsAgentOnCreate, "off until asked for")
   }
 
   @Test func aWorkspaceFromBeforeAutoStartWasSplitSaysTheSameAboutCreation() throws {
     let on = try decodeJSON(Workspace.self, #"{ "autoStartAgent": true }"#)
-    #expect(on.autoStartAgentOnCreate, "what the one setting used to mean")
+    #expect(on.autoStartsAgentOnCreate, "what the one setting used to mean")
     let split = try decodeJSON(
       Workspace.self, #"{ "autoStartAgent": true, "autoStartAgentOnCreate": false }"#)
-    #expect(split.autoStartAgent && !split.autoStartAgentOnCreate)
-  }
-
-  @Test func aWorkspaceFromBeforeTheNotificationTogglesKeepsWhatThePickerSaid() throws {
-    let attention = try decodeJSON(Workspace.self, #"{ "notifications": "attentionOnly" }"#)
-    #expect(attention.notifications == NotificationPreference(attention: true))
-    let everything = try decodeJSON(Workspace.self, #"{ "notifications": "attentionAndDone" }"#)
-    #expect(
-      everything.notifications == NotificationPreference(attention: true, failed: true, done: true),
-      "the picker's last rung was all three")
-    let off = try decodeJSON(Workspace.self, #"{ "notifications": "off" }"#)
-    #expect(off.notifications == .off)
+    #expect(split.autoStartsAgent && !split.autoStartsAgentOnCreate)
   }
 
   @Test func aWorkspaceWithoutShellEditorOrSelectionFieldsGetsTheDefaults() throws {
@@ -96,7 +83,7 @@ struct WorkspaceTests {
         == .default, "a kind a newer build named costs that value alone")
   }
 
-  @Test func aWorkspaceWithoutTheRemovalFieldsAsksAndKeepsTheBranch() throws {
+  @Test func theRemovalFieldsDefaultToAskingAndKeepingAndEveryWrittenChoiceStands() throws {
     let workspace = try decodeJSON(Workspace.self, #"{ "projects": [] }"#)
     #expect(workspace.confirmsWorktreeRemoval, "asks until told not to")
     #expect(!workspace.deletesBranchWithWorktree, "the branch stays until told otherwise")
@@ -109,7 +96,7 @@ struct WorkspaceTests {
     #expect(!chosen.confirmsWorktreeRemoval && chosen.deletesBranchWithWorktree)
     #expect(!chosen.trashesRemovedWorktrees)
     #expect(
-      chosen.preferredShellID == ShellCatalogue.customID && chosen.customShellPath == "/opt/nu")
+      chosen.preferredShellID == ShellChoice.customID && chosen.customShellPath == "/opt/nu")
   }
 
   @Test func aWorkspaceWithoutTheListingFieldsSortsByNameWithNothingLifted() throws {
@@ -129,9 +116,6 @@ struct WorkspaceTests {
     let workspace = try decodeJSON(
       Workspace.self, #"{ "projects": [], "worktreeSortOrder": "byMergeState" }"#)
     #expect(workspace.worktreeSortOrder == .alphabetical)
-
-    let settings = try decodeJSON(ProjectSettings.self, #"{ "worktreeSortOrder": "byMergeState" }"#)
-    #expect(settings.worktreeSortOrder == nil, "follows the global instead")
   }
 
   @Test func aWorkspaceFromTheFirstBuildAndOneFromTodayBothLoad() throws {

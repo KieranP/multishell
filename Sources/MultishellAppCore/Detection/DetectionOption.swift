@@ -15,14 +15,14 @@ extension DetectionOption {
   /// the selected one if it is not, an unknown id, then Custom.
   static func catalogueOptions(
     _ entries: [(id: String, name: String)],
-    installed: (String) -> Bool,
+    isInstalled: (String) -> Bool,
     selected: String?,
     noneID: String,
     customID: String
   ) -> [DetectionOption] {
     var options = [DetectionOption(id: noneID, label: t("option.none"))]
     for entry in entries {
-      if installed(entry.id) {
+      if isInstalled(entry.id) {
         options.append(DetectionOption(id: entry.id, label: entry.name))
       } else if entry.id == selected {
         options.append(.notInstalled(entry.id, name: entry.name))

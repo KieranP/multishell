@@ -21,8 +21,8 @@ final class SidewaysWheelView: AccessibilityHiddenView {
     event.type == .scrollWheel && abs(event.scrollingDeltaY) > abs(event.scrollingDeltaX)
   }
 
-  /// The same event turned on its side, copied so phase and precision are
-  /// kept. Each field is written once, lines first: they are coupled, see the doc.
+  /// The same event turned on its side, copied to keep phase and precision.
+  /// Each field is written once, lines first, being coupled; see tabs-and-groups.md.
   private func sideways(_ event: NSEvent) -> NSEvent? {
     guard let swapped = event.cgEvent?.copy() else { return nil }
     let lines = swapped.getIntegerValueField(.scrollWheelEventDeltaAxis1)

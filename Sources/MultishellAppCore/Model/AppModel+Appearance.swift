@@ -21,7 +21,7 @@ extension AppModel {
   }
 
   /// Takes a font picker's row id, keeping the size; the divider is no choice.
-  public func setTerminalFontName(_ id: String) {
+  public func setTerminalFontPickerID(_ id: String) {
     guard id != DetectionOption.dividerID else { return }
     setTerminalFont(
       name: id == FontDetection.systemID ? nil : id, size: workspace.appearance.terminalFontSize)
@@ -29,15 +29,17 @@ extension AppModel {
 
   /// Takes the terminal size slider's value, keeping the family.
   public func setTerminalFontSize(_ size: Double) {
-    setTerminalFont(name: workspace.appearance.terminalFontName, size: size)
+    setTerminalFont(
+      name: workspace.appearance.terminalFontName,
+      size: size.clamped(to: Appearance.terminalFontSizes))
   }
 
   public func setUIFontSize(_ size: Double) {
-    store.setUIFontSize(size)
+    store.setUIFontSize(size.clamped(to: Appearance.uiFontSizes))
   }
 
   public func reloadThemes() {
-    let catalogue = ThemeCatalogue.load()
+    let catalogue = ThemeCatalogue.loadMovingStrayExamples()
     themes = catalogue.themes
     if let problem = catalogue.problems.first {
       presentedError = .themeUnreadable(problem)

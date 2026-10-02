@@ -33,7 +33,7 @@ extension AppModel {
       snapshot.asWritten == shared, snapshot.confined != confined
     else { return currentCopy(of: project) }
     snapshot.confined = confined
-    store.updateSharedSettings(snapshot, forProject: project.id)
+    store.setSharedSettings(snapshot, forProject: project.id)
     return currentCopy(of: project)
   }
 
@@ -61,7 +61,7 @@ extension AppModel {
     let changed = snapshot.asWritten != shared || firstRead
     snapshot.recordParsed(
       shared, confined: reading.confined, modificationDate: reading.modificationDate)
-    store.updateSharedSettings(snapshot, forProject: project.id)
+    store.setSharedSettings(snapshot, forProject: project.id)
     guard changed else { return }
     // A question already up is about a file the disk no longer has, and
     // trusting it would store an answer for bytes nobody committed.
@@ -86,7 +86,7 @@ extension AppModel {
       String(describing: error))
     let isNew = snapshot.problem != problem
     snapshot.recordFailure(problem: problem, modificationDate: reading.modificationDate)
-    store.updateSharedSettings(snapshot, forProject: project.id)
+    store.setSharedSettings(snapshot, forProject: project.id)
     if isNew { platform.log("\(project.name): \(problem)") }
   }
 }

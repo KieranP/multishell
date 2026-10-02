@@ -4,7 +4,7 @@ import MultishellProcess
 
 extension Helper {
   /// A report's pane, as `--session` or the app's environment names it. Not
-  /// a UUID is no pane, the report still reaching the worktree by its `cwd`.
+  /// a UUID is no pane, the report still reaching the worktree by its `workingDirectory`.
   static func sessionID(from text: String?) -> UUID? {
     text.flatMap { UUID(uuidString: $0) }
   }
@@ -13,6 +13,6 @@ extension Helper {
   /// from a prompt in one of its tabs that leaves the shell, whose exit clears.
   static func reportingPID(_ environment: [String: String]) -> Int32 {
     ProcessAncestry.reportingPID(
-      stoppingAt: environment[SessionEnvironment.appPIDKey].flatMap { Int32($0) })
+      stoppingAt: environment[SessionEnvironment.appPIDVariable].flatMap { Int32($0) })
   }
 }

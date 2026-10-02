@@ -87,7 +87,7 @@ public enum AccessibilityText {
   /// whether it is the one with the keyboard, its state and its workers.
   public static func pane(
     title: String, position: PanePosition?, isFocusedPane: Bool, state: SessionState?,
-    subagents: [Subagent], agentName: String?
+    workers: [Worker], agentName: String?
   ) -> String {
     // One pane of a split is not a tab, so only a whole tab is read as one.
     var parts = [position == nil ? t("spoken.tab", title) : title]
@@ -95,8 +95,17 @@ public enum AccessibilityText {
     if let position { parts.append(panePosition(position)) }
     if isFocusedPane { parts.append(t("spoken.selected")) }
     if let state { parts.append(state.displayName) }
-    if !subagents.isEmpty { parts.append(subagents.countText) }
+    if !workers.isEmpty { parts.append(workers.countText) }
     return parts.joined(separator: ", ")
+  }
+
+  /// The workers chip on a sidebar row or a board card: how many, then each
+  /// by kind. No times: they are read later than built, and cost a clock each.
+  public static func workers(_ workers: [Worker]) -> String {
+    let named = workers.map { worker in
+      [worker.displayName, worker.occurrenceText].compactMap { $0 }.joined(separator: " ")
+    }
+    return ([workers.countText] + named).joined(separator: ", ")
   }
 
   /// Which pane of a split, on a sidebar row and a board card alike.

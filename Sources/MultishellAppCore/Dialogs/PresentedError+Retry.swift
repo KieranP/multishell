@@ -3,6 +3,6 @@ extension PresentedError {
   /// set without the other.
   public struct Retry {
     public let label: String
-    public let action: @MainActor () async -> Void
+    let action: @MainActor () async -> Void
   }
 }

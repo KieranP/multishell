@@ -18,7 +18,7 @@ struct ProjectsSectionHeader: View {
       SidebarSortMenu(model: model, theme: theme, metrics: metrics)
     }
     .padding(.horizontal, 8)
-    .frame(height: 22)
+    .frame(height: UIMetrics.sectionHeaderHeight)
     .padding(.bottom, 2)
   }
 }

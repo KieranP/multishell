@@ -5,16 +5,16 @@ import MultishellProcess
 /// Runs the per-project hooks from `ProjectSettings`, context through the
 /// environment so a hook is a plain script; see Docs/design/hooks.md.
 public enum WorktreeHooks {
-  /// Returns at once when the stage's field is blank; `willRun` is called
+  /// Returns at once when the stage's field is blank; `onWillRun` is called
   /// only when there is a script, before it starts.
   static func run(
     _ stage: HookStage, for project: Project, worktreePath: URL, branch: String,
     shellPath: String? = nil, timeout: Duration? = nil, stopper: ProcessStopper? = nil,
-    willRun: () -> Void = {}
+    onWillRun: () -> Void = {}
   ) async throws {
     let script = trimmedScript(stage, in: project.settings)
     guard !script.isEmpty else { return }
-    willRun()
+    onWillRun()
 
     let environment = HookVariable.environment(
       project: project, worktreePath: worktreePath, branch: branch)
@@ -24,7 +24,7 @@ public enum WorktreeHooks {
     do {
       _ = try await ShellCommand.runScript(
         script, in: directory,
-        environment: environment, shellPath: shellPath ?? ShellCatalogue.loginShellPath(),
+        environment: environment, shellPath: shellPath ?? ShellChoice.loginShellPath(),
         timeout: timeout, stopper: stopper)
     } catch {
       throw HookFailure(stage: stage, underlying: error)

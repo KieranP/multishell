@@ -16,7 +16,7 @@ struct SelectedWorktreePanes: View {
         position: pane.position,
         isFocusedPane: pane.isFocused,
         state: pane.state,
-        subagents: pane.subagents,
+        workers: pane.workers,
         agentID: pane.agentID,
         agentName: pane.agentName,
         theme: theme,

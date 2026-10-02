@@ -9,7 +9,7 @@ struct RootView: View {
   let platform: MacPlatform
 
   /// Remembered per machine, not in the workspace: it is about this screen.
-  @AppStorage("sidebarWidth") private var sidebarWidth = 248.0
+  @AppStorage("sidebarWidth") private var sidebarWidth = SidebarWidth.initial
   /// Gesture state, not `@State`: a drag the system cancels never reaches
   /// `onEnded`, and this resets either way; see `SplitDivider`.
   @GestureState private var dragStartWidth: Double?
@@ -36,13 +36,15 @@ struct RootView: View {
     .presentedErrorAlert(model: model)
   }
 
-  /// The hairline between sidebar and detail, with an 8 pt grab area over it.
+  private static let resizeGrabWidth: Double = 8
+
+  /// The hairline between sidebar and detail, with a wider grab area over it.
   private func resizeHandle(_ theme: Theme, range: ClosedRange<Double>) -> some View {
     theme.hairline
-      .frame(width: 0.5)
+      .frame(width: UIMetrics.hairlineThickness)
       .overlay {
         Color.clear
-          .frame(width: 8)
+          .frame(width: Self.resizeGrabWidth)
           .contentShape(.rect)
           .pointerStyle(.columnResize(directions: .all))
           .gesture(
@@ -51,8 +53,8 @@ struct RootView: View {
                 if start == nil { start = sidebarWidth.clamped(to: range) }
               }
               .onChanged { value in
-                let start = (dragStartWidth ?? sidebarWidth).clamped(to: range)
-                sidebarWidth = (start + value.translation.width).clamped(to: range)
+                sidebarWidth = SidebarWidth.dragged(
+                  from: dragStartWidth ?? sidebarWidth, by: value.translation.width, in: range)
               }
           )
       }

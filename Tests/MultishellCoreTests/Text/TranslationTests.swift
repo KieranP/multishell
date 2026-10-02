@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellCore
@@ -8,14 +9,14 @@ import Testing
 struct TranslationTests {
   @Test func everyKeyTheCodeAsksForIsInTheCatalogue() throws {
     let catalogue = try Self.catalogue()
-    for site in try Self.callSites() {
+    for site in try TranslationCallSites.all() {
       let isKnown = catalogue[site.key] != nil || Self.countedForms.contains(site.key)
       #expect(isKnown, "\(site.where) asks for \(site.key), which is in neither catalogue file")
     }
   }
 
   @Test func theCatalogueHasNoEntryNothingAsksFor() throws {
-    let asked = Set(try Self.callSites().map(\.key))
+    let asked = Set(try TranslationCallSites.all().map(\.key))
     for key in try Self.catalogue().keys.sorted() + Self.countedForms.sorted() {
       // Not `asked.contains(key)` in the expectation itself: a failure
       // prints what it expanded, and that would be every key in the app.
@@ -28,14 +29,14 @@ struct TranslationTests {
   /// used to catch both at compile time.
   @Test func everyCallPassesTheArgumentsItsPhraseTakes() throws {
     let catalogue = try Self.catalogue()
-    for site in try Self.callSites() {
+    for site in try TranslationCallSites.all() {
       guard let english = catalogue[site.key] else { continue }
       let takes = Self.placeholders(in: english).count
       #expect(
         site.arguments == takes,
         "\(site.where) passes \(site.arguments) to \(site.key), which takes \(takes)")
     }
-    for site in try Self.callSites() where Self.countedForms.contains(site.key) {
+    for site in try TranslationCallSites.all() where Self.countedForms.contains(site.key) {
       #expect(site.arguments == 1, "\(site.where) counts with \(site.arguments) arguments")
     }
   }
@@ -117,7 +118,7 @@ struct TranslationTests {
   @Test func theBuiltCatalogueIsNotStale() throws {
     for name in ["Localizable.strings", "Localizable.stringsdict"] {
       let built = try #require(Bundle.coreResources.url(forResource: name, withExtension: nil))
-      let source = Self.checkout
+      let source = Checkout.root
         .appendingPathComponent("Sources/MultishellCore/Resources/en.lproj/\(name)")
       #expect(
         try Data(contentsOf: built) == (try Data(contentsOf: source)),
@@ -127,54 +128,6 @@ struct TranslationTests {
 
   @Test func aKeyWithNoEntryAnswersWithItself() {
     #expect(t("no.such.key") == "no.such.key")
-  }
-
-  private struct CallSite {
-    let key: String
-    let arguments: Int
-    let `where`: String
-  }
-
-  /// Arguments are counted by walking the brackets rather than by pattern, since an argument
-  /// is as often a call as a name.
-  private static func callSites() throws -> [CallSite] {
-    var sites: [CallSite] = []
-    for file in try swiftFiles() {
-      let text = try String(contentsOf: file, encoding: .utf8)
-      for match in text.matches(of: /\bt\(\s*"([^"]+)"/) {
-        sites.append(
-          CallSite(
-            key: String(match.output.1),
-            arguments: arguments(in: text, from: match.range.upperBound),
-            where: file.lastPathComponent))
-      }
-    }
-    #expect(sites.count > 100, "the source scan found almost nothing; is the path still right?")
-    return sites
-  }
-
-  /// Commas at the call's own bracket depth, after the key. Text in a
-  /// string literal is skipped, a comma inside one being no argument.
-  private static func arguments(in text: String, from start: String.Index) -> Int {
-    var depth = 1
-    var count = 0
-    var index = start
-    while index < text.endIndex, depth > 0 {
-      switch text[index] {
-      case "(", "[", "{": depth += 1
-      case ")", "]", "}": depth -= 1
-      case "," where depth == 1: count += 1
-      case "\"":
-        index = text.index(after: index)
-        while index < text.endIndex, text[index] != "\"" {
-          if text[index] == "\\" { index = text.index(after: index) }
-          index = text.index(after: index)
-        }
-      default: break
-      }
-      index = text.index(after: index)
-    }
-    return count
   }
 
   private static func placeholders(in english: String) -> [String] {
@@ -196,20 +149,4 @@ struct TranslationTests {
     else { return [] }
     return Set(entries.keys)
   }()
-
-  private static let checkout = URL(fileURLWithPath: #filePath)
-    .deletingLastPathComponent()  // Text
-    .deletingLastPathComponent()  // MultishellCoreTests
-    .deletingLastPathComponent()  // Tests
-    .deletingLastPathComponent()
-
-  /// Not the app's target, whose `t` answers from a catalogue of its own.
-  private static func swiftFiles() throws -> [URL] {
-    let start = checkout.appendingPathComponent("Sources")
-    let app = start.appendingPathComponent("MultishellAppUI").path + "/"
-    let walk = FileManager.default.enumerator(at: start, includingPropertiesForKeys: nil)
-    return (walk?.allObjects as? [URL] ?? []).filter {
-      $0.pathExtension == "swift" && !$0.path.hasPrefix(app)
-    }
-  }
 }

@@ -1,8 +1,8 @@
 import Foundation
-import MultishellCore
 import TestSupport
 import Testing
 
+@testable import MultishellCore
 @testable import MultishellGitKit
 
 @Suite(.serialized)
@@ -10,135 +10,105 @@ struct WorktreeGitRemovalTests {
   /// A repository-wide prune after the trash would also forget a worktree
   /// whose drive is unmounted at that moment; see Docs/design/worktrees.md.
   @Test func removingOneWorktreeKeepsAnotherWhoseDirectoryIsAway() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    try await repo.coordinator.createThenRunPostCreate(
-      branch: "gone", in: repo.project, settings: repo.worktreeSettings)
-    let away = try await repo.coordinator.createThenRunPostCreate(
-      branch: "away", in: repo.project, settings: repo.worktreeSettings)
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    try await fixture.coordinator.createThenRunPostCreate(
+      branch: "gone", in: fixture.project, settings: fixture.worktreeSettings)
+    let away = try await fixture.coordinator.createThenRunPostCreate(
+      branch: "away", in: fixture.project, settings: fixture.worktreeSettings)
     let aside = away.deletingLastPathComponent().appendingPathComponent("away-aside")
     try FileManager.default.moveItem(at: away, to: aside)
-    let gone = try await repo.worktree(onBranch: "gone")
+    let gone = try await fixture.worktree(onBranch: "gone")
 
-    try await repo.coordinator.removeUnlinking(gone, in: repo.project)
+    try await fixture.coordinator.removeUnlinking(gone, in: fixture.project)
 
-    let listed = try await repo.coordinator.git.list(repo.project)
+    let listed = try await fixture.coordinator.git.list(fixture.project)
     #expect(listed.map(\.branch) == ["main", "away"], "the away worktree is still on record")
     try FileManager.default.moveItem(at: aside, to: away)
-    #expect(try await repo.head(of: away) == repo.head(of: repo.project.path), "and works again")
+    #expect(
+      try await fixture.head(of: away) == fixture.head(of: fixture.project.path), "and works again")
   }
 
   @Test func forgettingAStaleRecordKeepsAnotherWorktreeWhoseDirectoryIsAway() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    let path = try await repo.coordinator.createThenRunPostCreate(
-      branch: "old", in: repo.project, settings: repo.worktreeSettings)
-    let away = try await repo.coordinator.createThenRunPostCreate(
-      branch: "away", in: repo.project, settings: repo.worktreeSettings)
-    let stale = try await repo.worktree(onBranch: "old")
-    try FileManager.default.removeItem(at: path)
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let (stale, path) = try await fixture.worktreeWithItsDirectoryGone()
+    let away = try await fixture.coordinator.createThenRunPostCreate(
+      branch: "away", in: fixture.project, settings: fixture.worktreeSettings)
     try FileManager.default.createDirectory(at: path, withIntermediateDirectories: false)
     let aside = away.deletingLastPathComponent().appendingPathComponent("away-aside")
     try FileManager.default.moveItem(at: away, to: aside)
 
-    try await repo.coordinator.removeUnlinking(stale, in: repo.project)
+    try await fixture.coordinator.removeUnlinking(stale, in: fixture.project)
 
-    let listed = try await repo.coordinator.git.list(repo.project)
+    let listed = try await fixture.coordinator.git.list(fixture.project)
     #expect(listed.map(\.branch) == ["main", "away"])
     try FileManager.default.moveItem(at: aside, to: away)
-    #expect(try await repo.head(of: away) == repo.head(of: repo.project.path))
+    #expect(try await fixture.head(of: away) == fixture.head(of: fixture.project.path))
   }
 
   @Test func aDirectoryThatTookAStaleRecordsPathIsNotTrashed() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    let path = try await repo.coordinator.createThenRunPostCreate(
-      branch: "old", in: repo.project, settings: repo.worktreeSettings)
-    let stale = try await repo.worktree(onBranch: "old")
-    try FileManager.default.removeItem(at: path)
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let (stale, path) = try await fixture.worktreeWithItsDirectoryGone()
     try FileManager.default.createDirectory(at: path, withIntermediateDirectories: false)
     let notes = path.appendingPathComponent("notes.txt")
     try "mine\n".write(to: notes, atomically: true, encoding: .utf8)
 
-    try await repo.coordinator.removeUnlinking(stale, in: repo.project)
+    try await fixture.coordinator.removeUnlinking(stale, in: fixture.project)
 
     #expect(FileManager.default.fileExists(atPath: notes.path))
-    #expect(try await repo.coordinator.git.list(repo.project).map(\.branch) == ["main"])
-  }
-
-  @Test func theDeleteHooksNeverRunAgainstADirectoryThatTookAStaleRecordsPath() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    var project = repo.project
-    let path = try await repo.coordinator.createThenRunPostCreate(
-      branch: "old", in: project, settings: repo.worktreeSettings)
-    let stale = try await repo.worktree(onBranch: "old", in: project)
-    try FileManager.default.removeItem(at: path)
-    try FileManager.default.createDirectory(at: path, withIntermediateDirectories: false)
-    project.settings = ProjectSettings(
-      preDeleteHook: "touch pre-ran \"$MULTISHELL_WORKTREE_PATH/pre-ran\"",
-      postDeleteHook: "touch \"$MULTISHELL_WORKTREE_PATH/post-ran\"")
-
-    try await repo.coordinator.removeUnlinking(stale, in: project, shellPath: "/bin/sh")
-
-    #expect(try FileManager.default.contentsOfDirectory(atPath: path.path).isEmpty)
-    #expect(try await repo.coordinator.git.list(project).map(\.branch) == ["main"])
+    #expect(try await fixture.coordinator.git.list(fixture.project).map(\.branch) == ["main"])
   }
 
   @Test func aLockedStaleRecordIsForgottenAndTheDirectoryAtItsPathKept() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    let path = try await repo.coordinator.createThenRunPostCreate(
-      branch: "old", in: repo.project, settings: repo.worktreeSettings)
-    _ = try await repo.runner.run(
-      ["worktree", "lock", "--reason", "external drive", path.path], in: repo.project.path)
-    let stale = try await repo.worktree(onBranch: "old")
-    try FileManager.default.removeItem(at: path)
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let (stale, path) = try await fixture.worktreeWithItsDirectoryGone(lockedFor: "external drive")
     try FileManager.default.createDirectory(at: path, withIntermediateDirectories: false)
     let notes = path.appendingPathComponent("notes.txt")
     try "mine\n".write(to: notes, atomically: true, encoding: .utf8)
 
-    try await repo.coordinator.removeUnlinking(stale, in: repo.project)
+    try await fixture.coordinator.removeUnlinking(stale, in: fixture.project)
 
     #expect(FileManager.default.fileExists(atPath: notes.path))
-    #expect(try await repo.coordinator.git.list(repo.project).map(\.branch) == ["main"])
+    #expect(try await fixture.coordinator.git.list(fixture.project).map(\.branch) == ["main"])
   }
 
   /// Stands in for a `safe.directory` refusal or a timeout inside the checkout alone.
   @Test func aCheckoutGitCannotReadIsStillRemovedWithItsHooks() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    var project = repo.project
-    let path = try await repo.coordinator.createThenRunPostCreate(
-      branch: "unread", in: project, settings: repo.worktreeSettings)
-    let worktree = try await repo.worktree(onBranch: "unread", in: project)
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    var project = fixture.project
+    let path = try await fixture.coordinator.createThenRunPostCreate(
+      branch: "unread", in: project, settings: fixture.worktreeSettings)
+    let worktree = try await fixture.worktree(onBranch: "unread", in: project)
     let fake = try FakeGit.make(
       """
       case "$*" in *--show-toplevel*) exit 128 ;; esac
       exec git "$@"
       """)
     defer { fake.tearDown() }
-    let ran = repo.root.appendingPathComponent("pre-ran")
+    let ran = fixture.root.appendingPathComponent("pre-ran")
     project.settings = ProjectSettings(preDeleteHook: "touch \"\(ran.path)\"")
-    let coordinator = WorktreeCoordinator(
-      git: WorktreeGit(runner: fake.runner, settlesNewIndex: false))
+    let coordinator = fake.coordinator
 
     try await coordinator.removeUnlinking(worktree, in: project, shellPath: "/bin/sh")
 
     #expect(FileManager.default.fileExists(atPath: ran.path))
     #expect(!FileManager.default.fileExists(atPath: path.path))
-    #expect(try await repo.coordinator.git.list(project).map(\.branch) == ["main"])
+    #expect(try await fixture.coordinator.git.list(project).map(\.branch) == ["main"])
   }
 
   /// git before 2.31 echoes `--path-format=absolute` back as an unknown flag
   /// and prints the common directory relative to where it ran.
   @Test func aCheckoutIsRemovedWithItsHooksOnAGitThatPredatesPathFormat() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    var project = repo.project
-    let path = try await repo.coordinator.createThenRunPostCreate(
-      branch: "older", in: project, settings: repo.worktreeSettings)
-    let worktree = try await repo.worktree(onBranch: "older", in: project)
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    var project = fixture.project
+    let path = try await fixture.coordinator.createThenRunPostCreate(
+      branch: "older", in: project, settings: fixture.worktreeSettings)
+    let worktree = try await fixture.worktree(onBranch: "older", in: project)
     let fake = try FakeGit.make(
       """
       if [ "$1" = rev-parse ]; then
@@ -150,10 +120,9 @@ struct WorktreeGitRemovalTests {
       exec git "$@"
       """)
     defer { fake.tearDown() }
-    let ran = repo.root.appendingPathComponent("pre-ran")
+    let ran = fixture.root.appendingPathComponent("pre-ran")
     project.settings = ProjectSettings(preDeleteHook: "touch \"\(ran.path)\"")
-    let coordinator = WorktreeCoordinator(
-      git: WorktreeGit(runner: fake.runner, settlesNewIndex: false))
+    let coordinator = fake.coordinator
 
     let common = try await coordinator.git.commonGitDirectory(project)
     try await coordinator.removeUnlinking(worktree, in: project, shellPath: "/bin/sh")
@@ -163,106 +132,62 @@ struct WorktreeGitRemovalTests {
         == project.path.appendingPathComponent(".git").resolvingSymlinksInPath().path)
     #expect(FileManager.default.fileExists(atPath: ran.path))
     #expect(!FileManager.default.fileExists(atPath: path.path))
-    #expect(try await repo.coordinator.git.list(project).map(\.branch) == ["main"])
+    #expect(try await fixture.coordinator.git.list(project).map(\.branch) == ["main"])
   }
 
   @Test func aCheckoutGitListsInAnotherCaseIsStillTheCheckout() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    let container = repo.root.appendingPathComponent("CaseDir", isDirectory: true)
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let container = fixture.root.appendingPathComponent("CaseDir", isDirectory: true)
     try FileManager.default.createDirectory(at: container, withIntermediateDirectories: true)
-    let spelled = repo.root.appendingPathComponent("casedir/wt")
-    _ = try await repo.runner.run(
-      ["worktree", "add", "-q", "-b", "cased", spelled.path], in: repo.project.path)
-    let cased = try await repo.worktree(onBranch: "cased")
+    let spelled = fixture.root.appendingPathComponent("casedir/wt")
+    _ = try await fixture.runner.run(
+      ["worktree", "add", "-q", "-b", "cased", spelled.path], in: fixture.project.path)
+    let cased = try await fixture.worktree(onBranch: "cased")
 
-    try await repo.coordinator.removeUnlinking(cased, in: repo.project)
+    try await fixture.coordinator.removeUnlinking(cased, in: fixture.project)
 
     #expect(!FileManager.default.fileExists(atPath: container.appendingPathComponent("wt").path))
-    #expect(try await repo.coordinator.git.list(repo.project).map(\.branch) == ["main"])
+    #expect(try await fixture.coordinator.git.list(fixture.project).map(\.branch) == ["main"])
   }
 
   @Test func aCloneThatTookAStaleRecordsPathIsNotTrashed() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    let path = try await repo.coordinator.createThenRunPostCreate(
-      branch: "old", in: repo.project, settings: repo.worktreeSettings)
-    let stale = try await repo.worktree(onBranch: "old")
-    try FileManager.default.removeItem(at: path)
-    _ = try await repo.runner.run(
-      ["clone", "-q", repo.project.path.path, path.path], in: repo.root)
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let (stale, path) = try await fixture.worktreeWithItsDirectoryGone()
+    _ = try await fixture.runner.run(
+      ["clone", "-q", fixture.project.path.path, path.path], in: fixture.root)
 
     await #expect(throws: WorktreePathTaken.self) {
-      try await repo.coordinator.removeUnlinking(stale, in: repo.project)
+      try await fixture.coordinator.removeUnlinking(stale, in: fixture.project)
     }
 
     #expect(FileManager.default.fileExists(atPath: path.appendingPathComponent(".git").path))
   }
 
-  @Test func aLockedWorktreeWhoseTrashRefusesStaysLocked() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    let path = try await repo.coordinator.createThenRunPostCreate(
-      branch: "pinned", in: repo.project, settings: repo.worktreeSettings)
-    _ = try await repo.runner.run(
-      ["worktree", "lock", "--reason", "external drive", path.path], in: repo.project.path)
-    let pinned = try await repo.worktree(onBranch: "pinned")
-    #expect(pinned.isLocked)
-
-    await #expect(throws: TrashFailure.self) {
-      try await repo.coordinator.remove(
-        pinned, in: repo.project, trash: { _ in throw CocoaError(.fileWriteNoPermission) })
-    }
-
-    let after = try await repo.worktree(onBranch: "pinned")
-    #expect(after.isLocked, "the lock and its reason are the user's")
-    let listed = try await repo.runner.run(
-      ["worktree", "list", "--porcelain"], in: repo.project.path)
-    #expect(listed.contains("locked external drive"))
-  }
-
-  /// `remove --force --force` on a directory still in place would unlink it,
-  /// so a Trash that returned without taking it must stop the removal.
-  @Test func aTrashThatTookNothingStopsBeforeGitIsAsked() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    let path = try await repo.coordinator.createThenRunPostCreate(
-      branch: "untouched", in: repo.project, settings: repo.worktreeSettings)
-    try "work\n".write(
-      to: path.appendingPathComponent("wip.txt"), atomically: true, encoding: .utf8)
-    let worktree = try await repo.worktree(onBranch: "untouched")
-
-    await #expect(throws: TrashFailure.self) {
-      try await repo.coordinator.remove(worktree, in: repo.project, trash: { _ in })
-    }
-
-    #expect(FileManager.default.fileExists(atPath: path.appendingPathComponent("wip.txt").path))
-    #expect(try await repo.coordinator.git.list(repo.project).count == 2, "still on record")
-  }
-
   @Test func aLockedWorktreeIsRemovedLockAndAll() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    let path = try await repo.coordinator.createThenRunPostCreate(
-      branch: "locked", in: repo.project, settings: repo.worktreeSettings)
-    _ = try await repo.runner.run(["worktree", "lock", path.path], in: repo.project.path)
-    let locked = try await repo.worktree(onBranch: "locked")
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let path = try await fixture.coordinator.createThenRunPostCreate(
+      branch: "locked", in: fixture.project, settings: fixture.worktreeSettings)
+    _ = try await fixture.runner.run(["worktree", "lock", path.path], in: fixture.project.path)
+    let locked = try await fixture.worktree(onBranch: "locked")
 
-    try await repo.coordinator.removeUnlinking(locked, in: repo.project)
+    try await fixture.coordinator.removeUnlinking(locked, in: fixture.project)
 
-    #expect(try await repo.coordinator.git.list(repo.project).map(\.branch) == ["main"])
+    #expect(try await fixture.coordinator.git.list(fixture.project).map(\.branch) == ["main"])
   }
 
   @Test func removingAWorktreeWhoseDirectoryIsGonePrunesIt() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    let project = repo.project
-    let coordinator = repo.coordinator
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let project = fixture.project
+    let coordinator = fixture.coordinator
     let path = try await coordinator.createThenRunPostCreate(
-      branch: "ghost", in: project, settings: repo.worktreeSettings)
+      branch: "ghost", in: project, settings: fixture.worktreeSettings)
     try FileManager.default.removeItem(at: path)
 
-    let ghost = try await repo.worktree(onBranch: "ghost")
+    let ghost = try await fixture.worktree(onBranch: "ghost")
     try await coordinator.removeUnlinking(ghost, in: project)
 
     #expect(try await coordinator.git.list(project).count == 1)
@@ -274,9 +199,7 @@ struct WorktreeGitRemovalTests {
     let fake = try FakeGit.make("exit 128")
     defer { fake.tearDown() }
     let project = Project(path: fake.directory)
-    let worktree = Worktree(
-      path: fake.directory.appendingPathComponent("gone"), projectID: project.id, head: "a",
-      branch: "gone")
+    let worktree = goneWorktree(of: project, in: fake)
 
     await #expect(throws: WorktreeForgetFailure.self) {
       try await WorktreeGit(runner: fake.runner).forget(worktree, in: project)
@@ -296,9 +219,7 @@ struct WorktreeGitRemovalTests {
       """)
     defer { fake.tearDown() }
     let project = Project(path: fake.directory)
-    let worktree = Worktree(
-      path: fake.directory.appendingPathComponent("gone"), projectID: project.id, head: "a",
-      branch: "gone")
+    let worktree = goneWorktree(of: project, in: fake)
 
     await #expect(throws: WorktreeForgetFailure.self) {
       try await WorktreeGit(runner: fake.runner).forget(worktree, in: project)
@@ -316,9 +237,7 @@ struct WorktreeGitRemovalTests {
       """)
     defer { fake.tearDown() }
     let project = Project(path: fake.directory)
-    let worktree = Worktree(
-      path: fake.directory.appendingPathComponent("gone"), projectID: project.id, head: "a",
-      branch: "gone")
+    let worktree = goneWorktree(of: project, in: fake)
 
     await #expect(throws: WorktreeForgetFailure.self) {
       try await WorktreeGit(runner: fake.runner).forget(worktree, in: project)
@@ -336,9 +255,7 @@ struct WorktreeGitRemovalTests {
       """)
     defer { fake.tearDown() }
     let project = Project(path: fake.directory)
-    let worktree = Worktree(
-      path: fake.directory.appendingPathComponent("gone"), projectID: project.id, head: "a",
-      branch: "gone")
+    let worktree = goneWorktree(of: project, in: fake)
 
     try await WorktreeGit(runner: fake.runner).forget(worktree, in: project)
   }
@@ -356,5 +273,12 @@ struct WorktreeGitRemovalTests {
       head: "2222222", branch: "gone")
 
     try await WorktreeGit(runner: fake.runner).forget(gone, in: Project(path: fake.directory))
+  }
+
+  /// A worktree on branch `gone` whose directory was never made.
+  private func goneWorktree(of project: Project, in fake: FakeGit) -> Worktree {
+    Worktree(
+      path: fake.directory.appendingPathComponent("gone"), projectID: project.id, head: "a",
+      branch: "gone")
   }
 }

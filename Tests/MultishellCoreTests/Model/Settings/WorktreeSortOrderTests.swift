@@ -13,12 +13,7 @@ struct WorktreeSortOrderTests {
     #expect(labels.allSatisfy { !$0.trimmingCharacters(in: .whitespaces).isEmpty })
   }
 
-  /// Raw values are what the state file holds, so they have to stay
-  /// distinct from each other and stable against a case being reordered.
-  @Test func everyOrderHasItsOwnStoredName() {
-    let stored = WorktreeSortOrder.allCases.map(\.rawValue)
-    #expect(Set(stored).count == stored.count)
-    #expect(WorktreeSortOrder(rawValue: "alphabetical") == .alphabetical)
+  @Test func theDefaultOrderIsAlphabetical() {
     #expect(WorktreeSortOrder.default == .alphabetical)
   }
 

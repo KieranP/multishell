@@ -5,15 +5,8 @@ import Testing
 
 @Suite
 struct AgentFlagsTests {
-  private let project = Project(path: URL(fileURLWithPath: "/Users/dev/Work/multishell"))
-  private var worktree: Worktree {
-    Worktree(
-      path: URL(fileURLWithPath: "/Users/dev/Work/multishell-worktrees/fix"),
-      projectID: project.id, head: "abc1234", branch: "kieran/fix")
-  }
-  private var values: [AgentPlaceholder: String] {
-    AgentPlaceholder.values(project: project, worktree: worktree, worktreeName: "The fix")
-  }
+  private let project = WorktreePlaceholder.sampleProject
+  private var values: [WorktreePlaceholder: String] { WorktreePlaceholder.sampleValues }
 
   @Test func aFlagLineBecomesArgumentsWithItsPlaceholdersFilledIn() {
     #expect(
@@ -71,7 +64,7 @@ struct AgentFlagsTests {
     let odd = Worktree(
       path: URL(fileURLWithPath: "/Users/dev/Work/multishell-worktrees/odd"),
       projectID: project.id, head: "abc1234", branch: "feat/{{project}}")
-    let values = AgentPlaceholder.values(
+    let values = WorktreePlaceholder.values(
       project: project, worktree: odd, worktreeName: "{{project_path}}")
 
     #expect(
@@ -82,25 +75,6 @@ struct AgentFlagsTests {
         == ["MULTISHELL_BRANCH": "feat/{{project}}"])
   }
 
-  @Test func everyPlaceholderHasAValue() {
-    let values = self.values
-    #expect(values[.branch] == "kieran/fix")
-    #expect(values[.worktree] == "The fix")
-    #expect(values[.worktreePath] == "/Users/dev/Work/multishell-worktrees/fix")
-    #expect(values[.project] == "multishell")
-    #expect(values[.projectPath] == "/Users/dev/Work/multishell")
-    #expect(
-      values.count == AgentPlaceholder.allCases.count, "a case with no value expands to nothing")
-  }
-
-  @Test func aDetachedWorktreeFallsBackToItsShortSHA() {
-    let detached = Worktree(
-      path: URL(fileURLWithPath: "/w"), projectID: project.id, head: "abc1234def")
-    let values = AgentPlaceholder.values(
-      project: project, worktree: detached, worktreeName: "abc1234")
-    #expect(values[.branch] == "abc1234", "never the empty string: `--name=` is worse")
-  }
-
   /// A branch name is whatever anyone pushed, and both paths hand it to a shell.
   /// TabCommandTests runs the flag path through real shells.
   @Test func aBranchNameCannotRunACommandOnEitherPath() {
@@ -108,7 +82,7 @@ struct AgentFlagsTests {
       let worktree = Worktree(
         path: URL(fileURLWithPath: "/repos/demo-worktrees/w"), projectID: project.id, head: "a",
         branch: hostile)
-      let values = AgentPlaceholder.values(
+      let values = WorktreePlaceholder.values(
         project: project, worktree: worktree, worktreeName: hostile)
 
       let flags = AgentFlags.arguments("--name={{branch}}", values: values)
@@ -118,24 +92,5 @@ struct AgentFlagsTests {
       #expect(custom.text == "my-agent --name=\"$MULTISHELL_BRANCH\"", "read, never written in")
       #expect(custom.environment == ["MULTISHELL_BRANCH": hostile])
     }
-  }
-
-  @Test func theCustomLineReadsEachPlaceholderFromTheEnvironmentWhereItsQuoteLeavesIt() {
-    let line = AgentCatalogue.customCommandLine(
-      #"my-agent --name={{worktree}} "in {{project_path}}" 'at {{worktree_path}}' {{nonsense}}"#,
-      values: values)
-    #expect(
-      line.text
-        == #"my-agent --name="$MULTISHELL_WORKTREE_NAME" "in ""$MULTISHELL_PROJECT_PATH""" 'at '"$MULTISHELL_WORKTREE_PATH"'' {{nonsense}}"#
-    )
-    #expect(
-      line.environment == [
-        "MULTISHELL_WORKTREE_NAME": "The fix",
-        "MULTISHELL_PROJECT_PATH": "/Users/dev/Work/multishell",
-        "MULTISHELL_WORKTREE_PATH": "/Users/dev/Work/multishell-worktrees/fix",
-      ], "only what the line names")
-    #expect(
-      AgentCatalogue.customCommandLine(#"my-agent \{{branch}}"#, values: values).text
-        == #"my-agent \{{branch}}"#, "an escaped brace is the user's text")
   }
 }

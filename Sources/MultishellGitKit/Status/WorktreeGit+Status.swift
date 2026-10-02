@@ -52,7 +52,7 @@ extension WorktreeGit {
       let output = await runner.output(
         ["--no-optional-locks", "ls-files", "--others", "--exclude-standard", "-z"], in: path)
     else { return LineCounts() }
-    let paths = UntrackedPathParser.parse(output, limit: UntrackedLineCounter.fileLimit)
+    let paths = NulPathListParser.parse(output, limit: UntrackedLineCounter.fileLimit)
     guard !paths.isEmpty else { return LineCounts() }
     let memo = readState.untrackedMemo
     return await offMain { UntrackedLineCounter.count(paths: paths, in: path, memo: memo) }

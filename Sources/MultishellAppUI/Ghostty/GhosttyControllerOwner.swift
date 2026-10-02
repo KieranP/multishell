@@ -20,7 +20,7 @@ final class GhosttyControllerOwner {
     if let cachedController { return cachedController }
     let base = GhosttyUserConfig.base()
     let made = TerminalController(configSource: .generated(base))
-    GhosttyUserConfig.repair(made, base: base)
+    GhosttyConfigRepair.repair(made, base: base)
     cachedController = made
     lastConfigBase = base
     if let latestTheme { _ = made.setTheme(latestTheme) }

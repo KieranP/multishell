@@ -28,6 +28,12 @@ public enum Scratch {
     return url
   }
 
+  /// A shell's whole environment: the system PATH, no history file, and a
+  /// scratch home, so nothing of the developer's is read or written.
+  public static func bareShellEnvironment(home: URL) -> [String: String] {
+    ["PATH": "/usr/bin:/bin", "HISTFILE": "", "HOME": home.path]
+  }
+
   /// A socket path under `/tmp`, not `$TMPDIR`: `sun_path` allows 104 bytes
   /// and the macOS temp directory alone is near that.
   public static func socketPath(_ tag: String) -> URL {
@@ -43,6 +49,14 @@ public enum Scratch {
   /// developer's own. Empty, not absent, as `ProcessRunner` merges it over its own environment.
   public static var shellEnvironment: [String: String] {
     ShellInvocation.historyless(ProcessInfo.processInfo.environment)
+  }
+
+  /// As `realpath` gives it, which a shell's `pwd -P` matches: `/private/var`
+  /// where Foundation says `/var`. `nil` for a path that does not exist.
+  public static func physicalPath(of url: URL) -> String? {
+    guard let resolved = realpath(url.path, nil) else { return nil }
+    defer { free(resolved) }
+    return String(cString: resolved)
   }
 
   /// Removes a path if it is there, for a `defer` or a `tearDown`.

@@ -120,6 +120,6 @@ extension AppModel {
     if let pending = pendingWorktreeRemoval, gone.contains(pending.worktree.id) {
       pendingWorktreeRemoval = nil
     }
-    if let latest = latestRemovalRequest, gone.contains(latest) { latestRemovalRequest = nil }
+    if let latest = latestRemovalRequestID, gone.contains(latest) { latestRemovalRequestID = nil }
   }
 }

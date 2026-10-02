@@ -11,74 +11,75 @@ struct AppModelWorktreeLookupTests {
   /// A worktree added through a symlink chain has a long written path and a short real one,
   /// and a worktree nested inside its real path is deeper.
   @Test func depthIsMeasuredOnTheSpellingThatMatched() throws {
-    let h = Harness()
+    let harness = Harness()
     let files = FileManager.default
-    let real = h.main.path.appendingPathComponent("real")
+    let real = harness.main.path.appendingPathComponent("real")
     let inner = real.appendingPathComponent("wt/inner")
     try files.createDirectory(at: inner, withIntermediateDirectories: true)
-    let chain = h.main.path.appendingPathComponent("a/b/c")
+    let chain = harness.main.path.appendingPathComponent("a/b/c")
     try files.createDirectory(at: chain, withIntermediateDirectories: true)
     let link = chain.appendingPathComponent("d")
     try files.createSymbolicLink(at: link, withDestinationURL: real)
     let outer = Worktree(
-      path: link.appendingPathComponent("wt"), projectID: h.project.id, head: "c", branch: "outer")
-    let nested = Worktree(path: inner, projectID: h.project.id, head: "d", branch: "nested")
-    h.store.replaceWorktrees([h.main, outer, nested], forProject: h.project.id)
+      path: link.appendingPathComponent("wt"), projectID: harness.project.id, head: "c",
+      branch: "outer")
+    let nested = Worktree(path: inner, projectID: harness.project.id, head: "d", branch: "nested")
+    harness.store.replaceWorktrees([harness.main, outer, nested], forProject: harness.project.id)
 
     let report = inner.appendingPathComponent("src").path
-    #expect(h.model.worktree(atPath: report)?.id == nested.id, "the real path is the deeper one")
     #expect(
-      h.model.worktree(atPath: real.appendingPathComponent("wt/lib").path)?.id == outer.id,
+      harness.model.worktree(atPath: report)?.id == nested.id, "the real path is the deeper one")
+    #expect(
+      harness.model.worktree(atPath: real.appendingPathComponent("wt/lib").path)?.id == outer.id,
       "and the outer one is still found through its real path")
   }
 
-  @Test func aWorktreeNobodyPollsIsFoundByItsRealPathAReportAfterItsDirectoryReturns()
+  @Test func aReportFromAWorktreeWhoseDirectoryCameBackFindsItByItsRealPath()
     async throws
   {
-    let h = Harness()
-    let files = FileManager.default
-    let real = h.main.path.appendingPathComponent("real")
-    try files.createDirectory(at: real, withIntermediateDirectories: true)
-    let link = h.main.path.appendingPathComponent("link")
-    try files.createSymbolicLink(at: link, withDestinationURL: real)
-    let linked = Worktree(
-      path: link.appendingPathComponent("wt"), projectID: h.project.id, head: "c",
-      branch: "linked")
-    h.store.replaceWorktrees([h.main, linked], forProject: h.project.id)
+    let harness = Harness()
+    let (linked, real) = try worktreeListedThroughASymlink(harness)
     let report = real.appendingPathComponent("wt/src").path
-    _ = h.model.worktree(atPath: report)
-    try await waitUntil { h.model.worktreesResolvedWhileMissing.contains(linked.id) }
-    try files.createDirectory(
+    _ = harness.model.worktree(atPath: report)
+    try await waitUntil { harness.model.worktreesResolvedWhileMissing.contains(linked.id) }
+    try FileManager.default.createDirectory(
       at: real.appendingPathComponent("wt"), withIntermediateDirectories: true)
 
-    _ = h.model.worktree(atPath: report)
-    try await waitUntil { h.model.worktreesResolvedWhileMissing.isEmpty }
+    _ = harness.model.worktree(atPath: report)
+    try await waitUntil { harness.model.worktreesResolvedWhileMissing.isEmpty }
 
-    #expect(h.model.worktree(atPath: report)?.id == linked.id)
+    #expect(harness.model.worktree(atPath: report)?.id == linked.id)
   }
 
   @Test func aWorktreeLookedUpWhileItsDirectoryWasMissingIsFoundByItsRealPathOnceItIsSeen()
     async throws
   {
-    let h = Harness()
-    let files = FileManager.default
-    let real = h.main.path.appendingPathComponent("real")
-    try files.createDirectory(at: real, withIntermediateDirectories: true)
-    let link = h.main.path.appendingPathComponent("link")
-    try files.createSymbolicLink(at: link, withDestinationURL: real)
-    let linked = Worktree(
-      path: link.appendingPathComponent("wt"), projectID: h.project.id, head: "c",
-      branch: "linked")
-    h.store.replaceWorktrees([h.main, linked], forProject: h.project.id)
+    let harness = Harness()
+    let (linked, real) = try worktreeListedThroughASymlink(harness)
     let report = real.appendingPathComponent("wt/src").path
-    #expect(h.model.worktree(atPath: report)?.id == h.main.id)
-    #expect(h.model.resolvedWorktreeComponents[linked.id] != nil, "kept, not walked per report")
-    try await waitUntil { h.model.worktreesResolvedWhileMissing.contains(linked.id) }
+    #expect(harness.model.worktree(atPath: report)?.id == harness.main.id)
+    #expect(
+      harness.model.resolvedWorktreeComponents[linked.id] != nil, "kept, not walked per report")
+    try await waitUntil { harness.model.worktreesResolvedWhileMissing.contains(linked.id) }
 
-    try files.createDirectory(
+    try FileManager.default.createDirectory(
       at: real.appendingPathComponent("wt"), withIntermediateDirectories: true)
-    h.model.select(linked)
+    harness.model.select(linked)
 
-    #expect(h.model.worktree(atPath: report)?.id == linked.id)
+    #expect(harness.model.worktree(atPath: report)?.id == linked.id)
+  }
+
+  /// A worktree git lists under `link/wt`, where `link` leads to `real`, its
+  /// directory not made yet.
+  private func worktreeListedThroughASymlink(_ harness: Harness) throws -> (Worktree, real: URL) {
+    let real = harness.main.path.appendingPathComponent("real")
+    try FileManager.default.createDirectory(at: real, withIntermediateDirectories: true)
+    let link = harness.main.path.appendingPathComponent("link")
+    try FileManager.default.createSymbolicLink(at: link, withDestinationURL: real)
+    let linked = Worktree(
+      path: link.appendingPathComponent("wt"), projectID: harness.project.id, head: "c",
+      branch: "linked")
+    harness.store.replaceWorktrees([harness.main, linked], forProject: harness.project.id)
+    return (linked, real)
   }
 }

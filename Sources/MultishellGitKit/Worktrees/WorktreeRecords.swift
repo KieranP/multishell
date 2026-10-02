@@ -5,17 +5,17 @@ import Foundation
 public struct WorktreeRecords: Hashable, Sendable {
   let files: [String: String]
 
-  public static func read(commonDirectory: URL) -> WorktreeRecords {
+  public static func read(in common: URL) -> WorktreeRecords {
     var files: [String: String] = [:]
     func readFile(_ relative: String) {
-      let url = commonDirectory.appendingPathComponent(relative)
+      let url = common.appendingPathComponent(relative)
       if let data = try? Data(contentsOf: url) {
         files[relative] = String(decoding: data, as: UTF8.self)
       }
     }
 
     readFile("HEAD")
-    let worktrees = worktreesDirectory(in: commonDirectory)
+    let worktrees = worktreesDirectory(in: common)
     let entries =
       (try? FileManager.default.contentsOfDirectory(atPath: worktrees.path))?.sorted() ?? []
     for entry in entries {

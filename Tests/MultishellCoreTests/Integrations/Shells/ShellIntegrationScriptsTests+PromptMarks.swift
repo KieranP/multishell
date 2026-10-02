@@ -50,18 +50,18 @@ extension ShellIntegrationScriptsTests {
     func output(termProgram: String?) async throws -> String {
       var environment = files.environment(termProgram: termProgram)
       environment["ZDOTDIR"] = files.zshDirectory.path
-      return try await interactiveShell(zsh, arguments: ["-i"], environment: environment)
+      return try await interactiveShellOutput(zsh, arguments: ["-i"], environment: environment)
     }
 
     let marked = try await output(termProgram: "ghostty")
-    #expect(marked.contains(Marks.claim))
-    #expect(marked.contains(Marks.input), "input start, or no cell is one a click can reach")
+    #expect(marked.contains(PromptMarks.claim))
+    #expect(marked.contains(PromptMarks.input), "input start, or no cell is one a click can reach")
     #expect(
-      marked.contains(Marks.output),
+      marked.contains(PromptMarks.output),
       "output start too, or the claim would stand while a program ran")
 
     let plain = try await output(termProgram: nil)
-    for mark in [Marks.claim, Marks.input, Marks.output] {
+    for mark in [PromptMarks.claim, PromptMarks.input, PromptMarks.output] {
       #expect(plain.contains(mark) == false, "a terminal that is not Ghostty is told nothing")
     }
   }
@@ -78,18 +78,18 @@ extension ShellIntegrationScriptsTests {
     func output(termProgram: String?) async throws -> String {
       var environment = files.environment(termProgram: termProgram)
       // The marks ride with the hooks, which do nothing outside a tab.
-      environment[SessionEnvironment.sessionKey] = "prompt-marks"
-      return try await interactiveShell(
+      environment[SessionEnvironment.sessionVariable] = "prompt-marks"
+      return try await interactiveShellOutput(
         bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment)
     }
 
     let marked = try await output(termProgram: "ghostty")
-    #expect(marked.contains(Marks.claim), "prompt start")
-    #expect(marked.contains("> " + Marks.input), "input start, on the end of PS1")
-    #expect(marked.contains(Marks.output), "output start, once the command ran")
+    #expect(marked.contains(PromptMarks.claim), "prompt start")
+    #expect(marked.contains("> " + PromptMarks.input), "input start, on the end of PS1")
+    #expect(marked.contains(PromptMarks.output), "output start, once the command ran")
 
     let plain = try await output(termProgram: nil)
-    for mark in [Marks.claim, Marks.input, Marks.output] {
+    for mark in [PromptMarks.claim, PromptMarks.input, PromptMarks.output] {
       #expect(plain.contains(mark) == false, "a terminal that is not Ghostty is told nothing")
     }
   }
@@ -105,8 +105,8 @@ extension ShellIntegrationScriptsTests {
     var environment = files.environment(termProgram: "ghostty")
     environment["ZDOTDIR"] = files.zshDirectory.path
 
-    let output = try await interactiveShell(zsh, arguments: ["-i"], environment: environment)
-    #expect(output.contains("ready%" + Marks.input), "the percent shown, then the mark")
+    let output = try await interactiveShellOutput(zsh, arguments: ["-i"], environment: environment)
+    #expect(output.contains("ready%" + PromptMarks.input), "the percent shown, then the mark")
     #expect(output.contains("%{") == false, "and no brace leaks into the prompt")
   }
 
@@ -120,7 +120,7 @@ extension ShellIntegrationScriptsTests {
     var environment = files.environment(termProgram: "ghostty")
     environment["ZDOTDIR"] = files.zshDirectory.path
 
-    let output = try await interactiveShell(
+    let output = try await interactiveShellOutput(
       zsh, arguments: ["-l", "-i", "-c", "echo starting"], environment: environment, input: "")
     #expect(output.contains("starting"))
     #expect(output.contains("\u{1B}]133;") == false, "nothing a hook's message would carry")
@@ -135,9 +135,9 @@ extension ShellIntegrationScriptsTests {
     defer { files.tearDown() }
     try files.writeHomeFile(".bashrc", "PROMPT_COMMAND=(theirs_first theirs_second)\n")
     var environment = files.environment(termProgram: "ghostty")
-    environment[SessionEnvironment.sessionKey] = "prompt-command"
+    environment[SessionEnvironment.sessionVariable] = "prompt-command"
 
-    let output = try await interactiveShell(
+    let output = try await interactiveShellOutput(
       bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment,
       input: "declare -p PROMPT_COMMAND\nexit\n")
     let declared = try #require(output.range(of: "declare -a PROMPT_COMMAND=")).upperBound
@@ -159,19 +159,12 @@ extension ShellIntegrationScriptsTests {
     defer { files.tearDown() }
     try files.writeHomeFile(".bashrc", "PS1='> '\nPROMPT_COMMAND=(theirs_first theirs_second)\n")
     var environment = files.environment(termProgram: "ghostty")
-    environment[SessionEnvironment.sessionKey] = "array-prompt-command"
+    environment[SessionEnvironment.sessionVariable] = "array-prompt-command"
 
-    let output = try await interactiveShell(
+    let output = try await interactiveShellOutput(
       bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment,
       input: "true\nexit\n")
-    #expect(output.contains(Marks.claim))
-    #expect(output.contains("> " + Marks.input))
-  }
-
-  enum Marks {
-    static let claim = "\u{1B}]133;A;cl=line\u{7}"
-    static let plainStart = "\u{1B}]133;A\u{7}"
-    static let input = "\u{1B}]133;B\u{7}"
-    static let output = "\u{1B}]133;C\u{7}"
+    #expect(output.contains(PromptMarks.claim))
+    #expect(output.contains("> " + PromptMarks.input))
   }
 }

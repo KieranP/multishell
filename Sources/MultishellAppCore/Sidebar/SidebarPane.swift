@@ -7,7 +7,7 @@ public struct SidebarPane: Identifiable, Equatable, Sendable {
   public let position: PanePosition?
   public let isFocused: Bool
   public let state: SessionState?
-  public let subagents: [Subagent]
+  public let workers: [Worker]
   public let agentID: String?
   public let agentName: String?
 }

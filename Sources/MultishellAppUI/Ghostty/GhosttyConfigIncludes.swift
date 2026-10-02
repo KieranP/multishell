@@ -22,23 +22,12 @@ enum GhosttyConfigIncludes {
     return texts
   }
 
-  /// Swift reads `\r\n` as one character, so splitting on `\n` alone kept a
-  /// CRLF file whole. Ghostty ends a line at either and nowhere else.
-  static func lines(of text: String) -> [Substring] {
-    text.split(omittingEmptySubsequences: false) { $0 == "\n" || $0 == "\r\n" }
-  }
-
-  /// What a line sets, before its first `=`, and empty for a line with none.
-  static func key(of line: Substring) -> String {
-    guard let separator = line.firstIndex(of: "=") else { return "" }
-    return line[..<separator].trimmingCharacters(in: .whitespaces).lowercased()
-  }
-
   /// A leading `?` makes a missing file quiet, which a missing one is here
   /// anyway; it goes before the quotes are taken off, `"?x"` naming a file.
   private static func includes(in text: String, from directory: URL, home: URL) -> [URL] {
-    lines(of: text).compactMap { line in
-      guard key(of: line) == "config-file", let equals = line.firstIndex(of: "=") else {
+    GhosttyConfigLine.lines(of: text).compactMap { line in
+      guard GhosttyConfigLine.key(of: line) == "config-file", let equals = line.firstIndex(of: "=")
+      else {
         return nil
       }
       var value = line[line.index(after: equals)...].trimmingCharacters(in: .whitespaces)

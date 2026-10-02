@@ -32,7 +32,7 @@ extension AppModel {
             position: .of(paneAt: offset, in: tab),
             isFocused: id == focused,
             state: state(ofPane: id),
-            subagents: subagents(ofPane: id),
+            workers: workers(ofPane: id),
             agentID: agentID,
             agentName: agentID.map(agentDisplayName))
         }

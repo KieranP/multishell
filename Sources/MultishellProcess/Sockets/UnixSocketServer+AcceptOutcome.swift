@@ -6,12 +6,12 @@ extension UnixSocketServer {
   enum AcceptOutcome: Equatable {
     case waitForNextEvent
     case retryNow
-    case outOfDescriptors
+    case outOfResources
 
     init(errno code: Int32) {
       switch code {
       case EINTR, ECONNABORTED, EPROTO: self = .retryNow
-      case EMFILE, ENFILE, ENOBUFS, ENOMEM: self = .outOfDescriptors
+      case EMFILE, ENFILE, ENOBUFS, ENOMEM: self = .outOfResources
       default: self = .waitForNextEvent
       }
     }

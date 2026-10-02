@@ -59,8 +59,8 @@ extension AppModel {
 
   /// The menu's, on the field's bar where one has the keyboard, else the pane in
   /// view's; none up, nothing. Another pane's bar, hidden by a switch, stays.
-  public func findNext() { navigateFind(.next) }
-  public func findPrevious() { navigateFind(.previous) }
+  public func findNext() { stepKeystrokeFindPane(.next) }
+  public func findPrevious() { stepKeystrokeFindPane(.previous) }
 
   /// Cmd+Shift+F, from the pane, where Escape reaches the program, or from a
   /// field: that one bar goes down and no other.
@@ -74,7 +74,7 @@ extension AppModel {
   public func findNext(in id: TerminalSession.ID) { step(.next, in: id) }
   public func findPrevious(in id: TerminalSession.ID) { step(.previous, in: id) }
 
-  private func navigateFind(_ direction: TerminalSearch) {
+  private func stepKeystrokeFindPane(_ direction: TerminalSearch) {
     guard let id = keystrokeFindPane else { return }
     step(direction, in: id)
   }

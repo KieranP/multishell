@@ -38,18 +38,18 @@ extension AppModel {
     let gone = watchedPIDs.filter(KernelProcessTable.isGone)
     for pid in gone {
       mutateStates { $0.processGone(pid) }
-      dropReportedAgents(withPID: pid)
+      forgetReportedAgents(withPID: pid)
     }
     // Agents first: a shell swept before its dead agent announced a Done.
     for pid in gone {
       for ending in sessionStates.endings(ofShell: pid) {
         apply(
-          SessionStateReport(state: .running, subagent: ending.report), pid: nil, to: ending.key)
+          SessionStateReport(state: .running, worker: ending.report), pid: nil, to: ending.key)
       }
     }
   }
 
-  private func dropReportedAgents(withPID pid: Int32) {
+  private func forgetReportedAgents(withPID pid: Int32) {
     guard setIfChanged(\.reportedAgents, reportedAgents.filter { $0.value.pid != pid }) else {
       return
     }

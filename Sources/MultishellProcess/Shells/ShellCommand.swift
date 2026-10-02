@@ -62,7 +62,7 @@ public enum ShellCommand {
   /// What a failed script printed, stdout first. The two streams are read
   /// apart, so their order against each other is not kept.
   static func failureMessage(standardOutput: String, standardError: String) -> String {
-    [standardOutput, scriptOutput(fromStderr: standardError)]
+    [standardOutput, stderrAfterMarker(standardError)]
       .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
       .filter { !$0.isEmpty }
       .joined(separator: "\n")
@@ -91,7 +91,7 @@ public enum ShellCommand {
 
   /// The part of a failure's stderr after the marker, or all of it where the
   /// script ended before writing one. The login shell `exec`s, so says no `logout`.
-  static func scriptOutput(fromStderr text: String) -> String {
+  static func stderrAfterMarker(_ text: String) -> String {
     let script = text.range(of: stderrStartMarker).map { String(text[$0.upperBound...]) } ?? text
     return script.trimmingCharacters(in: .whitespacesAndNewlines)
   }

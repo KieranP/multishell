@@ -30,10 +30,10 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   /// no flags at all; see Docs/design/agents.md for why a repo file cannot say this.
   public var agentFlags: String?
   /// Whether new tabs here start the agent. `nil` follows the global.
-  public var autoStartAgent: Bool?
+  public var autoStartsAgent: Bool?
   /// Whether the tab a worktree created here opens starts the agent. `nil`
   /// follows the global.
-  public var autoStartAgentOnCreate: Bool?
+  public var autoStartsAgentOnCreate: Bool?
 
   /// Whether a worktree here opens a terminal when it is turned to. `nil`
   /// follows the global.
@@ -51,7 +51,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   public var opensTerminalOnCreate: Bool?
 
   /// Shell override by path. `nil` follows the global;
-  /// `ShellCatalogue.loginShellID` means `$SHELL` here whatever it says.
+  /// `ShellChoice.loginShellID` means `$SHELL` here whatever it says.
   public var preferredShellID: String?
 
   /// The sidebar glyph: an SF Symbol name from `ProjectIcon.symbols`. `nil`,
@@ -65,7 +65,7 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   /// settings.md.
   var trustDecisions: [TrustDecision]
 
-  public init(
+  init(
     worktreeDirectory: String? = nil,
     branchPrefix: String? = nil,
     defaultBranch: String? = nil,
@@ -77,8 +77,8 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     copiedPaths: String = "",
     preferredAgentID: String? = nil,
     agentFlags: String? = nil,
-    autoStartAgent: Bool? = nil,
-    autoStartAgentOnCreate: Bool? = nil,
+    autoStartsAgent: Bool? = nil,
+    autoStartsAgentOnCreate: Bool? = nil,
     opensTerminalOnSelect: Bool? = nil,
     opensTerminalOnCreate: Bool? = nil,
     worktreeSortOrder: WorktreeSortOrder? = nil,
@@ -98,8 +98,8 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     self.copiedPaths = copiedPaths
     self.preferredAgentID = preferredAgentID
     self.agentFlags = agentFlags
-    self.autoStartAgent = autoStartAgent
-    self.autoStartAgentOnCreate = autoStartAgentOnCreate
+    self.autoStartsAgent = autoStartsAgent
+    self.autoStartsAgentOnCreate = autoStartsAgentOnCreate
     self.opensTerminalOnSelect = opensTerminalOnSelect
     self.opensTerminalOnCreate = opensTerminalOnCreate
     self.worktreeSortOrder = worktreeSortOrder
@@ -111,12 +111,15 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
   }
 
   /// The answers keep the key they had when they covered hooks alone, as a new
-  /// one would drop every answer already given; the shell keeps its old key too.
+  /// one would drop every answer already given; the shell and auto-start keep
+  /// their old keys too.
   private enum CodingKeys: String, CodingKey {
     case worktreeDirectory, branchPrefix, defaultBranch
     case preCreateHook, postCreateHook, preDeleteHook, postDeleteHook
     case linkedPaths, copiedPaths
-    case preferredAgentID, agentFlags, autoStartAgent, autoStartAgentOnCreate
+    case preferredAgentID, agentFlags
+    case autoStartsAgent = "autoStartAgent"
+    case autoStartsAgentOnCreate = "autoStartAgentOnCreate"
     case opensTerminalOnSelect, worktreeSortOrder, showsActiveWorktreesFirst, opensTerminalOnCreate
     case preferredShellID = "defaultShell"
     case iconGlyph, iconTint
@@ -136,15 +139,15 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
     postDeleteHook = try container.decode(String.self, forKey: .postDeleteHook, or: "")
     linkedPaths = try container.decode(String.self, forKey: .linkedPaths, or: "")
     copiedPaths = try container.decode(String.self, forKey: .copiedPaths, or: "")
-    preferredAgentID = Self.nonEmpty(
-      try container.decodeIfPresent(String.self, forKey: .preferredAgentID))
-    // No `nonEmpty(_:)`: `""` is this field's only way to say "no flags here".
+    preferredAgentID = try container.decodeIfPresent(
+      String.self, forKey: .preferredAgentID)?.presence
+    // No `presence`: `""` is this field's only way to say "no flags here".
     agentFlags = try container.decodeIfPresent(String.self, forKey: .agentFlags)
-    autoStartAgent = try container.decodeIfPresent(Bool.self, forKey: .autoStartAgent)
-    // Absent is "follow the global", not "what `autoStartAgent` says": seeding
+    autoStartsAgent = try container.decodeIfPresent(Bool.self, forKey: .autoStartsAgent)
+    // Absent is "follow the global", not "what `autoStartsAgent` says": seeding
     // it from the other turns the global into an override on every load.
-    autoStartAgentOnCreate = try container.decodeIfPresent(
-      Bool.self, forKey: .autoStartAgentOnCreate)
+    autoStartsAgentOnCreate = try container.decodeIfPresent(
+      Bool.self, forKey: .autoStartsAgentOnCreate)
     opensTerminalOnSelect = try container.decodeIfPresent(Bool.self, forKey: .opensTerminalOnSelect)
     opensTerminalOnCreate = try container.decodeIfPresent(Bool.self, forKey: .opensTerminalOnCreate)
     // Tolerated: an order a newer build named costs the override, not the project.
@@ -152,19 +155,14 @@ public struct ProjectSettings: Codable, Hashable, Sendable {
       WorktreeSortOrder.self, forKey: .worktreeSortOrder)
     showsActiveWorktreesFirst = try container.decodeIfPresent(
       Bool.self, forKey: .showsActiveWorktreesFirst)
-    preferredShellID = Self.nonEmpty(
-      try container.decodeIfPresent(String.self, forKey: .preferredShellID))
-    iconGlyph = Self.nonEmpty(try container.decodeIfPresent(String.self, forKey: .iconGlyph))
+    preferredShellID = try container.decodeIfPresent(
+      String.self, forKey: .preferredShellID)?.presence
+    iconGlyph = try container.decodeIfPresent(String.self, forKey: .iconGlyph)?.presence
     // Tolerated: a tint that is not a number costs the tint, not the file.
     iconTint = ProjectIcon.usableTint(container.decodeTolerantly(Int.self, forKey: .iconTint))
     // Lossy: an answer that will not decode costs that answer and not the
     // project's others, and its hooks are asked about again.
     trustDecisions = container.decodeLossy(
       TrustDecision.self, forKey: .trustDecisions)
-  }
-
-  private static func nonEmpty(_ value: String?) -> String? {
-    guard let value, !value.isEmpty else { return nil }
-    return value
   }
 }

@@ -2,10 +2,11 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// The field the tree is filtered by, folded away until asked for. It takes
+/// The field the tree is filtered by, hidden until asked for. It takes
 /// the keyboard as it appears, so the magnifier is one click.
 struct SidebarFilterField: View {
   @Binding var text: String
+  let isFiltering: Bool
   let theme: Theme
   let metrics: UIMetrics
   let close: () -> Void
@@ -23,7 +24,7 @@ struct SidebarFilterField: View {
         // installed yet.
         .task { isFocused = true }
         .onExitCommand(perform: close)
-      if SidebarFilter(text).isActive {
+      if isFiltering {
         Button {
           text = ""
           isFocused = true

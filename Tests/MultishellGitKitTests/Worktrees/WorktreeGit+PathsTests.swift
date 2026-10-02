@@ -12,11 +12,10 @@ struct WorktreeGitPathsTests {
     let link = root.appendingPathComponent("link")
     try FileManager.default.createSymbolicLink(
       at: link, withDestinationURL: root.appendingPathComponent("nowhere"))
-    let resolvedRoot = try #require(realpath(root.path, nil))
-    defer { free(resolvedRoot) }
+    let resolvedRoot = try #require(Scratch.physicalPath(of: root))
 
     #expect(
-      WorktreeGit.realPath(of: link.appendingPathComponent("wt"))
-        == String(cString: resolvedRoot) + "/link/wt")
+      WorktreeGit.pathAsGitLists(link.appendingPathComponent("wt"))
+        == resolvedRoot + "/link/wt")
   }
 }

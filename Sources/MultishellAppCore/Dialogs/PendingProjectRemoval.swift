@@ -9,7 +9,7 @@ public struct PendingProjectRemoval: Identifiable, Equatable, Sendable {
   }
 
   public let project: Project
-  public let source: Source
+  let source: Source
 
   public var id: String { project.id }
 

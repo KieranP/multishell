@@ -5,11 +5,7 @@ import Testing
 
 @Suite
 struct ProjectSettingsLayeringTests {
-  private let defaults = WorktreeSettings(worktreeDirectory: "/global/trees", branchPrefix: "team/")
-
-  private func decode(_ json: String) throws -> SharedProjectSettings {
-    try decodeJSON(SharedProjectSettings.self, json)
-  }
+  private let defaults = WorktreeSettings.globalDefaults
 
   @Test func nilFieldsFallBackToTheGlobalDefaults() {
     let effective = ProjectSettings().effectiveWorktreeSettings(defaults: defaults)
@@ -46,7 +42,7 @@ struct ProjectSettingsLayeringTests {
     var ownSettings = ProjectSettings(
       branchPrefix: "me/", defaultBranch: "trunk", postCreateHook: "make", iconTint: 1)
     ownSettings.trustDecisions = [
-      TrustDecision(digest: try #require(shared.digest), trusted: true)
+      TrustDecision(digest: try #require(shared.digest), isTrusted: true)
     ]
     let own = ownSettings.layered(over: shared)
     #expect(own.worktreeDirectory == "../trees", "left blank, so the file's")
@@ -62,28 +58,30 @@ struct ProjectSettingsLayeringTests {
   /// Unlike a hook this runs nothing the repository wrote, only the shell or agent the user
   /// chose, so it needs no trust decision.
   @Test func aRepositoryMaySayWhatItsWorktreesOpenAndTheUsersOwnAnswerWins() throws {
-    let shared = try decode(
+    let shared = try decodeJSON(
+      SharedProjectSettings.self,
       #"{ "autoStartAgent": true, "autoStartAgentOnCreate": true, "opensTerminalOnSelect": false, "opensTerminalOnCreate": true }"#
     )
-    #expect(shared.autoStartAgent == true && shared.autoStartAgentOnCreate == true)
+    #expect(shared.autoStartsAgent == true && shared.autoStartsAgentOnCreate == true)
     #expect(shared.opensTerminalOnSelect == false && shared.opensTerminalOnCreate == true)
 
     let blank = ProjectSettings().layered(over: shared)
-    #expect(blank.autoStartAgent == true && blank.autoStartAgentOnCreate == true)
+    #expect(blank.autoStartsAgent == true && blank.autoStartsAgentOnCreate == true)
     #expect(blank.opensTerminalOnSelect == false && blank.opensTerminalOnCreate == true)
 
-    let own = ProjectSettings(autoStartAgent: false, opensTerminalOnSelect: true)
+    let own = ProjectSettings(autoStartsAgent: false, opensTerminalOnSelect: true)
       .layered(over: shared)
-    #expect(own.autoStartAgent == false, "the user's off stands over the file's on")
+    #expect(own.autoStartsAgent == false, "the user's off stands over the file's on")
     #expect(own.opensTerminalOnSelect == true)
-    #expect(own.autoStartAgentOnCreate == true, "left alone, so the file's")
+    #expect(own.autoStartsAgentOnCreate == true, "left alone, so the file's")
 
     let exported = SharedProjectSettings(exporting: blank)
-    #expect(exported.autoStartAgentOnCreate == true && exported.opensTerminalOnSelect == false)
+    #expect(exported.autoStartsAgentOnCreate == true && exported.opensTerminalOnSelect == false)
   }
 
   @Test func aGlyphNoBuildDrawsIsNotAChoiceAndDoesNotMaskTheRepositorys() throws {
-    let shared = try decode(#"{ "iconGlyph": "server.rack", "iconTint": 4 }"#)
+    let shared = try decodeJSON(
+      SharedProjectSettings.self, #"{ "iconGlyph": "server.rack", "iconTint": 4 }"#)
 
     let blank = ProjectSettings().layered(over: shared)
     #expect(blank.iconGlyph == "server.rack" && blank.iconTint == 4)
@@ -96,7 +94,7 @@ struct ProjectSettingsLayeringTests {
       leftover.iconGlyph == "server.rack",
       "an emoji from a build that offered them is a gap, not a choice over the file")
 
-    let fileEmoji = try decode(#"{ "iconGlyph": "🚀" }"#)
+    let fileEmoji = try decodeJSON(SharedProjectSettings.self, #"{ "iconGlyph": "🚀" }"#)
     #expect(ProjectSettings().layered(over: fileEmoji).iconGlyph == nil, "and neither way round")
   }
 
@@ -124,7 +122,8 @@ struct ProjectSettingsLayeringTests {
   }
 
   @Test func aRepositoryMaySayWhatOrderItsWorktreesListInAndTheUsersOwnWins() throws {
-    let shared = try decode(
+    let shared = try decodeJSON(
+      SharedProjectSettings.self,
       #"{ "worktreeSortOrder": "committedNewestFirst", "showsActiveWorktreesFirst": true }"#)
     #expect(shared.worktreeSortOrder == .committedNewestFirst)
     #expect(shared.showsActiveWorktreesFirst == true)
@@ -144,7 +143,9 @@ struct ProjectSettingsLayeringTests {
     let exported = SharedProjectSettings(exporting: blank)
     #expect(exported.worktreeSortOrder == .committedNewestFirst)
     #expect(exported.showsActiveWorktreesFirst == true)
-    let written = try decode(String(decoding: try JSONEncoder().encode(exported), as: UTF8.self))
+    let written = try decodeJSON(
+      SharedProjectSettings.self,
+      String(decoding: try JSONEncoder().encode(exported), as: UTF8.self))
     #expect(written == exported)
   }
 }

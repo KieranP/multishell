@@ -25,7 +25,7 @@ struct DestructiveAlertTests {
   @Test func aLayoutTakesReturnOffTheLeadChoiceAndItGoesBackOn() {
     let alert = alert(choices: ["Remove Worktree"])
     #expect(alert.buttons.first?.keyEquivalent == "")
-    DestructiveAlert.leadTakesReturn(alert)
+    DestructiveAlert.makeLeadTheRedDefault(alert)
     #expect(alert.buttons.first?.keyEquivalent == "\r")
   }
 
@@ -37,7 +37,7 @@ struct DestructiveAlertTests {
   /// red itself, so there it is the drawing that is read.
   @Test func theLeadChoiceIsPaintedRedOverTheDefaultButtonsAccent() throws {
     let alert = alert(choices: ["Remove Worktree"])
-    DestructiveAlert.leadTakesReturn(alert)
+    DestructiveAlert.makeLeadTheRedDefault(alert)
     let lead = try #require(alert.buttons.first)
     #expect(lead.keyEquivalent == "\r")
     guard lead.bezelColor == nil else {
@@ -52,11 +52,9 @@ struct DestructiveAlertTests {
 
   /// A point inside the bezel clear of the title, from the alert drawn offscreen.
   private func bezelColour(of button: NSButton, in alert: NSAlert) -> NSColor? {
-    guard let view = alert.window.contentView,
-      let image = view.bitmapImageRepForCachingDisplay(in: view.bounds)
-    else { return nil }
+    guard let view = alert.window.contentView else { return nil }
     view.layoutSubtreeIfNeeded()
-    view.cacheDisplay(in: view.bounds, to: image)
+    guard let image = OffscreenWindow.pixels(of: view) else { return nil }
     let frame = button.convert(button.bounds, to: view)
     let scale = CGFloat(image.pixelsWide) / view.bounds.width
     let x = Int((frame.minX + 12) * scale)

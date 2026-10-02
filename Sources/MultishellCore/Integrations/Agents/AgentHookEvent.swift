@@ -12,7 +12,7 @@ struct AgentHookEvent: Hashable, Sendable {
   let matcher: String?
   /// Whether the event means waiting only in a mode that stops for the user;
   /// see Docs/design/agents.md.
-  let onlyWhenPrompting: Bool
+  let meansWaitingOnlyWhenPrompting: Bool
   /// Which notification types this event does not stand for, where all arrive
   /// on one. A deny list; see Docs/design/agents.md.
   let ignoredNotificationTypes: Set<String>
@@ -21,7 +21,7 @@ struct AgentHookEvent: Hashable, Sendable {
   let isSilent: Bool
   /// What the event says about the subagent its payload names: its start or
   /// its end. Any other event naming one is a tool call inside it.
-  let subagentPhase: SubagentReport.Phase?
+  let subagentPhase: WorkerReport.Phase?
   /// Whether the event is a prompt starting a turn, after which nothing of
   /// the last turn is still out.
   let isPrompt: Bool
@@ -33,8 +33,8 @@ struct AgentHookEvent: Hashable, Sendable {
 
   init(
     _ name: String, _ state: SessionState, reportedName: String? = nil, matcher: String? = nil,
-    ignoredNotificationTypes: Set<String> = [], onlyWhenPrompting: Bool = false,
-    isSilent: Bool = false, subagentPhase: SubagentReport.Phase? = nil,
+    ignoredNotificationTypes: Set<String> = [], meansWaitingOnlyWhenPrompting: Bool = false,
+    isSilent: Bool = false, subagentPhase: WorkerReport.Phase? = nil,
     isPrompt: Bool = false, startsSession: Bool = false, timeoutSeconds: Int? = nil
   ) {
     self.name = name
@@ -42,7 +42,7 @@ struct AgentHookEvent: Hashable, Sendable {
     self.state = state
     self.matcher = matcher
     self.ignoredNotificationTypes = ignoredNotificationTypes
-    self.onlyWhenPrompting = onlyWhenPrompting
+    self.meansWaitingOnlyWhenPrompting = meansWaitingOnlyWhenPrompting
     self.isSilent = isSilent
     self.subagentPhase = subagentPhase
     self.isPrompt = isPrompt
@@ -58,17 +58,17 @@ struct AgentHookEvent: Hashable, Sendable {
 
   /// The roster change this event and payload amount to, or nothing for the
   /// main thread's.
-  func subagentChange(for payload: AgentHookPayload) -> SubagentReport? {
+  func subagentChange(for payload: AgentHookPayload) -> WorkerReport? {
     let type = payload.subagentType
     guard let phase = subagentPhase else {
       // Any other event is a tool call, which is a worker's only where one
       // is named: an agent's own carries no id.
       guard let id = payload.subagentID else { return nil }
-      return SubagentReport(id: id, type: type, phase: .working)
+      return WorkerReport(id: id, type: type, phase: .working)
     }
     // A start or an end moved the roster by one, so one naming nobody takes
     // an unnamed place; read as the agent's own it leaves a worker over.
-    let id = payload.subagentID ?? SubagentReport.anonymousID
-    return SubagentReport(id: id, type: type, phase: phase)
+    let id = payload.subagentID ?? WorkerReport.anonymousID
+    return WorkerReport(id: id, type: type, phase: phase)
   }
 }

@@ -48,8 +48,6 @@ extension SessionStatesTests {
       _ = report(&states, .done)
       #expect(report(&states, ending) == ending)
       #expect(workersOut(states).isEmpty, "\(ending): nothing is out")
-      // Nothing is owed now, so a worker ending later pays nothing and moves
-      // nothing: an ended session stays idle, and a failure stands.
       #expect(report(&states, .running, ended("w1")) == nil, "\(ending)")
       #expect(states[.session(a)] == (ending == .failed ? .failed : nil), "\(ending)")
     }
@@ -80,8 +78,6 @@ extension SessionStatesTests {
     #expect(report(&states, .done) == .done)
   }
 
-  /// The roster is by id: the same worker reported twice is one worker, and
-  /// one whose start went unseen joins at its first tool call.
   @Test func theRosterIsKeptByIdInOrderOfArrival() {
     var states = SessionStates()
     _ = report(&states, .running, started("w1"))
@@ -89,7 +85,7 @@ extension SessionStatesTests {
     _ = report(&states, .running, working("w2"))
     _ = report(&states, .running, started("w3", type: "Plan"))
     #expect(workersOut(states) == ["w1", "w2", "w3"])
-    #expect(states.subagents(.session(a)).map(\.type) == ["Explore", "Explore", "Plan"])
+    #expect(states.workers(.session(a)).map(\.type) == ["Explore", "Explore", "Plan"])
 
     _ = report(&states, .running, ended("w2"))
     #expect(workersOut(states) == ["w1", "w3"])
@@ -102,7 +98,7 @@ extension SessionStatesTests {
   @Test func twoWorkersUnderOneNameTakeTwoEndsToPayADone() {
     var states = SessionStates()
     _ = report(&states, .running)
-    states.report(.init(state: .done), pid: 99, for: .session(a), isSeen: false)
+    report(&states, .init(state: .done))
 
     _ = report(&states, .running, started("code-review"))
     _ = report(&states, .running, started("code-review"))
@@ -122,14 +118,14 @@ extension SessionStatesTests {
     _ = report(&states, .running, started("code-review"))
     _ = report(&states, .running, started("code-review"))
     _ = report(&states, .running, started("w1"))
-    let workers = states.subagents(.session(a))
+    let workers = states.workers(.session(a))
     #expect(workers.count == 2, "two places")
     #expect(workers.workerCount == 3, "three workers")
-    #expect(workers.first?.occurrenceText == t("subagent.occurrences", 2))
+    #expect(workers.first?.occurrenceText == t("worker.occurrences", 2))
     #expect(workers.last?.occurrenceText == nil, "a place of one says nothing")
 
     _ = report(&states, .running, ended("code-review"))
-    #expect(states.subagents(.session(a)).workerCount == 2)
+    #expect(states.workers(.session(a)).workerCount == 2)
   }
 
   /// A stop naming no worker still lets one go; read as the agent's own report, the place
@@ -140,7 +136,7 @@ extension SessionStatesTests {
     _ = report(&states, .done)
     #expect(states[.session(a)] == .running, "the Done is held while one is out")
 
-    let unnamed = SubagentReport(id: SubagentReport.anonymousID, phase: .ended)
+    let unnamed = WorkerReport(id: WorkerReport.anonymousID, phase: .ended)
     #expect(report(&states, .running, unnamed) == .done, "the last one out pays it")
     #expect(workersOut(states).isEmpty)
   }
@@ -163,38 +159,37 @@ extension SessionStatesTests {
     _ = report(&states, .running, started("w1"))
     let first = Date(timeIntervalSince1970: 1000)
     states.stampChanges(against: before, at: first)
-    #expect(states.subagents(.session(a)).first?.since == first)
+    #expect(states.workers(.session(a)).first?.since == first)
 
     let stamped = states
     _ = report(&states, .running, working("w1"))
     states.stampChanges(against: stamped, at: first.addingTimeInterval(30))
-    #expect(states.subagents(.session(a)).first?.since == first, "it moved, its start did not")
+    #expect(states.workers(.session(a)).first?.since == first, "it moved, its start did not")
   }
 
   /// A helper from before workers had names writes a count: each `1` is a worker
   /// of its own and each `-1` takes the last of them.
   @Test func anOlderHelpersCountIsKeptAsUnnamedWorkers() {
     var states = SessionStates()
-    let anonymous = SubagentReport.anonymousID
-    _ = report(&states, .running, SubagentReport(id: anonymous, phase: .started))
-    _ = report(&states, .running, SubagentReport(id: anonymous, phase: .started))
+    let anonymous = WorkerReport.anonymousID
+    _ = report(&states, .running, WorkerReport(id: anonymous, phase: .started))
+    _ = report(&states, .running, WorkerReport(id: anonymous, phase: .started))
     _ = report(&states, .running, started("w1"))
-    #expect(states.subagents(.session(a)).count == 3)
-    #expect(states.subagents(.session(a)).map(\.type) == [nil, nil, "Explore"])
+    #expect(states.workers(.session(a)).count == 3)
+    #expect(states.workers(.session(a)).map(\.type) == [nil, nil, "Explore"])
 
-    _ = report(&states, .running, SubagentReport(id: anonymous, phase: .ended))
-    #expect(states.subagents(.session(a)).map(\.type) == [nil, "Explore"])
+    _ = report(&states, .running, ended(anonymous))
+    #expect(states.workers(.session(a)).map(\.type) == [nil, "Explore"])
     _ = report(&states, .done)
     _ = report(&states, .running, ended("w1"))
     #expect(states[.session(a)] == .running, "an unnamed one is still out")
-    #expect(report(&states, .running, SubagentReport(id: anonymous, phase: .ended)) == .done)
+    #expect(report(&states, .running, ended(anonymous)) == .done)
   }
 
   @Test func aWorkerOutLiftsADoneToWorkingAndTheLastOutPaysItBack() {
     var states = SessionStates()
     _ = report(&states, .running)
-    states.report(
-      .init(state: .done, message: "all green"), pid: 99, for: .session(a), isSeen: false)
+    report(&states, .init(state: .done, message: "all green"))
 
     #expect(report(&states, .running, started("w1")) == .running)
     #expect(states[.session(a)] == .running)
@@ -272,8 +267,7 @@ extension SessionStatesTests {
     #expect(states[.session(a)] == .running, "held for the worker")
 
     #expect(
-      states.report(
-        .init(state: .running, startsTurn: true), pid: 99, for: .session(a), isSeen: false)
+      report(&states, .init(state: .running, startsTurn: true))
         == .running)
     #expect(workersOut(states) == ["w1"], "a background worker outlives the turn")
     #expect(report(&states, .done) == .running, "and holds the next Stop")
@@ -302,7 +296,7 @@ extension SessionStatesTests {
   /// one: a fresh place per call would grow the roster all turn.
   @Test func anUnnamedWorkersToolCallTakesAPlaceAlreadyOut() {
     var states = SessionStates()
-    let call = SubagentReport(id: SubagentReport.anonymousID, phase: .working)
+    let call = WorkerReport(id: WorkerReport.anonymousID, phase: .working)
     _ = report(&states, .running, call)
     _ = report(&states, .running, call)
     #expect(workersOut(states).count == 1)

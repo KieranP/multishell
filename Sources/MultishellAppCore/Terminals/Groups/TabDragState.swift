@@ -3,9 +3,8 @@ import MultishellCore
 /// What a tab drag is doing, for every group of one worktree at once, drawn
 /// from what the drop targets report as the pointer comes and goes.
 public struct TabDragState: Equatable, Sendable {
-  /// The tab in the air, which the drop that lands has to name. Read only by
-  /// a drop, so a stale one moves nothing.
-  public var tabID: TerminalTab.ID?
+  /// The tab in the air, which the drop that lands has to name.
+  public internal(set) var tabID: TerminalTab.ID?
   /// The tab the pointer is over and which side of it, for the insertion
   /// line a strip draws.
   public var insertion: Insertion?
@@ -13,7 +12,7 @@ public struct TabDragState: Equatable, Sendable {
   /// are drawn from, so they go however the drag ended.
   public var hoveredGroupID: TabGroup.ID?
   /// The band the pointer is over, lit while it is.
-  public var band: Band?
+  public var band: TabGroupBand?
   /// Where the tab sat as the drag began, for a drag nothing takes.
   private(set) var home: Home?
 
@@ -21,7 +20,7 @@ public struct TabDragState: Equatable, Sendable {
 
   /// Whether the drag is over something that would take it, and what a strip
   /// marks the dragged tab from. Cannot outlive the drag.
-  public var isEngaged: Bool { insertion != nil || hoveredGroupID != nil || band != nil }
+  var isEngaged: Bool { insertion != nil || hoveredGroupID != nil || band != nil }
 
   /// Whether this group shows its bands: the pointer is over its terminal
   /// area, or over a band, which sits inside that area.
@@ -38,8 +37,15 @@ public struct TabDragState: Equatable, Sendable {
 
   /// Read from the drop targets rather than the drag beginning, so a tab let
   /// go where no target saw it is not marked for good.
-  public func isInTheAir(_ id: TerminalTab.ID) -> Bool {
+  func isHeldOverTarget(_ id: TerminalTab.ID) -> Bool {
     tabID == id && isEngaged
+  }
+
+  /// How a strip draws this tab: marked while held over a target, less so
+  /// in its own strip, where it moves as the pointer goes.
+  public func look(of id: TerminalTab.ID, isShuffling: Bool) -> TabLook {
+    guard isHeldOverTarget(id) else { return .resting }
+    return isShuffling ? .shuffling : .lifted
   }
 
   /// The side of this tab the insertion line goes, `nil` for none.
@@ -56,10 +62,16 @@ public struct TabDragState: Equatable, Sendable {
     self.home = home
   }
 
-  /// Every drop that takes the drag ends here, one that then moves nothing
-  /// included, through `AppModel.dropDraggedTab`.
+  /// Every drag ends here: a drop through `AppModel.dropDraggedTab`, one that
+  /// moves nothing included, and one no drop took through `endAbandonedTabDrag`.
   mutating func end() {
     self = TabDragState()
+  }
+
+  public enum TabLook: Equatable, Sendable {
+    case resting
+    case shuffling
+    case lifted
   }
 
   /// The tabs either side of the dragged one as the drag began, nearest first.
@@ -72,21 +84,10 @@ public struct TabDragState: Equatable, Sendable {
   /// Where a dragged tab would land in a strip: on a tab, and which side.
   public struct Insertion: Equatable, Sendable {
     public let tabID: TerminalTab.ID
-    public let placement: TerminalTab.Placement
+    let placement: TerminalTab.Placement
 
     public init(tabID: TerminalTab.ID, placement: TerminalTab.Placement) {
       self.tabID = tabID
-      self.placement = placement
-    }
-  }
-
-  /// Where a dragged tab would make a group: beside this one, on this side.
-  public struct Band: Equatable, Sendable {
-    let groupID: TabGroup.ID
-    public let placement: TerminalTab.Placement
-
-    public init(groupID: TabGroup.ID, placement: TerminalTab.Placement) {
-      self.groupID = groupID
       self.placement = placement
     }
   }

@@ -1,14 +1,14 @@
 import Testing
 
-@testable import MultishellCore
 @testable import MultishellGitKit
 
 @Suite
 struct HookVariableTests {
-  @Test func everyHookVariableIsSpelledAsTheAgentPlaceholderMeaningTheSame() {
-    let placeholderVariables = Set(AgentPlaceholder.allCases.map(\.variable))
-    for variable in HookVariable.allCases {
-      #expect(placeholderVariables.contains(variable.name), "\(variable.name)")
-    }
+  @Test func theHookVariablesKeepTheNamesHooksAreWrittenAgainst() {
+    #expect(
+      HookVariable.allCases.map(\.name) == [
+        "MULTISHELL_PROJECT_PATH", "MULTISHELL_PROJECT_NAME", "MULTISHELL_WORKTREE_PATH",
+        "MULTISHELL_BRANCH",
+      ])
   }
 }

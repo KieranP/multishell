@@ -6,7 +6,9 @@ import AppKit
 enum DestructiveAlert {
   /// The choices in the order shown, each drawn red, the first taking
   /// Return, and a Cancel after them taking Escape.
-  static func make(title: String, message: String, choices: [String], cancel: String) -> NSAlert {
+  static func make(
+    title: String, message: String, choices: [String], cancel: String = t("action.cancel")
+  ) -> NSAlert {
     let alert = NSAlert()
     alert.messageText = title
     alert.informativeText = message
@@ -17,15 +19,15 @@ enum DestructiveAlert {
     let cancelButton = alert.addButton(withTitle: cancel)
     // With no choice to lead with, Cancel keeps the Return AppKit gave it.
     if !choices.isEmpty {
-      cancelButton.takesEscape()
-      leadTakesReturn(alert)
+      cancelButton.assignEscape()
+      makeLeadTheRedDefault(alert)
     }
     return alert
   }
 
   /// AppKit takes Return off a destructive button at every layout and paints a
   /// default one blue; see Docs/design/smaller-decisions.md.
-  static func leadTakesReturn(_ alert: NSAlert) {
+  static func makeLeadTheRedDefault(_ alert: NSAlert) {
     guard let lead = alert.buttons.first, lead.hasDestructiveAction else { return }
     lead.keyEquivalent = "\r"
     lead.bezelColor = .systemRed
@@ -38,9 +40,9 @@ enum DestructiveAlert {
   {
     await withCheckedContinuation { continuation in
       alert.beginSheetModal(for: window) { continuation.resume(returning: $0) }
-      leadTakesReturn(alert)
+      makeLeadTheRedDefault(alert)
       // The sheet lays out again as it goes up, after this call returns.
-      Task { @MainActor in leadTakesReturn(alert) }
+      Task { @MainActor in makeLeadTheRedDefault(alert) }
     }
   }
 

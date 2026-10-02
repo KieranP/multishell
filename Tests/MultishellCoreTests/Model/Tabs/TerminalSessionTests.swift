@@ -21,7 +21,7 @@ struct TerminalSessionTests {
     #expect(!json.contains("/bin/bash"))
     let restored = try decodeJSON(TerminalSession.self, json)
     #expect(restored.shellOverride == nil, "a relaunched tab reads the setting again")
-    #expect(restored.shellPath == ShellCatalogue.loginShellPath())
+    #expect(restored.shellPath == ShellChoice.loginShellPath())
   }
 
   @Test func aProgramsTabKeepsTheProgramsName() throws {

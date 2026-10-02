@@ -56,8 +56,8 @@ public enum IconGridWalk {
 
   private static func position(of name: String?, in rows: [[String]]) -> (Int, Int)? {
     guard let name else { return nil }
-    for (row, glyphs) in rows.enumerated() {
-      if let column = glyphs.firstIndex(of: name) { return (row, column) }
+    for (row, symbols) in rows.enumerated() {
+      if let column = symbols.firstIndex(of: name) { return (row, column) }
     }
     return nil
   }

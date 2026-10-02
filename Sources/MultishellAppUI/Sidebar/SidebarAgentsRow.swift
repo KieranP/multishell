@@ -19,10 +19,10 @@ struct SidebarAgentsRow: View {
         .frame(width: metrics.sidebarGlyphColumn)
       Text(t("label.agents"))
         .font(.system(size: metrics.secondary, weight: .medium))
-        .foregroundStyle(theme.textPrimary.opacity(isSelected ? 1 : 0.85))
+        .foregroundStyle(theme.rowNameColor(isSelected: isSelected))
         .lineLimit(1)
       Spacer(minLength: 4)
-      ForEach(counts.filter { $0.count > 0 }, id: \.lane) { entry in
+      ForEach(counts, id: \.lane) { entry in
         HStack(spacing: 3) {
           StateDot(state: entry.lane.headerState, theme: theme, diameter: 6)
           Text("\(entry.count)")

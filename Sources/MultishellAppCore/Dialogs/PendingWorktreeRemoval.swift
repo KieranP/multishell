@@ -21,10 +21,10 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
   /// One of the dialog's remove buttons.
   public struct Choice: Equatable, Sendable {
     public let label: String
-    public let deletesBranch: Bool
+    let deletesBranch: Bool
   }
 
-  public let worktree: Worktree
+  let worktree: Worktree
   let branchHandling: BranchHandling
   let customName: String?
   /// Whether the branch has landed, which decides the button the dialog
@@ -34,18 +34,18 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
   let trashes: Bool
   /// The status read had not answered when the dialog was built, so the
   /// changed files it would count are unknown.
-  let changesUnread: Bool
+  let hasUnreadChanges: Bool
 
   init(
     worktree: Worktree, branchHandling: BranchHandling, customName: String? = nil,
-    mergeState: WorktreeMergeState = .unknown, trashes: Bool = true, changesUnread: Bool = false
+    mergeState: WorktreeMergeState = .unknown, trashes: Bool = true, hasUnreadChanges: Bool = false
   ) {
     self.worktree = worktree
     self.branchHandling = branchHandling
     self.customName = customName
     self.mergeState = mergeState
     self.trashes = trashes
-    self.changesUnread = changesUnread
+    self.hasUnreadChanges = hasUnreadChanges
   }
 
   public var id: String { worktree.id }
@@ -76,7 +76,7 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
 
   static func decide(
     _ worktree: Worktree, customName: String? = nil, confirms: Bool, alwaysDeletesBranch: Bool,
-    trashes: Bool = true, mergeState: WorktreeMergeState = .unknown, changesUnread: Bool = false
+    trashes: Bool = true, mergeState: WorktreeMergeState = .unknown, hasUnreadChanges: Bool = false
   ) -> Decision {
     let hasBranch = worktree.branch != nil
     let deletes = hasBranch && alwaysDeletesBranch
@@ -87,7 +87,7 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
         worktree: worktree,
         branchHandling: asksAboutBranch ? .offersBoth : .decided(deletesBranch: deletes),
         customName: customName, mergeState: mergeState, trashes: trashes,
-        changesUnread: changesUnread))
+        hasUnreadChanges: hasUnreadChanges))
   }
 
   /// Names the worktree as the title does and where it goes, says what
@@ -114,12 +114,12 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
   /// What the confirmation warns about beyond the removal: uncommitted files,
   /// or that they went unread, and the shells still running there.
   static func warning(
-    changedFiles: Int, changesUnread: Bool = false, liveTerminals: Int, trashes: Bool = true
+    changedFiles: Int, hasUnreadChanges: Bool = false, liveTerminals: Int, trashes: Bool = true
   )
     -> String?
   {
     var notes: [String] = []
-    if changesUnread {
+    if hasUnreadChanges {
       notes.append(trashes ? t("removal.changes-unread") : t("removal.changes-unread-deleted"))
     } else if changedFiles > 0 {
       notes.append(

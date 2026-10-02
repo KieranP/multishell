@@ -7,7 +7,7 @@ import Testing
 @Suite(.serialized) @MainActor
 struct AppModelWorktreeOrderTests {
   /// A third worktree, so an order is visible rather than merely a pair.
-  private func harnessWithThree() -> (Harness, Worktree) {
+  private func harnessWithThreeWorktrees() -> (Harness, Worktree) {
     let harness = Harness()
     let extra = Worktree(
       path: harness.project.path.appendingPathComponent("aardvark"),
@@ -18,22 +18,21 @@ struct AppModelWorktreeOrderTests {
   }
 
   @Test func theRowsFollowTheGlobalOrderWithTheMainWorktreeFirst() {
-    let (harness, extra) = harnessWithThree()
+    let (harness, _) = harnessWithThreeWorktrees()
     let all = harness.model.workspace.worktrees
 
     let rows = harness.model.orderedWorktrees(all, in: harness.project)
     #expect(rows.map(\.name) == ["main", "aardvark", "feature"])
     #expect(rows.first?.id == harness.main.id, "the trunk holds the top")
-    #expect(extra.branch == "aardvark")
   }
 
   /// The project's override beats the global, and the whole way through:
   /// the setting is written as the form writes it.
   @Test func aProjectsOverrideChangesItsRows() {
-    let (harness, _) = harnessWithThree()
-    var settings = harness.model.workspace.project(harness.project.id)!.settings
+    let (harness, _) = harnessWithThreeWorktrees()
+    var settings = harness.project.settings
     settings.worktreeSortOrder = WorktreeSortOrder.committedNewestFirst
-    harness.model.updateSettings(settings, for: harness.project)
+    harness.model.setSettings(settings, for: harness.project)
     harness.model.lastCommitDates[harness.feature.id] = Date(timeIntervalSince1970: 2000)
 
     let all = harness.model.workspace.worktrees
@@ -43,23 +42,24 @@ struct AppModelWorktreeOrderTests {
   }
 
   @Test func activeMeansATerminalOrAReportedState() {
-    let (harness, extra) = harnessWithThree()
+    let (harness, extra) = harnessWithThreeWorktrees()
     #expect(!harness.model.isActiveWorktree(harness.feature.id))
     #expect(!harness.model.isActiveWorktree(extra.id))
 
     harness.store.openTab(in: harness.feature.id)
     #expect(harness.model.isActiveWorktree(harness.feature.id), "a terminal is enough")
 
-    harness.stateSource.send(SessionStateReport(state: .attention, cwd: extra.path.path))
+    harness.stateSource.send(
+      SessionStateReport(state: .attention, workingDirectory: extra.path.path))
     #expect(harness.model.isActiveWorktree(extra.id), "so is a state with no terminal")
   }
 
   @Test func showActiveAtTheTopLiftsTheBusyRow() {
-    let (harness, _) = harnessWithThree()
+    let (harness, _) = harnessWithThreeWorktrees()
     harness.store.openTab(in: harness.feature.id)
-    var settings = harness.model.workspace.project(harness.project.id)!.settings
+    var settings = harness.project.settings
     settings.showsActiveWorktreesFirst = true
-    harness.model.updateSettings(settings, for: harness.project)
+    harness.model.setSettings(settings, for: harness.project)
 
     let all = harness.model.workspace.worktrees
     #expect(
@@ -67,7 +67,7 @@ struct AppModelWorktreeOrderTests {
         == ["main", "feature", "aardvark"], "feature is busy, aardvark only sorts earlier")
 
     settings.showsActiveWorktreesFirst = false
-    harness.model.updateSettings(settings, for: harness.project)
+    harness.model.setSettings(settings, for: harness.project)
     #expect(
       harness.model.orderedWorktrees(all, in: harness.project).map(\.name)
         == ["main", "aardvark", "feature"], "off, the name decides again")

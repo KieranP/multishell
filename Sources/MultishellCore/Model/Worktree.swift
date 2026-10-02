@@ -5,17 +5,17 @@ import Foundation
 public struct Worktree: Identifiable, Codable, Hashable, Sendable {
   /// Normalised by `URL.normalizedDirectory` in both initialisers; see `Project`.
   public private(set) var path: URL
-  public var projectID: Project.ID
-  public var head: String
-  public var branch: String?
-  public var isPrimary: Bool
-  public var isLocked: Bool
+  public internal(set) var projectID: Project.ID
+  public internal(set) var head: String
+  public internal(set) var branch: String?
+  public internal(set) var isPrimary: Bool
+  public internal(set) var isLocked: Bool
   /// git's own mark on a worktree `git worktree add` is still checking out,
   /// wherever that add was run.
   public var isInitializing: Bool
   /// The repository itself in a bare layout: listed first by git, with no
   /// checkout to show a status for.
-  public var isBare: Bool
+  public internal(set) var isBare: Bool
   /// When the directory was made, git recording no creation time. `nil` for
   /// a copied directory or a filesystem with no birth time, sorted last.
   public var createdAt: Date?

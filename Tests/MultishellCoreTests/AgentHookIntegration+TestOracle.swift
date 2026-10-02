@@ -9,7 +9,7 @@ extension AgentHookIntegration {
     // An agent with no events has no hooks in any file; without this every
     // settings object would satisfy an empty list.
     guard !events.isEmpty else { return false }
-    return events.allSatisfy(eventHoldsOurHook(in: settings))
+    return events.allSatisfy { holdsOurHook(under: $0, in: settings) }
   }
 
   func hasOurHookUnderEveryEvent(in file: URL? = nil) -> Bool {

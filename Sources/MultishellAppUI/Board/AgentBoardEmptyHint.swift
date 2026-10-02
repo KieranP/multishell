@@ -15,6 +15,6 @@ struct AgentBoardEmptyHint: View {
       .frame(maxWidth: .infinity, alignment: .leading)
       .padding(.horizontal, 14)
       .padding(.vertical, 8)
-      .overlay(alignment: .top) { theme.hairline.frame(height: 0.5) }
+      .hairline(.top, theme)
   }
 }

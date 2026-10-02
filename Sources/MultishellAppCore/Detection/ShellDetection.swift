@@ -13,7 +13,7 @@ public struct ShellDetection: Equatable, Sendable {
   private let loginShellExists: Bool
 
   static let empty = ShellDetection(
-    found: [], loginShell: ShellCatalogue.loginShellPath())
+    found: [], loginShell: ShellChoice.loginShellPath())
 
   init(found: [String], loginShell: String) {
     self.found = found
@@ -24,10 +24,10 @@ public struct ShellDetection: Equatable, Sendable {
   init(
     searchPath: String?,
     systemList: URL = URL(fileURLWithPath: "/etc/shells"),
-    loginShell: String = ShellCatalogue.loginShellPath()
+    loginShell: String = ShellChoice.loginShellPath()
   ) {
     var found = Set(Self.listed(in: systemList))
-    for name in ShellCatalogue.extraShellNamesToSearch {
+    for name in ShellChoice.extraShellNamesToSearch {
       if let executable = ExecutableLookup.find(name, searchPath: searchPath) {
         found.insert(executable.path)
       }
@@ -44,19 +44,15 @@ public struct ShellDetection: Equatable, Sendable {
 
   private static func sorted(_ paths: Set<String>) -> [String] {
     paths.sorted { a, b in
-      let (nameA, nameB) = (Self.name(a), Self.name(b))
+      let (nameA, nameB) = (a.executableName, b.executableName)
       return nameA == nameB ? a < b : nameA < nameB
     }
   }
 
-  private static func name(_ path: String) -> String {
-    URL(fileURLWithPath: path).lastPathComponent
-  }
-
   /// `id` is a shell's path, or the login or custom entry's id.
   func isInstalled(_ id: String) -> Bool {
-    id == ShellCatalogue.loginShellID
-      ? loginShellExists : id == ShellCatalogue.customID || found.contains(id)
+    id == ShellChoice.loginShellID
+      ? loginShellExists : id == ShellChoice.customID || found.contains(id)
   }
 
   /// The login shell first, then every installed shell, then the selected
@@ -64,18 +60,18 @@ public struct ShellDetection: Equatable, Sendable {
   public func options(selected: String?) -> [DetectionOption] {
     var options = [
       DetectionOption(
-        id: ShellCatalogue.loginShellID, label: t("option.login-shell", loginShell))
+        id: ShellChoice.loginShellID, label: t("option.login-shell", loginShell))
     ]
     for path in found {
       options.append(
-        DetectionOption(id: path, label: t("option.shell-path", Self.name(path), path)))
+        DetectionOption(id: path, label: t("option.shell-path", path.executableName, path)))
     }
     if let selected, !isInstalled(selected) {
       options.append(
         DetectionOption(
-          id: selected, label: t("option.shell-not-installed", Self.name(selected), selected)))
+          id: selected, label: t("option.shell-not-installed", selected.executableName, selected)))
     }
-    options.append(DetectionOption(id: ShellCatalogue.customID, label: t("option.custom-path")))
+    options.append(DetectionOption(id: ShellChoice.customID, label: t("option.custom-path")))
     return options
   }
 }

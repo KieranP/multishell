@@ -7,10 +7,10 @@ public struct AgentHooksRow: Identifiable, Equatable, Sendable {
   public let name: String
   /// The file the hooks go in, as the row names it.
   public let displayPath: String
-  public let isInstalled: Bool
+  let isInstalled: Bool
   /// Installed by an older build and not what this one writes, so Add would
   /// write something else: offered as an update.
-  public let isStale: Bool
+  let isStale: Bool
   /// What the disclosure button offers to show: the file is JSON for every
   /// agent but OpenCode, which is given a plugin.
   public let contentsLabel: String

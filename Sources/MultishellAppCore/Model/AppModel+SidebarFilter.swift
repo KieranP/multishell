@@ -1,14 +1,17 @@
 import MultishellCore
 
 extension AppModel {
-  /// Closing clears the filter, a field folded away being unable to say why
+  /// Closing clears the filter, a closed field being unable to say why
   /// rows are missing, and hands the keyboard back rather than dropping it.
-  public func setShowsSidebarFilter(_ open: Bool) {
-    showsSidebarFilter = open
-    guard !open else { return }
+  public func setShowsSidebarFilter(_ shows: Bool) {
+    showsSidebarFilter = shows
+    guard !shows else { return }
     sidebarFilterText = ""
     focusActivePane()
   }
+
+  /// Whether the filter has text past its spaces, and so is hiding rows.
+  public var isFilteringSidebar: Bool { SidebarFilter(sidebarFilterText).isFiltering }
 
   /// The projects the sidebar shows, each with its rows and whether they show.
   public var sidebarEntries: [SidebarFilter.Entry] {
@@ -32,7 +35,7 @@ extension AppModel {
   /// The chevron. While the filter has text it collapses the project for that
   /// text alone, as the filter opened it; otherwise it sets the stored flag.
   public func toggleExpansion(of project: Project) {
-    guard SidebarFilter(sidebarFilterText).isActive else {
+    guard isFilteringSidebar else {
       return setExpanded(!project.isExpanded, for: project)
     }
     guard projectsCollapsedWhileFiltering.contains(project.id) else {

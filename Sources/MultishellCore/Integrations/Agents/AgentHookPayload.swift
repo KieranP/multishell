@@ -4,7 +4,7 @@ import Foundation
 /// this reads; see Docs/design/agents.md.
 public struct AgentHookPayload: Hashable, Sendable {
   var eventName: String
-  var cwd: String?
+  var workingDirectory: String?
   var message: String?
   /// The approval mode the agent is in, where it says: `default`,
   /// `dontAsk` and the rest. Claude Code and Codex are the ones that say.
@@ -32,12 +32,13 @@ public struct AgentHookPayload: Hashable, Sendable {
   }
 
   init(
-    eventName: String, cwd: String? = nil, message: String? = nil, permissionMode: String? = nil,
+    eventName: String, workingDirectory: String? = nil, message: String? = nil,
+    permissionMode: String? = nil,
     notificationType: String? = nil, subagentID: String? = nil, subagentType: String? = nil,
     conversationID: String? = nil, transcriptPath: String? = nil
   ) {
     self.eventName = eventName
-    self.cwd = cwd
+    self.workingDirectory = workingDirectory
     self.message = message
     self.permissionMode = permissionMode
     self.notificationType = notificationType
@@ -53,7 +54,7 @@ public struct AgentHookPayload: Hashable, Sendable {
       let eventName = object["hook_event_name"] as? String
     else { return nil }
     self.eventName = eventName
-    self.cwd = object["cwd"] as? String
+    self.workingDirectory = object["cwd"] as? String
     self.message = object["message"] as? String
     self.permissionMode = object["permission_mode"] as? String
     self.notificationType = object["notification_type"] as? String

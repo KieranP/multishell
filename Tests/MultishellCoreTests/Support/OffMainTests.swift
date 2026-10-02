@@ -21,9 +21,7 @@ struct OffMainTests {
         }
       }
       group.addTask {
-        while entered.received.count < blockers {
-          try? await Task.sleep(for: .milliseconds(10))
-        }
+        try? await waitUntil { entered.received.count >= blockers }
         for _ in 0..<blockers { gate.signal() }
         return true
       }

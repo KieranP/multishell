@@ -5,7 +5,7 @@ import Testing
 
 @Suite
 struct WorktreeStatusParserTests {
-  @Test func countsEachKindOfChangeOnce() {
+  @Test func eachKindOfChangeIsCountedOnce() {
     let output = """
       ## main...origin/main [ahead 2, behind 1]
        M Sources/App.swift
@@ -42,7 +42,7 @@ struct WorktreeStatusParserTests {
     #expect(status.summary == "↑3")
   }
 
-  @Test func branchLinesWithoutUpstreamParse() {
+  @Test func aHeaderWithNoUpstreamStillReadsTheChangesUnderIt() {
     #expect(WorktreeStatusParser.parse("## HEAD (no branch)\n?? a\n").untracked == 1)
     #expect(WorktreeStatusParser.parse("## No commits yet on main\n").isCleanAndInSync)
   }

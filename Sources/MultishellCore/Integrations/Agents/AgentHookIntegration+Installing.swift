@@ -11,9 +11,9 @@ extension AgentHookIntegration {
       try AgentSettingsFile.writeWhole(snippet(helper: helper), to: file)
     } else {
       let settings = try AgentSettingsFile.read(file)
-      guard hooksSection(settings) != nil else { throw UnreadableHookSection(file: file) }
-      if let event = unreadableEvents(in: settings).first {
-        throw UnreadableHookEntries(file: file, event: event)
+      guard hooksSection(settings) != nil else { throw UnexpectedHookSectionShape(file: file) }
+      if let event = eventsOfUnexpectedShape(in: settings).first {
+        throw UnexpectedHookEntriesShape(file: file, event: event)
       }
       // Ours out first, so an install over an older build's is an update.
       try AgentSettingsFile.write(adding(to: removing(from: settings), helper: helper), to: file)

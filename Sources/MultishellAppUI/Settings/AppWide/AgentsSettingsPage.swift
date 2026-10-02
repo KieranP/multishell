@@ -53,7 +53,7 @@ struct AgentsSettingsPage: View {
         info: model.agentPathNote
       )
       if model.usesCustomAgent {
-        CustomCommandRow(
+        CustomChoiceField(
           label: t("label.command"), info: t("agents.command-info"),
           prompt: t("agents.command-prompt"),
           text: model.setting(\.customAgentCommand, write: model.setCustomAgentCommand))
@@ -66,12 +66,12 @@ struct AgentsSettingsPage: View {
       }
       InfoToggle(
         t("agents.auto-start-tab"), info: t("agents.auto-start-tab-info"),
-        isOn: model.setting(\.autoStartAgent, write: model.setAutoStartAgent)
+        isOn: model.setting(\.autoStartsAgent, write: model.setAutoStartsAgent)
       )
       .disabled(!model.hasPreferredAgent)
       InfoToggle(
         t("agents.auto-start-create"), info: t("agents.auto-start-create-info"),
-        isOn: model.setting(\.autoStartAgentOnCreate, write: model.setAutoStartAgentOnCreate)
+        isOn: model.setting(\.autoStartsAgentOnCreate, write: model.setAutoStartsAgentOnCreate)
       )
       .disabled(!model.hasPreferredAgent)
     }

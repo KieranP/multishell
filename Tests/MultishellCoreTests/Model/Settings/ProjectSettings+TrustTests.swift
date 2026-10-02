@@ -12,14 +12,14 @@ struct ProjectSettingsTrustTests {
     #expect(asked.needsTrustDecision(for: shared) && !asked.trustsSharedSettings(of: shared))
 
     var trusted = ProjectSettings()
-    trusted.trustDecisions = [TrustDecision(digest: digest, trusted: true)]
+    trusted.trustDecisions = [TrustDecision(digest: digest, isTrusted: true)]
     #expect(trusted.trustsSharedSettings(of: shared) && !trusted.needsTrustDecision(for: shared))
     let layered = trusted.layered(over: shared)
     #expect(layered.postCreateHook == "npm ci" && layered.preDeleteHook == "exit 1")
     #expect(layered.preCreateHook == "", "a hook the file does not have stays blank")
 
     var declined = ProjectSettings()
-    declined.trustDecisions = [TrustDecision(digest: digest, trusted: false)]
+    declined.trustDecisions = [TrustDecision(digest: digest, isTrusted: false)]
     #expect(!declined.trustsSharedSettings(of: shared) && !declined.needsTrustDecision(for: shared))
     #expect(declined.layered(over: shared).postCreateHook == "")
 
@@ -50,8 +50,8 @@ struct ProjectSettingsTrustTests {
     let main = try writtenAndReadBack(SharedProjectSettings(postCreateHook: "npm ci"))
     let feature = try writtenAndReadBack(SharedProjectSettings(postCreateHook: "make bootstrap"))
     var settings = ProjectSettings()
-    settings.recordTrustDecision(digest: try #require(main.digest), trusted: true)
-    settings.recordTrustDecision(digest: try #require(feature.digest), trusted: false)
+    settings.recordTrustDecision(digest: try #require(main.digest), isTrusted: true)
+    settings.recordTrustDecision(digest: try #require(feature.digest), isTrusted: false)
 
     #expect(!settings.needsTrustDecision(for: main), "switching back asks nothing")
     #expect(
@@ -61,8 +61,7 @@ struct ProjectSettingsTrustTests {
     #expect(!settings.trustsSharedSettings(of: feature))
     #expect(settings.layered(over: feature).postCreateHook == "")
 
-    // An answer given again is the one that stands, and is not stored twice.
-    settings.recordTrustDecision(digest: try #require(feature.digest), trusted: true)
+    settings.recordTrustDecision(digest: try #require(feature.digest), isTrusted: true)
     #expect(
       settings.trustDecisions.count == 2 && settings.trustsSharedSettings(of: feature))
   }
@@ -72,7 +71,7 @@ struct ProjectSettingsTrustTests {
     let digests = (0...ProjectSettings.rememberedDecisionLimit).map {
       FileDigest.sha256(of: Data("post-create:\necho \($0)".utf8))
     }
-    for digest in digests { settings.recordTrustDecision(digest: digest, trusted: true) }
+    for digest in digests { settings.recordTrustDecision(digest: digest, isTrusted: true) }
     #expect(settings.trustDecisions.count == ProjectSettings.rememberedDecisionLimit)
     #expect(
       settings.trustDecisions.first?.digest == digests.last, "the newest answer is kept")

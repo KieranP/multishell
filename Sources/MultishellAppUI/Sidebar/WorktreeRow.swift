@@ -83,7 +83,7 @@ struct WorktreeRow: View {
       VStack(alignment: .leading, spacing: 0) {
         Text(customName)
           .font(.system(size: metrics.secondary, weight: .medium))
-          .foregroundStyle(theme.textPrimary.opacity(isSelected ? 1 : 0.85))
+          .foregroundStyle(theme.rowNameColor(isSelected: isSelected))
           .lineLimit(1)
           .truncationMode(.tail)
         branchLine
@@ -91,8 +91,8 @@ struct WorktreeRow: View {
       .help(worktree.name)
     } else {
       Text(worktree.name)
-        .font(.system(size: metrics.mono, design: .monospaced))
-        .foregroundStyle(theme.textPrimary.opacity(isSelected ? 1 : 0.8))
+        .font(.system(size: metrics.monospaced, design: .monospaced))
+        .foregroundStyle(theme.rowNameColor(isSelected: isSelected))
         .lineLimit(1)
         .truncationMode(.middle)
     }

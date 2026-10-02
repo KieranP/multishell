@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Every keystroke this app's menus claim, and the ones the system claims
-/// over our windows. The host unbinds and the commands build from these.
+/// Every keystroke this app's menus claim. The commands build from these,
+/// and `GhosttyUnbinds` from the ones the surface gives up.
 enum AppShortcutCatalogue {
   static let newTab = AppShortcut("t")
   static let newShellTab = AppShortcut("t", .shift)
@@ -53,23 +53,4 @@ enum AppShortcutCatalogue {
     find, findNext, findPrevious, closeFind,
     cut, copy, paste, selectAll,
   ]
-
-  /// Hides the Dock. Listed so nothing here claims it, and so the reason Move
-  /// Tab to New Group is not on it stays written down.
-  private static let dockToggle = "super+alt+d"
-
-  /// Combinations the system owns over one of our windows. No menu item of
-  /// ours carries these, and the surface must still give them up.
-  static let systemOwned = [
-    "super+shift+n", "super+comma", "super+q", "super+ctrl+f", "super+enter", dockToggle,
-  ]
-
-  /// Ghostty bindings on plain keys, released so the key reaches the program:
-  /// its performable `esc=end_search` ate Escape under our bar; terminals.md.
-  static let surfaceReleases = ["escape"]
-
-  /// What the terminal surface is told to unbind, or it eats these before
-  /// the menu bar sees them.
-  static let unbound: [String] =
-    all.filter { !$0.surfaceKeeps }.map(\.ghosttyCombo) + systemOwned + surfaceReleases
 }

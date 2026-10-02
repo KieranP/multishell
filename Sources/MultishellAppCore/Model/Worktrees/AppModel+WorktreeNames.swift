@@ -12,10 +12,10 @@ extension AppModel {
   }
 
   /// The menus' Rename: the row swaps its name for a field. The project is
-  /// opened first, a collapsed or folded one leaving no row to type into.
+  /// opened first, one collapsed by its chevron or the filter leaving no row.
   public func beginRenamingWorktree(_ worktree: Worktree) {
     guard workspace.worktree(worktree.id) != nil else { return }
-    if SidebarFilter(sidebarFilterText).isActive {
+    if isFilteringSidebar {
       expandWhileFiltering(worktree.projectID)
     } else if let project = workspace.project(worktree.projectID), !project.isExpanded {
       setExpanded(true, for: project)

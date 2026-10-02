@@ -31,7 +31,8 @@ struct SidebarView: View {
       )
       if model.showsSidebarFilter {
         SidebarFilterField(
-          text: Bindable(model).sidebarFilterText, theme: theme, metrics: metrics,
+          text: Bindable(model).sidebarFilterText, isFiltering: model.isFilteringSidebar,
+          theme: theme, metrics: metrics,
           close: { model.setShowsSidebarFilter(false) })
       }
       ScrollView {
@@ -52,7 +53,8 @@ struct SidebarView: View {
             ProjectBlock(
               model: model,
               project: entry.project,
-              worktrees: orderedWorktrees(of: entry, sessions: sessions),
+              worktrees: model.orderedWorktrees(
+                entry.worktrees, in: entry.project, sessions: sessions),
               isExpanded: entry.isExpanded,
               sessions: sessions,
               theme: theme,
@@ -91,12 +93,5 @@ struct SidebarView: View {
   private func endProjectDrag() {
     projectDropTarget = nil
     model.endProjectDrag()
-  }
-
-  /// The rows of one project's block, in the order its settings ask for.
-  private func orderedWorktrees(
-    of entry: SidebarFilter.Entry, sessions: SessionIDsByWorktree
-  ) -> [Worktree] {
-    model.orderedWorktrees(entry.worktrees, in: entry.project, sessions: sessions)
   }
 }

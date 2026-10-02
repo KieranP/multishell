@@ -26,12 +26,8 @@ extension AppModelPersistenceTests {
     var expected = before.model.workspace
     expected.selectedWorktreeID = nil
 
-    let (store, error) = WorkspaceStore.restored(from: WorkspaceFile(fileURL: file))
+    let (after, engine, _, error) = before.relaunched()
     #expect(error == nil)
-    let engine = FakeEngine()
-    let after = AppModel(
-      store: store, host: engine,
-      coordinator: nil, watcher: FakeWatcher())
 
     #expect(after.workspace == expected, "everything but the selection, which a launch clears")
     #expect(after.liveTerminalCount == 0, "nothing starts until a worktree is visited")

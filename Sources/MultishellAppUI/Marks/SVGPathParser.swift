@@ -31,18 +31,18 @@ enum SVGPathParser {
       }
       guard !numbers.isEmpty, numbers.count % arity == 0 else { return false }
       for start in stride(from: 0, to: numbers.count, by: arity) {
-        let v = Array(numbers[start..<start + arity])
+        let values = Array(numbers[start..<start + arity])
         switch command {
         // Pairs after a move are lines, which is how a polygon is written.
-        case "M" where start == 0: path.move(to: CGPoint(x: v[0], y: v[1]))
-        case "M", "L": path.addLine(to: CGPoint(x: v[0], y: v[1]))
+        case "M" where start == 0: path.move(to: CGPoint(x: values[0], y: values[1]))
+        case "M", "L": path.addLine(to: CGPoint(x: values[0], y: values[1]))
         case "Q":
           path.addQuadCurve(
-            to: CGPoint(x: v[2], y: v[3]), control: CGPoint(x: v[0], y: v[1]))
+            to: CGPoint(x: values[2], y: values[3]), control: CGPoint(x: values[0], y: values[1]))
         default:
           path.addCurve(
-            to: CGPoint(x: v[4], y: v[5]), control1: CGPoint(x: v[0], y: v[1]),
-            control2: CGPoint(x: v[2], y: v[3]))
+            to: CGPoint(x: values[4], y: values[5]), control1: CGPoint(x: values[0], y: values[1]),
+            control2: CGPoint(x: values[2], y: values[3]))
         }
         drew = true
       }

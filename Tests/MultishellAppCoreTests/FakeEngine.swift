@@ -2,7 +2,8 @@ import MultishellCore
 
 @testable import MultishellAppCore
 
-/// An engine that opens everything and remembers focus and closes.
+/// An engine that remembers focus and closes, and opens everything unless
+/// `refusesToOpen` says not to.
 @MainActor
 final class FakeEngine: TerminalSurfaceHost {
   var liveSessionIDs: Set<TerminalSession.ID> = []

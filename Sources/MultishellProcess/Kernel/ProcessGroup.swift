@@ -1,7 +1,7 @@
 import Foundation
 
-/// Who is in a process group, for the kill that follows a hangup: the pid
-/// may have been handed on by then, and only our own group's members are old.
+/// Whether a process group is still ours, for the kill that follows a hangup:
+/// the pid may have been handed on by then.
 enum ProcessGroup {
   /// Whether the group is still the one hung up at `instant`. A stranger's
   /// has a leader younger than that; ours has an old leader or none.

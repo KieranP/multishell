@@ -9,10 +9,6 @@ struct PaneTreeView: View {
   let tabID: TerminalTab.ID
   let node: PaneNode
   var path: [Int] = []
-  let focusedSessionID: TerminalSession.ID
-  /// Whether this tree is in the group the keystrokes go to. One pane in
-  /// the window is the focused one, and it is in the focused group.
-  let isFocusedGroup: Bool
   /// Whether the focused pane wears the theme's ring: only where there is
   /// something to tell it apart from, a split or a second group.
   let showsFocusRing: Bool
@@ -21,9 +17,7 @@ struct PaneTreeView: View {
   var body: some View {
     switch node {
     case .terminal(let id):
-      // One pane in the window asks for the keyboard, not one per group:
-      // a surface reports focus back, so two would trade it between renders.
-      let isFocusedPane = isFocusedGroup && id == focusedSessionID
+      let isFocusedPane = model.isFocusedPane(id)
       PaneSurface(
         model: model,
         sessionID: id,
@@ -52,8 +46,6 @@ struct PaneTreeView: View {
               tabID: tabID,
               node: children[index],
               path: path + [index],
-              focusedSessionID: focusedSessionID,
-              isFocusedGroup: isFocusedGroup,
               showsFocusRing: showsFocusRing,
               theme: theme
             )

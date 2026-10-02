@@ -4,7 +4,7 @@ import Testing
 
 @Suite
 struct RGBTests {
-  @Test func chromeLiftsTowardsTheOppositeOfTheBackground() {
+  @Test func blendingTowardsWhiteLiftsAndTowardsBlackSinks() {
     let dark = Theme.multishellDark
     let light = Theme.multishellLight
     let lifted = dark.backgroundRGB.blended(with: .white, amount: 0.09)

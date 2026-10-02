@@ -17,6 +17,13 @@ extension AppModel {
     worktreeInView.flatMap { workspace.activeTab(in: $0.id) }
   }
 
+  /// The pane the keyboard goes to: the selected worktree's active tab's
+  /// focused pane, with the board hidden. One in the window, not one per
+  /// group: a surface reports focus back, so two would trade it.
+  public func isFocusedPane(_ id: TerminalSession.ID) -> Bool {
+    tabInView?.focusedSessionID == id
+  }
+
   /// The pane is on screen: its worktree selected and its tab shown, asked
   /// of every group. What holds a banner back, saying nothing about focus.
   func isPaneInView(_ id: TerminalSession.ID) -> Bool {

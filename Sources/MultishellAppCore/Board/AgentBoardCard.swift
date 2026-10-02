@@ -46,9 +46,9 @@ public struct AgentBoardCard: Identifiable, Equatable, Sendable {
   let note: SessionNote?
   public let status: WorktreeStatus?
   /// The workers the occupant has out, oldest first. Empty is no chip.
-  public var subagents: [Subagent] = []
+  public internal(set) var workers: [Worker] = []
   /// `nil` for a tab with one pane.
-  public var position: PanePosition?
+  public internal(set) var position: PanePosition?
 
   var lane: AgentBoardLane { AgentBoardLane.of(state) }
 

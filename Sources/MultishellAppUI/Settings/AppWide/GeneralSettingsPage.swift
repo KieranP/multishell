@@ -19,7 +19,7 @@ struct GeneralSettingsPage: View {
           info: t("general.editor-info")
         )
         if model.usesCustomEditor {
-          CustomCommandRow(
+          CustomChoiceField(
             label: t("label.command"), info: t("general.editor-command-info"),
             prompt: t("general.editor-command-prompt"),
             text: model.setting(\.customEditorCommand, write: model.setCustomEditorCommand))

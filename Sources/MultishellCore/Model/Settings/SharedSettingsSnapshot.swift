@@ -5,18 +5,18 @@ import Foundation
 public struct SharedSettingsSnapshot: Equatable, Sendable {
   /// The file's own words. For export, which writes them back; every other
   /// reader wants `confined`.
-  public var asWritten: SharedProjectSettings?
+  public internal(set) var asWritten: SharedProjectSettings?
   /// The same with what the repository may not name dropped, computed on the
   /// read rather than per lookup: the sidebar asks per row per render.
   public var confined: SharedProjectSettings?
   /// The date the file had when read. A stat against this tells an edited
   /// file without a read.
-  public var modificationDate: Date
+  var modificationDate: Date
   /// Why it would not parse, for the project's Hooks tab.
-  public var problem: String?
+  public internal(set) var problem: String?
   /// False until the file has been read at all this run. A first read says
   /// nothing about trust, so a launch opens with no queue of questions.
-  public var hasBeenRead: Bool
+  public internal(set) var hasBeenRead: Bool
 
   init(
     asWritten: SharedProjectSettings? = nil, confined: SharedProjectSettings? = nil,

@@ -10,9 +10,8 @@ struct AgentSettingsFileTests: AgentHookFixtures {
   /// The file is the user's. A parse to doubles and back writes `0.1` as
   /// `0.10000000000000001` and `1.0` as `1`, so numbers are kept as written.
   @Test func installingKeepsEveryNumberInTheFileAsTheUserWroteIt() throws {
-    let directory = try Scratch.directory("hooks")
+    let (directory, file) = try scratchSettingsFile()
     defer { Scratch.remove(directory) }
-    let file = directory.appendingPathComponent("settings.json")
     try #"{"a": 1.0, "c": 0.1, "big": 12345678901234567890123, "e": 1e-7, "s": "1.0", "hooks": {}}"#
       .write(to: file, atomically: true, encoding: .utf8)
 
@@ -24,7 +23,8 @@ struct AgentSettingsFileTests: AgentHookFixtures {
     }
     #expect(installed.contains(#""s" : "1.0""#), "a string that looks like one is still a string")
     #expect(installed.contains("\\u0001") == false, "and no marker leaks into the file")
-    #expect(installed.contains(#""timeout" : 5"#), "our own numbers are written as before")
+    #expect(
+      installed.contains(#/"timeout" : 5[,\n]/#), "our own numbers are written as before")
 
     try AgentHookCatalogue.claude.remove(from: file)
     let removed = try String(contentsOf: file, encoding: .utf8)
@@ -33,9 +33,8 @@ struct AgentSettingsFileTests: AgentHookFixtures {
 
   /// Keeping numbers as written must not widen what a read accepts.
   @Test func aNumberThatIsNotJSONOrAFileThatIsNotUTF8IsStillRefused() throws {
-    let directory = try Scratch.directory("hooks")
+    let (directory, file) = try scratchSettingsFile()
     defer { Scratch.remove(directory) }
-    let file = directory.appendingPathComponent("settings.json")
     for literal in ["01", "1-2", "-", "1e", "1.e5", "+1", ".5", "1."] {
       let theirs = #"{"a": \#(literal), "hooks": {}}"#
       try theirs.write(to: file, atomically: true, encoding: .utf8)
@@ -56,9 +55,8 @@ struct AgentSettingsFileTests: AgentHookFixtures {
   }
 
   @Test func aFileThatIsNotAnObjectIsRefusedNotRewritten() throws {
-    let directory = try Scratch.directory("hooks")
+    let (directory, file) = try scratchSettingsFile()
     defer { Scratch.remove(directory) }
-    let file = directory.appendingPathComponent("settings.json")
     try "[1, 2, 3]".write(to: file, atomically: true, encoding: .utf8)
 
     #expect(throws: UnexpectedSettingsShape.self) {
@@ -71,9 +69,8 @@ struct AgentSettingsFileTests: AgentHookFixtures {
   /// Gemini's settings file takes comments and Gemini keeps them when it writes the file, so a
   /// strict rewrite would throw them away.
   @Test func aFileWithCommentsIsRefusedRatherThanRewrittenWithoutThem() throws {
-    let directory = try Scratch.directory("hooks")
+    let (directory, file) = try scratchSettingsFile()
     defer { Scratch.remove(directory) }
-    let file = directory.appendingPathComponent("settings.json")
     let commented = """
       {
         // the model I use everywhere
@@ -92,6 +89,24 @@ struct AgentSettingsFileTests: AgentHookFixtures {
       !FileManager.default.fileExists(
         atPath: file.appendingPathExtension("before-multishell").path),
       "nothing was written, so nothing was backed up")
+  }
+
+  @Test func aLinkIntoADirectoryNotYetMadeIsWrittenThroughRatherThanReplaced() throws {
+    let directory = Scratch.path("hooks")
+    defer { Scratch.remove(directory) }
+    let home = directory.appendingPathComponent("home/.claude", isDirectory: true)
+    try FileManager.default.createDirectory(at: home, withIntermediateDirectories: true)
+    let tracked = directory.appendingPathComponent("dotfiles/claude/settings.json")
+    let link = home.appendingPathComponent("settings.json")
+    try FileManager.default.createSymbolicLink(
+      atPath: link.path, withDestinationPath: "../../dotfiles/claude/settings.json")
+
+    try AgentHookCatalogue.claude.install(into: link, helper: helper)
+
+    #expect(
+      (try? FileManager.default.destinationOfSymbolicLink(atPath: link.path))
+        == "../../dotfiles/claude/settings.json")
+    #expect(AgentHookCatalogue.claude.hasOurHookUnderEveryEvent(in: tracked))
   }
 
   /// A settings file is often a symlink into a dotfiles repository, and an atomic write puts a
@@ -134,9 +149,8 @@ struct AgentSettingsFileTests: AgentHookFixtures {
   }
 
   @Test func anEmptyFileReadsAsNoSettings() throws {
-    let directory = try Scratch.directory("hooks")
+    let (directory, file) = try scratchSettingsFile()
     defer { Scratch.remove(directory) }
-    let file = directory.appendingPathComponent("settings.json")
     try "\n".write(to: file, atomically: true, encoding: .utf8)
     #expect(try AgentSettingsFile.read(file).isEmpty)
   }

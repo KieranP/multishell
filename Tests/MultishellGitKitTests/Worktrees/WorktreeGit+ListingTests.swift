@@ -1,9 +1,9 @@
 import Foundation
-import MultishellCore
 import MultishellProcess
 import TestSupport
 import Testing
 
+@testable import MultishellCore
 @testable import MultishellGitKit
 
 @Suite(.serialized)
@@ -48,11 +48,11 @@ struct WorktreeGitListingTests {
   }
 
   @Test func aWorktreeLockedWithNoIndexYetIsBeingMadeInWhateverLanguageGitSaysSo() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    let path = try await repo.coordinator.createThenRunPostCreate(
-      branch: "making", in: repo.project, settings: repo.worktreeSettings)
-    let admin = repo.project.path.appendingPathComponent(".git/worktrees/making")
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let path = try await fixture.coordinator.createThenRunPostCreate(
+      branch: "making", in: fixture.project, settings: fixture.worktreeSettings)
+    let admin = fixture.project.path.appendingPathComponent(".git/worktrees/making")
     let lock = admin.appendingPathComponent("locked")
     try "initialisiere".write(to: lock, atomically: true, encoding: .utf8)
     try FileManager.default.removeItem(at: admin.appendingPathComponent("index"))
@@ -61,54 +61,54 @@ struct WorktreeGitListingTests {
         .modificationDate] as? Date)
     try FileManager.default.setAttributes(
       [.modificationDate: linkedAt.addingTimeInterval(-1)], ofItemAtPath: lock.path)
-    _ = try await repo.runner.run(
+    _ = try await fixture.runner.run(
       [
         "worktree", "add", "-q", "-b", "pinned",
         path.deletingLastPathComponent().appendingPathComponent("pinned").path,
       ],
-      in: repo.project.path)
-    _ = try await repo.runner.run(
+      in: fixture.project.path)
+    _ = try await fixture.runner.run(
       [
         "worktree", "lock", "--reason", "initialisiere",
         path.deletingLastPathComponent().appendingPathComponent("pinned").path,
       ],
-      in: repo.project.path)
+      in: fixture.project.path)
 
-    let listed = try await WorktreeGit(runner: repo.runner).list(repo.project)
+    let listed = try await WorktreeGit(runner: fixture.runner).list(fixture.project)
 
     #expect(listed.first { $0.branch == "making" }?.isInitializing == true)
     #expect(listed.first { $0.branch == "pinned" }?.isInitializing == false, "a user's lock")
   }
 
   @Test func aUsersLockOnAWorktreeAddedWithNoCheckoutIsNotAnAddBeingMade() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    let path = repo.root.appendingPathComponent("unchecked").path
-    _ = try await repo.runner.run(
-      ["worktree", "add", "-q", "--no-checkout", "-b", "unchecked", path], in: repo.project.path)
-    _ = try await repo.runner.run(
-      ["worktree", "lock", "--reason", "on usb", path], in: repo.project.path)
-    let admin = repo.project.path.appendingPathComponent(".git/worktrees/unchecked")
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let path = fixture.root.appendingPathComponent("unchecked").path
+    _ = try await fixture.runner.run(
+      ["worktree", "add", "-q", "--no-checkout", "-b", "unchecked", path], in: fixture.project.path)
+    _ = try await fixture.runner.run(
+      ["worktree", "lock", "--reason", "on usb", path], in: fixture.project.path)
+    let admin = fixture.project.path.appendingPathComponent(".git/worktrees/unchecked")
     try #require(
       !FileManager.default.fileExists(atPath: admin.appendingPathComponent("index").path))
 
-    let listed = try await WorktreeGit(runner: repo.runner).list(repo.project)
+    let listed = try await WorktreeGit(runner: fixture.runner).list(fixture.project)
 
     #expect(listed.first { $0.branch == "unchecked" }?.isLocked == true)
     #expect(listed.first { $0.branch == "unchecked" }?.isInitializing == false)
   }
 
   @Test func aWorktreeAddedLockedWithNoCheckoutIsNotAnAddBeingMade() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    let path = repo.root.appendingPathComponent("parked").path
-    _ = try await repo.runner.run(
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let path = fixture.root.appendingPathComponent("parked").path
+    _ = try await fixture.runner.run(
       [
         "worktree", "add", "-q", "--lock", "--reason", "usb", "--no-checkout", "-b", "parked", path,
       ],
-      in: repo.project.path)
+      in: fixture.project.path)
 
-    let listed = try await WorktreeGit(runner: repo.runner).list(repo.project)
+    let listed = try await WorktreeGit(runner: fixture.runner).list(fixture.project)
 
     #expect(listed.first { $0.branch == "parked" }?.isLocked == true)
     #expect(listed.first { $0.branch == "parked" }?.isInitializing == false)
@@ -117,13 +117,13 @@ struct WorktreeGitListingTests {
   /// git's own cleanup runs only on a signal it can catch, so a SIGKILL or a
   /// power cut mid-checkout leaves the lock for good.
   @Test func anInitializingLockLeftLongAgoIsAnAbandonedAddNotOneBeingMade() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
     let reasons = ["killed": "initializing", "worded": "initialisiere"]
     for (branch, reason) in reasons {
-      try await repo.coordinator.createThenRunPostCreate(
-        branch: branch, in: repo.project, settings: repo.worktreeSettings)
-      let admin = repo.project.path.appendingPathComponent(".git/worktrees/\(branch)")
+      try await fixture.coordinator.createThenRunPostCreate(
+        branch: branch, in: fixture.project, settings: fixture.worktreeSettings)
+      let admin = fixture.project.path.appendingPathComponent(".git/worktrees/\(branch)")
       let lock = admin.appendingPathComponent("locked")
       try reason.write(to: lock, atomically: true, encoding: .utf8)
       try FileManager.default.removeItem(at: admin.appendingPathComponent("index"))
@@ -131,7 +131,7 @@ struct WorktreeGitListingTests {
         [.modificationDate: Date(timeIntervalSinceNow: -3600)], ofItemAtPath: lock.path)
     }
 
-    let listed = try await WorktreeGit(runner: repo.runner).list(repo.project)
+    let listed = try await WorktreeGit(runner: fixture.runner).list(fixture.project)
 
     for branch in reasons.keys {
       #expect(listed.first { $0.branch == branch }?.isInitializing == false, "\(branch)")
@@ -142,16 +142,16 @@ struct WorktreeGitListingTests {
   /// git records no creation date, so this is the birth time of the directory that
   /// `git worktree add` made, and the second worktree must not read as the older.
   @Test func listStampsEachWorktreeWithItsDirectorysCreationDate() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    let project = repo.project
-    let coordinator = repo.coordinator
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let project = fixture.project
+    let coordinator = fixture.coordinator
     try await coordinator.createThenRunPostCreate(
-      branch: "first", in: project, settings: repo.worktreeSettings)
+      branch: "first", in: project, settings: fixture.worktreeSettings)
     try await coordinator.createThenRunPostCreate(
-      branch: "second", in: project, settings: repo.worktreeSettings)
+      branch: "second", in: project, settings: fixture.worktreeSettings)
 
-    let listed = try await WorktreeGit(runner: repo.runner).list(project)
+    let listed = try await WorktreeGit(runner: fixture.runner).list(project)
     let dates = try listed.map { try #require($0.createdAt, "no date for \($0.name)") }
     let byBranch = Dictionary(uniqueKeysWithValues: zip(listed.map(\.name), dates))
 
@@ -177,46 +177,46 @@ struct WorktreeGitListingTests {
   }
 
   @Test func aSubdirectoryAndALinkedWorktreeResolveToTheMainWorktree() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    let linked = try await repo.coordinator.createThenRunPostCreate(
-      branch: "side", in: repo.project, settings: repo.worktreeSettings)
-    let subdirectory = repo.project.path.appendingPathComponent("Sources", isDirectory: true)
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let linked = try await fixture.coordinator.createThenRunPostCreate(
+      branch: "side", in: fixture.project, settings: fixture.worktreeSettings)
+    let subdirectory = fixture.project.path.appendingPathComponent("Sources", isDirectory: true)
     try FileManager.default.createDirectory(at: subdirectory, withIntermediateDirectories: true)
 
     func root(_ url: URL) async throws -> String {
-      try await repo.coordinator.git.mainWorktree(containing: url).resolvingSymlinksInPath().path
+      try await fixture.coordinator.git.mainWorktree(containing: url).resolvingSymlinksInPath().path
     }
-    let main = repo.project.path.resolvingSymlinksInPath().path
+    let main = fixture.project.path.resolvingSymlinksInPath().path
 
-    #expect(try await root(repo.project.path) == main)
+    #expect(try await root(fixture.project.path) == main)
     #expect(try await root(subdirectory) == main)
     #expect(try await root(linked) == main, "a linked worktree is the same project")
   }
 
   @Test func aDirectoryOutsideAnyRepositoryIsAnError() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
     await #expect(throws: (any Error).self) {
-      try await repo.coordinator.git.mainWorktree(containing: repo.root)
+      try await fixture.coordinator.git.mainWorktree(containing: fixture.root)
     }
   }
 
   @Test func theListReflectsCreateAndRemove() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
 
-    try await repo.coordinator.createThenRunPostCreate(
-      branch: "a", in: repo.project, settings: repo.worktreeSettings)
-    try await repo.coordinator.createThenRunPostCreate(
-      branch: "b", in: repo.project, settings: repo.worktreeSettings)
-    var listed = try await repo.coordinator.git.list(repo.project)
+    try await fixture.coordinator.createThenRunPostCreate(
+      branch: "a", in: fixture.project, settings: fixture.worktreeSettings)
+    try await fixture.coordinator.createThenRunPostCreate(
+      branch: "b", in: fixture.project, settings: fixture.worktreeSettings)
+    var listed = try await fixture.coordinator.git.list(fixture.project)
     #expect(listed.map(\.branch) == ["main", "a", "b"])
     #expect(listed[0].isPrimary && !listed[1].isPrimary)
-    #expect(listed.allSatisfy { $0.projectID == repo.project.id })
+    #expect(listed.allSatisfy { $0.projectID == fixture.project.id })
 
-    try await repo.coordinator.removeUnlinking(listed[1], in: repo.project)
-    listed = try await repo.coordinator.git.list(repo.project)
+    try await fixture.coordinator.removeUnlinking(listed[1], in: fixture.project)
+    listed = try await fixture.coordinator.git.list(fixture.project)
     #expect(listed.map(\.branch) == ["main", "b"])
   }
 }

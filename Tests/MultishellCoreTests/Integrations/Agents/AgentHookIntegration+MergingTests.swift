@@ -11,12 +11,12 @@ struct AgentHookIntegrationMergingTests: AgentHookFixtures {
     var rng = SeededGenerator(seed: seed)
     for integration in AgentHookCatalogue.integrations where !integration.isOursAlone {
       let before = settings(&rng, events: integration.events.map(\.name))
-      let unreadable = integration.unreadableEvents(in: before)
+      let misshapen = integration.eventsOfUnexpectedShape(in: before)
 
       let added = integration.adding(to: before, helper: helper)
       #expect(
-        integration.hasOurHookUnderEveryEvent(in: added) == unreadable.isEmpty,
-        "seed \(seed) \(integration.id): installed unless an entry was unreadable")
+        integration.hasOurHookUnderEveryEvent(in: added) == misshapen.isEmpty,
+        "seed \(seed) \(integration.id): installed unless an entry was of an unexpected shape")
       #expect(
         integration.adding(to: added, helper: helper).keys.count == added.keys.count,
         "seed \(seed) \(integration.id): adding twice adds nothing")

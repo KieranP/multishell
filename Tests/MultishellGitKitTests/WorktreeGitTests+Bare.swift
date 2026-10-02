@@ -6,49 +6,51 @@ import Testing
 
 extension WorktreeGitTests {
   @Test func aBareRepositoryIsARepositoryAndIsTheProjectsRoot() async throws {
-    let (repo, checkout) = try await RepositoryFixture.makeBare()
-    defer { repo.tearDown() }
+    let (fixture, checkout) = try await RepositoryFixture.makeBare()
+    defer { fixture.tearDown() }
 
-    #expect(await repo.coordinator.git.isRepository(repo.project.path))
-    #expect(await repo.coordinator.git.isRepository(checkout))
-    #expect(await repo.coordinator.git.isRepository(repo.root) == false)
-    #expect(try await repo.coordinator.git.mainWorktree(containing: checkout) == repo.project.path)
-    #expect(repo.project.name == "repo")
+    #expect(await fixture.coordinator.git.isRepository(fixture.project.path))
+    #expect(await fixture.coordinator.git.isRepository(checkout))
+    #expect(await fixture.coordinator.git.isRepository(fixture.root) == false)
+    #expect(
+      try await fixture.coordinator.git.mainWorktree(containing: checkout) == fixture.project.path)
+    #expect(fixture.project.name == "repo")
   }
 
   @Test func theListLeadsWithTheBareEntryWhichGetsNoStatus() async throws {
-    let (repo, _) = try await RepositoryFixture.makeBare()
-    defer { repo.tearDown() }
+    let (fixture, _) = try await RepositoryFixture.makeBare()
+    defer { fixture.tearDown() }
 
-    let listed = try await repo.coordinator.git.list(repo.project)
+    let listed = try await fixture.coordinator.git.list(fixture.project)
     #expect(listed.map(\.isBare) == [true, false])
     #expect(listed[0].isPrimary && listed[0].name == "repo.git")
     #expect(listed[1].branch == "main")
 
-    let statuses = await repo.coordinator.readStatuses(of: listed).mapValues(\.status)
+    let statuses = await fixture.coordinator.readStatuses(of: listed).mapValues(\.status)
     #expect(statuses.keys.sorted() == [listed[1].id], "git status has no work tree to read there")
   }
 
   @Test func worktreesAreCreatedAndRemovedFromTheBareRepository() async throws {
-    let (repo, _) = try await RepositoryFixture.makeBare()
-    defer { repo.tearDown() }
-    #expect(await repo.coordinator.git.hasCommits(repo.project))
-    #expect(try await repo.coordinator.git.currentBranch(repo.project) == "main")
+    let (fixture, _) = try await RepositoryFixture.makeBare()
+    defer { fixture.tearDown() }
+    #expect(await fixture.coordinator.git.hasCommits(fixture.project))
+    #expect(try await fixture.coordinator.git.currentBranch(fixture.project) == "main")
 
-    let path = try await repo.coordinator.createThenRunPostCreate(
-      branch: "feat", in: repo.project, settings: repo.worktreeSettings)
+    let path = try await fixture.coordinator.createThenRunPostCreate(
+      branch: "feat", in: fixture.project, settings: fixture.worktreeSettings)
     #expect(path.path.hasSuffix("/trees/feat"))
-    let created = try await repo.worktree(onBranch: "feat")
-    try await repo.coordinator.removeUnlinking(created, deletingBranch: true, in: repo.project)
-    #expect(try await repo.coordinator.git.list(repo.project).count == 2)
-    #expect(try await repo.branches() == ["main"])
+    let created = try await fixture.worktree(onBranch: "feat")
+    try await fixture.coordinator.removeUnlinking(
+      created, deletingBranch: true, in: fixture.project)
+    #expect(try await fixture.coordinator.git.list(fixture.project).count == 2)
+    #expect(try await fixture.branches() == ["main"])
   }
 
   @Test func theCommonDirectoryIsTheBareRepositoryItself() async throws {
-    let (repo, _) = try await RepositoryFixture.makeBare()
-    defer { repo.tearDown() }
-    let common = try await repo.coordinator.git.commonGitDirectory(repo.project)
-    #expect(common.standardizedFileURL.path == repo.project.path.path)
+    let (fixture, _) = try await RepositoryFixture.makeBare()
+    defer { fixture.tearDown() }
+    let common = try await fixture.coordinator.git.commonGitDirectory(fixture.project)
+    #expect(common.standardizedFileURL.path == fixture.project.path.path)
     #expect(
       WorktreeRecords.directoriesToWatch(in: common).map(\.lastPathComponent).sorted()
         == ["main", "worktrees"])

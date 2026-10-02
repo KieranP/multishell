@@ -7,7 +7,7 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   enum Format: Sendable {
     /// `hooks` in a file the user keeps their own settings in, ours merged
     /// in and back out. Gemini counts the timeout in milliseconds.
-    case userSettingsFile(millisecondTimeout: Bool)
+    case userSettingsFile(timeoutIsInMilliseconds: Bool)
     /// Copilot reads every JSON file in its hooks directory, so ours is a
     /// file of its own: written whole, deleted to remove it.
     case ownHookFile
@@ -48,7 +48,7 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   let resumption: Resumption
   /// Whether a subagent is a conversation of its own, firing its own prompt
   /// and Stop, which only its conversation id tells apart; see agents.md.
-  let workersAreConversations: Bool
+  let subagentsAreConversations: Bool
   /// The kinds of listed work whose end reaches the model and wakes it. One
   /// counted that never wakes it holds the pane Working for good; see agents.md.
   let wakingTaskTypes: Set<String>
@@ -59,7 +59,7 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   init(
     id: String, file: URL, displayPath: String, events: [AgentHookEvent],
     format: Format, trustNote: String? = nil, backgroundShellMarker: String? = nil,
-    resumption: Resumption = .never, workersAreConversations: Bool = false,
+    resumption: Resumption = .never, subagentsAreConversations: Bool = false,
     wakingTaskTypes: Set<String> = [], transcriptQueuesNotices: Bool = false
   ) {
     self.id = id
@@ -70,7 +70,7 @@ public struct AgentHookIntegration: Identifiable, Sendable {
     self.trustNote = trustNote
     self.backgroundShellMarker = backgroundShellMarker
     self.resumption = resumption
-    self.workersAreConversations = workersAreConversations
+    self.subagentsAreConversations = subagentsAreConversations
     self.wakingTaskTypes = wakingTaskTypes
     self.transcriptQueuesNotices = transcriptQueuesNotices
   }

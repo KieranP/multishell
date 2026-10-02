@@ -9,9 +9,8 @@ struct AgentHookIntegrationInstallingTests: AgentHookFixtures {
   /// Remove on a file that has none of ours rewrites nothing: the write
   /// sorts keys and re-indents, and takes a backup copy nobody asked for.
   @Test func removingNothingLeavesTheFileAndMakesNoBackup() throws {
-    let directory = try Scratch.directory("hooks")
+    let (directory, file) = try scratchSettingsFile()
     defer { Scratch.remove(directory) }
-    let file = directory.appendingPathComponent("settings.json")
     let theirs = #"{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"echo bye"}]}]},"z":1}"#
     try theirs.write(to: file, atomically: true, encoding: .utf8)
 
@@ -20,9 +19,13 @@ struct AgentHookIntegrationInstallingTests: AgentHookFixtures {
     #expect(try String(contentsOf: file, encoding: .utf8) == theirs, "rewritten for nothing")
     let beside = try FileManager.default.contentsOfDirectory(atPath: directory.path)
     #expect(beside == ["settings.json"], "a backup of a file we did not change: \(beside)")
+  }
 
-    // Half of ours, under one event only: still ours to take back. The check
-    // cannot be `hasOurHookUnderEveryEvent`, which wants one under every event.
+  /// The check cannot be `hasOurHookUnderEveryEvent`, which wants one of ours
+  /// under every event.
+  @Test func removeTakesBackAHalfWrittenInstall() throws {
+    let (directory, file) = try scratchSettingsFile()
+    defer { Scratch.remove(directory) }
     let half = AgentHookCatalogue.claude.adding(to: [:], helper: helper)
     var hooks = try #require(half["hooks"] as? [String: Any])
     let one = try #require(hooks["Stop"])
@@ -38,35 +41,34 @@ struct AgentHookIntegrationInstallingTests: AgentHookFixtures {
   /// Leaving it alone in silence would leave a row that never says
   /// Installed, so the install refuses and names the event.
   @Test func installingRefusesAFileWhoseEntriesItCannotRead() throws {
-    let directory = try Scratch.directory("hooks")
+    let (directory, file) = try scratchSettingsFile()
     defer { Scratch.remove(directory) }
-    let file = directory.appendingPathComponent("settings.json")
     let original = #"{"hooks":{"Stop":"echo done"}}"#
     try original.write(to: file, atomically: true, encoding: .utf8)
 
-    #expect(throws: UnreadableHookEntries.self) {
+    #expect(throws: UnexpectedHookEntriesShape.self) {
       try AgentHookCatalogue.claude.install(into: file, helper: helper)
     }
     #expect(try String(contentsOf: file, encoding: .utf8) == original, "not a byte written")
     #expect(!AgentHookCatalogue.claude.hasOurHookUnderEveryEvent(in: file))
     #expect(
-      AgentHookCatalogue.claude.unreadableEvents(in: try AgentSettingsFile.read(file)) == ["Stop"])
+      AgentHookCatalogue.claude.eventsOfUnexpectedShape(in: try AgentSettingsFile.read(file)) == [
+        "Stop"
+      ])
   }
 
   /// Every existing install predates the two counting events, so Add has to
   /// top them up without doubling the seven that are already there.
   @Test func addingOverAnOlderInstallFillsOnlyWhatIsMissing() throws {
-    let directory = try Scratch.directory("hooks")
+    let (directory, file) = try scratchSettingsFile()
     defer { Scratch.remove(directory) }
-    let file = directory.appendingPathComponent("settings.json")
 
-    // The file as a build before the counting events left it.
-    let older = AgentHookIntegration(
+    let beforeCountingEvents = AgentHookIntegration(
       id: AgentCatalogue.claudeID, file: file, displayPath: "x",
       events: AgentHookCatalogue.claude.events.filter { $0.subagentPhase == nil },
-      format: .userSettingsFile(millisecondTimeout: false))
-    try older.install(into: file, helper: helper)
-    #expect(older.hasOurHookUnderEveryEvent(in: file))
+      format: .userSettingsFile(timeoutIsInMilliseconds: false))
+    try beforeCountingEvents.install(into: file, helper: helper)
+    #expect(beforeCountingEvents.hasOurHookUnderEveryEvent(in: file))
     #expect(
       !AgentHookCatalogue.claude.hasOurHookUnderEveryEvent(in: file), "so the row offers Add again")
 
@@ -83,13 +85,12 @@ struct AgentHookIntegrationInstallingTests: AgentHookFixtures {
   /// A list or a string under `hooks` is something this cannot put back, so
   /// the install refuses it rather than writing over it.
   @Test func installingRefusesAFileWhoseHooksAreNotAnObject() throws {
-    let directory = try Scratch.directory("hooks")
+    let (directory, file) = try scratchSettingsFile()
     defer { Scratch.remove(directory) }
-    let file = directory.appendingPathComponent("settings.json")
     let original = #"{"hooks":["Stop"]}"#
     try original.write(to: file, atomically: true, encoding: .utf8)
 
-    #expect(throws: UnreadableHookSection.self) {
+    #expect(throws: UnexpectedHookSectionShape.self) {
       try AgentHookCatalogue.claude.install(into: file, helper: helper)
     }
     #expect(try String(contentsOf: file, encoding: .utf8) == original, "not a byte written")
@@ -99,9 +100,8 @@ struct AgentHookIntegrationInstallingTests: AgentHookFixtures {
   /// An explicit `null` is not a shape to preserve, it is the key being
   /// absent spelled out, so the install goes ahead as for a file without it.
   @Test func installingTreatsANullHooksKeyAsNoHooksAtAll() throws {
-    let directory = try Scratch.directory("hooks")
+    let (directory, file) = try scratchSettingsFile()
     defer { Scratch.remove(directory) }
-    let file = directory.appendingPathComponent("settings.json")
     try #"{"hooks":null,"model":"opus"}"#.write(to: file, atomically: true, encoding: .utf8)
 
     try AgentHookCatalogue.claude.install(into: file, helper: helper)
@@ -125,7 +125,6 @@ struct AgentHookIntegrationInstallingTests: AgentHookFixtures {
         atPath: file.appendingPathExtension("before-multishell").path),
       "nothing to back up when the file did not exist")
 
-    // A hand-edited file with other content gets a backup once.
     try #"{ "model": "opus", "hooks": {} }"#.write(to: file, atomically: true, encoding: .utf8)
     try claude.install(into: file, helper: helper)
     let backup = file.appendingPathExtension("before-multishell")

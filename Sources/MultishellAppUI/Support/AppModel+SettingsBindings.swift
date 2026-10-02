@@ -67,7 +67,7 @@ extension AppModel {
       set: { value in
         var settings = self.ownSettings(of: project)
         settings[keyPath: keyPath] = value
-        self.updateSettings(settings, for: project)
+        self.setSettings(settings, for: project)
       }
     )
   }
@@ -94,7 +94,7 @@ extension AppModel {
   }
 
   /// The board's one filter, held by the model rather than the workspace.
-  var showsAllTerminalsBinding: Binding<Bool> {
+  var showsAllTerminalsSetting: Binding<Bool> {
     Binding(get: { self.showsAllTerminals }, set: { self.setShowsAllTerminals($0) })
   }
 }

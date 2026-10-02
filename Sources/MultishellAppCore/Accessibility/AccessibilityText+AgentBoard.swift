@@ -17,25 +17,15 @@ extension AccessibilityText {
         card.occupant.name,
         card.occupant.isAgent ? t("spoken.agent") : t("spoken.shell")))
     if let position = card.position { parts.append(panePosition(position)) }
-    if !card.subagents.isEmpty { parts.append(card.subagents.countText) }
+    if !card.workers.isEmpty { parts.append(card.workers.countText) }
     if let elapsed = card.elapsed(at: now) { parts.append(t("spoken.elapsed", elapsed)) }
     if let message = card.message { parts.append(message) }
     return parts.joined(separator: ", ")
   }
 
-  /// The chip, which is what says the list is there: how many, then each by
-  /// kind. No times: they are read later than they are built, and cost a clock per chip.
-  public static func subagents(_ subagents: [Subagent]) -> String {
-    let named = subagents.map { worker in
-      [worker.displayName, worker.occurrenceText].compactMap { $0 }.joined(separator: " ")
-    }
-    return ([subagents.countText] + named).joined(separator: ", ")
-  }
-
   /// The sidebar's Agents entry, which carries the counts.
   public static func agentsRow(_ counts: [AgentBoardLaneCount]) -> String {
-    let said = counts.filter { $0.count > 0 }
-      .map { t("spoken.lane-count", $0.count, $0.lane.title(inSentence: true)) }
+    let said = counts.map { t("spoken.lane-count", $0.count, $0.lane.title(inSentence: true)) }
     let tail = said.isEmpty ? [t("spoken.nothing-running")] : said
     return ([t("label.agents")] + tail).joined(separator: ", ")
   }

@@ -3,15 +3,14 @@ import MultishellAppCore
 import SwiftUI
 
 extension View {
-  /// Asked when Cmd+W would close a pane or tab whose agent last reported
-  /// that it is still working.
+  /// Asked before a close ends a pane or tab whose agent last reported that
+  /// it is still working, whichever key, button or menu asked for it.
   func pendingCloseDialog(model: AppModel) -> some View {
     destructiveAlert(model.pendingClose) { pending in
       DestructiveAlert.make(
         title: pending.title,
         message: t("dialog.agent-still-working"),
-        choices: [pending.buttonLabel],
-        cancel: t("action.cancel"))
+        choices: [pending.buttonLabel])
     } answer: { _, choice in
       model.answerPendingClose(confirmed: choice != nil)
     }

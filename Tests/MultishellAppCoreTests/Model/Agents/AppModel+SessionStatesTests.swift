@@ -1,4 +1,5 @@
 import MultishellCore
+import TestScratch
 import Testing
 
 @testable import MultishellAppCore
@@ -6,17 +7,20 @@ import Testing
 @Suite @MainActor
 struct AppModelSessionStatesTests {
   @Test func clearingByHandDropsAStaleWorkingDot() {
-    let h = Harness()
-    h.model.select(h.main)
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-    h.stateSource.send(
-      SessionStateReport(state: .running, sessionID: tab.focusedSessionID, pid: 99999))
-    h.stateSource.send(SessionStateReport(state: .attention, cwd: h.feature.path.path, pid: 99998))
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let tab = harness.model.workspace.activeTab(in: harness.main.id)!
+    harness.stateSource.send(
+      SessionStateReport(state: .running, sessionID: tab.focusedSessionID, pid: deadPID()))
+    harness.stateSource.send(
+      SessionStateReport(
+        state: .attention, workingDirectory: harness.feature.path.path, pid: deadPID())
+    )
 
-    h.model.clearState(of: tab)
-    #expect(h.model.state(of: tab) == nil)
-    h.model.clearState(ofWorktree: h.feature.id)
-    #expect(h.model.sessionStates.showsNothing)
-    #expect(h.model.pidWatch == nil)
+    harness.model.clearState(of: tab)
+    #expect(harness.model.state(of: tab) == nil)
+    harness.model.clearState(ofWorktree: harness.feature.id)
+    #expect(harness.model.sessionStates.showsNothing)
+    #expect(harness.model.pidWatch == nil)
   }
 }

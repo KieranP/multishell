@@ -9,8 +9,9 @@ extension ShellCommandTests {
   /// reads its rc files, each of which exports a marker under this home.
   @Test func aHookRunsInAnInteractiveLoginShellThatReadsItsRcFiles() async throws {
     guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
-    let home = try Scratch.directory("home")
-    defer { Scratch.remove(home) }
+    let shell = try ScratchShell()
+    defer { shell.tearDown() }
+    let home = shell.home
     for (file, marker) in [
       (".zshrc", "zshrc"), (".zprofile", "zprofile"), (".bashrc", "bashrc"),
       (".bash_profile", "bash_profile"), (".profile", "profile"),
@@ -21,40 +22,41 @@ extension ShellCommandTests {
 
     let out = try await ShellCommand.runScript(
       "printf '%s' \"$MULTISHELL_RC\"", in: home,
-      environment: ["HOME": home.path, "ZDOTDIR": home.path], shellPath: "/bin/zsh")
+      environment: shell.environment, shellPath: shell.path)
 
     #expect(out == "zshrc", ".zprofile then .zshrc, as a login interactive zsh reads them")
   }
 
   @Test func aHookRunsInItsDirectoryWhereverTheRcFilesLeftTheShell() async throws {
     guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
-    let home = try Scratch.directory("home")
-    defer { Scratch.remove(home) }
+    let shell = try ScratchShell()
+    defer { shell.tearDown() }
+    let home = shell.home
     let worktree = try Scratch.directory("it's here")
     defer { Scratch.remove(worktree) }
     try "cd /\nchpwd() { echo noise; }\n".write(
       to: home.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
 
     let out = try await ShellCommand.runScript(
-      "pwd -P", in: worktree, environment: ["HOME": home.path, "ZDOTDIR": home.path],
-      shellPath: "/bin/zsh")
+      "pwd -P", in: worktree, environment: shell.environment,
+      shellPath: shell.path)
 
-    let expected = try #require(realpath(worktree.path, nil))
-    defer { free(expected) }
-    #expect(out.trimmingCharacters(in: .newlines) == String(cString: expected))
+    let expected = try #require(Scratch.physicalPath(of: worktree))
+    #expect(out.trimmingCharacters(in: .newlines) == expected)
   }
 
   @Test func aChpwdHooksStderrIsNotTakenForTheFailingHooksMessage() async throws {
     guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
-    let home = try Scratch.directory("home")
-    defer { Scratch.remove(home) }
+    let shell = try ScratchShell()
+    defer { shell.tearDown() }
+    let home = shell.home
     try "chpwd() { echo 'direnv: loading .envrc' >&2; }\n".write(
       to: home.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
 
     let failure = await #expect(throws: ProcessFailure.self) {
       try await ShellCommand.runScript(
         "echo 'hook failed' >&2\nexit 3", in: home,
-        environment: ["HOME": home.path, "ZDOTDIR": home.path], shellPath: "/bin/zsh")
+        environment: shell.environment, shellPath: shell.path)
     }
 
     #expect(failure?.message == "hook failed")
@@ -62,14 +64,15 @@ extension ShellCommandTests {
 
   @Test func aChpwdHookWithAFailingCommandDoesNotEndTheHook() async throws {
     guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
-    let home = try Scratch.directory("home")
-    defer { Scratch.remove(home) }
+    let shell = try ScratchShell()
+    defer { shell.tearDown() }
+    let home = shell.home
     try "chpwd() { false; }\n".write(
       to: home.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
 
     let out = try await ShellCommand.runScript(
-      "printf ran", in: home, environment: ["HOME": home.path, "ZDOTDIR": home.path],
-      shellPath: "/bin/zsh")
+      "printf ran", in: home, environment: shell.environment,
+      shellPath: shell.path)
 
     #expect(out == "ran")
   }
@@ -77,8 +80,9 @@ extension ShellCommandTests {
   @Test(arguments: [("/bin/zsh", ".zshrc"), ("/bin/tcsh", ".tcshrc")])
   func aWorktreeThatCannotBeEnteredRunsNothing(shell: String, rcFile: String) async throws {
     guard FileManager.default.isExecutableFile(atPath: shell) else { return }
-    let home = try Scratch.directory("home")
-    defer { Scratch.remove(home) }
+    let scratchShell = try ScratchShell(shell)
+    defer { scratchShell.tearDown() }
+    let home = scratchShell.home
     let worktree = try Scratch.directory("worktree")
     let marker = home.appendingPathComponent("ran")
     try "rmdir \(AnyShellQuoting.quote(worktree.path))\n".write(
@@ -87,7 +91,7 @@ extension ShellCommandTests {
     await #expect(throws: ProcessFailure.self) {
       try await ShellCommand.runScript(
         "touch \(AnyShellQuoting.quote(marker.path))", in: worktree,
-        environment: ["HOME": home.path, "ZDOTDIR": home.path], shellPath: shell)
+        environment: scratchShell.environment, shellPath: shell)
     }
 
     #expect(!FileManager.default.fileExists(atPath: marker.path))
@@ -96,8 +100,9 @@ extension ShellCommandTests {
   @Test(arguments: ["/bin/zsh", "/bin/bash", "/bin/sh", "/bin/tcsh"])
   func aWorktreePathWithAnyPunctuationIsEnteredByEveryShell(shell: String) async throws {
     guard FileManager.default.isExecutableFile(atPath: shell) else { return }
-    let home = try Scratch.directory("home")
-    defer { Scratch.remove(home) }
+    let scratchShell = try ScratchShell(shell)
+    defer { scratchShell.tearDown() }
+    let home = scratchShell.home
     let worktree = try Scratch.directory(#"it's here!x a\b"#)
     defer { Scratch.remove(worktree) }
     for rc in [".zshrc", ".bash_profile", ".profile", ".tcshrc"] {
@@ -105,7 +110,7 @@ extension ShellCommandTests {
     }
 
     let out = try await ShellCommand.runScript(
-      "pwd", in: worktree, environment: ["HOME": home.path, "ZDOTDIR": home.path],
+      "pwd", in: worktree, environment: scratchShell.environment,
       shellPath: shell)
 
     #expect(out.trimmingCharacters(in: .newlines).hasSuffix(worktree.lastPathComponent))
@@ -114,10 +119,11 @@ extension ShellCommandTests {
   @Test(arguments: ["/bin/bash", "/bin/sh", "/bin/ksh"])
   func aHookLeavesAHistoryFileTheEnvironmentNamesAlone(shell: String) async throws {
     guard FileManager.default.isExecutableFile(atPath: shell) else { return }
-    let home = try Scratch.directory("home")
-    defer { Scratch.remove(home) }
+    let scratchShell = try ScratchShell(shell)
+    defer { scratchShell.tearDown() }
+    let home = scratchShell.home
     let history = home.appendingPathComponent("zsh_history")
-    let lines = (1...600).map { ": 1700000000:0;command \($0)\n" }.joined()
+    let lines = LongHistory.lines
     try lines.write(to: history, atomically: true, encoding: .utf8)
     for rc in [".bash_profile", ".profile"] {
       try "HISTFILESIZE=10\n".write(
@@ -136,20 +142,22 @@ extension ShellCommandTests {
     guard FileManager.default.isExecutableFile(atPath: path) else { return }
     let shell = try ScratchShell(path)
     defer { shell.tearDown() }
-    let scratch = try Scratch.directory("script")
-    defer { Scratch.remove(scratch) }
+    let scriptDirectory = try Scratch.directory("script")
+    defer { Scratch.remove(scriptDirectory) }
     func run(_ script: String) async throws -> String {
       try await ShellCommand.runScript(
-        script, in: scratch, environment: shell.environment, shellPath: shell.path)
+        script, in: scriptDirectory, environment: shell.environment, shellPath: shell.path)
     }
 
     await #expect(throws: ProcessFailure.self) {
       try await run("echo one > first.txt\nfalse\necho two > second.txt")
     }
     #expect(
-      FileManager.default.fileExists(atPath: scratch.appendingPathComponent("first.txt").path))
+      FileManager.default.fileExists(
+        atPath: scriptDirectory.appendingPathComponent("first.txt").path))
     #expect(
-      !FileManager.default.fileExists(atPath: scratch.appendingPathComponent("second.txt").path),
+      !FileManager.default.fileExists(
+        atPath: scriptDirectory.appendingPathComponent("second.txt").path),
       "the line after the failure ran")
 
     let out = try await run("printf a\nprintf b")
@@ -237,11 +245,11 @@ extension ShellCommandTests {
     #expect(ShellCommand.failureMessage(standardOutput: "  hey  ", standardError: "") == "hey")
   }
 
-  @Test func aScriptsOutputIsTheStderrAfterTheMarkerOrAllOfItWithoutOne() {
+  @Test func aScriptsStderrIsWhatFollowsTheMarkerOrAllOfItWithoutOne() {
     let marker = ShellCommand.stderrStartMarker
-    #expect(ShellCommand.scriptOutput(fromStderr: "noise\n\(marker)\nmine\n") == "mine")
-    #expect(ShellCommand.scriptOutput(fromStderr: "noise\n\(marker)\n") == "")
-    #expect(ShellCommand.scriptOutput(fromStderr: "no marker here") == "no marker here")
+    #expect(ShellCommand.stderrAfterMarker("noise\n\(marker)\nmine\n") == "mine")
+    #expect(ShellCommand.stderrAfterMarker("noise\n\(marker)\n") == "")
+    #expect(ShellCommand.stderrAfterMarker("no marker here") == "no marker here")
   }
 
 }

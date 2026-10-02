@@ -10,8 +10,7 @@ import MultishellAppCore
 final class ModelHarness {
   let model: MultishellAppUI.AppModel
   let store: WorkspaceStore
-  /// Captured once, so it goes stale after a write; that is what
-  /// `aBindingFollowsTheRecordAndNotTheProjectItWasBuiltWith` needs.
+  /// Captured once, so it goes stale after a write; `live` is the store's copy.
   let project: Project
   /// The record as the store has it, which is what a reader passes.
   var live: Project { model.workspace.project(project.id) ?? project }
@@ -30,6 +29,15 @@ final class ModelHarness {
       host: NoEngine(),
       coordinator: nil,
       watcher: NoWatcher())
+  }
+
+  /// The project's own checkout as its one worktree.
+  @discardableResult
+  func addPrimaryWorktree(branch: String = "main", head: String = "abc1234") -> Worktree {
+    let worktree = Worktree(
+      path: project.path, projectID: project.id, head: head, branch: branch, isPrimary: true)
+    store.replaceWorktrees([worktree], forProject: project.id)
+    return worktree
   }
 
   deinit { ScratchDirectory.remove(directory) }

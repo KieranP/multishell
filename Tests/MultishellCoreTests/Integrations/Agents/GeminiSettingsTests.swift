@@ -74,10 +74,14 @@ struct GeminiSettingsTests {
     defer { Scratch.remove(files.root) }
     try files.user(steering)
     #expect(!files.wakes, "a shell's end is silent by default")
-    try files.user(
-      #"{"experimental":{"modelSteering":true},"#
-        + #""tools":{"shell":{"backgroundCompletionBehavior":"notify"}}}"#)
-    #expect(files.wakes)
+    for behavior in ["notify", "inject"] {
+      try files.user(
+        #"{"experimental":{"modelSteering":true},"#
+          + #""tools":{"shell":{"backgroundCompletionBehavior":"\#(behavior)"}}}"#)
+      #expect(files.wakes, "\(behavior)")
+      try files.user(#"{"tools":{"shell":{"backgroundCompletionBehavior":"\#(behavior)"}}}"#)
+      #expect(!files.wakes, "\(behavior) without steering")
+    }
   }
 
   @Test func theProjectFillsWhatTheUserLeftAndTheSystemFileHasTheLastWord() throws {

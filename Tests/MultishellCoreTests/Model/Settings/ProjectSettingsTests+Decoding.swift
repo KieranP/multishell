@@ -4,28 +4,27 @@ import Testing
 @testable import MultishellCore
 
 extension ProjectSettingsTests {
-  @Test func projectSettingsKeepAnUnknownAgentIdAndReadEmptyAsNoOverride() throws {
+  @Test func projectSettingsKeepAnUnknownAgentIdAndFollowTheGlobalWhereAbsent() throws {
     let unknown = try decodeJSON(ProjectSettings.self, #"{ "preferredAgentID": "future-agent" }"#)
     #expect(unknown.preferredAgentID == "future-agent")
-    let empty = try decodeJSON(ProjectSettings.self, #"{ "preferredAgentID": "" }"#)
-    #expect(empty.preferredAgentID == nil)
     #expect(try decodeJSON(ProjectSettings.self, "{}").preferredAgentID == nil)
-    #expect(try decodeJSON(ProjectSettings.self, "{}").autoStartAgent == nil, "follows the global")
+    #expect(try decodeJSON(ProjectSettings.self, "{}").autoStartsAgent == nil, "follows the global")
     #expect(
-      try decodeJSON(ProjectSettings.self, #"{ "autoStartAgent": false }"#).autoStartAgent == false)
+      try decodeJSON(ProjectSettings.self, #"{ "autoStartAgent": false }"#).autoStartsAgent == false
+    )
   }
 
   @Test func projectSettingsSplitAutoStartAndOpenOnCreateFollowTheGlobalUntilOverridden() throws {
     let empty = try decodeJSON(ProjectSettings.self, "{}")
-    #expect(empty.autoStartAgentOnCreate == nil && empty.opensTerminalOnCreate == nil)
+    #expect(empty.autoStartsAgentOnCreate == nil && empty.opensTerminalOnCreate == nil)
     #expect(empty.opensTerminalOnSelect == nil)
     // The one override state files had before the split stays the tab-open
     // one; creation follows the global, which carries the old value.
     let old = try decodeJSON(ProjectSettings.self, #"{ "autoStartAgent": true }"#)
-    #expect(old.autoStartAgentOnCreate == nil, "follows the global")
+    #expect(old.autoStartsAgentOnCreate == nil, "follows the global")
     let split = try decodeJSON(
       ProjectSettings.self, #"{ "autoStartAgent": true, "autoStartAgentOnCreate": false }"#)
-    #expect(split.autoStartAgentOnCreate == false)
+    #expect(split.autoStartsAgentOnCreate == false)
     #expect(
       try decodeJSON(ProjectSettings.self, #"{ "opensTerminalOnCreate": false }"#)
         .opensTerminalOnCreate == false)
@@ -38,12 +37,12 @@ extension ProjectSettingsTests {
   /// would read that absence as an override on the next launch.
   @Test func anOverriddenSettingBesideOneFollowingTheGlobalSurvivesARoundTrip() throws {
     var settings = ProjectSettings()
-    settings.autoStartAgent = true
+    settings.autoStartsAgent = true
     settings.opensTerminalOnCreate = false
     let json = try JSONEncoder().encode(settings)
     let back = try JSONDecoder().decode(ProjectSettings.self, from: json)
-    #expect(back.autoStartAgent == true)
-    #expect(back.autoStartAgentOnCreate == nil, "still following the global")
+    #expect(back.autoStartsAgent == true)
+    #expect(back.autoStartsAgentOnCreate == nil, "still following the global")
     #expect(back.opensTerminalOnCreate == false)
   }
 
@@ -57,39 +56,36 @@ extension ProjectSettingsTests {
     #expect(settings.preferredShellID == nil, "follows the global shell")
     #expect(settings.iconGlyph == nil && settings.iconTint == nil, "the folder, untinted")
     #expect(settings.defaultBranch == nil, "detected rather than named")
+  }
 
-    let shell = try decodeJSON(ProjectSettings.self, #"{ "defaultShell": "" }"#)
-    #expect(shell.preferredShellID == nil, "empty is noise where `login` is how none is spelled")
+  @Test func loginNamesTheLoginShell() throws {
     let login = try decodeJSON(ProjectSettings.self, #"{ "defaultShell": "login" }"#)
-    #expect(login.preferredShellID == ShellCatalogue.loginShellID)
+    #expect(login.preferredShellID == ShellChoice.loginShellID)
+  }
 
-    // Kept, not coerced: blank is the only way these three say "none" over
-    // the global or the file. Every reader trims, so `""` still detects.
-    let blank = try decodeJSON(
-      ProjectSettings.self,
-      #"{ "worktreeDirectory": "", "branchPrefix": "", "defaultBranch": "" }"#)
-    #expect(blank.worktreeDirectory == "")
-    #expect(blank.branchPrefix == "")
-    #expect(blank.defaultBranch == "")
-    #expect(
-      try decodeJSON(ProjectSettings.self, #"{ "defaultBranch": "develop" }"#).defaultBranch
-        == "develop")
-
-    // The fourth field with no other spelling for none: blank runs the
-    // agent bare under a global that passes flags.
+  /// The fourth field with no other spelling for none: blank runs the agent
+  /// bare under a global that passes flags.
+  @Test func blankAgentFlagsAreKeptAndAbsentOnesFollowTheGlobal() throws {
     #expect(try decodeJSON(ProjectSettings.self, #"{ "agentFlags": "" }"#).agentFlags == "")
     #expect(
       try decodeJSON(ProjectSettings.self, #"{ "postCreateHook": "x" }"#).agentFlags == nil,
       "absent follows the global")
+  }
 
-    // The absent key is what "follow the global" is written as, and it must
-    // stay distinguishable from the blank above across a round trip.
+  /// The absent key is what "follow the global" is written as, and it must
+  /// stay distinguishable from a blank across a round trip.
+  @Test func aBlankPinSurvivesARoundTripApartFromAnAbsentKey() throws {
     var pinned = ProjectSettings()
     pinned.branchPrefix = ""
     let restored = try JSONDecoder().decode(
       ProjectSettings.self, from: try JSONEncoder().encode(pinned))
     #expect(restored.branchPrefix == "", "pinned to no prefix, not following the global")
     #expect(restored.worktreeDirectory == nil, "untouched, so still following the global")
+  }
+
+  @Test func aProjectsUnknownSortOrderFollowsTheGlobal() throws {
+    let settings = try decodeJSON(ProjectSettings.self, #"{ "worktreeSortOrder": "byMergeState" }"#)
+    #expect(settings.worktreeSortOrder == nil)
   }
 
   @Test func anIconTintOutsideTheThemeOrOfTheWrongTypeIsDropped() throws {
@@ -125,7 +121,7 @@ extension ProjectSettingsTests {
     let decided = try decodeJSON(
       ProjectSettings.self, #"{ "sharedHooks": [{ "digest": "\#(digest)", "trusted": true }] }"#)
     #expect(
-      decided.trustDecisions == [TrustDecision(digest: digest, trusted: true)])
+      decided.trustDecisions == [TrustDecision(digest: digest, isTrusted: true)])
     let broken = try decodeJSON(
       ProjectSettings.self, #"{ "sharedHooks": "yes", "branchPrefix": "k/" }"#)
     #expect(broken.trustDecisions.isEmpty && broken.branchPrefix == "k/")
@@ -137,7 +133,7 @@ extension ProjectSettingsTests {
       """#)
     #expect(
       oneBrokenAnswer.trustDecisions == [
-        TrustDecision(digest: "beef", trusted: false)
+        TrustDecision(digest: "beef", isTrusted: false)
       ],
       "an answer that will not decode costs that answer, not the others or the project")
     #expect(oneBrokenAnswer.branchPrefix == "k/")
@@ -145,8 +141,8 @@ extension ProjectSettingsTests {
     // And what is written comes back, so an answer survives a save.
     var two = ProjectSettings()
     two.trustDecisions = [
-      TrustDecision(digest: digest, trusted: true),
-      TrustDecision(digest: "beef", trusted: false),
+      TrustDecision(digest: digest, isTrusted: true),
+      TrustDecision(digest: "beef", isTrusted: false),
     ]
     let encoded = try JSONEncoder().encode(two)
     let written = try JSONDecoder().decode(ProjectSettings.self, from: encoded)

@@ -9,7 +9,7 @@ struct PaneRowTests {
     state: SessionState? = nil, select: @escaping () -> Void = {}
   ) -> PaneRow {
     PaneRow(
-      title: "zsh", position: nil, isFocusedPane: false, state: state, subagents: [],
+      title: "zsh", position: nil, isFocusedPane: false, state: state, workers: [],
       agentID: nil, agentName: nil, theme: .multishellDark, metrics: UIMetrics(fontSize: 13),
       select: select)
   }

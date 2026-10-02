@@ -30,12 +30,12 @@ extension InheritableSettingKeys<Bool> {
     Self(project: \.showsActiveWorktreesFirst, shared: \.showsActiveWorktreesFirst)
   }
 
-  public static var autoStartAgent: Self {
-    Self(project: \.autoStartAgent, shared: \.autoStartAgent)
+  public static var autoStartsAgent: Self {
+    Self(project: \.autoStartsAgent, shared: \.autoStartsAgent)
   }
 
-  public static var autoStartAgentOnCreate: Self {
-    Self(project: \.autoStartAgentOnCreate, shared: \.autoStartAgentOnCreate)
+  public static var autoStartsAgentOnCreate: Self {
+    Self(project: \.autoStartsAgentOnCreate, shared: \.autoStartsAgentOnCreate)
   }
 
   public static var opensTerminalOnSelect: Self {

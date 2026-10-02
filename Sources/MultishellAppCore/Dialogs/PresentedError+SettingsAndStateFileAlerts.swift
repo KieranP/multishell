@@ -4,12 +4,12 @@ extension PresentedError {
   /// An agent's settings file, or the app's own state file, that would not read.
   static func settingsOrStateFileAlert(_ error: any Error) -> Alert? {
     switch error {
-    case let entries as UnreadableHookEntries:
+    case let entries as UnexpectedHookEntriesShape:
       return (
         t("error.unknown-hooks-title"),
         t("error.unknown-hooks-message", entries.file.path, entries.event)
       )
-    case let section as UnreadableHookSection:
+    case let section as UnexpectedHookSectionShape:
       return (
         t("error.unknown-hooks-title"),
         t("error.unknown-hooks-section-message", section.file.path)

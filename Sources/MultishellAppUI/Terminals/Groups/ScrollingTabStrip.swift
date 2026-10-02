@@ -26,20 +26,18 @@ struct ScrollingTabStrip<Tabs: View>: View {
   @State private var scrollerReference = ScrollerReference()
 
   /// With no gutters the trackpad still scrolls the strip.
-  private var gutter: Double { model.metrics.tabArrowGutter(forAvailable: available) }
+  private var gutter: Double { model.metrics.tabStrip.arrowGutter(forAvailable: available) }
 
-  /// Both gutters keep their room whether an arrow is drawn or not, so this,
-  /// which decides that, cannot change what it is measured from.
-  private var viewport: Double { available - 2 * gutter }
+  private var viewport: Double { model.metrics.tabStrip.scrollingViewport(forAvailable: available) }
 
   var body: some View {
     let edges = TabStripLayout.Edges(
       offset: scrollOffset,
       viewport: viewport,
-      content: Double(tabIDs.count) * layout.tabWidth)
+      content: layout.contentWidth(count: tabIDs.count))
     ScrollViewReader { proxy in
       HStack(spacing: 0) {
-        arrow(.before, shown: edges.leading, proxy: proxy)
+        arrow(.before, isShown: edges.leading, proxy: proxy)
         ScrollView(.horizontal, showsIndicators: false) {
           HStack(spacing: 0) { tabs() }
             .frame(height: model.metrics.tabHeight)
@@ -52,7 +50,7 @@ struct ScrollingTabStrip<Tabs: View>: View {
         } action: { _, offset in
           scrollOffset = offset
         }
-        arrow(.after, shown: edges.trailing, proxy: proxy)
+        arrow(.after, isShown: edges.trailing, proxy: proxy)
       }
       .wheelScrollsSideways(scrollerReference)
       // Unwrapped, both: `scrollTo` takes anything hashable, so a
@@ -71,10 +69,10 @@ struct ScrollingTabStrip<Tabs: View>: View {
   /// gutter, an arrow over the tabs otherwise taking their clicks.
   @ViewBuilder
   private func arrow(
-    _ placement: TerminalTab.Placement, shown: Bool, proxy: ScrollViewProxy
+    _ placement: TerminalTab.Placement, isShown: Bool, proxy: ScrollViewProxy
   ) -> some View {
     let leading = placement == .before
-    if shown, gutter > 0 {
+    if isShown, gutter > 0 {
       Button {
         step(placement, proxy: proxy)
       } label: {

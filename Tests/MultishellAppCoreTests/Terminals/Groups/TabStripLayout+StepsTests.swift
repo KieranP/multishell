@@ -15,11 +15,6 @@ struct TabStripLayoutStepsTests {
     layout.stepTarget(towards: placement, offset: offset, viewport: 300, count: 7)
   }
 
-  @Test func theStripIsSetUpAsItsTestsAssume() {
-    #expect(layout.tabWidth == 100)
-    #expect(layout.scrolls)
-  }
-
   @Test func anArrowMovesOnByTheFirstTabPastThatEnd() {
     // Scrolled to the start: tabs 0, 1 and 2 are in view, so the next is 3.
     #expect(target(.after, at: 0) == 3)

@@ -9,8 +9,7 @@ extension View {
       DestructiveAlert.make(
         title: pending.title,
         message: model.projectRemovalMessage(for: pending.project),
-        choices: [t("dialog.remove-project")],
-        cancel: t("action.cancel"))
+        choices: [t("dialog.remove-project")])
     } answer: { pending, choice in
       model.answerProjectRemoval(pending, confirmed: choice != nil)
     }

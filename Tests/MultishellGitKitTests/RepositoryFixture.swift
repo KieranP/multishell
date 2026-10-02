@@ -26,11 +26,8 @@ struct RepositoryFixture {
   /// `git worktree list` puts first; `checkout` is a linked worktree of `main`.
   static func makeBare() async throws -> (fixture: RepositoryFixture, checkout: URL) {
     let source = try await make()
-    let bare = source.root.appendingPathComponent("repo.git", isDirectory: true)
-    _ = try await source.runner.run(
-      ["clone", "-q", "--bare", source.project.path.path, bare.path], in: source.root)
-    let checkout = source.root.appendingPathComponent("main", isDirectory: true)
-    _ = try await source.runner.run(["worktree", "add", "-q", checkout.path, "main"], in: bare)
+    let (bare, checkout) = try await TestRepository.bareClone(
+      of: source.project.path, in: source.root, worktree: "main", using: source.runner)
     let fixture = RepositoryFixture(
       runner: source.runner, root: source.root, project: Project(path: bare))
     return (fixture, checkout)
@@ -45,21 +42,49 @@ struct RepositoryFixture {
     try await TestRepository.commit(message, files: files, in: project.path, using: runner)
   }
 
+  /// A branch off `main` with one commit on it, the checkout back on `main` after.
+  func commitOnBranch(
+    _ branch: String, _ message: String = "work", file: String, content: String
+  ) async throws {
+    _ = try await runner.run(["checkout", "-q", "-b", branch], in: project.path)
+    try await commit(message, file: file, content: content)
+    _ = try await runner.run(["checkout", "-q", "main"], in: project.path)
+  }
+
+  /// A linked worktree under `trees/` on a new branch cut where `main` is.
+  func addWorktree(onNewBranch branch: String) async throws -> URL {
+    let tree = root.appendingPathComponent("trees/\(branch)", isDirectory: true)
+    _ = try await runner.run(
+      ["worktree", "add", "-q", "-b", branch, tree.path, "HEAD"], in: project.path)
+    return tree
+  }
+
+  /// A worktree whose directory has gone, leaving git's record of it stale.
+  func worktreeWithItsDirectoryGone(
+    lockedFor reason: String? = nil
+  ) async throws -> (record: Worktree, path: URL) {
+    let branch = "old"
+    let path = try await coordinator.createThenRunPostCreate(
+      branch: branch, in: project, settings: worktreeSettings)
+    if let reason {
+      _ = try await runner.run(
+        ["worktree", "lock", "--reason", reason, path.path], in: project.path)
+    }
+    let record = try await worktree(onBranch: branch)
+    try FileManager.default.removeItem(at: path)
+    return (record, path)
+  }
+
   func head(of directory: URL) async throws -> String {
     try await runner.run(["rev-parse", "HEAD"], in: directory).trimmingCharacters(
       in: .whitespacesAndNewlines)
   }
 
   func branches() async throws -> [String] {
-    try await runner.run(
-      ["for-each-ref", "--format=%(refname:short)", "refs/heads"], in: project.path
-    )
-    .split(whereSeparator: \.isNewline).map(String.init).sorted()
+    try await TestRepository.branches(in: project.path, using: runner)
   }
 
-  var coordinator: WorktreeCoordinator {
-    WorktreeCoordinator(git: WorktreeGit(runner: runner, settlesNewIndex: false))
-  }
+  var coordinator: WorktreeCoordinator { TestGit.coordinator(runner: runner) }
   var worktreeSettings: WorktreeSettings { WorktreeSettings(worktreeDirectory: "../trees") }
 
   func worktree(onBranch branch: String, in project: Project? = nil) async throws -> Worktree {

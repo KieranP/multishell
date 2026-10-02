@@ -2,14 +2,14 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// One of the selected worktree's panes: dot, position in a split, title,
+/// One of the selected worktree's panes: glyph, position in a split, title,
 /// chip. Bold is the one focused pane; see Docs/design/agents.md.
 struct PaneRow: View {
   let title: String
   let position: PanePosition?
   let isFocusedPane: Bool
   let state: SessionState?
-  let subagents: [Subagent]
+  let workers: [Worker]
   let agentID: String?
   let agentName: String?
   let theme: Theme
@@ -24,7 +24,7 @@ struct PaneRow: View {
         ringFill: theme.sidebarColor,
         plainTint: isFocusedPane ? theme.textPrimary : theme.textSecondary,
         theme: theme,
-        size: metrics.sidebarGlyphColumn
+        size: metrics.paneGlyphSize
       )
       .help((state ?? .idle).displayName)
       if let position {
@@ -36,8 +36,8 @@ struct PaneRow: View {
         .lineLimit(1)
         .truncationMode(.tail)
       Spacer(minLength: 4)
-      if !subagents.isEmpty {
-        SubagentChip(subagents: subagents, theme: theme, metrics: metrics)
+      if !workers.isEmpty {
+        WorkerChip(workers: workers, theme: theme, metrics: metrics)
       }
     }
     // The pane's glyph sits under the worktree's name, one step in from its dot.
@@ -50,7 +50,7 @@ struct PaneRow: View {
     .accessibilityLabel(
       AccessibilityText.pane(
         title: title, position: position, isFocusedPane: isFocusedPane, state: state,
-        subagents: subagents, agentName: agentName)
+        workers: workers, agentName: agentName)
     )
     .accessibilityAddTraits(isFocusedPane ? [.isButton, .isSelected] : .isButton)
   }
@@ -61,7 +61,7 @@ struct PaneRow: View {
 extension PaneRow: @MainActor Equatable {
   static func == (a: PaneRow, b: PaneRow) -> Bool {
     a.title == b.title && a.position == b.position && a.isFocusedPane == b.isFocusedPane
-      && a.state == b.state && a.subagents == b.subagents && a.agentID == b.agentID
+      && a.state == b.state && a.workers == b.workers && a.agentID == b.agentID
       && a.agentName == b.agentName && a.theme == b.theme && a.metrics == b.metrics
   }
 }

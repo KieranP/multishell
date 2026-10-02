@@ -8,46 +8,45 @@ extension AppModelNotificationsTests {
   /// A network volume can unmount between the report and the click. `select` refuses,
   /// and what follows would otherwise rewrite the active tab of a worktree nobody can reach.
   @Test func aClickOnAWorktreeThatHasGoneActivatesNothing() throws {
-    let h = Harness()
-    h.model.select(h.feature)
-    let first = try #require(h.model.workspace.activeTab(in: h.feature.id))
-    h.model.newTab()
-    let second = try #require(h.model.workspace.activeTab(in: h.feature.id))
+    let harness = Harness()
+    harness.model.select(harness.feature)
+    let first = try #require(harness.model.workspace.activeTab(in: harness.feature.id))
+    harness.model.newTab()
+    let second = try #require(harness.model.workspace.activeTab(in: harness.feature.id))
     #expect(second.id != first.id)
-    h.model.select(h.main)
-    let selected = h.model.workspace.selectedWorktreeID
+    harness.model.select(harness.main)
+    let selected = harness.model.workspace.selectedWorktreeID
 
-    try FileManager.default.removeItem(at: h.feature.path)
-    h.model.revealNotificationSubject(.session(first.focusedSessionID))
+    try FileManager.default.removeItem(at: harness.feature.path)
+    harness.model.revealNotificationSubject(.session(first.focusedSessionID))
 
-    #expect(h.model.presentedError?.title == PresentedError.worktreeDirectoryMissing("").title)
-    #expect(h.model.workspace.selectedWorktreeID == selected, "the selection stands")
     #expect(
-      h.model.workspace.activeTab(in: h.feature.id)?.id == second.id,
+      harness.model.presentedError?.title == PresentedError.worktreeDirectoryMissing("").title)
+    #expect(harness.model.workspace.selectedWorktreeID == selected, "the selection stands")
+    #expect(
+      harness.model.workspace.activeTab(in: harness.feature.id)?.id == second.id,
       "and the refused worktree's own strip is left as it was")
   }
 
   @Test func aClickOnAWorktreeThatIsStillThereBringsItsTabUp() throws {
-    let h = Harness()
-    h.model.select(h.feature)
-    let tab = try #require(h.model.workspace.activeTab(in: h.feature.id))
-    h.model.select(h.main)
+    let harness = Harness()
+    harness.model.select(harness.feature)
+    let tab = try #require(harness.model.workspace.activeTab(in: harness.feature.id))
+    harness.model.select(harness.main)
 
-    h.model.revealNotificationSubject(.session(tab.focusedSessionID))
+    harness.model.revealNotificationSubject(.session(tab.focusedSessionID))
 
-    #expect(h.model.workspace.selectedWorktreeID == h.feature.id)
-    #expect(h.model.workspace.activeTab(in: h.feature.id)?.id == tab.id)
+    #expect(harness.model.workspace.selectedWorktreeID == harness.feature.id)
+    #expect(harness.model.workspace.activeTab(in: harness.feature.id)?.id == tab.id)
   }
 
   @Test func aBannerClickReachesTheModelThroughTheNotifier() throws {
-    let h = Harness()
-    h.model.select(h.main)
-    let first = try #require(h.model.workspace.activeTab(in: h.main.id))
-    h.model.newTab()
-    #expect(h.model.workspace.activeTab(in: h.main.id)?.id != first.id)
+    let harness = Harness()
+    let first = harness.openBackgroundTab()
+    #expect(harness.model.workspace.activeTab(in: harness.main.id)?.id != first.id)
 
-    h.notifier.onActivate?(.session(first.focusedSessionID))
+    harness.notifier.onActivate?(.session(first.focusedSessionID))
 
-    #expect(h.model.workspace.activeTab(in: h.main.id)?.id == first.id)
+    #expect(harness.model.workspace.activeTab(in: harness.main.id)?.id == first.id)
   }
 }

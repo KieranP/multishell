@@ -6,12 +6,12 @@ public struct Project: Identifiable, Codable, Hashable, Sendable {
   /// Always the normalised form from `URL.normalizedDirectory`, so `id` can
   /// read it directly rather than standardise again on every comparison.
   public private(set) var path: URL
-  public var isExpanded: Bool
+  public internal(set) var isExpanded: Bool
   /// The user's own, as the settings forms edit them.
   public var settings: ProjectSettings
-  /// What the repository's `.multishell.json` said when last read. Per run,
-  /// so it is in neither `CodingKeys` nor `==`; see settings.md.
-  public var sharedSettings: SharedSettingsSnapshot = .unread
+  /// What the repository's `.multishell.json` said when last read; see
+  /// settings.md.
+  public internal(set) var sharedSettings: SharedSettingsSnapshot = .unread
 
   public var id: String { path.path }
 
@@ -26,7 +26,7 @@ public struct Project: Identifiable, Codable, Hashable, Sendable {
     return base
   }
 
-  public init(path: URL, isExpanded: Bool = true, settings: ProjectSettings = ProjectSettings()) {
+  init(path: URL, isExpanded: Bool = true, settings: ProjectSettings = ProjectSettings()) {
     self.path = path.normalizedDirectory
     self.isExpanded = isExpanded
     self.settings = settings

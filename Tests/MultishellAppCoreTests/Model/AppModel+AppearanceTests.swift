@@ -6,33 +6,45 @@ import Testing
 @Suite @MainActor
 struct AppModelAppearanceTests {
   @Test func theSystemRowStoresNoFontNameAndKeepsTheSize() {
-    let h = Harness()
-    h.model.setTerminalFont(name: "Menlo", size: 15)
-    #expect(h.model.terminalFontPickerID == "Menlo")
+    let harness = Harness()
+    harness.model.setTerminalFont(name: "Menlo", size: 15)
+    #expect(harness.model.terminalFontPickerID == "Menlo")
 
-    h.model.setTerminalFontName(FontDetection.systemID)
+    harness.model.setTerminalFontPickerID(FontDetection.systemID)
 
-    #expect(h.model.workspace.appearance.terminalFontName == nil)
-    #expect(h.model.workspace.appearance.terminalFontSize == 15)
-    #expect(h.model.terminalFontPickerID == FontDetection.systemID)
+    #expect(harness.model.workspace.appearance.terminalFontName == nil)
+    #expect(harness.model.workspace.appearance.terminalFontSize == 15)
+    #expect(harness.model.terminalFontPickerID == FontDetection.systemID)
   }
 
   @Test func aNewTerminalSizeKeepsTheFamily() {
-    let h = Harness()
-    h.model.setTerminalFont(name: "Menlo", size: 13)
+    let harness = Harness()
+    harness.model.setTerminalFont(name: "Menlo", size: 13)
 
-    h.model.setTerminalFontSize(17)
+    harness.model.setTerminalFontSize(17)
 
-    #expect(h.model.workspace.appearance.terminalFontName == "Menlo")
-    #expect(h.model.workspace.appearance.terminalFontSize == 17)
+    #expect(harness.model.workspace.appearance.terminalFontName == "Menlo")
+    #expect(harness.model.workspace.appearance.terminalFontSize == 17)
+  }
+
+  @Test func aFontSizeOutsideItsSliderIsHeldToTheNearestEnd() {
+    let harness = Harness()
+
+    harness.model.setTerminalFontSize(Appearance.terminalFontSizes.upperBound + 10)
+    harness.model.setUIFontSize(Appearance.uiFontSizes.lowerBound - 5)
+
+    #expect(
+      harness.model.workspace.appearance.terminalFontSize == Appearance.terminalFontSizes.upperBound
+    )
+    #expect(harness.model.workspace.appearance.uiFontSize == Appearance.uiFontSizes.lowerBound)
   }
 
   @Test func theDividerRowChangesNothing() {
-    let h = Harness()
-    h.model.setTerminalFontName("Menlo")
+    let harness = Harness()
+    harness.model.setTerminalFontPickerID("Menlo")
 
-    h.model.setTerminalFontName(DetectionOption.dividerID)
+    harness.model.setTerminalFontPickerID(DetectionOption.dividerID)
 
-    #expect(h.model.workspace.appearance.terminalFontName == "Menlo")
+    #expect(harness.model.workspace.appearance.terminalFontName == "Menlo")
   }
 }

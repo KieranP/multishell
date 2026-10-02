@@ -8,10 +8,10 @@ import Testing
 @Suite @MainActor
 struct AppModelDesktopTests {
   @Test func revealingAndCopyingGoThroughThePlatform() {
-    let h = Harness()
-    h.model.revealInFileBrowser(h.main.path)
-    h.model.copyToClipboard("feature")
-    #expect(h.platform.revealed == [h.main.path])
-    #expect(h.platform.clipboard == ["feature"])
+    let harness = Harness()
+    harness.model.revealInFileBrowser(harness.main.path)
+    harness.model.copyToClipboard("feature")
+    #expect(harness.platform.revealed == [harness.main.path])
+    #expect(harness.platform.clipboard == ["feature"])
   }
 }

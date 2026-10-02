@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 
 /// A window never ordered in, which lays a view out and draws it without asking for anything.
 @MainActor
@@ -20,5 +21,20 @@ enum OffscreenWindow {
     while !done(), Date() < deadline {
       RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.01))
     }
+  }
+
+  /// What `view` draws, at the backing scale, or `nil` where AppKit gives no bitmap.
+  static func pixels(of view: NSView) -> NSBitmapImageRep? {
+    guard let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return nil }
+    view.cacheDisplay(in: view.bounds, to: bitmap)
+    return bitmap
+  }
+
+  /// What `content` draws hosted at `size`, in a window held for the read.
+  static func pixels(ofHosted content: some View, size: CGSize) -> NSBitmapImageRep? {
+    let host = NSHostingView(rootView: content)
+    host.frame = NSRect(origin: .zero, size: size)
+    let window = holding(host, deferred: false)
+    return withExtendedLifetime(window) { pixels(of: host) }
   }
 }

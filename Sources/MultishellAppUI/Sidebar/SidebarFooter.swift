@@ -21,6 +21,6 @@ struct SidebarFooter: View {
     }
     .padding(.horizontal, 14)
     .frame(height: 30)
-    .overlay(alignment: .top) { theme.hairline.frame(height: 0.5) }
+    .hairline(.top, theme)
   }
 }

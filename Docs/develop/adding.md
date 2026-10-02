@@ -77,15 +77,16 @@ What each addition needs beyond the code itself.
 - **An agent with no hooks at all needs a plugin**, as one already has. A file
   that is ours alone is written whole and deleted to remove.
 - **A variable a hook receives.** A case in the hook variables, which both
-  builds the environment and draws the Hooks page's table, and a placeholder
-  whose variable is spelled the same: HookVariableTests.
+  builds the environment and draws the Hooks page's table, named by the
+  placeholder meaning the same, so the two cannot be spelled apart.
 - **A placeholder an agent's flags may use.** A case with its value and the
   variable a custom command reads it from. The settings rows name one as an
   example rather than the list, and no page in the repository lists them yet, so
   nothing tells a user the new one exists.
-- **A tab strip measurement.** The metrics bound what a tab is drawn at and the
-  strip layout divides the strip by them. `UIMetricsTests` checks across the
-  font-size range that the floor leaves room for what a tab always draws.
+- **A tab strip measurement.** The metrics bound what a tab is drawn at,
+  `TabStripWidths` decides from them where the splits and arrows fit, and the
+  strip layout divides the rest. `UIMetricsTests` checks across the font-size
+  range that the floor leaves room for what a tab always draws.
 - **The split buttons' threshold is written out in that test** rather than
   recomputed, and is the only place the widths are written down.
 - **The buttons and both gutters come off the room first**, so nothing measures
@@ -144,13 +145,14 @@ What each addition needs beyond the code itself.
   serves the old order. No order lifts a row above the main worktree or the
   trunk, which the tiers place first.
 - **A shell with command-status hooks.** A script in the libraries' resources
-  with the helper's placeholder, listed in the manifest, loaded by the
-  integration scripts, written by the integration refresh and picked up at
-  launch.
-- **It reports a command started and finished through the helper**, and does
-  nothing when the session variable is unset. Name it in
-  `ShellLaunch.reportsFinishedCommands` too, or its panes also read git on every
-  retitle, the fallback for shells that report nothing.
+  with the helper's and the agents' placeholders, listed in the manifest, loaded
+  by the integration scripts, written by the integration refresh and picked up
+  at launch.
+- **It reports a command started and finished through the helper**, naming the
+  program where it is one of the agents, and does nothing when the session
+  variable is unset. Name it in `ShellLaunch.reportsFinishedCommands` too, or
+  its panes also read git on every retitle, the fallback for shells that report
+  nothing.
 - **Add it to the searched shells if Homebrew leaves it out of `/etc/shells`**,
   and give it a row in COMPAT.md's table: the picker offers it, so a reader has
   to be told what it does not get.
@@ -171,10 +173,11 @@ What each addition needs beyond the code itself.
   coding keys, `==` and `hash`, which keep this run's read of a repo's file out
   of all three.
 - **A field on `ProjectSettings`** needs a case in its hand-written coding keys,
-  which keep the shell and the trust answers under their old keys; one left out
-  is never saved. ProjectSettingsTests counts them.
+  which keep the shell, the auto-start pair and the trust answers under their
+  old keys; one left out is never saved. ProjectSettingsTests counts them.
 - **A field on `Workspace`** needs a case in its hand-written coding keys too,
-  which keep the shell under its old key. WorkspaceTests counts them.
+  which keep the shell and the auto-start pair under their old keys.
+  WorkspaceTests counts them.
 - **A preference.** In order: the field on the workspace, a setter on the store,
   which must sit in that one file beside the private setter, a method on the
   model doing whatever else the change needs, and the row bound through the

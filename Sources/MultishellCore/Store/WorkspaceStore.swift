@@ -57,7 +57,7 @@ public final class WorkspaceStore {
   /// synchronous `save` stays for quit, when there is no later to wait for.
   public func prepareSave() -> WorkspaceSave? {
     guard !stillRefusesToSave() else { return nil }
-    return WorkspaceSave(workspace: workspace, file: file, ticket: file.ticket())
+    return WorkspaceSave(workspace: workspace, file: file, ticket: file.issueTicket())
   }
 }
 
@@ -93,23 +93,23 @@ extension WorkspaceStore {
     update(project: id) { $0.isExpanded = expanded }
   }
 
-  public func updateSettings(_ settings: ProjectSettings, forProject id: Project.ID) {
+  public func setSettings(_ settings: ProjectSettings, forProject id: Project.ID) {
     update(project: id) { $0.settings = settings }
   }
 
   /// This run's read of a project's `.multishell.json`. A read saying what the
   /// last one did touches nothing: a mutation here is a whole-workspace save.
-  public func updateSharedSettings(
+  public func setSharedSettings(
     _ snapshot: SharedSettingsSnapshot, forProject id: Project.ID
   ) {
-    guard let index = workspace.projects.firstIndex(where: { $0.id == id }),
+    guard let index = workspace.projectIndex(id),
       workspace.projects[index].sharedSettings != snapshot
     else { return }
     workspace.projects[index].sharedSettings = snapshot
   }
 
   private func update(project id: Project.ID, _ change: (inout Project) -> Void) {
-    guard let index = workspace.projects.firstIndex(where: { $0.id == id }) else { return }
+    guard let index = workspace.projectIndex(id) else { return }
     change(&workspace.projects[index])
   }
 }
@@ -204,17 +204,17 @@ extension WorkspaceStore {
     removeTab(at: index)
   }
 
-  /// Moves a tab beside `target`, possibly in another group of the same
+  /// Moves a tab beside `anchor`, possibly in another group of the same
   /// worktree; see Docs/design/tabs-and-groups.md.
   @discardableResult
   public func moveTab(
-    _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, anchor target: TerminalTab.ID
+    _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, anchor: TerminalTab.ID
   ) -> Bool {
     guard
       let movingIndex = workspace.tabIndex(id),
-      let anchorIndex = workspace.tabIndex(target),
+      let anchorIndex = workspace.tabIndex(anchor),
       workspace.tabs[movingIndex].worktreeID == workspace.tabs[anchorIndex].worktreeID,
-      id != target
+      id != anchor
     else { return false }
 
     // Taking the tab out shifts the anchor down by one where it sat after it.
@@ -490,7 +490,7 @@ extension WorkspaceStore {
 
   private func defaultTitle(for command: [String]?) -> String {
     guard let executable = command?.first else { return "" }
-    return URL(fileURLWithPath: executable).lastPathComponent
+    return executable.executableName
   }
 }
 
@@ -529,15 +529,15 @@ extension WorkspaceStore {
   /// An empty line removes the entry. Emptiness, not blankness: this is
   /// written per keystroke, and trimming eats the space between two flags.
   public func setAgentFlags(_ flags: String, for id: String) {
-    workspace.agentFlags[id] = flags.isEmpty ? nil : flags
+    workspace.agentFlags[id] = flags.presence
   }
 
-  public func setAutoStartAgent(_ enabled: Bool) {
-    workspace.autoStartAgent = enabled
+  public func setAutoStartsAgent(_ enabled: Bool) {
+    workspace.autoStartsAgent = enabled
   }
 
-  public func setAutoStartAgentOnCreate(_ enabled: Bool) {
-    workspace.autoStartAgentOnCreate = enabled
+  public func setAutoStartsAgentOnCreate(_ enabled: Bool) {
+    workspace.autoStartsAgentOnCreate = enabled
   }
 }
 

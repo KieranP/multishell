@@ -15,26 +15,24 @@ struct AppSettingsWindow: View {
   var body: some View {
     TabView(selection: $page) {
       GeneralSettingsPage(model: model)
-        .tabItem { Label(t("settings.general"), systemImage: "gearshape") }
+        .tabItem { SettingsPageLabel.general.label }
         .tag(Page.general)
       WorktreesSettingsPage(model: model)
-        .tabItem { Label(t("settings.worktrees"), systemImage: "arrow.trianglehead.branch") }
+        .tabItem { SettingsPageLabel.worktrees.label }
         .tag(Page.worktrees)
       TerminalSettingsPage(model: model)
-        .tabItem { Label(t("settings.terminal"), systemImage: "terminal") }
+        .tabItem { SettingsPageLabel.terminal.label }
         .tag(Page.terminal)
       AgentsSettingsPage(model: model)
-        .tabItem { Label(t("label.agents"), systemImage: "sparkles") }
+        .tabItem { SettingsPageLabel.agents.label }
         .tag(Page.agents)
       NotificationsSettingsPage(model: model)
-        .tabItem { Label(t("settings.notifications"), systemImage: "bell") }
+        .tabItem { SettingsPageLabel.notifications.label }
         .tag(Page.notifications)
       AppearanceSettingsPage(model: model)
-        .tabItem { Label(t("settings.appearance"), systemImage: "paintpalette") }
+        .tabItem { SettingsPageLabel.appearance.label }
         .tag(Page.appearance)
     }
-    .frame(width: SettingsWindowSize.fixed.width, height: SettingsWindowSize.fixed.height)
-    .settingsWindowReset(
-      on: { platform.workspaceWindow?.screen }, showFirstPage: { page = .general })
+    .settingsWindow(platform: platform, showFirstPage: { page = .general })
   }
 }

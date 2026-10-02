@@ -14,26 +14,34 @@ struct UIMetrics: Equatable {
   var badge: Double { body - 3 }
   /// A row's chevron and lock, a worker's glyph, count and time, a pane's number.
   var small: Double { body - 4 }
-  var mono: Double { body - 1 }
+  var monospaced: Double { body - 1 }
   var icon: Double { body - 2 }
 
   var rowHeight: Double { (body * 2.15).rounded() }
   /// A sidebar row carrying a user's name over its branch. Two lines of
   /// text where `rowHeight` holds one, so the branch is not clipped.
-  var namedRowHeight: Double { (body * 3.2).rounded() }
+  var customNameRowHeight: Double { (body * 3.2).rounded() }
 
   /// How tall a worktree's row is. Asked here, the row and the sidebar's
   /// block height disagreeing putting the drop indicator in the wrong half.
   func worktreeRowHeight(hasCustomName: Bool, isRenaming: Bool) -> Double {
-    hasCustomName || isRenaming ? namedRowHeight : rowHeight
+    hasCustomName || isRenaming ? customNameRowHeight : rowHeight
   }
   static let sidebarRowSpacing: Double = 1
+  /// A pane's glyph, on its sidebar row and on its tab.
+  var paneGlyphSize: Double { icon + 2 }
   /// The column a sidebar row's leading glyph sits in, one width for every
   /// row so the worktree, pane and agents rows line up.
-  var sidebarGlyphColumn: Double { icon + 2 }
+  var sidebarGlyphColumn: Double { paneGlyphSize }
   var sidebarFilterHeight: Double { (body * 1.85).rounded() }
   /// The + on a project's row, and the sort menu above it sharing its column.
   static let sidebarRowButtonWidth: Double = 24
+  /// The Projects header, and the sort menu inside it.
+  static let sectionHeaderHeight: Double = 22
+
+  /// The square a project's glyph is drawn in, which the row's spinner and
+  /// state dot take over so nothing shifts.
+  static func projectIconSlot(forGlyphOf size: Double) -> Double { size + 6 }
 
   /// How tall a project's block is, which the drop delegate halves: its row,
   /// each worktree's, and the pane rows under the one that shows them.
@@ -75,22 +83,14 @@ struct UIMetrics: Equatable {
   /// The New Tab menu and the two splits. Comes off the strip before a tab
   /// is measured, so nothing measures itself.
   var stripButtonsWidth: Double { newTabMenuWidth + splitButtonWidth * 2 }
-  /// Splits go only where they cost neither a whole tab nor the arrows; a
-  /// lower bar buys them by silent scrolling. See tabs-and-groups.md.
-  func stripShowsSplits(in width: Double) -> Bool {
-    width.isFinite && width >= stripButtonsWidth + 2 * tabArrowWidth + tabMinWidth
-  }
-  /// The room a strip of that width leaves its tabs, its buttons taken off.
-  func stripTabsAvailable(in width: Double) -> Double {
-    width - (stripShowsSplits(in: width) ? stripButtonsWidth : newTabMenuWidth)
-  }
   /// The arrow at either end of a strip with more tabs that way. Its room is
   /// kept either way, so the tabs do not shift under the pointer.
   var tabArrowWidth: Double { (body * 1.7).rounded() }
-  /// Each end's gutter in a scrolling strip with that room. None without room
-  /// for both and a tab besides, or two arrows draw over the group beside it.
-  func tabArrowGutter(forAvailable available: Double) -> Double {
-    available >= 2 * tabArrowWidth + tabMinWidth ? tabArrowWidth : 0
+  /// What the strip's fit rules are worked from.
+  var tabStrip: TabStripWidths {
+    TabStripWidths(
+      buttons: stripButtonsWidth, newTabMenu: newTabMenuWidth, arrow: tabArrowWidth,
+      minimumTab: tabMinWidth)
   }
   var indent: Double { (body * 2).rounded() }
   /// The find bar's well height, and each of its glyph buttons' side.
@@ -99,15 +99,19 @@ struct UIMetrics: Equatable {
   /// The narrowest a board column is drawn, below which a card's two split
   /// rows run into themselves. See `AgentBoardLayout`.
   var boardColumnMinWidth: Double { (body * 16).rounded() }
-  /// Between two board columns, and round the lot of them, taken off before
-  /// a column width is asked for so nothing measures itself.
+  /// Between two board columns. It and `boardPadding` are taken off before
+  /// a column width is asked for, so nothing measures itself.
   var boardGap: Double { (body * 0.8).rounded() }
+  /// Round the board's columns.
   var boardPadding: Double { (body * 0.9).rounded() }
 
   /// Layout space a split's divider takes, wider than its line: the panes are
   /// NSViews and take mouse events before a SwiftUI overlay.
   static let splitDividerThickness: Double = 6
   static let splitLineThickness: Double = 1
+  static let hairlineThickness: Double = 0.5
+  /// How far a sidebar row's name is held back until the row is selected.
+  static let unselectedRowNameOpacity: Double = 0.85
   /// The least a split gives one pane, read by the layout and by the drop
   /// that would make a group.
   static let minimumPaneLength: Double = 80

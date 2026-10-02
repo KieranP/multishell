@@ -112,9 +112,8 @@ extension Workspace {
 
   /// Gives every tab that names no group one to sit in: a file from before
   /// tab groups, or one whose group was dropped. The first group takes them.
-  mutating func adoptUngroupedTabs(activeByWorktree: [Worktree.ID: TerminalTab.ID] = [:]) {
-    let known = Dictionary(
-      tabGroups.map { ($0.id, $0.worktreeID) }, uniquingKeysWith: { a, _ in a })
+  mutating func adoptUngroupedTabs(shownTabByWorktree: [Worktree.ID: TerminalTab.ID] = [:]) {
+    let known = tabGroups.keyedByID().mapValues(\.worktreeID)
     var minted: [Worktree.ID: TabGroup.ID] = [:]
 
     for index in tabs.indices {
@@ -126,7 +125,7 @@ extension Workspace {
         continue
       }
       let group = TabGroup(
-        worktreeID: tab.worktreeID, shownTabID: activeByWorktree[tab.worktreeID] ?? tab.id)
+        worktreeID: tab.worktreeID, shownTabID: shownTabByWorktree[tab.worktreeID] ?? tab.id)
       tabGroups.append(group)
       minted[tab.worktreeID] = group.id
       tabs[index].groupID = group.id

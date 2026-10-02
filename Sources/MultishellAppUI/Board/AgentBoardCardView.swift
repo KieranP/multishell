@@ -54,8 +54,8 @@ struct AgentBoardCardView: View {
         .foregroundStyle(theme.textPrimary)
         .lineLimit(1)
       Spacer(minLength: 6)
-      if !card.subagents.isEmpty {
-        SubagentChip(subagents: card.subagents, theme: theme, metrics: metrics)
+      if !card.workers.isEmpty {
+        WorkerChip(workers: card.workers, theme: theme, metrics: metrics)
       }
       if let elapsed = card.elapsed(at: now) {
         Text(elapsed)

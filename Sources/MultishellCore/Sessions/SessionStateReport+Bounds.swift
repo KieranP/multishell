@@ -54,9 +54,9 @@ extension SessionStateReport {
 
   /// Named ones only: an id past the limit decodes as unnamed, which is no
   /// worker a list can name.
-  static func boundedWorkers(_ workers: [SubagentReport]?) -> [SubagentReport]? {
+  static func boundedWorkers(_ workers: [WorkerReport]?) -> [WorkerReport]? {
     workers.map {
-      Array($0.filter { $0.id != SubagentReport.anonymousID }.prefix(maximumWorkersOut))
+      Array($0.filter { $0.id != WorkerReport.anonymousID }.prefix(maximumWorkersOut))
     }
   }
 

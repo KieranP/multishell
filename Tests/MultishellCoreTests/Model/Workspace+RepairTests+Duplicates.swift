@@ -1,5 +1,4 @@
 import Foundation
-import TestScratch
 import Testing
 
 @testable import MultishellCore
@@ -10,15 +9,14 @@ extension WorkspaceRepairTests {
   /// The same as the tab case below, one collection up: the dead copy is the
   /// one kept, the prune then drops it, and its tabs and sessions go too.
   @Test func aWorktreeIdListedTwiceKeepsTheCopyWhoseProjectIsStillThere() throws {
-    var workspace = try JSONDecoder().decode(
+    var workspace = try decodeJSON(
       Workspace.self,
-      from: Data(
-        #"""
-        { "projects": [ { "path": "file:///repos/demo/" } ],
-          "worktrees": [
-            { "path": "file:///repos/demo/", "projectID": "/repos/gone", "head": "a", "branch": "dead" },
-            { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "a", "branch": "live" } ] }
-        """#.utf8))
+      #"""
+      { "projects": [ { "path": "file:///repos/demo/" } ],
+        "worktrees": [
+          { "path": "file:///repos/demo/", "projectID": "/repos/gone", "head": "a", "branch": "dead" },
+          { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "a", "branch": "live" } ] }
+      """#)
     #expect(workspace.worktrees.count == 2, "decoding keeps both; repair is where they meet")
 
     workspace.repairReferences()
@@ -30,25 +28,22 @@ extension WorkspaceRepairTests {
   /// First entry wins, so deduping before the dangling prune can keep the
   /// copy naming a worktree that has gone and lose the live one with it.
   @Test func aTabIdListedTwiceKeepsTheCopyWhoseWorktreeIsStillThere() throws {
-    let tab = UUID().uuidString
-    let dead = UUID().uuidString
-    let live = UUID().uuidString
-    var workspace = try JSONDecoder().decode(
+    let tab = UUID()
+    let dead = UUID()
+    let live = UUID()
+    var workspace = try decodeJSON(
       Workspace.self,
-      from: Data(
-        #"""
-        { "projects": [ { "path": "file:///repos/demo/" } ],
-          "worktrees": [
-            { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "a", "branch": "main" } ],
-          "tabs": [
-            { "id": "\#(tab)", "worktreeID": "/repos/gone",
-              "root": { "terminal": { "_0": "\#(dead)" } }, "focusedSessionID": "\#(dead)" },
-            { "id": "\#(tab)", "worktreeID": "/repos/demo",
-              "root": { "terminal": { "_0": "\#(live)" } }, "focusedSessionID": "\#(live)" } ],
-          "sessions": [
-            { "id": "\#(live)", "worktreeID": "/repos/demo",
-              "workingDirectory": "file:///repos/demo/", "title": "Shell" } ] }
-        """#.utf8))
+      #"""
+      { "projects": [ { "path": "file:///repos/demo/" } ],
+        "worktrees": [
+          { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "a", "branch": "main" } ],
+        "tabs": [
+          \#(tabJSON(id: tab, worktree: "/repos/gone", session: dead)),
+          \#(tabJSON(id: tab, session: live)) ],
+        "sessions": [
+          { "id": "\#(live)", "worktreeID": "/repos/demo",
+            "workingDirectory": "file:///repos/demo/", "title": "Shell" } ] }
+      """#)
     #expect(workspace.tabs.count == 2, "decoding keeps both; repair is where they meet")
 
     workspace.repairReferences()
@@ -56,21 +51,20 @@ extension WorkspaceRepairTests {
     WorkspaceInvariants.check(workspace, "duplicate tab")
     #expect(
       workspace.tabs.map(\.worktreeID) == ["/repos/demo"], "the dead copy was kept and then pruned")
-    #expect(workspace.sessions.map(\.id.uuidString) == [live], "its session went with it")
+    #expect(workspace.sessions.map(\.id) == [live], "its session went with it")
   }
 
   @Test func aProjectListedTwiceKeepsItsFirstEntryAndItsWorktrees() throws {
-    var workspace = try JSONDecoder().decode(
+    var workspace = try decodeJSON(
       Workspace.self,
-      from: Data(
-        #"""
-        { "projects": [
-            { "path": "file:///repos/demo/", "settings": { "branchPrefix": "k/" } },
-            { "path": "file:///repos/x/../demo", "isExpanded": false } ],
-          "worktrees": [
-            { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "a", "branch": "main" },
-            { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "a", "branch": "main" } ] }
-        """#.utf8))
+      #"""
+      { "projects": [
+          { "path": "file:///repos/demo/", "settings": { "branchPrefix": "k/" } },
+          { "path": "file:///repos/x/../demo", "isExpanded": false } ],
+        "worktrees": [
+          { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "a", "branch": "main" },
+          { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "a", "branch": "main" } ] }
+      """#)
     #expect(workspace.projects.count == 2, "decoding keeps both; repair is where they meet")
 
     workspace.repairReferences()

@@ -1,8 +1,8 @@
 import Foundation
-import MultishellCore
 import TestSupport
 import Testing
 
+@testable import MultishellCore
 @testable import MultishellGitKit
 
 extension WorktreeCoordinatorMergesTests {
@@ -20,8 +20,7 @@ extension WorktreeCoordinatorMergesTests {
       esac
       """)
     defer { fake.tearDown() }
-    let coordinator = WorktreeCoordinator(
-      git: WorktreeGit(runner: fake.runner, settlesNewIndex: false))
+    let coordinator = fake.coordinator
     let projects = try ["one", "two"].map { name in
       let path = fake.directory.appendingPathComponent(name, isDirectory: true)
       try FileManager.default.createDirectory(at: path, withIntermediateDirectories: true)

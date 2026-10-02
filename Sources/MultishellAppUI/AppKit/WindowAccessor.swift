@@ -5,20 +5,11 @@ import SwiftUI
 struct WindowAccessor: NSViewRepresentable {
   let onWindow: (NSWindow?) -> Void
 
-  func makeNSView(context: Context) -> Reporter {
-    let view = Reporter()
+  func makeNSView(context: Context) -> WindowAccessorView {
+    let view = WindowAccessorView()
     view.onWindow = onWindow
     return view
   }
 
-  func updateNSView(_ view: Reporter, context: Context) {}
-
-  final class Reporter: AccessibilityHiddenView {
-    var onWindow: ((NSWindow?) -> Void)?
-
-    override func viewDidMoveToWindow() {
-      super.viewDidMoveToWindow()
-      onWindow?(window)
-    }
-  }
+  func updateNSView(_ view: WindowAccessorView, context: Context) {}
 }

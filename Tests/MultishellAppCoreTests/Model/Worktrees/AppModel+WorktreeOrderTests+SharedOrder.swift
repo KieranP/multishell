@@ -14,7 +14,7 @@ extension AppModelWorktreeOrderTests {
     // order disagree and only the file's answer can pass.
     for branch in ["zulu", "alpha"] {
       await harness.model.createWorktree(
-        branch: branch, basedOn: nil, createBranch: true, in: harness.project)
+        branch: branch, basedOn: nil, createsBranch: true, in: harness.project)
       try? await Task.sleep(for: .milliseconds(1100))
     }
     try harness.writeSharedSettings(#"{ "worktreeSortOrder": "createdOldestFirst" }"#)
@@ -36,9 +36,9 @@ extension AppModelWorktreeOrderTests {
     #expect(inherited == InheritedSetting(value: .createdOldestFirst, isFromRepository: true))
     #expect(inherited.caption.contains(SharedProjectSettings.fileName))
 
-    var settings = harness.model.workspace.project(harness.project.id)!.settings
+    var settings = harness.project.settings
     settings.worktreeSortOrder = .alphabetical
-    harness.model.updateSettings(settings, for: harness.project)
+    harness.model.setSettings(settings, for: harness.project)
     #expect(
       harness.model.orderedWorktrees(all, in: harness.project).map(\.name) == [
         "main", "alpha", "zulu",
@@ -51,10 +51,10 @@ extension AppModelWorktreeOrderTests {
   @Test func exportCarriesTheOrderInForce() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
-    var settings = harness.model.workspace.project(harness.project.id)!.settings
+    var settings = harness.project.settings
     settings.worktreeSortOrder = .committedNewestFirst
     settings.showsActiveWorktreesFirst = true
-    harness.model.updateSettings(settings, for: harness.project)
+    harness.model.setSettings(settings, for: harness.project)
 
     await harness.model.exportSharedSettings(for: harness.project)
 

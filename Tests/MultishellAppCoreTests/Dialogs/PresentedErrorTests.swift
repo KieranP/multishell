@@ -90,7 +90,7 @@ struct PresentedErrorTests {
     #expect(unparsable.message.contains("comment"))
     #expect(unparsable.message.contains("Show JSON"))
 
-    let entries = PresentedError(UnreadableHookEntries(file: file, event: "BeforeTool"))
+    let entries = PresentedError(UnexpectedHookEntriesShape(file: file, event: "BeforeTool"))
     #expect(entries.title == "That settings file has hooks Multishell does not recognise")
     #expect(entries.message.contains("hooks.BeforeTool"))
     #expect(entries.message.contains("Show JSON"))

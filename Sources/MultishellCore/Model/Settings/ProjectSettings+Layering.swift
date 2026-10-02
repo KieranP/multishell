@@ -11,8 +11,8 @@ extension ProjectSettings {
     guard let shared = shared.map(sharedSettingsInForce) else { return result }
     result.branchPrefix = branchPrefix ?? shared.branchPrefix
     result.defaultBranch = defaultBranch ?? shared.defaultBranch
-    result.autoStartAgent = autoStartAgent ?? shared.autoStartAgent
-    result.autoStartAgentOnCreate = autoStartAgentOnCreate ?? shared.autoStartAgentOnCreate
+    result.autoStartsAgent = autoStartsAgent ?? shared.autoStartsAgent
+    result.autoStartsAgentOnCreate = autoStartsAgentOnCreate ?? shared.autoStartsAgentOnCreate
     result.opensTerminalOnSelect = opensTerminalOnSelect ?? shared.opensTerminalOnSelect
     result.opensTerminalOnCreate = opensTerminalOnCreate ?? shared.opensTerminalOnCreate
     result.worktreeSortOrder = worktreeSortOrder ?? shared.worktreeSortOrder

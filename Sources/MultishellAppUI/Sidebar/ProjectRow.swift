@@ -19,8 +19,8 @@ struct ProjectRow: View {
   let isFetching: Bool
   let theme: Theme
   let metrics: UIMetrics
-  let toggle: () -> Void
-  let newWorktree: () -> Void
+  let toggleExpansion: () -> Void
+  let requestNewWorktree: () -> Void
 
   @State private var isHovered = false
 
@@ -54,11 +54,11 @@ struct ProjectRow: View {
         ProgressView()
           .controlSize(.mini)
           .scaleEffect(0.7)
-          .frame(width: metrics.icon + 6)
+          .frame(width: UIMetrics.projectIconSlot(forGlyphOf: metrics.icon))
           .help(t("sidebar.fetching"))
       } else if let state {
         StateDot(state: state, theme: theme)
-          .frame(width: metrics.icon + 6)
+          .frame(width: UIMetrics.projectIconSlot(forGlyphOf: metrics.icon))
           .help(t("sidebar.collapsed-state", state.displayName))
       } else {
         ProjectIconView(
@@ -77,7 +77,7 @@ struct ProjectRow: View {
     }
     .frame(height: metrics.rowHeight)
     .contentShape(.rect)
-    .onTapGesture(perform: toggle)
+    .onTapGesture(perform: toggleExpansion)
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(
       AccessibilityText.project(
@@ -86,11 +86,11 @@ struct ProjectRow: View {
     )
     .accessibilityAddTraits(.isButton)
     .accessibilityAction(
-      named: isExpanded ? t("sidebar.collapse") : t("sidebar.expand"), toggle)
+      named: isExpanded ? t("sidebar.collapse") : t("sidebar.expand"), toggleExpansion)
   }
 
   private var newWorktreeButton: some View {
-    PlainGlyphButton(help: t("sidebar.new-worktree"), action: newWorktree) {
+    PlainGlyphButton(help: t("sidebar.new-worktree"), action: requestNewWorktree) {
       Image(systemName: "plus")
         .font(.system(size: metrics.icon))
         .foregroundStyle(isHovered ? theme.textSecondary : theme.textTertiary)

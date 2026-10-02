@@ -3,13 +3,22 @@ import MultishellCore
 
 /// What a project hook is told, and what the settings panel calls each
 /// variable. One list, so neither can gain a case without the other.
-public enum HookVariable: String, CaseIterable, Sendable {
-  case projectPath = "MULTISHELL_PROJECT_PATH"
-  case projectName = "MULTISHELL_PROJECT_NAME"
-  case worktreePath = "MULTISHELL_WORKTREE_PATH"
-  case branch = "MULTISHELL_BRANCH"
+public enum HookVariable: CaseIterable, Sendable {
+  case projectPath
+  case projectName
+  case worktreePath
+  case branch
 
-  public var name: String { rawValue }
+  /// Spelled by the placeholder meaning the same, so a custom command and a
+  /// hook read one name.
+  public var name: String {
+    switch self {
+    case .projectPath: WorktreePlaceholder.projectPath.variable
+    case .projectName: WorktreePlaceholder.project.variable
+    case .worktreePath: WorktreePlaceholder.worktreePath.variable
+    case .branch: WorktreePlaceholder.branch.variable
+    }
+  }
 
   /// The one-line description the Hooks tab shows beside the name.
   public var meaning: String {

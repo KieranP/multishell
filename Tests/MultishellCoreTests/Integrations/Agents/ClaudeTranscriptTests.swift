@@ -5,7 +5,7 @@ import Testing
 @testable import MultishellCore
 
 /// Lines in the shapes Claude Code 2.1 writes them, trimmed to the fields read.
-struct ClaudeTranscriptTests: AgentHookFixtures {
+struct ClaudeTranscriptTests {
   private func notice(_ id: String) -> String {
     "<task-notification>\\n<task-id>\(id)</task-id>\\n<status>completed</status>"
   }
@@ -25,7 +25,7 @@ struct ClaudeTranscriptTests: AgentHookFixtures {
       stopped(at: "2026-09-30T10:00:00.000Z"),
       queued("a1", at: "2026-09-30T10:00:05.000Z"),
     ])
-    #expect(ClaudeTranscript.turnFollows(in: data, fromStart: true))
+    #expect(ClaudeTranscript.turnFollows(in: data, startsAtFileStart: true))
   }
 
   @Test func aNoticeDeliveredInAnyOfItsThreeWaysMeansNoTurnFollows() {
@@ -36,7 +36,7 @@ struct ClaudeTranscriptTests: AgentHookFixtures {
     ]
     for delivery in deliveries {
       let data = lines([queued("a1", at: "2026-09-30T10:00:05.000Z"), delivery])
-      #expect(!ClaudeTranscript.turnFollows(in: data, fromStart: true), "\(delivery)")
+      #expect(!ClaudeTranscript.turnFollows(in: data, startsAtFileStart: true), "\(delivery)")
     }
   }
 
@@ -45,7 +45,7 @@ struct ClaudeTranscriptTests: AgentHookFixtures {
       queued("a1", at: "2026-09-30T10:00:05.000Z"),
       stopped(at: "2026-09-30T10:00:06.000Z"),
     ])
-    #expect(!ClaudeTranscript.turnFollows(in: data, fromStart: true))
+    #expect(!ClaudeTranscript.turnFollows(in: data, startsAtFileStart: true))
   }
 
   @Test func aNoticeQuotedInsideSomethingElseQueuesNothing() {
@@ -53,7 +53,7 @@ struct ClaudeTranscriptTests: AgentHookFixtures {
       #"{"type":"assistant","timestamp":"2026-09-30T10:00:05.000Z","message":{"content":[{"type":"tool_use","name":"Bash","input":{"command":"echo '\#(notice("a1"))'"}}]}}"#,
       #"{"type":"queue-operation","operation":"enqueue","timestamp":"2026-09-30T10:00:05.000Z","content":"see \#(notice("a2"))"}"#,
     ])
-    #expect(!ClaudeTranscript.turnFollows(in: data, fromStart: true))
+    #expect(!ClaudeTranscript.turnFollows(in: data, startsAtFileStart: true))
   }
 
   @Test func aTailThatStartsMidLineSkipsThatLine() {
@@ -61,7 +61,7 @@ struct ClaudeTranscriptTests: AgentHookFixtures {
       #"mary","timestamp":"2026-09-30T10:00:09.000Z"}"#,
       queued("a1", at: "2026-09-30T10:00:05.000Z"),
     ])
-    #expect(ClaudeTranscript.turnFollows(in: data, fromStart: false))
+    #expect(ClaudeTranscript.turnFollows(in: data, startsAtFileStart: false))
   }
 
   @Test func aFileIsReadFromItsTailAndAMissingOneSaysNothing() throws {

@@ -1,17 +1,15 @@
 import Foundation
-import Observation
-import TestScratch
 import Testing
 
 @testable import MultishellCore
 
 extension WorkspaceStoreTests {
-  @Test func updateSettingsOnlyTouchesThatProject() {
+  @Test func settingOneProjectsSettingsLeavesTheOtherAlone() {
     let store = WorkspaceStore()
     let a = store.addProject(at: URL(fileURLWithPath: "/repos/a"))
     let b = store.addProject(at: URL(fileURLWithPath: "/repos/b"))
 
-    store.updateSettings(ProjectSettings(branchPrefix: "k/"), forProject: a.id)
+    store.setSettings(ProjectSettings(branchPrefix: "k/"), forProject: a.id)
 
     #expect(store.workspace.project(a.id)?.settings.branchPrefix == "k/")
     #expect(store.workspace.project(b.id)?.settings.branchPrefix == nil)
@@ -26,18 +24,13 @@ extension WorkspaceStoreTests {
       asWritten: SharedProjectSettings(branchPrefix: "team/"),
       confined: SharedProjectSettings(branchPrefix: "team/"), modificationDate: Date(),
       hasBeenRead: true)
-    store.updateSharedSettings(read, forProject: project.id)
+    store.setSharedSettings(read, forProject: project.id)
 
-    let touched = Flag()
-    withObservationTracking {
-      _ = store.workspace.projects
-    } onChange: {
-      touched.raise()
-    }
-    store.updateSharedSettings(read, forProject: project.id)
+    let counter = ChangeCounter(store)
+    store.setSharedSettings(read, forProject: project.id)
 
-    #expect(!touched.raised)
-    store.updateSharedSettings(SharedSettingsSnapshot.unread, forProject: project.id)
-    #expect(touched.raised, "a read that says something else still does")
+    #expect(counter.changes == 0)
+    store.setSharedSettings(SharedSettingsSnapshot.unread, forProject: project.id)
+    #expect(counter.changes == 1, "a read that says something else still does")
   }
 }

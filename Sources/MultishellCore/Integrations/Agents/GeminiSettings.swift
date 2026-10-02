@@ -47,7 +47,7 @@ enum GeminiSettings {
   /// `underHome`'s fallback to the account's home.
   private static func geminiDirectory(_ environment: [String: String]) -> URL {
     let home =
-      environment["GEMINI_CLI_HOME"].flatMap { $0.isEmpty ? nil : $0 }
+      environment["GEMINI_CLI_HOME"]?.presence
       ?? environment["HOME"] ?? NSHomeDirectory()
     let base = home.isEmpty ? nodeTemporaryDirectory(environment) : home
     return URL(fileURLWithPath: base).appendingPathComponent(".gemini")
@@ -90,44 +90,10 @@ enum GeminiSettings {
     URL(fileURLWithPath: path).resolvingSymlinksInPath().standardizedFileURL.path
   }
 
+  /// Gemini reads its settings with comments allowed.
   private static func read(_ file: URL) -> [String: Any]? {
     guard let text = try? String(contentsOf: file, encoding: .utf8) else { return nil }
-    return try? JSONSerialization.jsonObject(with: Data(withoutComments(text).utf8))
+    return try? JSONSerialization.jsonObject(with: Data(text.withoutJSONComments.utf8))
       as? [String: Any]
-  }
-
-  /// Gemini reads its settings with comments allowed, so they go, and only
-  /// outside strings, where a URL's `//` is text.
-  private static func withoutComments(_ text: String) -> String {
-    var out = ""
-    var characters = text.makeIterator()
-    var inString = false
-    var pending = characters.next()
-    while let character = pending {
-      pending = characters.next()
-      if inString {
-        out.append(character)
-        if character == "\\", let escaped = pending {
-          out.append(escaped)
-          pending = characters.next()
-        } else if character == "\"" {
-          inString = false
-        }
-      } else if character == "/", pending == "/" {
-        while let skipped = pending, skipped != "\n" { pending = characters.next() }
-      } else if character == "/", pending == "*" {
-        pending = characters.next()
-        var previous: Character?
-        while let skipped = pending {
-          pending = characters.next()
-          if previous == "*", skipped == "/" { break }
-          previous = skipped
-        }
-      } else {
-        if character == "\"" { inString = true }
-        out.append(character)
-      }
-    }
-    return out
   }
 }

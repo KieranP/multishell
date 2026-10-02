@@ -15,7 +15,7 @@ extension SessionStates {
     /// What the last report said beyond its state.
     var note: SessionNote?
     /// The workers the agent still has out.
-    var roster = SubagentRoster()
+    var roster = WorkerRoster()
     /// What a worker's report put the dot over, remembered once, for the
     /// last worker out to put back; `nil` while the agent's own state shows.
     var displaced: Displaced?
@@ -63,7 +63,7 @@ extension SessionStates {
     /// A report about a worker recorded on the roster, an unnamed end taking the
     /// oldest place with a prompt up. Returns the place touched.
     @discardableResult
-    mutating func record(_ report: SubagentReport) -> SubagentRoster.Place {
+    mutating func record(_ report: WorkerReport) -> WorkerRoster.Place {
       roster.record(report, asking: Set(promptRaisers.compactMap(\.workerID)))
     }
 
@@ -83,7 +83,7 @@ extension SessionStates {
 
     /// The turn is over, however it ended: nothing out, displaced or asked.
     mutating func settleTurn() {
-      roster = SubagentRoster()
+      roster = WorkerRoster()
       clearDisplaced()
       resumesAfterWorkers = false
       turnUnderway = false

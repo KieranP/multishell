@@ -5,7 +5,7 @@ public enum WorktreeMergeState: Hashable, Sendable {
   /// measure against.
   case unknown
   case unmerged
-  /// Landed on `base`, which is a ref name such as `origin/main`.
+  /// Landed `into` a ref name such as `origin/main`.
   case merged(Evidence, into: String)
 
   /// How the branch was found to have landed. The first two are proof; the
@@ -20,11 +20,6 @@ public enum WorktreeMergeState: Hashable, Sendable {
     /// Upstream gone and the base moved on: what a squash merge leaves.
     /// Not proof; see Docs/design/merged-branch.md for what else is asked.
     case upstreamGone
-  }
-
-  var isMerged: Bool {
-    if case .merged = self { return true }
-    return false
   }
 
   /// Whether the evidence is proof rather than inference. Only these lead
@@ -43,21 +38,6 @@ public enum WorktreeMergeState: Hashable, Sendable {
     case .patchEquivalent: return t("merged.into-rebased", base)
     case .upstreamGone: return t("merged.upstream-gone")
     }
-  }
-
-  /// Whether the row draws the badge, given `git status`. Uncommitted work
-  /// hides it; see Docs/design/merged-branch.md.
-  public func showsBadge(with status: WorktreeStatus?) -> Bool {
-    guard isMerged else { return false }
-    guard let status else { return true }
-    return !status.isDirty && status.ahead == 0
-  }
-
-  /// The row's tooltip. "Safe to remove" only where the evidence is proof;
-  /// the badge is not drawn at all where there is work to lose.
-  public var tooltip: String {
-    guard isMerged else { return "" }
-    return isCertain ? t("merged.safe-to-remove", summary) : summary
   }
 
   /// What the removal dialog adds about the branch it is offering to

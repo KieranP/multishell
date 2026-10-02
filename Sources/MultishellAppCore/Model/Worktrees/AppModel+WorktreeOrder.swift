@@ -23,7 +23,7 @@ extension AppModel {
   private func worktreeSortRule(for project: Project) -> WorktreeSortRule {
     let effective = effectiveProject(currentCopy(of: project))
     return WorktreeSortRule(
-      sortOrder: workspace.worktreeSortOrder(for: effective),
+      sortOrder: workspace.effectiveWorktreeSortOrder(for: effective),
       showsActiveFirst: workspace.showsActiveWorktreesFirst(for: effective),
       trunkBranch: defaultBranch(of: project)?.nameWithoutRemote)
   }

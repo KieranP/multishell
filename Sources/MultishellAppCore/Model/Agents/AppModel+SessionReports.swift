@@ -30,7 +30,9 @@ extension AppModel {
       }
       noteCommandAgent(report, of: id)
       apply(report, pid: pid, to: .session(id))
-    } else if let cwd = report.cwd, let worktree = worktree(atPath: cwd) {
+    } else if let workingDirectory = report.workingDirectory,
+      let worktree = worktree(atPath: workingDirectory)
+    {
       apply(report, pid: pid, to: .worktree(worktree.id))
     }
     updatePIDWatch()

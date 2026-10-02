@@ -8,8 +8,8 @@ public enum AgentMark: Equatable, Hashable, Sendable {
   case gemini
   case monogram(String)
 
-  /// The marks the app has art for, in no order that matters. A test walks
-  /// them to check every one still loads.
+  /// The marks the app has art for, in no order that matters. Only these are
+  /// parsed, so a mark left off the list draws nothing.
   public static let drawn: [AgentMark] = [.claude, .codex, .copilot, .openCode, .gemini]
 
   /// One letter from each of the first two words, or the first two of one

@@ -15,8 +15,8 @@ extension AppModel {
     }
     // The write, its date and the confinement off the main actor: on a slow
     // volume each would hold the window.
-    let written = await offMain { export.write() }
-    finishSharedSettingsExport(export, written)
+    let outcome = await offMain { export.write() }
+    finishSharedSettingsExport(export, outcome)
   }
 
   /// `nil` for a project gone from the workspace between the click and here,
@@ -37,7 +37,7 @@ extension AppModel {
     // Stored before the bytes can be read: a poll reading them first would
     // otherwise ask the user to trust what they just exported.
     if written.asksForTrust, let digest = written.digest, let answer {
-      recordTrustDecision(digest: digest, trusted: answer, for: project.id)
+      recordTrustDecision(digest: digest, isTrusted: answer, for: project.id)
     }
     let order = sharedSettingsExportOrders[project.id] ?? SaveOrder()
     sharedSettingsExportOrders[project.id] = order
@@ -46,11 +46,11 @@ extension AppModel {
   }
 
   func finishSharedSettingsExport(
-    _ export: SharedSettingsExport, _ written: Result<SharedSettingsReading?, any Error>
+    _ export: SharedSettingsExport, _ outcome: Result<SharedSettingsReading?, any Error>
   ) {
     let project = export.project
     guard workspace.project(project.id) != nil else { return }
-    switch written {
+    switch outcome {
     case .failure(let error):
       present(error)
     case .success(let reading?) where export.order.isLastLanded(export.ticket):

@@ -9,7 +9,10 @@ struct KernelProcessTableTests {
     let me = ProcessInfo.processInfo.processIdentifier
     #expect(KernelProcessTable.parent(of: me) == getppid())
     #expect(KernelProcessTable.name(of: me)?.isEmpty == false)
-    #expect(KernelProcessTable.name(of: 1) != nil, "launchd or init")
+  }
+
+  @Test func launchdIsKnownAndAPidNothingHoldsIsNot() {
+    #expect(KernelProcessTable.name(of: 1) != nil)
     #expect(KernelProcessTable.parent(of: 999_999_999) == nil)
   }
 }

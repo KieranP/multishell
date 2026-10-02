@@ -6,11 +6,6 @@ import Testing
 
 @Suite
 struct PromisedDropCopiesTests {
-  private func makeParent() throws -> URL {
-    let parent = try Scratch.directory("drops")
-    return parent
-  }
-
   private func drop(_ name: String, in parent: URL, modified: Date) throws -> URL {
     let directory = parent.appendingPathComponent(name, isDirectory: true)
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -21,7 +16,7 @@ struct PromisedDropCopiesTests {
   }
 
   @Test func eachDragGetsItsOwnDirectorySoTwoOfANameCannotCollide() throws {
-    let parent = try makeParent()
+    let parent = try Scratch.directory("drops")
     defer { Scratch.remove(parent) }
 
     let one = try PromisedDropCopies.makeDirectory(in: parent)
@@ -86,8 +81,6 @@ struct PromisedDropCopiesTests {
     #expect(PromisedDropCopies.originals(among: []).isEmpty)
   }
 
-  /// Nothing makes the drops directory before the first drop needs it, and a
-  /// drop that could not make it delivers nothing at all.
   @Test func theFirstDragMakesTheDirectoryItself() throws {
     let parent = Scratch.path("drops")
     defer { Scratch.remove(parent) }
@@ -99,7 +92,7 @@ struct PromisedDropCopiesTests {
   }
 
   @Test func aSweepTakesTheDragsPastKeepingAndLeavesTheRest() throws {
-    let parent = try makeParent()
+    let parent = try Scratch.directory("drops")
     defer { Scratch.remove(parent) }
     let now = Date()
     let old = try drop("old", in: parent, modified: now.addingTimeInterval(-8 * 24 * 60 * 60))

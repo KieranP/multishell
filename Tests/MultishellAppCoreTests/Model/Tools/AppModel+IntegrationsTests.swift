@@ -5,12 +5,12 @@ import Testing
 @Suite @MainActor
 struct AppModelIntegrationsTests {
   @Test func installingTheCommandLineToolAsksThePlatformAndRaisesNothing() {
-    let h = Harness()
-    let alertBefore = h.model.presentedError?.id
+    let harness = Harness()
+    let alertBefore = harness.model.presentedError?.id
 
-    h.model.installCommandLineTool()
+    harness.model.installCommandLineTool()
 
-    #expect(h.platform.installedCommandLineTool)
-    #expect(h.model.presentedError?.id == alertBefore)
+    #expect(harness.platform.installedCommandLineTool)
+    #expect(harness.model.presentedError?.id == alertBefore)
   }
 }

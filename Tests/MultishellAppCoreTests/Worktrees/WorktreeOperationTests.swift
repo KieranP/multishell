@@ -22,9 +22,8 @@ struct WorktreeOperationTests {
   }
 
   @Test func aFailureChangesTheTitleAndTheDetailAndEndsTheRun() {
-    var hook = WorktreeOperation(.postCreateHook)
-    #expect(hook.isRunning)
-    hook.failure = "npm ERR! nope"
+    #expect(WorktreeOperation(.postCreateHook).isRunning)
+    let hook = WorktreeOperation(.postCreateHook, failure: "npm ERR! nope")
     #expect(!hook.isRunning)
     #expect(hook.title == "The post-create hook failed")
     #expect(hook.detail.contains("Dismiss to open its first terminal"))
@@ -51,10 +50,10 @@ struct WorktreeOperationTests {
     #expect(
       WorktreeOperation(.removingWorktree, failure: "x").title
         == "The worktree could not be removed")
-    let timedOut = WorktreeOperation(.preDeleteHook, failure: "x", timedOut: true)
+    let timedOut = WorktreeOperation(.preDeleteHook, failure: "x", didTimeOut: true)
     #expect(timedOut.title == "The pre-delete hook did not finish")
     #expect(
-      WorktreeOperation(.postCreateHook, failure: "x", timedOut: true).title
+      WorktreeOperation(.postCreateHook, failure: "x", didTimeOut: true).title
         == "The post-create hook did not finish")
   }
 }

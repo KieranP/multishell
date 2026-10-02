@@ -28,7 +28,7 @@ extension AgentHookIntegration {
   /// Our groups under each event are exactly the one this build writes, and
   /// none is under an event it no longer asks for.
   func isCurrent(in settings: [String: Any], helper: String) -> Bool {
-    guard let hooks = settings["hooks"] as? [String: Any],
+    guard let hooks = hooksSection(settings),
       let wanted = entries(helper: helper)["hooks"] as? [String: Any]
     else { return false }
     // Rendered, as a file's numbers are read as marked literals.

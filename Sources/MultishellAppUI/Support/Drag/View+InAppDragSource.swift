@@ -5,19 +5,19 @@ extension View {
   /// when no drop takes it.
   func inAppDragSource(
     begin: @escaping () -> NSItemProvider,
-    ended: @escaping () -> Void,
-    sourceLeft: @escaping (_ isPressed: @escaping @MainActor () -> Bool) -> Void
+    onEnded: @escaping () -> Void,
+    onSourceLeft: @escaping (_ isPressed: @escaping @MainActor () -> Bool) -> Void
   ) -> some View {
-    onDrag(begin).modifier(InAppDragEndModifier(ended: ended, sourceLeft: sourceLeft))
+    onDrag(begin).modifier(InAppDragSourceModifier(onEnded: onEnded, onSourceLeft: onSourceLeft))
   }
 
   func inAppDragSource<Preview: View>(
     begin: @escaping () -> NSItemProvider,
     @ViewBuilder preview: () -> Preview,
-    ended: @escaping () -> Void,
-    sourceLeft: @escaping (_ isPressed: @escaping @MainActor () -> Bool) -> Void
+    onEnded: @escaping () -> Void,
+    onSourceLeft: @escaping (_ isPressed: @escaping @MainActor () -> Bool) -> Void
   ) -> some View {
     onDrag(begin, preview: preview)
-      .modifier(InAppDragEndModifier(ended: ended, sourceLeft: sourceLeft))
+      .modifier(InAppDragSourceModifier(onEnded: onEnded, onSourceLeft: onSourceLeft))
   }
 }

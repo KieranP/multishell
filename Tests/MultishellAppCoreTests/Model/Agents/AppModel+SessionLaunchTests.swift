@@ -9,69 +9,75 @@ import Testing
 @Suite @MainActor
 struct AppModelSessionLaunchTests {
   @Test func eachTabRunsTheShellInForceForItsProject() {
-    let h = Harness()
+    let harness = Harness()
     let session = TerminalSession(
-      worktreeID: h.main.id, workingDirectory: h.main.path, title: "Shell")
-    #expect(h.model.preparedForLaunch(session).shellPath == ShellCatalogue.loginShellPath())
+      worktreeID: harness.main.id, workingDirectory: harness.main.path, title: "Shell")
+    #expect(harness.model.preparedForLaunch(session).shellPath == ShellChoice.loginShellPath())
 
-    h.model.setPreferredShell("/bin/bash")
-    #expect(h.model.preparedForLaunch(session).shellOverride == "/bin/bash")
+    harness.model.setPreferredShell("/bin/bash")
+    #expect(harness.model.preparedForLaunch(session).shellOverride == "/bin/bash")
 
-    h.model.updateSettings(ProjectSettings(preferredShellID: "/bin/sh"), for: h.project)
+    harness.model.setSettings(ProjectSettings(preferredShellID: "/bin/sh"), for: harness.project)
     #expect(
-      h.model.preparedForLaunch(session).shellOverride == "/bin/sh", "the project's override wins")
+      harness.model.preparedForLaunch(session).shellOverride == "/bin/sh",
+      "the project's override wins")
 
-    h.model.updateSettings(
-      ProjectSettings(preferredShellID: ShellCatalogue.loginShellID), for: h.project)
+    harness.model.setSettings(
+      ProjectSettings(preferredShellID: ShellChoice.loginShellID), for: harness.project)
     #expect(
-      h.model.preparedForLaunch(session).shellOverride == ShellCatalogue.loginShellPath(),
+      harness.model.preparedForLaunch(session).shellOverride == ShellChoice.loginShellPath(),
       "a project can step back to $SHELL under a global choice")
 
-    h.model.select(h.main)
+    harness.model.select(harness.main)
     #expect(
-      h.engine.opened.last?.shellOverride == ShellCatalogue.loginShellPath(), "reaches the engine")
+      harness.engine.opened.last?.shellOverride == ShellChoice.loginShellPath(),
+      "reaches the engine")
     #expect(
-      h.model.workspace.sessions.allSatisfy { $0.shellOverride == nil }, "never in the workspace")
+      harness.model.workspace.sessions.allSatisfy { $0.shellOverride == nil },
+      "never in the workspace")
   }
 
   @Test func anAgentTabsFollowingShellIsTheChosenOne() {
-    let h = Harness()
-    h.model.setPreferredShell("/bin/sh")
-    h.model.setPreferredAgent(AgentCatalogue.customID)
-    h.model.setCustomAgentCommand("my-agent")
+    let harness = Harness()
+    harness.model.setPreferredShell("/bin/sh")
+    harness.model.setPreferredAgent(AgentCatalogue.customID)
+    harness.model.setCustomAgentCommand("my-agent")
     let session = TerminalSession(
-      worktreeID: h.main.id, workingDirectory: h.main.path, title: "Agent",
+      worktreeID: harness.main.id, workingDirectory: harness.main.path, title: "Agent",
       agentID: AgentCatalogue.customID)
 
-    let prepared = h.model.preparedForLaunch(session)
+    let prepared = harness.model.preparedForLaunch(session)
 
     #expect(prepared.command?.last == "my-agent; exec /bin/sh -l")
   }
   /// The flags are the user's, so they reach the command line whole, with
   /// `{{branch}}` standing for the tab's own worktree.
   @Test func anAgentTabCarriesTheFlagsWithItsPlaceholdersFilledIn() {
-    let h = Harness()
-    h.model.setPreferredShell("/bin/sh")
-    h.model.setPreferredAgent(AgentCatalogue.claudeID)
-    h.model.agentDetection = AgentDetection(found: ["claude": URL(fileURLWithPath: "/bin/claude")])
-    h.model.setAgentFlags("--name={{branch}} --model opus", for: AgentCatalogue.claudeID)
+    let harness = Harness()
+    harness.model.setPreferredShell("/bin/sh")
+    harness.model.setPreferredAgent(AgentCatalogue.claudeID)
+    harness.model.agentDetection = AgentDetection(found: [
+      "claude": URL(fileURLWithPath: "/bin/claude")
+    ])
+    harness.model.setAgentFlags("--name={{branch}} --model opus", for: AgentCatalogue.claudeID)
     let session = TerminalSession(
-      worktreeID: h.feature.id, workingDirectory: h.feature.path, title: "Claude Code",
+      worktreeID: harness.feature.id, workingDirectory: harness.feature.path, title: "Claude Code",
       agentID: AgentCatalogue.claudeID)
 
     #expect(
-      h.model.preparedForLaunch(session).command?.last
+      harness.model.preparedForLaunch(session).command?.last
         == "claude '--name=feature' --model opus; exec /bin/sh -l"
     )
 
-    h.model.updateSettings(ProjectSettings(agentFlags: "--model haiku"), for: h.project)
+    harness.model.setSettings(ProjectSettings(agentFlags: "--model haiku"), for: harness.project)
     #expect(
-      h.model.preparedForLaunch(session).command?.last == "claude --model haiku; exec /bin/sh -l",
+      harness.model.preparedForLaunch(session).command?.last
+        == "claude --model haiku; exec /bin/sh -l",
       "the project's line replaces the global one")
 
-    h.model.updateSettings(ProjectSettings(agentFlags: ""), for: h.project)
+    harness.model.setSettings(ProjectSettings(agentFlags: ""), for: harness.project)
     #expect(
-      h.model.preparedForLaunch(session).command?.last == "claude; exec /bin/sh -l",
+      harness.model.preparedForLaunch(session).command?.last == "claude; exec /bin/sh -l",
       "blank runs it bare under a global that passes flags")
   }
   /// A saved tab that comes back as `claude --continue` is the same tab,
@@ -85,13 +91,8 @@ struct AppModelSessionLaunchTests {
     before.model.setAgentFlags("--name={{branch}}", for: AgentCatalogue.claudeID)
     before.model.select(before.main)
     before.store.openTab(in: before.main.id, title: "Claude Code", agentID: AgentCatalogue.claudeID)
-    before.model.saveNow()
 
-    let (store, _) = WorkspaceStore.restored(from: WorkspaceFile(fileURL: file))
-    let engine = FakeEngine()
-    let after = AppModel(
-      store: store, host: engine, coordinator: nil,
-      watcher: FakeWatcher())
+    let (after, engine, store, _) = before.relaunched()
     after.select(before.main)
 
     let opened = engine.opened.first { store.workspace.session($0.id)?.title == "Claude Code" }
@@ -99,44 +100,39 @@ struct AppModelSessionLaunchTests {
   }
 
   @Test func aRenamedWorktreeAndACustomCommandTakePlaceholdersToo() {
-    let h = Harness()
-    h.model.setPreferredShell("/bin/sh")
-    h.model.setPreferredAgent(AgentCatalogue.customID)
-    h.model.setCustomAgentCommand("my-agent --name={{worktree}}")
-    h.model.renameWorktree(h.feature.id, to: "The fix")
+    let harness = Harness()
+    harness.model.setPreferredShell("/bin/sh")
+    harness.model.setPreferredAgent(AgentCatalogue.customID)
+    harness.model.setCustomAgentCommand("my-agent --name={{worktree}}")
+    harness.model.renameWorktree(harness.feature.id, to: "The fix")
     let session = TerminalSession(
-      worktreeID: h.feature.id, workingDirectory: h.feature.path, title: "Agent",
+      worktreeID: harness.feature.id, workingDirectory: harness.feature.path, title: "Agent",
       agentID: AgentCatalogue.customID)
 
-    let command = h.model.preparedForLaunch(session).command
+    let command = harness.model.preparedForLaunch(session).command
     #expect(command?.last == #"my-agent --name="$MULTISHELL_WORKTREE_NAME"; exec /bin/sh -l"#)
     #expect(
       command?.prefix(2) == ["/usr/bin/env", "MULTISHELL_WORKTREE_NAME=The fix"],
       "the value is handed over around the shell, never written into its line")
   }
 
-  @Test func theCustomShellPathReachesTabsAndTheCaptionSaysWhenItWillNot() {
-    let h = Harness()
+  @Test func theCustomShellPathReachesTabsUnlessTheProjectOverridesIt() {
+    let harness = Harness()
     let session = TerminalSession(
-      worktreeID: h.main.id, workingDirectory: h.main.path, title: "Shell")
-    h.model.setPreferredShell(ShellCatalogue.customID)
+      worktreeID: harness.main.id, workingDirectory: harness.main.path, title: "Shell")
+    harness.model.setPreferredShell(ShellChoice.customID)
     #expect(
-      h.model.preparedForLaunch(session).shellOverride == ShellCatalogue.loginShellPath(),
+      harness.model.preparedForLaunch(session).shellOverride == ShellChoice.loginShellPath(),
       "blank path")
-    #expect(h.model.customShellPathProblem?.hasPrefix("Blank") == true)
-    #expect(h.model.shellDisplayName(ShellCatalogue.customID).contains("blank"))
 
-    h.model.setCustomShellPath("/no/such/shell")
-    #expect(h.model.preparedForLaunch(session).shellOverride == "/no/such/shell")
-    #expect(h.model.customShellPathProblem?.hasPrefix("Nothing executable") == true)
+    harness.model.setCustomShellPath("/no/such/shell")
+    #expect(harness.model.preparedForLaunch(session).shellOverride == "/no/such/shell")
 
-    h.model.setCustomShellPath(" /bin/sh ")
-    #expect(h.model.preparedForLaunch(session).shellOverride == "/bin/sh")
-    #expect(h.model.customShellPathProblem == nil)
-    #expect(h.model.shellDisplayName(ShellCatalogue.customID) == "the custom path /bin/sh")
-    h.model.updateSettings(ProjectSettings(preferredShellID: "/bin/bash"), for: h.project)
+    harness.model.setCustomShellPath(" /bin/sh ")
+    #expect(harness.model.preparedForLaunch(session).shellOverride == "/bin/sh")
+    harness.model.setSettings(ProjectSettings(preferredShellID: "/bin/bash"), for: harness.project)
     #expect(
-      h.model.preparedForLaunch(session).shellOverride == "/bin/bash",
+      harness.model.preparedForLaunch(session).shellOverride == "/bin/bash",
       "a project override still wins")
   }
 
@@ -148,13 +144,8 @@ struct AppModelSessionLaunchTests {
     before.model.select(before.main)
     before.store.openTab(in: before.main.id, title: "Claude Code", agentID: "claude")
     before.store.openTab(in: before.main.id, title: "Flagless", agentID: "flagless")
-    before.model.saveNow()
 
-    let (store, _) = WorkspaceStore.restored(from: WorkspaceFile(fileURL: file))
-    let engine = FakeEngine()
-    let after = AppModel(
-      store: store, host: engine, coordinator: nil,
-      watcher: FakeWatcher())
+    let (after, engine, store, _) = before.relaunched()
     after.select(before.main)
 
     let byTitle = Dictionary(
@@ -165,31 +156,33 @@ struct AppModelSessionLaunchTests {
   }
 
   @Test func anAgentThatIsNotInstalledOpensAShellAndSaysSoOnce() {
-    let h = Harness()
-    h.model.loginEnvironment = LoginShellEnvironment(
+    let harness = Harness()
+    harness.model.loginEnvironment = LoginShellEnvironment(
       variables: ["PATH": "/usr/bin"], source: .loginShell(URL(fileURLWithPath: "/bin/zsh")))
-    h.model.agentDetection = AgentDetection(searchPath: "/usr/bin")
-    h.model.setPreferredAgent("claude")
-    h.model.select(h.main)
-    h.model.presentedError = nil
+    harness.model.agentDetection = AgentDetection(searchPath: "/usr/bin")
+    harness.model.setPreferredAgent("claude")
+    harness.model.select(harness.main)
+    harness.model.presentedError = nil
 
-    h.model.newAgentTab()
-    #expect(h.engine.opened.last?.command == nil)
-    #expect(h.model.presentedError?.title == "Claude Code is not installed")
+    harness.model.newAgentTab()
+    #expect(harness.engine.opened.last?.command == nil)
+    #expect(harness.model.presentedError?.title == "Claude Code is not installed")
 
-    h.model.presentedError = nil
-    h.model.newAgentTab()
-    #expect(h.model.presentedError == nil, "reported once per run")
-    #expect(h.model.workspace.tabs(in: h.main.id).count == 3)
+    harness.model.presentedError = nil
+    harness.model.newAgentTab()
+    #expect(harness.model.presentedError == nil, "reported once per run")
+    #expect(harness.model.workspace.tabs(in: harness.main.id).count == 3)
   }
 
   @Test func theCustomEntryRunsWhatWasTyped() {
-    let h = Harness()
-    h.model.setPreferredAgent("custom")
-    h.model.setCustomAgentCommand("my-agent --fast")
-    h.model.select(h.main)
-    h.model.newAgentTab()
-    #expect(h.engine.opened.last?.command?.last?.hasPrefix("my-agent --fast; ") == true)
-    #expect(h.model.title(of: h.model.workspace.activeTab(in: h.main.id)!) == "Custom command")
+    let harness = Harness()
+    harness.model.setPreferredAgent("custom")
+    harness.model.setCustomAgentCommand("my-agent --fast")
+    harness.model.select(harness.main)
+    harness.model.newAgentTab()
+    #expect(harness.engine.opened.last?.command?.last?.hasPrefix("my-agent --fast; ") == true)
+    #expect(
+      harness.model.title(of: harness.model.workspace.activeTab(in: harness.main.id)!)
+        == "Custom command")
   }
 }

@@ -26,8 +26,8 @@ extension ShellIntegrationScriptsTests {
     try files.writeHomeFile(".bash_profile", "[ -f ~/.bashrc ] && . ~/.bashrc\n")
 
     var environment = files.environment(termProgram: "ghostty")
-    environment[SessionEnvironment.sessionKey] = "user-files"
-    let output = try await interactiveShell(
+    environment[SessionEnvironment.sessionVariable] = "user-files"
+    let output = try await interactiveShellOutput(
       bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment,
       input:
         "echo \"COUNT=$(printf %s \"$MARKER_PATH\" | tr ':' '\\n' | grep -c '^/opt/marker$')\"\nexit\n"
@@ -36,7 +36,7 @@ extension ShellIntegrationScriptsTests {
     #expect(output.contains("syntax error") == false, "a PROMPT_COMMAND ending in `;` made `;;`")
     #expect(output.contains("[theirs]"), "their DEBUG trap still fires, chained ahead of ours")
     #expect(output.contains("COUNT=1"), ".bashrc was sourced twice, so PATH gained it twice")
-    #expect(output.contains(Marks.claim), "and our own hooks still reach the prompt")
+    #expect(output.contains(PromptMarks.claim), "and our own hooks still reach the prompt")
   }
 
   /// A terminal may leave `TERM_PROGRAM` unset. Under `nounset`, reading it makes zsh
@@ -49,7 +49,7 @@ extension ShellIntegrationScriptsTests {
     if FileManager.default.isExecutableFile(atPath: "/bin/zsh") {
       try files.writeHomeFile(".zshrc", "setopt nounset\n")
       environment["ZDOTDIR"] = files.zshDirectory.path
-      let output = try await interactiveShell(
+      let output = try await interactiveShellOutput(
         "/bin/zsh", arguments: ["-i"], environment: environment)
       #expect(output.contains("parameter not set") == false, "no error at every startup")
       environment["ZDOTDIR"] = nil
@@ -57,8 +57,8 @@ extension ShellIntegrationScriptsTests {
 
     guard FileManager.default.isExecutableFile(atPath: "/bin/bash") else { return }
     try files.writeHomeFile(".bashrc", "set -u\n")
-    environment[SessionEnvironment.sessionKey] = "nounset"
-    let output = try await interactiveShell(
+    environment[SessionEnvironment.sessionVariable] = "nounset"
+    let output = try await interactiveShellOutput(
       "/bin/bash", arguments: ["--init-file", files.bashInit.path, "-i"],
       environment: environment,
       // Printed by the hooks' own name, so the echoed line cannot stand in

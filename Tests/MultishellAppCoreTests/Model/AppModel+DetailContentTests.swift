@@ -6,20 +6,20 @@ import Testing
 @Suite @MainActor
 struct AppModelDetailContentTests {
   @Test func theDetailAreaAsksTheBoardThenTheOperationThenTheTabs() throws {
-    let h = Harness()
-    #expect(h.model.detailContent == .noSelection(hasProjects: true))
+    let harness = Harness()
+    #expect(harness.model.detailContent == .noSelection(hasProjects: true))
 
-    h.model.select(h.main, openingFirstTab: .never)
-    #expect(h.model.detailContent == .noTabs(h.main))
+    harness.model.select(harness.main, openingFirstTab: .never)
+    #expect(harness.model.detailContent == .noTabs(harness.main))
 
-    h.model.newTab()
-    #expect(h.model.detailContent == .tabGroups(h.main))
+    harness.model.newTab()
+    #expect(harness.model.detailContent == .tabGroups(harness.main))
 
-    h.model.worktreeOperations.begin(.preDeleteHook, on: h.main.id)
-    let operation = try #require(h.model.worktreeOperations[h.main.id])
-    #expect(h.model.detailContent == .operation(h.main, operation))
+    harness.model.worktreeOperations.begin(.preDeleteHook, on: harness.main.id)
+    let operation = try #require(harness.model.worktreeOperations[harness.main.id])
+    #expect(harness.model.detailContent == .operation(harness.main, operation))
 
-    h.model.showAgentBoard()
-    #expect(h.model.detailContent == .agentBoard)
+    harness.model.showAgentBoard()
+    #expect(harness.model.detailContent == .agentBoard)
   }
 }

@@ -11,8 +11,8 @@ struct UIMetricsTests {
     let small = UIMetrics(fontSize: 11)
     let large = UIMetrics(fontSize: 16)
     for keyPath in [
-      \UIMetrics.body, \.secondary, \.caption, \.badge, \.mono, \.icon, \.rowHeight,
-      \.namedRowHeight, \.tabHeight, \.indent, \.paneRowHeight, \.findControlSize,
+      \UIMetrics.body, \.secondary, \.caption, \.badge, \.monospaced, \.icon, \.rowHeight,
+      \.customNameRowHeight, \.tabHeight, \.indent, \.paneRowHeight, \.findControlSize,
     ] {
       #expect(small[keyPath: keyPath] < large[keyPath: keyPath])
     }
@@ -23,23 +23,30 @@ struct UIMetricsTests {
   @Test func theSplitsShowAtTheThresholdAndNotAPointEarlier() {
     for (size, threshold) in [(10.0, 193.0), (13.0, 252.0), (18.0, 351.0)] {
       let metrics = UIMetrics(fontSize: size)
-      #expect(metrics.stripShowsSplits(in: threshold), "the splits never show at \(size)")
+      #expect(metrics.tabStrip.showsSplits(in: threshold), "the splits never show at \(size)")
       #expect(
-        !metrics.stripShowsSplits(in: threshold - 1), "the splits show a point early at \(size)")
+        !metrics.tabStrip.showsSplits(in: threshold - 1), "the splits show a point early at \(size)"
+      )
     }
   }
 
   @Test func aStripsTabsHaveWhatItsButtonsLeave() {
     let metrics = UIMetrics(fontSize: 13)
-    #expect(metrics.stripTabsAvailable(in: 252) == 145, "the menu and both splits come off")
+    #expect(metrics.tabStrip.tabsAvailable(in: 252) == 145, "the menu and both splits come off")
     #expect(
-      metrics.stripTabsAvailable(in: 251) == 212, "only the menu comes off below the threshold")
+      metrics.tabStrip.tabsAvailable(in: 251) == 212, "only the menu comes off below the threshold")
   }
 
   @Test func aScrollingStripHasGuttersOnlyWithRoomForBothAndATab() {
     let metrics = UIMetrics(fontSize: 13)
-    #expect(metrics.tabArrowGutter(forAvailable: 145) == 22)
-    #expect(metrics.tabArrowGutter(forAvailable: 144) == 0)
+    #expect(metrics.tabStrip.arrowGutter(forAvailable: 145) == 22)
+    #expect(metrics.tabStrip.arrowGutter(forAvailable: 144) == 0)
+  }
+
+  @Test func aScrollingStripsViewportIsWhatItsTwoGuttersLeave() {
+    let metrics = UIMetrics(fontSize: 13)
+    #expect(metrics.tabStrip.scrollingViewport(forAvailable: 145) == 101)
+    #expect(metrics.tabStrip.scrollingViewport(forAvailable: 144) == 144)
   }
 
   @Test func aProjectsBlockIsItsRowAndEachWorktreesWithTheSelectedOnesPanes() {
@@ -48,7 +55,7 @@ struct UIMetricsTests {
     let plain = Worktree(path: URL(fileURLWithPath: "/repo"), projectID: "/repo", head: "a")
     let named = Worktree(path: URL(fileURLWithPath: "/repo/b"), projectID: "/repo", head: "b")
     let pane = SidebarPane(
-      id: UUID(), title: "zsh", position: nil, isFocused: false, state: nil, subagents: [],
+      id: UUID(), title: "zsh", position: nil, isFocused: false, state: nil, workers: [],
       agentID: nil, agentName: nil)
 
     let height = metrics.projectBlockHeight(worktreeRows: [
@@ -66,11 +73,13 @@ struct UIMetricsTests {
   }
 
   @Test func rowsAreTallEnoughForTheirText() {
-    for size in stride(from: 10.0, through: 18.0, by: 1) {
+    for size in stride(
+      from: Appearance.uiFontSizes.lowerBound, through: Appearance.uiFontSizes.upperBound, by: 1
+    ) {
       let metrics = UIMetrics(fontSize: size)
       #expect(metrics.rowHeight >= metrics.body * 1.8, "size \(size)")
       #expect(
-        metrics.namedRowHeight >= metrics.rowHeight + metrics.badge,
+        metrics.customNameRowHeight >= metrics.rowHeight + metrics.badge,
         "a named row holds a branch line under the name at \(size)")
       #expect(metrics.badge >= 7, "badge text must stay legible at \(size)")
       #expect(
@@ -81,10 +90,12 @@ struct UIMetricsTests {
 
   /// A tab's floor has to hold what it always draws: side padding, the mark,
   /// the gap, the close button, and something over for the title.
-  @Test func theNarrowestTabStillHasRoomForItsTitle() {
-    for size in stride(from: 10.0, through: 18.0, by: 1) {
+  @Test func aTabStripsMeasuresHoldWhatTheyDrawAtEverySize() {
+    for size in stride(
+      from: Appearance.uiFontSizes.lowerBound, through: Appearance.uiFontSizes.upperBound, by: 1
+    ) {
       let metrics = UIMetrics(fontSize: size)
-      let furniture = 20.0 + (metrics.icon + 2) + 7 + 20
+      let furniture = 20.0 + metrics.paneGlyphSize + 7 + 20
       #expect(
         metrics.tabMinWidth >= furniture + metrics.body * 2,
         "no room for a title at \(size)")
@@ -99,14 +110,14 @@ struct UIMetricsTests {
         metrics.stripButtonsWidth == metrics.newTabMenuWidth + metrics.splitButtonWidth * 2,
         "the New Tab menu and the two splits are taken off the strip at \(size)")
       #expect(
-        !metrics.stripShowsSplits(in: UIMetrics.minimumPaneLength),
+        !metrics.tabStrip.showsSplits(in: UIMetrics.minimumPaneLength),
         "a group at its floor has no room for the splits at \(size)")
       // The width they first show at has to leave the scroller its gutters,
       // else the splits are bought by scrolling a strip with no arrows.
       let showsAt = metrics.stripButtonsWidth + 2 * metrics.tabArrowWidth + metrics.tabMinWidth
-      #expect(metrics.stripShowsSplits(in: showsAt), "the splits never show at \(size)")
+      #expect(metrics.tabStrip.showsSplits(in: showsAt), "the splits never show at \(size)")
       #expect(
-        !metrics.stripShowsSplits(in: showsAt - 1),
+        !metrics.tabStrip.showsSplits(in: showsAt - 1),
         "the splits show a point early at \(size)")
       #expect(
         showsAt - metrics.stripButtonsWidth >= 2 * metrics.tabArrowWidth + metrics.tabMinWidth,

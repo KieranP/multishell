@@ -5,15 +5,7 @@ import Testing
 
 extension SessionReconcilerTests {
   @Test func onlyLiveWorktreesGetShellsAndTheCallbackFires() {
-    let store = WorkspaceStore()
-    let project = store.addProject(at: URL(fileURLWithPath: "/repos/demo"))
-    let warm = Worktree(
-      path: URL(fileURLWithPath: "/repos/demo"), projectID: project.id, head: "a", branch: "main",
-      isPrimary: true)
-    let cold = Worktree(
-      path: URL(fileURLWithPath: "/repos/demo-feat"), projectID: project.id, head: "b",
-      branch: "feat")
-    store.replaceWorktrees([warm, cold], forProject: project.id)
+    let (store, warm, cold) = twoWorktreeStore()
     let warmTab = store.openTab(in: warm.id)!
     store.openTab(in: cold.id)
 

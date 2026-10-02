@@ -1,8 +1,8 @@
 import Foundation
 import MultishellCore
 
-/// Whether a worktree's branch has landed: five reads, one per way work
-/// lands, none of them writing. See Docs/design/merged-branch.md.
+/// Whether a worktree's branch has landed: five reads behind the three ways
+/// work lands, none of them writing. See Docs/design/merged-branch.md.
 extension WorktreeGit {
   /// The branches `base` can reach; `nil` where git could not answer, which
   /// is not "none". `lstrip=2`, since `:short` answers `heads/x` for a tie.
@@ -56,7 +56,7 @@ extension WorktreeGit {
     _ branch: String, against base: String, in project: Project
   ) async -> Bool? {
     // `base...branch`, so what the branch changed is measured from where it
-    // forked and not from the trunk as it stands now.
+    // forked and not from the default branch as it stands now.
     guard
       let own = await changedPaths(in: ["\(base)...\(BranchRef.localRef(branch))"], of: project),
       let differing = await changedPaths(in: [base, BranchRef.localRef(branch)], of: project)
@@ -71,6 +71,6 @@ extension WorktreeGit {
       let output = await runner.output(
         ["diff", "--name-only", "-z"] + revisions + ["--"], in: project.path)
     else { return nil }
-    return ChangedPathParser.parse(output)
+    return Set(NulPathListParser.parse(output))
   }
 }

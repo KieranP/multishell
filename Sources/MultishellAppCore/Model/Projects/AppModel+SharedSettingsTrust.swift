@@ -25,16 +25,16 @@ extension AppModel {
 
   /// Stores an answer against the file's sha256. The project is read again,
   /// a settings window outliving the refresh that replaced its record.
-  func recordTrustDecision(digest: String, trusted: Bool, for id: Project.ID) {
+  func recordTrustDecision(digest: String, isTrusted: Bool, for id: Project.ID) {
     guard var settings = workspace.project(id)?.settings else { return }
-    settings.recordTrustDecision(digest: digest, trusted: trusted)
-    store.updateSettings(settings, forProject: id)
+    settings.recordTrustDecision(digest: digest, isTrusted: isTrusted)
+    store.setSettings(settings, forProject: id)
   }
 
   /// The dialog's answer. Either way the question is not asked again for
   /// this file, this branch's or another's.
-  public func answerSharedSettingsTrust(_ pending: PendingSharedSettingsTrust, trusted: Bool) {
-    recordTrustDecision(digest: pending.digest, trusted: trusted, for: pending.projectID)
+  public func answerSharedSettingsTrust(_ pending: PendingSharedSettingsTrust, isTrusted: Bool) {
+    recordTrustDecision(digest: pending.digest, isTrusted: isTrusted, for: pending.projectID)
     // The whole value, not its project: a different question that arrived
     // while this one stood is not answered by it.
     if pendingSharedSettingsTrust == pending { pendingSharedSettingsTrust = nil }
@@ -42,15 +42,21 @@ extension AppModel {
 
   /// From the project's Hooks tab: trust what the file currently asks for,
   /// or stop.
-  public func setTrustsSharedSettings(_ trusted: Bool, for project: Project) {
+  public func setTrustsSharedSettings(_ trusts: Bool, for project: Project) {
     // A button's action runs after the render that built it, so this one
     // copy can be a read behind; the digest decides what trust is stored.
     let project = currentCopy(of: project)
     guard let shared = project.sharedSettings.confined, shared.asksForTrust,
       let digest = shared.digest
     else { return }
-    recordTrustDecision(digest: digest, trusted: trusted, for: project.id)
+    recordTrustDecision(digest: digest, isTrusted: trusts, for: project.id)
     dismissSharedSettingsTrust(for: project.id)
+  }
+
+  /// Escape or Decide Later: nothing is recorded, so the question comes back
+  /// the next time the project is turned to.
+  public func decideSharedSettingsTrustLater() {
+    pendingSharedSettingsTrust = nil
   }
 
   func dismissSharedSettingsTrust(for id: Project.ID) {

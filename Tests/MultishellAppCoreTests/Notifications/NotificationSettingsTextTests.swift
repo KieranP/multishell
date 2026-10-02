@@ -3,8 +3,7 @@ import Testing
 
 @testable import MultishellAppCore
 
-/// What Settings > Notifications draws its toggles and its note from. The
-/// tab is a view and untested; everything it says is here.
+/// The Notifications tab is a view and untested; everything it says is here.
 @Suite
 struct NotificationSettingsTextTests {
   @Test func thereIsARowPerStateANotificationCanBeAskedFor() {

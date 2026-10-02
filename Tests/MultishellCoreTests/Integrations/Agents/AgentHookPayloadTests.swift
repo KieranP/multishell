@@ -13,7 +13,7 @@ struct AgentHookPayloadTests {
           "notification_type": "permission_prompt" }
         """#.utf8))
     #expect(payload?.eventName == "Notification")
-    #expect(payload?.cwd == "/w/repo")
+    #expect(payload?.workingDirectory == "/w/repo")
     #expect(payload?.message == "Claude needs your permission")
     #expect(payload?.notificationType == "permission_prompt")
     #expect(AgentHookCatalogue.claude.event(for: try #require(payload))?.state == .attention)
@@ -21,7 +21,7 @@ struct AgentHookPayloadTests {
 
   /// Codex and Copilot write the same three fields under the same names,
   /// which is why one parser serves all four agents.
-  @Test func theOtherAgentsWriteTheSameFields() {
+  @Test func codexAndCopilotWriteTheSameFields() {
     let codex = AgentHookPayload(
       json: Data(
         #"""
@@ -30,7 +30,7 @@ struct AgentHookPayloadTests {
           "tool_name": "shell", "turn_id": "t" }
         """#.utf8))
     #expect(codex?.eventName == "PermissionRequest")
-    #expect(codex?.cwd == "/w/repo")
+    #expect(codex?.workingDirectory == "/w/repo")
     #expect(codex?.message == nil)
 
     let copilot = AgentHookPayload(
@@ -41,6 +41,7 @@ struct AgentHookPayloadTests {
           "notification_type": "permission_prompt" }
         """#.utf8))
     #expect(copilot?.eventName == "Notification")
+    #expect(copilot?.workingDirectory == "/w/repo")
     #expect(copilot?.message == "Permission needed")
   }
 

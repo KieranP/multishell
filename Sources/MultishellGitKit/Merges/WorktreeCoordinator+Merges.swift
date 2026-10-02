@@ -1,19 +1,7 @@
 import MultishellCore
 
-/// Which branches have already landed on their project's default branch,
-/// and what that branch is.
+/// Which branches have already landed on their project's default branch.
 extension WorktreeCoordinator {
-  /// The default branch, every local branch and each last commit, in one
-  /// process. `nil` is a failed read, not a repository with no branches.
-  public func scanBranches(
-    of project: Project, defaultBranchOverride override: String?
-  ) async
-    -> BranchScan?
-  {
-    guard let refs = await git.branchRefs(project) else { return nil }
-    return BranchScan(refs: refs, defaultBranchOverride: override)
-  }
-
   /// Whether each of `branches` has landed and what each read cost, in
   /// merged-branch.md's order of reads. A nil verdict or none keeps what it had.
   public func readMerges(

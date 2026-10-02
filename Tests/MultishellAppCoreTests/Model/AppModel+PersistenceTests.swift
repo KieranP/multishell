@@ -24,8 +24,8 @@ struct AppModelPersistenceTests {
     defer { Scratch.remove(file.deletingLastPathComponent()) }
     weak var store: WorkspaceStore?
     do {
-      let h = Harness(stateFile: file)
-      store = h.store
+      let harness = Harness(stateFile: file)
+      store = harness.store
     }
     try await waitUntil { store == nil }
 
@@ -35,17 +35,17 @@ struct AppModelPersistenceTests {
   @Test func aChangeReachesDiskWithoutAnyoneAskingAndSoDoesTheNext() async throws {
     let file = stateFile()
     defer { Scratch.remove(file.deletingLastPathComponent()) }
-    let h = Harness(stateFile: file)
+    let harness = Harness(stateFile: file)
 
-    h.model.select(h.main)
+    harness.model.select(harness.main)
     try await waitUntil { onDisk(file)?.selectedWorktreeID != nil }
     let first = try #require(onDisk(file))
-    #expect(first.selectedWorktreeID == h.main.id)
+    #expect(first.selectedWorktreeID == harness.main.id)
     #expect(first.tabs.count == 1)
 
     // The observation has to be re-armed after it fires, or only the first
     // change of a session would ever be saved.
-    h.model.newTab()
+    harness.model.newTab()
     try await waitUntil { onDisk(file)?.tabs.count == 2 }
     let second = try #require(onDisk(file))
     #expect(second.tabs.count == 2)
@@ -54,11 +54,11 @@ struct AppModelPersistenceTests {
   @Test func aBurstOfChangesIsOneWriteAndTheLastStateWins() async throws {
     let file = stateFile()
     defer { Scratch.remove(file.deletingLastPathComponent()) }
-    let h = Harness(stateFile: file)
+    let harness = Harness(stateFile: file)
 
-    h.model.select(h.main)
-    for _ in 0..<5 { h.model.newTab() }
-    h.model.closeActiveTab()
+    harness.model.select(harness.main)
+    for _ in 0..<5 { harness.model.newTab() }
+    harness.model.closeActiveTab()
     #expect(!FileManager.default.fileExists(atPath: file.path), "nothing written mid-burst")
 
     try await waitUntil { onDisk(file)?.tabs.count == 5 }
@@ -69,52 +69,53 @@ struct AppModelPersistenceTests {
   @Test func saveNowFlushesWhatTheDebounceStillHolds() throws {
     let file = stateFile()
     defer { Scratch.remove(file.deletingLastPathComponent()) }
-    let h = Harness(stateFile: file)
+    let harness = Harness(stateFile: file)
 
-    h.model.select(h.main)
-    h.model.saveNow()
+    harness.model.select(harness.main)
+    harness.model.saveNow()
 
-    #expect(try WorkspaceFile(fileURL: file).load().selectedWorktreeID == h.main.id)
-    #expect(h.model.pendingSave == nil)
+    #expect(try WorkspaceFile(fileURL: file).load().selectedWorktreeID == harness.main.id)
+    #expect(harness.model.pendingSave == nil)
   }
 
   @Test func shellTitlesAndStatusesNeverTriggerASave() async throws {
     let file = stateFile()
     defer { Scratch.remove(file.deletingLastPathComponent()) }
-    let h = Harness(stateFile: file)
-    h.model.select(h.main)
+    let harness = Harness(stateFile: file)
+    harness.model.select(harness.main)
     try await waitUntil { onDisk(file)?.selectedWorktreeID != nil }
-    #expect(onDisk(file)?.selectedWorktreeID == h.main.id)
+    #expect(onDisk(file)?.selectedWorktreeID == harness.main.id)
     let written = try FileManager.default.attributesOfItem(atPath: file.path)[.modificationDate]
     // A finished task stays in place, so clear it: anything below that
     // schedules a save would put a new one here.
-    h.model.pendingSave = nil
+    harness.model.pendingSave = nil
 
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    let tab = harness.model.workspace.activeTab(in: harness.main.id)!
     for i in 0..<10 {
-      h.engine.delegate?.terminalHost(h.engine, didRetitle: tab.focusedSessionID, to: "t\(i)")
-      h.engine.delegate?.terminalHost(h.engine, didSeeActivityIn: tab.focusedSessionID)
+      harness.engine.delegate?.terminalHost(
+        harness.engine, didRetitle: tab.focusedSessionID, to: "t\(i)")
+      harness.engine.delegate?.terminalHost(harness.engine, didSeeActivityIn: tab.focusedSessionID)
     }
-    h.model.statuses[h.main.id] = WorktreeStatus()
+    harness.model.statuses[harness.main.id] = WorktreeStatus()
     try await Task.sleep(for: .seconds(1))
 
-    #expect(h.model.pendingSave == nil)
+    #expect(harness.model.pendingSave == nil)
     let after = try FileManager.default.attributesOfItem(atPath: file.path)[.modificationDate]
     #expect(written as? Date == after as? Date, "a prompt rewrote the state file")
   }
 
   @Test func aFailingSaveIsReportedOnceNotAfterEveryChange() async {
     // A file where a directory is needed: nothing can be created under it.
-    let h = Harness(stateFile: URL(fileURLWithPath: "/dev/null/multishell/state.json"))
-    h.model.presentedError = nil
+    let harness = Harness(stateFile: URL(fileURLWithPath: "/dev/null/multishell/state.json"))
+    harness.model.presentedError = nil
 
-    h.model.saveOffMain()
-    let first = await h.presentedErrorArrives()
+    harness.model.saveOffMain()
+    let first = await harness.presentedErrorArrives()
     #expect(first != nil)
 
-    h.model.saveOffMain()
-    h.model.saveOffMain()
-    h.model.presentedError = nil
-    #expect(await h.presentedErrorArrives() == nil, "the same alert, not a new one each time")
+    harness.model.saveOffMain()
+    harness.model.saveOffMain()
+    harness.model.presentedError = nil
+    #expect(await harness.presentedErrorArrives() == nil, "the same alert, not a new one each time")
   }
 }

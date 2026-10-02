@@ -40,11 +40,12 @@
   dialog. The rest draw no part of one: reused small views under `Shared/`, or
   `Settings/Controls/` where only the settings windows use them, the agent
   marks, the AppKit modifiers and representables that reach under SwiftUI for an
-  event it has no gesture for, the scene and menus. The engine host and the
-  platform port each have a folder. What draws nothing sits under `Support/`,
-  the in-app drag's pieces under `Support/Drag/`, unless it is by nature a piece
-  of one part: the mark parser sits with the marks, a dialog's AppKit alert with
-  the dialogs, and what both settings windows share at `Settings/`'s root.
+  event it has no gesture for or the window a view sits in, the scene and menus.
+  The engine host and the platform port each have a folder. What draws nothing
+  sits under `Support/`, the in-app drag's pieces under `Support/Drag/`, unless
+  it is by nature a piece of one part: the mark parser sits with the marks, a
+  dialog's AppKit alert with the dialogs, and what both settings windows share
+  at `Settings/`'s root.
 - **A file's folder follows what it is, never how many places call it.** A
   generic extension stays in `Support/` when one concern alone calls it; a file
   moves only when the folder it is in is wrong for what it holds.

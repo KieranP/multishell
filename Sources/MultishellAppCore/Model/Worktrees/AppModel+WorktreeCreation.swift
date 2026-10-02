@@ -5,19 +5,19 @@ import MultishellProcess
 
 extension AppModel {
   func plannedPath(
-    forBranch branch: String, createBranch: Bool, in project: Project
+    forBranch branch: String, createsBranch: Bool, in project: Project
   )
     -> URL?
   {
     coordinator?.plannedPath(
-      forBranch: branch, createBranch: createBranch, in: project,
+      forBranch: branch, createsBranch: createsBranch, in: project,
       settings: effectiveWorktreeSettings(for: project))
   }
 
   /// The sheet's Cancel while the pre-create hook or git runs. A stopped
   /// add takes back the branch and directories it made; see worktrees.md.
   public func cancelWorktreeCreation() {
-    stageHandles.cancelCreation()
+    stageHandles.stopCreation()
   }
 
   /// A step reported by the create `stopper` belongs to, and dropped once
@@ -32,7 +32,7 @@ extension AppModel {
   public func createWorktree(
     branch: String,
     basedOn startPoint: String?,
-    createBranch: Bool,
+    createsBranch: Bool,
     in project: Project
   ) async {
     // The workspace, not the value handed in: a sheet held open across a
@@ -47,7 +47,7 @@ extension AppModel {
     let shell = workspace.effectiveShellPath(for: project)
     // The row can arrive mid-checkout: git writes its record before the
     // first file, and that directory is watched. See worktrees.md.
-    let claimed = plannedPath(forBranch: branch, createBranch: createBranch, in: project)
+    let claimed = plannedPath(forBranch: branch, createsBranch: createsBranch, in: project)
       .flatMap(claimPath(_:))
     let stopper = ProcessStopper()
     stageHandles.beginCreation(with: stopper)
@@ -61,7 +61,7 @@ extension AppModel {
       path = try await coordinator.create(
         branch: branch,
         basedOn: startPoint,
-        createBranch: createBranch,
+        createsBranch: createsBranch,
         in: effective,
         settings: settings,
         shellPath: shell,
@@ -78,7 +78,7 @@ extension AppModel {
     await refreshWorktrees(of: project)
     await rearmWatcher()
     let name = WorktreeCoordinator.qualifiedBranchName(
-      branch, createBranch: createBranch, settings: settings)
+      branch, createsBranch: createsBranch, settings: settings)
     guard let created = createdWorktree(at: path, branchName: name, in: project) else { return }
     beginWorktreeSetup(
       of: created, branch: name, in: effective, shellPath: shell,

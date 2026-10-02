@@ -12,7 +12,7 @@ final class SurfaceFrame: NSView {
   var dropHighlight: NSView?
   /// Whether this drag holds files, asked once per drag rather than once per
   /// mouse move: each ask reads the pasteboard.
-  var filesInDrag: (sequence: Int, hasFiles: Bool)?
+  var lastDragFileCheck: (sequence: Int, hasFiles: Bool)?
 
   init() {
     super.init(frame: .zero)

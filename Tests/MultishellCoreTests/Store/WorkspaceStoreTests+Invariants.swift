@@ -84,7 +84,7 @@ extension WorkspaceStoreTests {
         case 1: settings.worktreeDirectory = Bool.random(using: &rng) ? value : nil
         default: settings.defaultBranch = Bool.random(using: &rng) ? value : nil
         }
-        store.updateSettings(settings, forProject: project.id)
+        store.setSettings(settings, forProject: project.id)
       case 12:
         // A tab dragged to the band down one edge of a group.
         if let tab = workspace.tabs.randomElement(using: &rng),

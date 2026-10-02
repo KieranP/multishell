@@ -25,7 +25,7 @@ struct WorktreeCoordinatorStatusTests {
       Worktree(path: fake.directory, projectID: "/p", head: "h\($0)", branch: "b\($0)")
     }
     // Same directory, so ids collide; the count comes from the script.
-    let coordinator = WorktreeCoordinator(git: WorktreeGit(runner: fake.runner))
+    let coordinator = fake.coordinator
 
     let statuses = await coordinator.readStatuses(of: worktrees).mapValues(\.status)
 
@@ -43,15 +43,15 @@ struct WorktreeCoordinatorStatusTests {
   }
 
   @Test func statusesOmitWorktreesWhoseDirectoryIsGone() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    let path = try await repo.coordinator.createThenRunPostCreate(
-      branch: "ghost", in: repo.project, settings: repo.worktreeSettings)
-    let worktrees = try await repo.coordinator.git.list(repo.project)
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let path = try await fixture.coordinator.createThenRunPostCreate(
+      branch: "ghost", in: fixture.project, settings: fixture.worktreeSettings)
+    let worktrees = try await fixture.coordinator.git.list(fixture.project)
     try FileManager.default.removeItem(at: path)
 
-    let statuses = await repo.coordinator.readStatuses(of: worktrees).mapValues(\.status)
+    let statuses = await fixture.coordinator.readStatuses(of: worktrees).mapValues(\.status)
 
-    #expect(statuses.keys.sorted() == [repo.project.id])
+    #expect(statuses.keys.sorted() == [fixture.project.id])
   }
 }

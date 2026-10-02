@@ -2,7 +2,6 @@ import Foundation
 import MultishellCore
 import MultishellProcess
 import TestScratch
-import TestSupport
 import Testing
 
 @testable import MultishellAppCore
@@ -10,216 +9,120 @@ import Testing
 
 extension AppModelStatusPollingTests {
   @Test func aCollapsedProjectsWorktreesAreNotReadUntilItOpens() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    await h.model.createWorktree(branch: "side", basedOn: nil, createBranch: true, in: h.project)
-    let side = try #require(h.worktree(onBranch: "side"))
-    let main = try #require(h.worktree(onBranch: "main"))
-    h.model.select(main)
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    await harness.model.createWorktree(
+      branch: "side", basedOn: nil, createsBranch: true, in: harness.project)
+    let side = try #require(harness.worktree(onBranch: "side"))
+    let main = try #require(harness.worktree(onBranch: "main"))
+    harness.model.select(main)
     for worktree in [side, main] {
-      try "x".write(
-        to: worktree.path.appendingPathComponent("dirty.txt"), atomically: true, encoding: .utf8)
+      try harness.dirty(worktree)
     }
-    for pending in h.model.pendingStatusRefreshes.values { pending.cancel() }
-    h.model.pendingStatusRefreshes = [:]
-    h.model.statuses = [:]
+    harness.clearStatuses()
 
-    h.model.setExpanded(false, for: h.project)
-    await h.model.refreshStatuses()
-    #expect(h.model.statuses[side.id] == nil)
-    #expect(h.model.statuses[main.id]?.changedFiles == 1, "the main one, for its branch")
+    harness.model.setExpanded(false, for: harness.project)
+    await harness.model.refreshStatuses()
+    #expect(harness.model.statuses[side.id] == nil)
+    #expect(harness.model.statuses[main.id]?.changedFiles == 1, "the main one, for its branch")
 
-    h.model.setExpanded(true, for: h.project)
-    #expect(h.model.pendingStatusRefreshes.isEmpty, "one capped poll, not a read per row")
-    try await waitUntil { h.model.statuses[side.id] != nil }
-    #expect(h.model.statuses[side.id]?.changedFiles == 1)
+    harness.model.setExpanded(true, for: harness.project)
+    #expect(harness.model.pendingStatusRefreshes.isEmpty, "one capped poll, not a read per row")
+    try await waitUntil { harness.model.statuses[side.id] != nil }
+    #expect(harness.model.statuses[side.id]?.changedFiles == 1)
   }
 
   @Test func openingOneProjectReadsNoOtherProjectsWorktrees() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    let other = h.root.appendingPathComponent("other", isDirectory: true)
-    try await TestRepository.initialise(at: other, using: h.git)
-    try await TestRepository.commitInitial(in: other, using: h.git)
-    await h.model.addProject(at: other)
-    let otherProject = try #require(h.model.workspace.projects.first { $0.id != h.project.id })
-    let otherMain = try #require(h.model.workspace.worktrees(of: otherProject.id).first)
-    await h.model.createWorktree(branch: "side", basedOn: nil, createBranch: true, in: h.project)
-    let side = try #require(h.worktree(onBranch: "side"))
-    h.model.select(try #require(h.worktree(onBranch: "main")))
-    try "x".write(
-      to: side.path.appendingPathComponent("dirty.txt"), atomically: true, encoding: .utf8)
-    h.model.setExpanded(false, for: h.project)
-    for pending in h.model.pendingStatusRefreshes.values { pending.cancel() }
-    h.model.pendingStatusRefreshes = [:]
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let otherProject = try await harness.addSecondProject()
+    let otherMain = try #require(harness.model.workspace.worktrees(of: otherProject.id).first)
+    await harness.model.createWorktree(
+      branch: "side", basedOn: nil, createsBranch: true, in: harness.project)
+    let side = try #require(harness.worktree(onBranch: "side"))
+    harness.model.select(try #require(harness.worktree(onBranch: "main")))
+    try harness.dirty(side)
+    harness.model.setExpanded(false, for: harness.project)
+    harness.clearStatuses()
     var unread = WorktreeStatus()
     unread.branch = "main"
     unread.changedFiles = 99
-    h.model.statuses = [otherMain.id: unread]
+    harness.model.statuses = [otherMain.id: unread]
 
-    h.model.setExpanded(true, for: h.project)
+    harness.model.setExpanded(true, for: harness.project)
 
-    try await waitUntil { h.model.statuses[side.id] != nil }
-    #expect(h.model.statuses[otherMain.id] == unread)
-  }
-
-  @Test func aPauseInTypingReadsOnlyTheRowsTheFilterBroughtBack() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    for branch in ["side", "other"] {
-      let path = h.root.appendingPathComponent("demo-\(branch)", isDirectory: true)
-      _ = try await h.git.run(
-        ["worktree", "add", "-q", "-b", branch, path.path], in: h.project.path)
-    }
-    await h.model.refreshWorktrees(of: h.project)
-    let side = try #require(h.worktree(onBranch: "side"))
-    let other = try #require(h.worktree(onBranch: "other"))
-    h.model.select(try #require(h.worktree(onBranch: "main")))
-    h.model.sidebarFilterText = "side"
-    await h.model.pendingRevealedRowsRead?.task.value
-    for worktree in [side, other] {
-      try "x".write(
-        to: worktree.path.appendingPathComponent("dirty.txt"), atomically: true, encoding: .utf8)
-    }
-    h.model.statuses = [:]
-
-    h.model.sidebarFilterText = ""
-    await h.model.pendingRevealedRowsRead?.task.value
-
-    #expect(h.model.statuses[other.id]?.changedFiles == 1, "brought back, so read")
-    #expect(h.model.statuses[side.id] == nil, "on screen all along, so left to the poll")
+    try await waitUntil { harness.model.statuses[side.id] != nil }
+    #expect(harness.model.statuses[otherMain.id] == unread)
   }
 
   @Test func aCollapsedProjectsRowTheFilterShowsIsRead() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    await h.model.createWorktree(branch: "side", basedOn: nil, createBranch: true, in: h.project)
-    let side = try #require(h.worktree(onBranch: "side"))
-    h.model.select(try #require(h.worktree(onBranch: "main")))
-    try "x".write(
-      to: side.path.appendingPathComponent("dirty.txt"), atomically: true, encoding: .utf8)
-    for pending in h.model.pendingStatusRefreshes.values { pending.cancel() }
-    h.model.pendingStatusRefreshes = [:]
-    h.model.statuses = [:]
-    h.model.setExpanded(false, for: h.project)
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    await harness.model.createWorktree(
+      branch: "side", basedOn: nil, createsBranch: true, in: harness.project)
+    let side = try #require(harness.worktree(onBranch: "side"))
+    harness.model.select(try #require(harness.worktree(onBranch: "main")))
+    try harness.dirty(side)
+    harness.clearStatuses()
+    harness.model.setExpanded(false, for: harness.project)
 
-    h.model.sidebarFilterText = "side"
-    await h.model.refreshStatuses()
+    harness.model.sidebarFilterText = "side"
+    await harness.model.refreshStatuses()
 
-    #expect(h.model.statuses[side.id]?.changedFiles == 1)
+    #expect(harness.model.statuses[side.id]?.changedFiles == 1)
   }
 
   @Test func aRowCollapsedUnderTheFilterIsNotReadAndExpandingReadsIt() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    let path = h.root.appendingPathComponent("demo-side", isDirectory: true)
-    _ = try await h.git.run(["worktree", "add", "-q", "-b", "side", path.path], in: h.project.path)
-    await h.model.refreshWorktrees(of: h.project)
-    let side = try #require(h.worktree(onBranch: "side"))
-    h.model.select(try #require(h.worktree(onBranch: "main")))
-    h.model.sidebarFilterText = "side"
-    await h.model.pendingRevealedRowsRead?.task.value
-    try "x".write(
-      to: side.path.appendingPathComponent("dirty.txt"), atomically: true, encoding: .utf8)
-    for pending in h.model.pendingStatusRefreshes.values { pending.cancel() }
-    h.model.pendingStatusRefreshes = [:]
-    h.model.statuses = [:]
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let path = harness.root.appendingPathComponent("demo-side", isDirectory: true)
+    try await harness.addOutsideTheApp("side", at: path)
+    await harness.model.refreshWorktrees(of: harness.project)
+    let side = try #require(harness.worktree(onBranch: "side"))
+    harness.model.select(try #require(harness.worktree(onBranch: "main")))
+    harness.model.sidebarFilterText = "side"
+    await harness.model.pendingRevealedRowsRead?.task.value
+    try harness.dirty(side)
+    harness.clearStatuses()
 
-    h.model.toggleExpansion(of: h.project)
-    await h.model.refreshStatuses()
-    #expect(h.model.statuses[side.id] == nil)
+    harness.model.toggleExpansion(of: harness.project)
+    await harness.model.refreshStatuses()
+    #expect(harness.model.statuses[side.id] == nil)
 
-    h.model.toggleExpansion(of: h.project)
-    try await waitUntil { h.model.statuses[side.id] != nil }
-    #expect(h.model.statuses[side.id]?.changedFiles == 1)
-  }
-
-  @Test func aTextChangeReadsTheRowsOfAProjectCollapsedUnderTheOldText() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    let path = h.root.appendingPathComponent("demo-side", isDirectory: true)
-    _ = try await h.git.run(["worktree", "add", "-q", "-b", "side", path.path], in: h.project.path)
-    await h.model.refreshWorktrees(of: h.project)
-    let side = try #require(h.worktree(onBranch: "side"))
-    h.model.select(try #require(h.worktree(onBranch: "main")))
-    h.model.sidebarFilterText = "side"
-    await h.model.pendingRevealedRowsRead?.task.value
-    h.model.toggleExpansion(of: h.project)
-    try "x".write(
-      to: side.path.appendingPathComponent("dirty.txt"), atomically: true, encoding: .utf8)
-    for pending in h.model.pendingStatusRefreshes.values { pending.cancel() }
-    h.model.pendingStatusRefreshes = [:]
-    h.model.statuses = [:]
-
-    h.model.sidebarFilterText = "sid"
-    await h.model.pendingRevealedRowsRead?.task.value
-
-    #expect(h.model.statuses[side.id]?.changedFiles == 1)
-  }
-
-  @Test func clearingTheFilterReadsTheRowsItBringsBack() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    await h.model.createWorktree(branch: "side", basedOn: nil, createBranch: true, in: h.project)
-    let side = try #require(h.worktree(onBranch: "side"))
-    h.model.select(try #require(h.worktree(onBranch: "main")))
-    h.model.sidebarFilterText = "nothing-by-this-name"
-    try "x".write(
-      to: side.path.appendingPathComponent("dirty.txt"), atomically: true, encoding: .utf8)
-    for pending in h.model.pendingStatusRefreshes.values { pending.cancel() }
-    h.model.pendingStatusRefreshes = [:]
-    h.model.statuses = [:]
-
-    h.model.sidebarFilterText = ""
-
-    try await waitUntil { h.model.statuses[side.id] != nil }
-    #expect(h.model.statuses[side.id]?.changedFiles == 1)
+    harness.model.toggleExpansion(of: harness.project)
+    try await waitUntil { harness.model.statuses[side.id] != nil }
+    #expect(harness.model.statuses[side.id]?.changedFiles == 1)
   }
 
   @Test func renamingARowOfACollapsedProjectReadsTheRowsItOpens() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    await h.model.createWorktree(branch: "side", basedOn: nil, createBranch: true, in: h.project)
-    let side = try #require(h.worktree(onBranch: "side"))
-    h.model.select(try #require(h.worktree(onBranch: "main")))
-    h.model.setExpanded(false, for: h.project)
-    try "x".write(
-      to: side.path.appendingPathComponent("dirty.txt"), atomically: true, encoding: .utf8)
-    for pending in h.model.pendingStatusRefreshes.values { pending.cancel() }
-    h.model.pendingStatusRefreshes = [:]
-    h.model.statuses = [:]
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    await harness.model.createWorktree(
+      branch: "side", basedOn: nil, createsBranch: true, in: harness.project)
+    let side = try #require(harness.worktree(onBranch: "side"))
+    harness.model.select(try #require(harness.worktree(onBranch: "main")))
+    harness.model.setExpanded(false, for: harness.project)
+    try harness.dirty(side)
+    harness.clearStatuses()
 
-    h.model.beginRenamingWorktree(side)
+    harness.model.beginRenamingWorktree(side)
 
-    try await waitUntil { h.model.statuses[side.id] != nil }
-    #expect(h.model.statuses[side.id]?.changedFiles == 1)
+    try await waitUntil { harness.model.statuses[side.id] != nil }
+    #expect(harness.model.statuses[side.id]?.changedFiles == 1)
   }
 
   @Test func anExpandedProjectsRowTheFilterHidesIsNotRead() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    await h.model.createWorktree(branch: "side", basedOn: nil, createBranch: true, in: h.project)
-    let side = try #require(h.worktree(onBranch: "side"))
-    h.model.select(try #require(h.worktree(onBranch: "main")))
-    for pending in h.model.pendingStatusRefreshes.values { pending.cancel() }
-    h.model.pendingStatusRefreshes = [:]
-    h.model.statuses = [:]
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    await harness.model.createWorktree(
+      branch: "side", basedOn: nil, createsBranch: true, in: harness.project)
+    let side = try #require(harness.worktree(onBranch: "side"))
+    harness.model.select(try #require(harness.worktree(onBranch: "main")))
+    harness.clearStatuses()
 
-    h.model.sidebarFilterText = "nothing-by-this-name"
-    await h.model.refreshStatuses()
+    harness.model.sidebarFilterText = "nothing-by-this-name"
+    await harness.model.refreshStatuses()
 
-    #expect(h.model.statuses[side.id] == nil)
-  }
-
-  @Test func aPanesReadAsksNothingOfAWorktreeInAMissingProject() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    let model = try h.modelOnFakeGit("")
-    let main = try #require(h.worktree(onBranch: "main"))
-    model.missingProjects.insert(h.project.id)
-
-    await model.refreshStatus(of: main.id)
-
-    #expect(!h.gitCalls().contains { $0.contains("status") })
+    #expect(harness.model.statuses[side.id] == nil)
   }
 }

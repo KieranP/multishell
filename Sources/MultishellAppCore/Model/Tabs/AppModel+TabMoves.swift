@@ -51,6 +51,12 @@ extension AppModel {
     moveTab(tab.id, .after, toNewGroupOf: group.id)
   }
 
+  /// Whether Move Tab to New Group can take this tab: a group's only tab
+  /// has no group to leave, and the store refuses it.
+  public func canMoveTabToNewGroup(_ tab: TerminalTab) -> Bool {
+    workspace.tabs(inGroup: tab.groupID).count > 1
+  }
+
   /// A tab dropped on the band down a group's edge, or the menu item above.
   /// `false` when nothing moved, so the drag springs back.
   @discardableResult

@@ -17,7 +17,7 @@ struct MultishellApp: App {
   var body: some Scene {
     // One window, not a group: every surface is one NSView, and a second
     // window adopting the same views would steal them from the first.
-    Window("Multishell", id: "main") {
+    Window(t("window.main"), id: "main") {
       RootView(model: model, platform: platform)
         .frame(minWidth: 720, minHeight: 420)
         .task {

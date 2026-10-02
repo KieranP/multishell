@@ -20,13 +20,17 @@ final class Harness {
   let main: Worktree
   let feature: Worktree
   let root: URL
+  let stateFile: URL
 
-  init(savedSelection: Bool = false, stateFile: URL? = nil) {
+  /// `socketSource` stands in for `stateSource`, for a test of the real socket.
+  init(
+    savedSelection: Bool = false, stateFile: URL? = nil,
+    socketSource: (any SessionStateSource)? = nil
+  ) {
     root = Scratch.path("appmodel")
     try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-    store = WorkspaceStore(
-      file: WorkspaceFile(
-        fileURL: stateFile ?? root.appendingPathComponent("state.json")))
+    self.stateFile = stateFile ?? root.appendingPathComponent("state.json")
+    store = WorkspaceStore(file: WorkspaceFile(fileURL: self.stateFile))
     let added = store.addProject(at: root)  // exists on disk, so `select` accepts it
     main = Worktree(path: root, projectID: added.id, head: "a", branch: "main", isPrimary: true)
     feature = Worktree(
@@ -38,7 +42,7 @@ final class Harness {
 
     model = AppModel(
       store: store, host: engine, coordinator: nil, watcher: watcher, platform: platform,
-      stateSource: stateSource, notifier: notifier)
+      stateSource: socketSource ?? stateSource, notifier: notifier)
     model.statusReads.pace = .unpaced
     model.refreshAppLaunchFiles = { _ in }
     model.sweepPromisedDropCopies = {}
@@ -53,9 +57,7 @@ final class Harness {
   /// A test's own agent on a PATH nothing else has, so detection reads the
   /// scratch directory and not the machine.
   func installFakeAgent(_ name: String) throws {
-    let bin = root.appendingPathComponent("bin", isDirectory: true)
-    try FileManager.default.createDirectory(at: bin, withIntermediateDirectories: true)
-    try Scratch.script("exit 0", at: bin.appendingPathComponent(name))
+    try fakeBin([name], in: root.appendingPathComponent("bin", isDirectory: true))
   }
 
   deinit { Scratch.remove(root) }
@@ -71,5 +73,18 @@ final class Harness {
   func presentedErrorArrives() async -> PresentedError? {
     try? await waitUntil({ model.presentedError != nil }, seconds: 1)
     return model.presentedError
+  }
+
+  /// Saves, then starts the model a fresh launch would: a store read back from
+  /// the same file, a new engine, and no git.
+  func relaunched() -> (
+    model: AppModel<FakeSurface>, engine: FakeEngine, store: WorkspaceStore,
+    loadError: (any Error)?
+  ) {
+    model.saveNow()
+    let (store, loadError) = WorkspaceStore.restored(from: WorkspaceFile(fileURL: stateFile))
+    let engine = FakeEngine()
+    let model = AppModel(store: store, host: engine, coordinator: nil, watcher: FakeWatcher())
+    return (model, engine, store, loadError)
   }
 }

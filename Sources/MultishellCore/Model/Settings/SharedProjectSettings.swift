@@ -5,29 +5,29 @@ import Foundation
 public struct SharedProjectSettings: Codable, Equatable, Sendable {
   /// Absent leaves the user's value standing; blank is an opinion, the only
   /// spelling these three have for "none". Every reader trims.
-  public var worktreeDirectory: String?
-  public var branchPrefix: String?
-  public var defaultBranch: String?
+  public internal(set) var worktreeDirectory: String?
+  public internal(set) var branchPrefix: String?
+  public internal(set) var defaultBranch: String?
   /// What a worktree here opens, and whether it runs the agent: a team may
   /// ship "a worktree comes up with an agent working in it".
-  public var autoStartAgent: Bool?
-  public var autoStartAgentOnCreate: Bool?
-  public var opensTerminalOnSelect: Bool?
-  public var opensTerminalOnCreate: Bool?
-  public var preCreateHook: String?
-  public var postCreateHook: String?
-  public var preDeleteHook: String?
-  public var postDeleteHook: String?
+  public internal(set) var autoStartsAgent: Bool?
+  public internal(set) var autoStartsAgentOnCreate: Bool?
+  public internal(set) var opensTerminalOnSelect: Bool?
+  public internal(set) var opensTerminalOnCreate: Bool?
+  public internal(set) var preCreateHook: String?
+  public internal(set) var postCreateHook: String?
+  public internal(set) var preDeleteHook: String?
+  public internal(set) var postDeleteHook: String?
   /// Paths a new worktree is symlinked to, and paths copied. A repository may
   /// name only what is under it; `confined(to:)` drops the rest.
-  public var linkedPaths: String?
-  public var copiedPaths: String?
+  public internal(set) var linkedPaths: String?
+  public internal(set) var copiedPaths: String?
   /// What order a project's worktree rows come in. Display only, changing
   /// nothing the repository wrote on the reader's disk.
-  public var worktreeSortOrder: WorktreeSortOrder?
-  public var showsActiveWorktreesFirst: Bool?
-  public var iconGlyph: String?
-  public var iconTint: Int?
+  public internal(set) var worktreeSortOrder: WorktreeSortOrder?
+  public internal(set) var showsActiveWorktreesFirst: Bool?
+  public internal(set) var iconGlyph: String?
+  public internal(set) var iconTint: Int?
 
   /// The sha256 the trust decision is stored against; `nil` trusts nothing.
   /// Taken from the bytes by `load` and `fileContents`, as it decides what is trusted.
@@ -42,8 +42,8 @@ public struct SharedProjectSettings: Codable, Equatable, Sendable {
     worktreeDirectory: String? = nil,
     branchPrefix: String? = nil,
     defaultBranch: String? = nil,
-    autoStartAgent: Bool? = nil,
-    autoStartAgentOnCreate: Bool? = nil,
+    autoStartsAgent: Bool? = nil,
+    autoStartsAgentOnCreate: Bool? = nil,
     opensTerminalOnSelect: Bool? = nil,
     opensTerminalOnCreate: Bool? = nil,
     preCreateHook: String? = nil,
@@ -61,8 +61,8 @@ public struct SharedProjectSettings: Codable, Equatable, Sendable {
     self.worktreeDirectory = worktreeDirectory
     self.branchPrefix = branchPrefix
     self.defaultBranch = defaultBranch
-    self.autoStartAgent = autoStartAgent
-    self.autoStartAgentOnCreate = autoStartAgentOnCreate
+    self.autoStartsAgent = autoStartsAgent
+    self.autoStartsAgentOnCreate = autoStartsAgentOnCreate
     self.opensTerminalOnSelect = opensTerminalOnSelect
     self.opensTerminalOnCreate = opensTerminalOnCreate
     self.preCreateHook = Self.nonBlank(preCreateHook)
@@ -85,8 +85,8 @@ public struct SharedProjectSettings: Codable, Equatable, Sendable {
       worktreeDirectory: settings.worktreeDirectory,
       branchPrefix: settings.branchPrefix,
       defaultBranch: settings.defaultBranch,
-      autoStartAgent: settings.autoStartAgent,
-      autoStartAgentOnCreate: settings.autoStartAgentOnCreate,
+      autoStartsAgent: settings.autoStartsAgent,
+      autoStartsAgentOnCreate: settings.autoStartsAgentOnCreate,
       opensTerminalOnSelect: settings.opensTerminalOnSelect,
       opensTerminalOnCreate: settings.opensTerminalOnCreate,
       preCreateHook: settings.preCreateHook,

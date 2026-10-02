@@ -1,5 +1,4 @@
 import Foundation
-import TestScratch
 import Testing
 
 @testable import MultishellProcess
@@ -19,12 +18,13 @@ struct ShellInvocationTests {
     #expect(ShellInvocation.userShell(at: "/bin/tcsh").arguments == ["-i", "-c"])
     #expect(ShellInvocation.userShell(at: "/bin/csh").arguments == ["-i", "-c"])
     guard FileManager.default.isExecutableFile(atPath: "/bin/tcsh") else { return }
-    let home = try Scratch.directory("home")
-    defer { Scratch.remove(home) }
+    let shell = try ScratchShell("/bin/tcsh")
+    defer { shell.tearDown() }
+    let home = shell.home
 
-    let out = try await ShellCommand.runScript(
-      "printf ok", in: home, environment: ["HOME": home.path], shellPath: "/bin/tcsh")
+    let output = try await ShellCommand.runScript(
+      "printf ok", in: home, environment: ["HOME": home.path], shellPath: shell.path)
 
-    #expect(out == "ok")
+    #expect(output == "ok")
   }
 }

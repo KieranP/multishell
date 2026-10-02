@@ -12,24 +12,24 @@ public struct SidebarFilter: Sendable {
     public let isExpanded: Bool
   }
 
-  private let searchText: String
+  private let filterText: String
 
-  public init(_ text: String) {
-    searchText = text.trimmingCharacters(in: .whitespaces)
+  init(_ text: String) {
+    filterText = text.trimmingCharacters(in: .whitespaces)
   }
 
-  public var isActive: Bool { !searchText.isEmpty }
+  var isFiltering: Bool { !filterText.isEmpty }
 
   func apply(to workspace: Workspace, collapsing collapsed: Set<Project.ID> = []) -> [Entry] {
     // One pass over the worktrees, not one per project; grouping keeps order.
     let byProject = Dictionary(grouping: workspace.worktrees, by: \.projectID)
     return workspace.projects.compactMap { project in
       let worktrees = byProject[project.id] ?? []
-      guard isActive else {
+      guard isFiltering else {
         return Entry(project: project, worktrees: worktrees, isExpanded: project.isExpanded)
       }
       let isExpanded = !collapsed.contains(project.id)
-      if project.name.foldedContains(searchText) {
+      if project.name.foldedContains(filterText) {
         return Entry(project: project, worktrees: worktrees, isExpanded: isExpanded)
       }
       let matching = worktrees.filter { matches($0, in: workspace) }
@@ -39,7 +39,7 @@ public struct SidebarFilter: Sendable {
   }
 
   private func matches(_ worktree: Worktree, in workspace: Workspace) -> Bool {
-    worktree.name.foldedContains(searchText)
-      || workspace.displayName(of: worktree).foldedContains(searchText)
+    worktree.name.foldedContains(filterText)
+      || workspace.displayName(of: worktree).foldedContains(filterText)
   }
 }

@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellCore
@@ -17,16 +18,11 @@ struct PosixShellQuotingTests {
     let arguments = ["My Projects/app", "it's", "$HOME", "", "a\"b", "back\\slash", "tab\there"]
     let script =
       "for a in " + PosixShellQuoting.commandLine(arguments) + "; do printf '%s\\n' \"$a\"; done"
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: "/bin/sh")
-    process.arguments = ["-c", script]
-    let pipe = Pipe()
-    process.standardOutput = pipe
-    try process.run()
-    let data = pipe.fileHandleForReading.readDataToEndOfFile()
-    process.waitUntilExit()
+    let output = try await Detached.output(
+      of: "/bin/sh", ["-c", script], environment: Scratch.shellEnvironment,
+      standardError: .discarded)
 
-    let lines = String(decoding: data, as: UTF8.self).split(
+    let lines = output.split(
       separator: "\n", omittingEmptySubsequences: false
     ).dropLast().map(String.init)
     #expect(lines == arguments)

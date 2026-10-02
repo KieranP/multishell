@@ -7,7 +7,7 @@ import Testing
 
 @Suite(.serialized)
 struct WorktreeGitCreationTests {
-  @Test func aCancelledCreateSkipsTheIndexRefresh() async throws {
+  @Test func anAlreadyStoppedStopperSkipsTheIndexRefresh() async throws {
     let fake = try FakeGit.make("", loggingCalls: true)
     defer { fake.tearDown() }
     let stopper = ProcessStopper()

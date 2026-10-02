@@ -52,11 +52,11 @@ extension AppModel {
 
   /// What `{{branch}}` and the rest stand for here. Empty where the worktree
   /// has gone, leaving each placeholder as typed.
-  private func placeholderValues(in worktreeID: Worktree.ID) -> [AgentPlaceholder: String] {
+  private func placeholderValues(in worktreeID: Worktree.ID) -> [WorktreePlaceholder: String] {
     guard let worktree = workspace.worktree(worktreeID),
       let project = effectiveProject(of: worktree)
     else { return [:] }
-    return AgentPlaceholder.values(
+    return WorktreePlaceholder.values(
       project: project, worktree: worktree, worktreeName: workspace.displayName(of: worktree))
   }
 

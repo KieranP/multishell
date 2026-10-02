@@ -7,7 +7,7 @@ import Testing
 /// `sharedSettings` out of all three, so a later field is silently unsaved.
 @Suite
 struct ProjectTests {
-  @Test func everyFieldIsAccountedForInCodingKeysAndEquality() throws {
+  @Test func aFieldAddedToProjectIsCaughtHere() throws {
     let fields = Mirror(reflecting: Project(path: URL(fileURLWithPath: "/r")))
       .children.compactMap(\.label)
 
@@ -47,8 +47,7 @@ struct ProjectTests {
     }
     #expect(Set(worktrees.map(\.id)) == ["/repos/demo"])
 
-    let decoded = try JSONDecoder().decode(
-      Project.self, from: Data(#"{ "path": "file:///repos/x/../demo" }"#.utf8))
+    let decoded = try decodeJSON(Project.self, #"{ "path": "file:///repos/x/../demo" }"#)
     #expect(decoded.id == "/repos/demo")
   }
 }

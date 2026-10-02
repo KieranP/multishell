@@ -58,11 +58,9 @@ struct GitRunner: Sendable {
     return output?.succeeded ?? false
   }
 
-  /// The exit status of a run nobody stopped, `nil` where there was none.
+  /// The exit status, `nil` where git could not be started.
   func exitStatus(_ arguments: [String], in directory: URL) async -> Int32? {
-    let output = await captured(arguments, in: directory)
-    guard let output, output.stop == nil else { return nil }
-    return output.status
+    await captured(arguments, in: directory)?.status
   }
 
   /// The output where git succeeded, `nil` where it failed. For a poll's

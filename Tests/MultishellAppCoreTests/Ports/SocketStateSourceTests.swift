@@ -6,8 +6,6 @@ import Testing
 
 @testable import MultishellAppCore
 
-/// The channel the app listens on, driven with a real client. Reports land
-/// on the main actor parsed; anything else on the line is dropped there.
 @Suite(.serialized) @MainActor
 struct SocketStateSourceTests {
   @Test func aReportOnTheSocketReachesTheHandlerAndAStrayLineDoesNot() async throws {

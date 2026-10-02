@@ -25,7 +25,7 @@ struct TabDragStateTests {
     drag.hoveredGroupID = groupID
     #expect(drag.isEngaged)
     drag.hoveredGroupID = nil
-    drag.band = TabDragState.Band(groupID: groupID, placement: .after)
+    drag.band = TabGroupBand(groupID: groupID, placement: .after)
     #expect(drag.isEngaged)
   }
 
@@ -41,7 +41,7 @@ struct TabDragStateTests {
     #expect(!drag.showsBands(of: UUID()), "another group's bands stay away")
 
     drag.hoveredGroupID = nil
-    drag.band = TabDragState.Band(groupID: groupID, placement: .before)
+    drag.band = TabGroupBand(groupID: groupID, placement: .before)
     #expect(drag.showsBands(of: groupID))
   }
 
@@ -54,14 +54,25 @@ struct TabDragStateTests {
     #expect(!drag.isShuffling(within: [UUID()]), "another group's strip")
   }
 
-  @Test func onlyTheDraggedTabIsInTheAirAndOnlyOverATarget() {
+  @Test func onlyTheDraggedTabIsHeldOverATargetAndOnlyWhileOverOne() {
     var drag = TabDragState()
     drag.begin(tab)
-    #expect(!drag.isInTheAir(tab), "over nothing that would take it")
+    #expect(!drag.isHeldOverTarget(tab), "over nothing that would take it")
 
     drag.hoveredGroupID = groupID
-    #expect(drag.isInTheAir(tab))
-    #expect(!drag.isInTheAir(UUID()))
+    #expect(drag.isHeldOverTarget(tab))
+    #expect(!drag.isHeldOverTarget(UUID()))
+  }
+
+  @Test func aHeldTabLooksShuffledInItsOwnStripAndLiftedFromAnother() {
+    var drag = TabDragState()
+    drag.begin(tab)
+    #expect(drag.look(of: tab, isShuffling: true) == .resting, "over nothing yet")
+
+    drag.hoveredGroupID = groupID
+    #expect(drag.look(of: tab, isShuffling: true) == .shuffling)
+    #expect(drag.look(of: tab, isShuffling: false) == .lifted)
+    #expect(drag.look(of: UUID(), isShuffling: false) == .resting)
   }
 
   @Test func theInsertionLineIsDrawnOnTheTabUnderThePointerUnlessItsStripShuffles() {
@@ -82,7 +93,7 @@ struct TabDragStateTests {
     drag.begin(tab)
     drag.hoveredGroupID = groupID
     drag.insertion = TabDragState.Insertion(tabID: tab, placement: .after)
-    drag.band = TabDragState.Band(groupID: groupID, placement: .after)
+    drag.band = TabGroupBand(groupID: groupID, placement: .after)
 
     drag.end()
 
@@ -96,7 +107,7 @@ struct TabDragStateTests {
   @Test func beginningADragForgetsTheOneBefore() {
     var drag = TabDragState()
     drag.begin(tab)
-    drag.band = TabDragState.Band(groupID: groupID, placement: .after)
+    drag.band = TabGroupBand(groupID: groupID, placement: .after)
 
     let next = UUID()
     drag.begin(next)

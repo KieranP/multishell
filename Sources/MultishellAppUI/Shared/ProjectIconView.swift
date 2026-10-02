@@ -14,7 +14,10 @@ struct ProjectIconView: View {
 
   var body: some View {
     glyph
-      .frame(width: size + 6, height: size + 6)
+      .frame(
+        width: UIMetrics.projectIconSlot(forGlyphOf: size),
+        height: UIMetrics.projectIconSlot(forGlyphOf: size)
+      )
       .opacity(isMissing ? 0.45 : 1)
       .overlay(alignment: .bottomTrailing) {
         if isMissing {

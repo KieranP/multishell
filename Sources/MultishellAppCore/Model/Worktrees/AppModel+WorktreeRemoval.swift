@@ -24,20 +24,20 @@ extension AppModel {
     if case .remove(let deletingBranch) = removalDecision(for: worktree) {
       return Task { await removeWorktree(worktree, deletingBranch: deletingBranch) }
     }
-    latestRemovalRequest = worktree.id
+    latestRemovalRequestID = worktree.id
     guard removalsAwaitingStatus.insert(worktree.id).inserted else { return nil }
     // Any row's status may be as old as the pace allows, and the dialog,
     // built once, warns of the changed files that status counts.
     return Task {
-      let changesUnread = await !readsFreshStatusInTime(of: worktree.id)
+      let hasUnreadChanges = await !readsFreshStatusInTime(of: worktree.id)
       removalsAwaitingStatus.remove(worktree.id)
-      let isLatest = latestRemovalRequest == worktree.id
-      if isLatest { latestRemovalRequest = nil }
+      let isLatest = latestRemovalRequestID == worktree.id
+      if isLatest { latestRemovalRequestID = nil }
       // A late read must not swap the dialog up, or a newer click's, for its own.
       guard isLatest, pendingWorktreeRemoval == nil, let current = workspace.worktree(worktree.id),
         !isBusy(current.id)
       else { return }
-      switch removalDecision(for: current, changesUnread: changesUnread) {
+      switch removalDecision(for: current, hasUnreadChanges: hasUnreadChanges) {
       case .ask(let pending): pendingWorktreeRemoval = pending
       case .remove(let deletingBranch):
         await removeWorktree(current, deletingBranch: deletingBranch)
@@ -67,14 +67,14 @@ extension AppModel {
   }
 
   private func removalDecision(
-    for worktree: Worktree, changesUnread: Bool = false
+    for worktree: Worktree, hasUnreadChanges: Bool = false
   ) -> PendingWorktreeRemoval.Decision {
     PendingWorktreeRemoval.decide(
       worktree, customName: customName(of: worktree),
       confirms: workspace.confirmsWorktreeRemoval,
       alwaysDeletesBranch: workspace.deletesBranchWithWorktree,
       trashes: workspace.trashesRemovedWorktrees, mergeState: mergeState(of: worktree),
-      changesUnread: changesUnread)
+      hasUnreadChanges: hasUnreadChanges)
   }
 
   /// The dialog's answer: the index of the button chosen, `nil` for Cancel.
@@ -86,12 +86,12 @@ extension AppModel {
     pendingWorktreeRemoval = nil
     guard let choice, pending.choices.indices.contains(choice) else { return nil }
     let deletesBranch = pending.choices[choice].deletesBranch
-    return Task { await confirmWorktreeRemoval(pending, deletingBranch: deletesBranch) }
+    return Task { await removeAsConfirmed(pending, deletingBranch: deletesBranch) }
   }
 
   /// Trashing or deleting as the dialog's message said, even if the setting
   /// changed while it was up.
-  func confirmWorktreeRemoval(
+  func removeAsConfirmed(
     _ pending: PendingWorktreeRemoval, deletingBranch: Bool
   ) async {
     await removeWorktree(pending.worktree, deletingBranch: deletingBranch, trashes: pending.trashes)
@@ -101,7 +101,7 @@ extension AppModel {
   public func worktreeRemovalWarning(for pending: PendingWorktreeRemoval) -> String? {
     PendingWorktreeRemoval.warning(
       changedFiles: statuses[pending.worktree.id]?.changedFiles ?? 0,
-      changesUnread: pending.changesUnread,
+      hasUnreadChanges: pending.hasUnreadChanges,
       liveTerminals: liveTerminalCount(in: pending.worktree.id),
       trashes: pending.trashes)
   }
@@ -162,14 +162,14 @@ extension AppModel {
     case .stopped:
       worktreeOperations.clear(worktree.id)
       return false
-    case .vetoed(let message, let timedOut):
+    case .vetoed(let message, let didTimeOut):
       if !worktreeOperations.fail(
-        .preDeleteHook, on: worktree.id, message: message, timedOut: timedOut)
+        .preDeleteHook, on: worktree.id, message: message, didTimeOut: didTimeOut)
       {
         present(error)
       }
       return false
-    case .alert(let title, let message, let retry, let worktreeRemoved):
+    case .alert(let title, let message, let retry, let wasWorktreeRemoved):
       var presented = PresentedError(title: title, message: message)
       if let retry, case .deleteBranchAnyway(let branch) = retry {
         presented.retry = .init(label: retry.label) { [weak self] in
@@ -177,8 +177,8 @@ extension AppModel {
         }
       }
       presentedError = presented
-      if !worktreeRemoved { worktreeOperations.clear(worktree.id) }
-      return worktreeRemoved
+      if !wasWorktreeRemoved { worktreeOperations.clear(worktree.id) }
+      return wasWorktreeRemoved
     }
   }
 

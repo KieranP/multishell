@@ -1,135 +1,134 @@
 import Foundation
 import MultishellProcess
 import TestScratch
-import TestSupport
 import Testing
 
 @testable import MultishellCore
 @testable import MultishellGitKit
 
-/// The path most likely to lose someone's work if it is wrong.
 @Suite(.serialized)
 struct WorktreeCoordinatorCreationTests {
   @Test func theCreatedWorktreeIsWhereThePlannedPathSaid() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
 
-    let planned = repo.coordinator.plannedPath(
-      forBranch: "feat/tabs", in: repo.project, settings: repo.worktreeSettings)
-    let created = try await repo.coordinator.createThenRunPostCreate(
-      branch: "feat/tabs", in: repo.project, settings: repo.worktreeSettings)
+    let planned = fixture.coordinator.plannedPath(
+      forBranch: "feat/tabs", in: fixture.project, settings: fixture.worktreeSettings)
+    let created = try await fixture.coordinator.createThenRunPostCreate(
+      branch: "feat/tabs", in: fixture.project, settings: fixture.worktreeSettings)
 
     #expect(created == planned)
     #expect(created.lastPathComponent == "feat-tabs", "slash becomes one directory")
-    #expect(try await repo.branches() == ["feat/tabs", "main"], "the branch keeps its slash")
+    #expect(try await fixture.branches() == ["feat/tabs", "main"], "the branch keeps its slash")
   }
 
   @Test func theNewBranchStartsAtTheRequestedBase() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    let first = try await repo.head(of: repo.project.path)
-    try await repo.commit("second", file: "b.txt", content: "b\n")
-    _ = try await repo.runner.run(["branch", "release", first], in: repo.project.path)
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let first = try await fixture.head(of: fixture.project.path)
+    try await fixture.commit("second", file: "b.txt", content: "b\n")
+    _ = try await fixture.runner.run(["branch", "release", first], in: fixture.project.path)
 
-    let path = try await repo.coordinator.createThenRunPostCreate(
-      branch: "hotfix", basedOn: "release", in: repo.project, settings: repo.worktreeSettings)
+    let path = try await fixture.coordinator.createThenRunPostCreate(
+      branch: "hotfix", basedOn: "release", in: fixture.project, settings: fixture.worktreeSettings)
 
-    #expect(try await repo.head(of: path) == first)
+    #expect(try await fixture.head(of: path) == first)
   }
 
   @Test func withoutABaseTheNewBranchStartsAtHEAD() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
 
-    let path = try await repo.coordinator.createThenRunPostCreate(
-      branch: "x", in: repo.project, settings: repo.worktreeSettings)
+    let path = try await fixture.coordinator.createThenRunPostCreate(
+      branch: "x", in: fixture.project, settings: fixture.worktreeSettings)
 
-    #expect(try await repo.head(of: path) == repo.head(of: repo.project.path))
+    #expect(try await fixture.head(of: path) == fixture.head(of: fixture.project.path))
   }
 
   @Test func anExistingBranchIsCheckedOutNotRecreated() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    _ = try await repo.runner.run(["branch", "existing"], in: repo.project.path)
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    _ = try await fixture.runner.run(["branch", "existing"], in: fixture.project.path)
 
-    let path = try await repo.coordinator.createThenRunPostCreate(
-      branch: "existing", createBranch: false, in: repo.project, settings: repo.worktreeSettings)
+    let path = try await fixture.coordinator.createThenRunPostCreate(
+      branch: "existing", createsBranch: false, in: fixture.project,
+      settings: fixture.worktreeSettings)
 
-    let onBranch = try await repo.runner.run(["rev-parse", "--abbrev-ref", "HEAD"], in: path)
+    let onBranch = try await fixture.runner.run(["rev-parse", "--abbrev-ref", "HEAD"], in: path)
     #expect(onBranch.trimmingCharacters(in: .whitespacesAndNewlines) == "existing")
-    #expect(try await repo.branches() == ["existing", "main"])
+    #expect(try await fixture.branches() == ["existing", "main"])
   }
 
   @Test func thePrefixIsAppliedAndNeverDoubled() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
     let settings = WorktreeSettings(worktreeDirectory: "../trees", branchPrefix: "k/")
 
-    let a = try await repo.coordinator.createThenRunPostCreate(
-      branch: "one", in: repo.project, settings: settings)
-    let b = try await repo.coordinator.createThenRunPostCreate(
-      branch: "k/two", in: repo.project, settings: settings)
+    let one = try await fixture.coordinator.createThenRunPostCreate(
+      branch: "one", in: fixture.project, settings: settings)
+    let two = try await fixture.coordinator.createThenRunPostCreate(
+      branch: "k/two", in: fixture.project, settings: settings)
 
-    #expect(a.lastPathComponent == "k-one")
-    #expect(b.lastPathComponent == "k-two")
-    #expect(try await repo.branches() == ["k/one", "k/two", "main"])
+    #expect(one.lastPathComponent == "k-one")
+    #expect(two.lastPathComponent == "k-two")
+    #expect(try await fixture.branches() == ["k/one", "k/two", "main"])
   }
 
   @Test func thePrefixIsNotAppliedToAnExistingBranch() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    _ = try await repo.runner.run(["branch", "release"], in: repo.project.path)
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    _ = try await fixture.runner.run(["branch", "release"], in: fixture.project.path)
     let settings = WorktreeSettings(worktreeDirectory: "../trees", branchPrefix: "k/")
 
-    let planned = repo.coordinator.plannedPath(
-      forBranch: "release", createBranch: false, in: repo.project, settings: settings)
-    let path = try await repo.coordinator.createThenRunPostCreate(
-      branch: "release", createBranch: false, in: repo.project, settings: settings)
+    let planned = fixture.coordinator.plannedPath(
+      forBranch: "release", createsBranch: false, in: fixture.project, settings: settings)
+    let path = try await fixture.coordinator.createThenRunPostCreate(
+      branch: "release", createsBranch: false, in: fixture.project, settings: settings)
 
     #expect(path == planned)
     #expect(path.lastPathComponent == "release", "no k- in the directory either")
-    let onBranch = try await repo.runner.run(["rev-parse", "--abbrev-ref", "HEAD"], in: path)
+    let onBranch = try await fixture.runner.run(["rev-parse", "--abbrev-ref", "HEAD"], in: path)
     #expect(onBranch.trimmingCharacters(in: .whitespacesAndNewlines) == "release")
-    #expect(try await repo.branches() == ["main", "release"], "nothing was created")
+    #expect(try await fixture.branches() == ["main", "release"], "nothing was created")
   }
 
   @Test func nestedContainersAreCreatedOnDemand() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
     let settings = WorktreeSettings(worktreeDirectory: "../deep/er/trees")
 
-    let path = try await repo.coordinator.createThenRunPostCreate(
-      branch: "n", in: repo.project, settings: settings)
+    let path = try await fixture.coordinator.createThenRunPostCreate(
+      branch: "n", in: fixture.project, settings: settings)
 
     #expect(path.path.hasSuffix("/deep/er/trees/n"))
     #expect(FileManager.default.fileExists(atPath: path.appendingPathComponent("README.md").path))
   }
 
   @Test func aRefusedCreateLeavesNoContainerDirectory() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    _ = try await repo.runner.run(["branch", "taken"], in: repo.project.path)
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    _ = try await fixture.runner.run(["branch", "taken"], in: fixture.project.path)
     let settings = WorktreeSettings(worktreeDirectory: "../deep/er/trees")
 
     await #expect(throws: ProcessFailure.self) {
-      try await repo.coordinator.createThenRunPostCreate(
-        branch: "taken", in: repo.project, settings: settings)
+      try await fixture.coordinator.createThenRunPostCreate(
+        branch: "taken", in: fixture.project, settings: settings)
     }
 
-    let deep = repo.root.appendingPathComponent("deep", isDirectory: true)
+    let deep = fixture.root.appendingPathComponent("deep", isDirectory: true)
     #expect(
       !FileManager.default.fileExists(atPath: deep.path), "git made nothing, so nothing is left")
   }
 
   @Test func aNewWorktreesIndexIsWrittenAfterTheSecondItsFilesWereCheckedOutIn() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
 
-    let settling = WorktreeCoordinator(git: WorktreeGit(runner: repo.runner))
+    let settling = WorktreeCoordinator(git: WorktreeGit(runner: fixture.runner))
     let path = try await settling.createThenRunPostCreate(
-      branch: "fresh", in: repo.project, settings: repo.worktreeSettings)
+      branch: "fresh", in: fixture.project, settings: fixture.worktreeSettings)
 
-    let index = try await repo.runner.run(
+    let index = try await fixture.runner.run(
       ["rev-parse", "--path-format=absolute", "--git-path", "index"], in: path
     )
     .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -142,31 +141,31 @@ struct WorktreeCoordinatorCreationTests {
   }
 
   @Test func aBranchThatAlreadyExistsIsAGitErrorNotACrash() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    _ = try await repo.runner.run(["branch", "taken"], in: repo.project.path)
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    _ = try await fixture.runner.run(["branch", "taken"], in: fixture.project.path)
 
     await #expect(throws: ProcessFailure.self) {
-      try await repo.coordinator.createThenRunPostCreate(
-        branch: "taken", in: repo.project, settings: repo.worktreeSettings)
+      try await fixture.coordinator.createThenRunPostCreate(
+        branch: "taken", in: fixture.project, settings: fixture.worktreeSettings)
     }
     #expect(
-      try await repo.coordinator.git.list(repo.project).count == 1, "nothing was created")
+      try await fixture.coordinator.git.list(fixture.project).count == 1, "nothing was created")
   }
 
   @Test func anOccupiedTargetDirectoryIsRefusedAndTheHookDoesNotRun() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    var project = repo.project
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    var project = fixture.project
     project.settings = ProjectSettings(
       postCreateHook: "touch \"$MULTISHELL_PROJECT_PATH/hook-ran\"")
-    let target = repo.worktreeSettings.worktreePath(forBranch: "busy", in: project)
+    let target = fixture.worktreeSettings.worktreePath(forBranch: "busy", in: project)
     try FileManager.default.createDirectory(at: target, withIntermediateDirectories: true)
     try "x".write(to: target.appendingPathComponent("file"), atomically: true, encoding: .utf8)
 
     await #expect(throws: ProcessFailure.self) {
-      try await repo.coordinator.createThenRunPostCreate(
-        branch: "busy", in: project, settings: repo.worktreeSettings)
+      try await fixture.coordinator.createThenRunPostCreate(
+        branch: "busy", in: project, settings: fixture.worktreeSettings)
     }
     #expect(
       !FileManager.default.fileExists(atPath: project.path.appendingPathComponent("hook-ran").path))
@@ -175,45 +174,46 @@ struct WorktreeCoordinatorCreationTests {
   /// The sheet cannot send these, Create being off for a name not in the
   /// list; an API caller can, and the hook used to run before git refused.
   @Test func anExistingBranchNameGitWillRefuseRunsNoHook() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    var project = repo.project
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    var project = fixture.project
     project.settings = ProjectSettings(
       preCreateHook: "touch \"$MULTISHELL_PROJECT_PATH/hook-ran\"")
     let marker = project.path.appendingPathComponent("hook-ran")
 
     for name in ["", "  ", "my branch", "HEAD"] {
       await #expect(throws: InvalidBranchName.self, "\(name.debugDescription)") {
-        try await repo.coordinator.createThenRunPostCreate(
-          branch: name, createBranch: false, in: project, settings: repo.worktreeSettings)
+        try await fixture.coordinator.createThenRunPostCreate(
+          branch: name, createsBranch: false, in: project, settings: fixture.worktreeSettings)
       }
       #expect(!FileManager.default.fileExists(atPath: marker.path), "the hook did not run")
     }
-    #expect(try await repo.coordinator.git.list(project).count == 1, "nothing was created")
+    #expect(try await fixture.coordinator.git.list(project).count == 1, "nothing was created")
   }
 
   @Test func aBranchCheckedOutElsewhereCannotBeCheckedOutAgain() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
 
     // `main` is checked out in the primary worktree already.
     await #expect(throws: ProcessFailure.self) {
-      try await repo.coordinator.createThenRunPostCreate(
-        branch: "main", createBranch: false, in: repo.project, settings: repo.worktreeSettings)
+      try await fixture.coordinator.createThenRunPostCreate(
+        branch: "main", createsBranch: false, in: fixture.project,
+        settings: fixture.worktreeSettings)
     }
   }
 
   @Test func aWorktreeLandsWhereTheSettingsSayOnAPrefixedBranchAndThePostCreateHookRunsInIt()
     async throws
   {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
 
-    var project = repo.project
+    var project = fixture.project
     project.settings = ProjectSettings(postCreateHook: "echo created > hook.txt")
     let settings = WorktreeSettings(worktreeDirectory: "../trees", branchPrefix: "kieran/")
 
-    let coordinator = repo.coordinator
+    let coordinator = fixture.coordinator
     let path = try await coordinator.createThenRunPostCreate(
       branch: "tabs", in: project, settings: settings)
 
@@ -227,49 +227,50 @@ struct WorktreeCoordinatorCreationTests {
   }
 
   @Test func creationReportsEachStepAndSkipsHooksWithNoScript() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
     let steps = Recorder<WorktreeCreationStep>()
 
-    try await repo.coordinator.createThenRunPostCreate(
-      branch: "plain", in: repo.project, settings: repo.worktreeSettings,
+    try await fixture.coordinator.createThenRunPostCreate(
+      branch: "plain", in: fixture.project, settings: fixture.worktreeSettings,
       onStep: { steps.record($0) })
     #expect(steps.received == [.addingWorktree], "no hooks, so no hook steps")
 
-    var hooked = repo.project
+    var hooked = fixture.project
     hooked.settings = ProjectSettings(preCreateHook: "true", postCreateHook: "true")
     steps.clear()
-    try await repo.coordinator.createThenRunPostCreate(
-      branch: "hooked", in: hooked, settings: repo.worktreeSettings, onStep: { steps.record($0) })
+    try await fixture.coordinator.createThenRunPostCreate(
+      branch: "hooked", in: hooked, settings: fixture.worktreeSettings, onStep: { steps.record($0) }
+    )
     #expect(steps.received == [.preCreateHook, .addingWorktree])
 
-    var refused = repo.project
+    var refused = fixture.project
     refused.settings = ProjectSettings(preCreateHook: "exit 1", postCreateHook: "true")
     steps.clear()
     await #expect(throws: HookFailure.self) {
-      try await repo.coordinator.createThenRunPostCreate(
-        branch: "refused", in: refused, settings: repo.worktreeSettings,
+      try await fixture.coordinator.createThenRunPostCreate(
+        branch: "refused", in: refused, settings: fixture.worktreeSettings,
         onStep: { steps.record($0) })
     }
     #expect(steps.received == [.preCreateHook], "nothing past the veto")
   }
 
   @Test func createStopsBeforeThePostHookWhichRunPostCreateThenRuns() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    var project = repo.project
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    var project = fixture.project
     project.settings = ProjectSettings(
       preCreateHook: "echo pre > pre.txt", postCreateHook: "echo post > post.txt")
 
-    let path = try await repo.coordinator.create(
-      branch: "halves", in: project, settings: repo.worktreeSettings)
+    let path = try await fixture.coordinator.create(
+      branch: "halves", in: project, settings: fixture.worktreeSettings)
 
     #expect(
       FileManager.default.fileExists(atPath: project.path.appendingPathComponent("pre.txt").path))
-    #expect(try await repo.coordinator.git.list(project).count == 2, "the worktree exists")
+    #expect(try await fixture.coordinator.git.list(project).count == 2, "the worktree exists")
     #expect(!FileManager.default.fileExists(atPath: path.appendingPathComponent("post.txt").path))
 
-    try await repo.coordinator.runPostCreate(for: project, worktreePath: path, branch: "halves")
+    try await fixture.coordinator.runPostCreate(for: project, worktreePath: path, branch: "halves")
     #expect(FileManager.default.fileExists(atPath: path.appendingPathComponent("post.txt").path))
   }
 }

@@ -32,8 +32,8 @@ public struct ProcessRunner: Sendable {
     return output.standardOutput
   }
 
-  /// Returns the exit status instead of throwing. A child still running at
-  /// `timeout`, or stopped, is ended and reported with `stop` set.
+  /// Throws only where the child could not start; a non-zero exit comes back
+  /// in `status`, and a child ended at `timeout` or stopped with `stop` set.
   public func capture(
     _ executable: URL,
     _ arguments: [String],

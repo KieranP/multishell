@@ -12,13 +12,13 @@ extension SessionStates {
   /// Nothing showing and nothing out. A stamp and a note outlive the state
   /// they were about, so neither counts; a roster does.
   var showsNothing: Bool {
-    !entries.values.contains { $0.state != nil || !$0.roster.subagents.isEmpty }
+    !entries.values.contains { $0.state != nil || !$0.roster.workers.isEmpty }
   }
 
   /// What each worker's end meant, applied the way the model's sweep applies it.
   mutating func applyShellExit(_ pid: Int32) -> [SessionState?] {
     endings(ofShell: pid).map {
-      report(.init(state: .running, subagent: $0.report), pid: nil, for: $0.key, isSeen: false)
+      report(.init(state: .running, worker: $0.report), pid: nil, for: $0.key, isSeen: false)
     }
   }
 }

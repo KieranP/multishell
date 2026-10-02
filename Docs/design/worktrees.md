@@ -253,8 +253,8 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   between the sheet and the add used to judge it, so a bad name ran the
   pre-create hook before git refused at the end of it.
 - **The rules are git's own, in Swift, less the ones about slashes** that apply
-  only to a full refname, the sheet asking on every keystroke. `GitRefNameTests`
-  holds it against real git over a table of names.
+  only to a full refname, the sheet asking on every keystroke.
+  `GitBranchNameTests` holds it against real git over a table of names.
 - **An existing branch is held to the same rules**: the check used to run only
   when creating one, so an API caller with an empty name ran the hook and was
   refused after. Cost: a detached checkout git would have allowed is refused
@@ -380,7 +380,7 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   are a tested value because a cancelled branch load once re-enabled Create
   against the wrong project. Its existing-branch picker offers local branches
   only.
-- **The sidebar filter is folded behind a glass in the header.** Standing open
+- **The sidebar filter is tucked behind a glass in the header.** Standing open
   it cost a row of height in every session to a control reached in few of them.
 - **Names are folded per keystroke, not kept folded**: a folded copy searched
   with `contains` parts from a folded `range(of:)` on some letters, ß for one,
@@ -398,9 +398,9 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   found. The rows a text change brings back out of a collapse are read, as those
   it brings back out of hiding are.
 - **Whether the field is up is the model's, as its text is**, and only closing
-  folds it. Held by the view, a reopened window showed the field for the text
-  left in the model, and emptying that text removed the field with the keyboard
-  in it.
+  takes it down. Held by the view, a reopened window showed the field for the
+  text left in the model, and emptying that text removed the field with the
+  keyboard in it.
 - **A worktree's dot is the most urgent state among its tabs**, a project's
   among its worktrees: failed, waiting, working, done, idle.
 - **Failed above waiting**, where it was below: a question answered still leaves

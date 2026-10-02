@@ -55,9 +55,9 @@ struct SidewaysWheelViewTests {
     withExtendedLifetime(window) {}
   }
 
-  /// In points, not tabs: stepping a whole tab a notch read as jumpy, and a
-  /// turn twice as far has to move twice as far.
-  @Test func aTurnMovesTheStripAsFarAsItWasTurned() {
+  /// In points, not tabs: stepping a whole tab a notch read as jumpy, so a
+  /// turn twice as far moves farther.
+  @Test func aFartherTurnMovesTheStripFarther() {
     let (nearWindow, near, nearCatcher) = strip()
     let (farWindow, far, farCatcher) = strip()
     nearCatcher.scrollWheel(with: wheel(vertical: -40))
@@ -103,7 +103,7 @@ struct SidewaysWheelViewTests {
 
   /// A sideways turn is the scroller's own, and a click, a drag or a drop is
   /// the tabs': the catcher answers for none of them.
-  @Test func onlyAVerticalScrollIsTakenFromWhatIsUnderneath() {
+  @Test func theCatcherTakesNoClickDragOrDrop() {
     let (window, _, catcher) = strip()
     #expect(catcher.hitTest(NSPoint(x: 10, y: 10)) == nil, "no event at all")
     withExtendedLifetime(window) {}

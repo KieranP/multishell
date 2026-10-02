@@ -16,10 +16,10 @@ struct SessionStateReportBoundsTests {
     let report = SessionStateReport.parse(line)
 
     #expect(report?.agentID == nil)
-    #expect(report?.cwd == nil)
+    #expect(report?.workingDirectory == nil)
     #expect(report?.command == nil)
-    #expect(report?.subagent?.id == SubagentReport.anonymousID)
-    #expect(report?.subagent?.type?.count == SubagentReport.maximumTypeLength + 1)
+    #expect(report?.worker?.id == WorkerReport.anonymousID)
+    #expect(report?.worker?.type?.count == WorkerReport.maximumTypeLength + 1)
     #expect(report?.backgroundShells?.count == SessionStateReport.rosterCapacity)
   }
 
@@ -29,26 +29,28 @@ struct SessionStateReportBoundsTests {
     let long = String(repeating: "x", count: 200)
     let report = SessionStateReport.parse(
       #"{"state":"done","out":[{"id":"\#(long)","phase":"working"},\#(out)]}"#)
-    #expect(report?.workersOut?.count == 1024, "as many as a roster's places and folds")
+    #expect(
+      report?.workersOut?.count == SessionStateReport.maximumWorkersOut,
+      "as many as a roster's places and folds")
     #expect(report?.workersOut?.first?.id == "w1", "the unnamed one is dropped")
   }
 
-  @Test func boundedStringsWithinTheirLimitsAreKeptWhole() {
+  @Test func fieldsWithinTheirBoundsArriveAndACommandArrivesAsItsExecutable() {
     let report = SessionStateReport.parse(
       #"{"state":"running","agent":"codex","cwd":"/w/repo","command":"/bin/make all","#
         + #""subagent":{"id":"t1","type":"Explore","phase":"working"}}"#)
 
     #expect(report?.agentID == "codex")
-    #expect(report?.cwd == "/w/repo")
+    #expect(report?.workingDirectory == "/w/repo")
     #expect(report?.command == "make")
-    #expect(report?.subagent == SubagentReport(id: "t1", type: "Explore", phase: .working))
+    #expect(report?.worker == WorkerReport(id: "t1", type: "Explore", phase: .working))
   }
 
   /// The channel drops a line over 64 KB, so an overlong message would lose the state too:
   /// Waiting for input, from a permission prompt quoting a very long command.
   @Test func aVeryLongMessageIsTrimmedSoItsReportStillFits() throws {
     let report = SessionStateReport(
-      state: .attention, cwd: String(repeating: "d", count: 900),
+      state: .attention, workingDirectory: String(repeating: "d", count: 900),
       message: String(repeating: "x", count: 200_000))
 
     let message = try #require(report.message)

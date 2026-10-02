@@ -9,7 +9,7 @@ struct GhosttyAppLayerTests {
   /// One line libghostty cannot parse refuses the whole config. The app layer
   /// carries the unbinds and the four search colours: every built-in theme.
   @MainActor
-  @Test func everyBuiltInThemesConfigurationIsOneThePinnedLibghosttyAccepts() {
+  @Test func everyBuiltInThemeSetsReadableSearchColoursInAConfigurationLibghosttyAccepts() {
     for theme in Theme.builtins {
       let rendered = GhosttyAppLayer.configuration(theme, Appearance()).rendered
       #expect(rendered.contains("search-background = #"), "\(theme.name)")

@@ -24,8 +24,8 @@ extension AppModel {
   }
 
   /// Missing projects and slow worktrees are skipped, see `StatusPollPace`; nil is every project.
-  func refreshStatuses(inProject project: Project.ID? = nil) async {
-    await refreshStatuses { project == nil || $0.projectID == project }
+  func refreshStatuses(inProject id: Project.ID? = nil) async {
+    await refreshStatuses { id == nil || $0.projectID == id }
   }
 
   /// A failed read keeps its badge rather than blinking off; a gone worktree's

@@ -65,7 +65,7 @@ extension OpenCodePluginDriver {
 
   /// What a report says about a worker, as the chip reads it: the state, the
   /// phase, and the kind.
-  func said(_ report: [String]) -> String {
+  func chipSummary(of report: [String]) -> String {
     var parts = [report.count > 1 ? report[1] : ""]
     for flag in ["--subagent-phase", "--subagent-type", "--new-turn", "--message"] {
       if let index = report.firstIndex(of: flag), index + 1 < report.count {
@@ -75,7 +75,7 @@ extension OpenCodePluginDriver {
     return parts.joined(separator: " ")
   }
 
-  func value(_ report: [String], _ flag: String) -> String? {
+  func flagValue(_ report: [String], _ flag: String) -> String? {
     report.firstIndex(of: flag).flatMap { $0 + 1 < report.count ? report[$0 + 1] : nil }
   }
 }

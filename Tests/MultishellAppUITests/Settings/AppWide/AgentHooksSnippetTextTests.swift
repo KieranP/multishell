@@ -12,19 +12,17 @@ struct AgentHooksSnippetTextTests {
     let snippet = "{\n  \"hooks\": {}\n}\n"
     let view = AgentHooksSnippetText(snippet: snippet)
       .environment(\.multilineTextAlignment, .trailing)
-    let host = NSHostingView(rootView: view.frame(width: 300, height: 60, alignment: .top))
-    host.frame = NSRect(x: 0, y: 0, width: 300, height: 60)
-    let window = OffscreenWindow.holding(host, deferred: false)
-
-    let rep = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
-    host.cacheDisplay(in: host.bounds, to: rep)
-    let scale = Double(rep.pixelsWide) / host.bounds.width
+    let width = 300.0
+    let bitmap = try #require(
+      OffscreenWindow.pixels(
+        ofHosted: view.frame(width: width, height: 60, alignment: .top),
+        size: CGSize(width: width, height: 60)))
+    let scale = Double(bitmap.pixelsWide) / width
     let firstLineLeft = try #require(
-      InkedPixels(rep).firstLineLeftmostColumn(lineHeight: Int(8 * scale)))
+      InkedPixels(bitmap).firstLineLeftmostColumn(lineHeight: Int(8 * scale)))
 
     #expect(
       Double(firstLineLeft) / scale < 10,
       "the first line's ink starts \(Double(firstLineLeft) / scale)pt in")
-    withExtendedLifetime(window) {}
   }
 }

@@ -47,7 +47,7 @@ struct AgentBoardColumnView: View {
     }
     .padding(.horizontal, 2)
     .padding(.bottom, 6)
-    .overlay(alignment: .bottom) { theme.hairline.frame(height: 0.5) }
+    .hairline(.bottom, theme)
     .accessibilityElement(children: .combine)
     .accessibilityLabel(t("board.lane-count", column.lane.title(), column.count))
   }

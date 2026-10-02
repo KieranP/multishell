@@ -7,8 +7,8 @@ import Testing
 struct AgentMarkImageTests {
   @Test func theShellGlyphKeepsBothSidesOfItsWindow() throws {
     let image = try #require(AgentMarkImage.nsImage(for: nil, scale: 4))
-    let rep = try #require(image.tiffRepresentation.flatMap(NSBitmapImageRep.init(data:)))
-    let ink = InkedPixels(rep)
+    let bitmap = try #require(image.tiffRepresentation.flatMap(NSBitmapImageRep.init(data:)))
+    let ink = InkedPixels(bitmap)
     let glyph = try #require(ink.box)
 
     for column in [glyph.minX, glyph.maxX] {

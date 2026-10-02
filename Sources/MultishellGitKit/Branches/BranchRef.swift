@@ -60,8 +60,8 @@ struct BranchRef: Hashable, Sendable {
     return Self.shortLocalName(fullName)
   }
 
-  /// The branch with no remote in front of it, so the trunk's own checkout
-  /// is not badged. Only the remote's first component is dropped.
+  /// The branch with no remote in front of it, so the default branch's own
+  /// checkout is not badged. Only the remote's first component is dropped.
   var nameWithoutRemote: String {
     guard isRemote else { return shortName }
     let short = shortName

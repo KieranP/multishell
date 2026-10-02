@@ -56,4 +56,17 @@ struct ShellCommandTests {
       #expect(captured == "pipe", "which is what `runScript` gives it, for the contrast")
     }
   }
+
+  @Test func aStoppedScriptIsAFailureThatSaysSo() async throws {
+    let shell = try ScratchShell()
+    defer { shell.tearDown() }
+    do {
+      _ = try await ShellCommand.runScript(
+        "sleep 30", in: shell.home, environment: shell.environment, shellPath: shell.path,
+        timeout: .milliseconds(300))
+      Issue.record("the script did not fail")
+    } catch let failure as ProcessFailure {
+      #expect(failure.stop == .timedOut(after: .milliseconds(300)))
+    }
+  }
 }

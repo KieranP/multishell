@@ -13,4 +13,9 @@ public struct TabStripLayout: Equatable, Sendable {
     self.tabWidth = share.width
     self.scrolls = share.scrolls
   }
+
+  /// How far `count` tabs run end to end, which a scrolling strip scrolls over.
+  public func contentWidth(count: Int) -> Double {
+    Double(count) * tabWidth
+  }
 }

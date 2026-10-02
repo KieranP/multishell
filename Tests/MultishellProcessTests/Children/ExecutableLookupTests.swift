@@ -18,9 +18,7 @@ struct ExecutableLookupTests {
   @Test func executableLookupWalksTheGivenPathNotTheProcessOne() throws {
     let directory = try Scratch.directory("path")
     defer { Scratch.remove(directory) }
-    let fake = directory.appendingPathComponent("claude")
-    try "#!/bin/sh\nexit 0\n".write(to: fake, atomically: true, encoding: .utf8)
-    try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: fake.path)
+    let fake = try Scratch.script("exit 0", at: directory.appendingPathComponent("claude"))
     try "not executable".write(
       to: directory.appendingPathComponent("codex"), atomically: true, encoding: .utf8)
 

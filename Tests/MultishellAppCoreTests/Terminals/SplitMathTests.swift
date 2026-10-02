@@ -22,8 +22,8 @@ struct SplitMathTests {
 
   @Test func neitherPaneGoesBelowTheMinimum() {
     // 80 points of 600 is 0.4 of a weight.
-    #expect(close(drag(1000, weights: [1, 1, 1]), to: [1.6, 0.4, 1]))
-    #expect(close(drag(-1000, weights: [1, 1, 1]), to: [0.4, 1.6, 1]))
+    #expect(areClose(drag(1000, weights: [1, 1, 1]), [1.6, 0.4, 1]))
+    #expect(areClose(drag(-1000, weights: [1, 1, 1]), [0.4, 1.6, 1]))
   }
 
   /// What a drop that would make a new tab group asks first. 6 points of
@@ -35,8 +35,8 @@ struct SplitMathTests {
     #expect(!SplitMath.canHalve(.nan, minimumPane: 80, divider: 6), "a width not yet measured")
   }
 
-  private func close(_ a: [Double], to b: [Double]) -> Bool {
-    a.count == b.count && zip(a, b).allSatisfy { abs($0 - $1) < 1e-9 }
+  private func areClose(_ lhs: [Double], _ rhs: [Double]) -> Bool {
+    lhs.count == rhs.count && zip(lhs, rhs).allSatisfy { abs($0 - $1) < 1e-9 }
   }
 
   @Test func twoPanesTooSmallForTheMinimumSplitStayPutRatherThanGoingNegative() {
@@ -54,12 +54,10 @@ struct SplitMathTests {
     // 382 points shared by [1, 0.5, 0.25, 0.25]: the middle pair is 0.75,
     // which is 143 points, and two 80-point minimums do not fit.
     let weights = [1.0, 0.5, 0.25, 0.25]
-    let after = SplitMath.transferring(
-      1, acrossDividerAfter: 1, in: weights, available: 382, minimumPane: 80)
+    let after = drag(1, weights: weights, available: 382, index: 1)
     #expect(after == weights, "a drag of one point rewrote them to [1, 0.375, 0.375, 0.25]")
     #expect(
-      SplitMath.transferring(
-        -400, acrossDividerAfter: 1, in: weights, available: 382, minimumPane: 80) == weights,
+      drag(-400, weights: weights, available: 382, index: 1) == weights,
       "and nor does dragging it the other way")
   }
 

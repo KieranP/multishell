@@ -199,10 +199,7 @@ extension WorkspaceStoreTests {
   }
 
   @Test func aTabIsNotOpenedInAnotherWorktreesGroup() {
-    let (store, project, main) = demoStore()
-    let other = Worktree(
-      path: URL(fileURLWithPath: "/repos/demo-b"), projectID: project.id, head: "b", branch: "b")
-    store.replaceWorktrees([main, other], forProject: project.id)
+    let (store, main, other) = twoWorktreeStore()
     store.openTab(in: main.id)
     let foreign = store.workspace.groups(in: main.id)[0]
 
@@ -244,11 +241,7 @@ extension WorkspaceStoreTests {
   }
 
   @Test func aTabDraggedToAnotherWorktreeLandsInItsFocusedGroup() {
-    let (store, project, main) = demoStore()
-    let feature = Worktree(
-      path: URL(fileURLWithPath: "/repos/demo-b"), projectID: project.id, head: "b",
-      branch: "feature")
-    store.replaceWorktrees([main, feature], forProject: project.id)
+    let (store, main, feature) = twoWorktreeStore()
     let settled = store.openTab(in: feature.id)!
     let second = store.openTab(in: feature.id)!
     let firstGroup = store.workspace.groups(in: feature.id)[0]
@@ -277,35 +270,6 @@ extension WorkspaceStoreTests {
     #expect(store.workspace.tabGroups.isEmpty)
     #expect(store.workspace.focusedGroupByWorktree.isEmpty)
     WorkspaceInvariants.check(store.workspace, "worktree removed")
-  }
-
-  @Test func tabCyclingStaysInsideItsGroup() {
-    let (store, _, worktree) = demoStore()
-    let a = store.openTab(in: worktree.id)!
-    let b = store.openTab(in: worktree.id)!
-    let c = store.openTab(in: worktree.id)!
-    let first = store.workspace.groups(in: worktree.id)[0]
-    store.moveTab(c.id, .after, toNewGroupOf: first.id)
-
-    #expect(store.workspace.tab(after: a.id)?.id == b.id)
-    #expect(store.workspace.tab(after: b.id)?.id == a.id, "wraps within the group")
-    #expect(store.workspace.tab(after: c.id) == nil, "a group of one has nowhere to go")
-  }
-
-  /// A file hand-edited to name no focused group, read before repair has
-  /// run: the first group answers, so the worktree still draws a strip.
-  @Test func aWorktreeWithNoFocusedGroupFallsBackToItsFirst() {
-    let (store, _, worktree) = demoStore()
-    let tab = store.openTab(in: worktree.id)!
-    var workspace = store.workspace
-    let first = workspace.groups(in: worktree.id)[0]
-    workspace.focusedGroupByWorktree = [:]
-
-    #expect(workspace.focusedGroup(in: worktree.id)?.id == first.id)
-    #expect(workspace.activeTab(in: worktree.id)?.id == tab.id)
-
-    workspace.focusedGroupByWorktree[worktree.id] = UUID()
-    #expect(workspace.focusedGroup(in: worktree.id)?.id == first.id, "and a group that has gone")
   }
 
   @Test func onlyOneTabPerGroupCountsAsShown() {

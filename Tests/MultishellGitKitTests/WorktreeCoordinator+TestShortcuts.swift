@@ -18,7 +18,7 @@ extension WorktreeCoordinator {
   func createThenRunPostCreate(
     branch rawBranch: String,
     basedOn startPoint: String? = nil,
-    createBranch: Bool = true,
+    createsBranch: Bool = true,
     in project: Project,
     settings: WorktreeSettings,
     shellPath: String? = nil,
@@ -27,11 +27,11 @@ extension WorktreeCoordinator {
     onStep: (@Sendable (WorktreeCreationStep) -> Void)? = nil
   ) async throws -> URL {
     let path = try await create(
-      branch: rawBranch, basedOn: startPoint, createBranch: createBranch, in: project,
+      branch: rawBranch, basedOn: startPoint, createsBranch: createsBranch, in: project,
       settings: settings, shellPath: shellPath, timeout: timeout, stopper: stopper, onStep: onStep)
     try await runPostCreate(
       for: project, worktreePath: path,
-      branch: Self.qualifiedBranchName(rawBranch, createBranch: createBranch, settings: settings),
+      branch: Self.qualifiedBranchName(rawBranch, createsBranch: createsBranch, settings: settings),
       shellPath: shellPath, timeout: timeout, stopper: stopper)
     return path
   }

@@ -45,8 +45,8 @@ extension AppModel {
   }
 
   /// The workers out under one pane, for its row's chip. Empty is no chip.
-  func subagents(ofPane id: TerminalSession.ID) -> [Subagent] {
-    sessionStates.subagents(.session(id))
+  func workers(ofPane id: TerminalSession.ID) -> [Worker] {
+    sessionStates.workers(.session(id))
   }
 
   /// The most urgent of the project's worktrees, for its row while collapsed.

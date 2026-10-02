@@ -78,7 +78,9 @@ struct NSViewScrollToTopTests {
 
   @Test func aScrollViewWithNoDocumentIsLeftAlone() {
     let scrollView = NSScrollView(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+    let before = scrollView.contentView.bounds.origin
     scrollView.scrollDescendantsToTop()
+    #expect(scrollView.contentView.bounds.origin == before)
   }
 
   private final class FlippedView: NSView {

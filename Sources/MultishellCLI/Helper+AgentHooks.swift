@@ -16,8 +16,8 @@ extension Helper {
     guard
       let report = integration.report(
         for: payload,
-        sessionID: sessionID(from: environment[SessionEnvironment.sessionKey]),
-        cwd: environment[SessionEnvironment.worktreeKey], pid: pid,
+        sessionID: sessionID(from: environment[SessionEnvironment.sessionVariable]),
+        workingDirectory: environment[SessionEnvironment.worktreeVariable], pid: pid,
         backgroundShells: { backgroundShells(of: pid, marker: $0) })
     else { return }
     try? send(report, environment: environment)

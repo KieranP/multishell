@@ -17,7 +17,7 @@ public final class UnixSocketServer: Sendable {
     var listener: (any DispatchSourceRead)?
     var connections: [Int32: Connection] = [:]
     /// Whether the listener is suspended waiting for a descriptor to free.
-    var listenerSuspended = false
+    var isListenerSuspended = false
   }
 
   let path: String
@@ -74,7 +74,7 @@ public final class UnixSocketServer: Sendable {
     let staging = path + ".b"
     // The staging name is what binds, so its length is the limit. The alert
     // names the socket; see Docs/develop/state-on-disk.md for the two bytes.
-    guard staging.utf8.count <= UnixSocket.capacity else {
+    guard staging.utf8.count <= UnixSocket.maximumPathLength else {
       throw SocketFailure(kind: .pathTooLong, path: path)
     }
     let descriptor = try UnixSocket.newSocket(reportingAs: staging)
@@ -106,11 +106,11 @@ public final class UnixSocketServer: Sendable {
       defer {
         state.listener = nil
         state.connections.removeAll()
-        state.listenerSuspended = false
+        state.isListenerSuspended = false
       }
       // Put back before it goes: a source released while suspended traps,
       // and its cancel handler, which closes the descriptor, never runs.
-      if state.listenerSuspended { state.listener?.resume() }
+      if state.isListenerSuspended { state.listener?.resume() }
       return (state.listener, Array(state.connections.values))
     }
     // After the socket file has gone, so a launch taking the claim in between

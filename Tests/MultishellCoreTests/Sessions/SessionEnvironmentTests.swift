@@ -23,10 +23,10 @@ struct SessionEnvironmentTests {
         worktreeID: "/w", workingDirectory: URL(fileURLWithPath: "/w/repo"), title: "Shell",
         shellOverride: shell)
       let variables = SessionEnvironment.variables(for: session, socket: URL(fileURLWithPath: "/s"))
-      #expect(variables[SessionEnvironment.sessionKey] == session.id.uuidString, "\(shell)")
-      #expect(variables[SessionEnvironment.worktreeKey] == "/w/repo", "\(shell)")
-      #expect(variables[SessionEnvironment.socketKey] == "/s", "\(shell)")
-      #expect(variables[SessionEnvironment.appPIDKey] != nil, "\(shell)")
+      #expect(variables[SessionEnvironment.sessionVariable] == session.id.uuidString, "\(shell)")
+      #expect(variables[SessionEnvironment.worktreeVariable] == "/w/repo", "\(shell)")
+      #expect(variables[SessionEnvironment.socketVariable] == "/s", "\(shell)")
+      #expect(variables[SessionEnvironment.appPIDVariable] != nil, "\(shell)")
     }
   }
 }

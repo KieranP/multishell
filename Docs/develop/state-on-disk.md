@@ -76,8 +76,8 @@ Under `~/Library/Application Support/Multishell`.
   line in the layering, a decode that costs the key and not the file, and an
   override section on the page.
 - **A field naming a path on the reader's disk needs more**: confinement, the
-  trust text, the gate, and the export keep, the last so export does not drop it
-  while it is untrusted.
+  trust text, the gate, and the export's carry-over, the last so export does not
+  drop it while it is untrusted.
 - **Decide what a blank one means.** Coerce to "none" where that and "no
   opinion" agree, and leave it alone for the fields where blank is how "none" is
   spelled.

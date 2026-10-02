@@ -13,9 +13,7 @@ extension WorktreeCoordinatorMergesTests {
     let path = fixture.project.path
     try await fixture.commit("a directory to collide with", file: "docs/notes.md", content: "a\n")
 
-    _ = try await fixture.runner.run(["checkout", "-q", "-b", "docs"], in: path)
-    try await fixture.commit("work", file: "docs/one.md", content: "one\n")
-    _ = try await fixture.runner.run(["checkout", "-q", "main"], in: path)
+    try await fixture.commitOnBranch("docs", file: "docs/one.md", content: "one\n")
     _ = try await fixture.runner.run(
       ["merge", "-q", "--no-ff", "-m", "merge docs", "docs"], in: path)
 
@@ -35,9 +33,7 @@ extension WorktreeCoordinatorMergesTests {
     // The tag sits on the first commit, so judging by it would read the
     // branch as holding nothing of its own.
     _ = try await fixture.runner.run(["tag", "release"], in: path)
-    _ = try await fixture.runner.run(["checkout", "-q", "-b", "release"], in: path)
-    try await fixture.commit("work", file: "one.md", content: "one\n")
-    _ = try await fixture.runner.run(["checkout", "-q", "main"], in: path)
+    try await fixture.commitOnBranch("release", file: "one.md", content: "one\n")
     // By refname, or git merges the tag: the ambiguity this is about reaches
     // the setup as readily as the reads.
     _ = try await fixture.runner.run(
@@ -57,9 +53,7 @@ extension WorktreeCoordinatorMergesTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let path = fixture.project.path
-    _ = try await fixture.runner.run(["checkout", "-q", "-b", "feat"], in: path)
-    try await fixture.commit("work", file: "feat.txt", content: "a\n")
-    _ = try await fixture.runner.run(["checkout", "-q", "main"], in: path)
+    try await fixture.commitOnBranch("feat", file: "feat.txt", content: "a\n")
     _ = try await fixture.runner.run(["tag", "main", "feat"], in: path)
 
     let inputs = try await mergeInputs(fixture)
@@ -73,10 +67,8 @@ extension WorktreeCoordinatorMergesTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let path = fixture.project.path
-    try await withRemote(fixture)
-    _ = try await fixture.runner.run(["checkout", "-q", "-b", "feat"], in: path)
-    try await fixture.commit("work", file: "feat.txt", content: "a\n")
-    _ = try await fixture.runner.run(["checkout", "-q", "main"], in: path)
+    try await addOrigin(to: fixture)
+    try await fixture.commitOnBranch("feat", file: "feat.txt", content: "a\n")
     _ = try await fixture.runner.run(["tag", "origin/main", "feat"], in: path)
 
     let inputs = try await mergeInputs(fixture)
@@ -93,7 +85,7 @@ extension WorktreeCoordinatorMergesTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     try await fixture.commit("a directory to collide with", file: "docs/notes.md", content: "a\n")
-    try await withRemote(fixture)
+    try await addOrigin(to: fixture)
 
     try await squashMergeOnTheRemote(
       "docs", work: [("docs/one.md", "one\n"), ("docs/two.md", "two\n")], in: fixture)

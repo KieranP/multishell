@@ -29,7 +29,7 @@ struct TabStripLayoutEdgesTests {
     #expect(!edges(399.7).trailing)
   }
 
-  @Test func aStripThatFitsHasNothingPastEitherEnd() {
+  @Test func aStripThatFitsOrHasNoUsableOffsetHasNothingPastAnEnd() {
     let fits = TabStripLayout.Edges(offset: 0, viewport: 500, content: 300)
     #expect(!fits.leading && !fits.trailing)
     let odd = TabStripLayout.Edges(offset: .nan, viewport: 300, content: 700)

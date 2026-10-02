@@ -5,29 +5,32 @@ import Testing
 @Suite @MainActor
 struct AppModelInViewTests {
   @Test func aWorktreeIsInViewWhileSelectedAndNotUnderTheBoard() {
-    let h = Harness()
-    h.model.select(h.main, openingFirstTab: .never)
-    #expect(h.model.isInView(h.main))
-    #expect(!h.model.isInView(h.feature))
+    let harness = Harness()
+    harness.model.select(harness.main, openingFirstTab: .never)
+    #expect(harness.model.isInView(harness.main))
+    #expect(!harness.model.isInView(harness.feature))
 
-    h.model.showAgentBoard()
+    harness.model.showAgentBoard()
 
-    #expect(!h.model.isInView(h.main))
+    #expect(!harness.model.isInView(harness.main))
   }
 
-  @Test func onlyTheWorktreeInViewListsItsPanesInTheSidebar() {
-    let h = Harness()
-    h.model.select(h.feature)
-    #expect(h.model.workspace.tabs(in: h.feature.id).count == 1)
-    h.model.select(h.main)
-    h.model.splitActivePane(.horizontal)
-    h.model.newTab()
+  @Test func onlyTheFocusedGroupsFocusedPaneIsTheFocusedPaneAndNotUnderTheBoard() throws {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    harness.model.newTab()
+    harness.model.moveActiveTabToNewGroup()
+    let groups = harness.model.workspace.groups(in: harness.main.id)
+    try #require(groups.count == 2)
+    let focused = try #require(harness.model.workspace.activeTab(in: harness.main.id))
+    let other = try #require(
+      groups.compactMap { harness.model.workspace.shownTab(in: $0) }.first { $0.id != focused.id })
 
-    #expect(h.model.sidebarPanes(of: h.main).count == 3)
-    #expect(h.model.sidebarPanes(of: h.feature).isEmpty, "its pane is not listed")
+    #expect(harness.model.isFocusedPane(focused.focusedSessionID))
+    #expect(!harness.model.isFocusedPane(other.focusedSessionID))
 
-    h.model.showAgentBoard()
+    harness.model.showAgentBoard()
 
-    #expect(h.model.sidebarPanes(of: h.main).isEmpty)
+    #expect(!harness.model.isFocusedPane(focused.focusedSessionID))
   }
 }

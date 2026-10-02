@@ -11,15 +11,15 @@ struct TaskValueWithinTests {
   }
 
   @Test func aTaskStillRunningAtTheLimitGivesNilAndIsNotCancelled() async {
-    let released = Recorder<Bool>()
+    let released = Flag()
     let task = Task<Bool, Never> {
-      while released.received.isEmpty, !Task.isCancelled {
+      while !released.raised, !Task.isCancelled {
         try? await Task<Never, Never>.sleep(for: .milliseconds(10))
       }
       return Task.isCancelled
     }
     #expect(await task.value(within: .milliseconds(50)) == nil)
-    released.record(true)
+    released.raise()
     #expect(await task.value == false)
   }
 }

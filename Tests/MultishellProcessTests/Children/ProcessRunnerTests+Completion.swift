@@ -1,7 +1,6 @@
 import Foundation
 import Synchronization
 import System
-import TestScratch
 import Testing
 
 @testable import MultishellProcess
@@ -11,7 +10,7 @@ extension ProcessRunnerTests {
   /// bound flaked on CI, so the proof is the grandchild still alive when the call returns.
   @Test func aChildThatExitsWithABackgroundGrandchildStillCompletes() async throws {
     let output = try await runner.capture(
-      sh, ["-c", "printf before; sleep 60 & echo $! >&2; exit 0"], in: cwd)
+      sh, ["-c", "printf before; sleep 60 & echo $! >&2; exit 0"], in: workingDirectory)
     let grandchild = try #require(
       pid_t(output.standardError.trimmingCharacters(in: .whitespacesAndNewlines)))
     defer { kill(grandchild, SIGKILL) }
@@ -26,7 +25,7 @@ extension ProcessRunnerTests {
   @Test func outputWrittenJustBeforeExitIsKept() async throws {
     for _ in 0..<20 {
       let output = try await runner.capture(
-        sh, ["-c", "head -c 200000 /dev/zero | tr '\\0' x; printf tail >&2"], in: cwd)
+        sh, ["-c", "head -c 200000 /dev/zero | tr '\\0' x; printf tail >&2"], in: workingDirectory)
       #expect(output.standardOutput.count == 200_000)
       #expect(output.standardError == "tail")
     }
@@ -57,9 +56,11 @@ extension ProcessRunnerTests {
   /// Each run opens four descriptors, and the status poll runs one per worktree every five
   /// seconds, so a leak here would exhaust the process within the hour.
   @Test func successfulRunsDoNotLeakFileDescriptors() async throws {
-    for _ in 0..<5 { _ = try await runner.run(sh, ["-c", "printf x"], in: cwd) }
+    for _ in 0..<5 { _ = try await runner.run(sh, ["-c", "printf x"], in: workingDirectory) }
     let before = try await lowestDescriptorCount(over: .seconds(2))
-    for _ in 0..<100 { _ = try await runner.run(sh, ["-c", "printf x; printf y >&2"], in: cwd) }
+    for _ in 0..<100 {
+      _ = try await runner.run(sh, ["-c", "printf x; printf y >&2"], in: workingDirectory)
+    }
     let after = try await lowestDescriptorCount(over: .seconds(4))
 
     #expect(after - before < 100, "before \(before), after \(after); a leak would be 400")

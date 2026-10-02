@@ -3,6 +3,10 @@ extension Workspace {
     projects.first { $0.id == id }
   }
 
+  func projectIndex(_ id: Project.ID) -> Int? {
+    projects.firstIndex { $0.id == id }
+  }
+
   public func worktree(_ id: Worktree.ID) -> Worktree? {
     worktrees.first { $0.id == id }
   }
@@ -43,16 +47,6 @@ extension Workspace {
     return tabs(inGroup: current.groupID).neighbour(of: id, direction)
   }
 
-  public func customName(of worktree: Worktree.ID) -> String? {
-    worktreeNames[worktree]
-  }
-
-  /// What the sidebar and the header call a worktree: the user's name where
-  /// there is one, else the branch, SHA or folder `Worktree.name` gives.
-  public func displayName(of worktree: Worktree) -> String {
-    worktreeNames[worktree.id] ?? worktree.name
-  }
-
   public func worktrees(of project: Project.ID) -> [Worktree] {
     worktrees.filter { $0.projectID == project }
   }
@@ -87,13 +81,6 @@ extension Workspace {
 
   public func sessions(in worktree: Worktree.ID) -> [TerminalSession] {
     sessions.filter { $0.worktreeID == worktree }
-  }
-
-  /// The user's name for a tab, else the focused pane's starting title. What
-  /// a running shell reports is runtime state the GUI layers on top.
-  public func title(of tab: TerminalTab) -> String {
-    if let custom = tab.customTitle { return custom }
-    return session(tab.focusedSessionID)?.displayTitle ?? t("tab.shell")
   }
 
   public func tab(owning session: TerminalSession.ID) -> TerminalTab? {

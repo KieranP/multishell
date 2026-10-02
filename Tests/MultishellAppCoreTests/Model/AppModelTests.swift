@@ -9,173 +9,182 @@ import Testing
 struct AppModelTests {
   @Test(arguments: [3, 4, 6, 9, 12, 17, 25, 33] as [UInt64])
   func anySequenceOfActionsAndEventsKeepsTheRuntimeConsistent(seed: UInt64) {
-    var rng = SeededGenerator(seed: seed)
-    let h = Harness()
-    let worktrees = [h.main, h.feature]
+    var generator = SeededGenerator(seed: seed)
+    let harness = Harness()
+    let worktrees = [harness.main, harness.feature]
 
     for step in 0..<300 {
-      let ws = h.model.workspace
-      let live = Array(h.engine.liveSessionIDs)
-      switch Int.random(in: 0..<22, using: &rng) {
-      case 0, 1: h.model.select(worktrees.randomElement(using: &rng)!)
-      case 2: h.model.newTab()
-      case 3: h.model.closeActivePane()
-      case 4: h.model.closeActiveTab()
-      case 5: h.model.splitActivePane(Bool.random(using: &rng) ? .horizontal : .vertical)
-      case 6: if let tab = ws.tabs.randomElement(using: &rng) { h.model.activate(tab) }
-      case 7: Bool.random(using: &rng) ? h.model.activateNextTab() : h.model.activatePreviousTab()
+      let workspace = harness.model.workspace
+      let live = Array(harness.engine.liveSessionIDs)
+      switch Int.random(in: 0..<22, using: &generator) {
+      case 0, 1: harness.model.select(worktrees.randomElement(using: &generator)!)
+      case 2: harness.model.newTab()
+      case 3: harness.model.closeActivePane()
+      case 4: harness.model.closeActiveTab()
+      case 5:
+        harness.model.splitActivePane(Bool.random(using: &generator) ? .horizontal : .vertical)
+      case 6:
+        if let tab = workspace.tabs.randomElement(using: &generator) { harness.model.activate(tab) }
+      case 7:
+        Bool.random(using: &generator)
+          ? harness.model.activateNextTab() : harness.model.activatePreviousTab()
       case 8:
-        if let id = live.randomElement(using: &rng) {
-          h.engine.delegate?.terminalHost(h.engine, didExit: id)
+        if let id = live.randomElement(using: &generator) {
+          harness.engine.delegate?.terminalHost(harness.engine, didExit: id)
         }
       case 9:
-        if let id = live.randomElement(using: &rng) {
-          h.engine.delegate?.terminalHost(h.engine, didSeeActivityIn: id)
-          h.engine.delegate?.terminalHost(h.engine, didRetitle: id, to: "t\(step)")
+        if let id = live.randomElement(using: &generator) {
+          harness.engine.delegate?.terminalHost(harness.engine, didSeeActivityIn: id)
+          harness.engine.delegate?.terminalHost(harness.engine, didRetitle: id, to: "t\(step)")
         }
       case 10:
         // A click lands only on a visible pane, and the click itself gives
         // the surface focus, which the fake records as if `focus` had.
-        if let selected = ws.selectedWorktreeID, let shown = ws.activeTab(in: selected),
-          let id = shown.sessionIDs.randomElement(using: &rng)
+        if let selected = workspace.selectedWorktreeID,
+          let shown = workspace.activeTab(in: selected),
+          let id = shown.sessionIDs.randomElement(using: &generator)
         {
-          h.engine.focused.append(id)
-          h.engine.delegate?.terminalHost(h.engine, didFocus: id)
+          harness.engine.focused.append(id)
+          harness.engine.delegate?.terminalHost(harness.engine, didFocus: id)
         }
       case 11, 12:
         // A report over the socket: about a live shell, a dead one, an
         // unknown one, or a directory only.
-        let state = SessionState.allCases.randomElement(using: &rng)!
-        let subject = Int.random(in: 0..<4, using: &rng)
+        let state = SessionState.allCases.randomElement(using: &generator)!
+        let subject = Int.random(in: 0..<4, using: &generator)
         let session: TerminalSession.ID? =
           switch subject {
-          case 0: live.randomElement(using: &rng)
-          case 1: ws.sessions.randomElement(using: &rng)?.id
+          case 0: live.randomElement(using: &generator)
+          case 1: workspace.sessions.randomElement(using: &generator)?.id
           case 2: UUID()
           default: nil
           }
-        let cwd = Bool.random(using: &rng) ? worktrees.randomElement(using: &rng)!.path.path : "/x"
+        let workingDirectory =
+          Bool.random(using: &generator)
+          ? worktrees.randomElement(using: &generator)!.path.path : "/x"
         // Some reports name an agent, as Claude's hooks do; an id this
         // build does not know is as likely as one it does.
-        let agent = ["claude", "future-agent", nil].randomElement(using: &rng)!
-        h.stateSource.send(
+        let agent = ["claude", "future-agent", nil].randomElement(using: &generator)!
+        harness.stateSource.send(
           SessionStateReport(
-            state: state, sessionID: session, cwd: cwd,
-            pid: Bool.random(using: &rng) ? Int32.random(in: 1...99999, using: &rng) : nil,
+            state: state, sessionID: session, workingDirectory: workingDirectory,
+            pid: Bool.random(using: &generator)
+              ? Int32.random(in: 1...99999, using: &generator) : nil,
             agentID: agent))
       case 13:
-        if let id = live.randomElement(using: &rng) {
-          h.engine.delegate?.terminalHost(
-            h.engine, didFinishCommandIn: id, exitCode: Int32.random(in: 0...2, using: &rng))
+        if let id = live.randomElement(using: &generator) {
+          harness.engine.delegate?.terminalHost(
+            harness.engine, didFinishCommandIn: id,
+            exitCode: Int32.random(in: 0...2, using: &generator))
         }
       case 14:
-        if Bool.random(using: &rng), let tab = ws.tabs.randomElement(using: &rng) {
-          h.model.clearState(of: tab)
+        if Bool.random(using: &generator), let tab = workspace.tabs.randomElement(using: &generator)
+        {
+          harness.model.clearState(of: tab)
         } else {
-          h.model.clearState(ofWorktree: worktrees.randomElement(using: &rng)!.id)
+          harness.model.clearState(ofWorktree: worktrees.randomElement(using: &generator)!.id)
         }
       case 15:
-        // A tab dragged onto another worktree's row in the sidebar.
-        if let tab = ws.tabs.randomElement(using: &rng) {
-          h.model.moveTab(tab.id, toWorktree: worktrees.randomElement(using: &rng)!.id)
+        if let tab = workspace.tabs.randomElement(using: &generator) {
+          harness.model.moveTab(tab.id, toWorktree: worktrees.randomElement(using: &generator)!.id)
         }
       case 16:
-        h.model.moveActiveTabToNewGroup()
+        harness.model.moveActiveTabToNewGroup()
       case 17:
-        // A tab dragged to the band down one edge of a group.
-        if let tab = ws.tabs.randomElement(using: &rng),
-          let group = ws.tabGroups.randomElement(using: &rng)
+        if let tab = workspace.tabs.randomElement(using: &generator),
+          let group = workspace.tabGroups.randomElement(using: &generator)
         {
-          h.model.moveTab(
-            tab.id, Bool.random(using: &rng) ? .before : .after, toNewGroupOf: group.id)
+          harness.model.moveTab(
+            tab.id, Bool.random(using: &generator) ? .before : .after, toNewGroupOf: group.id)
         }
       case 18:
-        // A tab dropped on another group's strip, clear of its tabs.
-        if let tab = ws.tabs.randomElement(using: &rng),
-          let group = ws.tabGroups.randomElement(using: &rng)
+        if let tab = workspace.tabs.randomElement(using: &generator),
+          let group = workspace.tabGroups.randomElement(using: &generator)
         {
-          h.model.moveTab(tab.id, toEndOf: group.id)
+          harness.model.moveTab(tab.id, toEndOf: group.id)
         }
       case 19:
-        Bool.random(using: &rng) ? h.model.focusNextGroup() : h.model.focusPreviousGroup()
+        Bool.random(using: &generator)
+          ? harness.model.focusNextGroup() : harness.model.focusPreviousGroup()
       case 20:
-        // The New Tab button of one group, and the divider drag beside it.
-        if let group = ws.tabGroups.randomElement(using: &rng) {
-          Bool.random(using: &rng)
-            ? h.model.newTab(in: group.id)
-            : h.model.setGroupWeights(
-              (0..<Int.random(in: 1...3, using: &rng)).map { _ in
-                Double.random(in: 0.1...3, using: &rng)
+        if let group = workspace.tabGroups.randomElement(using: &generator) {
+          Bool.random(using: &generator)
+            ? harness.model.newTab(in: group.id)
+            : harness.model.setGroupWeights(
+              (0..<Int.random(in: 1...3, using: &generator)).map { _ in
+                Double.random(in: 0.1...3, using: &generator)
               }, in: group.worktreeID)
         }
       default:
         // A refresh that lost or found a worktree, then the reconcile every
         // model action ends with.
-        let kept = worktrees.filter { _ in Bool.random(using: &rng) }
-        h.store.replaceWorktrees(kept.isEmpty ? worktrees : kept, forProject: h.project.id)
-        h.model.reconcileSessions(takingFocus: true)
+        let kept = worktrees.filter { _ in Bool.random(using: &generator) }
+        harness.store.replaceWorktrees(
+          kept.isEmpty ? worktrees : kept, forProject: harness.project.id)
+        harness.model.reconcileSessions(takingFocus: true)
       }
-      expectRuntimeConsistent(h, "seed \(seed) step \(step)")
+      expectRuntimeConsistent(harness, "seed \(seed) step \(step)")
     }
   }
 
-  private func expectRuntimeConsistent(_ h: Harness, _ context: String) {
-    let ws = h.model.workspace
-    let live = h.engine.liveSessionIDs
-    let sessionIDs = Set(ws.sessions.map(\.id))
+  private func expectRuntimeConsistent(_ harness: Harness, _ context: String) {
+    let workspace = harness.model.workspace
+    let live = harness.engine.liveSessionIDs
+    let sessionIDs = Set(workspace.sessions.map(\.id))
 
-    #expect(h.model.liveSessionIDs == live, "\(context): views see a different live set")
+    #expect(harness.model.liveSessionIDs == live, "\(context): views see a different live set")
     #expect(live.isSubset(of: sessionIDs), "\(context): a shell with no session")
-    #expect(Set(h.model.sessionTitles.keys).isSubset(of: live), "\(context): title of a dead shell")
     #expect(
-      Set(h.model.reportedAgents.keys).isSubset(of: live),
+      Set(harness.model.sessionTitles.keys).isSubset(of: live), "\(context): title of a dead shell")
+    #expect(
+      Set(harness.model.reportedAgents.keys).isSubset(of: live),
       "\(context): an agent reported in a dead shell")
-    for key in h.model.sessionStates.states.keys {
+    for key in harness.model.sessionStates.states.keys {
       switch key {
       case .session(let id): #expect(live.contains(id), "\(context): dot for a dead shell")
       case .worktree(let id):
-        #expect(ws.worktree(id) != nil, "\(context): state for a missing worktree")
+        #expect(workspace.worktree(id) != nil, "\(context): state for a missing worktree")
       }
     }
     #expect(
-      Set(h.model.sessionStates.pids.keys).isSubset(of: Set(h.model.sessionStates.states.keys)),
+      Set(harness.model.sessionStates.pids.keys).isSubset(
+        of: Set(harness.model.sessionStates.states.keys)),
       "\(context): a pid with no state")
-    if let selected = ws.selectedWorktreeID {
+    if let selected = workspace.selectedWorktreeID {
       // Failed survives being looked at, as Waiting does, so the focused pane
       // may hold one. Nor is a Done on another pane in view: it waits for focus.
       #expect(
-        h.model.sessionStates[.worktree(selected)] != .done,
+        harness.model.sessionStates[.worktree(selected)] != .done,
         "\(context): unseen Done shown")
-      if let focused = ws.activeTab(in: selected)?.focusedSessionID {
+      if let focused = workspace.activeTab(in: selected)?.focusedSessionID {
         #expect(
-          h.model.sessionStates[.session(focused)] != .done,
+          harness.model.sessionStates[.session(focused)] != .done,
           "\(context): unseen Done in the focused pane")
       }
     }
-    #expect(h.model.liveTerminalCount == live.count, "\(context): quit guard count")
+    #expect(harness.model.liveTerminalCount == live.count, "\(context): quit guard count")
 
-    // Every session of a visited worktree has a shell; unvisited ones none.
-    for session in ws.sessions {
-      let warm = h.model.warmWorktrees.contains(session.worktreeID)
+    for session in workspace.sessions {
+      let warm = harness.model.warmWorktrees.contains(session.worktreeID)
       #expect(live.contains(session.id) == warm, "\(context): warmth and liveness disagree")
     }
 
-    if let selected = ws.selectedWorktreeID, let tab = ws.activeTab(in: selected) {
+    if let selected = workspace.selectedWorktreeID, let tab = workspace.activeTab(in: selected) {
       #expect(
-        h.engine.focused.last == tab.focusedSessionID,
+        harness.engine.focused.last == tab.focusedSessionID,
         "\(context): engine focus is not the shown pane")
     }
-    for tab in ws.tabs {
+    for tab in workspace.tabs {
       #expect(tab.root.contains(tab.focusedSessionID), "\(context): focus outside its tree")
       #expect(tab.sessionIDs.allSatisfy(sessionIDs.contains), "\(context): pane without a session")
       #expect(
-        ws.group(tab.groupID)?.worktreeID == tab.worktreeID,
+        workspace.group(tab.groupID)?.worktreeID == tab.worktreeID,
         "\(context): a tab in another worktree's group, or in none")
     }
-    for group in ws.tabGroups {
-      #expect(!ws.tabs(inGroup: group.id).isEmpty, "\(context): a group with no tabs")
+    for group in workspace.tabGroups {
+      #expect(!workspace.tabs(inGroup: group.id).isEmpty, "\(context): a group with no tabs")
       #expect(
-        ws.shownTab(in: group) != nil, "\(context): a group showing nothing")
+        workspace.shownTab(in: group) != nil, "\(context): a group showing nothing")
       #expect(group.weight.isFinite && group.weight > 0, "\(context): a group with no width")
     }
   }

@@ -8,20 +8,20 @@ extension SessionStates {
   func note(_ key: Key) -> SessionNote? { entries[key]?.note }
 
   /// The workers out under one key, oldest first.
-  func subagents(_ key: Key) -> [Subagent] { entries[key]?.roster.subagents ?? [] }
+  func workers(_ key: Key) -> [Worker] { entries[key]?.roster.workers ?? [] }
 
   /// The ends a shell's exit stands for, one per key it is out under.
-  func endings(ofShell pid: Int32) -> [(key: Key, report: SubagentReport)] {
+  func endings(ofShell pid: Int32) -> [(key: Key, report: WorkerReport)] {
     entries.flatMap { key, entry in
-      entry.roster.subagents.filter { $0.pid == pid }.map {
-        (key: key, report: SubagentReport(id: $0.id, phase: .ended))
+      entry.roster.workers.filter { $0.pid == pid }.map {
+        (key: key, report: WorkerReport(id: $0.id, phase: .ended))
       }
     }
   }
 
   /// The agents' own pids and their background shells'.
   var trackedPIDs: Set<Int32> {
-    Set(entries.values.flatMap { [$0.pid] + $0.roster.subagents.map(\.pid) }.compactMap { $0 })
+    Set(entries.values.flatMap { [$0.pid] + $0.roster.workers.map(\.pid) }.compactMap { $0 })
   }
 
   func state(ofSessions ids: [TerminalSession.ID]) -> SessionState? {

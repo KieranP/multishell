@@ -1,16 +1,16 @@
 import Foundation
-import MultishellCore
 import MultishellGitKit
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellCore
 
-/// The New Worktree sheet's rules, without the sheet. A load is what git
-/// says about a project; the picker may have moved by the time it lands.
+/// A load is what git says about a project; the picker may have moved by the
+/// time it lands.
 @Suite
 struct NewWorktreeDraftTests {
-  private let a = "/repos/a"
-  private let b = "/repos/b"
+  private let firstProject = "/repos/a"
+  private let secondProject = "/repos/b"
 
   private func loaded(_ id: String, branch: String = "feat") -> NewWorktreeDraft {
     var draft = NewWorktreeDraft(projectID: id)
@@ -25,7 +25,7 @@ struct NewWorktreeDraftTests {
   }
 
   @Test func nothingCanBeCreatedUntilThePickedProjectHasLoaded() {
-    var draft = NewWorktreeDraft(projectID: a)
+    var draft = NewWorktreeDraft(projectID: firstProject)
     draft.branch = "feat"
     #expect(!draft.canCreate(checkedOut: []), "no load yet")
 
@@ -33,7 +33,7 @@ struct NewWorktreeDraftTests {
     #expect(!draft.canCreate(checkedOut: []), "loading")
 
     draft.finishLoading(
-      a,
+      firstProject,
       with: NewWorktreeBranches(
         hasCommits: true, localBranches: ["main"], remoteBranches: [], currentBranch: "main"),
       checkedOut: ["main"])
@@ -44,24 +44,25 @@ struct NewWorktreeDraftTests {
   /// A switch used to cancel the first project's load, whose late return cleared a "loading"
   /// flag while the second project's load was still running.
   @Test func aLateLoadForAnotherProjectIsIgnoredAndDoesNotEnableCreate() {
-    var draft = NewWorktreeDraft(projectID: a)
+    var draft = NewWorktreeDraft(projectID: firstProject)
     draft.branch = "feat"
     draft.beginLoading()
-    draft.projectID = b
+    draft.projectID = secondProject
     draft.beginLoading()
 
     draft.finishLoading(
-      a,
+      firstProject,
       with: NewWorktreeBranches(
         hasCommits: true, localBranches: ["old"], remoteBranches: [], currentBranch: "old"),
       checkedOut: [])
 
     #expect(!draft.canCreate(checkedOut: []))
-    #expect(draft.localBranches.isEmpty && draft.baseBranch.isEmpty, "nothing of a's arrived")
+    #expect(
+      draft.localBranches.isEmpty && draft.baseBranch.isEmpty, "nothing of firstProject's arrived")
     #expect(draft.startPoint == nil, "git gets HEAD, never the other project's branch")
 
     draft.finishLoading(
-      b,
+      secondProject,
       with: NewWorktreeBranches(
         hasCommits: true, localBranches: ["dev"], remoteBranches: [], currentBranch: "dev"),
       checkedOut: [])
@@ -70,8 +71,8 @@ struct NewWorktreeDraftTests {
   }
 
   @Test func switchingProjectsKeepsTheTypedNameAndDropsTheRest() {
-    var draft = loaded(a)
-    draft.projectID = b
+    var draft = loaded(firstProject)
+    draft.projectID = secondProject
     draft.beginLoading()
 
     #expect(draft.branch == "feat", "the name is the user's")
@@ -81,13 +82,13 @@ struct NewWorktreeDraftTests {
   }
 
   @Test func branchesCheckedOutElsewhereAreNotOffered() {
-    let draft = loaded(a)
+    let draft = loaded(firstProject)
     #expect(draft.availableBranches(checkedOut: ["main"]) == ["release", "spike"])
     #expect(draft.availableBranches(checkedOut: ["main", "spike"]) == ["release"])
   }
 
   @Test func aNewBranchNeedsANameAndAnExistingOneNeedsAnAvailableChoice() {
-    var draft = loaded(a, branch: "   ")
+    var draft = loaded(firstProject, branch: "   ")
     #expect(!draft.canCreate(checkedOut: ["main"]))
     draft.branch = "feat"
     #expect(draft.canCreate(checkedOut: ["main"]))
@@ -101,43 +102,43 @@ struct NewWorktreeDraftTests {
   }
 
   @Test func switchingModesKeepsTheTypedNameAndNeverCarriesAPickedOne() {
-    var draft = loaded(a, branch: "feat")
+    var draft = loaded(firstProject, branch: "feat")
     draft.createsBranch = false
-    draft.modeChanged(checkedOut: ["main"])
+    draft.fitBranchToMode(checkedOut: ["main"])
     #expect(draft.branch == "release", "a typed name is not an existing branch; take the first")
 
     draft.branch = "spike"
     draft.createsBranch = true
-    draft.modeChanged(checkedOut: ["main"])
+    draft.fitBranchToMode(checkedOut: ["main"])
     #expect(draft.branch == "feat", "what was typed comes back, not what was picked")
 
     draft.branch = "release"
     draft.createsBranch = false
-    draft.modeChanged(checkedOut: ["main"])
+    draft.fitBranchToMode(checkedOut: ["main"])
     #expect(draft.branch == "release", "a typed name that is an existing branch is the choice")
   }
 
   @Test func togglingModesWhileALoadIsRunningDoesNotLoseTheTypedName() {
-    var draft = NewWorktreeDraft(projectID: a)
+    var draft = NewWorktreeDraft(projectID: firstProject)
     draft.branch = "feat"
     draft.beginLoading()
 
     draft.createsBranch = false
-    draft.modeChanged(checkedOut: [])
+    draft.fitBranchToMode(checkedOut: [])
     #expect(draft.branch == "", "nothing to pick yet")
     draft.createsBranch = true
-    draft.modeChanged(checkedOut: [])
+    draft.fitBranchToMode(checkedOut: [])
 
     #expect(draft.branch == "feat")
   }
 
   @Test func loadingInExistingModeReplacesAChoiceTheProjectDoesNotHave() {
-    var draft = NewWorktreeDraft(projectID: a)
+    var draft = NewWorktreeDraft(projectID: firstProject)
     draft.createsBranch = false
     draft.branch = "elsewhere"
     draft.beginLoading()
     draft.finishLoading(
-      a,
+      firstProject,
       with: NewWorktreeBranches(
         hasCommits: true, localBranches: ["main", "release"], remoteBranches: [],
         currentBranch: "main"), checkedOut: ["main"])
@@ -145,11 +146,11 @@ struct NewWorktreeDraftTests {
   }
 
   @Test func aRepositoryWithoutCommitsCannotGetAWorktree() {
-    var draft = NewWorktreeDraft(projectID: a)
+    var draft = NewWorktreeDraft(projectID: firstProject)
     draft.branch = "feat"
     draft.beginLoading()
     draft.finishLoading(
-      a,
+      firstProject,
       with: NewWorktreeBranches(
         hasCommits: false, localBranches: [], remoteBranches: [], currentBranch: "HEAD"),
       checkedOut: [])
@@ -157,20 +158,20 @@ struct NewWorktreeDraftTests {
   }
 
   @Test func aRemovedProjectClearsThePickerAndAnotherDoesNot() {
-    var draft = loaded(a)
-    draft.projectsChanged(to: [a, b])
-    #expect(draft.projectID == a)
-    draft.projectsChanged(to: [b])
+    var draft = loaded(firstProject)
+    draft.forgetProject(unlessIn: [firstProject, secondProject])
+    #expect(draft.projectID == firstProject)
+    draft.forgetProject(unlessIn: [secondProject])
     #expect(draft.projectID == nil)
     #expect(!draft.canCreate(checkedOut: []))
   }
 
   @Test func aRepositoryWithOnlyItsCheckedOutBranchHasNothingToPick() {
-    var draft = NewWorktreeDraft(projectID: a)
+    var draft = NewWorktreeDraft(projectID: firstProject)
     draft.createsBranch = false
     draft.beginLoading()
     draft.finishLoading(
-      a,
+      firstProject,
       with: NewWorktreeBranches(
         hasCommits: true, localBranches: ["main"],
         remoteBranches: ["origin/main", "origin/feature"], currentBranch: "main"),
@@ -181,7 +182,7 @@ struct NewWorktreeDraftTests {
     #expect(draft.branch == "")
     #expect(!draft.canCreate(checkedOut: ["main"]))
     draft.createsBranch = true
-    draft.modeChanged(checkedOut: ["main"])
+    draft.fitBranchToMode(checkedOut: ["main"])
     draft.branch = "feature"
     #expect(draft.canCreate(checkedOut: ["main"]), "a new branch is the way")
   }
@@ -214,7 +215,7 @@ struct NewWorktreeDraftTests {
   }
 
   @Test func creatingLocksTheDraft() {
-    var draft = loaded(a)
+    var draft = loaded(firstProject)
     #expect(draft.canCreate(checkedOut: ["main"]))
     draft.isCreating = true
     #expect(!draft.canCreate(checkedOut: ["main"]))
@@ -244,12 +245,12 @@ struct NewWorktreeDraftTests {
   }
 
   @Test func theAllCheckedOutNoteWaitsForTheLoadAndThenForAnEmptyList() {
-    var draft = NewWorktreeDraft(projectID: a)
+    var draft = NewWorktreeDraft(projectID: firstProject)
     draft.beginLoading()
     #expect(!draft.showsAllCheckedOutNote(checkedOut: ["main"]), "loading")
 
     draft.finishLoading(
-      a,
+      firstProject,
       with: NewWorktreeBranches(
         hasCommits: true, localBranches: ["main"], remoteBranches: [], currentBranch: "main"),
       checkedOut: ["main"])

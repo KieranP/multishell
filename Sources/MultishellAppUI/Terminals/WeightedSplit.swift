@@ -12,13 +12,10 @@ struct WeightedSplit<Content: View>: View {
   let onWeightsChange: ([Double]) -> Void
   @ViewBuilder let content: () -> Content
 
-  @State private var dragStartWeights: [Double]?
-  /// The weights as the drag has them, handed to the model once at its end:
-  /// each frame written through re-rendered every reader and re-armed autosave.
-  @State private var liveWeights: [Double]?
+  @State private var drag = SplitDrag()
 
   var body: some View {
-    let shownWeights = liveWeights ?? weights
+    let shownWeights = drag.shown(over: weights)
     GeometryReader { geometry in
       let length = axis == .horizontal ? geometry.size.width : geometry.size.height
       let available = SplitMath.available(
@@ -27,7 +24,7 @@ struct WeightedSplit<Content: View>: View {
 
       layout(sizes: sizes, available: CGFloat(available))
     }
-    .onChange(of: weights) { liveWeights = nil }
+    .onChange(of: weights) { drag.forgetShownWeights() }
   }
 
   private func layout(sizes: [CGFloat], available: CGFloat) -> some View {
@@ -39,21 +36,14 @@ struct WeightedSplit<Content: View>: View {
       ) { index, translation in
         resize(dividerAfter: index, by: translation, available: available)
       } onDragEnded: {
-        if let live = liveWeights, live != weights { onWeightsChange(live) }
-        dragStartWeights = nil
-        liveWeights = nil
+        if let moved = drag.end(over: weights) { onWeightsChange(moved) }
       }
     }
   }
 
-  /// The drag is measured from where it began, so the weights it started
-  /// from are remembered until it ends.
   private func resize(dividerAfter index: Int, by translation: CGFloat, available: CGFloat) {
-    let start = dragStartWeights ?? weights
-    if dragStartWeights == nil { dragStartWeights = start }
-    let updated = SplitMath.transferring(
-      Double(translation), acrossDividerAfter: index, in: start,
+    drag.move(
+      dividerAfter: index, by: Double(translation), over: weights,
       available: Double(available), minimumPane: UIMetrics.minimumPaneLength)
-    if updated != (liveWeights ?? start) { liveWeights = updated }
   }
 }

@@ -33,7 +33,7 @@ public struct EditorDetection: Equatable, Sendable {
   public func options(selected: String?) -> [DetectionOption] {
     DetectionOption.catalogueOptions(
       EditorCatalogue.editors.map { ($0.id, $0.name) },
-      installed: { found[$0] != nil },
+      isInstalled: { found[$0] != nil },
       selected: selected,
       noneID: EditorCatalogue.noneID,
       customID: EditorCatalogue.customID)

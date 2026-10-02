@@ -33,7 +33,7 @@ extension WorktreeGit {
     let common = try await commonGitDirectory(project)
     guard
       let output = await runner.output(
-        ["rev-parse", Self.absolutePathFormat, "--show-toplevel", "--git-common-dir"],
+        ["rev-parse", Self.absolutePathsFlag, "--show-toplevel", "--git-common-dir"],
         in: worktree.path)
     else {
       // git refusing the directory, over ownership or a timeout, proves nothing

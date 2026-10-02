@@ -12,7 +12,7 @@ public struct PresentedError: Identifiable {
   /// Offered when the failure has a stronger form of the same action.
   public internal(set) var retry: Retry?
   /// Asked as a destructive choice beside Cancel, where any other is dismissed.
-  public var isRetryable: Bool { retry != nil }
+  var isRetryable: Bool { retry != nil }
   /// The launch alert about a missing git, which finding git on the login
   /// shell's PATH takes down; nothing else is dismissed by the model.
   private(set) var saysGitIsMissing = false

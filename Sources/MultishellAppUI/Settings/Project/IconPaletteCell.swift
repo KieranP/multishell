@@ -10,7 +10,7 @@ struct IconPaletteCell: View {
   let pick: () -> Void
 
   var body: some View {
-    Button(action: pick) {
+    PlainGlyphButton(help: name, action: pick) {
       Image(systemName: name)
         .font(.system(size: 14))
         .foregroundStyle(isCurrent ? Color.white : Color.primary)
@@ -21,10 +21,6 @@ struct IconPaletteCell: View {
             RoundedRectangle(cornerRadius: 5).strokeBorder(Color.accentColor, lineWidth: 2)
           }
         }
-        .contentShape(.rect)
     }
-    .buttonStyle(.plain)
-    .help(name)
-    .accessibilityLabel(name)
   }
 }

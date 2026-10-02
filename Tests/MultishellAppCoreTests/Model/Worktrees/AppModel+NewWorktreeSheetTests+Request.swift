@@ -6,59 +6,59 @@ import Testing
 
 extension AppModelNewWorktreeSheetTests {
   @Test func theMenuWithOneProjectAndNothingSelectedPicksThatProject() {
-    let h = Harness()
-    h.model.requestNewWorktree()
-    #expect(h.model.newWorktreeRequest?.projectID == h.project.id)
+    let harness = Harness()
+    harness.model.requestNewWorktree()
+    #expect(harness.model.newWorktreeRequest?.projectID == harness.project.id)
   }
 
   @Test func theMenuWithSeveralProjectsAndNothingSelectedOpensWithNoProject() {
-    let h = Harness()
-    h.store.addProject(at: URL(fileURLWithPath: "/other"))
+    let harness = Harness()
+    harness.store.addProject(at: URL(fileURLWithPath: "/other"))
 
-    h.model.requestNewWorktree()
+    harness.model.requestNewWorktree()
 
-    #expect(h.model.newWorktreeRequest != nil, "used to do nothing, silently")
-    #expect(h.model.newWorktreeRequest?.projectID == nil, "the picker starts blank")
+    #expect(harness.model.newWorktreeRequest != nil, "used to do nothing, silently")
+    #expect(harness.model.newWorktreeRequest?.projectID == nil, "the picker starts blank")
   }
 
   @Test func theMenuOverTheBoardWithSeveralProjectsOpensWithNoProject() {
-    let h = Harness()
-    h.store.addProject(at: URL(fileURLWithPath: "/other"))
-    h.model.select(h.feature)
-    h.model.showAgentBoard()
+    let harness = Harness()
+    harness.store.addProject(at: URL(fileURLWithPath: "/other"))
+    harness.model.select(harness.feature)
+    harness.model.showAgentBoard()
 
-    h.model.requestNewWorktree()
+    harness.model.requestNewWorktree()
 
-    #expect(h.model.newWorktreeRequest?.projectID == nil, "nothing on screen names a project")
+    #expect(harness.model.newWorktreeRequest?.projectID == nil, "nothing on screen names a project")
   }
 
   @Test func theMenuFollowsTheSelectedWorktreesProject() {
-    let h = Harness()
-    let other = h.store.addProject(at: URL(fileURLWithPath: "/other"))
-    h.model.select(h.feature)
+    let harness = Harness()
+    let other = harness.store.addProject(at: URL(fileURLWithPath: "/other"))
+    harness.model.select(harness.feature)
 
-    h.model.requestNewWorktree()
+    harness.model.requestNewWorktree()
 
-    #expect(h.model.newWorktreeRequest?.projectID == h.project.id)
-    #expect(h.model.newWorktreeRequest?.projectID != other.id)
+    #expect(harness.model.newWorktreeRequest?.projectID == harness.project.id)
+    #expect(harness.model.newWorktreeRequest?.projectID != other.id)
   }
 
   @Test func theSidebarNamesItsProjectWhateverIsSelected() {
-    let h = Harness()
-    let other = h.store.addProject(at: URL(fileURLWithPath: "/other"))
-    h.model.select(h.main)
+    let harness = Harness()
+    let other = harness.store.addProject(at: URL(fileURLWithPath: "/other"))
+    harness.model.select(harness.main)
 
-    h.model.requestNewWorktree(in: other)
+    harness.model.requestNewWorktree(in: other)
 
-    #expect(h.model.newWorktreeRequest?.projectID == other.id)
+    #expect(harness.model.newWorktreeRequest?.projectID == other.id)
   }
 
   @Test func eachRequestIsANewPresentation() {
-    let h = Harness()
-    h.model.requestNewWorktree()
-    let first = h.model.newWorktreeRequest?.id
-    h.model.newWorktreeRequest = nil
-    h.model.requestNewWorktree()
-    #expect(h.model.newWorktreeRequest?.id != first, "the sheet must reopen after a cancel")
+    let harness = Harness()
+    harness.model.requestNewWorktree()
+    let first = harness.model.newWorktreeRequest?.id
+    harness.model.newWorktreeRequest = nil
+    harness.model.requestNewWorktree()
+    #expect(harness.model.newWorktreeRequest?.id != first, "the sheet must reopen after a cancel")
   }
 }

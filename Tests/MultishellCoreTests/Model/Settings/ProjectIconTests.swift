@@ -4,7 +4,7 @@ import Testing
 
 @Suite
 struct ProjectIconTests {
-  @Test func aGlyphIsASymbolNameOrNothing() {
+  @Test func onlyAGlyphOnTheCuratedListIsDrawnAndTheRestDrawTheFolder() {
     #expect(ProjectIcon.kind(of: nil) == .folder)
     #expect(ProjectIcon.kind(of: "") == .folder)
     #expect(ProjectIcon.kind(of: "  ") == .folder)
@@ -40,7 +40,7 @@ struct ProjectIconTests {
       "the folder is the first cell, and picking it is what goes back to no glyph")
   }
 
-  @Test func onlyASymbolNameCountsAsAGlyph() {
+  @Test func anySymbolNameIsKeptAsAGlyphButAnEmojiIsNot() {
     #expect(ProjectIcon.normalizedGlyph("hammer") == "hammer")
     #expect(ProjectIcon.normalizedGlyph("  hammer  ") == "hammer")
     #expect(

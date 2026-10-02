@@ -19,10 +19,10 @@ extension AppModel {
   /// The file lists and the post-create hook run in the pane, not under the
   /// sheet: a build cache is not worth holding the window for.
   func beginWorktreeSetup(
-    of worktree: Worktree, branch: String, in project: Project, shellPath: String?,
+    of worktree: Worktree, branch: String, in effective: Project, shellPath: String?,
     lists: [WorktreeFileList]
   ) {
-    let runningHook = WorktreeHooks.hasScript(.postCreate, in: project.settings)
+    let runningHook = WorktreeHooks.hasScript(.postCreate, in: effective.settings)
     let first: WorktreeOperation.Stage? =
       lists.first.map { WorktreeOperation.Stage($0.placement) }
       ?? (runningHook ? .postCreateHook : nil)
@@ -35,7 +35,7 @@ extension AppModel {
     stageHandles.trackSetup(
       Task {
         await runWorktreeSetup(
-          worktree, branch: branch, in: project, shellPath: shellPath, stopper: stopper,
+          worktree, branch: branch, in: effective, shellPath: shellPath, stopper: stopper,
           lists: lists, runningHook: runningHook)
       }, on: worktree.id)
   }
@@ -43,7 +43,7 @@ extension AppModel {
   /// What a new worktree gets before its first terminal: the file lists, then
   /// the post-create hook. A failure or a Cancel stops the stages after it.
   private func runWorktreeSetup(
-    _ worktree: Worktree, branch: String, in project: Project, shellPath: String?,
+    _ worktree: Worktree, branch: String, in effective: Project, shellPath: String?,
     stopper: ProcessStopper, lists: [WorktreeFileList], runningHook: Bool
   ) async {
     var skipped: [String] = []
@@ -52,7 +52,7 @@ extension AppModel {
         worktreeOperations.advance(to: WorktreeOperation.Stage(list.placement), on: worktree.id)
       }
       let placed = await placeListedFiles(
-        list, into: worktree.path, for: project, stopper: stopper)
+        list, into: worktree.path, for: effective, stopper: stopper)
       guard let failure = placed.failure else {
         skipped += placed.skipped
         continue
@@ -73,7 +73,7 @@ extension AppModel {
     }
     if !lists.isEmpty { worktreeOperations.advance(to: .postCreateHook, on: worktree.id) }
     await runPostCreateHook(
-      for: worktree, branch: branch, in: project, shellPath: shellPath, stopper: stopper)
+      for: worktree, branch: branch, in: effective, shellPath: shellPath, stopper: stopper)
   }
 
   /// A file list that stopped short, with what the lists before it skipped.
@@ -103,7 +103,8 @@ extension AppModel {
     }
   }
 
-  /// Lets go of the task and its stop handle, whichever stage ended.
+  /// Lets go of the task and its stop handle, whichever stage ended, and reads
+  /// the badges again for what the stages wrote.
   private func endSetup(of worktree: Worktree, stopper: ProcessStopper) {
     stageHandles.endSetup(worktree.id, ifStillHeldBy: stopper)
     refreshBadges(of: worktree.id, in: worktree.projectID)
@@ -120,7 +121,7 @@ extension AppModel {
   /// has gone. An alert only where there is no pane to say it on.
   private func failStage(
     _ stage: WorktreeOperation.Stage, of worktree: Worktree, _ error: any Error,
-    timedOut: Bool = false
+    didTimeOut: Bool = false
   ) {
     // Gone while the stage ran, and the entry goes with it: paths are ids, so
     // the next worktree there would inherit an operation nothing can finish.
@@ -132,19 +133,19 @@ extension AppModel {
       return
     }
     let shownInPane = worktreeOperations.fail(
-      stage, on: worktree.id, message: PresentedError(error).message, timedOut: timedOut)
+      stage, on: worktree.id, message: PresentedError(error).message, didTimeOut: didTimeOut)
     if !shownInPane { present(error) }
   }
 
   /// One of the project's file lists, before the post-create hook. Returns
   /// what went wrong rather than throwing, and what was skipped; off main.
   private func placeListedFiles(
-    _ list: WorktreeFileList, into path: URL, for project: Project, stopper: ProcessStopper
+    _ list: WorktreeFileList, into path: URL, for effective: Project, stopper: ProcessStopper
   ) async -> (failure: (any Error)?, skipped: [String]) {
     guard let coordinator else { return (nil, []) }
     return await offMain {
       do {
-        return (nil, try coordinator.placeFiles(list, for: project, into: path, stopper: stopper))
+        return (nil, try coordinator.placeFiles(list, for: effective, into: path, stopper: stopper))
       } catch {
         return (error, [])
       }
@@ -152,13 +153,13 @@ extension AppModel {
   }
 
   private func runPostCreateHook(
-    for worktree: Worktree, branch: String, in project: Project, shellPath: String?,
+    for worktree: Worktree, branch: String, in effective: Project, shellPath: String?,
     stopper: ProcessStopper
   ) async {
     defer { endSetup(of: worktree, stopper: stopper) }
     do {
       try await coordinator?.runPostCreate(
-        for: project, worktreePath: worktree.path, branch: branch, shellPath: shellPath,
+        for: effective, worktreePath: worktree.path, branch: branch, shellPath: shellPath,
         timeout: workspace.hookTimeout, stopper: stopper)
     } catch {
       let stop = (error as? HookFailure)?.stop
@@ -167,7 +168,7 @@ extension AppModel {
       if stop == .byUser {
         finishStage(.postCreateHook, of: worktree)
       } else {
-        failStage(.postCreateHook, of: worktree, error, timedOut: stop != nil)
+        failStage(.postCreateHook, of: worktree, error, didTimeOut: stop != nil)
       }
       return
     }

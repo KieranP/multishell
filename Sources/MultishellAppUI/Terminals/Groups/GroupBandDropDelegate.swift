@@ -4,7 +4,7 @@ import SwiftUI
 /// The band down one edge of a group's terminal area: on release the
 /// dragged tab gets a group of its own on that side.
 struct GroupBandDropDelegate: DropDelegate {
-  let band: TabDragState.Band
+  let band: TabGroupBand
   @Binding var drag: TabDragState
   let drop: () -> Bool
 

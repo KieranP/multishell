@@ -1,7 +1,7 @@
 import MultishellCore
 
-/// When and at what cost each worktree's `git status` was last read, and the
-/// pace those readings are judged by; see Docs/design/worktrees.md.
+/// When and at what cost each worktree's `git status` was last read, the pace
+/// those readings are judged by, and which reads are in flight; see worktrees.md.
 struct StatusReadLog: Sendable {
   var pace = StatusPollPace.standard
 
@@ -11,8 +11,8 @@ struct StatusReadLog: Sendable {
   private var askedAgain: Set<Worktree.ID> = []
   private var serial = 0
 
-  /// Whether nothing is held, for the tests.
-  var isEmpty: Bool { reads.isEmpty }
+  /// Whether no reading is kept to pace by, for the tests.
+  var hasNoReadings: Bool { reads.isEmpty }
 
   /// Whether this worktree is due a read, by what the last one cost.
   func isDue(_ id: Worktree.ID, at now: ContinuousClock.Instant) -> Bool {

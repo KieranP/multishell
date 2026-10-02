@@ -63,10 +63,10 @@ struct NewWorktreeForm: View {
     .frame(width: 520)
     .task(id: draft.projectID) { await loadBranches() }
     .onChange(of: model.workspace.projects.map(\.id)) { _, ids in
-      draft.projectsChanged(to: ids)
+      draft.forgetProject(unlessIn: ids)
     }
     .onChange(of: draft.createsBranch) { _, _ in
-      draft.modeChanged(checkedOut: model.checkedOutBranches(for: draft))
+      draft.fitBranchToMode(checkedOut: model.checkedOutBranches(for: draft))
     }
   }
 
@@ -134,7 +134,7 @@ struct NewWorktreeForm: View {
       await model.createWorktree(
         branch: draft.branch,
         basedOn: draft.startPoint,
-        createBranch: draft.createsBranch,
+        createsBranch: draft.createsBranch,
         in: project
       )
       dismiss()

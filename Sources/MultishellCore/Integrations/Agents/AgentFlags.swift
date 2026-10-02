@@ -6,14 +6,14 @@ public enum AgentFlags {
   /// The line as an argument list, placeholders resolved. An unknown one is
   /// left as typed, so the mistake shows in the tab.
   public static func arguments(
-    _ line: String, values: [AgentPlaceholder: String]
+    _ line: String, values: [WorktreePlaceholder: String]
   ) -> [String] {
     split(line).map { expanded($0, values: values) }
   }
 
   /// One pass over what was typed. A token appearing in a value is text the
   /// user named something, not a placeholder; see Docs/design/agents.md.
-  private static func expanded(_ text: String, values: [AgentPlaceholder: String]) -> String {
+  private static func expanded(_ text: String, values: [WorktreePlaceholder: String]) -> String {
     var result = ""
     var rest = Substring(text)
     while let open = rest.range(of: "{{"),
@@ -21,7 +21,7 @@ public enum AgentFlags {
     {
       result += rest[..<open.lowerBound]
       let name = String(rest[open.upperBound..<close.lowerBound])
-      if let placeholder = AgentPlaceholder(rawValue: name), let value = values[placeholder] {
+      if let placeholder = WorktreePlaceholder(rawValue: name), let value = values[placeholder] {
         result += value
       } else {
         result += rest[open.lowerBound..<close.upperBound]

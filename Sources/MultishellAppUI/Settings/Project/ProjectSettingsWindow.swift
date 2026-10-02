@@ -13,36 +13,34 @@ struct ProjectSettingsWindow: View {
 
   @Environment(\.dismiss) private var dismiss
 
-  @State private var firstTabToken = UUID()
+  @State private var firstPageToken = UUID()
 
   var body: some View {
     if let project = model.workspace.project(projectID) {
-      ToolbarTabs(
-        tabs: [
-          .init(t("settings.general"), symbol: "gearshape") {
+      ToolbarPages(
+        pages: [
+          .init(.general) {
             ProjectGeneralPage(model: model, project: project)
           },
-          .init(t("settings.worktrees"), symbol: "arrow.trianglehead.branch") {
+          .init(.worktrees) {
             ProjectWorktreesPage(model: model, project: project)
           },
-          .init(t("settings.hooks"), symbol: "bolt.horizontal") {
+          .init(.hooks) {
             ProjectHooksPage(model: model, project: project)
           },
-          .init(t("settings.terminal"), symbol: "terminal") {
+          .init(.terminal) {
             ProjectTerminalPage(model: model, project: project)
           },
-          .init(t("label.agents"), symbol: "sparkles") {
+          .init(.agents) {
             ProjectAgentsPage(model: model, project: project)
           },
-        ], firstTabToken: firstTabToken
+        ], firstPageToken: firstPageToken
       )
-      .frame(width: SettingsWindowSize.fixed.width, height: SettingsWindowSize.fixed.height)
+      .settingsWindow(platform: platform, showFirstPage: { firstPageToken = UUID() })
       .navigationTitle(t("window.project-settings-title", project.name))
       // This window is its own scene, so a removal asked for here has to
       // be confirmed here; the workspace window's dialog would be behind it.
       .projectRemovalDialog(model: model, source: .settings)
-      .settingsWindowReset(
-        on: { platform.workspaceWindow?.screen }, showFirstPage: { firstTabToken = UUID() })
     } else {
       // The project was removed while this window was open.
       Color.clear.frame(width: 1, height: 1).onAppear { dismiss() }

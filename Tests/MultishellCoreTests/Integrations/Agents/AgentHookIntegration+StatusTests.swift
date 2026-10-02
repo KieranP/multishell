@@ -102,9 +102,8 @@ struct AgentHookIntegrationStatusTests: AgentHookFixtures {
   func aNullHooksKeyReadsAbsentInstallsCurrentAndRemovesBackToAbsent(
     agent: AgentHookIntegration
   ) throws {
-    let directory = try Scratch.directory("hooks")
+    let (directory, file) = try scratchSettingsFile()
     defer { Scratch.remove(directory) }
-    let file = directory.appendingPathComponent("settings.json")
     let original = #"{"hooks":null,"model":"opus"}"#
     try original.write(to: file, atomically: true, encoding: .utf8)
 

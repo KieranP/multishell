@@ -15,26 +15,41 @@ struct AppModelErrorReportingTests {
     #expect(retryable(counting: {}).isRetryable)
   }
 
+  @Test func aRetryableErrorGoesToTheDestructiveAlertAndAPlainOneToTheDismiss() {
+    let harness = Harness()
+    harness.model.presentedError = nil
+    #expect(
+      harness.model.presentedRetryableError == nil && harness.model.presentedPlainError == nil)
+
+    harness.model.presentedError = retryable(counting: {})
+    #expect(
+      harness.model.presentedRetryableError != nil && harness.model.presentedPlainError == nil)
+
+    harness.model.presentedError = PresentedError(title: "Failed", message: "")
+    #expect(
+      harness.model.presentedRetryableError == nil && harness.model.presentedPlainError != nil)
+  }
+
   @Test func answeringWithTheRetryTakesTheAlertDownAndRunsItOnce() async {
-    let h = Harness()
+    let harness = Harness()
     var runs = 0
     let error = retryable { runs += 1 }
-    h.model.presentedError = error
+    harness.model.presentedError = error
 
-    await h.model.answerPresentedError(error, retrying: true)?.value
+    await harness.model.answerPresentedError(error, retrying: true)?.value
 
-    #expect(h.model.presentedError == nil)
+    #expect(harness.model.presentedError == nil)
     #expect(runs == 1)
   }
 
   @Test func dismissingTakesTheAlertDownAndRunsNothing() {
-    let h = Harness()
+    let harness = Harness()
     var runs = 0
     let error = retryable { runs += 1 }
-    h.model.presentedError = error
+    harness.model.presentedError = error
 
-    #expect(h.model.answerPresentedError(error, retrying: false) == nil)
-    #expect(h.model.presentedError == nil)
+    #expect(harness.model.answerPresentedError(error, retrying: false) == nil)
+    #expect(harness.model.presentedError == nil)
     #expect(runs == 0)
   }
 }

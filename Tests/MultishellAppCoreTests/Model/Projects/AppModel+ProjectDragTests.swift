@@ -8,94 +8,94 @@ import Testing
 @Suite @MainActor
 struct AppModelProjectDragTests {
   @Test func aProjectDroppedAboveOrBelowAnotherLandsOnThatSideOfIt() {
-    let h = Harness()
+    let harness = Harness()
     let paths = [Scratch.path("drag-b"), Scratch.path("drag-c")]
     defer { paths.forEach(Scratch.remove) }
-    let a = h.project.id
-    let b = h.store.addProject(at: paths[0]).id
-    let c = h.store.addProject(at: paths[1]).id
+    let a = harness.project.id
+    let b = harness.store.addProject(at: paths[0]).id
+    let c = harness.store.addProject(at: paths[1]).id
 
-    h.model.moveProject(c, .above, of: a)
-    #expect(h.model.workspace.projects.map(\.id) == [c, a, b])
+    harness.model.moveProject(c, .above, of: a)
+    #expect(harness.model.workspace.projects.map(\.id) == [c, a, b])
 
-    h.model.moveProject(c, .below, of: b)
-    #expect(h.model.workspace.projects.map(\.id) == [a, b, c])
+    harness.model.moveProject(c, .below, of: b)
+    #expect(harness.model.workspace.projects.map(\.id) == [a, b, c])
 
-    h.model.moveProject(a, .below, of: b)
-    #expect(h.model.workspace.projects.map(\.id) == [b, a, c])
+    harness.model.moveProject(a, .below, of: b)
+    #expect(harness.model.workspace.projects.map(\.id) == [b, a, c])
 
-    h.model.moveProject(c, .above, of: a)
-    #expect(h.model.workspace.projects.map(\.id) == [b, c, a])
+    harness.model.moveProject(c, .above, of: a)
+    #expect(harness.model.workspace.projects.map(\.id) == [b, c, a])
   }
 
   @Test func aProjectDroppedOnItselfOrAnUnknownOneStaysPut() {
-    let h = Harness()
+    let harness = Harness()
     let path = Scratch.path("drag-b")
     defer { Scratch.remove(path) }
-    let a = h.project.id
-    let b = h.store.addProject(at: path).id
+    let a = harness.project.id
+    let b = harness.store.addProject(at: path).id
 
-    h.model.moveProject(a, .below, of: a)
-    h.model.moveProject(a, .below, of: "/elsewhere")
-    h.model.moveProject("/elsewhere", .above, of: a)
+    harness.model.moveProject(a, .below, of: a)
+    harness.model.moveProject(a, .below, of: "/elsewhere")
+    harness.model.moveProject("/elsewhere", .above, of: a)
 
-    #expect(h.model.workspace.projects.map(\.id) == [a, b])
+    #expect(harness.model.workspace.projects.map(\.id) == [a, b])
   }
 
   @Test func aDragWhoseRowLeftStaysInTheAirWhileTheButtonIsDown() async {
-    let h = Harness()
-    h.model.beginProjectDrag(h.project.id)
+    let harness = Harness()
+    harness.model.beginProjectDrag(harness.project.id)
 
-    h.model.projectDragSourceLeft(h.project.id, isPressed: { true })
-    await h.settled()
+    harness.model.projectDragSourceLeft(harness.project.id, isPressed: { true })
+    await harness.settled()
 
-    #expect(h.model.draggedProjectID == h.project.id)
+    #expect(harness.model.draggedProjectID == harness.project.id)
   }
 
   @Test func aDragWhoseRowLeftEndsOnceTheButtonIsUp() async {
-    let h = Harness()
+    let harness = Harness()
     let released = Flag()
-    h.model.beginProjectDrag(h.project.id)
-    h.model.projectDragSourceLeft(h.project.id, isPressed: { !released.raised })
+    harness.model.beginProjectDrag(harness.project.id)
+    harness.model.projectDragSourceLeft(harness.project.id, isPressed: { !released.raised })
 
     released.raise()
-    await h.model.projectDragReleaseWatch?.value
+    await harness.model.projectDragReleaseWatch?.value
 
-    #expect(h.model.draggedProjectID == nil)
+    #expect(harness.model.draggedProjectID == nil)
   }
 
   @Test func aNewDragOfTheSameProjectIsNotEndedByTheLastOnesRelease() async {
-    let h = Harness()
+    let harness = Harness()
     let released = Flag()
-    h.model.beginProjectDrag(h.project.id)
-    h.model.projectDragSourceLeft(h.project.id, isPressed: { !released.raised })
-    let watch = h.model.projectDragReleaseWatch
+    harness.model.beginProjectDrag(harness.project.id)
+    harness.model.projectDragSourceLeft(harness.project.id, isPressed: { !released.raised })
+    let watch = harness.model.projectDragReleaseWatch
 
-    h.model.beginProjectDrag(h.project.id)
+    harness.model.beginProjectDrag(harness.project.id)
     released.raise()
     await watch?.value
 
-    #expect(h.model.draggedProjectID == h.project.id)
+    #expect(harness.model.draggedProjectID == harness.project.id)
   }
 
   @Test func anotherProjectsRowLeavingWatchesNothing() {
-    let h = Harness()
-    h.model.beginProjectDrag(h.project.id)
+    let harness = Harness()
+    harness.model.beginProjectDrag(harness.project.id)
 
-    h.model.projectDragSourceLeft("/elsewhere", isPressed: { true })
+    harness.model.projectDragSourceLeft("/elsewhere", isPressed: { true })
 
-    #expect(h.model.projectDragReleaseWatch == nil)
+    #expect(harness.model.projectDragReleaseWatch == nil)
   }
 
   @Test func anEndedDragStopsWatchingItsRow() {
-    let h = Harness()
-    h.model.beginProjectDrag(h.project.id)
-    h.model.projectDragSourceLeft(h.project.id, isPressed: { true })
-    let watch = h.model.projectDragReleaseWatch
+    let harness = Harness()
+    harness.model.beginProjectDrag(harness.project.id)
+    harness.model.projectDragSourceLeft(harness.project.id, isPressed: { true })
+    let watch = harness.model.projectDragReleaseWatch
 
-    h.model.endProjectDrag()
+    harness.model.endProjectDrag()
 
-    #expect(h.model.draggedProjectID == nil)
+    #expect(harness.model.draggedProjectID == nil)
     #expect(watch?.isCancelled == true)
   }
 }

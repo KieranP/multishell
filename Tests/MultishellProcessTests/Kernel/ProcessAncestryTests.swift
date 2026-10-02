@@ -16,14 +16,10 @@ struct ProcessAncestryTests {
   /// From a prompt in one of the app's own tabs nothing between the shell
   /// and the app is a program, and the app is not what the state is about.
   @Test func theWalkStopsShortOfTheAppAndNamesTheShellUnderIt() throws {
-    let shell = Process()
-    shell.executableURL = URL(fileURLWithPath: "/bin/sh")
-    shell.arguments = ["-c", "read line"]
-    shell.standardInput = Pipe()
-    try shell.run()
-    defer { shell.terminate() }
+    let shell = try WaitingShell()
+    defer { shell.end() }
     let me = ProcessInfo.processInfo.processIdentifier
-    let under = shell.processIdentifier
+    let under = shell.pid
     #expect(ProcessAncestry.reportingPID(startingAt: under) == me, "the walk as it was")
     #expect(ProcessAncestry.reportingPID(startingAt: under, stoppingAt: me) == under)
   }
@@ -31,29 +27,21 @@ struct ProcessAncestryTests {
   /// Failed once in a full run with the marked child unlisted, for a reason
   /// nobody has seen again; the answer is waited for rather than read once.
   @Test func childrenAreFoundByAWordOfTheirCommandLine() async throws {
-    func waiting(_ script: String) throws -> Process {
-      let shell = Process()
-      shell.executableURL = URL(fileURLWithPath: "/bin/sh")
-      shell.arguments = ["-c", script]
-      shell.standardInput = Pipe()
-      try shell.run()
-      return shell
-    }
-    let marked = try waiting("read line # /shell-snapshots/snapshot-test")
-    let plain = try waiting("read line")
+    let marked = try WaitingShell(marker: "/shell-snapshots/snapshot-test")
+    let plain = try WaitingShell()
     defer {
-      marked.terminate()
-      plain.terminate()
+      marked.end()
+      plain.end()
     }
     let me = ProcessInfo.processInfo.processIdentifier
     func found() -> [Int32] {
       ProcessAncestry.children(of: me, whoseArgumentsContain: "/shell-snapshots/")
     }
 
-    try await waitUntil { found().contains(marked.processIdentifier) }
+    try await waitUntil { found().contains(marked.pid) }
 
-    #expect(found().contains(marked.processIdentifier))
-    #expect(!found().contains(plain.processIdentifier))
+    #expect(found().contains(marked.pid))
+    #expect(!found().contains(plain.pid))
     #expect(ProcessAncestry.children(of: 999_999_999, whoseArgumentsContain: "x").isEmpty)
   }
 }

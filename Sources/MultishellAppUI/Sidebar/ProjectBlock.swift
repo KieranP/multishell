@@ -4,7 +4,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 /// A project and its worktrees move as one block, so the drop indicator
-/// spans the block: upper half means "before", lower half "after".
+/// spans the block: the upper half is `.above`, the lower `.below`.
 struct ProjectBlock: View {
   let model: AppModel
   let project: Project
@@ -21,6 +21,8 @@ struct ProjectBlock: View {
   var body: some View {
     let metrics = model.metrics
     let rows = isExpanded ? worktrees.map(model.sidebarWorktree) : []
+    let insertion = projectDropTarget?.insertionPlacement(
+      on: project.id, isDragging: model.draggedProjectID != nil)
 
     VStack(spacing: UIMetrics.sidebarRowSpacing) {
       projectRow(metrics: metrics)
@@ -31,11 +33,9 @@ struct ProjectBlock: View {
         }
       }
     }
-    .overlay(alignment: projectDropTarget?.placement == .below ? .bottom : .top) {
-      if model.draggedProjectID != nil, let target = projectDropTarget,
-        target.projectID == project.id
-      {
-        InsertionLine(axis: .horizontal, isAfter: target.placement != .above)
+    .overlay(alignment: insertion == .below ? .bottom : .top) {
+      if let insertion {
+        InsertionLine(axis: .horizontal, isAfter: insertion == .below)
       }
     }
     .onDrop(
@@ -64,8 +64,8 @@ struct ProjectBlock: View {
       isFetching: model.isFetching(project),
       theme: theme,
       metrics: metrics,
-      toggle: { model.toggleExpansion(of: project) },
-      newWorktree: { model.requestNewWorktree(in: project) }
+      toggleExpansion: { model.toggleExpansion(of: project) },
+      requestNewWorktree: { model.requestNewWorktree(in: project) }
     )
     .equatable()
     .contextMenu { ProjectActions(model: model, project: project) }
@@ -75,8 +75,8 @@ struct ProjectBlock: View {
         model.beginProjectDrag(project.id)
         return NSItemProvider(object: project.id as NSString)
       },
-      ended: endProjectDrag,
-      sourceLeft: { model.projectDragSourceLeft(project.id, isPressed: $0) }
+      onEnded: endProjectDrag,
+      onSourceLeft: { model.projectDragSourceLeft(project.id, isPressed: $0) }
     )
   }
 

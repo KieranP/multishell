@@ -82,8 +82,8 @@ extension WorktreeGit {
       !listed.isEmpty
     else { return true }
     return await offMain {
-      let wanted = Self.realPath(of: path)
-      return listed.contains { Self.realPath(of: $0.path) == wanted }
+      let wanted = Self.pathAsGitLists(path)
+      return listed.contains { Self.pathAsGitLists($0.path) == wanted }
     }
   }
 }

@@ -27,7 +27,7 @@ extension AppModel {
   public func plannedLocation(for draft: NewWorktreeDraft) -> String {
     let name = draft.trimmedBranch
     guard let project = draft.projectID.flatMap(workspace.project), !name.isEmpty,
-      let url = plannedPath(forBranch: name, createBranch: draft.createsBranch, in: project)
+      let url = plannedPath(forBranch: name, createsBranch: draft.createsBranch, in: project)
     else { return "\u{2014}" }
     return url.path.abbreviatingHomeDirectory()
   }

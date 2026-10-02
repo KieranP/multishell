@@ -26,12 +26,12 @@ extension Workspace {
   /// Whether a new tab in this project starts its agent: the project's say
   /// when it has one, else the global, and only when an agent is in force.
   public func autoStartsAgent(for project: Project) -> Bool {
-    (project.settings.autoStartAgent ?? autoStartAgent) && effectiveAgentID(for: project) != nil
+    (project.settings.autoStartsAgent ?? autoStartsAgent) && effectiveAgentID(for: project) != nil
   }
 
   /// The same for the tab a worktree created here opens.
   public func autoStartsAgentOnCreate(for project: Project) -> Bool {
-    (project.settings.autoStartAgentOnCreate ?? autoStartAgentOnCreate)
+    (project.settings.autoStartsAgentOnCreate ?? autoStartsAgentOnCreate)
       && effectiveAgentID(for: project) != nil
   }
 
@@ -48,7 +48,7 @@ extension Workspace {
 
   /// The order this project's worktree rows are listed in: the project's
   /// say when it has one, else the global.
-  public func worktreeSortOrder(for project: Project) -> WorktreeSortOrder {
+  public func effectiveWorktreeSortOrder(for project: Project) -> WorktreeSortOrder {
     project.settings.worktreeSortOrder ?? worktreeSortOrder
   }
 
@@ -59,7 +59,7 @@ extension Workspace {
 
   /// The shell a new tab in this project runs, or `nil` for `$SHELL`.
   public func effectiveShellPath(for project: Project) -> String? {
-    ShellCatalogue.effectivePath(
+    ShellChoice.effectivePath(
       global: preferredShellID, override: project.settings.preferredShellID,
       customPath: customShellPath)
   }

@@ -20,7 +20,7 @@ struct SidebarWorktreeTests {
 
   @Test func aRowListingItsPanesShowsNoCount() {
     let pane = SidebarPane(
-      id: UUID(), title: "zsh", position: nil, isFocused: true, state: nil, subagents: [],
+      id: UUID(), title: "zsh", position: nil, isFocused: true, state: nil, workers: [],
       agentID: nil, agentName: nil)
     #expect(row(panes: [pane]).shownTerminalCount(of: 1) == 0)
   }

@@ -11,270 +11,273 @@ import Testing
 @Suite @MainActor
 struct AppModelSessionReportsTests {
   @Test func aReportAboutALiveSessionColoursItsTabAndWorktree() {
-    let h = Harness()
-    h.model.select(h.main)
-    let first = h.model.workspace.activeTab(in: h.main.id)!
-    h.model.newTab()
+    let harness = Harness()
+    let first = harness.openBackgroundTab()
 
-    h.stateSource.send(SessionStateReport(state: .running, sessionID: first.focusedSessionID))
-    #expect(h.model.state(of: first) == .running)
-    #expect(h.model.state(ofWorktree: h.main.id) == .running)
-    #expect(h.model.workingAgentCount == 1)
+    harness.stateSource.send(SessionStateReport(state: .running, sessionID: first.focusedSessionID))
+    #expect(harness.model.state(of: first) == .running)
+    #expect(harness.model.state(ofWorktree: harness.main.id) == .running)
+    #expect(harness.model.workingAgentCount == 1)
 
-    h.stateSource.send(SessionStateReport(state: .attention, sessionID: first.focusedSessionID))
-    h.model.activate(first)
-    #expect(h.model.state(of: first) == .attention, "looking is not answering")
+    harness.stateSource.send(
+      SessionStateReport(state: .attention, sessionID: first.focusedSessionID))
+    harness.model.activate(first)
+    #expect(harness.model.state(of: first) == .attention, "looking is not answering")
 
-    h.stateSource.send(SessionStateReport(state: .done, sessionID: first.focusedSessionID))
-    #expect(h.model.state(of: first) == nil, "done for the shown tab has been seen")
+    harness.stateSource.send(SessionStateReport(state: .done, sessionID: first.focusedSessionID))
+    #expect(harness.model.state(of: first) == nil, "done for the shown tab has been seen")
   }
 
   @Test func aPlainCommandRunningIsNoAgentStillWorking() {
-    let h = Harness()
-    h.model.select(h.main)
-    let id = h.model.workspace.activeTab(in: h.main.id)!.focusedSessionID
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let id = harness.model.workspace.activeTab(in: harness.main.id)!.focusedSessionID
 
-    h.stateSource.send(
+    harness.stateSource.send(
       SessionStateReport(
         state: .running, sessionID: id, command: "make", isFromShellIntegration: true))
-    #expect(h.model.state(ofPane: id) == .running)
-    #expect(h.model.workingAgentCount == 0)
+    #expect(harness.model.state(ofPane: id) == .running)
+    #expect(harness.model.workingAgentCount == 0)
 
-    h.stateSource.send(SessionStateReport(state: .running, sessionID: id, agentID: "claude"))
-    #expect(h.model.workingAgentCount == 1)
+    harness.stateSource.send(SessionStateReport(state: .running, sessionID: id, agentID: "claude"))
+    #expect(harness.model.workingAgentCount == 1)
   }
 
   @Test func anAgentTypedAtThePromptWithNoHooksCountsAsWorking() {
-    let h = Harness()
-    h.model.select(h.main)
-    let id = h.model.workspace.activeTab(in: h.main.id)!.focusedSessionID
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let id = harness.model.workspace.activeTab(in: harness.main.id)!.focusedSessionID
 
-    h.stateSource.send(
+    harness.stateSource.send(
       SessionStateReport(
         state: .running, sessionID: id, command: "codex", isFromShellIntegration: true))
-    #expect(h.model.workingAgentCount == 1)
+    #expect(harness.model.workingAgentCount == 1)
   }
 
   @Test func reportsAboutUnknownOrColdSessionsAreDropped() {
-    let h = Harness()
-    h.store.openTab(in: h.feature.id)
-    let cold = h.model.workspace.sessions(in: h.feature.id)[0]
-    h.model.select(h.main)
+    let harness = Harness()
+    harness.store.openTab(in: harness.feature.id)
+    let cold = harness.model.workspace.sessions(in: harness.feature.id)[0]
+    harness.model.select(harness.main)
 
-    h.stateSource.send(
-      SessionStateReport(state: .running, sessionID: UUID(), cwd: h.main.path.path))
-    h.stateSource.send(
-      SessionStateReport(state: .running, sessionID: cold.id, cwd: h.main.path.path))
+    harness.stateSource.send(
+      SessionStateReport(
+        state: .running, sessionID: UUID(), workingDirectory: harness.main.path.path))
+    harness.stateSource.send(
+      SessionStateReport(
+        state: .running, sessionID: cold.id, workingDirectory: harness.main.path.path))
 
-    #expect(h.model.sessionStates.showsNothing, "an id the app cannot place is not matched by cwd")
+    #expect(
+      harness.model.sessionStates.showsNothing, "an id the app cannot place is not matched by cwd")
   }
 
   @Test func aReportWithOnlyADirectoryMarksTheWorktree() {
-    let h = Harness()
-    h.model.select(h.main)
+    let harness = Harness()
+    harness.model.select(harness.main)
 
-    h.stateSource.send(SessionStateReport(state: .attention, cwd: h.feature.path.path))
-    #expect(h.model.state(ofWorktree: h.feature.id) == .attention)
-    #expect(h.model.state(ofWorktree: h.main.id) == nil)
-    h.stateSource.send(SessionStateReport(state: .done, cwd: h.feature.path.path + "/"))
-    #expect(h.model.state(ofWorktree: h.feature.id) == .done)
+    harness.stateSource.send(
+      SessionStateReport(state: .attention, workingDirectory: harness.feature.path.path))
+    #expect(harness.model.state(ofWorktree: harness.feature.id) == .attention)
+    #expect(harness.model.state(ofWorktree: harness.main.id) == nil)
+    harness.stateSource.send(
+      SessionStateReport(state: .done, workingDirectory: harness.feature.path.path + "/"))
+    #expect(harness.model.state(ofWorktree: harness.feature.id) == .done)
 
-    h.model.select(h.feature)
-    #expect(h.model.state(ofWorktree: h.feature.id) == nil, "selecting the worktree is seeing it")
+    harness.model.select(harness.feature)
+    #expect(
+      harness.model.state(ofWorktree: harness.feature.id) == nil,
+      "selecting the worktree is seeing it")
 
-    h.stateSource.send(SessionStateReport(state: .running, cwd: "/nowhere/at/all"))
-    #expect(h.model.sessionStates.showsNothing)
+    harness.stateSource.send(
+      SessionStateReport(state: .running, workingDirectory: "/nowhere/at/all"))
+    #expect(harness.model.sessionStates.showsNothing)
   }
 
   /// Claude Code started outside the app in a package directory reports that directory. The
   /// harness nests `feature` inside `main`, so the deeper one must win.
   @Test func aReportFromInsideAWorktreeMarksTheWorktreeContainingIt() {
-    let h = Harness()
-    h.model.select(h.main)
+    let harness = Harness()
+    harness.model.select(harness.main)
 
-    h.stateSource.send(
+    harness.stateSource.send(
       SessionStateReport(
-        state: .attention, cwd: h.feature.path.appendingPathComponent("packages/api").path))
-    #expect(h.model.state(ofWorktree: h.feature.id) == .attention)
-    #expect(h.model.state(ofWorktree: h.main.id) == nil, "the deepest worktree, not the first")
-
-    h.stateSource.send(
-      SessionStateReport(state: .failed, cwd: h.main.path.appendingPathComponent("featurette").path)
+        state: .attention,
+        workingDirectory: harness.feature.path.appendingPathComponent("packages/api").path))
+    #expect(harness.model.state(ofWorktree: harness.feature.id) == .attention)
+    #expect(
+      harness.model.state(ofWorktree: harness.main.id) == nil, "the deepest worktree, not the first"
     )
-    #expect(h.model.state(ofWorktree: h.main.id) == .failed, "a sibling by name is not inside")
-    #expect(h.model.state(ofWorktree: h.feature.id) == .attention)
+
+    harness.stateSource.send(
+      SessionStateReport(
+        state: .failed,
+        workingDirectory: harness.main.path.appendingPathComponent("featurette").path)
+    )
+    #expect(
+      harness.model.state(ofWorktree: harness.main.id) == .failed, "a sibling by name is not inside"
+    )
+    #expect(harness.model.state(ofWorktree: harness.feature.id) == .attention)
   }
 
   /// `multishell state` typed at a prompt in one of our own tabs walks up
   /// to the app itself. A claim about our own pid would never clear.
   @Test func aReportNamingTheAppsOwnPidIsTakenAsNamingNone() {
-    let h = Harness()
-    h.model.select(h.main)
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let tab = harness.model.workspace.activeTab(in: harness.main.id)!
     let me = ProcessInfo.processInfo.processIdentifier
 
-    h.stateSource.send(
+    harness.stateSource.send(
       SessionStateReport(
         state: .running, sessionID: tab.focusedSessionID, pid: me, agentID: AgentCatalogue.claudeID)
     )
 
-    #expect(h.model.state(of: tab) == .running)
-    #expect(h.model.sessionStates.trackedPIDs.isEmpty, "the app is not what is working")
-    #expect(h.model.reportedAgents[tab.focusedSessionID]?.agentID == AgentCatalogue.claudeID)
-    #expect(h.model.reportedAgents[tab.focusedSessionID]?.pid == nil)
+    #expect(harness.model.state(of: tab) == .running)
+    #expect(harness.model.sessionStates.trackedPIDs.isEmpty, "the app is not what is working")
+    #expect(harness.model.reportedAgents[tab.focusedSessionID]?.agentID == AgentCatalogue.claudeID)
+    #expect(harness.model.reportedAgents[tab.focusedSessionID]?.pid == nil)
   }
 
   /// A banner arrives with the app off screen, so it must name the worktree
   /// the way the sidebar the user is picturing does.
   @Test func aRenamedWorktreeIsNamedByItsNameInABanner() {
-    let h = Harness()
-    h.model.setNotifications(NotificationPreference(attention: true, failed: true, done: true))
-    h.model.renameWorktree(h.feature.id, to: "Checkout flow")
+    let harness = Harness()
+    harness.model.setNotifications(.everyState)
+    harness.model.renameWorktree(harness.feature.id, to: "Checkout flow")
 
-    h.stateSource.send(SessionStateReport(state: .attention, cwd: h.feature.path.path))
+    harness.stateSource.send(
+      SessionStateReport(state: .attention, workingDirectory: harness.feature.path.path))
 
-    #expect(h.notifier.posted.count == 1)
-    #expect(h.notifier.posted.first?.title.contains("Checkout flow") == true)
-    #expect(h.notifier.posted.first?.title.contains("feature") == false, "not the branch")
+    #expect(harness.notifier.posted.count == 1)
+    #expect(harness.notifier.posted.first?.title.contains("Checkout flow") == true)
+    #expect(harness.notifier.posted.first?.title.contains("feature") == false, "not the branch")
   }
 
   /// The banner already up is the prompt's, and posting again under the same key would
   /// replace it with a body that says less.
   @Test func aWorkerTickRaisesNoSecondBannerForAPromptAlreadyUp() {
-    let h = Harness()
-    h.model.setNotifications(NotificationPreference(attention: true, failed: true, done: true))
-    h.model.select(h.main)
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-    h.model.newTab()
+    let harness = Harness()
+    harness.model.setNotifications(.everyState)
+    let tab = harness.openBackgroundTab()
     let session = tab.focusedSessionID
-    h.stateSource.send(
+    harness.stateSource.send(
       SessionStateReport(
         state: .running, sessionID: session,
-        subagent: SubagentReport(id: "w1", type: "Explore", phase: .started)))
-    h.stateSource.send(
+        worker: WorkerReport(id: "w1", type: "Explore", phase: .started)))
+    harness.stateSource.send(
       SessionStateReport(state: .attention, sessionID: session, message: "Needs Bash"))
-    #expect(h.notifier.posted.count == 1)
+    #expect(harness.notifier.posted.count == 1)
 
-    h.stateSource.send(
+    harness.stateSource.send(
       SessionStateReport(
-        state: .running, sessionID: session, subagent: SubagentReport(id: "w1", phase: .ended)))
+        state: .running, sessionID: session, worker: WorkerReport(id: "w1", phase: .ended)))
 
-    #expect(h.notifier.posted.count == 1, "the prompt's banner is the only one")
-    #expect(h.notifier.posted.first?.body == "Needs Bash")
-    #expect(h.notifier.withdrawn.isEmpty, "and it was not taken back either")
+    #expect(harness.notifier.posted.count == 1, "the prompt's banner is the only one")
+    #expect(harness.notifier.posted.first?.body == "Needs Bash")
+    #expect(harness.notifier.withdrawn.isEmpty, "and it was not taken back either")
   }
 
   /// The chip on the pane's row and on its card read the same roster: a Done on
   /// screen gives way to a worker, and the last one out posts the Done banner.
   @Test func workersShowOnTheRowAndTheCardAndKeepTheWorktreeWorking() {
-    let h = Harness()
-    h.model.setNotifications(NotificationPreference(attention: true, failed: true, done: true))
-    h.model.select(h.main)
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-    h.model.newTab()
+    let harness = Harness()
+    harness.model.setNotifications(.everyState)
+    let tab = harness.openBackgroundTab()
     let session = tab.focusedSessionID
-    h.stateSource.send(SessionStateReport(state: .running, sessionID: session, agentID: "claude"))
-    h.stateSource.send(SessionStateReport(state: .done, sessionID: session, agentID: "claude"))
-    #expect(h.model.state(ofWorktree: h.main.id) == .done)
-    #expect(h.notifier.posted.count == 1)
+    harness.stateSource.send(
+      SessionStateReport(state: .running, sessionID: session, agentID: "claude"))
+    harness.stateSource.send(
+      SessionStateReport(state: .done, sessionID: session, agentID: "claude"))
+    #expect(harness.model.state(ofWorktree: harness.main.id) == .done)
+    #expect(harness.notifier.posted.count == 1)
 
-    h.stateSource.send(
+    harness.stateSource.send(
       SessionStateReport(
         state: .running, sessionID: session, agentID: "claude",
-        subagent: SubagentReport(id: "w1", type: "Explore", phase: .started)))
-    h.stateSource.send(
+        worker: WorkerReport(id: "w1", type: "Explore", phase: .started)))
+    harness.stateSource.send(
       SessionStateReport(
-        state: .running, cwd: h.main.path.path, agentID: "claude",
-        subagent: SubagentReport(id: "w2", type: "Plan", phase: .working)))
+        state: .running, workingDirectory: harness.main.path.path, agentID: "claude",
+        worker: WorkerReport(id: "w2", type: "Plan", phase: .working)))
 
-    #expect(h.model.state(ofWorktree: h.main.id) == .running, "a worker out is work")
-    #expect(h.model.subagents(ofPane: session).map(\.id) == ["w1"], "the pane's own only")
+    #expect(harness.model.state(ofWorktree: harness.main.id) == .running, "a worker out is work")
+    #expect(harness.model.workers(ofPane: session).map(\.id) == ["w1"], "the pane's own only")
     #expect(
-      h.model.subagents(ofPane: h.model.workspace.activeTab(in: h.main.id)!.focusedSessionID)
-        .isEmpty)
-    #expect(h.model.state(ofPane: session) == .running)
-    let card = h.model.agentBoardCards.first { $0.id == session }
-    #expect(card?.subagents.map(\.type) == ["Explore"], "a card has its own pane's only")
-    #expect(card?.subagents.first?.since != nil, "stamped by the model's clock")
+      harness.model.workers(
+        ofPane: harness.model.workspace.activeTab(in: harness.main.id)!.focusedSessionID
+      )
+      .isEmpty)
+    #expect(harness.model.state(ofPane: session) == .running)
+    let card = harness.model.agentBoardCards.first { $0.id == session }
+    #expect(card?.workers.map(\.type) == ["Explore"], "a card has its own pane's only")
+    #expect(card?.workers.first?.since != nil, "stamped by the model's clock")
 
-    h.stateSource.send(
+    harness.stateSource.send(
       SessionStateReport(
         state: .running, sessionID: session, agentID: "claude",
-        subagent: SubagentReport(id: "w1", phase: .ended)))
-    h.stateSource.send(
+        worker: WorkerReport(id: "w1", phase: .ended)))
+    harness.stateSource.send(
       SessionStateReport(
-        state: .running, cwd: h.main.path.path, agentID: "claude",
-        subagent: SubagentReport(id: "w2", phase: .ended)))
-    #expect(h.model.subagents(ofPane: session).isEmpty)
-    #expect(h.model.state(ofWorktree: h.main.id) == .done, "the displaced Done comes back")
-    #expect(h.notifier.posted.count == 2, "and is announced once")
+        state: .running, workingDirectory: harness.main.path.path, agentID: "claude",
+        worker: WorkerReport(id: "w2", phase: .ended)))
+    #expect(harness.model.workers(ofPane: session).isEmpty)
+    #expect(
+      harness.model.state(ofWorktree: harness.main.id) == .done, "the displaced Done comes back")
+    #expect(harness.notifier.posted.count == 2, "and is announced once")
   }
 
   @Test func launchingAnAgentFlashesThenIdlesUntilAPromptDrivesItsOwnStates() {
-    let h = Harness()
-    h.model.select(h.main)
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-    h.model.newTab()  // background it
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let tab = harness.model.workspace.activeTab(in: harness.main.id)!
+    harness.model.newTab()
     let id = tab.focusedSessionID
 
     // The shell hook fires as `claude` starts: a command is running.
-    h.stateSource.send(SessionStateReport(state: .running, sessionID: id))
-    #expect(h.model.state(of: tab) == .running)
+    harness.stateSource.send(SessionStateReport(state: .running, sessionID: id))
+    #expect(harness.model.state(of: tab) == .running)
 
     // Claude's SessionStart hook: it is up and waiting for a prompt, not
-    // working. Back to grey.
-    h.stateSource.send(SessionStateReport(state: .idle, sessionID: id))
-    #expect(h.model.state(of: tab) == nil, "an agent at its prompt is idle")
+    // working.
+    harness.stateSource.send(SessionStateReport(state: .idle, sessionID: id))
+    #expect(harness.model.state(of: tab) == nil, "an agent at its prompt is idle")
 
     // A prompt: working again (UserPromptSubmit / PreToolUse).
-    h.stateSource.send(SessionStateReport(state: .running, sessionID: id))
-    #expect(h.model.state(of: tab) == .running)
+    harness.stateSource.send(SessionStateReport(state: .running, sessionID: id))
+    #expect(harness.model.state(of: tab) == .running)
 
-    h.stateSource.send(SessionStateReport(state: .attention, sessionID: id, message: "Needs Bash"))
-    #expect(h.model.state(of: tab) == .attention)
+    harness.stateSource.send(
+      SessionStateReport(state: .attention, sessionID: id, message: "Needs Bash"))
+    #expect(harness.model.state(of: tab) == .attention)
 
-    h.stateSource.send(SessionStateReport(state: .done, sessionID: id))
-    #expect(h.model.state(of: tab) == .done)
+    harness.stateSource.send(SessionStateReport(state: .done, sessionID: id))
+    #expect(harness.model.state(of: tab) == .done)
   }
 
   @Test func anAgentsSessionStartClearsTheShellsOwnWorking() {
-    let h = Harness()
-    h.model.select(h.main)
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-    h.model.newTab()
+    let harness = Harness()
+    let tab = harness.openBackgroundTab()
     let id = tab.focusedSessionID
 
-    h.stateSource.send(
+    harness.stateSource.send(
       SessionStateReport(
         state: .running, sessionID: id, pid: 4242, command: "claude", isFromShellIntegration: true))
-    h.stateSource.send(SessionStateReport(state: .idle, sessionID: id, startsSession: true))
+    harness.stateSource.send(SessionStateReport(state: .idle, sessionID: id, startsSession: true))
 
-    #expect(h.model.state(of: tab) == nil)
+    #expect(harness.model.state(of: tab) == nil)
   }
 
   @Test func reportsOverARealSocketReachTheModel() async throws {
-    let path = URL(fileURLWithPath: "/tmp/ms-model-\(UUID().uuidString.prefix(8)).sock")
+    let path = Scratch.socketPath("model")
     let source = SocketStateSource(path: path)
     defer {
       source.stop()
       Scratch.removeSocket(path)
     }
-    let tmp = try Scratch.directory("socket")
-    defer { Scratch.remove(tmp) }
-    let store = WorkspaceStore(
-      file: WorkspaceFile(fileURL: tmp.appendingPathComponent("state.json")))
-    let project = store.addProject(at: tmp)
-    let main = Worktree(
-      path: tmp, projectID: project.id, head: "a", branch: "main", isPrimary: true)
-    store.replaceWorktrees([main], forProject: project.id)
-    let engine = FakeEngine()
-    let model = AppModel(
-      store: store, host: engine, coordinator: nil,
-      watcher: FakeWatcher(), stateSource: source)
+    let harness = Harness(socketSource: source)
+    let model = harness.model
     _ = model.startStateSource()
-    model.select(main)
-    let tab = model.workspace.activeTab(in: main.id)!
-    model.newTab()
+    let tab = harness.openBackgroundTab()
 
     let report = SessionStateReport(state: .attention, sessionID: tab.focusedSessionID)
     try UnixSocketClient.send(try report.encodedLine(), to: path)

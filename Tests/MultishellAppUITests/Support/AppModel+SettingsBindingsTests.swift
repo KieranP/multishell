@@ -14,30 +14,30 @@ struct AppModelSettingsBindingsTests {
   @Test func turningAnOverrideOnSeedsItWithWhatWasInForce() {
     let harness = ModelHarness()
     let project = harness.project
-    #expect(harness.model.workspace.autoStartAgent == false, "the global this inherits from")
+    #expect(harness.model.workspace.autoStartsAgent == false, "the global this inherits from")
 
-    let toggle = harness.model.overrideToggle(\.autoStartAgent, of: project, fallback: false)
+    let toggle = harness.model.overrideToggle(\.autoStartsAgent, of: project, fallback: false)
     #expect(toggle.wrappedValue == false, "no override yet")
 
     toggle.wrappedValue = true
     #expect(
-      harness.model.ownSettings(of: project).autoStartAgent == false,
+      harness.model.ownSettings(of: project).autoStartsAgent == false,
       "seeded with the inherited false, not with the toggle's own true")
     #expect(
-      harness.model.overrideToggle(\.autoStartAgent, of: project, fallback: false).wrappedValue,
+      harness.model.overrideToggle(\.autoStartsAgent, of: project, fallback: false).wrappedValue,
       "and the row now reads as overridden")
   }
 
   @Test func turningAnOverrideOffClearsItRatherThanStoringWhatWasShown() {
     let harness = ModelHarness()
     let project = harness.project
-    harness.model.overrideField(\.autoStartAgent, of: project, fallback: false).wrappedValue = true
-    #expect(harness.model.ownSettings(of: project).autoStartAgent == true)
+    harness.model.overrideField(\.autoStartsAgent, of: project, fallback: false).wrappedValue = true
+    #expect(harness.model.ownSettings(of: project).autoStartsAgent == true)
 
-    harness.model.overrideToggle(\.autoStartAgent, of: project, fallback: false).wrappedValue =
+    harness.model.overrideToggle(\.autoStartsAgent, of: project, fallback: false).wrappedValue =
       false
     #expect(
-      harness.model.ownSettings(of: project).autoStartAgent == nil,
+      harness.model.ownSettings(of: project).autoStartsAgent == nil,
       "off means follow the global, which is a nil override and not a stored false")
   }
 
@@ -104,14 +104,13 @@ struct AppModelSettingsBindingsTests {
     let harness = ModelHarness()
     let stale = harness.project
 
-    // Something else changes the project while the window holds `stale`.
     harness.model.setExpanded(false, for: stale)
-    harness.model.overrideField(\.autoStartAgent, of: stale, fallback: false).wrappedValue = true
+    harness.model.overrideField(\.autoStartsAgent, of: stale, fallback: false).wrappedValue = true
 
     #expect(
       harness.model.workspace.project(stale.id)?.isExpanded == false,
       "the change is not lost")
     #expect(
-      harness.model.ownSettings(of: stale).autoStartAgent == true, "and the write still landed")
+      harness.model.ownSettings(of: stale).autoStartsAgent == true, "and the write still landed")
   }
 }

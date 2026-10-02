@@ -9,15 +9,14 @@ extension View {
       model.pendingSharedSettingsTrust?.title ?? "",
       isPresented: Binding(
         get: { model.pendingSharedSettingsTrust != nil },
-        set: { if !$0 { model.pendingSharedSettingsTrust = nil } }),
+        set: { if !$0 { model.decideSharedSettingsTrustLater() } }),
       titleVisibility: .visible,
       presenting: model.pendingSharedSettingsTrust
     ) { pending in
-      Button(pending.trustLabel) { model.answerSharedSettingsTrust(pending, trusted: true) }
-      Button(pending.declineLabel) { model.answerSharedSettingsTrust(pending, trusted: false) }
+      Button(pending.trustLabel) { model.answerSharedSettingsTrust(pending, isTrusted: true) }
+      Button(pending.declineLabel) { model.answerSharedSettingsTrust(pending, isTrusted: false) }
         .keyboardShortcut(.defaultAction)
-      // Escape: asked again next time, since nothing was decided.
-      Button(t("dialog.decide-later"), role: .cancel) { model.pendingSharedSettingsTrust = nil }
+      Button(t("dialog.decide-later"), role: .cancel) { model.decideSharedSettingsTrustLater() }
     } message: { pending in
       Text(pending.message)
     }

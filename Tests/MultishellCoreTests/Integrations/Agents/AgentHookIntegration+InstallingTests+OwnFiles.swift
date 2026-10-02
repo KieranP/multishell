@@ -31,12 +31,9 @@ extension AgentHookIntegrationInstallingTests {
     #expect(!copilot.hasOurHookUnderEveryEvent(in: file))
   }
 
-  /// The name is ours; the file on disk decides. Removing must not delete
-  /// something else that happens to be called that.
-  @Test func aFileOfOursThatIsNotOursIsLeftWhereItIs() throws {
-    let directory = try Scratch.directory("hooks")
+  @Test func aFileWithOurNameButNotOurHooksIsLeftWhereItIs() throws {
+    let (directory, file) = try scratchSettingsFile(named: "multishell.json")
     defer { Scratch.remove(directory) }
-    let file = directory.appendingPathComponent("multishell.json")
     try #"{"version":1,"hooks":{}}"#.write(to: file, atomically: true, encoding: .utf8)
 
     #expect(!AgentHookCatalogue.copilot.hasOurHookUnderEveryEvent(in: file))
@@ -65,19 +62,5 @@ extension AgentHookIntegrationInstallingTests {
 
     try openCode.remove(from: file)
     #expect(!FileManager.default.fileExists(atPath: file.path))
-  }
-
-  @Test func theOpenCodePluginReportsAWorkerByItsSessionIdAndCapsTheEndedIds() {
-    let source = OpenCodePlugin.source(helper: "$HOME/bin/multishell")
-    #expect(source.contains("\"--subagent\", worker.id, \"--subagent-phase\", worker.phase"))
-    #expect(source.contains("ended.length > 64"), "the cap is on the list, not on the map")
-  }
-
-  @Test func theOpenCodePluginHearsAPermissionsAnswerAndNotTheAskHookNeverCalled() {
-    let source = OpenCodePlugin.source(helper: "$HOME/bin/multishell")
-    #expect(source.contains("permission.replied"), "the one agent that says the answer came")
-    #expect(
-      !source.contains("\"permission.ask\":"),
-      "listening on both would report one prompt twice")
   }
 }

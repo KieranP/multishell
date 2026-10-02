@@ -36,7 +36,7 @@ public struct WorktreeGit: Sendable {
   /// for a project's life, so the watcher and the records check need no spawn.
   public func commonGitDirectory(_ project: Project) async throws -> URL {
     let output = try await runner.run(
-      ["rev-parse", Self.absolutePathFormat, "--git-common-dir"], in: project.path)
+      ["rev-parse", Self.absolutePathsFlag, "--git-common-dir"], in: project.path)
     guard let common = Self.absolutePaths(in: output, from: project.path).first else {
       throw ProcessFailure.unreportedByGit(
         ["rev-parse", "--git-common-dir"],

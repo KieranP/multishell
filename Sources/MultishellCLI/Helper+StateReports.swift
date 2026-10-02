@@ -15,18 +15,19 @@ extension Helper {
     let options = try CommandOptions(arguments.dropFirst(), valued: stateOptionNames)
     let report = SessionStateReport(
       state: state,
-      sessionID: sessionID(from: options["session"] ?? environment[SessionEnvironment.sessionKey]),
-      cwd: options["cwd"] ?? environment[SessionEnvironment.worktreeKey]
+      sessionID: sessionID(
+        from: options["session"] ?? environment[SessionEnvironment.sessionVariable]),
+      workingDirectory: options["cwd"] ?? environment[SessionEnvironment.worktreeVariable]
         ?? FileManager.default.currentDirectoryPath,
       pid: options.int32("pid") ?? reportingPID(environment),
       message: options["message"],
       agentID: options["agent"],
       isFromShellIntegration: options.onlyIfTrue("shell"),
-      subagent: try subagentReport(from: options),
+      worker: try workerReport(from: options),
       startsTurn: options.onlyIfTrue("new-turn"),
       resumesAfterWorkers: options.onlyIfTrue("resumes"),
       workersOut: options["out"].map { list in
-        list.split(separator: ",").map { SubagentReport(id: String($0), phase: .working) }
+        list.split(separator: ",").map { WorkerReport(id: String($0), phase: .working) }
       })
     do {
       try send(report, environment: environment)
@@ -37,7 +38,7 @@ extension Helper {
     }
   }
 
-  private static func subagentReport(from options: CommandOptions) throws -> SubagentReport? {
+  private static func workerReport(from options: CommandOptions) throws -> WorkerReport? {
     guard let id = options["subagent"] else {
       let orphan = ["subagent-phase", "subagent-type", "subagent-wakes"].first {
         options[$0] != nil
@@ -47,13 +48,13 @@ extension Helper {
       }
       return nil
     }
-    guard let phase = options["subagent-phase"].flatMap(SubagentReport.Phase.init(rawValue:))
+    guard let phase = options["subagent-phase"].flatMap(WorkerReport.Phase.init(rawValue:))
     else {
       throw UsageError(
         "--subagent needs --subagent-phase, one of: "
-          + SubagentReport.Phase.allCases.map(\.rawValue).joined(separator: ", "))
+          + WorkerReport.Phase.allCases.map(\.rawValue).joined(separator: ", "))
     }
-    return SubagentReport(
+    return WorkerReport(
       id: id, type: options["subagent-type"], phase: phase,
       wakesAgent: options.onlyIfFalse("subagent-wakes"))
   }
@@ -80,8 +81,8 @@ extension Helper {
   ) {
     let report = SessionStateReport(
       state: state,
-      sessionID: sessionID(from: environment[SessionEnvironment.sessionKey]),
-      cwd: environment[SessionEnvironment.worktreeKey],
+      sessionID: sessionID(from: environment[SessionEnvironment.sessionVariable]),
+      workingDirectory: environment[SessionEnvironment.worktreeVariable],
       pid: pid,
       duration: duration,
       command: command,

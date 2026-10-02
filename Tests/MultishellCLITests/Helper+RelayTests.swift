@@ -21,6 +21,22 @@ struct HelperRelayTests {
     return (helper, log)
   }
 
+  /// The helper behind a script that runs `relayBody` in place of `relay`.
+  private func helper(in home: URL, relayingAs relayBody: String) throws -> URL {
+    try Scratch.script(
+      """
+      if [ "$1" = relay ]; then
+      \(relayBody)
+      fi
+      exec \(PosixShellQuoting.quote(try HelperBinary.require().path)) "$@"
+      """,
+      at: home.appendingPathComponent("multishell"))
+  }
+
+  private func pid(writtenTo file: URL) throws -> Int32 {
+    try #require(Int32(String(contentsOf: file, encoding: .utf8).trimmingCharacters(in: .newlines)))
+  }
+
   private func spawns(_ log: URL) -> [(pid: String, command: String)] {
     ((try? String(contentsOf: log, encoding: .utf8)) ?? "").split(whereSeparator: \.isNewline)
       .map { line in
@@ -38,15 +54,14 @@ struct HelperRelayTests {
     let (helper, log) = try countingHelper(in: home)
     let initFile = try ShellTab.bashInitFile(in: home, helper: helper)
 
-    let env = ShellTab.environment(socket: listener.path, home: home, worktree: "/w/repo")
+    let environment = ShellTab.environment(socket: listener.path, home: home, worktree: "/w/repo")
     let script = """
       _multishell_command_started "claude --resume"; true; _multishell_precmd
       _multishell_command_started "ls"; false; _multishell_precmd
       _multishell_command_started "make"; true; _multishell_precmd
       """
-    _ = try await ProcessRunner().capture(
-      URL(fileURLWithPath: "/bin/bash"), ["--init-file", initFile.path, "-i", "-c", script],
-      in: home, environment: env)
+    _ = try await ShellTab.runBash(
+      initFile: initFile, script: script, in: home, environment: environment)
 
     try await waitUntil { recorder.received.count >= 6 }
     let reports = recorder.received.compactMap(SessionStateReport.parse)
@@ -73,15 +88,12 @@ struct HelperRelayTests {
 
     """.write(to: home.appendingPathComponent(".bashrc"), atomically: true, encoding: .utf8)
     let initFile = try ShellTab.bashInitFile(in: home)
-    let env = ShellTab.environment(socket: listener.path, home: home)
+    let environment = ShellTab.environment(socket: listener.path, home: home)
 
-    _ = try await ProcessRunner().capture(
-      URL(fileURLWithPath: bash),
-      [
-        "--init-file", initFile.path, "-i", "-c",
-        #"_multishell_command_started "ls"; true; _multishell_precmd"#,
-      ],
-      in: home, environment: env, timeout: .seconds(10))
+    _ = try await ShellTab.runBash(
+      bash, initFile: initFile,
+      script: #"_multishell_command_started "ls"; true; _multishell_precmd"#, in: home,
+      environment: environment, timeout: .seconds(10))
 
     try await waitUntil { recorder.received.count >= 2 }
     #expect(
@@ -100,7 +112,7 @@ struct HelperRelayTests {
     let (helper, log) = try countingHelper(in: home)
     let initFile = try ShellTab.bashInitFile(in: home, helper: helper)
 
-    let env = ShellTab.environment(socket: listener.path, home: home, worktree: "/w/repo")
+    let environment = ShellTab.environment(socket: listener.path, home: home, worktree: "/w/repo")
     let script = """
       while [ ! -s \(PosixShellQuoting.quote(log.path)) ]; do sleep 0.05; done
       kill -KILL "$(head -n 1 \(PosixShellQuoting.quote(log.path + ".parents")))"
@@ -110,9 +122,8 @@ struct HelperRelayTests {
       printf 'alive\\n'
       printf 'still-heard\\n' >&2
       """
-    let output = try await ProcessRunner().capture(
-      URL(fileURLWithPath: bash), ["--init-file", initFile.path, "-i", "-c", script],
-      in: home, environment: env)
+    let output = try await ShellTab.runBash(
+      bash, initFile: initFile, script: script, in: home, environment: environment)
 
     #expect(output.standardOutput.contains("alive"), "\(output.standardError)")
     #expect(output.standardError.contains("still-heard"), "the shell's own stderr went too")
@@ -132,25 +143,22 @@ struct HelperRelayTests {
     let home = try Scratch.directory("bashrelayrefused")
     defer { Scratch.remove(home) }
     let written = home.appendingPathComponent("written")
-    let helper = try Scratch.script(
-      """
-      if [ "$1" = relay ]; then
+    let helper = try helper(
+      in: home,
+      relayingAs: """
         while [ ! -e \(PosixShellQuoting.quote(written.path)) ]; do sleep 0.05; done
         exit 2
-      fi
-      exec \(PosixShellQuoting.quote(try HelperBinary.require().path)) "$@"
-      """,
-      at: home.appendingPathComponent("multishell"))
+        """)
     let initFile = try ShellTab.bashInitFile(in: home, helper: helper)
-    let env = ShellTab.environment(socket: listener.path, home: home)
+    let environment = ShellTab.environment(socket: listener.path, home: home)
     let script = """
       _multishell_command_started "ls"; true; _multishell_precmd
       : > \(PosixShellQuoting.quote(written.path))
       """
 
-    _ = try await ProcessRunner().capture(
-      URL(fileURLWithPath: bash), ["--init-file", initFile.path, "-i", "-c", script],
-      in: home, environment: env, timeout: .seconds(10))
+    _ = try await ShellTab.runBash(
+      bash, initFile: initFile, script: script, in: home, environment: environment,
+      timeout: .seconds(10))
 
     try await waitUntil { recorder.received.count >= 2 }
     #expect(
@@ -164,18 +172,18 @@ struct HelperRelayTests {
     let (helper, log) = try countingHelper(in: home)
     let initFile = try ShellTab.bashInitFile(in: home, helper: helper)
     let childPID = home.appendingPathComponent("child.pid")
-    let env = ShellTab.environment(socket: home.appendingPathComponent("nowhere.sock"), home: home)
+    let environment = ShellTab.environment(
+      socket: home.appendingPathComponent("nowhere.sock"), home: home)
     let script = """
       while [ ! -s \(PosixShellQuoting.quote(log.path)) ]; do sleep 0.05; done
       sleep 60 </dev/null >/dev/null 2>&1 &
       echo $! > \(PosixShellQuoting.quote(childPID.path))
       """
 
-    _ = try await ProcessRunner().capture(
-      URL(fileURLWithPath: bash), ["--init-file", initFile.path, "-i", "-c", script],
-      in: home, environment: env, timeout: .seconds(10))
-    let child = try #require(
-      Int32(String(contentsOf: childPID, encoding: .utf8).trimmingCharacters(in: .newlines)))
+    _ = try await ShellTab.runBash(
+      bash, initFile: initFile, script: script, in: home, environment: environment,
+      timeout: .seconds(10))
+    let child = try pid(writtenTo: childPID)
     defer { kill(child, SIGKILL) }
     let relay = try #require(spawns(log).first.flatMap { Int32($0.pid) })
 
@@ -189,29 +197,24 @@ struct HelperRelayTests {
     let home = try Scratch.directory("bashloopchild")
     defer { Scratch.remove(home) }
     let parents = home.appendingPathComponent("parents.log")
-    let helper = try Scratch.script(
-      """
-      if [ "$1" = relay ]; then echo "$PPID" >> \(PosixShellQuoting.quote(parents.path)); exit 2; fi
-      exec \(PosixShellQuoting.quote(try HelperBinary.require().path)) "$@"
-      """,
-      at: home.appendingPathComponent("multishell"))
+    let helper = try helper(
+      in: home, relayingAs: "echo \"$PPID\" >> \(PosixShellQuoting.quote(parents.path)); exit 2")
     let initFile = try ShellTab.bashInitFile(in: home, helper: helper)
     let childPID = home.appendingPathComponent("child.pid")
-    let env = ShellTab.environment(socket: home.appendingPathComponent("nowhere.sock"), home: home)
+    let environment = ShellTab.environment(
+      socket: home.appendingPathComponent("nowhere.sock"), home: home)
     let script = """
       while [ ! -s \(PosixShellQuoting.quote(parents.path)) ]; do sleep 0.05; done
       sleep 60 </dev/null >/dev/null 2>&1 &
       echo $! > \(PosixShellQuoting.quote(childPID.path))
       """
 
-    _ = try await ProcessRunner().capture(
-      URL(fileURLWithPath: bash), ["--init-file", initFile.path, "-i", "-c", script],
-      in: home, environment: env, timeout: .seconds(10))
-    let child = try #require(
-      Int32(String(contentsOf: childPID, encoding: .utf8).trimmingCharacters(in: .newlines)))
+    _ = try await ShellTab.runBash(
+      bash, initFile: initFile, script: script, in: home, environment: environment,
+      timeout: .seconds(10))
+    let child = try pid(writtenTo: childPID)
     defer { kill(child, SIGKILL) }
-    let loop = try #require(
-      Int32(String(contentsOf: parents, encoding: .utf8).trimmingCharacters(in: .newlines)))
+    let loop = try pid(writtenTo: parents)
 
     #expect(kill(child, 0) == 0, "the child that holds the pipe is still running")
     try await waitUntil { kill(loop, 0) != 0 }
@@ -223,7 +226,8 @@ struct HelperRelayTests {
     let home = try Scratch.directory("bashpipetrap")
     defer { Scratch.remove(home) }
     let initFile = try ShellTab.bashInitFile(in: home)
-    let env = ShellTab.environment(socket: home.appendingPathComponent("nowhere.sock"), home: home)
+    let environment = ShellTab.environment(
+      socket: home.appendingPathComponent("nowhere.sock"), home: home)
     let script = """
       _multishell_command_started "trap"
       trap 'echo mine' PIPE
@@ -232,9 +236,9 @@ struct HelperRelayTests {
       trap -p PIPE
       """
 
-    let output = try await ProcessRunner().capture(
-      URL(fileURLWithPath: bash), ["--init-file", initFile.path, "-i", "-c", script],
-      in: home, environment: env, timeout: .seconds(10))
+    let output = try await ShellTab.runBash(
+      bash, initFile: initFile, script: script, in: home, environment: environment,
+      timeout: .seconds(10))
 
     #expect(
       output.standardOutput.contains("trap -- 'echo mine' SIGPIPE"),
@@ -246,14 +250,15 @@ struct HelperRelayTests {
     let home = try Scratch.directory("bashpipetrapread")
     defer { Scratch.remove(home) }
     let initFile = try ShellTab.bashInitFile(in: home)
-    let env = ShellTab.environment(socket: home.appendingPathComponent("nowhere.sock"), home: home)
+    let environment = ShellTab.environment(
+      socket: home.appendingPathComponent("nowhere.sock"), home: home)
     let script =
       #"echo "version=$(( BASH_VERSINFO[0] * 100 + BASH_VERSINFO[1] ))"; "#
       + #"echo "read=$_multishell_read_pipe_trap""#
 
-    let output = try await ProcessRunner().capture(
-      URL(fileURLWithPath: bash), ["--init-file", initFile.path, "-i", "-c", script],
-      in: home, environment: env, timeout: .seconds(10))
+    let output = try await ShellTab.runBash(
+      bash, initFile: initFile, script: script, in: home, environment: environment,
+      timeout: .seconds(10))
 
     let lines = output.standardOutput.split(whereSeparator: \.isNewline)
     let version = try #require(
@@ -271,18 +276,17 @@ struct HelperRelayTests {
     defer { Scratch.remove(home) }
     let initFile = try ShellTab.bashInitFile(in: home)
     let childPID = home.appendingPathComponent("child.pid")
-    let env = ShellTab.environment(socket: listener.path, home: home)
+    let environment = ShellTab.environment(socket: listener.path, home: home)
     let script = """
       sleep 60 </dev/null >/dev/null 2>&1 &
       echo $! > \(PosixShellQuoting.quote(childPID.path))
       _multishell_command_started "ls"; true; _multishell_precmd
       """
 
-    _ = try await ProcessRunner().capture(
-      URL(fileURLWithPath: bash), ["--init-file", initFile.path, "-i", "-c", script],
-      in: home, environment: env, timeout: .seconds(10))
-    let child = try #require(
-      Int32(String(contentsOf: childPID, encoding: .utf8).trimmingCharacters(in: .newlines)))
+    _ = try await ShellTab.runBash(
+      bash, initFile: initFile, script: script, in: home, environment: environment,
+      timeout: .seconds(10))
+    let child = try pid(writtenTo: childPID)
     defer { kill(child, SIGKILL) }
 
     try await waitUntil { recorder.received.count >= 2 }

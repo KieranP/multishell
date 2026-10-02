@@ -22,6 +22,8 @@ public struct FakeGit {
     return FakeGit(directory: directory, runner: try GitRunner(executable: script))
   }
 
+  public var coordinator: WorktreeCoordinator { TestGit.coordinator(runner: runner) }
+
   /// The arguments of every logged run in `directory`, oldest first.
   public static func calls(in directory: URL) -> [String] {
     (try? String(contentsOf: directory.appendingPathComponent("calls"), encoding: .utf8))?

@@ -9,20 +9,15 @@ import Testing
 @Suite @MainActor
 struct SidebarViewTests {
   private func drawnSidebar(_ harness: ModelHarness) throws -> Data? {
-    let host = NSHostingView(rootView: SidebarView(model: harness.model))
-    host.frame = NSRect(x: 0, y: 0, width: 260, height: 300)
-    let window = OffscreenWindow.holding(host, deferred: false)
-    let rep = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
-    host.cacheDisplay(in: host.bounds, to: rep)
-    return withExtendedLifetime(window) { rep.tiffRepresentation }
+    try #require(
+      OffscreenWindow.pixels(
+        ofHosted: SidebarView(model: harness.model), size: CGSize(width: 260, height: 300))
+    ).tiffRepresentation
   }
 
   @Test func aCollapsedProjectTheFilterOpensDrawsAsAnExpandedOneDoes() throws {
     let harness = ModelHarness()
-    let worktree = Worktree(
-      path: harness.project.path, projectID: harness.project.id, head: "abc1234",
-      branch: "main", isPrimary: true)
-    harness.store.replaceWorktrees([worktree], forProject: harness.project.id)
+    harness.addPrimaryWorktree()
     harness.model.sidebarFilterText = "main"
     harness.model.setExpanded(false, for: harness.project)
     let collapsed = try drawnSidebar(harness)

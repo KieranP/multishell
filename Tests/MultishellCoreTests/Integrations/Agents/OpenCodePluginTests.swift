@@ -1,5 +1,4 @@
 import Foundation
-import TestScratch
 import Testing
 
 @testable import MultishellCore
@@ -31,8 +30,8 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
       .tool(session: "parent"), .tool(session: "parent"), .tool(session: "parent"),
       .tool(session: "parent"), .idle("parent"),
     ])
-    #expect(out.map(said) == ["running true", "running", "done"])
-    #expect(out.map(said).last == "done")
+    #expect(out.map(chipSummary(of:)) == ["running true", "running", "done"])
+    #expect(out.map(chipSummary(of:)).last == "done")
   }
 
   @Test func theParentsDoneSaysItResumesAndListsTheChildrenStillBusy() throws {
@@ -44,13 +43,13 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
       .idle("parent"),
     ])
     let done = try #require(out.last)
-    #expect(value(done, "--resumes") == "true")
-    #expect(value(done, "--out") == "parent/a")
+    #expect(flagValue(done, "--resumes") == "true")
+    #expect(flagValue(done, "--out") == "parent/a")
   }
 
   @Test func theParentsDoneWithNoChildOutListsNone() throws {
     let out = try reports(of: [.message(session: "parent"), .idle("parent")])
-    #expect(value(try #require(out.last), "--out") == "")
+    #expect(flagValue(try #require(out.last), "--out") == "")
   }
 
   @Test func anAbortedChildsEndWakesNoTurnAndAFailedOnesDoes() throws {
@@ -61,15 +60,15 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
       .error("parent/a", name: "MessageAbortedError"),
       .error("parent/b", name: "UnknownError"),
     ])
-    let ends = out.filter { value($0, "--subagent-phase") == "ended" }
-    #expect(ends.map { value($0, "--subagent-wakes") } == ["false", nil])
+    let ends = out.filter { flagValue($0, "--subagent-phase") == "ended" }
+    #expect(ends.map { flagValue($0, "--subagent-wakes") } == ["false", nil])
   }
 
   @Test func aPromptOfOnlySyntheticPartsIsTheWokenTurnNotANewOne() throws {
     let out = try reports(of: [
       .message(session: "parent"), .idle("parent"), .synthetic(session: "parent"),
     ])
-    #expect(out.map(said) == ["running true", "done", "running"])
+    #expect(out.map(chipSummary(of:)) == ["running true", "done", "running"])
   }
 
   @Test func aPromptInTheParentStartsATurnAndOneInAChildIsItsWork() throws {
@@ -81,7 +80,7 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
       .idle("parent"),
     ])
     #expect(
-      out.map(said) == [
+      out.map(chipSummary(of:)) == [
         "running true", "running started Explore", "running working Explore",
         "running ended Explore", "done",
       ])
@@ -95,14 +94,14 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
       .message(session: "parent"), idleStatus, .idle("parent"),
       .message(session: "parent"), .idle("parent"), idleStatus,
     ])
-    #expect(out.map(said) == ["running true", "done", "running true", "done"])
+    #expect(out.map(chipSummary(of:)) == ["running true", "done", "running true", "done"])
   }
 
   @Test func aParentTurnWithNoPromptStillEndsInADone() throws {
     let out = try reports(of: [
       .message(session: "parent"), .idle("parent"), .busy("parent"), .idle("parent"),
     ])
-    #expect(out.map(said) == ["running true", "done", "done"])
+    #expect(out.map(chipSummary(of:)) == ["running true", "done", "done"])
   }
 
   /// OpenCode hands `chat.message` the message as its second argument, so a session named
@@ -116,7 +115,7 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
       .idle("parent/a"),
     ])
     #expect(
-      out.map(said) == [
+      out.map(chipSummary(of:)) == [
         "running true", "running started Explore", "running working Explore", "done",
         "running ended Explore",
       ],
@@ -133,7 +132,7 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
       .idle("parent/a"),
     ])
     #expect(
-      out.map(said) == [
+      out.map(chipSummary(of:)) == [
         "running true", "running started Explore", "running", "running ended Explore",
       ])
   }
@@ -143,7 +142,8 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
       .created(child: "a", of: "parent", agent: "Plan"),
       .asked("parent/a", permission: "bash", pattern: "echo hi"),
     ])
-    #expect(out.map(said) == ["running started Plan", "attention working Plan bash echo hi"])
+    #expect(
+      out.map(chipSummary(of:)) == ["running started Plan", "attention working Plan bash echo hi"])
   }
 
   /// A child's id outlives its end, so a late event of its own is not read as
@@ -155,7 +155,7 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
       .idle("parent/a"),
       .tool(session: "parent/a"),
     ])
-    #expect(out.map(said) == ["running started Explore", "running ended Explore"])
+    #expect(out.map(chipSummary(of:)) == ["running started Explore", "running ended Explore"])
   }
 
   /// With more than one place, the cycling child would push another's id out, and that
@@ -172,7 +172,7 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
     }
     steps.append(.idle("parent/b"))
 
-    let out = try reports(of: steps).map(said)
+    let out = try reports(of: steps).map(chipSummary(of:))
     #expect(out.last == "running ended Explore", "b's late idle says nothing")
     #expect(!out.contains("done"), "and is not read as the parent's Done")
   }
@@ -184,7 +184,7 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
       of: [.message(session: "parent"), .message(session: "parent/a"), .idle("parent/a")],
       sessions: ["parent/a": ["id": "parent/a", "parentID": "parent"]])
     #expect(
-      out.map(said) == [
+      out.map(chipSummary(of:)) == [
         "running true", "running started", "running working", "running ended",
       ])
   }
@@ -193,7 +193,7 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
     let out = try reports(
       of: [.message(session: "parent"), .idle("parent")],
       sessions: ["parent": ["throws": "true"]])
-    #expect(out.map(said) == ["running true", "done"])
+    #expect(out.map(chipSummary(of:)) == ["running true", "done"])
   }
 
   @Test(arguments: [[:], ["parent": ["hangs": "true"]]])
@@ -204,7 +204,9 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
         .idle("parent"),
       ],
       sessions: sessions)
-    #expect(out.reports.map(said) == ["running true", "running", "done"], "the second collapses")
+    #expect(
+      out.reports.map(chipSummary(of:)) == ["running true", "running", "done"],
+      "the second collapses")
     #expect(out.waits == 1)
   }
 
@@ -212,7 +214,7 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
     let out = try reports(
       of: [.message(session: "parent/a"), .pause, .idle("parent/a")],
       sessions: ["parent/a": ["id": "parent/a", "parentID": "parent", "late": "true"]])
-    #expect(out.map(said) == ["running true", "running started", "running ended"])
+    #expect(out.map(chipSummary(of:)) == ["running true", "running started", "running ended"])
   }
 
   @Test func aChildPutBackByALookupIsNotStartedAgainByALateCreation() throws {
@@ -222,6 +224,6 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
         .idle("parent/a"),
       ],
       sessions: ["parent/a": ["id": "parent/a", "parentID": "parent"]])
-    #expect(out.map(said) == ["running started", "running working", "running ended"])
+    #expect(out.map(chipSummary(of:)) == ["running started", "running working", "running ended"])
   }
 }

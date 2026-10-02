@@ -6,25 +6,23 @@ import Testing
 
 @Suite
 struct SharedProjectSettingsTests {
-  private func decode(_ json: String) throws -> SharedProjectSettings {
-    try decodeJSON(SharedProjectSettings.self, json)
-  }
-
   @Test func everyFieldIsOptionalAndAWrongTypeCostsThatFieldOnly() throws {
-    let shared = try decode(
+    let shared = try decodeJSON(
+      SharedProjectSettings.self,
       #"{ "branchPrefix": "team/", "iconTint": "blue", "postCreateHook": ["npm"], "iconGlyph": "🚀" }"#
     )
     #expect(shared.branchPrefix == "team/")
     #expect(shared.iconTint == nil && shared.postCreateHook == nil)
     #expect(shared.iconGlyph == "🚀")
-    #expect(try decode("{}") == SharedProjectSettings())
-    #expect(throws: DecodingError.self) { try decode("[1, 2]") }
+    #expect(try decodeJSON(SharedProjectSettings.self, "{}") == SharedProjectSettings())
+    #expect(throws: DecodingError.self) { try decodeJSON(SharedProjectSettings.self, "[1, 2]") }
   }
 
   /// A blank hook is not a hook to be trusted, and a blank file list links
   /// nothing, so for those blank and absent come to the same thing.
   @Test func blankStringsReadAsAbsentWhereNoneAndNoOpinionAgree() throws {
-    let shared = try decode(
+    let shared = try decodeJSON(
+      SharedProjectSettings.self,
       #"{ "preCreateHook": "", "postCreateHook": "  ", "linkedPaths": "", "iconGlyph": "" }"#)
     #expect(shared.preCreateHook == nil && shared.postCreateHook == nil)
     #expect(shared.linkedPaths == nil && shared.iconGlyph == nil)
@@ -34,14 +32,15 @@ struct SharedProjectSettingsTests {
   /// The three worktree fields are the exception: blank is the only way they
   /// say "none", so a file that says it must be able to.
   @Test func aBlankWorktreeFieldIsAnOpinionAndNotAnAbsence() throws {
-    let shared = try decode(
+    let shared = try decodeJSON(
+      SharedProjectSettings.self,
       #"{ "worktreeDirectory": "  ", "branchPrefix": "", "defaultBranch": "" }"#)
     #expect(shared.worktreeDirectory == "  ")
     #expect(shared.branchPrefix == "")
     #expect(shared.defaultBranch == "")
 
     let layered = ProjectSettings().layered(over: shared)
-    let defaults = WorktreeSettings(worktreeDirectory: "/global/trees", branchPrefix: "team/")
+    let defaults = WorktreeSettings.globalDefaults
     #expect(
       layered.effectiveWorktreeSettings(defaults: defaults).branchPrefix == "",
       "the file's no-prefix beats the reader's global")
@@ -68,23 +67,26 @@ struct SharedProjectSettingsTests {
   /// An order a newer build named, or a typo someone committed, must not
   /// cost the rest of the file or override the user's own choice.
   @Test func anOrderTheBuildDoesNotKnowCostsThatKeyOnly() throws {
-    let shared = try decode(
+    let shared = try decodeJSON(
+      SharedProjectSettings.self,
       #"{ "worktreeSortOrder": "byMergeState", "branchPrefix": "team/" }"#)
     #expect(shared.worktreeSortOrder == nil)
     #expect(shared.branchPrefix == "team/")
     #expect(ProjectSettings().layered(over: shared).worktreeSortOrder == nil, "follows the global")
 
-    let wrongType = try decode(#"{ "worktreeSortOrder": 3 }"#)
+    let wrongType = try decodeJSON(SharedProjectSettings.self, #"{ "worktreeSortOrder": 3 }"#)
     #expect(wrongType.worktreeSortOrder == nil)
-    let wrongFlag = try decode(
+    let wrongFlag = try decodeJSON(
+      SharedProjectSettings.self,
       #"{ "showsActiveWorktreesFirst": "yes", "worktreeSortOrder": "createdOldestFirst" }"#)
     #expect(wrongFlag.showsActiveWorktreesFirst == nil)
     #expect(wrongFlag.worktreeSortOrder == .createdOldestFirst, "the good key survives")
   }
 
   @Test func aFlagOfTheWrongTypeCostsThatFlagOnly() throws {
-    let shared = try decode(#"{ "autoStartAgent": "yes", "opensTerminalOnCreate": false }"#)
-    #expect(shared.autoStartAgent == nil)
+    let shared = try decodeJSON(
+      SharedProjectSettings.self, #"{ "autoStartAgent": "yes", "opensTerminalOnCreate": false }"#)
+    #expect(shared.autoStartsAgent == nil)
     #expect(shared.opensTerminalOnCreate == false)
   }
 
@@ -126,7 +128,7 @@ struct SharedProjectSettingsTests {
   @Test func aWhitespaceOnlyHookOfTheUsersTurnsTheFilesOff() throws {
     let shared = try writtenAndReadBack(SharedProjectSettings(postCreateHook: "npm ci"))
     var settings = ProjectSettings(postCreateHook: " ")
-    settings.trustDecisions = [TrustDecision(digest: try #require(shared.digest), trusted: true)]
+    settings.trustDecisions = [TrustDecision(digest: try #require(shared.digest), isTrusted: true)]
     let optedOut = settings.layered(over: shared)
     #expect(optedOut.postCreateHook == " ", "kept as the user's none, not replaced")
   }

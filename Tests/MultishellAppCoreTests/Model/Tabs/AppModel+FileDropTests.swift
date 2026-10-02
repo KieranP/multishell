@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import TestScratch
 import Testing
 
 @testable import MultishellAppCore
@@ -7,160 +8,164 @@ import Testing
 @Suite @MainActor
 struct AppModelFileDropTests {
   @Test func filesDroppedOnAShellArriveAsQuotedPaths() {
-    let h = Harness()
-    h.model.select(h.main)
-    let session = h.model.workspace.sessions(in: h.main.id)[0]
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let session = harness.model.workspace.sessions(in: harness.main.id)[0]
 
-    let dropped = h.model.dropFiles(
-      [h.main.path.appendingPathComponent("a.swift")], into: session.id)
+    let dropped = harness.model.dropFiles(
+      [harness.main.path.appendingPathComponent("a.swift")], into: session.id)
 
     #expect(dropped)
-    #expect(h.engine.pasted.count == 1)
-    #expect(h.engine.pasted[0].id == session.id)
-    #expect(h.engine.pasted[0].text == "\(h.main.path.path)/a.swift ")
+    #expect(harness.engine.pasted.count == 1)
+    #expect(harness.engine.pasted[0].id == session.id)
+    #expect(harness.engine.pasted[0].text == "\(harness.main.path.path)/a.swift ")
   }
 
   @Test func filesDroppedOnAClaudeCodeTabArriveAsMentions() {
-    let h = Harness()
-    h.model.select(h.main)
-    h.store.openTab(in: h.main.id, title: "Claude Code", agentID: AgentCatalogue.claudeID)
-    h.model.reconcileSessions(takingFocus: true)
-    guard let session = h.model.workspace.sessions(in: h.main.id).last else {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    harness.store.openTab(
+      in: harness.main.id, title: "Claude Code", agentID: AgentCatalogue.claudeID)
+    harness.model.reconcileSessions(takingFocus: true)
+    guard let session = harness.model.workspace.sessions(in: harness.main.id).last else {
       return #expect(Bool(false), "the agent tab has a session")
     }
 
-    let dropped = h.model.dropFiles(
+    let dropped = harness.model.dropFiles(
       [
-        h.main.path.appendingPathComponent("Sources/App.swift"),
-        h.main.path.appendingPathComponent("README.md"),
+        harness.main.path.appendingPathComponent("Sources/App.swift"),
+        harness.main.path.appendingPathComponent("README.md"),
       ], into: session.id)
 
     #expect(dropped)
-    #expect(h.engine.pasted.map(\.text) == ["@Sources/App.swift @README.md "])
+    #expect(harness.engine.pasted.map(\.text) == ["@Sources/App.swift @README.md "])
   }
 
   /// The common case: the user types `claude` at a plain shell prompt, so
   /// the tab has no agent id and the hooks are what say who is there.
   @Test func filesDroppedOnAnAgentStartedByHandArriveAsMentions() {
-    let h = Harness()
-    h.model.select(h.main)
-    let session = h.model.workspace.sessions(in: h.main.id)[0]
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let session = harness.model.workspace.sessions(in: harness.main.id)[0]
     #expect(session.agentID == nil, "a plain shell tab")
 
-    h.stateSource.send(
+    harness.stateSource.send(
       SessionStateReport(
         state: .idle, sessionID: session.id, pid: ProcessInfo.processInfo.processIdentifier,
         agentID: AgentCatalogue.claudeID))
-    h.model.dropFiles(
-      [h.main.path.appendingPathComponent("Sources/App.swift")], into: session.id)
+    harness.model.dropFiles(
+      [harness.main.path.appendingPathComponent("Sources/App.swift")], into: session.id)
 
-    #expect(h.engine.pasted.map(\.text) == ["@Sources/App.swift "])
+    #expect(harness.engine.pasted.map(\.text) == ["@Sources/App.swift "])
   }
 
   /// And when it quits, the prompt is the shell's again. Claude's hooks
   /// report its own pid, so a pid that has left the table is the signal.
   @Test func anAgentThatHasQuitLeavesThePaneAPlainShell() {
-    let h = Harness()
-    h.model.select(h.main)
-    let session = h.model.workspace.sessions(in: h.main.id)[0]
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let session = harness.model.workspace.sessions(in: harness.main.id)[0]
 
-    h.stateSource.send(
+    harness.stateSource.send(
       SessionStateReport(
         state: .done, sessionID: session.id, pid: deadPID(), agentID: AgentCatalogue.claudeID))
-    h.model.dropFiles([h.main.path.appendingPathComponent("a.swift")], into: session.id)
+    harness.model.dropFiles([harness.main.path.appendingPathComponent("a.swift")], into: session.id)
 
-    #expect(h.engine.pasted.map(\.text) == ["\(h.main.path.path)/a.swift "])
+    #expect(harness.engine.pasted.map(\.text) == ["\(harness.main.path.path)/a.swift "])
   }
 
   @Test func anAgentThisBuildDoesNotKnowGetsAPlainPath() {
-    let h = Harness()
-    h.model.select(h.main)
-    let session = h.model.workspace.sessions(in: h.main.id)[0]
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let session = harness.model.workspace.sessions(in: harness.main.id)[0]
 
-    h.stateSource.send(
+    harness.stateSource.send(
       SessionStateReport(
         state: .running, sessionID: session.id,
         pid: ProcessInfo.processInfo.processIdentifier, agentID: "future-agent"))
-    h.model.dropFiles([h.main.path.appendingPathComponent("a.swift")], into: session.id)
+    harness.model.dropFiles([harness.main.path.appendingPathComponent("a.swift")], into: session.id)
 
-    #expect(h.engine.pasted.map(\.text) == ["\(h.main.path.path)/a.swift "])
+    #expect(harness.engine.pasted.map(\.text) == ["\(harness.main.path.path)/a.swift "])
   }
 
   @Test func aDropFocusesThePaneItLandedIn() {
-    let h = Harness()
-    h.model.select(h.main)
-    let first = h.model.workspace.sessions(in: h.main.id)[0].id
-    h.model.splitActivePane(.horizontal)
-    guard let second = h.model.workspace.activeTab(in: h.main.id)?.focusedSessionID,
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let first = harness.model.workspace.sessions(in: harness.main.id)[0].id
+    harness.model.splitActivePane(.horizontal)
+    guard let second = harness.model.workspace.activeTab(in: harness.main.id)?.focusedSessionID,
       second != first
     else { return #expect(Bool(false), "the split made a second pane and focused it") }
 
-    h.model.dropFiles([h.main.path.appendingPathComponent("a.swift")], into: first)
+    harness.model.dropFiles([harness.main.path.appendingPathComponent("a.swift")], into: first)
 
-    #expect(h.model.workspace.activeTab(in: h.main.id)?.focusedSessionID == first)
-    #expect(h.engine.focused.last == first)
+    #expect(harness.model.workspace.activeTab(in: harness.main.id)?.focusedSessionID == first)
+    #expect(harness.engine.focused.last == first)
   }
 
   /// A promised drag's files land after the drop, when the user may have moved on. Taking
   /// the focus then would switch the worktree's tab and save that.
   @Test func aDropWhoseFilesArrivedLateDoesNotTakeTheFocusBack() {
-    let h = Harness()
-    h.model.select(h.main)
-    let first = h.model.workspace.sessions(in: h.main.id)[0].id
-    h.model.splitActivePane(.horizontal)
-    guard let second = h.model.workspace.activeTab(in: h.main.id)?.focusedSessionID,
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let first = harness.model.workspace.sessions(in: harness.main.id)[0].id
+    harness.model.splitActivePane(.horizontal)
+    guard let second = harness.model.workspace.activeTab(in: harness.main.id)?.focusedSessionID,
       second != first
     else { return #expect(Bool(false), "the split made a second pane and focused it") }
 
-    let dropped = h.model.dropFiles(
-      [h.main.path.appendingPathComponent("a.swift")], into: first, takingFocus: false)
+    let dropped = harness.model.dropFiles(
+      [harness.main.path.appendingPathComponent("a.swift")], into: first, takingFocus: false)
 
     #expect(dropped, "the files are still pasted where they were dropped")
-    #expect(h.engine.pasted.last?.id == first)
-    #expect(h.model.workspace.activeTab(in: h.main.id)?.focusedSessionID == second)
-    #expect(h.engine.focused.last != first)
+    #expect(harness.engine.pasted.last?.id == first)
+    #expect(harness.model.workspace.activeTab(in: harness.main.id)?.focusedSessionID == second)
+    #expect(harness.engine.focused.last != first)
   }
 
   @Test func aDropOnATabWithNoShellRunningIsRefused() {
-    let h = Harness()
+    let harness = Harness()
     // A tab in a worktree that has never been visited has no shell: nothing
     // is warm until it is selected.
-    guard let tab = h.store.openTab(in: h.feature.id) else {
+    guard let tab = harness.store.openTab(in: harness.feature.id) else {
       return #expect(Bool(false), "the tab opened")
     }
     let session = tab.focusedSessionID
 
-    let dropped = h.model.dropFiles(
-      [h.feature.path.appendingPathComponent("a.swift")], into: session)
+    let dropped = harness.model.dropFiles(
+      [harness.feature.path.appendingPathComponent("a.swift")], into: session)
 
     #expect(!dropped)
-    #expect(!h.model.acceptsFileDrop(into: session))
-    #expect(h.engine.pasted.isEmpty)
+    #expect(!harness.model.acceptsFileDrop(into: session))
+    #expect(harness.engine.pasted.isEmpty)
   }
 
-  @Test func aDropOfNoFilesIsRefused() {
-    let h = Harness()
-    h.model.select(h.main)
-    let session = h.model.workspace.sessions(in: h.main.id)[0]
-    #expect(!h.model.dropFiles([], into: session.id))
+  @Test func aDropOfNoFilesOrOnlyUnpastableNamesIsRefused() {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let session = harness.model.workspace.sessions(in: harness.main.id)[0]
+    #expect(!harness.model.dropFiles([], into: session.id))
     #expect(
-      !h.model.dropFiles([h.main.path.appendingPathComponent("two\nlines.md")], into: session.id),
+      !harness.model.dropFiles(
+        [harness.main.path.appendingPathComponent("two\nlines.md")], into: session.id),
       "a name a terminal would act on leaves nothing to paste")
-    #expect(h.engine.pasted.isEmpty)
+    #expect(harness.engine.pasted.isEmpty)
   }
 
   /// A session whose surface never came up takes no text, and the drag is told so rather
   /// than the files going nowhere.
   @Test func aDropTheEngineCouldNotTakeIsRefused() {
-    let h = Harness()
-    h.model.select(h.main)
-    let session = h.model.workspace.sessions(in: h.main.id)[0]
-    h.engine.liveSessionIDs.remove(session.id)
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let session = harness.model.workspace.sessions(in: harness.main.id)[0]
+    harness.engine.liveSessionIDs.remove(session.id)
 
-    #expect(!h.model.dropFiles([h.main.path.appendingPathComponent("a.swift")], into: session.id))
-    #expect(h.engine.pasted.isEmpty)
     #expect(
-      h.model.workspace.activeTab(in: h.main.id)?.focusedSessionID == session.id,
+      !harness.model.dropFiles(
+        [harness.main.path.appendingPathComponent("a.swift")], into: session.id))
+    #expect(harness.engine.pasted.isEmpty)
+    #expect(
+      harness.model.workspace.activeTab(in: harness.main.id)?.focusedSessionID == session.id,
       "and nothing else moved")
   }
 }

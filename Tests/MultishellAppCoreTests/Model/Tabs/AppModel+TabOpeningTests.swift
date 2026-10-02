@@ -7,151 +7,158 @@ import Testing
 @Suite @MainActor
 struct AppModelTabOpeningTests {
   @Test func newAgentTabRecordsTheIdAndOpensTheAgentThroughTheLoginShell() {
-    let h = Harness()
-    h.model.setPreferredAgent("claude")
-    h.model.select(h.main)
+    let harness = Harness()
+    harness.model.setPreferredAgent("claude")
+    harness.model.select(harness.main)
 
-    h.model.newAgentTab()
+    harness.model.newAgentTab()
 
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-    let session = h.model.workspace.session(tab.focusedSessionID)!
+    let tab = harness.model.workspace.activeTab(in: harness.main.id)!
+    let session = harness.model.workspace.session(tab.focusedSessionID)!
     #expect(session.agentID == "claude")
     #expect(session.command == nil, "the store never holds the command line")
-    #expect(h.model.title(of: tab) == "Claude Code")
-    let opened = h.engine.opened.last!
+    #expect(harness.model.title(of: tab) == "Claude Code")
+    let opened = harness.engine.opened.last!
     #expect(opened.id == session.id)
     #expect(opened.command?.last?.hasPrefix("claude; ") == true, "\(opened.command ?? [])")
     #expect(opened.command?.last?.contains("exec ") == true, "a shell takes over after the agent")
   }
 
   @Test func autoStartMakesNewTabAndTheFirstTabTheAgentButNeverASplit() {
-    let h = Harness()
-    h.model.setPreferredAgent("claude")
-    h.model.setAutoStartAgent(true)
+    let harness = Harness()
+    harness.model.setPreferredAgent("claude")
+    harness.model.setAutoStartsAgent(true)
 
-    h.model.select(h.main)
-    let first = h.model.workspace.activeTab(in: h.main.id)!
+    harness.model.select(harness.main)
+    let first = harness.model.workspace.activeTab(in: harness.main.id)!
     #expect(
-      h.model.workspace.session(first.focusedSessionID)?.agentID == "claude",
+      harness.model.workspace.session(first.focusedSessionID)?.agentID == "claude",
       "the first tab after select, which is what follows a create")
-    #expect(h.model.title(of: first) == "Claude Code")
+    #expect(harness.model.title(of: first) == "Claude Code")
 
-    h.model.newTab()
-    let second = h.model.workspace.activeTab(in: h.main.id)!
-    #expect(h.model.workspace.session(second.focusedSessionID)?.agentID == "claude")
+    harness.model.newTab()
+    let second = harness.model.workspace.activeTab(in: harness.main.id)!
+    #expect(harness.model.workspace.session(second.focusedSessionID)?.agentID == "claude")
 
-    h.model.splitActivePane(.horizontal)
-    let split = h.model.workspace.tab(second.id)!
+    harness.model.splitActivePane(.horizontal)
+    let split = harness.model.workspace.tab(second.id)!
     let pane = split.sessionIDs.first { $0 != second.focusedSessionID }!
-    #expect(h.model.workspace.session(pane)?.agentID == nil, "splits stay plain shells")
+    #expect(harness.model.workspace.session(pane)?.agentID == nil, "splits stay plain shells")
 
-    h.model.newShellTab()
-    let shell = h.model.workspace.activeTab(in: h.main.id)!
+    harness.model.newShellTab()
+    let shell = harness.model.workspace.activeTab(in: harness.main.id)!
     #expect(
-      h.model.workspace.session(shell.focusedSessionID)?.agentID == nil, "a shell stays reachable")
+      harness.model.workspace.session(shell.focusedSessionID)?.agentID == nil,
+      "a shell stays reachable")
   }
 
   @Test func autoStartOffOrNoAgentOpensShellsAndTheProjectOverrideWins() {
-    let h = Harness()
-    h.model.setPreferredAgent("claude")
-    h.model.select(h.main)
+    let harness = Harness()
+    harness.model.setPreferredAgent("claude")
+    harness.model.select(harness.main)
     #expect(
-      h.model.workspace.session(h.model.workspace.activeTab(in: h.main.id)!.focusedSessionID)?
+      harness.model.workspace.session(
+        harness.model.workspace.activeTab(in: harness.main.id)!.focusedSessionID)?
         .agentID == nil, "off by default")
 
-    h.model.updateSettings(ProjectSettings(autoStartAgent: true), for: h.project)
-    h.model.newTab()
+    harness.model.setSettings(ProjectSettings(autoStartsAgent: true), for: harness.project)
+    harness.model.newTab()
     #expect(
-      h.model.workspace.session(h.model.workspace.activeTab(in: h.main.id)!.focusedSessionID)?
+      harness.model.workspace.session(
+        harness.model.workspace.activeTab(in: harness.main.id)!.focusedSessionID)?
         .agentID == "claude", "the project override turns it on")
 
-    h.model.setAutoStartAgent(true)
-    h.model.updateSettings(ProjectSettings(autoStartAgent: false), for: h.project)
-    h.model.newTab()
+    harness.model.setAutoStartsAgent(true)
+    harness.model.setSettings(ProjectSettings(autoStartsAgent: false), for: harness.project)
+    harness.model.newTab()
     #expect(
-      h.model.workspace.session(h.model.workspace.activeTab(in: h.main.id)!.focusedSessionID)?
+      harness.model.workspace.session(
+        harness.model.workspace.activeTab(in: harness.main.id)!.focusedSessionID)?
         .agentID == nil, "the project override turns it off")
 
-    h.model.updateSettings(ProjectSettings(preferredAgentID: "none"), for: h.project)
-    h.model.newTab()
+    harness.model.setSettings(ProjectSettings(preferredAgentID: "none"), for: harness.project)
+    harness.model.newTab()
     #expect(
-      h.model.workspace.session(h.model.workspace.activeTab(in: h.main.id)!.focusedSessionID)?
+      harness.model.workspace.session(
+        harness.model.workspace.activeTab(in: harness.main.id)!.focusedSessionID)?
         .agentID == nil, "auto-start with no agent in force is a shell")
   }
 
   @Test func aNamedAgentTabNeedsNoPreferredAgentAndOpensInTheGroupGiven() {
-    let h = Harness()
-    h.model.select(h.main)
-    h.model.newTab()
-    h.model.moveActiveTabToNewGroup()
-    let groups = h.model.workspace.groups(in: h.main.id)
-    #expect(h.model.effectiveAgentID(for: h.main) == nil)
-    h.model.presentedError = nil
+    let harness = Harness()
+    harness.model.select(harness.main)
+    harness.model.newTab()
+    harness.model.moveActiveTabToNewGroup()
+    let groups = harness.model.workspace.groups(in: harness.main.id)
+    #expect(harness.model.effectiveAgentID(for: harness.main) == nil)
+    harness.model.presentedError = nil
 
-    h.model.newAgentTab("opencode", in: groups[0].id)
+    harness.model.newAgentTab("opencode", in: groups[0].id)
 
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    let tab = harness.model.workspace.activeTab(in: harness.main.id)!
     #expect(tab.groupID == groups[0].id)
-    #expect(h.model.workspace.session(tab.focusedSessionID)?.agentID == "opencode")
-    #expect(h.model.title(of: tab) == "OpenCode")
-    #expect(h.model.presentedError == nil, "the strip named the agent, so none was chosen for it")
+    #expect(harness.model.workspace.session(tab.focusedSessionID)?.agentID == "opencode")
+    #expect(harness.model.title(of: tab) == "OpenCode")
+    #expect(
+      harness.model.presentedError == nil, "the strip named the agent, so none was chosen for it")
   }
 
   @Test func theNewTabMenusShellTabOpensInTheGroupGiven() {
-    let h = Harness()
-    h.model.select(h.main)
-    h.model.setPreferredAgent("claude")
-    h.model.setAutoStartAgent(true)
-    h.model.newTab()
-    h.model.moveActiveTabToNewGroup()
-    let groups = h.model.workspace.groups(in: h.main.id)
+    let harness = Harness()
+    harness.model.select(harness.main)
+    harness.model.setPreferredAgent("claude")
+    harness.model.setAutoStartsAgent(true)
+    harness.model.newTab()
+    harness.model.moveActiveTabToNewGroup()
+    let groups = harness.model.workspace.groups(in: harness.main.id)
 
-    h.model.newShellTab(in: groups[0].id)
+    harness.model.newShellTab(in: groups[0].id)
 
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    let tab = harness.model.workspace.activeTab(in: harness.main.id)!
     #expect(tab.groupID == groups[0].id)
-    #expect(h.model.workspace.session(tab.focusedSessionID)?.agentID == nil)
+    #expect(harness.model.workspace.session(tab.focusedSessionID)?.agentID == nil)
   }
 
   @Test func aMenusNewShellTabSelectsItsWorktreeAndOpensOnlyThatShell() throws {
-    let h = Harness()
-    h.model.setPreferredAgent("claude")
-    h.model.setAutoStartAgent(true)
-    h.model.select(h.main)
+    let harness = Harness()
+    harness.model.setPreferredAgent("claude")
+    harness.model.setAutoStartsAgent(true)
+    harness.model.select(harness.main)
 
-    h.model.newShellTab(selecting: h.feature)
+    harness.model.newShellTab(selecting: harness.feature)
 
-    #expect(h.model.workspace.selectedWorktreeID == h.feature.id)
-    let tabs = h.model.workspace.tabs(in: h.feature.id)
+    #expect(harness.model.workspace.selectedWorktreeID == harness.feature.id)
+    let tabs = harness.model.workspace.tabs(in: harness.feature.id)
     #expect(tabs.count == 1, "no first tab opened on the way")
-    let session = try #require(h.model.workspace.session(tabs[0].focusedSessionID))
+    let session = try #require(harness.model.workspace.session(tabs[0].focusedSessionID))
     #expect(session.agentID == nil)
   }
 
   @Test func aMenusNewAgentTabSelectsItsWorktreeAndStartsThePreferredAgent() throws {
-    let h = Harness()
-    h.model.setPreferredAgent("claude")
-    h.model.select(h.main)
+    let harness = Harness()
+    harness.model.setPreferredAgent("claude")
+    harness.model.select(harness.main)
 
-    h.model.newAgentTab(selecting: h.feature)
+    harness.model.newAgentTab(selecting: harness.feature)
 
-    #expect(h.model.workspace.selectedWorktreeID == h.feature.id)
-    let tabs = h.model.workspace.tabs(in: h.feature.id)
+    #expect(harness.model.workspace.selectedWorktreeID == harness.feature.id)
+    let tabs = harness.model.workspace.tabs(in: harness.feature.id)
     #expect(tabs.count == 1)
-    let session = try #require(h.model.workspace.session(tabs[0].focusedSessionID))
+    let session = try #require(harness.model.workspace.session(tabs[0].focusedSessionID))
     #expect(session.agentID == "claude")
   }
 
   @Test func aWorktreeThatCannotBeSelectedGetsNoTab() throws {
-    let h = Harness()
-    h.model.select(h.main)
-    try FileManager.default.removeItem(at: h.feature.path)
+    let harness = Harness()
+    harness.model.select(harness.main)
+    try FileManager.default.removeItem(at: harness.feature.path)
 
-    h.model.newShellTab(selecting: h.feature)
-    h.model.newAgentTab(selecting: h.feature)
+    harness.model.newShellTab(selecting: harness.feature)
+    harness.model.newAgentTab(selecting: harness.feature)
 
-    #expect(h.model.workspace.selectedWorktreeID == h.main.id)
-    #expect(h.model.workspace.tabs(in: h.feature.id).isEmpty)
-    #expect(h.model.workspace.tabs(in: h.main.id).count == 1, "nothing landed where it was")
+    #expect(harness.model.workspace.selectedWorktreeID == harness.main.id)
+    #expect(harness.model.workspace.tabs(in: harness.feature.id).isEmpty)
+    #expect(
+      harness.model.workspace.tabs(in: harness.main.id).count == 1, "nothing landed where it was")
   }
 }

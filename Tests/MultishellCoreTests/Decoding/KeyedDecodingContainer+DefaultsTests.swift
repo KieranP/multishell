@@ -17,10 +17,10 @@ struct KeyedDecodingContainerDefaultsTests {
   }
 
   @Test func theTolerantReadKeepsTheRestOfTheFile() throws {
-    let order = try decodeJSON(
+    let workspace = try decodeJSON(
       Workspace.self, #"{ "worktreeSortOrder": 12, "customShellPath": "/bin/fish" }"#)
-    #expect(order.worktreeSortOrder == WorktreeSortOrder.default)
-    #expect(order.customShellPath == "/bin/fish")
+    #expect(workspace.worktreeSortOrder == WorktreeSortOrder.default)
+    #expect(workspace.customShellPath == "/bin/fish")
 
     // The optional form, where absent is itself the answer.
     #expect(

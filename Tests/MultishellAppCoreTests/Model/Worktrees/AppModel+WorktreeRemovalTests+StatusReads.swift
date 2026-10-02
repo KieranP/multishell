@@ -1,105 +1,101 @@
 import Foundation
-import MultishellCore
 import TestScratch
-import TestSupport
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellCore
 
 extension AppModelWorktreeRemovalTests {
   @Test func askingToRemoveAWorktreeReadsItsStatusFirst() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    await h.model.createWorktree(branch: "side", basedOn: nil, createBranch: true, in: h.project)
-    let side = try #require(h.worktree(onBranch: "side"))
-    h.model.select(try #require(h.worktree(onBranch: "main")))
-    h.model.setExpanded(false, for: h.project)
-    try "x".write(
-      to: side.path.appendingPathComponent("dirty.txt"), atomically: true, encoding: .utf8)
-    for pending in h.model.pendingStatusRefreshes.values { pending.cancel() }
-    h.model.pendingStatusRefreshes = [:]
-    h.model.statuses = [:]
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    await harness.model.createWorktree(
+      branch: "side", basedOn: nil, createsBranch: true, in: harness.project)
+    let side = try #require(harness.worktree(onBranch: "side"))
+    harness.model.select(try #require(harness.worktree(onBranch: "main")))
+    harness.model.setExpanded(false, for: harness.project)
+    try harness.dirty(side)
+    harness.clearStatuses()
 
-    h.model.requestWorktreeRemoval(of: side)
+    harness.model.requestWorktreeRemoval(of: side)
 
-    try await waitUntil { h.model.pendingWorktreeRemoval != nil }
-    #expect(h.model.statuses[side.id]?.changedFiles == 1, "read before the dialog is built")
+    try await waitUntil { harness.model.pendingWorktreeRemoval != nil }
+    #expect(harness.model.statuses[side.id]?.changedFiles == 1, "read before the dialog is built")
   }
 
   @Test func aRemovalThatAsksNothingRequestedTwiceRunsOnce() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    await h.model.createWorktree(branch: "side", basedOn: nil, createBranch: true, in: h.project)
-    let side = try #require(h.worktree(onBranch: "side"))
-    h.model.select(try #require(h.worktree(onBranch: "main")))
-    h.model.setExpanded(false, for: h.project)
-    let log = h.root.appendingPathComponent("pre-delete.log")
-    h.model.updateSettings(
-      ProjectSettings(preDeleteHook: "echo ran >> \(log.path)"), for: h.project)
-    h.model.setConfirmsWorktreeRemoval(false)
-    h.model.setDeletesBranchWithWorktree(true)
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    await harness.model.createWorktree(
+      branch: "side", basedOn: nil, createsBranch: true, in: harness.project)
+    let side = try #require(harness.worktree(onBranch: "side"))
+    harness.model.select(try #require(harness.worktree(onBranch: "main")))
+    harness.model.setExpanded(false, for: harness.project)
+    let log = harness.root.appendingPathComponent("pre-delete.log")
+    harness.model.setSettings(
+      ProjectSettings(preDeleteHook: "echo ran >> \(log.path)"), for: harness.project)
+    harness.model.setConfirmsWorktreeRemoval(false)
+    harness.model.setDeletesBranchWithWorktree(true)
 
-    h.model.requestWorktreeRemoval(of: side)
-    h.model.requestWorktreeRemoval(of: side)
+    harness.model.requestWorktreeRemoval(of: side)
+    harness.model.requestWorktreeRemoval(of: side)
 
-    try await waitUntil { h.worktree(onBranch: "side") == nil }
-    await h.awaitOperationEnd(on: side.id)
+    try await waitUntil { harness.worktree(onBranch: "side") == nil }
+    await harness.awaitOperationEnd(on: side.id)
     let runs = try String(contentsOf: log, encoding: .utf8)
     #expect(runs == "ran\n")
   }
 
   @Test func aSlowWorktreeIsStillReadBeforeItsRemovalDialog() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    await h.model.createWorktree(branch: "side", basedOn: nil, createBranch: true, in: h.project)
-    let side = try #require(h.worktree(onBranch: "side"))
-    h.model.select(try #require(h.worktree(onBranch: "main")))
-    h.model.setExpanded(false, for: h.project)
-    try "x".write(
-      to: side.path.appendingPathComponent("dirty.txt"), atomically: true, encoding: .utf8)
-    for pending in h.model.pendingStatusRefreshes.values { pending.cancel() }
-    h.model.pendingStatusRefreshes = [:]
-    h.model.statuses = [:]
-    h.model.statusReads.pace = .standard
-    h.model.statusReads.remember([side.id: .seconds(10)])
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    await harness.model.createWorktree(
+      branch: "side", basedOn: nil, createsBranch: true, in: harness.project)
+    let side = try #require(harness.worktree(onBranch: "side"))
+    harness.model.select(try #require(harness.worktree(onBranch: "main")))
+    harness.model.setExpanded(false, for: harness.project)
+    try harness.dirty(side)
+    harness.clearStatuses()
+    harness.model.statusReads.pace = .standard
+    harness.model.statusReads.remember([side.id: .seconds(10)])
 
-    h.model.requestWorktreeRemoval(of: side)
+    harness.model.requestWorktreeRemoval(of: side)
 
-    try await waitUntil { h.model.pendingWorktreeRemoval != nil }
-    #expect(h.model.statuses[side.id]?.changedFiles == 1, "read before the dialog is built")
+    try await waitUntil { harness.model.pendingWorktreeRemoval != nil }
+    #expect(harness.model.statuses[side.id]?.changedFiles == 1, "read before the dialog is built")
   }
 
   @Test func aRowOnScreenThePaceHoldsBackIsStillReadBeforeItsRemovalDialog() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    await h.model.createWorktree(branch: "side", basedOn: nil, createBranch: true, in: h.project)
-    let side = try #require(h.worktree(onBranch: "side"))
-    h.model.select(try #require(h.worktree(onBranch: "main")))
-    try "x".write(
-      to: side.path.appendingPathComponent("dirty.txt"), atomically: true, encoding: .utf8)
-    for pending in h.model.pendingStatusRefreshes.values { pending.cancel() }
-    h.model.pendingStatusRefreshes = [:]
-    h.model.statuses = [:]
-    h.model.statusReads.pace = .standard
-    h.model.statusReads.remember([side.id: .seconds(3)])
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    await harness.model.createWorktree(
+      branch: "side", basedOn: nil, createsBranch: true, in: harness.project)
+    let side = try #require(harness.worktree(onBranch: "side"))
+    harness.model.select(try #require(harness.worktree(onBranch: "main")))
+    try harness.dirty(side)
+    harness.clearStatuses()
+    harness.model.statusReads.pace = .standard
+    harness.model.statusReads.remember([side.id: .seconds(3)])
 
-    await h.model.requestWorktreeRemoval(of: side)?.value
+    await harness.model.requestWorktreeRemoval(of: side)?.value
 
-    #expect(h.model.pendingWorktreeRemoval != nil)
-    #expect(h.model.statuses[side.id]?.changedFiles == 1, "read before the dialog is built")
+    #expect(harness.model.pendingWorktreeRemoval != nil)
+    #expect(harness.model.statuses[side.id]?.changedFiles == 1, "read before the dialog is built")
   }
 
   @Test func aRemovalReadLandingLateLeavesTheDialogThatOpenedMeanwhile() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    await h.model.createWorktree(branch: "gated", basedOn: nil, createBranch: true, in: h.project)
-    await h.model.createWorktree(branch: "quick", basedOn: nil, createBranch: true, in: h.project)
-    let gated = try #require(h.worktree(onBranch: "gated"))
-    let quick = try #require(h.worktree(onBranch: "quick"))
-    h.model.select(try #require(h.worktree(onBranch: "main")))
-    h.model.setExpanded(false, for: h.project)
-    let gate = h.root.appendingPathComponent("go")
-    let fake = try h.modelOnFakeGit(
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    await harness.model.createWorktree(
+      branch: "gated", basedOn: nil, createsBranch: true, in: harness.project)
+    await harness.model.createWorktree(
+      branch: "quick", basedOn: nil, createsBranch: true, in: harness.project)
+    let gated = try #require(harness.worktree(onBranch: "gated"))
+    let quick = try #require(harness.worktree(onBranch: "quick"))
+    harness.model.select(try #require(harness.worktree(onBranch: "main")))
+    harness.model.setExpanded(false, for: harness.project)
+    let gate = harness.root.appendingPathComponent("go")
+    let fake = try harness.modelOnFakeGit(
       """
       case "$PWD $*" in
         *gated*status*) while [ ! -f "\(gate.path)" ]; do sleep 0.02; done; printf '## gated\\n' ;;
@@ -108,7 +104,7 @@ extension AppModelWorktreeRemovalTests {
       """)
 
     fake.requestWorktreeRemoval(of: gated)
-    try await waitUntil { h.gitCalls().contains { $0.contains("status") } }
+    try await waitUntil { harness.statusRunCount() > 0 }
     fake.requestWorktreeRemoval(of: quick)
     try await waitUntil { fake.pendingWorktreeRemoval != nil }
     #expect(fake.pendingWorktreeRemoval?.worktree.id == quick.id)
@@ -121,45 +117,36 @@ extension AppModelWorktreeRemovalTests {
   }
 
   @Test func aRemovalAskedTwiceWhileItsStatusIsReadReadsItOnce() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    await h.model.createWorktree(branch: "gated", basedOn: nil, createBranch: true, in: h.project)
-    let gated = try #require(h.worktree(onBranch: "gated"))
-    h.model.select(try #require(h.worktree(onBranch: "main")))
-    h.model.setExpanded(false, for: h.project)
-    let gate = h.root.appendingPathComponent("go")
-    let fake = try h.modelOnFakeGit(
-      """
-      case "$*" in
-        *status*) while [ ! -f "\(gate.path)" ]; do sleep 0.02; done; printf '## gated\\n' ;;
-      esac
-      """)
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    await harness.model.createWorktree(
+      branch: "gated", basedOn: nil, createsBranch: true, in: harness.project)
+    let gated = try #require(harness.worktree(onBranch: "gated"))
+    harness.model.select(try #require(harness.worktree(onBranch: "main")))
+    harness.model.setExpanded(false, for: harness.project)
+    let gate = harness.root.appendingPathComponent("go")
+    let fake = try harness.modelWithStatusHeld(until: gate, answering: "gated")
 
     fake.requestWorktreeRemoval(of: gated)
     fake.requestWorktreeRemoval(of: gated)
-    try await waitUntil { h.statusRunCount() > 0 }
+    try await waitUntil { harness.statusRunCount() > 0 }
     try Data().write(to: gate)
     try await waitUntil { fake.pendingWorktreeRemoval != nil }
 
-    #expect(h.statusRunCount() == 1)
+    #expect(harness.statusRunCount() == 1)
   }
 
   @Test func aRemovalWhoseStatusReadHangsStillOpensItsDialog() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    await h.model.createWorktree(branch: "hung", basedOn: nil, createBranch: true, in: h.project)
-    let hung = try #require(h.worktree(onBranch: "hung"))
-    h.model.select(try #require(h.worktree(onBranch: "main")))
-    h.model.setExpanded(false, for: h.project)
-    let gate = h.root.appendingPathComponent("go")
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    await harness.model.createWorktree(
+      branch: "hung", basedOn: nil, createsBranch: true, in: harness.project)
+    let hung = try #require(harness.worktree(onBranch: "hung"))
+    harness.model.select(try #require(harness.worktree(onBranch: "main")))
+    harness.model.setExpanded(false, for: harness.project)
+    let gate = harness.root.appendingPathComponent("go")
     defer { try? Data().write(to: gate) }
-    let fake = try h.modelOnFakeGit(
-      """
-      case "$*" in
-        *status*) while [ ! -f "\(gate.path)" ] && [ -d "\(h.root.path)" ]; do sleep 0.02; done
-          printf '## hung\\n' ;;
-      esac
-      """)
+    let fake = try harness.modelWithStatusHeld(until: gate, answering: "hung")
     fake.removalStatusWait = .milliseconds(100)
 
     fake.requestWorktreeRemoval(of: hung)
@@ -171,21 +158,16 @@ extension AppModelWorktreeRemovalTests {
   }
 
   @Test func askingAgainWhileTheLastRemovalsReadStillHangsStartsNoOtherRead() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    await h.model.createWorktree(branch: "hung", basedOn: nil, createBranch: true, in: h.project)
-    let hung = try #require(h.worktree(onBranch: "hung"))
-    h.model.select(try #require(h.worktree(onBranch: "main")))
-    h.model.setExpanded(false, for: h.project)
-    let gate = h.root.appendingPathComponent("go")
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    await harness.model.createWorktree(
+      branch: "hung", basedOn: nil, createsBranch: true, in: harness.project)
+    let hung = try #require(harness.worktree(onBranch: "hung"))
+    harness.model.select(try #require(harness.worktree(onBranch: "main")))
+    harness.model.setExpanded(false, for: harness.project)
+    let gate = harness.root.appendingPathComponent("go")
     defer { try? Data().write(to: gate) }
-    let fake = try h.modelOnFakeGit(
-      """
-      case "$*" in
-        *status*) while [ ! -f "\(gate.path)" ] && [ -d "\(h.root.path)" ]; do sleep 0.02; done
-          printf '## hung\\n' ;;
-      esac
-      """)
+    let fake = try harness.modelWithStatusHeld(until: gate, answering: "hung")
     fake.removalStatusWait = .milliseconds(100)
     await fake.requestWorktreeRemoval(of: hung)?.value
     fake.pendingWorktreeRemoval = nil
@@ -200,21 +182,16 @@ extension AppModelWorktreeRemovalTests {
   @Test func anEarlierRemovalsReadLandingDuringTheNextStillLeavesAReadAfterTheClick()
     async throws
   {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    await h.model.createWorktree(branch: "slow", basedOn: nil, createBranch: true, in: h.project)
-    let slow = try #require(h.worktree(onBranch: "slow"))
-    h.model.select(try #require(h.worktree(onBranch: "main")))
-    h.model.setExpanded(false, for: h.project)
-    let gate = h.root.appendingPathComponent("go")
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    await harness.model.createWorktree(
+      branch: "slow", basedOn: nil, createsBranch: true, in: harness.project)
+    let slow = try #require(harness.worktree(onBranch: "slow"))
+    harness.model.select(try #require(harness.worktree(onBranch: "main")))
+    harness.model.setExpanded(false, for: harness.project)
+    let gate = harness.root.appendingPathComponent("go")
     defer { try? Data().write(to: gate) }
-    let fake = try h.modelOnFakeGit(
-      """
-      case "$*" in
-        *status*) while [ ! -f "\(gate.path)" ] && [ -d "\(h.root.path)" ]; do sleep 0.02; done
-          printf '## slow\\n' ;;
-      esac
-      """)
+    let fake = try harness.modelWithStatusHeld(until: gate, answering: "slow")
     fake.removalStatusWait = .milliseconds(100)
     await fake.requestWorktreeRemoval(of: slow)?.value
     fake.pendingWorktreeRemoval = nil
@@ -224,18 +201,19 @@ extension AppModelWorktreeRemovalTests {
     try Data().write(to: gate)
     await second?.value
 
-    #expect(h.statusRunCount() == 2, "the earlier read began before this click")
-    #expect(fake.pendingWorktreeRemoval?.changesUnread == false)
+    #expect(harness.statusRunCount() == 2, "the earlier read began before this click")
+    #expect(fake.pendingWorktreeRemoval?.hasUnreadChanges == false)
   }
 
   @Test func aRemovalWhoseStatusReadFailsSaysTheChangesWentUnread() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    await h.model.createWorktree(branch: "refused", basedOn: nil, createBranch: true, in: h.project)
-    let refused = try #require(h.worktree(onBranch: "refused"))
-    h.model.select(try #require(h.worktree(onBranch: "main")))
-    h.model.setExpanded(false, for: h.project)
-    let fake = try h.modelOnFakeGit(
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    await harness.model.createWorktree(
+      branch: "refused", basedOn: nil, createsBranch: true, in: harness.project)
+    let refused = try #require(harness.worktree(onBranch: "refused"))
+    harness.model.select(try #require(harness.worktree(onBranch: "main")))
+    harness.model.setExpanded(false, for: harness.project)
+    let fake = try harness.modelOnFakeGit(
       """
       case "$*" in
         *status*) exit 128 ;;
@@ -245,24 +223,24 @@ extension AppModelWorktreeRemovalTests {
     await fake.requestWorktreeRemoval(of: refused)?.value
 
     let pending = try #require(fake.pendingWorktreeRemoval)
-    #expect(pending.changesUnread)
+    #expect(pending.hasUnreadChanges)
   }
 
   @Test func aPollLandingAfterARemovalBeganIsDropped() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    let gate = h.root.appendingPathComponent("go")
-    let model = try h.modelOnFakeGit(
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let gate = harness.root.appendingPathComponent("go")
+    let model = try harness.modelOnFakeGit(
       """
       case "$*" in
         *status*) while [ ! -f "\(gate.path)" ]; do sleep 0.02; done
           printf '# branch.head main\\n1 .M N... 100644 100644 100644 a a x.txt\\n' ;;
       esac
       """)
-    let main = try #require(h.worktree(onBranch: "main"))
+    let main = try #require(harness.worktree(onBranch: "main"))
 
     let poll = Task { await model.refreshStatuses() }
-    try await waitUntil { h.gitCalls().contains { $0.contains("status") } }
+    try await waitUntil { harness.statusRunCount() > 0 }
     model.worktreeOperations.begin(.preDeleteHook, on: main.id)
     try Data().write(to: gate)
     await poll.value

@@ -43,8 +43,6 @@ struct TabGroupView: View {
       model: model,
       tabID: tab.id,
       node: tab.root,
-      focusedSessionID: tab.focusedSessionID,
-      isFocusedGroup: isFocusedGroup,
       showsFocusRing: model.showsFocusRing(in: tab),
       theme: theme
     )

@@ -1,5 +1,4 @@
 import Foundation
-import TestScratch
 import Testing
 
 @testable import MultishellCore
@@ -22,7 +21,7 @@ struct WorkspaceEffectiveSettingsTests {
     workspace.worktreeSortOrder = .createdOldestFirst
     workspace.showsActiveWorktreesFirst = true
 
-    #expect(workspace.worktreeSortOrder(for: project()) == .createdOldestFirst)
+    #expect(workspace.effectiveWorktreeSortOrder(for: project()) == .createdOldestFirst)
     #expect(workspace.showsActiveWorktreesFirst(for: project()))
   }
 
@@ -32,7 +31,7 @@ struct WorkspaceEffectiveSettingsTests {
     workspace.showsActiveWorktreesFirst = true
     let overridden = project(order: .committedNewestFirst, showsActiveFirst: false)
 
-    #expect(workspace.worktreeSortOrder(for: overridden) == .committedNewestFirst)
+    #expect(workspace.effectiveWorktreeSortOrder(for: overridden) == .committedNewestFirst)
     #expect(!workspace.showsActiveWorktreesFirst(for: overridden))
   }
 
@@ -44,7 +43,7 @@ struct WorkspaceEffectiveSettingsTests {
     workspace.worktreeSortOrder = .createdNewestFirst
     workspace.showsActiveWorktreesFirst = true
 
-    #expect(workspace.worktreeSortOrder(for: overridden) == .alphabetical)
+    #expect(workspace.effectiveWorktreeSortOrder(for: overridden) == .alphabetical)
     #expect(!workspace.showsActiveWorktreesFirst(for: overridden))
   }
 
@@ -107,18 +106,18 @@ struct WorkspaceEffectiveSettingsTests {
     workspace.preferredAgentID = "claude"
     let follows = Project(path: URL(fileURLWithPath: "/a"))
     let forcedOn = Project(
-      path: URL(fileURLWithPath: "/b"), settings: ProjectSettings(autoStartAgent: true))
+      path: URL(fileURLWithPath: "/b"), settings: ProjectSettings(autoStartsAgent: true))
     let forcedOff = Project(
-      path: URL(fileURLWithPath: "/c"), settings: ProjectSettings(autoStartAgent: false))
+      path: URL(fileURLWithPath: "/c"), settings: ProjectSettings(autoStartsAgent: false))
     let noAgent = Project(
       path: URL(fileURLWithPath: "/d"),
-      settings: ProjectSettings(preferredAgentID: "none", autoStartAgent: true))
+      settings: ProjectSettings(preferredAgentID: "none", autoStartsAgent: true))
 
     #expect(!workspace.autoStartsAgent(for: follows), "global off")
     #expect(workspace.autoStartsAgent(for: forcedOn))
     #expect(!workspace.autoStartsAgent(for: noAgent), "nothing to start")
 
-    workspace.autoStartAgent = true
+    workspace.autoStartsAgent = true
     #expect(workspace.autoStartsAgent(for: follows))
     #expect(!workspace.autoStartsAgent(for: forcedOff))
   }
@@ -126,10 +125,10 @@ struct WorkspaceEffectiveSettingsTests {
   @Test func autoStartOnCreationIsAskedApartFromAutoStartOnTabOpen() {
     var workspace = Workspace()
     workspace.preferredAgentID = "claude"
-    workspace.autoStartAgentOnCreate = true
+    workspace.autoStartsAgentOnCreate = true
     let follows = Project(path: URL(fileURLWithPath: "/a"))
     let forcedOff = Project(
-      path: URL(fileURLWithPath: "/b"), settings: ProjectSettings(autoStartAgentOnCreate: false))
+      path: URL(fileURLWithPath: "/b"), settings: ProjectSettings(autoStartsAgentOnCreate: false))
     let noAgent = Project(
       path: URL(fileURLWithPath: "/c"), settings: ProjectSettings(preferredAgentID: "none"))
 
@@ -148,12 +147,12 @@ struct WorkspaceEffectiveSettingsTests {
       settings: ProjectSettings(preferredShellID: "/usr/local/bin/fish"))
     let login = Project(
       path: URL(fileURLWithPath: "/repos/c"),
-      settings: ProjectSettings(preferredShellID: ShellCatalogue.loginShellID))
+      settings: ProjectSettings(preferredShellID: ShellChoice.loginShellID))
     #expect(workspace.effectiveShellPath(for: plain) == "/bin/bash")
     #expect(workspace.effectiveShellPath(for: fish) == "/usr/local/bin/fish")
     #expect(workspace.effectiveShellPath(for: login) == nil)
 
-    workspace.preferredShellID = ShellCatalogue.customID
+    workspace.preferredShellID = ShellChoice.customID
     workspace.customShellPath = "/opt/homebrew/bin/nu"
     #expect(workspace.effectiveShellPath(for: plain) == "/opt/homebrew/bin/nu")
     #expect(workspace.effectiveShellPath(for: fish) == "/usr/local/bin/fish")

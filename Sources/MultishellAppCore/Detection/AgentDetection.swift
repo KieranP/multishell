@@ -30,7 +30,7 @@ public struct AgentDetection: Equatable, Sendable {
   public func options(selected: String?) -> [DetectionOption] {
     DetectionOption.catalogueOptions(
       AgentCatalogue.agents.map { ($0.id, $0.name) },
-      installed: isInstalled,
+      isInstalled: isInstalled,
       selected: selected,
       noneID: AgentCatalogue.noneID,
       customID: AgentCatalogue.customID)

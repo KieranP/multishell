@@ -6,25 +6,28 @@ import Testing
 
 @Suite
 struct GitStatusBadgeDetailTests {
-  private func status(lines: Bool, files: Int = 0, ahead: Int = 0) -> WorktreeStatus {
+  private func status(
+    hasLineChanges: Bool, unscoredFiles: Int = 0, ahead: Int = 0
+  ) -> WorktreeStatus {
     var status = WorktreeStatus()
-    if lines {
+    if hasLineChanges {
       status.changedFiles = 1
       status.insertions = 12
     }
-    status.unscoredFiles = files
+    status.unscoredFiles = unscoredFiles
     status.ahead = ahead
     return status
   }
 
   @Test func aRowOutOfRoomDropsTheFileCountFirstThenTheArrows() {
-    let busy = status(lines: true, files: 3, ahead: 2)
+    let busy = status(hasLineChanges: true, unscoredFiles: 3, ahead: 2)
 
     #expect(GitStatusBadgeDetail.allCases.map { $0.showsFiles(of: busy) } == [true, false, false])
     #expect(GitStatusBadgeDetail.allCases.map { $0.showsArrows(of: busy) } == [true, true, false])
   }
 
   @Test func aBadgeOfArrowsAloneKeepsThemAtItsNarrowest() {
-    #expect(GitStatusBadgeDetail.essentials.showsArrows(of: status(lines: false, ahead: 2)))
+    #expect(
+      GitStatusBadgeDetail.essentials.showsArrows(of: status(hasLineChanges: false, ahead: 2)))
   }
 }

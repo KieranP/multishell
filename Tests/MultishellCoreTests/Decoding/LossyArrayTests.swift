@@ -7,14 +7,6 @@ import Testing
 /// used to move the whole state aside and the sidebar came up empty.
 @Suite
 struct LossyArrayTests {
-  private func tabJSON(root: String) -> String {
-    let session = UUID().uuidString
-    return #"""
-      { "id": "\#(UUID().uuidString)", "worktreeID": "/repos/demo",
-        "root": \#(root), "focusedSessionID": "\#(session)" }
-      """#
-  }
-
   @Test func aTabWithAPaneKindFromANewerBuildIsDroppedAndTheProjectsKept() throws {
     let good = tabJSON(root: #"{ "terminal": { "_0": "\#(UUID().uuidString)" } }"#)
     let newer = tabJSON(root: #"{ "tabs": { "children": [] } }"#)
@@ -30,8 +22,6 @@ struct LossyArrayTests {
   }
 
   @Test func badElementsOfEveryShapeAreSkippedWithoutStalling() throws {
-    // A scalar, an object missing required keys, an invalid UUID, then a
-    // sound element: the decoder must step past each bad one and finish.
     let sound = tabJSON(root: #"{ "terminal": { "_0": "\#(UUID().uuidString)" } }"#)
     let workspace = try decodeJSON(
       Workspace.self,

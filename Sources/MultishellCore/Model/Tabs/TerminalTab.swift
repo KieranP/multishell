@@ -1,17 +1,17 @@
 import Foundation
 
-/// One tab in a worktree's terminal pane, owning a pane tree and naming its
+/// One tab in a worktree's terminal area, owning a pane tree and naming its
 /// group. The worktree sits beside it, deciding where its shells start.
 public struct TerminalTab: Identifiable, Codable, Hashable, Sendable {
   public let id: UUID
-  public var worktreeID: Worktree.ID
+  public internal(set) var worktreeID: Worktree.ID
   /// The group this tab's strip is part of; see `TabGroup`.
-  public var groupID: TabGroup.ID
-  public var root: PaneNode
-  public var focusedSessionID: TerminalSession.ID
+  public internal(set) var groupID: TabGroup.ID
+  public internal(set) var root: PaneNode
+  public internal(set) var focusedSessionID: TerminalSession.ID
   /// Set by the user. While present it wins over whatever the shell reports
   /// through OSC; clearing it hands the title back to the shell.
-  public var customTitle: String?
+  public internal(set) var customTitle: String?
 
   init(
     id: UUID = UUID(),
@@ -52,8 +52,8 @@ public struct TerminalTab: Identifiable, Codable, Hashable, Sendable {
   public var sessionIDs: [TerminalSession.ID] { root.sessionIDs }
   public var isSplit: Bool { !root.isLeaf }
 
-  /// Where a dragged tab lands relative to the tab it was dropped on. Nested
-  /// because SwiftUI has a `TabPlacement` a view would have to disambiguate.
+  /// Where a dragged tab lands beside the tab or group it was dropped on.
+  /// Nested because SwiftUI has a `TabPlacement` a view would disambiguate.
   public enum Placement: Equatable, Sendable {
     case before
     case after

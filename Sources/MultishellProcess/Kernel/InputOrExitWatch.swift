@@ -14,28 +14,28 @@ public final class InputOrExitWatch {
     guard pid > 0 else { return nil }
     self.descriptor = descriptor
     self.pid = pid
-    let watching = kqueue()
-    guard watching >= 0 else { return nil }
-    var read = kevent(
+    let queue = kqueue()
+    guard queue >= 0 else { return nil }
+    var readFilter = kevent(
       ident: UInt(descriptor), filter: Int16(EVFILT_READ), flags: UInt16(EV_ADD), fflags: 0,
       data: 0, udata: nil)
-    guard kevent(watching, &read, 1, nil, 0, nil) == 0 else {
-      close(watching)
+    guard kevent(queue, &readFilter, 1, nil, 0, nil) == 0 else {
+      close(queue)
       return nil
     }
-    var exit = kevent(
+    var exitFilter = kevent(
       ident: UInt(pid), filter: Int16(EVFILT_PROC), flags: UInt16(EV_ADD | EV_ONESHOT),
       fflags: UInt32(NOTE_EXIT), data: 0, udata: nil)
-    if kevent(watching, &exit, 1, nil, 0, nil) != 0 {
+    if kevent(queue, &exitFilter, 1, nil, 0, nil) != 0 {
       guard errno == ESRCH else {
-        close(watching)
+        close(queue)
         return nil
       }
       hasExited = true
     }
     // Stored last: once every property is set, a failed init runs deinit,
     // which would close the descriptor a second time.
-    kqueueDescriptor = watching
+    kqueueDescriptor = queue
   }
 
   private typealias KernelEvent = Darwin.kevent

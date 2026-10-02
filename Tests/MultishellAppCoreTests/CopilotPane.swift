@@ -4,26 +4,26 @@ import MultishellCore
 @testable import MultishellAppCore
 
 @MainActor struct CopilotPane {
-  let h = Harness()
+  static let copilot = AgentHookCatalogue.integration("copilot")!
+
+  let harness = Harness()
   let tab: TerminalTab
   var session: TerminalSession.ID { tab.focusedSessionID }
 
   init() {
-    h.model.select(h.main)
-    tab = h.model.workspace.activeTab(in: h.main.id)!
-    h.model.newTab()
+    tab = harness.openBackgroundTab()
   }
 
   @discardableResult
   func hook(_ json: String) -> SessionStateReport? {
     guard let payload = AgentHookPayload(json: Data(json.utf8)),
-      let report = CopilotPayload.copilot.report(
-        for: payload, sessionID: session, cwd: nil, pid: nil)
+      let report = Self.copilot.report(
+        for: payload, sessionID: session, workingDirectory: nil, pid: nil)
     else { return nil }
-    h.stateSource.send(report)
+    harness.stateSource.send(report)
     return report
   }
 
-  var state: SessionState? { h.model.state(of: tab) }
-  var workers: [String] { h.model.sessionStates.subagents(.session(session)).map(\.id) }
+  var state: SessionState? { harness.model.state(of: tab) }
+  var workers: [String] { harness.model.sessionStates.workers(.session(session)).map(\.id) }
 }

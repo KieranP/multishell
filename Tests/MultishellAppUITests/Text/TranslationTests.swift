@@ -176,7 +176,7 @@ struct TranslationTests {
   @Test func theBuiltCatalogueIsNotStale() throws {
     for name in ["Localizable.strings", "Localizable.stringsdict"] {
       let built = try #require(Bundle.appCatalogue.url(forResource: name, withExtension: nil))
-      let source = Self.checkout.appendingPathComponent(
+      let source = Checkout.root.appendingPathComponent(
         "Sources/MultishellAppUI/Resources/en.lproj/\(name)")
       #expect(
         try Data(contentsOf: built) == (try Data(contentsOf: source)),
@@ -201,7 +201,7 @@ struct TranslationTests {
 
   /// Built per call: a `Regex` is not `Sendable`, so a `static let` of one does not compile.
   private static func literalLabel() -> Regex<(Substring, Substring)> {
-    /\b(Text|Label|Button|Toggle|Picker|TextField|SecureField|Stepper|Link|Section|GroupBox|DisclosureGroup|help|navigationTitle|accessibilityLabel|accessibilityHint|alert|confirmationDialog)\(\s*"[^"\\(]+"/
+    /\b(Text|Label|Button|Toggle|Picker|TextField|SecureField|Stepper|Link|Section|GroupBox|DisclosureGroup|Window|WindowGroup|help|navigationTitle|accessibilityLabel|accessibilityHint|alert|confirmationDialog)\(\s*"[^"\\(]+"/
   }
 
   private struct CallSite {
@@ -257,7 +257,8 @@ struct TranslationTests {
   }
 
   private static func libraryCatalogue(_ kind: String) -> URL {
-    checkout.appendingPathComponent("Sources/MultishellCore/Resources/en.lproj/Localizable.\(kind)")
+    Checkout.root.appendingPathComponent(
+      "Sources/MultishellCore/Resources/en.lproj/Localizable.\(kind)")
   }
 
   private static func catalogue() throws -> [String: String] {
@@ -274,14 +275,8 @@ struct TranslationTests {
     return Set(entries.keys)
   }()
 
-  private static let checkout = URL(fileURLWithPath: #filePath)
-    .deletingLastPathComponent()  // Text
-    .deletingLastPathComponent()  // MultishellAppUITests
-    .deletingLastPathComponent()  // Tests
-    .deletingLastPathComponent()
-
   private static func swiftFiles() throws -> [URL] {
-    let start = checkout.appendingPathComponent("Sources/MultishellAppUI")
+    let start = Checkout.root.appendingPathComponent("Sources/MultishellAppUI")
     let walk = FileManager.default.enumerator(at: start, includingPropertiesForKeys: nil)
     return (walk?.allObjects as? [URL] ?? []).filter { $0.pathExtension == "swift" }
   }

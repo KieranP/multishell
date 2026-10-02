@@ -107,8 +107,8 @@ struct MultishellCommands: Commands {
     }
   }
 
-  // Into the standard View menu, a `CommandMenu` of our own sitting beside
-  // AppKit's rather than in it. The board is a place to go, not an action.
+  // Into the standard View menu, not a `CommandMenu`, which would sit beside
+  // AppKit's. The board is a place to go, not an action.
   private var agentBoardItem: some Commands {
     CommandGroup(after: .toolbar) {
       Button(t("label.agents")) { model.toggleAgentBoard() }

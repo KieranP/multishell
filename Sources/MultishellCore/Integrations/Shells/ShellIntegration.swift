@@ -9,10 +9,11 @@ public enum ShellIntegration {
     helper: String = AgentHookCatalogue.helperReference
   ) throws {
     for (name, contents) in ShellIntegrationScripts.forZsh(helper: helper) {
-      try Data(contents.utf8).writeAtomically(
+      try Data(contents.utf8).writeAtomicallyCreatingDirectory(
         to: zshDirectory.appendingPathComponent(name, isDirectory: false))
     }
 
-    try Data(ShellIntegrationScripts.forBash(helper: helper).utf8).writeAtomically(to: bashInit)
+    try Data(ShellIntegrationScripts.forBash(helper: helper).utf8).writeAtomicallyCreatingDirectory(
+      to: bashInit)
   }
 }

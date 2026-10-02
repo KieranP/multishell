@@ -10,7 +10,7 @@
   where the hardened runtime has one. Extend both when a pane reaches somewhere
   new.
 - **TCC reads this app's entitlements for what a pane asks**, not only the
-  asking process's; signing.md records the test.
+  asking process's; design/signing.md records the test.
 - **What a missing string costs depends on the service.** A folder is denied
   with no reason named; the device services kill the process that asked, with a
   privacy-violation abort and nothing shown.

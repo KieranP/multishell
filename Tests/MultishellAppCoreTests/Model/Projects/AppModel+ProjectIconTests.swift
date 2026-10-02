@@ -6,27 +6,27 @@ import Testing
 @Suite @MainActor
 struct AppModelProjectIconTests {
   @Test func theGlyphAndTintAreWrittenToTheProjectsOwnSettingsAndClearedByNil() {
-    let h = Harness()
+    let harness = Harness()
 
-    h.model.setIconGlyph("hammer", for: h.project)
-    h.model.setIconTint(3, for: h.project)
+    harness.model.setIconGlyph("hammer", for: harness.project)
+    harness.model.setIconTint(3, for: harness.project)
 
-    #expect(h.model.ownSettings(of: h.project).iconGlyph == "hammer")
-    #expect(h.model.ownSettings(of: h.project).iconTint == 3)
+    #expect(harness.model.ownSettings(of: harness.project).iconGlyph == "hammer")
+    #expect(harness.model.ownSettings(of: harness.project).iconTint == 3)
 
-    h.model.setIconGlyph(nil, for: h.project)
-    h.model.setIconTint(nil, for: h.project)
+    harness.model.setIconGlyph(nil, for: harness.project)
+    harness.model.setIconTint(nil, for: harness.project)
 
-    #expect(h.model.ownSettings(of: h.project).iconGlyph == nil)
-    #expect(h.model.ownSettings(of: h.project).iconTint == nil)
+    #expect(harness.model.ownSettings(of: harness.project).iconGlyph == nil)
+    #expect(harness.model.ownSettings(of: harness.project).iconTint == nil)
   }
 
   @Test func settingTheTintLeavesTheGlyphAsItWas() {
-    let h = Harness()
-    h.model.setIconGlyph("hammer", for: h.project)
+    let harness = Harness()
+    harness.model.setIconGlyph("hammer", for: harness.project)
 
-    h.model.setIconTint(5, for: h.project)
+    harness.model.setIconTint(5, for: harness.project)
 
-    #expect(h.model.ownSettings(of: h.project).iconGlyph == "hammer")
+    #expect(harness.model.ownSettings(of: harness.project).iconGlyph == "hammer")
   }
 }

@@ -30,8 +30,8 @@ enum GhosttyAppLayer {
       builder.withFontSize(Float(appearance.terminalFontSize))
 
       // Ghostty's defaults bind our shortcuts to actions this embedding
-      // cannot perform, so unbind exactly those, from `AppShortcutCatalogue`.
-      for combo in AppShortcutCatalogue.unbound {
+      // cannot perform, so unbind exactly those.
+      for combo in GhosttyUnbinds.all {
         builder.withCustom("keybind", "\(combo)=unbind")
       }
     }

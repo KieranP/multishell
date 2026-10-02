@@ -9,7 +9,7 @@ import Testing
 @Suite @MainActor
 struct SettingsWindowSizeTests {
   @Test func noSettingsPageIsTallerThanTheWindowItOpensIn() {
-    for page in Self.pages(of: ModelHarness()) where !page.scrolls {
+    for page in Self.pages(of: ModelHarness()) {
       let needed = OffscreenHost.read(
         page.view, atWidth: SettingsWindowSize.fixed.width,
         windowSize: CGSize(width: 10, height: 10),
@@ -24,9 +24,6 @@ struct SettingsWindowSizeTests {
   private struct Page {
     let name: String
     let view: AnyView
-    /// Taller than the window on purpose, or at least knowingly. Everything
-    /// else has to fit, a new page included.
-    var scrolls = false
   }
 
   /// Both windows' tabs, app-wide and per-project. The two windows are the

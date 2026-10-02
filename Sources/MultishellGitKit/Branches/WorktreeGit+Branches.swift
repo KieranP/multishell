@@ -24,16 +24,6 @@ extension WorktreeGit {
     ]
   }
 
-  static let fetchTimeout: Duration = .seconds(120)
-
-  /// `git fetch --prune`, on the user's click only: the one git call here
-  /// that talks to a network. `GIT_TERMINAL_PROMPT=0`, and a timeout.
-  public func fetch(_ project: Project) async throws {
-    _ = try await runner.run(
-      ["fetch", "--prune", "--quiet"], in: project.path,
-      environment: ["GIT_TERMINAL_PROMPT": "0"], timeout: Self.fetchTimeout)
-  }
-
   /// The names a new worktree can start from, symbolic refs such as
   /// `origin/HEAD` dropped. `nil` is a failed read.
   public func branchNames(_ project: Project) async -> (local: [String], remote: [String])? {

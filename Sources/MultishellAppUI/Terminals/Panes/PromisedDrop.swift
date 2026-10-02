@@ -36,7 +36,7 @@ enum PromisedDrop {
     let collector = PromisedDropCollector(
       expecting: receivers.map { _ in 1 }, recounting: promised,
       naming: { receivers[$0].fileNames },
-      deliver: { urls in
+      onDelivery: { urls in
         if urls.isEmpty { try? FileManager.default.removeItem(at: directory) }
         deliver(urls)
       })

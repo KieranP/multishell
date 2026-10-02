@@ -29,18 +29,25 @@ enum AgentSettingsFile {
   /// Where a write lands. A link at the end of the path is written through,
   /// not over, so a dotfiles repo keeps seeing the file; see agents.md.
   static func destination(of file: URL) -> URL {
-    guard (try? FileManager.default.destinationOfSymbolicLink(atPath: file.path)) != nil else {
-      return file
+    var current = file
+    // Followed link by link: `resolvingSymlinksInPath` hands back a link whose
+    // target does not exist yet, and the write would replace it.
+    for _ in 0..<maximumLinkHops {
+      guard let target = try? FileManager.default.destinationOfSymbolicLink(atPath: current.path)
+      else { return current }
+      let directory = current.deletingLastPathComponent().resolvingSymlinksInPath()
+      current = URL(fileURLWithPath: target, relativeTo: directory).standardizedFileURL
     }
-    return file.resolvingSymlinksInPath()
+    return current
   }
+
+  /// The kernel's MAXSYMLINKS: a longer chain is a loop.
+  private static let maximumLinkHops = 32
 
   /// A file of ours alone: written whole, with no copy kept, because there
   /// was nothing of the user's in it to keep.
   static func writeWhole(_ contents: String, to file: URL) throws {
-    try FileManager.default.createDirectory(
-      at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
-    try Data(contents.utf8).write(to: destination(of: file), options: .atomic)
+    try Data(contents.utf8).writeAtomicallyCreatingDirectory(to: destination(of: file))
   }
 
   static func render(_ object: [String: Any]) -> String {

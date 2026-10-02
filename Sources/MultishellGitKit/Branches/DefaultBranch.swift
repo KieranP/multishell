@@ -6,7 +6,7 @@ public struct DefaultBranch: Hashable, Sendable {
   /// As git would print it short: `origin/main`, `main`, `upstream/trunk`.
   public let shortName: String
   /// The branch with no remote in front of it, which is what a worktree
-  /// sitting on the trunk has as its own branch.
+  /// sitting on the default branch has as its own branch.
   public let nameWithoutRemote: String
   public let tip: String
   /// What git is handed: a tag named `main` or `origin/main` ties with the

@@ -4,13 +4,13 @@ import Foundation
 /// `Workspace.tabGroups`; see Docs/design/tabs-and-groups.md.
 public struct TabGroup: Identifiable, Codable, Hashable, Sendable {
   public let id: UUID
-  public var worktreeID: Worktree.ID
+  public internal(set) var worktreeID: Worktree.ID
   /// Share of the worktree's width, relative to the other groups' rather
   /// than a fraction, so a removal needs no renormalising.
-  public var weight: Double
+  public internal(set) var weight: Double
   /// The tab this group shows. Never `nil` for a group the store kept: a
   /// group whose last tab left is removed rather than left standing empty.
-  public var shownTabID: TerminalTab.ID?
+  public internal(set) var shownTabID: TerminalTab.ID?
 
   /// The group id a tab written before groups existed carries.
   /// `Workspace.adoptUngroupedTabs` resolves every one into a real group.

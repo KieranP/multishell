@@ -21,7 +21,7 @@ struct NotificationPreferenceTests {
     #expect(NotificationPreference.notifiableStates.allSatisfy { !NotificationPreference.off[$0] })
   }
 
-  @Test func aNotificationPreferenceThisBuildDoesNotKnowFallsBack() throws {
+  @Test func aNotificationPreferenceThisBuildDoesNotKnowFallsBackAndAnUnknownAgentStays() throws {
     let workspace = try decodeJSON(
       Workspace.self,
       #"{ "notifications": "whisper", "preferredAgentID": "future-agent", "projects": [ { "path": "file:///repos/demo/" } ] }"#
@@ -35,5 +35,16 @@ struct NotificationPreferenceTests {
     #expect(
       partial == NotificationPreference(done: true),
       "a state this build has not got is not one, and a bad value costs its own toggle")
+  }
+
+  @Test func aWorkspaceFromBeforeTheNotificationTogglesKeepsWhatThePickerSaid() throws {
+    let attention = try decodeJSON(Workspace.self, #"{ "notifications": "attentionOnly" }"#)
+    #expect(attention.notifications == NotificationPreference(attention: true))
+    let everything = try decodeJSON(Workspace.self, #"{ "notifications": "attentionAndDone" }"#)
+    #expect(
+      everything.notifications == NotificationPreference(attention: true, failed: true, done: true),
+      "the picker's last rung was all three")
+    let off = try decodeJSON(Workspace.self, #"{ "notifications": "off" }"#)
+    #expect(off.notifications == .off)
   }
 }

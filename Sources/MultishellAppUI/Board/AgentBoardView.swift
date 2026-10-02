@@ -10,7 +10,7 @@ struct AgentBoardView: View {
 
   /// One clock for every card's corner. Ten seconds, the shortest step a
   /// card's text takes past its first minute.
-  private static let tick: TimeInterval = 10
+  private static let tickInterval: TimeInterval = 10
 
   /// The clock the cards read, held rather than taken from a `TimelineView`,
   /// which stood still under a body re-evaluated several times a second.
@@ -29,7 +29,7 @@ struct AgentBoardView: View {
       }
     }
     .background(theme.backgroundColor)
-    .ticking($now, every: .seconds(Self.tick))
+    .ticking($now, every: .seconds(Self.tickInterval))
   }
 
   private func scrollingColumns(_ board: AgentBoard, metrics: UIMetrics) -> some View {

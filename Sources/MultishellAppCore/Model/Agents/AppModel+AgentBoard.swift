@@ -31,7 +31,7 @@ extension AppModel {
         since: sessionStates.since(key),
         note: sessionStates.note(key),
         status: statuses[worktree.id],
-        subagents: sessionStates.subagents(key),
+        workers: sessionStates.workers(key),
         position: position)
     }
   }
@@ -45,14 +45,14 @@ extension AppModel {
     let board = withObservationTracking {
       AgentBoard(cards: agentBoardCards, showsAllTerminals: showsAllTerminals)
     } onChange: { [weak self] in
-      MainActor.assumeIsolated { self?.dropCachedAgentBoard() }
+      MainActor.assumeIsolated { self?.invalidateCachedAgentBoard() }
     }
     agentBoardBuilds += 1
     cachedAgentBoard = board
     return board
   }
 
-  private func dropCachedAgentBoard() {
+  private func invalidateCachedAgentBoard() {
     cachedAgentBoard = nil
     agentBoardGeneration &+= 1
   }
@@ -69,10 +69,12 @@ extension AppModel {
   }
 
   /// The counts the sidebar entry carries, in the order it draws them; see
-  /// `AgentBoardLane.sidebarLanes`.
+  /// `AgentBoardLane.sidebarLanes`. An empty lane is neither drawn nor said.
   public var agentSidebarCounts: [AgentBoardLaneCount] {
     let counts = agentLaneCounts
-    return AgentBoardLane.sidebarLanes.map { AgentBoardLaneCount($0, counts[$0] ?? 0) }
+    return AgentBoardLane.sidebarLanes.compactMap { lane in
+      counts[lane].map { AgentBoardLaneCount(lane, $0) }
+    }
   }
 
   /// Who is at the prompt, by name.
@@ -80,7 +82,7 @@ extension AppModel {
     if let agentID = agentAtThePrompt(of: session) {
       return .agent(id: agentID, name: agentDisplayName(agentID))
     }
-    return .shell(URL(filePath: shellPath(forWorktree: session.worktreeID)).lastPathComponent)
+    return .shell(shellPath(forWorktree: session.worktreeID).executableName)
   }
 
   /// The board fills the detail area, the selection left alone so its shells

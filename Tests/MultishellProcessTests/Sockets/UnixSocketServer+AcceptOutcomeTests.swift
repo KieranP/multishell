@@ -15,9 +15,9 @@ struct UnixSocketServerAcceptOutcomeTests {
       UnixSocketServer.AcceptOutcome(errno: ECONNABORTED) == .retryNow,
       "the peer went; the next one is still waiting")
     #expect(
-      UnixSocketServer.AcceptOutcome(errno: EMFILE) == .outOfDescriptors,
+      UnixSocketServer.AcceptOutcome(errno: EMFILE) == .outOfResources,
       "returning here spins the queue against a backlog that never clears")
-    #expect(UnixSocketServer.AcceptOutcome(errno: ENFILE) == .outOfDescriptors)
+    #expect(UnixSocketServer.AcceptOutcome(errno: ENFILE) == .outOfResources)
     #expect(
       UnixSocketServer.AcceptOutcome(errno: EINVAL) == .waitForNextEvent,
       "unknown: wait, do not spin")

@@ -47,8 +47,9 @@ struct AppleScriptRunnerTests {
   }
 
   @Test func aScriptThatWillNotCompileThrowsWhatAppleScriptSaid() {
-    #expect(throws: AppleScriptFailed.self) {
+    let failure = #expect(throws: AppleScriptFailed.self) {
       try AppleScriptRunner.call("on x(", handler: "x", arguments: [])
     }
+    #expect(failure?.message.isEmpty == false)
   }
 }

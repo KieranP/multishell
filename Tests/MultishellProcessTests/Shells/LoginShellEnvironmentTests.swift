@@ -37,7 +37,7 @@ struct LoginShellEnvironmentTests {
     let home = try Scratch.directory("home")
     defer { Scratch.remove(home) }
     let history = home.appendingPathComponent("zsh_history")
-    let lines = (1...600).map { ": 1700000000:0;command \($0)\n" }.joined()
+    let lines = LongHistory.lines
     try lines.write(to: history, atomically: true, encoding: .utf8)
     try "HISTFILESIZE=10\n".write(
       to: home.appendingPathComponent(".bash_profile"), atomically: true, encoding: .utf8)
@@ -54,7 +54,7 @@ struct LoginShellEnvironmentTests {
     let home = try Scratch.directory("home")
     defer { Scratch.remove(home) }
     let history = home.appendingPathComponent(".zsh_history")
-    let lines = (1...600).map { ": 1700000000:0;command \($0)\n" }.joined()
+    let lines = LongHistory.lines
     try lines.write(to: history, atomically: true, encoding: .utf8)
     try "HISTFILE=\(history.path)\nSAVEHIST=10\nsetopt share_history inc_append_history\n"
       .write(to: home.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
@@ -77,19 +77,6 @@ struct LoginShellEnvironmentTests {
     #expect(environment.source == .loginShell(URL(fileURLWithPath: "/bin/zsh")))
   }
 
-  @Test func aShellCutOffByTheTimeoutSaysSoRatherThanNamingItsSignal() async throws {
-    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
-    let home = try Scratch.directory("home")
-    defer { Scratch.remove(home) }
-    try "sleep 30\n".write(
-      to: home.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
-
-    let environment = await LoginShellEnvironment.capture(
-      timeout: .milliseconds(300), shellPath: "/bin/zsh", home: home)
-
-    #expect(environment.source == .processFallback(reason: "timed out after 0.3 seconds"))
-  }
-
   @Test func aGreetingShapedLikeAnAssignmentIsNotTakenForAVariable() async throws {
     guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
     let home = try Scratch.directory("home")
@@ -110,7 +97,7 @@ struct LoginShellEnvironmentTests {
     #expect(LoginShellEnvironment.parse(nulSeparated: text) == ["HOME": "/u", "PATH": "/bin"])
   }
 
-  @Test func aShellThatHangsFallsBackToTheAppsOwnEnvironmentWithinTheTimeout() async throws {
+  @Test func aShellThatHangsFallsBackToTheAppsOwnEnvironmentAndSaysItTimedOut() async throws {
     guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
     let home = try Scratch.directory("home")
     defer { Scratch.remove(home) }
@@ -123,6 +110,9 @@ struct LoginShellEnvironmentTests {
     let elapsed = ContinuousClock.now - started
 
     #expect(environment.variables == ProcessInfo.processInfo.environment)
+    #expect(
+      environment.source == .processFallback(reason: "timed out after 0.3 seconds"),
+      "the timeout said as such, not as the signal that ended the shell")
     // Ten against the rc file's thirty: the timeout firing, or not at all.
     #expect(elapsed < .seconds(10), "took \(elapsed)")
   }

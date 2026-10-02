@@ -64,11 +64,11 @@ extension SurfaceFrame {
   }
 
   private func holdsFiles(_ sender: any NSDraggingInfo) -> Bool {
-    if let known = filesInDrag, known.sequence == sender.draggingSequenceNumber {
+    if let known = lastDragFileCheck, known.sequence == sender.draggingSequenceNumber {
       return known.hasFiles
     }
     let answer = Self.pasteboardHasFiles(sender)
-    filesInDrag = (sender.draggingSequenceNumber, answer)
+    lastDragFileCheck = (sender.draggingSequenceNumber, answer)
     return answer
   }
 

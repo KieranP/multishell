@@ -36,18 +36,6 @@ public enum AgentCatalogue {
     agents.first { $0.id == id }
   }
 
-  /// The custom agent command, which runs as written: each placeholder reads
-  /// a variable, so no value is ever shell text. See Docs/design/agents.md.
-  public static func customCommandLine(
-    _ line: String, values: [AgentPlaceholder: String]
-  ) -> ShellLine {
-    var tokens: [String: (variable: String, value: String)] = [:]
-    for (placeholder, value) in values {
-      tokens[placeholder.token] = (placeholder.variable, value)
-    }
-    return ShellLine(line, substituting: tokens)
-  }
-
   /// What is drawn where this id is at a prompt. A command the user typed and
   /// an id a newer build stored have no mark of their own, so they get letters.
   public static func mark(_ id: String) -> AgentMark {
@@ -70,6 +58,6 @@ public enum AgentCatalogue {
   /// The id in force for a project: its override when it has one, else the
   /// global. `nil` means no agent, whichever side said so.
   static func effectiveID(global: String?, override: String?) -> String? {
-    ChosenID.inForce(global: global, override: override, none: noneID)
+    ChosenID.effective(global: global, override: override, noneID: noneID)
   }
 }

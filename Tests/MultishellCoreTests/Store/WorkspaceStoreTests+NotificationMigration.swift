@@ -8,15 +8,11 @@ import Testing
 /// is the file on disk that has to survive the first launch and the first save after it.
 extension WorkspaceStoreTests {
   @Test func thePickersLastRungComesBackAsThreeTogglesAndIsSavedThatWay() throws {
-    let file = Scratch.path("scratch")
-      .appendingPathComponent("state.json")
+    let file = try scratchStateFile(
+      holding:
+        #"{ "projects": [ { "path": "file:///repos/demo/" } ], "notifications": "attentionAndDone" }"#
+    )
     defer { Scratch.remove(file.deletingLastPathComponent()) }
-    try FileManager.default.createDirectory(
-      at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
-    try Data(
-      #"{ "projects": [ { "path": "file:///repos/demo/" } ], "notifications": "attentionAndDone" }"#
-        .utf8
-    ).write(to: file)
 
     let stateFile = WorkspaceFile(fileURL: file)
     let (store, error) = WorkspaceStore.restored(from: stateFile)

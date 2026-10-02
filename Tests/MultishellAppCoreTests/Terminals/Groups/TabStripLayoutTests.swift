@@ -21,6 +21,10 @@ struct TabStripLayoutTests {
     #expect(layout(600, 4).scrolls == false)
   }
 
+  @Test func theScrolledContentIsEveryTabAtItsWidth() {
+    #expect(layout(600, 7).contentWidth(count: 7) == 700)
+  }
+
   @Test func pastTheFloorTheStripScrollsInsteadOfSqueezing() {
     let tight = layout(600, 7)
     #expect(tight.tabWidth == 100, "the floor, not 85")

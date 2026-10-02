@@ -4,13 +4,7 @@ extension AppModel {
   /// Seen: the pane with the keyboard, and the app in front. A split's other
   /// pane is in view but not looked at, so its Done waits for its focus.
   func isSeen(_ id: TerminalSession.ID) -> Bool {
-    isFocused(id) && platform.isActive
-  }
-
-  /// The pane the keyboard goes to: the selected worktree's active tab's
-  /// focused pane, with the board hidden. What clears a Done.
-  private func isFocused(_ id: TerminalSession.ID) -> Bool {
-    tabInView?.focusedSessionID == id
+    isFocusedPane(id) && platform.isActive
   }
 
   /// The focused pane and the selected worktree are seen; every pane in view

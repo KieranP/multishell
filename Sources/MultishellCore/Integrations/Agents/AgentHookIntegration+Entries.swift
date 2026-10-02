@@ -38,8 +38,8 @@ extension AgentHookIntegration {
     ]
     let timeout = event.timeoutSeconds ?? AgentHookCatalogue.timeoutSeconds
     switch format {
-    case .userSettingsFile(let millisecondTimeout):
-      handler["timeout"] = millisecondTimeout ? timeout * 1000 : timeout
+    case .userSettingsFile(let timeoutIsInMilliseconds):
+      handler["timeout"] = timeoutIsInMilliseconds ? timeout * 1000 : timeout
     case .ownHookFile:
       handler["timeoutSec"] = timeout
       if let matcher = event.matcher { handler["matcher"] = matcher }

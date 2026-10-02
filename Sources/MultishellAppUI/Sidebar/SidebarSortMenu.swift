@@ -29,7 +29,7 @@ struct SidebarSortMenu: View {
       Image(systemName: "arrow.up.arrow.down")
         .font(.system(size: metrics.badge))
         .foregroundStyle(isHovered ? theme.textSecondary : theme.textTertiary.opacity(0.7))
-        .frame(width: UIMetrics.sidebarRowButtonWidth, height: 22)
+        .frame(width: UIMetrics.sidebarRowButtonWidth, height: UIMetrics.sectionHeaderHeight)
         // Painted: a menu is hit-tested by its label's ink, and the glyph
         // alone is a small target. As the strip's + does.
         .background(theme.sidebarColor)

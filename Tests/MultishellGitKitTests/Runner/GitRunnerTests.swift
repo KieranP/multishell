@@ -16,17 +16,15 @@ struct GitRunnerTests {
     let repository = fixture.project.path
     let git = try TestGit.runner(configuration: ["user.name": "From the runner"])
 
-    try "second\n".write(
-      to: repository.appendingPathComponent("README.md"), atomically: true, encoding: .utf8)
-    _ = try await git.run(["add", "."], in: repository)
-    _ = try await git.run(["commit", "-q", "-m", "second"], in: repository)
+    try await TestRepository.commit(
+      "second", files: ["README.md": "second\n"], in: repository, using: git)
 
     let author = try await git.run(["log", "-1", "--format=%an"], in: repository)
     #expect(author.trimmingCharacters(in: .whitespacesAndNewlines) == "From the runner")
     // The fixture's own runner passes no name, so the repository's answers.
     let first = try await fixture.runner.run(
       ["log", "-1", "--format=%an", "HEAD~1"], in: repository)
-    #expect(first.trimmingCharacters(in: .whitespacesAndNewlines) == "Multishell Tests")
+    #expect(first.trimmingCharacters(in: .whitespacesAndNewlines) == TestRepository.committerName)
   }
 
   /// Config of the user's that changes what a read means rather than how it

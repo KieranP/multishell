@@ -28,7 +28,7 @@ struct ShellDetectionTests {
         bin.appendingPathComponent("nu").path, "/bin/sh", bin.appendingPathComponent("zsh").path,
       ], "sorted by name then path, listed once, the missing one dropped")
     #expect(detection.isInstalled("/bin/sh"))
-    #expect(detection.isInstalled(ShellCatalogue.loginShellID))
+    #expect(detection.isInstalled(ShellChoice.loginShellID))
     #expect(!detection.isInstalled("/opt/gone/fish"))
   }
 
@@ -47,17 +47,17 @@ struct ShellDetectionTests {
     #expect(stale[3].label == "fish  /opt/homebrew/bin/fish (not installed)")
     #expect(detection.options(selected: "/bin/bash").count == 4, "an installed choice adds nothing")
     #expect(detection.options(selected: "custom").count == 4, "and neither does the custom path")
-    #expect(detection.isInstalled(ShellCatalogue.customID))
+    #expect(detection.isInstalled(ShellChoice.customID))
   }
 
   /// Every other row is checked against the disk. `$SHELL` pointing at an
   /// uninstalled fish passed as installed, and each new tab died silently.
   @Test func aLoginShellThatIsNotThereCountsAsNotInstalled() {
     let gone = ShellDetection(found: ["/bin/zsh"], loginShell: "/opt/gone/fish")
-    #expect(!gone.isInstalled(ShellCatalogue.loginShellID))
+    #expect(!gone.isInstalled(ShellChoice.loginShellID))
 
     let there = ShellDetection(found: ["/bin/zsh"], loginShell: "/bin/sh")
-    #expect(there.isInstalled(ShellCatalogue.loginShellID))
+    #expect(there.isInstalled(ShellChoice.loginShellID))
   }
 
   @Test func aMissingSystemListIsNotAnError() {

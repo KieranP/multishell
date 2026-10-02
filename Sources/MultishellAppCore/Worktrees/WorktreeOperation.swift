@@ -6,15 +6,15 @@ public struct WorktreeOperation: Equatable, Sendable {
   public let stage: Stage
   /// What the hook or git said, once the stage has failed. `nil` while it
   /// runs.
-  public var failure: String?
+  public let failure: String?
   /// The stage failed on the timeout, so the title says it did not finish
   /// rather than that it refused.
-  var timedOut = false
+  let didTimeOut: Bool
 
-  init(_ stage: Stage, failure: String? = nil, timedOut: Bool = false) {
+  init(_ stage: Stage, failure: String? = nil, didTimeOut: Bool = false) {
     self.stage = stage
     self.failure = failure
-    self.timedOut = timedOut
+    self.didTimeOut = didTimeOut
   }
 
   public var isRunning: Bool { failure == nil }
@@ -25,10 +25,10 @@ public struct WorktreeOperation: Equatable, Sendable {
       case .linkingFiles: return t("step.files-not-linked")
       case .copyingFiles: return t("step.files-not-copied")
       case .postCreateHook:
-        return timedOut
+        return didTimeOut
           ? t("step.post-create-hook-timed-out") : t("step.post-create-hook-failed")
       case .preDeleteHook:
-        return timedOut
+        return didTimeOut
           ? t("step.pre-delete-hook-timed-out") : t("step.pre-delete-hook-refused")
       case .removingWorktree, .deletingWorktree: return t("step.worktree-not-removed")
       case .postDeleteHook: return t("step.post-delete-hook-failed")

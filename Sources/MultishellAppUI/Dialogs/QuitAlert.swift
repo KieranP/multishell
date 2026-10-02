@@ -11,7 +11,7 @@ enum QuitAlert {
     alert.informativeText = QuitConfirmation.message(terminals: terminals, working: working)
     alert.alertStyle = .warning
     alert.addButton(withTitle: quit)
-    alert.addButton(withTitle: cancel).takesEscape()
+    alert.addButton(withTitle: cancel).assignEscape()
     return alert
   }
 }

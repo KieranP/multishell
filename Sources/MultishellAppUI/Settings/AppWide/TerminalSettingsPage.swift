@@ -18,7 +18,7 @@ struct TerminalSettingsPage: View {
           info: t("terminal.default-shell-info")
         )
         if model.usesCustomShell {
-          CustomCommandRow(
+          CustomChoiceField(
             label: t("terminal.path"), info: t("terminal.path-info"),
             prompt: t("terminal.path-prompt"),
             text: model.setting(\.customShellPath, write: model.setCustomShellPath))

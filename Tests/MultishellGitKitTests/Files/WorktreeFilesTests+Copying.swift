@@ -5,7 +5,7 @@ import Testing
 
 extension WorktreeFilesTests {
   @Test func aCopiedDirectoryArrivesWholeDownToItsNestedFilesAndLinks() throws {
-    let (repository, worktree) = try directories()
+    let (repository, worktree) = try repositoryAndWorktree()
     let cache = repository.appending(path: "cache/deep/er")
     try FileManager.default.createDirectory(at: cache, withIntermediateDirectories: true)
     try "x".write(to: cache.appending(path: "file.txt"), atomically: true, encoding: .utf8)
@@ -22,7 +22,7 @@ extension WorktreeFilesTests {
   }
 
   @Test func aReadOnlyDirectoryIsCopiedWholeAndKeepsItsMode() throws {
-    let (repository, worktree) = try directories()
+    let (repository, worktree) = try repositoryAndWorktree()
     let inner = repository.appending(path: "modules/inner")
     try FileManager.default.createDirectory(at: inner, withIntermediateDirectories: true)
     try "x".write(to: inner.appending(path: "file.txt"), atomically: true, encoding: .utf8)
@@ -50,7 +50,7 @@ extension WorktreeFilesTests {
   }
 
   @Test func aFolderInsideACopiedDirectoryThatCannotBeReadFailsTheEntry() throws {
-    let (repository, worktree) = try directories()
+    let (repository, worktree) = try repositoryAndWorktree()
     let hidden = repository.appending(path: "cache/hidden")
     try FileManager.default.createDirectory(at: hidden, withIntermediateDirectories: true)
     try "x".write(to: hidden.appending(path: "file.txt"), atomically: true, encoding: .utf8)
@@ -67,7 +67,7 @@ extension WorktreeFilesTests {
   }
 
   @Test func aFileInsideACopiedDirectoryThatCannotBeReadLeavesNoHalfCopy() throws {
-    let (repository, worktree) = try directories()
+    let (repository, worktree) = try repositoryAndWorktree()
     let config = repository.appending(path: "config")
     try FileManager.default.createDirectory(at: config, withIntermediateDirectories: true)
     for name in ["a.yml", "b.yml", "c.yml"] {

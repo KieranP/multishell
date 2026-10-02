@@ -6,7 +6,7 @@ import MultishellCore
 public enum SplitMath {
   /// `translation` is the pointer's movement since the drag began and
   /// `available` the length shared. Unchanged where either is invalid.
-  public static func transferring(
+  static func transferring(
     _ translation: Double,
     acrossDividerAfter index: Int,
     in weights: [Double],

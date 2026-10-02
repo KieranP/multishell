@@ -10,7 +10,7 @@ struct WorkspaceFile: Sendable {
     self.fileURL = fileURL
   }
 
-  func ticket() -> SaveOrder.Ticket {
+  func issueTicket() -> SaveOrder.Ticket {
     order.issue()
   }
 
@@ -46,13 +46,13 @@ struct WorkspaceFile: Sendable {
   }
 
   func save(_ workspace: Workspace) throws {
-    try save(workspace, as: ticket())
+    try save(workspace, as: issueTicket())
   }
 
   /// The encode is outside the lock, so two saves encode side by side and
   /// only the writes queue.
   func save(_ workspace: Workspace, as ticket: SaveOrder.Ticket) throws {
     let data = try JSONEncoder.forFile().encode(workspace)
-    try order.land(ticket) { try data.writeAtomically(to: fileURL) }
+    try order.land(ticket) { try data.writeAtomicallyCreatingDirectory(to: fileURL) }
   }
 }

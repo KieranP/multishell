@@ -13,8 +13,8 @@ struct FindBar: View {
   /// What the bar takes when the pane has it; a narrower pane shrinks the
   /// well rather than drawing the bar over its neighbour.
   private static let width: CGFloat = 340
-  private static let corner: CGFloat = 10
-  private static let inset: CGFloat = 7
+  private static let cornerRadius: CGFloat = 10
+  private static let padding: CGFloat = 7
 
   var body: some View {
     let metrics = model.metrics
@@ -24,10 +24,10 @@ struct FindBar: View {
       button("chevron.down", t("find.next")) { model.findNext(in: sessionID) }
       button("xmark", t("find.close")) { model.closeFind(in: sessionID) }
     }
-    .padding(Self.inset)
+    .padding(Self.padding)
     .frame(maxWidth: Self.width)
-    .background(theme.findPanelColor, in: RoundedRectangle(cornerRadius: Self.corner))
-    .overlay(RoundedRectangle(cornerRadius: Self.corner).strokeBorder(theme.hairline))
+    .background(theme.findBarColor, in: RoundedRectangle(cornerRadius: Self.cornerRadius))
+    .overlay(RoundedRectangle(cornerRadius: Self.cornerRadius).strokeBorder(theme.hairline))
     .padding(12)
     // A turn later, and only against a Cmd+F: a bar a worktree switch brings
     // back must not take the keyboard from the pane. See terminals.md.
@@ -49,9 +49,10 @@ struct FindBar: View {
       .onExitCommand { model.closeFind(in: sessionID) }
       .padding(.horizontal, 10)
       .frame(height: metrics.findControlSize)
-      .background(theme.backgroundColor, in: RoundedRectangle(cornerRadius: Self.corner - 3))
+      .background(theme.backgroundColor, in: RoundedRectangle(cornerRadius: Self.cornerRadius - 3))
       .overlay(
-        RoundedRectangle(cornerRadius: Self.corner - 3).strokeBorder(theme.findWellBorderColor))
+        RoundedRectangle(cornerRadius: Self.cornerRadius - 3).strokeBorder(
+          theme.findWellBorderColor))
   }
 
   private func claimField() {

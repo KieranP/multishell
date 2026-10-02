@@ -11,67 +11,77 @@ import Testing
 @Suite(.serialized) @MainActor
 struct AppModelLoginEnvironmentTests {
   @Test func theAgentPathNoteNamesWhereThePathCameFrom() {
-    let h = Harness()
-    #expect(h.model.agentPathNote == t("agents.path-asking"))
+    let harness = Harness()
+    #expect(harness.model.agentPathNote == t("agents.path-asking"))
 
-    h.model.loginEnvironment = LoginShellEnvironment(
+    harness.model.loginEnvironment = LoginShellEnvironment(
       variables: [:], source: .loginShell(URL(fileURLWithPath: "/bin/zsh")))
-    #expect(h.model.agentPathNote == t("agents.path-from-login-shell", "/bin/zsh"))
+    #expect(harness.model.agentPathNote == t("agents.path-from-login-shell", "/bin/zsh"))
 
-    h.model.loginEnvironment = LoginShellEnvironment(
+    harness.model.loginEnvironment = LoginShellEnvironment(
       variables: [:], source: .processFallback(reason: "timed out after 5s"))
-    #expect(h.model.agentPathNote == t("agents.path-fallback", "timed out after 5s"))
+    #expect(harness.model.agentPathNote == t("agents.path-fallback", "timed out after 5s"))
   }
 
   /// A saved agent tab clicked while PATH is still being scanned must not read as missing,
   /// so the environment and what was found on it land together.
   @Test func theEnvironmentIsNotKnownBeforeItsPathHasBeenScanned() async throws {
-    let h = Harness()
-    let refresh = Task { await h.model.refreshLoginEnvironment() }
-    try await waitUntil { h.model.loginEnvironment != nil }
-    #expect(h.model.loginEnvironment != nil)
-    #expect(h.model.shellDetection != .empty, "/etc/shells alone fills this")
-    #expect(h.model.agentDetection == AgentDetection(searchPath: h.model.loginEnvironment?.path))
+    let harness = Harness()
+    let refresh = Task { await harness.model.refreshLoginEnvironment() }
+    try await waitUntil { harness.model.loginEnvironment != nil }
+    #expect(harness.model.loginEnvironment != nil)
+    #expect(harness.model.shellDetection != .empty, "/etc/shells alone fills this")
+    #expect(
+      harness.model.agentDetection
+        == AgentDetection(searchPath: harness.model.loginEnvironment?.path))
     await refresh.value
   }
 
   @Test func theLoginEnvironmentFeedsDetection() async throws {
-    let h = Harness()
-    try h.installFakeAgent("claude")
-    #expect(h.model.loginEnvironment == nil)
-    await h.model.refreshLoginEnvironment()
-    #expect(h.model.loginEnvironment?.path != nil)
-    #expect(h.model.agentDetection.found[AgentCatalogue.claudeID] != nil, "found on that PATH")
-    #expect(h.model.agentDetection == AgentDetection(searchPath: h.model.loginEnvironment?.path))
+    let harness = Harness()
+    try harness.installFakeAgent("claude")
+    #expect(harness.model.loginEnvironment == nil)
+    await harness.model.refreshLoginEnvironment()
+    #expect(harness.model.loginEnvironment?.path != nil)
+    #expect(
+      harness.model.agentDetection.found[AgentCatalogue.claudeID] != nil, "found on that PATH")
+    #expect(
+      harness.model.agentDetection
+        == AgentDetection(searchPath: harness.model.loginEnvironment?.path))
   }
 
-  @Test func theModelListensForTheAppComingToTheFrontAndCapturesTheLoginShell() async {
-    let h = Harness()
-    #expect(h.platform.onDidBecomeActive != nil, "the model listens from its init")
-    await h.model.refreshLoginEnvironment()
-    let environment = h.model.loginEnvironment
-    #expect(environment != nil)
-    if case .processFallback = environment?.source {
-      #expect(h.platform.logged.count == 1, "a shell that could not answer is logged, not shown")
-    } else {
-      #expect(h.platform.logged.isEmpty)
+  @Test func aLoginShellThatAnswersIsRecordedAndNotLogged() async {
+    let harness = Harness()
+    await harness.model.refreshLoginEnvironment()
+    #expect(harness.model.loginEnvironment?.source == .loginShell(URL(fileURLWithPath: "/bin/zsh")))
+    #expect(harness.platform.logged.isEmpty)
+  }
+
+  @Test func aLoginShellThatCouldNotAnswerIsRecordedAndLogged() async {
+    let harness = Harness()
+    let variables = await harness.model.captureLoginEnvironment().variables
+    harness.model.captureLoginEnvironment = {
+      LoginShellEnvironment(variables: variables, source: .processFallback(reason: "timed out"))
     }
+    await harness.model.refreshLoginEnvironment()
+    #expect(harness.model.loginEnvironment?.source == .processFallback(reason: "timed out"))
+    #expect(harness.platform.logged.count == 1)
   }
 
   @Test func theLoginEnvironmentsGitKeepsTheCountsAndTheMergeWidthLaunchHad() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
     let path = try #require(ProcessInfo.processInfo.environment["PATH"])
-    h.model.captureLoginEnvironment = {
+    harness.model.captureLoginEnvironment = {
       LoginShellEnvironment(
-        variables: ["PATH": path, "HOME": h.root.path],
+        variables: ["PATH": path, "HOME": harness.root.path],
         source: .loginShell(URL(fileURLWithPath: "/bin/zsh")))
     }
-    let launched = try #require(h.model.coordinator).git
+    let launched = try #require(harness.model.coordinator).git
 
-    await h.model.refreshLoginEnvironment()
+    await harness.model.refreshLoginEnvironment()
 
-    let rebuilt = try #require(h.model.coordinator).git
+    let rebuilt = try #require(harness.model.coordinator).git
     #expect(rebuilt.readState.untrackedMemo === launched.readState.untrackedMemo)
     #expect(rebuilt.readState.mergeSlots === launched.readState.mergeSlots)
   }

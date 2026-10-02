@@ -21,7 +21,7 @@ public enum AgentHookCatalogue {
   /// `$HOME` first, as the agents themselves read it: the account's home
   /// ignores it, and a test's helper then wrote the developer's own files.
   private static func underHome(_ path: String) -> URL {
-    let home = ProcessInfo.processInfo.environment["HOME"].flatMap { $0.isEmpty ? nil : $0 }
+    let home = ProcessInfo.processInfo.environment["HOME"]?.presence
     return
       (home.map { URL(fileURLWithPath: $0, isDirectory: true) }
       ?? FileManager.default.homeDirectoryForCurrentUser).appendingPathComponent(path)
@@ -50,7 +50,8 @@ public enum AgentHookCatalogue {
       AgentHookEvent("UserPromptSubmit", .running, isPrompt: true),
       AgentHookEvent("PreToolUse", .running),
       AgentHookEvent("PostToolUse", .running),
-      AgentHookEvent("PermissionRequest", .attention, onlyWhenPrompting: true, isSilent: true),
+      AgentHookEvent(
+        "PermissionRequest", .attention, meansWaitingOnlyWhenPrompting: true, isSilent: true),
       AgentHookEvent("Notification", .attention, ignoredNotificationTypes: claudeAnnouncements),
       AgentHookEvent("SubagentStart", .running, subagentPhase: .started),
       AgentHookEvent("SubagentStop", .running, subagentPhase: .ended),
@@ -58,7 +59,7 @@ public enum AgentHookCatalogue {
       AgentHookEvent("StopFailure", .failed),
       AgentHookEvent("SessionEnd", .idle),
     ],
-    format: .userSettingsFile(millisecondTimeout: false),
+    format: .userSettingsFile(timeoutIsInMilliseconds: false),
     resumption: .always, wakingTaskTypes: claudeWakingTaskTypes,
     transcriptQueuesNotices: true)
 
@@ -79,14 +80,15 @@ public enum AgentHookCatalogue {
       AgentHookEvent("UserPromptSubmit", .running, isPrompt: true),
       AgentHookEvent("PreToolUse", .running),
       AgentHookEvent("PostToolUse", .running),
-      AgentHookEvent("PermissionRequest", .attention, onlyWhenPrompting: true, isSilent: true),
+      AgentHookEvent(
+        "PermissionRequest", .attention, meansWaitingOnlyWhenPrompting: true, isSilent: true),
       AgentHookEvent("SubagentStart", .running, subagentPhase: .started),
       AgentHookEvent("SubagentStop", .running, subagentPhase: .ended),
       AgentHookEvent("Stop", .done),
       AgentHookEvent("Interrupt", .idle, timeoutSeconds: codexExitTimeoutSeconds),
       AgentHookEvent("SessionEnd", .idle, timeoutSeconds: codexExitTimeoutSeconds),
     ],
-    format: .userSettingsFile(millisecondTimeout: false),
+    format: .userSettingsFile(timeoutIsInMilliseconds: false),
     trustNote:
       t("agent-hooks.codex-trust")
   )
@@ -106,7 +108,7 @@ public enum AgentHookCatalogue {
       AgentHookEvent("AfterAgent", .done),
       AgentHookEvent("SessionEnd", .idle),
     ],
-    format: .userSettingsFile(millisecondTimeout: true),
+    format: .userSettingsFile(timeoutIsInMilliseconds: true),
     backgroundShellMarker: geminiShellMarker, resumption: .whenGeminiSettingsSay)
 
   /// In the wrapper every shell-tool command runs in and nothing else does, so
@@ -131,7 +133,7 @@ public enum AgentHookCatalogue {
       AgentHookEvent("Stop", .done),
       AgentHookEvent("SessionEnd", .idle),
     ],
-    format: .ownHookFile, resumption: .always, workersAreConversations: true)
+    format: .ownHookFile, resumption: .always, subagentsAreConversations: true)
 
   /// OpenCode has no hooks in its settings: what a session is doing shows only
   /// to a plugin, so it is given one.

@@ -5,100 +5,100 @@ import Testing
 
 @Suite @MainActor
 struct AppModelSidebarFilterTests {
-  @Test func textLeftFromAnEarlierWindowKeepsTheFieldUpOnceItIsEmptied() {
-    let h = Harness()
-    h.model.select(h.main)
-    h.model.sidebarFilterText = "side"
-    #expect(h.model.showsSidebarFilter)
-    h.engine.focused.removeAll()
+  @Test func emptyingTheFilterTextKeepsTheFieldUpAndTheKeyboardInIt() {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    harness.model.sidebarFilterText = "side"
+    #expect(harness.model.showsSidebarFilter)
+    harness.engine.focused.removeAll()
 
-    h.model.sidebarFilterText = ""
+    harness.model.sidebarFilterText = ""
 
-    let shown = h.model.showsSidebarFilter
+    let shown = harness.model.showsSidebarFilter
     #expect(shown, "the field has the keyboard and would take it away")
-    #expect(h.engine.focused.isEmpty)
+    #expect(harness.engine.focused.isEmpty)
   }
 
   @Test func closingTheFieldClearsItsTextAndHandsTheKeyboardToTheActivePane() throws {
-    let h = Harness()
-    h.model.select(h.main)
-    let tab = try #require(h.model.workspace.activeTab(in: h.main.id))
-    h.model.setShowsSidebarFilter(true)
-    h.model.sidebarFilterText = "side"
-    h.engine.focused.removeAll()
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let tab = try #require(harness.model.workspace.activeTab(in: harness.main.id))
+    harness.model.setShowsSidebarFilter(true)
+    harness.model.sidebarFilterText = "side"
+    harness.engine.focused.removeAll()
 
-    h.model.setShowsSidebarFilter(false)
+    harness.model.setShowsSidebarFilter(false)
 
-    #expect(!h.model.showsSidebarFilter)
-    #expect(h.model.sidebarFilterText.isEmpty)
-    #expect(h.engine.focused == [tab.focusedSessionID])
+    #expect(!harness.model.showsSidebarFilter)
+    #expect(harness.model.sidebarFilterText.isEmpty)
+    #expect(harness.engine.focused == [tab.focusedSessionID])
   }
 
   @Test func emptyingTheTextOfAFieldOpenedByHandLeavesItUp() {
-    let h = Harness()
-    h.model.select(h.main)
-    h.model.setShowsSidebarFilter(true)
-    h.model.sidebarFilterText = "side"
-    h.engine.focused.removeAll()
+    let harness = Harness()
+    harness.model.select(harness.main)
+    harness.model.setShowsSidebarFilter(true)
+    harness.model.sidebarFilterText = "side"
+    harness.engine.focused.removeAll()
 
-    h.model.sidebarFilterText = ""
+    harness.model.sidebarFilterText = ""
 
-    #expect(h.model.showsSidebarFilter)
-    #expect(h.engine.focused.isEmpty)
+    #expect(harness.model.showsSidebarFilter)
+    #expect(harness.engine.focused.isEmpty)
   }
 
   @Test func theChevronCollapsesAProjectTheFilterHoldsOpenUntilTheTextChanges() {
-    let h = Harness()
-    h.model.setExpanded(false, for: h.project)
-    h.model.sidebarFilterText = "feat"
-    #expect(h.model.sidebarEntries.first?.isExpanded == true)
+    let harness = Harness()
+    harness.model.setExpanded(false, for: harness.project)
+    harness.model.sidebarFilterText = "feat"
+    #expect(harness.model.sidebarEntries.first?.isExpanded == true)
 
-    h.model.toggleExpansion(of: h.project)
+    harness.model.toggleExpansion(of: harness.project)
 
-    #expect(h.model.sidebarEntries.first?.isExpanded == false)
-    #expect(!h.project.isExpanded, "the stored flag is left for after the filter")
-    h.model.sidebarFilterText = "featu"
-    #expect(h.model.sidebarEntries.first?.isExpanded == true)
+    #expect(harness.model.sidebarEntries.first?.isExpanded == false)
+    #expect(!harness.project.isExpanded, "the stored flag is left for after the filter")
+    harness.model.sidebarFilterText = "featu"
+    #expect(harness.model.sidebarEntries.first?.isExpanded == true)
   }
 
   @Test func withNoFilterTheChevronSetsTheStoredFlag() {
-    let h = Harness()
-    h.model.setExpanded(true, for: h.project)
+    let harness = Harness()
+    harness.model.setExpanded(true, for: harness.project)
 
-    h.model.toggleExpansion(of: h.project)
+    harness.model.toggleExpansion(of: harness.project)
 
-    #expect(!h.project.isExpanded)
-    #expect(h.model.sidebarEntries.first?.isExpanded == false)
+    #expect(!harness.project.isExpanded)
+    #expect(harness.model.sidebarEntries.first?.isExpanded == false)
   }
 
   @Test func renamingARowOfAProjectCollapsedUnderTheFilterExpandsIt() {
-    let h = Harness()
-    h.model.sidebarFilterText = "feat"
-    h.model.toggleExpansion(of: h.project)
+    let harness = Harness()
+    harness.model.sidebarFilterText = "feat"
+    harness.model.toggleExpansion(of: harness.project)
 
-    h.model.beginRenamingWorktree(h.feature)
+    harness.model.beginRenamingWorktree(harness.feature)
 
-    #expect(h.model.sidebarEntries.first?.isExpanded == true)
+    #expect(harness.model.sidebarEntries.first?.isExpanded == true)
   }
 
   @Test func removingAProjectDropsItsCollapseWhileFiltering() {
-    let h = Harness()
-    h.model.sidebarFilterText = "feat"
-    h.model.toggleExpansion(of: h.project)
+    let harness = Harness()
+    harness.model.sidebarFilterText = "feat"
+    harness.model.toggleExpansion(of: harness.project)
 
-    h.model.removeProject(h.project)
+    harness.model.removeProject(harness.project)
 
-    #expect(h.model.projectsCollapsedWhileFiltering.isEmpty)
+    #expect(harness.model.projectsCollapsedWhileFiltering.isEmpty)
   }
 
   @Test func renamingARowTheFilterShowsLeavesTheStoredFlagAlone() {
-    let h = Harness()
-    h.model.setExpanded(false, for: h.project)
-    h.model.sidebarFilterText = "feat"
+    let harness = Harness()
+    harness.model.setExpanded(false, for: harness.project)
+    harness.model.sidebarFilterText = "feat"
 
-    h.model.beginRenamingWorktree(h.feature)
+    harness.model.beginRenamingWorktree(harness.feature)
 
-    #expect(!h.project.isExpanded)
-    #expect(h.model.sidebarEntries.first?.isExpanded == true)
+    #expect(!harness.project.isExpanded)
+    #expect(harness.model.sidebarEntries.first?.isExpanded == true)
   }
 }

@@ -24,7 +24,7 @@ extension AppModel {
   private func reconcile() {
     // A copy still here after handing over has no socket of its own, and the
     // config a shell's engine writes would outlive its quit; state-and-store.md.
-    let warm = yieldingToRunningInstance ? [] : warmWorktrees
+    let warm = isYieldingToRunningInstance ? [] : warmWorktrees
     let failures = reconciler.reconcile(
       shouldBeLive: { warm.contains($0.worktreeID) }, prepare: { preparedForLaunch($0) })
     for (index, failure) in failures.enumerated() {

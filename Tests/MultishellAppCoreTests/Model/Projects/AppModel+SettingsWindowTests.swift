@@ -7,26 +7,27 @@ import Testing
 @Suite @MainActor
 struct AppModelSettingsWindowTests {
   @Test func theSettingsWindowShowsTheProjectAskedForElseTheSelectedOne() {
-    let h = Harness()
+    let harness = Harness()
     let other = Scratch.path("settings-window")
     defer { Scratch.remove(other) }
-    let second = h.store.addProject(at: other)
-    #expect(h.model.settingsWindowProjectID == nil, "two projects and none selected")
+    let second = harness.store.addProject(at: other)
+    #expect(harness.model.settingsWindowProjectID == nil, "two projects and none selected")
 
-    h.model.select(h.main, openingFirstTab: .never)
-    #expect(h.model.settingsWindowProjectID == h.project.id)
+    harness.model.select(harness.main, openingFirstTab: .never)
+    #expect(harness.model.settingsWindowProjectID == harness.project.id)
 
-    h.model.requestedSettingsProjectID = second.id
-    #expect(h.model.settingsWindowProjectID == second.id)
+    harness.model.requestSettings(for: second)
+    #expect(harness.model.settingsWindowProjectID == second.id)
   }
 
   @Test func theFallbackProjectFollowsSelectionOrTheOnlyProject() {
-    let h = Harness()
+    let harness = Harness()
     #expect(
-      h.model.settingsWindowFallbackProject?.id == h.project.id, "one project, nothing selected")
-    h.store.addProject(at: URL(fileURLWithPath: "/other"))
-    #expect(h.model.settingsWindowFallbackProject == nil, "two projects, nothing selected")
-    h.model.select(h.feature)
-    #expect(h.model.settingsWindowFallbackProject?.id == h.project.id)
+      harness.model.settingsWindowFallbackProject?.id == harness.project.id,
+      "one project, nothing selected")
+    harness.store.addProject(at: URL(fileURLWithPath: "/other"))
+    #expect(harness.model.settingsWindowFallbackProject == nil, "two projects, nothing selected")
+    harness.model.select(harness.feature)
+    #expect(harness.model.settingsWindowFallbackProject?.id == harness.project.id)
   }
 }

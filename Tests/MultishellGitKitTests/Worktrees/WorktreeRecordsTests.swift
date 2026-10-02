@@ -9,49 +9,50 @@ import Testing
 @Suite(.serialized)
 struct WorktreeRecordsTests {
   @Test func indexWritesInALinkedWorktreeDoNotChangeTheRecords() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    let path = try await repo.coordinator.createThenRunPostCreate(
-      branch: "work", in: repo.project, settings: repo.worktreeSettings)
-    let common = try await repo.coordinator.git.commonGitDirectory(repo.project)
-    let before = WorktreeRecords.read(commonDirectory: common)
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let path = try await fixture.coordinator.createThenRunPostCreate(
+      branch: "work", in: fixture.project, settings: fixture.worktreeSettings)
+    let common = try await fixture.coordinator.git.commonGitDirectory(fixture.project)
+    let before = WorktreeRecords.read(in: common)
     #expect(before.files.keys.contains("worktrees/work/HEAD"))
 
     try "new\n".write(to: path.appendingPathComponent("n.txt"), atomically: true, encoding: .utf8)
-    _ = try await repo.runner.run(["add", "n.txt"], in: path)
-    _ = try await repo.runner.run(["status", "--porcelain"], in: path)
+    _ = try await fixture.runner.run(["add", "n.txt"], in: path)
+    _ = try await fixture.runner.run(["status", "--porcelain"], in: path)
 
-    #expect(WorktreeRecords.read(commonDirectory: common) == before)
+    #expect(WorktreeRecords.read(in: common) == before)
   }
 
   @Test func branchSwitchesLocksAndNewWorktreesChangeTheRecords() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    let common = try await repo.coordinator.git.commonGitDirectory(repo.project)
-    let empty = WorktreeRecords.read(commonDirectory: common)
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let common = try await fixture.coordinator.git.commonGitDirectory(fixture.project)
+    let empty = WorktreeRecords.read(in: common)
 
-    let path = try await repo.coordinator.createThenRunPostCreate(
-      branch: "work", in: repo.project, settings: repo.worktreeSettings)
-    let added = WorktreeRecords.read(commonDirectory: common)
+    let path = try await fixture.coordinator.createThenRunPostCreate(
+      branch: "work", in: fixture.project, settings: fixture.worktreeSettings)
+    let added = WorktreeRecords.read(in: common)
     #expect(added != empty)
 
-    _ = try await repo.runner.run(["checkout", "-q", "-b", "elsewhere"], in: path)
-    let switched = WorktreeRecords.read(commonDirectory: common)
+    _ = try await fixture.runner.run(["checkout", "-q", "-b", "elsewhere"], in: path)
+    let switched = WorktreeRecords.read(in: common)
     #expect(switched != added)
 
-    _ = try await repo.runner.run(["worktree", "lock", path.path], in: repo.project.path)
-    let locked = WorktreeRecords.read(commonDirectory: common)
+    _ = try await fixture.runner.run(["worktree", "lock", path.path], in: fixture.project.path)
+    let locked = WorktreeRecords.read(in: common)
     #expect(locked != switched)
 
-    _ = try await repo.runner.run(["checkout", "-q", "-b", "main-moved"], in: repo.project.path)
-    #expect(WorktreeRecords.read(commonDirectory: common) != locked, "the main HEAD counts too")
+    _ = try await fixture.runner.run(
+      ["checkout", "-q", "-b", "main-moved"], in: fixture.project.path)
+    #expect(WorktreeRecords.read(in: common) != locked, "the main HEAD counts too")
   }
 
   @Test func watchPathsMoveFromDotGitToWorktreesOnceOneExists() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-    let project = repo.project
-    let coordinator = repo.coordinator
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    let project = fixture.project
+    let coordinator = fixture.coordinator
 
     // Asked the way the app asks: the common directory once, then the
     // directories read off it without spawning git for each watcher tick.
@@ -61,7 +62,7 @@ struct WorktreeRecordsTests {
     #expect(before.map(\.lastPathComponent) == [".git"])
 
     try await coordinator.createThenRunPostCreate(
-      branch: "one", in: project, settings: repo.worktreeSettings)
+      branch: "one", in: project, settings: fixture.worktreeSettings)
     let after = WorktreeRecords.directoriesToWatch(in: common)
     #expect(after.map(\.lastPathComponent) == ["worktrees", "one"])
   }

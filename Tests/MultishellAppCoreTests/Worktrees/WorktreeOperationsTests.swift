@@ -5,20 +5,20 @@ import Testing
 
 @Suite
 struct WorktreeOperationsTests {
-  private let a = "/trees/a"
-  private let b = "/trees/b"
+  private let firstTree = "/trees/a"
+  private let secondTree = "/trees/b"
 
   @Test func aStageBeginsAdvancesAndFinishesOnlyWhileItIsTheOneRunning() {
     var operations = WorktreeOperations()
-    operations.begin(.preDeleteHook, on: a)
-    #expect(operations.isBusy(a) && !operations.isBusy(b))
-    operations.advance(to: .removingWorktree, on: a)
-    #expect(operations[a]?.stage == .removingWorktree)
+    operations.begin(.preDeleteHook, on: firstTree)
+    #expect(operations.isBusy(firstTree) && !operations.isBusy(secondTree))
+    operations.advance(to: .removingWorktree, on: firstTree)
+    #expect(operations[firstTree]?.stage == .removingWorktree)
 
-    let otherStage = operations.finish(.postCreateHook, on: a)
+    let otherStage = operations.finish(.postCreateHook, on: firstTree)
     #expect(!otherStage, "another stage's ending changes nothing")
-    #expect(operations[a]?.stage == .removingWorktree)
-    let ownStage = operations.finish(.removingWorktree, on: a)
+    #expect(operations[firstTree]?.stage == .removingWorktree)
+    let ownStage = operations.finish(.removingWorktree, on: firstTree)
     #expect(ownStage)
     #expect(operations.isEmpty)
   }
@@ -27,40 +27,42 @@ struct WorktreeOperationsTests {
   /// the removal's stage or put its own failure over it.
   @Test func aRemovalTakesTheEntryFromARunningPostCreateHook() {
     var operations = WorktreeOperations()
-    operations.begin(.postCreateHook, on: a)
-    operations.begin(.preDeleteHook, on: a)
+    operations.begin(.postCreateHook, on: firstTree)
+    operations.begin(.preDeleteHook, on: firstTree)
 
-    let finished = operations.finish(.postCreateHook, on: a)
-    let failed = operations.fail(.postCreateHook, on: a, message: "npm ERR!")
+    let finished = operations.finish(.postCreateHook, on: firstTree)
+    let failed = operations.fail(.postCreateHook, on: firstTree, message: "npm ERR!")
     #expect(!finished && !failed)
-    #expect(operations[a] == WorktreeOperation(.preDeleteHook), "the removal's entry is untouched")
+    #expect(
+      operations[firstTree] == WorktreeOperation(.preDeleteHook), "the removal's entry is untouched"
+    )
   }
 
   @Test func aFailureHoldsTheEntryUntilDismissedAndIgnoresLaterStages() {
     var operations = WorktreeOperations()
-    operations.begin(.postCreateHook, on: a)
-    let recorded = operations.fail(.postCreateHook, on: a, message: "exit 3")
+    operations.begin(.postCreateHook, on: firstTree)
+    let recorded = operations.fail(.postCreateHook, on: firstTree, message: "exit 3")
     #expect(recorded)
-    #expect(operations[a]?.failure == "exit 3")
-    #expect(operations.isBusy(a))
+    #expect(operations[firstTree]?.failure == "exit 3")
+    #expect(operations.isBusy(firstTree))
 
-    operations.advance(to: .removingWorktree, on: a)
-    #expect(operations[a]?.stage == .postCreateHook, "a failed entry does not advance")
-    let finished = operations.finish(.postCreateHook, on: a)
+    operations.advance(to: .removingWorktree, on: firstTree)
+    #expect(operations[firstTree]?.stage == .postCreateHook, "a failed entry does not advance")
+    let finished = operations.finish(.postCreateHook, on: firstTree)
     #expect(!finished, "nor does it finish on its own")
 
-    let dismissed = operations.dismiss(a)
+    let dismissed = operations.dismiss(firstTree)
     #expect(dismissed?.stage == .postCreateHook && dismissed?.failure == "exit 3")
     #expect(operations.isEmpty)
   }
 
   @Test func dismissLeavesARunningOperationAloneAndClearTakesAnything() {
     var operations = WorktreeOperations()
-    operations.begin(.removingWorktree, on: a)
-    #expect(operations.dismiss(a) == nil)
-    #expect(operations.isBusy(a))
-    operations.clear(a)
+    operations.begin(.removingWorktree, on: firstTree)
+    #expect(operations.dismiss(firstTree) == nil)
+    #expect(operations.isBusy(firstTree))
+    operations.clear(firstTree)
     #expect(operations.isEmpty)
-    #expect(operations.dismiss(b) == nil, "nothing there")
+    #expect(operations.dismiss(secondTree) == nil, "nothing there")
   }
 }

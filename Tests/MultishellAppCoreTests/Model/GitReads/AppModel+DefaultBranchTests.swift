@@ -6,27 +6,28 @@ import Testing
 @Suite @MainActor
 struct AppModelDefaultBranchTests {
   @Test func theCaptionNamesTheDetectedBranchAndSaysSoWhenThereIsNone() {
-    let h = Harness()
+    let harness = Harness()
     #expect(
-      h.model.defaultBranchCaption(for: h.project)
+      harness.model.defaultBranchCaption(for: harness.project)
         == "No branch to measure merges against, so no worktree is badged as merged.")
 
-    h.model.defaultBranches[h.project.id] = DefaultBranch(
+    harness.model.defaultBranches[harness.project.id] = DefaultBranch(
       shortName: "origin/trunk", nameWithoutRemote: "trunk", tip: "abc",
       fullName: "refs/remotes/origin/trunk")
 
     #expect(
-      h.model.defaultBranchCaption(for: h.project) == "Merges are measured against origin/trunk.")
+      harness.model.defaultBranchCaption(for: harness.project)
+        == "Merges are measured against origin/trunk.")
   }
 
   @Test func theDefaultBranchFieldShowsTheDetectedBranchWithoutItsRemote() {
-    let h = Harness()
-    #expect(h.model.defaultBranchName(of: h.project) == "main", "nothing detected yet")
+    let harness = Harness()
+    #expect(harness.model.defaultBranchName(of: harness.project) == "main", "nothing detected yet")
 
-    h.model.defaultBranches[h.project.id] = DefaultBranch(
+    harness.model.defaultBranches[harness.project.id] = DefaultBranch(
       shortName: "origin/trunk", nameWithoutRemote: "trunk", tip: "abc",
       fullName: "refs/remotes/origin/trunk")
 
-    #expect(h.model.defaultBranchName(of: h.project) == "trunk")
+    #expect(harness.model.defaultBranchName(of: harness.project) == "trunk")
   }
 }

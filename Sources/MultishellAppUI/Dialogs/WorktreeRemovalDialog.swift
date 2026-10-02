@@ -11,8 +11,7 @@ extension View {
       DestructiveAlert.make(
         title: pending.title,
         message: pending.message(warning: model.worktreeRemovalWarning(for: pending)),
-        choices: pending.choices.map(\.label),
-        cancel: t("action.cancel"))
+        choices: pending.choices.map(\.label))
     } answer: { pending, choice in
       model.answerWorktreeRemoval(pending, choice: choice)
     }

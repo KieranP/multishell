@@ -2,7 +2,6 @@ import Testing
 
 @testable import MultishellAppCore
 
-/// The terminal font picker's rows.
 @Suite
 struct FontDetectionTests {
   private let fonts = FontDetection(

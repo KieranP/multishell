@@ -27,7 +27,7 @@ extension WorktreeCoordinator {
     } else {
       try await WorktreeHooks.run(
         .preDelete, for: project, worktreePath: path, branch: branchOrHead, shellPath: shellPath,
-        timeout: timeout, stopper: stopper, willRun: { onStep?(.preDeleteHook) })
+        timeout: timeout, stopper: stopper, onWillRun: { onStep?(.preDeleteHook) })
       onStep?(.removingWorktree)
       if directoryExists {
         do {
@@ -43,7 +43,7 @@ extension WorktreeCoordinator {
       try await git.forget(worktree, in: project)
       try await WorktreeHooks.run(
         .postDelete, for: project, worktreePath: path, branch: branchOrHead, shellPath: shellPath,
-        timeout: timeout, stopper: stopper, willRun: { onStep?(.postDeleteHook) })
+        timeout: timeout, stopper: stopper, onWillRun: { onStep?(.postDeleteHook) })
     }
     if deletingBranch, let branch = worktree.branch {
       onStep?(.deletingBranch)

@@ -45,7 +45,7 @@ struct WorktreeStageHandles: Sendable {
   }
 
   /// The sheet's Cancel while the pre-create hook or git runs.
-  func cancelCreation() {
+  func stopCreation() {
     creationStopper?.stop()
   }
 

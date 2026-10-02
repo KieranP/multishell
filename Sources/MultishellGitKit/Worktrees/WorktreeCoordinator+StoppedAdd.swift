@@ -26,8 +26,8 @@ extension WorktreeCoordinator {
   private static func removeEmptyDirectories(from path: URL, through top: URL) {
     let manager = FileManager.default
     var directory = path.standardizedFileURL
-    let last = top.standardizedFileURL.pathComponents.count
-    while directory.pathComponents.count >= last {
+    let topDepth = top.standardizedFileURL.pathComponents.count
+    while directory.pathComponents.count >= topDepth {
       // `rmdir` refuses a directory with anything in it, a create beside this
       // one having perhaps made its checkout there since.
       if manager.fileExists(atPath: directory.path), rmdir(directory.path) != 0 { return }

@@ -1,14 +1,14 @@
 import Foundation
-import MultishellCore
 import TestSupport
 import Testing
 
+@testable import MultishellCore
 @testable import MultishellGitKit
 
-/// The ref read carries both the sidebar's commit dates and the badges' tips, and a git that
-/// cannot give the first must still give the second.
 @Suite(.serialized)
 struct WorktreeGitBranchesTests {
+  /// The ref read carries both the sidebar's commit dates and the badges' tips, and a git that
+  /// cannot give the first must still give the second.
   @Test func aGitTooOldForTheDateAtomStillAnswersWithTheRest() async throws {
     // Fails any query naming committerdate, as git does for an unknown
     // format atom, and answers the rest.

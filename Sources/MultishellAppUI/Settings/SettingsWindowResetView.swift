@@ -14,8 +14,8 @@ final class SettingsWindowResetView: AccessibilityHiddenView {
     stopObserving()
     hasBeenShown = false
     guard let window else { return }
-    // Placing but not resetting the tab, a write to the view's state here
-    // being a write during a SwiftUI update. The key pass does the tab.
+    // Placing but not resetting the page, a write to the view's state here
+    // being a write during a SwiftUI update. The key pass does the page.
     centre(window)
     observe(NSWindow.didBecomeKeyNotification, from: window) { [weak self] window in
       guard let self, !hasBeenShown else { return }
@@ -28,7 +28,7 @@ final class SettingsWindowResetView: AccessibilityHiddenView {
       reset(window)
     }
     // The user cannot resize a settings window, so every resize is AppKit
-    // settling: the tab band lands late and grows the frame.
+    // settling: the page toolbar lands late and grows the frame.
     observe(NSWindow.didResizeNotification, from: window) { [weak self] window in
       self?.centre(window)
     }

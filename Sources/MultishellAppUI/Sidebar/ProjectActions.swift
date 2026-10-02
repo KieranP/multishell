@@ -19,7 +19,7 @@ struct ProjectActions: View {
       .disabled(model.isFetching(project))
     Divider()
     Button(t("action.project-settings")) {
-      model.requestedSettingsProjectID = project.id
+      model.requestSettings(for: project)
       openWindow(id: ProjectSettingsWindow.windowID)
     }
     Button(t("action.reveal-in-finder")) { model.revealInFileBrowser(project.path) }

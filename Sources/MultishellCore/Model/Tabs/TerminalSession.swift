@@ -4,14 +4,14 @@ import Foundation
 /// `TerminalHost`. No natural key, so it carries a generated id.
 public struct TerminalSession: Identifiable, Codable, Hashable, Sendable {
   public let id: UUID
-  public var worktreeID: Worktree.ID
-  public var workingDirectory: URL
-  public var title: String
+  public internal(set) var worktreeID: Worktree.ID
+  public internal(set) var workingDirectory: URL
+  public internal(set) var title: String
   /// `nil` runs the user's login shell.
   public var command: [String]?
   /// The agent this tab was opened for. The command line is built when the
   /// shell starts, so a saved tab resumes and a new install applies.
-  public var agentID: String?
+  public internal(set) var agentID: String?
   /// The shell to run when `command` is nil. Runtime only, never saved: a
   /// relaunched tab reads the setting again.
   public var shellOverride: String?
@@ -45,6 +45,6 @@ public struct TerminalSession: Identifiable, Codable, Hashable, Sendable {
 
   /// What the session runs as: the chosen shell, else `$SHELL`.
   public var shellPath: String {
-    shellOverride ?? ShellCatalogue.loginShellPath()
+    shellOverride ?? ShellChoice.loginShellPath()
   }
 }

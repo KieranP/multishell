@@ -13,23 +13,18 @@ extension Helper {
   static func relay(environment: [String: String], input: FileHandle, shellPID: Int32?) {
     for number in relayIgnoredSignals { _ = signal(number, SIG_IGN) }
     let watch = shellPID.flatMap { InputOrExitWatch(descriptor: input.fileDescriptor, pid: $0) }
-    var pending = Data()
-    func relayLines() {
-      while let newline = pending.firstIndex(of: UInt8(ascii: "\n")) {
-        relayLine(String(decoding: pending[..<newline], as: UTF8.self), environment: environment)
-        pending.removeSubrange(...newline)
-      }
+    var pending = LineBuffer()
+    func relayLines(_ chunk: Data) {
+      for line in pending.append(chunk) { relayLine(line, environment: environment) }
     }
     while true {
       if let watch, watch.next() == .exited {
-        pending.append(watch.drain())
-        relayLines()
+        relayLines(watch.drain())
         return
       }
       let chunk = input.availableData
       guard !chunk.isEmpty else { return }
-      pending.append(chunk)
-      relayLines()
+      relayLines(chunk)
     }
   }
 

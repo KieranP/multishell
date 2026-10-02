@@ -5,9 +5,9 @@ public struct NotificationPreference: Codable, Hashable, Sendable {
   /// lists them, most urgent first.
   public static let notifiableStates: [SessionState] = [.attention, .failed, .done]
 
-  public var attention: Bool
-  public var failed: Bool
-  public var done: Bool
+  var attention: Bool
+  var failed: Bool
+  var done: Bool
 
   /// Off until asked for, which is also where the permission prompt belongs.
   static let off = NotificationPreference()

@@ -6,13 +6,13 @@ extension AppModel {
   public func setIconGlyph(_ glyph: String?, for project: Project) {
     var settings = ownSettings(of: project)
     settings.iconGlyph = glyph
-    updateSettings(settings, for: project)
+    setSettings(settings, for: project)
   }
 
   /// A theme slot to tint the icon from, or `nil` for none.
   public func setIconTint(_ slot: Int?, for project: Project) {
     var settings = ownSettings(of: project)
     settings.iconTint = slot
-    updateSettings(settings, for: project)
+    setSettings(settings, for: project)
   }
 }

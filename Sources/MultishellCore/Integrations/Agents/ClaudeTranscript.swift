@@ -19,14 +19,14 @@ enum ClaudeTranscript {
     guard (try? handle.seek(toOffset: start)) != nil, let data = try? handle.readToEnd() else {
       return false
     }
-    return turnFollows(in: data, fromStart: start == 0)
+    return turnFollows(in: data, startsAtFileStart: start == 0)
   }
 
   /// A notice queued since the last Stop and neither taken off the queue nor
   /// handed to the model; by timestamp, the file's order not being time's.
-  static func turnFollows(in data: Data, fromStart: Bool) -> Bool {
+  static func turnFollows(in data: Data, startsAtFileStart: Bool) -> Bool {
     var lines = data.split(separator: UInt8(ascii: "\n"))
-    if !fromStart, !lines.isEmpty { lines.removeFirst() }
+    if !startsAtFileStart, !lines.isEmpty { lines.removeFirst() }
     var lastStop = ""
     var queued: [String: String] = [:]
     var delivered: [String: String] = [:]

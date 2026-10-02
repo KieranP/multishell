@@ -3,10 +3,16 @@
 struct TrustDecision: Codable, Hashable, Sendable {
   /// `FileDigest.sha256` of the `.multishell.json` this answers for.
   var digest: String
-  var trusted: Bool
+  var isTrusted: Bool
 
-  init(digest: String, trusted: Bool) {
+  init(digest: String, isTrusted: Bool) {
     self.digest = digest
-    self.trusted = trusted
+    self.isTrusted = isTrusted
+  }
+
+  /// `isTrusted` keeps `trusted`, the key it was written under.
+  private enum CodingKeys: String, CodingKey {
+    case digest
+    case isTrusted = "trusted"
   }
 }

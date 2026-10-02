@@ -20,7 +20,6 @@ struct AppModelAgentBoardTests {
     #expect(model.agentBoard.cardCount == 1)
     #expect(model.agentBoard.count(of: .idle) == 1)
 
-    // An agent reports from that shell, so the pane is one from now on.
     harness.stateSource.send(
       SessionStateReport(state: .running, sessionID: session.id, agentID: "claude"))
     model.setShowsAllTerminals(false)
@@ -78,7 +77,7 @@ struct AppModelAgentBoardTests {
 
   /// Otherwise the selected worktree's Done states clear as the board opens, and nothing would
   /// ever say a pane had finished.
-  @Test func theBoardIsNotShowingATabSoADoneSurvivesOpeningIt() {
+  @Test func aDoneArrivingUnderTheBoardStaysUntilItsCardIsOpened() {
     let (harness, session) = harnessWithOnePane()
     let model = harness.model
     #expect(model.isPaneInView(session.id))
@@ -90,8 +89,6 @@ struct AppModelAgentBoardTests {
     harness.stateSource.send(SessionStateReport(state: .done, sessionID: session.id))
     #expect(model.agentBoard.count(of: .done) == 1)
 
-    // Clicking through shows the pane, which is what clears a Done. The
-    // card does not go anywhere: it moves to Idle.
     model.show(model.agentBoard.column(.done).cards[0])
     #expect(!model.showsAgentBoard)
     #expect(model.agentBoard.count(of: .done) == 0)
@@ -160,6 +157,16 @@ struct AppModelAgentBoardTests {
     }
   }
 
+  @Test func theSidebarEntryCarriesOnlyTheLanesWithSomethingInThem() {
+    let (harness, session) = harnessWithOnePane()
+    let model = harness.model
+    #expect(model.agentSidebarCounts.isEmpty)
+
+    harness.stateSource.send(
+      SessionStateReport(state: .running, sessionID: session.id, agentID: "claude"))
+    #expect(model.agentSidebarCounts == [AgentBoardLaneCount(.working, 1)])
+  }
+
   @Test func theBadgeCountsTheWaitingColumnAndClearsWithIt() {
     let (harness, session) = harnessWithOnePane()
     let model = harness.model
@@ -172,7 +179,6 @@ struct AppModelAgentBoardTests {
       SessionStateReport(state: .attention, sessionID: session.id, agentID: "claude"))
     #expect(harness.platform.badges.last == 1)
 
-    // A failure waits with the rest, so the badge does not move.
     harness.stateSource.send(
       SessionStateReport(state: .failed, sessionID: session.id, agentID: "claude"))
     #expect(model.agentBoard.count(of: .waiting) == 1)
@@ -254,7 +260,8 @@ struct AppModelAgentBoardTests {
     let cards = model.agentBoard.cardCount
 
     harness.stateSource.send(
-      SessionStateReport(state: .attention, cwd: harness.feature.path.path, agentID: "claude"))
+      SessionStateReport(
+        state: .attention, workingDirectory: harness.feature.path.path, agentID: "claude"))
 
     #expect(model.state(ofWorktree: harness.feature.id) == .attention, "the sidebar dot moves")
     #expect(model.agentBoard.cardCount == cards, "and nothing else does")
@@ -287,8 +294,6 @@ struct AppModelAgentBoardTests {
     #expect(model.agentBoard.count(of: .done) == 0)
   }
 
-  /// A tab the user named is named that on every pane of it, in the rows and on
-  /// the cards: the name is theirs, and the shell's own title goes under it.
   @Test func aPaneInheritsItsTabsCustomNameOverTheShellsTitle() {
     let harness = Harness()
     let model = harness.model
@@ -408,15 +413,15 @@ struct AppModelAgentBoardTests {
     let model = harness.model
     model.setShowsAllTerminals(true)
     _ = model.agentBoard
-    let changed = Recorder<String>()
+    let changed = Flag()
 
     withObservationTracking {
       _ = model.agentBoard
     } onChange: {
-      changed.record("board")
+      changed.raise()
     }
     model.noteTitle("vim", of: session.id)
 
-    #expect(changed.received == ["board"])
+    #expect(changed.raised)
   }
 }

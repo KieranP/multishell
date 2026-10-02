@@ -9,9 +9,9 @@ public struct NewWorktreeDraft: Equatable, Sendable {
   public var branch = ""
   public var createsBranch = true
   public var baseBranch = ""
-  public var localBranches: [String] = []
-  public var remoteBranches: [String] = []
-  public var hasCommits = true
+  public internal(set) var localBranches: [String] = []
+  public internal(set) var remoteBranches: [String] = []
+  public internal(set) var hasCommits = true
   public var isCreating = false
   /// What was typed in new-branch mode, kept across a visit to the
   /// existing-branch picker so coming back restores it.
@@ -61,7 +61,7 @@ public struct NewWorktreeDraft: Equatable, Sendable {
 
   /// The field and the picker share `branch`. Coming back restores what was
   /// typed, never what was picked, which would be a duplicate.
-  public mutating func modeChanged(checkedOut: Set<String>) {
+  public mutating func fitBranchToMode(checkedOut: Set<String>) {
     if createsBranch {
       branch = typedBranch
     } else {
@@ -73,7 +73,7 @@ public struct NewWorktreeDraft: Equatable, Sendable {
 
   /// A project removed from the sidebar while the sheet is up goes back to
   /// the placeholder rather than a selection nothing in the list matches.
-  public mutating func projectsChanged(to ids: [Project.ID]) {
+  public mutating func forgetProject(unlessIn ids: [Project.ID]) {
     if let projectID, !ids.contains(projectID) { self.projectID = nil }
   }
 
@@ -89,7 +89,7 @@ public struct NewWorktreeDraft: Equatable, Sendable {
       return false
     }
     return createsBranch
-      ? GitRefName.isValidBranch(branch)
+      ? GitBranchName.isValid(branch)
       : availableBranches(checkedOut: checkedOut).contains(branch)
   }
 
@@ -97,7 +97,7 @@ public struct NewWorktreeDraft: Equatable, Sendable {
   /// so. An empty field is not yet wrong.
   public var branchNameIsRefused: Bool {
     guard createsBranch else { return false }
-    return !trimmedBranch.isEmpty && !GitRefName.isValidBranch(trimmedBranch)
+    return !trimmedBranch.isEmpty && !GitBranchName.isValid(trimmedBranch)
   }
 
   /// The name as git would be handed it, the field's stray spaces dropped.

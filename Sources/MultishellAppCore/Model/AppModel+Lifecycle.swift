@@ -2,8 +2,8 @@ import MultishellCore
 import MultishellProcess
 
 extension AppModel {
-  /// Restores the sidebar from disk, then asks git what each project
-  /// actually has. Terminals are not restored; only the tree is.
+  /// Opens the socket and asks git what each project actually has, over a
+  /// workspace already read from disk. Terminals are not restored.
   public func start() async {
     guard startStateSource() else { return }
     host.claimSharedFiles()
@@ -25,7 +25,7 @@ extension AppModel {
       try stateSource.start()
       return true
     } catch let failure as SocketFailure where failure.kind == .inUse {
-      yieldingToRunningInstance = true
+      isYieldingToRunningInstance = true
       pendingSave?.cancel()
       platform.handOverToRunningInstance()
       // Still here: the platform could not quit, so say what is wrong.

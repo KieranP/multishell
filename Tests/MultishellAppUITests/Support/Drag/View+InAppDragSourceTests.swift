@@ -7,22 +7,20 @@ import Testing
 
 @Suite @MainActor
 struct ViewInAppDragSourceTests {
-  private func threeTabs(_ h: ModelHarness) -> (Worktree, [TerminalTab.ID]) {
-    let worktree = Worktree(
-      path: h.project.path, projectID: h.project.id, head: "a", branch: "main", isPrimary: true)
-    h.store.replaceWorktrees([worktree], forProject: h.project.id)
-    h.model.select(worktree)
-    h.model.newTab()
-    h.model.newTab()
-    return (worktree, h.model.workspace.tabs(in: worktree.id).map(\.id))
+  private func threeTabs(_ harness: ModelHarness) -> (Worktree, [TerminalTab.ID]) {
+    let worktree = harness.addPrimaryWorktree(head: "a")
+    harness.model.select(worktree)
+    harness.model.newTab()
+    harness.model.newTab()
+    return (worktree, harness.model.workspace.tabs(in: worktree.id).map(\.id))
   }
 
   private func host(
-    _ h: ModelHarness, _ worktree: Worktree, width: CGFloat,
-    button: PrimaryMouseButton = PrimaryMouseButton(pressedOverride: false)
+    _ harness: ModelHarness, _ worktree: Worktree, width: CGFloat,
+    button: PrimaryMouseButton = PrimaryMouseButton(isPressedOverride: false)
   ) -> NSWindow {
     let host = NSHostingView(
-      rootView: WorktreeTabGroups(model: h.model, worktree: worktree, theme: .multishellDark)
+      rootView: WorktreeTabGroups(model: harness.model, worktree: worktree, theme: .multishellDark)
         .environment(\.primaryMouseButton, button))
     host.frame = CGRect(x: 0, y: 0, width: width, height: 400)
     let window = OffscreenWindow.holding(host)
@@ -31,36 +29,36 @@ struct ViewInAppDragSourceTests {
   }
 
   @Test func aDragWhoseTabClosesInTheAirEnds() {
-    let h = ModelHarness()
-    let (worktree, tabs) = threeTabs(h)
+    let harness = ModelHarness()
+    let (worktree, tabs) = threeTabs(harness)
     #expect(tabs.count == 3)
-    let window = host(h, worktree, width: 800)
+    let window = host(harness, worktree, width: 800)
 
-    h.model.beginTabDrag(tabs[2])
-    h.model.closeTab(tabs[2])
-    OffscreenWindow.settle(until: { !h.model.tabDrag.isDragging }, within: 1)
+    harness.model.beginTabDrag(tabs[2])
+    harness.model.closeTab(tabs[2])
+    OffscreenWindow.settle(until: { !harness.model.tabDrag.isDragging }, within: 1)
 
-    #expect(!h.model.tabDrag.isDragging)
+    #expect(!harness.model.tabDrag.isDragging)
     withExtendedLifetime(window) {}
   }
 
   @Test func aDragWhoseStripStopsScrollingStaysInTheAirWhileTheButtonIsDown() {
-    let h = ModelHarness()
-    let (worktree, tabs) = threeTabs(h)
-    let metrics = h.model.metrics
+    let harness = ModelHarness()
+    let (worktree, tabs) = threeTabs(harness)
+    let metrics = harness.model.metrics
     let window = host(
-      h, worktree, width: metrics.newTabMenuWidth + 2 * metrics.tabMinWidth,
-      button: PrimaryMouseButton(pressedOverride: true))
-    h.model.beginTabDrag(tabs[2])
-    h.model.shuffleTab(tabs[2], .before, past: tabs[0])
-    let shuffled = h.model.workspace.tabs(in: worktree.id).map(\.id)
+      harness, worktree, width: metrics.newTabMenuWidth + 2 * metrics.tabMinWidth,
+      button: PrimaryMouseButton(isPressedOverride: true))
+    harness.model.beginTabDrag(tabs[2])
+    harness.model.shuffleTab(tabs[2], .before, past: tabs[0])
+    let shuffled = harness.model.workspace.tabs(in: worktree.id).map(\.id)
 
     window.setContentSize(NSSize(width: 1200, height: 400))
     window.contentView?.layoutSubtreeIfNeeded()
     OffscreenWindow.settle(within: 0.25)
 
-    #expect(h.model.tabDrag.tabID == tabs[2])
-    #expect(h.model.workspace.tabs(in: worktree.id).map(\.id) == shuffled)
+    #expect(harness.model.tabDrag.tabID == tabs[2])
+    #expect(harness.model.workspace.tabs(in: worktree.id).map(\.id) == shuffled)
     withExtendedLifetime(window) {}
   }
 }

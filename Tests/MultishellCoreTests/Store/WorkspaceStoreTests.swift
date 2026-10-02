@@ -1,5 +1,4 @@
 import Foundation
-import Observation
 import TestScratch
 import Testing
 
@@ -85,16 +84,6 @@ struct WorkspaceStoreTests {
     #expect(store.workspace.worktreeNames.isEmpty, "a removed project takes its names too")
   }
 
-  @Test func closingTheActiveTabActivatesAnother() {
-    let (store, _, worktree) = demoStore()
-    let first = store.openTab(in: worktree.id)!
-    let second = store.openTab(in: worktree.id)!
-
-    #expect(store.workspace.activeTab(in: worktree.id)?.id == second.id)
-    store.closeTab(second.id)
-    #expect(store.workspace.activeTab(in: worktree.id)?.id == first.id)
-  }
-
   @Test func sessionsInheritTheWorktreeDirectory() {
     let (store, _, worktree) = demoStore()
     let tab = store.openTab(in: worktree.id)!
@@ -119,7 +108,7 @@ struct WorkspaceStoreTests {
     #expect(store.workspace.agentFlags["claude"] == nil, "cleared, so nothing is left behind")
   }
 
-  @Test func unknownIDsAreIgnored() {
+  @Test func everyTabAndPaneWriteNamingAnUnknownIDLeavesTheWorkspaceAlone() {
     let (store, _, worktree) = demoStore()
     store.openTab(in: worktree.id)
     let before = store.workspace

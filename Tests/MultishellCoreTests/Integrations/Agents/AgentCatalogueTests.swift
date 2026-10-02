@@ -41,4 +41,25 @@ struct AgentCatalogueTests {
     #expect(AgentCatalogue.agent("claude")?.fileMentionPrefix == "@")
     #expect(AgentCatalogue.agent("codex")?.fileMentionPrefix == nil)
   }
+
+  @Test func everyCatalogueAgentHasAMarkAndAParsableTint() {
+    for agent in AgentCatalogue.agents {
+      #expect(AgentCatalogue.mark(agent.id) == agent.mark)
+      guard agent.markTint != nil else { continue }
+      #expect(
+        AgentCatalogue.markTintRGB(agent.id) != nil,
+        "\(agent.id) names a tint the hex parser rejects")
+    }
+  }
+
+  @Test func anAgentWithNoMarkOfItsOwnFallsBackToLetters() {
+    #expect(AgentCatalogue.mark(AgentCatalogue.customID) == .monogram("Cc"))
+  }
+
+  /// A workspace written by a newer build names agents this one has never
+  /// heard of; the tab still has to draw something.
+  @Test func anUnknownIdGetsLettersFromTheIdItself() {
+    #expect(AgentCatalogue.mark("wezterm-agent") == .monogram("Wa"))
+    #expect(AgentCatalogue.markTintRGB("wezterm-agent") == nil)
+  }
 }

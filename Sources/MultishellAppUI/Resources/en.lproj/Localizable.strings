@@ -247,6 +247,7 @@
 "terminal.path" = "Path:";
 "terminal.path-info" = "The shell's executable, for one that is neither in /etc/shells nor on the login shell's PATH. Run as a login shell like any other choice.";
 "terminal.path-prompt" = "/opt/homebrew/bin/nu";
+"window.main" = "Multishell";
 "window.project-settings" = "Project Settings";
 "window.project-settings-empty" = "Right-click a project in the sidebar and choose Project Settings.";
 "window.project-settings-title" = "%@ Settings";

@@ -2,8 +2,6 @@ import Testing
 
 @testable import MultishellAppCore
 
-/// How wide a column is drawn, and when the board gives up sharing and
-/// scrolls instead.
 @Suite
 struct AgentBoardLayoutTests {
   private let floor = 208.0

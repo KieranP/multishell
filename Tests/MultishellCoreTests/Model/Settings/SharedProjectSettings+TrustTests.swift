@@ -5,22 +5,6 @@ import Testing
 
 @Suite
 struct SharedProjectSettingsTrustTests {
-  /// `copiedPaths: .aws.json` would carry a gitignored secret into a worktree
-  /// an agent reads, so the lists wait for the same yes the hooks do.
-  @Test func aFileListFromTheRepositoryWaitsForTrustLikeAHook() throws {
-    let shared = try writtenAndReadBack(
-      SharedProjectSettings(linkedPaths: "node_modules", copiedPaths: ".aws.json"))
-
-    #expect(shared.asksForTrust, "and so the question is asked")
-    let untrusted = ProjectSettings().layered(over: shared)
-    #expect(untrusted.linkedPaths.isEmpty && untrusted.copiedPaths.isEmpty)
-
-    var settings = ProjectSettings()
-    settings.recordTrustDecision(digest: try #require(shared.digest), trusted: true)
-    let trusted = settings.layered(over: shared)
-    #expect(trusted.linkedPaths == "node_modules" && trusted.copiedPaths == ".aws.json")
-  }
-
   @Test func theQuestionShowsTheListsAlongsideTheHooks() throws {
     let shared = SharedProjectSettings(
       postCreateHook: "npm ci", linkedPaths: "node_modules", copiedPaths: ".env")
@@ -83,12 +67,12 @@ struct SharedProjectSettingsTrustTests {
     #expect(untrusted.worktreeDirectory == nil, "the reader's own, so the global default")
 
     var settings = ProjectSettings()
-    settings.recordTrustDecision(digest: try #require(shared.digest), trusted: true)
+    settings.recordTrustDecision(digest: try #require(shared.digest), isTrusted: true)
     #expect(settings.layered(over: shared).worktreeDirectory == ".worktrees")
   }
 
-  /// A list waits for the same yes a hook does. The user's own list is
-  /// theirs and wins whole, trusted or not.
+  /// `copiedPaths: .aws.json` would carry a secret into a worktree an agent reads,
+  /// so a list waits for a hook's yes. The user's own list wins whole.
   @Test func aRepositorysListOfWhatNewWorktreesAreGivenWaitsToBeTrusted() throws {
     let shared = try writtenAndReadBack(
       SharedProjectSettings(linkedPaths: "node_modules", copiedPaths: ".env\n.env.local"))
@@ -98,12 +82,12 @@ struct SharedProjectSettingsTrustTests {
     #expect(untrusted.copiedPaths.isEmpty && untrusted.linkedPaths.isEmpty)
 
     var settings = ProjectSettings()
-    settings.recordTrustDecision(digest: try #require(shared.digest), trusted: true)
+    settings.recordTrustDecision(digest: try #require(shared.digest), isTrusted: true)
     let trusted = settings.layered(over: shared)
     #expect(trusted.copiedPaths == ".env\n.env.local" && trusted.linkedPaths == "node_modules")
 
     var own = ProjectSettings(linkedPaths: "vendor", copiedPaths: ".env")
-    own.recordTrustDecision(digest: try #require(shared.digest), trusted: true)
+    own.recordTrustDecision(digest: try #require(shared.digest), isTrusted: true)
     #expect(own.layered(over: shared).copiedPaths == ".env", "the user's list wins whole")
     #expect(own.layered(over: shared).linkedPaths == "vendor")
   }

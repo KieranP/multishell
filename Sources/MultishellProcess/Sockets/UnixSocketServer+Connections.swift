@@ -3,7 +3,7 @@ import Foundation
 extension UnixSocketServer {
   /// How long the listener stays suspended when there is no descriptor to
   /// accept with. Long enough that the queue is not the thing holding one.
-  private static let descriptorBackoff: DispatchTimeInterval = .milliseconds(250)
+  private static let resourceBackoff: DispatchTimeInterval = .milliseconds(250)
 
   func acceptPending(on descriptor: Int32) {
     while true {
@@ -12,7 +12,7 @@ extension UnixSocketServer {
         switch AcceptOutcome(errno: errno) {
         case .waitForNextEvent: return
         case .retryNow: continue
-        case .outOfDescriptors:
+        case .outOfResources:
           // The pending connection stays in the backlog and the source is
           // level-triggered, so returning here burns a core until one frees.
           suspendListenerForBackoff()
@@ -33,17 +33,17 @@ extension UnixSocketServer {
   /// releasing a suspended source traps, and so does one resume too many.
   private func suspendListenerForBackoff() {
     let suspended = state.withLock { state -> Bool in
-      guard !state.listenerSuspended, let source = state.listener else { return false }
-      state.listenerSuspended = true
+      guard !state.isListenerSuspended, let source = state.listener else { return false }
+      state.isListenerSuspended = true
       source.suspend()
       return true
     }
     guard suspended else { return }
-    queue.asyncAfter(deadline: .now() + Self.descriptorBackoff) { [weak self] in
+    queue.asyncAfter(deadline: .now() + Self.resourceBackoff) { [weak self] in
       guard let self else { return }
       self.state.withLock { state in
-        guard state.listenerSuspended, let source = state.listener else { return }
-        state.listenerSuspended = false
+        guard state.isListenerSuspended, let source = state.listener else { return }
+        state.isListenerSuspended = false
         source.resume()
       }
     }
@@ -55,22 +55,15 @@ extension UnixSocketServer {
     while true {
       let count = read(descriptor, &chunk, chunk.count)
       if count > 0 {
-        connection.buffer.append(contentsOf: chunk[0..<count])
-        while let newline = connection.buffer.firstIndex(of: UInt8(ascii: "\n")) {
-          onLine?(String(decoding: connection.buffer[..<newline], as: UTF8.self))
-          connection.buffer.removeSubrange(...newline)
-        }
-        if connection.buffer.count > Self.maximumLineLength {
+        for line in connection.buffer.append(chunk[0..<count]) { onLine?(line) }
+        if connection.buffer.pendingByteCount > Self.maximumLineLength {
           drop(descriptor, connection)
           return
         }
       } else if count == 0 {
         // EOF. A client that wrote one line and closed without a newline
         // still meant it.
-        if !connection.buffer.isEmpty {
-          onLine?(String(decoding: connection.buffer, as: UTF8.self))
-          connection.buffer.removeAll()
-        }
+        if let rest = connection.buffer.takeRest() { onLine?(rest) }
         drop(descriptor, connection)
         return
       } else {
@@ -91,7 +84,7 @@ extension UnixSocketServer {
   /// runs on the server's serial queue.
   final class Connection: @unchecked Sendable {
     let source: any DispatchSourceRead
-    var buffer: [UInt8] = []
+    var buffer = LineBuffer()
     init(source: any DispatchSourceRead) { self.source = source }
   }
 }

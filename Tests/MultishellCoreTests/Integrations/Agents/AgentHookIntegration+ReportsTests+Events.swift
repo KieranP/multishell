@@ -11,6 +11,32 @@ extension AgentHookIntegrationReportsTests {
     integration.event(for: AgentHookPayload(eventName: event, permissionMode: mode))?.state
   }
 
+  /// Asked for so the roster can be kept: `Stop` is the main loop stopping,
+  /// which happens while these are still going. What they move is the roster.
+  @Test func claudesSubagentStartAndStopAreItsOnlyWorkerEvents() {
+    let claude = AgentHookCatalogue.claude
+    #expect(claude.events.first { $0.name == "SubagentStart" }?.subagentPhase == .started)
+    #expect(claude.events.first { $0.name == "SubagentStop" }?.subagentPhase == .ended)
+    #expect(
+      claude.events.filter { $0.subagentPhase != nil }.count == 2,
+      "one event each way, or a worker never leaves the roster")
+  }
+
+  /// Ctrl+C fires no hook and the workers it killed send no stop, so the
+  /// next prompt is what empties the roster.
+  @Test func eachAgentMarksTheOneEventThatIsANewPrompt() {
+    let claude = AgentHookCatalogue.claude
+    #expect(claude.events.first { $0.name == "UserPromptSubmit" }?.isPrompt == true)
+    #expect(claude.events.filter(\.isPrompt).count == 1)
+    #expect(
+      AgentHookCatalogue.codex.events.first { $0.name == "UserPromptSubmit" }?.isPrompt == true)
+    #expect(
+      AgentHookCatalogue.copilot.events.first { $0.name == "UserPromptSubmit" }?.isPrompt == true
+    )
+    #expect(
+      AgentHookCatalogue.gemini.events.first { $0.name == "BeforeAgent" }?.isPrompt == true)
+  }
+
   @Test func eachAgentsEventsMapToTheStatesTheyStandFor() {
     let claude = AgentHookCatalogue.claude
     #expect(state(claude, "UserPromptSubmit") == .running)
@@ -23,26 +49,8 @@ extension AgentHookIntegrationReportsTests {
     #expect(state(claude, "StopFailure") == .failed)
     #expect(state(claude, "SessionEnd") == .idle)
     #expect(state(claude, "SessionStart") == .idle)
-    // Asked for so the roster can be kept: `Stop` is the main loop stopping,
-    // which happens while these are still going. What they move is the roster.
     #expect(state(claude, "SubagentStart") == .running)
     #expect(state(claude, "SubagentStop") == .running, "the agent is still working")
-    #expect(claude.events.first { $0.name == "SubagentStart" }?.subagentPhase == .started)
-    #expect(claude.events.first { $0.name == "SubagentStop" }?.subagentPhase == .ended)
-    #expect(
-      claude.events.filter { $0.subagentPhase != nil }.count == 2,
-      "one event each way, or a worker never leaves the roster")
-    // Ctrl+C fires no hook and the workers it killed send no stop, so the
-    // next prompt is what empties the roster.
-    #expect(claude.events.first { $0.name == "UserPromptSubmit" }?.isPrompt == true)
-    #expect(claude.events.filter(\.isPrompt).count == 1)
-    #expect(
-      AgentHookCatalogue.codex.events.first { $0.name == "UserPromptSubmit" }?.isPrompt == true)
-    #expect(
-      AgentHookCatalogue.copilot.events.first { $0.name == "UserPromptSubmit" }?.isPrompt == true
-    )
-    #expect(
-      AgentHookCatalogue.gemini.events.first { $0.name == "BeforeAgent" }?.isPrompt == true)
     #expect(state(claude, "PostToolUseFailure") == nil, "a tool failing is not a turn failing")
     #expect(state(claude, "PreCompact") == nil)
     #expect(state(claude, "PostCompact") == nil, "it fires when the compaction is over")
@@ -179,7 +187,7 @@ extension AgentHookIntegrationReportsTests {
             .utf8)))
     #expect(
       codex.event(for: inCodex)?.subagentChange(for: inCodex)
-        == SubagentReport(id: "t2", type: "worker", phase: .working))
+        == WorkerReport(id: "t2", type: "worker", phase: .working))
     #expect(
       AgentHookCatalogue.gemini.events.allSatisfy { $0.subagentPhase == nil },
       "Gemini says nothing about a subagent to a hook")
@@ -189,9 +197,9 @@ extension AgentHookIntegrationReportsTests {
   /// its Stop filed under its parent's transcript, and its end names it.
   @Test func copilotNamesASubagentByItsConversation() throws {
     let copilot = AgentHookCatalogue.copilot
-    let parent = "17954dff-e162-4e7a-925e-a59ca530c5fb"
-    let child = "37880ecf-c5f3-42ce-afe0-82b221d75839"
-    let transcript = "/Users/dev/.copilot/session-state/\(parent)/events.jsonl"
+    let parent = CopilotPayload.parent
+    let child = CopilotPayload.child
+    let transcript = CopilotPayload.transcript
     func payload(_ json: String) throws -> AgentHookPayload {
       try #require(AgentHookPayload(json: Data(json.utf8)))
     }
@@ -215,9 +223,11 @@ extension AgentHookIntegrationReportsTests {
     let childTool = try payload(
       #"{"hook_event_name":"PreToolUse","session_id":"\#(child)","tool_name":"Bash"}"#)
     #expect(
-      copilot.report(for: childTool, sessionID: nil, cwd: nil, pid: nil)?.conversationID == child)
+      copilot.report(for: childTool, sessionID: nil, workingDirectory: nil, pid: nil)?
+        .conversationID == child)
     #expect(
-      AgentHookCatalogue.claude.report(for: childTool, sessionID: nil, cwd: nil, pid: nil)?
+      AgentHookCatalogue.claude.report(
+        for: childTool, sessionID: nil, workingDirectory: nil, pid: nil)?
         .conversationID
         == nil)
 
@@ -226,7 +236,7 @@ extension AgentHookIntegrationReportsTests {
     )
     #expect(
       copilot.event(for: end)?.subagentChange(for: end)
-        == SubagentReport(id: child, type: "general-purpose", phase: .ended))
+        == WorkerReport(id: child, type: "general-purpose", phase: .ended))
     #expect(
       !copilot.events.contains { $0.name == "SubagentStart" },
       "its start names no id, and arrives in a spelling no event is read in")

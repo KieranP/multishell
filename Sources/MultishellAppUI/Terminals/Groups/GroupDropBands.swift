@@ -13,7 +13,7 @@ struct GroupDropBands: View {
     GeometryReader { proxy in
       // A group too narrow to halve offers no band, rather than make two
       // groups nobody can read; the release reaches the area beneath.
-      let fits = SplitMath.canHalve(
+      let canHalve = SplitMath.canHalve(
         Double(proxy.size.width), minimumPane: UIMetrics.minimumPaneLength,
         divider: UIMetrics.splitDividerThickness)
       ZStack {
@@ -29,7 +29,7 @@ struct GroupDropBands: View {
               drop: { model.dropDraggedTab(on: .area(group.id)) })
           )
           .accessibilityLabel(t("tab.move-to-this-group"))
-        if fits, drag.showsBands(of: group.id) {
+        if canHalve, drag.showsBands(of: group.id) {
           HStack(spacing: 0) {
             band(.before)
             Spacer(minLength: 0)
@@ -41,7 +41,7 @@ struct GroupDropBands: View {
   }
 
   private func band(_ placement: TerminalTab.Placement) -> some View {
-    let target = TabDragState.Band(groupID: group.id, placement: placement)
+    let target = TabGroupBand(groupID: group.id, placement: placement)
     let isLit = drag.band == target
     return Color.accentColor
       .opacity(isLit ? 0.3 : 0.14)

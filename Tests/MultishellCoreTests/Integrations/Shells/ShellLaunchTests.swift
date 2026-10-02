@@ -68,20 +68,22 @@ struct ShellLaunchTests {
   @Test func theExecAfterAnAgentCarriesTheIntegrationBackIn() throws {
     let bashInit = try bashInitThatExists()
     defer { Scratch.remove(bashInit) }
-    let zshDir = try Scratch.directory("zdot")
-    defer { Scratch.remove(zshDir) }
+    let zshDirectory = try Scratch.directory("zdot")
+    defer { Scratch.remove(zshDirectory) }
 
-    let ours = PosixShellQuoting.quote(zshDir.path)
+    let ours = PosixShellQuoting.quote(zshDirectory.path)
     let script =
       "if [ -f \"${GHOSTTY_RESOURCES_DIR-}/shell-integration/zsh/.zshenv\" ]; then "
       + "ZDOTDIR=\"$GHOSTTY_RESOURCES_DIR/shell-integration/zsh\" GHOSTTY_ZSH_ZDOTDIR=\(ours) "
       + "exec /bin/zsh -l; else ZDOTDIR=\(ours) exec /bin/zsh -l; fi"
     #expect(
-      ShellLaunch.execCommandLine(forShell: "/bin/zsh", zshDirectory: zshDir, bashInit: bashInit)
+      ShellLaunch.execCommandLine(
+        forShell: "/bin/zsh", zshDirectory: zshDirectory, bashInit: bashInit)
         == "exec /bin/sh -c \(PosixShellQuoting.quote(script))",
       "the engine's bootstrap first where there is one, ours where it looks for the displaced one")
     #expect(
-      ShellLaunch.execCommandLine(forShell: "/bin/bash", zshDirectory: zshDir, bashInit: bashInit)
+      ShellLaunch.execCommandLine(
+        forShell: "/bin/bash", zshDirectory: zshDirectory, bashInit: bashInit)
         == "exec /bin/bash --init-file \(PosixShellQuoting.quote(bashInit.path)) -i")
     let missing = URL(fileURLWithPath: "/no/such")
     #expect(
@@ -89,7 +91,7 @@ struct ShellLaunchTests {
         == "exec /bin/zsh -l")
     #expect(
       ShellLaunch.execCommandLine(
-        forShell: "/usr/local/bin/fish", zshDirectory: zshDir, bashInit: bashInit)
+        forShell: "/usr/local/bin/fish", zshDirectory: zshDirectory, bashInit: bashInit)
         == "exec /usr/local/bin/fish -l")
   }
 }

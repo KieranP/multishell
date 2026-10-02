@@ -6,7 +6,7 @@ import Testing
 
 @Suite
 struct UntrackedLineCounterTests {
-  @Test func countsLinesOfEachListedFile() throws {
+  @Test func everyListedFilesLinesAreCounted() throws {
     let root = try Scratch.directory("untracked")
     defer { Scratch.remove(root) }
     try "a\nb\nc\n".write(

@@ -8,40 +8,41 @@ struct AppModelReconcileTests {
   /// The model has one alert slot, so what happens when several things fail at
   /// once has to be decided rather than left to whichever wrote last.
   @Test func onlyTheFirstFailedSessionTakesTheAlertAndTheRestAreLogged() {
-    let h = Harness()
-    h.model.select(h.main)
-    for _ in 0..<3 { h.model.newTab() }
-    #expect(h.model.liveTerminalCount == 4)
-    h.engine.refusesToOpen = true
-    for id in h.engine.liveSessionIDs { h.engine.close(id) }
-    h.model.presentedError = nil
-    h.platform.logged.removeAll()
+    let harness = Harness()
+    harness.model.select(harness.main)
+    for _ in 0..<3 { harness.model.newTab() }
+    #expect(harness.model.liveTerminalCount == 4)
+    harness.engine.refusesToOpen = true
+    for id in harness.engine.liveSessionIDs { harness.engine.close(id) }
+    harness.model.presentedError = nil
+    harness.platform.logged.removeAll()
 
-    h.model.reconcileSessions(takingFocus: false)
+    harness.model.reconcileSessions(takingFocus: false)
 
-    #expect(h.model.presentedError != nil, "the user is told once")
-    #expect(h.platform.logged.count == 3, "and the rest are in the log: \(h.platform.logged)")
+    #expect(harness.model.presentedError != nil, "the user is told once")
+    #expect(
+      harness.platform.logged.count == 3, "and the rest are in the log: \(harness.platform.logged)")
   }
 
   @Test func focusingTheActivePaneHandsTheKeyboardToTheActiveTabsFocusedSession() throws {
-    let h = Harness()
-    h.model.select(h.main)
-    let tab = try #require(h.model.workspace.activeTab(in: h.main.id))
-    h.engine.focused.removeAll()
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let tab = try #require(harness.model.workspace.activeTab(in: harness.main.id))
+    harness.engine.focused.removeAll()
 
-    h.model.focusActivePane()
+    harness.model.focusActivePane()
 
-    #expect(h.engine.focused == [tab.focusedSessionID])
+    #expect(harness.engine.focused == [tab.focusedSessionID])
   }
 
   @Test func focusingTheActivePaneDoesNothingWhileTheBoardCoversThePanes() {
-    let h = Harness()
-    h.model.select(h.main)
-    h.model.showAgentBoard()
-    h.engine.focused.removeAll()
+    let harness = Harness()
+    harness.model.select(harness.main)
+    harness.model.showAgentBoard()
+    harness.engine.focused.removeAll()
 
-    h.model.focusActivePane()
+    harness.model.focusActivePane()
 
-    #expect(h.engine.focused.isEmpty)
+    #expect(harness.engine.focused.isEmpty)
   }
 }

@@ -11,7 +11,7 @@ extension SessionStatesTests {
     var overWorking = SessionStates()
     _ = report(&overWorking, .running)
     _ = report(&overWorking, .running, started("w1"))
-    _ = report(&overWorking, .attention, SubagentReport(id: "w1", phase: .working))
+    _ = report(&overWorking, .attention, WorkerReport(id: "w1", phase: .working))
     #expect(report(&overWorking, .running, ended("w1")) == .running)
     #expect(overWorking[.session(a)] == .running)
     #expect(report(&overWorking, .running) == .running, "nothing holds the agent now")
@@ -19,7 +19,7 @@ extension SessionStatesTests {
 
     var overNothing = SessionStates()
     _ = report(&overNothing, .running, started("w1"))
-    _ = report(&overNothing, .attention, SubagentReport(id: "w1", phase: .working))
+    _ = report(&overNothing, .attention, WorkerReport(id: "w1", phase: .working))
     #expect(report(&overNothing, .running, ended("w1")) == .idle)
     #expect(overNothing.showsNothing)
   }
@@ -29,7 +29,7 @@ extension SessionStatesTests {
   @Test func aStopOverAWorkersWaitingHoldsThePrompt() {
     var states = SessionStates()
     _ = report(&states, .running, started("w1"))
-    _ = report(&states, .attention, SubagentReport(id: "w1", phase: .working))
+    _ = report(&states, .attention, WorkerReport(id: "w1", phase: .working))
     #expect(report(&states, .done) == nil, "not news while the prompt is up")
     #expect(states[.session(a)] == .attention)
     #expect(report(&states, .running, working("w1")) == .running, "answered")
@@ -40,8 +40,8 @@ extension SessionStatesTests {
     var states = SessionStates()
     _ = report(&states, .running, started("w1"))
     _ = report(&states, .running, started("w2"))
-    _ = report(&states, .attention, SubagentReport(id: "w1", phase: .working))
-    _ = report(&states, .attention, SubagentReport(id: "w2", phase: .working))
+    _ = report(&states, .attention, WorkerReport(id: "w1", phase: .working))
+    _ = report(&states, .attention, WorkerReport(id: "w2", phase: .working))
     #expect(report(&states, .running, working("w2")) == nil, "w1 is still asking")
     #expect(states[.session(a)] == .attention)
     #expect(report(&states, .running, working("w1")) == .running)
@@ -69,8 +69,7 @@ extension SessionStatesTests {
   @Test func aWorkerTickKeepsWhatTheWaitingSaid() {
     var states = SessionStates()
     _ = report(&states, .running, started("w1"))
-    states.report(
-      .init(state: .attention, message: "Needs Bash"), pid: 99, for: .session(a), isSeen: false)
+    report(&states, .init(state: .attention, message: "Needs Bash"))
     #expect(states.notes[.session(a)]?.message == "Needs Bash")
 
     _ = report(&states, .running, ended("w1"))
@@ -83,7 +82,7 @@ extension SessionStatesTests {
     var states = SessionStates()
     _ = report(&states, .running, started("w1"))
     _ = report(&states, .running, started("w2"))
-    let prompt = SubagentReport(id: "w1", type: "Explore", phase: .working)
+    let prompt = working("w1")
     #expect(report(&states, .attention, prompt) == .attention)
     #expect(states[.session(a)] == .attention)
 
@@ -109,7 +108,7 @@ extension SessionStatesTests {
   @Test func aWorkersPromptKeepsWhatItsStartDisplaced() {
     var states = SessionStates()
     _ = report(&states, .running, started("w1"))
-    _ = report(&states, .attention, SubagentReport(id: "w1", phase: .working))
+    _ = report(&states, .attention, WorkerReport(id: "w1", phase: .working))
     _ = report(&states, .running, working("w1"))
     #expect(states[.session(a)] == .running)
     #expect(report(&states, .running, ended("w1")) == .idle, "the agent never spoke")
@@ -127,7 +126,7 @@ extension SessionStatesTests {
     #expect(states[.session(a)] == .failed)
     #expect(workersOut(states) == ["w1"], "though it is back on the roster")
 
-    #expect(report(&states, .attention, SubagentReport(id: "w1", phase: .working)) == .attention)
+    #expect(report(&states, .attention, WorkerReport(id: "w1", phase: .working)) == .attention)
     #expect(report(&states, .running, working("w1")) == .running)
     #expect(report(&states, .running, ended("w1")) == nil, "put back without a banner")
     #expect(states[.session(a)] == .failed)
@@ -149,8 +148,7 @@ extension SessionStatesTests {
     for finished in [SessionState.done, .failed] {
       var states = SessionStates()
       _ = report(&states, .running)
-      states.report(
-        .init(state: finished, message: "all green"), pid: 99, for: .session(a), isSeen: false)
+      report(&states, .init(state: finished, message: "all green"))
 
       #expect(report(&states, .running, ended("w1")) == nil, "\(finished): no news")
       #expect(states[.session(a)] == finished)
@@ -165,7 +163,7 @@ extension SessionStatesTests {
     var states = SessionStates()
     _ = report(&states, .running, started("w1"))
     _ = report(&states, .failed)
-    #expect(report(&states, .attention, SubagentReport(id: "w1", phase: .working)) == .attention)
+    #expect(report(&states, .attention, WorkerReport(id: "w1", phase: .working)) == .attention)
 
     #expect(report(&states, .done) == nil, "not news while the prompt is up")
     #expect(report(&states, .running, working("w1")) == .running, "answered")
@@ -191,12 +189,12 @@ extension SessionStatesTests {
   /// place on the roster: one end does not answer another's prompt.
   @Test func eachUnnamedWorkersPromptIsItsOwn() {
     var states = SessionStates()
-    let anonymous = SubagentReport(id: SubagentReport.anonymousID, phase: .started)
+    let anonymous = WorkerReport(id: WorkerReport.anonymousID, phase: .started)
     _ = report(&states, .running, anonymous)
     #expect(report(&states, .attention, anonymous) == .attention)
     #expect(report(&states, .attention, anonymous) == .attention)
 
-    let ended = SubagentReport(id: SubagentReport.anonymousID, phase: .ended)
+    let ended = WorkerReport(id: WorkerReport.anonymousID, phase: .ended)
     #expect(report(&states, .running, ended) == nil, "the other is still asking")
     #expect(states[.session(a)] == .attention)
     #expect(report(&states, .running, ended) == .running, "both answered")
@@ -210,7 +208,7 @@ extension SessionStatesTests {
     overDone.report(.init(state: .done), pid: 99, for: .session(a), isSeen: false)
     _ = report(&overDone, .running, started("w1"))
     _ = report(&overDone, .running, started("w2"))
-    _ = report(&overDone, .attention, SubagentReport(id: "w1", phase: .working))
+    _ = report(&overDone, .attention, WorkerReport(id: "w1", phase: .working))
 
     #expect(report(&overDone, .running) == nil, "w1 is still asking")
     #expect(report(&overDone, .running, ended("w2")) == nil)
@@ -219,7 +217,7 @@ extension SessionStatesTests {
 
     var overNothing = SessionStates()
     _ = report(&overNothing, .running, started("w1"))
-    _ = report(&overNothing, .attention, SubagentReport(id: "w1", phase: .working))
+    _ = report(&overNothing, .attention, WorkerReport(id: "w1", phase: .working))
     #expect(report(&overNothing, .running) == nil, "w1 is still asking")
     #expect(report(&overNothing, .running, ended("w1")) == .running, "not a blank dot")
     #expect(overNothing[.session(a)] == .running)
@@ -234,7 +232,7 @@ extension SessionStatesTests {
     byEnd.report(
       .init(
         state: .attention, message: "Needs Bash",
-        subagent: SubagentReport(id: "code-review", phase: .working)), pid: 99, for: .session(a),
+        worker: WorkerReport(id: "code-review", phase: .working)), pid: 99, for: .session(a),
       isSeen: false)
     #expect(byEnd[.session(a)] == .attention)
 
@@ -246,7 +244,7 @@ extension SessionStatesTests {
     var byToolCall = SessionStates()
     _ = report(&byToolCall, .running, started("code-review"))
     _ = report(&byToolCall, .running, started("code-review"))
-    _ = report(&byToolCall, .attention, SubagentReport(id: "code-review", phase: .working))
+    _ = report(&byToolCall, .attention, WorkerReport(id: "code-review", phase: .working))
     #expect(report(&byToolCall, .running, working("code-review")) == nil, "which of them called")
     #expect(byToolCall[.session(a)] == .attention)
   }
@@ -256,14 +254,13 @@ extension SessionStatesTests {
   @Test func aRestoredFailureKeepsWhatTheFailureSaid() {
     var states = SessionStates()
     _ = report(&states, .running, started("w1"))
-    states.report(
-      .init(state: .failed, message: "build failed"), pid: 99, for: .session(a), isSeen: false)
+    report(&states, .init(state: .failed, message: "build failed"))
     _ = report(&states, .running, working("w1"))
-    states.report(
+    report(
+      &states,
       .init(
         state: .attention, message: "Needs Bash",
-        subagent: SubagentReport(id: "w1", phase: .working)), pid: 99, for: .session(a),
-      isSeen: false)
+        worker: WorkerReport(id: "w1", phase: .working)))
     _ = report(&states, .running, working("w1"))
 
     #expect(report(&states, .running, ended("w1")) == nil, "put back without a banner")
@@ -290,7 +287,7 @@ extension SessionStatesTests {
       $0.report(
         .init(
           state: .attention, message: "Needs Bash",
-          subagent: SubagentReport(id: "w1", phase: .working)), pid: 99, for: .session(a),
+          worker: WorkerReport(id: "w1", phase: .working)), pid: 99, for: .session(a),
         isSeen: false)
     }
     step { _ = report(&$0, .running, working("w1")) }

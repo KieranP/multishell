@@ -23,8 +23,8 @@ enum GhosttyConfigAllowList {
 
   /// The lines of a user's file this app passes on.
   static func settings(in contents: String) -> String {
-    GhosttyConfigIncludes.lines(of: contents)
-      .filter { isAllowed(GhosttyConfigIncludes.key(of: $0)) }
+    GhosttyConfigLine.lines(of: contents)
+      .filter { isAllowed(GhosttyConfigLine.key(of: $0)) }
       .joined(separator: "\n")
   }
 

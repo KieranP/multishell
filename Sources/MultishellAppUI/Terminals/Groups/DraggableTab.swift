@@ -29,7 +29,7 @@ struct DraggableTab: View {
       model: model, group: group, tab: tab, isFocusedGroup: isFocusedGroup,
       canLeaveGroup: canLeaveGroup, theme: theme
     )
-    .opacity(drag.isInTheAir(tab.id) ? (isShuffling ? 0.55 : 0.3) : 1)
+    .opacity(Self.opacity(drag.look(of: tab.id, isShuffling: isShuffling)))
     .frame(width: width)
     .clipped()
     .overlay(alignment: insertionPlacement == .after ? .trailing : .leading) {
@@ -45,8 +45,8 @@ struct DraggableTab: View {
         // for most of a second after the drop, so the tab is the preview.
         Color.clear.frame(width: 1, height: 1)
       },
-      ended: { model.endAbandonedTabDrag(tab.id) },
-      sourceLeft: { model.tabDragSourceLeft(tab.id, isPressed: $0) }
+      onEnded: { model.endAbandonedTabDrag(tab.id) },
+      onSourceLeft: { model.tabDragSourceLeft(tab.id, isPressed: $0) }
     )
     .onDrop(
       of: [TabTransfer.contentType],
@@ -74,6 +74,14 @@ struct DraggableTab: View {
 
   private var insertionPlacement: TerminalTab.Placement? {
     drag.insertionPlacement(on: tab.id, isShuffling: isShuffling)
+  }
+
+  private static func opacity(_ look: TabDragState.TabLook) -> Double {
+    switch look {
+    case .resting: 1
+    case .shuffling: 0.55
+    case .lifted: 0.3
+    }
   }
 }
 

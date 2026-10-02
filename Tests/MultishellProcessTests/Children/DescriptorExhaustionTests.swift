@@ -1,5 +1,4 @@
 import Foundation
-import TestScratch
 import Testing
 
 @testable import MultishellProcess
@@ -10,11 +9,11 @@ import Testing
 struct DescriptorExhaustionTests {
   @Test(.enabled(if: ProcessInfo.processInfo.environment["MULTISHELL_EXHAUST_DESCRIPTORS"] != nil))
   func atTheDescriptorLimitARunThrowsInsteadOfReadingTheAppsStdin() async throws {
-    let cwd = URL(fileURLWithPath: NSTemporaryDirectory())
+    let workingDirectory = URL(fileURLWithPath: NSTemporaryDirectory())
     try await withFreeDescriptors(0) {
       do {
         let output = try await ProcessRunner().capture(
-          URL(fileURLWithPath: "/bin/sh"), ["-c", "printf real"], in: cwd)
+          URL(fileURLWithPath: "/bin/sh"), ["-c", "printf real"], in: workingDirectory)
         Issue.record("ran with output \(output.standardOutput.debugDescription) at the limit")
       } catch is DescriptorUnavailable {
       } catch {
@@ -22,7 +21,7 @@ struct DescriptorExhaustionTests {
       }
     }
     let output = try await ProcessRunner().run(
-      URL(fileURLWithPath: "/bin/sh"), ["-c", "printf ok"], in: cwd)
+      URL(fileURLWithPath: "/bin/sh"), ["-c", "printf ok"], in: workingDirectory)
     #expect(output == "ok", "works again once descriptors are back")
   }
 

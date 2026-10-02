@@ -7,7 +7,7 @@ import Testing
 struct AccessibilityHiddenViewTests {
   @Test func everyOverlayLaidUnderSwiftUIDerivesFromIt() {
     let overlays: [NSView] = [
-      MiddleClickView(), ScrollerMarkerView(), SidewaysWheelView(), WindowAccessor.Reporter(),
+      MiddleClickView(), ScrollerMarkerView(), SidewaysWheelView(), WindowAccessorView(),
       SettingsWindowResetView(),
     ]
     for overlay in overlays {

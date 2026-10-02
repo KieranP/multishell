@@ -40,8 +40,8 @@ struct TabStrip: View {
       // One width for every tab, the strip's buttons taken off, so a drop
       // needs no measuring and both halves below read the width alike.
       let width = Double(proxy.size.width)
-      let showsSplits = model.metrics.stripShowsSplits(in: width)
-      let available = model.metrics.stripTabsAvailable(in: width)
+      let showsSplits = model.metrics.tabStrip.showsSplits(in: width)
+      let available = model.metrics.tabStrip.tabsAvailable(in: width)
       let layout = TabStripLayout(
         available: available,
         count: tabs.count,
@@ -72,7 +72,7 @@ struct TabStrip: View {
     }
     .frame(height: model.metrics.tabHeight)
     .background(theme.chromeColor)
-    .overlay(alignment: .top) { theme.hairline.frame(height: 0.5) }
+    .hairline(.top, theme)
     .contentShape(.rect)
     // The strip past its last tab, otherwise the one part of a group a
     // click does nothing in. The tabs are hit first.
@@ -99,7 +99,7 @@ struct TabStrip: View {
         group: group,
         tab: tab,
         isFocusedGroup: isFocusedGroup,
-        canLeaveGroup: tabs.count > 1,
+        canLeaveGroup: model.canMoveTabToNewGroup(tab),
         isShuffling: isShuffling,
         width: layout.tabWidth,
         theme: theme,

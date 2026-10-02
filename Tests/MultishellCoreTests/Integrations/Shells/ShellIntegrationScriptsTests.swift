@@ -42,8 +42,9 @@ struct ShellIntegrationScriptsTests {
       #expect(!text.contains("__MULTISHELL_"), "\(name) still holds a placeholder")
     }
     for script in [files[".zshrc"] ?? "", files["init.bash"] ?? ""] {
-      for id in ["claude", "codex", "opencode"] {
-        #expect(script.contains(id), "the shell cannot match \(id) without its name")
+      for executable in AgentCatalogue.agents.map(\.executable) {
+        #expect(
+          script.contains(executable), "the shell cannot match \(executable) without its name")
       }
     }
   }
@@ -85,32 +86,23 @@ struct ShellIntegrationScriptsTests {
 
   private func historyFile(
     userZdotdir: URL? = nil, userZshrc: String? = nil
-  ) async throws -> (
-    file: String, home: URL, integration: URL
-  ) {
-    let root = try Scratch.directory("histfile")
-    let home = root.appendingPathComponent("home", isDirectory: true)
-    let integration = root.appendingPathComponent("integration", isDirectory: true)
-    for directory in [home, integration] + (userZdotdir.map { [$0] } ?? []) {
-      try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-    }
-    for (name, contents) in ShellIntegrationScripts.forZsh(helper: "/x/multishell") {
-      try contents.write(
-        to: integration.appendingPathComponent(name), atomically: true, encoding: .utf8)
+  ) async throws -> (file: String, integration: GeneratedIntegration) {
+    let integration = try GeneratedIntegration(helper: "/x/multishell")
+    if let userZdotdir {
+      try FileManager.default.createDirectory(at: userZdotdir, withIntermediateDirectories: true)
     }
     if let userZshrc {
       try userZshrc.write(
-        to: (userZdotdir ?? home).appendingPathComponent(".zshrc"), atomically: true,
+        to: (userZdotdir ?? integration.home).appendingPathComponent(".zshrc"), atomically: true,
         encoding: .utf8)
     }
-    var environment = [
-      "HOME": home.path, "ZDOTDIR": integration.path, "PATH": "/usr/bin:/bin", "TERM": "dumb",
-    ]
+    var environment = integration.environment(termProgram: nil)
+    environment["ZDOTDIR"] = integration.zshDirectory.path
     environment["MULTISHELL_USER_ZDOTDIR"] = userZdotdir?.path
     let file = try await Detached.output(
       of: "/bin/zsh", ["-l", "-i", "-c", "print -r -- \"$HISTFILE\""],
-      environment: environment, in: home, standardError: .discarded)
-    return (file.trimmingCharacters(in: .newlines), home, integration)
+      environment: environment, in: integration.home, standardError: .discarded)
+    return (file.trimmingCharacters(in: .newlines), integration)
   }
 
   private var systemRcSetsHistory: Bool {
@@ -120,23 +112,23 @@ struct ShellIntegrationScriptsTests {
   @Test func aTabsHistoryGoesWhereTheUsersOwnShellWouldPutIt() async throws {
     guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
     let plain = try await historyFile()
-    defer { Scratch.remove(plain.home.deletingLastPathComponent()) }
-    #expect(!plain.file.hasPrefix(plain.integration.path), "\(plain.file)")
+    defer { plain.integration.tearDown() }
+    #expect(!plain.file.hasPrefix(plain.integration.zshDirectory.path), "\(plain.file)")
     if systemRcSetsHistory {
-      #expect(plain.file == plain.home.appendingPathComponent(".zsh_history").path)
+      #expect(plain.file == plain.integration.home.appendingPathComponent(".zsh_history").path)
     }
 
     let root = try Scratch.directory("histfile-user")
     defer { Scratch.remove(root) }
     let own = root.appendingPathComponent("zdot", isDirectory: true)
     let relocated = try await historyFile(userZdotdir: own)
-    defer { Scratch.remove(relocated.home.deletingLastPathComponent()) }
+    defer { relocated.integration.tearDown() }
     if systemRcSetsHistory {
       #expect(relocated.file == own.appendingPathComponent(".zsh_history").path)
     }
 
     let chosen = try await historyFile(userZshrc: "HISTFILE=/elsewhere/history\n")
-    defer { Scratch.remove(chosen.home.deletingLastPathComponent()) }
+    defer { chosen.integration.tearDown() }
     #expect(chosen.file == "/elsewhere/history", "the user's own setting stands")
   }
 }

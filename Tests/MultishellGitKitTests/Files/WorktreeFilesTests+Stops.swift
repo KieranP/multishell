@@ -7,7 +7,7 @@ extension WorktreeFilesTests {
   /// The pane's Cancel, which has no process to signal: it lands between
   /// paths, and what is in the worktree by then stays there.
   @Test func aStopEndsTheListAtTheNextPathAndKeepsWhatIsPlaced() throws {
-    let (repository, worktree) = try directories()
+    let (repository, worktree) = try repositoryAndWorktree()
     try "one".write(to: repository.appending(path: ".env.local"), atomically: true, encoding: .utf8)
     try "two".write(to: repository.appending(path: ".env.test"), atomically: true, encoding: .utf8)
     // Sorted, so `.env.local` is placed first and its arrival is the stop.
@@ -25,12 +25,11 @@ extension WorktreeFilesTests {
   /// Cancel excuses what it stopped, not what had already gone wrong: the
   /// stage used to be reported finished with the failures thrown away.
   @Test func aStopCarriesTheFailuresItAlreadyHad() throws {
-    let (repository, worktree) = try directories()
+    let (repository, worktree) = try repositoryAndWorktree()
     try FileManager.default.createDirectory(
       at: repository.appending(path: "vendor"), withIntermediateDirectories: true)
     try "dep".write(to: repository.appending(path: "vendor/dep"), atomically: true, encoding: .utf8)
     try "two".write(to: repository.appending(path: "after.txt"), atomically: true, encoding: .utf8)
-    // A folder linked into the worktree, so writing through it is refused.
     try WorktreeFiles.place("vendor", as: .link, from: repository, to: worktree)
 
     // The stop lands after the first path, which is the one that failed.
@@ -48,7 +47,7 @@ extension WorktreeFilesTests {
   /// Left behind, the half a Cancel stopped at read as placed: a later
   /// placement passes over anything already at the destination.
   @Test func aCancelEndsTheCopyOfALargeDirectoryPartWayAndTakesTheHalfAway() throws {
-    let (repository, worktree) = try directories()
+    let (repository, worktree) = try repositoryAndWorktree()
     let cache = repository.appending(path: "cache")
     try FileManager.default.createDirectory(at: cache, withIntermediateDirectories: true)
     for index in 0..<200 {
@@ -66,7 +65,7 @@ extension WorktreeFilesTests {
   }
 
   @Test func aStopCarriesTheEntriesItAlreadySkipped() throws {
-    let (repository, worktree) = try directories()
+    let (repository, worktree) = try repositoryAndWorktree()
     try "one".write(to: repository.appending(path: ".env"), atomically: true, encoding: .utf8)
 
     let stopped = #expect(throws: WorktreeFileStopped.self) {

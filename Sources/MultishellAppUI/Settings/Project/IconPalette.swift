@@ -100,10 +100,10 @@ struct IconPalette: View {
     _ step: IconGridWalk.Step, through groups: [ProjectIcon.Group], proxy: ScrollViewProxy
   ) -> KeyPress.Result {
     let rows = IconGridWalk.rows(of: groups, columns: Self.columns)
-    guard let to = IconGridWalk.destination(from: highlighted, step: step, in: rows) else {
+    guard let destination = IconGridWalk.destination(from: highlighted, step: step, in: rows) else {
       return .ignored
     }
-    return move(to: to, proxy: proxy)
+    return move(to: destination, proxy: proxy)
   }
 
   private func move(to name: String, proxy: ScrollViewProxy) -> KeyPress.Result {

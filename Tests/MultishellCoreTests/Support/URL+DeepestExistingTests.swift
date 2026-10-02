@@ -27,9 +27,7 @@ struct URLDeepestExistingTests {
   @Test func aPathResolvesAsFarAsItExistsADanglingLinkRefusedUnlessKept() throws {
     let root = try Scratch.directory("deepest")
     defer { Scratch.remove(root) }
-    let real = try #require(realpath(root.path, nil))
-    defer { free(real) }
-    let resolvedRoot = String(cString: real)
+    let resolvedRoot = try #require(Scratch.physicalPath(of: root))
     try FileManager.default.createDirectory(
       at: root.appendingPathComponent("target"), withIntermediateDirectories: true)
     try FileManager.default.createSymbolicLink(

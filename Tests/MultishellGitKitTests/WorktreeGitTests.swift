@@ -8,26 +8,24 @@ import Testing
 @Suite(.serialized)
 struct WorktreeGitTests {
   @Test func aRepositoryIsRecognisedAndItsParentAndAnEmptyDirectoryAreNot() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
     let empty = try Scratch.directory("empty")
     defer { Scratch.remove(empty) }
 
-    #expect(await repo.coordinator.git.isRepository(repo.project.path))
-    #expect(await repo.coordinator.git.isRepository(repo.root) == false)
+    #expect(await fixture.coordinator.git.isRepository(fixture.project.path))
+    #expect(await fixture.coordinator.git.isRepository(fixture.root) == false)
     #expect(await WorktreeGit(runner: try GitRunner()).isRepository(empty) == false)
   }
 
   @Test func aFreshRepositoryHasNoCommitsUntilTheFirstIsMade() async throws {
-    let repo = try await RepositoryFixture.make(commit: false)
-    defer { repo.tearDown() }
-    let project = repo.project
-    let coordinator = repo.coordinator
+    let fixture = try await RepositoryFixture.make(commit: false)
+    defer { fixture.tearDown() }
+    let project = fixture.project
+    let coordinator = fixture.coordinator
 
     #expect(await coordinator.git.hasCommits(project) == false)
-    try "x\n".write(to: project.path.appendingPathComponent("f"), atomically: true, encoding: .utf8)
-    _ = try await repo.runner.run(["add", "."], in: project.path)
-    _ = try await repo.runner.run(["commit", "-m", "first"], in: project.path)
+    try await fixture.commit("first", file: "f", content: "x\n")
     #expect(await coordinator.git.hasCommits(project) == true)
   }
 }

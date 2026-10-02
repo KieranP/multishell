@@ -25,6 +25,6 @@ struct SettingsSymbolButton: View {
 
   static func reveal(action: @escaping () -> Void) -> SettingsSymbolButton {
     SettingsSymbolButton(
-      symbol: "magnifyingglass", help: t("action.reveal-in-finder"), action: action)
+      symbol: "folder", help: t("action.reveal-in-finder"), action: action)
   }
 }

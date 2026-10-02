@@ -25,13 +25,10 @@ public final class AppModel<Surface> {
   /// than start afresh; see `preparedForLaunch`.
   @ObservationIgnored let restoredSessionIDs: Set<TerminalSession.ID>
 
-  public internal(set) var presentedError: PresentedError?
+  var presentedError: PresentedError?
   public var newWorktreeRequest: NewWorktreeRequest?
-  /// A removal waiting on the confirmation dialog.
   public internal(set) var pendingWorktreeRemoval: PendingWorktreeRemoval?
-  /// The trust question about one project's shared hooks, waiting on its
-  /// dialog.
-  public var pendingSharedSettingsTrust: PendingSharedSettingsTrust?
+  public internal(set) var pendingSharedSettingsTrust: PendingSharedSettingsTrust?
   /// A project removal waiting on its dialog, in whichever window asked.
   var pendingProjectRemoval: PendingProjectRemoval?
   /// A pane or tab close waiting on it, because an agent there is working.
@@ -54,7 +51,7 @@ public final class AppModel<Surface> {
   public internal(set) var showsSidebarFilter = false
   /// The project a menu asked the settings window for; `settingsWindowProjectID`
   /// is the one it shows.
-  public var requestedSettingsProjectID: Project.ID?
+  var requestedSettingsProjectID: Project.ID?
   /// The worktree showing its name field. Runtime state, so the menu that
   /// starts a rename and the row that draws it need not know each other.
   var renamingWorktreeID: Worktree.ID?
@@ -146,7 +143,7 @@ public final class AppModel<Surface> {
   /// Runs the user's login shell for its environment. Settable so a test
   /// hands in a PATH of its own rather than reading the developer's machine.
   @ObservationIgnored var captureLoginEnvironment: @Sendable () async -> LoginShellEnvironment = {
-    await LoginShellEnvironment.capture(shellPath: ShellCatalogue.loginShellPath())
+    await LoginShellEnvironment.capture(shellPath: ShellChoice.loginShellPath())
   }
   /// A harness stands in for both, the real ones writing the account's own files.
   @ObservationIgnored var refreshAppLaunchFiles: @Sendable (_ helper: URL?) throws -> Void =
@@ -199,8 +196,8 @@ public final class AppModel<Surface> {
   /// than dropped: an unmounted drive should not delete someone's setup.
   public internal(set) var missingProjects: Set<Project.ID> = []
   /// What each worktree's merge verdict was computed from, so a refresh
-  /// that finds nothing moved spawns no git; see `MergeCheck`.
-  @ObservationIgnored var mergeChecks: [Worktree.ID: MergeCheck] = [:]
+  /// that finds nothing moved spawns no git; see `MergeVerdictBasis`.
+  @ObservationIgnored var mergeVerdictBases: [Worktree.ID: MergeVerdictBasis] = [:]
   /// What each verdict cost, which spreads a re-ask of every branch over
   /// several rounds; a test sets `budget` to see them spread.
   @ObservationIgnored var mergeReads = MergeReadLog()
@@ -239,16 +236,16 @@ public final class AppModel<Surface> {
   /// How long a removal waits for that read before it asks anyway.
   @ObservationIgnored var removalStatusWait: Duration = .seconds(3)
   /// The removal asked last, the only one whose read may put up a dialog.
-  @ObservationIgnored var latestRemovalRequest: Worktree.ID?
+  @ObservationIgnored var latestRemovalRequestID: Worktree.ID?
 
   @ObservationIgnored var pendingSave: Task<Void, Never>?
   @ObservationIgnored var autosave: Task<Void, Never>?
   /// Set where another copy holds the socket: two copies autosaving one file
   /// leave the last writer's, so this one writes nothing; see state-and-store.md.
-  @ObservationIgnored var yieldingToRunningInstance = false
+  @ObservationIgnored var isYieldingToRunningInstance = false
   /// Set while saves are failing, so the alert is raised once rather than
   /// again after every change until the disk is writable.
-  @ObservationIgnored var saveFailureReported = false
+  @ObservationIgnored var hasReportedSaveFailure = false
 
   public var workspace: Workspace { store.workspace }
 

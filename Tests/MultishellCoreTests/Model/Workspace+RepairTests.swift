@@ -189,7 +189,6 @@ struct WorkspaceRepairTests {
     let other = session()
     var second = TabGroup(worktreeID: worktree.id)
     let itsOwn = TerminalTab(worktreeID: worktree.id, groupID: second.id, session: other.id)
-    // Pointing at the first group's tab, which is not one of its own.
     second.shownTabID = tab.id
     workspace.sessions.append(other)
     workspace.tabGroups.append(second)

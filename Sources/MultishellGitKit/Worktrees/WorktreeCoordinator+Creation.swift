@@ -6,21 +6,21 @@ extension WorktreeCoordinator {
   /// Where `create` would put a worktree for this branch, so the sheet can
   /// show it first. `settings` is the project's effective value.
   public func plannedPath(
-    forBranch rawBranch: String, createBranch: Bool = true, in project: Project,
+    forBranch rawBranch: String, createsBranch: Bool = true, in project: Project,
     settings: WorktreeSettings
   ) -> URL {
     settings.worktreePath(
       forBranch: Self.qualifiedBranchName(
-        rawBranch, createBranch: createBranch, settings: settings),
+        rawBranch, createsBranch: createsBranch, settings: settings),
       in: project)
   }
 
   /// The prefix names branches this app creates. An existing branch has its
   /// name already, and prefixing it would ask git for one that is not there.
   public static func qualifiedBranchName(
-    _ raw: String, createBranch: Bool, settings: WorktreeSettings
+    _ raw: String, createsBranch: Bool, settings: WorktreeSettings
   ) -> String {
-    createBranch
+    createsBranch
       ? settings.qualifiedBranch(raw) : raw.trimmingCharacters(in: .whitespaces)
   }
 
@@ -30,7 +30,7 @@ extension WorktreeCoordinator {
   public func create(
     branch rawBranch: String,
     basedOn startPoint: String? = nil,
-    createBranch: Bool = true,
+    createsBranch: Bool = true,
     in project: Project,
     settings: WorktreeSettings,
     shellPath: String? = nil,
@@ -38,25 +38,26 @@ extension WorktreeCoordinator {
     stopper: ProcessStopper? = nil,
     onStep: (@Sendable (WorktreeCreationStep) -> Void)? = nil
   ) async throws -> URL {
-    let branch = Self.qualifiedBranchName(rawBranch, createBranch: createBranch, settings: settings)
+    let branch = Self.qualifiedBranchName(
+      rawBranch, createsBranch: createsBranch, settings: settings)
     // Before the hook, for an existing branch too: git rejects the name at
     // the end of it, and the hook's work is done by then.
-    guard GitRefName.isValidBranch(branch) else { throw InvalidBranchName(branch) }
+    guard GitBranchName.isValid(branch) else { throw InvalidBranchName(branch) }
     // The one place the path is derived, so what the sheet showed and what
     // the model holds back from `git status` cannot part from what is made.
     let path = plannedPath(
-      forBranch: rawBranch, createBranch: createBranch, in: project, settings: settings)
+      forBranch: rawBranch, createsBranch: createsBranch, in: project, settings: settings)
 
     try await WorktreeHooks.run(
       .preCreate, for: project, worktreePath: path, branch: branch, shellPath: shellPath,
-      timeout: timeout, stopper: stopper, willRun: { onStep?(.preCreateHook) })
+      timeout: timeout, stopper: stopper, onWillRun: { onStep?(.preCreateHook) })
     onStep?(.addingWorktree)
     // No container directory made here: `git worktree add` makes the leading
     // directories itself, and a refused add then leaves none behind.
     let highestNewDirectory = await offMain { Self.highestMissingAncestor(of: path) }
     // Asked first: a stop can land before git has made anything, and the
     // name may be a branch of the user's that the add was refusing.
-    let branchIsNew = createBranch ? await git.lacksBranch(branch, in: project) : false
+    let branchIsNew = createsBranch ? await git.lacksBranch(branch, in: project) : false
     // An unforced remove still forgets a registered worktree whose directory is
     // away. Asked even where the path exists: git fills an empty directory.
     let worktreeIsNew = await !git.isListed(path, in: project)
@@ -65,7 +66,7 @@ extension WorktreeCoordinator {
         branch: branch,
         at: path,
         basedOn: startPoint,
-        createBranch: createBranch,
+        createsBranch: createsBranch,
         in: project,
         stopper: stopper
       )

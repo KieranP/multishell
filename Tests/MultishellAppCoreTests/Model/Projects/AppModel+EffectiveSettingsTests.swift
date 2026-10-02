@@ -7,35 +7,37 @@ import Testing
 @Suite @MainActor
 struct AppModelEffectiveSettingsTests {
   @Test func ownSettingsReadTheStoredProjectAndNotTheCopyPassedIn() {
-    let h = Harness()
-    let stale = h.project
+    let harness = Harness()
+    let stale = harness.project
     var settings = stale.settings
-    settings.autoStartAgent = true
-    h.model.updateSettings(settings, for: stale)
+    settings.autoStartsAgent = true
+    harness.model.setSettings(settings, for: stale)
 
-    #expect(stale.settings.autoStartAgent == nil)
-    #expect(h.model.ownSettings(of: stale).autoStartAgent == true)
+    #expect(stale.settings.autoStartsAgent == nil)
+    #expect(harness.model.ownSettings(of: stale).autoStartsAgent == true)
   }
 
-  /// `h.project` each time, not a copy taken once: these read the record the
+  /// `harness.project` each time, not a copy taken once: these read the record the
   /// caller hands them, which every view resolves per render.
   @Test func theFileAnswersForAProjectThatLeftTheSettingAloneAndTheGlobalOtherwise() {
-    let h = Harness()
+    let harness = Harness()
 
-    let global = h.model.inherited(.autoStartAgentOnCreate, global: true, for: h.project)
+    let global = harness.model.inherited(
+      .autoStartsAgentOnCreate, global: true, for: harness.project)
     #expect(global == InheritedSetting<Bool>(value: true, isFromRepository: false))
 
-    h.model.applySharedSettingsReading(
+    harness.model.applySharedSettingsReading(
       SharedSettingsReading(
-        loaded: .success(SharedProjectSettings(autoStartAgentOnCreate: false)),
-        modificationDate: .now, project: h.project),
-      for: h.project)
-    let file = h.model.inherited(.autoStartAgentOnCreate, global: true, for: h.project)
+        loaded: .success(SharedProjectSettings(autoStartsAgentOnCreate: false)),
+        modificationDate: .now, project: harness.project),
+      for: harness.project)
+    let file = harness.model.inherited(.autoStartsAgentOnCreate, global: true, for: harness.project)
     #expect(
       file == InheritedSetting<Bool>(value: false, isFromRepository: true),
       "the value in force is the file's, and the form has to say so")
 
-    let untouched = h.model.inherited(.opensTerminalOnCreate, global: true, for: h.project)
+    let untouched = harness.model.inherited(
+      .opensTerminalOnCreate, global: true, for: harness.project)
     #expect(
       untouched.isFromRepository == false, "a key the file does not carry is still the global")
   }
@@ -43,63 +45,69 @@ struct AppModelEffectiveSettingsTests {
   /// `worktreeDirectory` says where a checkout lands, so it waits for the yes
   /// the hooks wait for. Until then the form names the global, not the file.
   @Test func theFilesWorktreeDirectoryIsNotInForceUntilItIsTrusted() {
-    let h = Harness()
-    h.model.setWorktreeDefaults(WorktreeSettings(worktreeDirectory: "/global/trees"))
+    let harness = Harness()
+    harness.model.setWorktreeDefaults(WorktreeSettings(worktreeDirectory: "/global/trees"))
 
-    h.model.applySharedSettingsReading(
+    harness.model.applySharedSettingsReading(
       SharedSettingsReading(
         loaded: .success(SharedProjectSettings(worktreeDirectory: ".worktrees")),
-        modificationDate: .now, project: h.project),
-      for: h.project)
+        modificationDate: .now, project: harness.project),
+      for: harness.project)
 
-    let directory = h.model.inherited(
-      .worktreeDirectory, global: h.model.workspace.worktreeDefaults.worktreeDirectory,
-      for: h.project)
+    let directory = harness.model.inherited(
+      .worktreeDirectory, global: harness.model.workspace.worktreeDefaults.worktreeDirectory,
+      for: harness.project)
     #expect(directory == InheritedSetting(value: "/global/trees", isFromRepository: false))
     #expect(
-      h.model.effectiveWorktreeSettings(for: h.project).worktreeDirectory == "/global/trees",
+      harness.model.effectiveWorktreeSettings(for: harness.project).worktreeDirectory
+        == "/global/trees",
       "and the path the sheet would use is the one the caption names")
   }
 
   @Test func theFilesWorktreeDirectoryIsInForceOnceTrusted() {
-    let h = Harness()
-    h.model.setWorktreeDefaults(WorktreeSettings(worktreeDirectory: "/global/trees"))
-    h.model.applySharedSettingsReading(
+    let harness = Harness()
+    harness.model.setWorktreeDefaults(WorktreeSettings(worktreeDirectory: "/global/trees"))
+    harness.model.applySharedSettingsReading(
       SharedSettingsReading(
         loaded: .success(SharedProjectSettings(worktreeDirectory: ".worktrees", digest: "file")),
-        modificationDate: .now, project: h.project),
-      for: h.project)
+        modificationDate: .now, project: harness.project),
+      for: harness.project)
 
-    h.model.setTrustsSharedSettings(true, for: h.project)
+    harness.model.setTrustsSharedSettings(true, for: harness.project)
 
-    let directory = h.model.inherited(
-      .worktreeDirectory, global: h.model.workspace.worktreeDefaults.worktreeDirectory,
-      for: h.project)
+    let directory = harness.model.inherited(
+      .worktreeDirectory, global: harness.model.workspace.worktreeDefaults.worktreeDirectory,
+      for: harness.project)
     #expect(directory == InheritedSetting(value: ".worktrees", isFromRepository: true))
-    #expect(h.model.effectiveWorktreeSettings(for: h.project).worktreeDirectory == ".worktrees")
+    #expect(
+      harness.model.effectiveWorktreeSettings(for: harness.project).worktreeDirectory
+        == ".worktrees")
   }
 
   /// Blank is a value the file carries, not a key it left out, so the row
   /// shows it rather than falling back to the user's global.
   @Test func aBlankPrefixInTheFileIsTheValueInForceAndNotAFallThroughToTheGlobal() {
-    let h = Harness()
+    let harness = Harness()
 
     // A real global prefix, so the file's blank has something to beat.
-    h.model.setWorktreeDefaults(WorktreeSettings(branchPrefix: "team/"))
+    harness.model.setWorktreeDefaults(WorktreeSettings(branchPrefix: "team/"))
     #expect(
-      h.model.effectiveWorktreeSettings(for: h.project).qualifiedBranch("tabs") == "team/tabs")
+      harness.model.effectiveWorktreeSettings(for: harness.project).qualifiedBranch("tabs")
+        == "team/tabs")
 
-    h.model.applySharedSettingsReading(
+    harness.model.applySharedSettingsReading(
       SharedSettingsReading(
         loaded: .success(SharedProjectSettings(branchPrefix: "")), modificationDate: .now,
-        project: h.project),
-      for: h.project)
+        project: harness.project),
+      for: harness.project)
 
-    let prefix = h.model.inherited(
-      .branchPrefix, global: h.model.workspace.worktreeDefaults.branchPrefix, for: h.project)
+    let prefix = harness.model.inherited(
+      .branchPrefix, global: harness.model.workspace.worktreeDefaults.branchPrefix,
+      for: harness.project)
     #expect(prefix == InheritedSetting(value: "", isFromRepository: true))
     #expect(
-      h.model.effectiveWorktreeSettings(for: h.project).qualifiedBranch("tabs") == "tabs",
+      harness.model.effectiveWorktreeSettings(for: harness.project).qualifiedBranch("tabs")
+        == "tabs",
       "and the branch the sheet would create carries no prefix")
   }
 }

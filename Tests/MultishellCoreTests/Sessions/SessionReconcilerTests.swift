@@ -11,11 +11,7 @@ struct SessionReconcilerTests {
   let worktree: Worktree
 
   init() {
-    store = WorkspaceStore()
-    let project = store.addProject(at: URL(fileURLWithPath: "/repos/demo"))
-    worktree = Worktree(
-      path: project.path, projectID: project.id, head: "abc", branch: "main", isPrimary: true)
-    store.replaceWorktrees([worktree], forProject: project.id)
+    (store, _, worktree) = demoStore()
     store.selectWorktree(worktree.id)
     reconciler = SessionReconciler(store: store, host: host)
   }

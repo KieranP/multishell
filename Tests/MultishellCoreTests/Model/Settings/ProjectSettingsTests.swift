@@ -1,22 +1,21 @@
 import Foundation
-import TestScratch
 import Testing
 
 @testable import MultishellCore
 
 @Suite
 struct ProjectSettingsTests {
-  private let defaults = WorktreeSettings(worktreeDirectory: "/global/trees", branchPrefix: "team/")
+  private let defaults = WorktreeSettings.globalDefaults
 
   @Test func everyStoredFieldIsWrittenUnderItsOwnKey() throws {
     var everyField = ProjectSettings(
       worktreeDirectory: "trees", branchPrefix: "k/", defaultBranch: "main",
       preCreateHook: "a", postCreateHook: "b", preDeleteHook: "c", postDeleteHook: "d",
       linkedPaths: "node_modules", copiedPaths: ".env", preferredAgentID: "codex",
-      agentFlags: "--yolo", autoStartAgent: true, autoStartAgentOnCreate: true,
+      agentFlags: "--yolo", autoStartsAgent: true, autoStartsAgentOnCreate: true,
       opensTerminalOnSelect: true, opensTerminalOnCreate: true, worktreeSortOrder: .alphabetical,
       showsActiveWorktreesFirst: true, preferredShellID: "/bin/zsh", iconGlyph: "star", iconTint: 2)
-    everyField.trustDecisions = [TrustDecision(digest: "beef", trusted: true)]
+    everyField.trustDecisions = [TrustDecision(digest: "beef", isTrusted: true)]
     let fields = Mirror(reflecting: everyField).children.count
     let encoded = try JSONEncoder().encode(everyField)
     let keys = try #require(try JSONSerialization.jsonObject(with: encoded) as? [String: Any]).keys
@@ -24,13 +23,13 @@ struct ProjectSettingsTests {
     #expect(keys.count == fields, "a field missing from CodingKeys is silently never saved")
   }
 
-  /// These fields have no other spelling for "none". A project pinned to no
-  /// prefix used to follow the global again on the next load.
+  /// Kept, not coerced: these fields have no other spelling for "none". A
+  /// project pinned to no prefix used to follow the global again on the next load.
   @Test func aBlankWorktreeFieldDecodesAsTheOverrideToNone() throws {
-    let json = Data(
+    let settings = try decodeJSON(
+      ProjectSettings.self,
       #"{ "worktreeDirectory": "", "branchPrefix": "", "defaultBranch": "", "postCreateHook": "" }"#
-        .utf8)
-    let settings = try JSONDecoder().decode(ProjectSettings.self, from: json)
+    )
 
     #expect(settings.branchPrefix == "")
     #expect(settings.worktreeDirectory == "")
@@ -38,19 +37,18 @@ struct ProjectSettingsTests {
     #expect(
       settings.effectiveWorktreeSettings(defaults: defaults).branchPrefix == "",
       "not the global's team/")
+    #expect(
+      try decodeJSON(ProjectSettings.self, #"{ "defaultBranch": "develop" }"#).defaultBranch
+        == "develop")
   }
 
   /// Read back by someone whose own global has a prefix, the file has to
   /// still say none, or the team gets the opposite of what was shared.
   @Test func aBlankOverrideSurvivesAnExportAndTheFileItIsWrittenTo() throws {
-    let repository = try Scratch.directory("export")
-    defer { Scratch.remove(repository) }
-
     let exported = SharedProjectSettings(exporting: ProjectSettings(branchPrefix: ""))
     #expect(exported.branchPrefix == "")
-    try exported.write(to: repository)
 
-    let read = try #require(try SharedProjectSettings.load(from: repository))
+    let read = try writtenAndReadBack(exported)
     #expect(read.branchPrefix == "")
     // The reader leaves it alone, so the file's answer stands over a global
     // that has a prefix of its own.
@@ -60,23 +58,24 @@ struct ProjectSettingsTests {
     #expect(inEffect.qualifiedBranch("tabs") == "tabs")
   }
 
-  /// A field with its own spelling for "none" reads `""` as noise and keeps
-  /// following the global.
+  /// A field with its own spelling for "none", `login` for the shell, reads
+  /// `""` as noise and keeps following the global.
   @Test func aBlankFieldWithASentinelOfItsOwnStaysNoOverride() throws {
-    let json = Data(#"{ "preferredAgentID": "", "defaultShell": "", "iconGlyph": "" }"#.utf8)
-    let settings = try JSONDecoder().decode(ProjectSettings.self, from: json)
+    let settings = try decodeJSON(
+      ProjectSettings.self,
+      #"{ "preferredAgentID": "", "defaultShell": "", "iconGlyph": "" }"#)
 
     #expect(settings.preferredAgentID == nil)
     #expect(settings.preferredShellID == nil)
     #expect(settings.iconGlyph == nil)
   }
 
-  /// What the bug actually cost: the whole trip through the store and the
-  /// file, which is where the override used to be lost.
-  @Test @MainActor func aBlankOverrideSurvivesASaveAndLoad() throws {
+  /// What the bug actually cost: the trip through the store and the
+  /// workspace's encoding, which is where the override used to be lost.
+  @Test @MainActor func aBlankOverrideSurvivesTheStoreAndTheWorkspacesEncoding() throws {
     let store = WorkspaceStore()
     let project = store.addProject(at: URL(fileURLWithPath: "/repos/demo"))
-    store.updateSettings(ProjectSettings(branchPrefix: ""), forProject: project.id)
+    store.setSettings(ProjectSettings(branchPrefix: ""), forProject: project.id)
 
     let data = try JSONEncoder().encode(store.workspace)
     let restored = try JSONDecoder().decode(Workspace.self, from: data)

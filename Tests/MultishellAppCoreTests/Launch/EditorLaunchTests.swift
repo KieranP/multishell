@@ -7,15 +7,13 @@ import Testing
 
 @Suite
 struct EditorLaunchTests {
-  private let zsh = ShellInvocation(
-    executable: URL(fileURLWithPath: "/bin/zsh"), arguments: ["-l", "-i", "-c"])
   private let directory = URL(fileURLWithPath: "/Users/me/Work/repo trees/feat")
 
   private func action(
     _ id: String, found: EditorDetection.Found? = nil, custom: String = ""
   ) -> EditorLaunch.Action? {
     EditorLaunch.action(
-      editorID: id, found: found, customTemplate: custom, directory: directory, shell: zsh,
+      editorID: id, found: found, customTemplate: custom, directory: directory, shell: .loginZsh,
       handOver: "exec /bin/zsh -l")
   }
 
@@ -41,14 +39,14 @@ struct EditorLaunchTests {
     guard
       case .runInBackground(let line) = EditorLaunch.action(
         editorID: "vscode", found: .init(application: nil, command: shim), customTemplate: "",
-        directory: worktree, shell: zsh, handOver: "exit")
+        directory: worktree, shell: .loginZsh, handOver: "exit")
     else {
       Issue.record("the shim runs in the background")
       return
     }
     let text = try await Detached.output(
       of: tcsh, ["-f", "-i", "-c", line],
-      environment: ["PATH": "/usr/bin:/bin", "HISTFILE": "", "HOME": home.path])
+      environment: Scratch.bareShellEnvironment(home: home))
 
     #expect(text == worktree.path + "\n")
   }

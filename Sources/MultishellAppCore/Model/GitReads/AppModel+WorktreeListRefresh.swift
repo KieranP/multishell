@@ -20,7 +20,7 @@ extension AppModel {
         else { continue }
       }
       if let common, let known = worktreeRecords[project.id],
-        await offMain({ WorktreeRecords.read(commonDirectory: common) }) == known
+        await offMain({ WorktreeRecords.read(in: common) }) == known
       {
         await refreshSharedSettingsIfChanged(project)
         continue
@@ -49,7 +49,7 @@ extension AppModel {
     // next tick rather than lost.
     var records: WorktreeRecords?
     if let common = await commonGitDirectory(of: project) {
-      records = await offMain { WorktreeRecords.read(commonDirectory: common) }
+      records = await offMain { WorktreeRecords.read(in: common) }
     }
     let shared = await offMain { SharedSettingsReading.read(from: project) }
     do {
@@ -98,27 +98,5 @@ extension AppModel {
     }
     commonGitDirectories[project.id] = common
     return common
-  }
-
-  /// Whether a fetch is running on this project: its row spins, and the
-  /// menu item that started it is disabled until it ends.
-  public func isFetching(_ project: Project) -> Bool {
-    fetchingProjects.contains(project.id)
-  }
-
-  /// The menus' Fetch, the one git call that talks to a network and only on
-  /// a click. Marked for the whole of it, re-reads included.
-  public func fetch(_ project: Project) async {
-    guard let coordinator, fetchingProjects.insert(project.id).inserted else { return }
-    defer { fetchingProjects.remove(project.id) }
-    do {
-      try await coordinator.git.fetch(project)
-    } catch {
-      present(error)
-      return
-    }
-    await refreshWorktrees(of: project)
-    await refreshStatuses()
-    await refreshMergeStates(of: project)
   }
 }

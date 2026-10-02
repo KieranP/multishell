@@ -8,18 +8,15 @@ import Testing
 
 @Suite
 struct TabCommandTests {
-  private let zsh = ShellInvocation(
-    executable: URL(fileURLWithPath: "/bin/zsh"), arguments: ["-l", "-i", "-c"])
-
   @Test func theAgentRunsInTheLoginShellAndAShellTakesOverAfterIt() {
     let command = TabCommand.running(
-      ["claude", "--continue"], shell: zsh, handOver: "exec /bin/zsh -l")
+      ["claude", "--continue"], shell: .loginZsh, handOver: "exec /bin/zsh -l")
     #expect(command == ["/bin/zsh", "-l", "-i", "-c", "claude --continue; exec /bin/zsh -l"])
   }
 
   @Test func argumentsWithSpacesAreQuotedAndTheUsersShellIsExecd() {
     let command = TabCommand.running(
-      ["my agent", "--name", "it's"], shell: zsh, handOver: "exec /opt/homebrew/bin/nu -l")
+      ["my agent", "--name", "it's"], shell: .loginZsh, handOver: "exec /opt/homebrew/bin/nu -l")
     #expect(command.last == "'my agent' --name 'it'\\''s'; exec /opt/homebrew/bin/nu -l")
   }
 
@@ -35,7 +32,7 @@ struct TabCommandTests {
         executable: URL(fileURLWithPath: tcsh), arguments: ["-f", "-i", "-c"]), handOver: "exit")
     let text = try await Detached.output(
       of: command[0], Array(command.dropFirst()),
-      environment: ["PATH": "/usr/bin:/bin", "HISTFILE": "", "HOME": home.path])
+      environment: Scratch.bareShellEnvironment(home: home))
 
     #expect(text == words.map { "[\($0)]\n" }.joined())
   }
@@ -56,7 +53,7 @@ struct TabCommandTests {
       let worktree = Worktree(
         path: URL(fileURLWithPath: "/repos/demo-worktrees/w"), projectID: project.id, head: "a",
         branch: hostile)
-      let values = AgentPlaceholder.values(
+      let values = WorktreePlaceholder.values(
         project: project, worktree: worktree, worktreeName: hostile)
       let command = TabCommand.running(
         ["/usr/bin/printf", "[%s]\\n"] + AgentFlags.arguments("--name={{branch}}", values: values),
@@ -64,7 +61,7 @@ struct TabCommandTests {
         handOver: "exit")
       let text = try await Detached.output(
         of: command[0], Array(command.dropFirst()),
-        environment: ["PATH": "/usr/bin:/bin", "HISTFILE": "", "HOME": home.path],
+        environment: Scratch.bareShellEnvironment(home: home),
         standardError: .discarded)
 
       #expect(text == "[--name=\(hostile)]\n", "\(shell)")
@@ -75,11 +72,11 @@ struct TabCommandTests {
   @Test func aCustomLineIsUsedAsTypedAndBlankMeansNothing() {
     #expect(
       TabCommand.running(
-        customLine: ShellLine(text: "  "), shell: zsh, handOver: "exec /bin/zsh -l")
+        customLine: ShellLine(text: "  "), shell: .loginZsh, handOver: "exec /bin/zsh -l")
         == nil)
     #expect(
       TabCommand.running(
-        customLine: ShellLine(text: " my-agent --model x \n"), shell: zsh,
+        customLine: ShellLine(text: " my-agent --model x \n"), shell: .loginZsh,
         handOver: "exec /bin/zsh -l")
         == ["/bin/zsh", "-l", "-i", "-c", "my-agent --model x; exec /bin/zsh -l"])
   }
@@ -89,7 +86,7 @@ struct TabCommandTests {
       text: #"my-agent --name "$MULTISHELL_BRANCH""#,
       environment: ["MULTISHELL_BRANCH": "feat$(x)", "MULTISHELL_PROJECT_NAME": "demo"])
     #expect(
-      TabCommand.running(customLine: line, shell: zsh, handOver: "exec /bin/zsh -l") == [
+      TabCommand.running(customLine: line, shell: .loginZsh, handOver: "exec /bin/zsh -l") == [
         "/usr/bin/env", "MULTISHELL_BRANCH=feat$(x)", "MULTISHELL_PROJECT_NAME=demo",
         "/bin/zsh", "-l", "-i", "-c", #"my-agent --name "$MULTISHELL_BRANCH"; exec /bin/zsh -l"#,
       ])

@@ -32,8 +32,8 @@ extension ShellIntegrationScriptsTests {
     try files.writeHomeFile(".bashrc", "PS1='> '\nPROMPT_COMMAND='history -a'\n")
 
     var environment = files.environment(termProgram: nil)
-    environment[SessionEnvironment.sessionKey] = "empty-enter"
-    _ = try await interactiveShell(
+    environment[SessionEnvironment.sessionVariable] = "empty-enter"
+    _ = try await interactiveShellOutput(
       bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment,
       input: "\n\ntrue\n\nexit\n")
 
@@ -59,9 +59,9 @@ extension ShellIntegrationScriptsTests {
     try files.writeHomeFile(".bashrc", "PS1='> '\n")
 
     var environment = files.environment(termProgram: nil)
-    environment[SessionEnvironment.sessionKey] = "typed-agent"
+    environment[SessionEnvironment.sessionVariable] = "typed-agent"
     environment["PATH"] = scratch.path + ":" + (environment["PATH"] ?? "")
-    _ = try await interactiveShell(
+    _ = try await interactiveShellOutput(
       bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment,
       input: "\(codex.path) --continue\nFOO=1 \(codex.path)\ntrue\nexit\n")
 
@@ -95,8 +95,8 @@ extension ShellIntegrationScriptsTests {
       """)
 
     var environment = files.environment(termProgram: nil)
-    environment[SessionEnvironment.sessionKey] = "late-debug"
-    let output = try await interactiveShell(
+    environment[SessionEnvironment.sessionVariable] = "late-debug"
+    let output = try await interactiveShellOutput(
       bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment,
       input: "true\nexit\n")
 
@@ -140,9 +140,9 @@ extension ShellIntegrationScriptsTests {
         #"_multishell_send() { print -r -- "$1" }"#,
       ] + calls).joined(separator: "\n")
     var environment = files.environment(termProgram: nil)
-    environment[SessionEnvironment.sessionKey] = "zsh-typed"
-    environment[SessionEnvironment.socketKey] = "/tmp/nothing.sock"
-    environment[SessionEnvironment.worktreeKey] = "/w"
+    environment[SessionEnvironment.sessionVariable] = "zsh-typed"
+    environment[SessionEnvironment.socketVariable] = "/tmp/nothing.sock"
+    environment[SessionEnvironment.worktreeVariable] = "/w"
     let process = Process()
     process.executableURL = URL(fileURLWithPath: zsh)
     process.arguments = ["-c", script]

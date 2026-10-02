@@ -1,6 +1,17 @@
 import MultishellCore
 
 extension WorktreeCoordinator {
+  /// The default branch, every local branch and each last commit, in one
+  /// process. `nil` is a failed read, not a repository with no branches.
+  public func scanBranches(
+    of project: Project, defaultBranchOverride override: String?
+  ) async
+    -> BranchScan?
+  {
+    guard let refs = await git.branchRefs(project) else { return nil }
+    return BranchScan(refs: refs, defaultBranchOverride: override)
+  }
+
   public func deleteBranch(_ branch: String, force: Bool = false, in project: Project) async throws
   {
     do {

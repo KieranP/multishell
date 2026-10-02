@@ -8,12 +8,12 @@ import Testing
 @Suite @MainActor
 struct AppModelSidebarRowsTests {
   @Test func thePanesListedAreTheTabsSessionsInOrderWithTheFocusedOneMarked() {
-    let h = Harness()
-    h.model.select(h.main)
-    h.model.splitActivePane(.horizontal)
-    let tab = h.model.workspace.tabs(in: h.main.id)[0]
+    let harness = Harness()
+    harness.model.select(harness.main)
+    harness.model.splitActivePane(.horizontal)
+    let tab = harness.model.workspace.tabs(in: harness.main.id)[0]
 
-    let panes = h.model.sidebarPanes(of: h.main)
+    let panes = harness.model.sidebarPanes(of: harness.main)
 
     #expect(panes.map(\.id) == tab.sessionIDs)
     #expect(panes.map(\.isFocused) == tab.sessionIDs.map { $0 == tab.focusedSessionID })
@@ -21,10 +21,10 @@ struct AppModelSidebarRowsTests {
   }
 
   @Test func aTabListingASessionThatIsGoneGivesItsWorktreeOnlyThePanesItHas() throws {
-    let h = Harness()
-    h.model.select(h.main)
-    var workspace = h.store.workspace
-    let index = try #require(workspace.tabs.firstIndex { $0.worktreeID == h.main.id })
+    let harness = Harness()
+    harness.model.select(harness.main)
+    var workspace = harness.store.workspace
+    let index = try #require(workspace.tabs.firstIndex { $0.worktreeID == harness.main.id })
     let session = workspace.tabs[index].focusedSessionID
     workspace.tabs[index].root = .split(
       axis: .horizontal, children: [.terminal(session), .terminal(UUID())], weights: [1, 1])
@@ -34,33 +34,52 @@ struct AppModelSidebarRowsTests {
       workspace: workspace,
       file: WorkspaceFile(fileURL: root.appendingPathComponent("state.json")))
     let model = AppModel(store: store, host: FakeEngine(), coordinator: nil, watcher: FakeWatcher())
-    model.select(h.main, openingFirstTab: .never)
+    model.select(harness.main, openingFirstTab: .never)
 
-    #expect(model.sidebarWorktree(h.main).panes.map(\.id) == [session])
+    #expect(model.sidebarWorktree(harness.main).panes.map(\.id) == [session])
   }
 
   @Test func aProjectsRowShowsItsWorktreesStateOnlyWhileTheyAreCollapsed() {
-    let h = Harness()
-    h.model.select(h.main)
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-    h.stateSource.send(SessionStateReport(state: .attention, sessionID: tab.focusedSessionID))
-    let sessions = h.model.sessionIDsByWorktree
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let tab = harness.model.workspace.activeTab(in: harness.main.id)!
+    harness.stateSource.send(SessionStateReport(state: .attention, sessionID: tab.focusedSessionID))
+    let sessions = harness.model.sessionIDsByWorktree
 
     #expect(
-      h.model.projectRowState(h.project.id, isExpanded: false, sessions: sessions) == .attention)
-    #expect(h.model.projectRowState(h.project.id, isExpanded: true, sessions: sessions) == nil)
+      harness.model.projectRowState(harness.project.id, isExpanded: false, sessions: sessions)
+        == .attention)
+    #expect(
+      harness.model.projectRowState(harness.project.id, isExpanded: true, sessions: sessions) == nil
+    )
   }
 
   @Test func aWorktreesRowSaysWhetherItIsNamedOrBeingRenamed() {
-    let h = Harness()
-    #expect(!h.model.sidebarWorktree(h.feature).hasCustomName)
+    let harness = Harness()
+    #expect(!harness.model.sidebarWorktree(harness.feature).hasCustomName)
 
-    h.model.renameWorktree(h.feature.id, to: "Spike")
-    h.model.beginRenamingWorktree(h.main)
+    harness.model.renameWorktree(harness.feature.id, to: "Spike")
+    harness.model.beginRenamingWorktree(harness.main)
 
-    #expect(h.model.sidebarWorktree(h.feature).customName == "Spike")
-    #expect(h.model.sidebarWorktree(h.feature).hasCustomName)
-    #expect(!h.model.sidebarWorktree(h.feature).isRenaming)
-    #expect(h.model.sidebarWorktree(h.main).isRenaming)
+    #expect(harness.model.sidebarWorktree(harness.feature).customName == "Spike")
+    #expect(harness.model.sidebarWorktree(harness.feature).hasCustomName)
+    #expect(!harness.model.sidebarWorktree(harness.feature).isRenaming)
+    #expect(harness.model.sidebarWorktree(harness.main).isRenaming)
+  }
+
+  @Test func onlyTheWorktreeInViewListsItsPanesInTheSidebar() {
+    let harness = Harness()
+    harness.model.select(harness.feature)
+    #expect(harness.model.workspace.tabs(in: harness.feature.id).count == 1)
+    harness.model.select(harness.main)
+    harness.model.splitActivePane(.horizontal)
+    harness.model.newTab()
+
+    #expect(harness.model.sidebarPanes(of: harness.main).count == 3)
+    #expect(harness.model.sidebarPanes(of: harness.feature).isEmpty, "its pane is not listed")
+
+    harness.model.showAgentBoard()
+
+    #expect(harness.model.sidebarPanes(of: harness.main).isEmpty)
   }
 }

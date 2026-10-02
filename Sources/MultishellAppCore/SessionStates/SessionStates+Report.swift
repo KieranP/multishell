@@ -12,19 +12,19 @@ extension SessionStates {
     let resumesAfterWorkers = report.resumesAfterWorkers == true
     // Copilot's prompt mode starts its session after the first prompt. Before
     // the conversation is read, or a dropped start re-points the pane's own.
-    if report.startsSession == true, report.subagentChange == nil,
+    if report.startsSession == true, report.workerChange == nil,
       entries[key]?.workingIsShellCommand != true,
       [.running, .attention].contains(entries[key]?.state)
     {
       return nil
     }
-    let (subagent, isAnotherConversation) = workerAfterReading(
-      conversation: report.conversationID, named: report.subagentChange,
+    let (worker, isAnotherConversation) = workerAfterReading(
+      conversation: report.conversationID, named: report.workerChange,
       reporting: report.state, for: key)
     // A prompt starts a turn, so whatever the last one left out is gone: an
     // agent interrupted, Codex aside, fires no hook and its workers send no stop.
     if report.startsTurn == true, !isAnotherConversation { update(key) { $0.startTurn() } }
-    let isOwnStop = report.state == .done && subagent == nil
+    let isOwnStop = report.state == .done && worker == nil
     if isOwnStop {
       update(key) {
         if let workersOut = report.workersOut,
@@ -39,8 +39,8 @@ extension SessionStates {
       }
     }
     guard
-      let state = meaning(
-        of: report.state, subagent: subagent,
+      let state = applyMeaning(
+        of: report.state, worker: worker,
         turnFollows: isOwnStop && report.turnFollows == true, for: key)
     else { return nil }
     switch state {
@@ -67,19 +67,19 @@ extension SessionStates {
   /// A report's worker once its conversation is read: a worker's end can
   /// hand back the pane's own id, and another conversation is a worker.
   private mutating func workerAfterReading(
-    conversation conversationID: String?, named subagent: SubagentReport?,
+    conversation conversationID: String?, named worker: WorkerReport?,
     reporting state: SessionState, for key: Key
-  ) -> (subagent: SubagentReport?, isAnotherConversation: Bool) {
-    guard let conversationID else { return (subagent, false) }
+  ) -> (worker: WorkerReport?, isAnotherConversation: Bool) {
+    guard let conversationID else { return (worker, false) }
     // A worker's end names the conversation it ran under: the pane's own, where
     // a pane that heard the worker first took the worker for its own.
-    if let ending = subagent, ending.phase == .ended, ownConversationIDs[key] == ending.id {
+    if let ending = worker, ending.phase == .ended, ownConversationIDs[key] == ending.id {
       ownConversationIDs[key] = conversationID
       update(key) { $0.roster.forget(conversationID) }
     }
-    guard subagent == nil,
-      let worker = worker(inConversation: conversationID, reporting: state, for: key)
-    else { return (subagent, false) }
+    guard worker == nil,
+      let worker = self.worker(inConversation: conversationID, reporting: state, for: key)
+    else { return (worker, false) }
     return (worker, true)
   }
 
@@ -103,10 +103,10 @@ extension SessionStates {
   /// pane's own. Only the pane's own sends a start, an end or a Stop.
   private mutating func worker(
     inConversation conversation: String, reporting state: SessionState, for key: Key
-  ) -> SubagentReport? {
+  ) -> WorkerReport? {
     let own = ownConversationIDs[key]
     guard own == nil || state == .idle || state.isFinished else {
-      return own == conversation ? nil : SubagentReport(id: conversation, phase: .working)
+      return own == conversation ? nil : WorkerReport(id: conversation, phase: .working)
     }
     if let own, own != conversation {
       // A new conversation of the pane's, cleared or started without a

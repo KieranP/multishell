@@ -11,11 +11,11 @@ enum NotificationPolicy {
   /// than what clears a Done, which is the focused pane alone.
   static func shouldNotify(
     _ state: SessionState, preference: NotificationPreference, isOnScreen: Bool,
-    duration: Double? = nil, silent: Bool = false
+    duration: Double? = nil, isSilent: Bool = false
   ) -> Bool {
     // Two reports stand for one permission prompt: the dot moves on the
     // first, the banner comes with the second.
-    guard !silent, preference[state] else { return false }
+    guard !isSilent, preference[state] else { return false }
     if state.isFinished, let duration, duration < minimumNotifiedDuration { return false }
     return !isOnScreen
   }

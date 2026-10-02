@@ -4,23 +4,23 @@ import MultishellCore
 /// Stop owes while workers are out; see Docs/design/agents.md.
 extension SessionStates {
   /// `nil` for a report that moves nothing.
-  mutating func meaning(
-    of state: SessionState, subagent: SubagentReport?, turnFollows: Bool, for key: Key
+  mutating func applyMeaning(
+    of state: SessionState, worker: WorkerReport?, turnFollows: Bool, for key: Key
   ) -> SessionState? {
     // A Stop, a failure or an end naming a worker, which no agent documents,
     // is the agent's own and puts no phantom on the roster.
-    guard let subagent, !state.isFinished, state != .idle else {
-      return meaningOfOwnReport(
+    guard let worker, !state.isFinished, state != .idle else {
+      return applyOwnReport(
         state, entry: entries[key] ?? Entry(), turnFollows: turnFollows, for: key)
     }
-    var place = SubagentRoster.Place(id: subagent.id)
+    var place = WorkerRoster.Place(id: worker.id)
     update(key) {
-      let before = $0.roster.subagents.workerCount
-      place = $0.record(subagent)
+      let before = $0.roster.workers.workerCount
+      place = $0.record(worker)
       // An idle agent takes a turn over this end, and that turn's Stop pays;
       // an end that took nobody off woke nothing.
-      if subagent.phase == .ended, subagent.wakesAgent != false, $0.displaced == .owedDone,
-        $0.roster.subagents.workerCount < before
+      if worker.phase == .ended, worker.wakesAgent != false, $0.displaced == .owedDone,
+        $0.roster.workers.workerCount < before
       {
         $0.turnUnderway = true
       }
@@ -34,7 +34,7 @@ extension SessionStates {
         $0.promptRaisers.insert(raiser)
       }
       return state
-    case .running where subagent.phase == .working:
+    case .running where worker.phase == .working:
       // A failure stands to mere work, and so does another thread's prompt:
       // only the thread that asked, moving on, says it was answered.
       if entry.state == .failed { return nil }
@@ -44,7 +44,7 @@ extension SessionStates {
       update(key) { $0.rememberDisplaced(byPrompt: false) }
       return state
     case .running:
-      return meaningOfTick(subagent, place: place, entry: entry, for: key)
+      return applyTick(worker, place: place, entry: entry, for: key)
     case .done, .failed, .idle:
       return nil
     }
@@ -52,14 +52,14 @@ extension SessionStates {
 
   /// A start or an end carries `.running` for want of anything to say: a
   /// tick, not news, except over a Done or nothing, and at the last one out.
-  private mutating func meaningOfTick(
-    _ subagent: SubagentReport, place: SubagentRoster.Place, entry: Entry, for key: Key
+  private mutating func applyTick(
+    _ worker: WorkerReport, place: WorkerRoster.Place, entry: Entry, for key: Key
   ) -> SessionState? {
     let raiser = Entry.PromptRaiser.worker(place.id)
-    let outstanding = !entry.roster.subagents.isEmpty
+    let outstanding = !entry.roster.workers.isEmpty
     // A worker ending with its prompt still up, the user having denied it,
     // takes the prompt with it.
-    if subagent.phase == .ended, entry.state == .attention, entry.promptRaisers.contains(raiser) {
+    if worker.phase == .ended, entry.state == .attention, entry.promptRaisers.contains(raiser) {
       guard answer(raiser, sharedPlace: place.isShared, for: key) else { return nil }
       if !outstanding, let displaced = entry.displaced {
         return settleLastWorkerOut(displaced, entry: entry, for: key)
@@ -79,7 +79,7 @@ extension SessionStates {
 
   /// The agent's own report. Its Working answers its own prompt and takes
   /// the dot back from a worker; its Stop is held while workers are out.
-  private mutating func meaningOfOwnReport(
+  private mutating func applyOwnReport(
     _ state: SessionState, entry: Entry, turnFollows: Bool, for key: Key
   ) -> SessionState? {
     // Its Working is a turn running and its Stop the end of one; its prompt
@@ -103,7 +103,7 @@ extension SessionStates {
       }
       return state
     // A turn starting straight after the Stop is work out as a worker is.
-    case .done where !entry.roster.subagents.isEmpty || turnFollows:
+    case .done where !entry.roster.workers.isEmpty || turnFollows:
       update(key) { $0.roster.markOutAtStop() }
       // A failure is left alone whether a worker's prompt covered it or it is
       // still standing, or the Done would be paid over it.

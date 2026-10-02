@@ -6,21 +6,13 @@ import Testing
 
 @Suite
 struct WorkspaceFileTests {
-  private func scratchFile() -> URL {
-    Scratch.path("state").appendingPathComponent("state.json")
-  }
-
   @Test func stateWrittenBeforeAFieldExistedStillLoads() throws {
-    let file = scratchFile()
-    defer { Scratch.remove(file.deletingLastPathComponent()) }
-    try FileManager.default.createDirectory(
-      at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
     // Only what the very first build wrote: no appearance, no engine, no tabs.
-    try Data(
-      """
-      { "projects": [ { "path": "file:///repos/demo/" } ], "worktrees": [], "sessions": [] }
-      """.utf8
-    ).write(to: file)
+    let file = try scratchStateFile(
+      holding:
+        #"{ "projects": [ { "path": "file:///repos/demo/" } ], "worktrees": [], "sessions": [] }"#
+    )
+    defer { Scratch.remove(file.deletingLastPathComponent()) }
 
     let workspace = try WorkspaceFile(fileURL: file).load()
 
@@ -29,11 +21,9 @@ struct WorkspaceFileTests {
   }
 
   @Test func unreadableStateIsMovedAsideNotOverwritten() throws {
-    let file = scratchFile()
+    let file = try scratchStateFile(holding: "not json")
     let directory = file.deletingLastPathComponent()
     defer { Scratch.remove(directory) }
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-    try Data("not json".utf8).write(to: file)
 
     let stateFile = WorkspaceFile(fileURL: file)
     var reported: URL?
@@ -58,11 +48,9 @@ struct WorkspaceFileTests {
   /// The decode path moved a file aside and the read path did not, so one
   /// that would not open was left where an empty workspace would be saved.
   @Test func stateThatWillNotOpenIsMovedAsideAsWellAsStateThatWillNotDecode() throws {
-    let file = scratchFile()
+    let file = try scratchStateFile(holding: #"{"projects":[{"path":"file:///repos/demo/"}]}"#)
     let directory = file.deletingLastPathComponent()
     defer { Scratch.remove(directory) }
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-    try Data(#"{"projects":[{"path":"file:///repos/demo/"}]}"#.utf8).write(to: file)
     // Readable to nobody, as a restore from a backup under sudo leaves it.
     try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: file.path)
 
@@ -83,15 +71,13 @@ struct WorkspaceFileTests {
   /// Moving it aside frees the path to write. Where that fails too the state
   /// is still there; see Docs/design/state-and-store.md.
   @Test @MainActor func aStateFileMovedAwayMidSessionLetsSavingResume() throws {
-    let file = scratchFile()
+    let file = try scratchStateFile(holding: #"{"projects":[{"path":"file:///repos/demo/"}]}"#)
     let directory = file.deletingLastPathComponent()
     defer {
       try? FileManager.default.setAttributes(
         [.posixPermissions: 0o755], ofItemAtPath: directory.path)
       Scratch.remove(directory)
     }
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-    try Data(#"{"projects":[{"path":"file:///repos/demo/"}]}"#.utf8).write(to: file)
     try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: file.path)
     try FileManager.default.setAttributes(
       [.posixPermissions: 0o500], ofItemAtPath: directory.path)
@@ -110,16 +96,14 @@ struct WorkspaceFileTests {
   }
 
   @Test @MainActor func aStateFileThatCannotBeMovedAsideIsNeverSavedOver() throws {
-    let file = scratchFile()
+    let original = #"{"projects":[{"path":"file:///repos/demo/"}]}"#
+    let file = try scratchStateFile(holding: original)
     let directory = file.deletingLastPathComponent()
     defer {
       try? FileManager.default.setAttributes(
         [.posixPermissions: 0o755], ofItemAtPath: directory.path)
       Scratch.remove(directory)
     }
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-    let original = #"{"projects":[{"path":"file:///repos/demo/"}]}"#
-    try Data(original.utf8).write(to: file)
     // Unreadable, and in a directory that takes no rename, so neither the
     // read nor the move aside can happen.
     try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: file.path)
@@ -141,7 +125,7 @@ struct WorkspaceFileTests {
   }
 
   @Test @MainActor func restoringRepairsDanglingReferencesBeforeTheStoreSeesThem() throws {
-    let file = scratchFile()
+    let file = scratchStatePath()
     defer { Scratch.remove(file.deletingLastPathComponent()) }
 
     var workspace = Workspace()
@@ -169,7 +153,7 @@ struct WorkspaceFileTests {
   /// Autosave encodes and writes on the main thread after every change. A
   /// workspace far larger than anyone keeps must still save in a blink.
   @Test func aLargeWorkspaceSavesLoadsAndRepairsWithoutAQuadratic() throws {
-    let file = scratchFile()
+    let file = scratchStatePath()
     defer { Scratch.remove(file.deletingLastPathComponent()) }
     var workspace = Workspace()
     for p in 0..<20 {
@@ -225,7 +209,7 @@ struct WorkspaceFileTests {
   }
 
   @Test func everySavedFieldLoadsBackAsItWasSaved() throws {
-    let file = scratchFile()
+    let file = scratchStatePath()
     defer { Scratch.remove(file.deletingLastPathComponent()) }
 
     // Every scalar is off its default, so a field the decoder forgets fails here. The pairs
@@ -246,8 +230,8 @@ struct WorkspaceFileTests {
     workspace.preferredAgentID = "claude"
     workspace.customAgentCommand = "my-agent --flag"
     workspace.agentFlags = ["claude": "--model haiku"]
-    workspace.autoStartAgent = true
-    workspace.autoStartAgentOnCreate = false
+    workspace.autoStartsAgent = true
+    workspace.autoStartsAgentOnCreate = false
     workspace.preferredShellID = "/opt/homebrew/bin/fish"
     workspace.customShellPath = "/usr/local/bin/zsh"
     workspace.preferredEditorID = "vscode"
@@ -270,30 +254,25 @@ struct WorkspaceFileTests {
   /// The dropped tab has a pane kind this build does not know; the session it owned goes
   /// with it.
   @Test @MainActor func aStateFileWithOneUnreadableTabRestoresEverythingElse() throws {
-    let file = Scratch.path("scratch")
-      .appendingPathComponent("state.json")
-    defer { Scratch.remove(file.deletingLastPathComponent()) }
-    try FileManager.default.createDirectory(
-      at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
-
     let kept = UUID()
     let orphaned = UUID()
     let keptTab = UUID()
-    try Data(
-      #"""
-      { "projects": [ { "path": "file:///repos/demo/" } ],
-        "worktrees": [ { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "a" } ],
-        "sessions": [
-          { "id": "\#(kept)", "worktreeID": "/repos/demo", "workingDirectory": "file:///repos/demo/", "title": "sh" },
-          { "id": "\#(orphaned)", "worktreeID": "/repos/demo", "workingDirectory": "file:///repos/demo/", "title": "sh" } ],
-        "tabs": [
-          { "id": "\#(keptTab)", "worktreeID": "/repos/demo", "focusedSessionID": "\#(kept)",
-            "root": { "terminal": { "_0": "\#(kept)" } } },
-          { "id": "\#(UUID())", "worktreeID": "/repos/demo", "focusedSessionID": "\#(orphaned)",
-            "root": { "stack": { "pages": [ { "terminal": { "_0": "\#(orphaned)" } } ] } } } ],
-        "activeTabByWorktree": { "/repos/demo": "\#(keptTab)" } }
-      """#.utf8
-    ).write(to: file)
+    let file = try scratchStateFile(
+      holding:
+        #"""
+        { "projects": [ { "path": "file:///repos/demo/" } ],
+          "worktrees": [ { "path": "file:///repos/demo/", "projectID": "/repos/demo", "head": "a" } ],
+          "sessions": [
+            { "id": "\#(kept)", "worktreeID": "/repos/demo", "workingDirectory": "file:///repos/demo/", "title": "sh" },
+            { "id": "\#(orphaned)", "worktreeID": "/repos/demo", "workingDirectory": "file:///repos/demo/", "title": "sh" } ],
+          "tabs": [
+            { "id": "\#(keptTab)", "worktreeID": "/repos/demo", "focusedSessionID": "\#(kept)",
+              "root": { "terminal": { "_0": "\#(kept)" } } },
+            { "id": "\#(UUID())", "worktreeID": "/repos/demo", "focusedSessionID": "\#(orphaned)",
+              "root": { "stack": { "pages": [ { "terminal": { "_0": "\#(orphaned)" } } ] } } } ],
+          "activeTabByWorktree": { "/repos/demo": "\#(keptTab)" } }
+        """#)
+    defer { Scratch.remove(file.deletingLastPathComponent()) }
 
     let (store, error) = WorkspaceStore.restored(from: WorkspaceFile(fileURL: file))
 

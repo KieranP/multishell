@@ -31,8 +31,9 @@ struct GeneratedIntegration {
   /// libghostty's bootstrap contract: restore `ZDOTDIR` from `GHOSTTY_ZSH_ZDOTDIR`, source
   /// its `.zshenv`, and from a precmd deferred past `.zshrc` write the prompt start and mark.
   func writeEngineBootstrap() throws -> URL {
-    let dir = engineResources.appendingPathComponent("shell-integration/zsh", isDirectory: true)
-    try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    let bootstrap = engineResources.appendingPathComponent(
+      "shell-integration/zsh", isDirectory: true)
+    try FileManager.default.createDirectory(at: bootstrap, withIntermediateDirectories: true)
     let contents = """
       if [[ -n "${GHOSTTY_ZSH_ZDOTDIR+set}" ]]; then
         ZDOTDIR="$GHOSTTY_ZSH_ZDOTDIR"; unset GHOSTTY_ZSH_ZDOTDIR
@@ -56,11 +57,10 @@ struct GeneratedIntegration {
       fi
 
       """
-    try Data(contents.utf8).write(to: dir.appendingPathComponent(".zshenv"), options: .atomic)
-    return dir
+    try Data(contents.utf8).write(to: bootstrap.appendingPathComponent(".zshenv"), options: .atomic)
+    return bootstrap
   }
 
-  /// A startup file for the shell to chain to, as a user's own would be.
   func writeHomeFile(_ name: String, _ contents: String) throws {
     try Data(contents.utf8).write(to: home.appendingPathComponent(name), options: .atomic)
   }

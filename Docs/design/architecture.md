@@ -12,7 +12,8 @@ What the core is, what it refuses, how work reaches it. Newest at the bottom.
   is removed after, not prevented.
 - **One `reconcileSessions(takingFocus:)`, and only a user's action passes
   focus.** A refresh runs from the watcher, so focusing there would take the
-  keyboard off whatever is being typed.
+  keyboard off whatever is being typed. The one exception is a held-back first
+  tab opening in view (terminals.md).
 - **A refresh still reconciles.** Without it a worktree removed outside the app
   keeps its surfaces and its shells run on unreachable.
 - **Identity is the path.** A minted id would change under persisted selection.

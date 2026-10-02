@@ -6,14 +6,12 @@ extension AgentHookIntegration {
   /// Whether any hook of ours is in there at all, so a half-written file
   /// still counts.
   func holdsAnyOfOurHooks(_ settings: [String: Any]) -> Bool {
-    events.contains(where: eventHoldsOurHook(in: settings))
+    events.contains { holdsOurHook(under: $0, in: settings) }
   }
 
-  func eventHoldsOurHook(in settings: [String: Any]) -> (AgentHookEvent) -> Bool {
+  func holdsOurHook(under event: AgentHookEvent, in settings: [String: Any]) -> Bool {
     let hooks = hooksSection(settings) ?? [:]
-    return { event in
-      existingGroups(hooks[event.name])?.contains(where: holdsOurHook) ?? false
-    }
+    return existingGroups(hooks[event.name])?.contains(where: holdsOurHook) ?? false
   }
 
   /// One entry of ours per event, everything already there left alone.
@@ -24,8 +22,6 @@ extension AgentHookIntegration {
     -> [String: Any]
   {
     var result = settings
-    // Left alone where it holds a shape this cannot put back; `install`
-    // refuses such a file rather than reaching here.
     guard var hooks = hooksSection(settings) else { return result }
     for event in events {
       guard var existing = existingGroups(hooks[event.name]) else { continue }
@@ -63,7 +59,7 @@ extension AgentHookIntegration {
   }
 
   /// What one event holds, `nil` where the file has a shape this cannot
-  /// read. Absent reads as an empty list to add to; unreadable does not.
+  /// read. Absent reads as an empty list to add to; another shape does not.
   private func existingGroups(_ value: Any?) -> [[String: Any]]? {
     guard let value else { return [] }
     return value as? [[String: Any]]
@@ -71,7 +67,7 @@ extension AgentHookIntegration {
 
   /// The events this would have to write over to install. Empty is the
   /// answer for every file the agents themselves write.
-  func unreadableEvents(in settings: [String: Any]) -> [String] {
+  func eventsOfUnexpectedShape(in settings: [String: Any]) -> [String] {
     let hooks = hooksSection(settings) ?? [:]
     return events.filter { existingGroups(hooks[$0.name]) == nil }.map(\.name)
   }

@@ -234,29 +234,30 @@ struct SessionStatesTests {
   }
 
   /// `nil` where the report was only bookkeeping.
+  @discardableResult
   func report(_ states: inout SessionStates, _ report: SessionStateReport) -> SessionState? {
     states.report(report, pid: 99, for: .session(a), isSeen: false)
   }
 
   func report(
-    _ states: inout SessionStates, _ state: SessionState, _ subagent: SubagentReport? = nil
+    _ states: inout SessionStates, _ state: SessionState, _ worker: WorkerReport? = nil
   ) -> SessionState? {
-    report(&states, .init(state: state, subagent: subagent))
+    report(&states, .init(state: state, worker: worker))
   }
 
-  func started(_ id: String, type: String? = "Explore") -> SubagentReport {
-    SubagentReport(id: id, type: type, phase: .started)
+  func started(_ id: String, type: String? = "Explore") -> WorkerReport {
+    WorkerReport(id: id, type: type, phase: .started)
   }
 
-  func working(_ id: String) -> SubagentReport {
-    SubagentReport(id: id, type: "Explore", phase: .working)
+  func working(_ id: String) -> WorkerReport {
+    WorkerReport(id: id, type: "Explore", phase: .working)
   }
 
-  func ended(_ id: String) -> SubagentReport {
-    SubagentReport(id: id, phase: .ended)
+  func ended(_ id: String) -> WorkerReport {
+    WorkerReport(id: id, phase: .ended)
   }
 
   func workersOut(_ states: SessionStates) -> [String] {
-    states.subagents(.session(a)).map(\.id)
+    states.workers(.session(a)).map(\.id)
   }
 }

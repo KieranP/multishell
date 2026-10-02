@@ -7,7 +7,7 @@ extension AppModel {
   func saveNow() {
     pendingSave?.cancel()
     pendingSave = nil
-    guard !yieldingToRunningInstance else { return }
+    guard !isYieldingToRunningInstance else { return }
     recordSaveOutcome(Result { try store.save() })
   }
 
@@ -40,7 +40,7 @@ extension AppModel {
   /// Encoded and written off the main actor, a stalled volume otherwise
   /// holding the window; the store keeps the writes in order.
   func saveOffMain() {
-    guard !yieldingToRunningInstance, let save = store.prepareSave() else { return }
+    guard !isYieldingToRunningInstance, let save = store.prepareSave() else { return }
     Task { @MainActor [weak self] in
       let outcome = await offMain { Result { try save.run() } }
       self?.recordSaveOutcome(outcome)
@@ -50,12 +50,12 @@ extension AppModel {
   private func recordSaveOutcome(_ outcome: Result<Void, any Error>) {
     switch outcome {
     case .success:
-      saveFailureReported = false
+      hasReportedSaveFailure = false
     case .failure(let error):
       // Every change schedules a save, so a full disk or a bad permission
       // would otherwise put the same alert up after each keystroke.
-      guard !saveFailureReported else { return }
-      saveFailureReported = true
+      guard !hasReportedSaveFailure else { return }
+      hasReportedSaveFailure = true
       present(error)
     }
   }

@@ -42,7 +42,7 @@ struct TabFace: View {
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(isShown ? theme.backgroundColor : .clear)
     .overlay(alignment: .trailing) {
-      if !isShown { theme.hairline.frame(width: 0.5).padding(.vertical, 8) }
+      if !isShown { theme.hairline.frame(width: UIMetrics.hairlineThickness).padding(.vertical, 8) }
     }
     .contentShape(.rect)
     // Simultaneous, not sequential: a plain double-tap makes SwiftUI hold
@@ -79,7 +79,7 @@ struct TabFace: View {
       ringFill: isShown ? theme.backgroundColor : theme.chromeColor,
       plainTint: textColor,
       theme: theme,
-      size: model.metrics.icon + 2)
+      size: model.metrics.paneGlyphSize)
     if let state {
       Button {
         model.clearState(of: tab)

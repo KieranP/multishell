@@ -48,6 +48,6 @@ enum EditorLaunch {
   /// The command's first word, for the tab.
   private static func title(of line: String) -> String {
     let first = line.split(whereSeparator: \.isWhitespace).first.map(String.init) ?? t("tab.editor")
-    return URL(fileURLWithPath: first).lastPathComponent
+    return first.executableName
   }
 }

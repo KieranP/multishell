@@ -10,73 +10,40 @@ import Testing
 @Suite(.serialized) @MainActor
 struct AppModelWorktreeListRefreshTests {
   @Test func aWorktreeAddedOutsideTheAppIsFoundByTheWatcherTick() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    let outside = h.root.appendingPathComponent("outside", isDirectory: true)
-    _ = try await h.git.run(
-      ["worktree", "add", "-q", "-b", "outside", outside.path], in: h.project.path)
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let outside = harness.root.appendingPathComponent("outside", isDirectory: true)
+    try await harness.addOutsideTheApp("outside", at: outside)
 
-    await h.model.refreshWorktreesIfRecordsChanged()
+    await harness.model.refreshWorktreesIfRecordsChanged()
 
-    #expect(h.worktree(onBranch: "outside") != nil)
-    #expect(h.watcher.watched.map(\.lastPathComponent).sorted() == ["outside", "worktrees"])
-  }
-
-  /// A prompt's status refresh is in flight when the worktree goes. Paths are
-  /// ids, so its answer could badge a row re-made at the same path.
-  @Test func aStatusThatArrivesAfterTheWorktreeWentBadgesNothing() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    let main = h.model.workspace.worktrees(of: h.project.id)[0]
-    try "x".write(
-      to: main.path.appendingPathComponent("dirty.txt"), atomically: true, encoding: .utf8)
-
-    let refresh = Task { await h.model.refreshStatus(of: main.id) }
-    // One turn: the refresh has asked git and is waiting on the answer.
-    await Task.yield()
-    h.store.replaceWorktrees([], forProject: h.project.id)
-    _ = await refresh.value
-
-    #expect(h.model.statuses[main.id] == nil)
-  }
-
-  @Test func aBranchSwitchInTheMainWorktreeIsCaughtByTheStatusPoll() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    _ = try await h.git.run(["checkout", "-q", "-b", "elsewhere"], in: h.project.path)
-    #expect(h.worktree(onBranch: "main") != nil, "nothing has looked yet")
-
-    await h.model.refreshStatuses()
-
-    #expect(h.worktree(onBranch: "elsewhere") != nil)
-    #expect(h.worktree(onBranch: "main") == nil)
-    let statuses = h.model.statuses
-    #expect(statuses.count == 1 && statuses.values.first?.branch == "elsewhere")
+    #expect(harness.worktree(onBranch: "outside") != nil)
+    #expect(harness.watcher.watched.map(\.lastPathComponent).sorted() == ["outside", "worktrees"])
   }
 
   @Test func aRefreshLandingAfterTheProjectWasRemovedLeavesNoTrace() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    let project = h.project
-    #expect(h.model.worktreeRecords[project.id] != nil)
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let project = harness.project
+    #expect(harness.model.worktreeRecords[project.id] != nil)
 
-    h.model.removeProject(project)
-    await h.model.refreshWorktrees(of: project)
+    harness.model.removeProject(project)
+    await harness.model.refreshWorktrees(of: project)
 
-    #expect(h.model.workspace.projects.isEmpty)
-    #expect(h.model.workspace.worktrees.isEmpty)
-    #expect(h.model.worktreeRecords[project.id] == nil)
-    #expect(h.model.commonGitDirectories[project.id] == nil)
-    #expect(h.model.missingProjects.isEmpty)
+    #expect(harness.model.workspace.projects.isEmpty)
+    #expect(harness.model.workspace.worktrees.isEmpty)
+    #expect(harness.model.worktreeRecords[project.id] == nil)
+    #expect(harness.model.commonGitDirectories[project.id] == nil)
+    #expect(harness.model.missingProjects.isEmpty)
   }
 
   /// The same with git failing: the failure lands on a project that has
   /// gone, and must neither dim a stale id nor alert about it.
   @Test func aFailingRefreshLandingAfterTheProjectWasRemovedLeavesNoTrace() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    let project = h.project
-    let failing = try h.modelOnFakeGit(
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let project = harness.project
+    let failing = try harness.modelOnFakeGit(
       """
       case "$1 $2" in
         "worktree list") while [ ! -e "$SCRATCH/go" ]; do sleep 0.02; done; exit 128 ;;
@@ -84,9 +51,9 @@ struct AppModelWorktreeListRefreshTests {
       """)
 
     let refresh = Task { await failing.refreshWorktrees(of: project) }
-    try await waitUntil { h.gitCalls().contains { $0.hasPrefix("worktree list") } }
+    try await waitUntil { harness.gitCalls().contains { $0.hasPrefix("worktree list") } }
     failing.removeProject(project)
-    try "".write(to: h.root.appendingPathComponent("go"), atomically: true, encoding: .utf8)
+    try "".write(to: harness.root.appendingPathComponent("go"), atomically: true, encoding: .utf8)
     await refresh.value
 
     #expect(failing.missingProjects.isEmpty)
@@ -96,51 +63,52 @@ struct AppModelWorktreeListRefreshTests {
   /// The alert fires on a project's first failure only, so a dimmed mark left
   /// behind would cost a project later added under the same path its alert.
   @Test func aProjectRemovedWhileDimmedTakesTheMarkWithIt() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    let project = h.project
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let project = harness.project
     try FileManager.default.removeItem(at: project.path.appendingPathComponent(".git"))
-    await h.model.refreshWorktrees(of: project)
-    #expect(h.model.missingProjects == [project.id])
+    await harness.model.refreshWorktrees(of: project)
+    #expect(harness.model.missingProjects == [project.id])
 
-    h.model.presentedError = nil
-    h.model.removeProject(project)
+    harness.model.presentedError = nil
+    harness.model.removeProject(project)
 
-    #expect(h.model.missingProjects.isEmpty)
+    #expect(harness.model.missingProjects.isEmpty)
 
-    await h.model.addProject(at: project.path)
-    #expect(h.model.presentedError != nil, "still unreadable, and said so again")
+    await harness.model.addProject(at: project.path)
+    #expect(harness.model.presentedError != nil, "still unreadable, and said so again")
   }
 
   @Test func aRepositoryGitCanNoLongerReadIsReportedOnceThenDimmed() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    let project = h.project
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let project = harness.project
     try FileManager.default.removeItem(at: project.path.appendingPathComponent(".git"))
 
-    await h.model.refreshWorktrees(of: project)
-    let first = try #require(h.model.presentedError)
+    await harness.model.refreshWorktrees(of: project)
+    let first = try #require(harness.model.presentedError)
     #expect(first.title.hasPrefix("git worktree list failed"))
-    #expect(h.model.missingProjects == [project.id])
+    #expect(harness.model.missingProjects == [project.id])
 
-    h.model.presentedError = nil
-    await h.model.refreshWorktreesIfRecordsChanged()
-    await h.model.refreshWorktrees(of: project)
+    harness.model.presentedError = nil
+    await harness.model.refreshWorktreesIfRecordsChanged()
+    await harness.model.refreshWorktrees(of: project)
 
-    #expect(h.model.presentedError == nil, "the same failure on every tick is one alert, not many")
-    #expect(h.model.workspace.projects.count == 1)
+    #expect(
+      harness.model.presentedError == nil, "the same failure on every tick is one alert, not many")
+    #expect(harness.model.workspace.projects.count == 1)
   }
 
   /// What the descriptor limit used to produce: git "succeeds" and lists
   /// nothing. The project must keep what it had and say something went wrong.
   @Test func aRefreshWhereGitListsNothingKeepsTheWorktreesAndTheirTabs() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    let project = h.project
-    h.model.select(h.worktree(onBranch: "main")!)
-    #expect(h.model.liveTerminalCount == 1)
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let project = harness.project
+    harness.model.select(harness.worktree(onBranch: "main")!)
+    #expect(harness.model.liveTerminalCount == 1)
 
-    let muted = try h.modelOnFakeGit("exit 0")
+    let muted = try harness.modelOnFakeGit("exit 0")
 
     await muted.refreshWorktrees(of: project)
 
@@ -153,17 +121,17 @@ struct AppModelWorktreeListRefreshTests {
   /// The watched directories also hold each worktree's `index`, which every
   /// `git status` rewrites, so most ticks mean nothing.
   @Test func aTickWithUnchangedRecordsSpawnsNoGitAndAChangedHEADDoes() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    let repository = h.project.path.path
-    let counting = try h.modelOnFakeGit(
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let repository = harness.project.path.path
+    let counting = try harness.modelOnFakeGit(
       """
       case "$1 $2" in
         "rev-parse --path-format=absolute") printf '%s/.git\\n' "\(repository)" ;;
         "worktree list") printf 'worktree %s\\nHEAD 1111111\\nbranch refs/heads/main\\n' "\(repository)" ;;
       esac
       """)
-    func listings() -> Int { h.gitCalls().filter { $0.hasPrefix("worktree list") }.count }
+    func listings() -> Int { harness.gitCallCount(startingWith: "worktree list") }
 
     await counting.refreshWorktreesIfRecordsChanged()
     #expect(listings() == 1, "no records yet, so a full refresh")
@@ -172,68 +140,65 @@ struct AppModelWorktreeListRefreshTests {
     await counting.refreshWorktreesIfRecordsChanged()
     #expect(listings() == 1, "nothing changed, so nothing was spawned")
     #expect(
-      h.gitCalls().filter { $0.hasPrefix("rev-parse") }.count == 1, "the common dir is cached")
+      harness.gitCallCount(startingWith: "rev-parse") == 1, "the common dir is cached"
+    )
 
-    _ = try await h.git.run(["checkout", "-q", "-b", "moved"], in: h.project.path)
+    _ = try await harness.git.run(["checkout", "-q", "-b", "moved"], in: harness.project.path)
     await counting.refreshWorktreesIfRecordsChanged()
     #expect(listings() == 2, "HEAD changed, so git was asked again")
   }
 
   @Test func anExplicitRefreshReportsAFailureAlreadyShown() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    let project = h.project
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let project = harness.project
     try FileManager.default.removeItem(at: project.path.appendingPathComponent(".git"))
-    await h.model.refreshWorktrees(of: project)
-    #expect(h.model.presentedError != nil)
-    h.model.presentedError = nil
-    await h.model.refreshWorktrees(of: project)
-    #expect(h.model.presentedError == nil, "a tick stays quiet")
+    await harness.model.refreshWorktrees(of: project)
+    #expect(harness.model.presentedError != nil)
+    harness.model.presentedError = nil
+    await harness.model.refreshWorktrees(of: project)
+    #expect(harness.model.presentedError == nil, "a tick stays quiet")
 
-    await h.model.refreshWorktreesOnRequest(of: project)
+    await harness.model.refreshWorktreesOnRequest(of: project)
 
-    #expect(h.model.presentedError != nil, "the user asked, so the answer is shown again")
-    #expect(h.model.missingProjects == [project.id])
-  }
-
-  /// A status read can fail for a moment: a lock, a slow disk, a directory
-  /// mid-rename. The badge must not blink off for five seconds each time.
-  @Test func aFailedStatusReadKeepsTheLastBadgeUntilTheNextGoodOne() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    let flaky = try h.modelOnFakeGit(
-      """
-      while [ "${1#--}" != "$1" ]; do shift; done
-      case "$1" in
-        status) if [ -e "$SCRATCH/fail" ]; then exit 128; fi
-                printf '## main\\n M a.txt\\n' ;;
-      esac
-      """)
-    let main = try #require(h.worktree(onBranch: "main"))
-
-    await flaky.refreshStatuses()
-    #expect(flaky.statuses[main.id]?.changedFiles == 1)
-
-    try Data().write(to: h.root.appendingPathComponent("fail"))
-    await flaky.refreshStatuses()
-    #expect(flaky.statuses[main.id]?.changedFiles == 1, "kept through the failed read")
-
-    h.store.replaceWorktrees([], forProject: h.project.id)
-    await flaky.refreshStatuses()
-    #expect(flaky.statuses.isEmpty, "a worktree that is gone loses its badge")
+    #expect(harness.model.presentedError != nil, "the user asked, so the answer is shown again")
+    #expect(harness.model.missingProjects == [project.id])
   }
 
   @Test func aProjectWhoseDirectoryVanishesIsDimmedNotDropped() async throws {
-    let h = try await GitHarness()
-    defer { h.tearDown() }
-    let project = h.project
-    h.model.select(h.worktree(onBranch: "main")!)
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let project = harness.project
+    harness.model.select(harness.worktree(onBranch: "main")!)
     try FileManager.default.removeItem(at: project.path)
 
-    await h.model.refreshWorktrees(of: project)
+    await harness.model.refreshWorktrees(of: project)
 
-    #expect(h.model.workspace.projects.count == 1, "an unmounted drive must not delete the setup")
-    #expect(h.model.missingProjects == [project.id])
-    #expect(h.model.workspace.worktrees(of: project.id).count == 1, "kept as last seen")
+    #expect(
+      harness.model.workspace.projects.count == 1, "an unmounted drive must not delete the setup")
+    #expect(harness.model.missingProjects == [project.id])
+    #expect(harness.model.workspace.worktrees(of: project.id).count == 1, "kept as last seen")
+  }
+
+  @Test func aTickNamingOneProjectsRecordsLeavesTheOtherProjectUnread() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let other = try await harness.addSecondProject()
+    let common = try #require(await harness.model.commonGitDirectory(of: harness.project))
+    _ = try await harness.git.run(
+      ["worktree", "add", "-b", "quiet", harness.root.appendingPathComponent("quiet").path],
+      in: other.path)
+    harness.watcher.watched = []
+
+    await harness.model.refreshWorktreesIfRecordsChanged(
+      under: [common.appendingPathComponent("worktrees")])
+    #expect(
+      harness.model.workspace.worktrees(of: other.id).count == 1,
+      "the other's records were not read")
+    #expect(harness.watcher.watched.isEmpty, "nothing changed, so nothing was re-armed")
+
+    await harness.model.refreshWorktreesIfRecordsChanged()
+    #expect(harness.model.workspace.worktrees(of: other.id).count == 2)
+    #expect(!harness.watcher.watched.isEmpty)
   }
 }

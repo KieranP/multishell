@@ -1,0 +1,42 @@
+import Foundation
+
+/// How a chosen shell is stored and resolved. The value is its path; the
+/// login shell has none, being whatever `$SHELL` says on that machine.
+public enum ShellChoice {
+  /// A project override that means "the login shell here" while the global
+  /// names another. A global value of `nil` means the same.
+  public static let loginShellID = "login"
+  /// The path the user typed in settings, `Workspace.customShellPath`. A
+  /// project override of this id means that same path.
+  public static let customID = "custom"
+
+  /// Shells worth looking for on the login shell's PATH beyond `/etc/shells`,
+  /// which Homebrew installs do not always register.
+  public static let extraShellNamesToSearch = ["zsh", "bash", "fish", "nu"]
+
+  /// The path in force for a project, or `nil` for `$SHELL`. `customID`
+  /// resolves to `customPath`, and blank is `$SHELL` too.
+  static func effectivePath(
+    global: String?, override: String?, customPath: String = ""
+  ) -> String? {
+    guard let chosen = ChosenID.effective(global: global, override: override, noneID: loginShellID)
+    else { return nil }
+    guard chosen == customID else { return chosen }
+    return runnablePath(customPath)
+  }
+
+  /// The typed custom path as a tab runs it, `nil` where it is blank. The
+  /// caption and the dropdown read it too, so all three agree on what was typed.
+  public static func runnablePath(_ customPath: String) -> String? {
+    customPath.trimmedOrNil
+  }
+
+  /// `$SHELL`, or `/bin/zsh` where the environment has none, which is what
+  /// was assumed before shells could be chosen.
+  public static func loginShellPath(
+    environment: [String: String] = ProcessInfo.processInfo.environment
+  ) -> String {
+    let shell = environment["SHELL"] ?? ""
+    return shell.isEmpty ? "/bin/zsh" : shell
+  }
+}

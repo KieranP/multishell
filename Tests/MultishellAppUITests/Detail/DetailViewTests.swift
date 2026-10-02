@@ -12,10 +12,7 @@ import Testing
 struct DetailViewTests {
   @Test func theHeaderDrawsNothingOutsideTheNarrowestDetail() throws {
     let harness = ModelHarness()
-    let worktree = Worktree(
-      path: harness.project.path, projectID: harness.project.id,
-      head: "abc1234", branch: "feature/a-branch", isPrimary: true)
-    harness.store.replaceWorktrees([worktree], forProject: harness.project.id)
+    let worktree = harness.addPrimaryWorktree(branch: "feature/a-branch")
     harness.store.selectWorktree(worktree.id)
     try #require(harness.model.workspace.selectedWorktree != nil)
 
@@ -28,12 +25,11 @@ struct DetailViewTests {
     box.addSubview(host)
     box.layoutSubtreeIfNeeded()
 
-    let rep = try #require(box.bitmapImageRepForCachingDisplay(in: box.bounds))
-    box.cacheDisplay(in: box.bounds, to: rep)
-    let scale = Double(rep.pixelsWide) / box.bounds.width
-    let row = rep.pixelsHigh / 4
+    let bitmap = try #require(OffscreenWindow.pixels(of: box))
+    let scale = Double(bitmap.pixelsWide) / box.bounds.width
+    let row = bitmap.pixelsHigh / 4
     for x in [margin - 10, margin + width + 10] {
-      let alpha = rep.colorAt(x: Int(x * scale), y: row)?.alphaComponent ?? 0
+      let alpha = bitmap.colorAt(x: Int(x * scale), y: row)?.alphaComponent ?? 0
       #expect(alpha == 0, "painted at \(x)pt, outside the pane's \(margin)-\(margin + width)")
     }
     withExtendedLifetime(window) {}

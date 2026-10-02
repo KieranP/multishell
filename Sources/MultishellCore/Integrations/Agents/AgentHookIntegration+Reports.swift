@@ -14,13 +14,13 @@ extension AgentHookIntegration {
     guard let event = events.first(where: { $0.reportedName == payload.eventName }) else {
       return nil
     }
-    if event.onlyWhenPrompting, !payload.promptsForPermission { return nil }
+    if event.meansWaitingOnlyWhenPrompting, !payload.promptsForPermission { return nil }
     if let type = payload.notificationType, event.ignoredNotificationTypes.contains(type) {
       return nil
     }
     // A subagent's own Stop, which its SubagentStop follows: read as the
     // agent's, it put the pane at Done in the middle of the turn.
-    if workersAreConversations, event.state.isFinished, payload.isFiledUnderAnotherConversation {
+    if subagentsAreConversations, event.state.isFinished, payload.isFiledUnderAnotherConversation {
       return nil
     }
     return event
@@ -29,7 +29,8 @@ extension AgentHookIntegration {
   /// What the helper sends for a payload, or nothing where it says nothing.
   /// `backgroundShells` walks the processes, so it is asked only at a Stop.
   public func report(
-    for payload: AgentHookPayload, sessionID: TerminalSession.ID?, cwd: String?, pid: Int32?,
+    for payload: AgentHookPayload, sessionID: TerminalSession.ID?, workingDirectory: String?,
+    pid: Int32?,
     backgroundShells: (_ marker: String) -> [Int32]? = { _ in nil }
   ) -> SessionStateReport? {
     guard let event = event(for: payload) else { return nil }
@@ -37,18 +38,18 @@ extension AgentHookIntegration {
     return SessionStateReport(
       state: event.state,
       sessionID: sessionID,
-      cwd: payload.cwd ?? cwd,
+      workingDirectory: payload.workingDirectory ?? workingDirectory,
       pid: pid,
       message: payload.message,
       agentID: id,
       isSilent: event.isSilent ? true : nil,
-      subagent: event.subagentChange(for: payload),
+      worker: event.subagentChange(for: payload),
       startsTurn: event.startsTurn(for: payload) ? true : nil,
       startsSession: event.startsSession ? true : nil,
       backgroundShells: isStop && payload.backgroundTasks == nil
         ? backgroundShellMarker.flatMap(backgroundShells) : nil,
       resumesAfterWorkers: isStop && resumes(at: payload) ? true : nil,
-      conversationID: workersAreConversations ? payload.conversationID : nil,
+      conversationID: subagentsAreConversations ? payload.conversationID : nil,
       workersOut: isStop ? payload.backgroundTasks.map(workers(from:)) : nil,
       turnFollows: isStop && turnFollows(at: payload) ? true : nil)
   }
@@ -64,17 +65,17 @@ extension AgentHookIntegration {
     case .always: true
     case .whenGeminiSettingsSay:
       GeminiSettings.wakesForBackgroundShells(
-        environment: ProcessInfo.processInfo.environment, directory: payload.cwd)
+        environment: ProcessInfo.processInfo.environment, directory: payload.workingDirectory)
     }
   }
 
   /// A listed shell is named by the agent's id for it; a subagent by its
   /// kind where the list says, and anything else by what the agent calls it.
-  private func workers(from tasks: [AgentHookPayload.BackgroundTask]) -> [SubagentReport] {
+  private func workers(from tasks: [AgentHookPayload.BackgroundTask]) -> [WorkerReport] {
     tasks.filter { wakingTaskTypes.contains($0.type) }.map { task in
       task.type == "shell"
-        ? SubagentReport(id: task.id, phase: .working, isBackgroundShell: true)
-        : SubagentReport(id: task.id, type: task.subagentType ?? task.type, phase: .working)
+        ? WorkerReport(id: task.id, phase: .working, isBackgroundShell: true)
+        : WorkerReport(id: task.id, type: task.subagentType ?? task.type, phase: .working)
     }
   }
 }

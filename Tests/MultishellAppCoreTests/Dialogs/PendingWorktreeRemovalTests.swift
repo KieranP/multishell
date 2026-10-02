@@ -11,14 +11,13 @@ struct PendingWorktreeRemovalTests {
   private let detached = Worktree(
     path: URL(fileURLWithPath: "/trees/pinned"), projectID: "/repo", head: "abc1234")
 
-  /// The dialog the decision asks for, or a failed requirement.
   private func asked(
-    _ worktree: Worktree, confirms: Bool, alwaysDeletesBranch: Bool,
+    _ worktree: Worktree, customName: String? = nil, confirms: Bool, alwaysDeletesBranch: Bool,
     mergeState: WorktreeMergeState = .unknown
   ) throws -> PendingWorktreeRemoval {
     let decision = PendingWorktreeRemoval.decide(
-      worktree, confirms: confirms, alwaysDeletesBranch: alwaysDeletesBranch,
-      mergeState: mergeState)
+      worktree, customName: customName, confirms: confirms,
+      alwaysDeletesBranch: alwaysDeletesBranch, mergeState: mergeState)
     guard case .ask(let pending) = decision else {
       throw RemovalTestFailure(decision: decision)
     }
@@ -47,9 +46,8 @@ struct PendingWorktreeRemovalTests {
   /// The dialog names the row the user right-clicked. The branch is still
   /// in the body: that is the part that cannot be undone.
   @Test func aRenamedWorktreeIsAskedAboutByItsName() throws {
-    let decision = PendingWorktreeRemoval.decide(
+    let pending = try asked(
       branched, customName: "Checkout flow", confirms: true, alwaysDeletesBranch: false)
-    guard case .ask(let pending) = decision else { throw RemovalTestFailure(decision: decision) }
     #expect(pending.title == "Remove worktree Checkout flow?")
     #expect(pending.message(warning: nil).hasPrefix("Moves Checkout flow to the Trash"))
     #expect(pending.message(warning: nil).contains("The branch feat is kept unless"))
@@ -89,12 +87,12 @@ struct PendingWorktreeRemovalTests {
 
   @Test func changesThatWentUnreadAreWarnedOfWhereverTheDirectoryGoes() {
     #expect(
-      PendingWorktreeRemoval.warning(changedFiles: 0, changesUnread: true, liveTerminals: 0)
+      PendingWorktreeRemoval.warning(changedFiles: 0, hasUnreadChanges: true, liveTerminals: 0)
         == "Its changes could not be read in time; any it has are kept in the Trash with the directory."
     )
     #expect(
       PendingWorktreeRemoval.warning(
-        changedFiles: 0, changesUnread: true, liveTerminals: 0, trashes: false)
+        changedFiles: 0, hasUnreadChanges: true, liveTerminals: 0, trashes: false)
         == "Its changes could not be read in time; any it has are deleted with the directory.")
   }
 
@@ -122,10 +120,9 @@ struct PendingWorktreeRemovalTests {
   }
 
   @Test func aMergedBranchLeadsWithTheButtonThatDeletesItAndSaysWhy() throws {
-    let decision = PendingWorktreeRemoval.decide(
+    let pending = try asked(
       branched, confirms: true, alwaysDeletesBranch: false,
       mergeState: .merged(.ancestor, into: "origin/main"))
-    guard case .ask(let pending) = decision else { throw RemovalTestFailure(decision: decision) }
     #expect(pending.choices.map(\.deletesBranch) == [true, false])
     #expect(pending.choices.first?.label == "Remove Worktree and Branch")
     #expect(pending.message(warning: nil).contains("feat is merged into origin/main."))

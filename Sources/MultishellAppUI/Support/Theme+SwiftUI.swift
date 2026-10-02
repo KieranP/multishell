@@ -18,13 +18,16 @@ extension Theme {
 
   /// The find bar: the sidebar's lift on a dark theme, a third of it on a
   /// light one, whose well then needs a line of its own; see appearance.md.
-  var findPanelColor: Color { isDark ? sidebarColor : columnColor }
+  var findBarColor: Color { isDark ? sidebarColor : columnColor }
   var findWellBorderColor: Color { isDark ? .clear : hairline }
 
   var textPrimary: Color { foregroundColor.opacity(0.92) }
   var textSecondary: Color { foregroundColor.opacity(0.6) }
   var textTertiary: Color { foregroundColor.opacity(0.38) }
   var hairline: Color { foregroundColor.opacity(0.09) }
+  func rowNameColor(isSelected: Bool) -> Color {
+    textPrimary.opacity(isSelected ? 1 : UIMetrics.unselectedRowNameOpacity)
+  }
   var faintFill: Color { foregroundColor.opacity(0.06) }
 
   var colorScheme: ColorScheme { isDark ? .dark : .light }

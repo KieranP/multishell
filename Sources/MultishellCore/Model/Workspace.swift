@@ -1,15 +1,15 @@
 /// The whole sidebar, every open tab, and the current look, as one value.
 /// Collections are flat and joined by id; array order is display order.
 public struct Workspace: Codable, Hashable, Sendable {
-  public var projects: [Project] = []
-  public var worktrees: [Worktree] = []
-  public var sessions: [TerminalSession] = []
-  public var tabs: [TerminalTab] = []
+  public internal(set) var projects: [Project] = []
+  public internal(set) var worktrees: [Worktree] = []
+  public internal(set) var sessions: [TerminalSession] = []
+  public internal(set) var tabs: [TerminalTab] = []
   /// The groups of tabs each worktree is divided into, in display order
   /// left to right; see `TabGroup`. A worktree with tabs has at least one.
   var tabGroups: [TabGroup] = []
 
-  public var selectedWorktreeID: Worktree.ID?
+  public internal(set) var selectedWorktreeID: Worktree.ID?
   /// Which group a worktree's keystrokes go to. Here and not on `Worktree`
   /// for the same reason `worktreeNames` is.
   var focusedGroupByWorktree: [Worktree.ID: TabGroup.ID] = [:]
@@ -17,58 +17,58 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// records git replaces wholesale on every refresh.
   var worktreeNames: [Worktree.ID: String] = [:]
 
-  public var appearance = Appearance()
-  public var worktreeDefaults = WorktreeSettings()
-  public var notifications = NotificationPreference.off
+  public internal(set) var appearance = Appearance()
+  public internal(set) var worktreeDefaults = WorktreeSettings()
+  public internal(set) var notifications = NotificationPreference.off
   /// Catalogue id of the agent New Agent Tab starts, or `nil` for none.
   /// Projects may override it in `ProjectSettings`.
-  public var preferredAgentID: String?
+  public internal(set) var preferredAgentID: String?
   /// What `AgentCatalogue.customID` runs, as the user typed it.
-  public var customAgentCommand = ""
+  public internal(set) var customAgentCommand = ""
   /// Extra arguments each agent is started with, by catalogue id, as typed.
   /// Per agent, not one line; see Docs/design/agents.md.
-  public var agentFlags: [String: String] = [:]
+  public internal(set) var agentFlags: [String: String] = [:]
   /// New Tab, and the first tab of a worktree turned to, start the
   /// preferred agent rather than a plain shell. Projects may override it.
-  public var autoStartAgent = false
+  public internal(set) var autoStartsAgent = false
   /// The same for the tab a newly created worktree opens, asked separately:
   /// a worktree is often made for an agent by someone whose tabs are shells.
-  public var autoStartAgentOnCreate = false
-  /// Path of the shell new tabs run, `ShellCatalogue.customID` for the one
+  public internal(set) var autoStartsAgentOnCreate = false
+  /// Path of the shell new tabs run, `ShellChoice.customID` for the one
   /// typed in `customShellPath`, or `nil` for `$SHELL`.
-  public var preferredShellID: String?
-  /// What `ShellCatalogue.customID` runs, as the user typed it.
-  public var customShellPath = ""
+  public internal(set) var preferredShellID: String?
+  /// What `ShellChoice.customID` runs, as the user typed it.
+  public internal(set) var customShellPath = ""
   /// Catalogue id of the editor Open in Editor uses, or `nil` for none.
-  public var preferredEditorID: String?
+  public internal(set) var preferredEditorID: String?
   /// What `EditorCatalogue.customID` runs, with `{path}` for the worktree.
-  public var customEditorCommand = ""
+  public internal(set) var customEditorCommand = ""
   /// Selecting a worktree with no tabs opens one. Off, Cmd+T or the
   /// actions menu does.
-  public var opensTerminalOnSelect = true
+  public internal(set) var opensTerminalOnSelect = true
   /// A worktree just created opens its first terminal. Asked separately from
   /// `opensTerminalOnSelect`: a create is asked for, not looked at.
-  public var opensTerminalOnCreate = true
+  public internal(set) var opensTerminalOnCreate = true
   /// The order worktree rows are listed in under their project. Projects
   /// may override it in `ProjectSettings`.
-  public var worktreeSortOrder = WorktreeSortOrder.default
+  public internal(set) var worktreeSortOrder = WorktreeSortOrder.default
   /// Active worktrees listed above the rest, each group then in
   /// `worktreeSortOrder`. Off by default: self-reordering lists surprise.
-  public var showsActiveWorktreesFirst = false
+  public internal(set) var showsActiveWorktreesFirst = false
   /// Ask before `git worktree remove`. Off is for people who remove
   /// worktrees all day; the default protects everyone else.
-  public var confirmsWorktreeRemoval = true
+  public internal(set) var confirmsWorktreeRemoval = true
   /// Delete a worktree's branch along with it every time. Off, the removal
   /// asks whether the branch goes too.
-  public var deletesBranchWithWorktree = false
+  public internal(set) var deletesBranchWithWorktree = false
   /// A removed worktree's directory goes to the Trash. Off, it is deleted
   /// outright, for trees too large to keep there.
-  public var trashesRemovedWorktrees = true
+  public internal(set) var trashesRemovedWorktrees = true
   /// How long a project hook may run before it is stopped and reported.
   /// Zero is no limit.
-  public var hookTimeoutSeconds = Self.defaultHookTimeoutSeconds
+  public internal(set) var hookTimeoutSeconds = Self.defaultHookTimeoutSeconds
   /// What the git badge on a row and a card counts.
-  public var gitStatusIndicator = GitStatusIndicator.default
+  public internal(set) var gitStatusIndicator = GitStatusIndicator.default
 
   private static let defaultHookTimeoutSeconds = 60
 
@@ -102,10 +102,10 @@ public struct Workspace: Codable, Hashable, Sendable {
     preferredAgentID = try container.decodeIfPresent(String.self, forKey: .preferredAgentID)
     customAgentCommand = try container.decode(String.self, forKey: .customAgentCommand, or: "")
     agentFlags = try container.decode([String: String].self, forKey: .agentFlags, or: [:])
-    autoStartAgent = try container.decode(Bool.self, forKey: .autoStartAgent, or: false)
+    autoStartsAgent = try container.decode(Bool.self, forKey: .autoStartsAgent, or: false)
     // State from before the two were split says one thing about both.
-    autoStartAgentOnCreate = try container.decode(
-      Bool.self, forKey: .autoStartAgentOnCreate, or: autoStartAgent)
+    autoStartsAgentOnCreate = try container.decode(
+      Bool.self, forKey: .autoStartsAgentOnCreate, or: autoStartsAgent)
     preferredShellID = try container.decodeIfPresent(String.self, forKey: .preferredShellID)
     customShellPath = try container.decode(String.self, forKey: .customShellPath, or: "")
     preferredEditorID = try container.decodeIfPresent(String.self, forKey: .preferredEditorID)
@@ -138,17 +138,20 @@ public struct Workspace: Codable, Hashable, Sendable {
     // A file written before groups names no group but says which tab was
     // active. Read here, or `repairReferences` falls back to the last tab.
     let legacy = try? decoder.container(keyedBy: LegacyKeys.self)
-    let wasActive = legacy?.decodeTolerantly(
+    let legacyShownTabs = legacy?.decodeTolerantly(
       [Worktree.ID: TerminalTab.ID].self, forKey: .activeTabByWorktree)
-    adoptUngroupedTabs(activeByWorktree: wasActive ?? [:])
+    adoptUngroupedTabs(shownTabByWorktree: legacyShownTabs ?? [:])
   }
 
-  /// `preferredShellID` keeps `defaultShell`, the key it was written under.
+  /// `preferredShellID` keeps `defaultShell`, and the auto-start pair keeps
+  /// `autoStartAgent…`, the keys they were written under.
   private enum CodingKeys: String, CodingKey {
     case projects, worktrees, sessions, tabs, tabGroups
     case selectedWorktreeID, focusedGroupByWorktree, worktreeNames
     case appearance, worktreeDefaults, notifications
-    case preferredAgentID, customAgentCommand, agentFlags, autoStartAgent, autoStartAgentOnCreate
+    case preferredAgentID, customAgentCommand, agentFlags
+    case autoStartsAgent = "autoStartAgent"
+    case autoStartsAgentOnCreate = "autoStartAgentOnCreate"
     case preferredShellID = "defaultShell"
     case customShellPath, preferredEditorID, customEditorCommand
     case opensTerminalOnSelect, opensTerminalOnCreate, worktreeSortOrder, showsActiveWorktreesFirst

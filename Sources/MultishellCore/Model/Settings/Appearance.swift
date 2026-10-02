@@ -1,19 +1,21 @@
 /// App-wide look, separate from `ProjectSettings` because it is not per-repo.
 public struct Appearance: Codable, Hashable, Sendable {
-  public var themeID: Theme.ID
+  public internal(set) var themeID: Theme.ID
   /// `nil` uses the platform's default monospace face.
-  public var terminalFontName: String?
-  public var terminalFontSize: Double
+  public internal(set) var terminalFontName: String?
+  public internal(set) var terminalFontSize: Double
   /// Sidebar, tabs and header. Every chrome measurement scales from it.
-  public var uiFontSize: Double
+  public internal(set) var uiFontSize: Double
 
-  static let defaultFontSize = 13.0
+  static let defaultTerminalFontSize = 13.0
   static let defaultUIFontSize = 13.0
+  public static let terminalFontSizes = 9.0...24.0
+  public static let uiFontSizes = 10.0...18.0
 
   init(
     themeID: Theme.ID = Theme.multishellDark.id,
     terminalFontName: String? = nil,
-    terminalFontSize: Double = Appearance.defaultFontSize,
+    terminalFontSize: Double = Appearance.defaultTerminalFontSize,
     uiFontSize: Double = Appearance.defaultUIFontSize
   ) {
     self.themeID = themeID
@@ -35,7 +37,7 @@ public struct Appearance: Codable, Hashable, Sendable {
     themeID = try container.decode(Theme.ID.self, forKey: .themeID, or: Theme.multishellDark.id)
     terminalFontName = try container.decodeIfPresent(String.self, forKey: .terminalFontName)
     terminalFontSize = try container.decode(
-      Double.self, forKey: .terminalFontSize, or: Self.defaultFontSize)
+      Double.self, forKey: .terminalFontSize, or: Self.defaultTerminalFontSize)
     uiFontSize = try container.decode(Double.self, forKey: .uiFontSize, or: Self.defaultUIFontSize)
   }
 

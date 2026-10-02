@@ -5,10 +5,10 @@ public enum TabOpeningReason: Sendable {
   /// opens whatever the settings say.
   case byUser
   /// The user turned to a worktree that has no tabs:
-  /// `Workspace.opensTerminalOnSelect` and `autoStartAgent`.
+  /// `Workspace.opensTerminalOnSelect` and `autoStartsAgent`.
   case onSelect
   /// A create, and any post-create hook, has just finished:
-  /// `opensTerminalOnCreate` and `autoStartAgentOnCreate`.
+  /// `opensTerminalOnCreate` and `autoStartsAgentOnCreate`.
   case onCreate
   /// The caller is about to open its own tab; nothing opens here.
   case never

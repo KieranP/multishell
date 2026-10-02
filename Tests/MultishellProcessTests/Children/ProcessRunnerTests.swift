@@ -8,19 +8,19 @@ import Testing
 struct ProcessRunnerTests {
   let runner = ProcessRunner()
   let sh = URL(fileURLWithPath: "/bin/sh")
-  let cwd = URL(fileURLWithPath: NSTemporaryDirectory())
+  let workingDirectory = URL(fileURLWithPath: NSTemporaryDirectory())
 
   @Test func runReturnsWhatTheChildWroteToStandardOutput() async throws {
-    let out = try await runner.run(sh, ["-c", "printf hello"], in: cwd)
+    let out = try await runner.run(sh, ["-c", "printf hello"], in: workingDirectory)
     #expect(out == "hello")
   }
 
   @Test func aNonZeroExitThrowsWithStderrAsTheMessage() async {
     await #expect(throws: ProcessFailure.self) {
-      try await runner.run(sh, ["-c", "echo nope >&2; exit 3"], in: cwd)
+      try await runner.run(sh, ["-c", "echo nope >&2; exit 3"], in: workingDirectory)
     }
     do {
-      _ = try await runner.run(sh, ["-c", "echo nope >&2; exit 3"], in: cwd)
+      _ = try await runner.run(sh, ["-c", "echo nope >&2; exit 3"], in: workingDirectory)
     } catch let failure as ProcessFailure {
       #expect(failure.status == 3)
       #expect(failure.message == "nope")
@@ -31,7 +31,7 @@ struct ProcessRunnerTests {
   }
 
   @Test func captureReturnsStatusInsteadOfThrowing() async throws {
-    let output = try await runner.capture(sh, ["-c", "exit 7"], in: cwd)
+    let output = try await runner.capture(sh, ["-c", "exit 7"], in: workingDirectory)
     #expect(output.status == 7)
     #expect(!output.succeeded)
   }
@@ -42,7 +42,7 @@ struct ProcessRunnerTests {
     let output = try await runner.capture(
       sh,
       ["-c", "head -c 300000 /dev/zero | tr '\\0' a; head -c 300000 /dev/zero | tr '\\0' b >&2"],
-      in: cwd
+      in: workingDirectory
     )
     #expect(output.standardOutput.count == 300_000)
     #expect(output.standardError.count == 300_000)
@@ -65,7 +65,7 @@ struct ProcessRunnerTests {
     let peaks = try await withThrowingTaskGroup(of: Int.self) { group in
       for _ in 0..<children {
         group.addTask {
-          let seen = try await runner.run(sh, ["-c", script], in: cwd)
+          let seen = try await runner.run(sh, ["-c", script], in: workingDirectory)
           return Int(seen.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0
         }
       }
@@ -78,24 +78,25 @@ struct ProcessRunnerTests {
 
   @Test func extraEnvironmentIsMergedOverTheParents() async throws {
     let out = try await runner.run(
-      sh, ["-c", "printf \"$MULTISHELL_TEST-$HOME\""], in: cwd,
+      sh, ["-c", "printf \"$MULTISHELL_TEST-$HOME\""], in: workingDirectory,
       environment: ["MULTISHELL_TEST": "yes"])
     #expect(out.hasPrefix("yes-/"))
   }
 
   @Test func aChildStartsInTheDirectoryItIsGiven() async throws {
-    let out = try await runner.run(sh, ["-c", "pwd"], in: cwd)
-    #expect(
-      URL(fileURLWithPath: out.trimmingCharacters(in: .whitespacesAndNewlines)).standardizedFileURL
-        .path
-        == cwd.standardizedFileURL.path.replacingOccurrences(of: "/private", with: "")
-        || out.contains(cwd.lastPathComponent))
+    let directory = try Scratch.directory("start-here")
+    defer { Scratch.remove(directory) }
+    let out = try await runner.run(sh, ["-c", "pwd -P"], in: directory)
+    let started = URL(fileURLWithPath: out.trimmingCharacters(in: .whitespacesAndNewlines))
+    #expect(Scratch.physicalPath(of: started) == Scratch.physicalPath(of: directory))
   }
 
   /// A superseded status refresh cancels its task mid-read; the stopper, not
   /// the task, is what ends a child, or a slow `git status` never lands.
   @Test func cancellingTheTaskThatAwaitsAChildLetsTheChildFinish() async throws {
-    let run = Task { try await runner.capture(sh, ["-c", "sleep 0.3; printf done"], in: cwd) }
+    let run = Task {
+      try await runner.capture(sh, ["-c", "sleep 0.3; printf done"], in: workingDirectory)
+    }
     try await Task.sleep(for: .milliseconds(50))
     run.cancel()
     let output = try await run.value
@@ -108,7 +109,7 @@ struct ProcessRunnerTests {
   /// group stopped itself on SIGTTIN and sat there until the timeout.
   @Test func aChildRunsInASessionOfItsOwnSoNoTerminalCanStopIt() async throws {
     let output = try await runner.capture(
-      sh, ["-c", "sleep 30 >/dev/null 2>&1 & echo $!"], in: cwd)
+      sh, ["-c", "sleep 30 >/dev/null 2>&1 & echo $!"], in: workingDirectory)
     let background = try #require(
       pid_t(output.standardOutput.trimmingCharacters(in: .whitespacesAndNewlines)))
     defer { kill(background, SIGKILL) }
@@ -123,13 +124,13 @@ struct ProcessRunnerTests {
     ForkCount.watch()
     let before = ForkCount.forks.load(ordering: .relaxed)
 
-    _ = try await runner.capture(sh, ["-c", "true"], in: cwd)
+    _ = try await runner.capture(sh, ["-c", "true"], in: workingDirectory)
 
     #expect(ForkCount.forks.load(ordering: .relaxed) == before)
   }
 
   @Test func aChildThatReadsStdinGetsEOFNotTheApps() async throws {
-    let out = try await runner.run(sh, ["-c", "cat; printf done"], in: cwd)
+    let out = try await runner.run(sh, ["-c", "cat; printf done"], in: workingDirectory)
     #expect(out == "done")
   }
 }

@@ -3,7 +3,7 @@ import MultishellCore
 
 /// Which worktree a path is in, for a report that names only a directory.
 extension AppModel {
-  /// The deepest worktree holding the directory. A hook's `cwd` may be the
+  /// The deepest worktree holding the directory. A hook's `workingDirectory` may be the
   /// resolved path of one added through a symlink, so both spellings are tried.
   func worktree(atPath path: String) -> Worktree? {
     recheckResolutionsMadeWhileMissing()
@@ -26,13 +26,13 @@ extension AppModel {
     if let known = resolvedWorktreeComponents[worktree.id] { return known }
     let resolved = worktree.path.resolvingSymlinksInPath().pathComponents
     resolvedWorktreeComponents[worktree.id] = resolved
-    markIfResolvedWhileMissing(worktree, resolved: resolved)
+    resolveAgainOffMain(worktree, replacing: resolved)
     return resolved
   }
 
   /// Foundation hands back a missing path unresolved. Checked off the main
   /// actor, which the kept resolution is there to spare.
-  private func markIfResolvedWhileMissing(_ worktree: Worktree, resolved: [String]) {
+  private func resolveAgainOffMain(_ worktree: Worktree, replacing resolved: [String]) {
     let path = worktree.path
     Task {
       let (again, exists) = await offMain {

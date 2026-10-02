@@ -1,8 +1,8 @@
 import Foundation
-import MultishellCore
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellCore
 
 @Suite
 struct PendingProjectRemovalTests {
@@ -15,11 +15,11 @@ struct PendingProjectRemovalTests {
     #expect(PendingProjectRemoval.message(liveTerminals: 3).contains("3 open terminals will"))
   }
 
-  @Test func eachWindowPresentsOnlyItsOwnRequest() {
+  @Test func theRequestCarriesItsProjectAndItsWindow() {
     let project = Project(path: URL(fileURLWithPath: "/repos/demo"))
     let pending = PendingProjectRemoval(project: project, source: .settings)
     #expect(pending.id == project.id)
     #expect(pending.title == "Remove project demo?")
-    #expect(pending.source == .settings && pending.source != .workspace)
+    #expect(pending.source == .settings)
   }
 }

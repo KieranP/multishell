@@ -283,13 +283,13 @@
 "step.removal-failed-detail" = "Dismiss to go back to the terminals.";
 "step.removing-worktree" = "Moving the worktree to the Trash…";
 "step.worktree-not-removed" = "The worktree could not be removed";
-"subagent.background-shell" = "background shell";
-"subagent.occurrences" = "×%d";
-"subagent.unnamed" = "subagent";
 "tab.editor" = "Editor";
 "tab.new-custom-agent" = "New Custom Command Tab";
 "tab.new-named-agent" = "New %@ Tab";
 "tab.shell" = "Shell";
+"worker.background-shell" = "background shell";
+"worker.occurrences" = "×%d";
+"worker.unnamed" = "subagent";
 "worktree-file.escape" = "It leads outside the repository or the worktree.";
 "worktree-removal.branch-asked" = "The branch %@ is kept unless you remove it too.";
 "worktree-removal.branch-deleted" = "The branch %@ is deleted with it.";

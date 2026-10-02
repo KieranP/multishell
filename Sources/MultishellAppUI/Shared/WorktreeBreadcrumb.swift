@@ -47,7 +47,7 @@ struct WorktreeBreadcrumb: View {
 
   private var worktreeFont: Font {
     switch style {
-    case .header: .system(size: metrics.mono, weight: .medium, design: .monospaced)
+    case .header: .system(size: metrics.monospaced, weight: .medium, design: .monospaced)
     case .card: .system(size: metrics.badge, design: .monospaced)
     }
   }

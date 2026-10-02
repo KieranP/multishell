@@ -8,20 +8,20 @@ extension AppModelTabsTests {
   /// A worktree selected while it existed could still get new shells after it was deleted by
   /// hand, each landing silently in $HOME.
   @Test func aNewTabOrSplitInAWorktreeWhoseDirectoryVanishedIsRefused() throws {
-    let h = Harness()
-    h.model.select(h.feature)
-    #expect(h.model.liveTerminalCount == 1)
-    try FileManager.default.removeItem(at: h.feature.path)
-    h.model.presentedError = nil
+    let harness = Harness()
+    harness.model.select(harness.feature)
+    #expect(harness.model.liveTerminalCount == 1)
+    try FileManager.default.removeItem(at: harness.feature.path)
+    harness.model.presentedError = nil
 
-    h.model.newTab()
-    #expect(h.model.workspace.tabs(in: h.feature.id).count == 1)
-    #expect(h.model.presentedError?.title == "Worktree directory is missing")
+    harness.model.newTab()
+    #expect(harness.model.workspace.tabs(in: harness.feature.id).count == 1)
+    #expect(harness.model.presentedError?.title == "Worktree directory is missing")
 
-    h.model.presentedError = nil
-    h.model.splitActivePane(.horizontal)
-    #expect(h.model.workspace.activeTab(in: h.feature.id)?.isSplit == false)
-    #expect(h.model.presentedError?.title == "Worktree directory is missing")
-    #expect(h.model.liveTerminalCount == 1, "the shell that already existed is left alone")
+    harness.model.presentedError = nil
+    harness.model.splitActivePane(.horizontal)
+    #expect(harness.model.workspace.activeTab(in: harness.feature.id)?.isSplit == false)
+    #expect(harness.model.presentedError?.title == "Worktree directory is missing")
+    #expect(harness.model.liveTerminalCount == 1, "the shell that already existed is left alone")
   }
 }

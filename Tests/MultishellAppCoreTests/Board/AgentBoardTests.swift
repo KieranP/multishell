@@ -4,23 +4,21 @@ import Testing
 
 @testable import MultishellAppCore
 
-/// How panes are sorted into columns, on the plain value the board is drawn
-/// from. No workspace, no host and no clock.
 @Suite
 struct AgentBoardTests {
-  private let start = Date(timeIntervalSince1970: 1_000_000)
+  private let drawnAt = Date(timeIntervalSince1970: 1_000_000)
 
   private func card(
     _ name: String,
-    agent: Bool = true,
+    isAgent: Bool = true,
     state: SessionState? = nil,
     secondsAgo: Double? = nil,
     note: SessionNote? = nil,
     title: String = "claude"
   ) -> AgentBoardCard {
     .sample(
-      occupant: agent ? .agent(id: "claude", name: name) : .shell(name), title: title,
-      state: state, since: secondsAgo.map { start.addingTimeInterval(-$0) }, note: note)
+      occupant: isAgent ? .agent(id: "claude", name: name) : .shell(name), title: title,
+      state: state, since: secondsAgo.map { drawnAt.addingTimeInterval(-$0) }, note: note)
   }
 
   @Test func everyOpenPaneHasExactlyOneCard() {
@@ -55,8 +53,8 @@ struct AgentBoardTests {
   @Test func theFilterDecidesMembershipAndNeverTheColumn() {
     let cards = [
       card("Claude Code", state: .attention),
-      card("zsh", agent: false, state: .running, title: "make release"),
-      card("zsh", agent: false, state: .failed, title: "swift test"),
+      card("zsh", isAgent: false, state: .running, title: "make release"),
+      card("zsh", isAgent: false, state: .failed, title: "swift test"),
     ]
 
     let agentsOnly = AgentBoard(cards: cards, showsAllTerminals: false)
@@ -94,8 +92,6 @@ struct AgentBoardTests {
     let waiting = (card("Claude Code", state: .attention, note: asked))
     #expect(waiting.message == "Permission to run rm -rf .build")
 
-    // The engine saw the command finish, which no report corrected: the
-    // question the pane was asking is not what it is doing now.
     let finished = (card("Claude Code", state: .done, note: asked))
     #expect(finished.message == nil)
   }
@@ -115,14 +111,14 @@ struct AgentBoardTests {
   }
 
   @Test func aCardSaysHowLongItHasBeenInItsColumn() {
-    #expect(card("Claude Code", state: .running, secondsAgo: 750).elapsed(at: start) == "12m")
-    #expect(card("Codex").elapsed(at: start) == nil)
+    #expect(card("Claude Code", state: .running, secondsAgo: 750).elapsed(at: drawnAt) == "12m")
+    #expect(card("Codex").elapsed(at: drawnAt) == nil)
   }
 
   /// The board's clock lags by up to a tick, so a pane that has just entered
   /// its column is younger than the `now` the cards are drawn against.
   @Test func aCardThatEnteredItsColumnSinceTheLastTickReadsZeroRatherThanNothing() {
-    #expect(card("Claude Code", state: .running, secondsAgo: -8).elapsed(at: start) == "0s")
+    #expect(card("Claude Code", state: .running, secondsAgo: -8).elapsed(at: drawnAt) == "0s")
   }
 
   @Test func everyLaneHasAColumnEvenWithNothingInIt() {
@@ -150,8 +146,7 @@ struct AgentBoardTests {
     #expect(AgentBoardLane.sidebarLanes == [.waiting, .working, .done])
   }
 
-  /// The columns read left to right, most urgent first.
-  @Test func theColumnsAreInTheOrderTheyAreDrawn() {
+  @Test func theColumnsAreInDrawingOrderEachHeadedByItsState() {
     #expect(AgentBoardLane.allCases == [.waiting, .working, .done, .idle])
     #expect(AgentBoardLane.waiting.headerState == .attention)
     #expect(AgentBoardLane.idle.headerState == .idle)

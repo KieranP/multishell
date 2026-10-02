@@ -7,22 +7,16 @@ import Testing
 @Suite(.serialized)
 struct UnixSocketServerTests {
   @Test func linesFromSeveralClientsArriveWholeAndTheFileIsPrivate() async throws {
-    let path = Scratch.socketPath("srv")
-    let server = UnixSocketServer(path: path)
-    defer {
-      server.stop()
-      Scratch.removeSocket(path)
-    }
-    let recorder = Recorder<String>()
-    server.onLine = { recorder.record($0) }
-    try server.start()
+    let listener = try ReportListener(prefix: "srv")
+    defer { listener.stop() }
+    let path = listener.path
+    let recorder = listener.recorder
 
     let mode = try FileManager.default.attributesOfItem(atPath: path.path)[.posixPermissions]
     #expect((mode as? Int) == 0o600, "mode \(String(describing: mode))")
 
     try UnixSocketClient.send("one\ntwo\n", to: path)
     try UnixSocketClient.send("three without newline", to: path)
-    // A line split across two writes on one connection.
     try UnixSocketClient.send("four\nfive", to: path)
 
     try await waitUntil { recorder.received.count == 5 }
@@ -260,15 +254,10 @@ struct UnixSocketServerTests {
   }
 
   @Test func aClientThatNeverSendsANewlineIsDroppedAtTheCap() async throws {
-    let path = Scratch.socketPath("srv")
-    let server = UnixSocketServer(path: path)
-    defer {
-      server.stop()
-      Scratch.removeSocket(path)
-    }
-    let recorder = Recorder<String>()
-    server.onLine = { recorder.record($0) }
-    try server.start()
+    let listener = try ReportListener(prefix: "srv")
+    defer { listener.stop() }
+    let path = listener.path
+    let recorder = listener.recorder
 
     let flood = String(repeating: "a", count: UnixSocketServer.maximumLineLength + 10)
     try? UnixSocketClient.send(flood, to: path)

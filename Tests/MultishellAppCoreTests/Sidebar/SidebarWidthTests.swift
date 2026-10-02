@@ -14,4 +14,15 @@ struct SidebarWidthTests {
     let range = SidebarWidth.range(inWindowOfWidth: SidebarWidth.minimum)
     #expect(range == SidebarWidth.minimum...SidebarWidth.minimum)
   }
+
+  @Test func aDragMovesTheWidthByItsTravelAndStopsAtEitherEnd() {
+    let range = 200.0...600.0
+    #expect(SidebarWidth.dragged(from: 300, by: 50, in: range) == 350)
+    #expect(SidebarWidth.dragged(from: 300, by: 900, in: range) == 600)
+    #expect(SidebarWidth.dragged(from: 300, by: -900, in: range) == 200)
+  }
+
+  @Test func aDragFromAWidthTheWindowNoLongerHoldsStartsFromItsEdge() {
+    #expect(SidebarWidth.dragged(from: 900, by: -50, in: 200.0...600.0) == 550)
+  }
 }
