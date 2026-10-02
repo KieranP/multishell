@@ -15,21 +15,21 @@ public enum WorktreeFiles {
   @discardableResult
   static func place(
     _ listText: String, as placement: WorktreeFilePlacement, from repository: URL, to worktree: URL,
-    heldToRepository: Bool = true, isStopped: @Sendable () -> Bool = { false }
+    isRepositoryList: Bool = true, isStopRequested: @Sendable () -> Bool = { false }
   ) throws -> [String] {
     let bases = (
       repository: repository.resolvingSymlinksInPath(), worktree: worktree.resolvingSymlinksInPath()
     )
     let split = splitByContainment(Self.paths(in: listText), under: repository)
-    var failures = heldToRepository ? split.escapes : []
-    var skipped = heldToRepository ? [] : split.escapes.map(\.path)
+    var failures = isRepositoryList ? split.escapes : []
+    var skipped = isRepositoryList ? [] : split.escapes.map(\.path)
 
-    for path in split.listed.flatMap({ WorktreeFilePattern.expand($0, in: repository) }) {
+    for path in split.contained.flatMap({ WorktreeFilePattern.expand($0, in: repository) }) {
       let outcome: PathOutcome
       do {
         outcome = try placePath(
           path, as: placement, from: repository, to: worktree, resolved: bases,
-          heldToRepository: heldToRepository, isStopped: isStopped)
+          isRepositoryList: isRepositoryList, isStopRequested: isStopRequested)
       } catch {
         throw WorktreeFileStopped(failures: failures, skipped: skipped)
       }
@@ -55,10 +55,10 @@ public enum WorktreeFiles {
   /// path's failure.
   private static func placePath(
     _ path: String, as placement: WorktreeFilePlacement, from repository: URL, to worktree: URL,
-    resolved bases: (repository: URL, worktree: URL), heldToRepository: Bool,
-    isStopped: () -> Bool
+    resolved bases: (repository: URL, worktree: URL), isRepositoryList: Bool,
+    isStopRequested: () -> Bool
   ) throws(WorktreeFileStopped) -> PathOutcome {
-    guard !isStopped() else { throw WorktreeFileStopped() }
+    guard !isStopRequested() else { throw WorktreeFileStopped() }
     let manager = FileManager.default
     let source = repository.appendingPathComponent(path)
     let destination = worktree.appendingPathComponent(path)
@@ -68,7 +68,7 @@ public enum WorktreeFiles {
     let landsInWorktree = Self.isInside(
       destination.deletingLastPathComponent().splitAtDeepestExisting().existing,
       under: bases.worktree)
-    if heldToRepository {
+    if isRepositoryList {
       // Each end as on disk, the source itself included: `copyItem` carries
       // a symlink rather than following it. See Docs/design/hooks.md.
       guard landsInWorktree,
@@ -93,7 +93,7 @@ public enum WorktreeFiles {
         // checkout the user sees. Absolute, as git records one.
         try manager.createSymbolicLink(at: destination, withDestinationURL: source)
       case .copy:
-        try WorktreeFileCopy.copy(source, to: destination, isStopped: isStopped)
+        try WorktreeFileCopy.copy(source, to: destination, isStopRequested: isStopRequested)
       }
     } catch let stop as WorktreeFileStopped {
       throw stop
@@ -107,18 +107,18 @@ public enum WorktreeFiles {
   /// than skipped for not existing under the repository. See settings.md.
   private static func splitByContainment(
     _ paths: [String], under repository: URL
-  ) -> (listed: [String], escapes: [WorktreeFileFailure.PathFailure]) {
-    var listed: [String] = []
+  ) -> (contained: [String], escapes: [WorktreeFileFailure.PathFailure]) {
+    var contained: [String] = []
     var escapes: [WorktreeFileFailure.PathFailure] = []
     for path in paths {
       if RepositoryContainment.holds(listedPath: path, under: repository) {
-        listed.append(path)
+        contained.append(path)
       } else {
         escapes.append(
           WorktreeFileFailure.PathFailure(path: path, underlying: WorktreeFileEscape()))
       }
     }
-    return (listed, escapes)
+    return (contained, escapes)
   }
 
   /// Whether anything is at `url`, a symlink included, without asking where

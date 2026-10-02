@@ -24,35 +24,35 @@ public struct WorktreeOperations: Equatable, Sendable {
 
   /// A stage starts. Whatever was there gives way: the newer operation owns
   /// the entry from here on.
-  mutating func begin(_ step: WorktreeOperation.Step, on id: Worktree.ID) {
-    operations[id] = WorktreeOperation(step)
+  mutating func begin(_ stage: WorktreeOperation.Stage, on id: Worktree.ID) {
+    operations[id] = WorktreeOperation(stage)
   }
 
   /// A running operation reached its next stage. Nothing once it has
   /// failed: the pane keeps saying what went wrong.
-  mutating func advance(to step: WorktreeOperation.Step, on id: Worktree.ID) {
+  mutating func advance(to stage: WorktreeOperation.Stage, on id: Worktree.ID) {
     guard operations[id]?.isRunning == true else { return }
-    operations[id] = WorktreeOperation(step)
+    operations[id] = WorktreeOperation(stage)
   }
 
   /// The stage failed with the worktree still there, so the pane shows
   /// `message` until dismissed. Returns whether that stage was running.
   @discardableResult
   mutating func fail(
-    _ step: WorktreeOperation.Step, on id: Worktree.ID, message: String, timedOut: Bool = false
+    _ stage: WorktreeOperation.Stage, on id: Worktree.ID, message: String, timedOut: Bool = false
   )
     -> Bool
   {
-    guard owns(step, id) else { return false }
-    operations[id] = WorktreeOperation(step, failure: message, timedOut: timedOut)
+    guard owns(stage, id) else { return false }
+    operations[id] = WorktreeOperation(stage, failure: message, timedOut: timedOut)
     return true
   }
 
-  /// The stage `step` ended. Clears the entry only while that stage is the
-  /// one running; returns whether it was.
+  /// `stage` ended. Clears the entry only while it is the one running;
+  /// returns whether it was.
   @discardableResult
-  mutating func finish(_ step: WorktreeOperation.Step, on id: Worktree.ID) -> Bool {
-    guard owns(step, id) else { return false }
+  mutating func finish(_ stage: WorktreeOperation.Stage, on id: Worktree.ID) -> Bool {
+    guard owns(stage, id) else { return false }
     operations[id] = nil
     return true
   }
@@ -71,8 +71,8 @@ public struct WorktreeOperations: Equatable, Sendable {
     operations[id] = nil
   }
 
-  private func owns(_ step: WorktreeOperation.Step, _ id: Worktree.ID) -> Bool {
+  private func owns(_ stage: WorktreeOperation.Stage, _ id: Worktree.ID) -> Bool {
     guard let current = operations[id] else { return false }
-    return current.isRunning && current.step == step
+    return current.isRunning && current.stage == stage
   }
 }

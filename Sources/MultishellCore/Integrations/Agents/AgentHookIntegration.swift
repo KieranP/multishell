@@ -77,8 +77,6 @@ public struct AgentHookIntegration: Identifiable, Sendable {
 
   public var name: String { AgentCatalogue.agent(id)?.name ?? id }
 
-  /// Whether the file is Multishell's own, rather than one the user keeps
-  /// their own settings in.
   public var isOursAlone: Bool { format.isOursAlone }
 
   public var isPlugin: Bool {

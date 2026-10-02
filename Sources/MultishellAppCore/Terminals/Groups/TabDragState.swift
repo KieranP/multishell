@@ -11,7 +11,7 @@ public struct TabDragState: Equatable, Sendable {
   public var insertion: Insertion?
   /// The group whose terminal area the pointer is over, and what the bands
   /// are drawn from, so they go however the drag ended.
-  public var overGroup: TabGroup.ID?
+  public var hoveredGroupID: TabGroup.ID?
   /// The band the pointer is over, lit while it is.
   public var band: Band?
   /// Where the tab sat as the drag began, for a drag nothing takes.
@@ -21,12 +21,33 @@ public struct TabDragState: Equatable, Sendable {
 
   /// Whether the drag is over something that would take it, and what a strip
   /// marks the dragged tab from. Cannot outlive the drag.
-  public var isEngaged: Bool { insertion != nil || overGroup != nil || band != nil }
+  public var isEngaged: Bool { insertion != nil || hoveredGroupID != nil || band != nil }
 
   /// Whether this group shows its bands: the pointer is over its terminal
   /// area, or over a band, which sits inside that area.
   public func showsBands(of group: TabGroup.ID) -> Bool {
-    overGroup == group || band?.groupID == group
+    hoveredGroupID == group || band?.groupID == group
+  }
+
+  /// Whether the tab in the air is one of this strip's, which moves as the
+  /// pointer goes rather than being marked by a line.
+  public func isShuffling(within tabIDs: [TerminalTab.ID]) -> Bool {
+    guard let tabID else { return false }
+    return tabIDs.contains(tabID)
+  }
+
+  /// Read from the drop targets rather than the drag beginning, so a tab let
+  /// go where no target saw it is not marked for good.
+  public func isInTheAir(_ id: TerminalTab.ID) -> Bool {
+    tabID == id && isEngaged
+  }
+
+  /// The side of this tab the insertion line goes, `nil` for none.
+  public func insertionPlacement(
+    on id: TerminalTab.ID, isShuffling: Bool
+  ) -> TerminalTab.Placement? {
+    guard isDragging, !isShuffling, let insertion, insertion.tabID == id else { return nil }
+    return insertion.placement
   }
 
   mutating func begin(_ id: TerminalTab.ID, home: Home? = nil) {

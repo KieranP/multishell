@@ -20,14 +20,14 @@ enum GhosttyAppLayer {
       // colour, their text the darker of the theme's pair; see appearance.md.
       let selected = theme.focusRingRGB ?? theme.selectionBackgroundRGB
       let text = theme.isDark ? theme.backgroundRGB : theme.foregroundRGB
-      builder.withCustom("search-background", theme.ansiRGB(3).hex)
+      builder.withCustom("search-background", theme.ansiRGB(.yellow).hex)
       builder.withCustom("search-foreground", text.hex)
       builder.withCustom("search-selected-background", selected.hex)
       builder.withCustom("search-selected-foreground", text.hex)
-      if let name = appearance.fontName {
+      if let name = appearance.terminalFontName {
         builder.withFontFamily(name)
       }
-      builder.withFontSize(Float(appearance.fontSize))
+      builder.withFontSize(Float(appearance.terminalFontSize))
 
       // Ghostty's defaults bind our shortcuts to actions this embedding
       // cannot perform, so unbind exactly those, from `AppShortcutCatalogue`.

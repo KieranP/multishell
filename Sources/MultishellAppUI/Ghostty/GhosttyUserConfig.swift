@@ -30,34 +30,13 @@ enum GhosttyUserConfig {
   }
 
   static func base(userContents: [String]) -> String {
-    ([defaults.rendered] + userContents.map(allowedSettings)).joined(separator: "\n")
+    let userSettings = userContents.map(GhosttyConfigAllowList.settings(in:))
+    return ([defaults.rendered] + userSettings).joined(separator: "\n")
   }
-
-  /// What a user's file may set; everything else is dropped. An allow list,
-  /// a deny list having to grow with Ghostty; see terminals.md.
-  private static let allowedPrefixes = [
-    "adjust-", "background", "bell-", "clipboard-", "cursor-", "font-", "link",
-    "mouse-", "palette", "resize-overlay", "scrollback-", "search-", "selection-",
-    "window-padding-",
-  ]
-
-  /// The rest, one at a time. `env` is left off deliberately: a file setting
-  /// one of the variables naming a session would break its reports.
-  private static let allowedKeys: Set<String> = [
-    "abnormal-command-exit-runtime", "alpha-blending", "bold-color", "click-repeat-interval",
-    "copy-on-select", "custom-shader", "custom-shader-animation", "enquiry-response",
-    "faint-opacity", "focus-follows-mouse", "foreground", "freetype-load-flags",
-    "grapheme-width-method", "image-storage-limit", "key-remap", "keybind", "language",
-    "macos-option-as-alt", "middle-click-action", "minimum-contrast", "osc-color-report-format",
-    "progress-style", "right-click-action", "scroll-to-bottom", "scrollbar",
-    "shell-integration-features", "term", "title-report", "vt-kam-allowed", "window-colorspace",
-    "window-vsync",
-  ]
 
   /// The files as they now read, where they changed since `previous`; the
   /// wrapper lays the theme and overrides back over the new base.
   @MainActor
-  @discardableResult
   static func reload(
     _ controller: TerminalController, reading urls: [URL] = fileURLs, over previous: String
   ) -> String {
@@ -68,12 +47,14 @@ enum GhosttyUserConfig {
     return base
   }
 
+  private static let repairPasses = 3
+
   /// libghostty refuses a file whole over one complaint, where Ghostty names
   /// the line and carries on. Blank the named lines and offer the rest again.
   @MainActor
-  static func repair(_ controller: TerminalController, base: String, passes: Int = 3) {
+  static func repair(_ controller: TerminalController, base: String) {
     var lines = base.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
-    for _ in 0..<passes {
+    for _ in 0..<repairPasses {
       guard let issue = controller.lastConfigurationIssue else { return }
       let refused = refusedLines(in: issue).filter { $0 >= 1 && $0 <= lines.count }
       guard !refused.isEmpty else { break }
@@ -95,22 +76,5 @@ enum GhosttyUserConfig {
       }
       return Int(part[range].dropFirst(6).dropLast())
     }
-  }
-
-  private static func allowedSettings(_ contents: String) -> String {
-    GhosttyConfigIncludes.lines(of: contents)
-      .filter { isAllowed(key(of: $0)) }
-      .joined(separator: "\n")
-  }
-
-  /// A line with no `=` has no key, so comments and blank lines go too: what
-  /// libghostty is handed is then the settings and nothing else.
-  private static func isAllowed(_ key: String) -> Bool {
-    allowedKeys.contains(key) || allowedPrefixes.contains { key.hasPrefix($0) }
-  }
-
-  private static func key(of line: Substring) -> String {
-    guard let separator = line.firstIndex(of: "=") else { return "" }
-    return line[..<separator].trimmingCharacters(in: .whitespaces).lowercased()
   }
 }

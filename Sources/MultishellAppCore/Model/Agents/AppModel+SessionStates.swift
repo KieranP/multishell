@@ -31,11 +31,11 @@ extension AppModel {
   }
 
   public func state(ofWorktree id: Worktree.ID) -> SessionState? {
-    state(ofWorktree: id, sessions: worktreeSessions)
+    state(ofWorktree: id, sessions: sessionIDsByWorktree)
   }
 
   /// The sidebar's form, one grouping serving every row of a render.
-  public func state(ofWorktree id: Worktree.ID, sessions: WorktreeSessions) -> SessionState? {
+  public func state(ofWorktree id: Worktree.ID, sessions: SessionIDsByWorktree) -> SessionState? {
     sessionStates.state(ofWorktree: id, sessions: sessions[id])
   }
 
@@ -50,13 +50,13 @@ extension AppModel {
   }
 
   /// The most urgent of the project's worktrees, for its row while collapsed.
-  public func state(ofProject id: Project.ID, sessions: WorktreeSessions) -> SessionState? {
+  func state(ofProject id: Project.ID, sessions: SessionIDsByWorktree) -> SessionState? {
     SessionState.mostUrgent(
       workspace.worktrees(of: id).compactMap { state(ofWorktree: $0.id, sessions: sessions) })
   }
 
   /// One pass over the sessions, taken at the top of a render.
-  public var worktreeSessions: WorktreeSessions { WorktreeSessions(workspace.sessions) }
+  public var sessionIDsByWorktree: SessionIDsByWorktree { SessionIDsByWorktree(workspace.sessions) }
 
   /// Agents that reported Working, counted separately by the quit guard.
   public var workingAgentCount: Int {

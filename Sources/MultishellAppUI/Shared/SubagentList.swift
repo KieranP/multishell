@@ -30,13 +30,13 @@ struct SubagentList: View {
             .lineLimit(1)
           if let occurrences = subagent.occurrenceText {
             Text(occurrences)
-              .font(.system(size: metrics.badge - 1, weight: .medium))
+              .font(.system(size: metrics.small, weight: .medium))
               .monospacedDigit()
               .foregroundStyle(theme.textSecondary)
           }
           Spacer(minLength: 12)
           Text(subagent.elapsed(at: now) ?? "")
-            .font(.system(size: metrics.badge - 1, design: .monospaced))
+            .font(.system(size: metrics.small, design: .monospaced))
             .monospacedDigit()
             .foregroundStyle(theme.textTertiary)
             .frame(minWidth: 38, alignment: .trailing)

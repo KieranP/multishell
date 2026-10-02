@@ -40,7 +40,7 @@ shipped hook. Newest at the bottom.
   to do in settings, not the repository's. Cost: a repo can no longer ship
   `../{project}-worktrees`, and the drop is silent.
 - **Refusal reaches only what the file ships.** `place` takes
-  `heldToRepository`, false for a user's list: an entry of theirs spelled to
+  `isRepositoryList`, false for a user's list: an entry of theirs spelled to
   leave the root is skipped and named rather than failing the create (hooks.md),
   and its symlinked sources may lead anywhere. Both lists take an entry as a
   path inside the repository and mirror it into the worktree; `~` and variables
@@ -64,15 +64,15 @@ shipped hook. Newest at the bottom.
   is kept per file: the file is tracked, so one shared answer would be asked
   again on every branch switch.
 - **Layering is asked of the model**, `effectiveSettings(for:)` and
-  `worktreeSettings(for:)`, never `project.settings`. The override forms are the
-  exception, where blank must keep meaning "follow the global".
+  `effectiveWorktreeSettings(for:)`, never `project.settings`. The override
+  forms are the exception, where blank must keep meaning "follow the global".
 - **The gate is one line.** `layered` drops what the yes covers, the same fields
   the dialog names, then puts the user's over the rest, rather than each field
   asking.
 - **The forms read that same view through `inherited`**, or a caption saying
   "from .multishell.json" names a value the layering left out, which it did for
   an untrusted `worktreeDirectory`.
-- **An `InheritableSetting` pairs the project field with the file's once.**
+- **An `InheritableSettingKeys` pairs the project field with the file's once.**
   Reading the layering with the override cleared answered only for a field
   merged as `own ?? shared`; any other quietly showed the global.
 - **Export writes the settings in force back over the file**, but keeps the

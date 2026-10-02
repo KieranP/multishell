@@ -8,20 +8,16 @@ import TestScratch
 enum ShellTab {
   static func bashInitFile(in home: URL, helper: URL? = nil) throws -> URL {
     let file = home.appendingPathComponent("init.bash")
-    try ShellStateHooks.bashInitScript(helper: (try helper ?? HelperBinary.require()).path)
+    try ShellIntegrationScripts.forBash(helper: (try helper ?? HelperBinary.require()).path)
       .write(to: file, atomically: true, encoding: .utf8)
     return file
   }
 
   static func zshIntegrationDirectory(in root: URL, helper: String? = nil) throws -> URL {
     let directory = root.appendingPathComponent("integration", isDirectory: true)
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-    let files = ShellStateHooks.zshIntegrationScripts(
+    try ShellIntegration.refresh(
+      zshDirectory: directory, bashInit: root.appendingPathComponent("bash/init.bash"),
       helper: try helper ?? HelperBinary.require().path)
-    for (name, contents) in files {
-      try contents.write(
-        to: directory.appendingPathComponent(name), atomically: true, encoding: .utf8)
-    }
     return directory
   }
 

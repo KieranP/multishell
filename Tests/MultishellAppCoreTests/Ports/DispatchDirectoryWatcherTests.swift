@@ -144,7 +144,7 @@ struct DispatchDirectoryWatcherTests {
   @Test func directoriesAreOpenedOffTheMainThread() async throws {
     let dir = try Scratch.directory("watch")
     defer { Scratch.remove(dir) }
-    let onMain = LineRecorder()
+    let onMain = Recorder<String>()
     let watcher = DispatchDirectoryWatcher { path in
       onMain.record(Thread.isMainThread ? "main" : "off")
       return open(path, O_EVTONLY)
@@ -163,7 +163,7 @@ struct DispatchDirectoryWatcherTests {
       Scratch.remove(a)
       Scratch.remove(b)
     }
-    let opened = LineRecorder()
+    let opened = Recorder<String>()
     let gate = DispatchSemaphore(value: 0)
     let watcher = DispatchDirectoryWatcher { path in
       opened.record(path)

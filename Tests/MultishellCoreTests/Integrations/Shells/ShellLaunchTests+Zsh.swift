@@ -5,13 +5,8 @@ import Testing
 @testable import MultishellCore
 
 extension ShellLaunchTests {
-  private func directoryThatExists() throws -> URL {
-    let url = try Scratch.directory("zdotdir")
-    return url
-  }
-
   @Test func theSessionGetsZDOTDIROnlyWhenGeneratedAndTheShellIsZsh() throws {
-    let dir = try directoryThatExists()
+    let dir = try Scratch.directory("zdotdir")
     defer { Scratch.remove(dir) }
 
     let zsh = ShellLaunch.zshEnvironment(
@@ -47,9 +42,9 @@ extension ShellLaunchTests {
   /// libghostty sets `ZDOTDIR` to its own bootstrap and then applies the surface's
   /// variables on top, so ours would replace it and its integration would never load.
   @Test func theEnginesBootstrapIsEnteredFirstWhenItHasOne() throws {
-    let ours = try directoryThatExists()
+    let ours = try Scratch.directory("zdotdir")
     defer { Scratch.remove(ours) }
-    let bootstrap = try directoryThatExists()
+    let bootstrap = try Scratch.directory("zdotdir")
     defer { Scratch.remove(bootstrap) }
     try Data().write(to: bootstrap.appendingPathComponent(".zshenv"))
 
@@ -60,7 +55,7 @@ extension ShellLaunchTests {
     #expect(chained[ShellLaunch.ghosttyZdotdirKey] == ours.path)
     #expect(chained["MULTISHELL_USER_ZDOTDIR"] == "/u", "and ours still chains to the user's")
 
-    let empty = try directoryThatExists()
+    let empty = try Scratch.directory("zdotdir")
     defer { Scratch.remove(empty) }
     let unbootstrapped = ShellLaunch.zshEnvironment(
       forShell: "/bin/zsh", environment: [:], zshDirectory: ours, engineZshBootstrap: empty)

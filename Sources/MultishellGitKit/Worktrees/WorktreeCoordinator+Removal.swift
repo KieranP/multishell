@@ -18,10 +18,10 @@ extension WorktreeCoordinator {
     }
     let path = worktree.path
     let branchOrHead = worktree.branch ?? worktree.head
-    let isThere = await offMain { FileManager.default.fileExists(atPath: path.path) }
+    let directoryExists = await offMain { FileManager.default.fileExists(atPath: path.path) }
     // Whatever took a stale record's path since is not ours: not trashed,
     // and no hook runs, each being handed that path; see worktrees.md.
-    if isThere, try await !git.isCheckout(of: worktree, in: project) {
+    if directoryExists, try await !git.isCheckout(of: worktree, in: project) {
       onStep?(.removingWorktree)
       try await git.forgetStale(worktree, in: project)
     } else {
@@ -29,7 +29,7 @@ extension WorktreeCoordinator {
         .preDelete, for: project, worktreePath: path, branch: branchOrHead, shellPath: shellPath,
         timeout: timeout, stopper: stopper, willRun: { onStep?(.preDeleteHook) })
       onStep?(.removingWorktree)
-      if isThere {
+      if directoryExists {
         do {
           try await trash(path)
         } catch {

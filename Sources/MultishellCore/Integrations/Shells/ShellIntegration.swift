@@ -8,15 +8,11 @@ public enum ShellIntegration {
     bashInit: URL = Paths.bashInitFile,
     helper: String = AgentHookCatalogue.helperReference
   ) throws {
-    try FileManager.default.createDirectory(at: zshDirectory, withIntermediateDirectories: true)
-    for (name, contents) in ShellStateHooks.zshIntegrationScripts(helper: helper) {
-      try Data(contents.utf8).write(
-        to: zshDirectory.appendingPathComponent(name, isDirectory: false), options: .atomic)
+    for (name, contents) in ShellIntegrationScripts.forZsh(helper: helper) {
+      try Data(contents.utf8).writeAtomically(
+        to: zshDirectory.appendingPathComponent(name, isDirectory: false))
     }
 
-    try FileManager.default.createDirectory(
-      at: bashInit.deletingLastPathComponent(), withIntermediateDirectories: true)
-    try Data(ShellStateHooks.bashInitScript(helper: helper).utf8).write(
-      to: bashInit, options: .atomic)
+    try Data(ShellIntegrationScripts.forBash(helper: helper).utf8).writeAtomically(to: bashInit)
   }
 }

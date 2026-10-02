@@ -25,30 +25,30 @@ public final class AppModel<Surface> {
   /// than start afresh; see `preparedForLaunch`.
   @ObservationIgnored let restoredSessionIDs: Set<TerminalSession.ID>
 
-  public var presentedError: PresentedError?
+  public internal(set) var presentedError: PresentedError?
   public var newWorktreeRequest: NewWorktreeRequest?
   /// A removal waiting on the confirmation dialog.
-  public var pendingWorktreeRemoval: PendingWorktreeRemoval?
+  public internal(set) var pendingWorktreeRemoval: PendingWorktreeRemoval?
   /// The trust question about one project's shared hooks, waiting on its
   /// dialog.
   public var pendingSharedSettingsTrust: PendingSharedSettingsTrust?
   /// A project removal waiting on its dialog, in whichever window asked.
-  public var pendingProjectRemoval: PendingProjectRemoval?
+  var pendingProjectRemoval: PendingProjectRemoval?
   /// A pane or tab close waiting on it, because an agent there is working.
-  public var pendingClose: PendingClose?
+  public internal(set) var pendingClose: PendingClose?
   /// Held here, not by the sidebar, because the poll reads the rows it opens.
   public var sidebarFilterText = "" {
     didSet {
       guard sidebarFilterText != oldValue else { return }
-      let foldedBefore = projectsFoldedWhileFiltering
-      setIfChanged(\.projectsFoldedWhileFiltering, [])
-      scheduleRevealedRowsRead(from: oldValue, folding: foldedBefore)
+      let collapsedBefore = projectsCollapsedWhileFiltering
+      setIfChanged(\.projectsCollapsedWhileFiltering, [])
+      scheduleRevealedRowsRead(from: oldValue, collapsing: collapsedBefore)
       if !sidebarFilterText.isEmpty { showsSidebarFilter = true }
     }
   }
-  /// Projects folded by their chevron while the filter holds them open. A
-  /// fold lasts until the text changes; the stored flag is left alone.
-  var projectsFoldedWhileFiltering: Set<Project.ID> = []
+  /// Projects collapsed by their chevron while the filter holds them open.
+  /// That lasts until the text changes; the stored flag is left alone.
+  var projectsCollapsedWhileFiltering: Set<Project.ID> = []
   /// Up whenever there is text, and down only through `setShowsSidebarFilter`,
   /// so emptying the field never takes the keyboard away with it.
   public internal(set) var showsSidebarFilter = false
@@ -58,8 +58,8 @@ public final class AppModel<Surface> {
   /// The worktree showing its name field. Runtime state, so the menu that
   /// starts a rename and the row that draws it need not know each other.
   var renamingWorktreeID: Worktree.ID?
-  /// The tab whose strip shows a name field, for the same reason the worktree
-  /// above has one: a commit arriving after the edit ended must be ignored.
+  /// The tab whose strip shows a name field; a commit arriving after the edit
+  /// ended is ignored.
   public internal(set) var renamingTabID: TerminalTab.ID?
   /// The panes with a find bar up, each pane's its own; see `showFind`.
   /// Runtime state, dropped with the session.
@@ -174,12 +174,12 @@ public final class AppModel<Surface> {
   var installedAgentHooks: Set<String> = []
   /// Installed, but not what this build writes.
   var staleAgentHooks: Set<String> = []
-  public internal(set) var commandLineToolInstalled = false
+  public internal(set) var isCommandLineToolInstalled = false
   /// What the notification centre has been told about this app. The system's
   /// answer, not the workspace's, and changeable while the app runs.
   var notificationAuthorization = NotificationAuthorization.notAsked
   public internal(set) var themes: [Theme] = Theme.builtins
-  @ObservationIgnored var reportedMissingAgents: Set<String> = []
+  @ObservationIgnored var alertedMissingAgentIDs: Set<String> = []
 
   /// `git status` per worktree. Runtime only; see `WorktreeStatus`.
   public internal(set) var statuses: [Worktree.ID: WorktreeStatus] = [:]
@@ -217,7 +217,7 @@ public final class AppModel<Surface> {
   @ObservationIgnored var commonGitDirectories: [Project.ID: URL] = [:]
   /// Written from the sidebar's body, so not observed: a write there would
   /// invalidate the body writing it.
-  @ObservationIgnored var worktreeOrderMemo = WorktreeOrderMemo()
+  @ObservationIgnored var worktreeSortCache = WorktreeSortCache()
   /// What the last refresh of each project was computed from; see
   /// `refreshWorktreesIfRecordsChanged`.
   @ObservationIgnored var worktreeRecords: [Project.ID: WorktreeRecords] = [:]
@@ -231,13 +231,14 @@ public final class AppModel<Surface> {
   /// the rows the poll kept reading through every keystroke of that burst.
   @ObservationIgnored var pendingRevealedRowsRead:
     (polledThroughout: Set<Worktree.ID>, task: Task<Void, Never>)?
-  /// Worktrees whose removal is reading their status, and the latest asked.
+  /// Worktrees whose removal is reading their status.
   @ObservationIgnored var removalsAwaitingStatus: Set<Worktree.ID> = []
   /// Each removal's read until git answers, which outlives the removal's wait
   /// on a dead mount; a later removal waits on it rather than start another.
   @ObservationIgnored var removalStatusReads: [Worktree.ID: Task<Bool, Never>] = [:]
   /// How long a removal waits for that read before it asks anyway.
   @ObservationIgnored var removalStatusWait: Duration = .seconds(3)
+  /// The removal asked last, the only one whose read may put up a dialog.
   @ObservationIgnored var latestRemovalRequest: Worktree.ID?
 
   @ObservationIgnored var pendingSave: Task<Void, Never>?
@@ -259,7 +260,7 @@ public final class AppModel<Surface> {
     coordinator: WorktreeCoordinator?,
     watcher: any DirectoryWatcher,
     platform: any Platform = NullPlatform(),
-    stateSource: any SessionStateSource = NullStateSource(),
+    stateSource: any SessionStateSource = NullSessionStateSource(),
     notifier: any SessionNotifier = NullNotifier(),
     loadError: (any Error)? = nil
   ) {
@@ -295,47 +296,6 @@ public final class AppModel<Surface> {
     autosave?.cancel()
     tabDragReleaseWatch?.cancel()
     projectDragReleaseWatch?.cancel()
-  }
-
-  /// What the platform, the reconciler, the socket, the notifier and the
-  /// watcher report back, each routed to the model.
-  private func wireCallbacks() {
-    // Statuses poll only while frontmost, so a return would show badges five
-    // seconds stale. The permission is read back for the same reason.
-    platform.onDidBecomeActive = { [weak self] in
-      Task { await self?.refreshAll() }
-      self?.refreshNotificationAuthorization()
-      // Coming back is seeing the focused pane: a Done raised there while
-      // the user was elsewhere clears now, and its banner goes with it.
-      self?.markInViewSeen()
-    }
-
-    reconciler.onActivity = { [weak self] id in self?.noteActivity(in: id) }
-    reconciler.onCommandFinished = { [weak self] id, code in
-      self?.noteCommandFinished(in: id, exitCode: code)
-    }
-    reconciler.onRetitle = { [weak self] id, title in self?.noteTitle(title, of: id) }
-    // A click into a pane is looking at it: seen is the pane with the
-    // keyboard, and a click is how the keyboard moves without a reconcile.
-    reconciler.onFocus = { [weak self] _ in self?.markInViewSeen() }
-    reconciler.onLiveSessionsChanged = { [weak self] in
-      guard let self else { return }
-      let live = reconciler.liveSessionIDs
-      setIfChanged(\.liveSessionIDs, live)
-      setIfChanged(\.sessionTitles, sessionTitles.filter { live.contains($0.key) })
-      setIfChanged(\.reportedAgents, reportedAgents.filter { live.contains($0.key) })
-      setIfChanged(\.commandAgentIDs, commandAgentIDs.filter { live.contains($0.key) })
-      pruneStates()
-      pruneFind()
-      // A shell exiting can bring another pane the keyboard; it is being
-      // looked at now, whatever happened in it before.
-      markInViewSeen()
-    }
-    stateSource.onReport = { [weak self] report in self?.apply(report) }
-    notifier.onActivate = { [weak self] key in self?.revealNotificationSubject(key) }
-    watcher.onChange = { [weak self] changed in
-      Task { await self?.refreshWorktreesIfRecordsChanged(under: changed) }
-    }
   }
 
   /// The view a session draws into, from whichever engine opened it: the one

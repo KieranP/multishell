@@ -103,7 +103,7 @@ extension WorktreeListParserTests {
       "an empty path would resolve to the current directory")
   }
 
-  @Test func missingTrailingBlankLineIsFine() {
+  @Test func aLastRecordWithoutATrailingSeparatorIsStillParsed() {
     let output = "worktree /a\nHEAD 5555555\nbranch refs/heads/x"
     #expect(
       WorktreeListParser.parse(zeroTerminated(output), projectID: "/p").map(\.branch) == ["x"])

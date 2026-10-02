@@ -65,9 +65,8 @@ struct ClaudeTranscriptTests: AgentHookFixtures {
   }
 
   @Test func aFileIsReadFromItsTailAndAMissingOneSaysNothing() throws {
-    let directory = temporaryDirectory()
+    let directory = try Scratch.directory("hooks")
     defer { Scratch.remove(directory) }
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     let file = directory.appendingPathComponent("session.jsonl")
     let filler =
       #"{"type":"user","message":{"content":""#

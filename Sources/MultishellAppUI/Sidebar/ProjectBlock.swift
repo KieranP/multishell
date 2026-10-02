@@ -12,7 +12,7 @@ struct ProjectBlock: View {
   let worktrees: [Worktree]
   /// What the chevron shows, the filter's word over the project's own.
   let isExpanded: Bool
-  let sessions: WorktreeSessions
+  let sessions: SessionIDsByWorktree
   let theme: Theme
   @Binding var projectDropTarget: ProjectDropTarget?
   @Binding var tabDropTarget: Worktree.ID?
@@ -47,7 +47,7 @@ struct ProjectBlock: View {
         drop: { moving, placement in
           // `moveProject` looks the id up, so a drop carrying anything but a
           // project of ours moves nothing.
-          if let moving { model.moveProject(moving, placement, project.id) }
+          if let moving { model.moveProject(moving, placement, of: project.id) }
           endProjectDrag()
         }
       ))
@@ -59,9 +59,7 @@ struct ProjectBlock: View {
       isExpanded: isExpanded,
       settings: model.effectiveSettings(for: project),
       isMissing: model.missingProjects.contains(project.id),
-      // The worktree rows carry the dots while they are visible; the folder
-      // stands in for them only once they are folded away.
-      state: isExpanded ? nil : model.state(ofProject: project.id, sessions: sessions),
+      state: model.projectRowState(project.id, isExpanded: isExpanded, sessions: sessions),
       worktreeCount: worktrees.count,
       isFetching: model.isFetching(project),
       theme: theme,
@@ -88,7 +86,7 @@ struct ProjectBlock: View {
       worktree: worktree,
       customName: row.customName,
       isRenaming: row.isRenaming,
-      terminalCount: sessions[worktree.id].count,
+      terminalCount: row.shownTerminalCount(of: sessions[worktree.id].count),
       state: model.state(ofWorktree: worktree.id, sessions: sessions),
       operation: model.worktreeOperations[worktree.id],
       isSelected: model.isInView(worktree),

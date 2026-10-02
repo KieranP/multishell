@@ -47,7 +47,7 @@ extension AppModelPersistenceTests {
     }
     #expect(weights == [3, 1])
     #expect(after.workspace.activeTab(in: before.main.id)?.id == tabs[1].id)
-    #expect(engine.openSessionIDs == Set(after.workspace.sessions(in: before.main.id).map(\.id)))
+    #expect(engine.liveSessionIDs == Set(after.workspace.sessions(in: before.main.id).map(\.id)))
 
     after.select(before.feature)
     #expect(after.liveTerminalCount == 5)

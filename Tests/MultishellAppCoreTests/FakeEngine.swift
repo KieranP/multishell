@@ -5,7 +5,7 @@ import MultishellCore
 /// An engine that opens everything and remembers focus and closes.
 @MainActor
 final class FakeEngine: TerminalSurfaceHost {
-  var openSessionIDs: Set<TerminalSession.ID> = []
+  var liveSessionIDs: Set<TerminalSession.ID> = []
   var focused: [TerminalSession.ID] = []
   var closed: [TerminalSession.ID] = []
   /// What was pasted into each session, in order.
@@ -19,21 +19,21 @@ final class FakeEngine: TerminalSurfaceHost {
   var refusesToOpen = false
   func open(_ session: TerminalSession) throws {
     if refusesToOpen { throw OpenRefused() }
-    openSessionIDs.insert(session.id)
+    liveSessionIDs.insert(session.id)
     opened.append(session)
   }
   func close(_ id: TerminalSession.ID) {
-    openSessionIDs.remove(id)
+    liveSessionIDs.remove(id)
     closed.append(id)
   }
   func focus(_ id: TerminalSession.ID) { focused.append(id) }
   func paste(_ text: String, into id: TerminalSession.ID) -> Bool {
-    guard openSessionIDs.contains(id) else { return false }
+    guard liveSessionIDs.contains(id) else { return false }
     pasted.append((id, text))
     return true
   }
   func search(_ command: TerminalSearch, in id: TerminalSession.ID) -> Bool {
-    guard openSessionIDs.contains(id) else { return false }
+    guard liveSessionIDs.contains(id) else { return false }
     searched.append((id, command))
     return true
   }

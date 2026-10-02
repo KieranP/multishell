@@ -1,7 +1,6 @@
 import Foundation
 import System
 
-/// Runs a child process and captures its output.
 public struct ProcessRunner: Sendable {
   /// A pipe's 64 KiB buffer is all a child can leave unread when it exits, and
   /// one readability callback takes it. The margin is for a loaded machine.
@@ -64,12 +63,12 @@ public struct ProcessRunner: Sendable {
         closingOutputsAfterSpawn: true
       ) { pid in
         nullInput.close()
-        child.started(pid)
+        child.markStarted(pid)
         stopper.attach(child)
         if let timeout { Self.armTimeout(timeout, for: child, stopper: stopper) }
         // Marked before Subprocess reaps it, so no stop signals a reused pid.
         await child.waitForExit()
-        child.exited()
+        child.markExited()
       }
     } catch {
       // A missing executable or directory fails here, and no EOF will come.
@@ -83,8 +82,8 @@ public struct ProcessRunner: Sendable {
     if status == 0 { stopper.withdrawTimeout(from: child) }
     await Self.awaitDrained(standardOutput, standardError, group: drained)
     return ProcessOutput(
-      standardOutput: String(decoding: standardOutput.data, as: UTF8.self),
-      standardError: String(decoding: standardError.data, as: UTF8.self),
+      standardOutput: String(decoding: standardOutput.collected, as: UTF8.self),
+      standardError: String(decoding: standardError.collected, as: UTF8.self),
       status: status,
       stop: stopper.appliedStop
     )

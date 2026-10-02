@@ -9,39 +9,19 @@ struct ProjectSettingsTests {
   private let defaults = WorktreeSettings(worktreeDirectory: "/global/trees", branchPrefix: "team/")
 
   @Test func everyStoredFieldIsWrittenUnderItsOwnKey() throws {
-    let everyField = ProjectSettings(
+    var everyField = ProjectSettings(
       worktreeDirectory: "trees", branchPrefix: "k/", defaultBranch: "main",
       preCreateHook: "a", postCreateHook: "b", preDeleteHook: "c", postDeleteHook: "d",
       linkedPaths: "node_modules", copiedPaths: ".env", preferredAgentID: "codex",
       agentFlags: "--yolo", autoStartAgent: true, autoStartAgentOnCreate: true,
       opensTerminalOnSelect: true, opensTerminalOnCreate: true, worktreeSortOrder: .alphabetical,
-      showsActiveWorktreesFirst: true, preferredShellID: "/bin/zsh", iconGlyph: "star", iconTint: 2,
-      trustDecisions: [TrustDecision(digest: "beef", trusted: true)])
+      showsActiveWorktreesFirst: true, preferredShellID: "/bin/zsh", iconGlyph: "star", iconTint: 2)
+    everyField.trustDecisions = [TrustDecision(digest: "beef", trusted: true)]
     let fields = Mirror(reflecting: everyField).children.count
     let encoded = try JSONEncoder().encode(everyField)
     let keys = try #require(try JSONSerialization.jsonObject(with: encoded) as? [String: Any]).keys
 
     #expect(keys.count == fields, "a field missing from CodingKeys is silently never saved")
-  }
-
-  @Test func nilFieldsFallBackToTheGlobalDefaults() {
-    let effective = ProjectSettings().effectiveWorktreeSettings(defaults: defaults)
-    #expect(effective == defaults)
-  }
-
-  @Test func eachFieldOverridesIndependently() {
-    let effective = ProjectSettings(branchPrefix: "kieran/").effectiveWorktreeSettings(
-      defaults: defaults)
-    #expect(effective.worktreeDirectory == "/global/trees")
-    #expect(effective.branchPrefix == "kieran/")
-  }
-
-  @Test func aWhitespaceOverrideMeansNone() {
-    // The sheet stores a lone space to opt a project out of a global
-    // prefix; it must not end up in the branch name.
-    let effective = ProjectSettings(branchPrefix: " ").effectiveWorktreeSettings(defaults: defaults)
-    #expect(effective.branchPrefix == "")
-    #expect(effective.qualifiedBranch("tabs") == "tabs")
   }
 
   /// These fields have no other spelling for "none". A project pinned to no

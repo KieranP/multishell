@@ -38,7 +38,7 @@ struct PendingWorktreeRemovalTests {
 
     let settled = try asked(branched, confirms: true, alwaysDeletesBranch: true)
     #expect(settled.choices.count == 1)
-    #expect(settled.branchHandling == .decided(deletes: true))
+    #expect(settled.branchHandling == .decided(deletesBranch: true))
     #expect(
       settled.choices.map(\.label) == ["Remove Worktree and Branch"],
       "one button, saying what it does")
@@ -68,7 +68,7 @@ struct PendingWorktreeRemovalTests {
 
   @Test func aDetachedWorktreeNeverHasItsBranchDeleted() throws {
     let pending = try asked(detached, confirms: true, alwaysDeletesBranch: true)
-    #expect(pending.branchHandling == .decided(deletes: false) && pending.choices.count == 1)
+    #expect(pending.branchHandling == .decided(deletesBranch: false) && pending.choices.count == 1)
     #expect(pending.choices.map(\.label) == ["Remove Worktree"])
     #expect(!pending.message(warning: nil).contains("branch"))
   }
@@ -114,9 +114,10 @@ struct PendingWorktreeRemovalTests {
         == "Moves feat to the Trash and removes it from git.\n\nThe branch feat is kept unless you remove it too.\n\n2 open terminals will be closed."
     )
     let deletes = PendingWorktreeRemoval(
-      worktree: branched, branchHandling: .decided(deletes: true))
+      worktree: branched, branchHandling: .decided(deletesBranch: true))
     #expect(deletes.message(warning: nil).hasSuffix("The branch feat is deleted with it."))
-    let keeps = PendingWorktreeRemoval(worktree: branched, branchHandling: .decided(deletes: false))
+    let keeps = PendingWorktreeRemoval(
+      worktree: branched, branchHandling: .decided(deletesBranch: false))
     #expect(keeps.message(warning: nil).hasSuffix("The branch feat is kept."))
   }
 

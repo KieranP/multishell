@@ -13,7 +13,6 @@ struct PosixShellQuotingTests {
     #expect(PosixShellQuoting.quote("") == "''")
   }
 
-  /// The shell that receives the line must give back exactly the arguments.
   @Test func theShellUnquotesToTheOriginalArguments() async throws {
     let arguments = ["My Projects/app", "it's", "$HOME", "", "a\"b", "back\\slash", "tab\there"]
     let script =

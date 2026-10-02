@@ -9,7 +9,7 @@ struct OffMainTests {
   @Test func moreBlockedWorkThanCoresStillLeavesATaskFreeToReleaseIt() async {
     let blockers = ProcessInfo.processInfo.activeProcessorCount + 1
     let gate = DispatchSemaphore(value: 0)
-    let entered = LineRecorder()
+    let entered = Recorder<String>()
 
     let released = await withTaskGroup(of: Bool.self) { group in
       for _ in 0..<blockers {

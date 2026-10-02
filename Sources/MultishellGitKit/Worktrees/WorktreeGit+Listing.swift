@@ -8,11 +8,11 @@ extension WorktreeGit {
   public func list(_ project: Project) async throws -> [Worktree] {
     let worktrees = try await parsedList(in: project.path, projectID: project.id)
     guard !worktrees.isEmpty else {
-      throw ProcessFailure.git(
+      throw ProcessFailure.unreportedByGit(
         ["worktree", "list"], message: "git listed no worktrees for \(project.path.path)")
     }
     // Stats, each of which a dead mount holds; see worktrees.md.
-    return await offMain { worktrees.map(Self.datedByDirectory).map(Self.markedIfStillAdding) }
+    return await offMain { worktrees.map(Self.datedByDirectory).map(Self.judgedInitializing) }
   }
 
   /// A lock older than this is an add that died mid-checkout, git's own
@@ -21,7 +21,7 @@ extension WorktreeGit {
 
   /// git's `initializing` is in the user's language, so a lock from before
   /// `gitdir` over files with no index yet counts too; see worktrees.md.
-  private static func markedIfStillAdding(_ worktree: Worktree) -> Worktree {
+  private static func judgedInitializing(_ worktree: Worktree) -> Worktree {
     guard worktree.isLocked else { return worktree }
     let record = Self.recordDirectoryFromGitFile(in: worktree.path)
     let lockedAt =
@@ -69,7 +69,7 @@ extension WorktreeGit {
   /// which identifies a project so a subdirectory does not become a second.
   public func mainWorktree(containing url: URL) async throws -> URL {
     guard let main = try await parsedList(in: url, projectID: "").first else {
-      throw ProcessFailure.git(
+      throw ProcessFailure.unreportedByGit(
         ["worktree", "list"], message: "no worktree listed for \(url.path)")
     }
     return main.path

@@ -46,7 +46,7 @@ struct WorktreeHooksTests {
       branch: "bye", in: project, settings: repo.worktreeSettings)
     let worktree = try await repo.worktree(onBranch: "bye", in: project)
 
-    try await repo.coordinator.remove(worktree, in: project)
+    try await repo.coordinator.removeUnlinking(worktree, in: project)
 
     let recorded = try String(
       contentsOf: project.path.appendingPathComponent("deleted.txt"), encoding: .utf8
@@ -164,7 +164,7 @@ struct WorktreeHooksTests {
     let worktree = try await repo.worktree(onBranch: "kept", in: project)
 
     await #expect(throws: HookFailure.self) {
-      try await repo.coordinator.remove(worktree, in: project)
+      try await repo.coordinator.removeUnlinking(worktree, in: project)
     }
 
     #expect(FileManager.default.fileExists(atPath: path.path))
@@ -181,7 +181,7 @@ struct WorktreeHooksTests {
       branch: "leaving", in: project, settings: repo.worktreeSettings)
     let worktree = try await repo.worktree(onBranch: "leaving", in: project)
 
-    try await repo.coordinator.remove(worktree, in: project)
+    try await repo.coordinator.removeUnlinking(worktree, in: project)
 
     let ran = try String(
       contentsOf: project.path.appendingPathComponent("where.txt"), encoding: .utf8)
@@ -199,7 +199,7 @@ struct WorktreeHooksTests {
     let worktree = try await repo.worktree(onBranch: "vanished", in: project)
     try FileManager.default.removeItem(at: path)
 
-    try await repo.coordinator.remove(worktree, in: project)
+    try await repo.coordinator.removeUnlinking(worktree, in: project)
 
     let ran = try String(
       contentsOf: project.path.appendingPathComponent("where.txt"), encoding: .utf8)

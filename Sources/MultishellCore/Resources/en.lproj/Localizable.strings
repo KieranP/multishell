@@ -3,7 +3,9 @@
 
 "action.add-project" = "Add Project";
 "agent-hooks.codex-trust" = "Run /hooks in Codex once to trust Multishell's.";
+"agent-hooks.installed-in" = "Installed in %@";
 "agent-hooks.json" = "JSON";
+"agent-hooks.not-installed" = "Not installed";
 "agent-hooks.ours-alone" = "%@ is Multishell's own file: Add writes it and Remove deletes it.";
 "agent-hooks.plugin" = "Plugin";
 "agent-hooks.reports" = "%@ reports Working, Waiting for input and Done through its hooks.";
@@ -208,6 +210,8 @@
 "shell.named-login-shell" = "the login shell (%@)";
 "shell.path-blank" = "Blank, so tabs run the login shell, %@.";
 "shell.path-not-executable" = "Nothing executable at that path; a new tab would fail to start.";
+"sidebar.no-projects" = "No projects yet";
+"sidebar.nothing-matches" = "Nothing matches";
 "sort.alphabetical" = "Name";
 "sort.committed-newest-first" = "Last commit, newest first";
 "sort.committed-oldest-first" = "Last commit, oldest first";
@@ -283,6 +287,8 @@
 "subagent.occurrences" = "×%d";
 "subagent.unnamed" = "subagent";
 "tab.editor" = "Editor";
+"tab.new-custom-agent" = "New Custom Command Tab";
+"tab.new-named-agent" = "New %@ Tab";
 "tab.shell" = "Shell";
 "worktree-file.escape" = "It leads outside the repository or the worktree.";
 "worktree-removal.branch-asked" = "The branch %@ is kept unless you remove it too.";

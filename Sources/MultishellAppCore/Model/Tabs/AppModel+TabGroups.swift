@@ -3,8 +3,7 @@ import MultishellCore
 /// A worktree's terminal area is one or more groups of tabs. All layout, so
 /// none of it asks whether a shell could start.
 extension AppModel {
-  /// The group the keystrokes go to, which is what the menu items and the
-  /// tab-strip chrome are drawn from.
+  /// The group the keystrokes go to in the worktree in view.
   var focusedGroup: TabGroup? {
     worktreeInView.flatMap { workspace.focusedGroup(in: $0.id) }
   }
@@ -23,7 +22,7 @@ extension AppModel {
   private func focusAdjacentGroup(_ direction: CycleDirection) {
     guard
       let worktree = worktreeInView?.id,
-      let current = workspace.focusedGroup(in: worktree),
+      let current = focusedGroup,
       let next = workspace.groups(in: worktree).neighbour(of: current.id, direction)
     else { return }
     focusGroup(next.id)

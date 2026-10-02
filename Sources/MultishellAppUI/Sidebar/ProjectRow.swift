@@ -42,7 +42,7 @@ struct ProjectRow: View {
   private var toggleArea: some View {
     HStack(spacing: 6) {
       Image(systemName: "chevron.right")
-        .font(.system(size: metrics.badge - 1, weight: .bold))
+        .font(.system(size: metrics.small, weight: .bold))
         .rotationEffect(.degrees(isExpanded ? 90 : 0))
         .foregroundStyle(theme.textTertiary)
         .frame(width: 10)

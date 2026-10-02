@@ -7,7 +7,7 @@ import Testing
 /// The two file lists a project gives each new worktree.
 @Suite
 final class WorktreeFilesTests {
-  private let root = Scratch.path("files")
+  let root = Scratch.path("files")
 
   deinit { Scratch.remove(root) }
 
@@ -52,7 +52,7 @@ final class WorktreeFilesTests {
 
     let skipped = try WorktreeFiles.place(
       "~/.aws.json\n$HOME/.zshrc\n/etc/passwd\n.env", as: placement, from: repository,
-      to: worktree, heldToRepository: false)
+      to: worktree, isRepositoryList: false)
 
     #expect(try FileManager.default.contentsOfDirectory(atPath: worktree.path) == [".env"])
     #expect(skipped == ["~/.aws.json", "$HOME/.zshrc", "/etc/passwd"])
@@ -71,7 +71,7 @@ final class WorktreeFilesTests {
     try "TOP SECRET".write(to: outside.appending(path: "key"), atomically: true, encoding: .utf8)
 
     let skipped = try WorktreeFiles.place(
-      "../outside/key", as: .copy, from: repository, to: worktree, heldToRepository: false)
+      "../outside/key", as: .copy, from: repository, to: worktree, isRepositoryList: false)
 
     #expect(skipped == ["../outside/key"])
     #expect(try manager.contentsOfDirectory(atPath: worktree.path).isEmpty)
@@ -191,47 +191,6 @@ final class WorktreeFilesTests {
     #expect(failure?.failures.map(\.path) == ["vendor/dep"])
   }
 
-  /// The pane's Cancel, which has no process to signal: it lands between
-  /// paths, and what is in the worktree by then stays there.
-  @Test func aStopEndsTheListAtTheNextPathAndKeepsWhatIsPlaced() throws {
-    let (repository, worktree) = try directories()
-    try "one".write(to: repository.appending(path: ".env.local"), atomically: true, encoding: .utf8)
-    try "two".write(to: repository.appending(path: ".env.test"), atomically: true, encoding: .utf8)
-    // Sorted, so `.env.local` is placed first and its arrival is the stop.
-    let placed = worktree.appending(path: ".env.local")
-
-    #expect(throws: WorktreeFileStopped.self) {
-      try WorktreeFiles.place(
-        ".env.*", as: .copy, from: repository, to: worktree,
-        isStopped: { FileManager.default.fileExists(atPath: placed.path) })
-    }
-    #expect(try String(contentsOf: placed, encoding: .utf8) == "one")
-    #expect(!FileManager.default.fileExists(atPath: worktree.appending(path: ".env.test").path))
-  }
-
-  /// Cancel excuses what it stopped, not what had already gone wrong: the
-  /// stage used to be reported finished with the failures thrown away.
-  @Test func aStopCarriesTheFailuresItAlreadyHad() throws {
-    let (repository, worktree) = try directories()
-    try FileManager.default.createDirectory(
-      at: repository.appending(path: "vendor"), withIntermediateDirectories: true)
-    try "dep".write(to: repository.appending(path: "vendor/dep"), atomically: true, encoding: .utf8)
-    try "two".write(to: repository.appending(path: "after.txt"), atomically: true, encoding: .utf8)
-    // A folder linked into the worktree, so writing through it is refused.
-    try WorktreeFiles.place("vendor", as: .link, from: repository, to: worktree)
-
-    // The stop lands after the first path, which is the one that failed.
-    let seen = CallCounter()
-    let stopped = #expect(throws: WorktreeFileStopped.self) {
-      try WorktreeFiles.place(
-        "vendor/dep\nafter.txt", as: .copy, from: repository, to: worktree,
-        isStopped: { seen.next() > 0 })
-    }
-
-    #expect(stopped?.failures.map(\.path) == ["vendor/dep"])
-    #expect(!FileManager.default.fileExists(atPath: worktree.appending(path: "after.txt").path))
-  }
-
   /// A leading `/` or `~` is not a way out: it lands under the repository,
   /// where there is nothing to copy, so it needs no rule of its own.
   @Test func anAbsolutePathOrATildeIsRefusedRatherThanFindingNothing() throws {
@@ -291,13 +250,12 @@ final class WorktreeFilesTests {
     let failure = #expect(throws: WorktreeFileFailure.self) {
       try WorktreeFiles.place(
         "blocked/inner\n~/.aws.json", as: .copy, from: repository, to: worktree,
-        heldToRepository: false)
+        isRepositoryList: false)
     }
     #expect(failure?.failures.map(\.path) == ["blocked/inner"])
     #expect(failure?.skipped == ["~/.aws.json"])
   }
 
-  /// One path that cannot be copied should not cost the rest of the list.
   @Test func everythingCopiableIsCopiedAndTheFailuresAreNamedTogether() throws {
     let (repository, worktree) = try directories()
     try "SECRET=1".write(to: repository.appending(path: ".env"), atomically: true, encoding: .utf8)
@@ -360,7 +318,6 @@ final class WorktreeFilesTests {
     #expect(try FileManager.default.contentsOfDirectory(atPath: worktree.path).isEmpty)
   }
 
-  /// A symlink that stays inside is the ordinary case and is carried whole.
   @Test func aSymlinkThatStaysInsideTheRepositoryIsPlaced() throws {
     let (repository, worktree) = try directories()
     try "SECRET=1".write(
@@ -374,166 +331,7 @@ final class WorktreeFilesTests {
     #expect(try String(contentsOf: worktree.appending(path: ".env"), encoding: .utf8) == "SECRET=1")
   }
 
-  /// A glob may not reach out either: it expands under the repository, and
-  /// each name it finds is judged against the disk like any other.
-  @Test func aGlobCannotExpandOntoSomethingOutsideTheRepository() throws {
-    let (repository, worktree) = try directories()
-    let outside = repository.deletingLastPathComponent().appending(path: "outside")
-    try FileManager.default.createDirectory(at: outside, withIntermediateDirectories: true)
-    try "TOP SECRET".write(to: outside.appending(path: "key"), atomically: true, encoding: .utf8)
-    try "SECRET=1".write(to: repository.appending(path: "a.env"), atomically: true, encoding: .utf8)
-    try FileManager.default.createSymbolicLink(
-      at: repository.appending(path: "b.env"), withDestinationURL: outside.appending(path: "key"))
-
-    let failure = #expect(throws: WorktreeFileFailure.self) {
-      try WorktreeFiles.place("*.env", as: .copy, from: repository, to: worktree)
-    }
-    #expect(failure?.failures.map(\.path) == ["b.env"])
-    #expect(
-      try FileManager.default.contentsOfDirectory(atPath: worktree.path) == ["a.env"],
-      "the one that stayed inside is still placed")
-  }
-
-  @Test func aPatternInAFolderNameExpandsToEachFolderThatMatches() throws {
-    let (repository, worktree) = try directories()
-    for pack in ["pack-a", "pack-b"] {
-      try FileManager.default.createDirectory(
-        at: repository.appending(path: pack), withIntermediateDirectories: true)
-      try "x".write(
-        to: repository.appending(path: "\(pack)/.env"), atomically: true, encoding: .utf8)
-    }
-    #expect(
-      WorktreeFilePattern.expand("pack-?/.env", in: repository) == ["pack-a/.env", "pack-b/.env"])
-
-    try WorktreeFiles.place("pack-*/.env", as: .copy, from: repository, to: worktree)
-    #expect(FileManager.default.fileExists(atPath: worktree.appending(path: "pack-b/.env").path))
-  }
-
-  @Test func copyingBringsEveryFileAPatternMatches() throws {
-    let (repository, worktree) = try directories()
-    try "one".write(to: repository.appending(path: ".env.local"), atomically: true, encoding: .utf8)
-    try "two".write(to: repository.appending(path: ".env.test"), atomically: true, encoding: .utf8)
-    try WorktreeFiles.place(".env.*", as: .copy, from: repository, to: worktree)
-    #expect(
-      try String(contentsOf: worktree.appending(path: ".env.local"), encoding: .utf8) == "one")
-    #expect(try String(contentsOf: worktree.appending(path: ".env.test"), encoding: .utf8) == "two")
-  }
-
-  /// Left behind, the half a Cancel stopped at read as placed: a later
-  /// placement passes over anything already at the destination.
-  @Test func aCancelEndsTheCopyOfALargeDirectoryPartWayAndTakesTheHalfAway() throws {
-    let (repository, worktree) = try directories()
-    let cache = repository.appending(path: "cache")
-    try FileManager.default.createDirectory(at: cache, withIntermediateDirectories: true)
-    for index in 0..<200 {
-      try "x".write(to: cache.appending(path: "f\(index)"), atomically: true, encoding: .utf8)
-    }
-    let asked = CallCounter()
-
-    #expect(throws: WorktreeFileStopped.self) {
-      try WorktreeFiles.place(
-        "cache", as: .copy, from: repository, to: worktree,
-        isStopped: { asked.next() > 20 })
-    }
-
-    #expect(!FileManager.default.fileExists(atPath: worktree.appending(path: "cache").path))
-  }
-
-  @Test func aStopCarriesTheEntriesItAlreadySkipped() throws {
-    let (repository, worktree) = try directories()
-    try "one".write(to: repository.appending(path: ".env"), atomically: true, encoding: .utf8)
-
-    let stopped = #expect(throws: WorktreeFileStopped.self) {
-      try WorktreeFiles.place(
-        "~/.aws.json\n.env", as: .copy, from: repository, to: worktree,
-        heldToRepository: false, isStopped: { true })
-    }
-
-    #expect(stopped?.skipped == ["~/.aws.json"])
-  }
-
-  @Test func aCopiedDirectoryArrivesWholeDownToItsNestedFilesAndLinks() throws {
-    let (repository, worktree) = try directories()
-    let cache = repository.appending(path: "cache/deep/er")
-    try FileManager.default.createDirectory(at: cache, withIntermediateDirectories: true)
-    try "x".write(to: cache.appending(path: "file.txt"), atomically: true, encoding: .utf8)
-    try FileManager.default.createSymbolicLink(
-      atPath: cache.appending(path: "link").path, withDestinationPath: "file.txt")
-
-    try WorktreeFiles.place("cache", as: .copy, from: repository, to: worktree)
-
-    let copied = worktree.appending(path: "cache/deep/er")
-    #expect(try String(contentsOf: copied.appending(path: "file.txt"), encoding: .utf8) == "x")
-    #expect(
-      try FileManager.default.destinationOfSymbolicLink(atPath: copied.appending(path: "link").path)
-        == "file.txt")
-  }
-
-  @Test func aReadOnlyDirectoryIsCopiedWholeAndKeepsItsMode() throws {
-    let (repository, worktree) = try directories()
-    let inner = repository.appending(path: "modules/inner")
-    try FileManager.default.createDirectory(at: inner, withIntermediateDirectories: true)
-    try "x".write(to: inner.appending(path: "file.txt"), atomically: true, encoding: .utf8)
-    let copied = worktree.appending(path: "modules")
-    let readOnly = [inner, repository.appending(path: "modules")]
-    for directory in readOnly {
-      try FileManager.default.setAttributes(
-        [.posixPermissions: 0o555], ofItemAtPath: directory.path)
-    }
-    defer {
-      for directory in readOnly.reversed() + [copied, copied.appending(path: "inner")] {
-        try? FileManager.default.setAttributes(
-          [.posixPermissions: 0o755], ofItemAtPath: directory.path)
-      }
-    }
-
-    try WorktreeFiles.place("modules", as: .copy, from: repository, to: worktree)
-
-    #expect(
-      try String(contentsOf: copied.appending(path: "inner/file.txt"), encoding: .utf8) == "x")
-    for directory in [copied, copied.appending(path: "inner")] {
-      let mode = try FileManager.default.attributesOfItem(atPath: directory.path)[.posixPermissions]
-      #expect(mode as? Int == 0o555)
-    }
-  }
-
-  @Test func aFolderInsideACopiedDirectoryThatCannotBeReadFailsTheEntry() throws {
-    let (repository, worktree) = try directories()
-    let hidden = repository.appending(path: "cache/hidden")
-    try FileManager.default.createDirectory(at: hidden, withIntermediateDirectories: true)
-    try "x".write(to: hidden.appending(path: "file.txt"), atomically: true, encoding: .utf8)
-    try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: hidden.path)
-    defer {
-      try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: hidden.path)
-    }
-
-    let failure = #expect(throws: WorktreeFileFailure.self) {
-      try WorktreeFiles.place("cache", as: .copy, from: repository, to: worktree)
-    }
-    #expect(failure?.failures.map(\.path) == ["cache"])
-    #expect(!FileManager.default.fileExists(atPath: worktree.appending(path: "cache").path))
-  }
-
-  @Test func aFileInsideACopiedDirectoryThatCannotBeReadLeavesNoHalfCopy() throws {
-    let (repository, worktree) = try directories()
-    let config = repository.appending(path: "config")
-    try FileManager.default.createDirectory(at: config, withIntermediateDirectories: true)
-    for name in ["a.yml", "b.yml", "c.yml"] {
-      try "x".write(to: config.appending(path: name), atomically: true, encoding: .utf8)
-    }
-    let locked = config.appending(path: "b.yml")
-    try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: locked.path)
-    defer {
-      try? FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: locked.path)
-    }
-
-    #expect(throws: WorktreeFileFailure.self) {
-      try WorktreeFiles.place("config", as: .copy, from: repository, to: worktree)
-    }
-    #expect(!FileManager.default.fileExists(atPath: worktree.appending(path: "config").path))
-  }
-
-  private func directories() throws -> (repository: URL, worktree: URL) {
+  func directories() throws -> (repository: URL, worktree: URL) {
     let repository = root.appending(path: "repo")
     let worktree = root.appending(path: "tree")
     for url in [repository, worktree] {

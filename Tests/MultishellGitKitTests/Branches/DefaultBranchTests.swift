@@ -7,7 +7,7 @@ import Testing
 struct DefaultBranchTests {
   @Test func theRemoteIsPreferredOverALocalBranchOfTheSameName() {
     let refs = DefaultBranch.candidateRefs(
-      override: nil, originHead: "refs/remotes/origin/main")
+      override: nil, originHeadTarget: "refs/remotes/origin/main")
     #expect(refs.first == "refs/remotes/origin/main")
     #expect(refs.contains("refs/heads/main"))
     #expect(
@@ -16,7 +16,7 @@ struct DefaultBranchTests {
 
   @Test func withoutAnOriginHeadTheUsualNamesAreTriedInOrder() {
     #expect(
-      DefaultBranch.candidateRefs(override: nil, originHead: nil) == [
+      DefaultBranch.candidateRefs(override: nil, originHeadTarget: nil) == [
         "refs/remotes/origin/main", "refs/remotes/origin/master",
         "refs/heads/main", "refs/heads/master",
       ])
@@ -24,12 +24,12 @@ struct DefaultBranchTests {
 
   @Test func anOverrideIsTriedOnTheRemoteThenLocallyAndNothingFallsBackAfterIt() {
     #expect(
-      DefaultBranch.candidateRefs(override: " develop ", originHead: "origin/main") == [
+      DefaultBranch.candidateRefs(override: " develop ", originHeadTarget: "origin/main") == [
         "refs/remotes/origin/develop", "refs/heads/develop", "refs/remotes/develop",
       ])
     // Typed in full, as the caption shows it.
     #expect(
-      DefaultBranch.candidateRefs(override: "upstream/trunk", originHead: nil).contains(
+      DefaultBranch.candidateRefs(override: "upstream/trunk", originHeadTarget: nil).contains(
         "refs/remotes/upstream/trunk"))
   }
 

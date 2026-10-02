@@ -7,10 +7,10 @@ import MultishellCore
 @MainActor
 final class GhosttyControllerOwner {
   private var cachedController: TerminalController?
-  private var pendingTheme: TerminalTheme?
+  private var latestTheme: TerminalTheme?
   /// What the controller was last handed from the user's files, so coming to
   /// the front rereads them and pushes only a change.
-  private var lastUserConfig = ""
+  private var lastConfigBase = ""
   private var activationObserver: (any NSObjectProtocol)?
   /// The generated configs sit in a directory every copy of the build shares,
   /// so a copy that handed over would sweep a running copy's file with its own.
@@ -22,8 +22,8 @@ final class GhosttyControllerOwner {
     let made = TerminalController(configSource: .generated(base))
     GhosttyUserConfig.repair(made, base: base)
     cachedController = made
-    lastUserConfig = base
-    if let pendingTheme { _ = made.setTheme(pendingTheme) }
+    lastConfigBase = base
+    if let latestTheme { _ = made.setTheme(latestTheme) }
     // An edit to the user's file is made in another app, so switching back
     // is when it can have changed.
     activationObserver = NotificationCenter.default.addObserver(
@@ -50,7 +50,7 @@ final class GhosttyControllerOwner {
     // Both slots get the same config: the user picked a theme, so the
     // terminal should not flip with the system appearance.
     let applied = TerminalTheme(light: configuration, dark: configuration)
-    pendingTheme = applied
+    latestTheme = applied
     // Held rather than pushed where there is no controller yet, so a theme
     // at launch does not build one before the socket is claimed.
     guard let cachedController else { return }
@@ -59,7 +59,7 @@ final class GhosttyControllerOwner {
 
   private func reloadUserConfig() {
     guard let cachedController else { return }
-    lastUserConfig = GhosttyUserConfig.reload(cachedController, over: lastUserConfig)
+    lastConfigBase = GhosttyUserConfig.reload(cachedController, over: lastConfigBase)
   }
 
   private static func removeGeneratedConfigs() {

@@ -11,7 +11,7 @@ struct ThemeRGBTests {
     return theme
   }
 
-  @Test func aColourIsThatColour() {
+  @Test func aHexRingReadsAsItsColourWithOrWithoutTheHashAndSpaces() {
     #expect(theme(ring: "#6cc763").focusRingRGB == RGB(red: 0x6c, green: 0xc7, blue: 0x63))
     #expect(theme(ring: " 6cc763 ").focusRingRGB == RGB(red: 0x6c, green: 0xc7, blue: 0x63))
   }

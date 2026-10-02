@@ -1,7 +1,6 @@
 import MultishellCore
 
 extension AppModel {
-  /// The name the user gave this worktree, or `nil` for none.
   public func customName(of worktree: Worktree) -> String? {
     workspace.customName(of: worktree.id)
   }
@@ -17,7 +16,7 @@ extension AppModel {
   public func beginRenamingWorktree(_ worktree: Worktree) {
     guard workspace.worktree(worktree.id) != nil else { return }
     if SidebarFilter(sidebarFilterText).isActive {
-      unfoldWhileFiltering(worktree.projectID)
+      expandWhileFiltering(worktree.projectID)
     } else if let project = workspace.project(worktree.projectID), !project.isExpanded {
       setExpanded(true, for: project)
     }

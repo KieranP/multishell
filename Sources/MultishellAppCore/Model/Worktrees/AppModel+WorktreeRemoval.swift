@@ -77,9 +77,21 @@ extension AppModel {
       changesUnread: changesUnread)
   }
 
-  /// The dialog's answer, trashing or deleting as its message said even if
-  /// the setting changed while it was up.
-  public func confirmWorktreeRemoval(
+  /// The dialog's answer: the index of the button chosen, `nil` for Cancel.
+  /// The task is the removal, when one was chosen.
+  @discardableResult
+  public func answerWorktreeRemoval(
+    _ pending: PendingWorktreeRemoval, choice: Int?
+  ) -> Task<Void, Never>? {
+    pendingWorktreeRemoval = nil
+    guard let choice, pending.choices.indices.contains(choice) else { return nil }
+    let deletesBranch = pending.choices[choice].deletesBranch
+    return Task { await confirmWorktreeRemoval(pending, deletingBranch: deletesBranch) }
+  }
+
+  /// Trashing or deleting as the dialog's message said, even if the setting
+  /// changed while it was up.
+  func confirmWorktreeRemoval(
     _ pending: PendingWorktreeRemoval, deletingBranch: Bool
   ) async {
     await removeWorktree(pending.worktree, deletingBranch: deletingBranch, trashes: pending.trashes)
@@ -104,13 +116,13 @@ extension AppModel {
       !isBusy(worktree.id)
     else { return }
     if renamingWorktreeID == worktree.id { renamingWorktreeID = nil }
-    let effective = withEffectiveSettings(project)
+    let effective = effectiveProject(project)
     let trashes = trashes ?? workspace.trashesRemovedWorktrees
     worktreeOperations.begin(
       .init(WorktreeRemovalStep.first(for: effective), trashes: trashes), on: worktree.id)
     let stopper = ProcessStopper()
-    stageHandles.arm(stopper, on: worktree.id)
-    defer { stageHandles.disarm(worktree.id, ifStillHeldBy: stopper) }
+    stageHandles.holdStopper(stopper, on: worktree.id)
+    defer { stageHandles.releaseStopper(worktree.id, ifStillHeldBy: stopper) }
     do {
       try await coordinator.remove(
         worktree, deletingBranch: deletingBranch, in: effective,
@@ -161,7 +173,7 @@ extension AppModel {
       var presented = PresentedError(title: title, message: message)
       if let retry, case .deleteBranchAnyway(let branch) = retry {
         presented.retry = .init(label: retry.label) { [weak self] in
-          await self?.deleteBranch(branch, of: project, force: true)
+          await self?.forceDeleteBranch(branch, of: project)
         }
       }
       presentedError = presented
@@ -181,10 +193,10 @@ extension AppModel {
   }
 
   /// The branch alone, after a removal that left it behind.
-  private func deleteBranch(_ branch: String, of project: Project, force: Bool) async {
+  private func forceDeleteBranch(_ branch: String, of project: Project) async {
     guard let coordinator else { return }
     do {
-      try await coordinator.deleteBranch(branch, force: force, in: project)
+      try await coordinator.deleteBranch(branch, force: true, in: project)
     } catch {
       present(error)
     }

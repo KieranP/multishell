@@ -8,7 +8,7 @@ struct ProjectWorktreesPage: View {
 
   var body: some View {
     let defaults = model.workspace.worktreeDefaults
-    let effective = model.worktreeSettings(for: project)
+    let effective = model.effectiveWorktreeSettings(for: project)
     let exampleBranch = effective.exampleBranch
 
     Form {

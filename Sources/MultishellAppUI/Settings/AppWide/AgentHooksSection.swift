@@ -13,20 +13,12 @@ struct AgentHooksSection: View {
     Section(t("agents.hooks-section")) {
       ForEach(model.agentHooksRows) { row in
         InfoLabeledContent(t("agents.row-label", row.name), info: row.info) {
-          Text(
-            row.isInstalled
-              ? t("agents.hooks-installed-in", row.displayPath) : t("agents.not-installed")
-          )
-          .foregroundStyle(.secondary)
-          .lineLimit(1)
-          .truncationMode(.head)
-          if row.isInstalled {
-            if row.wantsUpdate {
-              Button(t("action.update")) { model.installAgentHooks(row.id) }
-            }
-            Button(t("action.remove")) { model.removeAgentHooks(row.id) }
-          } else {
-            Button(t("action.add")) { model.installAgentHooks(row.id) }
+          Text(row.statusLabel)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .truncationMode(.head)
+          ForEach(row.actions, id: \.self) { action in
+            actionButton(action, for: row)
           }
           // A popover, not the page: shown inline it added 166 pt a row.
           Button(t("agents.show", row.contentsLabel)) { shownSnippetRowID = row.id }
@@ -36,6 +28,14 @@ struct AgentHooksSection: View {
         }
         .controlSize(.small)
       }
+    }
+  }
+
+  private func actionButton(_ action: AgentHooksRow.Action, for row: AgentHooksRow) -> some View {
+    switch action {
+    case .update: Button(t("action.update")) { model.installAgentHooks(row.id) }
+    case .remove: Button(t("action.remove")) { model.removeAgentHooks(row.id) }
+    case .add: Button(t("action.add")) { model.installAgentHooks(row.id) }
     }
   }
 

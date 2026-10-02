@@ -8,7 +8,6 @@ struct TabStrip: View {
   let model: AppModel
   let group: TabGroup
   let tabs: [TerminalTab]
-  /// Whether this group is the one the keystrokes go to.
   let isFocusedGroup: Bool
   /// What a screen reader says before this strip's tabs; empty for a
   /// worktree with one group. See `AccessibilityText.tabGroup`.
@@ -16,12 +15,8 @@ struct TabStrip: View {
   let theme: Theme
   @Binding var drag: TabDragState
 
-  /// Whether the tab in the air is this group's, in which case it moves as
-  /// the pointer goes and needs no line. Once for the strip, not per tab.
-  private var isShuffling: Bool {
-    guard let dragged = drag.tabID else { return false }
-    return tabs.contains { $0.id == dragged }
-  }
+  /// Once for the strip, not per tab.
+  private var isShuffling: Bool { drag.isShuffling(within: tabs.map(\.id)) }
 
   var body: some View {
     labelledAsGroup(strip)
@@ -46,7 +41,7 @@ struct TabStrip: View {
       // needs no measuring and both halves below read the width alike.
       let width = Double(proxy.size.width)
       let showsSplits = model.metrics.stripShowsSplits(in: width)
-      let available = model.metrics.stripTabRoom(in: width)
+      let available = model.metrics.stripTabsAvailable(in: width)
       let layout = TabStripLayout(
         available: available,
         count: tabs.count,
@@ -66,10 +61,10 @@ struct TabStrip: View {
           ) {
             tabViews(layout)
           }
-          stripButtons(showsSplits)
+          buttons(showsSplits: showsSplits)
         } else {
           HStack(spacing: 0) { tabViews(layout) }
-          stripButtons(showsSplits)
+          buttons(showsSplits: showsSplits)
           Spacer(minLength: 0)
         }
       }
@@ -90,6 +85,12 @@ struct TabStrip: View {
     )
   }
 
+  private func buttons(showsSplits: Bool) -> some View {
+    TabStripButtons(
+      model: model, groupID: group.id, isFocusedGroup: isFocusedGroup,
+      showsSplits: showsSplits, theme: theme)
+  }
+
   @ViewBuilder
   private func tabViews(_ layout: TabStripLayout) -> some View {
     ForEach(tabs) { tab in
@@ -106,49 +107,5 @@ struct TabStrip: View {
       )
       .equatable()
     }
-  }
-
-  /// Each names this group, so a click in one never acts in another.
-  /// Outside the scroller, so a full strip cannot hide them.
-  private func stripButtons(_ showsSplits: Bool) -> some View {
-    HStack(spacing: 0) {
-      NewTabMenu(model: model, groupID: group.id, isFocusedGroup: isFocusedGroup, theme: theme)
-      if showsSplits {
-        // The same family the tab's own icon uses for a split tab.
-        splitButton(.horizontal, symbol: AgentMarkView.splitSymbol)
-        splitButton(.vertical, symbol: "rectangle.split.1x2")
-      }
-    }
-  }
-
-  /// Splits the tab this group shows, whichever group the keyboard is in.
-  private func splitButton(_ axis: SplitAxis, symbol: String) -> some View {
-    Button {
-      model.splitActivePane(axis, in: group.id)
-    } label: {
-      stripIcon(symbol)
-    }
-    .buttonStyle(.plain)
-    .help(help(for: axis))
-    .accessibilityLabel(axis == .horizontal ? t("tab.split-right") : t("tab.split-down"))
-  }
-
-  /// The keystrokes split the focused group, so only that group's buttons
-  /// are what they do.
-  private func help(for axis: SplitAxis) -> String {
-    switch (axis, isFocusedGroup) {
-    case (.horizontal, true): t("tab.split-right-here")
-    case (.horizontal, false): t("tab.split-right-in-group")
-    case (.vertical, true): t("tab.split-down-here")
-    case (.vertical, false): t("tab.split-down-in-group")
-    }
-  }
-
-  private func stripIcon(_ symbol: String) -> some View {
-    Image(systemName: symbol)
-      .font(.system(size: model.metrics.icon, weight: .medium))
-      .foregroundStyle(theme.textSecondary)
-      .frame(width: model.metrics.splitButtonWidth, height: model.metrics.tabHeight)
-      .contentShape(.rect)
   }
 }

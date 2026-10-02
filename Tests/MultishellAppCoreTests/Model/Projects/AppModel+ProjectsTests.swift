@@ -180,19 +180,29 @@ struct AppModelProjectsTests {
     #expect(
       h.model.projectRemovalMessage(for: h.project).contains("1 open terminal will be closed"))
 
-    h.model.pendingProjectRemoval = nil
-    h.model.removeProject(h.project)
+    h.model.answerProjectRemoval(pending, confirmed: true)
+    #expect(h.model.pendingProjectRemoval == nil)
     #expect(h.model.workspace.projects.isEmpty)
     #expect(h.model.liveTerminalCount == 0)
   }
 
-  @Test func selectedProjectFollowsSelectionOrTheOnlyProject() {
+  @Test func eachWindowPresentsOnlyTheProjectRemovalItAskedFor() {
     let h = Harness()
-    #expect(h.model.selectedProject?.id == h.project.id, "one project, nothing selected")
-    h.store.addProject(at: URL(fileURLWithPath: "/other"))
-    #expect(h.model.selectedProject == nil, "two projects, nothing selected")
-    h.model.select(h.feature)
-    #expect(h.model.selectedProject?.id == h.project.id)
+    h.model.requestProjectRemoval(h.project, from: .settings)
+
+    #expect(h.model.pendingProjectRemoval(for: .settings)?.project.id == h.project.id)
+    #expect(h.model.pendingProjectRemoval(for: .workspace) == nil)
+  }
+
+  @Test func cancellingAProjectRemovalTakesTheDialogDownAndKeepsTheProject() throws {
+    let h = Harness()
+    h.model.requestProjectRemoval(h.project, from: .workspace)
+    let pending = try #require(h.model.pendingProjectRemoval)
+
+    h.model.answerProjectRemoval(pending, confirmed: false)
+
+    #expect(h.model.pendingProjectRemoval == nil)
+    #expect(h.model.workspace.projects.count == 1)
   }
 
   @Test func aCancelledDirectoryPickerAddsNothing() async {

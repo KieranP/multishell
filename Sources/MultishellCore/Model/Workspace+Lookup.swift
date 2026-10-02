@@ -43,7 +43,6 @@ extension Workspace {
     return tabs(inGroup: current.groupID).neighbour(of: id, direction)
   }
 
-  /// The name the user gave this worktree, or `nil` where they gave none.
   public func customName(of worktree: Worktree.ID) -> String? {
     worktreeNames[worktree]
   }

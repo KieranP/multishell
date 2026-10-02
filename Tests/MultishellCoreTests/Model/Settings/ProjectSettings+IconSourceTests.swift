@@ -30,11 +30,11 @@ struct ProjectSettingsIconSourceTests {
     #expect(!settings().takesIconFromSharedFile(SharedProjectSettings(iconTint: 16)))
   }
 
-  @Test func noFileGivesNothing() {
+  @Test func withNoSharedFileTheIconIsNeverTheFiles() {
     #expect(!settings().takesIconFromSharedFile(nil))
   }
 
-  @Test func itAgreesWithWhatTheLayeringDraws() {
+  @Test func takingTheFilesIconAgreesWithLayeringInEveryCombination() {
     let glyphs: [String?] = [nil, "star", "🚀", " "]
     let tints: [Int?] = [nil, 3, 16]
     for ownGlyph in glyphs {

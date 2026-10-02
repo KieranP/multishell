@@ -52,6 +52,13 @@ extension AppModel {
     AgentCatalogue.displayName(id)
   }
 
+  /// "New Claude Code Tab", and the typed command by its own name rather
+  /// than as "New Custom command Tab".
+  public func newAgentTabTitle(_ id: String) -> String {
+    id == AgentCatalogue.customID
+      ? t("tab.new-custom-agent") : t("tab.new-named-agent", agentDisplayName(id))
+  }
+
   /// Which agent a pane holds: the one that reported while its process is up,
   /// else the tab's own. Most panes get theirs typed at a shell prompt.
   func agentAtThePrompt(of session: TerminalSession) -> String? {
@@ -86,5 +93,11 @@ extension AppModel {
       ids.append(AgentCatalogue.customID)
     }
     setIfChanged(\.newTabAgentIDs, ids)
+  }
+
+  /// The agent picker's row for the global choice, None where nothing is
+  /// stored. What a project inherits and shows while not overriding it.
+  public var globalAgentID: String {
+    workspace.preferredAgentID ?? AgentCatalogue.noneID
   }
 }

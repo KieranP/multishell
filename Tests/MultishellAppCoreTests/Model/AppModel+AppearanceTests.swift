@@ -7,32 +7,32 @@ import Testing
 struct AppModelAppearanceTests {
   @Test func theSystemRowStoresNoFontNameAndKeepsTheSize() {
     let h = Harness()
-    h.model.setFont(name: "Menlo", size: 15)
-    #expect(h.model.fontPickerID == "Menlo")
+    h.model.setTerminalFont(name: "Menlo", size: 15)
+    #expect(h.model.terminalFontPickerID == "Menlo")
 
-    h.model.setFontName(FontDetection.systemID)
+    h.model.setTerminalFontName(FontDetection.systemID)
 
-    #expect(h.model.workspace.appearance.fontName == nil)
-    #expect(h.model.workspace.appearance.fontSize == 15)
-    #expect(h.model.fontPickerID == FontDetection.systemID)
+    #expect(h.model.workspace.appearance.terminalFontName == nil)
+    #expect(h.model.workspace.appearance.terminalFontSize == 15)
+    #expect(h.model.terminalFontPickerID == FontDetection.systemID)
   }
 
   @Test func aNewTerminalSizeKeepsTheFamily() {
     let h = Harness()
-    h.model.setFont(name: "Menlo", size: 13)
+    h.model.setTerminalFont(name: "Menlo", size: 13)
 
-    h.model.setFontSize(17)
+    h.model.setTerminalFontSize(17)
 
-    #expect(h.model.workspace.appearance.fontName == "Menlo")
-    #expect(h.model.workspace.appearance.fontSize == 17)
+    #expect(h.model.workspace.appearance.terminalFontName == "Menlo")
+    #expect(h.model.workspace.appearance.terminalFontSize == 17)
   }
 
   @Test func theDividerRowChangesNothing() {
     let h = Harness()
-    h.model.setFontName("Menlo")
+    h.model.setTerminalFontName("Menlo")
 
-    h.model.setFontName(DetectionOption.dividerID)
+    h.model.setTerminalFontName(DetectionOption.dividerID)
 
-    #expect(h.model.workspace.appearance.fontName == "Menlo")
+    #expect(h.model.workspace.appearance.terminalFontName == "Menlo")
   }
 }

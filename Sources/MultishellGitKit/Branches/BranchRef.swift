@@ -7,7 +7,7 @@ struct BranchRef: Hashable, Sendable {
   let fullName: String
   let tip: String
   /// The upstream is configured and no longer there: `git`'s `[gone]`.
-  let isUpstreamGone: Bool
+  let upstreamIsGone: Bool
   /// What this ref points at when symbolic, as `refs/remotes/origin/HEAD`
   /// is. Read here so the default branch costs no process of its own.
   let symref: String?
@@ -16,12 +16,12 @@ struct BranchRef: Hashable, Sendable {
   let committedAt: Date?
 
   init(
-    fullName: String, tip: String, isUpstreamGone: Bool = false, symref: String? = nil,
+    fullName: String, tip: String, upstreamIsGone: Bool = false, symref: String? = nil,
     committedAt: Date? = nil
   ) {
     self.fullName = fullName
     self.tip = tip
-    self.isUpstreamGone = isUpstreamGone
+    self.upstreamIsGone = upstreamIsGone
     self.symref = symref
     self.committedAt = committedAt
   }
@@ -29,12 +29,15 @@ struct BranchRef: Hashable, Sendable {
   /// The ref a clone records as the remote's default branch.
   static let originHead = "refs/remotes/origin/HEAD"
 
-  static let localPrefix = "refs/heads/"
-  static let remotePrefix = "refs/remotes/"
+  private static let localPrefix = "refs/heads/"
+  private static let remotePrefix = "refs/remotes/"
 
   /// Full refname: a bare name reaches a tag of that name first, and git's
   /// ambiguity warning goes to stderr, which `runner.output` throws away.
   static func localRef(_ branch: String) -> String { localPrefix + branch }
+
+  /// `origin/main` as a full refname, for the same reason as `localRef`.
+  static func remoteRef(_ branch: String) -> String { remotePrefix + branch }
 
   /// `refs/heads/feat` as `feat`, and any other name as it is.
   static func shortLocalName(_ ref: String) -> String {

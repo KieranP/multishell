@@ -7,8 +7,7 @@ import Testing
 @Suite
 struct ShellLaunchTests {
   private func bashInitThatExists() throws -> URL {
-    let url = URL(fileURLWithPath: NSTemporaryDirectory())
-      .appendingPathComponent("ms-bashinit-\(UUID().uuidString).bash")
+    let url = Scratch.path("bashinit")
     try "".write(to: url, atomically: true, encoding: .utf8)
     return url
   }

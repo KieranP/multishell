@@ -27,13 +27,13 @@ extension AppModel {
         shell: shell, handOver: handOver)
     }
     guard let agent = AgentCatalogue.agent(id) else {
-      reportMissingAgentOnce(id, name: id)
+      alertMissingAgentOnce(id, name: id)
       return nil
     }
     // Until the login shell has answered, detection knows nothing; let the
     // shell say "command not found" in the tab rather than refuse here.
     if loginEnvironment != nil, !agentDetection.isInstalled(id) {
-      reportMissingAgentOnce(id, name: agent.name)
+      alertMissingAgentOnce(id, name: agent.name)
       return nil
     }
     guard let arguments = AgentLaunch.arguments(for: agent, resume: resume) else { return nil }
@@ -47,7 +47,7 @@ extension AppModel {
     guard let worktree = workspace.worktree(worktreeID),
       let project = effectiveProject(of: worktree)
     else { return "" }
-    return workspace.agentFlags(for: project, agent: id)
+    return workspace.effectiveAgentFlags(for: project, agent: id)
   }
 
   /// What `{{branch}}` and the rest stand for here. Empty where the worktree
@@ -62,8 +62,8 @@ extension AppModel {
 
   /// Once per agent per run, like an unreachable project: every relaunch of
   /// a saved tab would otherwise raise it again.
-  private func reportMissingAgentOnce(_ id: String, name: String) {
-    guard reportedMissingAgents.insert(id).inserted else { return }
+  private func alertMissingAgentOnce(_ id: String, name: String) {
+    guard alertedMissingAgentIDs.insert(id).inserted else { return }
     presentedError = .agentNotInstalled(name)
   }
 }

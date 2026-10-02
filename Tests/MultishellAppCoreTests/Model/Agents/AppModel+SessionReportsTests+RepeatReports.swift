@@ -14,9 +14,9 @@ extension AppModelSessionReportsTests {
     let tab = try #require(h.model.workspace.activeTab(in: h.main.id))
     let session = tab.focusedSessionID
     func report() {
-      h.model.apply(
+      h.model.receive(
         SessionStateReport(
-          state: .running, sessionID: session, pid: 4242, agent: AgentCatalogue.claudeID))
+          state: .running, sessionID: session, pid: 4242, agentID: AgentCatalogue.claudeID))
     }
     report()
 
@@ -36,8 +36,8 @@ extension AppModelSessionReportsTests {
     } onChange: {
       wrote.raise()
     }
-    h.model.apply(
-      SessionStateReport(state: .running, sessionID: session, pid: 99, agent: "codex"))
+    h.model.receive(
+      SessionStateReport(state: .running, sessionID: session, pid: 99, agentID: "codex"))
     #expect(wrote.raised, "a different agent still lands")
   }
 }

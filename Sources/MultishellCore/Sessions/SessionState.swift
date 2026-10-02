@@ -17,7 +17,7 @@ public enum SessionState: String, Codable, Hashable, Sendable, CaseIterable {
 
   /// A tab or worktree with several sessions shows the most urgent. A
   /// failure above a question: a question answered still leaves the failure.
-  var urgency: Int {
+  private var urgency: Int {
     switch self {
     case .idle: 0
     case .done: 1

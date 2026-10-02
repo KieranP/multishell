@@ -13,7 +13,7 @@ struct UnixSocketServerTests {
       server.stop()
       Scratch.removeSocket(path)
     }
-    let recorder = LineRecorder()
+    let recorder = Recorder<String>()
     server.onLine = { recorder.record($0) }
     try server.start()
 
@@ -191,7 +191,7 @@ struct UnixSocketServerTests {
       server.stop()
       Scratch.removeSocket(path)
     }
-    let recorder = LineRecorder()
+    let recorder = Recorder<String>()
     server.onLine = { recorder.record($0) }
     try server.start()
     try server.start()
@@ -259,22 +259,6 @@ struct UnixSocketServerTests {
     #expect(FileManager.default.fileExists(atPath: path.path))
   }
 
-  @Test func aClientWithNobodyListeningGetsAnErrorNotAHang() {
-    let path = Scratch.socketPath("srv")
-    do {
-      try UnixSocketClient.send("hello\n", to: path)
-      Issue.record("sent to nobody")
-    } catch let failure as SocketFailure {
-      if case .system(let operation, _) = failure.kind {
-        #expect(operation == "connect")
-      } else {
-        Issue.record("wrong kind: \(failure.kind)")
-      }
-    } catch {
-      Issue.record("wrong error: \(error)")
-    }
-  }
-
   @Test func aClientThatNeverSendsANewlineIsDroppedAtTheCap() async throws {
     let path = Scratch.socketPath("srv")
     let server = UnixSocketServer(path: path)
@@ -282,7 +266,7 @@ struct UnixSocketServerTests {
       server.stop()
       Scratch.removeSocket(path)
     }
-    let recorder = LineRecorder()
+    let recorder = Recorder<String>()
     server.onLine = { recorder.record($0) }
     try server.start()
 

@@ -10,11 +10,11 @@ struct SidebarAgentsRowTests {
 
   @Test func theBoardRowComparesItsCounts() {
     let none = SidebarAgentsRow(
-      counts: [AgentLaneCount(.waiting, 0)], isSelected: false, theme: .multishellDark,
+      counts: [AgentBoardLaneCount(.waiting, 0)], isSelected: false, theme: .multishellDark,
       metrics: metrics,
       select: {})
     let one = SidebarAgentsRow(
-      counts: [AgentLaneCount(.waiting, 1)], isSelected: false, theme: .multishellDark,
+      counts: [AgentBoardLaneCount(.waiting, 1)], isSelected: false, theme: .multishellDark,
       metrics: metrics,
       select: {})
     #expect(none == none)

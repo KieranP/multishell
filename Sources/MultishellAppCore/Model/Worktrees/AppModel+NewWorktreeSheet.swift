@@ -2,6 +2,12 @@ import Foundation
 import MultishellCore
 
 extension AppModel {
+  /// Opens the sheet for `project`, or the one being worked in. With several
+  /// projects and nothing selected the picker starts blank.
+  public func requestNewWorktree(in project: Project? = nil) {
+    newWorktreeRequest = NewWorktreeRequest(projectID: (project ?? projectInView)?.id)
+  }
+
   /// What git refuses to check out a second time in the draft's project, none
   /// while no project is chosen.
   public func checkedOutBranches(for draft: NewWorktreeDraft) -> Set<String> {
@@ -11,7 +17,9 @@ extension AppModel {
   /// The draft's project's effective prefix, shown as fixed text so the user
   /// types only the part that varies.
   public func branchPrefix(for draft: NewWorktreeDraft) -> String {
-    draft.projectID.flatMap(workspace.project).map { worktreeSettings(for: $0).branchPrefix } ?? ""
+    draft.projectID.flatMap(workspace.project).map {
+      effectiveWorktreeSettings(for: $0).branchPrefix
+    } ?? ""
   }
 
   /// Where the sheet's draft would put its worktree, or a dash while there
@@ -19,7 +27,7 @@ extension AppModel {
   public func plannedLocation(for draft: NewWorktreeDraft) -> String {
     let name = draft.trimmedBranch
     guard let project = draft.projectID.flatMap(workspace.project), !name.isEmpty,
-      let url = plannedPath(forBranch: name, createBranch: draft.createBranch, in: project)
+      let url = plannedPath(forBranch: name, createBranch: draft.createsBranch, in: project)
     else { return "\u{2014}" }
     return url.path.abbreviatingHomeDirectory()
   }

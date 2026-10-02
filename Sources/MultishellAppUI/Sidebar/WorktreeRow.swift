@@ -29,10 +29,6 @@ struct WorktreeRow: View {
 
   private var kind: String { AccessibilityText.kind(of: worktree) }
 
-  /// The selected worktree lists its panes under itself, so a count on its
-  /// row would say the same thing twice.
-  private var shownTerminalCount: Int { isSelected ? 0 : terminalCount }
-
   private var height: Double {
     metrics.worktreeRowHeight(hasCustomName: customName != nil, isRenaming: isRenaming)
   }
@@ -42,7 +38,7 @@ struct WorktreeRow: View {
       // Always a dot, grey when nothing is running, and keeping its colour
       // when selected, which is why selection is an outline.
       StateDot(state: state ?? .idle, theme: theme)
-        .frame(width: metrics.icon + 2)
+        .frame(width: metrics.sidebarGlyphColumn)
         .help(t("sidebar.kind-and-state", kind, (state ?? .idle).displayName))
 
       if isRenaming {
@@ -58,7 +54,7 @@ struct WorktreeRow: View {
         isLocked: worktree.isLocked,
         mergeState: mergeState,
         status: status,
-        terminalCount: shownTerminalCount,
+        terminalCount: terminalCount,
         theme: theme,
         metrics: metrics)
     }
@@ -73,7 +69,7 @@ struct WorktreeRow: View {
     .accessibilityLabel(
       AccessibilityText.worktree(
         worktree, customName: customName, state: state, status: status, operation: operation,
-        terminalCount: shownTerminalCount, isSelected: isSelected, mergeState: mergeState)
+        terminalCount: terminalCount, isSelected: isSelected, mergeState: mergeState)
     )
     .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     .accessibilityAction(named: t("action.rename-spoken"), beginRename)

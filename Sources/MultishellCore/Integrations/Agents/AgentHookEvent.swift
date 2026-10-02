@@ -18,7 +18,7 @@ struct AgentHookEvent: Hashable, Sendable {
   let ignoredNotificationTypes: Set<String>
   /// Whether the event moves the dot and says nothing else, for the second
   /// of two events standing for one thing.
-  let silent: Bool
+  let isSilent: Bool
   /// What the event says about the subagent its payload names: its start or
   /// its end. Any other event naming one is a tool call inside it.
   let subagentPhase: SubagentReport.Phase?
@@ -34,7 +34,7 @@ struct AgentHookEvent: Hashable, Sendable {
   init(
     _ name: String, _ state: SessionState, reportedName: String? = nil, matcher: String? = nil,
     ignoredNotificationTypes: Set<String> = [], onlyWhenPrompting: Bool = false,
-    silent: Bool = false, subagentPhase: SubagentReport.Phase? = nil,
+    isSilent: Bool = false, subagentPhase: SubagentReport.Phase? = nil,
     isPrompt: Bool = false, startsSession: Bool = false, timeoutSeconds: Int? = nil
   ) {
     self.name = name
@@ -43,7 +43,7 @@ struct AgentHookEvent: Hashable, Sendable {
     self.matcher = matcher
     self.ignoredNotificationTypes = ignoredNotificationTypes
     self.onlyWhenPrompting = onlyWhenPrompting
-    self.silent = silent
+    self.isSilent = isSilent
     self.subagentPhase = subagentPhase
     self.isPrompt = isPrompt
     self.timeoutSeconds = timeoutSeconds

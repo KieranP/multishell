@@ -38,7 +38,7 @@ struct GeminiSettingsTests {
     }
 
     var wakes: Bool {
-      GeminiSettings.wakesForBackgroundShells(environment: environment, workspace: workspace.path)
+      GeminiSettings.wakesForBackgroundShells(environment: environment, directory: workspace.path)
     }
   }
 
@@ -61,7 +61,7 @@ struct GeminiSettingsTests {
 
     #expect(
       GeminiSettings.wakesForBackgroundShells(
-        environment: environment, workspace: files.workspace.path))
+        environment: environment, directory: files.workspace.path))
   }
 
   @Test func withNoSettingsAShellsEndWakesNothing() {

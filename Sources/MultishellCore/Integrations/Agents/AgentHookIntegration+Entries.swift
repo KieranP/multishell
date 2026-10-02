@@ -1,7 +1,7 @@
 extension AgentHookIntegration {
   /// The hooks as the file spells them: the whole file for one of ours, the
   /// object to merge for a file of the user's.
-  func entries(helper: String = AgentHookCatalogue.helperReference) -> [String: Any] {
+  func entries(helper: String) -> [String: Any] {
     switch format {
     case .userSettingsFile:
       var hooks: [String: Any] = [:]

@@ -20,9 +20,8 @@ public enum ProjectIcon {
   /// A glyph is a symbol name from the palette; anything else is the folder,
   /// a repository's file being free to name one this build cannot draw.
   public static func kind(of glyph: String?) -> Kind {
-    guard let glyph else { return .folder }
-    let trimmed = glyph.trimmingCharacters(in: .whitespacesAndNewlines)
-    return offeredSymbols.contains(trimmed) ? .symbol(trimmed) : .folder
+    guard let name = normalizedGlyph(glyph), offeredSymbols.contains(name) else { return .folder }
+    return .symbol(name)
   }
 
   /// The glyph as a symbol name, or `nil`. A name this build lacks is still

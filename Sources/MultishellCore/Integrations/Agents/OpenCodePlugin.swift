@@ -1,7 +1,7 @@
 /// The plugin OpenCode is given, since it runs no hook command. Here and not
 /// in `Resources`, which the helper cannot reach; see Docs/design/agents.md.
 enum OpenCodePlugin {
-  static func source(helper: String = AgentHookCatalogue.helperReference) -> String {
+  static func source(helper: String) -> String {
     """
     // Written by Multishell so its tabs can show what a session is doing.
     // Remove it from Settings > Agents, or delete this file.

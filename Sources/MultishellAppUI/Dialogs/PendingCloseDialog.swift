@@ -13,8 +13,7 @@ extension View {
         choices: [pending.buttonLabel],
         cancel: t("action.cancel"))
     } answer: { _, choice in
-      // `confirmPendingClose` reads the pending close and clears it itself.
-      if choice == nil { model.pendingClose = nil } else { model.confirmPendingClose() }
+      model.answerPendingClose(confirmed: choice != nil)
     }
   }
 }

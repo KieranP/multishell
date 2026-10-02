@@ -36,8 +36,7 @@ public final class SessionReconciler {
     host.delegate = self
   }
 
-  /// Sessions the host has a live process for.
-  public var liveSessionIDs: Set<TerminalSession.ID> { host.openSessionIDs }
+  public var liveSessionIDs: Set<TerminalSession.ID> { host.liveSessionIDs }
 
   /// Opens sessions the host is missing and closes ones it should not have.
   /// `shouldBeLive` keeps restored tabs cold; failures stay in the store.
@@ -48,7 +47,7 @@ public final class SessionReconciler {
   ) -> [Failure] {
     let wanted = store.workspace.sessions.filter(shouldBeLive)
     let wantedIDs = Set(wanted.map(\.id))
-    let open = host.openSessionIDs
+    let open = host.liveSessionIDs
 
     for id in open.subtracting(wantedIDs) {
       host.close(id)

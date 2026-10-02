@@ -4,10 +4,8 @@ import MultishellCore
 extension AppModel {
   /// Every live pane, flattened into a card.
   var agentBoardCards: [AgentBoardCard] {
-    let projectNames = Dictionary(
-      workspace.projects.map { ($0.id, $0.name) }, uniquingKeysWith: { first, _ in first })
-    let worktreesByID = Dictionary(
-      workspace.worktrees.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+    let projectNames = workspace.projects.keyedByID().mapValues(\.name)
+    let worktreesByID = workspace.worktrees.keyedByID()
     var tabsBySession: [TerminalSession.ID: (tab: TerminalTab, position: PanePosition?)] =
       [:]
     for tab in workspace.tabs {
@@ -72,9 +70,9 @@ extension AppModel {
 
   /// The counts the sidebar entry carries, in the order it draws them; see
   /// `AgentBoardLane.sidebarLanes`.
-  public var agentSidebarCounts: [AgentLaneCount] {
+  public var agentSidebarCounts: [AgentBoardLaneCount] {
     let counts = agentLaneCounts
-    return AgentBoardLane.sidebarLanes.map { AgentLaneCount($0, counts[$0] ?? 0) }
+    return AgentBoardLane.sidebarLanes.map { AgentBoardLaneCount($0, counts[$0] ?? 0) }
   }
 
   /// Who is at the prompt, by name.
@@ -118,7 +116,7 @@ extension AppModel {
 
   /// A click on a card: turn to its pane and leave the board. The card stays,
   /// moving to Idle if what was shown was a Done.
-  public func open(_ card: AgentBoardCard) {
+  public func show(_ card: AgentBoardCard) {
     guard let tab = workspace.tab(card.tabID), let worktree = workspace.worktree(card.worktreeID)
     else { return }
     // The board is left by `select`, and only once it agrees to go: a

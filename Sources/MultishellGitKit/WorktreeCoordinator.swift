@@ -12,8 +12,8 @@ public struct WorktreeCoordinator: Sendable {
     self.git = git
   }
 
-  /// The git on the process's own PATH, which from the Finder is the system
-  /// directories alone; `resolved(searchPath:)` replaces it once the login shell's is known.
+  /// The git on the process's own PATH, which from the Finder is the system directories
+  /// alone; `resolved(searchPath:replacing:)` replaces it once the login shell's is known.
   public init() throws {
     self.init(git: WorktreeGit(runner: try GitRunner()))
   }
@@ -21,7 +21,7 @@ public struct WorktreeCoordinator: Sendable {
   /// The git on `searchPath`, the login shell's PATH, past Apple's git shim to the git it
   /// would run. Async, as it may ask xcrun; for the login environment's capture, not launch.
   public static func resolved(
-    searchPath: String?, replacing previous: WorktreeCoordinator? = nil
+    searchPath: String?, replacing previous: WorktreeCoordinator?
   ) async throws -> WorktreeCoordinator {
     let executable = await GitExecutable.resolve(
       searchPath: searchPath,

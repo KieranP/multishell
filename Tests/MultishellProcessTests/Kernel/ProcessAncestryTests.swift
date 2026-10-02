@@ -10,7 +10,7 @@ struct ProcessAncestryTests {
     // The walk through real shells is covered end to end in the helper's
     // tests, where two `sh -c` layers stand between it and the runner.
     let me = ProcessInfo.processInfo.processIdentifier
-    #expect(ProcessAncestry.reportingProcess(startingAt: me) == me)
+    #expect(ProcessAncestry.reportingPID(startingAt: me) == me)
   }
 
   /// From a prompt in one of the app's own tabs nothing between the shell
@@ -24,8 +24,8 @@ struct ProcessAncestryTests {
     defer { shell.terminate() }
     let me = ProcessInfo.processInfo.processIdentifier
     let under = shell.processIdentifier
-    #expect(ProcessAncestry.reportingProcess(startingAt: under) == me, "the walk as it was")
-    #expect(ProcessAncestry.reportingProcess(startingAt: under, stoppingAt: me) == under)
+    #expect(ProcessAncestry.reportingPID(startingAt: under) == me, "the walk as it was")
+    #expect(ProcessAncestry.reportingPID(startingAt: under, stoppingAt: me) == under)
   }
 
   /// Failed once in a full run with the marked child unlisted, for a reason

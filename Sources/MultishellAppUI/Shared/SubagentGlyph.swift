@@ -7,6 +7,6 @@ struct SubagentGlyph: View {
 
   var body: some View {
     Image(systemName: "arrow.triangle.branch")
-      .font(.system(size: metrics.badge - 1, weight: .semibold))
+      .font(.system(size: metrics.small, weight: .semibold))
   }
 }

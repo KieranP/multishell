@@ -17,7 +17,7 @@ struct AgentHookIntegrationEntriesTests: AgentHookFixtures {
     #expect(snippet.contains("\"timeout\" : 5"))
   }
 
-  @Test func codexIsGivenNoTimeoutItWouldClampAndWarnAbout() throws {
+  @Test func codexsInterruptAndSessionEndGetThreeSecondsAndTheRestFive() throws {
     let hooks = try #require(
       AgentHookCatalogue.codex.entries(helper: helper)["hooks"] as? [String: Any])
     func timeout(_ event: String) -> Int? {

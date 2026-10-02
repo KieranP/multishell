@@ -6,8 +6,8 @@ import Synchronization
 public final class ProcessStopper: Sendable {
   private struct State {
     var child: RunningChild?
-    var pending: ProcessStop?
-    var applied: ProcessStop?
+    var pending: ProcessStopReason?
+    var applied: ProcessStopReason?
     var appliedTo: RunningChild?
   }
 
@@ -21,7 +21,7 @@ public final class ProcessStopper: Sendable {
 
   /// The reason this stopper ended the child it was attached to, once it
   /// has; `nil` while the child runs or after it exited on its own.
-  var appliedStop: ProcessStop? {
+  var appliedStop: ProcessStopReason? {
     state.withLock { $0.applied }
   }
 
@@ -31,7 +31,7 @@ public final class ProcessStopper: Sendable {
     state.withLock { $0.pending != nil || $0.applied != nil }
   }
 
-  func stop(_ reason: ProcessStop) {
+  func stop(_ reason: ProcessStopReason) {
     state.withLock { state in
       // Kept for the next child: a timeout standing here may yet be withdrawn.
       guard state.applied == nil else {

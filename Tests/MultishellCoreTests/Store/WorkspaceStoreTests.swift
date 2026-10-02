@@ -17,21 +17,6 @@ struct WorkspaceStoreTests {
     #expect(store.workspace.projects[0].id == "/repos/demo")
   }
 
-  /// Identity reads the stored path, so every way in must normalise it.
-  @Test func everySpellingOfADirectoryGivesTheSameIdentity() throws {
-    let spellings = ["/repos/demo", "/repos/demo/", "/repos/x/../demo", "/repos/./demo//"]
-    let projects = spellings.map { Project(path: URL(fileURLWithPath: $0)) }
-    #expect(Set(projects.map(\.id)) == ["/repos/demo"])
-    let worktrees = spellings.map {
-      Worktree(path: URL(fileURLWithPath: $0), projectID: "/p", head: "h")
-    }
-    #expect(Set(worktrees.map(\.id)) == ["/repos/demo"])
-
-    let decoded = try JSONDecoder().decode(
-      Project.self, from: Data(#"{ "path": "file:///repos/x/../demo" }"#.utf8))
-    #expect(decoded.id == "/repos/demo")
-  }
-
   @Test func removingAProjectDropsItsWorktreesTabsAndSessions() {
     let (store, project, worktree) = demoStore()
     store.openTab(in: worktree.id)
@@ -76,6 +61,15 @@ struct WorkspaceStoreTests {
     #expect(store.workspace.worktreeNames.isEmpty)
   }
 
+  @Test func selectingAWorktreeThatIsGoneIsIgnored() {
+    let (store, _, worktree) = demoStore()
+    store.selectWorktree(worktree.id)
+    store.selectWorktree("/repos/vanished")
+    #expect(store.workspace.selectedWorktreeID == worktree.id)
+    store.selectWorktree(nil)
+    #expect(store.workspace.selectedWorktreeID == nil)
+  }
+
   /// The name is the user's, but it belongs to a directory that no longer
   /// exists; leaving it would put it back on whatever is made there next.
   @Test func aRemovedWorktreeLeavesNoNameBehind() {
@@ -101,67 +95,6 @@ struct WorkspaceStoreTests {
     #expect(store.workspace.activeTab(in: worktree.id)?.id == first.id)
   }
 
-  @Test func aTabMovedToAnotherWorktreeTakesItsPanesAndLandsLast() {
-    let (store, project, main) = demoStore()
-    let feature = Worktree(
-      path: main.path.appendingPathComponent("feature"), projectID: project.id, head: "b",
-      branch: "feature")
-    store.replaceWorktrees([main, feature], forProject: project.id)
-    let settled = store.openTab(in: feature.id)!
-    let moving = store.openTab(in: main.id)!
-    store.splitFocusedPane(of: moving.id, axis: .vertical)
-
-    #expect(store.moveTab(moving.id, toWorktree: feature.id))
-
-    #expect(store.workspace.tab(moving.id)?.worktreeID == feature.id)
-    #expect(store.workspace.tabs(in: feature.id).map(\.id) == [settled.id, moving.id])
-    #expect(store.workspace.tabs(in: main.id).isEmpty)
-    #expect(store.workspace.sessions(in: feature.id).count == 3, "both panes came along")
-    #expect(store.workspace.sessions(in: main.id).isEmpty)
-    #expect(store.workspace.activeTab(in: feature.id)?.id == moving.id)
-  }
-
-  /// The panes' shell is resolved from the worktree, so a tab left on the old directory
-  /// would open one project's shell in another project's checkout on the next launch.
-  @Test func aMovedTabsPanesStartInTheWorktreeItLandedIn() {
-    let (store, project, main) = demoStore()
-    let feature = Worktree(
-      path: main.path.appendingPathComponent("feature"), projectID: project.id, head: "b",
-      branch: "feature")
-    store.replaceWorktrees([main, feature], forProject: project.id)
-    let tab = store.openTab(in: main.id)!
-
-    store.moveTab(tab.id, toWorktree: feature.id)
-
-    #expect(store.workspace.session(tab.focusedSessionID)?.workingDirectory == feature.path)
-  }
-
-  @Test func theWorktreeATabLeavesFallsBackToItsLastTab() {
-    let (store, project, main) = demoStore()
-    let feature = Worktree(
-      path: main.path.appendingPathComponent("feature"), projectID: project.id, head: "b",
-      branch: "feature")
-    store.replaceWorktrees([main, feature], forProject: project.id)
-    let first = store.openTab(in: main.id)!
-    let second = store.openTab(in: main.id)!
-
-    store.moveTab(second.id, toWorktree: feature.id)
-    #expect(store.workspace.activeTab(in: main.id)?.id == first.id)
-
-    store.moveTab(first.id, toWorktree: feature.id)
-    #expect(store.workspace.activeTab(in: main.id)?.id == nil, "no tabs, no active one")
-  }
-
-  @Test func aTabIsNotMovedToAWorktreeThatCannotTakeIt() {
-    let (store, _, worktree) = demoStore()
-    let tab = store.openTab(in: worktree.id)!
-
-    #expect(store.moveTab(tab.id, toWorktree: "/repos/nowhere") == false)
-    #expect(store.moveTab(tab.id, toWorktree: worktree.id) == false, "already there")
-    #expect(store.moveTab(UUID(), toWorktree: worktree.id) == false, "no such tab")
-    #expect(store.workspace.tab(tab.id)?.worktreeID == worktree.id)
-  }
-
   @Test func sessionsInheritTheWorktreeDirectory() {
     let (store, _, worktree) = demoStore()
     let tab = store.openTab(in: worktree.id)!
@@ -174,40 +107,6 @@ struct WorkspaceStoreTests {
     #expect(store.openTab(in: "/nowhere") == nil)
   }
 
-  @Test func closingTheLastPaneClosesItsTab() {
-    let (store, _, worktree) = demoStore()
-    let tab = store.openTab(in: worktree.id)!
-
-    store.closeSession(tab.focusedSessionID)
-
-    #expect(store.workspace.tabs.isEmpty)
-    #expect(store.workspace.sessions.isEmpty)
-  }
-
-  @Test func closingOneSideOfASplitKeepsTheTab() {
-    let (store, _, worktree) = demoStore()
-    let tab = store.openTab(in: worktree.id)!
-    let original = tab.focusedSessionID
-    let added = store.splitFocusedPane(of: tab.id, axis: .vertical)!
-
-    store.closeSession(added.id)
-
-    let survivor = store.workspace.tab(tab.id)
-    #expect(survivor?.root == .terminal(original))
-    #expect(survivor?.focusedSessionID == original)
-    #expect(store.workspace.sessions.count == 1)
-  }
-
-  @Test func splittingAddsAPaneToTheSameTab() {
-    let (store, _, worktree) = demoStore()
-    let tab = store.openTab(in: worktree.id)!
-    store.splitFocusedPane(of: tab.id, axis: .horizontal)
-
-    #expect(store.workspace.tabs.count == 1)
-    #expect(store.workspace.tab(tab.id)?.sessionIDs.count == 2)
-    #expect(store.workspace.tab(tab.id)?.isSplit == true)
-  }
-
   /// The settings field writes on every keystroke, so the space between two
   /// flags has to survive being typed; only an empty line drops the entry.
   @Test func storingFlagsKeepsWhatWasTypedAndClearingRemovesTheEntry() {
@@ -218,5 +117,19 @@ struct WorkspaceStoreTests {
     #expect(store.workspace.agentFlags["claude"] == " ", "a space is a flag half typed")
     store.setAgentFlags("", for: "claude")
     #expect(store.workspace.agentFlags["claude"] == nil, "cleared, so nothing is left behind")
+  }
+
+  @Test func unknownIDsAreIgnored() {
+    let (store, _, worktree) = demoStore()
+    store.openTab(in: worktree.id)
+    let before = store.workspace
+
+    store.closeSession(UUID())
+    store.closeTab(UUID())
+    store.activateTab(UUID())
+    store.setCustomTitle("x", forTab: UUID())
+    store.setSplitWeights([1], at: [0], ofTab: UUID())
+
+    #expect(store.workspace == before)
   }
 }

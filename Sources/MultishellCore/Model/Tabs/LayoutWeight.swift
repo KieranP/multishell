@@ -1,7 +1,7 @@
 /// A split's or a group's relative share. Zero, or one that is not a
 /// number, is a pane nothing can be laid out in.
 enum LayoutWeight {
-  static func isUsable(_ weight: Double) -> Bool {
+  private static func isUsable(_ weight: Double) -> Bool {
     weight.isFinite && weight > 0
   }
 

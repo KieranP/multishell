@@ -21,7 +21,7 @@ struct WorktreeOperationView: View {
           .foregroundStyle(theme.failureColor)
       }
     } extra: {
-      if operation.isRunning, let help = operation.step.cancelHelp {
+      if operation.isRunning, let help = operation.stage.cancelHelp {
         Button(t("action.cancel"), action: cancel)
           .padding(.top, 18)
           .help(help)

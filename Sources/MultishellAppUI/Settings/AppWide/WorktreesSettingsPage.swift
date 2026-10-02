@@ -2,8 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Settings > Worktrees, every row overridable per project but the git status
-/// indicator. Sort order is not here: the sidebar's own menu holds it.
+/// Settings > Worktrees. A project overrides the path and branch prefix; the
+/// rest apply to all. Sort order is not here: the sidebar's own menu holds it.
 struct WorktreesSettingsPage: View {
   let model: AppModel
 

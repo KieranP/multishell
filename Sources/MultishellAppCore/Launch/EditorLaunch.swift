@@ -6,7 +6,6 @@ import MultishellProcess
 /// view and the model so it can be tested.
 enum EditorLaunch {
   enum Action: Equatable {
-    /// Hand the directory to the application.
     case openApplication(URL)
     /// Run the editor's command line shim through the login shell, in the
     /// background: the application it starts is what the user sees.

@@ -19,7 +19,7 @@ public enum WorktreeHooks {
     let environment = HookVariable.environment(
       project: project, worktreePath: worktreePath, branch: branch)
     let directory = await offMain {
-      Self.directory(stage, project: project, worktreePath: worktreePath)
+      Self.workingDirectory(for: stage, project: project, worktreePath: worktreePath)
     }
     do {
       _ = try await ShellCommand.runScript(
@@ -37,20 +37,13 @@ public enum WorktreeHooks {
   }
 
   private static func trimmedScript(_ stage: HookStage, in settings: ProjectSettings) -> String {
-    let script =
-      switch stage {
-      case .preCreate: settings.preCreateHook
-      case .postCreate: settings.postCreateHook
-      case .preDelete: settings.preDeleteHook
-      case .postDelete: settings.postDeleteHook
-      }
-    return script.trimmingCharacters(in: .whitespacesAndNewlines)
+    stage.script(in: settings).trimmingCharacters(in: .whitespacesAndNewlines)
   }
 
   /// In the worktree where it exists at that stage, in the repository where
   /// it does not; see Docs/design/hooks.md.
-  private static func directory(
-    _ stage: HookStage, project: Project, worktreePath: URL
+  private static func workingDirectory(
+    for stage: HookStage, project: Project, worktreePath: URL
   ) -> URL {
     switch stage {
     case .preCreate, .postDelete: project.path

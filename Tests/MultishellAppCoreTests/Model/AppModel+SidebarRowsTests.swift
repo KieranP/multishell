@@ -17,7 +17,7 @@ struct AppModelSidebarRowsTests {
 
     #expect(panes.map(\.id) == tab.sessionIDs)
     #expect(panes.map(\.isFocused) == tab.sessionIDs.map { $0 == tab.focusedSessionID })
-    #expect(panes.map(\.position?.index) == [1, 2])
+    #expect(panes.map(\.position?.number) == [1, 2])
   }
 
   @Test func aTabListingASessionThatIsGoneGivesItsWorktreeOnlyThePanesItHas() throws {
@@ -37,6 +37,18 @@ struct AppModelSidebarRowsTests {
     model.select(h.main, openingFirstTab: .never)
 
     #expect(model.sidebarWorktree(h.main).panes.map(\.id) == [session])
+  }
+
+  @Test func aProjectsRowShowsItsWorktreesStateOnlyWhileTheyAreCollapsed() {
+    let h = Harness()
+    h.model.select(h.main)
+    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    h.stateSource.send(SessionStateReport(state: .attention, sessionID: tab.focusedSessionID))
+    let sessions = h.model.sessionIDsByWorktree
+
+    #expect(
+      h.model.projectRowState(h.project.id, isExpanded: false, sessions: sessions) == .attention)
+    #expect(h.model.projectRowState(h.project.id, isExpanded: true, sessions: sessions) == nil)
   }
 
   @Test func aWorktreesRowSaysWhetherItIsNamedOrBeingRenamed() {

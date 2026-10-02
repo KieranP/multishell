@@ -7,7 +7,7 @@ struct CopyButton: View {
   let model: AppModel
   let text: String
 
-  @State private var copied = false
+  @State private var showsCopiedTick = false
 
   init(_ text: String, model: AppModel) {
     self.text = text
@@ -16,7 +16,7 @@ struct CopyButton: View {
 
   var body: some View {
     PlainGlyphButton(help: t("action.copy-value", text), action: copy) {
-      Image(systemName: copied ? "checkmark" : "doc.on.doc")
+      Image(systemName: showsCopiedTick ? "checkmark" : "doc.on.doc")
         .foregroundStyle(.secondary)
         .frame(width: 20, height: 20)
     }
@@ -24,10 +24,10 @@ struct CopyButton: View {
 
   private func copy() {
     model.copyToClipboard(text)
-    copied = true
+    showsCopiedTick = true
     Task {
       try? await Task.sleep(for: .seconds(1.2))
-      copied = false
+      showsCopiedTick = false
     }
   }
 }

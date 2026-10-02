@@ -7,7 +7,7 @@ import Testing
 
 @Suite @MainActor
 struct ViewSegmentedAcrossRowTests {
-  @Test func theSettingsPartPickersSpanTheirPage() {
+  @Test func theSettingsSplitPagePickersSpanTheirPage() {
     let harness = ModelHarness()
     let pages: [(String, AnyView)] = [
       ("Agents", AnyView(AgentsSettingsPage(model: harness.model, part: .agent))),

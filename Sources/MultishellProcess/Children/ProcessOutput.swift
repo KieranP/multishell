@@ -4,10 +4,10 @@ public struct ProcessOutput: Sendable {
   public let status: Int32
   /// Set when this side ended the child: the timeout ran out, or the
   /// caller's `ProcessStopper` was used. `status` is then the signal's.
-  public let stop: ProcessStop?
+  public let stop: ProcessStopReason?
 
   init(
-    standardOutput: String, standardError: String, status: Int32, stop: ProcessStop? = nil
+    standardOutput: String, standardError: String, status: Int32, stop: ProcessStopReason?
   ) {
     self.standardOutput = standardOutput
     self.standardError = standardError

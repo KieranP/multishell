@@ -1,8 +1,8 @@
 import SwiftUI
 
 extension View {
-  /// Attaches both halves of a shortcut's contract: the menu item's
-  /// equivalent here, and the surface's unbind through `AppShortcutCatalogue`.
+  /// The menu item's key equivalent. The surface's unbind is the other half,
+  /// and comes from the shortcut's place in `AppShortcutCatalogue.all`.
   func keyboardShortcut(_ shortcut: AppShortcut) -> some View {
     keyboardShortcut(shortcut.key, modifiers: shortcut.modifiers)
   }

@@ -18,16 +18,17 @@ extension AppModel {
     requestClose(.tab(id), in: tab)
   }
 
-  /// The confirmed half of a close that found a working agent.
-  public func confirmPendingClose() {
+  /// The dialog's answer to a close that found a working agent: the close
+  /// goes either way, and only a confirmation performs it.
+  public func answerPendingClose(confirmed: Bool) {
     guard let pending = pendingClose else { return }
     pendingClose = nil
-    perform(pending)
+    if confirmed { perform(pending) }
   }
 
   /// A close or a name field whose subject has gone has nothing left to ask.
   /// Run from the reconcile, so every path that takes one away is covered.
-  func pruneTabPrompts() {
+  func pruneTabCloseAndRename() {
     switch pendingClose {
     case .pane(let id) where workspace.session(id) == nil: pendingClose = nil
     case .tab(let id) where workspace.tab(id) == nil: pendingClose = nil

@@ -16,6 +16,9 @@ extension SharedProjectSettings {
     func flag(_ key: CodingKeys) -> Bool? {
       container.decodeTolerantly(Bool.self, forKey: key)
     }
+    // An order a newer build named, or a typo someone committed, costs
+    // the key and leaves the user's own choice in force.
+    let sortOrder = container.decodeTolerantly(WorktreeSortOrder.self, forKey: .worktreeSortOrder)
     self.init(
       worktreeDirectory: string(.worktreeDirectory),
       branchPrefix: string(.branchPrefix),
@@ -30,10 +33,7 @@ extension SharedProjectSettings {
       postDeleteHook: string(.postDeleteHook),
       linkedPaths: string(.linkedPaths),
       copiedPaths: string(.copiedPaths),
-      // An order a newer build named, or a typo someone committed, costs
-      // the key and leaves the user's own choice in force.
-      worktreeSortOrder: container.decodeTolerantly(
-        WorktreeSortOrder.self, forKey: .worktreeSortOrder),
+      worktreeSortOrder: sortOrder,
       showsActiveWorktreesFirst: flag(.showsActiveWorktreesFirst),
       iconGlyph: string(.iconGlyph),
       iconTint: container.decodeTolerantly(Int.self, forKey: .iconTint))

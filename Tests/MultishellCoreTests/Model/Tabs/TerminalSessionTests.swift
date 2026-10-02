@@ -19,7 +19,7 @@ struct TerminalSessionTests {
       shellOverride: "/bin/bash")
     let json = String(decoding: try JSONEncoder().encode(session), as: UTF8.self)
     #expect(!json.contains("/bin/bash"))
-    let restored = try JSONDecoder().decode(TerminalSession.self, from: Data(json.utf8))
+    let restored = try decodeJSON(TerminalSession.self, json)
     #expect(restored.shellOverride == nil, "a relaunched tab reads the setting again")
     #expect(restored.shellPath == ShellCatalogue.loginShellPath())
   }

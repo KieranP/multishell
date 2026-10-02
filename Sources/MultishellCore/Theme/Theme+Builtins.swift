@@ -1,6 +1,8 @@
 extension Theme {
   public static let builtins: [Theme] = [.multishellDark, .multishellLight]
 
+  /// Its focus ring is its own blue: the selection colour is mixed to sit
+  /// under text, and reads as a smudge as a one-point line.
   static let multishellDark = Theme(
     id: "multishell.dark",
     name: "Multishell Dark",
@@ -15,8 +17,6 @@ extension Theme {
       "#4a4a52", "#ff8b82", "#8fdb87", "#f0d49b",
       "#7fbdff", "#d191f5", "#8fe0ff", "#f2f2f5",
     ],
-    // The theme's own blue rather than its selection colour, which is
-    // mixed to sit under text and reads as a smudge as a one-point line.
     focusRing: "#5aa9f8",
     inactivePaneOpacity: 0.8
   )

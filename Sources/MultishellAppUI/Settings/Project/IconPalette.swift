@@ -10,7 +10,7 @@ struct IconPalette: View {
   let choose: (String?) -> Void
 
   @State private var highlighted: String?
-  @FocusState private var gridFocused: Bool
+  @FocusState private var isGridFocused: Bool
 
   private static let columns = 10
   private static let cellSize: Double = 26
@@ -20,15 +20,15 @@ struct IconPalette: View {
     return ScrollViewReader { proxy in
       VStack(spacing: 6) {
         grid(groups, proxy: proxy)
-        jumps(groups, proxy: proxy)
+        IconPaletteGroupBar(groups: groups) { proxy.scrollTo(Self.headerID($0), anchor: .top) }
       }
       .onAppear {
-        highlighted = chosen
+        highlighted = currentSymbol
         // A frame later: the grid is lazy, so neither the cell nor the
         // ring's own row exists during the first layout pass.
         Task {
-          gridFocused = true
-          proxy.scrollTo(chosen, anchor: .center)
+          isGridFocused = true
+          proxy.scrollTo(currentSymbol, anchor: .center)
         }
       }
     }
@@ -45,7 +45,12 @@ struct IconPalette: View {
       ) {
         ForEach(groups, id: \.name) { group in
           Section {
-            ForEach(group.symbols, id: \.self) { cell($0) }
+            ForEach(group.symbols, id: \.self) { name in
+              IconPaletteCell(
+                name: name, isCurrent: name == currentSymbol,
+                isHighlighted: highlighted == name && isGridFocused, size: Self.cellSize,
+                pick: { pick(name) })
+            }
           } header: {
             header(group.name).id(Self.headerID(group.name))
           }
@@ -58,41 +63,12 @@ struct IconPalette: View {
     }
     .focusable()
     .focusEffectDisabled()
-    .focused($gridFocused)
+    .focused($isGridFocused)
     .onKeyPress(.leftArrow) { walk(.left, through: groups, proxy: proxy) }
     .onKeyPress(.rightArrow) { walk(.right, through: groups, proxy: proxy) }
     .onKeyPress(.upArrow) { walk(.up, through: groups, proxy: proxy) }
     .onKeyPress(.downArrow) { walk(.down, through: groups, proxy: proxy) }
     .onKeyPress(.return) { pickHighlighted() }
-  }
-
-  /// One button per group, its first symbol standing for it, as the emoji
-  /// picker's categories do.
-  private func jumps(_ groups: [ProjectIcon.Group], proxy: ScrollViewProxy) -> some View {
-    VStack(spacing: 0) {
-      Divider()
-      HStack(spacing: 0) {
-        ForEach(groups, id: \.name) { group in
-          Button {
-            proxy.scrollTo(Self.headerID(group.name), anchor: .top)
-          } label: {
-            Image(systemName: group.symbols.first ?? "square")
-              .font(.system(size: 11))
-              .foregroundStyle(.secondary)
-              // Shared width, not a fixed one: a fifteenth group would
-              // otherwise run off the edge of the popover unnoticed.
-              .frame(maxWidth: .infinity, minHeight: 20)
-              .contentShape(.rect)
-          }
-          .buttonStyle(.plain)
-          .help(group.name)
-          .accessibilityLabel(group.name)
-        }
-      }
-      .padding(.horizontal, 8)
-      .padding(.top, 4)
-      .padding(.bottom, 6)
-    }
   }
 
   private static func headerID(_ group: String) -> String { "header." + group }
@@ -104,28 +80,6 @@ struct IconPalette: View {
       .frame(maxWidth: .infinity, alignment: .leading)
       .padding(.vertical, 3)
       .background(.regularMaterial)
-  }
-
-  private func cell(_ name: String) -> some View {
-    let selected = chosen == name
-    return Button {
-      pick(name)
-    } label: {
-      Image(systemName: name)
-        .font(.system(size: 14))
-        .foregroundStyle(selected ? Color.white : Color.primary)
-        .frame(width: Self.cellSize, height: Self.cellSize)
-        .background(selected ? Color.accentColor : .clear, in: RoundedRectangle(cornerRadius: 5))
-        .overlay {
-          if highlighted == name, gridFocused {
-            RoundedRectangle(cornerRadius: 5).strokeBorder(Color.accentColor, lineWidth: 2)
-          }
-        }
-        .contentShape(.rect)
-    }
-    .buttonStyle(.plain)
-    .help(name)
-    .accessibilityLabel(name)
   }
 
   /// Return picks what the ring is on, and is left alone when there is no
@@ -158,5 +112,5 @@ struct IconPalette: View {
     return .handled
   }
 
-  private var chosen: String { kind.symbolName }
+  private var currentSymbol: String { kind.symbolName }
 }

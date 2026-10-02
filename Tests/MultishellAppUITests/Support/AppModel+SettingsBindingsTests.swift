@@ -1,7 +1,7 @@
-import MultishellAppCore
 import SwiftUI
 import Testing
 
+@testable import MultishellAppCore
 @testable import MultishellAppUI
 @testable import MultishellCore
 
@@ -72,7 +72,7 @@ struct AppModelSettingsBindingsTests {
       harness.model.overrideToggle(\.branchPrefix, of: project, fallback: "team/").wrappedValue,
       "blank is still the project having its say")
     #expect(
-      harness.model.worktreeSettings(for: harness.live).qualifiedBranch("tabs") == "tabs",
+      harness.model.effectiveWorktreeSettings(for: harness.live).qualifiedBranch("tabs") == "tabs",
       "and the branch it would create carries no prefix")
   }
 

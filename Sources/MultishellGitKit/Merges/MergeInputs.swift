@@ -15,6 +15,6 @@ public struct MergeInputs: Hashable, Sendable {
 
   /// The branch tracks an upstream that is no longer on the remote.
   public func upstreamIsGone(_ branch: String) -> Bool {
-    branches[branch]?.isUpstreamGone ?? false
+    branches[branch]?.upstreamIsGone ?? false
   }
 }

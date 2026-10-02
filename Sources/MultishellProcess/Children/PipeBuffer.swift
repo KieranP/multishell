@@ -21,7 +21,7 @@ final class PipeBuffer: Sendable {
     }
   }
 
-  var data: Data {
+  var collected: Data {
     state.withLock { $0.buffer }
   }
 

@@ -25,11 +25,7 @@ extension WorkspaceStoreTests {
   }
 
   @Test func aPlainShellsTitleIsSavedAsNoneAndReadInTheCurrentLanguage() throws {
-    let store = WorkspaceStore()
-    let project = store.addProject(at: URL(fileURLWithPath: "/repos/demo"))
-    let worktree = Worktree(
-      path: project.path, projectID: project.id, head: "a", branch: "main", isPrimary: true)
-    store.replaceWorktrees([worktree], forProject: project.id)
+    let (store, _, worktree) = demoStore()
 
     let tab = try #require(store.openTab(in: worktree.id))
     let session = try #require(store.workspace.session(tab.focusedSessionID))

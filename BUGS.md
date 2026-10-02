@@ -17,7 +17,7 @@ a feature draws and works in ordinary use is checked by hand as it is built, so
 it gets no entry here.
 
 Code references last checked on 2026-10-02 against the uncommitted tree on
-30d243f. Agent behaviour last checked on 2026-09-23 with claude 2.1.280, codex
+6e6eff2. Agent behaviour last checked on 2026-09-23 with claude 2.1.280, codex
 0.155.1, gemini 0.46.0, copilot 1.0.87 and opencode 1.18.30.
 
 | #   | Effect | What                                                                                  |
@@ -44,7 +44,7 @@ once with `/hooks` in Codex and start a session without the bypass flag.
 ### 002. [Unconfirmed] A drop landing 250 ms after the button comes up can be refused
 
 A tab or project drag whose source view was rebuilt or recycled mid-drag never
-hears its drag session end, so `DragRelease.wait` (`DragRelease.swift:5`) polls
+hears its drag session end, so `DragRelease.wait` (`DragRelease.swift:8`) polls
 `NSEvent.pressedMouseButtons` every 100 ms and ends the drag 250 ms after the
 button is seen up (`AppModel+TabDrag.swift:30`,
 `AppModel+ProjectDrag.swift:35`). A `performDrop` that arrives later than that,

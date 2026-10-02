@@ -50,7 +50,7 @@ struct AppModelFileDropTests {
     h.stateSource.send(
       SessionStateReport(
         state: .idle, sessionID: session.id, pid: ProcessInfo.processInfo.processIdentifier,
-        agent: AgentCatalogue.claudeID))
+        agentID: AgentCatalogue.claudeID))
     h.model.dropFiles(
       [h.main.path.appendingPathComponent("Sources/App.swift")], into: session.id)
 
@@ -64,10 +64,9 @@ struct AppModelFileDropTests {
     h.model.select(h.main)
     let session = h.model.workspace.sessions(in: h.main.id)[0]
 
-    // Above the highest pid the kernel hands out, so it is certainly gone.
     h.stateSource.send(
       SessionStateReport(
-        state: .done, sessionID: session.id, pid: 999_999, agent: AgentCatalogue.claudeID))
+        state: .done, sessionID: session.id, pid: deadPID(), agentID: AgentCatalogue.claudeID))
     h.model.dropFiles([h.main.path.appendingPathComponent("a.swift")], into: session.id)
 
     #expect(h.engine.pasted.map(\.text) == ["\(h.main.path.path)/a.swift "])
@@ -81,7 +80,7 @@ struct AppModelFileDropTests {
     h.stateSource.send(
       SessionStateReport(
         state: .running, sessionID: session.id,
-        pid: ProcessInfo.processInfo.processIdentifier, agent: "future-agent"))
+        pid: ProcessInfo.processInfo.processIdentifier, agentID: "future-agent"))
     h.model.dropFiles([h.main.path.appendingPathComponent("a.swift")], into: session.id)
 
     #expect(h.engine.pasted.map(\.text) == ["\(h.main.path.path)/a.swift "])
@@ -156,7 +155,7 @@ struct AppModelFileDropTests {
     let h = Harness()
     h.model.select(h.main)
     let session = h.model.workspace.sessions(in: h.main.id)[0]
-    h.engine.openSessionIDs.remove(session.id)
+    h.engine.liveSessionIDs.remove(session.id)
 
     #expect(!h.model.dropFiles([h.main.path.appendingPathComponent("a.swift")], into: session.id))
     #expect(h.engine.pasted.isEmpty)

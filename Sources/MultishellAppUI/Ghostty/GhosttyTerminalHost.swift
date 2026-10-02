@@ -20,7 +20,6 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
   private let controllerOwner = GhosttyControllerOwner()
   private var surfaces: [TerminalSession.ID: OpenSurface] = [:]
 
-  /// See Docs/design/terminals.md.
   func claimSharedFiles() {
     controllerOwner.claimSharedFiles()
   }
@@ -31,15 +30,15 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
 
   /// `MULTISHELL_TERMINAL_DEBUG=1` makes libghostty's wrapper report what it
   /// hands the surface on stderr. No test can see the engine's own path.
-  private static let debugLogging: Void = {
+  private static let enableDebugLoggingOnce: Void = {
     guard ProcessInfo.processInfo.environment["MULTISHELL_TERMINAL_DEBUG"] != nil else { return }
     TerminalDebugLog.isEnabled = true
   }()
 
-  var openSessionIDs: Set<TerminalSession.ID> { Set(surfaces.keys) }
+  var liveSessionIDs: Set<TerminalSession.ID> { Set(surfaces.keys) }
 
   func open(_ session: TerminalSession) throws {
-    _ = Self.debugLogging
+    _ = Self.enableDebugLoggingOnce
     guard surfaces[session.id] == nil else { return }
 
     let view = TerminalView(frame: .zero)

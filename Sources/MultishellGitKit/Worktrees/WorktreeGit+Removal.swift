@@ -65,11 +65,11 @@ extension WorktreeGit {
     guard !taken,
       let record = try await recordDirectory(whoseGitdirNames: worktree.path, in: project)
     else {
-      throw NotTheCheckout(path: worktree.path)
+      throw WorktreePathTaken(path: worktree.path)
     }
     try await offMain { Result { try FileManager.default.removeItem(at: record) } }.get()
     guard await !isListed(worktree.path, in: project) else {
-      throw NotTheCheckout(path: worktree.path)
+      throw WorktreePathTaken(path: worktree.path)
     }
   }
 
@@ -85,11 +85,9 @@ extension WorktreeGit {
           at: records, includingPropertiesForKeys: nil)) ?? []
       return names.first { record in
         guard
-          let gitdir = try? String(
-            contentsOf: record.appendingPathComponent("gitdir"), encoding: .utf8),
-          let line = gitdir.split(whereSeparator: \.isNewline).first
+          let target = Self.directoryNamed(
+            inFile: record.appendingPathComponent("gitdir"), relativeTo: record)
         else { return false }
-        let target = Self.directoryURL(String(line), relativeTo: record)
         return Self.sameResolvedPath(target.deletingLastPathComponent(), checkout)
       }
     }

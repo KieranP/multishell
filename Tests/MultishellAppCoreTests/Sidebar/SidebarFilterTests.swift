@@ -27,21 +27,21 @@ struct SidebarFilterTests {
   @Test func noFilterShowsEverythingAsEachProjectIsStored() {
     var ws = workspace
     ws.projects[1].isExpanded = false
-    let entries = SidebarFilter("  ").apply(to: ws, folding: [ws.projects[0].id])
+    let entries = SidebarFilter("  ").apply(to: ws, collapsing: [ws.projects[0].id])
     #expect(entries.map(\.project.name) == ["acme-web", "acme-api"])
     #expect(entries.map(\.isExpanded) == [true, false])
     #expect(entries.allSatisfy { $0.worktrees.count == 2 })
     #expect(!SidebarFilter("").isActive)
   }
 
-  @Test func theFilterHoldsACollapsedProjectOpenUnlessItWasFoldedUnderIt() {
+  @Test func theFilterHoldsACollapsedProjectOpenUnlessItWasCollapsedUnderIt() {
     var ws = workspace
     ws.projects = ws.projects.map { project in
       var collapsed = project
       collapsed.isExpanded = false
       return collapsed
     }
-    let entries = SidebarFilter("main").apply(to: ws, folding: [ws.projects[1].id])
+    let entries = SidebarFilter("main").apply(to: ws, collapsing: [ws.projects[1].id])
     #expect(entries.map(\.isExpanded) == [true, false])
   }
 
@@ -62,15 +62,9 @@ struct SidebarFilterTests {
   /// Branch and directory names are not the reader's language, so folding
   /// them by the reader's alphabet drops a row they can see on screen.
   @Test func theFilterDoesNotFoldBySomebodyElsesAlphabet() {
-    let turkish = Locale(identifier: "tr_TR")
-    #expect(
-      "kieran/rate-limits".range(of: "LIMITS", options: [.caseInsensitive], locale: turkish) == nil,
-      "the dotless I is what breaks it; this is the form that must not be used")
-
     let entries = SidebarFilter("LIMITS").apply(to: workspace)
     #expect(entries.map(\.project.name) == ["acme-api"])
     #expect(entries.first?.worktrees.map(\.name) == ["kieran/rate-limits"])
-    #expect("Crème".foldedContains("creme"), "accents still fold")
   }
 
   /// Locale.current cannot be moved for one test without moving it for every

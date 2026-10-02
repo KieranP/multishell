@@ -14,10 +14,7 @@ extension View {
         choices: pending.choices.map(\.label),
         cancel: t("action.cancel"))
     } answer: { pending, choice in
-      model.pendingWorktreeRemoval = nil
-      guard let choice, pending.choices.indices.contains(choice) else { return }
-      let deletesBranch = pending.choices[choice].deletesBranch
-      Task { await model.confirmWorktreeRemoval(pending, deletingBranch: deletesBranch) }
+      model.answerWorktreeRemoval(pending, choice: choice)
     }
   }
 }

@@ -8,7 +8,7 @@ struct FindBar: View {
   let model: AppModel
   let sessionID: TerminalSession.ID
   let theme: Theme
-  @FocusState private var fieldFocused: Bool
+  @FocusState private var isFieldFocused: Bool
 
   /// What the bar takes when the pane has it; a narrower pane shrinks the
   /// well rather than drawing the bar over its neighbour.
@@ -43,8 +43,8 @@ struct FindBar: View {
       .textFieldStyle(.plain)
       .font(.system(size: metrics.body))
       .foregroundStyle(theme.textPrimary)
-      .focused($fieldFocused)
-      .onChange(of: fieldFocused) { model.noteFindField(focused: $1, of: sessionID) }
+      .focused($isFieldFocused)
+      .onChange(of: isFieldFocused) { model.noteFindField(focused: $1, of: sessionID) }
       .onSubmit(submit)
       .onExitCommand { model.closeFind(in: sessionID) }
       .padding(.horizontal, 10)
@@ -55,7 +55,7 @@ struct FindBar: View {
   }
 
   private func claimField() {
-    if model.takeFindFieldRequest(sessionID) { fieldFocused = true }
+    if model.takeFindFieldRequest(sessionID) { isFieldFocused = true }
   }
 
   /// Return steps down, Shift+Return up. The shift is read off the keyboard

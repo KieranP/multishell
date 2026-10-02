@@ -4,7 +4,7 @@ import TestScratch
 /// A socket server standing in for the app, keeping every line it reads.
 final class ReportListener {
   let path = Scratch.socketPath("cli")
-  let recorder = LineRecorder()
+  let recorder = Recorder<String>()
   private let server: UnixSocketServer
 
   init() throws {

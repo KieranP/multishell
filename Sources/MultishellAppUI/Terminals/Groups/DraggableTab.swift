@@ -24,21 +24,15 @@ struct DraggableTab: View {
   let theme: Theme
   @Binding var drag: TabDragState
 
-  private var isInTheAir: Bool {
-    drag.tabID == tab.id && drag.isEngaged
-  }
-
   var body: some View {
     TabFace(
       model: model, group: group, tab: tab, isFocusedGroup: isFocusedGroup,
       canLeaveGroup: canLeaveGroup, theme: theme
     )
-    // The tab in the air, read from the drop targets rather than the drag
-    // beginning, so one let go unseen cannot mark a tab for good.
-    .opacity(isInTheAir ? (isShuffling ? 0.55 : 0.3) : 1)
+    .opacity(drag.isInTheAir(tab.id) ? (isShuffling ? 0.55 : 0.3) : 1)
     .frame(width: width)
     .clipped()
-    .overlay(alignment: drag.insertion?.placement == .after ? .trailing : .leading) {
+    .overlay(alignment: insertionPlacement == .after ? .trailing : .leading) {
       insertionLine
     }
     .inAppDragSource(
@@ -73,9 +67,13 @@ struct DraggableTab: View {
   /// sidebar draws the same line lying down.
   @ViewBuilder
   private var insertionLine: some View {
-    if drag.isDragging, !isShuffling, let insertion = drag.insertion, insertion.tabID == tab.id {
-      InsertionLine(axis: .vertical, isAfter: insertion.placement != .before)
+    if let insertionPlacement {
+      InsertionLine(axis: .vertical, isAfter: insertionPlacement == .after)
     }
+  }
+
+  private var insertionPlacement: TerminalTab.Placement? {
+    drag.insertionPlacement(on: tab.id, isShuffling: isShuffling)
   }
 }
 

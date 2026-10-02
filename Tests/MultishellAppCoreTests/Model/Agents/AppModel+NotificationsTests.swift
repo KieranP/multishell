@@ -33,10 +33,6 @@ struct AppModelNotificationsTests {
     h.model.setNotifications(.off)
     h.stateSource.send(SessionStateReport(state: .attention, sessionID: first.focusedSessionID))
     #expect(h.notifier.posted.count == 1)
-
-    // A click on the banner brings the tab back.
-    h.notifier.onActivate?(.session(first.focusedSessionID))
-    #expect(h.model.workspace.activeTab(in: h.main.id)?.id == first.id)
   }
 
   /// Once the agent is back at work the banner names something no longer true,

@@ -3,7 +3,7 @@ import MultishellCore
 /// A create or remove running on a worktree, shown in its detail pane so no
 /// sheet stays up for a slow hook. A failed stage leaves `failure`.
 public struct WorktreeOperation: Equatable, Sendable {
-  public let step: Step
+  public let stage: Stage
   /// What the hook or git said, once the stage has failed. `nil` while it
   /// runs.
   public var failure: String?
@@ -11,8 +11,8 @@ public struct WorktreeOperation: Equatable, Sendable {
   /// rather than that it refused.
   var timedOut = false
 
-  init(_ step: Step, failure: String? = nil, timedOut: Bool = false) {
-    self.step = step
+  init(_ stage: Stage, failure: String? = nil, timedOut: Bool = false) {
+    self.stage = stage
     self.failure = failure
     self.timedOut = timedOut
   }
@@ -21,7 +21,7 @@ public struct WorktreeOperation: Equatable, Sendable {
 
   public var title: String {
     if failure != nil {
-      switch step {
+      switch stage {
       case .linkingFiles: return t("step.files-not-linked")
       case .copyingFiles: return t("step.files-not-copied")
       case .postCreateHook:
@@ -35,7 +35,7 @@ public struct WorktreeOperation: Equatable, Sendable {
       case .deletingBranch: return t("step.branch-not-deleted")
       }
     }
-    switch step {
+    switch stage {
     case .linkingFiles: return t("step.linking-files")
     case .copyingFiles: return t("step.copying-files")
     case .postCreateHook: return t("step.post-create-hook")
@@ -51,7 +51,7 @@ public struct WorktreeOperation: Equatable, Sendable {
   /// or where things stand after a failure.
   public var detail: String {
     if failure != nil {
-      switch step {
+      switch stage {
       case .linkingFiles, .copyingFiles:
         // Not "the hook did not run": a project may list files and have no
         // hook, and this is the pane for that one too.
@@ -62,7 +62,7 @@ public struct WorktreeOperation: Equatable, Sendable {
         return t("step.removal-failed-detail")
       }
     }
-    switch step {
+    switch stage {
     case .linkingFiles, .copyingFiles, .postCreateHook: return t("step.creation-detail")
     case .preDeleteHook: return t("step.pre-delete-detail")
     case .removingWorktree: return t("step.removal-detail")

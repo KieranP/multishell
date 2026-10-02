@@ -45,4 +45,16 @@ final class WorktreeFilePatternTests {
       WorktreeFilePattern.expand("missing/file", in: repository) == ["missing/file"],
       "a plain path is itself, whether it is there or not")
   }
+
+  @Test func aPatternInAFolderNameExpandsToEachFolderThatMatches() throws {
+    let repository = root.appendingPathComponent("repo")
+    for pack in ["pack-a", "pack-b"] {
+      try FileManager.default.createDirectory(
+        at: repository.appendingPathComponent(pack), withIntermediateDirectories: true)
+      try "x".write(
+        to: repository.appendingPathComponent("\(pack)/.env"), atomically: true, encoding: .utf8)
+    }
+    #expect(
+      WorktreeFilePattern.expand("pack-?/.env", in: repository) == ["pack-a/.env", "pack-b/.env"])
+  }
 }

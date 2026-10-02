@@ -29,22 +29,22 @@ struct WorktreeStatusParserTests {
     #expect(status.isDirty)
   }
 
-  @Test func aCleanTreeIsClean() {
+  @Test func aCleanTreeOnItsUpstreamIsCleanAndInSync() {
     let status = WorktreeStatusParser.parse("## main...origin/main\n")
-    #expect(status.isClean)
+    #expect(status.isCleanAndInSync)
     #expect(status.summary == "Clean")
   }
 
-  @Test func aheadOnlyIsNotDirtyButNotClean() {
+  @Test func aheadOnlyIsNotDirtyButNotInSync() {
     let status = WorktreeStatusParser.parse("## feat...origin/feat [ahead 3]\n")
     #expect(!status.isDirty)
-    #expect(!status.isClean)
+    #expect(!status.isCleanAndInSync)
     #expect(status.summary == "↑3")
   }
 
   @Test func branchLinesWithoutUpstreamParse() {
     #expect(WorktreeStatusParser.parse("## HEAD (no branch)\n?? a\n").untracked == 1)
-    #expect(WorktreeStatusParser.parse("## No commits yet on main\n").isClean)
+    #expect(WorktreeStatusParser.parse("## No commits yet on main\n").isCleanAndInSync)
   }
 
   @Test func aDeletedUpstreamIsNotACount() {

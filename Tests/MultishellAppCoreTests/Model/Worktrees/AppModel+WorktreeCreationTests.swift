@@ -24,7 +24,7 @@ struct AppModelWorktreeCreationTests {
     #expect(h.model.workspace.selectedWorktreeID == created.id)
     #expect(h.model.workspace.tabs(in: created.id).count == 1)
     #expect(h.model.liveTerminalCount == 1)
-    #expect(h.engine.openSessionIDs == Set(h.model.workspace.sessions(in: created.id).map(\.id)))
+    #expect(h.engine.liveSessionIDs == Set(h.model.workspace.sessions(in: created.id).map(\.id)))
     #expect(
       h.watcher.watched.map(\.lastPathComponent).sorted() == ["feat-tabs", "worktrees"],
       "the linked worktree's own record directory is watched for branch switches")
@@ -215,7 +215,7 @@ struct AppModelWorktreeCreationTests {
     let h = try await GitHarness()
     defer { h.tearDown() }
     let project = h.project
-    let container = h.model.worktreeSettings(for: project).worktreeContainer(for: project)
+    let container = h.model.effectiveWorktreeSettings(for: project).worktreeContainer(for: project)
 
     h.model.requestNewWorktree(in: project)
     h.model.removeProject(project)
@@ -254,7 +254,8 @@ struct AppModelWorktreeCreationTests {
     let h = try await GitHarness()
     defer { h.tearDown() }
     let marker = h.root.appendingPathComponent("hook-ran")
-    let container = h.model.worktreeSettings(for: h.project).worktreeContainer(for: h.project)
+    let container = h.model.effectiveWorktreeSettings(for: h.project).worktreeContainer(
+      for: h.project)
     h.model.updateSettings(
       ProjectSettings(preCreateHook: "touch \(marker.path)"), for: h.project)
 

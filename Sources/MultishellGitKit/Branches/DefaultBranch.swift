@@ -15,22 +15,22 @@ public struct DefaultBranch: Hashable, Sendable {
 
   /// The refs to try, in order. A remote-tracking ref beats a local branch
   /// of the same name; an override falls back to no default at all.
-  static func candidateRefs(override: String?, originHead: String?) -> [String] {
+  static func candidateRefs(override: String?, originHeadTarget: String?) -> [String] {
     var refs: [String] = []
     func add(_ ref: String) {
       if !refs.contains(ref) { refs.append(ref) }
     }
     if let override = override?.trimmingCharacters(in: .whitespaces), !override.isEmpty {
-      add(BranchRef.remotePrefix + "origin/" + override)
+      add(BranchRef.remoteRef("origin/" + override))
       add(BranchRef.localRef(override))
-      add(BranchRef.remotePrefix + override)
+      add(BranchRef.remoteRef(override))
       return refs
     }
     // What the clone recorded as the remote's own default, the only answer
     // that is not a guess.
-    if let originHead, !originHead.isEmpty { add(originHead) }
-    add(BranchRef.remotePrefix + "origin/main")
-    add(BranchRef.remotePrefix + "origin/master")
+    if let originHeadTarget, !originHeadTarget.isEmpty { add(originHeadTarget) }
+    add(BranchRef.remoteRef("origin/main"))
+    add(BranchRef.remoteRef("origin/master"))
     add(BranchRef.localRef("main"))
     add(BranchRef.localRef("master"))
     return refs
@@ -40,8 +40,8 @@ public struct DefaultBranch: Hashable, Sendable {
   /// badge, rather than one measured against a guess.
   static func resolve(from refs: [BranchRef], override: String?) -> DefaultBranch? {
     let byName = Dictionary(refs.map { ($0.fullName, $0) }, uniquingKeysWith: { first, _ in first })
-    let originHead = byName[BranchRef.originHead]?.symref
-    for candidate in candidateRefs(override: override, originHead: originHead) {
+    let originHeadTarget = byName[BranchRef.originHead]?.symref
+    for candidate in candidateRefs(override: override, originHeadTarget: originHeadTarget) {
       guard let ref = byName[candidate] else { continue }
       return DefaultBranch(
         shortName: ref.shortName, nameWithoutRemote: ref.nameWithoutRemote, tip: ref.tip,

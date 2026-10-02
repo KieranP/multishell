@@ -10,7 +10,7 @@ public enum ProcessAncestry {
 
   /// `stoppingAt` is the app's own pid: from a prompt in one of its tabs
   /// nothing between the shell and it is a program, so the shell is named.
-  public static func reportingProcess(
+  public static func reportingPID(
     startingAt pid: Int32 = getppid(), stoppingAt boundary: Int32? = nil
   ) -> Int32 {
     var current = pid

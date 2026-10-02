@@ -13,7 +13,7 @@ struct AppModelReconcileTests {
     for _ in 0..<3 { h.model.newTab() }
     #expect(h.model.liveTerminalCount == 4)
     h.engine.refusesToOpen = true
-    for id in h.engine.openSessionIDs { h.engine.close(id) }
+    for id in h.engine.liveSessionIDs { h.engine.close(id) }
     h.model.presentedError = nil
     h.platform.logged.removeAll()
 

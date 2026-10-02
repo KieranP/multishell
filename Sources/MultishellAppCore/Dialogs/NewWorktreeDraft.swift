@@ -7,7 +7,7 @@ import MultishellGitKit
 public struct NewWorktreeDraft: Equatable, Sendable {
   public var projectID: Project.ID?
   public var branch = ""
-  public var createBranch = true
+  public var createsBranch = true
   public var baseBranch = ""
   public var localBranches: [String] = []
   public var remoteBranches: [String] = []
@@ -48,7 +48,7 @@ public struct NewWorktreeDraft: Equatable, Sendable {
     // Recorded before the fix-up below, which reads the available branches
     // and sees none for a project not yet marked loaded.
     loadedProjectID = id
-    if !createBranch, !availableBranches(checkedOut: checkedOut).contains(branch) {
+    if !createsBranch, !availableBranches(checkedOut: checkedOut).contains(branch) {
       branch = availableBranches(checkedOut: checkedOut).first ?? ""
     }
   }
@@ -62,7 +62,7 @@ public struct NewWorktreeDraft: Equatable, Sendable {
   /// The field and the picker share `branch`. Coming back restores what was
   /// typed, never what was picked, which would be a duplicate.
   public mutating func modeChanged(checkedOut: Set<String>) {
-    if createBranch {
+    if createsBranch {
       branch = typedBranch
     } else {
       typedBranch = branch
@@ -88,7 +88,7 @@ public struct NewWorktreeDraft: Equatable, Sendable {
     guard let projectID, loadedProjectID == projectID, hasCommits, !isCreating else {
       return false
     }
-    return createBranch
+    return createsBranch
       ? GitRefName.isValidBranch(branch)
       : availableBranches(checkedOut: checkedOut).contains(branch)
   }
@@ -96,7 +96,7 @@ public struct NewWorktreeDraft: Equatable, Sendable {
   /// Whether what is typed is a name git would refuse, for the sheet to say
   /// so. An empty field is not yet wrong.
   public var branchNameIsRefused: Bool {
-    guard createBranch else { return false }
+    guard createsBranch else { return false }
     return !trimmedBranch.isEmpty && !GitRefName.isValidBranch(trimmedBranch)
   }
 
@@ -108,7 +108,7 @@ public struct NewWorktreeDraft: Equatable, Sendable {
   /// What the new branch starts from; `nil` lets git use HEAD. Never the
   /// empty string a cleared field would otherwise send.
   public var startPoint: String? {
-    createBranch && !baseBranch.isEmpty ? baseBranch : nil
+    createsBranch && !baseBranch.isEmpty ? baseBranch : nil
   }
 
   /// What the sheet says beside its spinner while a create runs, a hook

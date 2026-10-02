@@ -27,10 +27,11 @@
   rewrite and a script that refuses GPL text, which is what keeps this
   repository's AGPL from inheriting a GPL obligation.
 - **Moving the pin changes which config keys a user's Ghostty file may use**,
-  and can change which file names it reads, so `GhosttyUserConfig` wants a look
-  then. The key list came from Ghostty's own `show-config` and `docs` output,
-  each key handed to the pinned build to see whether it took it; the names and
-  their order came from its `loadDefaultFiles`.
+  and can change which file names it reads, so `GhosttyConfigAllowList` and
+  `GhosttyUserConfig` want a look then. The key list came from Ghostty's own
+  `show-config` and `docs` output, each key handed to the pinned build to see
+  whether it took it; the names and their order came from its
+  `loadDefaultFiles`.
 - **MSDisplayLink via `Lakr233/MSDisplayLink`**, MIT. Easy to miss: this tree
   imports it nowhere and names it in no manifest, but libghostty-spm depends on
   it and its symbols are in the executable. libghostty-spm asks only for

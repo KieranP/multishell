@@ -12,25 +12,39 @@ extension AppModel {
 
   /// The projects the sidebar shows, each with its rows and whether they show.
   public var sidebarEntries: [SidebarFilter.Entry] {
-    SidebarFilter(sidebarFilterText).apply(to: workspace, folding: projectsFoldedWhileFiltering)
+    sidebarEntries(filteredBy: sidebarFilterText, collapsing: projectsCollapsedWhileFiltering)
   }
 
-  /// The chevron. While the filter has text it folds the project for that
+  func sidebarEntries(
+    filteredBy text: String, collapsing collapsed: Set<Project.ID>
+  )
+    -> [SidebarFilter.Entry]
+  {
+    SidebarFilter(text).apply(to: workspace, collapsing: collapsed)
+  }
+
+  /// What the list says in place of rows, `nil` while it shows some.
+  public func sidebarEmptyMessage(showing shownProjects: [SidebarFilter.Entry]) -> String? {
+    if workspace.projects.isEmpty { return t("sidebar.no-projects") }
+    return shownProjects.isEmpty ? t("sidebar.nothing-matches") : nil
+  }
+
+  /// The chevron. While the filter has text it collapses the project for that
   /// text alone, as the filter opened it; otherwise it sets the stored flag.
   public func toggleExpansion(of project: Project) {
     guard SidebarFilter(sidebarFilterText).isActive else {
       return setExpanded(!project.isExpanded, for: project)
     }
-    guard projectsFoldedWhileFiltering.contains(project.id) else {
-      projectsFoldedWhileFiltering.insert(project.id)
+    guard projectsCollapsedWhileFiltering.contains(project.id) else {
+      projectsCollapsedWhileFiltering.insert(project.id)
       return
     }
-    unfoldWhileFiltering(project.id)
+    expandWhileFiltering(project.id)
   }
 
-  /// Its rows went unread while folded, so they are read now.
-  func unfoldWhileFiltering(_ projectID: Project.ID) {
-    guard projectsFoldedWhileFiltering.remove(projectID) != nil else { return }
+  /// Its rows went unread while collapsed, so they are read now.
+  func expandWhileFiltering(_ projectID: Project.ID) {
+    guard projectsCollapsedWhileFiltering.remove(projectID) != nil else { return }
     Task { await refreshStatuses(inProject: projectID) }
   }
 }

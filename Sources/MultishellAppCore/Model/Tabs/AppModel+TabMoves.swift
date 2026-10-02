@@ -1,14 +1,14 @@
 import MultishellCore
 
 extension AppModel {
-  /// Moves `id` beside `target`, possibly in another group; `false` where either
+  /// Moves `id` beside `anchor`, possibly in another group; `false` where either
   /// has gone or they sit in different worktrees. A no-op move writes nothing.
   @discardableResult
   func moveTab(
-    _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, anchor target: TerminalTab.ID
+    _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, anchor: TerminalTab.ID
   ) -> Bool {
-    guard changesTheStrip(id, placement, target) else { return true }
-    guard store.moveTab(id, placement, anchor: target) else { return false }
+    guard changesTheStrip(id, placement, anchor) else { return true }
+    guard store.moveTab(id, placement, anchor: anchor) else { return false }
     // The drop activates the tab in its new group, so without this the engine
     // keeps focus on the one now hidden behind it.
     reconcileSessions(takingFocus: true)
@@ -18,14 +18,14 @@ extension AppModel {
   /// A tab landing in another group always changes something, if only
   /// which group it is in. Inside one group it is a question of order.
   private func changesTheStrip(
-    _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, _ target: TerminalTab.ID
+    _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, _ anchor: TerminalTab.ID
   ) -> Bool {
     guard
-      let moving = workspace.tab(id), let anchor = workspace.tab(target),
-      moving.groupID == anchor.groupID
+      let moving = workspace.tab(id), let anchorTab = workspace.tab(anchor),
+      moving.groupID == anchorTab.groupID
     else { return true }
     return TabShuffle.reorders(
-      id, placement, of: target, in: workspace.tabs(inGroup: moving.groupID).map(\.id))
+      id, placement, of: anchor, in: workspace.tabs(inGroup: moving.groupID).map(\.id))
   }
 
   /// A tab dragged onto a worktree's row, shells and all, the destination

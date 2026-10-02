@@ -7,7 +7,7 @@ struct SubagentRoster: Equatable, Sendable {
   private(set) var subagents: [Subagent] = []
   /// Workers past the roster limit by id, all under the one overflow place,
   /// so a tool call is told from a new worker and a stray end from their own.
-  private(set) var folded: [String: Int] = [:]
+  private(set) var overflowed: [String: Int] = [:]
 
   /// A roster place a report touched, and whether more than one worker was
   /// under it: a start repeated under one id makes which reported unknowable.
@@ -17,9 +17,9 @@ struct SubagentRoster: Equatable, Sendable {
   }
 
   /// How many ids the overflow place tells apart; a worker past that is dropped.
-  static let foldLimit = 1024
+  private static let overflowLimit = 1024
 
-  var isEmpty: Bool { subagents.isEmpty && folded.isEmpty }
+  var isEmpty: Bool { subagents.isEmpty && overflowed.isEmpty }
 
   /// A start or a tool call puts a worker on the roster, its end takes it off.
   /// Returns the place touched; `asking` are the workers with a prompt up.
@@ -28,7 +28,7 @@ struct SubagentRoster: Equatable, Sendable {
     let isAnonymous = report.id == SubagentReport.anonymousID
     switch report.phase {
     case .ended:
-      if let id = foldedID(endedBy: report) { return unfold(id) }
+      if let id = overflowedID(endedBy: report) { return removeFromOverflow(id) }
       guard let index = endingPlace(for: report, asking: asking) else {
         return Place(id: report.id)
       }
@@ -41,13 +41,13 @@ struct SubagentRoster: Equatable, Sendable {
       if let index = subagents.lastIndex(where: \.isAnonymous) {
         return place(at: index)
       }
-      if foldedAnonymousID != nil { return overflowPlace }
+      if overflowedAnonymousID != nil { return overflowPlace }
       return add(Subagent(id: Subagent.anonymousPrefix + UUID().uuidString, type: report.type))
     case .started, .working:
       let id = isAnonymous ? Subagent.anonymousPrefix + UUID().uuidString : report.id
       guard let index = subagents.firstIndex(where: { $0.id == id }) else {
-        guard folded[id] != nil else { return add(Subagent(id: id, type: report.type)) }
-        if report.phase == .started { _ = fold(id) }
+        guard overflowed[id] != nil else { return add(Subagent(id: id, type: report.type)) }
+        if report.phase == .started { _ = addToOverflow(id) }
         if let overflow = overflowIndex { subagents[overflow].heardSinceStop = true }
         return overflowPlace
       }
@@ -79,18 +79,18 @@ struct SubagentRoster: Equatable, Sendable {
     subagents.firstIndex { !$0.isBackgroundShell && $0.id != Subagent.overflowID }
   }
 
-  /// The folded worker an end takes, in `endingPlace`'s order: an unnamed
+  /// The overflowed worker an end takes, in `endingPlace`'s order: an unnamed
   /// end takes an unnamed one first, and any only where no named place is left.
-  private func foldedID(endedBy report: SubagentReport) -> String? {
+  private func overflowedID(endedBy report: SubagentReport) -> String? {
     guard report.id == SubagentReport.anonymousID else {
-      return folded[report.id] == nil ? nil : report.id
+      return overflowed[report.id] == nil ? nil : report.id
     }
     guard !subagents.contains(where: \.isAnonymous) else { return nil }
-    return foldedAnonymousID ?? (firstNamedPlace == nil ? folded.keys.first : nil)
+    return overflowedAnonymousID ?? (firstNamedPlace == nil ? overflowed.keys.first : nil)
   }
 
-  private var foldedAnonymousID: String? {
-    folded.keys.first { $0.hasPrefix(Subagent.anonymousPrefix) }
+  private var overflowedAnonymousID: String? {
+    overflowed.keys.first { $0.hasPrefix(Subagent.anonymousPrefix) }
   }
 
   private var overflowIndex: Int? {
@@ -130,8 +130,8 @@ struct SubagentRoster: Equatable, Sendable {
     for index in subagents.indices where listed.contains(subagents[index].id) {
       subagents[index].heardSinceStop = true
     }
-    let foldedGone = folded.keys.filter { !listed.contains($0) }
-    for id in foldedGone { forget(id) }
+    let overflowedGone = overflowed.keys.filter { !listed.contains($0) }
+    for id in overflowedGone { forget(id) }
     for worker in out where !isOut(worker.id) {
       var listedWorker = Subagent(id: worker.id, type: worker.type)
       listedWorker.isListedShell = worker.isBackgroundShell == true
@@ -139,7 +139,7 @@ struct SubagentRoster: Equatable, Sendable {
       add(listedWorker)
     }
     keepShells(shells)
-    return gone + foldedGone
+    return gone + overflowedGone
   }
 
   /// A Stop vouches only for workers heard from since the last one.
@@ -151,16 +151,18 @@ struct SubagentRoster: Equatable, Sendable {
   }
 
   /// Only the workers a Stop saw out, which a new turn leaves standing, the
-  /// folded ones with the overflow place that stands for them.
+  /// overflowed ones with the overflow place that stands for them.
   func keepingOutAtStop() -> SubagentRoster {
     var kept = SubagentRoster()
     kept.subagents = subagents.filter(\.outAtStop)
-    if kept.subagents.contains(where: { $0.id == Subagent.overflowID }) { kept.folded = folded }
+    if kept.subagents.contains(where: { $0.id == Subagent.overflowID }) {
+      kept.overflowed = overflowed
+    }
     return kept
   }
 
   private func isOut(_ id: String) -> Bool {
-    folded[id] != nil || subagents.contains { $0.id == id }
+    overflowed[id] != nil || subagents.contains { $0.id == id }
   }
 
   /// Past the limit a worker shares one overflow place, so none still out is
@@ -172,14 +174,14 @@ struct SubagentRoster: Equatable, Sendable {
       subagents.append(worker)
       return Place(id: worker.id)
     }
-    guard worker.pid == nil, fold(worker.id) else { return Place(id: worker.id) }
+    guard worker.pid == nil, addToOverflow(worker.id) else { return Place(id: worker.id) }
     return overflowPlace
   }
 
-  /// `false` for a new id once the overflow place holds `foldLimit` of them.
-  private mutating func fold(_ id: String) -> Bool {
-    guard folded[id] != nil || folded.count < Self.foldLimit else { return false }
-    folded[id, default: 0] += 1
+  /// `false` for a new id once the overflow place holds `overflowLimit` of them.
+  private mutating func addToOverflow(_ id: String) -> Bool {
+    guard overflowed[id] != nil || overflowed.count < Self.overflowLimit else { return false }
+    overflowed[id, default: 0] += 1
     if let overflow = overflowIndex {
       subagents[overflow].occurrences += 1
     } else {
@@ -191,13 +193,13 @@ struct SubagentRoster: Equatable, Sendable {
   /// Takes a worker off wherever it is, every start under its id included.
   mutating func forget(_ id: String) {
     subagents.removeAll { $0.id == id }
-    for _ in 0..<(folded[id] ?? 0) { unfold(id) }
+    for _ in 0..<(overflowed[id] ?? 0) { removeFromOverflow(id) }
   }
 
   @discardableResult
-  private mutating func unfold(_ id: String) -> Place {
+  private mutating func removeFromOverflow(_ id: String) -> Place {
     let place = overflowPlace
-    folded[id] = folded[id].flatMap { $0 > 1 ? $0 - 1 : nil }
+    overflowed[id] = overflowed[id].flatMap { $0 > 1 ? $0 - 1 : nil }
     if let overflow = overflowIndex { removeOne(at: overflow) }
     return place
   }

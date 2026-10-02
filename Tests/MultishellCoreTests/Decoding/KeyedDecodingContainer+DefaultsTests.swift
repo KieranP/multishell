@@ -16,8 +16,6 @@ struct KeyedDecodingContainerDefaultsTests {
     }
   }
 
-  /// A `decodeTolerantly` read takes the default for a value this build
-  /// cannot read, and the rest of the file loads around it.
   @Test func theTolerantReadKeepsTheRestOfTheFile() throws {
     let order = try decodeJSON(
       Workspace.self, #"{ "worktreeSortOrder": 12, "customShellPath": "/bin/fish" }"#)

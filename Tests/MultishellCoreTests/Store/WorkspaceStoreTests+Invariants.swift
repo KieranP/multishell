@@ -126,6 +126,6 @@ extension WorkspaceStoreTests {
     var restored = try JSONDecoder().decode(Workspace.self, from: data)
     #expect(restored == store.workspace, "seed \(seed): the file does not say what the store did")
     restored.repairReferences()
-    #expect(restored == store.workspace, "seed \(seed): repair changed a sound workspace")
+    #expect(restored == store.workspace, "seed \(seed): repair changed a consistent workspace")
   }
 }

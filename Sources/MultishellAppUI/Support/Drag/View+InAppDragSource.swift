@@ -8,7 +8,7 @@ extension View {
     ended: @escaping () -> Void,
     sourceLeft: @escaping (_ isPressed: @escaping @MainActor () -> Bool) -> Void
   ) -> some View {
-    onDrag(begin).modifier(InAppDragEnds(ended: ended, sourceLeft: sourceLeft))
+    onDrag(begin).modifier(InAppDragEndModifier(ended: ended, sourceLeft: sourceLeft))
   }
 
   func inAppDragSource<Preview: View>(
@@ -18,6 +18,6 @@ extension View {
     sourceLeft: @escaping (_ isPressed: @escaping @MainActor () -> Bool) -> Void
   ) -> some View {
     onDrag(begin, preview: preview)
-      .modifier(InAppDragEnds(ended: ended, sourceLeft: sourceLeft))
+      .modifier(InAppDragEndModifier(ended: ended, sourceLeft: sourceLeft))
   }
 }

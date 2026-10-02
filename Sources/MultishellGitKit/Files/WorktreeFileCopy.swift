@@ -1,9 +1,9 @@
 import Foundation
 
 enum WorktreeFileCopy {
-  /// A directory entry by entry, asking `isStopped` before each, so a large
+  /// A directory entry by entry, asking `isStopRequested` before each, so a large
   /// one ends at the next file on Cancel; `copyItem` alone takes it whole.
-  static func copy(_ source: URL, to destination: URL, isStopped: () -> Bool) throws {
+  static func copy(_ source: URL, to destination: URL, isStopRequested: () -> Bool) throws {
     let manager = FileManager.default
     var isDirectory: ObjCBool = false
     guard manager.fileExists(atPath: source.path, isDirectory: &isDirectory), isDirectory.boolValue,
@@ -17,8 +17,8 @@ enum WorktreeFileCopy {
     defer { for (directory, source) in made.reversed() { copyMode(of: source, to: directory) } }
     try manager.createDirectory(at: destination, withIntermediateDirectories: false)
     made.append((destination, source))
-    // Nil, the enumerator walks on past a folder it cannot read and the copy
-    // reads as whole where `copyItem` would have thrown.
+    // Without this handler the enumerator skips a folder it cannot read, and
+    // the copy reads as whole where `copyItem` would have thrown.
     var unread: (any Error)?
     let entries = manager.enumerator(
       at: source, includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey],
@@ -29,7 +29,7 @@ enum WorktreeFileCopy {
     }
     do {
       while let entry = entries?.nextObject() as? URL {
-        guard !isStopped() else { throw WorktreeFileStopped() }
+        guard !isStopRequested() else { throw WorktreeFileStopped() }
         let target = destination.appendingPathComponent(entry.relativePath)
         let values = try entry.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
         if values.isDirectory == true, values.isSymbolicLink != true {

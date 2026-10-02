@@ -47,7 +47,7 @@ struct AppModelSidebarFilterTests {
     #expect(h.engine.focused.isEmpty)
   }
 
-  @Test func theChevronFoldsAProjectTheFilterHoldsOpenUntilTheTextChanges() {
+  @Test func theChevronCollapsesAProjectTheFilterHoldsOpenUntilTheTextChanges() {
     let h = Harness()
     h.model.setExpanded(false, for: h.project)
     h.model.sidebarFilterText = "feat"
@@ -71,7 +71,7 @@ struct AppModelSidebarFilterTests {
     #expect(h.model.sidebarEntries.first?.isExpanded == false)
   }
 
-  @Test func renamingARowOfAProjectFoldedUnderTheFilterUnfoldsIt() {
+  @Test func renamingARowOfAProjectCollapsedUnderTheFilterExpandsIt() {
     let h = Harness()
     h.model.sidebarFilterText = "feat"
     h.model.toggleExpansion(of: h.project)
@@ -81,14 +81,14 @@ struct AppModelSidebarFilterTests {
     #expect(h.model.sidebarEntries.first?.isExpanded == true)
   }
 
-  @Test func removingAProjectDropsItsFoldWhileFiltering() {
+  @Test func removingAProjectDropsItsCollapseWhileFiltering() {
     let h = Harness()
     h.model.sidebarFilterText = "feat"
     h.model.toggleExpansion(of: h.project)
 
     h.model.removeProject(h.project)
 
-    #expect(h.model.projectsFoldedWhileFiltering.isEmpty)
+    #expect(h.model.projectsCollapsedWhileFiltering.isEmpty)
   }
 
   @Test func renamingARowTheFilterShowsLeavesTheStoredFlagAlone() {

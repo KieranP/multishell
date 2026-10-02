@@ -40,7 +40,7 @@ struct ProjectHooksPage: View {
         Section { SettingsCaption(problem) }
       }
 
-      PartPicker(label: t("settings.hooks"), selection: $part, title: \.title)
+      SplitPagePicker(label: t("settings.hooks"), selection: $part, title: \.title)
 
       switch part {
       case .create: createSection(shared)

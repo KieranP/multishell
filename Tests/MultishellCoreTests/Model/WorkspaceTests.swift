@@ -160,14 +160,14 @@ struct WorkspaceTests {
   }
 
   @Test func aSavedLayoutIsWrittenUnderTheTabGroupKeysAndComesBackExactly() throws {
-    let (workspace, _) = soundWorkspace()
+    let (workspace, _) = consistentWorkspace()
 
     let json = String(decoding: try JSONEncoder().encode(workspace), as: UTF8.self)
     #expect(json.contains("tabGroups"))
     #expect(json.contains("focusedGroupByWorktree"))
     #expect(!json.contains("activeTabByWorktree"), "the old key is read, never written")
 
-    var reloaded = try JSONDecoder().decode(Workspace.self, from: Data(json.utf8))
+    var reloaded = try decodeJSON(Workspace.self, json)
     reloaded.repairReferences()
     #expect(reloaded == workspace, "a saved layout comes back exactly")
   }

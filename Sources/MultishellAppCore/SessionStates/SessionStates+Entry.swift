@@ -21,10 +21,10 @@ extension SessionStates {
     var displaced: Displaced?
     /// Who raised the prompts on screen, since only that thread's next tool
     /// call, or its end, says its own was answered.
-    var waitingRaisers: Set<Raiser> = []
+    var promptRaisers: Set<PromptRaiser> = []
     /// Whether the agent whose last Stop this turn heard takes a turn when
     /// its workers end.
-    var stopResumes = false
+    var resumesAfterWorkers = false
     /// A turn of the agent's is running, or an end has woken one, so a Stop
     /// is coming that pays whatever is owed.
     var turnUnderway = false
@@ -34,7 +34,7 @@ extension SessionStates {
       case done
       /// A Done the agent's own Stop owes, which its later reports do not
       /// take back: only the last worker out settles it.
-      case stop
+      case owedDone
       /// The failure's own note and age, put back with it: the prompt that
       /// covered it rewrote both, and a card reads a note only for its state.
       case failed(SessionNote?, since: Date?)
@@ -45,7 +45,7 @@ extension SessionStates {
       }
     }
 
-    enum Raiser: Hashable {
+    enum PromptRaiser: Hashable {
       case agent
       case worker(String)
 
@@ -57,14 +57,14 @@ extension SessionStates {
 
     var isEmpty: Bool {
       state == nil && pid == nil && since == nil && note == nil && roster.isEmpty
-        && displaced == nil && waitingRaisers.isEmpty && !turnUnderway
+        && displaced == nil && promptRaisers.isEmpty && !turnUnderway
     }
 
     /// A report about a worker recorded on the roster, an unnamed end taking the
     /// oldest place with a prompt up. Returns the place touched.
     @discardableResult
     mutating func record(_ report: SubagentReport) -> SubagentRoster.Place {
-      roster.record(report, asking: Set(waitingRaisers.compactMap(\.workerID)))
+      roster.record(report, asking: Set(promptRaisers.compactMap(\.workerID)))
     }
 
     /// Remembers what a worker's report is about to stand over, once. A
@@ -75,7 +75,7 @@ extension SessionStates {
       case nil: displaced = .nothing
       // A worker heard after a resuming agent's Stop was out at it, its start
       // landing late, so that Stop's Done is owed to the turn its end wakes.
-      case .done: displaced = stopResumes ? .stop : .done
+      case .done: displaced = resumesAfterWorkers ? .owedDone : .done
       case .failed where byPrompt: displaced = .failed(note, since: since)
       default: break
       }
@@ -85,14 +85,14 @@ extension SessionStates {
     mutating func settleTurn() {
       roster = SubagentRoster()
       clearDisplaced()
-      stopResumes = false
+      resumesAfterWorkers = false
       turnUnderway = false
     }
 
     /// Nothing displaced, and nothing asked that it was holding.
     mutating func clearDisplaced() {
       displaced = nil
-      waitingRaisers = []
+      promptRaisers = []
     }
 
     /// A new turn: what the last one owed or asked goes, and so does a worker
@@ -105,10 +105,10 @@ extension SessionStates {
 
     /// One prompt answered, `true` when no other is asking. A shared place
     /// answers nothing, being any of them; see Docs/design/agents.md.
-    mutating func answer(_ raiser: Raiser, sharedPlace: Bool = false) -> Bool {
+    mutating func answer(_ raiser: PromptRaiser, sharedPlace: Bool = false) -> Bool {
       guard !sharedPlace else { return false }
-      waitingRaisers.remove(raiser)
-      return waitingRaisers.isEmpty
+      promptRaisers.remove(raiser)
+      return promptRaisers.isEmpty
     }
   }
 }

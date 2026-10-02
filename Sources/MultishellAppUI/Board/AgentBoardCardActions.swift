@@ -9,7 +9,7 @@ struct AgentBoardCardActions: View {
   let card: AgentBoardCard
 
   var body: some View {
-    Button(t("card.go-to-terminal")) { model.open(card) }
+    Button(t("card.go-to-terminal")) { model.show(card) }
     if card.state != nil {
       Button(t("action.clear-status")) { model.clearState(ofPane: card.id) }
     }

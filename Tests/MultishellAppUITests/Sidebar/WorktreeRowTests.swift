@@ -26,7 +26,7 @@ struct WorktreeRowTests {
     #expect(row() == row(beginRename: { print("another") }))
   }
 
-  @Test func aWorktreeRowWhoseStatusChangedIsNot() {
+  @Test func aWorktreeRowWhoseStatusChangedIsADifferentRow() {
     var dirty = WorktreeStatus()
     dirty.changedFiles = 1
     #expect(row() != row(status: dirty))

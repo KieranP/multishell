@@ -51,7 +51,7 @@ extension AppModel {
   }
 
   /// Whether the menu's pane has a bar up, enabling Find Next, Previous and Close
-  /// Find. Read off the workspace, so a menu re-evaluates when it changes.
+  /// Find. Read off `findBarSessionIDs`, so a menu re-evaluates when it changes.
   public var findIsOpenInView: Bool {
     guard let id = menuFindPane else { return false }
     return findBarSessionIDs.contains(id)
@@ -121,13 +121,16 @@ extension AppModel {
     paneTakesKeystrokes ? menuFindPane : nil
   }
 
-  /// Bars and find texts whose pane has gone. From the reconcile, as `pruneTabPrompts`
+  /// Bars and find texts whose pane has gone. From the reconcile, as `pruneTabCloseAndRename`
   /// is, and from a shell exiting, which closes its session without one.
   func pruneFind() {
-    setIfChanged(\.findBarSessionIDs, findBarSessionIDs.filter { workspace.session($0) != nil })
-    setIfChanged(\.findTexts, findTexts.filter { workspace.session($0.key) != nil })
-    setIfChanged(\.findFieldRequests, findFieldRequests.filter { workspace.session($0) != nil })
-    steppedFindSessionIDs = steppedFindSessionIDs.filter { workspace.session($0) != nil }
-    if let field = findFieldSessionID, workspace.session(field) == nil { findFieldSessionID = nil }
+    let existingSessionIDs = Set(workspace.sessions.map(\.id))
+    setIfChanged(\.findBarSessionIDs, findBarSessionIDs.filter(existingSessionIDs.contains))
+    setIfChanged(\.findTexts, findTexts.filter { existingSessionIDs.contains($0.key) })
+    setIfChanged(\.findFieldRequests, findFieldRequests.filter(existingSessionIDs.contains))
+    steppedFindSessionIDs = steppedFindSessionIDs.filter(existingSessionIDs.contains)
+    if let field = findFieldSessionID, !existingSessionIDs.contains(field) {
+      findFieldSessionID = nil
+    }
   }
 }

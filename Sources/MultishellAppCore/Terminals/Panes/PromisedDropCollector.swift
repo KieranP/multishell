@@ -6,7 +6,7 @@ import Foundation
 public final class PromisedDropCollector {
   private var files: [[URL]]
   private var reported: [Int]
-  private var promised: (Int) -> Int
+  private var promisedCount: (Int) -> Int
   private var naming: ((Int) -> [String])?
   private var waiting: Set<Int>
   private let deliver: ([URL]) -> Void
@@ -18,7 +18,7 @@ public final class PromisedDropCollector {
 
   /// Held, because `receivePromisedFiles` is not documented to keep the
   /// queue it is handed and a released one never calls the reader.
-  public var queue: OperationQueue?
+  public var readerQueue: OperationQueue?
 
   public var isDelivered: Bool { delivered }
 
@@ -30,7 +30,7 @@ public final class PromisedDropCollector {
   ) {
     files = Array(repeating: [], count: counts.count)
     reported = Array(repeating: 0, count: counts.count)
-    promised = recounting ?? { counts[$0] }
+    promisedCount = recounting ?? { counts[$0] }
     self.naming = naming
     waiting = Set(counts.indices.filter { counts[$0] > 0 })
     self.deliver = deliver
@@ -51,7 +51,7 @@ public final class PromisedDropCollector {
   func received(_ url: URL?, from index: Int) {
     if let url { files[index].append(url) }
     reported[index] += 1
-    guard reported[index] >= promised(index) else { return }
+    guard reported[index] >= promisedCount(index) else { return }
     guard waiting.remove(index) != nil, waiting.isEmpty else { return }
     answer()
   }
@@ -66,10 +66,10 @@ public final class PromisedDropCollector {
     delivered = true
     giveUpTimer?.cancel()
     // The queue holds the reader, which holds this, so a source that never
-    // writes would leave all three standing; `promised` holds the receivers.
-    queue = nil
+    // writes would leave all three standing; `promisedCount` holds the receivers.
+    readerQueue = nil
     let ordered = files.indices.map { Self.inNamedOrder(files[$0], names: naming?($0) ?? []) }
-    promised = { _ in 1 }
+    promisedCount = { _ in 1 }
     naming = nil
     deliver(ordered.flatMap { $0 })
   }

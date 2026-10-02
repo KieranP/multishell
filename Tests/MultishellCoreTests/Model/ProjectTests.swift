@@ -36,4 +36,19 @@ struct ProjectTests {
     #expect(decoded.settings.branchPrefix == "team/")
     #expect(decoded.sharedSettings == .unread, "and nothing of the file survives")
   }
+
+  /// Identity reads the stored path, so every way in must normalise it.
+  @Test func everySpellingOfADirectoryGivesTheSameIdentity() throws {
+    let spellings = ["/repos/demo", "/repos/demo/", "/repos/x/../demo", "/repos/./demo//"]
+    let projects = spellings.map { Project(path: URL(fileURLWithPath: $0)) }
+    #expect(Set(projects.map(\.id)) == ["/repos/demo"])
+    let worktrees = spellings.map {
+      Worktree(path: URL(fileURLWithPath: $0), projectID: "/p", head: "h")
+    }
+    #expect(Set(worktrees.map(\.id)) == ["/repos/demo"])
+
+    let decoded = try JSONDecoder().decode(
+      Project.self, from: Data(#"{ "path": "file:///repos/x/../demo" }"#.utf8))
+    #expect(decoded.id == "/repos/demo")
+  }
 }

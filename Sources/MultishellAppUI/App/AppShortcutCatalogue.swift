@@ -43,8 +43,8 @@ enum AppShortcutCatalogue {
   static let paste = AppShortcut("v", surfaceKeeps: true)
   static let selectAll = AppShortcut("a", surfaceKeeps: true)
 
-  /// In declaration order, so `unbound` reads the way the config did. The one
-  /// step done by hand: nothing can check a shortcut left out of this list.
+  /// The one step done by hand: nothing can check a shortcut left out of
+  /// this list.
   static let all: [AppShortcut] = [
     newTab, newShellTab, newAgentTab, closePane, closeTab, newWorktree,
     addProject, openInEditor, splitRight, splitDown,

@@ -7,7 +7,7 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
   enum BranchHandling: Equatable, Sendable {
     /// Settled before the dialog: the worktree is detached, or the setting
     /// deletes the branch every time.
-    case decided(deletes: Bool)
+    case decided(deletesBranch: Bool)
     /// The dialog offers both.
     case offersBoth
   }
@@ -56,17 +56,17 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
     t("worktree-removal.title", customName ?? worktree.name)
   }
 
-  var removeLabel: String { t("worktree-removal.remove") }
+  private var removeLabel: String { t("worktree-removal.remove") }
 
-  var removeWithBranchLabel: String { t("worktree-removal.remove-with-branch") }
+  private var removeWithBranchLabel: String { t("worktree-removal.remove-with-branch") }
 
   /// The remove buttons in the order the dialog shows them. A merged branch
   /// leads with deleting it, and only on evidence that is proof.
   public var choices: [Choice] {
     switch branchHandling {
-    case .decided(let deletes):
-      let label = deletes ? removeWithBranchLabel : removeLabel
-      return [Choice(label: label, deletesBranch: deletes)]
+    case .decided(let deletesBranch):
+      let label = deletesBranch ? removeWithBranchLabel : removeLabel
+      return [Choice(label: label, deletesBranch: deletesBranch)]
     case .offersBoth:
       let keep = Choice(label: removeLabel, deletesBranch: false)
       let delete = Choice(label: removeWithBranchLabel, deletesBranch: true)
@@ -85,7 +85,7 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
     return .ask(
       PendingWorktreeRemoval(
         worktree: worktree,
-        branchHandling: asksAboutBranch ? .offersBoth : .decided(deletes: deletes),
+        branchHandling: asksAboutBranch ? .offersBoth : .decided(deletesBranch: deletes),
         customName: customName, mergeState: mergeState, trashes: trashes,
         changesUnread: changesUnread))
   }
@@ -100,8 +100,8 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
     if let branch = worktree.branch {
       switch branchHandling {
       case .offersBoth: notes.append(t("worktree-removal.branch-asked", branch))
-      case .decided(deletes: true): notes.append(t("worktree-removal.branch-deleted", branch))
-      case .decided(deletes: false): notes.append(t("worktree-removal.branch-kept", branch))
+      case .decided(deletesBranch: true): notes.append(t("worktree-removal.branch-deleted", branch))
+      case .decided(deletesBranch: false): notes.append(t("worktree-removal.branch-kept", branch))
       }
     }
     if let branch = worktree.branch, let note = mergeState.removalNote(branch: branch) {

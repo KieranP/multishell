@@ -15,16 +15,16 @@ struct AppModelProjectDragTests {
     let b = h.store.addProject(at: paths[0]).id
     let c = h.store.addProject(at: paths[1]).id
 
-    h.model.moveProject(c, .above, a)
+    h.model.moveProject(c, .above, of: a)
     #expect(h.model.workspace.projects.map(\.id) == [c, a, b])
 
-    h.model.moveProject(c, .below, b)
+    h.model.moveProject(c, .below, of: b)
     #expect(h.model.workspace.projects.map(\.id) == [a, b, c])
 
-    h.model.moveProject(a, .below, b)
+    h.model.moveProject(a, .below, of: b)
     #expect(h.model.workspace.projects.map(\.id) == [b, a, c])
 
-    h.model.moveProject(c, .above, a)
+    h.model.moveProject(c, .above, of: a)
     #expect(h.model.workspace.projects.map(\.id) == [b, c, a])
   }
 
@@ -35,9 +35,9 @@ struct AppModelProjectDragTests {
     let a = h.project.id
     let b = h.store.addProject(at: path).id
 
-    h.model.moveProject(a, .below, a)
-    h.model.moveProject(a, .below, "/elsewhere")
-    h.model.moveProject("/elsewhere", .above, a)
+    h.model.moveProject(a, .below, of: a)
+    h.model.moveProject(a, .below, of: "/elsewhere")
+    h.model.moveProject("/elsewhere", .above, of: a)
 
     #expect(h.model.workspace.projects.map(\.id) == [a, b])
   }

@@ -1,12 +1,12 @@
 import Foundation
-import TestScratch
 
 protocol AgentHookFixtures {}
 
 extension AgentHookFixtures {
   var helper: String { "$HOME/Library/Application Support/Multishell/bin/multishell" }
 
-  func temporaryDirectory() -> URL {
-    Scratch.path("hooks")
+  /// The hook line the first builds wrote, which settings files still hold.
+  var legacyClaudeHookLine: String {
+    "[ -x \"\(helper)\" ] && exec \"\(helper)\" claude-hook; exit 0"
   }
 }

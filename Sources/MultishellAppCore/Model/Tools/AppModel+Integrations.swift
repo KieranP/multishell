@@ -10,7 +10,7 @@ extension AppModel {
   func recordInstallState(_ state: IntegrationInstallState) {
     setIfChanged(\.installedAgentHooks, state.installedHooks)
     setIfChanged(\.staleAgentHooks, state.staleHooks)
-    setIfChanged(\.commandLineToolInstalled, state.commandLineToolInstalled)
+    setIfChanged(\.isCommandLineToolInstalled, state.isCommandLineToolInstalled)
   }
 
   /// The agents Settings > Agents offers hooks for: the ones this machine
@@ -40,11 +40,7 @@ extension AppModel {
   }
 
   private func changeInstallState(_ change: () throws -> Void) {
-    do {
-      try change()
-    } catch {
-      present(error)
-    }
+    presentingFailure(change)
     refreshInstallState()
   }
 }

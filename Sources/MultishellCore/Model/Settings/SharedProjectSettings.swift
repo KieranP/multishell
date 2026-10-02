@@ -29,8 +29,8 @@ public struct SharedProjectSettings: Codable, Equatable, Sendable {
   public var iconGlyph: String?
   public var iconTint: Int?
 
-  /// The sha256 a hook trust decision is stored against; `nil` trusts nothing.
-  /// Taken from the bytes by `load` and `fileContents`, as it decides whether hooks run.
+  /// The sha256 the trust decision is stored against; `nil` trusts nothing.
+  /// Taken from the bytes by `load` and `fileContents`, as it decides what is trusted.
   public internal(set) var digest: String?
   /// The file's keys the fields would not write back: ones this build has no
   /// field for, and values it could not read. Export keeps them; see settings.md.

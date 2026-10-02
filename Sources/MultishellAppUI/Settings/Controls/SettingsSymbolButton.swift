@@ -15,7 +15,6 @@ struct SettingsSymbolButton: View {
     .accessibilityLabel(help)
   }
 
-  /// Runs detection or a git read again.
   static func refresh(
     help: String = t("action.refresh"), action: @escaping () -> Void
   )
@@ -24,12 +23,8 @@ struct SettingsSymbolButton: View {
     SettingsSymbolButton(symbol: "arrow.clockwise", help: help, action: action)
   }
 
-  /// Shows a file or folder in the Finder.
-  static func reveal(
-    help: String = t("action.reveal-in-finder"), action: @escaping () -> Void
-  )
-    -> SettingsSymbolButton
-  {
-    SettingsSymbolButton(symbol: "magnifyingglass", help: help, action: action)
+  static func reveal(action: @escaping () -> Void) -> SettingsSymbolButton {
+    SettingsSymbolButton(
+      symbol: "magnifyingglass", help: t("action.reveal-in-finder"), action: action)
   }
 }

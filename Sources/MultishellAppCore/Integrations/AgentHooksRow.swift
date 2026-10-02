@@ -10,17 +10,32 @@ public struct AgentHooksRow: Identifiable, Equatable, Sendable {
   public let isInstalled: Bool
   /// Installed by an older build and not what this one writes, so Add would
   /// write something else: offered as an update.
-  public let wantsUpdate: Bool
+  public let isStale: Bool
   /// What the disclosure button offers to show: the file is JSON for every
   /// agent but OpenCode, which is given a plugin.
   public let contentsLabel: String
   public let info: String
 
+  public enum Action: Equatable, Sendable {
+    case update
+    case remove
+    case add
+  }
+
+  public var statusLabel: String {
+    isInstalled ? t("agent-hooks.installed-in", displayPath) : t("agent-hooks.not-installed")
+  }
+
+  /// The buttons the row shows, in order.
+  public var actions: [Action] {
+    guard isInstalled else { return [.add] }
+    return isStale ? [.update, .remove] : [.remove]
+  }
+
   static func rows(
-    detection: AgentDetection, installed: Set<String>, stale: Set<String> = [],
-    integrations: [AgentHookIntegration] = AgentHookCatalogue.integrations
+    detection: AgentDetection, installed: Set<String>, stale: Set<String> = []
   ) -> [AgentHooksRow] {
-    integrations.compactMap { integration in
+    AgentHookCatalogue.integrations.compactMap { integration in
       let isInstalled = installed.contains(integration.id)
       guard isInstalled || detection.isInstalled(integration.id) else { return nil }
       return AgentHooksRow(
@@ -28,7 +43,7 @@ public struct AgentHooksRow: Identifiable, Equatable, Sendable {
         name: integration.name,
         displayPath: integration.displayPath,
         isInstalled: isInstalled,
-        wantsUpdate: isInstalled && stale.contains(integration.id),
+        isStale: isInstalled && stale.contains(integration.id),
         contentsLabel: integration.isPlugin
           ? t("agent-hooks.plugin") : t("agent-hooks.json"),
         info: info(for: integration))

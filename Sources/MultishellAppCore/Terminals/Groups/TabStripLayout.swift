@@ -4,8 +4,6 @@ public struct TabStripLayout: Equatable, Sendable {
   /// What every tab is drawn, exactly. Uniform, so a drop can tell which
   /// half of a tab the pointer is in from this alone.
   public let tabWidth: Double
-  /// Whether the tabs at that width overrun the strip, so it scrolls and
-  /// clips rather than squeezing them further.
   public let scrolls: Bool
 
   /// `available` is the room the tabs have, the buttons at the end of the

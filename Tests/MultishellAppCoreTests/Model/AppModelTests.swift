@@ -15,7 +15,7 @@ struct AppModelTests {
 
     for step in 0..<300 {
       let ws = h.model.workspace
-      let live = Array(h.engine.openSessionIDs)
+      let live = Array(h.engine.liveSessionIDs)
       switch Int.random(in: 0..<22, using: &rng) {
       case 0, 1: h.model.select(worktrees.randomElement(using: &rng)!)
       case 2: h.model.newTab()
@@ -62,7 +62,7 @@ struct AppModelTests {
           SessionStateReport(
             state: state, sessionID: session, cwd: cwd,
             pid: Bool.random(using: &rng) ? Int32.random(in: 1...99999, using: &rng) : nil,
-            agent: agent))
+            agentID: agent))
       case 13:
         if let id = live.randomElement(using: &rng) {
           h.engine.delegate?.terminalHost(
@@ -80,7 +80,6 @@ struct AppModelTests {
           h.model.moveTab(tab.id, toWorktree: worktrees.randomElement(using: &rng)!.id)
         }
       case 16:
-        // Move Tab to New Group, from the menu.
         h.model.moveActiveTabToNewGroup()
       case 17:
         // A tab dragged to the band down one edge of a group.
@@ -122,7 +121,7 @@ struct AppModelTests {
 
   private func expectRuntimeConsistent(_ h: Harness, _ context: String) {
     let ws = h.model.workspace
-    let live = h.engine.openSessionIDs
+    let live = h.engine.liveSessionIDs
     let sessionIDs = Set(ws.sessions.map(\.id))
 
     #expect(h.model.liveSessionIDs == live, "\(context): views see a different live set")

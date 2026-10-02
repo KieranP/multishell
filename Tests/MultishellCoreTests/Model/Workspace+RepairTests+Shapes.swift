@@ -13,7 +13,6 @@ extension WorkspaceRepairTests {
     workspace.worktrees = [worktree]
     workspace.sessions = sessions
     workspace.tabs = tabs
-    // The tabs name no group, the shape of every state file written before groups existed.
     return workspace
   }
 
@@ -126,5 +125,19 @@ extension WorkspaceRepairTests {
     var again = workspace
     again.repairReferences()
     #expect(again == workspace, "seed \(seed): repair is not idempotent")
+  }
+
+  @Test func aSplitWithNoPanesAtAllIsDropped() {
+    var (workspace, tab) = consistentWorkspace()
+    var hollow = tab
+    hollow.root = .split(axis: .vertical, children: [])
+    workspace.tabs = [hollow]
+
+    workspace.repairReferences()
+
+    #expect(workspace.tabs.isEmpty)
+    #expect(workspace.sessions.isEmpty)
+    #expect(workspace.tabGroups.isEmpty, "a group with no tabs does not stand")
+    #expect(workspace.focusedGroupByWorktree[worktree.id] == nil)
   }
 }

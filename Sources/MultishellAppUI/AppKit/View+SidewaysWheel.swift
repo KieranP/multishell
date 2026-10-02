@@ -10,6 +10,6 @@ extension View {
   /// Turns a wheel's vertical scrolling sideways for the marked scroller. Goes
   /// outside the scroller, over it; see Docs/design/tabs-and-groups.md.
   func wheelScrollsSideways(_ reference: ScrollerReference) -> some View {
-    overlay { SidewaysWheel(reference: reference) }
+    overlay { SidewaysWheelCatcher(reference: reference) }
   }
 }

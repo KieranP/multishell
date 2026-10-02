@@ -7,14 +7,14 @@ import MultishellProcess
 final class AppDelegate: NSObject, NSApplicationDelegate {
   var liveTerminalCount: @MainActor () -> Int = { 0 }
   var workingAgentCount: @MainActor () -> Int = { 0 }
-  var willTerminate: @MainActor () -> Void = {}
+  var onWillTerminate: @MainActor () -> Void = {}
 
   func applicationWillFinishLaunching(_ notification: Notification) {
     DescriptorLimit.raise()
   }
 
   func applicationWillTerminate(_ notification: Notification) {
-    willTerminate()
+    onWillTerminate()
   }
 
   func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

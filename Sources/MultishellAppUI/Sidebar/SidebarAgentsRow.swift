@@ -5,7 +5,7 @@ import SwiftUI
 /// The entry above Projects that opens the board, carrying the waiting,
 /// working and done counts. Selected is the worktree rows' own outline.
 struct SidebarAgentsRow: View {
-  let counts: [AgentLaneCount]
+  let counts: [AgentBoardLaneCount]
   let isSelected: Bool
   let theme: Theme
   let metrics: UIMetrics
@@ -16,7 +16,7 @@ struct SidebarAgentsRow: View {
       Image(systemName: "square.grid.2x2")
         .font(.system(size: metrics.icon, weight: .medium))
         .foregroundStyle(isSelected ? theme.textPrimary : theme.textSecondary)
-        .frame(width: metrics.icon + 2)
+        .frame(width: metrics.sidebarGlyphColumn)
       Text(t("label.agents"))
         .font(.system(size: metrics.secondary, weight: .medium))
         .foregroundStyle(theme.textPrimary.opacity(isSelected ? 1 : 0.85))

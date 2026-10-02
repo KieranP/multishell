@@ -23,12 +23,12 @@ struct SessionReconcilerTests {
   @Test func reconcileOpensWantedAndClosesOrphanedSessions() {
     store.openTab(in: worktree.id)
     let orphan = UUID()
-    host.openSessionIDs.insert(orphan)
+    host.liveSessionIDs.insert(orphan)
 
     let failures = reconciler.reconcile()
 
     #expect(failures.isEmpty)
-    #expect(host.openSessionIDs == Set(store.workspace.sessions.map(\.id)))
+    #expect(host.liveSessionIDs == Set(store.workspace.sessions.map(\.id)))
     #expect(host.log == ["close", "open"])
   }
 
@@ -41,7 +41,7 @@ struct SessionReconcilerTests {
     host.delegate?.terminalHost(host, didExit: second.focusedSessionID)
 
     #expect(store.workspace.tabs.map(\.id) == [first.id])
-    #expect(!host.openSessionIDs.contains(second.focusedSessionID))
+    #expect(!host.liveSessionIDs.contains(second.focusedSessionID))
     #expect(host.log == ["close", "focus \(first.focusedSessionID.uuidString.prefix(4))"])
   }
 

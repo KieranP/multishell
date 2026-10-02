@@ -18,7 +18,7 @@ enum UnixSocket {
     return address
   }
 
-  static var length: socklen_t { socklen_t(MemoryLayout<sockaddr_un>.size) }
+  static var addressLength: socklen_t { socklen_t(MemoryLayout<sockaddr_un>.size) }
 
   static func newSocket(reportingAs path: String) throws -> Int32 {
     let descriptor = socket(AF_UNIX, SOCK_STREAM, 0)
@@ -33,11 +33,11 @@ enum UnixSocket {
   }
 
   static func connectSocket(_ descriptor: Int32, to path: String) throws {
-    try call("connect", withAddressOf: path) { connect(descriptor, $0, length) }
+    try call("connect", withAddressOf: path) { connect(descriptor, $0, addressLength) }
   }
 
   static func bindSocket(_ descriptor: Int32, to path: String) throws {
-    try call("bind", withAddressOf: path) { bind(descriptor, $0, length) }
+    try call("bind", withAddressOf: path) { bind(descriptor, $0, addressLength) }
   }
 
   /// `operation` names the call in the failure, which reads its errno.

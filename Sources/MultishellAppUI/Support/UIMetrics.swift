@@ -12,6 +12,8 @@ struct UIMetrics: Equatable {
   var secondary: Double { body - 1 }
   var caption: Double { body - 2 }
   var badge: Double { body - 3 }
+  /// A row's chevron and lock, a worker's glyph, count and time, a pane's number.
+  var small: Double { body - 4 }
   var mono: Double { body - 1 }
   var icon: Double { body - 2 }
 
@@ -25,8 +27,11 @@ struct UIMetrics: Equatable {
   func worktreeRowHeight(hasCustomName: Bool, isRenaming: Bool) -> Double {
     hasCustomName || isRenaming ? namedRowHeight : rowHeight
   }
-  /// The gap between the sidebar's rows.
   static let sidebarRowSpacing: Double = 1
+  /// The column a sidebar row's leading glyph sits in, one width for every
+  /// row so the worktree, pane and agents rows line up.
+  var sidebarGlyphColumn: Double { icon + 2 }
+  var sidebarFilterHeight: Double { (body * 1.85).rounded() }
   /// The + on a project's row, and the sort menu above it sharing its column.
   static let sidebarRowButtonWidth: Double = 24
 
@@ -53,7 +58,7 @@ struct UIMetrics: Equatable {
   var tabHeight: Double { (body * 2.6).rounded() }
   /// What a tab is drawn at when the strip has room for it.
   var tabMaxWidth: Double { (body * 14.6).rounded() }
-  /// And the least it is ever drawn: below this the mark, title and close
+  /// The least a tab is ever drawn at: below this the mark, title and close
   /// button have nowhere to go. See `TabStripLayout`.
   var tabMinWidth: Double { (body * 7.8).rounded() }
   /// A split button at the end of a strip, which never scrolls away.
@@ -76,7 +81,7 @@ struct UIMetrics: Equatable {
     width.isFinite && width >= stripButtonsWidth + 2 * tabArrowWidth + tabMinWidth
   }
   /// The room a strip of that width leaves its tabs, its buttons taken off.
-  func stripTabRoom(in width: Double) -> Double {
+  func stripTabsAvailable(in width: Double) -> Double {
     width - (stripShowsSplits(in: width) ? stripButtonsWidth : newTabMenuWidth)
   }
   /// The arrow at either end of a strip with more tabs that way. Its room is
@@ -84,8 +89,8 @@ struct UIMetrics: Equatable {
   var tabArrowWidth: Double { (body * 1.7).rounded() }
   /// Each end's gutter in a scrolling strip with that room. None without room
   /// for both and a tab besides, or two arrows draw over the group beside it.
-  func tabArrowGutter(forRoom room: Double) -> Double {
-    room >= 2 * tabArrowWidth + tabMinWidth ? tabArrowWidth : 0
+  func tabArrowGutter(forAvailable available: Double) -> Double {
+    available >= 2 * tabArrowWidth + tabMinWidth ? tabArrowWidth : 0
   }
   var indent: Double { (body * 2).rounded() }
   /// The find bar's well height, and each of its glyph buttons' side.

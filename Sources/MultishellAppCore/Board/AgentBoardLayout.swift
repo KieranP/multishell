@@ -3,12 +3,8 @@
 public struct AgentBoardLayout: Equatable, Sendable {
   /// What every column is drawn, exactly.
   public let columnWidth: Double
-  /// Whether the columns at that width overrun the board, so it scrolls
-  /// rather than squeezing them further.
   public let scrolls: Bool
 
-  /// `available` is the room the columns have, the gaps between them and the
-  /// padding round them already taken off.
   public init(available: Double, count: Int, minimum: Double) {
     let share = EvenShare(available: available, count: count, minimum: minimum)
     self.columnWidth = share.width

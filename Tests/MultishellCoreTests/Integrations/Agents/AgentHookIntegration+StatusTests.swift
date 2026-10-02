@@ -8,7 +8,7 @@ import Testing
 @Suite
 struct AgentHookIntegrationStatusTests: AgentHookFixtures {
   @Test func anInstallationReadsAbsentThenCurrentThenStale() throws {
-    let directory = temporaryDirectory()
+    let directory = Scratch.path("hooks")
     defer { Scratch.remove(directory) }
     let ours = directory.appendingPathComponent("hooks/multishell.json")
     let shared = directory.appendingPathComponent(".codex/hooks.json")
@@ -32,7 +32,7 @@ struct AgentHookIntegrationStatusTests: AgentHookFixtures {
   }
 
   @Test func aFileOfOursAnOlderBuildWroteOrTheUserEditedIsStaleUntilUpdate() throws {
-    let directory = temporaryDirectory()
+    let directory = Scratch.path("hooks")
     defer { Scratch.remove(directory) }
     let file = directory.appendingPathComponent("hooks/multishell.json")
     let copilot = AgentHookCatalogue.copilot
@@ -47,7 +47,7 @@ struct AgentHookIntegrationStatusTests: AgentHookFixtures {
   }
 
   @Test func aSharedFileMissingAnEventThisBuildAddedIsStaleNotAbsent() throws {
-    let directory = temporaryDirectory()
+    let directory = Scratch.path("hooks")
     defer { Scratch.remove(directory) }
     let file = directory.appendingPathComponent(".claude/settings.json")
     try FileManager.default.createDirectory(
@@ -74,7 +74,7 @@ struct AgentHookIntegrationStatusTests: AgentHookFixtures {
   }
 
   @Test func installingOverAStaleInstallReplacesOursAndKeepsTheirs() throws {
-    let directory = temporaryDirectory()
+    let directory = Scratch.path("hooks")
     defer { Scratch.remove(directory) }
     let file = directory.appendingPathComponent(".codex/hooks.json")
     try FileManager.default.createDirectory(
@@ -102,9 +102,8 @@ struct AgentHookIntegrationStatusTests: AgentHookFixtures {
   func aNullHooksKeyReadsAbsentInstallsCurrentAndRemovesBackToAbsent(
     agent: AgentHookIntegration
   ) throws {
-    let directory = temporaryDirectory()
+    let directory = try Scratch.directory("hooks")
     defer { Scratch.remove(directory) }
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     let file = directory.appendingPathComponent("settings.json")
     let original = #"{"hooks":null,"model":"opus"}"#
     try original.write(to: file, atomically: true, encoding: .utf8)

@@ -16,7 +16,6 @@ public protocol Platform: AnyObject, Sendable {
 
   /// A directory picker, or `nil` when the user cancels.
   func chooseDirectory(prompt: String) async -> URL?
-  /// Shows the file in the platform's file browser.
   func revealInFileBrowser(_ url: URL)
   func copyToClipboard(_ text: String)
 

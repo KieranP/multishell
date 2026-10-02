@@ -29,8 +29,6 @@ struct WorktreeGitBranchesTests {
     #expect(refs.first?.committedAt == nil, "the order loses its dates, and only those")
   }
 
-  /// The retry is only for a failure: a git that answers the first query is
-  /// asked once.
   @Test func aGitThatAnswersIsAskedOnce() async throws {
     let fake = try FakeGit.make(
       #"printf 'refs/heads/main\t111\t\t\t\t1700000000\n'"#, loggingCalls: true)

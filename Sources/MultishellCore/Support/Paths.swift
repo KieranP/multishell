@@ -2,7 +2,7 @@ import Foundation
 
 /// Where Multishell keeps its state; see Docs/develop/state-on-disk.md.
 public enum Paths {
-  static var stateDirectory: URL {
+  private static var stateDirectory: URL {
     let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
     return base.appendingPathComponent("Multishell", isDirectory: true)
   }

@@ -7,7 +7,7 @@ import Testing
 @testable import MultishellCore
 
 /// Reports arriving at the model: which tab they land on, what they clear,
-/// when a notification is posted, and how a dead agent is noticed.
+/// and when a notification is posted.
 @Suite @MainActor
 struct AppModelSessionReportsTests {
   @Test func aReportAboutALiveSessionColoursItsTabAndWorktree() {
@@ -40,7 +40,7 @@ struct AppModelSessionReportsTests {
     #expect(h.model.state(ofPane: id) == .running)
     #expect(h.model.workingAgentCount == 0)
 
-    h.stateSource.send(SessionStateReport(state: .running, sessionID: id, agent: "claude"))
+    h.stateSource.send(SessionStateReport(state: .running, sessionID: id, agentID: "claude"))
     #expect(h.model.workingAgentCount == 1)
   }
 
@@ -115,7 +115,8 @@ struct AppModelSessionReportsTests {
 
     h.stateSource.send(
       SessionStateReport(
-        state: .running, sessionID: tab.focusedSessionID, pid: me, agent: AgentCatalogue.claudeID))
+        state: .running, sessionID: tab.focusedSessionID, pid: me, agentID: AgentCatalogue.claudeID)
+    )
 
     #expect(h.model.state(of: tab) == .running)
     #expect(h.model.sessionStates.trackedPIDs.isEmpty, "the app is not what is working")
@@ -172,18 +173,18 @@ struct AppModelSessionReportsTests {
     let tab = h.model.workspace.activeTab(in: h.main.id)!
     h.model.newTab()
     let session = tab.focusedSessionID
-    h.stateSource.send(SessionStateReport(state: .running, sessionID: session, agent: "claude"))
-    h.stateSource.send(SessionStateReport(state: .done, sessionID: session, agent: "claude"))
+    h.stateSource.send(SessionStateReport(state: .running, sessionID: session, agentID: "claude"))
+    h.stateSource.send(SessionStateReport(state: .done, sessionID: session, agentID: "claude"))
     #expect(h.model.state(ofWorktree: h.main.id) == .done)
     #expect(h.notifier.posted.count == 1)
 
     h.stateSource.send(
       SessionStateReport(
-        state: .running, sessionID: session, agent: "claude",
+        state: .running, sessionID: session, agentID: "claude",
         subagent: SubagentReport(id: "w1", type: "Explore", phase: .started)))
     h.stateSource.send(
       SessionStateReport(
-        state: .running, cwd: h.main.path.path, agent: "claude",
+        state: .running, cwd: h.main.path.path, agentID: "claude",
         subagent: SubagentReport(id: "w2", type: "Plan", phase: .working)))
 
     #expect(h.model.state(ofWorktree: h.main.id) == .running, "a worker out is work")
@@ -198,11 +199,11 @@ struct AppModelSessionReportsTests {
 
     h.stateSource.send(
       SessionStateReport(
-        state: .running, sessionID: session, agent: "claude",
+        state: .running, sessionID: session, agentID: "claude",
         subagent: SubagentReport(id: "w1", phase: .ended)))
     h.stateSource.send(
       SessionStateReport(
-        state: .running, cwd: h.main.path.path, agent: "claude",
+        state: .running, cwd: h.main.path.path, agentID: "claude",
         subagent: SubagentReport(id: "w2", phase: .ended)))
     #expect(h.model.subagents(ofPane: session).isEmpty)
     #expect(h.model.state(ofWorktree: h.main.id) == .done, "the displaced Done comes back")
@@ -229,11 +230,9 @@ struct AppModelSessionReportsTests {
     h.stateSource.send(SessionStateReport(state: .running, sessionID: id))
     #expect(h.model.state(of: tab) == .running)
 
-    // A permission prompt: waiting.
     h.stateSource.send(SessionStateReport(state: .attention, sessionID: id, message: "Needs Bash"))
     #expect(h.model.state(of: tab) == .attention)
 
-    // The turn ends: done.
     h.stateSource.send(SessionStateReport(state: .done, sessionID: id))
     #expect(h.model.state(of: tab) == .done)
   }
@@ -251,243 +250,6 @@ struct AppModelSessionReportsTests {
     h.stateSource.send(SessionStateReport(state: .idle, sessionID: id, startsSession: true))
 
     #expect(h.model.state(of: tab) == nil)
-  }
-
-  @Test func aReportedProcessThatExitsClearsWorking() async throws {
-    let h = Harness()
-    h.model.pidPollInterval = .milliseconds(50)
-    h.model.select(h.main)
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-
-    // A child that is gone by the time the poll looks.
-    let child = Process()
-    child.executableURL = URL(fileURLWithPath: "/bin/sh")
-    child.arguments = ["-c", "exit 0"]
-    try child.run()
-    child.waitUntilExit()
-    let gone = child.processIdentifier
-
-    h.stateSource.send(
-      SessionStateReport(state: .running, sessionID: tab.focusedSessionID, pid: gone))
-    #expect(h.model.state(of: tab) == .running)
-    #expect(h.model.pidWatch != nil)
-
-    try await waitUntil({ h.model.state(of: tab) == nil }, seconds: 4)
-    #expect(h.model.state(of: tab) == nil, "the agent was killed without a Stop hook")
-    #expect(h.model.pidWatch == nil, "nothing left to watch")
-
-    // A live process keeps its state.
-    h.stateSource.send(
-      SessionStateReport(
-        state: .running, sessionID: tab.focusedSessionID,
-        pid: ProcessInfo.processInfo.processIdentifier))
-    try await Task.sleep(for: .milliseconds(200))
-    #expect(h.model.state(of: tab) == .running)
-  }
-
-  @Test func aStopHeldForABackgroundShellIsPaidAndAnnouncedWhenTheShellExits() async throws {
-    let h = Harness()
-    h.model.pidPollInterval = .milliseconds(50)
-    h.model.setNotifications(NotificationPreference(attention: true, failed: true, done: true))
-    h.model.select(h.main)
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-    h.model.newTab()
-    let session = tab.focusedSessionID
-    let me = ProcessInfo.processInfo.processIdentifier
-
-    let shell = Process()
-    shell.executableURL = URL(fileURLWithPath: "/bin/sh")
-    shell.arguments = ["-c", "read line"]
-    let input = Pipe()
-    shell.standardInput = input
-    try shell.run()
-    defer { shell.terminate() }
-
-    h.stateSource.send(
-      SessionStateReport(state: .running, sessionID: session, pid: me, agent: "claude"))
-    h.stateSource.send(
-      SessionStateReport(
-        state: .done, sessionID: session, pid: me, agent: "claude",
-        backgroundShells: [shell.processIdentifier]))
-    #expect(h.model.state(ofPane: session) == .running, "the shell is still working")
-    #expect(h.model.subagents(ofPane: session).count == 1)
-    #expect(h.notifier.posted.isEmpty)
-
-    try input.fileHandleForWriting.close()
-    shell.waitUntilExit()
-    try await waitUntil({ h.model.state(ofPane: session) == .done }, seconds: 4)
-    #expect(h.model.state(ofPane: session) == .done)
-    #expect(h.model.subagents(ofPane: session).isEmpty)
-    #expect(h.notifier.posted.count == 1, "the Done announced once, at the end")
-  }
-
-  private func exitedProcess() throws -> Int32 {
-    let child = Process()
-    child.executableURL = URL(fileURLWithPath: "/bin/sh")
-    child.arguments = ["-c", "exit 0"]
-    try child.run()
-    child.waitUntilExit()
-    return child.processIdentifier
-  }
-
-  @Test func aShellExitingBeforeTheWokenTurnAnnouncesOnlyThatTurnsStop() throws {
-    let h = Harness()
-    h.model.setNotifications(NotificationPreference(attention: true, failed: true, done: true))
-    h.model.select(h.main)
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-    h.model.newTab()
-    let session = tab.focusedSessionID
-    let me = ProcessInfo.processInfo.processIdentifier
-    let shell = try exitedProcess()
-
-    h.stateSource.send(
-      SessionStateReport(
-        state: .done, sessionID: session, pid: me, agent: "claude", backgroundShells: [shell],
-        resumesAfterWorkers: true))
-    h.model.sweepGonePIDs()
-    #expect(h.model.state(ofPane: session) == .running, "waiting on the turn the exit starts")
-    #expect(h.notifier.posted.isEmpty)
-
-    h.stateSource.send(SessionStateReport(state: .running, sessionID: session, agent: "claude"))
-    h.stateSource.send(
-      SessionStateReport(
-        state: .done, sessionID: session, agent: "claude", resumesAfterWorkers: true))
-    #expect(h.model.state(ofPane: session) == .done)
-    #expect(h.notifier.posted.count == 1)
-  }
-
-  @Test func aWokenTurnStoppingBeforeThePollSeesItsShellGoIsStillDone() throws {
-    let h = Harness()
-    h.model.setNotifications(NotificationPreference(attention: true, failed: true, done: true))
-    h.model.select(h.main)
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-    h.model.newTab()
-    let session = tab.focusedSessionID
-    let me = ProcessInfo.processInfo.processIdentifier
-    let shell = try exitedProcess()
-
-    h.stateSource.send(
-      SessionStateReport(
-        state: .done, sessionID: session, pid: me, agent: "claude", backgroundShells: [shell],
-        resumesAfterWorkers: true))
-    h.stateSource.send(
-      SessionStateReport(
-        state: .done, sessionID: session, pid: me, agent: "claude", backgroundShells: [],
-        resumesAfterWorkers: true))
-    #expect(h.model.state(ofPane: session) == .done)
-    #expect(h.model.subagents(ofPane: session).isEmpty)
-    #expect(h.notifier.posted.count == 1)
-  }
-
-  @Test func aSubagentStartLandingAfterTheStopTakesBackThatDoneAndLeavesOneStanding() {
-    let h = Harness()
-    h.model.setNotifications(NotificationPreference(attention: true, failed: true, done: true))
-    h.model.select(h.main)
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-    h.model.newTab()
-    let session = tab.focusedSessionID
-
-    h.stateSource.send(
-      SessionStateReport(
-        state: .done, sessionID: session, agent: "claude", resumesAfterWorkers: true))
-    h.stateSource.send(
-      SessionStateReport(
-        state: .running, sessionID: session, agent: "claude",
-        subagent: SubagentReport(id: "w1", type: "Explore", phase: .started)))
-    #expect(h.notifier.withdrawn.count == 1, "the Done was not true")
-    h.stateSource.send(
-      SessionStateReport(
-        state: .running, sessionID: session, agent: "claude",
-        subagent: SubagentReport(id: "w1", phase: .ended)))
-    #expect(h.model.state(ofPane: session) == .running)
-    #expect(h.notifier.posted.count == 1)
-
-    h.stateSource.send(
-      SessionStateReport(
-        state: .done, sessionID: session, agent: "claude", resumesAfterWorkers: true))
-    #expect(h.model.state(ofPane: session) == .done)
-    #expect(h.notifier.posted.count == 2)
-    #expect(h.notifier.withdrawn.count == 1)
-  }
-
-  @Test func aStopListingABackgroundSubagentAnnouncesNothingUntilTheStopListingNone() {
-    let h = Harness()
-    h.model.setNotifications(NotificationPreference(attention: true, failed: true, done: true))
-    h.model.select(h.main)
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-    h.model.newTab()
-    let session = tab.focusedSessionID
-    func stop(_ out: [String]) {
-      h.stateSource.send(
-        SessionStateReport(
-          state: .done, sessionID: session, agent: "claude", resumesAfterWorkers: true,
-          workersOut: out.map { SubagentReport(id: $0, type: "Explore", phase: .working) }))
-    }
-
-    stop(["w1"])
-    #expect(h.model.state(ofPane: session) == .running)
-    #expect(h.model.subagents(ofPane: session).map(\.id) == ["w1"], "its start not heard yet")
-    h.stateSource.send(
-      SessionStateReport(
-        state: .running, sessionID: session, agent: "claude",
-        subagent: SubagentReport(id: "w1", phase: .ended)))
-    #expect(h.model.state(ofPane: session) == .running)
-    #expect(h.notifier.posted.isEmpty)
-
-    stop([])
-    #expect(h.model.state(ofPane: session) == .done)
-    #expect(h.notifier.posted.count == 1)
-  }
-
-  @Test func aSubagentEndingBeforeTheWokenTurnAnnouncesOnlyThatTurnsStop() {
-    let h = Harness()
-    h.model.setNotifications(NotificationPreference(attention: true, failed: true, done: true))
-    h.model.select(h.main)
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-    h.model.newTab()
-    let session = tab.focusedSessionID
-
-    h.stateSource.send(
-      SessionStateReport(
-        state: .running, sessionID: session, agent: "claude",
-        subagent: SubagentReport(id: "w1", type: "Explore", phase: .started)))
-    h.stateSource.send(
-      SessionStateReport(
-        state: .done, sessionID: session, agent: "claude", resumesAfterWorkers: true))
-    h.stateSource.send(
-      SessionStateReport(
-        state: .running, sessionID: session, agent: "claude",
-        subagent: SubagentReport(id: "w1", phase: .ended)))
-    #expect(h.model.state(ofPane: session) == .running, "the woken turn is still writing")
-    #expect(h.notifier.posted.isEmpty)
-
-    h.stateSource.send(
-      SessionStateReport(
-        state: .done, sessionID: session, agent: "claude", resumesAfterWorkers: true))
-    #expect(h.model.state(ofPane: session) == .done)
-    #expect(h.notifier.posted.count == 1)
-  }
-
-  /// Whether the agent or its shell is checked first is a set's order, so
-  /// several pairs make sure both orders are met.
-  @Test func anAgentDyingWithItsShellAnnouncesNothingWhicheverIsSweptFirst() throws {
-    let h = Harness()
-    h.model.setNotifications(NotificationPreference(attention: true, failed: true, done: true))
-    h.model.select(h.main)
-    let tab = h.model.workspace.activeTab(in: h.main.id)!
-    h.model.newTab()
-    let session = tab.focusedSessionID
-    for _ in 0..<12 {
-      let agent = try exitedProcess()
-      let shell = try exitedProcess()
-      h.stateSource.send(SessionStateReport(state: .running, sessionID: session, pid: agent))
-      h.stateSource.send(
-        SessionStateReport(
-          state: .done, sessionID: session, pid: agent, backgroundShells: [shell]))
-      h.model.sweepGonePIDs()
-      #expect(h.model.state(ofPane: session) == nil, "agent \(agent), shell \(shell)")
-    }
-    #expect(h.notifier.posted.isEmpty)
   }
 
   @Test func reportsOverARealSocketReachTheModel() async throws {

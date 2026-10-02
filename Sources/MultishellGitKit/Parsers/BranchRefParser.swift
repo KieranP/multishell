@@ -5,10 +5,10 @@ import Foundation
 enum BranchRefParser {
   static func parse(_ output: String) -> [BranchRef] {
     output.split(omittingEmptySubsequences: true, whereSeparator: \.isNewline)
-      .compactMap { row(from: $0) }
+      .compactMap { ref(from: $0) }
   }
 
-  private static func row(from line: Substring) -> BranchRef? {
+  private static func ref(from line: Substring) -> BranchRef? {
     // Trailing \r where git ran with a Windows-configured core.autocrlf.
     let fields = line.split(separator: "\t", omittingEmptySubsequences: false)
       .map { $0.trimmingCharacters(in: CharacterSet(charactersIn: "\r")) }
@@ -23,7 +23,7 @@ enum BranchRefParser {
     // rather than a dropped row; the badges do not read it.
     let committed = fields.count > 5 ? TimeInterval(fields[5]) : nil
     return BranchRef(
-      fullName: name, tip: tip, isUpstreamGone: tracksUpstream && track.contains("gone"),
+      fullName: name, tip: tip, upstreamIsGone: tracksUpstream && track.contains("gone"),
       symref: symref, committedAt: committed.map(Date.init(timeIntervalSince1970:)))
   }
 }

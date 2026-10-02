@@ -49,13 +49,15 @@ struct AccessibilityTextTests {
   @Test func theBoardRowReadsItsCounts() {
     #expect(
       AccessibilityText.agentsRow([
-        AgentLaneCount(.waiting, 2), AgentLaneCount(.working, 3), AgentLaneCount(.done, 0),
+        AgentBoardLaneCount(.waiting, 2), AgentBoardLaneCount(.working, 3),
+        AgentBoardLaneCount(.done, 0),
       ])
         == "Agents, 2 waiting for you, 3 working",
       "a lane with nothing in it is not said")
     #expect(
       AccessibilityText.agentsRow([
-        AgentLaneCount(.waiting, 0), AgentLaneCount(.working, 0), AgentLaneCount(.done, 0),
+        AgentBoardLaneCount(.waiting, 0), AgentBoardLaneCount(.working, 0),
+        AgentBoardLaneCount(.done, 0),
       ])
         == "Agents, nothing running")
   }
@@ -103,7 +105,7 @@ struct AccessibilityTextTests {
         == "claude, tab, Claude Code, agent, Working, 2 subagents")
     #expect(
       AccessibilityText.pane(
-        title: "fix tests", position: PanePosition(index: 2, count: 2),
+        title: "fix tests", position: PanePosition(number: 2, count: 2),
         isFocusedPane: true, state: nil, subagents: [],
         agentName: nil)
         == "fix tests, pane 2 of 2, selected",

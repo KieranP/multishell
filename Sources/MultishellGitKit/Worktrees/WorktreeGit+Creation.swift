@@ -8,10 +8,10 @@ extension WorktreeGit {
   func add(
     branch: String,
     at path: URL,
-    basedOn startPoint: String? = nil,
-    createBranch: Bool = true,
+    basedOn startPoint: String?,
+    createBranch: Bool,
     in project: Project,
-    stopper: ProcessStopper? = nil
+    stopper: ProcessStopper?
   ) async throws {
     var arguments = ["worktree", "add"]
     if createBranch { arguments += ["-b", branch] }
@@ -22,7 +22,7 @@ extension WorktreeGit {
 
   /// Written once, a second after the checkout: git trusts no stat data from the
   /// second an index was written in; see Docs/design/worktrees.md.
-  func settleIndex(of worktree: URL, stopper: ProcessStopper? = nil) async {
+  func settleIndex(of worktree: URL, stopper: ProcessStopper?) async {
     guard settlesNewIndex else { return }
     let now = Date().timeIntervalSince1970
     let settled = ContinuousClock.now + .seconds(now.rounded(.down) + 1.01 - now)

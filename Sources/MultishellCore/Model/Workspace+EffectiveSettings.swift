@@ -1,7 +1,7 @@
 /// A project's override where it has one, else the global. These read
-/// `project.settings`, so the project must be the one `AppModel.withEffectiveSettings(_:)` made.
+/// `project.settings`, so the project must be the one `AppModel.effectiveProject(_:)` made.
 extension Workspace {
-  public func worktreeSettings(for project: Project) -> WorktreeSettings {
+  public func effectiveWorktreeSettings(for project: Project) -> WorktreeSettings {
     project.settings.effectiveWorktreeSettings(defaults: worktreeDefaults)
   }
 
@@ -13,7 +13,7 @@ extension Workspace {
 
   /// The project's flag line where it overrides, else the global one for
   /// that agent. Blank is the override to none; see settings.md.
-  public func agentFlags(for project: Project, agent id: String) -> String {
+  public func effectiveAgentFlags(for project: Project, agent id: String) -> String {
     project.settings.agentFlags ?? agentFlags[id] ?? ""
   }
 
@@ -52,7 +52,7 @@ extension Workspace {
     project.settings.worktreeSortOrder ?? worktreeSortOrder
   }
 
-  /// Whether this project lifts its busy worktrees to the top of its block.
+  /// Whether this project lifts its active worktrees to the top of its block.
   public func showsActiveWorktreesFirst(for project: Project) -> Bool {
     project.settings.showsActiveWorktreesFirst ?? showsActiveWorktreesFirst
   }

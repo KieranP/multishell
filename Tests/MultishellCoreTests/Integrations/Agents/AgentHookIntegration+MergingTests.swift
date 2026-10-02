@@ -70,8 +70,7 @@ struct AgentHookIntegrationMergingTests: AgentHookFixtures {
       case 2:
         hooks[event] = [["hooks": [["type": "command", "command": "echo \(event)"]]]]
       case 3:
-        let old = "[ -x \"\(helper)\" ] && exec \"\(helper)\" claude-hook; exit 0"
-        hooks[event] = [["hooks": [["type": "command", "command": old]]]]
+        hooks[event] = [["hooks": [["type": "command", "command": legacyClaudeHookLine]]]]
       case 4: hooks[event] = "echo \(event)"
       default: hooks[event] = ["command": "echo \(event)"]
       }

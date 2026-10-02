@@ -8,11 +8,7 @@ extension AppModel {
     guard startStateSource() else { return }
     host.claimSharedFiles()
     // On the main actor, before `start` first yields, so no tab can open ahead.
-    do {
-      try refreshAppLaunchFiles(platform.bundledHelper)
-    } catch {
-      present(error)
-    }
+    presentingFailure { try refreshAppLaunchFiles(platform.bundledHelper) }
     // All that bounds the drops directory; no terminal waits on it.
     let sweep = sweepPromisedDropCopies
     Task { await offMain(sweep) }

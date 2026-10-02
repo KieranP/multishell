@@ -11,23 +11,15 @@ struct ProjectAgentsPage: View {
     let globalAgentID = model.globalAgentID
     let globalFlags = model.workspace.globalAgentFlags(for: project)
     Form {
-      OverrideSection(
+      DetectionOverrideSection(
         model: model, project: project, setting: \.preferredAgentID,
         label: t("project.preferred-agent"),
         info: t("project.preferred-agent-info"),
-        fallback: globalAgentID
-      ) { selection, isOverridden in
-        DetectionPicker(
-          label: t("project.agent-label"),
-          selection: selection,
-          options: model.agentDetection.options(selected:),
-          rescanning: model,
-          info: t("project.agent-picker-info"),
-          isEnabled: isOverridden
-        )
-      } footer: {
-        SettingsCaption(t("project.using-global-value", model.agentDisplayName(globalAgentID)))
-      }
+        pickerLabel: t("project.agent-label"),
+        pickerInfo: t("project.agent-picker-info"),
+        options: model.agentDetection.options(selected:),
+        globalID: globalAgentID,
+        globalName: model.agentDisplayName(globalAgentID))
 
       OverrideSection(
         model: model, project: project, setting: \.agentFlags,

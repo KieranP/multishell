@@ -233,10 +233,30 @@ struct SessionStatesTests {
     #expect(states.showsNothing && states.trackedPIDs.isEmpty)
   }
 
-  func shellGone(_ states: inout SessionStates, _ pid: Int32) -> [SessionState?] {
-    states.endings(ofShell: pid).map {
-      states.report(
-        .init(state: .running, subagent: $0.report), pid: nil, for: $0.key, isSeen: false)
-    }
+  /// `nil` where the report was only bookkeeping.
+  func report(_ states: inout SessionStates, _ report: SessionStateReport) -> SessionState? {
+    states.report(report, pid: 99, for: .session(a), isSeen: false)
+  }
+
+  func report(
+    _ states: inout SessionStates, _ state: SessionState, _ subagent: SubagentReport? = nil
+  ) -> SessionState? {
+    report(&states, .init(state: state, subagent: subagent))
+  }
+
+  func started(_ id: String, type: String? = "Explore") -> SubagentReport {
+    SubagentReport(id: id, type: type, phase: .started)
+  }
+
+  func working(_ id: String) -> SubagentReport {
+    SubagentReport(id: id, type: "Explore", phase: .working)
+  }
+
+  func ended(_ id: String) -> SubagentReport {
+    SubagentReport(id: id, phase: .ended)
+  }
+
+  func workersOut(_ states: SessionStates) -> [String] {
+    states.subagents(.session(a)).map(\.id)
   }
 }

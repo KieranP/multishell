@@ -15,7 +15,7 @@ extension WorktreeGit {
     var status = WorktreeStatusParser.parse(output)
     guard status.isDirty else { return status }
     let counts = await lineCounts(
-      in: worktree.path, counting: indicator, untrackedFiles: status.untracked)
+      in: worktree.path, counting: indicator, untrackedCount: status.untracked)
     status.insertions = counts.insertions
     status.deletions = counts.deletions
     status.unscoredFiles = counts.unscoredFiles
@@ -25,7 +25,7 @@ extension WorktreeGit {
   /// `--cached` is the index alone, and the fallback wherever the diff
   /// against HEAD fails, which an unborn HEAD does; see worktrees.md.
   private func lineCounts(
-    in path: URL, counting indicator: GitStatusIndicator, untrackedFiles: Int
+    in path: URL, counting indicator: GitStatusIndicator, untrackedCount: Int
   ) async -> LineCounts {
     // `--diff-filter=u` drops unmerged paths, which print `0 0` from
     // `--cached` and read as a file with nothing to count.
@@ -38,7 +38,7 @@ extension WorktreeGit {
     } else if let cached = await runner.output(numstat + ["--cached"], in: path) {
       counts = NumstatParser.parse(cached)
     }
-    guard indicator == .stagedAndUnstaged, untrackedFiles > 0 else { return counts }
+    guard indicator == .stagedAndUnstaged, untrackedCount > 0 else { return counts }
     let untrackedLines = await untrackedCounts(in: path)
     counts.insertions += untrackedLines.insertions
     counts.unscoredFiles += untrackedLines.unscoredFiles

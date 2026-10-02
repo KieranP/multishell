@@ -23,7 +23,7 @@ struct MultishellApp: App {
         .task {
           appDelegate.liveTerminalCount = { model.liveTerminalCount }
           appDelegate.workingAgentCount = { model.workingAgentCount }
-          appDelegate.willTerminate = {
+          appDelegate.onWillTerminate = {
             model.shutDown()
           }
           await model.start()

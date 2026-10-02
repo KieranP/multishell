@@ -15,7 +15,7 @@ struct AppModelWorktreesTests {
     #expect(h.model.workspace.tabs(in: h.main.id).count == 1)
     #expect(h.model.liveTerminalCount == 1)
     #expect(h.engine.focused.count == 1)
-    #expect(h.model.liveSessionIDs == h.engine.openSessionIDs)
+    #expect(h.model.liveSessionIDs == h.engine.liveSessionIDs)
   }
 
   @Test func selectingOpensNoTerminalWhenTheSettingIsOff() {

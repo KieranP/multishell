@@ -29,7 +29,7 @@ struct AgentBoardHeader: View {
   /// The board's one control, deciding membership and nothing else: a shell
   /// it lets in lands where its state says, as an agent does.
   private var allTerminalsToggle: some View {
-    Toggle(t("board.show-all-terminals"), isOn: model.showsAllTerminalsSetting)
+    Toggle(t("board.show-all-terminals"), isOn: model.showsAllTerminalsBinding)
       .toggleStyle(.switch)
       .controlSize(.mini)
       .font(.system(size: metrics.caption))

@@ -7,9 +7,8 @@ import Testing
 @Suite
 struct AgentHookIntegrationReportsTests: AgentHookFixtures {
   @Test func claudesStopSaysATurnFollowsWhereItsTranscriptHasANoticeQueued() throws {
-    let directory = temporaryDirectory()
+    let directory = try Scratch.directory("hooks")
     defer { Scratch.remove(directory) }
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     let transcript = directory.appendingPathComponent("session.jsonl")
     try Data(
       (#"{"type":"queue-operation","operation":"enqueue","timestamp":"2026-09-30T10:00:05.000Z","#

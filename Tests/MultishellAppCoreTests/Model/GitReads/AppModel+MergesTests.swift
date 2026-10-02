@@ -387,15 +387,4 @@ struct AppModelMergesTests {
     #expect(h.model.mergeState(of: feat) == .unmerged, "the sign it was badged on is gone")
     #expect(h.model.presentedError == nil)
   }
-
-  @Test func theDefaultBranchFieldShowsTheDetectedBranchWithoutItsRemote() {
-    let h = Harness()
-    #expect(h.model.defaultBranchName(of: h.project) == "main", "nothing detected yet")
-
-    h.model.defaultBranches[h.project.id] = DefaultBranch(
-      shortName: "origin/trunk", nameWithoutRemote: "trunk", tip: "abc",
-      fullName: "refs/remotes/origin/trunk")
-
-    #expect(h.model.defaultBranchName(of: h.project) == "trunk")
-  }
 }

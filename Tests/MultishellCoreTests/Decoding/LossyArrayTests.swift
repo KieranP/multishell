@@ -62,8 +62,8 @@ struct LossyArrayTests {
     }
   }
 
-  @Test func soundCollectionsDecodeExactlyAsBefore() throws {
-    let (workspace, _) = soundWorkspace()
+  @Test func consistentCollectionsDecodeExactlyAsBefore() throws {
+    let (workspace, _) = consistentWorkspace()
 
     let json = try JSONEncoder().encode(workspace)
     #expect(try JSONDecoder().decode(Workspace.self, from: json) == workspace)

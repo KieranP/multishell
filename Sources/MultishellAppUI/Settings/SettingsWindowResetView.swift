@@ -7,24 +7,24 @@ final class SettingsWindowResetView: AccessibilityHiddenView {
   private var observers: [any NSObjectProtocol] = []
   /// Whether the window this view is in is one the user has already been
   /// shown, so that becoming key can tell a reopen from a raise.
-  private var isOpen = false
+  private var hasBeenShown = false
 
   override func viewDidMoveToWindow() {
     super.viewDidMoveToWindow()
     stopObserving()
-    isOpen = false
+    hasBeenShown = false
     guard let window else { return }
     // Placing but not resetting the tab, a write to the view's state here
     // being a write during a SwiftUI update. The key pass does the tab.
     centre(window)
     observe(NSWindow.didBecomeKeyNotification, from: window) { [weak self] window in
-      guard let self, !isOpen else { return }
-      isOpen = true
+      guard let self, !hasBeenShown else { return }
+      hasBeenShown = true
       reset(window)
     }
     observe(NSWindow.willCloseNotification, from: window) { [weak self] window in
       guard let self else { return }
-      isOpen = false
+      hasBeenShown = false
       reset(window)
     }
     // The user cannot resize a settings window, so every resize is AppKit

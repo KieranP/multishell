@@ -3,15 +3,11 @@ import MultishellCore
 import MultishellGitKit
 
 extension AppModel {
-  /// What the project settings window shows when opened with no project
-  /// named: the selected worktree's project, or the only project.
-  var selectedProject: Project? { project(of: workspace.selectedWorktree) }
-
   /// The project a command should act on while nothing else names one: the
   /// worktree in view's, or the only project. The board names none.
   var projectInView: Project? { project(of: worktreeInView) }
 
-  private func project(of worktree: Worktree?) -> Project? {
+  func project(of worktree: Worktree?) -> Project? {
     if let worktree { return workspace.project(worktree.projectID) }
     return workspace.projects.count == 1 ? workspace.projects.first : nil
   }
@@ -47,6 +43,19 @@ extension AppModel {
     pendingProjectRemoval = PendingProjectRemoval(project: project, source: source)
   }
 
+  /// Each window attaches the dialog with its own source, so only the
+  /// window that asked presents it.
+  public func pendingProjectRemoval(
+    for source: PendingProjectRemoval.Source
+  ) -> PendingProjectRemoval? {
+    pendingProjectRemoval.flatMap { $0.source == source ? $0 : nil }
+  }
+
+  public func answerProjectRemoval(_ pending: PendingProjectRemoval, confirmed: Bool) {
+    pendingProjectRemoval = nil
+    if confirmed { removeProject(pending.project) }
+  }
+
   /// What the confirmation says, with the live terminal count.
   public func projectRemovalMessage(for project: Project) -> String {
     let live = workspace.worktrees(of: project.id).map { liveTerminalCount(in: $0.id) }
@@ -55,15 +64,15 @@ extension AppModel {
 
   public func removeProject(_ project: Project) {
     defaultBranches[project.id] = nil
-    // Paths are ids, so the project re-added under the same filter text came back folded.
+    // Paths are ids, so the project re-added under the same filter text came back collapsed.
     setIfChanged(
-      \.projectsFoldedWhileFiltering, projectsFoldedWhileFiltering.subtracting([project.id]))
+      \.projectsCollapsedWhileFiltering, projectsCollapsedWhileFiltering.subtracting([project.id]))
     // Or a project re-added while git still cannot read it would be dimmed
     // with no alert: the first failure is what reports one.
     missingProjects.remove(project.id)
     commonGitDirectories[project.id] = nil
     worktreeRecords[project.id] = nil
-    worktreeOrderMemo.forget(project.id)
+    worktreeSortCache.forget(project.id)
     dismissSharedSettingsTrust(for: project.id)
     // Or the settings window's fallback to the current project never fires:
     // a stale id wins over it, and the window opens only to dismiss itself.
@@ -76,7 +85,7 @@ extension AppModel {
     Task { await rearmWatcher() }
   }
 
-  public func setExpanded(_ expanded: Bool, for project: Project) {
+  func setExpanded(_ expanded: Bool, for project: Project) {
     store.setExpanded(expanded, forProject: project.id)
     // A collapsed project's rows went unread; opening reads them now, through
     // the poll's own read, which holds git to a few at a time.

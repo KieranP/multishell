@@ -4,7 +4,7 @@ import Foundation
 extension AgentHookIntegration {
   /// Whether a payload is one of the asked-for events, which the helper asks
   /// before it walks its ancestry for a pid.
-  public func handles(_ payload: AgentHookPayload) -> Bool {
+  public func asksFor(_ payload: AgentHookPayload) -> Bool {
     event(for: payload) != nil
   }
 
@@ -40,8 +40,8 @@ extension AgentHookIntegration {
       cwd: payload.cwd ?? cwd,
       pid: pid,
       message: payload.message,
-      agent: id,
-      silent: event.silent ? true : nil,
+      agentID: id,
+      isSilent: event.isSilent ? true : nil,
       subagent: event.subagentChange(for: payload),
       startsTurn: event.startsTurn(for: payload) ? true : nil,
       startsSession: event.startsSession ? true : nil,
@@ -64,7 +64,7 @@ extension AgentHookIntegration {
     case .always: true
     case .whenGeminiSettingsSay:
       GeminiSettings.wakesForBackgroundShells(
-        environment: ProcessInfo.processInfo.environment, workspace: payload.cwd)
+        environment: ProcessInfo.processInfo.environment, directory: payload.cwd)
     }
   }
 

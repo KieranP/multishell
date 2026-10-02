@@ -30,18 +30,17 @@ extension Theme {
   var colorScheme: ColorScheme { isDark ? .dark : .light }
 
   /// A worktree's name beside its project's, on the header and a card.
-  var worktreeNameColor: Color { ansiRGB(6).color }
+  var worktreeNameColor: Color { ansiRGB(.cyan).color }
 
   /// The git badge's lines added and removed, and its files with no line.
-  var insertionsColor: Color { ansiRGB(2).color }
-  var deletionsColor: Color { ansiRGB(1).color }
-  var unscoredFilesColor: Color { ansiRGB(3).color }
+  var insertionsColor: Color { ansiRGB(.green).color }
+  var deletionsColor: Color { ansiRGB(.red).color }
+  var unscoredFilesColor: Color { ansiRGB(.yellow).color }
 
   /// A create or remove that failed, and a branch that landed.
-  var failureColor: Color { ansiRGB(1).color }
-  var mergedColor: Color { ansiRGB(2).color }
+  var failureColor: Color { ansiRGB(.red).color }
+  var mergedColor: Color { ansiRGB(.green).color }
 
-  /// A project icon's tint slot, or `untinted` for an icon without one.
   func iconTint(_ slot: Int?, untinted: Color) -> Color {
     slot.map { ansiRGB($0).color } ?? untinted
   }
@@ -50,10 +49,10 @@ extension Theme {
   /// dirty-files dot is the same yellow, so the two never sit together.
   func color(for state: SessionState) -> Color {
     switch state {
-    case .running: ansiRGB(3).color
-    case .attention: ansiRGB(4).color
-    case .done: ansiRGB(2).color
-    case .failed: ansiRGB(1).color
+    case .running: ansiRGB(.yellow).color
+    case .attention: ansiRGB(.blue).color
+    case .done: ansiRGB(.green).color
+    case .failed: ansiRGB(.red).color
     case .idle: textTertiary
     }
   }

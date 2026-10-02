@@ -5,13 +5,11 @@ import Testing
 
 @testable import MultishellGitKit
 
-/// The merge check against real repositories: the three ways a branch lands,
-/// and the branches it must not claim have landed.
 @Suite(.serialized)
 struct WorktreeCoordinatorMergesTests {
   /// The fixture with a bare `origin` beside it, so a branch can be pushed
   /// and then deleted on the remote the way a merge does.
-  private func withRemote(_ fixture: RepositoryFixture) async throws {
+  func withRemote(_ fixture: RepositoryFixture) async throws {
     let origin = fixture.root.appendingPathComponent("origin.git", isDirectory: true)
     _ = try await fixture.runner.run(
       ["clone", "-q", "--bare", fixture.project.path.path, origin.path], in: fixture.root)
@@ -20,7 +18,7 @@ struct WorktreeCoordinatorMergesTests {
     _ = try await fixture.runner.run(["fetch", "-q", "origin"], in: fixture.project.path)
   }
 
-  private func mergeInputs(
+  func mergeInputs(
     _ fixture: RepositoryFixture, override: String? = nil
   ) async throws -> MergeInputs {
     let scan = try #require(
@@ -30,7 +28,7 @@ struct WorktreeCoordinatorMergesTests {
 
   /// Two commits, so the one the forge squashes them into shares a patch id with neither and
   /// `git cherry` cannot answer. The squash is one commit of the whole tree, then the branch goes.
-  private func squashMergeOnTheRemote(
+  func squashMergeOnTheRemote(
     _ branch: String, work: [(file: String, content: String)], in fixture: RepositoryFixture
   ) async throws {
     let path = fixture.project.path
@@ -123,7 +121,6 @@ struct WorktreeCoordinatorMergesTests {
     let tree = fixture.root.appendingPathComponent("trees/behind", isDirectory: true)
     _ = try await fixture.runner.run(
       ["worktree", "add", "-q", "-b", "behind", tree.path, "HEAD"], in: path)
-    // The trunk moves, and the worktree pulls it in.
     try await fixture.commit("trunk moves on", file: "trunk.txt", content: "a\n")
     _ = try await fixture.runner.run(["merge", "-q", "--ff-only", "main"], in: tree)
 
@@ -201,106 +198,6 @@ struct WorktreeCoordinatorMergesTests {
     states = await fixture.coordinator.mergeStates(
       of: ["squashed"], in: fixture.project, inputs: after)
     #expect(states["squashed"] == .unmerged, "this worktree holds the only copy of that")
-  }
-
-  /// git reads a bare name shared with a path as "both revision and filename" and fails the
-  /// read, leaving the branch as never written in; see Docs/design/merged-branch.md.
-  @Test func aBranchNamedAfterADirectoryIsStillJudgedByItsReflog() async throws {
-    let fixture = try await RepositoryFixture.make()
-    defer { fixture.tearDown() }
-    let path = fixture.project.path
-    try await fixture.commit("a directory to collide with", file: "docs/notes.md", content: "a\n")
-
-    _ = try await fixture.runner.run(["checkout", "-q", "-b", "docs"], in: path)
-    try await fixture.commit("work", file: "docs/one.md", content: "one\n")
-    _ = try await fixture.runner.run(["checkout", "-q", "main"], in: path)
-    _ = try await fixture.runner.run(
-      ["merge", "-q", "--no-ff", "-m", "merge docs", "docs"], in: path)
-
-    let inputs = try await mergeInputs(fixture)
-    let states = await fixture.coordinator.mergeStates(
-      of: ["docs"], in: fixture.project, inputs: inputs)
-
-    #expect(states["docs"] == .merged(.ancestor, into: "main"))
-  }
-
-  /// A tag of the branch's name makes `%(refname:short)` answer `heads/x`,
-  /// matching no worktree's branch, and a bare name reach the tag instead.
-  @Test func aTagSharingABranchsNameChangesNeitherTheListNorTheVerdict() async throws {
-    let fixture = try await RepositoryFixture.make()
-    defer { fixture.tearDown() }
-    let path = fixture.project.path
-    // The tag sits on the first commit, so judging by it would read the
-    // branch as holding nothing of its own.
-    _ = try await fixture.runner.run(["tag", "release"], in: path)
-    _ = try await fixture.runner.run(["checkout", "-q", "-b", "release"], in: path)
-    try await fixture.commit("work", file: "one.md", content: "one\n")
-    _ = try await fixture.runner.run(["checkout", "-q", "main"], in: path)
-    // By refname, or git merges the tag: the ambiguity this is about reaches
-    // the setup as readily as the reads.
-    _ = try await fixture.runner.run(
-      ["merge", "-q", "--no-ff", "-m", "merge release", "refs/heads/release"], in: path)
-
-    let worktreeGit = WorktreeGit(runner: fixture.runner)
-    let merged = await worktreeGit.mergedBranches(into: "main", in: fixture.project)
-    #expect(merged?.contains("release") == true, "got \(merged ?? [])")
-
-    let inputs = try await mergeInputs(fixture)
-    let states = await fixture.coordinator.mergeStates(
-      of: ["release"], in: fixture.project, inputs: inputs)
-    #expect(states["release"] == .merged(.ancestor, into: "main"))
-  }
-
-  @Test func aTagNamedLikeTheLocalBaseDecidesNoVerdict() async throws {
-    let fixture = try await RepositoryFixture.make()
-    defer { fixture.tearDown() }
-    let path = fixture.project.path
-    _ = try await fixture.runner.run(["checkout", "-q", "-b", "feat"], in: path)
-    try await fixture.commit("work", file: "feat.txt", content: "a\n")
-    _ = try await fixture.runner.run(["checkout", "-q", "main"], in: path)
-    _ = try await fixture.runner.run(["tag", "main", "feat"], in: path)
-
-    let inputs = try await mergeInputs(fixture)
-    let states = await fixture.coordinator.mergeStates(
-      of: ["feat"], in: fixture.project, inputs: inputs)
-
-    #expect(states["feat"] == .unmerged)
-  }
-
-  @Test func aTagNamedLikeTheRemoteBaseDecidesNoVerdict() async throws {
-    let fixture = try await RepositoryFixture.make()
-    defer { fixture.tearDown() }
-    let path = fixture.project.path
-    try await withRemote(fixture)
-    _ = try await fixture.runner.run(["checkout", "-q", "-b", "feat"], in: path)
-    try await fixture.commit("work", file: "feat.txt", content: "a\n")
-    _ = try await fixture.runner.run(["checkout", "-q", "main"], in: path)
-    _ = try await fixture.runner.run(["tag", "origin/main", "feat"], in: path)
-
-    let inputs = try await mergeInputs(fixture)
-    #expect(inputs.base.shortName == "origin/main")
-    let states = await fixture.coordinator.mergeStates(
-      of: ["feat"], in: fixture.project, inputs: inputs)
-
-    #expect(states["feat"] == .unmerged)
-  }
-
-  /// The same collision on the content read: the two-name form of `git diff` takes the
-  /// branch for a path, and the squash-merged branch loses its badge.
-  @Test func aSquashedBranchNamedAfterADirectoryStillReadsAsMerged() async throws {
-    let fixture = try await RepositoryFixture.make()
-    defer { fixture.tearDown() }
-    try await fixture.commit("a directory to collide with", file: "docs/notes.md", content: "a\n")
-    try await withRemote(fixture)
-
-    try await squashMergeOnTheRemote(
-      "docs", work: [("docs/one.md", "one\n"), ("docs/two.md", "two\n")], in: fixture)
-
-    let inputs = try await mergeInputs(fixture)
-    let states = await fixture.coordinator.mergeStates(
-      of: ["docs"], in: fixture.project, inputs: inputs)
-
-    #expect(states["docs"] == .merged(.upstreamGone, into: "origin/main"))
   }
 
   /// A bare repository logs no branch creation, so nothing is claimed for a branch with no
@@ -518,7 +415,7 @@ struct WorktreeCoordinatorMergesTests {
     #expect(missing.lastCommitDates["main"] != nil, "the dates come back with no base to measure")
   }
 
-  @Test func aScanOfNoBranchesAsksGitNothingAndAnswersNothing() async throws {
+  @Test func aScanOfNoBranchesAnswersNothing() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let inputs = try await mergeInputs(fixture)

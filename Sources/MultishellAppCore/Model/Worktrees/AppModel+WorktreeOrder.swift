@@ -6,32 +6,32 @@ extension AppModel {
   /// Orders a project's rows as its settings ask. Takes the worktrees rather
   /// than reading them, so a filtered list orders like a whole one.
   public func orderedWorktrees(
-    _ worktrees: [Worktree], in project: Project, sessions: WorktreeSessions? = nil
+    _ worktrees: [Worktree], in project: Project, sessions: SessionIDsByWorktree? = nil
   ) -> [Worktree] {
-    let sessions = sessions ?? worktreeSessions
-    let order = worktreeOrder(for: project)
-    let keys = order.keys(
+    let sessions = sessions ?? sessionIDsByWorktree
+    let rule = worktreeSortRule(for: project)
+    let keys = rule.keys(
       worktrees,
       displayName: { self.workspace.displayName(of: $0) },
-      isActive: { self.hasActivity($0.id, sessions: sessions) },
+      isActive: { self.isActiveWorktree($0.id, sessions: sessions) },
       lastCommit: { self.lastCommitDates[$0.id] })
-    return worktreeOrderMemo.rows(of: project.id, keys: keys, order: order)
+    return worktreeSortCache.rows(of: project.id, keys: keys, rule: rule)
   }
 
   /// The rule in force for a project, measured against the merge badges'
   /// trunk. Looked up again, the settings window being its own scene.
-  private func worktreeOrder(for project: Project) -> WorktreeOrder {
-    let effective = withEffectiveSettings(currentCopy(of: project))
-    return WorktreeOrder(
+  private func worktreeSortRule(for project: Project) -> WorktreeSortRule {
+    let effective = effectiveProject(currentCopy(of: project))
+    return WorktreeSortRule(
       sortOrder: workspace.worktreeSortOrder(for: effective),
-      activeFirst: workspace.showsActiveWorktreesFirst(for: effective),
+      showsActiveFirst: workspace.showsActiveWorktreesFirst(for: effective),
       trunkBranch: defaultBranch(of: project)?.nameWithoutRemote)
   }
 
   /// Whether anything is going on in a worktree: a terminal open in it, or
   /// a state something reported for it.
-  func hasActivity(_ id: Worktree.ID, sessions: WorktreeSessions? = nil) -> Bool {
-    let sessions = sessions ?? worktreeSessions
+  func isActiveWorktree(_ id: Worktree.ID, sessions: SessionIDsByWorktree? = nil) -> Bool {
+    let sessions = sessions ?? sessionIDsByWorktree
     return !sessions[id].isEmpty || state(ofWorktree: id, sessions: sessions) != nil
   }
 

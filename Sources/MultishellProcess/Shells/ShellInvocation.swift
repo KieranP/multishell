@@ -22,7 +22,7 @@ public struct ShellInvocation: Equatable, Sendable {
 
   /// Runs in place of a shell that would fail on the flags, reading no
   /// startup files.
-  static let fallbackShell = URL(fileURLWithPath: "/bin/sh")
+  private static let fallbackShell = URL(fileURLWithPath: "/bin/sh")
 
   /// The user's shell, interactive and login, so a script sees a terminal's
   /// PATH: additions live in `.zprofile` for some and `.zshrc` for others.

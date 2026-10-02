@@ -21,7 +21,7 @@ struct GroupAreaDropDelegate: DropDelegate {
   }
 
   func dropExited(info: DropInfo) {
-    if drag.overGroup == groupID { drag.overGroup = nil }
+    if drag.hoveredGroupID == groupID { drag.hoveredGroupID = nil }
   }
 
   func performDrop(info: DropInfo) -> Bool { drop() }
@@ -29,7 +29,7 @@ struct GroupAreaDropDelegate: DropDelegate {
   /// Arriving here gives up any line a strip was drawing, the pointer
   /// crossing between targets leaving an exit unreported.
   private func track() {
-    drag.overGroup = groupID
+    drag.hoveredGroupID = groupID
     drag.insertion = nil
   }
 }

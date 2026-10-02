@@ -9,7 +9,7 @@ struct NewWorktreeBranchFields: View {
   let checkedOut: Set<String>
 
   var body: some View {
-    if draft.createBranch { newBranchFields } else { existingBranchFields }
+    if draft.createsBranch { newBranchFields } else { existingBranchFields }
   }
 
   @ViewBuilder
@@ -27,7 +27,7 @@ struct NewWorktreeBranchFields: View {
       }
     }
     if draft.branchNameIsRefused {
-      FormNote(
+      NewWorktreeFormNote(
         text: t("sheet.branch-refused"), symbol: "exclamationmark.triangle.fill", tint: .yellow)
     }
     Picker(t("sheet.based-on"), selection: $draft.baseBranch) {
@@ -44,7 +44,7 @@ struct NewWorktreeBranchFields: View {
     // Local branches only. A large repository has hundreds of remote ones,
     // and a fresh clone with nothing local to pick is told so instead.
     if draft.showsAllCheckedOutNote(checkedOut: checkedOut) {
-      FormNote(
+      NewWorktreeFormNote(
         text: t("sheet.all-branches-checked-out"), symbol: "info.circle", tint: .secondary,
         dimsText: true)
     } else {

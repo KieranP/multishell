@@ -7,7 +7,7 @@ struct MergeReadLog: Sendable {
   /// one a project, so a fetch that moved every branch's base does not start them all.
   var budget: Duration = .seconds(2)
   /// What a branch never read is taken to cost against the round.
-  static let unmeasuredCost: Duration = .milliseconds(250)
+  private static let unmeasuredCost: Duration = .milliseconds(250)
 
   private var reads = LastReads()
   private var spent = Duration.zero

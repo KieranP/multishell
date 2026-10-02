@@ -53,13 +53,13 @@ extension WorktreeCoordinator {
     onStep?(.addingWorktree)
     // No container directory made here: `git worktree add` makes the leading
     // directories itself, and a refused add then leaves none behind.
-    let firstMade = await offMain { Self.highestMissingAncestor(of: path) }
+    let highestNewDirectory = await offMain { Self.highestMissingAncestor(of: path) }
     // Asked first: a stop can land before git has made anything, and the
     // name may be a branch of the user's that the add was refusing.
     let branchIsNew = createBranch ? await git.lacksBranch(branch, in: project) : false
     // An unforced remove still forgets a registered worktree whose directory is
     // away. Asked even where the path exists: git fills an empty directory.
-    let madeHere = await !git.isListed(path, in: project)
+    let worktreeIsNew = await !git.isListed(path, in: project)
     do {
       try await git.add(
         branch: branch,
@@ -72,48 +72,17 @@ extension WorktreeCoordinator {
       await git.settleIndex(of: path, stopper: stopper)
       // A Cancel during that wait comes after git finished; see worktrees.md.
       if stopper?.isStopRequested == true {
-        throw ProcessFailure.git(
+        throw ProcessFailure.unreportedByGit(
           ["worktree", "add"], message: "stopped while the new index settled", stop: .byUser)
       }
     } catch  where stopper?.isStopRequested == true {
-      await takeBack(
-        path, madeHere: madeHere, branch: branchIsNew ? branch : nil, through: firstMade,
+      await undoStoppedAdd(
+        path, worktreeIsNew: worktreeIsNew, branch: branchIsNew ? branch : nil,
+        through: highestNewDirectory,
         in: project)
       throw error
     }
     return path
-  }
-
-  /// A stopped add leaves its new branch and its directories, and the worktree
-  /// where git had finished, so the same name could not be tried again.
-  private func takeBack(
-    _ path: URL, madeHere: Bool, branch: String?, through firstMade: URL?, in project: Project
-  ) async {
-    if madeHere { await git.removeUnchanged(path, in: project) }
-    if let branch { await git.deleteBranchIfUnlisted(branch, in: project) }
-    if let firstMade {
-      await offMain { Self.removeEmptyDirectories(from: path, through: firstMade) }
-    }
-  }
-
-  /// The topmost directory on the way to `path` that is not there yet.
-  private static func highestMissingAncestor(of path: URL) -> URL? {
-    let (existing, unmade) = path.splitAtDeepestExisting()
-    return unmade.first.map { existing.appendingPathComponent($0) }
-  }
-
-  /// Each directory from `path` up to `top` that holds nothing; one holding
-  /// anything stops the walk, `removeItem` taking a directory whole.
-  private static func removeEmptyDirectories(from path: URL, through top: URL) {
-    let manager = FileManager.default
-    var directory = path.standardizedFileURL
-    let last = top.standardizedFileURL.pathComponents.count
-    while directory.pathComponents.count >= last {
-      // `rmdir` refuses a directory with anything in it, a create beside this
-      // one having perhaps made its checkout there since.
-      if manager.fileExists(atPath: directory.path), rmdir(directory.path) != 0 { return }
-      directory = directory.deletingLastPathComponent()
-    }
   }
 
   /// The other half of a create. Returns at once when the hook is blank.

@@ -35,8 +35,8 @@ public struct Theme: Identifiable, Codable, Hashable, Sendable {
     cursor: String,
     selectionBackground: String,
     ansi: [String],
-    focusRing: String? = nil,
-    inactivePaneOpacity: Double = 1
+    focusRing: String?,
+    inactivePaneOpacity: Double
   ) {
     precondition(
       ansi.count == Self.ansiSlotCount, "a theme needs exactly \(Self.ansiSlotCount) ANSI colours")
@@ -52,7 +52,7 @@ public struct Theme: Identifiable, Codable, Hashable, Sendable {
     self.inactivePaneOpacity = Self.usableOpacity(inactivePaneOpacity)
   }
 
-  static func usableOpacity(_ value: Double) -> Double {
+  private static func usableOpacity(_ value: Double) -> Double {
     guard value.isFinite else { return 1 }
     return value.clamped(to: minimumInactivePaneOpacity...1)
   }

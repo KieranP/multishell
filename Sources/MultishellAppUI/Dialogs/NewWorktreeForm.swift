@@ -36,7 +36,8 @@ struct NewWorktreeForm: View {
 
       Form {
         if model.workspace.projects.isEmpty {
-          FormNote(text: t("sheet.no-projects"), symbol: "folder.badge.plus", tint: .secondary)
+          NewWorktreeFormNote(
+            text: t("sheet.no-projects"), symbol: "folder.badge.plus", tint: .secondary)
         } else {
           let labels = NewWorktreeDraft.labels(for: model.workspace.projects)
           Picker(t("sheet.project"), selection: $draft.projectID) {
@@ -64,7 +65,7 @@ struct NewWorktreeForm: View {
     .onChange(of: model.workspace.projects.map(\.id)) { _, ids in
       draft.projectsChanged(to: ids)
     }
-    .onChange(of: draft.createBranch) { _, _ in
+    .onChange(of: draft.createsBranch) { _, _ in
       draft.modeChanged(checkedOut: model.checkedOutBranches(for: draft))
     }
   }
@@ -72,11 +73,11 @@ struct NewWorktreeForm: View {
   @ViewBuilder
   private var fields: some View {
     if project != nil, !draft.hasCommits {
-      FormNote(
+      NewWorktreeFormNote(
         text: t("sheet.no-commits"), symbol: "exclamationmark.triangle.fill", tint: .yellow)
     }
 
-    Picker("", selection: $draft.createBranch) {
+    Picker("", selection: $draft.createsBranch) {
       Text(t("sheet.new-branch")).tag(true)
       Text(t("sheet.existing-branch")).tag(false)
     }
@@ -133,7 +134,7 @@ struct NewWorktreeForm: View {
       await model.createWorktree(
         branch: draft.branch,
         basedOn: draft.startPoint,
-        createBranch: draft.createBranch,
+        createBranch: draft.createsBranch,
         in: project
       )
       dismiss()

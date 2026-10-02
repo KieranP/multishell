@@ -20,7 +20,7 @@ struct SidebarView: View {
     let metrics = model.metrics
     // Once per render, not per row: forty rows scanning every session four
     // times each was most of what a render cost.
-    let sessions = model.worktreeSessions
+    let sessions = model.sessionIDsByWorktree
     let shownProjects = model.sidebarEntries
     VStack(spacing: 0) {
       SidebarHeader(
@@ -66,7 +66,7 @@ struct SidebarView: View {
         .padding(.bottom, 12)
       }
       .overlay {
-        if let message = emptyMessage(showing: shownProjects) {
+        if let message = model.sidebarEmptyMessage(showing: shownProjects) {
           Text(message)
             .font(.system(size: metrics.secondary))
             .foregroundStyle(theme.textTertiary)
@@ -93,15 +93,9 @@ struct SidebarView: View {
     model.endProjectDrag()
   }
 
-  /// What the list says in place of rows, `nil` while it has some.
-  private func emptyMessage(showing shownProjects: [SidebarFilter.Entry]) -> String? {
-    if model.workspace.projects.isEmpty { return t("sidebar.no-projects") }
-    return shownProjects.isEmpty ? t("sidebar.nothing-matches") : nil
-  }
-
   /// The rows of one project's block, in the order its settings ask for.
   private func orderedWorktrees(
-    of entry: SidebarFilter.Entry, sessions: WorktreeSessions
+    of entry: SidebarFilter.Entry, sessions: SessionIDsByWorktree
   ) -> [Worktree] {
     model.orderedWorktrees(entry.worktrees, in: entry.project, sessions: sessions)
   }

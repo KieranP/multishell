@@ -22,9 +22,9 @@ struct TabDragStateTests {
     drag.insertion = TabDragState.Insertion(tabID: tab, placement: .before)
     #expect(drag.isEngaged)
     drag.insertion = nil
-    drag.overGroup = groupID
+    drag.hoveredGroupID = groupID
     #expect(drag.isEngaged)
-    drag.overGroup = nil
+    drag.hoveredGroupID = nil
     drag.band = TabDragState.Band(groupID: groupID, placement: .after)
     #expect(drag.isEngaged)
   }
@@ -36,26 +36,58 @@ struct TabDragStateTests {
     drag.begin(tab)
     #expect(!drag.showsBands(of: groupID))
 
-    drag.overGroup = groupID
+    drag.hoveredGroupID = groupID
     #expect(drag.showsBands(of: groupID))
     #expect(!drag.showsBands(of: UUID()), "another group's bands stay away")
 
-    drag.overGroup = nil
+    drag.hoveredGroupID = nil
     drag.band = TabDragState.Band(groupID: groupID, placement: .before)
     #expect(drag.showsBands(of: groupID))
+  }
+
+  @Test func aStripShufflesOnlyWhenTheTabInTheAirIsOneOfItsOwn() {
+    var drag = TabDragState()
+    #expect(!drag.isShuffling(within: [tab]))
+
+    drag.begin(tab)
+    #expect(drag.isShuffling(within: [UUID(), tab]))
+    #expect(!drag.isShuffling(within: [UUID()]), "another group's strip")
+  }
+
+  @Test func onlyTheDraggedTabIsInTheAirAndOnlyOverATarget() {
+    var drag = TabDragState()
+    drag.begin(tab)
+    #expect(!drag.isInTheAir(tab), "over nothing that would take it")
+
+    drag.hoveredGroupID = groupID
+    #expect(drag.isInTheAir(tab))
+    #expect(!drag.isInTheAir(UUID()))
+  }
+
+  @Test func theInsertionLineIsDrawnOnTheTabUnderThePointerUnlessItsStripShuffles() {
+    let under = UUID()
+    var drag = TabDragState()
+    drag.insertion = TabDragState.Insertion(tabID: under, placement: .after)
+    #expect(drag.insertionPlacement(on: under, isShuffling: false) == nil, "no drag, no line")
+
+    drag.begin(tab)
+    drag.insertion = TabDragState.Insertion(tabID: under, placement: .after)
+    #expect(drag.insertionPlacement(on: under, isShuffling: false) == .after)
+    #expect(drag.insertionPlacement(on: UUID(), isShuffling: false) == nil)
+    #expect(drag.insertionPlacement(on: under, isShuffling: true) == nil, "the tab itself moves")
   }
 
   @Test func endingADragClearsEveryTargetWithIt() {
     var drag = TabDragState()
     drag.begin(tab)
-    drag.overGroup = groupID
+    drag.hoveredGroupID = groupID
     drag.insertion = TabDragState.Insertion(tabID: tab, placement: .after)
     drag.band = TabDragState.Band(groupID: groupID, placement: .after)
 
     drag.end()
 
     #expect(drag.tabID == nil && drag.insertion == nil)
-    #expect(drag.overGroup == nil && drag.band == nil)
+    #expect(drag.hoveredGroupID == nil && drag.band == nil)
     #expect(!drag.isDragging && !drag.isEngaged)
   }
 

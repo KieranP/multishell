@@ -49,7 +49,7 @@ struct ProcessStopperTests {
     waitid(P_PID, id_t(pid), &info, WEXITED | WNOWAIT)
     defer { waitpid(pid, nil, 0) }
     let child = RunningChild()
-    child.started(pid)
+    child.markStarted(pid)
     let stopper = ProcessStopper()
     stopper.attach(child)
 
@@ -60,7 +60,7 @@ struct ProcessStopperTests {
 
   @Test func aStopReachingAReapedChildNotYetMarkedSignalsNothing() {
     let child = RunningChild()
-    child.started(Self.pidNoProcessHolds)
+    child.markStarted(Self.pidNoProcessHolds)
     let stopper = ProcessStopper()
     stopper.attach(child)
 
@@ -75,7 +75,7 @@ struct ProcessStopperTests {
     waitid(P_PID, id_t(pid), &info, WEXITED | WNOWAIT)
     defer { waitpid(pid, nil, 0) }
     let child = RunningChild()
-    child.started(pid)
+    child.markStarted(pid)
     let stopper = ProcessStopper()
     stopper.stop()
 

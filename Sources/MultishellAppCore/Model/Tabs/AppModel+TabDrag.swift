@@ -38,8 +38,8 @@ extension AppModel {
     _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, past anchor: TerminalTab.ID
   ) {
     guard
-      let moving = workspace.tab(id), let target = workspace.tab(anchor),
-      moving.groupID == target.groupID
+      let moving = workspace.tab(id), let anchorTab = workspace.tab(anchor),
+      moving.groupID == anchorTab.groupID
     else { return }
     // `moveTab` is what drops the moves that would change nothing, which is
     // most of the ones a drag asks for.

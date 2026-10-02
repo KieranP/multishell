@@ -11,16 +11,15 @@ struct ProjectSettingsTrustTests {
     let asked = ProjectSettings()
     #expect(asked.needsTrustDecision(for: shared) && !asked.trustsSharedSettings(of: shared))
 
-    let trusted = ProjectSettings(trustDecisions: [
-      TrustDecision(digest: digest, trusted: true)
-    ])
+    var trusted = ProjectSettings()
+    trusted.trustDecisions = [TrustDecision(digest: digest, trusted: true)]
     #expect(trusted.trustsSharedSettings(of: shared) && !trusted.needsTrustDecision(for: shared))
     let layered = trusted.layered(over: shared)
     #expect(layered.postCreateHook == "npm ci" && layered.preDeleteHook == "exit 1")
     #expect(layered.preCreateHook == "", "a hook the file does not have stays blank")
 
-    let declined = ProjectSettings(
-      trustDecisions: [TrustDecision(digest: digest, trusted: false)])
+    var declined = ProjectSettings()
+    declined.trustDecisions = [TrustDecision(digest: digest, trusted: false)]
     #expect(!declined.trustsSharedSettings(of: shared) && !declined.needsTrustDecision(for: shared))
     #expect(declined.layered(over: shared).postCreateHook == "")
 

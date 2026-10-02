@@ -10,18 +10,18 @@ extension SessionStatesTests {
     shells: [Int32] = [], out: [String]? = nil, startsTurn: Bool = false,
     conversation: String? = nil
   ) -> SessionState? {
-    states.report(
+    report(
+      &states,
       .init(
         state: state, subagent: subagent, startsTurn: startsTurn, backgroundShells: shells,
         resumesAfterWorkers: state == .done, conversationID: conversation,
-        workersOut: out.map { $0.map { SubagentReport(id: $0, phase: .working) } }), pid: 99,
-      for: .session(a), isSeen: false)
+        workersOut: out.map { $0.map { SubagentReport(id: $0, phase: .working) } }))
   }
 
   @Test func theWokenTurnsStopPaysTheDoneRatherThanTheLastShellOut() {
     var states = SessionStates()
     var meant = [reportResuming(&states, .done, shells: [500])]
-    meant += shellGone(&states, 500)
+    meant += states.applyShellExit(500)
     #expect(states[.session(a)] == .running, "the agent is about to take the result")
 
     meant.append(reportResuming(&states, .running))
@@ -33,7 +33,7 @@ extension SessionStatesTests {
   @Test func aWokenTurnThatOnlyStopsStillPaysOnce() {
     var states = SessionStates()
     _ = reportResuming(&states, .done, shells: [500])
-    #expect(shellGone(&states, 500) == [nil])
+    #expect(states.applyShellExit(500) == [nil])
     #expect(reportResuming(&states, .done) == .done)
   }
 
@@ -51,7 +51,7 @@ extension SessionStatesTests {
   @Test func aWorkerOutInTheWokenTurnLeavesItsStopToPay() {
     var states = SessionStates()
     _ = reportResuming(&states, .done, shells: [500])
-    _ = shellGone(&states, 500)
+    _ = states.applyShellExit(500)
     #expect(
       reportResuming(&states, .running, SubagentReport(id: "w2", phase: .started)) == .running)
     #expect(reportResuming(&states, .running, SubagentReport(id: "w2", phase: .ended)) == .running)
@@ -73,11 +73,11 @@ extension SessionStatesTests {
   private func stopListingWorkersOut(
     _ states: inout SessionStates, out: [String], shells: [Int32] = []
   ) -> SessionState? {
-    states.report(
+    report(
+      &states,
       .init(
         state: .done, backgroundShells: shells, resumesAfterWorkers: true,
-        workersOut: out.map { SubagentReport(id: $0, phase: .working) }), pid: 99, for: .session(a),
-      isSeen: false)
+        workersOut: out.map { SubagentReport(id: $0, phase: .working) }))
   }
 
   @Test func aStopListingNothingOutPaysTheDoneThoughAnEndNeverCame() {
@@ -310,7 +310,7 @@ extension SessionStatesTests {
     #expect(states.subagents(.session(a)).contains { $0.id == "w0" }, "the cut may have held it")
   }
 
-  @Test func aPromptKeepsTheWorkersFoldedPastTheLimitThatAStopSawOut() {
+  @Test func aPromptKeepsTheWorkersOverflowedPastTheLimitThatAStopSawOut() {
     var states = SessionStates()
     let ids = (1...70).map { "w\($0)" }
     for id in ids { _ = reportResuming(&states, .running, SubagentReport(id: id, phase: .started)) }
@@ -348,6 +348,6 @@ extension SessionStatesTests {
     var states = SessionStates()
     states.report(
       .init(state: .done, backgroundShells: [500]), pid: 99, for: .session(a), isSeen: false)
-    #expect(shellGone(&states, 500) == [.done])
+    #expect(states.applyShellExit(500) == [.done])
   }
 }

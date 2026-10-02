@@ -3,7 +3,8 @@ import Foundation
 /// Raises the soft descriptor limit as far as the kernel allows: launchd
 /// starts a Mac GUI app with 256. Darwin caps it at `OPEN_MAX`.
 public enum DescriptorLimit {
-  /// Never lowers. Returns the soft limit in force afterwards.
+  /// Never lowers. Returns the soft limit in force afterwards, or -1 where
+  /// the kernel would not say.
   @discardableResult
   public static func raise() -> Int {
     var limit = rlimit()

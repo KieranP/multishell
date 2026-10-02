@@ -10,9 +10,9 @@ struct UnixSocketServerAcceptOutcomeTests {
   @Test func eachAcceptErrorRetriesWaitsOrBacksOff() {
     #expect(UnixSocketServer.AcceptOutcome(errno: EAGAIN) == .waitForNextEvent)
     #expect(UnixSocketServer.AcceptOutcome(errno: EWOULDBLOCK) == .waitForNextEvent)
-    #expect(UnixSocketServer.AcceptOutcome(errno: EINTR) == .again, "a signal is not an answer")
+    #expect(UnixSocketServer.AcceptOutcome(errno: EINTR) == .retryNow, "a signal is not an answer")
     #expect(
-      UnixSocketServer.AcceptOutcome(errno: ECONNABORTED) == .again,
+      UnixSocketServer.AcceptOutcome(errno: ECONNABORTED) == .retryNow,
       "the peer went; the next one is still waiting")
     #expect(
       UnixSocketServer.AcceptOutcome(errno: EMFILE) == .outOfDescriptors,

@@ -20,7 +20,7 @@ struct WorktreeGitRemovalTests {
     try FileManager.default.moveItem(at: away, to: aside)
     let gone = try await repo.worktree(onBranch: "gone")
 
-    try await repo.coordinator.remove(gone, in: repo.project)
+    try await repo.coordinator.removeUnlinking(gone, in: repo.project)
 
     let listed = try await repo.coordinator.git.list(repo.project)
     #expect(listed.map(\.branch) == ["main", "away"], "the away worktree is still on record")
@@ -41,7 +41,7 @@ struct WorktreeGitRemovalTests {
     let aside = away.deletingLastPathComponent().appendingPathComponent("away-aside")
     try FileManager.default.moveItem(at: away, to: aside)
 
-    try await repo.coordinator.remove(stale, in: repo.project)
+    try await repo.coordinator.removeUnlinking(stale, in: repo.project)
 
     let listed = try await repo.coordinator.git.list(repo.project)
     #expect(listed.map(\.branch) == ["main", "away"])
@@ -60,7 +60,7 @@ struct WorktreeGitRemovalTests {
     let notes = path.appendingPathComponent("notes.txt")
     try "mine\n".write(to: notes, atomically: true, encoding: .utf8)
 
-    try await repo.coordinator.remove(stale, in: repo.project)
+    try await repo.coordinator.removeUnlinking(stale, in: repo.project)
 
     #expect(FileManager.default.fileExists(atPath: notes.path))
     #expect(try await repo.coordinator.git.list(repo.project).map(\.branch) == ["main"])
@@ -79,7 +79,7 @@ struct WorktreeGitRemovalTests {
       preDeleteHook: "touch pre-ran \"$MULTISHELL_WORKTREE_PATH/pre-ran\"",
       postDeleteHook: "touch \"$MULTISHELL_WORKTREE_PATH/post-ran\"")
 
-    try await repo.coordinator.remove(stale, in: project, shellPath: "/bin/sh")
+    try await repo.coordinator.removeUnlinking(stale, in: project, shellPath: "/bin/sh")
 
     #expect(try FileManager.default.contentsOfDirectory(atPath: path.path).isEmpty)
     #expect(try await repo.coordinator.git.list(project).map(\.branch) == ["main"])
@@ -98,7 +98,7 @@ struct WorktreeGitRemovalTests {
     let notes = path.appendingPathComponent("notes.txt")
     try "mine\n".write(to: notes, atomically: true, encoding: .utf8)
 
-    try await repo.coordinator.remove(stale, in: repo.project)
+    try await repo.coordinator.removeUnlinking(stale, in: repo.project)
 
     #expect(FileManager.default.fileExists(atPath: notes.path))
     #expect(try await repo.coordinator.git.list(repo.project).map(\.branch) == ["main"])
@@ -123,7 +123,7 @@ struct WorktreeGitRemovalTests {
     let coordinator = WorktreeCoordinator(
       git: WorktreeGit(runner: fake.runner, settlesNewIndex: false))
 
-    try await coordinator.remove(worktree, in: project, shellPath: "/bin/sh")
+    try await coordinator.removeUnlinking(worktree, in: project, shellPath: "/bin/sh")
 
     #expect(FileManager.default.fileExists(atPath: ran.path))
     #expect(!FileManager.default.fileExists(atPath: path.path))
@@ -156,7 +156,7 @@ struct WorktreeGitRemovalTests {
       git: WorktreeGit(runner: fake.runner, settlesNewIndex: false))
 
     let common = try await coordinator.git.commonGitDirectory(project)
-    try await coordinator.remove(worktree, in: project, shellPath: "/bin/sh")
+    try await coordinator.removeUnlinking(worktree, in: project, shellPath: "/bin/sh")
 
     #expect(
       common.resolvingSymlinksInPath().path
@@ -176,7 +176,7 @@ struct WorktreeGitRemovalTests {
       ["worktree", "add", "-q", "-b", "cased", spelled.path], in: repo.project.path)
     let cased = try await repo.worktree(onBranch: "cased")
 
-    try await repo.coordinator.remove(cased, in: repo.project)
+    try await repo.coordinator.removeUnlinking(cased, in: repo.project)
 
     #expect(!FileManager.default.fileExists(atPath: container.appendingPathComponent("wt").path))
     #expect(try await repo.coordinator.git.list(repo.project).map(\.branch) == ["main"])
@@ -192,8 +192,8 @@ struct WorktreeGitRemovalTests {
     _ = try await repo.runner.run(
       ["clone", "-q", repo.project.path.path, path.path], in: repo.root)
 
-    await #expect(throws: NotTheCheckout.self) {
-      try await repo.coordinator.remove(stale, in: repo.project)
+    await #expect(throws: WorktreePathTaken.self) {
+      try await repo.coordinator.removeUnlinking(stale, in: repo.project)
     }
 
     #expect(FileManager.default.fileExists(atPath: path.appendingPathComponent(".git").path))
@@ -248,7 +248,7 @@ struct WorktreeGitRemovalTests {
     _ = try await repo.runner.run(["worktree", "lock", path.path], in: repo.project.path)
     let locked = try await repo.worktree(onBranch: "locked")
 
-    try await repo.coordinator.remove(locked, in: repo.project)
+    try await repo.coordinator.removeUnlinking(locked, in: repo.project)
 
     #expect(try await repo.coordinator.git.list(repo.project).map(\.branch) == ["main"])
   }
@@ -263,7 +263,7 @@ struct WorktreeGitRemovalTests {
     try FileManager.default.removeItem(at: path)
 
     let ghost = try await repo.worktree(onBranch: "ghost")
-    try await coordinator.remove(ghost, in: project)
+    try await coordinator.removeUnlinking(ghost, in: project)
 
     #expect(try await coordinator.git.list(project).count == 1)
   }

@@ -14,4 +14,11 @@ extension SessionStates {
   var showsNothing: Bool {
     !entries.values.contains { $0.state != nil || !$0.roster.subagents.isEmpty }
   }
+
+  /// What each worker's end meant, applied the way the model's sweep applies it.
+  mutating func applyShellExit(_ pid: Int32) -> [SessionState?] {
+    endings(ofShell: pid).map {
+      report(.init(state: .running, subagent: $0.report), pid: nil, for: $0.key, isSeen: false)
+    }
+  }
 }

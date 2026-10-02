@@ -17,18 +17,22 @@ struct WorkspaceRepairTests {
     TerminalSession(worktreeID: worktree.id, workingDirectory: worktree.path, title: "sh")
   }
 
-  /// The one group a sound single-group workspace has.
   private func onlyGroup(_ workspace: Workspace) -> TabGroup { workspace.tabGroups[0] }
 
-  @Test func aSoundWorkspaceIsLeftAlone() {
-    let (workspace, _) = soundWorkspace()
+  /// Every tab of a state file written before groups existed names no group.
+  static func ungroupEveryTab(_ workspace: inout Workspace) {
+    for index in workspace.tabs.indices { workspace.tabs[index].groupID = TabGroup.unassigned }
+  }
+
+  @Test func aConsistentWorkspaceIsLeftAlone() {
+    let (workspace, _) = consistentWorkspace()
     var repaired = workspace
     repaired.repairReferences()
     #expect(repaired == workspace)
   }
 
   @Test func worktreesOfAMissingProjectGoWithTheirTabs() {
-    var (workspace, _) = soundWorkspace()
+    var (workspace, _) = consistentWorkspace()
     let stray = Worktree(
       path: URL(fileURLWithPath: "/repos/x"), projectID: "/repos/gone", head: "b")
     let straySession = TerminalSession(
@@ -48,7 +52,7 @@ struct WorkspaceRepairTests {
   }
 
   @Test func aSessionNoTabOwnsIsDropped() {
-    var (workspace, tab) = soundWorkspace()
+    var (workspace, tab) = consistentWorkspace()
     workspace.sessions.append(session())
 
     workspace.repairReferences()
@@ -57,7 +61,7 @@ struct WorkspaceRepairTests {
   }
 
   @Test func aPaneWhoseSessionIsMissingCollapsesAndTheTabSurvives() {
-    var (workspace, tab) = soundWorkspace()
+    var (workspace, tab) = consistentWorkspace()
     let ghost = UUID()
     var split = tab
     split.root = .split(
@@ -74,7 +78,7 @@ struct WorkspaceRepairTests {
   }
 
   @Test func aTabWithNoLiveSessionsIsRemovedAndTheActiveEntryMovesOn() {
-    var (workspace, tab) = soundWorkspace()
+    var (workspace, tab) = consistentWorkspace()
     let empty = TerminalTab(
       worktreeID: worktree.id, groupID: onlyGroup(workspace).id, session: UUID())
     workspace.tabs.append(empty)
@@ -88,7 +92,7 @@ struct WorkspaceRepairTests {
   }
 
   @Test func aFocusedGroupEntryNamingAnotherWorktreesGroupIsCorrected() {
-    var (workspace, tab) = soundWorkspace()
+    var (workspace, tab) = consistentWorkspace()
     let other = Worktree(
       path: URL(fileURLWithPath: "/repos/demo-b"), projectID: project.id, head: "b")
     workspace.worktrees.append(other)
@@ -102,7 +106,7 @@ struct WorkspaceRepairTests {
   }
 
   @Test func aNameForAMissingWorktreeGoesAndABlankOneWithIt() {
-    var (workspace, _) = soundWorkspace()
+    var (workspace, _) = consistentWorkspace()
     let other = Worktree(
       path: URL(fileURLWithPath: "/repos/demo-b"), projectID: project.id, head: "b")
     workspace.worktrees.append(other)
@@ -116,7 +120,7 @@ struct WorkspaceRepairTests {
   /// The store writes a session's worktree with its tab's, so a file where they disagree was
   /// written by something else; the sidebar lists it under the tab, so the tab decides.
   @Test func aSessionSaidToBeInAnotherWorktreeThanItsTabIsPutBack() {
-    var (workspace, tab) = soundWorkspace()
+    var (workspace, tab) = consistentWorkspace()
     workspace.sessions[0].worktreeID = "/repos/nowhere"
 
     workspace.repairReferences()
@@ -128,14 +132,13 @@ struct WorkspaceRepairTests {
       "the directory it starts in comes back with it")
   }
 
-  /// Every tab of a state file written before groups existed names no group.
   @Test func tabsThatNameNoGroupAreGatheredIntoOne() {
-    var (workspace, tab) = soundWorkspace()
+    var (workspace, tab) = consistentWorkspace()
     let second = session()
     workspace.sessions.append(second)
     workspace.tabs.append(
       TerminalTab(worktreeID: worktree.id, groupID: TabGroup.unassigned, session: second.id))
-    workspace.tabs[0].groupID = TabGroup.unassigned
+    Self.ungroupEveryTab(&workspace)
     workspace.tabGroups = []
     workspace.focusedGroupByWorktree = [:]
 
@@ -147,9 +150,9 @@ struct WorkspaceRepairTests {
     #expect(workspace.activeTab(in: worktree.id)?.id == tab.id, "the first tab of the group shows")
   }
 
-  /// A group whose group decoded badly is dropped and leaves its tabs behind.
+  /// A group that decoded badly is dropped and leaves its tabs behind.
   @Test func aTabWhoseGroupIsGoneJoinsTheWorktreesFirstGroup() {
-    var (workspace, tab) = soundWorkspace()
+    var (workspace, tab) = consistentWorkspace()
     let stray = session()
     workspace.sessions.append(stray)
     workspace.tabs.append(TerminalTab(worktreeID: worktree.id, groupID: UUID(), session: stray.id))
@@ -165,7 +168,7 @@ struct WorkspaceRepairTests {
   /// The pane pass empties the focused group, and unless the focus moves on the worktree draws
   /// no strip at all.
   @Test func aGroupLeftWithNoTabsGoesAndTheFocusMovesOn() {
-    var (workspace, tab) = soundWorkspace()
+    var (workspace, tab) = consistentWorkspace()
     var second = TabGroup(worktreeID: worktree.id)
     let doomed = TerminalTab(worktreeID: worktree.id, groupID: second.id, session: UUID())
     second.shownTabID = doomed.id
@@ -182,7 +185,7 @@ struct WorkspaceRepairTests {
   }
 
   @Test func aGroupShowingAnotherGroupsTabIsCorrected() {
-    var (workspace, tab) = soundWorkspace()
+    var (workspace, tab) = consistentWorkspace()
     let other = session()
     var second = TabGroup(worktreeID: worktree.id)
     let itsOwn = TerminalTab(worktreeID: worktree.id, groupID: second.id, session: other.id)
@@ -199,7 +202,7 @@ struct WorkspaceRepairTests {
   }
 
   @Test func aSelectionOfAMissingWorktreeIsCleared() {
-    var (workspace, _) = soundWorkspace()
+    var (workspace, _) = consistentWorkspace()
     workspace.selectedWorktreeID = "/repos/nowhere"
     workspace.repairReferences()
     #expect(workspace.selectedWorktreeID == nil)
@@ -208,7 +211,7 @@ struct WorkspaceRepairTests {
   @Test(arguments: [7, 11, 19, 23, 29, 31] as [UInt64])
   func repairIsCompleteAndIdempotentOnRandomDamage(seed: UInt64) {
     var rng = SeededGenerator(seed: seed)
-    var (workspace, _) = soundWorkspace()
+    var (workspace, _) = consistentWorkspace()
     let ghost = UUID()
     let damage: [(inout Workspace) -> Void] = [
       {
@@ -226,10 +229,7 @@ struct WorkspaceRepairTests {
       { $0.tabGroups[0].weight = 0 },
       { $0.focusedGroupByWorktree[$0.worktrees[0].id] = UUID() },
       { $0.focusedGroupByWorktree["/nowhere"] = $0.tabGroups[0].id },
-      // Every tab of a state file written before groups existed.
-      { workspace in
-        for index in workspace.tabs.indices { workspace.tabs[index].groupID = TabGroup.unassigned }
-      },
+      Self.ungroupEveryTab,
       { $0.selectedWorktreeID = "/nowhere" },
       { $0.worktreeNames["/nowhere"] = "Ghost" },
       { $0.worktreeNames[$0.worktrees[0].id] = "  " },
@@ -265,19 +265,5 @@ struct WorkspaceRepairTests {
     again.repairReferences()
     #expect(again == workspace, "seed \(seed): repair is not idempotent")
     #expect(workspace.projects.count == 1, "seed \(seed): repair must never drop a project")
-  }
-
-  @Test func aSplitWithNoPanesAtAllIsDropped() {
-    var (workspace, tab) = soundWorkspace()
-    var hollow = tab
-    hollow.root = .split(axis: .vertical, children: [])
-    workspace.tabs = [hollow]
-
-    workspace.repairReferences()
-
-    #expect(workspace.tabs.isEmpty)
-    #expect(workspace.sessions.isEmpty)
-    #expect(workspace.tabGroups.isEmpty, "a group with no tabs does not stand")
-    #expect(workspace.focusedGroupByWorktree[worktree.id] == nil)
   }
 }

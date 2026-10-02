@@ -5,9 +5,10 @@ import TestScratch
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellGitKit
 @testable import MultishellProcess
 
-@Suite @MainActor
+@Suite(.serialized) @MainActor
 struct AppModelLoginEnvironmentTests {
   @Test func theAgentPathNoteNamesWhereThePathCameFrom() {
     let h = Harness()
@@ -55,5 +56,23 @@ struct AppModelLoginEnvironmentTests {
     } else {
       #expect(h.platform.logged.isEmpty)
     }
+  }
+
+  @Test func theLoginEnvironmentsGitKeepsTheCountsAndTheMergeWidthLaunchHad() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    let path = try #require(ProcessInfo.processInfo.environment["PATH"])
+    h.model.captureLoginEnvironment = {
+      LoginShellEnvironment(
+        variables: ["PATH": path, "HOME": h.root.path],
+        source: .loginShell(URL(fileURLWithPath: "/bin/zsh")))
+    }
+    let launched = try #require(h.model.coordinator).git
+
+    await h.model.refreshLoginEnvironment()
+
+    let rebuilt = try #require(h.model.coordinator).git
+    #expect(rebuilt.readState.untrackedMemo === launched.readState.untrackedMemo)
+    #expect(rebuilt.readState.mergeSlots === launched.readState.mergeSlots)
   }
 }

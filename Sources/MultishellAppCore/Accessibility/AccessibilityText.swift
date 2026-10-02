@@ -39,7 +39,7 @@ public enum AccessibilityText {
     }
     if worktree.isLocked { parts.append(t("spoken.locked")) }
     if mergeState.showsBadge(with: status) { parts.append(mergeState.summary) }
-    if let status, !status.isClean { parts.append(status.summary) }
+    if let status, !status.isCleanAndInSync { parts.append(status.summary) }
     if terminalCount > 0 { parts.append(t("count.terminals", terminalCount)) }
     return parts.joined(separator: ", ")
   }
@@ -101,7 +101,7 @@ public enum AccessibilityText {
 
   /// Which pane of a split, on a sidebar row and a board card alike.
   static func panePosition(_ position: PanePosition) -> String {
-    t("spoken.pane-position", position.index, position.count)
+    t("spoken.pane-position", position.number, position.count)
   }
 
   /// One group of tabs, said before its tabs are. Empty for a worktree with

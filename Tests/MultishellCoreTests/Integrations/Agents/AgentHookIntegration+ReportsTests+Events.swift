@@ -98,10 +98,10 @@ extension AgentHookIntegrationReportsTests {
     let request = try #require(claude.event(for: AgentHookPayload(eventName: "PermissionRequest")))
     let notification = try #require(claude.event(for: AgentHookPayload(eventName: "Notification")))
     #expect(request.state == notification.state)
-    #expect(request.silent)
-    #expect(!notification.silent)
-    #expect(claude.events.filter(\.silent).count == 1)
-    #expect(AgentHookCatalogue.integrations.allSatisfy { $0.events.filter(\.silent).count <= 1 })
+    #expect(request.isSilent)
+    #expect(!notification.isSilent)
+    #expect(claude.events.filter(\.isSilent).count == 1)
+    #expect(AgentHookCatalogue.integrations.allSatisfy { $0.events.filter(\.isSilent).count <= 1 })
   }
 
   /// Claude notifies for a finished login or a resumed quota as for a question, and the

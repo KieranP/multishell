@@ -38,4 +38,16 @@ extension AppModelNotificationsTests {
     #expect(h.model.workspace.selectedWorktreeID == h.feature.id)
     #expect(h.model.workspace.activeTab(in: h.feature.id)?.id == tab.id)
   }
+
+  @Test func aBannerClickReachesTheModelThroughTheNotifier() throws {
+    let h = Harness()
+    h.model.select(h.main)
+    let first = try #require(h.model.workspace.activeTab(in: h.main.id))
+    h.model.newTab()
+    #expect(h.model.workspace.activeTab(in: h.main.id)?.id != first.id)
+
+    h.notifier.onActivate?(.session(first.focusedSessionID))
+
+    #expect(h.model.workspace.activeTab(in: h.main.id)?.id == first.id)
+  }
 }

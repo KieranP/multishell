@@ -92,7 +92,7 @@ struct NewWorktreeDraftTests {
     draft.branch = "feat"
     #expect(draft.canCreate(checkedOut: ["main"]))
 
-    draft.createBranch = false
+    draft.createsBranch = false
     draft.branch = "main"
     #expect(!draft.canCreate(checkedOut: ["main"]), "checked out already")
     draft.branch = "release"
@@ -102,17 +102,17 @@ struct NewWorktreeDraftTests {
 
   @Test func switchingModesKeepsTheTypedNameAndNeverCarriesAPickedOne() {
     var draft = loaded(a, branch: "feat")
-    draft.createBranch = false
+    draft.createsBranch = false
     draft.modeChanged(checkedOut: ["main"])
     #expect(draft.branch == "release", "a typed name is not an existing branch; take the first")
 
     draft.branch = "spike"
-    draft.createBranch = true
+    draft.createsBranch = true
     draft.modeChanged(checkedOut: ["main"])
     #expect(draft.branch == "feat", "what was typed comes back, not what was picked")
 
     draft.branch = "release"
-    draft.createBranch = false
+    draft.createsBranch = false
     draft.modeChanged(checkedOut: ["main"])
     #expect(draft.branch == "release", "a typed name that is an existing branch is the choice")
   }
@@ -122,10 +122,10 @@ struct NewWorktreeDraftTests {
     draft.branch = "feat"
     draft.beginLoading()
 
-    draft.createBranch = false
+    draft.createsBranch = false
     draft.modeChanged(checkedOut: [])
     #expect(draft.branch == "", "nothing to pick yet")
-    draft.createBranch = true
+    draft.createsBranch = true
     draft.modeChanged(checkedOut: [])
 
     #expect(draft.branch == "feat")
@@ -133,7 +133,7 @@ struct NewWorktreeDraftTests {
 
   @Test func loadingInExistingModeReplacesAChoiceTheProjectDoesNotHave() {
     var draft = NewWorktreeDraft(projectID: a)
-    draft.createBranch = false
+    draft.createsBranch = false
     draft.branch = "elsewhere"
     draft.beginLoading()
     draft.finishLoading(
@@ -167,7 +167,7 @@ struct NewWorktreeDraftTests {
 
   @Test func aRepositoryWithOnlyItsCheckedOutBranchHasNothingToPick() {
     var draft = NewWorktreeDraft(projectID: a)
-    draft.createBranch = false
+    draft.createsBranch = false
     draft.beginLoading()
     draft.finishLoading(
       a,
@@ -180,7 +180,7 @@ struct NewWorktreeDraftTests {
       draft.availableBranches(checkedOut: ["main"]).isEmpty, "remote branches are not offered")
     #expect(draft.branch == "")
     #expect(!draft.canCreate(checkedOut: ["main"]))
-    draft.createBranch = true
+    draft.createsBranch = true
     draft.modeChanged(checkedOut: ["main"])
     draft.branch = "feature"
     #expect(draft.canCreate(checkedOut: ["main"]), "a new branch is the way")

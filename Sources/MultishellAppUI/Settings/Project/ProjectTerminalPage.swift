@@ -11,23 +11,15 @@ struct ProjectTerminalPage: View {
   var body: some View {
     let globalShellID = model.globalShellID
     Form {
-      OverrideSection(
+      DetectionOverrideSection(
         model: model, project: project, setting: \.preferredShellID,
         label: t("project.default-shell"),
         info: t("project.default-shell-info"),
-        fallback: globalShellID
-      ) { selection, isOverridden in
-        DetectionPicker(
-          label: t("project.shell-label"),
-          selection: selection,
-          options: model.shellDetection.options(selected:),
-          rescanning: model,
-          info: t("project.shell-picker-info"),
-          isEnabled: isOverridden
-        )
-      } footer: {
-        SettingsCaption(t("project.using-global-value", model.shellDisplayName(globalShellID)))
-      }
+        pickerLabel: t("project.shell-label"),
+        pickerInfo: t("project.shell-picker-info"),
+        options: model.shellDetection.options(selected:),
+        globalID: globalShellID,
+        globalName: model.shellDisplayName(globalShellID))
 
       OverrideSection(
         model: model, project: project, setting: .opensTerminalOnSelect,

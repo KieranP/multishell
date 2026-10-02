@@ -1,7 +1,7 @@
 import Foundation
 
-/// Parses the hex strings themes are written in. In the core so both
-/// frontends and both terminal backends read a theme file the same way.
+/// Parses the hex strings themes are written in. In the core so the app and
+/// the terminal engine read a theme file the same way.
 enum HexColor {
   /// Accepts `#rgb`, `#rrggbb`, and either without the `#`. A trailing alpha
   /// is read and ignored: a terminal cell has none.

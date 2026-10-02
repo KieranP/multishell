@@ -18,9 +18,9 @@ extension Helper {
       sessionID: sessionID(from: options["session"] ?? environment[SessionEnvironment.sessionKey]),
       cwd: options["cwd"] ?? environment[SessionEnvironment.worktreeKey]
         ?? FileManager.default.currentDirectoryPath,
-      pid: options.int32("pid") ?? reportingProcess(environment),
+      pid: options.int32("pid") ?? reportingPID(environment),
       message: options["message"],
-      agent: options["agent"],
+      agentID: options["agent"],
       isFromShellIntegration: options.onlyIfTrue("shell"),
       subagent: try subagentReport(from: options),
       startsTurn: options.onlyIfTrue("new-turn"),

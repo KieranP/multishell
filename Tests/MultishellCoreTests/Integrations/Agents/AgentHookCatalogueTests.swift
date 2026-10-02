@@ -18,9 +18,8 @@ struct AgentHookCatalogueTests: AgentHookFixtures {
   /// Copilot denies a tool call when a preToolUse hook exits non-zero, and Claude blocks one on
   /// exit 2, so the line answers 0 whatever becomes of the helper.
   @Test func aHelperThatDiesTakesTheDotsWithItAndNotTheToolCall() throws {
-    let directory = temporaryDirectory()
+    let directory = try Scratch.directory("hooks")
     defer { Scratch.remove(directory) }
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     let fake = directory.appendingPathComponent("multishell")
 
     for ending in ["exit 3", "exit 2", "kill -TERM $$"] {
@@ -52,11 +51,10 @@ struct AgentHookCatalogueTests: AgentHookFixtures {
   /// Settings files still hold the `claude-hook` line the first builds wrote, and an install that
   /// missed it would append a second one beside it.
   @Test func theLineAnOlderBuildWroteIsStillOurs() {
-    let old = "[ -x \"\(helper)\" ] && exec \"\(helper)\" claude-hook; exit 0"
-    #expect(AgentHookCatalogue.isOurHook(old))
+    #expect(AgentHookCatalogue.isOurHook(legacyClaudeHookLine))
     #expect(
       AgentHookCatalogue.claude.hasOurHookUnderEveryEvent(in: [
-        "hooks": groups(claudeEvents, command: old)
+        "hooks": groups(claudeEvents, command: legacyClaudeHookLine)
       ]))
   }
 

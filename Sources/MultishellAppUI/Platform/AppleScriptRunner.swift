@@ -4,15 +4,6 @@ import Foundation
 /// parameters, never as script text; see Docs/design/smaller-decisions.md.
 @MainActor
 enum AppleScriptRunner {
-  /// Links `/usr/local/bin/multishell` to the stable link. The one script
-  /// this app runs with administrator rights.
-  static let installToolScript = """
-    on installTool(target, link)
-      do shell script "mkdir -p /usr/local/bin && ln -sf " & quoted form of target & " " ¬
-        & quoted form of link with administrator privileges
-    end installTool
-    """
-
   /// Four-char codes from `AppleScript.h`, which Swift does not import:
   /// `ascr`, `psbr` and `snam`.
   private static let suite = AEEventClass(0x6173_6372)

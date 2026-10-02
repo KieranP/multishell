@@ -5,7 +5,7 @@ extension AppModel {
   /// What the shell says it started, while it runs. An agent naming itself
   /// is left alone; see Docs/design/agents.md.
   private func noteCommandAgent(_ report: SessionStateReport, of id: TerminalSession.ID) {
-    guard report.isFromShellIntegration == true, report.agent == nil else { return }
+    guard report.isFromShellIntegration == true, report.agentID == nil else { return }
     setIfChanged(
       \.commandAgentIDs[id], report.command.flatMap { AgentCatalogue.agent(runningCommand: $0)?.id }
     )
@@ -13,7 +13,7 @@ extension AppModel {
 
   /// A report names a live session, or only a directory. One naming an
   /// unknown session is dropped, never matched by directory.
-  func apply(_ report: SessionStateReport) {
+  func receive(_ report: SessionStateReport) {
     // An older helper's walk from a prompt ends at this process, whose pid
     // never goes while it is looking; see Docs/design/agents.md.
     let pid = report.pid == ProcessInfo.processInfo.processIdentifier ? nil : report.pid
@@ -25,7 +25,7 @@ extension AppModel {
     if let id = report.sessionID {
       guard liveSessionIDs.contains(id), workspace.session(id) != nil else { return }
       // Who is at that prompt, so a drop is written as that agent reads a file.
-      if let agent = report.agent {
+      if let agent = report.agentID {
         setIfChanged(\.reportedAgents[id], ReportedAgent(agentID: agent, pid: pid))
       }
       noteCommandAgent(report, of: id)

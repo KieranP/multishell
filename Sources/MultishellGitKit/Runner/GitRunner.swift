@@ -5,14 +5,14 @@ import MultishellProcess
 /// linking libgit2; see Docs/design/architecture.md.
 struct GitRunner: Sendable {
   private let executable: URL
-  private let runner = ProcessRunner()
+  private let processRunner = ProcessRunner()
   /// `GIT_CONFIG_*`, which git reads as config of the highest precedence,
   /// and the login shell's PATH where one was captured.
   private let baseEnvironment: [String: String]
 
   /// Set on every runner: signature lines read as reflog work, and untracked
   /// files hidden read as a clean tree. Both badge wrongly and offer a delete.
-  private static let isolation = [
+  private static let forcedConfiguration = [
     "log.showSignature": "false",
     "status.showUntrackedFiles": "normal",
   ]
@@ -24,14 +24,14 @@ struct GitRunner: Sendable {
       configuration: configuration)
   }
 
-  /// `configuration` beats `isolation` and git's own. Through the environment,
+  /// `configuration` beats `forcedConfiguration` and git's own. Through the environment,
   /// not `-c`, which a failure would report in its arguments; see merged-branch.md.
   init(
     executable: URL?, searchPath: String? = nil, configuration: [String: String] = [:]
   ) throws {
     guard let executable else { throw GitUnavailable() }
     self.executable = executable
-    let configuration = Self.isolation.merging(configuration) { _, callers in callers }
+    let configuration = Self.forcedConfiguration.merging(configuration) { _, callers in callers }
     var overrides = ["GIT_CONFIG_COUNT": String(configuration.count)]
     for (index, entry) in configuration.sorted(by: { $0.key < $1.key }).enumerated() {
       overrides["GIT_CONFIG_KEY_\(index)"] = entry.key
@@ -47,7 +47,7 @@ struct GitRunner: Sendable {
     _ arguments: [String], in directory: URL, environment: [String: String] = [:],
     timeout: Duration? = nil, stopper: ProcessStopper? = nil
   ) async throws -> String {
-    try await runner.run(
+    try await processRunner.run(
       executable, arguments, in: directory,
       environment: baseEnvironment.merging(environment) { _, callers in callers },
       timeout: timeout, stopper: stopper)
@@ -75,6 +75,7 @@ struct GitRunner: Sendable {
 
   /// The whole outcome, `nil` where the child could not be started.
   private func captured(_ arguments: [String], in directory: URL) async -> ProcessOutput? {
-    try? await runner.capture(executable, arguments, in: directory, environment: baseEnvironment)
+    try? await processRunner.capture(
+      executable, arguments, in: directory, environment: baseEnvironment)
   }
 }

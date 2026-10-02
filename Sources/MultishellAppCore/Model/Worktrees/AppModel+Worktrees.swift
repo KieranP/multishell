@@ -15,10 +15,10 @@ extension AppModel {
     !isBusy(worktree.id) && requireDirectory(of: worktree)
   }
 
-  /// A worktree with no tabs gets one unless `TabOpening` says otherwise, and
+  /// A worktree with no tabs gets one unless `TabOpeningReason` says otherwise, and
   /// this is where the shared-hooks question is asked, a create being asked apart.
   @discardableResult
-  public func select(_ worktree: Worktree, openingFirstTab: TabOpening = .onSelect) -> Bool {
+  public func select(_ worktree: Worktree, openingFirstTab: TabOpeningReason = .onSelect) -> Bool {
     // A row git no longer lists is refused by the store, so ask first: the
     // board closing and a tab opening are not things to do for nothing.
     guard workspace.worktree(worktree.id) != nil, requireDirectory(of: worktree) else {
@@ -30,8 +30,8 @@ extension AppModel {
     store.selectWorktree(worktree.id)
     warmWorktrees.insert(worktree.id)
     if openingFirstTab != .onCreate { askAboutSharedSettingsIfNeeded(for: worktree.projectID) }
-    if wantsFirstTab(in: worktree, on: openingFirstTab) {
-      addDefaultTab(in: worktree, on: openingFirstTab)
+    if wantsFirstTab(in: worktree, for: openingFirstTab) {
+      addDefaultTab(in: worktree, for: openingFirstTab)
     }
     reconcileSessions(takingFocus: true)
     return true
@@ -63,7 +63,7 @@ extension AppModel {
   /// hands over the way a finished one does: the first tab opens.
   public func dismissOperationFailure(of worktree: Worktree) {
     guard let operation = worktreeOperations.dismiss(worktree.id) else { return }
-    if operation.step.isCreation { openHeldBackTab(of: worktree) }
+    if operation.stage.isCreation { openHeldBackTab(of: worktree) }
   }
 
   /// The pane's Cancel: ends the stage running there, a hook by signal and a

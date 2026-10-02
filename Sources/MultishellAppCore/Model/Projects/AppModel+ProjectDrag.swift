@@ -2,7 +2,7 @@ import MultishellCore
 
 extension AppModel {
   /// Moves `id` to sit just above or just below `target`.
-  public func moveProject(_ id: Project.ID, _ placement: ProjectPlacement, _ target: Project.ID) {
+  public func moveProject(_ id: Project.ID, _ placement: ProjectPlacement, of target: Project.ID) {
     let projects = workspace.projects
     guard
       let from = projects.firstIndex(where: { $0.id == id }),

@@ -24,11 +24,11 @@ struct PaneRow: View {
         ringFill: theme.sidebarColor,
         plainTint: isFocusedPane ? theme.textPrimary : theme.textSecondary,
         theme: theme,
-        size: metrics.icon + 2
+        size: metrics.sidebarGlyphColumn
       )
       .help((state ?? .idle).displayName)
       if let position {
-        PanePositionBadge(index: position.index, metrics: metrics, theme: theme)
+        PanePositionBadge(number: position.number, metrics: metrics, theme: theme)
       }
       Text(title)
         .font(.system(size: metrics.badge, weight: isFocusedPane ? .semibold : .regular))
@@ -41,7 +41,7 @@ struct PaneRow: View {
       }
     }
     // The pane's glyph sits under the worktree's name, one step in from its dot.
-    .padding(.leading, metrics.indent + metrics.icon + 2)
+    .padding(.leading, metrics.indent + metrics.sidebarGlyphColumn)
     .padding(.trailing, 8)
     .frame(height: metrics.paneRowHeight)
     .contentShape(.rect)

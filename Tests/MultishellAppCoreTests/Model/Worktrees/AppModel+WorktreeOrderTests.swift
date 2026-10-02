@@ -44,14 +44,14 @@ struct AppModelWorktreeOrderTests {
 
   @Test func activeMeansATerminalOrAReportedState() {
     let (harness, extra) = harnessWithThree()
-    #expect(!harness.model.hasActivity(harness.feature.id))
-    #expect(!harness.model.hasActivity(extra.id))
+    #expect(!harness.model.isActiveWorktree(harness.feature.id))
+    #expect(!harness.model.isActiveWorktree(extra.id))
 
     harness.store.openTab(in: harness.feature.id)
-    #expect(harness.model.hasActivity(harness.feature.id), "a terminal is enough")
+    #expect(harness.model.isActiveWorktree(harness.feature.id), "a terminal is enough")
 
     harness.stateSource.send(SessionStateReport(state: .attention, cwd: extra.path.path))
-    #expect(harness.model.hasActivity(extra.id), "so is a state with no terminal")
+    #expect(harness.model.isActiveWorktree(extra.id), "so is a state with no terminal")
   }
 
   @Test func showActiveAtTheTopLiftsTheBusyRow() {

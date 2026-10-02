@@ -4,26 +4,26 @@ import Foundation
 /// which only two settings together make it do; see Docs/design/agents.md.
 enum GeminiSettings {
   /// The ones Gemini reads that name a turn a shell's end starts.
-  private static let waking: Set<String> = ["inject", "notify"]
+  private static let wakingCompletionBehaviors: Set<String> = ["inject", "notify"]
 
-  static func wakesForBackgroundShells(environment: [String: String], workspace: String?) -> Bool {
+  static func wakesForBackgroundShells(environment: [String: String], directory: String?) -> Bool {
     var steering = false
     var completion = "silent"
     // Gemini's merge order, the last word winning.
-    for settings in layersInMergeOrder(environment: environment, workspace: workspace) {
+    for settings in layersInMergeOrder(environment: environment, directory: directory) {
       if let value = (settings["experimental"] as? [String: Any])?["modelSteering"] as? Bool {
         steering = value
       }
       let shell = (settings["tools"] as? [String: Any])?["shell"] as? [String: Any]
       if let value = shell?["backgroundCompletionBehavior"] as? String { completion = value }
     }
-    return steering && waking.contains(completion)
+    return steering && wakingCompletionBehaviors.contains(completion)
   }
 
   /// System defaults, user, project, system; the project's only where Gemini
   /// trusts it.
   private static func layersInMergeOrder(
-    environment: [String: String], workspace: String?
+    environment: [String: String], directory: String?
   ) -> [[String: Any]] {
     let geminiDirectory = geminiDirectory(environment)
     let systemFile = URL(
@@ -36,9 +36,9 @@ enum GeminiSettings {
     let system = read(systemFile)
     var project: [String: Any]?
     let outside = [defaults, user, system].compactMap { $0 }
-    if let workspace, isTrusted(workspace, environment: environment, settings: outside) {
+    if let directory, isTrusted(directory, environment: environment, settings: outside) {
       project = read(
-        URL(fileURLWithPath: workspace).appendingPathComponent(".gemini/settings.json"))
+        URL(fileURLWithPath: directory).appendingPathComponent(".gemini/settings.json"))
     }
     return [defaults, user, project, system].compactMap { $0 }
   }
@@ -65,7 +65,7 @@ enum GeminiSettings {
   /// Gemini's own rule: the longest rule path naming the folder decides, a
   /// parent rule standing for the folder above it, and no rule is no trust.
   private static func isTrusted(
-    _ workspace: String, environment: [String: String], settings: [[String: Any]]
+    _ directory: String, environment: [String: String], settings: [[String: Any]]
   ) -> Bool {
     if environment["GEMINI_CLI_TRUST_WORKSPACE"] == "true" { return true }
     let enabled = settings.reduce(true) { enabled, file in
@@ -77,7 +77,7 @@ enum GeminiSettings {
       environment["GEMINI_CLI_TRUSTED_FOLDERS_PATH"].map(URL.init(fileURLWithPath:))
       ?? geminiDirectory(environment).appendingPathComponent("trustedFolders.json")
     guard let rules = read(rulesFile) as? [String: String] else { return false }
-    let folder = resolved(workspace)
+    let folder = resolved(directory)
     let decisive = rules.filter { path, level in
       let covered = level == "TRUST_PARENT" ? (path as NSString).deletingLastPathComponent : path
       let root = resolved(covered)
@@ -98,7 +98,7 @@ enum GeminiSettings {
 
   /// Gemini reads its settings with comments allowed, so they go, and only
   /// outside strings, where a URL's `//` is text.
-  static func withoutComments(_ text: String) -> String {
+  private static func withoutComments(_ text: String) -> String {
     var out = ""
     var characters = text.makeIterator()
     var inString = false

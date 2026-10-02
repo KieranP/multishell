@@ -25,12 +25,12 @@ final class DirectoryProbe: Sendable {
   func probe(_ path: String) -> Answer {
     // A stat still in flight on this path would only be joined by another thread.
     guard inFlight.withLock({ $0.insert(path).inserted }) else { return .unanswered }
-    let pending = PendingProbe()
+    let slot = ProbeResultSlot()
     DispatchQueue.global(qos: .userInteractive).async { [self] in
       let found = exists(path)
       inFlight.withLock { _ = $0.remove(path) }
-      pending.settle(found)
+      slot.settle(found)
     }
-    return pending.wait(for: bound).map { $0 ? .present : .missing } ?? .unanswered
+    return slot.wait(for: bound).map { $0 ? .present : .missing } ?? .unanswered
   }
 }

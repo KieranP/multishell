@@ -57,12 +57,7 @@ extension AppModel {
     )
   }
 
-  /// The board's one filter, held by the model rather than the workspace.
-  var showsAllTerminalsSetting: Binding<Bool> {
-    Binding(get: { self.showsAllTerminals }, set: { self.setShowsAllTerminals($0) })
-  }
-
-  /// The same for one project's own settings, written whole. The project is
+  /// One field of a project's own settings, written whole. The project is
   /// looked up again each time, a settings window outliving a refresh.
   func setting<Value>(
     _ keyPath: WritableKeyPath<ProjectSettings, Value>, of project: Project
@@ -96,5 +91,10 @@ extension AppModel {
   ) -> Binding<Value> {
     let source = setting(keyPath, of: project)
     return Binding(get: { source.wrappedValue ?? fallback }, set: { source.wrappedValue = $0 })
+  }
+
+  /// The board's one filter, held by the model rather than the workspace.
+  var showsAllTerminalsBinding: Binding<Bool> {
+    Binding(get: { self.showsAllTerminals }, set: { self.setShowsAllTerminals($0) })
   }
 }

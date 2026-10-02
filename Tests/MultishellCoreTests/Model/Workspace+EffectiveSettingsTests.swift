@@ -9,11 +9,11 @@ import Testing
 @Suite
 struct WorkspaceEffectiveSettingsTests {
   private func project(
-    order: WorktreeSortOrder? = nil, activeFirst: Bool? = nil
+    order: WorktreeSortOrder? = nil, showsActiveFirst: Bool? = nil
   ) -> Project {
     var project = Project(path: URL(fileURLWithPath: "/w/demo"))
     project.settings = ProjectSettings(
-      worktreeSortOrder: order, showsActiveWorktreesFirst: activeFirst)
+      worktreeSortOrder: order, showsActiveWorktreesFirst: showsActiveFirst)
     return project
   }
 
@@ -30,7 +30,7 @@ struct WorkspaceEffectiveSettingsTests {
     var workspace = Workspace()
     workspace.worktreeSortOrder = .createdOldestFirst
     workspace.showsActiveWorktreesFirst = true
-    let overridden = project(order: .committedNewestFirst, activeFirst: false)
+    let overridden = project(order: .committedNewestFirst, showsActiveFirst: false)
 
     #expect(workspace.worktreeSortOrder(for: overridden) == .committedNewestFirst)
     #expect(!workspace.showsActiveWorktreesFirst(for: overridden))
@@ -40,7 +40,7 @@ struct WorkspaceEffectiveSettingsTests {
   /// this, turning the global on would drag every project with it.
   @Test func anOverrideThatMatchesTheOldGlobalStillHolds() {
     var workspace = Workspace()
-    let overridden = project(order: .alphabetical, activeFirst: false)
+    let overridden = project(order: .alphabetical, showsActiveFirst: false)
     workspace.worktreeSortOrder = .createdNewestFirst
     workspace.showsActiveWorktreesFirst = true
 
@@ -75,18 +75,18 @@ struct WorkspaceEffectiveSettingsTests {
     workspace.preferredAgentID = AgentCatalogue.claudeID
     workspace.agentFlags = ["claude": "--model opus", "codex": "--full-auto"]
 
-    #expect(workspace.agentFlags(for: project, agent: "claude") == "--model opus")
-    #expect(workspace.agentFlags(for: project, agent: "codex") == "--full-auto")
-    #expect(workspace.agentFlags(for: project, agent: "opencode") == "", "nothing stored")
+    #expect(workspace.effectiveAgentFlags(for: project, agent: "claude") == "--model opus")
+    #expect(workspace.effectiveAgentFlags(for: project, agent: "codex") == "--full-auto")
+    #expect(workspace.effectiveAgentFlags(for: project, agent: "opencode") == "", "nothing stored")
 
     let quiet = Project(path: project.path, settings: ProjectSettings(agentFlags: ""))
     #expect(quiet.settings.agentFlags != nil, "blank is an override, not an absent key")
     #expect(
-      workspace.agentFlags(for: quiet, agent: "claude") == "",
+      workspace.effectiveAgentFlags(for: quiet, agent: "claude") == "",
       "a project can run the agent bare under a global that passes flags")
 
     let own = Project(path: project.path, settings: ProjectSettings(agentFlags: "--model haiku"))
-    #expect(workspace.agentFlags(for: own, agent: "claude") == "--model haiku")
+    #expect(workspace.effectiveAgentFlags(for: own, agent: "claude") == "--model haiku")
   }
 
   @Test func aWorkspaceResolvesAProjectsAgent() {

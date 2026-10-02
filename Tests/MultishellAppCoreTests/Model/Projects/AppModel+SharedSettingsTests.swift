@@ -20,7 +20,7 @@ struct AppModelSharedSettingsTests {
 
     #expect(
       h.model.workspace.project(h.project.id)?.sharedSettings.asWritten?.branchPrefix == "team/")
-    #expect(h.model.worktreeSettings(for: h.project).branchPrefix == "team/")
+    #expect(h.model.effectiveWorktreeSettings(for: h.project).branchPrefix == "team/")
     #expect(h.model.effectiveSettings(for: h.project).iconGlyph == "hammer")
     #expect(
       h.model.plannedPath(forBranch: "x", createBranch: true, in: h.project)?.path.hasSuffix(
@@ -56,7 +56,7 @@ struct AppModelSharedSettingsTests {
     h.model.updateSettings(
       h.model.workspace.project(h.project.id)!.settings.with { $0.branchPrefix = "me/" },
       for: h.project)
-    #expect(h.model.worktreeSettings(for: h.project).branchPrefix == "me/")
+    #expect(h.model.effectiveWorktreeSettings(for: h.project).branchPrefix == "me/")
     try h.writeSharedSettings(#"{ "postCreateHook": "echo changed" }"#)
     await h.model.refreshWorktrees(of: h.project)
     #expect(!h.model.trustsSharedSettings(of: h.project))
@@ -356,6 +356,6 @@ struct AppModelSharedSettingsTests {
     _ = await h.model.reconfineSharedSettings(of: h.project)
 
     #expect(h.project.sharedSettings.confined?.worktreeDirectory == "trees")
-    #expect(h.model.worktreeSettings(for: h.project).worktreeDirectory == "trees")
+    #expect(h.model.effectiveWorktreeSettings(for: h.project).worktreeDirectory == "trees")
   }
 }

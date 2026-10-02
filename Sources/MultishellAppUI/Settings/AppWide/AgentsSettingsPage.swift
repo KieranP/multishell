@@ -28,7 +28,7 @@ struct AgentsSettingsPage: View {
 
   var body: some View {
     Form {
-      PartPicker(label: t("label.agents"), selection: $part, title: \.title)
+      SplitPagePicker(label: t("label.agents"), selection: $part, title: \.title)
 
       switch part {
       case .agent: agentSection
@@ -81,11 +81,11 @@ struct AgentsSettingsPage: View {
     Section(t("agents.command-line-tool")) {
       InfoLabeledContent(t("agents.helper-label"), info: t("agents.helper-info")) {
         Text(
-          model.commandLineToolInstalled
+          model.isCommandLineToolInstalled
             ? t("agents.helper-installed") : t("agents.not-installed")
         )
         .foregroundStyle(.secondary)
-        if !model.commandLineToolInstalled {
+        if !model.isCommandLineToolInstalled {
           Button(t("agents.install-helper")) { model.installCommandLineTool() }
             .controlSize(.small)
         }

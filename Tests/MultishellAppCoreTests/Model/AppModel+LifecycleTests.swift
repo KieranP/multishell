@@ -18,7 +18,7 @@ struct AppModelLifecycleTests {
 
   @Test func launchRefreshesTheFilesAndSweepsTheDropsOnceAndSaysWhatFailed() async throws {
     let h = Harness()
-    let calls = LineRecorder()
+    let calls = Recorder<String>()
     h.model.refreshAppLaunchFiles = { _ in
       calls.record("refresh")
       throw CocoaError(.fileWriteNoPermission)
@@ -36,7 +36,7 @@ struct AppModelLifecycleTests {
 
   @Test func launchOpensTerminalsWithoutWaitingForTheDroppedFileSweep() async throws {
     let h = Harness()
-    let gate = LineRecorder()
+    let gate = Recorder<String>()
     h.model.sweepPromisedDropCopies = {
       let giveUp = Date().addingTimeInterval(10)
       while !gate.received.contains("open"), Date() < giveUp { usleep(1000) }

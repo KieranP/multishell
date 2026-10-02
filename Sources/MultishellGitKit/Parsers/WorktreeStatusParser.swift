@@ -35,9 +35,9 @@ enum WorktreeStatusParser {
   /// `## main...origin/main [ahead 1]`, `## main`, `## HEAD (no branch)`,
   /// `## No commits yet on main`, `## No commits yet on main...origin/main`.
   private static func parseBranchLine(_ line: Substring, into status: inout WorktreeStatus) {
-    var head = line.dropFirst(3)
-    if let bracket = head.firstIndex(of: "[") { head = head[..<bracket] }
-    var name = head.trimmingCharacters(in: .whitespaces)
+    var header = line.dropFirst(3)
+    if let bracket = header.firstIndex(of: "[") { header = header[..<bracket] }
+    var name = header.trimmingCharacters(in: .whitespaces)
     if name.hasPrefix("HEAD (") {
       status.branch = nil
     } else {

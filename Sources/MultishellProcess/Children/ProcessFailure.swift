@@ -6,11 +6,11 @@ public struct ProcessFailure: Error, CustomStringConvertible {
   public let status: Int32
   public let message: String
   /// Why the child did not finish on its own, when it did not.
-  public let stop: ProcessStop?
+  public let stop: ProcessStopReason?
 
   public init(
     executable: String, arguments: [String], status: Int32, message: String,
-    stop: ProcessStop? = nil
+    stop: ProcessStopReason? = nil
   ) {
     self.executable = executable
     self.arguments = arguments

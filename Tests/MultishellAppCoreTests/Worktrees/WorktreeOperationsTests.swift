@@ -13,11 +13,11 @@ struct WorktreeOperationsTests {
     operations.begin(.preDeleteHook, on: a)
     #expect(operations.isBusy(a) && !operations.isBusy(b))
     operations.advance(to: .removingWorktree, on: a)
-    #expect(operations[a]?.step == .removingWorktree)
+    #expect(operations[a]?.stage == .removingWorktree)
 
     let otherStage = operations.finish(.postCreateHook, on: a)
     #expect(!otherStage, "another stage's ending changes nothing")
-    #expect(operations[a]?.step == .removingWorktree)
+    #expect(operations[a]?.stage == .removingWorktree)
     let ownStage = operations.finish(.removingWorktree, on: a)
     #expect(ownStage)
     #expect(operations.isEmpty)
@@ -45,12 +45,12 @@ struct WorktreeOperationsTests {
     #expect(operations.isBusy(a))
 
     operations.advance(to: .removingWorktree, on: a)
-    #expect(operations[a]?.step == .postCreateHook, "a failed entry does not advance")
+    #expect(operations[a]?.stage == .postCreateHook, "a failed entry does not advance")
     let finished = operations.finish(.postCreateHook, on: a)
     #expect(!finished, "nor does it finish on its own")
 
     let dismissed = operations.dismiss(a)
-    #expect(dismissed?.step == .postCreateHook && dismissed?.failure == "exit 3")
+    #expect(dismissed?.stage == .postCreateHook && dismissed?.failure == "exit 3")
     #expect(operations.isEmpty)
   }
 
@@ -62,17 +62,5 @@ struct WorktreeOperationsTests {
     operations.clear(a)
     #expect(operations.isEmpty)
     #expect(operations.dismiss(b) == nil, "nothing there")
-  }
-
-  @Test func removalStepsMapOntoPaneSteps() {
-    #expect(WorktreeOperation.Step(WorktreeRemovalStep.preDeleteHook) == .preDeleteHook)
-    #expect(WorktreeOperation.Step(WorktreeRemovalStep.removingWorktree) == .removingWorktree)
-    #expect(WorktreeOperation.Step(WorktreeRemovalStep.postDeleteHook) == .postDeleteHook)
-    #expect(WorktreeOperation.Step(WorktreeRemovalStep.deletingBranch) == .deletingBranch)
-    #expect(
-      WorktreeOperation.Step(WorktreeRemovalStep.removingWorktree, trashes: false)
-        == .deletingWorktree)
-    #expect(
-      WorktreeOperation.Step(WorktreeRemovalStep.postDeleteHook, trashes: false) == .postDeleteHook)
   }
 }

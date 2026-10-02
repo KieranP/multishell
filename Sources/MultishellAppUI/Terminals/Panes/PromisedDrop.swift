@@ -41,7 +41,7 @@ enum PromisedDrop {
         deliver(urls)
       })
     let queue = OperationQueue()
-    collector.queue = queue
+    collector.readerQueue = queue
     for (index, receiver) in receivers.enumerated() {
       receiver.receivePromisedFiles(
         atDestination: directory, options: [:], operationQueue: queue,

@@ -39,7 +39,7 @@ struct AppModelTabMovesTests {
     #expect(h.model.workspace.selectedWorktreeID == h.feature.id)
     #expect(h.model.workspace.activeTab(in: h.feature.id)?.id == tab.id)
     #expect(h.model.workspace.tabs(in: h.main.id).isEmpty)
-    #expect(panes.isSubset(of: h.engine.openSessionIDs), "the shells kept running")
+    #expect(panes.isSubset(of: h.engine.liveSessionIDs), "the shells kept running")
     #expect(h.engine.closed.isEmpty)
     #expect(h.model.workspace.tabs(in: h.feature.id).count == 1, "no second tab was opened")
   }

@@ -67,14 +67,14 @@ extension SurfaceFrame {
     if let known = filesInDrag, known.sequence == sender.draggingSequenceNumber {
       return known.hasFiles
     }
-    let answer = Self.hasFiles(sender)
+    let answer = Self.pasteboardHasFiles(sender)
     filesInDrag = (sender.draggingSequenceNumber, answer)
     return answer
   }
 
   /// Files only, a drag of text having no path to hand the terminal. The
   /// promise is asked about first, asking for a URL being what copies.
-  private static func hasFiles(_ sender: any NSDraggingInfo) -> Bool {
+  private static func pasteboardHasFiles(_ sender: any NSDraggingInfo) -> Bool {
     !PromisedDrop.receivers(from: sender).isEmpty || !fileURLs(from: sender).isEmpty
   }
 

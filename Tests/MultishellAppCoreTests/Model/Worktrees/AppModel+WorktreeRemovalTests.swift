@@ -18,11 +18,13 @@ struct AppModelWorktreeRemovalTests {
     #expect(h.model.liveTerminalCount == 1)
 
     let removal = Task { await h.model.removeWorktree(worktree) }
-    var seen: Set<WorktreeOperation.Step> = []
+    var seen: Set<WorktreeOperation.Stage> = []
     try await waitUntil(
       {
-        guard let step = h.model.worktreeOperations[worktree.id]?.step else { return !seen.isEmpty }
-        seen.insert(step)
+        guard let stage = h.model.worktreeOperations[worktree.id]?.stage else {
+          return !seen.isEmpty
+        }
+        seen.insert(stage)
         return false
       }, seconds: 15)
     await removal.value
@@ -45,7 +47,7 @@ struct AppModelWorktreeRemovalTests {
 
     #expect(h.model.presentedError == nil, "the veto is shown in the pane, with no Remove Anyway")
     let refused = try #require(h.model.worktreeOperations[worktree.id])
-    #expect(!refused.isRunning && refused.step == .preDeleteHook)
+    #expect(!refused.isRunning && refused.stage == .preDeleteHook)
     #expect(refused.title == "The pre-delete hook refused the removal")
     #expect(h.worktree(onBranch: "kept") != nil)
     #expect(h.model.liveTerminalCount == 1, "the shells were never closed")
@@ -88,7 +90,7 @@ struct AppModelWorktreeRemovalTests {
       to: worktree.path.appendingPathComponent("work.txt"), atomically: true, encoding: .utf8)
     await h.model.refreshStatuses()
     let pending = PendingWorktreeRemoval(
-      worktree: worktree, branchHandling: .decided(deletes: false))
+      worktree: worktree, branchHandling: .decided(deletesBranch: false))
     #expect(
       pending.message(warning: h.model.worktreeRemovalWarning(for: pending))
         .contains("1 changed file, kept in the Trash"))
@@ -108,7 +110,7 @@ struct AppModelWorktreeRemovalTests {
     let h = Harness()
     h.model.setTrashesRemovedWorktrees(false)
     let pending = PendingWorktreeRemoval(
-      worktree: h.feature, branchHandling: .decided(deletes: false), trashes: true,
+      worktree: h.feature, branchHandling: .decided(deletesBranch: false), trashes: true,
       changesUnread: true)
 
     #expect(h.model.worktreeRemovalWarning(for: pending)?.contains("kept in the Trash") == true)
@@ -124,7 +126,7 @@ struct AppModelWorktreeRemovalTests {
       to: worktree.path.appendingPathComponent("work.txt"), atomically: true, encoding: .utf8)
     await h.model.refreshStatuses()
     let pending = PendingWorktreeRemoval(
-      worktree: worktree, branchHandling: .decided(deletes: false), trashes: false)
+      worktree: worktree, branchHandling: .decided(deletesBranch: false), trashes: false)
     #expect(
       h.model.worktreeRemovalWarning(for: pending)?.contains("deleted with the directory") == true)
 
@@ -149,6 +151,37 @@ struct AppModelWorktreeRemovalTests {
     await h.model.confirmWorktreeRemoval(pending, deletingBranch: false)
 
     #expect(h.platform.trashed == [worktree.path])
+  }
+
+  @Test func answeringTheDialogWithAButtonRemovesAsThatButtonSays() async throws {
+    let h = try await GitHarness()
+    defer { h.tearDown() }
+    await h.model.createWorktree(
+      branch: "answered", basedOn: nil, createBranch: true, in: h.project)
+    let worktree = try #require(h.worktree(onBranch: "answered"))
+    await h.model.requestWorktreeRemoval(of: worktree)?.value
+    let pending = try #require(h.model.pendingWorktreeRemoval)
+    let choice = try #require(pending.choices.indices.last)
+
+    await h.model.answerWorktreeRemoval(pending, choice: choice)?.value
+
+    #expect(h.model.pendingWorktreeRemoval == nil)
+    #expect(h.worktree(onBranch: "answered") == nil)
+    let branches = try await h.git.run(
+      ["for-each-ref", "--format=%(refname:short)", "refs/heads"], in: h.project.path)
+    #expect(branches.contains("answered") != pending.choices[choice].deletesBranch)
+  }
+
+  @Test func cancellingTheDialogTakesItDownAndRemovesNothing() {
+    let h = Harness()
+    let pending = PendingWorktreeRemoval(
+      worktree: h.feature, branchHandling: .offersBoth, trashes: true)
+    h.model.pendingWorktreeRemoval = pending
+
+    #expect(h.model.answerWorktreeRemoval(pending, choice: nil) == nil)
+    #expect(h.model.answerWorktreeRemoval(pending, choice: pending.choices.count) == nil)
+    #expect(h.model.pendingWorktreeRemoval == nil)
+    #expect(h.model.workspace.worktree(h.feature.id) != nil)
   }
 
   @Test func removingWithTheBranchDeletesItAndAnUnmergedOneOffersTheForcedForm() async throws {
@@ -214,8 +247,8 @@ struct AppModelWorktreeRemovalTests {
     h.model.setDeletesBranchWithWorktree(true)
 
     h.model.requestWorktreeRemoval(of: worktree)
-    try await waitUntil { h.model.worktreeOperations[worktree.id]?.step == .preDeleteHook }
-    #expect(h.model.worktreeOperations[worktree.id]?.step == .preDeleteHook)
+    try await waitUntil { h.model.worktreeOperations[worktree.id]?.stage == .preDeleteHook }
+    #expect(h.model.worktreeOperations[worktree.id]?.stage == .preDeleteHook)
     h.model.cancelStage(of: worktree)
     await h.awaitOperationEnd(on: worktree.id)
 
@@ -254,7 +287,7 @@ struct AppModelWorktreeRemovalTests {
 
     h.model.setConfirmsWorktreeRemoval(true)
     await h.model.requestWorktreeRemoval(of: h.feature)?.value
-    #expect(h.model.pendingWorktreeRemoval?.branchHandling == .decided(deletes: true))
+    #expect(h.model.pendingWorktreeRemoval?.branchHandling == .decided(deletesBranch: true))
     #expect(h.model.pendingWorktreeRemoval?.choices.count == 1)
 
     h.model.pendingWorktreeRemoval = nil

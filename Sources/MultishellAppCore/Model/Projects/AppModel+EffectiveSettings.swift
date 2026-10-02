@@ -15,7 +15,7 @@ extension AppModel {
 
   /// The project as the git layer should see it, its settings the effective
   /// ones: the repository's file filling the gaps the user's own leave.
-  func withEffectiveSettings(_ project: Project) -> Project {
+  func effectiveProject(_ project: Project) -> Project {
     var effective = project
     effective.settings = effectiveSettings(for: project)
     return effective
@@ -24,19 +24,19 @@ extension AppModel {
   /// A worktree's project with the repository's file layered in: reading
   /// `project.settings` would pass over what the file says.
   func effectiveProject(of worktree: Worktree) -> Project? {
-    workspace.project(worktree.projectID).map(withEffectiveSettings)
+    workspace.project(worktree.projectID).map(effectiveProject)
   }
 
   /// Where this project's worktrees go and how their branches are named,
   /// after the repository's defaults and the user's overrides.
-  public func worktreeSettings(for project: Project) -> WorktreeSettings {
-    workspace.worktreeSettings(for: withEffectiveSettings(project))
+  public func effectiveWorktreeSettings(for project: Project) -> WorktreeSettings {
+    workspace.effectiveWorktreeSettings(for: effectiveProject(project))
   }
 
   /// The value in force where this project does not override, and where it
   /// came from. What the settings forms show and seed an override with.
   public func inherited<Value: Equatable & Sendable>(
-    _ setting: InheritableSetting<Value>, global: Value, for project: Project
+    _ setting: InheritableSettingKeys<Value>, global: Value, for project: Project
   ) -> InheritedSetting<Value> {
     if let shared = sharedSettingsInForce(for: project)?[keyPath: setting.shared] {
       return InheritedSetting(value: shared, isFromRepository: true)

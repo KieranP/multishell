@@ -21,9 +21,9 @@ struct BranchRefParserTests {
     #expect(byName[BranchRef.originHead]?.symref == "refs/remotes/origin/main")
     #expect(byName["refs/heads/main"]?.symref == nil)
     #expect(byName["refs/heads/feat"]?.tip == "cd2")
-    #expect(byName["refs/heads/feat"]?.isUpstreamGone == false)
-    #expect(byName["refs/heads/squashed"]?.isUpstreamGone == true)
-    #expect(byName["refs/heads/local-only"]?.isUpstreamGone == false)
+    #expect(byName["refs/heads/feat"]?.upstreamIsGone == false)
+    #expect(byName["refs/heads/squashed"]?.upstreamIsGone == true)
+    #expect(byName["refs/heads/local-only"]?.upstreamIsGone == false)
     #expect(byName["refs/remotes/origin/main"]?.isRemote == true)
     // The date is the sixth field, so every row written before it existed
     // simply has none; the badges never read it.

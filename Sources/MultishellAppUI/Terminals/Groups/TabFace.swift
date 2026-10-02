@@ -74,7 +74,7 @@ struct TabFace: View {
   ) -> some View {
     let glyph = PaneGlyph(
       agentID: agentID,
-      unmarkedSymbol: tab.isSplit ? AgentMarkView.splitSymbol : AgentMarkView.terminalSymbol,
+      unmarkedSymbol: tab.isSplit ? PaneSymbol.split : PaneSymbol.terminal,
       state: state,
       ringFill: isShown ? theme.backgroundColor : theme.chromeColor,
       plainTint: textColor,

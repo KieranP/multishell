@@ -15,7 +15,7 @@ struct WorktreeCoordinatorRemovalTests {
       branch: "keep", in: repo.project, settings: repo.worktreeSettings)
     let worktree = try await repo.worktree(onBranch: "keep")
 
-    try await repo.coordinator.remove(worktree, in: repo.project)
+    try await repo.coordinator.removeUnlinking(worktree, in: repo.project)
 
     #expect(try await repo.branches() == ["keep", "main"])
     #expect(!FileManager.default.fileExists(atPath: worktree.path.path))
@@ -55,7 +55,7 @@ struct WorktreeCoordinatorRemovalTests {
       to: path.appendingPathComponent("wip.txt"), atomically: true, encoding: .utf8)
     let worktree = try await repo.worktree(onBranch: "dirty", in: project)
     let bin = repo.root.appendingPathComponent("bin", isDirectory: true)
-    let steps = StepLog<WorktreeRemovalStep>()
+    let steps = Recorder<WorktreeRemovalStep>()
 
     try await repo.coordinator.remove(
       worktree, in: project,
@@ -63,9 +63,9 @@ struct WorktreeCoordinatorRemovalTests {
         try FileManager.default.createDirectory(at: bin, withIntermediateDirectories: true)
         try FileManager.default.moveItem(at: url, to: bin.appendingPathComponent("dirty"))
       },
-      onStep: { steps.add($0) })
+      onStep: { steps.record($0) })
 
-    #expect(steps.steps == [.removingWorktree, .postDeleteHook])
+    #expect(steps.received == [.removingWorktree, .postDeleteHook])
     #expect(try await repo.coordinator.git.list(project).count == 1, "forgotten")
     #expect(
       FileManager.default.fileExists(atPath: bin.appendingPathComponent("dirty/wip.txt").path),
@@ -104,7 +104,7 @@ struct WorktreeCoordinatorRemovalTests {
       branch: "scratch", in: project, settings: settings)
 
     let worktree = try await repo.worktree(onBranch: "scratch", in: project)
-    try await coordinator.remove(worktree, in: project)
+    try await coordinator.removeUnlinking(worktree, in: project)
 
     #expect(try await coordinator.git.list(project).count == 1)
     #expect(
@@ -122,7 +122,7 @@ struct WorktreeCoordinatorRemovalTests {
       branch: "done", in: project, settings: repo.worktreeSettings)
     let worktree = try await repo.worktree(onBranch: "done", in: project)
 
-    try await repo.coordinator.remove(worktree, deletingBranch: true, in: project)
+    try await repo.coordinator.removeUnlinking(worktree, deletingBranch: true, in: project)
 
     #expect(try await repo.branches() == ["main"])
     let seen = try String(
@@ -141,7 +141,7 @@ struct WorktreeCoordinatorRemovalTests {
     let worktree = try await repo.worktree(onBranch: "unmerged")
 
     await #expect(throws: BranchDeletionFailure.self) {
-      try await repo.coordinator.remove(worktree, deletingBranch: true, in: repo.project)
+      try await repo.coordinator.removeUnlinking(worktree, deletingBranch: true, in: repo.project)
     }
 
     #expect(
@@ -165,7 +165,7 @@ struct WorktreeCoordinatorRemovalTests {
         $0.isDetached && !$0.isPrimary
       })
 
-    try await repo.coordinator.remove(worktree, deletingBranch: true, in: repo.project)
+    try await repo.coordinator.removeUnlinking(worktree, deletingBranch: true, in: repo.project)
 
     #expect(try await repo.branches() == ["main"])
   }
@@ -173,13 +173,14 @@ struct WorktreeCoordinatorRemovalTests {
   @Test func removalReportsEachStepAndSkipsWhatDoesNotApply() async throws {
     let repo = try await RepositoryFixture.make()
     defer { repo.tearDown() }
-    let steps = StepLog<WorktreeRemovalStep>()
+    let steps = Recorder<WorktreeRemovalStep>()
     try await repo.coordinator.createThenRunPostCreate(
       branch: "plain", in: repo.project, settings: repo.worktreeSettings)
     let plain = try await repo.worktree(onBranch: "plain")
 
-    try await repo.coordinator.remove(plain, in: repo.project, onStep: { steps.add($0) })
-    #expect(steps.steps == [.removingWorktree], "no hooks, branch kept")
+    try await repo.coordinator.removeUnlinking(
+      plain, in: repo.project, onStep: { steps.record($0) })
+    #expect(steps.received == [.removingWorktree], "no hooks, branch kept")
     #expect(WorktreeRemovalStep.first(for: repo.project) == .removingWorktree)
 
     var hooked = repo.project
@@ -188,28 +189,10 @@ struct WorktreeCoordinatorRemovalTests {
       branch: "hooked", in: hooked, settings: repo.worktreeSettings)
     let worktree = try await repo.worktree(onBranch: "hooked", in: hooked)
     steps.clear()
-    try await repo.coordinator.remove(
-      worktree, deletingBranch: true, in: hooked, onStep: { steps.add($0) })
+    try await repo.coordinator.removeUnlinking(
+      worktree, deletingBranch: true, in: hooked, onStep: { steps.record($0) })
     #expect(
-      steps.steps == [.preDeleteHook, .removingWorktree, .postDeleteHook, .deletingBranch])
+      steps.received == [.preDeleteHook, .removingWorktree, .postDeleteHook, .deletingBranch])
     #expect(WorktreeRemovalStep.first(for: hooked) == .preDeleteHook)
-  }
-
-  @Test func theListReflectsCreateAndRemove() async throws {
-    let repo = try await RepositoryFixture.make()
-    defer { repo.tearDown() }
-
-    try await repo.coordinator.createThenRunPostCreate(
-      branch: "a", in: repo.project, settings: repo.worktreeSettings)
-    try await repo.coordinator.createThenRunPostCreate(
-      branch: "b", in: repo.project, settings: repo.worktreeSettings)
-    var listed = try await repo.coordinator.git.list(repo.project)
-    #expect(listed.map(\.branch) == ["main", "a", "b"])
-    #expect(listed[0].isPrimary && !listed[1].isPrimary)
-    #expect(listed.allSatisfy { $0.projectID == repo.project.id })
-
-    try await repo.coordinator.remove(listed[1], in: repo.project)
-    listed = try await repo.coordinator.git.list(repo.project)
-    #expect(listed.map(\.branch) == ["main", "b"])
   }
 }

@@ -52,7 +52,7 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// The order worktree rows are listed in under their project. Projects
   /// may override it in `ProjectSettings`.
   public var worktreeSortOrder = WorktreeSortOrder.default
-  /// Busy worktrees listed above the rest, each group then in
+  /// Active worktrees listed above the rest, each group then in
   /// `worktreeSortOrder`. Off by default: self-reordering lists surprise.
   public var showsActiveWorktreesFirst = false
   /// Ask before `git worktree remove`. Off is for people who remove
@@ -70,7 +70,7 @@ public struct Workspace: Codable, Hashable, Sendable {
   /// What the git badge on a row and a card counts.
   public var gitStatusIndicator = GitStatusIndicator.default
 
-  static let defaultHookTimeoutSeconds = 60
+  private static let defaultHookTimeoutSeconds = 60
 
   /// `hookTimeoutSeconds` as the runner takes it; `nil` for no limit.
   public var hookTimeout: Duration? {

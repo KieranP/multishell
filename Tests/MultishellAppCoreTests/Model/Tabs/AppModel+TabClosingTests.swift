@@ -86,8 +86,21 @@ struct AppModelTabClosingTests {
     #expect(h.model.pendingClose == .tab(working.id))
     #expect(h.model.workspace.tab(working.id) != nil, "nothing closed until it is confirmed")
 
-    h.model.confirmPendingClose()
+    h.model.answerPendingClose(confirmed: true)
     #expect(h.model.workspace.tab(working.id) == nil)
+  }
+
+  @Test func cancellingAPendingCloseClosesNothingAndAsksNoMore() {
+    let h = Harness()
+    h.model.select(h.main)
+    let tab = h.model.workspace.activeTab(in: h.main.id)!
+    h.stateSource.send(SessionStateReport(state: .running, sessionID: tab.focusedSessionID))
+    h.model.closeActiveTab()
+
+    h.model.answerPendingClose(confirmed: false)
+
+    #expect(h.model.pendingClose == nil)
+    #expect(h.model.workspace.tab(tab.id) != nil)
   }
 
   @Test func closingATabRunningAPlainCommandAsksNothing() {
@@ -120,7 +133,7 @@ struct AppModelTabClosingTests {
     h.model.closeActiveTab()
     #expect(h.model.pendingClose == .tab(tab.id))
 
-    h.model.confirmPendingClose()
+    h.model.answerPendingClose(confirmed: true)
     #expect(h.model.pendingClose == nil)
     #expect(h.model.workspace.tabs(in: h.main.id).isEmpty)
     #expect(h.model.liveTerminalCount == 0)

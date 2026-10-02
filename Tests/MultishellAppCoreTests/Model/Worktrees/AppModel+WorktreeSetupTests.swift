@@ -25,7 +25,7 @@ struct AppModelWorktreeSetupTests {
     // going away is lost, and one raised later lands over other work.
     #expect(h.model.presentedError == nil)
     let failed = try #require(h.model.worktreeOperations[created.id])
-    #expect(!failed.isRunning && failed.step == .postCreateHook)
+    #expect(!failed.isRunning && failed.stage == .postCreateHook)
     #expect(failed.title == "The post-create hook failed")
     #expect(h.model.isBusy(created.id), "held until dismissed")
     #expect(h.model.liveTerminalCount == 0)
@@ -65,7 +65,7 @@ struct AppModelWorktreeSetupTests {
     // No clock needed: a create that waited out the hook would leave the operation
     // finished and the first tab open, which the next three read.
     #expect(h.model.workspace.selectedWorktreeID == created.id)
-    #expect(h.model.worktreeOperations[created.id]?.step == .postCreateHook)
+    #expect(h.model.worktreeOperations[created.id]?.stage == .postCreateHook)
     #expect(h.model.isBusy(created.id))
     #expect(h.model.workspace.tabs(in: created.id).isEmpty, "no shell until the hook is done")
     #expect(h.model.liveTerminalCount == 0)
@@ -180,7 +180,7 @@ struct AppModelWorktreeSetupTests {
     #expect(h.model.showsAgentBoard, "nothing the user did")
     let tabs = h.model.workspace.tabs(in: created.id)
     #expect(tabs.count == 1, "owed by the create, not the select")
-    #expect(h.engine.openSessionIDs.contains(tabs[0].focusedSessionID), "and running already")
+    #expect(h.engine.liveSessionIDs.contains(tabs[0].focusedSessionID), "and running already")
     #expect(h.engine.focused.isEmpty, "the keyboard is left where it was")
   }
   /// The first tab is the create's, so it opens under the create settings,
@@ -207,7 +207,7 @@ struct AppModelWorktreeSetupTests {
     #expect(
       h.model.workspace.session(tabs[0].focusedSessionID)?.agentID == "claude",
       "the create pair of settings, not the select pair")
-    #expect(h.engine.openSessionIDs.contains(tabs[0].focusedSessionID), "started in the background")
+    #expect(h.engine.liveSessionIDs.contains(tabs[0].focusedSessionID), "started in the background")
     #expect(h.model.workspace.selectedWorktreeID == main.id, "the user was not moved")
     #expect(h.engine.focused.count == focusedBefore, "nor was the keyboard")
     h.model.select(created)

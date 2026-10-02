@@ -19,7 +19,7 @@ extension AgentHookIntegration {
   /// One entry of ours per event, everything already there left alone.
   /// `install` refuses a file it cannot read rather than skipping an event.
   func adding(
-    to settings: [String: Any], helper: String = AgentHookCatalogue.helperReference
+    to settings: [String: Any], helper: String
   )
     -> [String: Any]
   {

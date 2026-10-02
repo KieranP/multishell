@@ -30,16 +30,16 @@ enum WorktreeRemovalFailure: Equatable, Sendable {
   init(_ error: any Error, deletingBranch branch: String?) {
     switch error {
     case let failure as HookFailure
-    where !failure.stage.operationHappened && failure.stop == .byUser:
+    where !failure.stage.isAfterOperation && failure.stop == .byUser:
       self = .stopped
-    case let failure as HookFailure where !failure.stage.operationHappened:
+    case let failure as HookFailure where !failure.stage.isAfterOperation:
       self = .vetoed(message: PresentedError(failure).message, timedOut: failure.stop != nil)
     case let failure as HookFailure:
       // The branch is deleted after the post hook, so a hook that failed
       // kept it; the alert has to say so, or the user believes it went.
       let kept = branch.map { "\n\n" + t("removal.branch-was-kept", $0) } ?? ""
       self = .presenting(failure, adding: kept, worktreeRemoved: true)
-    case let failure as NotTheCheckout:
+    case let failure as WorktreePathTaken:
       // Nothing was removed and nothing is worth retrying until it moves.
       self = .presenting(failure, worktreeRemoved: false)
     case let failure as WorktreeForgetFailure:

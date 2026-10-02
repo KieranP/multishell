@@ -10,7 +10,7 @@ enum GitExecutable {
   static func resolve(
     searchPath: String?, shim: URL = URL(fileURLWithPath: "/usr/bin/git"),
     xcrun: URL = URL(fileURLWithPath: "/usr/bin/xcrun"),
-    developerDirectory: URL? = selectedDeveloperDirectory()
+    developerDirectory: URL?
   ) async -> URL? {
     // Each PATH directory is a stat, which a dead mount holds.
     let found = await offMain { ExecutableLookup.find("git", searchPath: searchPath) }
@@ -34,10 +34,8 @@ enum GitExecutable {
 
   /// Where xcrun would look, in its order: `DEVELOPER_DIR`, xcode-select's
   /// link, then its two defaults. Read off the disk, as asking is a launch.
-  static func selectedDeveloperDirectory(
-    environment: [String: String] = ProcessInfo.processInfo.environment
-  ) -> URL? {
-    if let directory = environment["DEVELOPER_DIR"], !directory.isEmpty {
+  static func selectedDeveloperDirectory() -> URL? {
+    if let directory = ProcessInfo.processInfo.environment["DEVELOPER_DIR"], !directory.isEmpty {
       return URL(fileURLWithPath: directory)
     }
     let manager = FileManager.default

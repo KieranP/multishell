@@ -32,7 +32,7 @@ struct WeightedSplit<Content: View>: View {
 
   private func layout(sizes: [CGFloat], available: CGFloat) -> some View {
     Group(subviews: content()) { subviews in
-      SplitPanes(
+      SplitStack(
         subviews: subviews, axis: axis, sizes: sizes, dividerColor: dividerColor,
         gutterColor: gutterColor,
         thickness: CGFloat(UIMetrics.splitDividerThickness)

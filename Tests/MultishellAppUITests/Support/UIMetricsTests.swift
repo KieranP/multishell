@@ -31,14 +31,15 @@ struct UIMetricsTests {
 
   @Test func aStripsTabsHaveWhatItsButtonsLeave() {
     let metrics = UIMetrics(fontSize: 13)
-    #expect(metrics.stripTabRoom(in: 252) == 145, "the menu and both splits come off")
-    #expect(metrics.stripTabRoom(in: 251) == 212, "only the menu comes off below the threshold")
+    #expect(metrics.stripTabsAvailable(in: 252) == 145, "the menu and both splits come off")
+    #expect(
+      metrics.stripTabsAvailable(in: 251) == 212, "only the menu comes off below the threshold")
   }
 
   @Test func aScrollingStripHasGuttersOnlyWithRoomForBothAndATab() {
     let metrics = UIMetrics(fontSize: 13)
-    #expect(metrics.tabArrowGutter(forRoom: 145) == 22)
-    #expect(metrics.tabArrowGutter(forRoom: 144) == 0)
+    #expect(metrics.tabArrowGutter(forAvailable: 145) == 22)
+    #expect(metrics.tabArrowGutter(forAvailable: 144) == 0)
   }
 
   @Test func aProjectsBlockIsItsRowAndEachWorktreesWithTheSelectedOnesPanes() {

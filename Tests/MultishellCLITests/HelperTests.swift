@@ -55,7 +55,7 @@ struct HelperTests {
     #expect(report?.cwd == "/w/repo")
     #expect(report?.pid == 4242)
     #expect(report?.message == "build failed")
-    #expect(report?.agent == "opencode")
+    #expect(report?.agentID == "opencode")
     #expect(report?.isFromShellIntegration == true)
     #expect(report?.startsTurn == true)
   }
@@ -117,12 +117,12 @@ struct HelperTests {
     #expect(output.succeeded, "\(output.standardError)")
 
     try await waitUntil { !recorder.received.isEmpty }
-    #expect(SessionStateReport.parse(recorder.received.first ?? "")?.agent == "codex")
+    #expect(SessionStateReport.parse(recorder.received.first ?? "")?.agentID == "codex")
   }
 
   /// OpenCode's plugin has no payload to hand over and names a worker by flags.
   /// A phase without a worker, or a worker without a phase, is a usage error.
-  @Test func stateCanNameASubagent() async throws {
+  @Test func stateNamesAWorkerOnlyWithItsIdAndPhaseTogether() async throws {
     let listener = try ReportListener()
     defer { listener.stop() }
     let path = listener.path
@@ -137,13 +137,6 @@ struct HelperTests {
     try await waitUntil { !recorder.received.isEmpty }
     let report = SessionStateReport.parse(recorder.received.first ?? "")
     #expect(report?.subagent == SubagentReport(id: "ses_1", type: "explore", phase: .working))
-
-    let prompt = try await HelperBinary.run(
-      ["state", "running", "--agent", "opencode", "--new-turn", "true"],
-      environment: ["MULTISHELL_SOCKET": path.path])
-    #expect(prompt.succeeded, "\(prompt.standardError)")
-    try await waitUntil { recorder.received.count == 2 }
-    #expect(SessionStateReport.parse(recorder.received.last ?? "")?.startsTurn == true)
 
     let halfSaid = try await HelperBinary.run(
       ["state", "running", "--subagent", "ses_1"], environment: ["MULTISHELL_SOCKET": path.path])
@@ -164,11 +157,25 @@ struct HelperTests {
     let after = try await HelperBinary.run(
       ["state", "done", "--agent", "opencode"], environment: ["MULTISHELL_SOCKET": path.path])
     #expect(after.succeeded, "\(after.standardError)")
-    try await waitUntil { recorder.received.count == 3 }
+    try await waitUntil { recorder.received.count == 2 }
     #expect(
       SessionStateReport.parse(recorder.received.last ?? "")?.state == .done,
-      "the barrier is the third line, so nothing the usage errors sent is behind it")
-    #expect(recorder.received.count == 3, "no half-said worker reached the app")
+      "the barrier is the second line, so nothing the usage errors sent is behind it")
+    #expect(recorder.received.count == 2, "no half-said worker reached the app")
+  }
+
+  @Test func aNewTurnFlagMarksTheReportAsStartingATurn() async throws {
+    let listener = try ReportListener()
+    defer { listener.stop() }
+    let path = listener.path
+    let recorder = listener.recorder
+
+    let prompt = try await HelperBinary.run(
+      ["state", "running", "--agent", "opencode", "--new-turn", "true"],
+      environment: ["MULTISHELL_SOCKET": path.path])
+    #expect(prompt.succeeded, "\(prompt.standardError)")
+    try await waitUntil { !recorder.received.isEmpty }
+    #expect(SessionStateReport.parse(recorder.received.first ?? "")?.startsTurn == true)
   }
 
   /// The pid reported is the program that ran the hook, past any shells

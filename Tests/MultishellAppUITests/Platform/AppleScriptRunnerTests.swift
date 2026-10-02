@@ -42,7 +42,7 @@ struct AppleScriptRunnerTests {
 
   @Test func theInstallScriptIsValidAppleScript() throws {
     #expect(throws: Never.self) {
-      try AppleScriptRunner.compile(AppleScriptRunner.installToolScript)
+      try AppleScriptRunner.compile(MacPlatform.installToolScript)
     }
   }
 

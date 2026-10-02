@@ -220,7 +220,7 @@ struct WorkspaceFileTests {
     let repairing = ContinuousClock.now
     repaired.repairReferences()
     let repairTime = ContinuousClock.now - repairing
-    #expect(repaired == loaded, "a sound workspace is left alone")
+    #expect(repaired == loaded, "a consistent workspace is left alone")
     #expect(repairTime < .seconds(5), "repair took \(repairTime)")
   }
 
@@ -237,8 +237,8 @@ struct WorkspaceFileTests {
     ]
     workspace.worktreeNames = ["/repos/demo": "trunk"]
     workspace.appearance.themeID = "multishell.light"
-    workspace.appearance.fontName = "Menlo"
-    workspace.appearance.fontSize = 15
+    workspace.appearance.terminalFontName = "Menlo"
+    workspace.appearance.terminalFontSize = 15
     workspace.appearance.uiFontSize = 16
     workspace.worktreeDefaults = WorktreeSettings(
       worktreeDirectory: "/trees", branchPrefix: "team/")

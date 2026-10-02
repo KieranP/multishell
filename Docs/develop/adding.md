@@ -33,14 +33,14 @@ What each addition needs beyond the code itself.
 - **A hook stage.** A case in the hook stage, an arm in each of the script and
   directory lookups, the call from the coordinator in order, an error title
   saying whether the operation happened, an editor on the Hooks page, and an
-  operation step with its text.
+  operation stage with its text.
 - **A way a worktree stage can fail.** A failure type naming what is still on
   disk, an error title, and an arm in the removal describer saying whether the
   worktree is still there, which decides whether the row is restored or
   refreshed. Nothing forces the arm: without it the failure falls to the Trash's
   default and the row comes back.
 - **A list of files a new worktree is given.** A case in the placement with the
-  settings field it reads, an operation step with its titles and Cancel help,
+  settings field it reads, an operation stage with its titles and Cancel help,
   and an editor on the Hooks page.
 - **If a repository may ship that list**, it also needs a field on the shared
   settings, a line in the layering, and the two places trust and containment are
@@ -123,7 +123,9 @@ What each addition needs beyond the code itself.
   that asks. One that removes something goes through `DestructiveAlert` and
   `destructiveAlert(_:alert:answer:)`, which keep the red button and Return on
   it; one that does not can stay a SwiftUI dialog, where the cancel role gives
-  Escape and `.defaultAction` gives Return (design/smaller-decisions.md).
+  Escape and `.defaultAction` gives Return (design/smaller-decisions.md). Its
+  answer is an `AppModel` method, `answerPendingClose` the pattern, so the view
+  only forwards the button chosen and the model's tests cover what it does.
 - **A project icon.** A name in one of the symbol groups, or a new group. It
   must exist as far back as the deployment target; a name that does not resolve
   draws nothing rather than failing.
@@ -133,17 +135,18 @@ What each addition needs beyond the code itself.
 - **The picker has no search**, so put a symbol in the group someone would look
   in. The same test holds every name to the width the shipped ones draw at.
 - **A way of ordering worktree rows.** A case with its display name, a
-  comparison in the order type, and a case in its tests. Raw values reach
+  comparison in the sort rule, and a case in its tests. Raw values reach
   repositories through the shared file, so renaming one silently turns a
   committed order into the default.
 - **Anything not on the worktree is passed to the sort as a closure**, as the
-  active flag and the last commit are, and lands on the sort key. The order memo
+  active flag and the last commit are, and lands on the sort key. The sort cache
   compares keys to skip a sort, so a comparison reading anything not on the key
   serves the old order. No order lifts a row above the main worktree or the
-  trunk, which the bands place first.
+  trunk, which the tiers place first.
 - **A shell with command-status hooks.** A script in the libraries' resources
-  with the helper's placeholder, listed in the manifest, loaded by the state
-  hooks, written by the integration refresh and picked up at launch.
+  with the helper's placeholder, listed in the manifest, loaded by the
+  integration scripts, written by the integration refresh and picked up at
+  launch.
 - **It reports a command started and finished through the helper**, and does
   nothing when the session variable is unset. Name it in
   `ShellLaunch.reportsFinishedCommands` too, or its panes also read git on every
@@ -178,8 +181,8 @@ What each addition needs beyond the code itself.
   model's setting accessor.
 - **A project override** is a second field on the project settings and a
   resolver reading those first; if a repository may ship it, a shared-settings
-  field, a line in the layering and an `InheritableSetting` member pairing the
-  two, plus the two trust places if it names a path (design/settings.md).
+  field, a line in the layering and an `InheritableSettingKeys` member pairing
+  the two, plus the two trust places if it names a path (design/settings.md).
 - **A collection, or a reference between collections.** Extend the repair and
   the invariants. Every store operation must leave the invariants true, and the
   seeded random tests find it if not, printing the seed and step to replay.
@@ -198,8 +201,8 @@ What each addition needs beyond the code itself.
   the stored value; a field with its own binding goes stale against a change
   made elsewhere.
 - **An override is an override section**, naming the key path once, or the
-  `InheritableSetting` where a repository may ship it. Help goes behind an (i);
-  a caption is only for a value computed live.
+  `InheritableSettingKeys` where a repository may ship it. Help goes behind an
+  (i); a caption is only for a value computed live.
 - **A page that outgrows its window gets another part** in its segmented switch,
   and each part a line in SettingsWindowSizeTests. Hooks' Create part has 7 pt
   left under a repository file asking for trust.

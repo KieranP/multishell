@@ -23,7 +23,7 @@ extension AppModel {
     await refreshSharedSettingsIfChanged()
   }
 
-  /// Missing and slow projects are skipped, see `StatusPollPace`; nil is every project.
+  /// Missing projects and slow worktrees are skipped, see `StatusPollPace`; nil is every project.
   func refreshStatuses(inProject project: Project.ID? = nil) async {
     await refreshStatuses { project == nil || $0.projectID == project }
   }
@@ -43,7 +43,7 @@ extension AppModel {
     // After the await: a removed row keeps no badge, and one a stage began on
     // meanwhile keeps its old one and takes no new one; see worktrees.md.
     let known = Set(workspace.worktrees.map(\.id).filter { !pathClaims.isClaimed($0) })
-    let current = Dictionary(workspace.worktrees.map { ($0.id, $0) }) { first, _ in first }
+    let current = workspace.worktrees.keyedByID()
     let kept = readings.filter { current[$0.key].map(mayReadStatus) == true }
     statusReads.remember(kept.mapValues(\.took))
     let fresh = kept.mapValues(\.status)
@@ -56,37 +56,20 @@ extension AppModel {
 
   /// Whether git may be asked about this worktree's status, and whether an
   /// answer may land: both reads ask it before and after git runs.
-  private func mayReadStatus(of worktree: Worktree) -> Bool {
+  func mayReadStatus(of worktree: Worktree) -> Bool {
     !isBeingWritten(worktree) && !missingProjects.contains(worktree.projectID)
   }
 
   /// Only rows on screen are polled, bar the main one, the selected one and any
   /// on the board; see Docs/design/worktrees.md.
-  private func isStatusWanted(_ worktree: Worktree, onSidebar: Set<Worktree.ID>) -> Bool {
+  func isStatusWanted(_ worktree: Worktree, onSidebar: Set<Worktree.ID>) -> Bool {
     worktree.isPrimary || worktree.id == workspace.selectedWorktreeID
       || onSidebar.contains(worktree.id)
       || (showsAgentBoard
         && workspace.sessions(in: worktree.id).contains { liveSessionIDs.contains($0.id) })
   }
 
-  /// The rows the sidebar draws, once a round: asked per row, the filter
-  /// looked up the project and folded the text for every worktree.
-  private func sidebarRowIDs(
-    filteredBy text: String? = nil, folding folded: Set<Project.ID>? = nil
-  ) -> Set<Worktree.ID> {
-    let entries = SidebarFilter(text ?? sidebarFilterText)
-      .apply(to: workspace, folding: folded ?? projectsFoldedWhileFiltering)
-    return Set(entries.filter(\.isExpanded).flatMap { $0.worktrees.map(\.id) })
-  }
-
-  private func polledRowIDs(
-    filteredBy text: String? = nil, folding folded: Set<Project.ID>? = nil
-  ) -> Set<Worktree.ID> {
-    let onSidebar = sidebarRowIDs(filteredBy: text, folding: folded)
-    return Set(workspace.worktrees.filter { isStatusWanted($0, onSidebar: onSidebar) }.map(\.id))
-  }
-
-  private func readStatuses(
+  func readStatuses(
     of worktrees: [Worktree], with coordinator: WorktreeCoordinator
   ) async -> [Worktree.ID: StatusReading] {
     let ticket = statusReads.begin(worktrees.map(\.id))
@@ -127,79 +110,5 @@ extension AppModel {
     for id in ids {
       if let project = workspace.project(id) { await refreshWorktrees(of: project) }
     }
-  }
-
-  /// Paced like the poll; `forced` must start after its cause, see worktrees.md.
-  /// `true` where a status landed, which a failed git or a skipped read is not.
-  @discardableResult
-  func refreshStatus(of worktreeID: Worktree.ID, forced: Bool = false) async -> Bool {
-    guard let coordinator, let worktree = workspace.worktree(worktreeID),
-      mayReadStatus(of: worktree)
-    else { return false }
-    if !forced, statusReads.isReading(worktreeID) {
-      statusReads.askAgain(worktreeID)
-      return false
-    }
-    guard forced || statusReads.isDue(worktreeID, at: .now) else { return false }
-    let readings = await readStatuses(of: [worktree], with: coordinator)
-    // Gone while git ran: paths are ids, so a worktree re-made at this path
-    // would otherwise wear the old checkout's badge until the next poll.
-    guard let still = workspace.worktree(worktreeID), mayReadStatus(of: still) else {
-      return false
-    }
-    statusReads.remember(readings.mapValues(\.took))
-    guard let reading = readings[worktreeID] else { return false }
-    noteDirectoryPresent(of: worktreeID)
-    setIfChanged(\.statuses[worktreeID], reading.status)
-    return true
-  }
-
-  /// Rows the filter hid went unread, so those it brings back are read, as
-  /// opening a project's are; after a pause, not at every keystroke.
-  func scheduleRevealedRowsRead(from oldText: String, folding oldFolds: Set<Project.ID>) {
-    let polledBefore =
-      pendingRevealedRowsRead?.polledThroughout
-      ?? polledRowIDs(filteredBy: oldText, folding: oldFolds)
-    let polledThroughout = polledBefore.intersection(polledRowIDs())
-    pendingRevealedRowsRead?.task.cancel()
-    let task = Task { @MainActor [weak self] in
-      try? await Task.sleep(for: .milliseconds(250))
-      guard !Task.isCancelled, let self else { return }
-      pendingRevealedRowsRead = nil
-      let revealed = polledRowIDs().subtracting(polledThroughout)
-      await refreshStatuses { revealed.contains($0.id) }
-    }
-    pendingRevealedRowsRead = (polledThroughout, task)
-  }
-
-  /// Nothing writes there now, so read rather than wait out the poll. Judged
-  /// when the read runs: `endSetup` is called before a file list's entry clears.
-  func refreshBadges(of id: Worktree.ID, in projectID: Project.ID) {
-    scheduleStatusRefresh(of: id)
-    Task { @MainActor [weak self] in
-      guard let self, !isBeingWritten(id), let project = workspace.project(projectID)
-      else { return }
-      await refreshMergeStates(of: project)
-    }
-  }
-
-  /// One command at a prompt raises several events in a row, each of which
-  /// would spawn a `git status`. The burst becomes one run.
-  func scheduleStatusRefresh(of worktreeID: Worktree.ID) {
-    pendingStatusRefreshes[worktreeID]?.cancel()
-    pendingStatusRefreshes[worktreeID] = Task { @MainActor [weak self] in
-      try? await Task.sleep(for: .milliseconds(250))
-      guard !Task.isCancelled, let self else { return }
-      pendingStatusRefreshes[worktreeID] = nil
-      await refreshStatus(of: worktreeID)
-    }
-  }
-
-  /// Every badge is re-read at once rather than at the next poll, which a
-  /// slow checkout paces minutes out: the setting was changed to be seen.
-  public func setGitStatusIndicator(_ indicator: GitStatusIndicator) {
-    store.setGitStatusIndicator(indicator)
-    statusReads.invalidate()
-    Task { await refreshStatuses() }
   }
 }

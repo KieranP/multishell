@@ -38,7 +38,6 @@
 "agents.helper-info" = "For your own hooks: `multishell state running|attention|done|error|idle` marks the tab it runs in. Asks for an administrator password.";
 "agents.helper-installed" = "Installed in /usr/local/bin";
 "agents.helper-label" = "multishell:";
-"agents.hooks-installed-in" = "Installed in %@";
 "agents.hooks-section" = "Agent hooks";
 "agents.install-helper" = "Install Command Line Tool…";
 "agents.not-installed" = "Not installed";
@@ -212,9 +211,7 @@
 "sidebar.locked" = "Locked worktree";
 "sidebar.name-prompt" = "Name";
 "sidebar.new-worktree" = "New Worktree";
-"sidebar.no-projects" = "No projects yet";
 "sidebar.not-reachable" = "%@ is not reachable right now";
-"sidebar.nothing-matches" = "Nothing matches";
 "sidebar.projects" = "Projects";
 "sidebar.sort-worktrees" = "Sort Worktrees";
 "status.ahead" = "↑%d";
@@ -229,9 +226,7 @@
 "tab.move-to-this-group" = "Move tab to this group";
 "tab.name-prompt" = "Tab name";
 "tab.new" = "New Tab";
-"tab.new-custom-agent" = "New Custom Command Tab";
 "tab.new-in-group" = "New Tab in This Group";
-"tab.new-named-agent" = "New %@ Tab";
 "tab.scroll-left" = "Scroll tabs left";
 "tab.scroll-right" = "Scroll tabs right";
 "tab.split-down" = "Split Down";

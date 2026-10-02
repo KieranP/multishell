@@ -1,11 +1,11 @@
 import MultishellCore
 
-/// Whose hooks and whether the command-line tool are installed, read off
-/// the main actor and recorded on it by `AppModel.recordInstallState`.
+/// Whose hooks and whether the command-line tool are installed, read on or
+/// off the main actor and recorded on it by `AppModel.recordInstallState`.
 struct IntegrationInstallState: Sendable {
   let installedHooks: Set<String>
   let staleHooks: Set<String>
-  let commandLineToolInstalled: Bool
+  let isCommandLineToolInstalled: Bool
 
   static func read() -> IntegrationInstallState {
     let installations = AgentHookCatalogue.integrations.map {
@@ -14,6 +14,6 @@ struct IntegrationInstallState: Sendable {
     return IntegrationInstallState(
       installedHooks: Set(installations.filter { $0.installation != .absent }.map(\.id)),
       staleHooks: Set(installations.filter { $0.installation == .stale }.map(\.id)),
-      commandLineToolInstalled: HelperLink.isCommandLineToolInstalled)
+      isCommandLineToolInstalled: HelperLink.isCommandLineToolInstalled)
   }
 }

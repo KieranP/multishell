@@ -41,7 +41,7 @@ struct AppModelNewWorktreeSheetTests {
     draft.finishLoading(project.id, with: read, checkedOut: checkedOut)
 
     #expect(draft.availableBranches(checkedOut: checkedOut) == ["release", "spike"])
-    draft.createBranch = false
+    draft.createsBranch = false
     draft.modeChanged(checkedOut: checkedOut)
     #expect(draft.branch == "release")
     #expect(draft.canCreate(checkedOut: checkedOut))

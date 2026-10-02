@@ -26,7 +26,7 @@ struct ScrollingTabStrip<Tabs: View>: View {
   @State private var scrollerReference = ScrollerReference()
 
   /// With no gutters the trackpad still scrolls the strip.
-  private var gutter: Double { model.metrics.tabArrowGutter(forRoom: available) }
+  private var gutter: Double { model.metrics.tabArrowGutter(forAvailable: available) }
 
   /// Both gutters keep their room whether an arrow is drawn or not, so this,
   /// which decides that, cannot change what it is measured from.

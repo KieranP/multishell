@@ -51,4 +51,11 @@ public struct TerminalTab: Identifiable, Codable, Hashable, Sendable {
 
   public var sessionIDs: [TerminalSession.ID] { root.sessionIDs }
   public var isSplit: Bool { !root.isLeaf }
+
+  /// Where a dragged tab lands relative to the tab it was dropped on. Nested
+  /// because SwiftUI has a `TabPlacement` a view would have to disambiguate.
+  public enum Placement: Equatable, Sendable {
+    case before
+    case after
+  }
 }

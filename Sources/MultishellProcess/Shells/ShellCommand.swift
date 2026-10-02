@@ -70,17 +70,17 @@ public enum ShellCommand {
 
   /// Where the script travels: csh cannot take a newline inside quotes, and
   /// an interactive csh expands a `!` in them, so it is never in the command.
-  static let scriptVariable = "MULTISHELL_SCRIPT"
+  private static let scriptVariable = "MULTISHELL_SCRIPT"
 
   /// What the shell is handed: one line every listed shell reads alike, so the
   /// script is sh whichever set the environment. The variable is unset for its children.
-  static let evalScriptCommand =
+  private static let evalScriptCommand =
     "exec /bin/sh -c '_multishell_script=$\(scriptVariable); unset \(scriptVariable); "
     + "eval \"$_multishell_script\"'"
 
   /// Back to the script's directory, as the rc files may leave the shell
   /// anywhere; then `set -e`, then the marker its stderr is read from.
-  static func prologue(entering directory: URL) -> String {
+  private static func prologue(entering directory: URL) -> String {
     "cd \(AnyShellQuoting.quote(directory.path)) >/dev/null || exit 1\nset -e\n"
       + "printf '%s\\n' '\(stderrStartMarker)' >&2\n"
   }

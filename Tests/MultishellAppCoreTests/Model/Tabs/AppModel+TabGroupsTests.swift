@@ -21,7 +21,7 @@ struct AppModelTabGroupsTests {
     h.model.select(h.main)
     h.model.newTab()
     h.model.newTab()
-    let live = h.engine.openSessionIDs
+    let live = h.engine.liveSessionIDs
     let moving = h.model.workspace.activeTab(in: h.main.id)!
 
     h.model.moveActiveTabToNewGroup()
@@ -30,7 +30,7 @@ struct AppModelTabGroupsTests {
     #expect(groups.count == 2)
     #expect(h.model.workspace.tabs(inGroup: groups[1].id).map(\.id) == [moving.id])
     #expect(h.model.focusedGroup?.id == groups[1].id)
-    #expect(h.engine.openSessionIDs == live, "the shells kept running")
+    #expect(h.engine.liveSessionIDs == live, "the shells kept running")
     #expect(h.engine.closed.isEmpty)
   }
 

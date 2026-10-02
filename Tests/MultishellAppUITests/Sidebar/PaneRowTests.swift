@@ -18,7 +18,7 @@ struct PaneRowTests {
     #expect(row() == row(select: { print("another") }))
   }
 
-  @Test func aPaneRowWhoseStateChangedIsNot() {
+  @Test func aPaneRowWhoseStateChangedIsADifferentRow() {
     #expect(row() != row(state: .running))
   }
 }

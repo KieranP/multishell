@@ -38,7 +38,7 @@ public struct WorktreeGit: Sendable {
     let output = try await runner.run(
       ["rev-parse", Self.absolutePathFormat, "--git-common-dir"], in: project.path)
     guard let common = Self.absolutePaths(in: output, from: project.path).first else {
-      throw ProcessFailure.git(
+      throw ProcessFailure.unreportedByGit(
         ["rev-parse", "--git-common-dir"],
         message: "git named no common directory for \(project.path.path)")
     }

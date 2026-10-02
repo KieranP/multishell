@@ -2,9 +2,8 @@
 public struct Appearance: Codable, Hashable, Sendable {
   public var themeID: Theme.ID
   /// `nil` uses the platform's default monospace face.
-  public var fontName: String?
-  /// Terminal text.
-  public var fontSize: Double
+  public var terminalFontName: String?
+  public var terminalFontSize: Double
   /// Sidebar, tabs and header. Every chrome measurement scales from it.
   public var uiFontSize: Double
 
@@ -13,21 +12,30 @@ public struct Appearance: Codable, Hashable, Sendable {
 
   init(
     themeID: Theme.ID = Theme.multishellDark.id,
-    fontName: String? = nil,
-    fontSize: Double = Appearance.defaultFontSize,
+    terminalFontName: String? = nil,
+    terminalFontSize: Double = Appearance.defaultFontSize,
     uiFontSize: Double = Appearance.defaultUIFontSize
   ) {
     self.themeID = themeID
-    self.fontName = fontName
-    self.fontSize = fontSize
+    self.terminalFontName = terminalFontName
+    self.terminalFontSize = terminalFontSize
     self.uiFontSize = uiFontSize
+  }
+
+  /// The terminal font keeps the keys it was saved under before the rename.
+  private enum CodingKeys: String, CodingKey {
+    case themeID
+    case terminalFontName = "fontName"
+    case terminalFontSize = "fontSize"
+    case uiFontSize
   }
 
   public init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     themeID = try container.decode(Theme.ID.self, forKey: .themeID, or: Theme.multishellDark.id)
-    fontName = try container.decodeIfPresent(String.self, forKey: .fontName)
-    fontSize = try container.decode(Double.self, forKey: .fontSize, or: Self.defaultFontSize)
+    terminalFontName = try container.decodeIfPresent(String.self, forKey: .terminalFontName)
+    terminalFontSize = try container.decode(
+      Double.self, forKey: .terminalFontSize, or: Self.defaultFontSize)
     uiFontSize = try container.decode(Double.self, forKey: .uiFontSize, or: Self.defaultUIFontSize)
   }
 

@@ -109,7 +109,7 @@ extension AppModelStatusPollingTests {
     #expect(h.model.statuses[side.id]?.changedFiles == 1)
   }
 
-  @Test func aRowFoldedUnderTheFilterIsNotReadAndUnfoldingReadsIt() async throws {
+  @Test func aRowCollapsedUnderTheFilterIsNotReadAndExpandingReadsIt() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
     let path = h.root.appendingPathComponent("demo-side", isDirectory: true)
@@ -134,7 +134,7 @@ extension AppModelStatusPollingTests {
     #expect(h.model.statuses[side.id]?.changedFiles == 1)
   }
 
-  @Test func aTextChangeReadsTheRowsOfAProjectFoldedUnderTheOldText() async throws {
+  @Test func aTextChangeReadsTheRowsOfAProjectCollapsedUnderTheOldText() async throws {
     let h = try await GitHarness()
     defer { h.tearDown() }
     let path = h.root.appendingPathComponent("demo-side", isDirectory: true)

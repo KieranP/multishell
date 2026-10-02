@@ -12,14 +12,14 @@ extension PresentedError {
       return (t("error.trash-refused"), pathAndCause(failure.path, failure.underlying))
     case let failure as WorktreeForgetFailure:
       return (t("error.forget-refused"), pathAndCause(failure.path, failure.underlying))
-    case let failure as NotTheCheckout:
+    case let failure as WorktreePathTaken:
       return (
         t("error.not-the-checkout-title"), t("error.not-the-checkout-message", failure.path.path)
       )
     case let invalid as InvalidBranchName:
       return (t("error.invalid-branch-title"), invalid.errorDescription ?? "")
-    case let repository as WorktreeNotRemovable:
-      return (t("error.not-a-worktree-title"), repository.errorDescription ?? "")
+    case let notRemovable as WorktreeNotRemovable:
+      return (t("error.not-a-worktree-title"), notRemovable.errorDescription ?? "")
     case is GitUnavailable:
       return (t("error.git-not-found-title"), t("error.git-not-found-message"))
     default:

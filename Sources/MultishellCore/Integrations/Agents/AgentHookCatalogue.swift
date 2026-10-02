@@ -12,34 +12,7 @@ public enum AgentHookCatalogue {
   static let timeoutSeconds = 5
   /// Codex clamps its exit events' hooks to three seconds and warns at every
   /// start where one asks for more.
-  static let codexExitTimeoutSeconds = 3
-
-  /// The helper as a hook should reference it: through `$HOME`, so a synced
-  /// dotfile still resolves on another machine.
-  public static var helperReference: String {
-    Paths.helperLink.path.abbreviatingHomeDirectory(as: "$HOME")
-  }
-
-  /// Runs the helper rather than `exec`ing it, and exits 0 whatever became of
-  /// it; parses in fish as well as sh. See Docs/design/agents.md.
-  static func command(agent id: String, helper: String = helperReference) -> String {
-    "[ -x \"\(helper)\" ] && \"\(helper)\" \(subcommand) --agent \(id); exit 0"
-  }
-
-  /// Whether a hook line is ours. Whole words, not substrings: the user's own
-  /// `multishell-agent-hook-logger` spells both names and Remove used to eat it.
-  static func isOurHook(_ command: String) -> Bool {
-    let shellPunctuation = CharacterSet(charactersIn: ";&|()")
-    let words =
-      command
-      .split(whereSeparator: { $0.isWhitespace || $0 == "\"" || $0 == "'" })
-      .map { $0.trimmingCharacters(in: shellPunctuation) }
-    let runsTheHelper = words.contains {
-      $0 == Paths.helperName || $0.hasSuffix("/" + Paths.helperName)
-    }
-    let namesASubcommand = words.contains { $0 == subcommand || $0 == legacySubcommand }
-    return runsTheHelper && namesASubcommand
-  }
+  private static let codexExitTimeoutSeconds = 3
 
   public static func integration(_ id: String) -> AgentHookIntegration? {
     integrations.first { $0.id == id }
@@ -60,14 +33,14 @@ public enum AgentHookCatalogue {
 
   /// The notification types of Claude's that announce rather than ask, out of
   /// fifteen in its list and two sent outside it. A deny list; see agents.md.
-  static let claudeAnnouncements: Set<String> = [
+  private static let claudeAnnouncements: Set<String> = [
     "idle_prompt", "agent_completed", "auth_success", "quota_auto_resume_fired",
     "computer_use_enter", "computer_use_exit", "elicitation_complete", "elicitation_response",
     "push_notification",
   ]
 
-  /// Claude Code: `~/.claude/settings.json`. The one agent asked for both a
-  /// permission request and a notification; see Docs/design/agents.md.
+  /// Claude Code: `~/.claude/settings.json`, asked for a permission request and a notification.
+  /// Subagents go on a roster: `Stop` ends only the main loop, so Done waits for the last one out.
   static let claude = AgentHookIntegration(
     id: AgentCatalogue.claudeID,
     file: underHome(".claude/settings.json"),
@@ -77,10 +50,8 @@ public enum AgentHookCatalogue {
       AgentHookEvent("UserPromptSubmit", .running, isPrompt: true),
       AgentHookEvent("PreToolUse", .running),
       AgentHookEvent("PostToolUse", .running),
-      AgentHookEvent("PermissionRequest", .attention, onlyWhenPrompting: true, silent: true),
+      AgentHookEvent("PermissionRequest", .attention, onlyWhenPrompting: true, isSilent: true),
       AgentHookEvent("Notification", .attention, ignoredNotificationTypes: claudeAnnouncements),
-      // Kept on a roster so Done waits for the last one out, `Stop` being
-      // the main loop stopping; see Docs/design/agents.md.
       AgentHookEvent("SubagentStart", .running, subagentPhase: .started),
       AgentHookEvent("SubagentStop", .running, subagentPhase: .ended),
       AgentHookEvent("Stop", .done),
@@ -93,12 +64,12 @@ public enum AgentHookCatalogue {
 
   /// Claude's own labels for work whose end is announced to the model, read
   /// from its binary; the rest never end or end unannounced. See agents.md.
-  static let claudeWakingTaskTypes: Set<String> = [
+  private static let claudeWakingTaskTypes: Set<String> = [
     "subagent", "shell", "workflow", "MCP task", "cloud session",
   ]
 
-  /// Codex: `~/.codex/hooks.json`, the JSON half of a file it also accepts as
-  /// `[hooks]` in `config.toml`, which is not ours to rewrite.
+  /// Codex: `~/.codex/hooks.json`, the JSON half of a file whose `config.toml` half is not ours to
+  /// rewrite. It spells its subagent events and their fields as Claude does.
   static let codex = AgentHookIntegration(
     id: AgentCatalogue.codexID,
     file: underHome(".codex/hooks.json"),
@@ -108,8 +79,7 @@ public enum AgentHookCatalogue {
       AgentHookEvent("UserPromptSubmit", .running, isPrompt: true),
       AgentHookEvent("PreToolUse", .running),
       AgentHookEvent("PostToolUse", .running),
-      AgentHookEvent("PermissionRequest", .attention, onlyWhenPrompting: true, silent: true),
-      // Codex spells its subagent events and their fields as Claude does.
+      AgentHookEvent("PermissionRequest", .attention, onlyWhenPrompting: true, isSilent: true),
       AgentHookEvent("SubagentStart", .running, subagentPhase: .started),
       AgentHookEvent("SubagentStop", .running, subagentPhase: .ended),
       AgentHookEvent("Stop", .done),
@@ -141,10 +111,10 @@ public enum AgentHookCatalogue {
 
   /// In the wrapper every shell-tool command runs in and nothing else does, so
   /// no MCP server matches. Not a documented contract; see agents.md.
-  static let geminiShellMarker = "/gemini-shell-"
+  private static let geminiShellMarker = "/gemini-shell-"
 
-  /// Copilot CLI reads every JSON file in `~/.copilot/hooks`, so ours is a
-  /// file of its own. Event names are its Visual Studio Code spelling.
+  /// Copilot CLI reads every JSON file in `~/.copilot/hooks`. Ours uses its VS Code spelling, where
+  /// no SubagentStart names an id, so a worker goes on at its own first event; see agents.md.
   static let copilot = AgentHookIntegration(
     id: AgentCatalogue.copilotID,
     file: underHome(".copilot/hooks/multishell.json"),
@@ -157,8 +127,6 @@ public enum AgentHookCatalogue {
       AgentHookEvent(
         "notification", .attention, reportedName: "Notification",
         matcher: "permission_prompt|elicitation_dialog"),
-      // No SubagentStart: it arrives in the other spelling, naming no id.
-      // A worker goes on at its own first event; see Docs/design/agents.md.
       AgentHookEvent("SubagentStop", .running, subagentPhase: .ended),
       AgentHookEvent("Stop", .done),
       AgentHookEvent("SessionEnd", .idle),

@@ -4,12 +4,6 @@ import MultishellGitKit
 import MultishellProcess
 
 extension AppModel {
-  /// Opens the sheet for `project`, or the one being worked in. With several
-  /// projects and nothing selected the picker starts blank.
-  public func requestNewWorktree(in project: Project? = nil) {
-    newWorktreeRequest = NewWorktreeRequest(projectID: (project ?? projectInView)?.id)
-  }
-
   func plannedPath(
     forBranch branch: String, createBranch: Bool, in project: Project
   )
@@ -17,7 +11,7 @@ extension AppModel {
   {
     coordinator?.plannedPath(
       forBranch: branch, createBranch: createBranch, in: project,
-      settings: worktreeSettings(for: project))
+      settings: effectiveWorktreeSettings(for: project))
   }
 
   /// The sheet's Cancel while the pre-create hook or git runs. A stopped
@@ -48,8 +42,8 @@ extension AppModel {
     // verdict cached at the read is asked of the disk again; see settings.md.
     let project = await reconfineSharedSettings(of: project)
     guard workspace.project(project.id) != nil else { return }
-    let effective = withEffectiveSettings(project)
-    let settings = worktreeSettings(for: project)
+    let effective = effectiveProject(project)
+    let settings = effectiveWorktreeSettings(for: project)
     let shell = workspace.effectiveShellPath(for: project)
     // The row can arrive mid-checkout: git writes its record before the
     // first file, and that directory is watched. See worktrees.md.

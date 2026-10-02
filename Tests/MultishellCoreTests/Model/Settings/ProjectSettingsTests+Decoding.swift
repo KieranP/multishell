@@ -143,11 +143,11 @@ extension ProjectSettingsTests {
     #expect(oneBrokenAnswer.branchPrefix == "k/")
 
     // And what is written comes back, so an answer survives a save.
-    let two = ProjectSettings(
-      trustDecisions: [
-        TrustDecision(digest: digest, trusted: true),
-        TrustDecision(digest: "beef", trusted: false),
-      ])
+    var two = ProjectSettings()
+    two.trustDecisions = [
+      TrustDecision(digest: digest, trusted: true),
+      TrustDecision(digest: "beef", trusted: false),
+    ]
     let encoded = try JSONEncoder().encode(two)
     let written = try JSONDecoder().decode(ProjectSettings.self, from: encoded)
     #expect(written.trustDecisions == two.trustDecisions)

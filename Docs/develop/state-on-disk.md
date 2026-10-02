@@ -12,11 +12,11 @@ Under `~/Library/Application Support/Multishell`.
 - **Settings prints the state file**, which is how you see which one a running
   copy has.
 - **`state.json`**: sidebar, tabs, the groups they sit in with their widths and
-  active tab, pane trees, worktree names and creation dates, every setting.
+  shown tab, pane trees, worktree names and creation dates, every setting.
 - **Not in it**: processes, shell titles, the shell a tab resolved to, a
-  branch's last commit time, the sidebar filter or a project folded under it, or
-  anything about the Agents board, which is runtime state, so its filter is off
-  after a relaunch.
+  branch's last commit time, the sidebar filter or a project collapsed under it,
+  or anything about the Agents board, which is runtime state, so its filter is
+  off after a relaunch.
 - **A file written before groups existed names no group**, and carries a key for
   the active tab this build has no property for; the repair gathers each
   worktree's ungrouped tabs into the one group they were saved as.
@@ -51,9 +51,9 @@ Under `~/Library/Application Support/Multishell`.
 - **The integration directory is generated at launch**; the drops directory
   holds files a drag promised rather than handed over, swept at launch once old.
 - **The merged Ghostty config lives in the temporary directory**, written by the
-  wrapper when the first terminal opens and again when the app comes to the
-  front with the user's files changed, and cleared at launch and quit by the
-  copy holding the instance socket (design/terminals.md).
+  wrapper when the first terminal opens, when the theme or font changes, and
+  when the app comes to the front with the user's files changed, and cleared at
+  launch and quit by the copy holding the instance socket (design/terminals.md).
 - **Agent hooks are written only when asked**, each in that agent's own config
   directory; launch leaves alone even one an older build wrote
   (design/agents.md). Three of them keep a copy of the file as it was the first

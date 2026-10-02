@@ -32,7 +32,7 @@ struct AppearanceSettingsPage: View {
         )
         sizeRow(
           t("appearance.terminal-size"),
-          value: model.setting(\.appearance.fontSize, write: model.setFontSize),
+          value: model.setting(\.appearance.terminalFontSize, write: model.setTerminalFontSize),
           range: 9...24, info: t("appearance.terminal-size-info"))
       }
 
@@ -47,9 +47,9 @@ struct AppearanceSettingsPage: View {
   }
 
   private var fontName: Binding<String> {
-    // A closure, not `model.setFontName`: Swift 6.3's IRGen crashes on the
+    // A closure, not `model.setTerminalFontName`: Swift 6.3's IRGen crashes on the
     // @isolated(any) thunk a method reference needs here.
-    Binding(get: { model.fontPickerID }, set: { model.setFontName($0) })
+    Binding(get: { model.terminalFontPickerID }, set: { model.setTerminalFontName($0) })
   }
 
   private func sizeRow(

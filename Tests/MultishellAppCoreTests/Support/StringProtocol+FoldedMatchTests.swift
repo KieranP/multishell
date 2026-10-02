@@ -18,7 +18,7 @@ struct StringProtocolFoldedMatchTests {
 
   /// The pair that broke the icon picker under `tr_TR`, kept as the reason
   /// this exists: the dotless I stops an ASCII query matching ASCII data.
-  @Test func theLocaleSensitiveFormIsWhatThisAvoids() {
+  @Test func anAsciiQueryMatchesWhereTurkishCaseFoldingWouldNot() {
     let turkish = Locale(identifier: "tr_TR")
     #expect(
       "disk volume storage".range(of: "DISK", options: [.caseInsensitive], locale: turkish) == nil)

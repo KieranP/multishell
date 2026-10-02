@@ -39,7 +39,7 @@ extension WorktreeGitTests {
       branch: "feat", in: repo.project, settings: repo.worktreeSettings)
     #expect(path.path.hasSuffix("/trees/feat"))
     let created = try await repo.worktree(onBranch: "feat")
-    try await repo.coordinator.remove(created, deletingBranch: true, in: repo.project)
+    try await repo.coordinator.removeUnlinking(created, deletingBranch: true, in: repo.project)
     #expect(try await repo.coordinator.git.list(repo.project).count == 2)
     #expect(try await repo.branches() == ["main"])
   }

@@ -28,8 +28,8 @@ struct AgentHooksRowTests {
     let rows = AgentHooksRow.rows(
       detection: detection(["claude", "codex"]), installed: ["claude", "codex"], stale: ["codex"])
 
-    #expect(try #require(rows.first { $0.id == "codex" }).wantsUpdate)
-    #expect(try !#require(rows.first { $0.id == "claude" }).wantsUpdate)
+    #expect(try #require(rows.first { $0.id == "codex" }).isStale)
+    #expect(try !#require(rows.first { $0.id == "claude" }).isStale)
   }
 
   @Test func eachRowNamesItsFileAndWhatWritingItDoes() throws {
@@ -50,6 +50,21 @@ struct AgentHooksRowTests {
     #expect(!claude.info.contains("/hooks in Codex"))
     #expect(openCode.contentsLabel == "Plugin")
     for row in rows { #expect(row.info.contains(row.name)) }
+  }
+
+  @Test func aRowSaysWhereItsHooksAreAndOffersWhatItsStateAllows() throws {
+    let rows = AgentHooksRow.rows(
+      detection: detection(["claude", "codex", "gemini"]), installed: ["claude", "codex"],
+      stale: ["codex"])
+    let current = try #require(rows.first { $0.id == "claude" })
+    let stale = try #require(rows.first { $0.id == "codex" })
+    let absent = try #require(rows.first { $0.id == "gemini" })
+
+    #expect(current.statusLabel == "Installed in ~/.claude/settings.json")
+    #expect(absent.statusLabel == "Not installed")
+    #expect(current.actions == [.remove])
+    #expect(stale.actions == [.update, .remove])
+    #expect(absent.actions == [.add])
   }
 
   @Test func everyRowsInfoFitsTwoHundredCharacters() {

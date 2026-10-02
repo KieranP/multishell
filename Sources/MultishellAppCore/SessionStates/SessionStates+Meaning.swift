@@ -5,7 +5,7 @@ import MultishellCore
 extension SessionStates {
   /// `nil` for a report that moves nothing.
   mutating func meaning(
-    of state: SessionState, subagent: SubagentReport?, turnFollows: Bool = false, for key: Key
+    of state: SessionState, subagent: SubagentReport?, turnFollows: Bool, for key: Key
   ) -> SessionState? {
     // A Stop, a failure or an end naming a worker, which no agent documents,
     // is the agent's own and puts no phantom on the roster.
@@ -19,19 +19,19 @@ extension SessionStates {
       place = $0.record(subagent)
       // An idle agent takes a turn over this end, and that turn's Stop pays;
       // an end that took nobody off woke nothing.
-      if subagent.phase == .ended, subagent.wakesAgent != false, $0.displaced == .stop,
+      if subagent.phase == .ended, subagent.wakesAgent != false, $0.displaced == .owedDone,
         $0.roster.subagents.workerCount < before
       {
         $0.turnUnderway = true
       }
     }
     let entry = entries[key] ?? Entry()
-    let raiser = Entry.Raiser.worker(place.id)
+    let raiser = Entry.PromptRaiser.worker(place.id)
     switch state {
     case .attention:
       update(key) {
         $0.rememberDisplaced(byPrompt: true)
-        $0.waitingRaisers.insert(raiser)
+        $0.promptRaisers.insert(raiser)
       }
       return state
     case .running where subagent.phase == .working:
@@ -55,19 +55,19 @@ extension SessionStates {
   private mutating func meaningOfTick(
     _ subagent: SubagentReport, place: SubagentRoster.Place, entry: Entry, for key: Key
   ) -> SessionState? {
-    let raiser = Entry.Raiser.worker(place.id)
+    let raiser = Entry.PromptRaiser.worker(place.id)
     let outstanding = !entry.roster.subagents.isEmpty
     // A worker ending with its prompt still up, the user having denied it,
     // takes the prompt with it.
-    if subagent.phase == .ended, entry.state == .attention, entry.waitingRaisers.contains(raiser) {
+    if subagent.phase == .ended, entry.state == .attention, entry.promptRaisers.contains(raiser) {
       guard answer(raiser, sharedPlace: place.isShared, for: key) else { return nil }
       if !outstanding, let displaced = entry.displaced {
-        return lastOut(displaced, entry: entry, for: key)
+        return settleLastWorkerOut(displaced, entry: entry, for: key)
       }
       return .running
     }
     if !outstanding, let displaced = entry.displaced {
-      return lastOut(displaced, entry: entry, for: key)
+      return settleLastWorkerOut(displaced, entry: entry, for: key)
     }
     if outstanding, entry.state == nil || entry.state == .done {
       update(key) { $0.rememberDisplaced(byPrompt: false) }
@@ -89,7 +89,7 @@ extension SessionStates {
     case .running:
       // The claim goes whether or not another thread's prompt still holds the
       // dot, or the last worker out puts back what the turn began over.
-      update(key) { if $0.displaced != .stop { $0.displaced = nil } }
+      update(key) { if $0.displaced != .owedDone { $0.displaced = nil } }
       if entry.state == .attention {
         guard answer(.agent, for: key) else { return nil }
       }
@@ -99,7 +99,7 @@ extension SessionStates {
       // it owed is still owed.
       update(key) {
         if $0.displaced == .nothing { $0.displaced = nil }
-        $0.waitingRaisers.insert(.agent)
+        $0.promptRaisers.insert(.agent)
       }
       return state
     // A turn starting straight after the Stop is work out as a worker is.
@@ -111,14 +111,14 @@ extension SessionStates {
       // The main loop stopping is not the turn finishing: the Done is owed to
       // the last worker out, and a worker's prompt still up stays on the dot.
       update(key) {
-        if $0.displaced?.isFailure != true { $0.displaced = .stop }
+        if $0.displaced?.isFailure != true { $0.displaced = .owedDone }
         if turnFollows { $0.turnUnderway = true }
       }
-      if entry.state == .attention, entry.waitingRaisers.contains(where: { $0 != .agent }) {
+      if entry.state == .attention, entry.promptRaisers.contains(where: { $0 != .agent }) {
         update(key) { _ = $0.answer(.agent) }
         return nil
       }
-      update(key) { $0.waitingRaisers = [] }
+      update(key) { $0.promptRaisers = [] }
       return .running
     case .done:
       update(key) { $0.clearDisplaced() }
@@ -131,7 +131,7 @@ extension SessionStates {
 
   /// `true` once no other raiser's prompt still holds the dot.
   private mutating func answer(
-    _ raiser: Entry.Raiser, sharedPlace: Bool = false, for key: Key
+    _ raiser: Entry.PromptRaiser, sharedPlace: Bool = false, for key: Key
   ) -> Bool {
     var answered = false
     update(key) { answered = $0.answer(raiser, sharedPlace: sharedPlace) }
@@ -140,10 +140,10 @@ extension SessionStates {
 
   /// The last worker out pays what its agent's Stop owed, unless an end woke
   /// that agent for a turn: that turn's Stop pays it instead.
-  private mutating func lastOut(
+  private mutating func settleLastWorkerOut(
     _ displaced: Entry.Displaced, entry: Entry, for key: Key
   ) -> SessionState? {
-    guard displaced == .stop, entry.stopResumes, entry.turnUnderway else {
+    guard displaced == .owedDone, entry.resumesAfterWorkers, entry.turnUnderway else {
       return restore(displaced, for: key)
     }
     update(key) { $0.clearDisplaced() }
@@ -156,7 +156,7 @@ extension SessionStates {
     update(key) { $0.clearDisplaced() }
     switch displaced {
     case .nothing: return .idle
-    case .done, .stop: return .done
+    case .done, .owedDone: return .done
     case .failed(let note, let since):
       update(key) {
         $0.state = .failed

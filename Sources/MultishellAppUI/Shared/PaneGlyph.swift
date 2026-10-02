@@ -1,3 +1,4 @@
+import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
@@ -5,7 +6,7 @@ import SwiftUI
 /// by the strip, the sidebar's pane rows and a card. See Docs/design/agents.md.
 struct PaneGlyph: View {
   let agentID: String?
-  var unmarkedSymbol = AgentMarkView.terminalSymbol
+  var unmarkedSymbol = PaneSymbol.terminal
   /// `nil` draws no badge, which is a tab with nothing to report.
   let state: SessionState?
   /// What the badge's ring is filled with, so it reads as a gap in the row

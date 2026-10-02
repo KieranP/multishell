@@ -6,7 +6,6 @@ import SwiftUI
 /// on auto-start, is not among them: each item here says what it starts.
 struct NewTabMenu: View {
   let model: AppModel
-  /// The group every item opens in.
   let groupID: TabGroup.ID
   let isFocusedGroup: Bool
   let theme: Theme
@@ -22,7 +21,7 @@ struct NewTabMenu: View {
         Button {
           model.newAgentTab(id, in: groupID)
         } label: {
-          itemLabel(itemTitle(id), agentID: id)
+          itemLabel(model.newAgentTabTitle(id), agentID: id)
         }
       }
     } label: {
@@ -67,12 +66,5 @@ struct NewTabMenu: View {
     } else {
       Text(title)
     }
-  }
-
-  /// "New Claude Code Tab", and the typed command by its own name rather
-  /// than as "New Custom command Tab".
-  private func itemTitle(_ id: String) -> String {
-    id == AgentCatalogue.customID
-      ? t("tab.new-custom-agent") : t("tab.new-named-agent", model.agentDisplayName(id))
   }
 }

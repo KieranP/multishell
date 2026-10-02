@@ -12,7 +12,7 @@ extension AppModel {
       guard !WorktreeFiles.paths(in: listText).isEmpty else { return nil }
       return WorktreeFileList(
         placement: placement, listText: listText,
-        heldToRepository: placement.listText(in: project.settings).isEmpty)
+        isRepositoryList: placement.listText(in: project.settings).isEmpty)
     }
   }
 
@@ -23,15 +23,15 @@ extension AppModel {
     lists: [WorktreeFileList]
   ) {
     let runningHook = WorktreeHooks.hasScript(.postCreate, in: project.settings)
-    let first: WorktreeOperation.Step? =
-      lists.first.map { WorktreeOperation.Step($0.placement) }
+    let first: WorktreeOperation.Stage? =
+      lists.first.map { WorktreeOperation.Stage($0.placement) }
       ?? (runningHook ? .postCreateHook : nil)
     guard let first else { return }
     worktreeOperations.begin(first, on: worktree.id)
     // Made here, not in the task: a Cancel clicked before the task has run
     // would otherwise find nothing to stop.
     let stopper = ProcessStopper()
-    stageHandles.arm(stopper, on: worktree.id)
+    stageHandles.holdStopper(stopper, on: worktree.id)
     stageHandles.trackSetup(
       Task {
         await runWorktreeSetup(
@@ -49,7 +49,7 @@ extension AppModel {
     var skipped: [String] = []
     for (index, list) in lists.enumerated() {
       if index > 0 {
-        worktreeOperations.advance(to: WorktreeOperation.Step(list.placement), on: worktree.id)
+        worktreeOperations.advance(to: WorktreeOperation.Stage(list.placement), on: worktree.id)
       }
       let placed = await placeListedFiles(
         list, into: worktree.path, for: project, stopper: stopper)
@@ -67,7 +67,7 @@ extension AppModel {
     guard runningHook else {
       endSetup(of: worktree, stopper: stopper)
       if let last = lists.last {
-        finishStage(WorktreeOperation.Step(last.placement), of: worktree)
+        finishStage(WorktreeOperation.Stage(last.placement), of: worktree)
       }
       return
     }
@@ -81,7 +81,7 @@ extension AppModel {
     of worktree: Worktree, placing placement: WorktreeFilePlacement, _ failure: any Error,
     skipped: [String]
   ) {
-    let stage = WorktreeOperation.Step(placement)
+    let stage = WorktreeOperation.Stage(placement)
     // The user's Cancel: the worktree is theirs, as after a stopped hook.
     // What had already failed is still said, Cancel excusing only the rest.
     if let stopped = failure as? WorktreeFileStopped {
@@ -111,15 +111,15 @@ extension AppModel {
 
   /// The stage ended, so the first tab held back while it ran opens now.
   /// Nothing where a removal now owns the entry; see `WorktreeOperations`.
-  private func finishStage(_ step: WorktreeOperation.Step, of worktree: Worktree) {
-    guard worktreeOperations.finish(step, on: worktree.id) else { return }
+  private func finishStage(_ stage: WorktreeOperation.Stage, of worktree: Worktree) {
+    guard worktreeOperations.finish(stage, on: worktree.id) else { return }
     openHeldBackTab(of: worktree)
   }
 
   /// A stage that failed says so on its pane, where it reads once the sheet
   /// has gone. An alert only where there is no pane to say it on.
   private func failStage(
-    _ step: WorktreeOperation.Step, of worktree: Worktree, _ error: any Error,
+    _ stage: WorktreeOperation.Stage, of worktree: Worktree, _ error: any Error,
     timedOut: Bool = false
   ) {
     // Gone while the stage ran, and the entry goes with it: paths are ids, so
@@ -127,12 +127,12 @@ extension AppModel {
     guard workspace.worktree(worktree.id) != nil else {
       // `finish`, not `clear`: a removal that has since taken the entry owns
       // it, and this stage's late result is not the one to throw it away.
-      worktreeOperations.finish(step, on: worktree.id)
+      worktreeOperations.finish(stage, on: worktree.id)
       present(error)
       return
     }
     let shownInPane = worktreeOperations.fail(
-      step, on: worktree.id, message: PresentedError(error).message, timedOut: timedOut)
+      stage, on: worktree.id, message: PresentedError(error).message, timedOut: timedOut)
     if !shownInPane { present(error) }
   }
 
@@ -178,9 +178,9 @@ extension AppModel {
   /// settings, and its shell starts even out of view; see terminals.md.
   func openHeldBackTab(of worktree: Worktree) {
     guard let current = workspace.worktree(worktree.id),
-      wantsFirstTab(in: current, on: .onCreate), requireDirectory(of: current)
+      wantsFirstTab(in: current, for: .onCreate), requireDirectory(of: current)
     else { return }
-    addDefaultTab(in: current, on: .onCreate)
+    addDefaultTab(in: current, for: .onCreate)
     warmWorktrees.insert(current.id)
     // The keyboard moves into the new pane only where the user is looking at
     // it; anywhere else the shell starts and the keyboard stays put.

@@ -9,7 +9,7 @@ struct WorktreeRowBadges: View {
   let isLocked: Bool
   let mergeState: WorktreeMergeState
   let status: WorktreeStatus?
-  /// Already zero on the selected row; see `WorktreeRow`.
+  /// Already zero where the pane rows list them; see `SidebarWorktree`.
   let terminalCount: Int
   let theme: Theme
   let metrics: UIMetrics
@@ -29,7 +29,7 @@ struct WorktreeRowBadges: View {
     }
     if isLocked {
       Image(systemName: "lock.fill")
-        .font(.system(size: metrics.badge - 1))
+        .font(.system(size: metrics.small))
         .foregroundStyle(theme.textTertiary)
         .help(t("sidebar.locked"))
     }
@@ -43,8 +43,8 @@ struct WorktreeRowBadges: View {
     }
     // Git changes sit left of the terminal count, so the count stays at
     // the row's right edge and lines up with rows that have no changes.
-    if let status, !status.isClean {
-      ChangeBadge(status: status, theme: theme, size: metrics.badge, tint: theme.textSecondary)
+    if let status, !status.isCleanAndInSync {
+      GitStatusBadge(status: status, theme: theme, size: metrics.badge, tint: theme.textSecondary)
     }
     if terminalCount > 0 {
       Text("\(terminalCount)")

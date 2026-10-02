@@ -27,14 +27,12 @@ struct AgentMarkShape: Shape {
     }
   }
 
-  /// Every file, parsed on the first mark drawn and never again: a path is
-  /// read on every row of every render, and a `let` needs no lock for it.
   static func unitPath(of mark: AgentMark) -> Path? {
     resourceName(of: mark).flatMap { paths[$0] }
   }
 
-  /// A file that is missing or unparsable is left out, which draws nothing
-  /// rather than crashing a view; `AgentMarkShapeTests` catches that.
+  /// Parsed once, on the first mark drawn: every row reads a path each render, and a `let`
+  /// needs no lock. A bad or missing file draws nothing; `AgentMarkShapeTests` catches it.
   private static let paths: [String: Path] = {
     var parsed: [String: Path] = [:]
     for name in AgentMark.drawn.compactMap(resourceName(of:)) {

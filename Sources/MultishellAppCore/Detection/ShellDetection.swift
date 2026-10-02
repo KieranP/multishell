@@ -10,7 +10,7 @@ public struct ShellDetection: Equatable, Sendable {
   let loginShell: String
   /// Whether `$SHELL` points at something, read once here rather than per
   /// row: a stat on a dead mount blocks for its timeout.
-  let loginShellExists: Bool
+  private let loginShellExists: Bool
 
   static let empty = ShellDetection(
     found: [], loginShell: ShellCatalogue.loginShellPath())
@@ -53,9 +53,10 @@ public struct ShellDetection: Equatable, Sendable {
     URL(fileURLWithPath: path).lastPathComponent
   }
 
-  func isInstalled(_ path: String) -> Bool {
-    path == ShellCatalogue.loginShellID
-      ? loginShellExists : path == ShellCatalogue.customID || found.contains(path)
+  /// `id` is a shell's path, or the login or custom entry's id.
+  func isInstalled(_ id: String) -> Bool {
+    id == ShellCatalogue.loginShellID
+      ? loginShellExists : id == ShellCatalogue.customID || found.contains(id)
   }
 
   /// The login shell first, then every installed shell, then the selected

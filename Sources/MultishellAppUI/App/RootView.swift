@@ -11,7 +11,7 @@ struct RootView: View {
   /// Remembered per machine, not in the workspace: it is about this screen.
   @AppStorage("sidebarWidth") private var sidebarWidth = 248.0
   /// Gesture state, not `@State`: a drag the system cancels never reaches
-  /// `onEnded`, and this resets either way; see `SplitHandle`.
+  /// `onEnded`, and this resets either way; see `SplitDivider`.
   @GestureState private var dragStartWidth: Double?
 
   var body: some View {

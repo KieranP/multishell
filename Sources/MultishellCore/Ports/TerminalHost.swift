@@ -21,7 +21,7 @@ public protocol TerminalHost: AnyObject {
 
   /// Sessions the host currently has open. `SessionReconciler` reconciles
   /// against this rather than keeping its own copy.
-  var openSessionIDs: Set<TerminalSession.ID> { get }
+  var liveSessionIDs: Set<TerminalSession.ID> { get }
 
   var delegate: (any TerminalHostDelegate)? { get set }
 

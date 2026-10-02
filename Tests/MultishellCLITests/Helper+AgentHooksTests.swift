@@ -33,7 +33,7 @@ struct HelperAgentHooksTests {
     #expect(report?.sessionID == session)
     #expect(report?.message == "Claude needs your permission to use Bash")
     #expect((report?.pid ?? 0) > 0, "the parent's pid, for staleness checks")
-    #expect(report?.agent == AgentCatalogue.claudeID, "who is at that prompt")
+    #expect(report?.agentID == AgentCatalogue.claudeID, "who is at that prompt")
 
     // An event that says nothing, and no app at all: both exit 0 in silence.
     let ignored = try await HelperBinary.run(
@@ -56,7 +56,7 @@ struct HelperAgentHooksTests {
     try await waitUntil { recorder.received.count == 2 }
     let second = SessionStateReport.parse(recorder.received.last ?? "")
     #expect(second?.state == .done)
-    #expect(second?.agent == "gemini")
+    #expect(second?.agentID == "gemini")
     #expect(second?.cwd == "/w/repo")
 
     // Claude says one prompt twice. The request moves the dot without a banner,
@@ -72,7 +72,7 @@ struct HelperAgentHooksTests {
     try await waitUntil { recorder.received.count == 3 }
     let third = SessionStateReport.parse(recorder.received.last ?? "")
     #expect(third?.state == .attention)
-    #expect(third?.silent == true)
+    #expect(third?.isSilent == true)
     #expect(third?.message == nil)
 
     // The mode where a classifier answers the prompt: nobody is waiting,

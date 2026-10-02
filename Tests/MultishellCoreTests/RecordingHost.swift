@@ -5,7 +5,7 @@ import Foundation
 /// Records what the reconciler asks of a host, in order.
 @MainActor
 final class RecordingHost: TerminalHost {
-  var openSessionIDs: Set<TerminalSession.ID> = []
+  var liveSessionIDs: Set<TerminalSession.ID> = []
   var opened: [TerminalSession] = []
   var log: [String] = []
   /// Sessions whose open throws, as a pty the system would not give.
@@ -14,13 +14,13 @@ final class RecordingHost: TerminalHost {
 
   func open(_ session: TerminalSession) throws {
     if failing.contains(session.id) { throw NSError(domain: "pty", code: 12) }
-    openSessionIDs.insert(session.id)
+    liveSessionIDs.insert(session.id)
     opened.append(session)
     log.append("open")
   }
 
   func close(_ id: TerminalSession.ID) {
-    openSessionIDs.remove(id)
+    liveSessionIDs.remove(id)
     log.append("close")
   }
 

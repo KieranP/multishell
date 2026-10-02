@@ -14,8 +14,6 @@ public final class InputOrExitWatch {
     guard pid > 0 else { return nil }
     self.descriptor = descriptor
     self.pid = pid
-    // Stored last: once every property is set, a failed init runs deinit,
-    // which would close the descriptor a second time.
     let watching = kqueue()
     guard watching >= 0 else { return nil }
     var read = kevent(
@@ -35,6 +33,8 @@ public final class InputOrExitWatch {
       }
       hasExited = true
     }
+    // Stored last: once every property is set, a failed init runs deinit,
+    // which would close the descriptor a second time.
     kqueueDescriptor = watching
   }
 

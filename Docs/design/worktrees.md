@@ -59,10 +59,10 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   directory acts on it, so a row that hid it would lie. The removal dialog names
   the worktree as its row does, and the branch in its body, where what cannot be
   undone belongs.
-- **The trunk row holds the top whatever the sort says.** Rows sort in bands
-  first: git's main worktree, a linked worktree on the trunk, the busy ones if
+- **The trunk row holds the top whatever the sort says.** Rows sort in tiers
+  first: git's main worktree, a linked worktree on the trunk, the active ones if
   asked for, then the rest.
-- **Two bands because a bare clone's trunk is a linked worktree.** The trunk is
+- **Two tiers because a bare clone's trunk is a linked worktree.** The trunk is
   what every other row is read against.
 - **The trunk is the default branch the badges use**, falling back to the usual
   names until the first scan resolves one. Cost: a project on another trunk can
@@ -391,12 +391,12 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   the window and typing reaches nothing. Cost: the filter is a click further
   away, with no keyboard route to it.
 - **While the filter has text it holds every project it shows open**, and the
-  chevron says so. A click folds the project for that text alone, as Xcode's
+  chevron says so. A click collapses the project for that text alone, as Xcode's
   navigator does, and leaves the stored flag for after the filter. Reading the
   flag, the chevron pointed right over open rows and its click moved nothing.
-- **A fold lasts until the text changes**, being about the rows that text found.
-  The rows a text change brings back out of a fold are read, as those it brings
-  back out of hiding are.
+- **A collapse lasts until the text changes**, being about the rows that text
+  found. The rows a text change brings back out of a collapse are read, as those
+  it brings back out of hiding are.
 - **Whether the field is up is the model's, as its text is**, and only closing
   folds it. Held by the view, a reopened window showed the field for the text
   left in the model, and emptying that text removed the field with the keyboard

@@ -11,8 +11,8 @@ struct WorktreeStageHandlesTests {
     var handles = WorktreeStageHandles()
     let first = ProcessStopper()
     let second = ProcessStopper()
-    handles.arm(first, on: a)
-    handles.arm(second, on: a)
+    handles.holdStopper(first, on: a)
+    handles.holdStopper(second, on: a)
 
     handles.endSetup(a, ifStillHeldBy: first)
     #expect(handles.stopper(of: a) === second, "the later stage keeps its own")
@@ -22,13 +22,13 @@ struct WorktreeStageHandlesTests {
 
   /// A removal running over a create shares the stop handle slot but owns no setup task, so its
   /// ending must leave the create's task for a caller still awaiting it.
-  @Test func disarmLeavesTheSetupTaskWhereEndTakesIt() async {
+  @Test func releasingTheStopperLeavesTheSetupTaskWhereEndTakesIt() async {
     var handles = WorktreeStageHandles()
     let stopper = ProcessStopper()
-    handles.arm(stopper, on: a)
+    handles.holdStopper(stopper, on: a)
     handles.trackSetup(Task {}, on: a)
 
-    handles.disarm(a, ifStillHeldBy: stopper)
+    handles.releaseStopper(a, ifStillHeldBy: stopper)
     #expect(handles.stopper(of: a) == nil)
     #expect(handles.setup(of: a) != nil, "the removal drops no create's task")
 

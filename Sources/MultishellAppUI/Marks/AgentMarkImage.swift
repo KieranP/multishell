@@ -1,3 +1,4 @@
+import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
@@ -45,7 +46,7 @@ enum AgentMarkImage {
     if let agentID {
       AgentMarkView(agentID: agentID, plainTint: .black, size: size)
     } else {
-      Image(systemName: AgentMarkView.terminalSymbol)
+      Image(systemName: PaneSymbol.terminal)
         .resizable()
         .scaledToFit()
         .foregroundStyle(.black)

@@ -1,7 +1,6 @@
 import Foundation
 import MultishellCore
 
-/// Reading, fetching and deleting branches.
 extension WorktreeGit {
   /// Every branch with its tip, upstream and date, in one process, the date
   /// atom retried separately. `nil` is a failed read, not no branches.
@@ -25,12 +24,14 @@ extension WorktreeGit {
     ]
   }
 
+  static let fetchTimeout: Duration = .seconds(120)
+
   /// `git fetch --prune`, on the user's click only: the one git call here
   /// that talks to a network. `GIT_TERMINAL_PROMPT=0`, and a timeout.
-  public func fetch(_ project: Project, timeout: Duration = .seconds(120)) async throws {
+  public func fetch(_ project: Project) async throws {
     _ = try await runner.run(
       ["fetch", "--prune", "--quiet"], in: project.path,
-      environment: ["GIT_TERMINAL_PROMPT": "0"], timeout: timeout)
+      environment: ["GIT_TERMINAL_PROMPT": "0"], timeout: Self.fetchTimeout)
   }
 
   /// The names a new worktree can start from, symbolic refs such as
@@ -62,7 +63,7 @@ extension WorktreeGit {
 
   /// `git branch -d`, which refuses a branch with commits no other branch
   /// has; `force` is `-D`.
-  func deleteBranch(_ branch: String, force: Bool = false, in project: Project) async throws {
+  func deleteBranch(_ branch: String, force: Bool, in project: Project) async throws {
     _ = try await runner.run(["branch", force ? "-D" : "-d", branch], in: project.path)
   }
 }

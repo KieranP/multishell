@@ -46,7 +46,7 @@ extension AppModelWorktreeSetupTests {
     let created = try #require(h.worktree(onBranch: "linked"))
     // Read before the setup task has had the actor: the stage the pane
     // opens on is the link list, whatever else the project has.
-    #expect(h.model.worktreeOperations[created.id]?.step == .linkingFiles)
+    #expect(h.model.worktreeOperations[created.id]?.stage == .linkingFiles)
     await h.model.stageHandles.setup(of: created.id)?.value
 
     #expect(h.model.presentedError == nil)
@@ -150,7 +150,7 @@ extension AppModelWorktreeSetupTests {
     let created = try #require(h.worktree(onBranch: "halted"))
     // Before the setup task has had the actor: the stage's handle is made
     // early so the stop lands at its first path, not in a race with it.
-    #expect(h.model.worktreeOperations[created.id]?.step == .copyingFiles)
+    #expect(h.model.worktreeOperations[created.id]?.stage == .copyingFiles)
     h.model.cancelStage(of: created)
     await h.model.stageHandles.setup(of: created.id)?.value
 

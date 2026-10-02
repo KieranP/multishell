@@ -5,7 +5,7 @@ extension AppModel {
   /// A strip's button names its group; the keystroke names none.
   public func newTab(in group: TabGroup.ID? = nil) {
     guard let worktree = requireWorktreeForShell() else { return }
-    addDefaultTab(in: worktree, on: .byUser, group: group)
+    addDefaultTab(in: worktree, for: .byUser, group: group)
     reconcileSessions(takingFocus: true)
   }
 
@@ -48,9 +48,10 @@ extension AppModel {
 
   /// What a new tab is by default here, and the first tab a worktree gets
   /// when selected or created.
-  func addDefaultTab(in worktree: Worktree, on opening: TabOpening, group: TabGroup.ID? = nil) {
+  func addDefaultTab(in worktree: Worktree, for reason: TabOpeningReason, group: TabGroup.ID? = nil)
+  {
     if let project = effectiveProject(of: worktree),
-      autoStartsAgent(in: project, on: opening),
+      autoStartsAgent(in: project, for: reason),
       let agentID = workspace.effectiveAgentID(for: project)
     {
       addAgentTab(agentID, in: worktree, group: group)
@@ -61,16 +62,16 @@ extension AppModel {
 
   /// Nothing running there, no tab yet, and the setting for this reason says
   /// open one.
-  func wantsFirstTab(in worktree: Worktree, on opening: TabOpening) -> Bool {
+  func wantsFirstTab(in worktree: Worktree, for reason: TabOpeningReason) -> Bool {
     !isBusy(worktree.id) && workspace.tabs(in: worktree.id).isEmpty
-      && opensTab(in: worktree, on: opening)
+      && opensTab(in: worktree, for: reason)
   }
 
   /// Whether a worktree with no tabs gets one for this reason. A worktree
   /// whose project has gone follows the global.
-  private func opensTab(in worktree: Worktree, on opening: TabOpening) -> Bool {
+  private func opensTab(in worktree: Worktree, for reason: TabOpeningReason) -> Bool {
     let project = effectiveProject(of: worktree)
-    return switch opening {
+    return switch reason {
     case .byUser: true
     case .onSelect:
       project.map(workspace.opensTerminalOnSelect(for:)) ?? workspace.opensTerminalOnSelect
@@ -82,8 +83,8 @@ extension AppModel {
 
   /// Whether that tab runs the agent. Only a create asks the create setting;
   /// everything else follows auto-start on tab open.
-  private func autoStartsAgent(in project: Project, on opening: TabOpening) -> Bool {
-    switch opening {
+  private func autoStartsAgent(in project: Project, for reason: TabOpeningReason) -> Bool {
+    switch reason {
     case .onCreate: workspace.autoStartsAgentOnCreate(for: project)
     case .byUser, .onSelect, .never: workspace.autoStartsAgent(for: project)
     }
@@ -95,5 +96,18 @@ extension AppModel {
 
   public func setOpensTerminalOnCreate(_ enabled: Bool) {
     store.setOpensTerminalOnCreate(enabled)
+  }
+
+  /// A worktree menu's New Shell Tab: that worktree selected first, so the tab
+  /// opens where it was asked for, and nothing opened where it cannot be.
+  public func newShellTab(selecting worktree: Worktree) {
+    guard select(worktree, openingFirstTab: .never) else { return }
+    newShellTab()
+  }
+
+  /// The same for New Agent Tab, starting the agent the project prefers.
+  public func newAgentTab(selecting worktree: Worktree) {
+    guard select(worktree, openingFirstTab: .never) else { return }
+    newAgentTab()
   }
 }

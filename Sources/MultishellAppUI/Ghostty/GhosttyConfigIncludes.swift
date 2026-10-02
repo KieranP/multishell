@@ -28,13 +28,19 @@ enum GhosttyConfigIncludes {
     text.split(omittingEmptySubsequences: false) { $0 == "\n" || $0 == "\r\n" }
   }
 
+  /// What a line sets, before its first `=`, and empty for a line with none.
+  static func key(of line: Substring) -> String {
+    guard let separator = line.firstIndex(of: "=") else { return "" }
+    return line[..<separator].trimmingCharacters(in: .whitespaces).lowercased()
+  }
+
   /// A leading `?` makes a missing file quiet, which a missing one is here
   /// anyway; it goes before the quotes are taken off, `"?x"` naming a file.
   private static func includes(in text: String, from directory: URL, home: URL) -> [URL] {
     lines(of: text).compactMap { line in
-      guard let equals = line.firstIndex(of: "="),
-        line[..<equals].trimmingCharacters(in: .whitespaces).lowercased() == "config-file"
-      else { return nil }
+      guard key(of: line) == "config-file", let equals = line.firstIndex(of: "=") else {
+        return nil
+      }
       var value = line[line.index(after: equals)...].trimmingCharacters(in: .whitespaces)
       if value.hasPrefix("?") { value.removeFirst() }
       if value.count >= 2, value.hasPrefix("\""), value.hasSuffix("\"") {

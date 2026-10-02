@@ -7,9 +7,7 @@ import Testing
 @Suite
 struct URLDeepestExistingTests {
   @Test func aPathSplitsAtItsDeepestExistingPartADanglingLinkIncluded() throws {
-    let root = FileManager.default.temporaryDirectory
-      .appendingPathComponent(UUID().uuidString, isDirectory: true)
-    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    let root = try Scratch.directory("deepest")
     defer { Scratch.remove(root) }
     let link = root.appendingPathComponent("link")
     try FileManager.default.createSymbolicLink(
@@ -27,9 +25,7 @@ struct URLDeepestExistingTests {
   }
 
   @Test func aPathResolvesAsFarAsItExistsADanglingLinkRefusedUnlessKept() throws {
-    let root = FileManager.default.temporaryDirectory
-      .appendingPathComponent(UUID().uuidString, isDirectory: true)
-    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    let root = try Scratch.directory("deepest")
     defer { Scratch.remove(root) }
     let real = try #require(realpath(root.path, nil))
     defer { free(real) }

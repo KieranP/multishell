@@ -17,8 +17,8 @@ struct AgentBoardCardView: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 5) {
-      place
-      title
+      locationLine
+      titleLine
       if let message = card.message {
         AgentBoardCardMessage(text: message, theme: theme, metrics: metrics)
       }
@@ -35,7 +35,7 @@ struct AgentBoardCardView: View {
     }
     .contentShape(.rect)
     .onHover { isHovered = $0 }
-    .onTapGesture { model.open(card) }
+    .onTapGesture { model.show(card) }
     .contextMenu { AgentBoardCardActions(model: model, card: card) }
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(AccessibilityText.card(card, at: now))
@@ -44,10 +44,10 @@ struct AgentBoardCardView: View {
 
   /// The tab's name, with how long this pane has been in its column on the
   /// same right-hand rail the line above ends on.
-  private var title: some View {
+  private var titleLine: some View {
     HStack(spacing: 4) {
       if let position = card.position {
-        PanePositionBadge(index: position.index, metrics: metrics, theme: theme)
+        PanePositionBadge(number: position.number, metrics: metrics, theme: theme)
       }
       Text(card.title)
         .font(.system(size: metrics.secondary))
@@ -68,7 +68,7 @@ struct AgentBoardCardView: View {
 
   /// Where the pane is, with git's verdict on the same line's right edge, so
   /// the card has one right-hand rail. The name gives way first.
-  private var place: some View {
+  private var locationLine: some View {
     HStack(spacing: 4) {
       PaneGlyph(
         agentID: card.occupant.agentID,
@@ -80,9 +80,9 @@ struct AgentBoardCardView: View {
       WorktreeBreadcrumb(
         projectName: card.projectName, worktreeName: card.worktreeName, style: .card,
         theme: theme, metrics: metrics)
-      if let status = card.status, !status.isClean {
+      if let status = card.status, !status.isCleanAndInSync {
         Spacer(minLength: 6)
-        ChangeBadge(status: status, theme: theme, size: metrics.badge, tint: theme.textTertiary)
+        GitStatusBadge(status: status, theme: theme, size: metrics.badge, tint: theme.textTertiary)
       }
     }
     .font(.system(size: metrics.badge))

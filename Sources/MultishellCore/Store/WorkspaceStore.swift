@@ -367,7 +367,7 @@ extension WorkspaceStore {
     return group.id
   }
 
-  private func setShownTab(_ id: TerminalTab.ID?, ofGroup groupID: TabGroup.ID) {
+  private func setShownTab(_ id: TerminalTab.ID, ofGroup groupID: TabGroup.ID) {
     guard let index = workspace.groupIndex(groupID),
       workspace.tabGroups[index].shownTabID != id
     else { return }
@@ -499,9 +499,9 @@ extension WorkspaceStore {
     workspace.appearance.themeID = id
   }
 
-  public func setFont(name: String?, size: Double) {
-    workspace.appearance.fontName = name
-    workspace.appearance.fontSize = size
+  public func setTerminalFont(name: String?, size: Double) {
+    workspace.appearance.terminalFontName = name
+    workspace.appearance.terminalFontSize = size
   }
 
   public func setUIFontSize(_ size: Double) {

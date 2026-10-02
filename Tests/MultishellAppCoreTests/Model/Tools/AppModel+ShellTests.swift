@@ -15,4 +15,13 @@ struct AppModelShellTests {
     h.model.setPreferredShell(ShellCatalogue.loginShellID)
     #expect(!h.model.usesCustomShell)
   }
+
+  @Test func theGlobalShellIsTheLoginShellUntilOneIsChosen() {
+    let h = Harness()
+    #expect(h.model.globalShellID == ShellCatalogue.loginShellID)
+
+    h.model.setPreferredShell("/bin/zsh")
+
+    #expect(h.model.globalShellID == "/bin/zsh")
+  }
 }

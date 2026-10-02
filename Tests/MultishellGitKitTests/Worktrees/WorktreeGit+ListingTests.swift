@@ -20,7 +20,7 @@ struct WorktreeGitListingTests {
     }
   }
 
-  @Test func aListWithTheMainWorktreeIsFine() async throws {
+  @Test func aListOfTheMainWorktreeAloneIsAResult() async throws {
     // `-z`, as the real one is asked: NUL where the newline was.
     let fake = try FakeGit.make(
       "printf 'worktree /repos/demo\\0HEAD 1111111\\0branch refs/heads/main\\0'")
@@ -200,5 +200,23 @@ struct WorktreeGitListingTests {
     await #expect(throws: (any Error).self) {
       try await repo.coordinator.git.mainWorktree(containing: repo.root)
     }
+  }
+
+  @Test func theListReflectsCreateAndRemove() async throws {
+    let repo = try await RepositoryFixture.make()
+    defer { repo.tearDown() }
+
+    try await repo.coordinator.createThenRunPostCreate(
+      branch: "a", in: repo.project, settings: repo.worktreeSettings)
+    try await repo.coordinator.createThenRunPostCreate(
+      branch: "b", in: repo.project, settings: repo.worktreeSettings)
+    var listed = try await repo.coordinator.git.list(repo.project)
+    #expect(listed.map(\.branch) == ["main", "a", "b"])
+    #expect(listed[0].isPrimary && !listed[1].isPrimary)
+    #expect(listed.allSatisfy { $0.projectID == repo.project.id })
+
+    try await repo.coordinator.removeUnlinking(listed[1], in: repo.project)
+    listed = try await repo.coordinator.git.list(repo.project)
+    #expect(listed.map(\.branch) == ["main", "b"])
   }
 }

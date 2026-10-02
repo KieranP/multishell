@@ -38,7 +38,7 @@ struct WorktreeGitStatusTests {
     let worktreeGit = WorktreeGit(runner: repo.runner)
     let main = try await worktreeGit.list(project)[0]
 
-    #expect(try await worktreeGit.status(of: main).isClean)
+    #expect(try await worktreeGit.status(of: main).isCleanAndInSync)
 
     try "changed\n".write(
       to: project.path.appendingPathComponent("README.md"), atomically: true, encoding: .utf8)
