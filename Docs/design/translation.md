@@ -118,3 +118,6 @@ Newest at the bottom.
 - **The literal scan reads the frontend alone.** A word a library holds as a
   bare string reaches the screen in English and no test sees it; the trust
   question named its fields that way.
+- **Memory sizes do follow the region.** `ByteCountFormatter` takes no locale,
+  so in a region that writes a comma the debug panel's sizes use one and the
+  rates and times beside them do not.

@@ -33,7 +33,7 @@ extension AppModel {
   }
 
   /// A tab dragged along its own strip, moved as the pointer passes each
-  /// neighbour. Only inside one group, and no reconcile; see tabs-and-groups.md.
+  /// neighbour. Only inside one group; see tabs-and-groups.md.
   public func shuffleTab(
     _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, past anchor: TerminalTab.ID
   ) {

@@ -11,6 +11,8 @@ struct DetailView: View {
       switch model.detailContent {
       case .agentBoard:
         AgentBoardView(model: model, theme: theme)
+      case .debugInfo:
+        DebugInfoView(model: model, theme: theme)
       case .operation(let worktree, let operation):
         WorktreeHeader(model: model, worktree: worktree, theme: theme)
         WorktreeOperationView(

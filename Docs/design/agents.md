@@ -692,3 +692,7 @@ at the bottom.
   confirmed. An agent typed with no hooks installed counts, the command having
   named it (`closingATabRunningAPlainCommandAsksNothing`,
   `anAgentTypedAtThePromptWithNoHooksCountsAsWorking`).
+- **Debug Info covers the panes as the board does, through the same predicate**,
+  so under it too no pane is in view. A Done is not seen and a banner is not
+  held back. An agent's pid is still polled only for the board, Debug Info
+  showing no agents (debug-tools.md).

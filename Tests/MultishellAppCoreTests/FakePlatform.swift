@@ -53,4 +53,10 @@ final class FakePlatform: Platform {
   func setBadgeCount(_ count: Int?) { badges.append(count) }
   var notificationSettingsLocation: String? = "System Settings > Notifications"
   func log(_ message: String) { logged.append(message) }
+  /// What the model asked to be called on each frame; a test calls it.
+  var onDisplayFrame: (@MainActor (ContinuousClock.Instant) -> Void)?
+  func startDisplayFrameCallbacks(
+    _ onFrame: @escaping @MainActor (ContinuousClock.Instant) -> Void
+  ) { onDisplayFrame = onFrame }
+  func stopDisplayFrameCallbacks() { onDisplayFrame = nil }
 }

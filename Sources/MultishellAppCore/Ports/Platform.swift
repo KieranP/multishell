@@ -48,6 +48,11 @@ public protocol Platform: AnyObject, Sendable {
   /// alert.
   func log(_ message: String)
 
+  /// Calls `onFrame` on the main thread once per display refresh until stopped,
+  /// late when the main thread is busy: the debug panel's frame rate.
+  func startDisplayFrameCallbacks(_ onFrame: @escaping @MainActor (ContinuousClock.Instant) -> Void)
+  func stopDisplayFrameCallbacks()
+
   /// Another copy of this build holds the socket: bring it forward and quit
   /// this one. A platform with no such notion does nothing and returns.
   func handOverToRunningInstance()

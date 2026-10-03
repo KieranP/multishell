@@ -108,3 +108,7 @@ Themes, the focused pane, the window the app draws itself. Newest at the bottom.
   sidebar's colour in a row and the header's in the header, as a pane's state
   dot is. One fill for both drew a patch of sidebar on the header:
   WorktreeHeaderTests.
+- **The debug tools split the app from its children in the theme's blue and
+  yellow**, a pair every kind of colour blindness still tells apart, and taken
+  from the theme so a user theme recolours them. Cost: a theme whose blue and
+  yellow sit close loses the split.

@@ -24,8 +24,11 @@ public enum KernelProcessTable {
 
   /// The arguments joined by spaces, or `nil` for a process not ours to read.
   static func commandLine(of pid: Int32) -> String? {
-    // KERN_PROCARGS2 is argc, then the executable path and the arguments,
-    // each NUL-terminated; the environment follows and is left unread.
+    arguments(of: pid)?.arguments.joined(separator: " ")
+  }
+
+  /// `nil` for a process not ours to read.
+  static func arguments(of pid: Int32) -> ProcessArguments? {
     var name: [Int32] = [CTL_KERN, KERN_PROCARGS2, pid]
     var size = 0
     guard sysctl(&name, 3, nil, &size, nil, 0) == 0, size > MemoryLayout<Int32>.size else {
@@ -33,15 +36,19 @@ public enum KernelProcessTable {
     }
     var buffer = [UInt8](repeating: 0, count: size)
     guard sysctl(&name, 3, &buffer, &size, nil, 0) == 0 else { return nil }
-    let argc = buffer.withUnsafeBytes { $0.loadUnaligned(as: Int32.self) }
-    let afterCount = buffer[MemoryLayout<Int32>.size..<size]
-    guard let pathEnd = afterCount.firstIndex(of: 0),
-      let argumentsStart = afterCount[pathEnd...].firstIndex(where: { $0 != 0 })
-    else { return nil }
-    let words = afterCount[argumentsStart...]
-      .split(separator: 0, maxSplits: Int(argc), omittingEmptySubsequences: false)
-      .prefix(Int(argc))
-    return words.map { String(decoding: $0, as: UTF8.self) }.joined(separator: " ")
+    return ProcessArguments(procArgs: buffer.prefix(size))
+  }
+
+  /// `NODEV`, a macro Swift does not import.
+  static let noDevice: Int32 = -1
+
+  /// The controlling terminal's device number, `nil` for a process with none.
+  static func terminalDevice(of pid: Int32) -> Int32? {
+    record(of: pid).flatMap(terminalDevice(in:))
+  }
+
+  static func terminalDevice(in record: kinfo_proc) -> Int32? {
+    record.kp_eproc.e_tdev == noDevice ? nil : record.kp_eproc.e_tdev
   }
 
   static func parent(of pid: Int32) -> Int32? {
@@ -52,12 +59,35 @@ public enum KernelProcessTable {
   /// The executable's name as the kernel keeps it: 16 characters, which is
   /// enough to tell a shell from an agent.
   static func name(of pid: Int32) -> String? {
-    guard var info = record(of: pid) else { return nil }
-    return withUnsafePointer(to: &info.kp_proc.p_comm) { pointer in
+    record(of: pid).map(name(in:))
+  }
+
+  static func name(in record: kinfo_proc) -> String {
+    var record = record
+    return withUnsafePointer(to: &record.kp_proc.p_comm) { pointer in
       pointer.withMemoryRebound(to: CChar.self, capacity: Int(MAXCOMLEN) + 1) {
         String(cString: $0)
       }
     }
+  }
+
+  /// Every process in the table, read in one call; empty where the kernel
+  /// would not say. Retried where the table outgrew the buffer meanwhile.
+  static func allRecords() -> [kinfo_proc] {
+    var name: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_ALL]
+    let stride = MemoryLayout<kinfo_proc>.stride
+    for _ in 0..<3 {
+      var size = 0
+      guard sysctl(&name, UInt32(name.count), nil, &size, nil, 0) == 0 else { return [] }
+      var records = [kinfo_proc](repeating: kinfo_proc(), count: size / stride + 16)
+      size = records.count * stride
+      let read = records.withUnsafeMutableBytes {
+        sysctl(&name, UInt32(name.count), $0.baseAddress, &size, nil, 0)
+      }
+      if read == 0 { return Array(records.prefix(size / stride)) }
+      guard errno == ENOMEM else { return [] }
+    }
+    return []
   }
 
   static func record(of pid: Int32) -> kinfo_proc? {

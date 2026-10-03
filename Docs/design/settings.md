@@ -20,7 +20,7 @@ shipped hook. Newest at the bottom.
   agent skill on any create, or link `~/.ssh/id_ed25519` into a tree an agent
   reads.
 - **So a repo's three are confined to the checkout**, once at read time and held
-  on the project, the sidebar asking per row per render. The tick's reader
+  on the project, since the sidebar asks per row per render. The tick's reader
   confines off the main actor with the parse, and export writes, stamps and
   confines there too: each touches the disk, and on a slow volume would hold the
   window.
@@ -61,8 +61,8 @@ shipped hook. Newest at the bottom.
   every answer already given.
 - **Trust is per file, held against the sha256 of its bytes**, asked when a
   worktree of that project is selected and re-read when mtime moves. An answer
-  is kept per file: the file is tracked, so one shared answer would be asked
-  again on every branch switch.
+  is kept per version of the file: the file is tracked, so one answer per
+  project would be asked again on every branch switch.
 - **Layering is asked of the model**, `effectiveSettings(for:)` and
   `effectiveWorktreeSettings(for:)`, never `project.settings`. The override
   forms are the exception, where blank must keep meaning "follow the global".

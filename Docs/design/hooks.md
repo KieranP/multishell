@@ -76,3 +76,8 @@ at the bottom.
 - **A list drops blank lines and `#` lines**, the grammar of `/etc/shells`, so
   one reader serves both. Cost: a name starting with `#` is reached only by a
   pattern, `?` in place of the `#`.
+- **A failure shows stderr only from a marker line on**, which the script prints
+  after its `cd`. An interactive shell's rc files write to stderr too, and their
+  noise would lead the message. A script that ends at its `cd` shows all of it.
+  Cost: stdout comes first, the two streams being read apart, so their order
+  against each other is lost.

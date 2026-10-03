@@ -39,5 +39,8 @@ final class FakeEngine: TerminalSurfaceHost {
     return true
   }
   func view(for id: TerminalSession.ID) -> FakeSurface? { nil }
+  /// What each session's pty is said to be, for placing its processes.
+  var processHints: [TerminalSession.ID: TerminalProcessHint] = [:]
+  func processHint(of id: TerminalSession.ID) -> TerminalProcessHint? { processHints[id] }
   func apply(_ theme: Theme, appearance: Appearance) {}
 }

@@ -59,3 +59,8 @@ the bottom.
   without it. The helper takes the same file in a debug build for that one key.
 - **A timestamp goes on only for a Developer ID identity**, being a call to
   Apple's server that a local build would fail offline for nothing.
+- **The debug tools add no entitlement.** `proc_pid_rusage` and the
+  `KERN_PROCARGS2` sysctl answer for any process of the same user, so the
+  sampler reads a pane's processes without `task_for_pid` and the debugger
+  entitlement that would cost. A process another user owns, `sudo` for one, is
+  refused and left out of the memory table.

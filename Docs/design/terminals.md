@@ -33,10 +33,10 @@ at the bottom.
 - **The shell's own end-of-command outranks a report.** It settles background
   workers, the owed Done and which agent is at the prompt, whatever was in the
   foreground having returned (agents.md).
-- **A closed tab ends its shell next turn.** The engine no longer frees a
-  surface in the view's deinit, the view outlives any frame that adopted it, and
-  on a process exit the close runs inside the engine's own callback, where
-  freeing would free the object mid-call.
+- **A closed tab ends its shell next turn.** The engine frees a surface only
+  when its view goes, and the view outlives any frame that adopted it, so the
+  host detaches the controller instead. On a process exit the close runs inside
+  the engine's own callback, where freeing would free the object mid-call.
 - **Shell integration is injected, never written to a user's file.** It is
   written at launch into the app's own directory, and every session is pointed
   at it.
@@ -212,9 +212,10 @@ at the bottom.
   character, so a CRLF file split on `\n` was one line: its includes were lost
   and every key after the first rode through the allow list behind it.
 - **The merged text reaches the engine through a file under the temp
-  directory.** The wrapper removes that file only when it replaces it or frees
-  its controller, which here lives until the process ends, so the host clears
-  the directory at launch and at quit.
+  directory.** The wrapper removes that file when it refuses the config,
+  replaces it or frees its controller, which here lives until the process ends,
+  so an accepted file stays and the host clears the directory at launch and at
+  quit.
 - **Every copy of the build shares that directory**, so only the copy holding
   the instance socket may sweep it. A copy that hands over quits before it opens
   a terminal, and one whose quit failed starts no shell (state-and-store.md), so
@@ -234,6 +235,8 @@ at the bottom.
   a window is, and those are the keys a release is likeliest to add another of.
 - **So a refusal list is one release behind** where an allowance list is only
   ever missing a nicety.
+- **Ghostty 0538f75 bore that out.** It added `vt-window-resize-allowed`, which
+  lets a program resize the window, and the key stayed out with no edit here.
 - **What is allowed is families that can only draw or drive a surface**, plus a
   short list named one at a time, of which one option key is the only
   platform-prefixed key a surface reads.
@@ -351,8 +354,9 @@ at the bottom.
   performable key, so while a search ran it ate Escape in the pane. Released, it
   is a plain key again and only the bar ends a search.
 - **The engine's search-for-selection is left bound and does nothing here**, its
-  whole effect being an action the wrapper drops, and the app cannot offer it,
-  the wrapper keeping the selection internal.
+  whole effect being an action the wrapper drops. The app does not offer it
+  either, though the surface the wrapper hands a lifecycle delegate reads the
+  selection, so offering it needs no patch.
 - **The same find text set again is nothing to the model.** The field commits on
   Return as well as on each keystroke, and a repeat taken as a change would send
   the find text again and start the selection over.

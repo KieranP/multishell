@@ -5,6 +5,7 @@ import MultishellCore
 public enum DetailContent: Equatable, Sendable {
   /// In place of the selected worktree's terminals, whose shells stay live.
   case agentBoard
+  case debugInfo
   /// A create has no terminals yet, and a remove is about to close them.
   case operation(Worktree, WorktreeOperation)
   case tabGroups(Worktree)

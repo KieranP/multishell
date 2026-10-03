@@ -1,10 +1,14 @@
 import MultishellCore
 
 extension AppModel {
-  /// The board first, then the selected worktree's operation, groups or
+  /// A cover first, then the selected worktree's operation, groups or
   /// nothing, then the empty state.
   public var detailContent: DetailContent {
-    if showsAgentBoard { return .agentBoard }
+    switch detailCover {
+    case .agentBoard: return .agentBoard
+    case .debugInfo: return .debugInfo
+    case nil: break
+    }
     guard let worktree = workspace.selectedWorktree else {
       return .noSelection(hasProjects: !workspace.projects.isEmpty)
     }

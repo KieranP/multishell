@@ -15,4 +15,8 @@ struct KernelProcessTableTests {
     #expect(KernelProcessTable.name(of: 1) != nil)
     #expect(KernelProcessTable.parent(of: 999_999_999) == nil)
   }
+
+  @Test func aPidNothingHoldsHasNoTerminal() {
+    #expect(KernelProcessTable.terminalDevice(of: 999_999_999) == nil)
+  }
 }

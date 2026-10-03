@@ -20,6 +20,9 @@ public struct WorktreeGit: Sendable {
     self.readState = readState
   }
 
+  /// Every git this value runs, timed while debug tools are on.
+  public var runLog: GitRunLog { runner.runLog }
+
   /// `--git-dir`, not `--is-inside-work-tree`, which prints `false` for a
   /// bare repository: a common layout for people who live in worktrees.
   public func isRepository(_ url: URL) async -> Bool {

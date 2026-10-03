@@ -9,6 +9,7 @@ public final class WaitingShell {
   public init(marker: String? = nil) throws {
     process.executableURL = URL(fileURLWithPath: "/bin/sh")
     process.arguments = ["-c", "read line" + (marker.map { " # \($0)" } ?? "")]
+    process.environment = Scratch.shellEnvironment
     process.standardInput = input
     try process.run()
   }

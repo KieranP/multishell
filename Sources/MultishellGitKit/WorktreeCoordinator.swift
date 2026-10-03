@@ -26,7 +26,9 @@ public struct WorktreeCoordinator: Sendable {
     let executable = await GitExecutable.resolve(
       searchPath: searchPath,
       developerDirectory: await offMain { GitExecutable.selectedDeveloperDirectory() })
-    let runner = try GitRunner(executable: executable, searchPath: searchPath)
+    let runner = try GitRunner(
+      executable: executable, searchPath: searchPath,
+      runLog: previous?.git.runLog ?? GitRunLog())
     // Reads still in flight on the previous git hold slots the new one must count.
     guard let previous else { return WorktreeCoordinator(git: WorktreeGit(runner: runner)) }
     return WorktreeCoordinator(

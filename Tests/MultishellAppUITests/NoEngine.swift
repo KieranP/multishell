@@ -11,5 +11,6 @@ final class NoEngine: TerminalSurfaceHost {
   func focus(_ id: TerminalSession.ID) {}
   func paste(_ text: String, into id: TerminalSession.ID) -> Bool { false }
   func view(for id: TerminalSession.ID) -> NSView? { nil }
+  func processHint(of id: TerminalSession.ID) -> TerminalProcessHint? { nil }
   func apply(_ theme: Theme, appearance: Appearance) {}
 }

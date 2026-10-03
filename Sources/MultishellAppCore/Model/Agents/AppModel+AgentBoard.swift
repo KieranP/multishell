@@ -85,21 +85,20 @@ extension AppModel {
     return .shell(shellPath(forWorktree: session.worktreeID).executableName)
   }
 
+  public var showsAgentBoard: Bool { detailCover == .agentBoard }
+
   /// The board fills the detail area, the selection left alone so its shells
   /// stay live. The sweep makes the first frame honest; see `watchedPIDs`.
   public func showAgentBoard() {
-    showsAgentBoard = true
+    detailCover = .agentBoard
     sweepGonePIDs()
     updatePIDWatch()
   }
 
-  /// The panes are back in front of the user, and the focused one's Done seen
-  /// unless the caller does its own seen-clearing. The PID watch is told.
+  /// `uncoverDetail`, where it is the board that covers the panes.
   func hideAgentBoard(markingInViewSeen marksSeen: Bool = true) {
     guard showsAgentBoard else { return }
-    showsAgentBoard = false
-    updatePIDWatch()
-    if marksSeen { markInViewSeen() }
+    uncoverDetail(markingInViewSeen: marksSeen)
   }
 
   /// The menu item and its keystroke, which go back to the worktree the

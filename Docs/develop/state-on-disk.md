@@ -15,8 +15,9 @@ Under `~/Library/Application Support/Multishell`.
   shown tab, pane trees, worktree names and creation dates, every setting.
 - **Not in it**: processes, shell titles, the shell a tab resolved to, a
   branch's last commit time, the sidebar filter or a project collapsed under it,
-  or anything about the Agents board, which is runtime state, so its filter is
-  off after a relaunch.
+  or anything about the Agents board or the debug tools. Those are runtime
+  state, so Show all terminals is off after a relaunch, and the debug tools
+  start off at every launch and write nothing to disk or defaults.
 - **A file written before groups existed names no group**, and carries a key for
   the active tab this build has no property for; the repair gathers each
   worktree's ungrouped tabs into the one group they were saved as.

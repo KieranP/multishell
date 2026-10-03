@@ -16,6 +16,7 @@ final class MacPlatform: Platform {
   nonisolated static let bundleIdentifier = "io.multishell.app"
 
   private let logger = Logger(subsystem: bundleIdentifier, category: "platform")
+  private var displayFrameLink: DisplayFrameLink?
 
   init() {
     NotificationCenter.default.addObserver(
@@ -104,6 +105,20 @@ final class MacPlatform: Platform {
 
   func log(_ message: String) {
     logger.notice("\(message, privacy: .public)")
+  }
+
+  func startDisplayFrameCallbacks(
+    _ onFrame: @escaping @MainActor (ContinuousClock.Instant) -> Void
+  ) {
+    stopDisplayFrameCallbacks()
+    let link = DisplayFrameLink(onFrame: onFrame)
+    link.start(following: workspaceWindow?.contentView)
+    displayFrameLink = link
+  }
+
+  func stopDisplayFrameCallbacks() {
+    displayFrameLink?.stop()
+    displayFrameLink = nil
   }
 
   /// `terminate` exits inside the call once the delegate agrees, which with

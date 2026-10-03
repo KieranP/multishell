@@ -105,6 +105,31 @@ struct UIMetrics: Equatable {
   /// Round the board's columns.
   var boardPadding: Double { (body * 0.9).rounded() }
 
+  /// A debug strip's name and value column, which its axis row keeps clear;
+  /// the memory strip's widest label takes 16 ems (DebugStripLabelTests).
+  var debugStripLabelWidth: Double { (body * 17).rounded() }
+  var debugStripHeight: Double { (body * 4.2).rounded() }
+  /// The debug tables' number columns, which their headers line up over.
+  var debugCountColumnWidth: Double { (body * 5.5).rounded() }
+  /// A memory figure with the bar beside it, and one without.
+  var debugMemoryBarColumnWidth: Double { (body * 8.5).rounded() }
+  var debugDurationColumnWidth: Double { (body * 4.8).rounded() }
+  var debugMemoryValueColumnWidth: Double { (body * 5.5).rounded() }
+  var debugMemoryBarWidth: Double { (body * 3.5).rounded() }
+  /// A debug table's side inset, which its title, header and rows share.
+  static let debugTableInset: Double = 12
+  /// A row's disclosure chevron, before its first column.
+  static let debugTableChevronWidth: Double = 10
+  static let debugTableColumnSpacing: Double = 8
+  /// Where a debug table's first column starts, past the chevron.
+  static let debugTableTitleInset =
+    debugTableInset + debugTableChevronWidth + debugTableColumnSpacing
+  /// Right of each debug strip's chart, which the axis row must match for its
+  /// ticks to sit under the slots.
+  static let debugChartTrailingInset: Double = 10
+  /// Round a board column and a debug panel block, which sit on the same fill.
+  static let columnCornerRadius: Double = 8
+
   /// Layout space a split's divider takes, wider than its line: the panes are
   /// NSViews and take mouse events before a SwiftUI overlay.
   static let splitDividerThickness: Double = 6

@@ -59,6 +59,12 @@
   imports.
 - **CryptoKit hashes the shared-settings files**, not swift-crypto: on the Mac
   that package only re-exports CryptoKit, and would add a notice to ship.
+- **libproc and the kernel's process sysctls read the process table**, from
+  libSystem, so they need no package and no notice. Apple documents neither, and
+  `libproc.h` calls its interfaces private and subject to change. The helper's
+  agent hooks rest on `proc_listchildpids` and `KERN_PROCARGS2`, the debug tools
+  on `proc_pid_rusage` too, so a new macOS wants both tried. The quirks found so
+  far are in design/debug-tools.md.
 - **git 2.36 or newer**, for `-z` on `git worktree list --porcelain`, which
   keeps a path holding a newline from reading as two records. The floor is under
   what the supported macOS ships, so an older git usually comes from a version

@@ -15,7 +15,7 @@ extension AppModel {
   /// For a control that is leaving, such as the sidebar filter on Escape: the
   /// keyboard would otherwise fall to the window and type into nothing.
   func focusActivePane() {
-    guard !showsAgentBoard else { return }
+    guard detailCover == nil else { return }
     reconciler.focusActiveSession()
   }
 

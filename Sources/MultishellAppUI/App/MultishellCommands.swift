@@ -15,7 +15,7 @@ struct MultishellCommands: Commands {
     undoItems
     findMenu
     closeItems
-    agentBoardItem
+    viewItems
     terminalMenu
   }
 
@@ -108,11 +108,13 @@ struct MultishellCommands: Commands {
   }
 
   // Into the standard View menu, not a `CommandMenu`, which would sit beside
-  // AppKit's. The board is a place to go, not an action.
-  private var agentBoardItem: some Commands {
+  // AppKit's: the board and the debug tools change what is shown, not act.
+  private var viewItems: some Commands {
     CommandGroup(after: .toolbar) {
       Button(t("label.agents")) { model.toggleAgentBoard() }
         .keyboardShortcut(AppShortcutCatalogue.toggleAgentBoard)
+      Divider()
+      Toggle(t("menu.enable-debug-tools"), isOn: model.debugToolsEnabledSetting)
     }
   }
 

@@ -82,3 +82,6 @@ What is written, what is repaired, how it is tested. Newest at the bottom.
   reads every earlier file as missing it, and the default replaces the user's
   choice. `WorkspaceTests` counts `Workspace`'s keys against its fields, so a
   field left out of the coding keys fails there rather than going unsaved.
+- **Debug tools keep nothing in the workspace**, the toggle included. A sample a
+  second in the store would schedule a save a second, and debug-tools.md says
+  why the toggle ends with its launch.

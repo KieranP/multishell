@@ -19,14 +19,14 @@ extension AppModel {
   /// this is where the shared-hooks question is asked, a create being asked apart.
   @discardableResult
   public func select(_ worktree: Worktree, openingFirstTab: TabOpeningReason = .onSelect) -> Bool {
-    // A row git no longer lists is refused by the store, so ask first: the
-    // board closing and a tab opening are not things to do for nothing.
+    // A row git no longer lists is refused by the store, so ask first: a
+    // cover closing and a tab opening are not things to do for nothing.
     guard workspace.worktree(worktree.id) != nil, requireDirectory(of: worktree) else {
       return false
     }
     // Before anything else, `isPaneInView` having to agree that panes fill the
     // detail area. The seen-clearing is left to the reconcile at the end.
-    hideAgentBoard(markingInViewSeen: false)
+    uncoverDetail(markingInViewSeen: false)
     store.selectWorktree(worktree.id)
     warmWorktrees.insert(worktree.id)
     if openingFirstTab != .onCreate { askAboutSharedSettingsIfNeeded(for: worktree.projectID) }

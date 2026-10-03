@@ -84,9 +84,9 @@ public final class AppModel<Surface> {
   public internal(set) var draggedProjectID: Project.ID?
   @ObservationIgnored var projectDragReleaseWatch: Task<Void, Never>?
 
-  /// Whether the board fills the detail area. Runtime state; set through
-  /// `showAgentBoard` and `hideAgentBoard`, which do the seen-clearing.
-  public internal(set) var showsAgentBoard = false
+  /// What covers the selected worktree's terminals. Runtime state; set through
+  /// the show methods and `uncoverDetail`, which do the seen-clearing.
+  var detailCover: DetailCover?
   /// Whether the board shows every terminal or only agent panes. Here and not
   /// in the view, the Dock badge reading the same filter.
   public internal(set) var showsAllTerminals = false
@@ -98,6 +98,29 @@ public final class AppModel<Surface> {
   var agentBoardGeneration = 0
   /// How many times the board was built, for the tests.
   @ObservationIgnored var agentBoardBuilds = 0
+
+  /// View > Enable Debug Tools. Runtime state, so sampling never outlives
+  /// the launch it was turned on in.
+  public internal(set) var debugToolsEnabled = false
+  /// A sample a second while debug tools are on; see `takeDebugSample`.
+  var debugHistory = DebugHistory()
+  /// Which processes each pane runs, as of the last sample.
+  var debugProcessAttribution = PaneProcessAttribution.empty
+  /// What the panel shows while paused, the sampling going on under it.
+  var pausedDebugSnapshot: DebugSnapshot?
+  @ObservationIgnored var debugSampling: Task<Void, Never>?
+  /// Settable so a test can push the tick out of reach and take each sample itself.
+  @ObservationIgnored var debugSampleInterval: Duration = .seconds(1)
+  @ObservationIgnored var frameRateMeter = FrameRateMeter()
+  @ObservationIgnored var cpuUsageMeter = CPUUsageMeter()
+  @ObservationIgnored var stateReportsSinceDebugSample = 0
+  @ObservationIgnored var lastDebugSampleTaken: ContinuousClock.Instant?
+  /// Bumped at each start and stop, so a sample begun before either lands nowhere.
+  @ObservationIgnored var debugSamplingGeneration = 0
+  /// Reads the kernel's process table; a test stands in a scan of its own.
+  @ObservationIgnored var scanDebugProcesses:
+    @Sendable (_ appPID: Int32, _ terminalPaths: [TerminalSession.ID: String]) -> DebugProcessScan =
+      DebugProcessScan.take
 
   /// Which stage a create is in while the sheet still waits on it: the
   /// pre-create hook and `git worktree add`. `nil` when none is running.

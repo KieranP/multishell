@@ -16,6 +16,54 @@
       <key>other</key><string>%d background shells</string>
     </dict>
   </dict>
+  <key>count.frames-per-second</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d frame per second</string>
+      <key>other</key><string>%d frames per second</string>
+    </dict>
+  </dict>
+  <key>count.git-running</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d running</string>
+      <key>other</key><string>%d running</string>
+    </dict>
+  </dict>
+  <key>count.processes</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d process</string>
+      <key>other</key><string>%d processes</string>
+    </dict>
+  </dict>
+  <key>count.runs</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d run</string>
+      <key>other</key><string>%d runs</string>
+    </dict>
+  </dict>
   <key>count.subagents</key>
   <dict>
     <key>NSStringLocalizedFormatKey</key>

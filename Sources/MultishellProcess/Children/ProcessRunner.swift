@@ -15,11 +15,12 @@ public struct ProcessRunner: Sendable {
     in directory: URL,
     environment: [String: String] = [:],
     timeout: Duration? = nil,
-    stopper: ProcessStopper? = nil
+    stopper: ProcessStopper? = nil,
+    exitUsage: ExitUsageProbe? = nil
   ) async throws -> String {
     let output = try await capture(
       executable, arguments, in: directory, environment: environment, timeout: timeout,
-      stopper: stopper)
+      stopper: stopper, exitUsage: exitUsage)
     guard output.succeeded else {
       throw ProcessFailure(
         executable: executable.lastPathComponent,
@@ -40,7 +41,8 @@ public struct ProcessRunner: Sendable {
     in directory: URL,
     environment: [String: String] = [:],
     timeout: Duration? = nil,
-    stopper: ProcessStopper? = nil
+    stopper: ProcessStopper? = nil,
+    exitUsage: ExitUsageProbe? = nil
   ) async throws -> ProcessOutput {
     let stopper = stopper ?? ProcessStopper()
     let nullInput = try NullDevice()
@@ -68,6 +70,8 @@ public struct ProcessRunner: Sendable {
         if let timeout { Self.armTimeout(timeout, for: child, stopper: stopper) }
         // Marked before Subprocess reaps it, so no stop signals a reused pid.
         await child.waitForExit()
+        // A zombie still, Subprocess reaping it only once this returns.
+        exitUsage?.record(KernelResourceUsage.exitUsage(of: pid))
         child.markExited()
       }
     } catch {
@@ -123,9 +127,7 @@ public struct ProcessRunner: Sendable {
   private static func armTimeout(
     _ timeout: Duration, for child: RunningChild, stopper: ProcessStopper
   ) {
-    let seconds =
-      Double(timeout.components.seconds) + Double(timeout.components.attoseconds) / 1e18
-    DispatchQueue.global().asyncAfter(deadline: .now() + seconds) {
+    DispatchQueue.global().asyncAfter(deadline: .now() + timeout.inSeconds) {
       if child.isRunning { stopper.stop(.timedOut(after: timeout)) }
     }
   }

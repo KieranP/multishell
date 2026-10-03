@@ -85,4 +85,19 @@ struct AppModelLoginEnvironmentTests {
     #expect(rebuilt.readState.untrackedMemo === launched.readState.untrackedMemo)
     #expect(rebuilt.readState.mergeSlots === launched.readState.mergeSlots)
   }
+
+  @Test(arguments: [true, false])
+  func aGitFoundOnlyOnTheLoginPathIsTimedJustWhileDebugToolsAreOn(enabled: Bool) async throws {
+    let harness = Harness()
+    try harness.installFakeAgent("git")
+    harness.model.enableDebugTools()
+
+    await harness.model.refreshLoginEnvironment()
+    if !enabled { harness.model.setDebugToolsEnabled(false) }
+    let git = try #require(harness.model.coordinator?.git)
+    _ = git.runLog.drain()
+    _ = await git.isRepository(harness.root)
+
+    #expect(git.runLog.drain().startedCount == (enabled ? 1 : 0))
+  }
 }

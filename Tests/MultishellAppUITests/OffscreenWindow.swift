@@ -23,6 +23,13 @@ enum OffscreenWindow {
     }
   }
 
+  /// The width `content` takes unconstrained, hosted in a window held for the read.
+  static func naturalWidth(of content: some View, windowSize: CGSize) -> Double {
+    let host = NSHostingView(rootView: content.fixedSize())
+    let window = holding(host, rect: NSRect(origin: .zero, size: windowSize), deferred: false)
+    return withExtendedLifetime(window) { host.fittingSize.width }
+  }
+
   /// What `view` draws, at the backing scale, or `nil` where AppKit gives no bitmap.
   static func pixels(of view: NSView) -> NSBitmapImageRep? {
     guard let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return nil }

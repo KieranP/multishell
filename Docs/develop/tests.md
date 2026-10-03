@@ -25,7 +25,8 @@ says why these are the rules.
   caught twelve starving. Starved, at most a thread per core is inside a run;
   unstarved, nearly all are, the hold being long against a launch.
 - **Descriptor exhaustion** lowers the process-wide limit, so
-  DescriptorExhaustionTests needs its environment flag and a filter.
+  DescriptorExhaustionTests runs only with `MULTISHELL_EXHAUST_DESCRIPTORS` set
+  and a filter.
 - **Git on a timer reads only**: WorktreeGitStatusTests.
 - **A tree still being built wears no badge, and a stage on a listed worktree
   keeps the one it earned**: the badged tests in
@@ -435,19 +436,32 @@ says why these are the rules.
   command, not a value read under another name: HelperTests.
 - **The trust question names its fields in the catalogue's words**:
   SharedProjectSettings+TrustTests.
+- **A sample begun before the debug tools go off lands nowhere**, nor once they
+  are back on: AppModelDebugToolsTests, the scan held on a semaphore across the
+  toggle.
+- **A display asleep is no frames, not a stall**, while a reading held late by a
+  stall keeps its gap: FrameRateMeterTests.
+- **CPU time is mach ticks, not nanoseconds**: KernelResourceUsageTests holds
+  this process's against its own CPU clock within a factor of two, the misread
+  figure being about 42 times short.
+- **A git run that starts and ends between two samples still counts**:
+  AppModelDebugSamplingTests on real git, and ProcessRunnerTests+ExitUsage
+  reading the child's usage as it exits.
 
 ## Conventions
 
 - **A new file goes in the folder its subject is in**, one tree mirroring the
-  other (layout.md). Harnesses and fakes stay at the suite's root.
+  other (layout.md). Harnesses, fakes and a value's `<Type>+Sample.swift`
+  builder stay at the suite's root.
 - **Git behaviour goes against a real repository**, never mocks. Parsers get
   fixture text, odd lines included.
 - **Prefer evidence to a clock.** Concurrency is read off what the children
   recorded about each other, not off how long the batch took. Both were
   wall-clock bounds first, and both flaked.
-- **A test never hands the stopper a pid it reaped**: tests run in parallel, and
-  the pid can go to another test's child, which the stop would then hang up.
-  ProcessStopperTests uses a pid past PID_MAX for the reaped case.
+- **A test never hands the stopper or a pid watch a pid it reaped**: tests run
+  in parallel, and the pid can go to another test's child, which the stop would
+  then hang up and the watch find alive. `deadPID()` in TestScratch gives one
+  past PID_MAX instead.
 - **Nothing on the cooperative pool waits for something only another task can
   release.** The pool is as wide as the cores.
   `LIBDISPATCH_COOPERATIVE_POOL_STRICT=1` cuts it to one thread, which turns
@@ -456,8 +470,13 @@ says why these are the rules.
   `make test` and CI. Without it, CI froze with all 1,550 tests started within
   1.4 s and none finished. A swift-testing from before the cap
   (swift-testing#1390) fails the script rather than running uncapped.
-- **Waiting for a state is the shared helper**, with the assertion after it; a
-  fixed sleep fails on a loaded runner and wastes time on a quiet one.
+- **Waiting for a state is `waitUntil` in TestScratch**, with the assertion
+  after it; a fixed sleep fails on a loaded runner and wastes time on a quiet
+  one.
+- **A debug-tools test turns them on with `enableDebugTools`**, which pushes the
+  sampling tick out to an hour and stands in a process scan, and takes each
+  sample itself with `takeDebugSample`. A live tick would race the test's own
+  sample, and the real scan reads whatever the machine is running.
 - **Never the developer's machine**: a shell runs against a home the test wrote,
   the model's login environment comes from the harness, and git is the fixture's
   runner rather than the PATH's.
@@ -472,8 +491,8 @@ says why these are the rules.
   its foreground group stops itself on SIGTTIN, with no timeout to end it. The
   runner starts every child the same way (dependencies.md).
 - **A bash behaviour runs under every installed bash**, `InstalledBashes.all` in
-  TestScratch, which the Core and CLI suites share: the system's 3.2 and a newer
-  one differ in `$!`, `wait` and, from 5.3, how the PIPE trap is read.
+  TestScratch: the system's 3.2 and a newer one differ in `$!`, `wait` and, from
+  5.3, how the PIPE trap is read.
 - **A hook or the login capture leaves a named history file alone**:
   ShellCommandTests+HookShells under bash, sh and ksh, and
   LoginShellEnvironmentTests.

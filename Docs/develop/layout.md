@@ -8,22 +8,26 @@
   sessions and the reports about them; the decoding every persisted type leans
   on; the libraries' word lookup; and, under `Support/`, the small extensions
   and helpers every other library reaches for.
-- **MultishellProcess**: processes and sockets. **MultishellGitKit**: worktree
-  operations, a project's hooks and file lists, the output readers, what a
-  branch is, where it points and whether it landed, a worktree's status, the
-  runner above them all, and, under `Support/`, what belongs to no concern.
-  WorktreeGit and WorktreeCoordinator sit at its root with their extensions
-  under each concern, since five concerns extend them and none owns them, beside
-  the state every WorktreeGit a launch builds shares.
+- **MultishellProcess**: the children it starts, how a shell is started and
+  quoted, sockets, what the kernel answers about a process, a descriptor or a
+  terminal, under `Kernel/`, and, under `Support/`, what belongs to no concern.
+  **MultishellGitKit**: worktree operations, a project's hooks and file lists,
+  the output readers, what a branch is, where it points and whether it landed, a
+  worktree's status, the runner above them all, and, under `Support/`, what
+  belongs to no concern. WorktreeGit and WorktreeCoordinator sit at its root
+  with their extensions under each concern, since five concerns extend them and
+  none owns them, beside the state every WorktreeGit a launch builds shares.
 - **MultishellAppCore**: AppModel, detections, dialogs, error mapping, settings
   as inherited, what a tab runs, what each session is doing, when to read git,
   when to notify, every decision a view makes; what a screen reader is told;
   what it needs from the app, and its own implementations of Core's ports, under
-  `Ports/`; and, under `Support/`, the pieces that belong to no concern.
+  `Ports/`; what the debug panel measures and shows, under `Debug/`; and, under
+  `Support/`, the pieces that belong to no concern.
 - **AppModel's extensions sit under `Model/` by concern**: agents, tabs,
-  worktrees, git reads, projects, and the tools it drives. What spans them all
-  stays at the root beside the type, since the concerns are too many for one
-  alphabetical listing to keep a concern's files together.
+  worktrees, git reads, projects, the debug tools' sampling and tables, and the
+  tools it drives. What spans them all stays at the root beside the type, since
+  the concerns are too many for one alphabetical listing to keep a concern's
+  files together.
 - **AppCore's `Integrations/` is the app's own side of them**: the helper and
   shell-integration files it installs, and each agent's hooks as installed.
 - **Everything about a program someone else wrote is in Core's
@@ -36,16 +40,19 @@
   `Multishell`: views, the engine host, the Mac platform port, and a word lookup
   of its own.
 - **Its views sit under the part of the window they draw**: the sidebar, the
-  detail area, a group of tabs or a pane in it, the board, a settings window, a
-  dialog. The rest draw no part of one: reused small views under `Shared/`, or
-  `Settings/Controls/` where only the settings windows use them, the agent
-  marks, the AppKit modifiers and representables that reach under SwiftUI for an
-  event it has no gesture for or the window a view sits in, the scene and menus.
-  The engine host and the platform port each have a folder. What draws nothing
-  sits under `Support/`, the in-app drag's pieces under `Support/Drag/`, unless
-  it is by nature a piece of one part: the mark parser sits with the marks, a
-  dialog's AppKit alert with the dialogs, and what both settings windows share
-  at `Settings/`'s root.
+  detail area, a group of tabs or a pane in it, the board, the debug panel, a
+  settings window, a dialog. The rest draw no part of one: reused small views
+  under `Shared/`, or `Settings/Controls/` where only the settings windows use
+  them, the agent marks, the AppKit modifiers and representables that reach
+  under SwiftUI for an event it has no gesture for or the window a view sits in,
+  the scene and menus. The engine host and the platform port each have a folder.
+  What draws nothing sits under `Support/`, the in-app drag's pieces under
+  `Support/Drag/`, unless it is by nature a piece of one part: the mark parser
+  sits with the marks, a dialog's AppKit alert with the dialogs, and what both
+  settings windows share at `Settings/`'s root.
+- **AppCore's values for a part of the window sit under the folder its views
+  use**: `Sidebar/`, `Board/`, `Detail/`, `Terminals/Panes/`, `Debug/` and the
+  rest, so a view and the decision it reads share one path in two targets.
 - **A file's folder follows what it is, never how many places call it.** A
   generic extension stays in `Support/` when one concern alone calls it; a file
   moves only when the folder it is in is wrong for what it holds.
@@ -84,7 +91,7 @@
 
 ## Layering rules
 
-- **The four libraries import Foundation, Dispatch, System, Observation,
+- **The four libraries import Foundation, Darwin, Dispatch, System, Observation,
   Synchronization and CryptoKit, which Apple ships, and one package, nothing
   else**: swift-subprocess in the process layer (dependencies.md).
 - **MultishellAppUI is views, AppKit and the engine host.** Everything else

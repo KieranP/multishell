@@ -50,6 +50,9 @@
 - **`make signing-identity` creates the self-signed certificate**; without it
   the build signs ad hoc and says so. Not for distribution: it is so the user's
   permission grants survive a rebuild.
+- **`MULTISHELL_SIGN_IDENTITY` picks another certificate**, and `-` forces ad
+  hoc. Only a `Developer ID` identity asks Apple's server for a timestamp, so
+  every other build signs offline.
 - **Every target works the same from a git worktree**, and two can build at
   once: the scratch directories are per-worktree and the shared caches lock only
   briefly.

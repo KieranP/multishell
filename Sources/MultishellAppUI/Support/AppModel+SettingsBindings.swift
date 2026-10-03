@@ -2,8 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Bindings for the settings forms and the board's toggle. `Binding` is
-/// SwiftUI's, so these live in the app rather than beside the model they read.
+/// Bindings for the settings forms and the board's and debug tools' toggles.
+/// `Binding` is SwiftUI's, so these live in the app, not beside the model.
 extension AppModel {
   /// A workspace value and the method that sets it, as one binding. The read
   /// goes through `workspace`, so the row follows a change made elsewhere.
@@ -96,5 +96,13 @@ extension AppModel {
   /// The board's one filter, held by the model rather than the workspace.
   var showsAllTerminalsSetting: Binding<Bool> {
     Binding(get: { self.showsAllTerminals }, set: { self.setShowsAllTerminals($0) })
+  }
+
+  var debugToolsEnabledSetting: Binding<Bool> {
+    Binding(get: { self.debugToolsEnabled }, set: { self.setDebugToolsEnabled($0) })
+  }
+
+  var debugPausedSetting: Binding<Bool> {
+    Binding(get: { self.isDebugPaused }, set: { self.setDebugPaused($0) })
   }
 }

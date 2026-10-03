@@ -82,6 +82,11 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
     surfaces[id]?.container
   }
 
+  func processHint(of id: TerminalSession.ID) -> TerminalProcessHint? {
+    guard let view = surfaces[id]?.view else { return nil }
+    return TerminalProcessHint(terminalPath: view.ttyName, foregroundPID: view.foregroundPid)
+  }
+
   /// libghostty frames this as a paste itself. `false` means the surface is
   /// not created yet, which a session with no shell running is.
   @discardableResult

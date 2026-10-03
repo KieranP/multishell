@@ -27,8 +27,9 @@
   one, which is always this app. Service names are the log's less the
   `kTCCService` prefix.
 - **App Management, Full Disk Access, Accessibility, Input Monitoring and Screen
-  Recording are never prompted for**, only denied, so they are added by hand in
-  System Settings.
+  Recording are granted only in System Settings**, so they are added by hand.
+  The last three can raise an alert when a program asks for one, but the alert
+  only opens Settings. The first two are only denied.
 - **App Management is the one working on this app needs**: anything a pane runs
   that writes inside an app bundle wants it, a `make install` of this app
   included. Its service name is `SystemPolicyAppBundles`.

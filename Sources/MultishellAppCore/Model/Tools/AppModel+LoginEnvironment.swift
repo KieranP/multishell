@@ -64,6 +64,8 @@ extension AppModel {
         searchPath: searchPath, replacing: coordinator)
     else { return }
     coordinator = found
+    // A git found for the first time has a log of its own to switch on.
+    found.git.runLog.setRecording(debugToolsEnabled)
     guard !hadGit else { return }
     if presentedError?.saysGitIsMissing == true { presentedError = nil }
     // `start` refreshed before this ran and found no git, so every project

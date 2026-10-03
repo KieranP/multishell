@@ -191,7 +191,8 @@ bottom.
   new-tab shortcut, whose answer turns on the project's auto-start setting, so
   the same click started a shell in one project and an agent in the next.
 - **The shortcut itself is unchanged**, and it and its File menu item are the
-  only ways left to the auto-start answer.
+  only ways left to ask for the auto-start answer by hand. The first tab a
+  worktree opens by itself, on select or create, still gets it.
 - **The items open in the group the menu sits in**, as the split buttons do, so
   a click never acts in the group the keyboard happens to be in.
 - **Every item's icon is a rendered image**, the shell's terminal glyph as well

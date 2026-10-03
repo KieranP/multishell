@@ -13,8 +13,9 @@ What each addition needs beyond the code itself.
   protocol and is passed to the model in the Mac half.
 - **What a host owes**: the session environment to the child, a finished command
   reported if the engine can tell, paste framed as a bracketed paste, anything
-  outside its sessions dropped at shutdown, and a shared directory cleared only
-  when it claimed it.
+  outside its sessions dropped at shutdown, a shared directory cleared only when
+  it claimed it, and each session's pty path and foreground pid where it knows
+  them, without which the debug panel puts every pane under Other processes.
 - **Two engines at once needs a multiplexer**, one host per kind and a map from
   session to kind, so a running terminal keeps the engine that opened it.
 - **An agent or editor.** A row in its catalogue; detection and the dropdowns
@@ -64,7 +65,9 @@ What each addition needs beyond the code itself.
   integration too**, beside whether a worker is a conversation of its own and
   which listed kinds wake it. All default to no, so nothing forces them: a
   resuming agent left at the default pays Done at its last worker out and again
-  at the woken turn's Stop (design/agents.md).
+  at the woken turn's Stop (design/agents.md). A fourth, whether its transcript
+  shows a notice still queued at a Stop, is read only in Claude's format, so
+  another agent needs a reader of its own before it can say yes.
 - **An agent whose Stop does not list the shells it backgrounded names a shell
   marker on the integration**, text only such a shell's command line holds.
   Nothing forces it either: without one a pane waiting on the shell goes Done
@@ -110,6 +113,18 @@ What each addition needs beyond the code itself.
 - **An item on a card's context menu.** A line in the card menu: above the
   section if it acts on the pane, inside the worktree actions if it acts on the
   worktree, which puts it on the sidebar row and detail header too.
+- **A strip on the debug panel.** A case in `DebugMetric` in draw order, with
+  its values from a slot and its scale's floor, and its title and value text in
+  `DebugMetric+Wording`. A reading no sample takes yet also needs a field on
+  `DebugSample`, filled in `takeDebugSample`, and on `DebugTimelineSlot`, saying
+  how a slot of several seconds combines it (design/debug-tools.md). The test
+  builder `DebugSample.sample` takes it with a default, and the widest slot in
+  `DebugStripLabelTests` its widest figure, so the label is held to its column.
+- **A column in a debug table.** A title in the table's header and a cell in its
+  row at the same `UIMetrics` width, the figure in the stacked row's caption,
+  and, for Memory by tab, a part in its accessibility text. Raise the table's
+  width in ems in `DebugTableLayout` by hand. Nothing measures the columns, so
+  one left short crowds them before the rows stack.
 - **A keyboard shortcut.** An entry in the shortcuts table, listed in `all`,
   which both the menu item and the engine's unbind derive from.
 - **A key the engine names rather than takes the character of** needs a case in
@@ -161,8 +176,9 @@ What each addition needs beyond the code itself.
   type once, and implement the platform, surface host, directory watcher and
   notifier ports.
 - **A port may do less.** Trash may delete outright, handing over to a running
-  copy may return and leave the alert standing, and a notifier that needs no
-  permission answers unavailable to both questions, which keeps the settings
+  copy may return and leave the alert standing, a platform with no display link
+  may never call back and leave the frame rate blank, and a notifier that needs
+  no permission answers unavailable to both questions, which keeps the settings
   page from promising a dialog.
 - **A persisted field.** Decode with a default, an unknown enum value included,
   and add a decoding case to that type's own tests.
@@ -171,7 +187,7 @@ What each addition needs beyond the code itself.
   that value alone. A lossy array drops a broken element; projects stay strict.
 - **A field on `Project`** also needs its case in that type's hand-written
   coding keys, `==` and `hash`, which keep this run's read of a repo's file out
-  of all three.
+  of all three. ProjectTests lists the fields.
 - **A field on `ProjectSettings`** needs a case in its hand-written coding keys,
   which keep the shell, the auto-start pair and the trust answers under their
   old keys; one left out is never saved. ProjectSettingsTests counts them.

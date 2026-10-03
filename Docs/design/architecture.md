@@ -33,9 +33,10 @@ What the core is, what it refuses, how work reaches it. Newest at the bottom.
 - **xcrun is not asked where no developer directory exists**, judged off the
   disk in xcrun's own order. With no tools it may raise their install dialog,
   and before the lookup a Mac with no projects ran no git at all.
-- **The rebuilt coordinator keeps the launch one's line counts and merge
-  slots**: merge reads still in flight hold the old slots, and a fresh set let
-  sixteen git processes run where the width is eight.
+- **The rebuilt coordinator keeps the launch one's line counts, merge slots and
+  git run log.** Merge reads still in flight hold the old slots, and a fresh set
+  let sixteen git processes run where the width is eight. A fresh log would drop
+  the runs the debug panel counted before the login shell's PATH landed.
 - **Nothing in the core blocks a pool thread.** Waits inside `Task`s held a pool
   thread per core until GCD ran out and the suite hung. Blocking file work goes
   through `offMain` to Dispatch, the git library's stats, reads and line counts

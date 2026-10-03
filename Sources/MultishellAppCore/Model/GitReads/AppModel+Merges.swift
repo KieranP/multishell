@@ -95,7 +95,7 @@ extension AppModel {
       guard let basis = verdictBases[worktree.id], basis.branch == worktree.branch,
         let reading = fresh[basis.branch], !isBeingWritten(worktree)
       else { continue }
-      // A failed read is logged too, or it sorts first every round at the guess.
+      // A failed read is logged too, or it stays unread and is let in every round.
       mergeReads.remember([worktree.id: reading.took])
       // Only an answer settles it: stamping the basis for a failed read
       // pins the old verdict to the new tip for good.

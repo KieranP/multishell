@@ -23,4 +23,8 @@ public final class NullPlatform: Platform {
   public var notificationSettingsLocation: String? { nil }
   public func log(_ message: String) {}
   public func handOverToRunningInstance() {}
+  public func startDisplayFrameCallbacks(
+    _ onFrame: @escaping @MainActor (ContinuousClock.Instant) -> Void
+  ) {}
+  public func stopDisplayFrameCallbacks() {}
 }

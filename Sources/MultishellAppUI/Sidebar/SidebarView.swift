@@ -86,6 +86,9 @@ struct SidebarView: View {
         theme: theme,
         metrics: metrics
       )
+      if model.debugToolsEnabled {
+        SidebarDebugStats(model: model, theme: theme, metrics: metrics)
+      }
     }
     .background(theme.sidebarColor)
   }
