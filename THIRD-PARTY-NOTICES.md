@@ -3,13 +3,13 @@
 Multishell is licensed under the GNU Affero General Public License v3.0; see
 [LICENSE](LICENSE). The executable also contains the software below, most of it
 inside the prebuilt `libghostty` library, built from Ghostty at commit
-`3c47ca1`. Each licence text is in [Licenses/](Licenses/), which ships in the
+`0538f75`. Each licence text is in [Licenses/](Licenses/), which ships in the
 app bundle beside this file.
 
 | Component                 | Copyright                                            | Licence                     | Text                                                                                 |
 | ------------------------- | ---------------------------------------------------- | --------------------------- | ------------------------------------------------------------------------------------ |
 | libghostty-spm            | 2026 @Lakr233                                        | MIT                         | [libghostty-spm.txt](Licenses/libghostty-spm.txt)                                    |
-| MSDisplayLink             | 2024 Lakr Aream                                      | MIT                         | [MSDisplayLink.txt](Licenses/MSDisplayLink.txt)                                      |
+| DisplayLink               | 2024 Lakr Aream                                      | MIT                         | [DisplayLink.txt](Licenses/DisplayLink.txt)                                          |
 | Ghostty                   | 2024 Mitchell Hashimoto, Ghostty contributors        | MIT                         | [Ghostty.txt](Licenses/Ghostty.txt)                                                  |
 | Zig standard library      | Zig contributors                                     | MIT                         | [Zig.txt](Licenses/Zig.txt)                                                          |
 | libxev                    | 2023 Mitchell Hashimoto                              | MIT                         | [libxev.txt](Licenses/libxev.txt)                                                    |

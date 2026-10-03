@@ -2,7 +2,7 @@
 
 - **`THIRD-PARTY-NOTICES.md` is written from the bundle, not the dependency
   graph.** A transitive dependency compiled into the executable needs its notice
-  there and its licence text verbatim in `Licenses/` (MSDisplayLink is one); a
+  there and its licence text verbatim in `Licenses/` (DisplayLink is one); a
   file shipping its own licence beside it (bash-preexec) is pointed at. Adding a
   dependency means deciding which.
 - **Most of what ships comes inside the prebuilt `libghostty.a`**: Ghostty's Zig
@@ -14,7 +14,7 @@
   `nm --defined-only` on it answers directly. Moving the libghostty pin means
   redoing that.
 - **The archive also holds FreeType, libpng and zlib, which the linker drops**:
-  at `1.6.20260922` the debug executable defines none of `FT_Init_FreeType`,
+  at `1.6.20261003` the debug executable defines none of `FT_Init_FreeType`,
   `png_create_read_struct`, `inflate` or `deflate`, while it keeps `onig_new`.
   So the notices leave them out.
 - **libghostty via `Lakr233/libghostty-spm`**, MIT, pinned to an exact tag, the
@@ -32,10 +32,10 @@
   `show-config` and `docs` output, each key handed to the pinned build to see
   whether it took it; the names and their order came from its
   `loadDefaultFiles`.
-- **MSDisplayLink via `Lakr233/MSDisplayLink`**, MIT. Easy to miss: this tree
+- **DisplayLink via `Lakr233/DisplayLink`**, MIT. Easy to miss: this tree
   imports it nowhere and names it in no manifest, but libghostty-spm depends on
   it and its symbols are in the executable. libghostty-spm asks only for
-  `from: "2.2.0"`, so `Package.resolved` alone pins it, and a
+  `from: "3.0.1"`, so `Package.resolved` alone pins it, and a
   `swift package update` can move it without the libghostty pin moving.
 - **swift-subprocess starts every child but a terminal's**, Apache-2.0, from
   1.0.0. Each runs in a session of its own, so no child has a controlling

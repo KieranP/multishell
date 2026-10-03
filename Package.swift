@@ -15,7 +15,7 @@ let package = Package(
     .package(url: "https://github.com/swiftlang/swift-subprocess", from: "1.0.0"),
     // Pinned exactly: libghostty's embedding API is not stable, so a
     // range would let an upgrade break the build without warning.
-    .package(url: "https://github.com/Lakr233/libghostty-spm", exact: "1.6.20260922"),
+    .package(url: "https://github.com/Lakr233/libghostty-spm", exact: "1.6.20261003"),
   ],
   targets: [
     // Pure model and state. Its resources are the shell scripts and the
