@@ -12,7 +12,7 @@ enum TabCommand {
   ) -> (shell: ShellInvocation, handOver: String) {
     (
       ShellInvocation.userShell(at: ShellChoice.loginShellPath()),
-      ShellLaunch.execCommandLine(forShell: tabShell)
+      commandLine(ShellLaunch.execArguments(forShell: tabShell))
     )
   }
 
@@ -21,9 +21,12 @@ enum TabCommand {
     shell: ShellInvocation,
     handOver: String
   ) -> [String] {
-    // The login shell may be tcsh or fish, which read a `!` or a `\` in single quotes.
-    line(
-      arguments.map(AnyShellQuoting.quote).joined(separator: " "), shell: shell, handOver: handOver)
+    line(commandLine(arguments), shell: shell, handOver: handOver)
+  }
+
+  /// The login shell may be tcsh or fish, which read a `!` or a `\` in single quotes.
+  static func commandLine(_ arguments: [String]) -> String {
+    arguments.map(AnyShellQuoting.quote).joined(separator: " ")
   }
 
   /// A custom entry is a shell line as the user typed it, the values its

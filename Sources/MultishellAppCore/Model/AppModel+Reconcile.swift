@@ -22,8 +22,8 @@ extension AppModel {
   /// Surfaces brought in line with the workspace, the keyboard left alone: a
   /// poll reaches this too, and focusing would take it off a field being typed in.
   private func reconcile() {
-    // A copy still here after handing over has no socket of its own, and the
-    // config a shell's engine writes would outlive its quit; state-and-store.md.
+    // A copy still here after handing over has no socket of its own for its
+    // shells to report to; state-and-store.md.
     let warm = isYieldingToRunningInstance ? [] : warmWorktrees
     let failures = reconciler.reconcile(
       shouldBeLive: { warm.contains($0.worktreeID) }, prepare: { preparedForLaunch($0) })

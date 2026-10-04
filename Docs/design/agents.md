@@ -123,12 +123,6 @@ at the bottom.
 - **So a prompt reports twice and only the second is heard from**: the request
   moves the dot with no banner, the notification raises it and carries the
   wording, the request having no message.
-- **Claude's question to the user words its banner as a permission**: the
-  question tool goes through the permission dialog, whose notification says
-  "Claude needs your permission" and names no tool. The helper reads the
-  transcript's last tool call and, where it is an unanswered `AskUserQuestion`,
-  marks the report a question. The app words it from its catalogue, the helper
-  having none; an older app shows the agent's own message.
 - **That delay is the agent's own rule for when a prompt is worth interrupting
   someone for.** The general form is silent: move a dot where another report
   about the same thing will do the talking.
@@ -140,6 +134,13 @@ at the bottom.
 - **The other agents have nothing of the kind**: one request is already the
   immediate one, one notification has a single type, and one fires before its
   own rules run with a payload that never says the mode.
+- **Claude words its question to the user as a permission request**: the
+  question tool goes through the permission dialog, whose notification says
+  "Claude needs your permission" and names no tool. The helper reads the
+  transcript's last tool call and, where it is an unanswered `AskUserQuestion`,
+  marks the report a question, which the app words as needing input from its
+  catalogue, the helper having none; an older app shows the agent's own message.
+  Only Claude's transcript is read, though Copilot sends the same type.
 - **One error event is deliberately left**: it carries a recoverable flag, and a
   red dot for something the agent recovers from is worse than no red dot.
 - **The hook line runs the helper rather than exec'ing it, and exits zero

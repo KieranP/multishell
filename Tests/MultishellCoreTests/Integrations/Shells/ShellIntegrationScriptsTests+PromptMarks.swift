@@ -14,7 +14,7 @@ extension ShellIntegrationScriptsTests {
       zshrc.contains("]133;B"), "and the input mark, so the claim never stands over unmarked text")
     #expect(zshrc.contains("add-zsh-hook precmd _multishell_prompt_click"), "on every prompt")
     #expect(
-      zshrc.contains("add-zsh-hook preexec _multishell_prompt_output"),
+      zshrc.contains("add-zsh-hook preexec _multishell_terminal_preexec"),
       "and output start, so the claim does not stand while a program runs")
     #expect(
       zshrc.contains("[ \"${TERM_PROGRAM-}\" = ghostty ]"),
@@ -119,11 +119,13 @@ extension ShellIntegrationScriptsTests {
     defer { files.tearDown() }
     var environment = files.environment(termProgram: "ghostty")
     environment["ZDOTDIR"] = files.zshDirectory.path
+    environment["GHOSTTY_SHELL_FEATURES"] = "cursor:blink,title"
 
     let output = try await interactiveShellOutput(
-      zsh, arguments: ["-l", "-i", "-c", "echo starting"], environment: environment, input: "")
+      zsh, arguments: ["-l", "-i", "-c", "cd /tmp; echo starting"], environment: environment,
+      input: "")
     #expect(output.contains("starting"))
-    #expect(output.contains("\u{1B}]133;") == false, "nothing a hook's message would carry")
+    #expect(output.contains("\u{1B}") == false, "no mark, title, cursor or directory report")
   }
 
   /// Our marks go back after a framework's entry rebuilds PS1, and the DEBUG trap arms
@@ -166,5 +168,13 @@ extension ShellIntegrationScriptsTests {
       input: "true\nexit\n")
     #expect(output.contains(PromptMarks.claim))
     #expect(output.contains("> " + PromptMarks.input))
+  }
+
+  /// `zsh -i script` runs preexec for each line, and no prompt is ever shown.
+  @Test func aScriptRunInAnInteractiveShellCarriesNoEscapes() async throws {
+    let output = try await zshOutput(
+      features: "cursor,title", input: "true\nprint -r done\n", arguments: ["-i", "SCRIPT"])
+    #expect(output.contains("done"))
+    #expect(output.contains("\u{1B}") == false)
   }
 }

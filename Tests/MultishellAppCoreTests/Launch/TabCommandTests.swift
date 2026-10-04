@@ -37,6 +37,32 @@ struct TabCommandTests {
     #expect(text == words.map { "[\($0)]\n" }.joined())
   }
 
+  @Test func theHandOverReachesZshWithItsDirectoryIntactUnderInteractiveTcsh() async throws {
+    let tcsh = "/bin/tcsh"
+    guard FileManager.default.isExecutableFile(atPath: tcsh) else { return }
+    let home = try Scratch.directory("hand-over")
+    defer { Scratch.remove(home) }
+    let zshDirectory = home.appendingPathComponent("a!b")
+    try FileManager.default.createDirectory(at: zshDirectory, withIntermediateDirectories: true)
+    let zsh = home.appendingPathComponent("zsh")
+    try "#!/bin/sh\nprintf '[%s]\\n' \"$ZDOTDIR\"\n".write(
+      to: zsh, atomically: true, encoding: .utf8)
+    try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: zsh.path)
+    let missing = URL(fileURLWithPath: "/no/such")
+    let command = TabCommand.running(
+      ["true"],
+      shell: ShellInvocation(
+        executable: URL(fileURLWithPath: tcsh), arguments: ["-f", "-i", "-c"]),
+      handOver: TabCommand.commandLine(
+        ShellLaunch.execArguments(forShell: zsh.path, zshDirectory: zshDirectory, bashInit: missing)
+      ))
+    let text = try await Detached.output(
+      of: command[0], Array(command.dropFirst()),
+      environment: Scratch.bareShellEnvironment(home: home), standardError: .discarded)
+
+    #expect(text.contains("[\(zshDirectory.path)]"), "\(text)")
+  }
+
   @Test(arguments: [
     ("/bin/zsh", ["-f", "-i", "-c"]), ("/bin/bash", ["--norc", "-i", "-c"]),
     ("/bin/sh", ["-c"]), ("/bin/tcsh", ["-f", "-i", "-c"]),

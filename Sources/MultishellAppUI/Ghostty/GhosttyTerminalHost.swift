@@ -1,5 +1,4 @@
 import AppKit
-import GhosttyTerminal
 import MultishellAppCore
 import MultishellCore
 
@@ -7,137 +6,96 @@ import MultishellCore
 /// config. Three config layers; see Docs/design/terminals.md.
 @MainActor
 final class GhosttyTerminalHost: NSObject, TerminalHost {
-  /// A session's surface, the view the window holds it in, and its observer,
-  /// held here because `TerminalView.delegate` is weak.
-  private struct OpenSurface {
-    let view: TerminalView
-    let container: GhosttySurfaceContainer
-    let observer: GhosttySurfaceObserver
-  }
-
   weak var delegate: (any TerminalHostDelegate)?
 
-  private let controllerOwner = GhosttyControllerOwner()
-  private var surfaces: [TerminalSession.ID: OpenSurface] = [:]
+  private let runtimeOwner = GhosttyRuntimeOwner()
+  private var views: [TerminalSession.ID: GhosttySurfaceView] = [:]
 
-  func claimSharedFiles() {
-    controllerOwner.claimSharedFiles()
-  }
-
-  func shutDown() {
-    controllerOwner.shutDown()
-  }
-
-  /// `MULTISHELL_TERMINAL_DEBUG=1` makes libghostty's wrapper report what it
-  /// hands the surface on stderr. No test can see the engine's own path.
-  private static let enableDebugLoggingOnce: Void = {
-    guard ProcessInfo.processInfo.environment["MULTISHELL_TERMINAL_DEBUG"] != nil else { return }
-    TerminalDebugLog.isEnabled = true
-  }()
-
-  var liveSessionIDs: Set<TerminalSession.ID> { Set(surfaces.keys) }
+  var liveSessionIDs: Set<TerminalSession.ID> { Set(views.keys) }
 
   func open(_ session: TerminalSession) throws {
-    _ = Self.enableDebugLoggingOnce
-    guard surfaces[session.id] == nil else { return }
-
-    let view = TerminalView(frame: .zero)
-    view.controller = controllerOwner.controller
-    view.configuration = TerminalSurfaceOptions(
-      backend: .exec,
+    guard views[session.id] == nil else { return }
+    let launch = GhosttySurfaceLaunch(
       workingDirectory: session.workingDirectory.path,
-      envVars: SessionEnvironment.variables(
-        for: session, socket: Paths.socketFile, engineZshBootstrap: Self.zshBootstrap),
-      command: Self.command(for: session)
-    )
-
-    let observer = GhosttySurfaceObserver(sessionID: session.id, host: self)
-    view.delegate = observer
-    surfaces[session.id] = OpenSurface(
-      view: view, container: GhosttySurfaceContainer(surface: view), observer: observer)
+      environment: SessionEnvironment.variables(for: session, socket: Paths.socketFile),
+      command: Self.command(for: session))
+    let view = GhosttySurfaceView(runtime: runtimeOwner.runtime, launch: launch)
+    guard view.surface != nil else { throw TerminalUnavailable() }
+    connect(view, to: session.id)
+    views[session.id] = view
   }
-
-  /// libghostty's own zsh startup file, entered before ours so its marks and
-  /// titles are written; see `ShellLaunch.zshEnvironment`.
-  private static let zshBootstrap: URL? = GhosttyRuntimeResources.directoryURL?
-    .appendingPathComponent("shell-integration/zsh", isDirectory: true)
 
   /// A tab's command, or an override naming a chosen shell. zsh as `$SHELL`
   /// needs none, its hooks riding in on `ZDOTDIR`.
-  private static func command(for session: TerminalSession) -> String? {
+  static func command(for session: TerminalSession) -> String? {
     if let command = session.command { return PosixShellQuoting.commandLine(command) }
     return ShellLaunch.overrideCommand(forShell: session.shellPath).map(
       PosixShellQuoting.commandLine)
   }
 
+  private func connect(_ view: GhosttySurfaceView, to id: TerminalSession.ID) {
+    view.onRetitle = { [weak self] title in
+      self.map { $0.delegate?.terminalHost($0, didRetitle: id, to: title) }
+    }
+    view.onBell = { [weak self] in
+      self.map { $0.delegate?.terminalHost($0, didSeeActivityIn: id) }
+    }
+    view.onCommandFinish = { [weak self] exitCode in
+      self.map {
+        $0.delegate?.terminalHost(
+          $0, didFinishCommandIn: id, exitCode: exitCode.flatMap { Int32(exactly: $0) })
+      }
+    }
+    view.onExit = { [weak self] in self.map { $0.delegate?.terminalHost($0, didExit: id) } }
+    view.onCloseRequest = { [weak self] in
+      self.map { $0.delegate?.terminalHost($0, didAskToClose: id) }
+    }
+    view.onFocus = { [weak self] in self?.surfaceFocused(id) }
+  }
+
   func close(_ id: TerminalSession.ID) {
-    guard let surface = surfaces.removeValue(forKey: id) else { return }
-    surface.container.removeFromSuperview()
-    // Detaching the controller closes the pty rather than waiting on SwiftUI
-    // to let the view go. Next turn: this runs inside a close callback.
-    DispatchQueue.main.async { surface.view.controller = nil }
+    guard let view = views.removeValue(forKey: id) else { return }
+    view.removeFromSuperview()
+    // Next turn: this can run inside libghostty's own close callback.
+    DispatchQueue.main.async { view.free() }
   }
 
   func view(for id: TerminalSession.ID) -> NSView? {
-    surfaces[id]?.container
+    views[id]
   }
 
   func processHint(of id: TerminalSession.ID) -> TerminalProcessHint? {
-    guard let view = surfaces[id]?.view else { return nil }
-    return TerminalProcessHint(terminalPath: view.ttyName, foregroundPID: view.foregroundPid)
+    guard let view = views[id] else { return nil }
+    return TerminalProcessHint(terminalPath: view.terminalPath, foregroundPID: view.foregroundPID)
   }
 
-  /// libghostty frames this as a paste itself. `false` means the surface is
-  /// not created yet, which a session with no shell running is.
+  /// libghostty frames this as a paste itself. `false` means there is no
+  /// surface, which a session with no shell running has none of.
   @discardableResult
   func paste(_ text: String, into id: TerminalSession.ID) -> Bool {
-    guard !text.isEmpty, let view = surfaces[id]?.view else { return false }
-    return view.paste(text: text)
+    guard !text.isEmpty, let view = views[id] else { return false }
+    return view.typeAsPaste(text)
   }
 
   func focus(_ id: TerminalSession.ID) {
-    surfaces[id]?.view.takeFirstResponder()
+    views[id]?.takeFirstResponder()
   }
 
   func search(_ command: TerminalSearch, in id: TerminalSession.ID) -> Bool {
-    guard let view = surfaces[id]?.view else { return false }
-    return view.performBindingAction(GhosttySearchActions.action(for: command))
+    views[id]?.performBindingAction(GhosttySearchActions.action(for: command)) ?? false
   }
 
   func apply(_ theme: Theme, appearance: Appearance) {
-    controllerOwner.apply(theme, appearance: appearance)
-  }
-
-  func surfaceRetitled(_ id: TerminalSession.ID, to title: String) {
-    delegate?.terminalHost(self, didRetitle: id, to: title)
-  }
-
-  func surfaceExited(_ id: TerminalSession.ID) {
-    delegate?.terminalHost(self, didExit: id)
-  }
-
-  func surfaceSawActivity(_ id: TerminalSession.ID) {
-    delegate?.terminalHost(self, didSeeActivityIn: id)
-  }
-
-  func surfaceFinishedCommand(_ id: TerminalSession.ID, exitCode: Int?) {
-    delegate?.terminalHost(
-      self, didFinishCommandIn: id, exitCode: exitCode.flatMap { Int32(exactly: $0) })
+    runtimeOwner.apply(theme, appearance: appearance)
   }
 
   /// A turn later, and only while still true: a frame raises this inside
   /// SwiftUI's own update, where a store write is undefined behaviour.
-  func surfaceFocused(_ id: TerminalSession.ID) {
+  private func surfaceFocused(_ id: TerminalSession.ID) {
     Task { @MainActor [weak self] in
-      guard let self, let view = surfaces[id]?.view, Self.hasKeyboard(view) else { return }
+      guard let self, views[id]?.isFirstResponder == true else { return }
       delegate?.terminalHost(self, didFocus: id)
     }
-  }
-
-  /// libghostty may make an inner view the responder, so descendants count.
-  private static func hasKeyboard(_ view: NSView) -> Bool {
-    guard let responder = view.window?.firstResponder as? NSView else { return false }
-    return responder === view || responder.isDescendant(of: view)
   }
 }
 

@@ -45,8 +45,28 @@ struct ShellLaunchTests {
         == [
           "/bin/sh", "-c",
           "exec /bin/bash --init-file \(PosixShellQuoting.quote(bashInit.path)) -i",
-        ],
-      "through sh, so Ghostty applies no bash injection of its own")
+        ])
+  }
+
+  /// libghostty runs a surface's command as `exec -l <command>` under bash
+  /// (its Exec.zig), and a login bash skips `--init-file`.
+  @Test func bashReadsTheInitFileWhenLaunchedAsLibghosttyLaunchesACommand() async throws {
+    let bashInit = Scratch.path("bashinit")
+    try "echo multishell-init-ran\nexit\n".write(to: bashInit, atomically: true, encoding: .utf8)
+    defer { Scratch.remove(bashInit) }
+    let home = try Scratch.directory("bash-home")
+    defer { Scratch.remove(home) }
+    let command = try #require(
+      ShellLaunch.overrideCommand(forShell: "/bin/bash", bashInit: bashInit))
+    var environment = Scratch.shellEnvironment
+    environment["HOME"] = home.path
+
+    let output = try await Detached.output(
+      of: "/bin/bash",
+      ["--noprofile", "--norc", "-c", "exec -l \(PosixShellQuoting.commandLine(command))"],
+      environment: environment, input: "exit\n")
+
+    #expect(output.contains("multishell-init-ran"))
   }
 
   @Test func bashWithoutAGeneratedInitFallsBackToAPlainLogin() {
@@ -71,27 +91,21 @@ struct ShellLaunchTests {
     let zshDirectory = try Scratch.directory("zdot")
     defer { Scratch.remove(zshDirectory) }
 
-    let ours = PosixShellQuoting.quote(zshDirectory.path)
-    let script =
-      "if [ -f \"${GHOSTTY_RESOURCES_DIR-}/shell-integration/zsh/.zshenv\" ]; then "
-      + "ZDOTDIR=\"$GHOSTTY_RESOURCES_DIR/shell-integration/zsh\" GHOSTTY_ZSH_ZDOTDIR=\(ours) "
-      + "exec /bin/zsh -l; else ZDOTDIR=\(ours) exec /bin/zsh -l; fi"
     #expect(
-      ShellLaunch.execCommandLine(
+      ShellLaunch.execArguments(
         forShell: "/bin/zsh", zshDirectory: zshDirectory, bashInit: bashInit)
-        == "exec /bin/sh -c \(PosixShellQuoting.quote(script))",
-      "the engine's bootstrap first where there is one, ours where it looks for the displaced one")
+        == ["exec", "env", "ZDOTDIR=\(zshDirectory.path)", "/bin/zsh", "-l"])
     #expect(
-      ShellLaunch.execCommandLine(
+      ShellLaunch.execArguments(
         forShell: "/bin/bash", zshDirectory: zshDirectory, bashInit: bashInit)
-        == "exec /bin/bash --init-file \(PosixShellQuoting.quote(bashInit.path)) -i")
+        == ["exec", "/bin/bash", "--init-file", bashInit.path, "-i"])
     let missing = URL(fileURLWithPath: "/no/such")
     #expect(
-      ShellLaunch.execCommandLine(forShell: "/bin/zsh", zshDirectory: missing, bashInit: missing)
-        == "exec /bin/zsh -l")
+      ShellLaunch.execArguments(forShell: "/bin/zsh", zshDirectory: missing, bashInit: missing)
+        == ["exec", "/bin/zsh", "-l"])
     #expect(
-      ShellLaunch.execCommandLine(
+      ShellLaunch.execArguments(
         forShell: "/usr/local/bin/fish", zshDirectory: zshDirectory, bashInit: bashInit)
-        == "exec /usr/local/bin/fish -l")
+        == ["exec", "/usr/local/bin/fish", "-l"])
   }
 }

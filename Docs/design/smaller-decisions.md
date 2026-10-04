@@ -36,8 +36,9 @@ What has no other file to go in. Newest at the bottom.
   destructive, so the blue default is right, and Return declines. Its other
   button runs what a repository committed, nobody asked for the question, and a
   keystroke meant for the window behind must not be what trusts it.
-- **The quit alert is AppKit's own.** `NSAlert` gives Return to its first
-  button, and Escape only to one titled exactly "Cancel", so the app sets the
-  key equivalent by hand, as `DestructiveAlert` does on its Cancel. Otherwise a
-  translated title would leave that alert with no way out
-  (`theCancelButtonTakesEscapeWhateverItIsCalled`).
+- **The quit and unsafe-paste alerts are AppKit's own.** `NSAlert` gives Return
+  to its first button, and Escape only to one titled exactly "Cancel", so the
+  app sets the key equivalent by hand, as `DestructiveAlert` does on its Cancel.
+  Otherwise a translated title would leave the alert with no way out
+  (`theCancelButtonTakesEscapeWhateverItIsCalled`,
+  `pasteTakesReturnAndCancelTakesEscape`).

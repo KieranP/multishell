@@ -23,9 +23,9 @@ Code references last checked on 2026-10-02 against the uncommitted tree on
 | #   | Effect | What                                                                                  |
 | --- | ------ | ------------------------------------------------------------------------------------- |
 | 001 | Medium | [Unconfirmed] Parts of three agents' hook files have never been watched               |
-| 002 | Low    | [Unconfirmed] A drop landing 250 ms after the button comes up can be refused          |
-| 003 | CI     | [Unconfirmed] The bundle script has run through xcodebuild only under the newer Xcode |
-| 004 | Docs   | libintl is LGPL and linked statically, from a libghostty someone else built           |
+| 002 | Medium | [Unconfirmed] A tab started with a command waits for a key after the command exits    |
+| 003 | Low    | [Unconfirmed] A drop landing 250 ms after the button comes up can be refused          |
+| 004 | CI     | [Unconfirmed] The bundle script has run through xcodebuild only under the newer Xcode |
 
 ## Medium
 
@@ -39,9 +39,23 @@ longer authenticating; Copilot's `notification`, and its reading of the
 user-level `~/.copilot/hooks` rather than a repository's. Step: trust the hook
 once with `/hooks` in Codex and start a session without the bypass flag.
 
+### 002. [Unconfirmed] A tab started with a command waits for a key after the command exits
+
+libghostty turns `wait-after-command` on for any surface given a command
+(`ThirdParty/ghostty/src/apprt/embedded.zig:572`). Agent tabs, bash tabs
+(through `/bin/sh -c`, `ShellLaunch.overrideCommand`) and shells other than the
+login one are all given one, so when the command exits the pane prints "Process
+exited. Press any key to close the terminal." and stays. The session stays in
+`liveSessionIDs` until a key is pressed, and only then does `close_surface_cb`
+reach `SessionReconciler.terminalHost(_:didExit:)`. A zsh tab on the login shell
+is given no command and closes at once. libghostty-spm carried no patch for it
+either. Found by reading, not watched. Step: run `exit` in a bash tab. Fix = a
+sixth Ghostty patch leaving `wait-after-command` to the config, once it is
+decided whether an agent tab should keep its last screen.
+
 ## Low
 
-### 002. [Unconfirmed] A drop landing 250 ms after the button comes up can be refused
+### 003. [Unconfirmed] A drop landing 250 ms after the button comes up can be refused
 
 A tab or project drag whose source view was rebuilt or recycled mid-drag never
 hears its drag session end, so `DragRelease.wait` (`DragRelease.swift:8`) polls
@@ -58,24 +72,10 @@ click move to AppKit with it (tabs-and-groups.md).
 
 ## CI
 
-### 003. [Unconfirmed] The bundle script has run through xcodebuild only under the newer Xcode
+### 004. [Unconfirmed] The bundle script has run through xcodebuild only under the newer Xcode
 
 This machine has only Xcode 27. That the older one writes no build path either
 rests on its accessor having looked in the bundle's resources since packages
 could carry them, not on a run; the helper comes the same way. Step: run
 `make build` under `DEVELOPER_DIR=/Applications/Xcode_26.0.1.app` on a macos-26
 runner and see `verify_binary` pass for both. Fallback = the newer Xcode.
-
-## Docs
-
-### 004. libintl is LGPL and linked statically, from a libghostty someone else built
-
-GNU gettext 0.24's libintl reaches the executable inside the prebuilt
-`libghostty.a` (Ghostty's Zig object calls `bindtextdomain` and `dgettext`).
-LGPL-2.1 asks that whoever receives a statically linked copy can relink it
-against a modified libintl. `THIRD-PARTY-NOTICES.md` names the pieces for that,
-the gettext source, Ghostty's at the pinned commit, libghostty-spm's build
-scripts and this repository, but nobody has walked the relink, and libghostty is
-built by a third party (`Docs/develop/dependencies.md`). Nothing binds until the
-app is distributed. Fix = build libghostty from source before a release, which
-dependencies.md already asks for, and try the relink once.

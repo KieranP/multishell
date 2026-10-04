@@ -23,6 +23,7 @@ extension AppModel {
     // keyboard, and a click is how the keyboard moves without a reconcile.
     reconciler.onFocus = { [weak self] _ in self?.markInViewSeen() }
     reconciler.onLiveSessionsChanged = { [weak self] in self?.noteLiveSessionsChanged() }
+    reconciler.onCloseRequest = { [weak self] id in self?.closePane(id) }
     stateSource.onReport = { [weak self] report in self?.receive(report) }
     notifier.onActivate = { [weak self] key in self?.revealNotificationSubject(key) }
     watcher.onChange = { [weak self] changed in

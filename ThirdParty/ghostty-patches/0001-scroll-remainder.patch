@@ -1,0 +1,33 @@
+Keep the part of a row a scroll leaves over.
+
+Surface.scrollCallback keeps `poff - amount * cell_size` as the scroll still
+to come, but divides without truncating first, so `amount` is fractional and
+the remainder always zero: every scroll that crosses a row drops the rest of
+it, and a slow trackpad scroll moves less than the fingers did. Truncating
+first keeps it. The pin still divides untruncated.
+
+From libghostty-spm's Patches/ghostty/0010-fix-scroll-remainder-zeroing.patch (MIT, 2026 @Lakr233),
+cut as a `git diff` against the ThirdParty/ghostty pin.
+
+diff --git a/src/Surface.zig b/src/Surface.zig
+index 22e4ae413..de3a8de2f 100644
+--- a/src/Surface.zig
++++ b/src/Surface.zig
+@@ -3603,7 +3603,7 @@ pub fn scrollCallback(
+         }
+ 
+         // We scroll by the number of rows in the offset and save the remainder
+-        const amount = poff / cell_size;
++        const amount = @trunc(poff / cell_size);
+         assert(@abs(amount) >= 1);
+         self.mouse.pending_scroll_y = poff - (amount * cell_size);
+ 
+@@ -3628,7 +3628,7 @@ pub fn scrollCallback(
+             break :x .{};
+         }
+ 
+-        const amount = poff / cell_size;
++        const amount = @trunc(poff / cell_size);
+         assert(@abs(amount) >= 1);
+         self.mouse.pending_scroll_x = poff - (amount * cell_size);
+         const delta: isize = @intFromFloat(@trunc(amount));

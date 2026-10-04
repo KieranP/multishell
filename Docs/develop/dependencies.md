@@ -1,42 +1,74 @@
 # Dependencies
 
 - **`THIRD-PARTY-NOTICES.md` is written from the bundle, not the dependency
-  graph.** A transitive dependency compiled into the executable needs its notice
-  there and its licence text verbatim in `Licenses/` (DisplayLink is one); a
-  file shipping its own licence beside it (bash-preexec) is pointed at. Adding a
-  dependency means deciding which.
-- **Most of what ships comes inside the prebuilt `libghostty.a`**: Ghostty's Zig
-  packages, its C libraries and two fonts. The executable is stripped, so tell
-  what the linker kept from the archive's members (`lipo -thin`, then `ar -t`),
-  the undefined symbols of its Zig object (`nm -u libghostty_zcu.o`), and
-  strings a library leaves in the executable, such as a font's name table or a
-  library's error messages. The debug build's executable is not stripped, so
-  `nm --defined-only` on it answers directly. Moving the libghostty pin means
-  redoing that.
+  graph.** A dependency compiled into the executable needs its notice there and
+  its licence text verbatim in `Licenses/`. Adding a dependency means deciding
+  which.
+- **Most of what ships comes inside `libghostty.a`**: Ghostty's Zig packages,
+  its C libraries and two fonts. The debug build's executable is not stripped,
+  so `nm --defined-only` on it says which libraries the linker kept, and a
+  font's name table, in UTF-16, which fonts. Moving the Ghostty pin or a patch
+  means redoing that.
 - **The archive also holds FreeType, libpng and zlib, which the linker drops**:
-  at `1.6.20261003` the debug executable defines none of `FT_Init_FreeType`,
+  at `befcdfd` the debug executable defines none of `FT_Init_FreeType`,
   `png_create_read_struct`, `inflate` or `deflate`, while it keeps `onig_new`.
   So the notices leave them out.
-- **libghostty via `Lakr233/libghostty-spm`**, MIT, pinned to an exact tag, the
-  embedding API not being stable. Prebuilt by a third party with patches; build
-  it from source before distributing.
-- **It carries Ghostty itself, bash-preexec, and most of the libraries and fonts
-  the notices list.** Its `GhosttyTheme` product, the iTerm2 colour schemes, is
-  not linked and ships nothing.
-- **Ghostty's own bash and zsh integration is GPLv3.** The package ships an MIT
-  rewrite and a script that refuses GPL text, which is what keeps this
-  repository's AGPL from inheriting a GPL obligation.
+- **libghostty is built here from Ghostty itself**, the `ThirdParty/ghostty`
+  submodule, by `Scripts/build-ghostty.sh`. The submodule's commit is the pin,
+  the embedding API not being stable.
+- **`Lakr233/libghostty-spm` was dropped for it.** Its libghostty came prebuilt
+  by a third party, with GNU libintl, LGPL, inside, which left open how a user
+  would relink it; its Swift wrapper also dropped the search counts and kept the
+  selection to itself (design/terminals.md). `Lakr233/DisplayLink`, which only
+  it depended on, went with it, and so did the bash-preexec it shipped.
+- **The patches in `ThirdParty/ghostty-patches/` came from libghostty-spm**,
+  MIT, cut as plain diffs against the pin, each with its reasons in its own
+  header: scroll remainder, synchronized output kept across a resize, and the
+  frame held while a prompt redraws. The last two are what stop the prompt line
+  blinking on a resize.
+- **Its Xcode 27 libtool patch was dropped at `befcdfd`**: upstream's
+  `a83a82b3f` normalises the archives before the merge itself, and a build
+  without it gave the same archive, member for member.
+- **Two more leave out what the app never uses**: custom shaders and the
+  inspector. Built with them, the executable keeps glslang, SPIRV-Cross and Dear
+  ImGui, and the inspector's calls make the linker keep FreeType, libpng and
+  zlib too. Built without, the notices stay as short as they are. A user's
+  `custom-shader` line is dropped with them, having nothing to run.
+- **i18n is off**, which is what keeps GNU libintl, LGPL, out of the executable:
+  Ghostty's Zig object then calls no gettext function, and the linker drops the
+  archive's copy. The app's words are its own anyway.
+- **A patch that no longer applies stops the build** and names itself. Moving
+  the pin means cutting each again, in order, in a scratch clone at the new
+  commit: `git apply --3way` merges where upstream only moved the lines around
+  it, the rest is resolved by hand, and after a commit `git diff HEAD~1` under
+  the old header is the new patch. One the pin already has is deleted; the build
+  refuses it.
+- **The build itself applies them strictly**, never three-way: a merge it made
+  unseen could build code nobody read.
+- **The build moves the submodule to the pin** when it is empty or behind, as
+  after a plain clone or a pull that moved the pin, where it would otherwise
+  build the old Ghostty and fail later as Swift that no longer compiles.
+- **A checkout past the pin stops the build** instead, since it may be a bump in
+  progress that an update would throw away. A branch pinned earlier, or a pull
+  that moves the pin back, stops it too:
+  `git submodule update ThirdParty/ghostty` matches the pin, where in a bump
+  `git add ThirdParty/ghostty` makes the checkout the pin, once the patches
+  apply to it.
+- **The build leaves the submodule clean**: it writes there only where Ghostty's
+  `.gitignore` covers, and takes its patches back out.
+- **It also installs `libghostty-vt` and editor and shell files under `share/`**
+  that the app never uses. Ghostty's build installs them whatever the options,
+  leaving them out would take another patch, and none reaches the bundle.
+- **One build at a time per worktree**, under `lockf`: two at once reverted the
+  patches under each other and deleted each other's output.
+- **Ghostty's bash and zsh integration scripts are GPLv3 and are not shipped**;
+  its integration is off and ours does that work (design/terminals.md).
 - **Moving the pin changes which config keys a user's Ghostty file may use**,
   and can change which file names it reads, so `GhosttyConfigAllowList` and
   `GhosttyUserConfig` want a look then. The key list came from Ghostty's own
   `show-config` and `docs` output, each key handed to the pinned build to see
   whether it took it; the names and their order came from its
   `loadDefaultFiles`.
-- **DisplayLink via `Lakr233/DisplayLink`**, MIT. Easy to miss: this tree
-  imports it nowhere and names it in no manifest, but libghostty-spm depends on
-  it and its symbols are in the executable. libghostty-spm asks only for
-  `from: "3.0.1"`, so `Package.resolved` alone pins it, and a
-  `swift package update` can move it without the libghostty pin moving.
 - **swift-subprocess starts every child but a terminal's**, Apache-2.0, from
   1.0.0. Each runs in a session of its own, so no child has a controlling
   terminal: an interactive shell on one, outside its foreground group, stops

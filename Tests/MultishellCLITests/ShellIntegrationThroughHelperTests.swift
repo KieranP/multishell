@@ -48,7 +48,7 @@ struct ShellIntegrationThroughHelperTests {
     #expect(SessionStateReport.parse(recorder.received.first ?? "")?.sessionID == session)
   }
 
-  @Test func zshBuildsTheLineItSendsInAVariableRatherThanASubshell() async throws {
+  @Test func zshSendsAnIdleLineForItsSessionOnTheWayOut() async throws {
     guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
     let root = try Scratch.directory("zsh-json")
     defer { Scratch.remove(root) }
@@ -60,7 +60,7 @@ struct ShellIntegrationThroughHelperTests {
     environment["MULTISHELL_SESSION"] = "s"
 
     let output = try await ShellTab.runZsh(
-      #"_multishell_json idle ""; print -r -- "line=$_multishell_line""#, in: root,
+      #"_multishell_send() { print -r -- "line=$1" }; _multishell_zshexit"#, in: root,
       environment: environment)
 
     #expect(output.standardOutput.contains(#"line={"v":1,"state":"idle","session":"s""#))

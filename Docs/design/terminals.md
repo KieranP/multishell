@@ -33,10 +33,15 @@ at the bottom.
 - **The shell's own end-of-command outranks a report.** It settles background
   workers, the owed Done and which agent is at the prompt, whatever was in the
   foreground having returned (agents.md).
-- **A closed tab ends its shell next turn.** The engine frees a surface only
-  when its view goes, and the view outlives any frame that adopted it, so the
-  host detaches the controller instead. On a process exit the close runs inside
-  the engine's own callback, where freeing would free the object mid-call.
+- **A closed tab ends its shell next turn.** The view outlives any frame that
+  adopted it, so the host frees the surface rather than waiting for the view to
+  go, and on a process exit the close runs inside libghostty's own callback,
+  where freeing would free the surface mid-call.
+- **A close libghostty is asked for while the process runs goes through the
+  app's own**, so a `close_surface` keybind in the user's config asks first over
+  a working agent, as Cmd+W does. Whether the process is there is asked of the
+  surface: the callback's flag says whether Ghostty would confirm, by its own
+  rule.
 - **Shell integration is injected, never written to a user's file.** It is
   written at launch into the app's own directory, and every session is pointed
   at it.
@@ -44,9 +49,13 @@ at the bottom.
   bundle breaks no hook line. An agent's hooks are the one exception, written
   only on the user's click: merged into a settings file of theirs with a copy
   kept, or a file of ours alone written whole (agents.md).
-- **Under the engine, bash is launched through `sh`**, the engine keying its own
-  injection on the command's first word and adding a POSIX flag under which
-  macOS's bash reads neither file.
+- **The engine's own shell integration is off** (`shell-integration = none`), so
+  ours is the only one in a pane, as two integrations printing marks from their
+  own hooks fought over the prompt. develop/dependencies.md has its scripts'
+  licence.
+- **bash is launched through `sh`**: libghostty runs a command as `exec -l`,
+  which makes bash a login shell, and a login bash skips `--init-file`. Run
+  straight, a bash tab got none of our hooks (ShellLaunchTests).
 - **A session starts with no `ZDOTDIR` of the user's**, as a stock terminal
   does, and the chain picks up one their own files set: two of our files capture
   what they left and the third hands it back.
@@ -95,6 +104,10 @@ at the bottom.
 - **zsh splits it into a real array first**, its word subscript taking
   characters rather than words for a bare path, which came out empty. Both then
   step over a leading assignment, `command`, `env` or `exec`.
+- **A zsh hook returns 0 and counts words under zsh's own options.** Under a
+  user's `err_exit` a hook returning 1 ended the shell at its first prompt, and
+  under `ksh_arrays` the word list began at 0 and the agent's name was lost
+  (`aUsersErrExitDoesNotEndTheShellAtItsFirstPrompt`).
 - **The trap is disarmed before anything else runs at the prompt.** The arm is
   set last and consumed by the next command, so an empty Enter left it alive
   into the next prompt, where the user's own prompt entry was reported as a
@@ -105,30 +118,54 @@ at the bottom.
 - **A click in the prompt moves the cursor because the prompt claims it.** The
   engine answers a click only for a shell whose prompt mark says the line is
   editable, over cells an input mark covers.
-- **The engine points the shell at its own bootstrap**, which never claims, so a
-  zsh session names both, ours behind the engine's variable.
-- **The zsh claim rides at the front of the prompt string**, a plain mark
-  printed later withdrawing it; bash writes the whole set itself and prints its
+- **The zsh claim rides at the front of the prompt string**, expanded last and
+  on every redraw, so a prompt framework rebuilding it in a hook of its own
+  cannot leave the claim out; bash writes the whole set itself and prints its
   start mark, or readline edits at the wrong column.
-- **No end mark**: the exit code is the socket's. And only where the terminal
-  names itself, half a set opening a prompt that never ends. Cost: no
-  click-to-move on the later lines of a multi-line buffer.
-- **The claim rides the prompt string because of the other integration.** The
-  engine ships an MIT rewrite that claims nothing while printing a plain mark
-  from a hook registered after ours, which would withdraw ours; the prompt
-  string is expanded last and on every redraw.
-- **Both halves put an input mark at the end and each sees the other's.** The
-  output-start mark is printed by both, harmlessly, and earns its place where
-  that integration is absent, the claim otherwise standing for the whole
-  session.
+- **zsh ends a command with its status** (`133;D`), which is where the engine's
+  own finished-command signal comes from; bash writes none, its exit code being
+  the socket's alone. All of it only where the terminal names itself, half a set
+  opening a prompt that never ends. Cost: no click-to-move on the later lines of
+  a multi-line buffer.
+- **The input mark goes on the end of a prompt only once**, our zsh hook leaving
+  it off a prompt a framework already ended with one. The output-start mark ends
+  the claim while a program runs.
+- **zsh titles a pane and shapes its cursor as Ghostty's own integration does**:
+  the directory at a prompt and the command while it runs, a bar to edit in, a
+  block in vi command mode and the configured shape back for a program. Each
+  only where the user's `shell-integration-features` ask, which Ghostty exports
+  whatever the integration setting, `cursor:steady` and all. bash has never had
+  either.
+- **zsh and bash wrap `sudo` and `ssh` where those features ask**, which
+  Ghostty's own zsh integration did before ours replaced it: `sudo` keeps the
+  bundled `TERMINFO`, root's terminfo having no `xterm-ghostty`, and `ssh` sends
+  `xterm-256color`. A function of the user's own by either name is kept. bash
+  never had Ghostty's, its tab starting through `sh`, which Ghostty does not
+  integrate.
+- **Cost: `ssh-terminfo` installs nothing on the host**, only sending that TERM
+  as `ssh-env` does. Ghostty installs the entry and remembers each host through
+  its own CLI, which the bundle does not carry.
+- **The cursor follows a keymap change through zle's hook widgets**, chained
+  rather than set, and stands back where the user has a keymap widget of their
+  own: oh-my-zsh's vi-mode and prezto draw their own shapes there, and ours
+  running after theirs overdrew them.
+- **zsh reports its directory at each prompt and on every `cd`**, a command
+  after `cd x &&` resolving paths from the new one. Raw, in Ghostty's
+  `kitty-shell-cwd://` form: percent-encoding tripled a long path past the 2 KB
+  Ghostty reads it into. A directory holding a control character goes
+  unreported, the character able to end the sequence early.
+- **Only after a first prompt**, so a `zsh -c` a hook runs in prints nothing
+  into the output the hook is judged by. bash reports no directory.
+- **Cost: no continuation-prompt marks**, which Ghostty's integration writes on
+  PS2. A deep directory is titled `…/` and its last three parts, as Ghostty
+  titles it, a tab having room for the end of a path rather than the start.
 - **bash's start mark is printed rather than embedded**, because it moves to a
   fresh line where a command left the cursor mid-line, and inside the prompt
   string that would be a line readline had been told cost nothing.
 - **Its input mark rides the end of the prompt string**, put back after any
   framework has rebuilt it, which is why the marks run last of all.
-- **The engine writes none of this for bash itself**, refusing the system bash
-  outright, and the launch through `sh` hides the rest. The command mark comes
-  off the same debug trap as the hooks.
+- **The engine writes none of this for bash itself**, its integration being off.
+  The command mark comes off the same debug trap as the hooks.
 - **Files dropped on a terminal are pasted, never run.** A shell gets absolute
   quoted paths; an agent whose prompt reads mentions gets its prefix and paths
   relative to the session's directory.
@@ -165,7 +202,9 @@ at the bottom.
   exec carrying the integration a fresh tab gets: the agent is found on the
   terminal's PATH and a shell remains with the scrollback.
 - **Its words take the drop's quoting**, an editor tab's too: the login shell
-  may be tcsh or fish, which read a `!` or a backslash inside single quotes.
+  may be tcsh or fish, which read a `!` or a backslash inside single quotes. The
+  exec after it takes the same, a `!` in its directory having made tcsh stop at
+  "Event not found" and leave no shell.
 - **A session off disk resumes rather than starts**: four saved agent tabs must
   not start four agents. Cost: where the login shell cannot take the
   login-interactive form, as nu cannot, the agent runs under `/bin/sh` as a hook
@@ -212,22 +251,19 @@ at the bottom.
   character, so a CRLF file split on `\n` was one line: its includes were lost
   and every key after the first rode through the allow list behind it.
 - **The merged text reaches the engine through a file under the temp
-  directory.** The wrapper removes that file when it refuses the config,
-  replaces it or frees its controller, which here lives until the process ends,
-  so an accepted file stays and the host clears the directory at launch and at
-  quit.
-- **Every copy of the build shares that directory**, so only the copy holding
-  the instance socket may sweep it. A copy that hands over quits before it opens
-  a terminal, and one whose quit failed starts no shell (state-and-store.md), so
-  neither writes a file, and sweeping from either would take the running copy's.
-- **A line the engine refuses costs that line, not the file.** It answers one
-  complaint by refusing the whole config and falling back to its own defaults,
-  where Ghostty names the line and carries on.
-- **So the app does what Ghostty does**: the lines a diagnostic names are
-  blanked and the rest offered again, a few passes, then the app's defaults.
-- **Line numbers are read out of the diagnostic text**, which is all there is,
-  so a wrapper that words them differently costs the repair and not the
-  terminal.
+  directory**, libghostty reading config from nothing else. The file goes the
+  moment it is read, so no copy of the build leaves one for another to sweep.
+- **A line the engine refuses costs that line, not the file**: libghostty names
+  it and carries on, as Ghostty does. The wrapper before it refused the whole
+  file over one complaint, and the app blanked lines and retried to undo that;
+  built here, the base is handed over as it is.
+- **Each refusal goes to the unified log**, category `ghostty`, its line
+  numbered in the merged config: the app's defaults, the user's settings, then
+  the app's layer.
+- **A config that could not be loaded at all is tried again**, at the next
+  activation or theme change, and logged. The runtime keeps the text libghostty
+  runs apart from what it was offered, where recording the offer first skipped
+  every retry until the file changed again.
 - **This is not a corner**: the embedded build is not the Ghostty a user runs,
   and the two differ in both directions, one carrying keys the other lacks.
 - **A user's config is read through a list of what is allowed**, not a list of
@@ -238,8 +274,8 @@ at the bottom.
 - **Ghostty 0538f75 bore that out.** It added `vt-window-resize-allowed`, which
   lets a program resize the window, and the key stayed out with no edit here.
 - **What is allowed is families that can only draw or drive a surface**, plus a
-  short list named one at a time, of which one option key is the only
-  platform-prefixed key a surface reads.
+  short list named one at a time. Its only platform-prefixed keys are the option
+  key, which a surface reads, and auto secure input, which the app reads back.
 - **A family also carries a rename**: a limit key that was split in two keeps
   every spelling whichever build is pinned.
 - **What is left out is chrome that does nothing in an embedding**, and the keys
@@ -249,8 +285,7 @@ at the bottom.
 - **The environment key is left out too**, the app giving each child the
   variables that name its session.
 - **The theme key is left out** because this embedding ships no themes
-  directory, so it is the one complaint carrying no line number for the repair
-  to place, and the app paints its own theme anyway.
+  directory, and the app paints its own theme anyway.
 - **Cost: a key we have not thought about is ignored in silence**, and nothing
   says which lines of a user's file did not count.
 - **The reporting line is built without anything the user's locale decides.**
@@ -354,9 +389,7 @@ at the bottom.
   performable key, so while a search ran it ate Escape in the pane. Released, it
   is a plain key again and only the bar ends a search.
 - **The engine's search-for-selection is left bound and does nothing here**, its
-  whole effect being an action the wrapper drops. The app does not offer it
-  either, though the surface the wrapper hands a lifecycle delegate reads the
-  selection, so offering it needs no patch.
+  whole effect being an action the app does not answer yet (TODO.md).
 - **The same find text set again is nothing to the model.** The field commits on
   Return as well as on each keystroke, and a repeat taken as a change would send
   the find text again and start the selection over.
@@ -370,10 +403,9 @@ at the bottom.
 - **An empty find text ends the engine's search outright**, so an emptied field
   sends a search with nothing after it and the bar's close sends the end action,
   which also tells the engine's own bar.
-- **Cost: no "3 of 12".** The engine reports its match count and which is
-  selected through two actions the wrapper logs and drops, on its main branch as
-  on the pinned tag, so only a patch to the wrapper buys it back, and a count is
-  not worth carrying one (appearance.md).
+- **Cost, for now: no "3 of 12".** The engine reports its match count and which
+  is selected through two surface actions the app does not decode yet
+  (appearance.md, TODO.md).
 - **Sessions warm up when visited**, a saved workspace implying dozens of shells
   at launch. Selecting a worktree opens a terminal unless told not to; a create
   is asked about separately. Cost: four settings where there were two.
@@ -422,13 +454,68 @@ at the bottom.
 - **Cost of one engine**: a pinned build that misbehaves has nothing to fall
   back to, the unfocused fade is a scrim rather than view opacity, and nothing
   tests the host against a real shell, a surface needing a window and a GPU.
-- **The terminal host is told the app is quitting**, and told that it holds the
-  instance socket. The engine's generated config directory is shared by every
-  copy of the build, so only the copy that claimed sweeps it, on the claim and
-  again at quit.
-- **"Built a controller" was the earlier test and did not hold**: a copy that
-  handed over once kept its terminals until it quit, and built one too. The
-  controller is still built on first use, the theme held until there is one.
+- **The app talks to libghostty's C API itself**, after Ghostty's own macOS app,
+  built from source with our patches (develop/dependencies.md). A wrapper
+  package before it dropped the search counts and kept the selection to itself.
+- **libghostty draws on its own thread**, paced to the display the window is on,
+  so the view keeps no display link; a wakeup from any thread only ticks the app
+  on the main one.
+- **A command key goes to the menus before the terminal**, and is typed only
+  when AppKit offers the same event again, which it does when no menu took it.
+  The event's timestamp is the identity, events comparing no other way. A key
+  libghostty binds goes to the pane first, which is why the menus' keys are
+  unbound.
+- **A right click goes to the program**, and nowhere else where the program does
+  not take it: the app has no context menu of its own over a pane. Right and
+  middle clicks take the keyboard as a left one does, or a paste landed in one
+  pane and the typing stayed in another.
+- **A click on a pane in a window not in front takes the keyboard too.** AppKit
+  spends that click on bringing the window forward and never delivers it, so a
+  split's other pane kept the keyboard.
+- **A command key's release is caught on its way through the app**, AppKit
+  delivering it to no view, and sent only to the pane with the keyboard in the
+  window it came from.
+- **One monitor for the app catches both**, handing the release to the window's
+  first responder and the click to the pane it hit. A monitor per pane ran every
+  click past every pane's hit test.
+- **The pointer is what libghostty asks for**, an I-beam over text and a hand
+  over a link, hidden while typing where the user's config says so.
+- **A program asking whether the terminal is light or dark is told the theme's
+  answer**, the view's appearance following the app's theme, not the system's.
+- **Secure keyboard entry is on while a pane at a password prompt has the
+  keyboard**, which libghostty spots by the program turning echo off; the
+  `toggle_secure_input` keybind flips it for that pane. Off altogether where the
+  user's `macos-auto-secure-input` says so, as accessibility and snippet tools
+  need. It is one switch for the whole Mac, so every enable is balanced and it
+  is let go while another app is in front.
+- **Cost: the pane shows libghostty's lock cursor at the prompt**, not whether
+  macOS took the switch, and a keybind toggle shows nothing.
+- **Copied files paste as quoted paths, as a drop does**, single-quoted for any
+  shell and a name holding a control character left out, where the wrapper
+  escaped them with backslashes.
+- **Files all left out paste nothing.** Finder puts a copied file's name beside
+  it as text, so falling back to the text pasted the very name left out.
+- **The right-hand Option key is told apart**, so `macos-option-as-alt = left`
+  leaves the right one typing accents.
+- **Ghostty's manual-integration lines find files that do nothing.** libghostty
+  exports its resources folder to every shell, and the line Ghostty documents
+  for a manual setup sources a script from it; the bundle has a stand-in in each
+  place, the real scripts being GPLv3 and the marks ours.
+- **A paste libghostty judges unsafe is asked about in a sheet showing the
+  text**, Paste taking Return as in Ghostty's app. That is a multi-line paste
+  into a program without bracketed paste, macOS's bash 3.2 or a REPL; refused
+  unasked, it typed nothing and said nothing.
+- **A program's clipboard read or write libghostty would ask about is still
+  refused unasked**, OSC 52 and kitty's protocol alike. Cost: a program that
+  reads the clipboard that way gets nothing here.
+- **One paste is asked about at a time**, another meanwhile refused, and one
+  still waiting when its pane closes is refused before the surface goes.
+- **A read with nothing to hand back is unavailable, not refused**, answered
+  before libghostty's callback returns, as Ghostty's app does. Started first and
+  refused after, an empty clipboard read as a denial to a kitty-protocol
+  program.
+- **The runtime is built on first use**, the theme held until there is one, so a
+  copy that hands over at launch never starts one.
 - **An item's files are pasted in the order it names them**, a name it did not
   give going last. They land in whatever order its queue runs, so an item naming
   several pasted them out of order: `PromisedDropTests`.

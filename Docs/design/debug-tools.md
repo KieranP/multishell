@@ -31,8 +31,8 @@ What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
 - **Panes are matched by terminal, then foreground pid, never environment.**
   Each shell carries its session in `MULTISHELL_SESSION`, but macOS leaves the
   environment out of `KERN_PROCARGS2` for any process but one's own.
-- **The engine names the tty and foreground pid**, and an older libghostty
-  answered neither. Where it cannot, every pane's processes land under Other
+- **The engine names the tty and foreground pid**, and a pane whose shell has no
+  pty yet has neither. Where it cannot, every pane's processes land under Other
   processes and the totals stay right: they read every child of the app.
 - **An expanded tab is a tree of who started whom**, each process under its
   parent. Siblings go by what their whole tree holds, so a small shell running a

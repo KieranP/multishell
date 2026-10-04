@@ -1,0 +1,142 @@
+Keep DEC 2026 synchronized output on across a resize.
+
+A program clears and repaints inside one synchronized-output transaction, and
+the renderer holds its last frame until the program ends it. Terminal.resize()
+at the pin ends the transaction itself, so a resize between the clear and the
+repaint shows the empty grid and the whole pane blinks: libghostty-spm measured
+291 of 1201 frames blank during a resize, 0 with this. The mode now ends when
+the program ends it, or at termio's one-second watchdog (sync_reset_ms).
+libghostty-vt's stream handler reports the hold's end only when the mode is
+off after the resize, and the tests asserting the old behaviour follow.
+
+From libghostty-spm's Patches/ghostty/0014-preserve-sync-on-resize.sh (MIT, 2026 @Lakr233),
+cut as a `git diff` against the ThirdParty/ghostty pin.
+
+diff --git a/src/terminal/Terminal.zig b/src/terminal/Terminal.zig
+index 78f2b43e9..8a61cc30c 100644
+--- a/src/terminal/Terminal.zig
++++ b/src/terminal/Terminal.zig
+@@ -4080,7 +4080,9 @@ pub fn resize(
+         ) catch std.math.maxInt(u32);
+     }
+ 
+-    self.modes.set(.synchronized_output, false);
++    // libghostty-spm: synchronized output stays as the program left it. A
++    // resize must not present the half-drawn frame the mode is hiding; the
++    // termio watchdog still ends a transaction nobody finishes.
+ 
+     // If our cols/rows didn't change, skip grid work but still apply pixels.
+     if (self.cols == opts.cols and self.rows == opts.rows) return;
+@@ -4350,7 +4352,7 @@ test "Terminal setScrollback only affects primary screen" {
+     try testing.expectEqual(alternate, t.screens.active);
+ }
+ 
+-test "Terminal: resize resets synchronized output" {
++test "Terminal: resize preserves synchronized output" {
+     const alloc = testing.allocator;
+     const io_impl = testing.io;
+     var t = try init(io_impl, alloc, .{ .cols = 10, .rows = 5 });
+@@ -4358,7 +4360,7 @@ test "Terminal: resize resets synchronized output" {
+ 
+     t.modes.set(.synchronized_output, true);
+     try t.resize(alloc, .{ .cols = 10, .rows = 5 });
+-    try testing.expect(!t.modes.get(.synchronized_output));
++    try testing.expect(t.modes.get(.synchronized_output));
+ }
+ 
+ test "Terminal: resize rejects zero dimensions before mutation" {
+@@ -4524,7 +4526,7 @@ test "Terminal: resize failure paths preserve consistent state" {
+             try testing.expectEqual(@as(size.CellCountInt, 4), t.rows);
+             try testing.expectEqual(@as(u32, 4617), t.width_px);
+             try testing.expectEqual(@as(u32, 72), t.height_px);
+-            try testing.expect(!t.modes.get(.synchronized_output));
++            try testing.expect(t.modes.get(.synchronized_output));
+             try testing.expect(t.flags.dirty.clear);
+             try testing.expectEqual(@as(size.CellCountInt, 513), primary.pages.cols);
+             try testing.expectEqual(@as(size.CellCountInt, 4), primary.pages.rows);
+diff --git a/src/terminal/c/terminal.zig b/src/terminal/c/terminal.zig
+index 09068b92f..019e1fc8f 100644
+--- a/src/terminal/c/terminal.zig
++++ b/src/terminal/c/terminal.zig
+@@ -6369,7 +6369,7 @@ test "resize pixel overflow saturates" {
+     try testing.expectEqual(std.math.maxInt(u32), zt.height_px);
+ }
+ 
+-test "resize disables synchronized output" {
++test "resize preserves synchronized output" {
+     var t: Terminal = null;
+     try testing.expectEqual(Result.success, new(
+         &lib.alloc.test_allocator,
+@@ -6382,9 +6382,9 @@ test "resize disables synchronized output" {
+     const zt = t.?.terminal;
+     zt.modes.set(.synchronized_output, true);
+ 
+-    // The terminal-level reset must run even if grid work is unnecessary.
++    // A resize with unchanged cell dimensions keeps synchronized output.
+     try testing.expectEqual(Result.success, resize(t, 80, 24, 9, 18));
+-    try testing.expect(!zt.modes.get(.synchronized_output));
++    try testing.expect(zt.modes.get(.synchronized_output));
+ }
+ 
+ test "resize sends in-band size report" {
+diff --git a/src/terminal/stream_terminal.zig b/src/terminal/stream_terminal.zig
+index 0fd0e8dab..590b1800a 100644
+--- a/src/terminal/stream_terminal.zig
++++ b/src/terminal/stream_terminal.zig
+@@ -268,8 +268,8 @@ pub const Handler = struct {
+         ///
+         /// Today the only source of a hold is synchronized output (mode
+         /// 2026). The hold begins when VT input sets the mode. It ends
+-        /// when VT input resets the mode, on a full reset, and on a resize
+-        /// through `Handler.resize`. The calls always come in pairs:
++        /// when VT input resets the mode or on a full reset. A resize
++        /// preserves the hold. The calls always come in pairs:
+         /// setting the mode during a hold does nothing, and neither does
+         /// resetting it when there is no hold. Writing `terminal.modes`
+         /// directly never calls this.
+@@ -462,10 +462,10 @@ pub const Handler = struct {
+     /// because it also handles the side effects like mode 2048 in-band
+     /// size reports if write_pty is set.
+     pub fn resize(self: *Handler, value: Terminal.Resize) !void {
+-        // Resize always turns off synchronized output, ending its hold.
++        // A resize keeps synchronized output active until the program ends it.
+         const sync = self.terminal.modes.get(.synchronized_output);
+         try self.terminal.resize(self.terminal.gpa(), value);
+-        if (sync) self.renderHold(false);
++        if (sync and !self.terminal.modes.get(.synchronized_output)) self.renderHold(false);
+ 
+         // Mode 2048 reports require complete, current cell pixel geometry.
+         const cell_size = value.cell_size_px orelse return;
+@@ -2267,11 +2267,13 @@ test "render hold effect fires on synchronized output transitions only" {
+     s.nextSlice("\x1b[?2026h\x1bc\x1bc");
+     try testing.expectEqualSlices(bool, &.{ true, false }, S.events[0..S.len]);
+ 
+-    // Resize
++    // Resize preserves the hold; an explicit reset ends it once.
+     S.len = 0;
+     s.nextSlice("\x1b[?2026h");
+     try s.handler.resize(.{ .cols = 80, .rows = 24 });
+     try s.handler.resize(.{ .cols = 80, .rows = 24 });
++    try testing.expectEqualSlices(bool, &.{true}, S.events[0..S.len]);
++    s.nextSlice("\x1b[?2026l");
+     try testing.expectEqualSlices(bool, &.{ true, false }, S.events[0..S.len]);
+ }
+ 
+@@ -2324,7 +2326,7 @@ test "render hold effect can snapshot the frame when the hold begins" {
+     try testing.expectEqual('Z', S.char(0, 2));
+ }
+ 
+-test "resize clears synchronized output on unchanged cell dimensions" {
++test "resize preserves synchronized output on unchanged cell dimensions" {
+     var t: Terminal = try .init(testing.io, testing.allocator, .{ .cols = 80, .rows = 24 });
+     defer t.deinit(testing.allocator);
+ 
+@@ -2338,7 +2340,7 @@ test "resize clears synchronized output on unchanged cell dimensions" {
+         .cell_size_px = .{ .width = 9, .height = 18 },
+     });
+ 
+-    try testing.expect(!t.modes.get(.synchronized_output));
++    try testing.expect(t.modes.get(.synchronized_output));
+     try testing.expectEqual(@as(u32, 720), t.width_px);
+     try testing.expectEqual(@as(u32, 432), t.height_px);
+ }

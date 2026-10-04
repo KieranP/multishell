@@ -1,0 +1,324 @@
+Add an `inspector` build option, and build without it.
+
+Ghostty links Dear ImGui unconditionally for its terminal inspector, which the
+app never shows, and the inspector's calls keep FreeType, libpng and zlib in
+the executable too. Applied after the custom-shaders patch, whose lines it
+edits.
+
+From libghostty-spm's Patches/ghostty/0007-disable-inspector.sh (MIT, 2026 @Lakr233),
+cut as a `git diff` against the ThirdParty/ghostty pin.
+
+diff --git a/src/apprt/embedded.zig b/src/apprt/embedded.zig
+index b90366ac7..448e873eb 100644
+--- a/src/apprt/embedded.zig
++++ b/src/apprt/embedded.zig
+@@ -17,7 +17,7 @@ const internal_os = @import("../os/main.zig");
+ const renderer = @import("../renderer.zig");
+ const terminal = @import("../terminal/main.zig");
+ const CoreApp = @import("../App.zig");
+-const CoreInspector = @import("../inspector/main.zig").Inspector;
++const CoreInspector = if (@import("../build_config.zig").inspector) @import("../inspector/main.zig").Inspector else struct {};
+ const CoreSurface = @import("../Surface.zig");
+ const configpkg = @import("../config.zig");
+ const Config = configpkg.Config;
+@@ -649,6 +649,7 @@ pub const Surface = struct {
+     /// inspector at any given time, so this will return the previous inspector
+     /// if it was already initialized.
+     pub fn initInspector(self: *Surface) !*Inspector {
++        if (comptime !@import("../build_config.zig").inspector) return error.InspectorUnavailable;
+         if (self.inspector) |v| return v;
+ 
+         const alloc = self.app.core_app.alloc;
+@@ -660,6 +661,7 @@ pub const Surface = struct {
+     }
+ 
+     pub fn freeInspector(self: *Surface) void {
++        if (comptime !@import("../build_config.zig").inspector) return;
+         if (self.inspector) |v| {
+             v.deinit();
+             self.app.core_app.alloc.destroy(v);
+@@ -1219,7 +1221,7 @@ pub const Surface = struct {
+ 
+ /// Inspector is the state required for the terminal inspector. A terminal
+ /// inspector is 1:1 with a Surface.
+-pub const Inspector = struct {
++pub const Inspector = if (@import("../build_config.zig").inspector) struct {
+     const cimgui = @import("dcimgui");
+ 
+     surface: *Surface,
+@@ -1466,6 +1468,10 @@ pub const Inspector = struct {
+         } else (1.0 / 60.0);
+         self.instant = now;
+     }
++} else struct {
++    surface: *Surface = undefined,
++    pub fn init(_: *Surface) !@This() { return .{}; }
++    pub fn deinit(_: *@This()) void {}
+ };
+ 
+ // C API
+@@ -2303,10 +2309,12 @@ pub const CAPI = struct {
+     }
+ 
+     export fn ghostty_inspector_set_size(ptr: *Inspector, w: u32, h: u32) void {
++        if (comptime !@import("../build_config.zig").inspector) return;
+         ptr.updateSize(w, h);
+     }
+ 
+     export fn ghostty_inspector_set_content_scale(ptr: *Inspector, x: f64, y: f64) void {
++        if (comptime !@import("../build_config.zig").inspector) return;
+         ptr.updateContentScale(x, y);
+     }
+ 
+@@ -2316,6 +2324,7 @@ pub const CAPI = struct {
+         button: input.MouseButton,
+         mods: c_int,
+     ) void {
++        if (comptime !@import("../build_config.zig").inspector) return;
+         ptr.mouseButtonCallback(
+             action,
+             button,
+@@ -2327,6 +2336,7 @@ pub const CAPI = struct {
+     }
+ 
+     export fn ghostty_inspector_mouse_pos(ptr: *Inspector, x: f64, y: f64) void {
++        if (comptime !@import("../build_config.zig").inspector) return;
+         ptr.cursorPosCallback(x, y);
+     }
+ 
+@@ -2336,6 +2346,7 @@ pub const CAPI = struct {
+         y: f64,
+         scroll_mods: c_int,
+     ) void {
++        if (comptime !@import("../build_config.zig").inspector) return;
+         ptr.scrollCallback(
+             x,
+             y,
+@@ -2349,6 +2360,7 @@ pub const CAPI = struct {
+         key: input.Key,
+         c_mods: c_int,
+     ) void {
++        if (comptime !@import("../build_config.zig").inspector) return;
+         ptr.keyCallback(
+             action,
+             key,
+@@ -2366,10 +2378,12 @@ pub const CAPI = struct {
+         ptr: *Inspector,
+         str: [*:0]const u8,
+     ) void {
++        if (comptime !@import("../build_config.zig").inspector) return;
+         ptr.textCallback(std.mem.sliceTo(str, 0));
+     }
+ 
+     export fn ghostty_inspector_set_focus(ptr: *Inspector, focused: bool) void {
++        if (comptime !@import("../build_config.zig").inspector) return;
+         ptr.focusCallback(focused);
+     }
+ 
+@@ -2498,6 +2512,7 @@ pub const CAPI = struct {
+         }
+ 
+         export fn ghostty_inspector_metal_init(ptr: *Inspector, device: objc.c.id) bool {
++            if (comptime !@import("../build_config.zig").inspector) return false;
+             return ptr.initMetal(.fromId(device));
+         }
+ 
+@@ -2506,6 +2521,7 @@ pub const CAPI = struct {
+             command_buffer: objc.c.id,
+             descriptor: objc.c.id,
+         ) void {
++            if (comptime !@import("../build_config.zig").inspector) return;
+             return ptr.renderMetal(
+                 .fromId(command_buffer),
+                 .fromId(descriptor),
+@@ -2516,6 +2532,7 @@ pub const CAPI = struct {
+         }
+ 
+         export fn ghostty_inspector_metal_shutdown(ptr: *Inspector) void {
++            if (comptime !@import("../build_config.zig").inspector) return;
+             if (ptr.backend) |v| {
+                 v.deinit();
+                 ptr.backend = null;
+diff --git a/src/build/Config.zig b/src/build/Config.zig
+index 346790026..479d3be5d 100644
+--- a/src/build/Config.zig
++++ b/src/build/Config.zig
+@@ -32,6 +32,7 @@ x11: bool = false,
+ wayland: bool = false,
+ sentry: bool = true,
+ custom_shaders: bool = true, // LIBGHOSTTY_SPM_TRIM_PATCH
++inspector: bool = true, // LIBGHOSTTY_SPM_INSPECTOR_DISABLE
+ simd: bool = true,
+ i18n: bool = true,
+ wasm_shared: bool = true,
+@@ -242,6 +243,12 @@ pub fn init(b: *std.Build, appVersion: []const u8, libVersion: []const u8) !Conf
+         "Build with custom shader (glslang/spirv-cross) support.",
+     ) orelse true;
+ 
++    config.inspector = b.option(
++        bool,
++        "inspector",
++        "Build with terminal inspector (dcimgui) support.",
++    ) orelse true;
++
+     config.simd = b.option(
+         bool,
+         "simd",
+@@ -672,6 +679,7 @@ pub fn addOptions(self: *const Config, step: *std.Build.Step.Options) !void {
+     step.addOption(bool, "wayland", self.wayland);
+     step.addOption(bool, "sentry", self.sentry);
+     step.addOption(bool, "custom_shaders", self.custom_shaders);
++    step.addOption(bool, "inspector", self.inspector);
+     step.addOption(bool, "simd", self.simd);
+     step.addOption(bool, "i18n", self.i18n);
+     step.addOption(ApprtRuntime, "app_runtime", self.app_runtime);
+diff --git a/src/build/SharedDeps.zig b/src/build/SharedDeps.zig
+index 1a0191638..79e32902c 100644
+--- a/src/build/SharedDeps.zig
++++ b/src/build/SharedDeps.zig
+@@ -595,8 +595,8 @@ pub fn add(
+         }
+     }
+ 
+-    // cimgui
+-    if (b.lazyDependency("dcimgui", .{
++    // cimgui — only needed for inspector
++    if (self.config.inspector) if (b.lazyDependency("dcimgui", .{
+         .target = target,
+         .optimize = optimize,
+         .freetype = true,
+@@ -612,7 +612,7 @@ pub fn add(
+             b.allocator,
+             dep.artifact("dcimgui").getEmittedBin(),
+         );
+-    }
++    };
+ 
+     // Fonts
+     {
+diff --git a/src/build_config.zig b/src/build_config.zig
+index d1d7174e5..9db41ad66 100644
+--- a/src/build_config.zig
++++ b/src/build_config.zig
+@@ -6,6 +6,7 @@ const std = @import("std");
+ const builtin = @import("builtin");
+ const options = @import("build_options");
+ pub const custom_shaders = options.custom_shaders;
++pub const inspector = options.inspector;
+ const assert = std.debug.assert;
+ const apprt = @import("apprt.zig");
+ const font = @import("font/main.zig");
+diff --git a/src/input/key.zig b/src/input/key.zig
+index 1bf64919a..666401fa9 100644
+--- a/src/input/key.zig
++++ b/src/input/key.zig
+@@ -1,7 +1,8 @@
+ const std = @import("std");
+ const builtin = @import("builtin");
+ const Allocator = std.mem.Allocator;
+-const cimgui = @import("dcimgui");
++const _build_config = @import("../build_config.zig");
++const cimgui = if (_build_config.inspector) @import("dcimgui") else struct {};
+ 
+ pub const Mods = @import("key_mods.zig").Mods;
+ 
+@@ -541,6 +542,7 @@ pub const Key = enum(c_int) {
+ 
+     /// Returns the cimgui key constant for this key.
+     pub fn imguiKey(self: Key) ?c_int {
++            if (comptime !_build_config.inspector) return null;
+         return switch (self) {
+             .key_a => cimgui.c.ImGuiKey_A,
+             .key_b => cimgui.c.ImGuiKey_B,
+diff --git a/src/inspector/main.zig b/src/inspector/main.zig
+index ae185f479..5a1962023 100644
+--- a/src/inspector/main.zig
++++ b/src/inspector/main.zig
+@@ -1,8 +1,84 @@
+-pub const widgets = @import("widgets.zig");
+-pub const Inspector = @import("Inspector.zig");
++const build_config = @import("../build_config.zig");
++const std = @import("std");
++const terminal = @import("../terminal/main.zig");
++const input = @import("../input.zig");
++const renderer = @import("../renderer.zig");
+ 
++pub const widgets = if (build_config.inspector) @import("widgets.zig") else struct {
++    pub const key = struct {
++        pub const Event = StubKeyEvent;
++    };
++    pub const renderer = struct {
++        pub const Info = StubRendererInfo;
++    };
++    pub const surface = struct {
++        pub const Mouse = StubMouse;
++    };
++};
++
++pub const Inspector = if (build_config.inspector) @import("Inspector.zig") else StubInspector;
+ pub const KeyEvent = widgets.key.Event;
+ 
++/// Stub types — these satisfy all downstream method/field accesses
++/// when inspector is disabled, so no other files need patching.
++
++const StubMouse = struct {
++    last_xpos: f64 = 0,
++    last_ypos: f64 = 0,
++    last_point: ?terminal.Pin = null,
++};
++
++const StubRendererInfo = struct {
++    pub const empty: @This() = .{};
++
++    pub fn deinit(_: *@This(), _: std.mem.Allocator) void {}
++
++    pub fn overlayFeatures(
++        _: *const @This(),
++        _: std.mem.Allocator,
++    ) std.mem.Allocator.Error![]renderer.Overlay.Feature {
++        return &.{};
++    }
++};
++
++const StubKeyEvent = struct {
++    event: input.KeyEvent = undefined,
++    binding: []const input.Binding.Action = &.{},
++    pty: []const u8 = "",
++
++    pub fn deinit(_: *const @This(), _: std.mem.Allocator) void {}
++};
++
++const StubInspector = struct {
++    mouse: StubMouse = .{},
++
++    pub fn setup() void {}
++    pub fn init(_: std.mem.Allocator) !@This() { return .{}; }
++    pub fn deinit(_: *@This(), _: std.mem.Allocator) void {}
++    pub fn render(_: *@This(), _: anytype) void {}
++
++    pub fn rendererInfo(_: *@This()) *StubRendererInfo {
++        return &stub_renderer_info;
++    }
++
++    pub fn recordKeyEvent(
++        _: *@This(),
++        _: std.mem.Allocator,
++        _: StubKeyEvent,
++    ) std.mem.Allocator.Error!void {}
++
++    pub fn recordPtyRead(
++        _: *@This(),
++        _: std.mem.Allocator,
++        _: *terminal.Terminal,
++        _: []const u8,
++    ) !void {}
++
++    var stub_renderer_info: StubRendererInfo = .{};
++};
++
+ test {
+-    @import("std").testing.refAllDecls(@This());
++    if (build_config.inspector) {
++        @import("std").testing.refAllDecls(@This());
++    }
+ }

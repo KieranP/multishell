@@ -8,6 +8,15 @@
 - **git on PATH**, and **prettier** for the Markdown half of `make format`. CI
   does not run prettier; a Claude Code hook runs it on every `.md` an agent
   writes, and skips it quietly where prettier is missing.
+- **Zig, at the version `ThirdParty/ghostty/build.zig.zon` names**, and Xcode's
+  Metal toolchain (`xcodebuild -downloadComponent MetalToolchain`), for
+  libghostty. Ghostty's own renderer shaders need the Metal compiler, which
+  custom shaders being off does not remove. The build script fetches the
+  submodule and keeps it at the pin, so a plain clone needs nothing more.
+- **The script takes `$ZIG` when set, refusing it at another version, else the
+  first matching Zig of `zig` on PATH and Homebrew's `zig@X.Y`.** Homebrew's
+  plain `zig` moves to a new release before Ghostty does, and its versioned
+  formula is keg-only, so never on PATH.
 
 ## Build, test, run
 
@@ -16,8 +25,14 @@
   Each carries a comment line above it in the Makefile saying what it does.
 - **`make-app.sh` builds the app binary with `xcodebuild`**, wraps it in a
   bundle, builds the CLI the same way into the bundle's helpers, copies the
-  resource bundles in (the engine's terminfo must be there), writes the
-  Info.plist and signs both.
+  resource bundles and libghostty's terminfo in, writes the Info.plist and signs
+  both.
+- **libghostty finds its terminfo through `GHOSTTY_RESOURCES_DIR`**, which the
+  app sets to `Contents/Resources/ghostty` at launch: a release libghostty reads
+  the variable before its own walk up from the executable, so one inherited from
+  a Ghostty tab would win. TERMINFO points at `terminfo` beside it. Without it
+  every shell starts with a TERM it has no entry for, so the bundling script
+  refuses to finish without it.
 - **Signed with the hardened runtime and the entitlements** in `Resources/`
   (design/signing.md).
 - **The short version is three integers**, the only form Apple's key takes: a
@@ -26,13 +41,17 @@
   is the commit count, and `MultishellCommit` names the commit, with a suffix
   for a modified tree. The About panel shows it beside the build number, so a
   bug report still says what was installed: AboutPanelTests.
-- **The first build downloads the libghostty xcframework**, which is large; a
-  test build needs it too, the app being in the same package.
-- **`build-lib.sh` holds the functions `make-app.sh` sources**, not runs: the
-  copyright holder, the version, the commit, the build number, the worktree
-  variant, the xcodebuild call, the checks, the resource copying, the Info.plist
-  rendering, the entitlements and the signing. What stays in `make-app.sh` is
-  the paths and the order of the steps.
+- **`make` builds libghostty first**, from the submodule, into `.build/ghostty`:
+  about 80 s cold here, nothing while the submodule, the patches, the script,
+  Zig and Xcode are unchanged, and 2 s after a `make clean` or
+  `swift package reset`: Zig's cache is in the submodule's `.zig-cache/`, which
+  neither touches. A bare `swift build` needs it built already, the package
+  naming the xcframework by path; `make libghostty` does it.
+- **`build-lib.sh` holds the functions `make-app.sh` sources**, not runs (and
+  `build-ghostty.sh` its `die`): the copyright holder, the version, the commit,
+  the build number, the worktree variant, the xcodebuild call, the checks, the
+  resource copying, the Info.plist rendering, the entitlements and the signing.
+  What stays in `make-app.sh` is the paths and the order of the steps.
 - **The Info.plist is a template filled in by placeholder**, and
   InfoPlistTemplateTests reads it out of the checkout (tests.md). Substitution
   is bash's own, so a value may hold a newline or an ampersand unescaped. The
@@ -55,7 +74,8 @@
   every other build signs offline.
 - **Every target works the same from a git worktree**, and two can build at
   once: the scratch directories are per-worktree and the shared caches lock only
-  briefly.
+  briefly. Each worktree has its own clone of the submodule, so a new one's
+  first libghostty build starts with no `.zig-cache/`.
 - **Running the tests is the exception**, several bounds being wall-clock. So
   `make test` compiles unguarded, then runs under a lock file: a second worktree
   compiles alongside the first and waits, silently, only for its turn to run.
@@ -78,9 +98,10 @@
 - **`swift build` wrote the tree's own build path into the binary** as the place
   the resource accessor looks after the app root, and codesign refuses anything
   at the app root.
-- **So an installed app read the engine's terminfo from the build directory**,
-  and the next build there took it away: every shell started with a TERM it had
-  no entry for, drew doubled letters and lost key combinations.
+- **So an installed app read its resources from the build directory**, the
+  engine's terminfo then among them, and the next build there took it away:
+  every shell started with a TERM it had no entry for, drew doubled letters and
+  lost key combinations.
 - **Xcode's own build of the same package writes no path** and looks in the
   bundle's resources first, so the script runs `xcodebuild` and refuses a binary
   that carries a build path.
@@ -95,10 +116,10 @@
   instrumented and tried to write a profile at exit. Coverage mapping off is the
   setting that stops it, and the script checks the sections are gone rather than
   trusting it.
-- **No destination names plain macOS alone**: libghostty declares Mac Catalyst,
-  so the platform matches both, the variant form is refused, and a package build
-  without a destination is refused. The script checks the binary's build version
-  says macOS rather than trusting the order.
+- **No destination names plain macOS alone**: SwiftPM offers every package for
+  Mac Catalyst too, so the platform matches both, the variant form is refused,
+  and a package build without a destination is refused. The script checks the
+  binary's build version says macOS rather than trusting the order.
 - **`-quiet` prints a failure for a compile that only warned**, so each run is
   logged, shown whole on failure and reduced to its warning and error lines on
   success.
@@ -108,9 +129,11 @@
 - **CI runs two jobs in parallel**: build and test, and the lint. It calls
   `swift test` directly, so it takes no lock and has no write sandbox: a test
   writing outside the temporary directories passes there. It shares only the
-  one-test-per-core cap with `make test`, and a test run past 30 minutes is
-  stopped. It builds without debug info, which took a cold build from 38 s to 29
-  s here, so a crash backtrace from CI has no line numbers.
+  one-test-per-core cap with `make test`, and a run past 60 minutes is stopped.
+  libghostty's cache is saved as soon as it is built, so a red run still keeps
+  it; a cold build's time on CI is unmeasured. It builds the package without
+  debug info, which took a cold build from 38 s to 29 s here, so a crash
+  backtrace from CI has no line numbers.
 
 ## Before you say something works
 

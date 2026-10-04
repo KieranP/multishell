@@ -6,7 +6,6 @@ extension AppModel {
   /// workspace already read from disk. Terminals are not restored.
   public func start() async {
     guard startStateSource() else { return }
-    host.claimSharedFiles()
     // On the main actor, before `start` first yields, so no tab can open ahead.
     presentingFailure { try refreshAppLaunchFiles(platform.bundledHelper) }
     // All that bounds the drops directory; no terminal waits on it.
@@ -42,6 +41,5 @@ extension AppModel {
   public func shutDown() {
     saveNow()
     stateSource.stop()
-    host.shutDown()
   }
 }

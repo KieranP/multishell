@@ -19,10 +19,11 @@
   none owns them, beside the state every WorktreeGit a launch builds shares.
 - **MultishellAppCore**: AppModel, detections, dialogs, error mapping, settings
   as inherited, what a tab runs, what each session is doing, when to read git,
-  when to notify, every decision a view makes; what a screen reader is told;
-  what it needs from the app, and its own implementations of Core's ports, under
-  `Ports/`; what the debug panel measures and shows, under `Debug/`; and, under
-  `Support/`, the pieces that belong to no concern.
+  when to notify, the worktree creates and removals under way, every decision a
+  view makes; what a screen reader is told; what it needs from the app, and its
+  own implementations of Core's ports, under `Ports/`; what the debug panel
+  measures and shows, under `Debug/`; and, under `Support/`, the pieces that
+  belong to no concern.
 - **AppModel's extensions sit under `Model/` by concern**: agents, tabs,
   worktrees, git reads, projects, the debug tools' sampling and tables, and the
   tools it drives. What spans them all stays at the root beside the type, since
@@ -45,11 +46,12 @@
   under `Shared/`, or `Settings/Controls/` where only the settings windows use
   them, the agent marks, the AppKit modifiers and representables that reach
   under SwiftUI for an event it has no gesture for or the window a view sits in,
-  the scene and menus. The engine host and the platform port each have a folder.
-  What draws nothing sits under `Support/`, the in-app drag's pieces under
-  `Support/Drag/`, unless it is by nature a piece of one part: the mark parser
-  sits with the marks, a dialog's AppKit alert with the dialogs, and what both
-  settings windows share at `Settings/`'s root.
+  the scene and menus. The engine host and the platform port each have a folder,
+  the host's split by what each part is to libghostty: config, runtime, surface,
+  input. What draws nothing sits under `Support/`, the in-app drag's pieces
+  under `Support/Drag/`, unless it is by nature a piece of one part: the mark
+  parser sits with the marks, a dialog's AppKit alert with the dialogs, and what
+  both settings windows share at `Settings/`'s root.
 - **AppCore's values for a part of the window sit under the folder its views
   use**: `Sidebar/`, `Board/`, `Detail/`, `Terminals/Panes/`, `Debug/` and the
   rest, so a view and the decision it reads share one path in two targets.
@@ -60,8 +62,13 @@
   carry the shell-integration scripts; the app's also carries the agent marks. A
   second frontend is a third of these.
 - **`Resources/` at the root is not one of those**: the icon, the Info.plist
-  template and the entitlements, which the bundling script reads and SwiftPM
-  never sees, and a smaller icon for the README.
+  template, the entitlements and the stand-ins under `ghostty/`, which the
+  bundling script reads and SwiftPM never sees, and a smaller icon for the
+  README.
+- **`ThirdParty/` holds what is built rather than written here**: Ghostty as a
+  submodule, and the patches the build lays over it for the build alone.
+  `Scripts/build-ghostty.sh` builds it into the GhosttyKit binary target under
+  `.build/ghostty/`, which only the app links.
 - **Each suite's folders mirror the target it tests**, so a file and its tests
   sit at the same place in two trees. A suite's harnesses and fakes stay at its
   root, and a file covering several concerns goes by the one it spends most of

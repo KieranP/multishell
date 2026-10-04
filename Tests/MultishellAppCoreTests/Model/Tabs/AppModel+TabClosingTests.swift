@@ -140,6 +140,30 @@ struct AppModelTabClosingTests {
     #expect(harness.model.liveTerminalCount == 0)
   }
 
+  @Test func aCloseTheEngineIsAskedForOnAWorkingPaneAsksFirst() {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let tab = harness.model.workspace.activeTab(in: harness.main.id)!
+    harness.stateSource.send(SessionStateReport(state: .running, sessionID: tab.focusedSessionID))
+
+    harness.engine.delegate?.terminalHost(harness.engine, didAskToClose: tab.focusedSessionID)
+
+    #expect(harness.model.pendingClose == .pane(tab.focusedSessionID))
+    #expect(harness.model.workspace.tabs(in: harness.main.id).count == 1, "nothing closed yet")
+  }
+
+  @Test func aCloseTheEngineIsAskedForOnAnIdlePaneClosesIt() {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let tab = harness.model.workspace.activeTab(in: harness.main.id)!
+
+    harness.engine.delegate?.terminalHost(harness.engine, didAskToClose: tab.focusedSessionID)
+
+    #expect(harness.model.pendingClose == nil)
+    #expect(harness.model.workspace.tabs(in: harness.main.id).isEmpty)
+    #expect(harness.model.liveTerminalCount == 0)
+  }
+
   /// The question goes when its subject does, whichever way that happens, which is why the
   /// prune lives in the reconcile rather than beside a removal.
   @Test func aCloseWaitingOnAConfirmationGoesWithTheProjectItAskedAbout() {

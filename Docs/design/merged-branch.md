@@ -76,7 +76,9 @@ Newest at the bottom.
   about 75 s later.
 - **A branch never read is not paced**, having no badge to show meanwhile:
   paced, a project of forty took five rounds at launch to badge them all. Cost:
-  the first round asks every branch, held to the shared width below.
+  the first round asks every branch, held to the shared width below. Each counts
+  as 250 ms against the round, so re-asks beside them get what is left of the
+  budget rather than all of it.
 - **A failed read is logged at its cost like an answer**, or it stayed never
   read and went unpaced every round.
 - **Nothing observable is written unless it changed**, or the sidebar redraws on

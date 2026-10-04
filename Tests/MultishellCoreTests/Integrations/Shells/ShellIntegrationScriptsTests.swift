@@ -33,6 +33,16 @@ struct ShellIntegrationScriptsTests {
     }
   }
 
+  @Test func eachIncludedFileIsJoinedInIndentedUnderItsGuard() {
+    let zshrc = ShellIntegrationScripts.forZsh(helper: "/x/multishell")[".zshrc"] ?? ""
+    let bash = ShellIntegrationScripts.forBash(helper: "/x/multishell")
+    #expect(!zshrc.contains("# include ") && !bash.contains("# include "))
+    #expect(zshrc.contains("\n  _multishell_terminal_precmd() {"))
+    #expect(zshrc.contains("\n  _multishell_report_state() {"))
+    #expect(bash.contains("\n  _multishell_relayed() {"))
+    #expect(bash.contains("\n  _multishell_prompt_marks() {"))
+  }
+
   /// A placeholder left in reports no command, and the live-shell tests
   /// catch that only where both shells are installed.
   @Test func everyPlaceholderIsFilledInAndTheAgentsAreNamed() {
@@ -54,7 +64,7 @@ struct ShellIntegrationScriptsTests {
     #expect(text.contains(". /etc/profile"))
     #expect(text.contains("$HOME/.bash_profile"))
     #expect(text.contains("$HOME/.bashrc"))
-    #expect(text.contains("command-started --pid $$") && text.contains("command-finished"))
+    #expect(text.contains("command-started --pid ") && text.contains("command-finished --exit "))
     #expect(
       text.contains("${MULTISHELL_SESSION-}"),
       "does nothing outside a tab, and reading it does not trip a shell run with nounset")

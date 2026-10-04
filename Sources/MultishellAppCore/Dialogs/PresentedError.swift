@@ -40,6 +40,7 @@ public struct PresentedError: Identifiable {
     // Each says it in English on itself, one from a target with no
     // catalogue to reach; see Docs/design/translation.md.
     if error is TrashTookNothing { return t("error.trash-took-nothing") }
+    if error is TerminalUnavailable { return t("error.terminal-unavailable") }
     if let failure = error as? DescriptorUnavailable { return Self.descriptorMessage(failure) }
     if let failure = error as? ProcessFailure {
       let ending =

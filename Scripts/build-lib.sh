@@ -1,6 +1,6 @@
 #!/bin/bash
-# The parts of a bundle build that are not about this bundle. Sourced by
-# make-app.sh, which sets `set -euo pipefail`; nothing here runs on its own.
+# The parts of a bundle build that are not about this bundle, sourced by
+# make-app.sh and build-ghostty.sh under `set -euo pipefail`.
 
 # The copyright the bundle carries. One place, so LICENSE, the About box and
 # the notices cannot say three different things.
@@ -101,8 +101,7 @@ verify_binary() {
     fi
 }
 
-# GhosttyTerminal ships terminfo and config as SPM resource bundles; without
-# them libghostty starts with no terminfo and every child process misbehaves.
+# The targets' catalogues and shell scripts, as SwiftPM resource bundles.
 copy_resource_bundles() {
     local products="$1" destination="$2" bundle count=0
     for bundle in "$products"/*.bundle; do
@@ -110,12 +109,22 @@ copy_resource_bundles() {
         cp -R "$bundle" "$destination/"
         count=$((count + 1))
     done
-    # Counted, because a glob matching nothing is no error to `set -e`: the
-    # build used to finish quietly on an app whose terminals all misbehave.
+    # Counted, because a glob matching nothing is no error to `set -e`.
     if [ "$count" -eq 0 ]; then
-        die "error: no resource bundles in $products; libghostty would start with no" \
-            "       terminfo. Build the package first."
+        die "error: no resource bundles in $products. Build the package first."
     fi
+}
+
+# libghostty finds its terminfo by this path inside the bundle, and every
+# child misbehaves without it: a TERM with no entry; build.md.
+copy_engine_resources() {
+    local ghostty_share="$1" bundling="$2" destination="$3"
+    [ -f "$ghostty_share/terminfo/78/xterm-ghostty" ] \
+        || die "error: no terminfo in $ghostty_share. Run Scripts/build-ghostty.sh first."
+    cp -R "$ghostty_share/terminfo" "$destination/terminfo"
+    # Ghostty exports its resources folder to every shell, and its manual
+    # integration lines source from it; ours are stand-ins, terminals.md.
+    cp -R "$bundling/ghostty" "$destination/ghostty"
 }
 
 # InfoPlist.strings alone, the one macOS reads through Bundle.main: the app's

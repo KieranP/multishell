@@ -21,14 +21,16 @@
 
 ## Install
 
-Requires macOS 26 Tahoe or later, Xcode 26 or later (Swift 6.2 or later), and
-`git` on your `PATH`. `make install` below goes through `xcodebuild`, which the
-command line tools alone do not have; see
-[Docs/develop/build.md](Docs/develop/build.md).
+Requires macOS 26 Tahoe or later, Xcode 26 or later (Swift 6.2 or later) with
+its Metal toolchain, the Zig version Ghostty names, and `git` on your `PATH`.
+`make install` below goes through `xcodebuild`, which the command line tools
+alone do not have; see [Docs/develop/build.md](Docs/develop/build.md).
 
 ```sh
 git clone https://github.com/KieranP/multishell.git
 cd multishell
+brew install zig@0.16                          # keg-only, found by the build; Scripts/build-ghostty.sh --zig-version names the version
+xcodebuild -downloadComponent MetalToolchain   # once per Xcode install, for libghostty's shaders
 sudo xcode-select -s /Applications/Xcode.app   # once, if only the command line tools are active
 sudo xcodebuild -license                       # once per Xcode install, accept the agreement
 sudo xcodebuild -runFirstLaunch                # once per Xcode install
@@ -37,11 +39,17 @@ make install                                   # release build into /Application
 ```
 
 `make run` builds and opens a debug copy that keeps its own state, so it sits
-beside an installed one. The first build downloads libghostty, about 80 MB. Then
-add a repository with the folder button at the top of the sidebar, or Cmd+O.
+beside an installed one. The first build compiles libghostty from the
+`ThirdParty/ghostty` submodule, a minute or two. Then add a repository with the
+folder button at the top of the sidebar, or Cmd+O.
 
 If a build fails after a pull that moved or renamed files, run `make clean`
-once. It deletes `build/` and `.build/`, and the next build starts from scratch.
+once. It deletes `build/` and `.build/`, so the next build compiles the app from
+scratch; libghostty comes back in seconds from Zig's cache in the submodule. The
+build fetches the `ThirdParty/ghostty` submodule itself, and moves it when a
+pull moves the pin forward. One that moves it back, or a checkout of a branch
+pinned earlier, stops the build; `git submodule update ThirdParty/ghostty`
+matches the pin.
 
 **Agent hooks.** For the state dots to follow an agent, it has to report through
 its hooks. Open Settings > Agents > Hooks: every agent on your PATH that has

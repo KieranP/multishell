@@ -39,6 +39,7 @@ verify_binary "$products/multishell-helper"
 cp "$products/multishell-helper" "$app/Contents/Helpers/multishell"
 
 copy_resource_bundles "$products" "$app/Contents/Resources"
+copy_engine_resources "$root/.build/ghostty/share" "$bundling" "$app/Contents/Resources"
 cp "$bundling/Multishell.icns" "$app/Contents/Resources/Multishell.icns"
 # Each compiled-in dependency's licence must travel with the binary;
 # THIRD-PARTY-NOTICES.md says which text in Licenses/ covers what.

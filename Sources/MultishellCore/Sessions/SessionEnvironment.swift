@@ -10,21 +10,16 @@ public enum SessionEnvironment {
   /// Docs/design/agents.md.
   public static let appPIDVariable = "MULTISHELL_APP_PID"
 
-  /// `engineZshBootstrap` is the directory holding the terminal engine's own
-  /// zsh startup file, when the engine has one it wants entered first.
-  public static func variables(
-    for session: TerminalSession, socket: URL, engineZshBootstrap: URL? = nil
-  ) -> [String: String] {
+  public static func variables(for session: TerminalSession, socket: URL) -> [String: String] {
     var variables = [
       sessionVariable: session.id.uuidString,
       worktreeVariable: session.workingDirectory.path,
       socketVariable: socket.path,
       appPIDVariable: String(ProcessInfo.processInfo.processIdentifier),
     ]
-    variables.merge(
-      ShellLaunch.zshEnvironment(
-        forShell: session.shellPath, engineZshBootstrap: engineZshBootstrap)
-    ) { current, _ in current }
+    variables.merge(ShellLaunch.zshEnvironment(forShell: session.shellPath)) { current, _ in
+      current
+    }
     return variables
   }
 }

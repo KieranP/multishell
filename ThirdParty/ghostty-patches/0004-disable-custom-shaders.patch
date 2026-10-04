@@ -1,0 +1,128 @@
+Add a `custom-shaders` build option, and build without them.
+
+Ghostty links glslang and SPIRV-Cross unconditionally, for custom shaders the
+app never runs. Off, neither is in libghostty: with the inspector off too, the
+archive here went from 132 MB to 20 MB, and the notices stay short. A user's
+`custom-shader` line then does nothing.
+
+From libghostty-spm's Patches/ghostty/0006-disable-custom-shaders.sh (MIT, 2026 @Lakr233),
+cut as a `git diff` against the ThirdParty/ghostty pin.
+
+diff --git a/src/build/Config.zig b/src/build/Config.zig
+index 71fa4d289..346790026 100644
+--- a/src/build/Config.zig
++++ b/src/build/Config.zig
+@@ -31,6 +31,7 @@ font_backend: FontBackend = .freetype,
+ x11: bool = false,
+ wayland: bool = false,
+ sentry: bool = true,
++custom_shaders: bool = true, // LIBGHOSTTY_SPM_TRIM_PATCH
+ simd: bool = true,
+ i18n: bool = true,
+ wasm_shared: bool = true,
+@@ -235,6 +236,12 @@ pub fn init(b: *std.Build, appVersion: []const u8, libVersion: []const u8) !Conf
+         }
+     };
+ 
++    config.custom_shaders = b.option(
++        bool,
++        "custom-shaders",
++        "Build with custom shader (glslang/spirv-cross) support.",
++    ) orelse true;
++
+     config.simd = b.option(
+         bool,
+         "simd",
+@@ -664,6 +671,7 @@ pub fn addOptions(self: *const Config, step: *std.Build.Step.Options) !void {
+     step.addOption(bool, "x11", self.x11);
+     step.addOption(bool, "wayland", self.wayland);
+     step.addOption(bool, "sentry", self.sentry);
++    step.addOption(bool, "custom_shaders", self.custom_shaders);
+     step.addOption(bool, "simd", self.simd);
+     step.addOption(bool, "i18n", self.i18n);
+     step.addOption(ApprtRuntime, "app_runtime", self.app_runtime);
+diff --git a/src/build/SharedDeps.zig b/src/build/SharedDeps.zig
+index 7f777faa1..1a0191638 100644
+--- a/src/build/SharedDeps.zig
++++ b/src/build/SharedDeps.zig
+@@ -353,8 +353,8 @@ pub fn add(
+         }
+     }
+ 
+-    // Glslang
+-    if (b.lazyDependency("glslang", .{
++    // Glslang — only needed for custom shaders
++    if (self.config.custom_shaders) if (b.lazyDependency("glslang", .{
+         .target = target,
+         .optimize = optimize,
+     })) |glslang_dep| {
+@@ -372,10 +372,10 @@ pub fn add(
+                 glslang_dep.artifact("glslang").getEmittedBin(),
+             );
+         }
+-    }
++    };
+ 
+-    // Spirv-cross
+-    if (b.lazyDependency("spirv_cross", .{
++    // Spirv-cross — only needed for custom shaders
++    if (self.config.custom_shaders) if (b.lazyDependency("spirv_cross", .{
+         .target = target,
+         .optimize = optimize,
+     })) |spirv_cross_dep| {
+@@ -392,7 +392,7 @@ pub fn add(
+                 spirv_cross_dep.artifact("spirv_cross").getEmittedBin(),
+             );
+         }
+-    }
++    };
+ 
+     // Sentry
+     if (self.config.sentry) {
+diff --git a/src/build_config.zig b/src/build_config.zig
+index c19f7372b..d1d7174e5 100644
+--- a/src/build_config.zig
++++ b/src/build_config.zig
+@@ -5,6 +5,7 @@
+ const std = @import("std");
+ const builtin = @import("builtin");
+ const options = @import("build_options");
++pub const custom_shaders = options.custom_shaders;
+ const assert = std.debug.assert;
+ const apprt = @import("apprt.zig");
+ const font = @import("font/main.zig");
+diff --git a/src/global.zig b/src/global.zig
+index 3312039a9..daf8b8ff3 100644
+--- a/src/global.zig
++++ b/src/global.zig
+@@ -5,7 +5,9 @@ const build_options = @import("build_options");
+ const cli = @import("cli.zig");
+ const internal_os = @import("os/main.zig");
+ const fontconfig = @import("fontconfig");
+-const glslang = @import("glslang");
++const glslang = if (build_config.custom_shaders) @import("glslang") else struct {
++    pub fn init() !void {}
++};
+ const harfbuzz = @import("harfbuzz");
+ const oni = @import("oniguruma");
+ const crash = @import("crash/main.zig");
+diff --git a/src/renderer/shadertoy.zig b/src/renderer/shadertoy.zig
+index 26b710de4..a4cb5ba24 100644
+--- a/src/renderer/shadertoy.zig
++++ b/src/renderer/shadertoy.zig
+@@ -2,6 +2,7 @@ const std = @import("std");
+ const builtin = @import("builtin");
+ const Allocator = std.mem.Allocator;
+ const ArenaAllocator = std.heap.ArenaAllocator;
++const build_config = @import("../build_config.zig");
+ const glslang = @import("glslang");
+ const spvcross = @import("spirv_cross");
+ const configpkg = @import("../config.zig");
+@@ -51,6 +52,7 @@ pub fn loadFromFiles(
+     paths: configpkg.RepeatablePath,
+     target: Target,
+ ) ![]const [:0]const u8 {
++    if (comptime !build_config.custom_shaders) return &.{};
+     var list: std.ArrayList([:0]const u8) = .empty;
+     defer list.deinit(alloc_gpa);
+     errdefer for (list.items) |shader| alloc_gpa.free(shader);
