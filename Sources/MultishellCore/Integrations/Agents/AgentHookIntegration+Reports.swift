@@ -51,7 +51,17 @@ extension AgentHookIntegration {
       resumesAfterWorkers: isStop && resumes(at: payload) ? true : nil,
       conversationID: subagentsAreConversations ? payload.conversationID : nil,
       workersOut: isStop ? payload.backgroundTasks.map(workers(from:)) : nil,
-      turnFollows: isStop && turnFollows(at: payload) ? true : nil)
+      turnFollows: isStop && turnFollows(at: payload) ? true : nil,
+      asksQuestion: asksQuestion(payload) ? true : nil)
+  }
+
+  /// Claude asks its questions through the permission prompt, whose
+  /// notification says it needs permission; only the transcript tells them apart.
+  private func asksQuestion(_ payload: AgentHookPayload) -> Bool {
+    guard transcriptShowsPendingQuestion, payload.notificationType == "permission_prompt",
+      let path = payload.transcriptPath
+    else { return false }
+    return ClaudeTranscript.asksQuestion(atPath: path)
   }
 
   private func turnFollows(at payload: AgentHookPayload) -> Bool {

@@ -35,6 +35,19 @@ struct AppModelNotificationsTests {
     #expect(harness.notifier.posted.count == 1)
   }
 
+  @Test func aQuestionIsWordedAsOneOnTheBannerAndTheCardWhateverTheAgentSaid() {
+    let harness = Harness()
+    harness.model.setNotifications(.everyState)
+    let tab = harness.openBackgroundTab()
+    harness.stateSource.send(
+      SessionStateReport(
+        state: .attention, sessionID: tab.focusedSessionID,
+        message: "Claude needs your permission", asksQuestion: true))
+    #expect(harness.notifier.posted.first?.body == "An agent needs your input")
+    let card = harness.model.agentBoardCards.first { $0.id == tab.focusedSessionID }
+    #expect(card?.message == "An agent needs your input")
+  }
+
   /// Once the agent is back at work the banner names something no longer true,
   /// so it goes rather than sitting in Notification Centre until swiped.
   @Test func aBannerIsTakenBackWhenTheStateItNamedMovesOn() {

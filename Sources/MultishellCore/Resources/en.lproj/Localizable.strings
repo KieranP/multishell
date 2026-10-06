@@ -187,6 +187,7 @@
 "merged.removal-note-upstream-gone" = "%@ tracked a remote branch that is gone, so it was likely squash-merged. Check before deleting it: a closed pull request leaves the same trace.";
 "merged.safe-to-remove" = "%@ · safe to remove";
 "merged.upstream-gone" = "Its upstream branch is gone from the remote";
+"notification.agent-question" = "An agent needs your input";
 "notification.attention" = "Waiting for your input.";
 "notification.done" = "Finished.";
 "notification.error" = "Finished with an error.";

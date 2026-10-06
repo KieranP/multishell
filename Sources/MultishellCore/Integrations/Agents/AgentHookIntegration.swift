@@ -55,12 +55,16 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   /// Whether the agent's transcript shows a finished task's notice still
   /// queued at a Stop, which starts a turn straight after; see agents.md.
   let transcriptQueuesNotices: Bool
+  /// Whether the agent's questions reach a hook as permission prompts, which
+  /// only its transcript tells apart; see agents.md.
+  let transcriptShowsPendingQuestion: Bool
 
   init(
     id: String, file: URL, displayPath: String, events: [AgentHookEvent],
     format: Format, trustNote: String? = nil, backgroundShellMarker: String? = nil,
     resumption: Resumption = .never, subagentsAreConversations: Bool = false,
-    wakingTaskTypes: Set<String> = [], transcriptQueuesNotices: Bool = false
+    wakingTaskTypes: Set<String> = [], transcriptQueuesNotices: Bool = false,
+    transcriptShowsPendingQuestion: Bool = false
   ) {
     self.id = id
     self.file = file
@@ -73,6 +77,7 @@ public struct AgentHookIntegration: Identifiable, Sendable {
     self.subagentsAreConversations = subagentsAreConversations
     self.wakingTaskTypes = wakingTaskTypes
     self.transcriptQueuesNotices = transcriptQueuesNotices
+    self.transcriptShowsPendingQuestion = transcriptShowsPendingQuestion
   }
 
   public var name: String { AgentCatalogue.agent(id)?.name ?? id }

@@ -1,7 +1,7 @@
 import Foundation
 
-/// Whether Claude has a finished task's notice still queued at its Stop,
-/// which starts a turn of its own after it; see Docs/design/agents.md.
+/// What Claude's transcript tells a hook: here, a task's notice still queued at
+/// its Stop, which starts a turn; see Docs/design/agents.md.
 enum ClaudeTranscript {
   /// Far more than a turn writes, and a read of a few milliseconds where a
   /// whole transcript runs to 23 MB.
@@ -12,14 +12,20 @@ enum ClaudeTranscript {
 
   /// `false` where the file cannot be read, which is what an older build said.
   static func turnFollows(atPath path: String) -> Bool {
-    guard let handle = FileHandle(forReadingAtPath: path) else { return false }
+    guard let tail = tail(atPath: path) else { return false }
+    return turnFollows(in: tail.data, startsAtFileStart: tail.startsAtFileStart)
+  }
+
+  /// The last `tailBytes` of the file, `nil` where it cannot be read.
+  static func tail(atPath path: String) -> (data: Data, startsAtFileStart: Bool)? {
+    guard let handle = FileHandle(forReadingAtPath: path) else { return nil }
     defer { try? handle.close() }
-    guard let end = try? handle.seekToEnd() else { return false }
+    guard let end = try? handle.seekToEnd() else { return nil }
     let start = end > UInt64(tailBytes) ? end - UInt64(tailBytes) : 0
     guard (try? handle.seek(toOffset: start)) != nil, let data = try? handle.readToEnd() else {
-      return false
+      return nil
     }
-    return turnFollows(in: data, startsAtFileStart: start == 0)
+    return (data, start == 0)
   }
 
   /// A notice queued since the last Stop and neither taken off the queue nor

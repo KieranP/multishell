@@ -49,7 +49,7 @@ extension AppModel {
     }
     notifier.notify(
       title: NotificationPolicy.title(subject: subject, project: project, worktree: place),
-      body: NotificationPolicy.body(for: state, message: report.message),
+      body: NotificationPolicy.body(for: state, message: report.shownMessage),
       about: key)
     notifiedKeys.insert(key)
   }

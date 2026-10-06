@@ -123,6 +123,12 @@ at the bottom.
 - **So a prompt reports twice and only the second is heard from**: the request
   moves the dot with no banner, the notification raises it and carries the
   wording, the request having no message.
+- **Claude's question to the user words its banner as a permission**: the
+  question tool goes through the permission dialog, whose notification says
+  "Claude needs your permission" and names no tool. The helper reads the
+  transcript's last tool call and, where it is an unanswered `AskUserQuestion`,
+  marks the report a question. The app words it from its catalogue, the helper
+  having none; an older app shows the agent's own message.
 - **That delay is the agent's own rule for when a prompt is worth interrupting
   someone for.** The general form is silent: move a dot where another report
   about the same thing will do the talking.

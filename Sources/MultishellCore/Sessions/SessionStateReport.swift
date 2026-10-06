@@ -58,6 +58,9 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   /// Set on a Stop the agent takes another turn straight after, a finished
   /// task's notice still being queued; see Docs/design/agents.md.
   public internal(set) var turnFollows: Bool?
+  /// Set where the agent waits on its own question though its message says
+  /// permission; the app words it, the helper having no catalogue.
+  public internal(set) var asksQuestion: Bool?
 
   enum CodingKeys: String, CodingKey {
     case version = "v"
@@ -80,6 +83,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     case conversationID = "conversation"
     case workersOut = "out"
     case turnFollows = "follows"
+    case asksQuestion = "question"
   }
 
   public init(
@@ -100,7 +104,8 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     resumesAfterWorkers: Bool? = nil,
     conversationID: String? = nil,
     workersOut: [WorkerReport]? = nil,
-    turnFollows: Bool? = nil
+    turnFollows: Bool? = nil,
+    asksQuestion: Bool? = nil
   ) {
     self.version = Self.protocolVersion
     self.state = state
@@ -122,6 +127,7 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     self.conversationID = Self.boundedIdentifier(conversationID)
     self.workersOut = Self.boundedWorkers(workersOut)
     self.turnFollows = turnFollows
+    self.asksQuestion = asksQuestion
   }
 
   public init(from decoder: any Decoder) throws {
@@ -147,7 +153,8 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
       resumesAfterWorkers: try container.decodeIfPresent(Bool.self, forKey: .resumesAfterWorkers),
       conversationID: try container.decodeIfPresent(String.self, forKey: .conversationID),
       workersOut: try container.decodeIfPresent([WorkerReport].self, forKey: .workersOut),
-      turnFollows: try container.decodeIfPresent(Bool.self, forKey: .turnFollows))
+      turnFollows: try container.decodeIfPresent(Bool.self, forKey: .turnFollows),
+      asksQuestion: try container.decodeIfPresent(Bool.self, forKey: .asksQuestion))
     version = try container.decode(Int.self, forKey: .version, or: 1)
     legacyWorkerCount = try container.decodeIfPresent(Int.self, forKey: .legacyWorkerCount)
   }

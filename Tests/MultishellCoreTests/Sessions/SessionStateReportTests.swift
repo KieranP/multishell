@@ -12,7 +12,7 @@ struct SessionStateReportTests {
     let report = SessionStateReport(
       state: .attention, sessionID: id, workingDirectory: "/w/repo", pid: 4242,
       message: "Needs permission",
-      duration: 12.5, agentID: "claude", isSilent: true)
+      duration: 12.5, agentID: "claude", isSilent: true, asksQuestion: true)
     let line = try report.encodedLine()
     #expect(line.hasSuffix("\n"))
     #expect(!line.dropLast().contains("\n"), "one line per message")

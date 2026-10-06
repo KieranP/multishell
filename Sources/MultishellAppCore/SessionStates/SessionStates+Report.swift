@@ -60,7 +60,7 @@ extension SessionStates {
       $0.workingIsShellCommand = report.isFromShellIntegration == true && $0.state == .running
     }
     noteIfStanding(
-      SessionNote(state: state, message: report.message, duration: report.duration), on: key)
+      SessionNote(state: state, message: report.shownMessage, duration: report.duration), on: key)
     return state
   }
 

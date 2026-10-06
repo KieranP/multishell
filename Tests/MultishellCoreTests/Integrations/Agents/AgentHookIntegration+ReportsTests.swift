@@ -26,6 +26,39 @@ struct AgentHookIntegrationReportsTests {
     #expect(follows(AgentHookCatalogue.codex, "Stop") == nil, "Claude's transcript alone")
   }
 
+  @Test func claudesPermissionNotificationForAQuestionIsMarkedAsOne() throws {
+    let directory = try Scratch.directory("hooks")
+    defer { Scratch.remove(directory) }
+    let transcript = directory.appendingPathComponent("session.jsonl")
+    func report(
+      lastToolCalled tool: String, answered: Bool = false,
+      by integration: AgentHookIntegration = AgentHookCatalogue.claude
+    ) throws -> SessionStateReport? {
+      var lines = [
+        #"{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t1","name":"\#(tool)"}]}}"#
+      ]
+      if answered {
+        lines.append(
+          #"{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"t1"}]}}"#)
+      }
+      try Data(lines.joined(separator: "\n").utf8).write(to: transcript)
+      let payload = AgentHookPayload(
+        json: Data(
+          (#"{"hook_event_name":"Notification","message":"Claude needs your permission","#
+            + #""notification_type":"permission_prompt","transcript_path":"\#(transcript.path)"}"#)
+            .utf8))!
+      return integration.report(for: payload, sessionID: nil, workingDirectory: nil, pid: nil)
+    }
+    let question = try report(lastToolCalled: "AskUserQuestion")
+    #expect(question?.asksQuestion == true)
+    #expect(question?.message == "Claude needs your permission", "an older app's words")
+    #expect(try report(lastToolCalled: "Bash")?.asksQuestion == nil)
+    #expect(try report(lastToolCalled: "AskUserQuestion", answered: true)?.asksQuestion == nil)
+    #expect(
+      try report(lastToolCalled: "AskUserQuestion", by: AgentHookCatalogue.copilot)?.asksQuestion
+        == nil, "Copilot's notifications share the type")
+  }
+
   @Test func anAgentThatWakesForItsWorkersSaysSoAtItsStop() {
     func resumes(_ integration: AgentHookIntegration, _ event: String) -> Bool? {
       let payload = AgentHookPayload(eventName: event)
