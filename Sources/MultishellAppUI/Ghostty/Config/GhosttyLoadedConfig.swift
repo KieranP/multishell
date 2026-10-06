@@ -3,10 +3,20 @@ import GhosttyKit
 
 /// Config text turned into a libghostty config. libghostty reads config only
 /// from a file, so the text passes through one that is gone once loaded.
-struct GhosttyLoadedConfig {
+/// libghostty copies a config it is given, so this frees its own once let go.
+final class GhosttyLoadedConfig {
   let config: ghostty_config_t
   /// libghostty's complaints, each naming the `.conf:` line it refused.
   let diagnostics: [String]
+
+  private init(config: ghostty_config_t, diagnostics: [String]) {
+    self.config = config
+    self.diagnostics = diagnostics
+  }
+
+  deinit {
+    ghostty_config_free(config)
+  }
 
   /// `nil` where the text could not be written for libghostty to read, or
   /// libghostty made no config.
@@ -46,9 +56,5 @@ struct GhosttyLoadedConfig {
     var value = false
     let found = key.withCStringAndLength { ghostty_config_get(config, &value, $0, $1) }
     return found ? value : nil
-  }
-
-  func free() {
-    ghostty_config_free(config)
   }
 }

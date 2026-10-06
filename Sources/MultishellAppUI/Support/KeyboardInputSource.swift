@@ -1,6 +1,5 @@
 import Carbon.HIToolbox
 
-/// The keyboard input source in use.
 enum KeyboardInputSource {
   static var currentID: String? {
     guard let source = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue(),

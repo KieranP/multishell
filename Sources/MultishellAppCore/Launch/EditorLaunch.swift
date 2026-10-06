@@ -36,7 +36,7 @@ enum EditorLaunch {
       if let application = found?.application { return .openApplication(application) }
       guard let command = found?.command else { return nil }
       return .runInBackground(
-        [command.path, directory.path].map(AnyShellQuoting.quote).joined(separator: " "))
+        AnyShellQuoting.commandLine([command.path, directory.path]))
     case .terminal:
       guard let command = found?.command else { return nil }
       return .openTab(

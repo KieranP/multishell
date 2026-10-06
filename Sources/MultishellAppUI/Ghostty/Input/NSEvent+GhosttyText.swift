@@ -8,7 +8,7 @@ extension NSEvent {
     guard characters.count == 1, let scalar = characters.unicodeScalars.first else {
       return characters
     }
-    if scalar.value < 0x20 {
+    if scalar.isC0Control {
       return self.characters(byApplyingModifiers: modifierFlags.subtracting(.control))
     }
     // AppKit spells a function key as one scalar in this private-use range.

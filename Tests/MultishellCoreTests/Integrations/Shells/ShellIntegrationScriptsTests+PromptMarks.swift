@@ -173,7 +173,7 @@ extension ShellIntegrationScriptsTests {
   /// `zsh -i script` runs preexec for each line, and no prompt is ever shown.
   @Test func aScriptRunInAnInteractiveShellCarriesNoEscapes() async throws {
     let output = try await zshOutput(
-      features: "cursor,title", input: "true\nprint -r done\n", arguments: ["-i", "SCRIPT"])
+      features: "cursor,title", input: "true\nprint -r done\n", runsInputAsScript: true)
     #expect(output.contains("done"))
     #expect(output.contains("\u{1B}") == false)
   }

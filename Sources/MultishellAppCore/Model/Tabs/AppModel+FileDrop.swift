@@ -2,14 +2,14 @@ import Foundation
 import MultishellCore
 
 extension AppModel {
-  /// Files dropped on a surface, pasted as `FileDropText` decides and taking
+  /// Files dropped on a surface, pasted as `FilePathText` decides and taking
   /// the focus. `false` when nothing was pasted, so the drag says so.
   @discardableResult
   public func dropFiles(
     _ urls: [URL], into id: TerminalSession.ID, takingFocus: Bool = true
   ) -> Bool {
     guard acceptsFileDrop(into: id), let session = workspace.session(id) else { return false }
-    let text = FileDropText.text(
+    let text = FilePathText.droppedText(
       for: urls,
       relativeTo: session.workingDirectory,
       mentionPrefix: fileMentionPrefix(for: session)

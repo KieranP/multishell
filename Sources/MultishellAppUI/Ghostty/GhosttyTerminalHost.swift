@@ -8,8 +8,13 @@ import MultishellCore
 final class GhosttyTerminalHost: NSObject, TerminalHost {
   weak var delegate: (any TerminalHostDelegate)?
 
-  private let runtimeOwner = GhosttyRuntimeOwner()
+  private let runtimeOwner: GhosttyRuntimeOwner
   private var views: [TerminalSession.ID: GhosttySurfaceView] = [:]
+
+  init(runtimeOwner: GhosttyRuntimeOwner = GhosttyRuntimeOwner()) {
+    self.runtimeOwner = runtimeOwner
+    super.init()
+  }
 
   var liveSessionIDs: Set<TerminalSession.ID> { Set(views.keys) }
 
@@ -53,11 +58,23 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
     view.onFocus = { [weak self] in self?.surfaceFocused(id) }
   }
 
+  /// The surface lives on until the next turn, and a report queued for it
+  /// would name a session the delegate has already closed.
+  private func disconnect(_ view: GhosttySurfaceView) {
+    view.onRetitle = nil
+    view.onBell = nil
+    view.onCommandFinish = nil
+    view.onExit = nil
+    view.onCloseRequest = nil
+    view.onFocus = nil
+  }
+
   func close(_ id: TerminalSession.ID) {
     guard let view = views.removeValue(forKey: id) else { return }
+    disconnect(view)
     view.removeFromSuperview()
     // Next turn: this can run inside libghostty's own close callback.
-    DispatchQueue.main.async { view.free() }
+    DispatchQueue.main.async { view.freeSurface() }
   }
 
   func view(for id: TerminalSession.ID) -> NSView? {

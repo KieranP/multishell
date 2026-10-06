@@ -7,6 +7,7 @@ import os
 @MainActor
 final class GhosttyRuntime {
   let app: ghostty_app_t
+  private let readBase: @MainActor () -> String
   private var base: String
   private var appLayer: GhosttyConfigText
   /// The merged text libghostty runs, `nil` for its defaults. It lags the two
@@ -22,9 +23,12 @@ final class GhosttyRuntime {
   /// Started from both layers in one load, or from libghostty's defaults where
   /// that load fails.
   init(
-    base: String = "", appLayer: GhosttyConfigText = GhosttyConfigText(),
+    readBase: @escaping @MainActor () -> String = { "" },
+    appLayer: GhosttyConfigText = GhosttyConfigText(),
     configDirectory: URL = FileManager.default.temporaryDirectory
   ) {
+    self.readBase = readBase
+    let base = readBase()
     self.base = base
     self.appLayer = appLayer
     self.configDirectory = configDirectory
@@ -33,9 +37,7 @@ final class GhosttyRuntime {
     guard let config = loaded ?? GhosttyLoadedConfig.defaults() else {
       preconditionFailure("libghostty could not make a config")
     }
-    // libghostty keeps a copy of a config it is given, so ours goes at once.
-    defer { config.free() }
-    var callbacks = GhosttyRuntimeCallbacks.config(waking: ticker.userdata)
+    var callbacks = GhosttyRuntimeCallbacks.runtimeConfig(waking: ticker.userdata)
     guard let app = ghostty_app_new(&callbacks, config.config) else {
       preconditionFailure("libghostty refused to start an app")
     }
@@ -80,7 +82,6 @@ final class GhosttyRuntime {
     ghostty_app_update_config(app, next.config)
     runningText = text
     followSecureInputSetting(of: next)
-    next.free()
   }
 
   private func followSecureInputSetting(of config: GhosttyLoadedConfig) {
@@ -105,9 +106,12 @@ final class GhosttyRuntime {
     return loaded
   }
 
+  /// An edit to the user's file is made in another app, so switching back is
+  /// when the base can have changed.
   private func applicationDidBecomeActive() {
     ghostty_app_set_focus(app, true)
     secureInput.applicationDidBecomeActive()
+    apply(base: readBase())
   }
 
   private func applicationDidResignActive() {

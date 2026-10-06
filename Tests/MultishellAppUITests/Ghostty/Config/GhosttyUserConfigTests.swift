@@ -19,7 +19,6 @@ struct GhosttyUserConfigTests {
   @Test func aUserCanTurnOffSecureInputAtPasswordPrompts() throws {
     let rendered = GhosttyUserConfig.base(userContents: ["macos-auto-secure-input = false"])
     let loaded = try #require(GhosttyLoadedConfig.load(rendered))
-    defer { loaded.free() }
     #expect(loaded.flag("macos-auto-secure-input") == false)
   }
 

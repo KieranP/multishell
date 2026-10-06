@@ -3,11 +3,10 @@
 Under `~/Library/Application Support/Multishell`.
 
 - **A debug build keeps its own state file, socket, integration and drops
-  directories**, `.debug` added to each name; themes and the helper link are
-  shared.
-- **A debug build made in a git worktree adds that worktree's name**,
-  `.debug-<name>`, so two can run at once. The bundling script writes the name
-  into the Info.plist, `open` passing no environment to what it launches.
+  directories**; themes and the helper link are shared.
+- **A debug build made in a git worktree adds that worktree's name**, so two can
+  run at once. The bundling script writes the name into the Info.plist, `open`
+  passing no environment to what it launches.
 - **The name is cut short and spelled conservatively**, a socket path having
   only `sun_path` to fit in, some of it taken by the staging suffix.
 - **Settings prints the state file**, which is how you see which one a running
@@ -25,59 +24,54 @@ Under `~/Library/Application Support/Multishell`.
 - **An agent id the catalogue retired is forgotten on load**: its tab comes back
   a plain shell and a preference naming it falls back, since a kept id raised an
   install alert at every launch. `WorkspaceRetiredAgentsTests` holds it.
-- **A broken state file is moved aside** to `state.<timestamp>.broken.json`.
-  Where the move itself failed the original is still in place and nothing saves
-  over it; once the user moves it away, that session saves again
-  (design/state-and-store.md).
-- **Themes are JSON in a `themes` folder**, with the examples in an `examples`
+- **A broken state file is moved aside with a timestamp.** Where the move itself
+  failed the original is still in place and nothing saves over it; once the user
+  moves it away, that session saves again (design/state-and-store.md).
+- **Themes are JSON in a themes folder**, with the examples in an `examples`
   folder inside it, written when the user opens the folder and not loaded.
-- **The socket, `multishell.sock`, is mode 0600**, bound under a staging name
-  and renamed into place, so it is never briefly world-readable: the mode comes
-  from the umask at bind, and umask is process-wide.
+- **The socket is mode 0600**, bound under a staging name and renamed into
+  place, so it is never briefly world-readable: the mode comes from the umask at
+  bind, and umask is process-wide.
 - **So the longest path that binds is two bytes shorter than `sun_path`
   allows**, the `.b` of the staging name, and the refusal names the socket
   rather than the staging file, which is no concern of the user's.
-- **A lock file beside it, `multishell.sock.lock`, is never removed**: unlinked
-  at quit, a launch that opened it just before would lock the orphan while the
-  next made a fresh one, and both would own the socket. A running instance holds
-  an exclusive record lock on it while it listens, which is what tells a second
-  launch the socket has a live owner (design/state-and-store.md).
+- **A lock file beside it is never removed**: unlinked at quit, a launch that
+  opened it just before would lock the orphan while the next made a fresh one,
+  and both would own the socket. A running instance holds an exclusive record
+  lock on it while it listens, which is what tells a second launch the socket
+  has a live owner (design/state-and-store.md).
 - **A record lock, not `flock`**: a child forked while one is held keeps it
   until it execs, and this process spawns freely.
 - **A connect alone cannot tell**: a listener whose accept backlog is full
   refuses one exactly as a dead socket does.
-- **A symlink to the helper in the current bundle**, `bin/multishell`, is
-  refreshed at launch. Hook lines reference that path through the home
-  directory.
+- **A symlink to the helper in the current bundle** is refreshed at launch. Hook
+  lines reference that path through the home directory.
 - **`/usr/local/bin/multishell` is a link to that link**, made only when the
   user installs the tool, through an administrator prompt. Every build shares
   that link, so the tool runs the last copy that started without handing over.
-- **The integration directory is generated at launch**, zsh startup files and a
-  bash `init.bash` built from the scripts bundled in MultishellCore, so an edit
-  there lasts until the next launch.
+- **The integration directory is generated at launch** from the scripts bundled
+  in MultishellCore, so an edit there lasts until the next launch.
 - **The drops directory holds files a drag promised rather than handed over**,
   swept at launch once a week old.
-- **The merged Ghostty config passes through the temporary directory**, a
-  `ghostty-config-<uuid>.conf` per load, gone as soon as libghostty has read it:
-  libghostty reads config from no other source, and nothing outlives a load for
-  another copy to sweep (design/terminals.md).
+- **The merged Ghostty config passes through the temporary directory**, a file
+  per load, gone as soon as libghostty has read it: libghostty reads config from
+  no other source, and nothing outlives a load for another copy to sweep
+  (design/terminals.md).
 - **libghostty is built without its crash reporter**, so it keeps no crash
   directory, and it reads the user's Ghostty config without writing it.
 - **Agent hooks are written only when asked**, each in that agent's own config
   directory; launch leaves alone even one an older build wrote
-  (design/agents.md). `~/.claude/settings.json`, `~/.codex/hooks.json` and
-  `~/.gemini/settings.json` keep a copy of the file as it was the first time,
-  beside it with `.before-multishell` added. `~/.copilot/hooks/multishell.json`
-  and `~/.config/opencode/plugin/multishell.js` are files of ours alone and are
-  deleted to remove.
+  (design/agents.md). Three of them keep a copy of the file as it was the first
+  time, beside it; the other two are files of ours alone and are deleted to
+  remove.
 - **Those directories are under `$HOME`**, as the agents read it, and under the
   account's home only where `HOME` is unset or empty: the account's home alone
   sent a test's helper into the developer's own files.
 - **Gemini's own settings are read where Gemini reads them**, to tell whether a
   shell's end starts a turn, so an empty `HOME` there means the temporary
   directory. The hook file does not follow it.
-- **Sidebar width lives in user defaults**, under `sidebarWidth` in the
-  `io.multishell.app` domain every build shares, debug ones included.
+- **Sidebar width lives in user defaults**, in the `io.multishell.app` domain
+  every build shares, debug ones included.
 - **A repository may carry `.multishell.json` at its root**, written by Export,
   with the same keys as a project's settings, less the agent, its flags and the
   shell. Read at launch, when a project's worktree records change, and on any

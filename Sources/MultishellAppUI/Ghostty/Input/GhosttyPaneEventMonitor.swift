@@ -20,7 +20,7 @@ final class GhosttyPaneEventMonitor {
   }
 
   /// `true` where a pane took the event, which AppKit then never sees.
-  private static func deliver(_ event: NSEvent) -> Bool {
+  static func deliver(_ event: NSEvent) -> Bool {
     guard let window = event.window else { return false }
     if event.type == .keyUp {
       return (window.firstResponder as? GhosttySurfaceView)?.takeCommandKeyUp(event) ?? false

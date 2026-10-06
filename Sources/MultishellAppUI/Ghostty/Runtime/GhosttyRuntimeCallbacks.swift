@@ -5,12 +5,13 @@ import GhosttyKit
 /// but the wakeup, which reaches the ticker, and a copy, which goes to the pasteboard.
 enum GhosttyRuntimeCallbacks {
   /// `ticker` is a `GhosttyTicker`'s userdata, the one thing a wakeup reaches.
-  static func config(waking ticker: UnsafeMutableRawPointer) -> ghostty_runtime_config_s {
-    ghostty_runtime_config_s(
+  static func runtimeConfig(waking ticker: UnsafeMutableRawPointer) -> ghostty_runtime_config_s {
+    // The Mac has no selection clipboard; Ghostty's own app keeps a private
+    // one, which nothing outside a pane could read.
+    let supportsSelectionClipboard = false
+    return ghostty_runtime_config_s(
       userdata: ticker,
-      // The Mac has no selection clipboard; Ghostty's own app keeps a private
-      // one, which nothing outside a pane could read.
-      supports_selection_clipboard: false,
+      supports_selection_clipboard: supportsSelectionClipboard,
       wakeup_cb: { GhosttyTicker.wakeUp($0) },
       action_cb: { _, target, action in GhosttyRuntimeCallbacks.perform(action, on: target) },
       read_clipboard_cb: { userdata, location, request, mimes, count, wantsList in

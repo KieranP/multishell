@@ -34,19 +34,23 @@ struct GhosttyModifiersTests {
 
   @Test func aRightHandKeyIsDownOnlyWhileItsOwnSideIsHeld() {
     let rightShiftKey: UInt16 = 0x3C
-    #expect(!GhosttyModifiers.isPressed(keyCode: rightShiftKey, in: shift(NX_DEVICELSHIFTKEYMASK)))
-    #expect(GhosttyModifiers.isPressed(keyCode: rightShiftKey, in: shift(NX_DEVICERSHIFTKEYMASK)))
+    #expect(
+      !GhosttyModifiers.isOwnSideDown(keyCode: rightShiftKey, in: shift(NX_DEVICELSHIFTKEYMASK)))
+    #expect(
+      GhosttyModifiers.isOwnSideDown(keyCode: rightShiftKey, in: shift(NX_DEVICERSHIFTKEYMASK)))
   }
 
   @Test func aLeftHandKeyIsDownOnlyWhileItsOwnSideIsHeld() {
     let leftShiftKey: UInt16 = 0x38
-    #expect(!GhosttyModifiers.isPressed(keyCode: leftShiftKey, in: shift(NX_DEVICERSHIFTKEYMASK)))
-    #expect(GhosttyModifiers.isPressed(keyCode: leftShiftKey, in: shift(NX_DEVICELSHIFTKEYMASK)))
+    #expect(
+      !GhosttyModifiers.isOwnSideDown(keyCode: leftShiftKey, in: shift(NX_DEVICERSHIFTKEYMASK)))
+    #expect(
+      GhosttyModifiers.isOwnSideDown(keyCode: leftShiftKey, in: shift(NX_DEVICELSHIFTKEYMASK)))
   }
 
   @Test func aModifierKeyWithNoSideReportedIsDown() {
-    #expect(GhosttyModifiers.isPressed(keyCode: 0x38, in: .shift))
-    #expect(GhosttyModifiers.isPressed(keyCode: 0x3C, in: .shift))
+    #expect(GhosttyModifiers.isOwnSideDown(keyCode: 0x38, in: .shift))
+    #expect(GhosttyModifiers.isOwnSideDown(keyCode: 0x3C, in: .shift))
   }
 
   private func shift(_ deviceMask: Int32) -> NSEvent.ModifierFlags {

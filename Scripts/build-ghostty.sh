@@ -13,6 +13,7 @@ output="$root/.build/ghostty"
 # `make clean` and `swift package reset` leave the next build warm.
 zig_cache="$ghostty/.zig-cache"
 xcframework="$output/GhosttyKit.xcframework"
+terminfo="$output/share/terminfo/78/xterm-ghostty"
 fingerprint_file="$output/fingerprint"
 lock_file="$root/.build/ghostty.lock"
 applied=()
@@ -107,7 +108,8 @@ fingerprint() {
 }
 
 is_built() {
-    [ -d "$xcframework" ] && [ "$(cat "$fingerprint_file" 2>/dev/null)" = "$1" ]
+    [ -d "$xcframework" ] && [ -f "$terminfo" ] \
+        && [ "$(cat "$fingerprint_file" 2>/dev/null)" = "$1" ]
 }
 
 # Runs on exit, however the build ends, so the submodule is left as it was.

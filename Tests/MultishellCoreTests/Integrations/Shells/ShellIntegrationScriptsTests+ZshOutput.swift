@@ -10,7 +10,7 @@ extension ShellIntegrationScriptsTests {
   static let scriptProgramPath = "/usr/bin/script"
 
   func zshOutput(
-    features: String?, input: String, usersRC: String? = nil, arguments: [String] = ["-i"],
+    features: String?, input: String, usersRC: String? = nil, runsInputAsScript: Bool = false,
     helper: String = "/bin/echo"
   ) async throws -> String {
     try #require(FileManager.default.isExecutableFile(atPath: Self.zshPath))
@@ -23,11 +23,14 @@ extension ShellIntegrationScriptsTests {
     environment[SessionEnvironment.sessionVariable] = "zsh-output"
     environment[SessionEnvironment.worktreeVariable] = "/w"
     environment[SessionEnvironment.socketVariable] = files.root.appendingPathComponent("s").path
-    let script = files.home.appendingPathComponent("script.zsh")
-    try Data(input.utf8).write(to: script)
+    var arguments = ["-i"]
+    if runsInputAsScript {
+      let script = files.home.appendingPathComponent("script.zsh")
+      try Data(input.utf8).write(to: script)
+      arguments.append(script.path)
+    }
     return try await interactiveShellOutput(
-      Self.zshPath, arguments: arguments.map { $0 == "SCRIPT" ? script.path : $0 },
-      environment: environment, input: input)
+      Self.zshPath, arguments: arguments, environment: environment, input: input)
   }
 
   /// zle loads with a terminal, which a test's piped shell has none of, so

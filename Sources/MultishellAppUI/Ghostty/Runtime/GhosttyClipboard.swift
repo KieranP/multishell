@@ -12,7 +12,7 @@ enum GhosttyClipboard {
   @MainActor
   static func pasteText(on pasteboard: NSPasteboard = .general) -> String? {
     let files = pasteboard.fileURLs
-    guard files.isEmpty else { return FileDropText.pastedText(for: files) }
+    guard files.isEmpty else { return FilePathText.pastedText(for: files) }
     return pasteboard.string(forType: .string)
   }
 

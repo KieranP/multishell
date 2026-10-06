@@ -9,7 +9,6 @@ final class GhosttySurfaceView: NSView {
   private(set) var surface: ghostty_surface_t?
   var onRetitle: ((String) -> Void)?
   var onBell: (() -> Void)?
-  /// `nil` where the shell's integration reported no status.
   var onCommandFinish: ((Int?) -> Void)?
   /// The shell's process ended and libghostty closed the pane.
   var onExit: (() -> Void)?
@@ -21,7 +20,7 @@ final class GhosttySurfaceView: NSView {
   /// The input method's uncommitted text, empty when nothing is composing.
   var markedText = ""
   /// Text the input method commits during one `keyDown`, sent after it.
-  var keyTextAccumulator: [String]?
+  var textCommittedInKeyDown: [String]?
   var keyEquivalent = GhosttyKeyEquivalent()
   var surrogatePairing = GhosttySurrogatePairing()
   private var windowObservers: [any NSObjectProtocol] = []
@@ -29,12 +28,14 @@ final class GhosttySurfaceView: NSView {
   var pendingPaste: (paste: GhosttyPasteConfirmation, alert: NSAlert)?
   /// What a program or libghostty last asked the pointer to be over the pane.
   private var pointer = NSCursor.iBeam
-  let secureInput: GhosttySecureInput
-  /// libghostty saw this pane's program turn echo off, as at a password prompt.
-  private var isAtPasswordPrompt = false
+  /// Held so libghostty's app outlives every surface made in it.
+  let runtime: GhosttyRuntime
+  /// libghostty saw this pane's program turn echo off, as at a password
+  /// prompt, or the `toggle_secure_input` keybind asked for it.
+  private var wantsSecureInput = false
 
   init(runtime: GhosttyRuntime, launch: GhosttySurfaceLaunch) {
-    secureInput = runtime.secureInput
+    self.runtime = runtime
     super.init(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
     let scale = NSScreen.main?.backingScaleFactor ?? 2
     surface = launch.withCConfig(view: self, scale: scale) { ghostty_surface_new(runtime.app, &$0) }
@@ -51,14 +52,14 @@ final class GhosttySurfaceView: NSView {
   /// libghostty holds this view unretained as the surface's userdata, so a
   /// view let go unfreed would leave it a dangling pointer and the shell running.
   isolated deinit {
-    free()
+    freeSurface()
   }
 
   /// Ends the shell. Not from the surface's own close callback, which runs
   /// inside libghostty and would free the surface mid-call.
-  func free() {
+  func freeSurface() {
     answerPendingPaste(approved: false)
-    secureInput.remove(ObjectIdentifier(self))
+    runtime.secureInput.remove(ObjectIdentifier(self))
     guard let surface else { return }
     ghostty_surface_free(surface)
     self.surface = nil
@@ -130,7 +131,7 @@ final class GhosttySurfaceView: NSView {
     case .pointerVisible(let visible):
       NSCursor.setHiddenUntilMouseMoves(!visible)
     case .secureInput(let mode):
-      isAtPasswordPrompt = GhosttySecureInput.isAtPrompt(after: mode, was: isAtPasswordPrompt)
+      wantsSecureInput = GhosttySecureInput.wantsSecureInput(after: mode, was: wantsSecureInput)
       syncSecureInput(hasKeyboard: hasKeyboard)
     }
   }
@@ -175,8 +176,8 @@ final class GhosttySurfaceView: NSView {
   /// Secure input follows the keyboard: on only while this prompt has it.
   /// `hasKeyboard` is passed in, AppKit naming a new responder only afterwards.
   func syncSecureInput(hasKeyboard: Bool) {
-    secureInput.update(
-      ObjectIdentifier(self), isAtPrompt: isAtPasswordPrompt, hasKeyboard: hasKeyboard)
+    runtime.secureInput.update(
+      ObjectIdentifier(self), wantsSecureInput: wantsSecureInput, hasKeyboard: hasKeyboard)
   }
 
   /// A program asking whether the terminal is light or dark is told the

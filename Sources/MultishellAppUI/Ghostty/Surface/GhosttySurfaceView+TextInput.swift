@@ -5,16 +5,11 @@ import GhosttyKit
 /// Composing text is drawn by libghostty as preedit, not by AppKit.
 extension GhosttySurfaceView: @preconcurrency NSTextInputClient {
   func insertText(_ string: Any, replacementRange: NSRange) {
-    guard NSApp.currentEvent != nil else { return }
-    let text: String
-    switch string {
-    case let attributed as NSAttributedString: text = attributed.string
-    case let plain as NSString: text = surrogatePairing.text(for: plain)
-    default: return
-    }
+    guard NSApp.currentEvent != nil, let committed = Self.text(of: string) else { return }
+    let text = surrogatePairing.text(for: committed as NSString)
     unmarkText()
-    if keyTextAccumulator != nil {
-      keyTextAccumulator?.append(text)
+    if textCommittedInKeyDown != nil {
+      textCommittedInKeyDown?.append(text)
     } else if !text.isEmpty {
       // Dictation and the like arrive outside a key, typed rather than pasted.
       send(GhosttyKeyInput(committing: text))
@@ -24,7 +19,7 @@ extension GhosttySurfaceView: @preconcurrency NSTextInputClient {
   func setMarkedText(_ string: Any, selectedRange: NSRange, replacementRange: NSRange) {
     markedText = Self.text(of: string) ?? ""
     // Outside a key the input source changed mid-composition; show it now.
-    if keyTextAccumulator == nil { syncPreedit() }
+    if textCommittedInKeyDown == nil { syncPreedit() }
   }
 
   func unmarkText() {

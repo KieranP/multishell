@@ -16,6 +16,8 @@ enum GhosttyKeyDown {
     wasComposing: Bool, isComposing: Bool, committed: [String], characters: String?,
     keyText: String?, keyCode: UInt16, flags: NSEvent.ModifierFlags
   ) -> [Delivery] {
+    // A lone surrogate half commits as empty text while it waits for its pair.
+    let committed = committed.filter { !$0.isEmpty }
     let isOrWasComposing = isComposing || wasComposing
     let typed = committed.filter { !isComposingControl($0, whileComposing: isOrWasComposing) }
     if wasComposing, !committed.isEmpty {
@@ -34,7 +36,7 @@ enum GhosttyKeyDown {
     guard whileComposing, let scalars = text?.unicodeScalars, scalars.count == 1 else {
       return false
     }
-    return scalars.first!.value < 0x20
+    return scalars.first!.isC0Control
   }
 
   /// Arrows still move after the input method commits on them; plain Left

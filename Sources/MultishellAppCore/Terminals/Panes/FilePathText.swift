@@ -2,10 +2,11 @@ import Foundation
 import MultishellCore
 import MultishellProcess
 
-/// What a terminal receives when files are dropped: quoted absolute paths for
-/// a shell, relative mentions for an agent. A trailing space, never a newline.
-public enum FileDropText {
-  static func text(
+/// What a terminal receives for files dropped or pasted on it, never a newline.
+public enum FilePathText {
+  /// Quoted absolute paths for a shell, relative mentions for an agent, with
+  /// a trailing space.
+  static func droppedText(
     for urls: [URL], relativeTo directory: URL, mentionPrefix: String? = nil
   ) -> String {
     let words =

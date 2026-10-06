@@ -31,14 +31,14 @@ struct GhosttySecureInputTests {
   @Test func aPasswordPromptInThePaneWithTheKeyboardTurnsItOn() {
     let system = FakeSystem()
     let input = secureInput(system)
-    input.update(ObjectIdentifier(system), isAtPrompt: true, hasKeyboard: true)
+    input.update(ObjectIdentifier(system), wantsSecureInput: true, hasKeyboard: true)
     #expect(system.enabled)
   }
 
   @Test func aPasswordPromptInAPaneWithoutTheKeyboardLeavesItOff() {
     let system = FakeSystem()
     let input = secureInput(system)
-    input.update(ObjectIdentifier(system), isAtPrompt: true, hasKeyboard: false)
+    input.update(ObjectIdentifier(system), wantsSecureInput: true, hasKeyboard: false)
     #expect(!system.enabled)
   }
 
@@ -46,11 +46,11 @@ struct GhosttySecureInputTests {
     let system = FakeSystem()
     let input = secureInput(system)
     let pane = ObjectIdentifier(system)
-    input.update(pane, isAtPrompt: true, hasKeyboard: true)
+    input.update(pane, wantsSecureInput: true, hasKeyboard: true)
     #expect(system.enabled)
-    input.update(pane, isAtPrompt: false, hasKeyboard: true)
+    input.update(pane, wantsSecureInput: false, hasKeyboard: true)
     #expect(!system.enabled)
-    input.update(pane, isAtPrompt: true, hasKeyboard: true)
+    input.update(pane, wantsSecureInput: true, hasKeyboard: true)
     #expect(system.enabled)
     input.remove(pane)
     #expect(!system.enabled)
@@ -59,7 +59,7 @@ struct GhosttySecureInputTests {
   @Test func anotherAppInFrontGetsItBackAndReturningTakesItAgain() {
     let system = FakeSystem()
     let input = secureInput(system)
-    input.update(ObjectIdentifier(system), isAtPrompt: true, hasKeyboard: true)
+    input.update(ObjectIdentifier(system), wantsSecureInput: true, hasKeyboard: true)
     #expect(system.enabled)
     system.isAppActive = false
     input.applicationDidResignActive()
@@ -73,7 +73,7 @@ struct GhosttySecureInputTests {
     let system = FakeSystem()
     system.isAppActive = false
     let input = secureInput(system)
-    input.update(ObjectIdentifier(system), isAtPrompt: true, hasKeyboard: true)
+    input.update(ObjectIdentifier(system), wantsSecureInput: true, hasKeyboard: true)
     #expect(!system.enabled)
     #expect(system.calls == 0)
   }
@@ -82,14 +82,14 @@ struct GhosttySecureInputTests {
     let system = FakeSystem()
     let input = secureInput(system)
     input.followsPasswordPrompts = false
-    input.update(ObjectIdentifier(system), isAtPrompt: true, hasKeyboard: true)
+    input.update(ObjectIdentifier(system), wantsSecureInput: true, hasKeyboard: true)
     #expect(!system.enabled)
   }
 
   @Test func turningPromptsOffLetsGoOfOneAlreadyOn() {
     let system = FakeSystem()
     let input = secureInput(system)
-    input.update(ObjectIdentifier(system), isAtPrompt: true, hasKeyboard: true)
+    input.update(ObjectIdentifier(system), wantsSecureInput: true, hasKeyboard: true)
     #expect(system.enabled)
     input.followsPasswordPrompts = false
     #expect(!system.enabled)
@@ -112,26 +112,26 @@ struct GhosttySecureInputTests {
         return noErr
       })
     let pane = ObjectIdentifier(system)
-    input.update(pane, isAtPrompt: true, hasKeyboard: true)
-    input.update(pane, isAtPrompt: false, hasKeyboard: true)
+    input.update(pane, wantsSecureInput: true, hasKeyboard: true)
+    input.update(pane, wantsSecureInput: false, hasKeyboard: true)
     #expect(system.enabled, "macOS refused")
     refuses = false
-    input.update(pane, isAtPrompt: false, hasKeyboard: false)
+    input.update(pane, wantsSecureInput: false, hasKeyboard: false)
     #expect(!system.enabled)
   }
 
   @Test func theKeybindTogglesAPanesPromptAndLibghosttySetsItOutright() {
-    #expect(GhosttySecureInput.isAtPrompt(after: GHOSTTY_SECURE_INPUT_ON, was: false))
-    #expect(!GhosttySecureInput.isAtPrompt(after: GHOSTTY_SECURE_INPUT_OFF, was: true))
-    #expect(GhosttySecureInput.isAtPrompt(after: GHOSTTY_SECURE_INPUT_TOGGLE, was: false))
-    #expect(!GhosttySecureInput.isAtPrompt(after: GHOSTTY_SECURE_INPUT_TOGGLE, was: true))
+    #expect(GhosttySecureInput.wantsSecureInput(after: GHOSTTY_SECURE_INPUT_ON, was: false))
+    #expect(!GhosttySecureInput.wantsSecureInput(after: GHOSTTY_SECURE_INPUT_OFF, was: true))
+    #expect(GhosttySecureInput.wantsSecureInput(after: GHOSTTY_SECURE_INPUT_TOGGLE, was: false))
+    #expect(!GhosttySecureInput.wantsSecureInput(after: GHOSTTY_SECURE_INPUT_TOGGLE, was: true))
   }
 
   @Test func aPromptReportedTwiceTurnsItOnOnlyOnce() {
     let system = FakeSystem()
     let input = secureInput(system)
-    input.update(ObjectIdentifier(system), isAtPrompt: true, hasKeyboard: true)
-    input.update(ObjectIdentifier(system), isAtPrompt: true, hasKeyboard: true)
+    input.update(ObjectIdentifier(system), wantsSecureInput: true, hasKeyboard: true)
+    input.update(ObjectIdentifier(system), wantsSecureInput: true, hasKeyboard: true)
     #expect(system.calls == 1)
   }
 }

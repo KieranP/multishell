@@ -22,9 +22,13 @@ enum GhosttyModifiers {
     (0x36, GHOSTTY_MODS_SUPER, NX_DEVICERCMDKEYMASK, GHOSTTY_MODS_SUPER_RIGHT),
   ]
 
+  private static let rightHandMods = modifierKeys.compactMap { key in
+    key.rightHandMod.map { (deviceMask: key.deviceMask, mod: $0) }
+  }
+
   private static let capsLockKeyCode: UInt16 = 0x39
 
-  private static let plain: [(NSEvent.ModifierFlags, ghostty_input_mods_e)] = [
+  private static let sidelessMods: [(NSEvent.ModifierFlags, ghostty_input_mods_e)] = [
     (.shift, GHOSTTY_MODS_SHIFT), (.control, GHOSTTY_MODS_CTRL), (.option, GHOSTTY_MODS_ALT),
     (.command, GHOSTTY_MODS_SUPER),
   ]
@@ -33,23 +37,23 @@ enum GhosttyModifiers {
   /// two Option keys apart.
   static func mods(_ flags: NSEvent.ModifierFlags) -> ghostty_input_mods_e {
     var mods = GHOSTTY_MODS_NONE.rawValue
-    for (flag, mod) in plain where flags.contains(flag) { mods |= mod.rawValue }
+    for (flag, mod) in sidelessMods where flags.contains(flag) { mods |= mod.rawValue }
     if flags.contains(.capsLock) { mods |= GHOSTTY_MODS_CAPS.rawValue }
-    for key in modifierKeys where holds(flags, key.deviceMask) {
-      if let rightHandMod = key.rightHandMod { mods |= rightHandMod.rawValue }
+    for (deviceMask, rightHandMod) in rightHandMods where holds(flags, deviceMask) {
+      mods |= rightHandMod.rawValue
     }
     return ghostty_input_mods_e(mods)
   }
 
   static func flags(_ mods: ghostty_input_mods_e) -> NSEvent.ModifierFlags {
-    plain.reduce(into: []) { flags, pair in
+    sidelessMods.reduce(into: []) { flags, pair in
       if mods.rawValue & pair.1.rawValue != 0 { flags.insert(pair.0) }
     }
   }
 
-  /// Whether the key `flagsChanged` reports is down rather than its twin, held on
-  /// the other side. A made-up event may carry neither side's bit: then it is down.
-  static func isPressed(keyCode: UInt16, in flags: NSEvent.ModifierFlags) -> Bool {
+  /// Whether the key `flagsChanged` reports is down rather than its twin. A made-up
+  /// event may carry neither side's bit, and a key that is no modifier has none: both are down.
+  static func isOwnSideDown(keyCode: UInt16, in flags: NSEvent.ModifierFlags) -> Bool {
     guard let key = modifierKeys.first(where: { $0.keyCode == keyCode }) else { return true }
     if holds(flags, key.deviceMask) { return true }
     let twins = modifierKeys.filter { $0.mod == key.mod && $0.keyCode != keyCode }

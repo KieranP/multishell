@@ -1,6 +1,6 @@
 import Foundation
 
-/// The command-status hooks a shell runs, and the generated startup files
+/// The integration scripts a shell sources, and the generated startup files
 /// carrying them into this app's terminals; see Docs/design/terminals.md.
 enum ShellIntegrationScripts {
   private static let helperPlaceholder = "__MULTISHELL_HELPER__"

@@ -4,8 +4,8 @@ import GhosttyKit
 /// libghostty's process-wide setup, which any config or app needs first.
 enum GhosttyLibrary {
   private static let initialized: Void = {
-    // Named, a release build taking an inherited value over the bundle. Not in
-    // a test process: it has no terminfo, and setenv races its shell threads.
+    // Overwritten, or an app launched from a Ghostty shell takes that Ghostty's
+    // resources. Not in a test process: it has no terminfo, and setenv races its shell threads.
     if Bundle.main.bundleURL.pathExtension == "app", let resources = Bundle.main.resourceURL {
       setenv("GHOSTTY_RESOURCES_DIR", resources.appendingPathComponent("ghostty").path, 1)
     }

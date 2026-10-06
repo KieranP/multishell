@@ -51,10 +51,10 @@ struct GhosttyKeyInput {
     }
   }
 
-  /// libghostty encodes control characters itself from the key and its
-  /// modifiers, which the Kitty keyboard protocol needs, so they go as no text.
+  /// libghostty encodes control characters, DEL among them, itself from the key
+  /// and its modifiers, which the Kitty keyboard protocol needs, so they go as no text.
   private static func textUnlessControl(_ text: String?) -> String? {
     guard let text, let first = text.unicodeScalars.first else { return nil }
-    return first.value < 0x20 || first.value == 0x7F ? nil : text
+    return first.isC0Control || first == "\u{7F}" ? nil : text
   }
 }

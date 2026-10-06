@@ -2,9 +2,7 @@ import Testing
 
 @testable import MultishellAppUI
 
-/// What libghostty refuses in config text, the config freed once read.
+/// What libghostty refuses in config text.
 func libghosttyDiagnostics(_ text: String) throws -> [String] {
-  let loaded = try #require(GhosttyLoadedConfig.load(text))
-  defer { loaded.free() }
-  return loaded.diagnostics
+  try #require(GhosttyLoadedConfig.load(text)).diagnostics
 }

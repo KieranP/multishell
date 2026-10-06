@@ -53,7 +53,7 @@ struct TabCommandTests {
       ["true"],
       shell: ShellInvocation(
         executable: URL(fileURLWithPath: tcsh), arguments: ["-f", "-i", "-c"]),
-      handOver: TabCommand.commandLine(
+      handOver: AnyShellQuoting.commandLine(
         ShellLaunch.execArguments(forShell: zsh.path, zshDirectory: zshDirectory, bashInit: missing)
       ))
     let text = try await Detached.output(

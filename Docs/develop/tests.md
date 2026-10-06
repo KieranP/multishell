@@ -345,18 +345,22 @@ says why these are the rules.
   PaneNodeDecodingTests and WorkspaceStoreTests.
 - **A view is tested only for its size or its pixels**, laid out in a window
   never ordered in; a value a view reads is tested as a value.
-- **The terminal host against a real shell is untested**: a surface needs a
-  window and a GPU. What libghostty is handed is tested as values instead: the
-  key, modifier and mouse button mapping (GhosttyKeyInputTests,
-  GhosttyModifiersTests, GhosttyMouseButtonTests), split surrogates
-  (GhosttySurrogatePairingTests), the actions decoded
+- **A real surface is made only where its lifetime is the question**, on
+  `/bin/sleep` and in no window: the runtime outliving it, a closed session
+  staying silent and the pane monitor's two events (GhosttySurfaceViewTests,
+  GhosttyTerminalHostTests, GhosttyPaneEventMonitorTests). A failed expectation
+  on a pane is read into a Bool first, as describing one trips over AppKit's
+  cursors, null pointers in a test process. What libghostty is handed is
+  otherwise tested as values: the key, modifier and mouse button mapping
+  (GhosttyKeyInputTests, GhosttyModifiersTests, GhosttyMouseButtonTests), split
+  surrogates (GhosttySurrogatePairingTests), the actions decoded
   (GhosttySurfaceEventTests), the launch's C strings
   (GhosttySurfaceLaunchTests), the clipboard and a program's reads of it
-  (GhosttyClipboardTests, GhosttyClipboardRequestTests,
-  GhosttyClipboardAnswerTests) and the unsafe paste question
-  (GhosttyPasteConfirmationTests). Secure keyboard entry's balance against a
-  fake system switch is GhosttySecureInputTests. Focus kept in step with the
-  window is not: libghostty's own idea of it shows only on a live surface.
+  (GhosttyClipboardTests, GhosttyClipboardAnswerTests) and the unsafe paste
+  question (GhosttyPasteConfirmationTests). Secure keyboard entry's balance
+  against a fake system switch is GhosttySecureInputTests. Focus kept in step
+  with the window is not: libghostty's own idea of it shows only on a live
+  surface.
 - **A config file outliving its load, and the line a diagnostic names**:
   GhosttyLoadedConfigTests, against the real libghostty in a scratch directory.
 - **What a zsh prompt tells the terminal now the engine's integration is off**,

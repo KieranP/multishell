@@ -61,8 +61,8 @@ final class SettingsWindowResetView: AccessibilityHiddenView {
     window.setFrameOrigin(origin)
   }
 
-  /// A block observer holds its window, which holds this view, so leaving
-  /// one registered past the window would keep both alive.
+  /// Each move to a window registers anew; left registered, the old
+  /// window's notifications would still reach this view.
   private func stopObserving() {
     for observer in observers { NotificationCenter.default.removeObserver(observer) }
     observers = []

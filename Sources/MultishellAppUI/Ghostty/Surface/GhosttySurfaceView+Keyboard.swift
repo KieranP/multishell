@@ -13,8 +13,8 @@ extension GhosttySurfaceView {
     let translation = translated(event, on: surface)
     let wasComposing = !markedText.isEmpty
     let layoutBefore = wasComposing ? nil : KeyboardInputSource.currentID
-    keyTextAccumulator = []
-    defer { keyTextAccumulator = nil }
+    textCommittedInKeyDown = []
+    defer { textCommittedInKeyDown = nil }
     keyEquivalent.reset()
 
     interpretKeyEvents([translation])
@@ -24,7 +24,7 @@ extension GhosttySurfaceView {
 
     let deliveries = GhosttyKeyDown.deliveries(
       wasComposing: wasComposing, isComposing: !markedText.isEmpty,
-      committed: keyTextAccumulator ?? [], characters: event.characters,
+      committed: textCommittedInKeyDown ?? [], characters: event.characters,
       keyText: translation.ghosttyText, keyCode: translation.keyCode,
       flags: translation.modifierFlags)
     for delivery in deliveries {
@@ -63,7 +63,7 @@ extension GhosttySurfaceView {
     let flags = event.modifierFlags
     let isDown =
       GhosttyModifiers.mods(flags).rawValue & mod.rawValue != 0
-      && GhosttyModifiers.isPressed(keyCode: event.keyCode, in: flags)
+      && GhosttyModifiers.isOwnSideDown(keyCode: event.keyCode, in: flags)
     send(GhosttyKeyInput(event, isDown ? GHOSTTY_ACTION_PRESS : GHOSTTY_ACTION_RELEASE))
   }
 

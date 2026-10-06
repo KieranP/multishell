@@ -28,10 +28,12 @@ _multishell_keymap_cursor() {
 # Raw, as percent-encoding overran Ghostty's 2 KB buffer; a control
 # character could end the sequence early, so that path goes unreported.
 _multishell_report_directory() {
+  emulate -L zsh
   # Not from a subshell, whose output `$(cd x; pwd)` would capture.
   (( _multishell_prompted && ! ZSH_SUBSHELL )) || return 0
   [[ "$PWD" == *[[:cntrl:]]* ]] && return 0
   print -rn -u $_multishell_tty_fd -- $'\e]7;kitty-shell-cwd://'"${HOST-}$PWD"$'\a'
+  return 0
 }
 
 # Put back on every prompt, as a framework rebuilds PS1.
@@ -47,6 +49,7 @@ _multishell_prompt_click() {
 
 _multishell_terminal_precmd() {
   local e=$?
+  emulate -L zsh
   _multishell_prompted=1
   (( _multishell_owes_command_end )) && print -n -- $'\e]133;D;'"$e"$'\a'
   _multishell_owes_command_end=0
@@ -55,10 +58,12 @@ _multishell_terminal_precmd() {
   # A deep directory as `…/` and its last three parts, as Ghostty titles it.
   _multishell_title "${(%):-%(4~|…/%3~|%~)}"
   _multishell_keymap_cursor
+  return 0
 }
 
 # Not before a first prompt: `zsh -i script` runs this for every line.
 _multishell_terminal_preexec() {
+  emulate -L zsh
   (( _multishell_prompted )) || return 0
   _multishell_owes_command_end=1
 
@@ -66,4 +71,5 @@ _multishell_terminal_preexec() {
   local line="${1%%$'\n'*}"
   _multishell_title "${line//[[:cntrl:]]/}"
   print -n -- $'\e]133;C\a'
+  return 0
 }

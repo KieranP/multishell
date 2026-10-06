@@ -3,13 +3,13 @@ import Carbon
 import GhosttyKit
 
 /// macOS's secure keyboard entry, after Ghostty's `SecureInput`: on while a
-/// pane at a password prompt has the keyboard. One switch for the whole Mac.
+/// pane wanting it, as at a password prompt, has the keyboard. One switch for the whole Mac.
 @MainActor
 final class GhosttySecureInput {
   private let isAppActive: () -> Bool
   private let enable: () -> OSStatus
   private let disable: () -> OSStatus
-  /// The panes at a password prompt, and whether each has the keyboard.
+  /// The panes wanting secure input, and whether each has the keyboard.
   private var panes: [ObjectIdentifier: Bool] = [:]
   /// The user's `macos-auto-secure-input`; off, no prompt turns it on.
   var followsPasswordPrompts = true {
@@ -27,14 +27,14 @@ final class GhosttySecureInput {
     self.disable = disable
   }
 
-  func update(_ pane: ObjectIdentifier, isAtPrompt: Bool, hasKeyboard: Bool) {
-    panes[pane] = isAtPrompt ? hasKeyboard : nil
+  func update(_ pane: ObjectIdentifier, wantsSecureInput: Bool, hasKeyboard: Bool) {
+    panes[pane] = wantsSecureInput ? hasKeyboard : nil
     apply()
   }
 
-  /// libghostty sets a pane's prompt outright as echo goes off and on; the
+  /// libghostty sets it outright as echo goes off and on; the
   /// `toggle_secure_input` keybind flips it.
-  static func isAtPrompt(after mode: ghostty_action_secure_input_e, was: Bool) -> Bool {
+  static func wantsSecureInput(after mode: ghostty_action_secure_input_e, was: Bool) -> Bool {
     mode == GHOSTTY_SECURE_INPUT_TOGGLE ? !was : mode == GHOSTTY_SECURE_INPUT_ON
   }
 

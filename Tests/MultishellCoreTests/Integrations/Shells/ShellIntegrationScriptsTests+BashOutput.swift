@@ -6,8 +6,6 @@ import Testing
 /// A real bash run against the generated init file, as a Ghostty pane starts
 /// it, with the user's own `.bashrc` read on the way.
 extension ShellIntegrationScriptsTests {
-  static let bashPaths = ["/bin/bash", "/opt/homebrew/bin/bash"]
-
   func bashOutput(
     _ bash: String, features: String?, input: String, usersRC: String
   ) async throws -> String {

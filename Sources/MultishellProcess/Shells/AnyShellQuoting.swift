@@ -6,6 +6,10 @@ public enum AnyShellQuoting {
   /// Characters no shell above reads specially anywhere in a word.
   private static let bare = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_./"))
 
+  public static func commandLine(_ words: [String]) -> String {
+    words.map(quote).joined(separator: " ")
+  }
+
   /// Single quotes, with a quote, a backslash and a `!` each outside them:
   /// fish escapes a backslash inside quotes, and csh expands a `!` there.
   public static func quote(_ word: String) -> String {
