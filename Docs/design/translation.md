@@ -120,4 +120,5 @@ Newest at the bottom.
   question named its fields that way.
 - **Memory sizes do follow the region.** `ByteCountFormatter` takes no locale,
   so in a region that writes a comma the debug panel's sizes use one and the
-  rates and times beside them do not.
+  rates and durations beside them do not. The clock time under the timeline's
+  pointer follows the region too, being `Date.formatted`.

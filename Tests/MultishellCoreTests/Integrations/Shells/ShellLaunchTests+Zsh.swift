@@ -38,33 +38,4 @@ extension ShellLaunchTests {
       ).isEmpty,
       "nothing when the setting has not generated the directory")
   }
-
-  /// libghostty sets `ZDOTDIR` to its own bootstrap and then applies the surface's
-  /// variables on top, so ours would replace it and its integration would never load.
-  @Test func theEnginesBootstrapIsEnteredFirstWhenItHasOne() throws {
-    let ours = try Scratch.directory("zdotdir")
-    defer { Scratch.remove(ours) }
-    let bootstrap = try Scratch.directory("zdotdir")
-    defer { Scratch.remove(bootstrap) }
-    try Data().write(to: bootstrap.appendingPathComponent(".zshenv"))
-
-    let chained = ShellLaunch.zshEnvironment(
-      forShell: "/bin/zsh", environment: ["ZDOTDIR": "/u"], zshDirectory: ours,
-      engineZshBootstrap: bootstrap)
-    #expect(chained["ZDOTDIR"] == bootstrap.path)
-    #expect(chained[ShellLaunch.ghosttyZdotdirVariable] == ours.path)
-    #expect(chained["MULTISHELL_USER_ZDOTDIR"] == "/u", "and ours still chains to the user's")
-
-    let empty = try Scratch.directory("zdotdir")
-    defer { Scratch.remove(empty) }
-    let unbootstrapped = ShellLaunch.zshEnvironment(
-      forShell: "/bin/zsh", environment: [:], zshDirectory: ours, engineZshBootstrap: empty)
-    #expect(unbootstrapped["ZDOTDIR"] == ours.path, "a bootstrap with no startup file is no chain")
-    #expect(unbootstrapped[ShellLaunch.ghosttyZdotdirVariable] == nil)
-    #expect(
-      ShellLaunch.zshEnvironment(
-        forShell: "/bin/bash", environment: [:], zshDirectory: ours,
-        engineZshBootstrap: bootstrap
-      ).isEmpty, "bash is not chained either way")
-  }
 }

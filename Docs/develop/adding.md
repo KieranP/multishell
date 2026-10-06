@@ -12,10 +12,9 @@ What each addition needs beyond the code itself.
   the model (design/terminals.md). A replacement implements the surface-host
   protocol and is passed to the model in the Mac half.
 - **What a host owes**: the session environment to the child, a finished command
-  reported if the engine can tell, paste framed as a bracketed paste, anything
-  outside its sessions dropped at shutdown, a shared directory cleared only when
-  it claimed it, and each session's pty path and foreground pid where it knows
-  them, without which the debug panel puts every pane under Other processes.
+  reported if the engine can tell, paste framed as a bracketed paste, and each
+  session's pty path and foreground pid where it knows them, without which the
+  debug panel puts every pane under Other processes.
 - **Two engines at once needs a multiplexer**, one host per kind and a map from
   session to kind, so a running terminal keeps the engine that opened it.
 - **An agent or editor.** A row in its catalogue; detection and the dropdowns
@@ -65,9 +64,10 @@ What each addition needs beyond the code itself.
   integration too**, beside whether a worker is a conversation of its own and
   which listed kinds wake it. All default to no, so nothing forces them: a
   resuming agent left at the default pays Done at its last worker out and again
-  at the woken turn's Stop (design/agents.md). A fourth, whether its transcript
-  shows a notice still queued at a Stop, is read only in Claude's format, so
-  another agent needs a reader of its own before it can say yes.
+  at the woken turn's Stop (design/agents.md). Two more, whether its transcript
+  shows a notice still queued at a Stop and whether it shows a question a
+  permission prompt stands for, are read only in Claude's format, so another
+  agent needs a reader of its own before it can say yes to either.
 - **An agent whose Stop does not list the shells it backgrounded names a shell
   marker on the integration**, text only such a shell's command line holds.
   Nothing forces it either: without one a pane waiting on the shell goes Done
@@ -159,18 +159,29 @@ What each addition needs beyond the code itself.
   compares keys to skip a sort, so a comparison reading anything not on the key
   serves the old order. No order lifts a row above the main worktree or the
   trunk, which the tiers place first.
-- **A shell with command-status hooks.** A script in the libraries' resources
-  with the helper's and the agents' placeholders, listed in the manifest, loaded
-  by the integration scripts, written by the integration refresh and picked up
-  at launch.
+- **A shell with command-status hooks.** A folder in the libraries' resources,
+  copied whole in the manifest, whose init file carries the helper's and the
+  agents' placeholders and joins the rest through `# include` lines. Then a path
+  in `Paths`, a generator in the integration scripts, a write in the integration
+  refresh, and a way in through `ShellLaunch` for both a fresh tab and the shell
+  taking over when an agent quits. Add its generated file to
+  `everyGeneratedFileParsesInItsShell`.
 - **It reports a command started and finished through the helper**, naming the
   program where it is one of the agents, and does nothing when the session
   variable is unset. Name it in `ShellLaunch.reportsFinishedCommands` too, or
   its panes also read git on every retitle, the fallback for shells that report
   nothing.
+- **The engine's own shell integration is off** (design/terminals.md), so prompt
+  marks and the `sudo` and `ssh` wrappers are the new shell's scripts to write,
+  or its panes go without click-to-move and the wrappers.
 - **Add it to the searched shells if Homebrew leaves it out of `/etc/shells`**,
   and give it a row in COMPAT.md's table: the picker offers it, so a reader has
   to be told what it does not get.
+- **A command wrapper.** A function in each shell's `command-wrappers` file,
+  zsh's and bash's, run only where the user's `shell-integration-features` name
+  it and standing back where they have a function of that name. Nothing holds
+  the two files to one list. The bash one must also run under macOS's bash 3.2,
+  which ShellIntegrationScriptsTests+CommandWrappers runs beside Homebrew's.
 - **A second frontend.** A target in this package depending on the four
   libraries, the package exporting no library product; fix the model to its view
   type once, and implement the platform, surface host, directory watcher and

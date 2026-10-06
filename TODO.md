@@ -14,8 +14,10 @@ Most pressing first within each heading. A decision that gets made moves to
   behind the header's glass, is mouse-only too. Each new binding is an
   `AppShortcut` in `AppShortcutCatalogue.all`.
 - Use Selection for Find: Cmd+F with text highlighted puts that text in the
-  search field. Waits on a wrapper release exposing the surface's selection; the
-  engine's own binding for it stays bound and does nothing here.
+  search field, read with `ghostty_surface_read_selection`. The engine's own
+  binding for it stays bound and does nothing here until then.
+- The find bar's match count, "3 of 12": decode libghostty's search total and
+  selected actions in `GhosttySurfaceEvent` and show them beside the field.
 - Subagent nesting. A subagent that launches its own shows in the chip as a flat
   list beside them, every row named `general-purpose`, where Claude shows
   `code-review` with its two workers under it. The roster is by id with no

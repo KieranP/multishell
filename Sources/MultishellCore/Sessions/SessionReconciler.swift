@@ -30,6 +30,10 @@ public final class SessionReconciler {
   /// store has it, so the GUI reads the new focus when it marks it seen.
   public var onFocus: (@MainActor (TerminalSession.ID) -> Void)?
 
+  /// The engine was asked to close a pane whose process still runs. Left to
+  /// the GUI, whose close asks first where an agent is working.
+  public var onCloseRequest: (@MainActor (TerminalSession.ID) -> Void)?
+
   public init(store: WorkspaceStore, host: any TerminalHost) {
     self.store = store
     self.host = host
@@ -94,6 +98,10 @@ extension SessionReconciler: TerminalHostDelegate {
   public func terminalHost(_ host: any TerminalHost, didFocus id: TerminalSession.ID) {
     store.focusSession(id)
     onFocus?(id)
+  }
+
+  public func terminalHost(_ host: any TerminalHost, didAskToClose id: TerminalSession.ID) {
+    onCloseRequest?(id)
   }
 
   /// The process is already gone, so the surface must go too; leaving it

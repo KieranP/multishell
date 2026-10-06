@@ -3,31 +3,21 @@ import Foundation
 /// How to launch a login shell so the command-status hooks reach that session
 /// only. zsh rides `ZDOTDIR`, bash `--init-file`; see Docs/design/terminals.md.
 public enum ShellLaunch {
-  /// The variable Ghostty's zsh bootstrap reads to find the `ZDOTDIR` it
-  /// displaced, and hands `ZDOTDIR` back to before the first startup file.
-  static let ghosttyZdotdirVariable = "GHOSTTY_ZSH_ZDOTDIR"
-
   /// The shell taking over when an agent tab's agent quits: `exec` plus the
-  /// integration a fresh tab gets. Runs under `/bin/sh`; see terminals.md.
-  public static func execCommandLine(
+  /// integration a fresh tab gets, as words for the caller to quote.
+  public static func execArguments(
     forShell shellPath: String,
     zshDirectory: URL = Paths.zshIntegrationDirectory,
     bashInit: URL = Paths.bashInitFile
-  ) -> String {
-    let shell = PosixShellQuoting.quote(shellPath)
+  ) -> [String] {
     switch shellPath.executableName {
     case "zsh" where FileManager.default.fileExists(atPath: zshDirectory.path):
-      let ours = PosixShellQuoting.quote(zshDirectory.path)
-      let engine = "\"$GHOSTTY_RESOURCES_DIR/shell-integration/zsh\""
-      let script =
-        "if [ -f \"${GHOSTTY_RESOURCES_DIR-}/shell-integration/zsh/.zshenv\" ]; then "
-        + "ZDOTDIR=\(engine) \(ghosttyZdotdirVariable)=\(ours) exec \(shell) -l; "
-        + "else ZDOTDIR=\(ours) exec \(shell) -l; fi"
-      return "exec /bin/sh -c \(PosixShellQuoting.quote(script))"
+      // Through env: fish and csh take no `VAR=value` before a command.
+      return ["exec", "env", "ZDOTDIR=\(zshDirectory.path)", shellPath, "-l"]
     case "bash" where FileManager.default.fileExists(atPath: bashInit.path):
-      return bashInitCommand(shell: shellPath, bashInit: bashInit)
+      return ["exec"] + bashInitArguments(shell: shellPath, bashInit: bashInit)
     default:
-      return "exec \(shell) -l"
+      return ["exec", shellPath, "-l"]
     }
   }
 
@@ -38,7 +28,7 @@ public enum ShellLaunch {
   }
 
   /// A command line replacing the engine's default shell, `nil` to leave it.
-  /// bash goes through `/bin/sh -c`; see Docs/design/terminals.md.
+  /// bash goes through `/bin/sh -c`, or libghostty's `exec -l` makes it a login shell.
   public static func overrideCommand(
     forShell shellPath: String,
     loginShell: String = ShellChoice.loginShellPath(),
@@ -46,7 +36,11 @@ public enum ShellLaunch {
   ) -> [String]? {
     switch shellPath.executableName {
     case "bash" where FileManager.default.fileExists(atPath: bashInit.path):
-      return ["/bin/sh", "-c", bashInitCommand(shell: shellPath, bashInit: bashInit)]
+      return [
+        "/bin/sh", "-c",
+        PosixShellQuoting.commandLine(
+          ["exec"] + bashInitArguments(shell: shellPath, bashInit: bashInit)),
+      ]
     case _ where shellPath != loginShell:
       return [shellPath, "-l"]
     default:
@@ -54,31 +48,24 @@ public enum ShellLaunch {
     }
   }
 
-  /// Points a zsh session's `ZDOTDIR` at the generated directory. Under
-  /// Ghostty it sets the pair the engine would have; see terminals.md.
+  /// Points a zsh session's `ZDOTDIR` at the generated directory, and says
+  /// where the user's was so ours can chain to it; see terminals.md.
   static func zshEnvironment(
     forShell shellPath: String,
     environment: [String: String] = ProcessInfo.processInfo.environment,
-    zshDirectory: URL = Paths.zshIntegrationDirectory,
-    engineZshBootstrap: URL? = nil
+    zshDirectory: URL = Paths.zshIntegrationDirectory
   ) -> [String: String] {
     guard shellPath.executableName == "zsh",
       FileManager.default.fileExists(atPath: zshDirectory.path)
     else { return [:] }
     var variables = ["ZDOTDIR": zshDirectory.path]
-    if let bootstrap = engineZshBootstrap,
-      FileManager.default.fileExists(atPath: bootstrap.appendingPathComponent(".zshenv").path)
-    {
-      variables["ZDOTDIR"] = bootstrap.path
-      variables[ghosttyZdotdirVariable] = zshDirectory.path
-    }
     if let user = environment["ZDOTDIR"], !user.isEmpty {
       variables["MULTISHELL_USER_ZDOTDIR"] = user
     }
     return variables
   }
 
-  private static func bashInitCommand(shell shellPath: String, bashInit: URL) -> String {
-    "exec \(PosixShellQuoting.quote(shellPath)) --init-file \(PosixShellQuoting.quote(bashInit.path)) -i"
+  private static func bashInitArguments(shell shellPath: String, bashInit: URL) -> [String] {
+    [shellPath, "--init-file", bashInit.path, "-i"]
   }
 }

@@ -143,6 +143,11 @@ struct PresentedErrorTests {
     #expect(!presented.message.contains("TrashTookNothing"))
   }
 
+  @Test func aTerminalTheEngineCouldNotStartSaysSoInWords() {
+    let presented = PresentedError(TerminalUnavailable())
+    #expect(presented.message == "The terminal could not be started.")
+  }
+
   @Test func onlyTheMissingGitAlertSaysGitIsMissing() {
     #expect(PresentedError(GitUnavailable()).saysGitIsMissing)
     #expect(!PresentedError(InvalidBranchName("x")).saysGitIsMissing)

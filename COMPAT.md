@@ -12,14 +12,16 @@ just never updates the state indicator dot.
 | macOS           | 26 Tahoe and newer              |
 | Other platforms | None                            |
 | Build           | Xcode 26 or newer               |
+| libghostty      | Ghostty's Zig, Metal toolchain  |
 | git             | 2.36 or newer advised           |
 | Release         | Source only, no notarised build |
 | Language        | English                         |
 
 `make build` builds for the machine it runs on, `arch=$(uname -m)` in
-`Scripts/build-lib.sh`, so the binary is single-architecture rather than
-universal. libghostty ships both slices; only Apple silicon has been built and
-run here. Only Xcode 27 has been built with, the floor of 26 resting on
+`Scripts/build-lib.sh`, and libghostty for it alone
+(`-Dxcframework-target=native`), so the binary is single-architecture rather
+than universal. Only Apple silicon has been built and run here; Intel is unbuilt
+and untested. Only Xcode 27 has been built with, the floor of 26 resting on
 `xcodebuild` behaving there as it does in 27; see BUGS.md.
 
 A git older than 2.36 has no `-z` for `git worktree list`, so the app reads the

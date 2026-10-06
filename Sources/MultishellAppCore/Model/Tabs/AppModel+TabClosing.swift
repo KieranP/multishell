@@ -18,6 +18,13 @@ extension AppModel {
     requestClose(.tab(id), in: tab)
   }
 
+  /// A close the engine was asked for, as by a keybind in the user's Ghostty
+  /// config, asked about as Cmd+W is.
+  func closePane(_ id: TerminalSession.ID) {
+    guard let tab = workspace.tab(owning: id) else { return }
+    requestClose(.pane(id), in: tab)
+  }
+
   /// The dialog's answer to a close that found a working agent: the close
   /// goes either way, and only a confirmation performs it.
   public func answerPendingClose(confirmed: Bool) {

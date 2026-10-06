@@ -63,7 +63,7 @@ says why these are the rules.
   table rather than crashing a view.
 - **An agent typed at a prompt that marks nothing**: the placeholder test in
   ShellIntegrationScriptsTests holds the generated files to naming the agents,
-  and ShellIntegrationScriptsTests+CommandReports runs the real shells and reads
+  and ShellIntegrationScriptsTests+SessionReports runs the real shells and reads
   what they report.
 - **That zsh test caught a word subscript taking characters** for a command run
   by its path, which a syntax check cannot see.
@@ -314,7 +314,7 @@ says why these are the rules.
   process's own, and run from a Multishell tab the hooks reported to the
   developer's live app.
 - **An empty Enter under a user's prompt command starts no command**:
-  ShellIntegrationScriptsTests+CommandReports, real bash with a logging stand-in
+  ShellIntegrationScriptsTests+SessionReports, real bash with a logging stand-in
   for the helper, counting the started lines.
 - **A dead agent with a worker counted no longer holds Working**, and its
   shell's later failure is not an agent waiting on the badge:
@@ -346,8 +346,32 @@ says why these are the rules.
 - **A view is tested only for its size or its pixels**, laid out in a window
   never ordered in; a value a view reads is tested as a value.
 - **The terminal host against a real shell is untested**: a surface needs a
-  window and a GPU, so the only suite that builds the host is
-  GhosttyTerminalHostTests, which opens no surface.
+  window and a GPU. What libghostty is handed is tested as values instead: the
+  key, modifier and mouse button mapping (GhosttyKeyInputTests,
+  GhosttyModifiersTests, GhosttyMouseButtonTests), split surrogates
+  (GhosttySurrogatePairingTests), the actions decoded
+  (GhosttySurfaceEventTests), the launch's C strings
+  (GhosttySurfaceLaunchTests), the clipboard and a program's reads of it
+  (GhosttyClipboardTests, GhosttyClipboardRequestTests,
+  GhosttyClipboardAnswerTests) and the unsafe paste question
+  (GhosttyPasteConfirmationTests). Secure keyboard entry's balance against a
+  fake system switch is GhosttySecureInputTests. Focus kept in step with the
+  window is not: libghostty's own idea of it shows only on a live surface.
+- **A config file outliving its load, and the line a diagnostic names**:
+  GhosttyLoadedConfigTests, against the real libghostty in a scratch directory.
+- **What a zsh prompt tells the terminal now the engine's integration is off**,
+  a command's end and status, the directory, the title and the cursor shape in
+  each keymap, each only where the user's features ask:
+  ShellIntegrationScriptsTests +CommandEnd, +DirectoryReports, +Title and
+  +CursorShape, run through +ZshOutput, which loads zle by hand for the keymap
+  hooks a piped shell would not register.
+- **bash launched as libghostty launches a command**, `exec -l`, still reading
+  our init file: ShellLaunchTests.
+- **`sudo` and `ssh` wrapped only where the user's features ask, and a function
+  of their own by either name kept**: ShellIntegrationScriptsTests
+  +CommandWrappers. The bash half runs `/bin/bash` and `/opt/homebrew/bin/bash`
+  from its own list, not `InstalledBashes.all`, so a bash in `/usr/local/bin` is
+  not run and a missing one passes.
 - **A removal dialog left up for a worktree git no longer lists, and Remove
   offered on the main worktree**:
   AppModel+WorktreeListRefreshTests+RemovedOutsideTheApp and

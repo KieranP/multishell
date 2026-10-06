@@ -4,26 +4,33 @@ import MultishellProcess
 
 /// What a terminal receives when files are dropped: quoted absolute paths for
 /// a shell, relative mentions for an agent. A trailing space, never a newline.
-enum FileDropText {
+public enum FileDropText {
   static func text(
     for urls: [URL], relativeTo directory: URL, mentionPrefix: String? = nil
   ) -> String {
-    let words = urls.filter { isTypable($0) }.map { url in
-      guard let mentionPrefix else {
-        return AnyShellQuoting.quote(url.standardizedFileURL.path)
-      }
-      return mentionPrefix + escaping(path(of: url, relativeTo: directory))
-    }
+    let words =
+      mentionPrefix.map { prefix in
+        urls.filter(isTypable).map { prefix + escaping(path(of: $0, relativeTo: directory)) }
+      } ?? quotedPaths(urls)
     guard !words.isEmpty else { return "" }
     return words.joined(separator: " ") + " "
+  }
+
+  /// What a paste of copied files types: each as a shell takes it, with no
+  /// trailing space; `nil` where every file is left out.
+  public static func pastedText(for urls: [URL]) -> String? {
+    let paths = quotedPaths(urls)
+    return paths.isEmpty ? nil : paths.joined(separator: " ")
+  }
+
+  private static func quotedPaths(_ urls: [URL]) -> [String] {
+    urls.filter(isTypable).map { AnyShellQuoting.quote($0.standardizedFileURL.path) }
   }
 
   /// A path carrying a control character is left out rather than mangled: a
   /// newline would press Return, and no quoting reaches through a terminal.
   private static func isTypable(_ url: URL) -> Bool {
-    !url.standardizedFileURL.path.unicodeScalars.contains {
-      $0.value < 0x20 || $0.value == 0x7f || (0x80...0x9f).contains($0.value)
-    }
+    !url.standardizedFileURL.path.holdsTerminalControl
   }
 
   /// A mention ends at whitespace, so a space is escaped rather than quoted,

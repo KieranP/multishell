@@ -8,9 +8,54 @@ jobs:
   test:
     runs-on: macos-26
     # A frozen run otherwise holds the runner for GitHub's six-hour default.
-    timeout-minutes: 30
+    # Headroom for a cold libghostty build, which a cache hit skips.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
+        with:
+          submodules: true
+      # The build script reads the version and its fingerprint, so a cache hit
+      # is a build it would keep.
+      - id: zig
+        run: echo "version=$(Scripts/build-ghostty.sh --zig-version)" >> "$GITHUB_OUTPUT"
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: ${{ steps.zig.outputs.version }}
+      - id: ghostty
+        run: echo "fingerprint=$(Scripts/build-ghostty.sh --fingerprint)" >> "$GITHUB_OUTPUT"
+      - id: cache
+        uses: actions/cache/restore@v5
+        with:
+          path: .build/ghostty
+          key: ghostty-${{ steps.ghostty.outputs.fingerprint }}
+      # On a miss, the last build's Zig packages and compile cache, from any
+      # fingerprint, so a patch edit rebuilds only what it changed.
+      - if: steps.cache.outputs.cache-hit != 'true'
+        id: zig-cache
+        uses: actions/cache/restore@v5
+        with:
+          path: |
+            ThirdParty/ghostty/zig-pkg
+            ThirdParty/ghostty/.zig-cache
+          key: ghostty-zig-${{ steps.ghostty.outputs.fingerprint }}
+          restore-keys: ghostty-zig-
+      # libghostty's own shaders; only a build needs the compiler.
+      - if: steps.cache.outputs.cache-hit != 'true'
+        run: xcodebuild -downloadComponent MetalToolchain
+      - run: Scripts/build-ghostty.sh
+      # Saved here rather than at the end, which a failing test would skip.
+      - if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: .build/ghostty
+          key: ${{ steps.cache.outputs.cache-primary-key }}
+      - if: steps.cache.outputs.cache-hit != 'true' && steps.zig-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            ThirdParty/ghostty/zig-pkg
+            ThirdParty/ghostty/.zig-cache
+          key: ${{ steps.zig-cache.outputs.cache-primary-key }}
       # No debug info: about a quarter off the build. Crash backtraces lose
       # their line numbers; a failed expectation still names its own.
       - run: swift build --build-tests -Xswiftc -gnone

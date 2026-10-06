@@ -125,6 +125,7 @@
 "error.socket-title" = "Session state reports are unavailable";
 "error.something-went-wrong" = "Something went wrong";
 "error.stopped-by-you" = "Stopped by you";
+"error.terminal-unavailable" = "The terminal could not be started.";
 "error.theme-unreadable-title" = "A theme file could not be read";
 "error.trash-refused" = "Worktree not removed: the directory could not be moved to the Trash or deleted";
 "error.trash-took-nothing" = "The directory is still there.";

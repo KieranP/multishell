@@ -40,7 +40,7 @@ extension SurfaceFrame {
   /// this app can read; see `PromisedDrop`.
   override func performDragOperation(_ sender: any NSDraggingInfo) -> Bool {
     hideDropHighlight()
-    let urls = Self.fileURLs(from: sender)
+    let urls = sender.draggingPasteboard.fileURLs
     let originals = PromisedDropCopies.originals(among: urls)
     let promises =
       PromisedDropCopies.needsPromise(for: urls) ? PromisedDrop.receivers(from: sender) : []
@@ -75,12 +75,7 @@ extension SurfaceFrame {
   /// Files only, a drag of text having no path to hand the terminal. The
   /// promise is asked about first, asking for a URL being what copies.
   private static func pasteboardHasFiles(_ sender: any NSDraggingInfo) -> Bool {
-    !PromisedDrop.receivers(from: sender).isEmpty || !fileURLs(from: sender).isEmpty
-  }
-
-  private static func fileURLs(from sender: any NSDraggingInfo) -> [URL] {
-    sender.draggingPasteboard.readObjects(
-      forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL] ?? []
+    !PromisedDrop.receivers(from: sender).isEmpty || !sender.draggingPasteboard.fileURLs.isEmpty
   }
 
   /// Which pane a drop will land in, a split having several. A view over the

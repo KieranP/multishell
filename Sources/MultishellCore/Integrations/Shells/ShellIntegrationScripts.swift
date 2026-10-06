@@ -7,6 +7,7 @@ enum ShellIntegrationScripts {
   /// The agents a shell may report starting, filled in when the file is
   /// generated; see Docs/design/agents.md.
   private static let agentsPlaceholder = "__MULTISHELL_AGENTS__"
+  private static let includeDirective = "# include "
 
   /// The zsh startup files placed in the directory set as a session's
   /// `ZDOTDIR`. Each chains to the user's own first, editing no file of theirs.
@@ -22,7 +23,7 @@ enum ShellIntegrationScripts {
         userFile: ".zprofile", restoresToSelf: true, capturesUserZdotdir: true, appending: nil),
       ".zshrc": zshChain(
         userFile: ".zshrc", restoresToSelf: false, restoresHistory: true,
-        appending: script("hooks", extension: "zsh", helper: helper)),
+        appending: script("init.zsh", in: "zsh", helper: helper)),
     ]
   }
 
@@ -74,23 +75,42 @@ enum ShellIntegrationScripts {
   /// A bash init file for `--init-file`, which is read instead of `.bashrc`
   /// and skips the profile chain, so this reproduces that chain first.
   static func forBash(helper: String) -> String {
-    script("init", extension: "bash", helper: helper) + "\n"
+    script("init.bash", in: "bash", helper: helper) + "\n"
   }
 
-  /// A script from the resource bundle with the helper's path filled in,
-  /// without its trailing newline so callers place it in a chain.
-  private static func script(_ name: String, extension: String, helper: String) -> String {
-    guard let url = Bundle.coreResources.url(forResource: name, withExtension: `extension`),
-      var text = try? String(contentsOf: url, encoding: .utf8)
-    else {
-      preconditionFailure("\(name).\(`extension`) is missing from the MultishellCore resources")
-    }
-    while text.hasSuffix("\n") { text.removeLast() }
-    return
-      text
+  /// A bundled script with its includes joined and placeholders filled, less
+  /// its trailing newline so callers place it in a chain.
+  private static func script(_ fileName: String, in folder: String, helper: String) -> String {
+    includingFiles(in: resource(fileName, in: folder), from: folder)
       .replacingOccurrences(of: helperPlaceholder, with: helper)
       .replacingOccurrences(
         of: agentsPlaceholder,
         with: AgentCatalogue.agents.map(\.executable).sorted().joined(separator: " "))
+  }
+
+  /// Each `# include <file>` line replaced by that file from the same folder,
+  /// indented as the line is, so the shell reads one file.
+  private static func includingFiles(in text: String, from folder: String) -> String {
+    text.split(separator: "\n", omittingEmptySubsequences: false).map { line in
+      let indent = line.prefix { $0 == " " }
+      guard line.dropFirst(indent.count).hasPrefix(includeDirective) else { return String(line) }
+      let included = resource(
+        String(line.dropFirst(indent.count + includeDirective.count)), in: folder)
+      return included.split(separator: "\n", omittingEmptySubsequences: false)
+        .map { $0.isEmpty ? "" : indent + $0 }
+        .joined(separator: "\n")
+    }.joined(separator: "\n")
+  }
+
+  private static func resource(_ fileName: String, in folder: String) -> String {
+    guard
+      let url = Bundle.coreResources.url(
+        forResource: fileName, withExtension: nil, subdirectory: folder),
+      var text = try? String(contentsOf: url, encoding: .utf8)
+    else {
+      preconditionFailure("\(folder)/\(fileName) is missing from the MultishellCore resources")
+    }
+    while text.hasSuffix("\n") { text.removeLast() }
+    return text
   }
 }

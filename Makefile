@@ -22,28 +22,32 @@ else
 SWIFT_TEST = swift test --skip-build
 endif
 
-.PHONY: build release test test-app lint format prettier install run clean signing-identity
+.PHONY: libghostty build release test test-app lint format prettier install run clean signing-identity
 
 ## Once per machine: the certificate that keeps the app's privacy permissions.
 signing-identity:
 	Scripts/make-signing-identity.sh
 
+## Build libghostty from the submodule; a no-op while nothing it reads changed.
+libghostty:
+	Scripts/build-ghostty.sh
+
 ## Build the app bundle (debug). `make build CONFIG=release` for optimised.
-build:
+build: libghostty
 	Scripts/make-app.sh $(CONFIG)
 
 ## Build an optimised bundle.
-release:
+release: libghostty
 	Scripts/make-app.sh release
 
 ## Test everything. Built before the lock and run under it; why in
 ## Docs/develop/build.md.
-test:
+test: libghostty
 	swift build --build-tests
 	$(LOCK) Scripts/one-test-per-core.sh $(SWIFT_TEST)
 
 ## Compile the macOS app without bundling; catches SwiftUI errors fast.
-test-app:
+test-app: libghostty
 	swift build --target MultishellAppUI
 
 ## Build release and copy into /Applications (or INSTALL_DIR=...).

@@ -61,8 +61,7 @@ What is written, what is repaired, how it is tested. Newest at the bottom.
   socket is per build variant, and a debug build's per worktree too, so a debug
   build beside the installed app is not a second copy.
 - **A copy that failed to quit starts no shell.** Its tabs' reports would reach
-  the running copy's socket, and the engine config each one writes is named by
-  the wrapper, so its quit could not tell those files from the running copy's.
+  the running copy's socket.
 - **Debug builds keep their own state file, socket, integration and drops
   directories**, so a debug run beside the installed app touches none of them.
   Themes and the helper link are shared (develop/state-on-disk.md).

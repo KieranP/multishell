@@ -12,18 +12,18 @@ let package = Package(
     .executable(name: "multishell-helper", targets: ["MultishellCLI"]),
   ],
   dependencies: [
-    .package(url: "https://github.com/swiftlang/swift-subprocess", from: "1.0.0"),
-    // Pinned exactly: libghostty's embedding API is not stable, so a
-    // range would let an upgrade break the build without warning.
-    .package(url: "https://github.com/Lakr233/libghostty-spm", exact: "1.6.20261003"),
+    .package(url: "https://github.com/swiftlang/swift-subprocess", from: "1.0.0")
   ],
   targets: [
+    // libghostty, built from the ThirdParty/ghostty submodule by
+    // Scripts/build-ghostty.sh; the submodule's commit is the pin.
+    .binaryTarget(name: "GhosttyKit", path: ".build/ghostty/GhosttyKit.xcframework"),
     // Pure model and state. Its resources are the shell scripts and the
     // libraries' catalogue; see Docs/design/translation.md.
     .target(
       name: "MultishellCore",
       resources: [
-        .copy("Resources/hooks.zsh"), .copy("Resources/init.bash"),
+        .copy("Resources/zsh"), .copy("Resources/bash"),
         .process("Resources/en.lproj"),
       ]),
     // Subprocess execution and Unix sockets.
@@ -44,9 +44,11 @@ let package = Package(
       name: "MultishellAppUI",
       dependencies: [
         "MultishellCore", "MultishellProcess", "MultishellGitKit", "MultishellAppCore",
-        .product(name: "GhosttyTerminal", package: "libghostty-spm"),
+        "GhosttyKit",
       ],
-      resources: [.process("Resources/en.lproj"), .process("Resources/Marks")]),
+      resources: [.process("Resources/en.lproj"), .process("Resources/Marks")],
+      // libghostty's own link needs, which its static archive cannot declare.
+      linkerSettings: [.linkedLibrary("c++"), .linkedFramework("Carbon")]),
 
     // What the suites share, split by what each drags in; see
     // Docs/develop/layout.md.

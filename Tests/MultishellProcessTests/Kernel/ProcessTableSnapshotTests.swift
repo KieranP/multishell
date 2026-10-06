@@ -10,11 +10,12 @@ struct ProcessTableSnapshotTests {
     let shell = try WaitingShell()
     defer { shell.end() }
     let me = ProcessInfo.processInfo.processIdentifier
-    try await waitUntil { KernelProcessTable.name(of: shell.pid) == "sh" }
+    try await waitUntil { KernelProcessTable.name(of: shell.pid) != nil }
     let table = ProcessTableSnapshot.take()
 
     #expect(table.children(of: me).contains(shell.pid))
-    #expect(table.name(of: shell.pid) == KernelProcessTable.name(of: shell.pid))
+    // Not the shell's name: macOS's /bin/sh re-execs as bash between two reads.
+    #expect(table.name(of: me) == KernelProcessTable.name(of: me))
     #expect(table.terminalDevice(of: me) == KernelProcessTable.terminalDevice(of: me))
   }
 
