@@ -39,7 +39,7 @@ public enum AgentHookCatalogue {
     "push_notification",
   ]
 
-  /// Claude Code: `~/.claude/settings.json`, asked for a permission request and a notification.
+  /// Claude Code: `~/.claude/settings.json`, asked for a permission or MCP request and a notification.
   /// Subagents go on a roster: `Stop` ends only the main loop, so Done waits for the last one out.
   static let claude = AgentHookIntegration(
     id: AgentCatalogue.claudeID,
@@ -50,8 +50,11 @@ public enum AgentHookCatalogue {
       AgentHookEvent("UserPromptSubmit", .running, isPrompt: true),
       AgentHookEvent("PreToolUse", .running),
       AgentHookEvent("PostToolUse", .running),
+      AgentHookEvent("PostToolUseFailure", .running),
       AgentHookEvent(
         "PermissionRequest", .attention, meansWaitingOnlyWhenPrompting: true, isSilent: true),
+      AgentHookEvent("Elicitation", .attention, isSilent: true),
+      AgentHookEvent("ElicitationResult", .running),
       AgentHookEvent("Notification", .attention, ignoredNotificationTypes: claudeAnnouncements),
       AgentHookEvent("SubagentStart", .running, subagentPhase: .started),
       AgentHookEvent("SubagentStop", .running, subagentPhase: .ended),
@@ -127,6 +130,7 @@ public enum AgentHookCatalogue {
       AgentHookEvent("UserPromptSubmit", .running, isPrompt: true),
       AgentHookEvent("PreToolUse", .running),
       AgentHookEvent("PostToolUse", .running),
+      AgentHookEvent("PostToolUseFailure", .running),
       AgentHookEvent(
         "notification", .attention, reportedName: "Notification",
         matcher: "permission_prompt|elicitation_dialog"),

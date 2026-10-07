@@ -51,7 +51,10 @@ extension AgentHookIntegrationReportsTests {
     #expect(state(claude, "SessionStart") == .idle)
     #expect(state(claude, "SubagentStart") == .running)
     #expect(state(claude, "SubagentStop") == .running, "the agent is still working")
-    #expect(state(claude, "PostToolUseFailure") == nil, "a tool failing is not a turn failing")
+    #expect(state(claude, "PostToolUseFailure") == .running, "a tool failing is not a turn failing")
+    #expect(state(claude, "Elicitation") == .attention)
+    #expect(state(claude, "Elicitation", mode: "auto") == .attention, "no classifier answers it")
+    #expect(state(claude, "ElicitationResult") == .running)
     #expect(state(claude, "PreCompact") == nil)
     #expect(state(claude, "PostCompact") == nil, "it fires when the compaction is over")
     #expect(state(claude, "SomethingNew") == nil)
@@ -61,6 +64,11 @@ extension AgentHookIntegrationReportsTests {
     #expect(state(codex, "Stop") == .done)
     #expect(state(codex, "Interrupt") == .idle, "the turn ended, nothing finished")
     #expect(state(codex, "Notification") == nil, "an event Codex does not have")
+    #expect(state(codex, "PostToolUseFailure") == nil, "its PostToolUse fires on a failure too")
+
+    let copilot = AgentHookCatalogue.copilot
+    #expect(state(copilot, "PostToolUse") == .running)
+    #expect(state(copilot, "PostToolUseFailure") == .running, "PostToolUse is success only")
 
     let gemini = AgentHookCatalogue.gemini
     #expect(state(gemini, "BeforeAgent") == .running)
@@ -108,8 +116,25 @@ extension AgentHookIntegrationReportsTests {
     #expect(request.state == notification.state)
     #expect(request.isSilent)
     #expect(!notification.isSilent)
-    #expect(claude.events.filter(\.isSilent).count == 1)
-    #expect(AgentHookCatalogue.integrations.allSatisfy { $0.events.filter(\.isSilent).count <= 1 })
+    #expect(claude.events.filter(\.isSilent).map(\.name) == ["PermissionRequest", "Elicitation"])
+    #expect(
+      AgentHookCatalogue.integrations.allSatisfy {
+        $0.events.filter(\.isSilent).allSatisfy { $0.state == .attention }
+      }, "only the immediate half of a prompt goes unheard")
+  }
+
+  /// An MCP server's question comes as Elicitation at once and as a Notification
+  /// six seconds later, and ElicitationResult is the answer a permission never sends.
+  @Test func claudeAsksTwiceForAnMCPServersQuestionAndHearsTheAnswer() throws {
+    let claude = AgentHookCatalogue.claude
+    let elicitation = try #require(claude.event(for: AgentHookPayload(eventName: "Elicitation")))
+    let notification = try #require(
+      claude.event(
+        for: AgentHookPayload(eventName: "Notification", notificationType: "elicitation_dialog")))
+    #expect(elicitation.isSilent)
+    #expect(!notification.isSilent)
+    #expect(elicitation.state == notification.state)
+    #expect(claude.event(for: AgentHookPayload(eventName: "ElicitationResult"))?.state == .running)
   }
 
   /// Claude notifies for a finished login or a resumed quota as for a question, and the

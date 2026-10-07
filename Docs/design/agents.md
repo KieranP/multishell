@@ -738,3 +738,21 @@ at the bottom.
   background work, its filter skipping a task marked foreground, so a foreground
   worker launched by a background one was read as ended, and a prompt it had up
   went with it. Read from Claude 2.1.292's binary.
+- **A failed tool call is Working, as a finished one is**: the agent reads the
+  error and carries on. Claude and Copilot send it as its own event, their
+  PostToolUse firing on success only; Codex's PostToolUse and Gemini's AfterTool
+  fire on a failure too. Unasked, an approved call that failed left the dot at
+  Waiting until the next call.
+- **Claude's MCP request is asked for beside its notification**, as its
+  permission request is: Elicitation moves the dot at once and silently, the
+  `elicitation_dialog` notification six seconds later raises the banner. No mode
+  answers one, so it is not narrowed by mode.
+- **ElicitationResult is the answer a permission never sends**, so an MCP
+  request's Waiting clears when the user answers, not at the next tool call.
+- **Cost: Claude waits for its Elicitation hooks before it shows the dialog**,
+  so a wedged app delays the question by up to the hook's timeout. Read from
+  Claude 2.1.292's binary.
+- **The other agents have no MCP request event**: Codex handles one with no
+  hook, Gemini's MCP client cannot receive one, and Copilot's arrives as the
+  notification already asked for, with no answer event. Read from Codex 0.160.0,
+  Gemini 0.46.0 and Copilot 1.0.91.
