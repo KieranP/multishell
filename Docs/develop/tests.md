@@ -373,9 +373,7 @@ says why these are the rules.
   our init file: ShellLaunchTests.
 - **`sudo` and `ssh` wrapped only where the user's features ask, and a function
   of their own by either name kept**: ShellIntegrationScriptsTests
-  +CommandWrappers. The bash half runs `/bin/bash` and `/opt/homebrew/bin/bash`
-  from its own list, not `InstalledBashes.all`, so a bash in `/usr/local/bin` is
-  not run and a missing one passes.
+  +CommandWrappers, the bash half under `InstalledBashes.all`.
 - **A removal dialog left up for a worktree git no longer lists, and Remove
   offered on the main worktree**:
   AppModel+WorktreeListRefreshTests+RemovedOutsideTheApp and

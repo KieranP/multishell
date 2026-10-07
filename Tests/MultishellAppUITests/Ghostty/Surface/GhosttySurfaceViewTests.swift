@@ -6,9 +6,9 @@ import Testing
 @Suite
 @MainActor
 struct GhosttySurfaceViewTests {
-  @Test func aSurfaceKeepsTheRuntimeItWasMadeInAliveUntilFreed() throws {
+  @Test func aSurfaceViewKeepsTheRuntimeItWasMadeInAlive() throws {
     var runtime: GhosttyRuntime? = GhosttyRuntime()
-    weak var heldRuntime = runtime
+    weak let heldRuntime = runtime
     let view = GhosttySurfaceView(runtime: try #require(runtime), launch: .sleeping)
     try #require(view.surface != nil)
 

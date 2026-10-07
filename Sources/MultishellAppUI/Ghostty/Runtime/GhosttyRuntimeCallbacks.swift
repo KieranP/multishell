@@ -30,7 +30,7 @@ enum GhosttyRuntimeCallbacks {
           if let paste { view.confirmPaste(paste) } else { view.denyClipboardRequest(request) }
         }
       },
-      write_clipboard_cb: { userdata, location, contents, count, needsConfirming in
+      write_clipboard_cb: { _, location, contents, count, needsConfirming in
         guard
           let text = GhosttyClipboard.textToWrite(
             UnsafeBufferPointer(start: contents, count: count), at: location,
@@ -68,7 +68,7 @@ enum GhosttyRuntimeCallbacks {
       handle: handle,
       wantsText: asked.contains { $0.map(String.init(cString:)) == GhosttyClipboard.textMime },
       wantsList: wantsList)
-    let view = Unmanaged<GhosttySurfaceView>.fromOpaque(userdata).takeUnretainedValue()
+    let view = view(from: userdata)
     return MainActor.assumeIsolated { view.answerClipboardRequest(request, at: location) }
   }
 
@@ -79,11 +79,15 @@ enum GhosttyRuntimeCallbacks {
     _ body: @escaping @MainActor (GhosttySurfaceView) -> Void
   ) {
     guard let userdata else { return }
-    let view = Unmanaged<GhosttySurfaceView>.fromOpaque(userdata).takeUnretainedValue()
+    let view = view(from: userdata)
     if Thread.isMainThread {
       MainActor.assumeIsolated { body(view) }
     } else {
       DispatchQueue.main.async { body(view) }
     }
+  }
+
+  private static func view(from userdata: UnsafeMutableRawPointer) -> GhosttySurfaceView {
+    Unmanaged<GhosttySurfaceView>.fromOpaque(userdata).takeUnretainedValue()
   }
 }

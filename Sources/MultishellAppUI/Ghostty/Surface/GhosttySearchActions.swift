@@ -1,7 +1,7 @@
 import MultishellCore
 
-/// The keybind actions the find bar sends libghostty, the only form it takes
-/// a search step in.
+/// The keybind actions the find bar sends libghostty, the only form it takes a
+/// search step in. A find is its text alone: a step sent with it ran before any match.
 enum GhosttySearchActions {
   /// Ghostty's keybind spelling of each step. Its `next` walks newest to oldest,
   /// up the scrollback, so the directions cross; from nothing it is the newest.

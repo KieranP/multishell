@@ -72,10 +72,10 @@ What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
   shows the frame rate as well. Another reason the toggle is not kept.
 - **A tab's terminal counts in the app's row, not the tab's.** Ghostty runs in
   the app's process and its C API reports no surface's memory, so a tab's
-  screen, scrollback and GPU buffers, up to `scrollback-limit` each, cannot be
-  split out. An estimate from line counts would cost a scrollback read a second.
-  libghostty-vt reports a terminal's bytes since ghostty#14499; the surface API
-  does not yet.
+  screen, scrollback and GPU buffers, up to `scrollback-limit-bytes` each,
+  cannot be split out. An estimate from line counts would cost a scrollback read
+  a second. libghostty-vt reports a terminal's bytes since ghostty#14499; the
+  surface API does not yet.
 - **Freed memory stays in the footprint until macOS wants it.** On macOS 27
   `malloc_zone_pressure_relief` releases nothing, and freed blocks of 256 KB and
   up held for a minute in a probe, so closing a tab drops the number late.

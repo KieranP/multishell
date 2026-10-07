@@ -1,9 +1,8 @@
 import Foundation
 import GhosttyKit
 
-/// Config text turned into a libghostty config. libghostty reads config only
-/// from a file, so the text passes through one that is gone once loaded.
-/// libghostty copies a config it is given, so this frees its own once let go.
+/// Config text loaded through a file, the only way libghostty reads one, deleted
+/// once loaded. Freed once let go, as libghostty copies a config it is given.
 final class GhosttyLoadedConfig {
   let config: ghostty_config_t
   /// libghostty's complaints, each naming the `.conf:` line it refused.

@@ -33,7 +33,7 @@ struct ShellIntegrationScriptsTests {
     }
   }
 
-  @Test func eachIncludedFileIsJoinedInIndentedUnderItsGuard() {
+  @Test func eachIncludedFileIsJoinedInAtTheIndentOfItsLine() {
     let zshrc = ShellIntegrationScripts.forZsh(helper: "/x/multishell")[".zshrc"] ?? ""
     let bash = ShellIntegrationScripts.forBash(helper: "/x/multishell")
     #expect(!zshrc.contains("# include ") && !bash.contains("# include "))

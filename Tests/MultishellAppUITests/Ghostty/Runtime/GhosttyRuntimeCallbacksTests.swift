@@ -9,7 +9,7 @@ import Testing
 struct GhosttyRuntimeCallbacksTests {
   private let ticker = GhosttyTicker()
 
-  @Test func aClipboardReadOffTheMainThreadIsRefusedRatherThanStarted() async throws {
+  @Test func aClipboardReadOffTheMainThreadIsAnsweredUnavailableRatherThanStarted() async throws {
     let read = try #require(
       GhosttyRuntimeCallbacks.runtimeConfig(waking: ticker.userdata).read_clipboard_cb)
     // Never dereferenced: the thread is checked first.
@@ -20,7 +20,7 @@ struct GhosttyRuntimeCallbacksTests {
     #expect(result == GHOSTTY_CLIPBOARD_READ_UNAVAILABLE)
   }
 
-  @Test func aClipboardReadWithNoSurfaceIsRefused() throws {
+  @Test func aClipboardReadWithNoSurfaceIsAnsweredUnavailable() throws {
     let read = try #require(
       GhosttyRuntimeCallbacks.runtimeConfig(waking: ticker.userdata).read_clipboard_cb)
     #expect(

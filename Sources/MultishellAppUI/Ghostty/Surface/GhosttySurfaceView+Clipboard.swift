@@ -39,7 +39,7 @@ extension GhosttySurfaceView {
     if approved {
       sendReply(to: paste.request, text: paste.text, available: [], confirmed: true, on: surface)
     } else {
-      ghostty_surface_deny_clipboard_request(surface, paste.request.handle)
+      denyClipboardRequest(paste.request)
     }
   }
 

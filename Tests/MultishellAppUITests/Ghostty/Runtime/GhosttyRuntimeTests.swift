@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 import Testing
 
 @testable import MultishellAppUI
@@ -51,6 +51,16 @@ struct GhosttyRuntimeTests {
     runtime.apply(base: "macos-auto-secure-input = false")
 
     #expect(runtime.secureInput.followsPasswordPrompts)
+  }
+
+  @Test func comingBackToTheAppReloadsTheUsersBase() {
+    var userFile = ""
+    let runtime = GhosttyRuntime(readBase: { userFile })
+    userFile = "macos-auto-secure-input = false"
+
+    NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: nil)
+
+    #expect(!runtime.secureInput.followsPasswordPrompts)
   }
 
   @Test func theAppLayerWinsOverABaseAppliedAfterIt() {

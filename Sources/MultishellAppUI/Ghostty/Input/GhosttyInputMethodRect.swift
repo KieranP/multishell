@@ -6,10 +6,11 @@ enum GhosttyInputMethodRect {
   /// For an empty range it is a caret at the range's end, not a span:
   /// dictation's microphone otherwise sat off the cursor (Ghostty #8493).
   static func rect(imePoint: CGRect, range: NSRange, cell: CGSize) -> CGRect {
-    let isCaret = range.length == 0 && imePoint.width > 0
-    let caretOffset = cell.width * Double(range.location + range.length)
-    return CGRect(
-      x: isCaret ? imePoint.minX + caretOffset : imePoint.minX, y: imePoint.minY,
-      width: isCaret ? 0 : imePoint.width, height: max(imePoint.height, cell.height))
+    let height = max(imePoint.height, cell.height)
+    guard range.length == 0, imePoint.width > 0 else {
+      return CGRect(x: imePoint.minX, y: imePoint.minY, width: imePoint.width, height: height)
+    }
+    let caretOffset = cell.width * Double(range.location)
+    return CGRect(x: imePoint.minX + caretOffset, y: imePoint.minY, width: 0, height: height)
   }
 }

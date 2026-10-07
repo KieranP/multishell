@@ -16,10 +16,11 @@ enum GhosttyKeyDown {
     wasComposing: Bool, isComposing: Bool, committed: [String], characters: String?,
     keyText: String?, keyCode: UInt16, flags: NSEvent.ModifierFlags
   ) -> [Delivery] {
-    // A lone surrogate half commits as empty text while it waits for its pair.
-    let committed = committed.filter { !$0.isEmpty }
     let isOrWasComposing = isComposing || wasComposing
-    let typed = committed.filter { !isComposingControl($0, whileComposing: isOrWasComposing) }
+    // A lone surrogate half commits as empty text while it waits for its pair.
+    let typed = committed.filter {
+      !$0.isEmpty && !isComposingControl($0, whileComposing: isOrWasComposing)
+    }
     if wasComposing, !committed.isEmpty {
       let replays = replaysAfterCommit(keyCode: keyCode, flags: flags)
       return typed.map(Delivery.committed) + (replays ? [.key(text: nil, isComposing: false)] : [])

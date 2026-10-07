@@ -63,6 +63,13 @@ struct GhosttyKeyDownTests {
     #expect(deliveries == [.key(text: "😀", isComposing: false)])
   }
 
+  @Test func aLeadSurrogateCommittedAloneSendsNothingUntilItsPairArrives() {
+    let deliveries = GhosttyKeyDown.deliveries(
+      wasComposing: false, isComposing: false, committed: [""], characters: "d", keyText: "d",
+      keyCode: 0x02, flags: [])
+    #expect(deliveries.isEmpty)
+  }
+
   @Test func aControlCharacterWhileComposingIsTheInputMethodsAndSendsNothing() {
     let deliveries = GhosttyKeyDown.deliveries(
       wasComposing: true, isComposing: true, committed: [], characters: "\u{8}", keyText: nil,

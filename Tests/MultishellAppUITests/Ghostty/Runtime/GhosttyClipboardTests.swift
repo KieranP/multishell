@@ -66,7 +66,7 @@ struct GhosttyClipboardTests {
         ghostty_clipboard_content_s(mime: strings[0], data: strings[2], len: 3),
         ghostty_clipboard_content_s(mime: strings[1], data: strings[2], len: strlen(strings[2])),
       ]
-      return contents.withUnsafeBufferPointer(GhosttyClipboard.copiedText(in:))
+      return contents.withUnsafeBufferPointer(GhosttyClipboard.plainText(in:))
     }
     #expect(read == "copied")
   }

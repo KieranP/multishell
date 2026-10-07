@@ -58,7 +58,8 @@ Under `~/Library/Application Support/Multishell`.
   no other source, and nothing outlives a load for another copy to sweep
   (design/terminals.md).
 - **libghostty is built without its crash reporter**, so it keeps no crash
-  directory, and it reads the user's Ghostty config without writing it.
+  directory, and it never opens the user's Ghostty config, which the app reads
+  and never writes.
 - **Agent hooks are written only when asked**, each in that agent's own config
   directory; launch leaves alone even one an older build wrote
   (design/agents.md). Three of them keep a copy of the file as it was the first

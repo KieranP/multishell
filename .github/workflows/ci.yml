@@ -17,12 +17,16 @@ jobs:
       # The build script reads the version and its fingerprint, so a cache hit
       # is a build it would keep.
       - id: zig
-        run: echo "version=$(Scripts/build-ghostty.sh --zig-version)" >> "$GITHUB_OUTPUT"
+        run: |
+          version=$(Scripts/build-ghostty.sh --zig-version)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
       - uses: mlugg/setup-zig@v2
         with:
           version: ${{ steps.zig.outputs.version }}
       - id: ghostty
-        run: echo "fingerprint=$(Scripts/build-ghostty.sh --fingerprint)" >> "$GITHUB_OUTPUT"
+        run: |
+          fingerprint=$(Scripts/build-ghostty.sh --fingerprint)
+          echo "fingerprint=$fingerprint" >> "$GITHUB_OUTPUT"
       - id: cache
         uses: actions/cache/restore@v5
         with:

@@ -13,7 +13,7 @@ struct GhosttyPasteConfirmation: Sendable {
     contents: UnsafeBufferPointer<ghostty_clipboard_content_s>
   ) {
     guard kind == GHOSTTY_CLIPBOARD_REQUEST_PASTE,
-      let text = GhosttyClipboard.copiedText(in: contents)
+      let text = GhosttyClipboard.plainText(in: contents)
     else { return nil }
     self.request = request
     self.text = text

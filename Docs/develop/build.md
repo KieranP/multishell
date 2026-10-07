@@ -158,7 +158,8 @@
   cut off, so it reads as a clip for any page with a caption.
 - **Metal is untried**: a terminal surface is expected to come out blank,
   neither path capturing a drawable, but nobody has looked.
-- **Otherwise a view change stops at the checks above**: say what is unverified,
-  leave the looking to the user, and record it in BUGS.md with the fallback.
+- **Otherwise a view change stops at the checks above**: say what is unverified
+  and leave the looking to the user. BUGS.md takes no entry for it, since
+  whether a feature draws and works is checked by hand as it is built.
 - **Anything decidable without a screen belongs in a plain value** in
   MultishellAppCore, tested there.

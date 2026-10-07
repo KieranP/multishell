@@ -86,6 +86,10 @@ struct FilePathTextTests {
         for: [URL(fileURLWithPath: "/repos/demo/\u{1b}[31m.md")], relativeTo: directory
       )
       .isEmpty, "an escape sequence in a name is not pasted either")
+    for control in ["\u{7f}", "\u{9b}"] {
+      let name = URL(fileURLWithPath: "/repos/demo/a\(control)b.md")
+      #expect(FilePathText.droppedText(for: [name], relativeTo: directory).isEmpty)
+    }
   }
 
   @Test func pastedFilesAreQuotedPathsWithNoTrailingSpace() {

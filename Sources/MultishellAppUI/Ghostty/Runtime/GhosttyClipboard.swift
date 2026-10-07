@@ -23,9 +23,9 @@ enum GhosttyClipboard {
     pasteboard.availableType(from: [.fileURL, .string]) != nil
   }
 
-  /// The text among what a copy offers, copied out of libghostty's buffers,
-  /// which live only for the callback.
-  static func copiedText(in contents: UnsafeBufferPointer<ghostty_clipboard_content_s>) -> String? {
+  /// The plain text among clipboard contents, copied out of libghostty's
+  /// buffers, which live only for the callback.
+  static func plainText(in contents: UnsafeBufferPointer<ghostty_clipboard_content_s>) -> String? {
     contents.lazy.compactMap { content -> String? in
       guard let mime = content.mime, String(cString: mime) == textMime, let bytes = content.data
       else { return nil }
@@ -41,12 +41,12 @@ enum GhosttyClipboard {
     needsConfirming: Bool
   ) -> String? {
     guard location == GHOSTTY_CLIPBOARD_STANDARD, !needsConfirming else { return nil }
-    return copiedText(in: contents)
+    return plainText(in: contents)
   }
 
   @MainActor
-  static func write(_ text: String, to pasteboard: NSPasteboard = .general) {
-    pasteboard.clearContents()
-    pasteboard.setString(text, forType: .string)
+  static func write(_ text: String) {
+    NSPasteboard.general.clearContents()
+    NSPasteboard.general.setString(text, forType: .string)
   }
 }

@@ -453,7 +453,7 @@ at the bottom.
   surface is Metal-backed.
 - **Cost of one engine**: a pinned build that misbehaves has nothing to fall
   back to, the unfocused fade is a scrim rather than view opacity, and nothing
-  tests the host against a real shell, a surface needing a window and a GPU.
+  tests the host against a real shell, a test's surface running `/bin/sleep`.
 - **The app talks to libghostty's C API itself**, after Ghostty's own macOS app,
   built from source with our patches (develop/dependencies.md). A wrapper
   package before it dropped the search counts and kept the selection to itself.

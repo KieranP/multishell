@@ -13,7 +13,8 @@ at the bottom.
   dropped rather than cut, a cut one naming something else, and a worker's id
   past it counts as an unnamed worker; a path past 1024 bytes is dropped; a
   worker's kind is cut to 64 and the message to 500, both being display only; a
-  Stop names at most 64 shells.
+  Stop names at most 64 shells. A duration outside zero to a week is dropped,
+  being a writer's number rather than a clock's.
 - **One naming only a directory marks the deepest worktree containing it**, so
   an agent started in a subfolder says that folder, and a worktree nested in
   another is the one meant.
@@ -244,9 +245,9 @@ at the bottom.
   regex keeps its escapes. Checked against zsh by random lines.
 - **A quote left open takes the rest of the line**, there being nobody to ask,
   and an opener carrying nothing passes no argument rather than an empty one.
-- **The placeholders are one list**, and the settings rows name one as an
-  example rather than all of them: a reference page in a tooltip is what the
-  documentation is for.
+- **The placeholders are one list**, and only the custom command's row names
+  one, as an example rather than all of them: a reference page in a tooltip is
+  what the documentation is for.
 - **So unlike the hook variables the list is drawn nowhere**, and a new case has
   to reach the docs by hand.
 - **An unknown placeholder is left as typed**, so the mistake shows in the tab
