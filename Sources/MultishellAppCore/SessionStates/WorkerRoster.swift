@@ -46,7 +46,10 @@ struct WorkerRoster: Equatable, Sendable {
     case .started, .working:
       let id = isAnonymous ? Worker.anonymousPrefix + UUID().uuidString : report.id
       guard let index = workers.firstIndex(where: { $0.id == id }) else {
-        guard overflowed[id] != nil else { return add(Worker(id: id, type: report.type)) }
+        guard overflowed[id] != nil else {
+          return add(
+            Worker(id: id, type: report.type, name: report.name, parentID: report.parentID))
+        }
         if report.phase == .started { _ = addToOverflow(id) }
         if let overflow = overflowIndex { workers[overflow].wasHeardSinceStop = true }
         return overflowPlace
@@ -54,6 +57,8 @@ struct WorkerRoster: Equatable, Sendable {
       // A tool call from one already out says nothing; a second start under
       // its id is a second worker an agent named without an id.
       workers[index].wasHeardSinceStop = true
+      if let parentID = report.parentID { workers[index].parentID = parentID }
+      if let name = report.name { workers[index].name = name }
       if report.phase == .started, workers[index].awaitsStart {
         workers[index].awaitsStart = false
         if let type = report.type { workers[index].type = type }
@@ -121,13 +126,14 @@ struct WorkerRoster: Equatable, Sendable {
   /// has ended, and whatever it names is out. Returns the ids taken off.
   mutating func keepOnly(_ out: [WorkerReport], shells: [Int32]) -> [String] {
     let listed = Set(out.map(\.id))
+    let vouched = withDescendants(of: listed)
     let live = Set(shells)
     let gone = workers.filter { worker in
       if let pid = worker.pid { return !live.contains(pid) }
-      return worker.id != Worker.overflowID && !listed.contains(worker.id)
+      return worker.id != Worker.overflowID && !vouched.contains(worker.id)
     }.map(\.id)
     workers.removeAll { gone.contains($0.id) }
-    for index in workers.indices where listed.contains(workers[index].id) {
+    for index in workers.indices where vouched.contains(workers[index].id) {
       workers[index].wasHeardSinceStop = true
     }
     let overflowedGone = overflowed.keys.filter { !listed.contains($0) }
@@ -140,6 +146,22 @@ struct WorkerRoster: Equatable, Sendable {
     }
     recordShells(shells)
     return gone + overflowedGone
+  }
+
+  /// The ids and every worker under one of them. Claude's Stop lists only
+  /// background work, so a foreground worker is out while its parent is.
+  private func withDescendants(of ids: Set<String>) -> Set<String> {
+    var found = ids
+    var isGrowing = true
+    while isGrowing {
+      isGrowing = false
+      for worker in workers where !found.contains(worker.id) {
+        guard let parentID = worker.parentID, found.contains(parentID) else { continue }
+        found.insert(worker.id)
+        isGrowing = true
+      }
+    }
+    return found
   }
 
   /// A Stop vouches only for workers heard from since the last one.

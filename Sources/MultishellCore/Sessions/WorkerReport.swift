@@ -15,6 +15,7 @@ public struct WorkerReport: Codable, Hashable, Sendable {
 
   /// Display only, so cut rather than dropped, as the message is.
   static let maximumTypeLength = 64
+  static let maximumNameLength = 64
 
   public internal(set) var id: String
   /// What the agent calls the kind: `Explore`, `Plan`, a custom agent's name.
@@ -25,25 +26,34 @@ public struct WorkerReport: Codable, Hashable, Sendable {
   public internal(set) var wakesAgent: Bool?
   /// Set on a shell a Stop lists by the agent's own id for it, not a pid.
   public internal(set) var isBackgroundShell: Bool?
+  /// The worker that launched this one, absent for the agent's own; see
+  /// Docs/design/agents.md. Set only through the inits, which bound it.
+  public private(set) var parentID: String?
+  /// What the agent shows for this worker, a skill's name or the task's
+  /// description, where it says. Set only through the inits, which cut it.
+  public private(set) var name: String?
 
   enum CodingKeys: String, CodingKey {
-    case id, type, phase
+    case id, type, phase, name
     case wakesAgent = "wakes"
     case isBackgroundShell = "shell"
+    case parentID = "parent"
   }
 
   public init(
     id: String, type: String? = nil, phase: Phase, wakesAgent: Bool? = nil,
-    isBackgroundShell: Bool? = nil
+    isBackgroundShell: Bool? = nil, parentID: String? = nil, name: String? = nil
   ) {
     self.id = id
     self.type = type
     self.phase = phase
     self.wakesAgent = wakesAgent
     self.isBackgroundShell = isBackgroundShell
+    self.parentID = SessionStateReport.boundedIdentifier(parentID)
+    self.name = name?.truncated(to: Self.maximumNameLength)
   }
 
-  /// Any process may write a line, so the reader bounds both strings. An id
+  /// Any process may write a line, so the reader bounds every string. An id
   /// past the report's limit is no worker's and counts as an unnamed one.
   public init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -54,5 +64,9 @@ public struct WorkerReport: Codable, Hashable, Sendable {
     phase = try container.decode(Phase.self, forKey: .phase)
     wakesAgent = try container.decodeIfPresent(Bool.self, forKey: .wakesAgent)
     isBackgroundShell = try container.decodeIfPresent(Bool.self, forKey: .isBackgroundShell)
+    parentID = SessionStateReport.boundedIdentifier(
+      try container.decodeIfPresent(String.self, forKey: .parentID))
+    name = try container.decodeIfPresent(String.self, forKey: .name)?
+      .truncated(to: Self.maximumNameLength)
   }
 }

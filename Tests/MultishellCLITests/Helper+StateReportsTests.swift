@@ -114,12 +114,14 @@ struct HelperStateReportsTests {
     let output = try await HelperBinary.run(
       [
         "state", "running", "--agent", "opencode", "--subagent", "ses_1", "--subagent-phase",
-        "working", "--subagent-type", "explore",
+        "working", "--subagent-type", "explore", "--subagent-parent", "ses_0",
       ], environment: ["MULTISHELL_SOCKET": path.path])
     #expect(output.succeeded, "\(output.standardError)")
     try await waitUntil { !recorder.received.isEmpty }
     let report = SessionStateReport.parse(recorder.received.first ?? "")
-    #expect(report?.worker == WorkerReport(id: "ses_1", type: "explore", phase: .working))
+    #expect(
+      report?.worker
+        == WorkerReport(id: "ses_1", type: "explore", phase: .working, parentID: "ses_0"))
 
     let halfSaid = try await HelperBinary.run(
       ["state", "running", "--subagent", "ses_1"], environment: ["MULTISHELL_SOCKET": path.path])
@@ -134,6 +136,10 @@ struct HelperStateReportsTests {
       environment: ["MULTISHELL_SOCKET": path.path])
     #expect(typeAlone.status == 2)
     #expect(typeAlone.standardError.contains("--subagent"))
+    let parentAlone = try await HelperBinary.run(
+      ["state", "running", "--subagent-parent", "ses_0"],
+      environment: ["MULTISHELL_SOCKET": path.path])
+    #expect(parentAlone.standardError.contains("--subagent-parent needs --subagent"))
 
     #expect(
       try await listener.linesUpToABarrier().count == 2, "no half-said worker reached the app")

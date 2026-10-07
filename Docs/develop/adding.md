@@ -64,19 +64,20 @@ What each addition needs beyond the code itself.
   integration too**, beside whether a worker is a conversation of its own and
   which listed kinds wake it. All default to no, so nothing forces them: a
   resuming agent left at the default pays Done at its last worker out and again
-  at the woken turn's Stop (design/agents.md). Two more, whether its transcript
-  shows a notice still queued at a Stop and whether it shows a question a
-  permission prompt stands for, are read only in Claude's format, so another
-  agent needs a reader of its own before it can say yes to either.
+  at the woken turn's Stop (design/agents.md). Three more, whether its
+  transcript shows a notice still queued at a Stop, whether it shows a question
+  a permission prompt stands for and whether a file beside it names each
+  worker's parent, are read only in Claude's format, so another agent needs a
+  reader of its own before it can say yes to any of them.
 - **An agent whose Stop does not list the shells it backgrounded names a shell
   marker on the integration**, text only such a shell's command line holds.
   Nothing forces it either: without one a pane waiting on the shell goes Done
   early (design/agents.md).
 - **An agent reporting through a plugin** names a worker through the helper's
-  subagent flags, starts a turn through its new-turn flag, and at a Stop that
-  resumes lists what is still out through its resumes and out flags. It also
-  needs a catalogue row, the Agents page's Hooks part offering hooks for agents
-  detection found.
+  subagent flags, the worker that launched it included, starts a turn through
+  its new-turn flag, and at a Stop that resumes lists what is still out through
+  its resumes and out flags. It also needs a catalogue row, the Agents page's
+  Hooks part offering hooks for agents detection found.
 - **An agent with no hooks at all needs a plugin**, as one already has. A file
   that is ours alone is written whole and deleted to remove.
 - **A variable a hook receives.** A case in the hook variables, which both

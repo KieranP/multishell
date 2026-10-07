@@ -12,9 +12,9 @@ at the bottom.
   able to write a line. An id, an agent or a command word past 128 characters is
   dropped rather than cut, a cut one naming something else, and a worker's id
   past it counts as an unnamed worker; a path past 1024 bytes is dropped; a
-  worker's kind is cut to 64 and the message to 500, both being display only; a
-  Stop names at most 64 shells. A duration outside zero to a week is dropped,
-  being a writer's number rather than a clock's.
+  worker's kind and name are cut to 64 and the message to 500, all being display
+  only; a Stop names at most 64 shells. A duration outside zero to a week is
+  dropped, being a writer's number rather than a clock's.
 - **One naming only a directory marks the deepest worktree containing it**, so
   an agent started in a subfolder says that folder, and a worktree nested in
   another is the one meant.
@@ -313,7 +313,8 @@ at the bottom.
 - **Not the tool it is in, though the payload says**: shown, it changed with
   every call and made the list flash; carried, it re-rendered the sidebar per
   call.
-- **No task description**: nothing on the wire carries one, for any agent.
+- **No task description from a hook**: no payload carries one, for any agent.
+  Claude's comes from a file beside its transcript, below.
 - **The wire field is an object with id, type and phase.** The older count field
   is still read, each increment as an unnamed worker, because the helper link is
   shared between builds and points at whichever launched last.
@@ -704,3 +705,36 @@ at the bottom.
   so under it too no pane is in view. A Done is not seen and a banner is not
   held back. An agent's pid is still polled only for the board, Debug Info
   showing no agents (debug-tools.md).
+- **A worker another worker launched is listed under it**, as Claude's own list
+  draws a skill's workers under the skill. Flat, a review fanning out eight
+  angles read as nine unrelated workers, each called `general-purpose`.
+- **No hook payload names a worker's parent**, checked for Claude 2.1.292 and
+  Codex 0.160.0 against the schemas in their binaries. Copilot's end names the
+  conversation it ran under, too late to list it there.
+- **Claude writes it beside the transcript instead**:
+  `<session>/subagents/ agent-<id>.meta.json` holds `parentAgentId`, absent for
+  the agent's own, and the `name` a skill runs under or the task's
+  `description`, which is what its own list shows. The helper reads it on each
+  event inside a worker and sends the parent and that name with the worker.
+- **Not at the worker's start**: Claude runs that hook before it writes the
+  file. In a real review the file came 30 to 65 ms after the worker's first
+  transcript line and 5 to 11 seconds before its first tool call, so a worker
+  sits at the top until then.
+- **Not a contract, so a changed format lists every worker at the top**, named
+  by its kind, which is what it did before; nothing about the state moves.
+- **The id goes into a path, so only letters, digits, `-` and `_` are read**,
+  and a parent naming anything else is no parent.
+- **OpenCode's plugin names a child's parent where that parent is itself a
+  child**, the session's `parentID`, read at its creation or its lookup. Codex
+  records its own in the child's rollout file, but whether a hook names that
+  file inside a worker is unread, so its workers stay flat.
+- **A worker whose parent is no longer out is drawn at the top**, and so is one
+  in a loop of workers naming each other, so nothing out goes unlisted.
+- **The count still counts every worker**, nested or not, the chip saying how
+  much is out rather than how many the agent launched itself.
+- **A screen reader hears each nested worker as under its parent**, by name, the
+  label being one string rather than rows it could step through.
+- **A Stop's list keeps every worker under one it names**: Claude lists only
+  background work, its filter skipping a task marked foreground, so a foreground
+  worker launched by a background one was read as ended, and a prompt it had up
+  went with it. Read from Claude 2.1.292's binary.

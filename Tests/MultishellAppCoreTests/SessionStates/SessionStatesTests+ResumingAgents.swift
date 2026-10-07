@@ -114,6 +114,28 @@ extension SessionStatesTests {
     #expect(states.workers(.session(a)).map(\.id) == ["w2"])
   }
 
+  /// Claude 2.1.292 lists only background work, so a foreground worker a
+  /// background one launched is out though its Stop leaves it off.
+  @Test func aStopKeepsTheForegroundWorkerOfAWorkerItListsAndThatWorkersPrompt() {
+    var states = SessionStates()
+    _ = reportResuming(&states, .running, WorkerReport(id: "review", phase: .started))
+    _ = reportResuming(&states, .running, WorkerReport(id: "angle", phase: .started))
+    _ = reportResuming(
+      &states, .attention, WorkerReport(id: "angle", phase: .working, parentID: "review"))
+    _ = stopListingWorkersOut(&states, out: ["review"])
+    #expect(states.workers(.session(a)).map(\.id) == ["review", "angle"])
+    #expect(states[.session(a)] == .attention)
+  }
+
+  @Test func aStopDropsAWorkerUnderOneItNoLongerLists() {
+    var states = SessionStates()
+    _ = reportResuming(&states, .running, WorkerReport(id: "review", phase: .started))
+    _ = reportResuming(
+      &states, .running, WorkerReport(id: "angle", phase: .working, parentID: "review"))
+    #expect(stopListingWorkersOut(&states, out: []) == .done)
+    #expect(states.workers(.session(a)).isEmpty)
+  }
+
   @Test func aStopListingNoShellDropsTheShellsAnEarlierStopLeft() {
     var states = SessionStates()
     #expect(stopListingWorkersOut(&states, out: [], shells: [500]) == .running)

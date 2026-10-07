@@ -59,6 +59,56 @@ struct AgentHookIntegrationReportsTests {
         == nil, "Copilot's notifications share the type")
   }
 
+  @Test func aClaudeWorkersToolCallCarriesItsParentAndNameFromBesideTheTranscript() throws {
+    let directory = try Scratch.directory("hooks")
+    defer { Scratch.remove(directory) }
+    let transcript = directory.appendingPathComponent("session.jsonl")
+    let subagentsFolder = directory.appendingPathComponent("session/subagents")
+    try FileManager.default.createDirectory(at: subagentsFolder, withIntermediateDirectories: true)
+    try Data(
+      (#"{"agentType":"general-purpose","description":"Efficiency angle","#
+        + #""parentAgentId":"a0","spawnDepth":2}"#).utf8
+    ).write(to: subagentsFolder.appendingPathComponent("agent-a1.meta.json"))
+    func worker(
+      _ event: String, id: String = "a1",
+      by integration: AgentHookIntegration = AgentHookCatalogue.claude
+    ) -> WorkerReport? {
+      let payload = AgentHookPayload(
+        json: Data(
+          (#"{"hook_event_name":"\#(event)","agent_id":"\#(id)","agent_type":"general-purpose","#
+            + #""transcript_path":"\#(transcript.path)"}"#).utf8))!
+      return integration.report(for: payload, sessionID: nil, workingDirectory: nil, pid: nil)?
+        .worker
+    }
+    #expect(
+      worker("PreToolUse")
+        == WorkerReport(
+          id: "a1", type: "general-purpose", phase: .working, parentID: "a0",
+          name: "Efficiency angle"))
+    #expect(worker("SubagentStop")?.parentID == nil, "an end is taken off whatever it was under")
+    #expect(worker("PreToolUse", id: "a2")?.name == nil, "not yet written")
+    #expect(worker("PreToolUse", by: AgentHookCatalogue.codex)?.parentID == nil)
+  }
+
+  @Test func anOversizedNameBesideTheTranscriptStillLeavesAReportThatFits() throws {
+    let directory = try Scratch.directory("hooks")
+    defer { Scratch.remove(directory) }
+    let transcript = directory.appendingPathComponent("session.jsonl")
+    let subagentsFolder = directory.appendingPathComponent("session/subagents")
+    try FileManager.default.createDirectory(at: subagentsFolder, withIntermediateDirectories: true)
+    let description = String(repeating: "x", count: 60_000)
+    try Data(#"{"description":"\#(description)"}"#.utf8)
+      .write(to: subagentsFolder.appendingPathComponent("agent-a1.meta.json"))
+    let payload = AgentHookPayload(
+      json: Data(
+        (#"{"hook_event_name":"PreToolUse","agent_id":"a1","#
+          + #""transcript_path":"\#(transcript.path)"}"#).utf8))!
+    let report = try #require(
+      AgentHookCatalogue.claude.report(
+        for: payload, sessionID: nil, workingDirectory: nil, pid: nil))
+    #expect(try report.encodedLine().utf8.count < 1_000)
+  }
+
   @Test func anAgentThatWakesForItsWorkersSaysSoAtItsStop() {
     func resumes(_ integration: AgentHookIntegration, _ event: String) -> Bool? {
       let payload = AgentHookPayload(eventName: event)

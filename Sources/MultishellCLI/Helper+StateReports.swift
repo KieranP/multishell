@@ -4,7 +4,7 @@ import MultishellCore
 extension Helper {
   private static let stateOptionNames: Set<String> = [
     "session", "cwd", "pid", "message", "agent", "subagent", "subagent-phase", "subagent-type",
-    "new-turn", "shell", "resumes", "subagent-wakes", "out",
+    "new-turn", "shell", "resumes", "subagent-wakes", "subagent-parent", "out",
   ]
 
   static func reportState(
@@ -42,7 +42,7 @@ extension Helper {
 
   private static func workerReport(from options: CommandOptions) throws -> WorkerReport? {
     guard let id = options["subagent"] else {
-      let orphan = ["subagent-phase", "subagent-type", "subagent-wakes"].first {
+      let orphan = ["subagent-phase", "subagent-type", "subagent-wakes", "subagent-parent"].first {
         options[$0] != nil
       }
       if let orphan {
@@ -58,6 +58,6 @@ extension Helper {
     }
     return WorkerReport(
       id: id, type: options["subagent-type"], phase: phase,
-      wakesAgent: options.onlyIfFalse("subagent-wakes"))
+      wakesAgent: options.onlyIfFalse("subagent-wakes"), parentID: options["subagent-parent"])
   }
 }

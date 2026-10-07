@@ -18,10 +18,6 @@ Most pressing first within each heading. A decision that gets made moves to
   binding for it stays bound and does nothing here until then.
 - The find bar's match count, "3 of 12": decode libghostty's search total and
   selected actions in `GhosttySurfaceEvent` and show them beside the field.
-- Subagent nesting. A subagent that launches its own shows in the chip as a flat
-  list beside them, every row named `general-purpose`, where Claude shows
-  `code-review` with its two workers under it. The roster is by id with no
-  parent (agents.md); first find whether any hook payload names the parent.
 
 ## Packaging
 

@@ -7,6 +7,12 @@ public struct Worker: Identifiable, Equatable, Sendable {
   public let id: String
   /// What the agent calls the kind, `nil` where no report said.
   var type: String?
+  /// What the agent shows for it, a skill's name or the task's description,
+  /// where it says.
+  var name: String?
+  /// The worker that launched it, `nil` for the agent's own or where no
+  /// report has said yet; see Docs/design/agents.md.
+  var parentID: String?
   /// When it started. Handed in by `stampChanges`, never read from a clock.
   var since: Date?
   /// How many workers share this roster place. Above one only where an agent
@@ -29,9 +35,13 @@ public struct Worker: Identifiable, Equatable, Sendable {
 
   var isBackgroundShell: Bool { pid != nil || isListedShell }
 
-  init(id: String, type: String?, since: Date? = nil) {
+  init(
+    id: String, type: String?, name: String? = nil, parentID: String? = nil, since: Date? = nil
+  ) {
     self.id = id
     self.type = type
+    self.name = name
+    self.parentID = parentID
     self.since = since
   }
 
@@ -51,7 +61,7 @@ public struct Worker: Identifiable, Equatable, Sendable {
   var isAnonymous: Bool { id.hasPrefix(Self.anonymousPrefix) }
 
   public var displayName: String {
-    type ?? (isBackgroundShell ? t("worker.background-shell") : t("worker.unnamed"))
+    name ?? type ?? (isBackgroundShell ? t("worker.background-shell") : t("worker.unnamed"))
   }
 
   /// How many workers this place stands for, where that is more than one.

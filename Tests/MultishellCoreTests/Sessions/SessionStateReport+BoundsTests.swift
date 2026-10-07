@@ -10,7 +10,8 @@ struct SessionStateReportBoundsTests {
     let shells = (1...500).map(String.init).joined(separator: ",")
     let line = """
       {"state":"running","agent":"\(long)","cwd":"/\(long)","command":"\(long) arg",\
-      "subagent":{"id":"\(long)","type":"\(long)","phase":"started"},\
+      "subagent":{"id":"\(long)","type":"\(long)","phase":"started",\
+      "parent":"\(long)","name":"\(long)"},\
       "shells":[\(shells)]}
       """
     let report = SessionStateReport.parse(line)
@@ -20,7 +21,16 @@ struct SessionStateReportBoundsTests {
     #expect(report?.command == nil)
     #expect(report?.worker?.id == WorkerReport.anonymousID)
     #expect(report?.worker?.type?.count == WorkerReport.maximumTypeLength + 1)
+    #expect(report?.worker?.parentID == nil, "a cut id would name another worker")
+    #expect(report?.worker?.name?.count == WorkerReport.maximumNameLength + 1)
     #expect(report?.backgroundShells?.count == SessionStateReport.rosterCapacity)
+  }
+
+  @Test func aWorkersNameIsCutGoingOntoTheChannelSoItsReportStillFits() throws {
+    let worker = WorkerReport(
+      id: "a1", phase: .working, name: String(repeating: "x", count: 70_000))
+    let line = try SessionStateReport(state: .running, worker: worker).encodedLine()
+    #expect(line.utf8.count < 1_000)
   }
 
   @Test func aStopNamesAsManyWorkersOutAsARosterHoldsAndOnlyNamedOnes() {
@@ -38,12 +48,16 @@ struct SessionStateReportBoundsTests {
   @Test func fieldsWithinTheirBoundsArriveAndACommandArrivesAsItsExecutable() {
     let report = SessionStateReport.parse(
       #"{"state":"running","agent":"codex","cwd":"/w/repo","command":"/bin/make all","#
-        + #""subagent":{"id":"t1","type":"Explore","phase":"working"}}"#)
+        + #""subagent":{"id":"t1","type":"Explore","phase":"working","parent":"t0","#
+        + #""name":"Efficiency angle"}}"#)
 
     #expect(report?.agentID == "codex")
     #expect(report?.workingDirectory == "/w/repo")
     #expect(report?.command == "make")
-    #expect(report?.worker == WorkerReport(id: "t1", type: "Explore", phase: .working))
+    #expect(
+      report?.worker
+        == WorkerReport(
+          id: "t1", type: "Explore", phase: .working, parentID: "t0", name: "Efficiency angle"))
   }
 
   /// The channel drops a line over 64 KB, so an overlong message would lose the state too:

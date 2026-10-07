@@ -43,7 +43,7 @@ extension AgentHookIntegration {
       message: payload.message,
       agentID: id,
       isSilent: event.isSilent ? true : nil,
-      worker: event.workerChange(for: payload),
+      worker: event.workerChange(for: payload).map { withMetadata($0, from: payload) },
       startsTurn: event.startsTurn(for: payload) ? true : nil,
       startsSession: event.startsSession ? true : nil,
       backgroundShells: isStop && payload.backgroundTasks == nil
@@ -62,6 +62,21 @@ extension AgentHookIntegration {
       let path = payload.transcriptPath
     else { return false }
     return ClaudeTranscript.asksQuestion(atPath: path)
+  }
+
+  /// A worker's start comes before Claude writes its metadata, so the parent
+  /// arrives with its first tool call. An end needs neither.
+  private func withMetadata(
+    _ worker: WorkerReport, from payload: AgentHookPayload
+  ) -> WorkerReport {
+    guard keepsWorkerMetadataBesideTranscript, worker.phase != .ended,
+      let path = payload.transcriptPath,
+      let metadata = ClaudeWorkerMetadata.read(ofWorker: worker.id, transcriptPath: path)
+    else { return worker }
+    return WorkerReport(
+      id: worker.id, type: worker.type, phase: worker.phase, wakesAgent: worker.wakesAgent,
+      isBackgroundShell: worker.isBackgroundShell, parentID: metadata.parentID,
+      name: metadata.name)
   }
 
   private func turnFollows(at payload: AgentHookPayload) -> Bool {

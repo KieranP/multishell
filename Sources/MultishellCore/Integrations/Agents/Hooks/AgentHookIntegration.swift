@@ -58,13 +58,16 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   /// Whether the agent's questions reach a hook as permission prompts, which
   /// only its transcript tells apart; see agents.md.
   let transcriptShowsPendingQuestion: Bool
+  /// Whether the agent keeps a file per worker beside its transcript naming
+  /// the worker's parent; see agents.md.
+  let keepsWorkerMetadataBesideTranscript: Bool
 
   init(
     id: String, file: URL, displayPath: String, events: [AgentHookEvent],
     format: Format, trustNote: String? = nil, backgroundShellMarker: String? = nil,
     resumption: Resumption = .never, subagentsAreConversations: Bool = false,
     wakingTaskTypes: Set<String> = [], transcriptQueuesNotices: Bool = false,
-    transcriptShowsPendingQuestion: Bool = false
+    transcriptShowsPendingQuestion: Bool = false, keepsWorkerMetadataBesideTranscript: Bool = false
   ) {
     self.id = id
     self.file = file
@@ -78,6 +81,7 @@ public struct AgentHookIntegration: Identifiable, Sendable {
     self.wakingTaskTypes = wakingTaskTypes
     self.transcriptQueuesNotices = transcriptQueuesNotices
     self.transcriptShowsPendingQuestion = transcriptShowsPendingQuestion
+    self.keepsWorkerMetadataBesideTranscript = keepsWorkerMetadataBesideTranscript
   }
 
   public var name: String { AgentCatalogue.agent(id)?.name ?? id }

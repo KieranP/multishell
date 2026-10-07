@@ -11,12 +11,20 @@ public enum AccessibilityText {
   }
 
   /// The workers chip on a sidebar row or a board card: how many, then each
-  /// by kind. No times: they are read later than built, and cost a clock each.
+  /// by name and under its parent. No times: they are read later than built,
+  /// and cost a clock each.
   public static func workers(_ workers: [Worker]) -> String {
-    let named = workers.map { worker in
-      [worker.displayName, worker.occurrenceText].compactMap { $0 }.joined(separator: " ")
+    let displayNames = Dictionary(workers.map { ($0.id, $0.displayName) }) { first, _ in first }
+    let spokenWorkers = workers.nested.map { nested in
+      let worker = nested.worker
+      let spokenName = [worker.displayName, worker.occurrenceText].compactMap { $0 }
+        .joined(separator: " ")
+      guard nested.depth > 0, let parentName = worker.parentID.flatMap({ displayNames[$0] }) else {
+        return spokenName
+      }
+      return t("spoken.worker-under", spokenName, parentName)
     }
-    return ([workers.countText] + named).joined(separator: ", ")
+    return ([workers.countText] + spokenWorkers).joined(separator: ", ")
   }
 
   /// Which pane of a split, on a sidebar row and a board card alike.

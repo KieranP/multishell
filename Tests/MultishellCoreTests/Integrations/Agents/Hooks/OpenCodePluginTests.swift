@@ -189,6 +189,31 @@ struct OpenCodePluginTests: OpenCodePluginDriver {
       ])
   }
 
+  @Test func aChildOfAChildNamesItsParentAndAChildOfTheSessionNamesNone() throws {
+    let out = try reports(of: [
+      .message(session: "parent"),
+      .created(child: "a", of: "parent", agent: "general"),
+      .created(child: "b", of: "parent/a", agent: "explore"),
+      .tool(session: "parent/a/b"),
+    ])
+    let workerReports = out.filter { flagValue($0, "--subagent") != nil }
+    #expect(
+      workerReports.map { flagValue($0, "--subagent-parent") } == [nil, "parent/a", "parent/a"])
+  }
+
+  @Test func aResumedChildOfAChildNamesItsParentOnceLookedUp() throws {
+    let out = try reports(
+      of: [
+        .message(session: "parent"),
+        .created(child: "a", of: "parent", agent: "general"),
+        .message(session: "parent/a/b"),
+      ],
+      sessions: ["parent/a/b": ["id": "parent/a/b", "parentID": "parent/a"]])
+    let grandchildReports = out.filter { flagValue($0, "--subagent") == "parent/a/b" }
+    #expect(
+      grandchildReports.map { flagValue($0, "--subagent-parent") } == ["parent/a", "parent/a"])
+  }
+
   @Test func aLookupThatFailsLeavesTheSessionTheParents() throws {
     let out = try reports(
       of: [.message(session: "parent"), .idle("parent")],

@@ -6,7 +6,8 @@ extension Helper {
       multishell state <running|attention|done|error|idle> [--session ID] [--cwd PATH]
                        [--pid PID] [--message TEXT] [--agent ID]
                        [--subagent ID --subagent-phase <started|working|ended>
-                        [--subagent-type NAME] [--subagent-wakes false]]
+                        [--subagent-type NAME] [--subagent-parent ID]
+                        [--subagent-wakes false]]
                        [--new-turn true] [--shell true] [--resumes true]
                        [--out ID,ID...]
           Report a state for the terminal this runs in. Defaults come from the
@@ -18,6 +19,8 @@ extension Helper {
           agent's pane from a plain shell; the agents' own hooks set it.
           --subagent names a worker the agent has out, so the app can list
           it: started and ended are its ends, working a tool call inside it.
+          --subagent-parent names the worker that launched it, which the app
+          lists it under.
           --subagent-wakes false marks an end the agent takes no turn over,
           such as a cancelled worker's. --resumes true on a done says the
           agent takes a turn when the work it left out ends, and --out

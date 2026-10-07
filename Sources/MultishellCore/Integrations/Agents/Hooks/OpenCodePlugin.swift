@@ -42,6 +42,7 @@ enum OpenCodePlugin {
         if (worker) {
           args.push("--subagent", worker.id, "--subagent-phase", worker.phase)
           if (worker.type) args.push("--subagent-type", worker.type)
+          if (worker.parent) args.push("--subagent-parent", worker.parent)
           if (worker.wakes === false) args.push("--subagent-wakes", "false")
         }
         send(args)
@@ -83,7 +84,7 @@ enum OpenCodePlugin {
       const busy = () => [...workers].filter(([, entry]) => !entry.done).map(([id]) => id)
       const worker = (id, phase) => {
         const entry = workers.get(id)
-        return entry && !entry.done ? { id, phase, type: entry.type } : undefined
+        return entry && !entry.done ? { id, phase, type: entry.type, parent: entry.parent } : undefined
       }
       // A child's id is kept past its end, so a late event of its own is not
       // read as the parent's; only a busy status puts it back on the roster.
@@ -114,12 +115,15 @@ enum OpenCodePlugin {
         if (timer.unref) timer.unref()
         promise.then((value) => { clearTimeout(timer); resolve(value) })
       })
+      // A child of a child is listed under it; a child of this session is not.
+      const parentWorkerID = (parentID) => (workers.has(parentID) ? parentID : undefined)
       const adopt = (id, session, agent) => {
         if (!session || !session.parentID || workers.has(id)) return
         lookups.delete(id)
         const type = agent || session.agent
-        workers.set(id, { type })
-        report("running", undefined, { id, phase: "started", type })
+        const parent = parentWorkerID(session.parentID)
+        workers.set(id, { type, parent })
+        report("running", undefined, { id, phase: "started", type, parent })
       }
       // Every hook shares the first one's bound, so a lookup that never settles
       // holds only that second; one landing after it still puts a child back.
@@ -167,8 +171,9 @@ enum OpenCodePlugin {
           if (event.type !== "session.created") await recognise(properties.sessionID)
           // Not a second start for a child a lookup already put back.
           if (event.type === "session.created" && info && info.parentID && !workers.has(info.id)) {
-            workers.set(info.id, { type: info.agent })
-            report("running", undefined, { id: info.id, phase: "started", type: info.agent })
+            const parent = parentWorkerID(info.parentID)
+            workers.set(info.id, { type: info.agent, parent })
+            report("running", undefined, { id: info.id, phase: "started", type: info.agent, parent })
           } else if (workers.has(properties.sessionID)) {
             const id = properties.sessionID
             if (idle || event.type === "session.error") {

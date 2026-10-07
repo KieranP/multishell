@@ -21,4 +21,15 @@ struct AccessibilityTextTests {
         agentName: nil)
         == "claude, tab, Working, 1 subagent, 2 background shells")
   }
+
+  @Test func theChipSaysEachNestedWorkerUnderItsParent() {
+    let out = [
+      Worker(id: "a0", type: "general-purpose", name: "code-review"),
+      Worker(id: "a1", type: "general-purpose", name: "Reuse angle", parentID: "a0"),
+      Worker(id: "a2", type: "Explore"),
+    ]
+    #expect(
+      AccessibilityText.workers(out)
+        == "3 subagents, code-review, Reuse angle under code-review, Explore")
+  }
 }

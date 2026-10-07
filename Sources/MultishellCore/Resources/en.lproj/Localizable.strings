@@ -277,6 +277,7 @@
 "spoken.tab-group" = "Tab group %1$d of %2$d";
 "spoken.total-memory" = "%@ total";
 "spoken.tree-depth" = "started by the process above, %d deep";
+"spoken.worker-under" = "%1$@ under %2$@";
 "state.attention" = "Waiting for input";
 "state.done" = "Done";
 "state.error" = "Failed";
