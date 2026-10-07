@@ -11,7 +11,7 @@ struct AppModelNotificationsTests {
     harness.stateSource.send(
       SessionStateReport(state: .attention, workingDirectory: harness.main.path.path))
     #expect(harness.notifier.posted.isEmpty, "off until turned on")
-    harness.model.setNotifications(.everyState)
+    harness.model.setNotificationPreference(.everyState)
     let first = harness.openBackgroundTab()
 
     harness.stateSource.send(SessionStateReport(state: .running, sessionID: first.focusedSessionID))
@@ -25,11 +25,11 @@ struct AppModelNotificationsTests {
     #expect(harness.notifier.posted.first?.title.contains("main") == true)
     #expect(harness.notifier.posted.first?.key == .session(first.focusedSessionID))
 
-    harness.model.setNotifications(NotificationPreference(attention: true))
+    harness.model.setNotificationPreference(NotificationPreference(notifiesOnAttention: true))
     harness.stateSource.send(SessionStateReport(state: .done, sessionID: first.focusedSessionID))
     #expect(harness.notifier.posted.count == 1)
 
-    harness.model.setNotifications(.off)
+    harness.model.setNotificationPreference(.off)
     harness.stateSource.send(
       SessionStateReport(state: .attention, sessionID: first.focusedSessionID))
     #expect(harness.notifier.posted.count == 1)
@@ -37,7 +37,7 @@ struct AppModelNotificationsTests {
 
   @Test func aQuestionIsWordedAsOneOnTheBannerAndTheCardWhateverTheAgentSaid() {
     let harness = Harness()
-    harness.model.setNotifications(.everyState)
+    harness.model.setNotificationPreference(.everyState)
     let tab = harness.openBackgroundTab()
     harness.stateSource.send(
       SessionStateReport(
@@ -52,11 +52,9 @@ struct AppModelNotificationsTests {
   /// so it goes rather than sitting in Notification Centre until swiped.
   @Test func aBannerIsTakenBackWhenTheStateItNamedMovesOn() {
     let harness = Harness()
-    harness.model.setNotifications(.everyState)
-    harness.model.select(harness.main)
-    let tab = harness.model.workspace.activeTab(in: harness.main.id)!
+    harness.model.setNotificationPreference(.everyState)
+    let tab = harness.openBackgroundTab()
     let session = tab.focusedSessionID
-    harness.model.newTab()
 
     harness.stateSource.send(SessionStateReport(state: .attention, sessionID: session))
     #expect(harness.notifier.posted.count == 1)
@@ -74,11 +72,9 @@ struct AppModelNotificationsTests {
   /// its job.
   @Test func lookingAtThePaneTakesItsBannerBackAndLeavesTheDot() {
     let harness = Harness()
-    harness.model.setNotifications(.everyState)
-    harness.model.select(harness.main)
-    let tab = harness.model.workspace.activeTab(in: harness.main.id)!
+    harness.model.setNotificationPreference(.everyState)
+    let tab = harness.openBackgroundTab()
     let session = tab.focusedSessionID
-    harness.model.newTab()
 
     harness.stateSource.send(SessionStateReport(state: .attention, sessionID: session))
     #expect(harness.notifier.posted.count == 1)
@@ -93,7 +89,7 @@ struct AppModelNotificationsTests {
   /// user is away, and a shell exiting anywhere runs the seen-it pass.
   @Test func nothingCountsAsSeenWhileTheUserIsInAnotherApp() {
     let harness = Harness()
-    harness.model.setNotifications(.everyState)
+    harness.model.setNotificationPreference(.everyState)
     harness.model.select(harness.main)
     let tab = harness.model.workspace.activeTab(in: harness.main.id)!
     let session = tab.focusedSessionID
@@ -117,11 +113,9 @@ struct AppModelNotificationsTests {
 
   @Test func closingATabTakesItsBannerWithIt() {
     let harness = Harness()
-    harness.model.setNotifications(.everyState)
-    harness.model.select(harness.main)
-    let first = harness.model.workspace.activeTab(in: harness.main.id)!
+    harness.model.setNotificationPreference(.everyState)
+    let first = harness.openBackgroundTab()
     let session = first.focusedSessionID
-    harness.model.newTab()
 
     harness.stateSource.send(SessionStateReport(state: .done, sessionID: session))
     #expect(harness.notifier.posted.count == 1)

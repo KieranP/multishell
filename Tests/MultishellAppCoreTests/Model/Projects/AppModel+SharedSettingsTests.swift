@@ -9,6 +9,19 @@ import Testing
 
 @Suite(.serialized) @MainActor
 struct AppModelSharedSettingsTests {
+  @Test func anEditorOpenedAsATabAsksAboutTheSharedSettingsAsSelectingDoes() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    try harness.writeSharedSettings(#"{ "postCreateHook": "echo shared" }"#)
+    await harness.model.refreshWorktrees(of: harness.project)
+    harness.model.setPreferredEditor(EditorCatalogue.customID)
+    harness.model.setCustomEditorCommand("my-editor {path}")
+
+    harness.model.openInEditor(harness.model.workspace.worktrees(of: harness.project.id)[0])
+
+    #expect(harness.model.pendingSharedSettingsTrust?.projectID == harness.project.id)
+  }
+
   @Test func theRepositorysSettingsFileFillsTheGapsAndItsHooksWaitForTrust() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
@@ -19,7 +32,7 @@ struct AppModelSharedSettingsTests {
     await harness.model.refreshWorktrees(of: harness.project)
 
     #expect(
-      harness.project.sharedSettings.asWritten?.branchPrefix
+      harness.project.sharedSettingsSnapshot.asWritten?.branchPrefix
         == "team/")
     #expect(harness.model.effectiveWorktreeSettings(for: harness.project).branchPrefix == "team/")
     #expect(harness.model.effectiveSettings(for: harness.project).iconGlyph == "hammer")
@@ -40,7 +53,7 @@ struct AppModelSharedSettingsTests {
       branch: "a", basedOn: nil, createsBranch: true, in: harness.project)
     #expect(harness.model.pendingSharedSettingsTrust == nil, "the sheet is still going away then")
     let a = try #require(harness.worktree(onBranch: "team/a"))
-    #expect(harness.model.stageHandles.setup(of: a.id) == nil)
+    #expect(harness.model.stageHandles.setupTask(of: a.id) == nil)
     #expect(!FileManager.default.fileExists(atPath: a.path.appendingPathComponent("hook.txt").path))
 
     harness.model.answerSharedSettingsTrust(pending, isTrusted: true)
@@ -54,7 +67,7 @@ struct AppModelSharedSettingsTests {
     await harness.model.createWorktree(
       branch: "b", basedOn: nil, createsBranch: true, in: harness.project)
     let b = try #require(harness.worktree(onBranch: "team/b"))
-    await harness.model.stageHandles.setup(of: b.id)?.value
+    await harness.model.stageHandles.setupTask(of: b.id)?.value
     #expect(FileManager.default.fileExists(atPath: b.path.appendingPathComponent("hook.txt").path))
 
     harness.model.setSettings(
@@ -102,7 +115,7 @@ struct AppModelSharedSettingsTests {
     await harness.model.createWorktree(
       branch: "x", basedOn: nil, createsBranch: true, in: harness.project)
     let worktree = try #require(harness.worktree(onBranch: "x"))
-    await harness.model.stageHandles.setup(of: worktree.id)?.value
+    await harness.model.stageHandles.setupTask(of: worktree.id)?.value
     #expect(
       !FileManager.default.fileExists(
         atPath: worktree.path.appendingPathComponent("id_ed25519").path))
@@ -126,8 +139,7 @@ struct AppModelSharedSettingsTests {
     #expect(!pending.trustCoveredText.contains(".ssh"), "not a line the user is asked to allow")
   }
 
-  /// And a file whose every path is refused asks nothing at all: there is
-  /// no longer anything a yes would turn on.
+  /// No yes would turn anything on.
   @Test func aFileWhoseEveryPathIsRefusedIsNeverAskedAbout() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
@@ -162,7 +174,9 @@ struct AppModelSharedSettingsTests {
         loaded: .success(shared), modificationDate: later, project: harness.project),
       for: harness.project)
 
-    #expect(!harness.project.sharedSettings.needsRead(at: later), "so the next tick spends no read")
+    #expect(
+      !harness.project.sharedSettingsSnapshot.needsRead(at: later),
+      "so the next tick spends no read")
   }
 
   /// The answer is held against the file's sha256, so a switch back asks
@@ -229,7 +243,7 @@ struct AppModelSharedSettingsTests {
     try #"{ "postCreateHook": "echo two" }"#.write(to: file, atomically: true, encoding: .utf8)
     await harness.model.refreshSharedSettingsIfChanged()
     #expect(
-      harness.project.sharedSettings.asWritten?.postCreateHook
+      harness.project.sharedSettingsSnapshot.asWritten?.postCreateHook
         == "echo two")
     #expect(harness.model.pendingSharedSettingsTrust == nil, "not a project the user is looking at")
 
@@ -238,7 +252,7 @@ struct AppModelSharedSettingsTests {
 
     try #"{ "postCreateHook": "echo two and a half" }"#
       .write(to: file, atomically: true, encoding: .utf8)
-    await harness.model.refreshWorktreesIfRecordsChanged()
+    await harness.model.refreshProjectsIfChanged()
     let pending = try #require(harness.model.pendingSharedSettingsTrust)
     #expect(
       pending.trustCoveredText == "post-create:\necho two and a half",
@@ -252,18 +266,18 @@ struct AppModelSharedSettingsTests {
     harness.model.newWorktreeRequest = NewWorktreeRequest(projectID: harness.project.id)
     try #"{ "postCreateHook": "echo three and a half" }"#
       .write(to: file, atomically: true, encoding: .utf8)
-    await harness.model.refreshWorktreesIfRecordsChanged()
+    await harness.model.refreshProjectsIfChanged()
     #expect(
-      harness.project.sharedSettings.asWritten?.postCreateHook
+      harness.project.sharedSettingsSnapshot.asWritten?.postCreateHook
         == "echo three and a half")
     #expect(harness.model.pendingSharedSettingsTrust == nil, "the sheet is what is being answered")
     harness.model.newWorktreeRequest = nil
 
     try #"{ "postCreateHook": "echo three" }"#.write(to: file, atomically: true, encoding: .utf8)
-    await harness.model.refreshWorktreesIfRecordsChanged()
+    await harness.model.refreshProjectsIfChanged()
 
     #expect(
-      harness.project.sharedSettings.asWritten?.postCreateHook
+      harness.project.sharedSettingsSnapshot.asWritten?.postCreateHook
         == "echo three")
     #expect(
       harness.model.pendingSharedSettingsTrust?.trustCoveredText == "post-create:\necho three",
@@ -279,10 +293,10 @@ struct AppModelSharedSettingsTests {
     await harness.model.refreshWorktrees(of: harness.project)
     #expect(harness.model.presentedError == nil)
     #expect(
-      harness.project.sharedSettings.problem?.hasPrefix(
+      harness.project.sharedSettingsSnapshot.problem?.hasPrefix(
         ".multishell.json could not be read")
         == true)
-    #expect(harness.project.sharedSettings.asWritten == nil)
+    #expect(harness.project.sharedSettingsSnapshot.asWritten == nil)
     #expect(harness.platform.logged.count == 1)
   }
 
@@ -302,10 +316,10 @@ struct AppModelSharedSettingsTests {
       harness.model.pendingSharedSettingsTrust == nil,
       "the hooks it named are not the app's any more")
 
-    // The same for a branch that carries no file at all.
     try #"{ "postCreateHook": "echo one" }"#.write(to: file, atomically: true, encoding: .utf8)
     await harness.model.refreshSharedSettingsIfChanged()
     #expect(harness.model.pendingSharedSettingsTrust != nil, "and comes back when it parses again")
+    // The same for a branch that carries no file at all.
     try FileManager.default.removeItem(at: file)
     await harness.model.refreshSharedSettingsIfChanged()
     #expect(harness.model.pendingSharedSettingsTrust == nil)
@@ -336,7 +350,7 @@ struct AppModelSharedSettingsTests {
   }
 
   /// The dropped verdict is stored, so the read that put it there must not be
-  /// the last word: taking the symlink away brings the directory back.
+  /// the last word.
   @Test func takingTheSymlinkAwayBringsTheDirectoryBack() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
@@ -349,12 +363,12 @@ struct AppModelSharedSettingsTests {
     try FileManager.default.createSymbolicLink(at: link, withDestinationURL: elsewhere)
 
     _ = await harness.model.reconfineSharedSettings(of: harness.project)
-    #expect(harness.project.sharedSettings.confined?.worktreeDirectory == nil)
+    #expect(harness.project.sharedSettingsSnapshot.confined?.worktreeDirectory == nil)
 
     try FileManager.default.removeItem(at: link)
     _ = await harness.model.reconfineSharedSettings(of: harness.project)
 
-    #expect(harness.project.sharedSettings.confined?.worktreeDirectory == "trees")
+    #expect(harness.project.sharedSettingsSnapshot.confined?.worktreeDirectory == "trees")
     #expect(
       harness.model.effectiveWorktreeSettings(for: harness.project).worktreeDirectory == "trees")
   }

@@ -58,7 +58,7 @@ extension AppModel {
         continue
       }
       endSetup(of: worktree, stopper: stopper)
-      endFileListStage(of: worktree, placing: list.placement, failure, skipped: skipped)
+      finishOrFailFileListStage(of: worktree, placing: list.placement, failure, skipped: skipped)
       return
     }
     // Said and gone past: an entry of the user's own naming elsewhere is a
@@ -77,7 +77,7 @@ extension AppModel {
   }
 
   /// A file list that stopped short, with what the lists before it skipped.
-  private func endFileListStage(
+  private func finishOrFailFileListStage(
     of worktree: Worktree, placing placement: WorktreeFilePlacement, _ failure: any Error,
     skipped: [String]
   ) {
@@ -143,7 +143,7 @@ extension AppModel {
     _ list: WorktreeFileList, into path: URL, for effective: Project, stopper: ProcessStopper
   ) async -> (failure: (any Error)?, skipped: [String]) {
     guard let coordinator else { return (nil, []) }
-    return await offMain {
+    return await runOnDispatch {
       do {
         return (nil, try coordinator.placeFiles(list, for: effective, into: path, stopper: stopper))
       } catch {
@@ -158,17 +158,17 @@ extension AppModel {
   ) async {
     defer { endSetup(of: worktree, stopper: stopper) }
     do {
-      try await coordinator?.runPostCreate(
+      try await coordinator?.runPostCreateHook(
         for: effective, worktreePath: worktree.path, branch: branch, shellPath: shellPath,
         timeout: workspace.hookTimeout, stopper: stopper)
     } catch {
-      let stop = (error as? HookFailure)?.stop
+      let stopReason = (error as? HookFailure)?.stopReason
       // Stopped by the user: the worktree is theirs to use, as after a
       // finish. A stop for any other reason is the timeout.
-      if stop == .byUser {
+      if stopReason == .byUser {
         finishStage(.postCreateHook, of: worktree)
       } else {
-        failStage(.postCreateHook, of: worktree, error, didTimeOut: stop != nil)
+        failStage(.postCreateHook, of: worktree, error, didTimeOut: stopReason != nil)
       }
       return
     }

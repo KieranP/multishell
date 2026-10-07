@@ -64,6 +64,18 @@
       <key>other</key><string>%d runs</string>
     </dict>
   </dict>
+  <key>count.stalled-seconds</key>
+  <dict>
+    <key>NSStringLocalizedFormatKey</key>
+    <string>%#@count@</string>
+    <key>count</key>
+    <dict>
+      <key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>
+      <key>NSStringFormatValueTypeKey</key><string>d</string>
+      <key>one</key><string>%d second</string>
+      <key>other</key><string>%d seconds</string>
+    </dict>
+  </dict>
   <key>count.subagents</key>
   <dict>
     <key>NSStringLocalizedFormatKey</key>

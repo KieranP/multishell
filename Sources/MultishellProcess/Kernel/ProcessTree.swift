@@ -7,12 +7,6 @@ public struct ProcessTree: Sendable, Equatable {
   /// Those readable, the root first where it is: a setuid `login` is not.
   public let processes: [ProcessUsage]
 
-  init(rootPID: Int32, terminalDevice: Int32?, processes: [ProcessUsage]) {
-    self.rootPID = rootPID
-    self.terminalDevice = terminalDevice
-    self.processes = processes
-  }
-
   public func contains(_ pid: Int32) -> Bool {
     rootPID == pid || processes.contains { $0.pid == pid }
   }

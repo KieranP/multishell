@@ -43,7 +43,7 @@ extension WorkspaceStoreTests {
         """#)
     defer { Scratch.remove(file.deletingLastPathComponent()) }
 
-    let (store, error) = WorkspaceStore.restored(from: WorkspaceFile(fileURL: file))
+    let (store, error) = WorkspaceStore.restored(from: StateFile(fileURL: file))
     let workspace = store.workspace
 
     #expect(error == nil, "\(String(describing: error))")

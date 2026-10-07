@@ -20,6 +20,6 @@ struct AppModelDetailContentTests {
     #expect(harness.model.detailContent == .operation(harness.main, operation))
 
     harness.model.showAgentBoard()
-    #expect(harness.model.detailContent == .agentBoard)
+    #expect(harness.model.detailContent == .cover(.agentBoard))
   }
 }

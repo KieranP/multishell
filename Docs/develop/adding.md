@@ -140,8 +140,8 @@ What each addition needs beyond the code itself.
   `destructiveAlert(_:alert:answer:)`, which keep the red button and Return on
   it; one that does not can stay a SwiftUI dialog, where the cancel role gives
   Escape and `.defaultAction` gives Return (design/smaller-decisions.md). Its
-  answer is an `AppModel` method, `answerPendingClose` the pattern, so the view
-  only forwards the button chosen and the model's tests cover what it does.
+  answer is an `AppModel` method, `answerClose` the pattern, so the view only
+  forwards the button chosen and the model's tests cover what it does.
 - **A project icon.** A name in one of the symbol groups, or a new group. It
   must exist as far back as the deployment target; a name that does not resolve
   draws nothing rather than failing.
@@ -163,9 +163,9 @@ What each addition needs beyond the code itself.
   copied whole in the manifest, whose init file carries the helper's and the
   agents' placeholders and joins the rest through `# include` lines. Then a path
   in `Paths`, a generator in the integration scripts, a write in the integration
-  refresh, and a way in through `ShellLaunch` for both a fresh tab and the shell
-  taking over when an agent quits. Add its generated file to
-  `everyGeneratedFileParsesInItsShell`.
+  refresh, and a way in for both a fresh tab, through `EngineCommandLine`, and
+  the shell taking over when an agent quits, through `ShellLaunch`. Add its
+  generated file to `everyGeneratedFileParsesInItsShell`.
 - **It reports a command started and finished through the helper**, naming the
   program where it is one of the agents, and does nothing when the session
   variable is unset. Name it in `ShellLaunch.reportsFinishedCommands` too, or
@@ -203,8 +203,8 @@ What each addition needs beyond the code itself.
   which keep the shell, the auto-start pair and the trust answers under their
   old keys; one left out is never saved. ProjectSettingsTests counts them.
 - **A field on `Workspace`** needs a case in its hand-written coding keys too,
-  which keep the shell and the auto-start pair under their old keys.
-  WorkspaceTests counts them.
+  which keep the shell, the auto-start pair, the worktree names and the
+  notification preference under their old keys. WorkspaceTests counts them.
 - **A preference.** In order: the field on the workspace, a setter on the store,
   which must sit in that one file beside the private setter, a method on the
   model doing whatever else the change needs, and the row bound through the
@@ -234,7 +234,7 @@ What each addition needs beyond the code itself.
   `InheritableSettingKeys` where a repository may ship it. Help goes behind an
   (i); a caption is only for a value computed live.
 - **A page that outgrows its window gets another part** in its segmented switch,
-  and each part a line in SettingsWindowSizeTests. Hooks' Create part has 7 pt
+  and each part a line in ViewSettingsWindowTests. Hooks' Create part has 7 pt
   left under a repository file asking for trust.
 - **A user-visible string.** A line in the catalogue of the half that says it,
   in key order under its thing's prefix (design/translation.md), and the lookup

@@ -12,7 +12,7 @@ struct GitStatusBadge: View {
 
   var body: some View {
     // Narrower forms only where the whole one will not fit; see
-    // `GitStatusBadgeDetail`. Beyond the narrowest it overflows.
+    // `GitStatusBadgeFit`. Beyond the narrowest it overflows.
     ViewThatFits(in: .horizontal) {
       counts(.full)
       counts(.withoutFiles)
@@ -26,7 +26,7 @@ struct GitStatusBadge: View {
     .help(status.summary)
   }
 
-  private func counts(_ detail: GitStatusBadgeDetail) -> some View {
+  private func counts(_ fit: GitStatusBadgeFit) -> some View {
     HStack(spacing: 4) {
       if status.isDirty {
         Text(t("status.insertions", status.insertions))
@@ -34,11 +34,11 @@ struct GitStatusBadge: View {
         Text(t("status.deletions", status.deletions))
           .foregroundStyle(theme.deletionsColor)
       }
-      if detail.showsFiles(of: status) {
+      if fit.showsFiles(of: status) {
         Text(t("status.unscored-badge", status.unscoredFiles))
           .foregroundStyle(theme.unscoredFilesColor)
       }
-      if detail.showsArrows(of: status) {
+      if fit.showsArrows(of: status) {
         if status.ahead > 0 { Text(t("status.ahead", status.ahead)) }
         if status.behind > 0 { Text(t("status.behind", status.behind)) }
       }

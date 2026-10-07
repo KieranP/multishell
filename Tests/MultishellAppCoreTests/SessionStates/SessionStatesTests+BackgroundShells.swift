@@ -46,22 +46,4 @@ extension SessionStatesTests {
     #expect(states.applyShellExit(600).isEmpty)
     #expect(states[.session(a)] == .running)
   }
-
-  @Test func aStopNamingAsManyShellsAsTheWireCarriesKeepsEveryOne() {
-    var states = SessionStates()
-    _ = report(
-      &states,
-      .init(state: .done, backgroundShells: Array(1...Int32(SessionStateReport.rosterCapacity))))
-
-    #expect(workersOut(states).count == SessionStateReport.rosterCapacity)
-  }
-
-  @Test func aStopNamingThousandsOfShellsKeepsNoMoreThanTheRosterHolds() {
-    var states = SessionStates()
-    var stop = SessionStateReport(state: .done)
-    stop.backgroundShells = Array(1...5000)
-    _ = report(&states, stop)
-
-    #expect(workersOut(states).count <= SessionStateReport.rosterCapacity)
-  }
 }

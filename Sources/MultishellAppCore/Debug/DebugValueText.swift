@@ -6,7 +6,7 @@ import MultishellProcess
 /// move. Only memory, ByteCountFormatter's, follows the locale; translation.md.
 public enum DebugValueText {
   /// What a cell shows where there is nothing to measure yet.
-  public static var noValue: String { t("debug.no-value") }
+  static var noValue: String { t("debug.no-value") }
 
   public static func memory(_ bytes: UInt64) -> String {
     ByteCountFormatter.string(fromByteCount: Int64(clamping: bytes), countStyle: .memory)
@@ -16,7 +16,7 @@ public enum DebugValueText {
     t("debug.fps", wholeNumber(value))
   }
 
-  public static func percent(_ value: Double) -> String {
+  static func percent(_ value: Double) -> String {
     t("debug.percent", wholeNumber(value))
   }
 

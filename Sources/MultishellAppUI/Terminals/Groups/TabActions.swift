@@ -6,9 +6,7 @@ import SwiftUI
 /// does rather than on every render of the strip.
 struct TabActions: View {
   let model: AppModel
-  let group: TabGroup
   let tab: TerminalTab
-  let canLeaveGroup: Bool
 
   var body: some View {
     Button(t("action.rename")) { model.beginRenamingTab(tab.id) }
@@ -23,9 +21,9 @@ struct TabActions: View {
     // The keyboard-only way to the layout the edge bands offer a drag, and
     // only where it would do something.
     Button(t("tab.move-to-new-group")) {
-      model.moveTab(tab.id, .after, toNewGroupOf: group.id)
+      model.moveTab(tab.id, .after, toNewGroupOf: tab.groupID)
     }
-    .disabled(!canLeaveGroup)
+    .disabled(!model.canMoveTabToNewGroup(tab))
     Divider()
     // The one way to close an inactive tab without a mouse, the X being
     // drawn on the active one alone. Not destructive-red.

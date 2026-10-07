@@ -27,7 +27,7 @@ struct GhosttyClipboardAnswerTests {
 
   @Test func aListingNamesTextWhereThereIsSomeAndHandsNoneOver() {
     let answer = answer(.init(handle: nil, wantsList: true), text: "hi")
-    #expect(answer == .reply(text: nil, available: [GhosttyClipboard.textMime]))
+    #expect(answer == .reply(text: nil, available: [GhosttyClipboardContents.textMime]))
   }
 
   @Test func aKittyPasteEventAskingOnlyWhatIsOnOfferIsStartedOverAnEmptyPasteboard() {

@@ -8,7 +8,7 @@ extension WorkspaceStoreTests {
   @Test func aSavePreparedEarlierNeverLandsOverOnePreparedLater() throws {
     let file = scratchStatePath("ordered-save")
     defer { Scratch.remove(file.deletingLastPathComponent()) }
-    let store = WorkspaceStore(file: WorkspaceFile(fileURL: file))
+    let store = WorkspaceStore(file: StateFile(fileURL: file))
     store.addProject(at: URL(fileURLWithPath: "/repos/a"))
     let first = try #require(store.prepareSave())
     store.addProject(at: URL(fileURLWithPath: "/repos/b"))
@@ -17,6 +17,6 @@ extension WorkspaceStoreTests {
     try second.run()
     try first.run()
 
-    #expect(try WorkspaceFile(fileURL: file).load().projects.count == 2)
+    #expect(try StateFile(fileURL: file).load().projects.count == 2)
   }
 }

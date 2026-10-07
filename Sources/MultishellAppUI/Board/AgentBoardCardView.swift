@@ -26,9 +26,9 @@ struct AgentBoardCardView: View {
     .padding(.horizontal, 9)
     .padding(.vertical, 8)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .background(theme.cardColor, in: RoundedRectangle(cornerRadius: 6))
+    .background(theme.cardColor, in: RoundedRectangle(cornerRadius: UIMetrics.cardCornerRadius))
     .overlay {
-      RoundedRectangle(cornerRadius: 6)
+      RoundedRectangle(cornerRadius: UIMetrics.cardCornerRadius)
         .strokeBorder(
           isHovered ? theme.color(for: card.state ?? .idle) : theme.hairline,
           lineWidth: isHovered ? 1.5 : 1)
@@ -76,11 +76,11 @@ struct AgentBoardCardView: View {
         ringFill: theme.cardColor,
         plainTint: theme.textSecondary,
         theme: theme,
-        size: metrics.badge + 4)
+        size: metrics.cardPaneGlyphSize)
       WorktreeBreadcrumb(
         projectName: card.projectName, worktreeName: card.worktreeName, style: .card,
         theme: theme, metrics: metrics)
-      if let status = card.status, !status.isCleanAndInSync {
+      if let status = WorktreeStatus.badged(card.status) {
         Spacer(minLength: 6)
         GitStatusBadge(status: status, theme: theme, size: metrics.badge, tint: theme.textTertiary)
       }

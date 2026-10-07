@@ -11,15 +11,15 @@ public struct Workspace: Codable, Hashable, Sendable {
 
   public internal(set) var selectedWorktreeID: Worktree.ID?
   /// Which group a worktree's keystrokes go to. Here and not on `Worktree`
-  /// for the same reason `worktreeNames` is.
+  /// for the same reason `customWorktreeNames` is.
   var focusedGroupByWorktree: [Worktree.ID: TabGroup.ID] = [:]
   /// The user's own name for a worktree. Here and not on `Worktree`, whose
   /// records git replaces wholesale on every refresh.
-  var worktreeNames: [Worktree.ID: String] = [:]
+  var customWorktreeNames: [Worktree.ID: String] = [:]
 
   public internal(set) var appearance = Appearance()
   public internal(set) var worktreeDefaults = WorktreeSettings()
-  public internal(set) var notifications = NotificationPreference.off
+  public internal(set) var notificationPreference = NotificationPreference.off
   /// Catalogue id of the agent New Agent Tab starts, or `nil` for none.
   /// Projects may override it in `ProjectSettings`.
   public internal(set) var preferredAgentID: String?
@@ -92,13 +92,13 @@ public struct Workspace: Codable, Hashable, Sendable {
       Worktree.ID.self, forKey: .selectedWorktreeID)
     focusedGroupByWorktree = try container.decode(
       [Worktree.ID: TabGroup.ID].self, forKey: .focusedGroupByWorktree, or: [:])
-    worktreeNames = try container.decode(
-      [Worktree.ID: String].self, forKey: .worktreeNames, or: [:])
+    customWorktreeNames = try container.decode(
+      [Worktree.ID: String].self, forKey: .customWorktreeNames, or: [:])
     appearance = try container.decode(Appearance.self, forKey: .appearance, or: Appearance())
     worktreeDefaults = try container.decode(
       WorktreeSettings.self, forKey: .worktreeDefaults, or: WorktreeSettings())
-    notifications = container.decodeTolerantly(
-      NotificationPreference.self, forKey: .notifications, or: .off)
+    notificationPreference = container.decodeTolerantly(
+      NotificationPreference.self, forKey: .notificationPreference, or: .off)
     preferredAgentID = try container.decodeIfPresent(String.self, forKey: .preferredAgentID)
     customAgentCommand = try container.decode(String.self, forKey: .customAgentCommand, or: "")
     agentFlags = try container.decode([String: String].self, forKey: .agentFlags, or: [:])
@@ -143,12 +143,14 @@ public struct Workspace: Codable, Hashable, Sendable {
     adoptUngroupedTabs(shownTabByWorktree: legacyShownTabs ?? [:])
   }
 
-  /// `preferredShellID` keeps `defaultShell`, and the auto-start pair keeps
-  /// `autoStartAgent…`, the keys they were written under.
+  /// Renamed fields keep the keys they were written under: `defaultShell`,
+  /// `worktreeNames`, `notifications` and the auto-start pair's `autoStartAgent…`.
   private enum CodingKeys: String, CodingKey {
     case projects, worktrees, sessions, tabs, tabGroups
-    case selectedWorktreeID, focusedGroupByWorktree, worktreeNames
-    case appearance, worktreeDefaults, notifications
+    case selectedWorktreeID, focusedGroupByWorktree
+    case customWorktreeNames = "worktreeNames"
+    case appearance, worktreeDefaults
+    case notificationPreference = "notifications"
     case preferredAgentID, customAgentCommand, agentFlags
     case autoStartsAgent = "autoStartAgent"
     case autoStartsAgentOnCreate = "autoStartAgentOnCreate"

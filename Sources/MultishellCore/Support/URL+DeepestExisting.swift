@@ -6,9 +6,7 @@ extension URL {
   public func splitAtDeepestExisting() -> (existing: URL, unmade: [String]) {
     var existing = standardizedFileURL
     var unmade: [String] = []
-    while existing.pathComponents.count > 1,
-      (try? FileManager.default.attributesOfItem(atPath: existing.path)) == nil
-    {
+    while existing.pathComponents.count > 1, !existing.hasEntryOnDisk {
       unmade.insert(existing.lastPathComponent, at: 0)
       existing = existing.deletingLastPathComponent()
     }

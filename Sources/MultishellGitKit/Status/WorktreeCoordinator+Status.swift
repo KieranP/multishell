@@ -14,7 +14,7 @@ extension WorktreeCoordinator {
       let started = ContinuousClock.now
       let status = try? await git.status(of: worktree, counting: indicator)
       return (
-        worktree.id, status.map { StatusReading(status: $0, took: started.duration(to: .now)) }
+        worktree.id, status.map { StatusReading(status: $0, duration: started.duration(to: .now)) }
       )
     }
     return Dictionary(

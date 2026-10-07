@@ -18,7 +18,7 @@ public enum WorktreeHooks {
 
     let environment = HookVariable.environment(
       project: project, worktreePath: worktreePath, branch: branch)
-    let directory = await offMain {
+    let directory = await runOnDispatch {
       Self.workingDirectory(for: stage, project: project, worktreePath: worktreePath)
     }
     do {

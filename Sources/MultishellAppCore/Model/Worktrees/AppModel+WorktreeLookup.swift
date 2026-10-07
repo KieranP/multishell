@@ -35,7 +35,7 @@ extension AppModel {
   private func resolveAgainOffMain(_ worktree: Worktree, replacing resolved: [String]) {
     let path = worktree.path
     Task {
-      let (again, exists) = await offMain {
+      let (again, exists) = await runOnDispatch {
         let again = path.resolvingSymlinksInPath()
         return (again.pathComponents, FileManager.default.fileExists(atPath: again.path))
       }
@@ -55,7 +55,7 @@ extension AppModel {
       resolutionsBeingRechecked.insert(worktree.id)
       let path = worktree.path
       Task {
-        let isPresent = await offMain { FileManager.default.fileExists(atPath: path.path) }
+        let isPresent = await runOnDispatch { FileManager.default.fileExists(atPath: path.path) }
         resolutionsBeingRechecked.remove(worktree.id)
         if isPresent { noteDirectoryPresent(of: worktree.id) }
       }

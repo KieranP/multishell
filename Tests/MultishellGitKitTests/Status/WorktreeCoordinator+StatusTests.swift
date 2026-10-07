@@ -45,7 +45,7 @@ struct WorktreeCoordinatorStatusTests {
   @Test func statusesOmitWorktreesWhoseDirectoryIsGone() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
-    let path = try await fixture.coordinator.createThenRunPostCreate(
+    let path = try await fixture.coordinator.createThenRunPostCreateHook(
       branch: "ghost", in: fixture.project, settings: fixture.worktreeSettings)
     let worktrees = try await fixture.coordinator.git.list(fixture.project)
     try FileManager.default.removeItem(at: path)

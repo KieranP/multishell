@@ -40,7 +40,7 @@ extension WorktreeGit {
   /// way says nothing, and the caller would `branch -D` on the answer.
   func lacksBranch(_ branch: String, in project: Project) async -> Bool {
     await runner.exitStatus(
-      ["rev-parse", "--verify", "--quiet", BranchRef.localRef(branch)], in: project.path) == 1
+      ["rev-parse", "--verify", "--quiet", RefName.local(branch)], in: project.path) == 1
   }
 
   /// `-D`, a branch cut from another start point being unmerged into HEAD.

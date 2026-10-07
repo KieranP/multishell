@@ -18,7 +18,7 @@ final class GhosttyRuntimeOwner {
     if let built { return built }
     let made = GhosttyRuntime(
       readBase: readBase, appLayer: latestAppLayer?.layer ?? GhosttyConfigText())
-    if let latestAppLayer { made.setColorScheme(dark: latestAppLayer.isDark) }
+    if let latestAppLayer { made.setColorScheme(isDark: latestAppLayer.isDark) }
     built = made
     return made
   }
@@ -27,6 +27,6 @@ final class GhosttyRuntimeOwner {
     let layer = GhosttyAppLayer.configuration(theme, appearance)
     latestAppLayer = (layer, theme.isDark)
     built?.apply(appLayer: layer)
-    built?.setColorScheme(dark: theme.isDark)
+    built?.setColorScheme(isDark: theme.isDark)
   }
 }

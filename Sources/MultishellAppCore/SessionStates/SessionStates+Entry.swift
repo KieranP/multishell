@@ -12,9 +12,7 @@ extension SessionStates {
     var workingIsShellCommand = false
     /// When the state last changed. Handed in, never read from a clock.
     var since: Date?
-    /// What the last report said beyond its state.
     var note: SessionNote?
-    /// The workers the agent still has out.
     var roster = WorkerRoster()
     /// What a worker's report put the dot over, remembered once, for the
     /// last worker out to put back; `nil` while the agent's own state shows.
@@ -27,7 +25,7 @@ extension SessionStates {
     var resumesAfterWorkers = false
     /// A turn of the agent's is running, or an end has woken one, so a Stop
     /// is coming that pays whatever is owed.
-    var turnUnderway = false
+    var isTurnUnderway = false
 
     enum Displaced: Equatable {
       case nothing
@@ -57,7 +55,7 @@ extension SessionStates {
 
     var isEmpty: Bool {
       state == nil && pid == nil && since == nil && note == nil && roster.isEmpty
-        && displaced == nil && promptRaisers.isEmpty && !turnUnderway
+        && displaced == nil && promptRaisers.isEmpty && !isTurnUnderway
     }
 
     /// A report about a worker recorded on the roster, an unnamed end taking the
@@ -86,7 +84,7 @@ extension SessionStates {
       roster = WorkerRoster()
       clearDisplaced()
       resumesAfterWorkers = false
-      turnUnderway = false
+      isTurnUnderway = false
     }
 
     /// Nothing displaced, and nothing asked that it was holding.

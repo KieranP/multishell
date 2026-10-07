@@ -43,7 +43,7 @@ public struct Appearance: Codable, Hashable, Sendable {
 
   /// Falls back to the built-in dark theme when a saved theme id no longer
   /// resolves, so deleting a theme file cannot leave the app unpaintable.
-  public func theme(from catalogue: [Theme] = Theme.builtins) -> Theme {
-    catalogue.first { $0.id == themeID } ?? .multishellDark
+  public func theme(from themes: [Theme] = Theme.builtins) -> Theme {
+    themes.first { $0.id == themeID } ?? .multishellDark
   }
 }

@@ -12,7 +12,7 @@ extension PresentedError {
     case let failure as ProcessFailure where failure.arguments.first == "fetch":
       // Fetch runs with no terminal to answer on, so a repository wanting a
       // password waits out the timeout: the likeliest way this ends.
-      switch failure.stop {
+      switch failure.stopReason {
       case .timedOut:
         return (t("error.fetch-timed-out-title"), t("error.fetch-timed-out-message"))
       case .byUser, .none:

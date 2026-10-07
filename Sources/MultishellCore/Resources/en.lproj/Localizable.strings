@@ -65,6 +65,7 @@
 "debug.seconds" = "%@ s";
 "debug.self-of-total" = "%1$@ self of %2$@";
 "debug.split" = "App %1$@ · Child processes %2$@";
+"debug.stalled-seconds" = "%1$@ with a frame over %2$@";
 "debug.subtitle-count-and-self" = "%1$@ · %2$@ · %3$@ self";
 "debug.total-row" = "Total, app and child processes";
 "elapsed.hours" = "%1$dh %2$02dm";
@@ -215,8 +216,8 @@
 "project-removal.title" = "Remove project %@?";
 "project.merges-measured" = "Merges are measured against %@.";
 "project.no-merge-base" = "No branch to measure merges against, so no worktree is badged as merged.";
-"project.prefix-example" = "Typing tabs creates %1$@ at %2$@.";
-"project.prefix-example-shared" = "Typing tabs creates %1$@ at %2$@. The prefix comes from %3$@.";
+"project.prefix-example" = "Typing %1$@ creates %2$@ at %3$@.";
+"project.prefix-example-shared" = "Typing %1$@ creates %2$@ at %3$@. The prefix comes from %4$@.";
 "project.resolves-to" = "Resolves to %@.";
 "project.resolves-to-shared" = "Resolves to %1$@, from %2$@.";
 "project.using-global-flags" = "Using the global flags, %@.";
@@ -337,3 +338,5 @@
 "worktree-removal.remove-with-branch" = "Remove Worktree and Branch";
 "worktree-removal.title" = "Remove worktree %@?";
 "worktree.not-removable" = "%@ is the repository itself, not a worktree that can be removed.";
+"worktrees.example-branch-name" = "tabs";
+"worktrees.prefix-example" = "Typing %1$@ creates %2$@.";

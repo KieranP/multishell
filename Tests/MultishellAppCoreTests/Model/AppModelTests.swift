@@ -184,7 +184,7 @@ struct AppModelTests {
     for group in workspace.tabGroups {
       #expect(!workspace.tabs(inGroup: group.id).isEmpty, "\(context): a group with no tabs")
       #expect(
-        workspace.shownTab(in: group) != nil, "\(context): a group showing nothing")
+        workspace.shownTab(ofGroup: group) != nil, "\(context): a group showing nothing")
       #expect(group.weight.isFinite && group.weight > 0, "\(context): a group with no width")
     }
   }

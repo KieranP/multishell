@@ -7,12 +7,12 @@ extension Workspace {
   }
 
   public func customName(of worktree: Worktree.ID) -> String? {
-    worktreeNames[worktree]
+    customWorktreeNames[worktree]
   }
 
   /// What the sidebar and the header call a worktree: the user's name where
   /// there is one, else the branch, SHA or folder `Worktree.name` gives.
   public func displayName(of worktree: Worktree) -> String {
-    worktreeNames[worktree.id] ?? worktree.name
+    customWorktreeNames[worktree.id] ?? worktree.name
   }
 }

@@ -9,7 +9,7 @@ extension GhosttySurfaceView {
     _ request: GhosttyClipboardRequest, at location: ghostty_clipboard_e
   ) -> ghostty_clipboard_read_result_e {
     guard let surface else { return GHOSTTY_CLIPBOARD_READ_UNAVAILABLE }
-    let answer = GhosttyClipboardAnswer(request, at: location, text: GhosttyClipboard.pasteText())
+    let answer = GhosttyClipboardAnswer(request, at: location, text: PanePasteboard.pasteText())
     if case .reply(let text, let available) = answer {
       sendReply(to: request, text: text, available: available, confirmed: false, on: surface)
     }
@@ -53,7 +53,7 @@ extension GhosttySurfaceView {
     to request: GhosttyClipboardRequest, text: String?, available: [String], confirmed: Bool,
     on surface: ghostty_surface_t
   ) {
-    let strings = [GhosttyClipboard.textMime, text ?? ""] + available
+    let strings = [GhosttyClipboardContents.textMime, text ?? ""] + available
     CStrings.with(strings) { strings in
       let contents =
         text == nil

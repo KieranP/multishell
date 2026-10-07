@@ -64,7 +64,7 @@ struct RepositoryFixture {
     lockedFor reason: String? = nil
   ) async throws -> (record: Worktree, path: URL) {
     let branch = "old"
-    let path = try await coordinator.createThenRunPostCreate(
+    let path = try await coordinator.createThenRunPostCreateHook(
       branch: branch, in: project, settings: worktreeSettings)
     if let reason {
       _ = try await runner.run(

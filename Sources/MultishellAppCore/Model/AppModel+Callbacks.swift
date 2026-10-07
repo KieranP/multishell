@@ -27,7 +27,7 @@ extension AppModel {
     stateSource.onReport = { [weak self] report in self?.receive(report) }
     notifier.onActivate = { [weak self] key in self?.revealNotificationSubject(key) }
     watcher.onChange = { [weak self] changed in
-      Task { await self?.refreshWorktreesIfRecordsChanged(under: changed) }
+      Task { await self?.refreshProjectsIfChanged(under: changed) }
     }
   }
 }

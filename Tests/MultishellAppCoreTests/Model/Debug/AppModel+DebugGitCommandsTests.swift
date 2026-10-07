@@ -25,7 +25,7 @@ struct AppModelDebugGitCommandsTests {
 
     model.setDebugToolsEnabled(false)
     _ = await git.isRepository(worktree.path)
-    #expect(git.runLog.drain() == .none)
+    #expect(git.runLog.drain() == .empty)
   }
 
   @Test func onlyTheRunsInsideTheRangeAreCounted() {

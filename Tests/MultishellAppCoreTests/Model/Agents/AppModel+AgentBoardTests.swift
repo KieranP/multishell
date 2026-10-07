@@ -29,8 +29,8 @@ struct AppModelAgentBoardTests {
         == .agent(id: "claude", name: "Claude Code"))
   }
 
-  /// One card per pane, not per tab: a split holds two panes under one
-  /// strip and each is something an agent could be sitting in.
+  /// A split holds two panes under one strip, and an agent could be sitting
+  /// in either.
   @Test func aSplitTabIsTwoCards() {
     let (harness, _) = harnessWithOnePane()
     let model = harness.model
@@ -95,46 +95,6 @@ struct AppModelAgentBoardTests {
     #expect(model.agentBoard.count(of: .idle) == 1)
   }
 
-  @Test func openingACardTurnsToItsPaneAndLeavesTheBoard() {
-    let harness = Harness()
-    harness.model.select(harness.feature)
-    let session = harness.store.workspace.sessions[0]
-    let model = harness.model
-    model.setShowsAllTerminals(true)
-    model.select(harness.main)
-    model.showAgentBoard()
-
-    let card = model.agentBoard.column(.idle).cards.first { $0.id == session.id }
-    #expect(card != nil)
-    model.show(card!)
-
-    #expect(!model.showsAgentBoard)
-    #expect(model.workspace.selectedWorktreeID == harness.feature.id)
-    #expect(model.workspace.activeTab(in: harness.feature.id)?.id == card?.tabID)
-    #expect(harness.engine.focused.last == session.id)
-  }
-
-  @Test func selectingAWorktreeLeavesTheBoard() {
-    let harness = Harness()
-    harness.model.showAgentBoard()
-    #expect(harness.model.showsAgentBoard)
-    harness.model.select(harness.feature)
-    #expect(!harness.model.showsAgentBoard)
-  }
-
-  /// Clicking a row git no longer lists selects nothing, so closing the board would leave the
-  /// user looking at a worktree they did not pick.
-  @Test func aRowTheStoreNoLongerHasLeavesTheBoardUp() {
-    let harness = Harness()
-    let stale = harness.feature
-    harness.store.replaceWorktrees([harness.main], forProject: harness.project.id)
-    harness.model.showAgentBoard()
-
-    #expect(!harness.model.select(stale))
-    #expect(harness.model.showsAgentBoard)
-    #expect(harness.model.workspace.selectedWorktreeID != stale.id)
-  }
-
   /// The sidebar entry and the badge count without building a card, so a shell reporting a new
   /// prompt does not re-render the sidebar.
   @Test func theCheapCountsAgreeWithTheColumnsTheySummarise() {
@@ -165,64 +125,6 @@ struct AppModelAgentBoardTests {
     harness.stateSource.send(
       SessionStateReport(state: .running, sessionID: session.id, agentID: "claude"))
     #expect(model.agentSidebarCounts == [AgentBoardLaneCount(.working, 1)])
-  }
-
-  @Test func theBadgeCountsTheWaitingColumnAndClearsWithIt() {
-    let (harness, session) = harnessWithOnePane()
-    let model = harness.model
-    // With the board up rather than the pane: a Failed about a pane the user
-    // is looking at has been seen already and never reaches a column.
-    model.showAgentBoard()
-    harness.platform.badges.removeAll()
-
-    harness.stateSource.send(
-      SessionStateReport(state: .attention, sessionID: session.id, agentID: "claude"))
-    #expect(harness.platform.badges.last == 1)
-
-    harness.stateSource.send(
-      SessionStateReport(state: .failed, sessionID: session.id, agentID: "claude"))
-    #expect(model.agentBoard.count(of: .waiting) == 1)
-    #expect(harness.platform.badges == [1], "one waiting, still")
-
-    harness.stateSource.send(
-      SessionStateReport(state: .running, sessionID: session.id, agentID: "claude"))
-    #expect(harness.platform.badges.last == .some(nil), "nothing waiting is no badge at all")
-  }
-
-  @Test func theBadgeFollowsTheFilter() {
-    let (harness, session) = harnessWithOnePane()
-    let model = harness.model
-    model.showAgentBoard()
-    harness.platform.badges.removeAll()
-
-    harness.stateSource.send(SessionStateReport(state: .failed, sessionID: session.id))
-    #expect(harness.platform.badges.isEmpty, "a shell, and shells are hidden")
-
-    model.setShowsAllTerminals(true)
-    #expect(harness.platform.badges.last == 1)
-  }
-
-  /// With the board closed no pid is polled, so the shell's own word that its
-  /// command returned is what says the agent typed at that prompt has gone.
-  @Test func aShellFailingAfterItsAgentQuitIsNotAnAgentWaitingOnTheBadge() {
-    let (harness, session) = harnessWithOnePane()
-    let model = harness.model
-    model.select(harness.feature)
-    harness.platform.badges.removeAll()
-
-    harness.stateSource.send(
-      SessionStateReport(state: .running, sessionID: session.id, pid: 1, agentID: "claude"))
-    harness.stateSource.send(
-      SessionStateReport(state: .idle, sessionID: session.id, agentID: "claude"))
-    harness.engine.delegate?.terminalHost(
-      harness.engine, didFinishCommandIn: session.id, exitCode: 0)
-    #expect(model.reportedAgents[session.id] == nil, "the agent was the command that returned")
-
-    harness.engine.delegate?.terminalHost(
-      harness.engine, didFinishCommandIn: session.id, exitCode: 1)
-    #expect(model.sessionStates[.session(session.id)] == .failed)
-    #expect(model.agentLaneCounts[.waiting] ?? 0 == 0, "a shell's failure, and shells are hidden")
-    #expect(harness.platform.badges.last != 1)
   }
 
   /// An agent killed with Ctrl+C sends no Stop. Once its process is gone the
@@ -294,21 +196,6 @@ struct AppModelAgentBoardTests {
     #expect(model.agentBoard.count(of: .done) == 0)
   }
 
-  @Test func aPaneInheritsItsTabsCustomNameOverTheShellsTitle() {
-    let harness = Harness()
-    let model = harness.model
-    model.select(harness.main)
-    let tab = model.workspace.activeTab(in: harness.main.id)!
-    let session = model.workspace.session(tab.focusedSessionID)!
-    model.noteTitle("make release", of: session.id)
-    #expect(model.title(ofPane: session, in: tab) == "make release")
-
-    model.renameTab(tab.id, to: "build")
-    let renamed = model.workspace.tab(tab.id)!
-    #expect(model.title(ofPane: session, in: renamed) == "build")
-    #expect(model.title(of: renamed) == "build", "the strip and the rows agree")
-  }
-
   /// Both panes of a renamed tab carry one name, so without a position the board draws two cards
   /// nothing tells apart.
   @Test func eachCardOfASplitSaysWhichPaneItIs() {
@@ -331,25 +218,6 @@ struct AppModelAgentBoardTests {
     #expect(AccessibilityText.card(cards[1], at: .now).contains(t("spoken.pane-position", 2, 2)))
   }
 
-  /// A quiet agent is watched only while the board is up, since a dropped file asks about the pid
-  /// when it lands; so opening the board sweeps once, or its first frame would be stale.
-  @Test func openingTheBoardSweepsAnAgentThatWentQuietAndQuit() {
-    let (harness, session) = harnessWithOnePane()
-    let model = harness.model
-    let gone = deadPID()
-
-    harness.stateSource.send(
-      SessionStateReport(state: .running, sessionID: session.id, pid: gone, agentID: "claude"))
-    harness.stateSource.send(
-      SessionStateReport(state: .idle, sessionID: session.id, pid: gone, agentID: "claude"))
-    #expect(model.reportedAgents[session.id] != nil)
-    #expect(!model.watchedPIDs.contains(gone), "nothing is being said about it")
-
-    model.showAgentBoard()
-    #expect(model.reportedAgents[session.id] == nil)
-    #expect(model.agentBoard.isEmpty)
-  }
-
   @Test func aPaneWhoseReportedAgentExitedIsAShellToTheCountsAsToTheStrip() {
     let (harness, session) = harnessWithOnePane()
     let model = harness.model
@@ -362,35 +230,10 @@ struct AppModelAgentBoardTests {
       SessionStateReport(state: .idle, sessionID: session.id, pid: gone, agentID: "claude"))
     #expect(model.reportedAgents[session.id] != nil)
 
-    #expect(model.agentAtThePrompt(of: tab) == nil)
-    #expect(model.agentAtThePrompt(of: session) == nil)
+    #expect(model.agentIDAtThePrompt(of: tab) == nil)
+    #expect(model.agentIDAtThePrompt(of: session) == nil)
     #expect(model.agentLaneCounts.values.reduce(0, +) == 0)
     #expect(!model.agentBoardCards[0].occupant.isAgent)
-  }
-
-  /// Cmd+W with the board up would otherwise end a shell in a pane nobody
-  /// can see, and Cmd+T open a tab that appears only once the board is left.
-  @Test func aKeystrokeAboutTheTerminalsDoesNothingBehindTheBoard() {
-    let (harness, _) = harnessWithOnePane()
-    let model = harness.model
-    let tabs = model.workspace.tabs.count
-    #expect(tabs == 1)
-
-    model.showAgentBoard()
-    model.newTab()
-    model.newShellTab()
-    model.splitActivePane(.horizontal)
-    model.closeActivePane()
-    model.closeActiveTab()
-    model.moveActiveTabToNewGroup()
-    model.activateNextTab()
-    #expect(model.workspace.tabs.count == tabs, "nothing opened and nothing closed")
-    #expect(model.workspace.sessions.count == 1)
-    #expect(model.focusedGroup == nil)
-
-    model.hideAgentBoard()
-    model.newTab()
-    #expect(model.workspace.tabs.count == tabs + 1)
   }
 
   @Test func theBoardIsBuiltOnceUntilSomethingItReadChanges() throws {

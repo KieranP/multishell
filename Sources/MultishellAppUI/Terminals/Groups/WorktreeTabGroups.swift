@@ -18,8 +18,7 @@ struct WorktreeTabGroups: View {
       WeightedSplit(
         axis: .horizontal,
         weights: groups.map(\.weight),
-        dividerColor: theme.hairline,
-        gutterColor: theme.chromeColor,
+        theme: theme,
         onWeightsChange: { model.setGroupWeights($0, in: worktree.id) },
         content: {
           ForEach(Array(groups.enumerated()), id: \.element.id) { index, group in

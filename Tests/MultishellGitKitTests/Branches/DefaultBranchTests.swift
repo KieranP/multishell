@@ -38,10 +38,11 @@ struct DefaultBranchTests {
       BranchRef(fullName: "refs/remotes/origin/main", tip: "a"),
       BranchRef(fullName: "refs/remotes/origin/trunk", tip: "b"),
       BranchRef(
-        fullName: BranchRef.originHead, tip: "b", symref: "refs/remotes/origin/trunk"),
+        fullName: RefName.originHead, tip: "b", symref: "refs/remotes/origin/trunk"),
     ]
-    // origin/HEAD wins over the origin/main guess that follows it.
-    #expect(DefaultBranch.resolve(from: refs, override: nil)?.shortName == "origin/trunk")
+    #expect(
+      DefaultBranch.resolve(from: refs, override: nil)?.shortName == "origin/trunk",
+      "origin/HEAD wins over the origin/main guess that follows it")
   }
 
   @Test func resolvingTakesTheFirstCandidateTheRepositoryActuallyHas() {

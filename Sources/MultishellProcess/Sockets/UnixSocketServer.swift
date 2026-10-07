@@ -16,7 +16,6 @@ public final class UnixSocketServer: Sendable {
   struct State {
     var listener: (any DispatchSourceRead)?
     var connections: [Int32: Connection] = [:]
-    /// Whether the listener is suspended waiting for a descriptor to free.
     var isListenerSuspended = false
   }
 

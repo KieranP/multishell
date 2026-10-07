@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellProcess
@@ -16,7 +17,24 @@ struct KernelProcessTableTests {
     #expect(KernelProcessTable.parent(of: 999_999_999) == nil)
   }
 
-  @Test func aPidNothingHoldsHasNoTerminal() {
-    #expect(KernelProcessTable.terminalDevice(of: 999_999_999) == nil)
+  /// Failed once in a full run with the marked child unlisted, for a reason
+  /// nobody has seen again; the answer is waited for rather than read once.
+  @Test func childrenAreFoundByAWordOfTheirCommandLine() async throws {
+    let marked = try WaitingShell(marker: "/shell-snapshots/snapshot-test")
+    let plain = try WaitingShell()
+    defer {
+      marked.terminate()
+      plain.terminate()
+    }
+    let me = ProcessInfo.processInfo.processIdentifier
+    func found() -> [Int32] {
+      KernelProcessTable.children(of: me, whoseArgumentsContain: "/shell-snapshots/")
+    }
+
+    try await waitUntil { found().contains(marked.pid) }
+
+    #expect(found().contains(marked.pid))
+    #expect(!found().contains(plain.pid))
+    #expect(KernelProcessTable.children(of: 999_999_999, whoseArgumentsContain: "x").isEmpty)
   }
 }

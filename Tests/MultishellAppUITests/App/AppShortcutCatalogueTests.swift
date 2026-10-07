@@ -28,7 +28,8 @@ struct AppShortcutCatalogueTests {
     // Not super+alt+d: the system's Dock toggle, which the
     // WindowServer takes before a menu item can see it.
     #expect(AppShortcutCatalogue.moveTabToNewGroup.ghosttyCombo == "super+alt+g")
-    #expect(GhosttyUnbinds.systemOwned.contains("super+alt+d"))
+    #expect(AppShortcutCatalogue.findPrevious.ghosttyCombo == "super+shift+g")
+    #expect(AppShortcutCatalogue.closeFind.ghosttyCombo == "super+shift+f")
   }
 
   /// Two menu items on one combination is one of them never firing, and

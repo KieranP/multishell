@@ -5,7 +5,6 @@ extension AppModel {
 
   public var isDebugPaused: Bool { pausedDebugSnapshot != nil }
 
-  /// The paused snapshot while there is one, else the latest.
   var shownDebugSnapshot: DebugSnapshot { pausedDebugSnapshot ?? liveDebugSnapshot }
 
   var liveDebugSnapshot: DebugSnapshot {
@@ -15,8 +14,8 @@ extension AppModel {
   /// View > Enable Debug Tools. Off drops every sample, stops git being
   /// timed, and puts the panes back where the panel covered them.
   public func setDebugToolsEnabled(_ enabled: Bool) {
-    guard enabled != debugToolsEnabled else { return }
-    debugToolsEnabled = enabled
+    guard enabled != areDebugToolsEnabled else { return }
+    areDebugToolsEnabled = enabled
     coordinator?.git.runLog.setRecording(enabled)
     if enabled {
       startDebugSampling()
@@ -29,7 +28,7 @@ extension AppModel {
   /// The quick stats' click: the panel covers the panes as the board does,
   /// and the board's wider PID watch narrows again.
   public func showDebugInfo() {
-    guard debugToolsEnabled else { return }
+    guard areDebugToolsEnabled else { return }
     detailCover = .debugInfo
     updatePIDWatch()
   }

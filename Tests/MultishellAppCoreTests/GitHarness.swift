@@ -27,13 +27,13 @@ struct GitHarness {
     try await TestRepository.commitInitial(in: repository, using: git)
 
     store = WorkspaceStore(
-      file: WorkspaceFile(fileURL: root.appendingPathComponent("state.json")))
+      file: StateFile(fileURL: root.appendingPathComponent("state.json")))
     model = AppModel(
       store: store,
       host: self.engine,
       coordinator: TestGit.coordinator(runner: git),
       watcher: watcher, platform: platform)
-    model.statusReads.pace = .unpaced
+    model.statusReadLog.pace = .unpaced
     await model.addProject(at: repository)
   }
 
@@ -72,7 +72,7 @@ struct GitHarness {
       store: store,
       host: self.engine,
       coordinator: fake.coordinator, watcher: watcher)
-    model.statusReads.pace = .unpaced
+    model.statusReadLog.pace = .unpaced
     model.presentedError = nil
     return model
   }
@@ -102,7 +102,7 @@ struct GitHarness {
   /// A model on fake git whose `git status` takes 0.6 s, read at the standard pace.
   func modelWithSlowStatus() throws -> AppModel<FakeSurface> {
     let fake = try modelOnFakeGit("case \"$*\" in *status*) sleep 0.6;; esac; exit 0")
-    fake.statusReads.pace = .standard
+    fake.statusReadLog.pace = .standard
     return fake
   }
 

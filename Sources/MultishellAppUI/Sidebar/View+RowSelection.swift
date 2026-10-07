@@ -6,16 +6,16 @@ extension View {
   func rowSelection(isSelected: Bool, isDropTarget: Bool = false) -> some View {
     background(
       isSelected || isDropTarget ? Color.accentColor.opacity(0.12) : .clear,
-      in: RoundedRectangle(cornerRadius: 6)
+      in: RoundedRectangle(cornerRadius: UIMetrics.rowCornerRadius)
     )
     // A dashed border for a hovering tab, the solid one meaning selected and
     // a row being able to be both at once.
     .overlay {
       if isDropTarget {
-        RoundedRectangle(cornerRadius: 6)
+        RoundedRectangle(cornerRadius: UIMetrics.rowCornerRadius)
           .strokeBorder(Color.accentColor, style: StrokeStyle(lineWidth: 2, dash: [4, 3]))
       } else if isSelected {
-        RoundedRectangle(cornerRadius: 6)
+        RoundedRectangle(cornerRadius: UIMetrics.rowCornerRadius)
           .strokeBorder(Color.accentColor, lineWidth: 1.5)
       }
     }

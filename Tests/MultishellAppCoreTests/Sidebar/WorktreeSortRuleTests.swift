@@ -141,9 +141,7 @@ struct WorktreeSortRuleTests {
     }
   }
 
-  /// Two worktrees created in the same second keep one order between
-  /// renders, whichever way the input happens to arrive.
-  @Test func theOrderIsTotal() {
+  @Test func twoWorktreesCreatedTogetherSortTheSameWhicheverArrivesFirst() {
     let a = linked("a", daysAfterEpoch: 1)
     let b = linked("b", daysAfterEpoch: 1)
     let rule = WorktreeSortRule(sortOrder: .createdNewestFirst, showsActiveFirst: false)

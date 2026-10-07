@@ -14,13 +14,13 @@ extension WorkspaceStoreTests {
     )
     defer { Scratch.remove(file.deletingLastPathComponent()) }
 
-    let stateFile = WorkspaceFile(fileURL: file)
+    let stateFile = StateFile(fileURL: file)
     let (store, error) = WorkspaceStore.restored(from: stateFile)
     #expect(error == nil, "\(String(describing: error))")
     #expect(
-      store.workspace.notifications
+      store.workspace.notificationPreference
         == NotificationPreference(
-          attention: true, failed: true, done: true))
+          notifiesOnAttention: true, notifiesOnFailure: true, notifiesOnDone: true))
 
     try store.save()
     let written = try #require(
@@ -33,6 +33,6 @@ extension WorkspaceStoreTests {
 
     let (again, reloadError) = WorkspaceStore.restored(from: stateFile)
     #expect(reloadError == nil, "\(String(describing: reloadError))")
-    #expect(again.workspace.notifications == store.workspace.notifications)
+    #expect(again.workspace.notificationPreference == store.workspace.notificationPreference)
   }
 }

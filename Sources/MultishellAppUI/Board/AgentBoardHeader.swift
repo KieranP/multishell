@@ -11,25 +11,18 @@ struct AgentBoardHeader: View {
   let metrics: UIMetrics
 
   var body: some View {
-    HStack(spacing: 8) {
-      Text(t("label.agents"))
-        .font(.system(size: metrics.body, weight: .semibold))
-        .foregroundStyle(theme.textPrimary)
-      Text(board.summary)
-        .font(.system(size: metrics.caption))
-        .foregroundStyle(theme.textTertiary)
-        .lineLimit(1)
-        .truncationMode(.tail)
-      Spacer(minLength: 8)
+    PanelHeader(
+      title: t("label.agents"), summary: board.summary, summaryColor: theme.textTertiary,
+      theme: theme, metrics: metrics
+    ) {
       allTerminalsToggle
     }
-    .windowHeader(fill: theme.chromeColor)
   }
 
   /// The board's one control, deciding membership and nothing else: a shell
   /// it lets in lands where its state says, as an agent does.
   private var allTerminalsToggle: some View {
-    Toggle(t("board.show-all-terminals"), isOn: model.showsAllTerminalsSetting)
+    Toggle(t("board.show-all-terminals"), isOn: model.showsAllTerminalsBinding)
       .toggleStyle(.switch)
       .controlSize(.mini)
       .font(.system(size: metrics.caption))

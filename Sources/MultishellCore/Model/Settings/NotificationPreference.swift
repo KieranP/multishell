@@ -5,17 +5,20 @@ public struct NotificationPreference: Codable, Hashable, Sendable {
   /// lists them, most urgent first.
   public static let notifiableStates: [SessionState] = [.attention, .failed, .done]
 
-  var attention: Bool
-  var failed: Bool
-  var done: Bool
+  var notifiesOnAttention: Bool
+  var notifiesOnFailure: Bool
+  var notifiesOnDone: Bool
 
   /// Off until asked for, which is also where the permission prompt belongs.
   static let off = NotificationPreference()
 
-  init(attention: Bool = false, failed: Bool = false, done: Bool = false) {
-    self.attention = attention
-    self.failed = failed
-    self.done = done
+  init(
+    notifiesOnAttention: Bool = false, notifiesOnFailure: Bool = false,
+    notifiesOnDone: Bool = false
+  ) {
+    self.notifiesOnAttention = notifiesOnAttention
+    self.notifiesOnFailure = notifiesOnFailure
+    self.notifiesOnDone = notifiesOnDone
   }
 
   /// Whether a state raises a banner. Every state answers, so a caller can
@@ -23,26 +26,26 @@ public struct NotificationPreference: Codable, Hashable, Sendable {
   public subscript(state: SessionState) -> Bool {
     get {
       switch state {
-      case .attention: attention
-      case .failed: failed
-      case .done: done
+      case .attention: notifiesOnAttention
+      case .failed: notifiesOnFailure
+      case .done: notifiesOnDone
       case .running, .idle: false
       }
     }
     set {
       switch state {
-      case .attention: attention = newValue
-      case .failed: failed = newValue
-      case .done: done = newValue
+      case .attention: notifiesOnAttention = newValue
+      case .failed: notifiesOnFailure = newValue
+      case .done: notifiesOnDone = newValue
       case .running, .idle: break
       }
     }
   }
 
   enum CodingKeys: String, CodingKey {
-    case attention
-    case failed = "error"
-    case done
+    case notifiesOnAttention = "attention"
+    case notifiesOnFailure = "error"
+    case notifiesOnDone = "done"
   }
 
   /// Also reads the three-way picker these toggles replaced. An unknown
@@ -50,9 +53,10 @@ public struct NotificationPreference: Codable, Hashable, Sendable {
   public init(from decoder: any Decoder) throws {
     if let legacy = try? decoder.singleValueContainer().decode(String.self) {
       switch legacy {
-      case "attentionOnly": self = NotificationPreference(attention: true)
+      case "attentionOnly": self = NotificationPreference(notifiesOnAttention: true)
       case "attentionAndDone":
-        self = NotificationPreference(attention: true, failed: true, done: true)
+        self = NotificationPreference(
+          notifiesOnAttention: true, notifiesOnFailure: true, notifiesOnDone: true)
       default: self = .off
       }
       return
@@ -60,8 +64,9 @@ public struct NotificationPreference: Codable, Hashable, Sendable {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     // Tolerated per state: a hand-edited file with one bad value costs
     // that toggle and not the other two.
-    attention = container.decodeTolerantly(Bool.self, forKey: .attention, or: false)
-    failed = container.decodeTolerantly(Bool.self, forKey: .failed, or: false)
-    done = container.decodeTolerantly(Bool.self, forKey: .done, or: false)
+    notifiesOnAttention = container.decodeTolerantly(
+      Bool.self, forKey: .notifiesOnAttention, or: false)
+    notifiesOnFailure = container.decodeTolerantly(Bool.self, forKey: .notifiesOnFailure, or: false)
+    notifiesOnDone = container.decodeTolerantly(Bool.self, forKey: .notifiesOnDone, or: false)
   }
 }

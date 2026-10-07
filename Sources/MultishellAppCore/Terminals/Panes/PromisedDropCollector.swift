@@ -10,7 +10,6 @@ public final class PromisedDropCollector {
   private var naming: ((Int) -> [String])?
   private var waiting: Set<Int>
   private let onDelivery: ([URL]) -> Void
-  private var delivered = false
 
   /// Cancelled the moment the drop is delivered, so a drag that finished
   /// does not keep a timer running behind it.
@@ -20,7 +19,7 @@ public final class PromisedDropCollector {
   /// queue it is handed and a released one never calls the reader.
   public var readerQueue: OperationQueue?
 
-  public var isDelivered: Bool { delivered }
+  public private(set) var isDelivered = false
 
   /// `counts` per item in the drag's order; `recounting` replaces one once a
   /// report knows it, and `naming` orders an item's own files.
@@ -62,8 +61,8 @@ public final class PromisedDropCollector {
   /// The drop is delivered once. A source reporting after the drop was given
   /// up on, or twice, must not paste a second time.
   private func deliver() {
-    guard !delivered else { return }
-    delivered = true
+    guard !isDelivered else { return }
+    isDelivered = true
     giveUpTimer?.cancel()
     // The queue holds the reader, which holds this, so a source that never
     // writes would leave all three standing; `promisedCount` holds the receivers.
@@ -78,7 +77,8 @@ public final class PromisedDropCollector {
   /// item did not give goes last, in the order it landed.
   private static func inNamedOrder(_ urls: [URL], names: [String]) -> [URL] {
     let rank = Dictionary(
-      names.enumerated().map { ($1, $0) }, uniquingKeysWith: { first, _ in first })
+      keepingFirst:
+        names.enumerated().map { ($1, $0) })
     let key = { (offset: Int, url: URL) in (rank[url.lastPathComponent] ?? names.count, offset) }
     return urls.enumerated().sorted { key($0.offset, $0.element) < key($1.offset, $1.element) }
       .map(\.element)

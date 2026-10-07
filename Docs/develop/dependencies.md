@@ -56,9 +56,10 @@
   apply to it.
 - **The build leaves the submodule clean**: it writes there only where Ghostty's
   `.gitignore` covers, and takes its patches back out.
-- **It also installs `libghostty-vt` and editor and shell files under `share/`**
-  that the app never uses. Ghostty's build installs them whatever the options,
-  leaving them out would take another patch, and none reaches the bundle.
+- **It also installs `libghostty-vt` under `lib/` and editor and shell files
+  under `share/`**, none of which the app uses. Ghostty's build installs them
+  whatever the options, leaving them out would take another patch, and none
+  reaches the bundle.
 - **One build at a time per worktree**, under `lockf`: two at once reverted the
   patches under each other and deleted each other's output.
 - **Ghostty's bash and zsh integration scripts are GPLv3 and are not shipped**;

@@ -61,4 +61,10 @@ enum TranslationCallSites {
       $0.pathExtension == "swift" && !$0.path.hasPrefix(app)
     }
   }
+
+  static func placeholders(in english: String) -> [String] {
+    let all = english.matches(of: /%[0-9]*\$?[0-9.]*[@dfs]/).map { String($0.output) }
+    let numbered = Set(all.filter { $0.contains("$") }.map { $0.prefix { $0 != "$" } })
+    return numbered.isEmpty ? all : Array(repeating: "%1$@", count: numbered.count)
+  }
 }

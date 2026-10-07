@@ -1,3 +1,4 @@
+import Foundation
 import MultishellAppCore
 
 /// Every chrome size, derived from one number so the UI font slider scales
@@ -30,6 +31,8 @@ struct UIMetrics: Equatable {
   static let sidebarRowSpacing: Double = 1
   /// A pane's glyph, on its sidebar row and on its tab.
   var paneGlyphSize: Double { icon + 2 }
+  /// The same glyph on a board card's location line, sized to the card's text.
+  var cardPaneGlyphSize: Double { badge + 4 }
   /// The column a sidebar row's leading glyph sits in, one width for every
   /// row so the worktree, pane and agents rows line up.
   var sidebarGlyphColumn: Double { paneGlyphSize }
@@ -74,10 +77,10 @@ struct UIMetrics: Equatable {
   /// The chevron after the New Tab menu's plus, small enough to read as a
   /// mark on the plus rather than a second glyph.
   var menuChevron: Double { (icon * 0.6).rounded() }
-  var menuChevronGap: Double { 2 }
+  static let menuChevronGap: Double = 2
   /// A split's width plus the chevron, less one gap; the ink either side
   /// differs from its box. See Docs/design/tabs-and-groups.md.
-  var newTabMenuWidth: Double { splitButtonWidth + menuChevron - menuChevronGap }
+  var newTabMenuWidth: Double { splitButtonWidth + menuChevron - Self.menuChevronGap }
   /// A split glyph's inset, which the menu's plus shares.
   var stripGlyphInset: Double { (splitButtonWidth - icon) / 2 }
   /// The New Tab menu and the two splits. Comes off the strip before a tab
@@ -120,6 +123,8 @@ struct UIMetrics: Equatable {
   static let debugTableInset: Double = 12
   /// A row's disclosure chevron, before its first column.
   static let debugTableChevronWidth: Double = 10
+  /// A debug table row's chevron and a process line's nesting arrow.
+  var debugTableGlyphSize: Double { small - 1 }
   static let debugTableColumnSpacing: Double = 8
   /// Where a debug table's first column starts, past the chevron.
   static let debugTableTitleInset =
@@ -135,8 +140,6 @@ struct UIMetrics: Equatable {
   static let splitDividerThickness: Double = 6
   static let splitLineThickness: Double = 1
   static let hairlineThickness: Double = 0.5
-  /// How far a sidebar row's name is held back until the row is selected.
-  static let unselectedRowNameOpacity: Double = 0.85
   /// The least a split gives one pane, read by the layout and by the drop
   /// that would make a group.
   static let minimumPaneLength: Double = 80
@@ -148,4 +151,21 @@ struct UIMetrics: Equatable {
   /// The sidebar and detail headers, the one size that does not scale with
   /// the font. Not smaller: a hidden title bar still keeps a 40 pt band.
   static let headerHeight: Double = 40
+  /// A header's glyph buttons, unscaled with the band they sit in.
+  static let headerGlyphSize: Double = 13
+  /// The square a header's glyph button or menu takes around that glyph.
+  static let headerGlyphButtonSide: Double = 28
+
+  /// Round a sidebar row's selection and hover fill and the filter field.
+  static let rowCornerRadius: Double = 6
+  /// Round a board card.
+  static let cardCornerRadius: Double = 6
+  /// A state dot inside a line of text: the agents row's lanes, a worker's.
+  static let inlineStateDotDiameter: Double = 6
+  /// The square a settings row's small glyph button takes: copy, and (i).
+  static let settingsGlyphButtonSide: Double = 20
+
+  /// Both settings windows, fixed, or a window would resize between tabs. 600
+  /// is the tallest page plus slack; ViewSettingsWindowTests holds it.
+  static let settingsWindowSize = CGSize(width: 560, height: 600)
 }

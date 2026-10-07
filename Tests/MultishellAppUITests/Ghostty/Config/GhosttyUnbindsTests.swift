@@ -33,8 +33,11 @@ struct GhosttyUnbindsTests {
     ] {
       #expect(unbound.contains(shortcut.ghosttyCombo))
     }
-    #expect(AppShortcutCatalogue.findPrevious.ghosttyCombo == "super+shift+g")
-    #expect(AppShortcutCatalogue.closeFind.ghosttyCombo == "super+shift+f")
+  }
+
+  /// The WindowServer takes the Dock toggle before a menu item can see it.
+  @Test func theDockToggleIsGivenUpAsTheSystems() {
+    #expect(GhosttyUnbinds.systemOwned.contains("super+alt+d"))
   }
 
   /// libghostty drops a line it refuses without a word, so a key name it lacks
@@ -62,7 +65,7 @@ struct GhosttyUnbindsTests {
       AppShortcutCatalogue.cut, AppShortcutCatalogue.copy, AppShortcutCatalogue.paste,
       AppShortcutCatalogue.selectAll,
     ] {
-      #expect(shortcut.surfaceKeeps, "\(shortcut.ghosttyCombo) is the terminal's to handle")
+      #expect(shortcut.surfaceKeepsBinding, "\(shortcut.ghosttyCombo) is the terminal's to handle")
       #expect(!unbound.contains(shortcut.ghosttyCombo))
     }
   }

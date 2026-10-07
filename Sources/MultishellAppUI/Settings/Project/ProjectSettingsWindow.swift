@@ -40,7 +40,7 @@ struct ProjectSettingsWindow: View {
       .navigationTitle(t("window.project-settings-title", project.name))
       // This window is its own scene, so a removal asked for here has to
       // be confirmed here; the workspace window's dialog would be behind it.
-      .projectRemovalDialog(model: model, source: .settings)
+      .projectRemovalAlert(model: model, source: .settings)
     } else {
       // The project was removed while this window was open.
       Color.clear.frame(width: 1, height: 1).onAppear { dismiss() }

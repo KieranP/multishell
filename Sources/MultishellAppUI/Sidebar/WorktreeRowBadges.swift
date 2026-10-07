@@ -43,7 +43,7 @@ struct WorktreeRowBadges: View {
     }
     // Git changes sit left of the terminal count, so the count stays at
     // the row's right edge and lines up with rows that have no changes.
-    if let status, !status.isCleanAndInSync {
+    if let status = WorktreeStatus.badged(status) {
       GitStatusBadge(status: status, theme: theme, size: metrics.badge, tint: theme.textSecondary)
     }
     if terminalCount > 0 {

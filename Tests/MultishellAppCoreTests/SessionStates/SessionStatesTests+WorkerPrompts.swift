@@ -171,8 +171,8 @@ extension SessionStatesTests {
     #expect(states[.session(a)] == .failed, "the failure, not the Done")
   }
 
-  /// A failure standing uncovered is left alone by a held Stop as well, or
-  /// the Working hides it and the last worker out pays it back as a Done.
+  /// Otherwise the Working hides it and the last worker out pays it back as a
+  /// Done.
   @Test func aHeldStopLeavesAStandingFailureAlone() {
     var states = SessionStates()
     _ = report(&states, .running, started("w1"))
@@ -205,7 +205,7 @@ extension SessionStatesTests {
   @Test func theAgentsOwnWorkingGivesUpWhatAWorkerDisplacedEvenUnanswered() {
     var overDone = SessionStates()
     _ = report(&overDone, .running)
-    overDone.report(.init(state: .done), pid: 99, for: .session(a), isSeen: false)
+    overDone.apply(.init(state: .done), pid: 99, for: .session(a), isSeen: false)
     _ = report(&overDone, .running, started("w1"))
     _ = report(&overDone, .running, started("w2"))
     _ = report(&overDone, .attention, WorkerReport(id: "w1", phase: .working))
@@ -229,7 +229,7 @@ extension SessionStatesTests {
     var byEnd = SessionStates()
     _ = report(&byEnd, .running, started("code-review"))
     _ = report(&byEnd, .running, started("code-review"))
-    byEnd.report(
+    byEnd.apply(
       .init(
         state: .attention, message: "Needs Bash",
         worker: WorkerReport(id: "code-review", phase: .working)), pid: 99, for: .session(a),
@@ -280,11 +280,11 @@ extension SessionStatesTests {
 
     step { _ = report(&$0, .running, started("w1")) }
     step {
-      $0.report(
+      $0.apply(
         .init(state: .failed, message: "build failed"), pid: 99, for: .session(a), isSeen: false)
     }
     step {
-      $0.report(
+      $0.apply(
         .init(
           state: .attention, message: "Needs Bash",
           worker: WorkerReport(id: "w1", phase: .working)), pid: 99, for: .session(a),

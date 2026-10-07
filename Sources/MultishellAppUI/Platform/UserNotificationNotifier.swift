@@ -29,8 +29,7 @@ final class UserNotificationNotifier: NSObject, SessionNotifier {
     content.title = title
     content.body = body
     content.sound = .default
-    content.userInfo = Self.userInfo(for: key)
-    let identifier = Self.identifier(for: key)
+    let identifier = key.notificationIdentifier
     let request = UNNotificationRequest(
       identifier: identifier, content: content, trigger: nil)
     if knownAuthorization == .allowed {
@@ -49,7 +48,7 @@ final class UserNotificationNotifier: NSObject, SessionNotifier {
   }
 
   func withdraw(about key: SessionStates.Key) {
-    let identifier = Self.identifier(for: key)
+    let identifier = key.notificationIdentifier
     pendingAdds.removeValue(forKey: identifier)
     // `add` delivers a moment after it returns; in that moment the request is
     // pending, and a banner taken back as delivered only would still land.
@@ -83,32 +82,6 @@ final class UserNotificationNotifier: NSObject, SessionNotifier {
     default: .allowed
     }
   }
-
-  /// Stable for the life of a pane and distinct across the two kinds of key,
-  /// the prefix saying which without relying on a path never being a UUID.
-  nonisolated static func identifier(for key: SessionStates.Key) -> String {
-    switch key {
-    case .session(let id): "session:\(id.uuidString)"
-    case .worktree(let id): "worktree:\(id)"
-    }
-  }
-
-  private static func userInfo(for key: SessionStates.Key) -> [String: String] {
-    switch key {
-    case .session(let id): ["session": id.uuidString]
-    case .worktree(let id): ["worktree": id]
-    }
-  }
-
-  nonisolated static func key(from userInfo: [AnyHashable: Any]) -> SessionStates.Key? {
-    if let raw = userInfo["session"] as? String, let id = UUID(uuidString: raw) {
-      return .session(id)
-    }
-    if let worktree = userInfo["worktree"] as? String {
-      return .worktree(worktree)
-    }
-    return nil
-  }
 }
 
 extension UserNotificationNotifier: UNUserNotificationCenterDelegate {
@@ -123,8 +96,10 @@ extension UserNotificationNotifier: UNUserNotificationCenterDelegate {
   nonisolated func userNotificationCenter(
     _ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse
   ) async {
-    let userInfo = response.notification.request.content.userInfo
-    guard let key = Self.key(from: userInfo) else { return }
+    guard
+      let key = SessionStates.Key(
+        notificationIdentifier: response.notification.request.identifier)
+    else { return }
     await MainActor.run {
       NSApp.activate()
       onActivate?(key)

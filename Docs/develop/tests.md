@@ -18,8 +18,8 @@ says why these are the rules.
   and reads off what each saw running beside it, starved being a thread per core
   at the ceiling.
 - **Blocking work sent off the main actor leaves the cooperative pool**:
-  OffMainTests holds one more `offMain` call than there are cores and still
-  releases them all from a task.
+  RunOnDispatchTests holds one more `runOnDispatch` call than there are cores
+  and still releases them all from a task.
 - **At least four children per core, and 96, counted, not timed**: a wall-clock
   bound was the runner's mood, and no figure both had headroom on one core and
   caught twelve starving. Starved, at most a thread per core is inside a run;
@@ -31,7 +31,7 @@ says why these are the rules.
 - **A tree still being built wears no badge, and a stage on a listed worktree
   keeps the one it earned**: the badged tests in
   AppModel+StatusPollingTests+WhileBeingWritten and the merged-badge one in
-  AppModelMergesTests, on real git, the hook case held open by a gate file.
+  AppModelBranchScansTests, on real git, the hook case held open by a gate file.
 - **Git against real repositories**, bare clone with worktrees beside it
   included: RepositoryFixture. FakeGit only for what real git cannot do on
   demand.
@@ -67,7 +67,7 @@ says why these are the rules.
   what they report.
 - **That zsh test caught a word subscript taking characters** for a command run
   by its path, which a syntax check cannot see.
-- **A settings page outgrowing its fixed window**: SettingsWindowSizeTests lays
+- **A settings page outgrowing its fixed window**: ViewSettingsWindowTests lays
   each page out in a window never ordered in and holds it to the window's
   height. The tab band takes none of it there, the content being given the whole
   window.
@@ -93,7 +93,7 @@ says why these are the rules.
   TranslationTests reads every lookup off the source and checks the keys both
   ways, one per catalogue over its own half.
 - **The two TranslationTests files are a pair**, the app's suite reaching no
-  shared target keeping their scanners apart (the libraries' is
+  shared target keeping their scanners apart (each target has its own
   TranslationCallSites); a check added to one goes in the other.
 - **The app's also pins the shadowing the split rests on**, and that the words
   written in both catalogues read the same, which the libraries cannot check,
@@ -110,7 +110,8 @@ says why these are the rules.
   skip-build run after changing the catalogue says so instead of passing on what
   is no longer there.
 - **State that will not open, not just will not decode, is moved aside**, and
-  one that cannot be moved is never saved over: WorkspaceFileTests.
+  one that cannot be moved is never saved over: StateFileTests and
+  WorkspaceStoreTests+Restoring.
 - **The user's git config cannot change what a read means**: GitRunnerTests
   reads the isolated keys back and watches an all-untracked worktree read dirty.
 - **A tag sharing a branch's or the base's name decides nothing**:
@@ -160,8 +161,8 @@ says why these are the rules.
   it is still standing, so no failure is paid back as a Done:
   SessionStatesTests+WorkerPrompts.
 - **A background shell is held for by pid and ended by its exit**:
-  SessionStatesTests+BackgroundShells, and ProcessAncestryTests finds one among
-  real children by its command line.
+  SessionStatesTests+BackgroundShells, and KernelProcessTableTests finds one
+  among real children by its command line.
 - **A resuming agent's Done is paid once**, by the woken turn or a cancelled
   last worker's end, never with a worker out: SessionStatesTests+ResumingAgents,
   and AppModel+SessionReportsTests+ResumingAgents from the report source up, the
@@ -170,7 +171,7 @@ says why these are the rules.
   AppModelPIDWatchTests over twelve pairs, a set's order meeting both.
 - **Each agent names a worker in its own spelling**:
   AgentHookIntegration+ReportsTests+Events. A start or stop naming nobody counts
-  as an unnamed one: AgentHookIntegration+ReportsTests.
+  as an unnamed one: AgentHookEventTests.
 - **A worker that is a conversation of its own is a worker, and its Stop is not
   the pane's Done**: AppModel+SessionReportsTests+CopilotWorkers, captured
   payloads driven through the helper's report into the model.
@@ -202,8 +203,8 @@ says why these are the rules.
   AppModelLoginEnvironmentTests, using the system shells file so the check is
   independent of which agents the machine has.
 - **A status answering after its worktree went badges nothing**:
-  AppModelStatusRefreshTests, real git, the store emptied between the ask and
-  the answer.
+  AppModelWorktreeStatusRefreshTests, real git, the store emptied between the
+  ask and the answer.
 - **A focus report that changes nothing writes nothing**: WorkspaceStoreTests,
   through observation tracking, a re-read of a repository's file held to the
   same rule. Its counter counts store operations rather than writes.
@@ -287,20 +288,20 @@ says why these are the rules.
   AppModelLifecycleTests, the sweep held open by a gate.
 - **A row the filter shows is polled, and a slow one is read before its removal
   dialog**: AppModel+StatusPollingTests+VisibleRows and
-  AppModel+WorktreeRemovalTests+StatusReads.
+  AppModel+WorktreeRemovalRequestTests+StatusReads.
 - **A row on screen is read before its dialog too, a late removal read leaves
   the dialog up and a repeated click reads once**: the same two suites, the last
   two on a fake git holding one read open. **A pause in typing reads only the
   rows the filter brought back**: AppModelRevealedRowsTests.
 - **A removal whose status read hangs or fails still asks, saying the changes
   went unread**, and a second ask while the read hangs starts no other:
-  AppModel+WorktreeRemovalTests+StatusReads, the hang a fake git held on a gate
-  with the wait cut to 100 ms, the failure one exiting 128.
+  AppModel+WorktreeRemovalRequestTests+StatusReads, the hang a fake git held on
+  a gate with the wait cut to 100 ms, the failure one exiting 128.
 - **A row the poll is reading is not read again, but a prompt's refresh asked
   for meanwhile is read once it lands**: AppModelStatusPollingTests and
-  AppModelStatusRefreshTests, a fake git holding the first read open.
+  AppModelWorktreeStatusRefreshTests, a fake git holding the first read open.
 - **A confirmed removal trashes or deletes as its dialog said**, though the
-  setting changed while it was up: AppModelWorktreeRemovalTests.
+  setting changed while it was up: AppModelWorktreeRemovalRequestTests.
 - **The Trash is asked off the main thread**:
   AppModel+WorktreeRemovalTests+Trash, the fake Trash recording the thread of
   each call.
@@ -318,7 +319,7 @@ says why these are the rules.
   for the helper, counting the started lines.
 - **A dead agent with a worker counted no longer holds Working**, and its
   shell's later failure is not an agent waiting on the badge:
-  SessionStatesTests+BackgroundWorkers in both orders, AppModelAgentBoardTests
+  SessionStatesTests+BackgroundWorkers in both orders, AppModelDockBadgeTests
   with the board closed.
 - **A hook still running when its worktree is removed in a terminal is ended**:
   AppModel+WorktreeListRefreshTests+RemovedOutsideTheApp, a sleeping hook, the
@@ -337,7 +338,7 @@ says why these are the rules.
   unreadable or empty list counts as listed: the same suite, a fake git whose
   remove fails and whose list still names the path.
 - **A greeting holding an equals sign does not cost the login shell its first
-  variable**: LoginShellEnvironmentTests, on the parser alone.
+  variable**: EnvironmentDumpParserTests.
 - **Numbers in an agent's settings file come back as written**, and a literal
   the grammar refuses or bytes that are not UTF-8 are still refused untouched:
   AgentSettingsFileTests over both sets.
@@ -356,28 +357,29 @@ says why these are the rules.
   surrogates (GhosttySurrogatePairingTests), the actions decoded
   (GhosttySurfaceEventTests), the launch's C strings
   (GhosttySurfaceLaunchTests), the clipboard and a program's reads of it
-  (GhosttyClipboardTests, GhosttyClipboardAnswerTests) and the unsafe paste
-  question (GhosttyPasteConfirmationTests). Secure keyboard entry's balance
-  against a fake system switch is GhosttySecureInputTests. Focus kept in step
-  with the window is not: libghostty's own idea of it shows only on a live
-  surface.
+  (PanePasteboardTests, GhosttyClipboardContentsTests,
+  GhosttyClipboardAnswerTests) and the unsafe paste question
+  (GhosttyPasteConfirmationTests). Secure keyboard entry's balance against a
+  fake system switch is GhosttySecureInputTests. Focus kept in step with the
+  window is not: libghostty's own idea of it shows only on a live surface.
 - **A config file outliving its load, and the line a diagnostic names**:
   GhosttyLoadedConfigTests, against the real libghostty in a scratch directory.
 - **What a zsh prompt tells the terminal now the engine's integration is off**,
   a command's end and status, the directory, the title and the cursor shape in
   each keymap, each only where the user's features ask:
-  ShellIntegrationScriptsTests +CommandEnd, +DirectoryReports, +Title and
+  ShellIntegrationScriptsTests +PromptMarks, +DirectoryReports, +Title and
   +CursorShape, run through +ZshOutput, which loads zle by hand for the keymap
   hooks a piped shell would not register.
 - **bash launched as libghostty launches a command**, `exec -l`, still reading
-  our init file: ShellLaunchTests.
+  our init file: EngineCommandLineTests.
 - **`sudo` and `ssh` wrapped only where the user's features ask, and a function
   of their own by either name kept**: ShellIntegrationScriptsTests
   +CommandWrappers, the bash half under `InstalledBashes.all`.
 - **A removal dialog left up for a worktree git no longer lists, and Remove
   offered on the main worktree**:
   AppModel+WorktreeListRefreshTests+RemovedOutsideTheApp and
-  AppModelWorktreeRemovalTests, both through the one place each is decided.
+  AppModelWorktreeRemovalRequestTests, both through the one place each is
+  decided.
 - **A second copy of the app writing the workspace file**:
   AppModelLifecycleTests hands the fake state source an in-use socket and
   expects the platform asked to hand over, no poll started, and no file after a
@@ -399,13 +401,14 @@ says why these are the rules.
 - **A repository whose own config says not to look at untracked files**:
   GitRunnerTests, where the lines are counted anyway.
 - **Changing the indicator reads every badge at once**:
-  AppModelStatusRefreshTests, and a read started before the change badges
-  nothing, held open by a fake git until the read that replaced it has landed.
+  AppModelWorktreeStatusRefreshTests, and a read started before the change
+  badges nothing, held open by a fake git until the read that replaced it has
+  landed.
 - **The status poll asking a missing project or a slow checkout**:
   AppModelStatusPollingTests on a fake git, counting the calls, and
-  AppModelStatusRefreshTests once more for a prompt's own refresh of that slow
-  worktree and once for a read discarded mid-flight, which must leave the next
-  read due.
+  AppModelWorktreeStatusRefreshTests once more for a prompt's own refresh of
+  that slow worktree and once for a read discarded mid-flight, which must leave
+  the next read due.
 - **The pacing rule itself**: StatusPollPaceTests, and StatusReadLogTests for
   the readings it is applied to, the generation and which read holds a row
   included. Every other model test runs unpaced, or a read right after a change
@@ -433,12 +436,12 @@ says why these are the rules.
 - **A header badge ringed in the sidebar's colour**: WorktreeHeaderTests draws
   the header for a missing project and looks for any patch of that colour.
 - **A worktree on a volume that does not answer is refused without waiting on
-  it, and asked once**: AppModelWorktreesTests, through a stat that blocks until
-  released.
+  it, and asked once**: AppModelWorktreeSelectionTests, through a stat that
+  blocks until released.
 - **The xcrun shim is looked past, and xcrun never asked with no developer
   directory**: GitExecutableTests.
 - **The merge reads' round budget and their one shared width**:
-  MergeReadLogTests on the log, AppModelMergesTests for a lone project's
+  MergeReadLogTests on the log, AppModelBranchScansTests for a lone project's
   refresh, and WorktreeCoordinator+MergesTests+ReadWidth counting a fake git's
   cherry processes across two projects.
 - **A child with a terminal to stop it, or ended by its task's cancel**:
@@ -534,7 +537,7 @@ says why these are the rules.
 - **A fake git that waits on a gate file also stops once the scratch root is
   gone** wherever the read can outlive the test: one started after teardown
   finds no gate to wait for and would spin for good. The hung-read tests in
-  AppModel+WorktreeRemovalTests+StatusReads do this.
+  AppModel+WorktreeRemovalRequestTests+StatusReads do this.
 - **A bound that is left tells one outcome from another**, not a fast machine
   from a slow one: the child sleeps far longer than the bound, so what fails it
   is the stop never arriving.

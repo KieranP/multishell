@@ -4,7 +4,7 @@ import Testing
 @testable import MultishellCore
 
 /// `Project` hand-writes coding keys, `==` and `hash` to keep this run's
-/// `sharedSettings` out of all three, so a later field is silently unsaved.
+/// `sharedSettingsSnapshot` out of all three, so a later field is silently unsaved.
 @Suite
 struct ProjectTests {
   @Test func aFieldAddedToProjectIsCaughtHere() throws {
@@ -12,10 +12,10 @@ struct ProjectTests {
       .children.compactMap(\.label)
 
     #expect(
-      fields == ["path", "isExpanded", "settings", "sharedSettings"],
+      fields == ["path", "isExpanded", "settings", "sharedSettingsSnapshot"],
       """
       A field was added to Project. Put it in CodingKeys, == and hash unless \
-      it is per-run state like sharedSettings, then add it here.
+      it is per-run state like sharedSettingsSnapshot, then add it here.
       """)
   }
 
@@ -26,7 +26,7 @@ struct ProjectTests {
       path: URL(fileURLWithPath: "/r"), isExpanded: false,
       settings: ProjectSettings(branchPrefix: "team/"))
     let shared = SharedProjectSettings(branchPrefix: "theirs/")
-    project.sharedSettings.recordParsed(
+    project.sharedSettingsSnapshot.recordParsed(
       shared, confined: shared.confined(to: project), modificationDate: .now)
 
     let decoded = try JSONDecoder().decode(
@@ -34,7 +34,7 @@ struct ProjectTests {
 
     #expect(decoded.path == project.path && decoded.isExpanded == false)
     #expect(decoded.settings.branchPrefix == "team/")
-    #expect(decoded.sharedSettings == .unread, "and nothing of the file survives")
+    #expect(decoded.sharedSettingsSnapshot == .unread, "and nothing of the file survives")
   }
 
   /// Identity reads the stored path, so every way in must normalise it.

@@ -5,21 +5,20 @@ import SwiftUI
 /// which a cancelled gesture does too where `onEnded` would stay silent.
 struct SplitDivider: View {
   let axis: SplitAxis
-  let thickness: CGFloat
-  let dividerColor: Color
-  let gutterColor: Color
+  let theme: Theme
   let onDrag: (CGFloat) -> Void
   let onDragEnded: () -> Void
 
   @GestureState private var isDragging = false
 
   var body: some View {
-    gutterColor
+    let thickness = CGFloat(UIMetrics.splitDividerThickness)
+    return theme.chromeColor
       .frame(
         width: axis == .horizontal ? thickness : nil, height: axis == .vertical ? thickness : nil
       )
       .overlay {
-        dividerColor.frame(
+        theme.hairline.frame(
           width: axis == .horizontal ? CGFloat(UIMetrics.splitLineThickness) : nil,
           height: axis == .vertical ? CGFloat(UIMetrics.splitLineThickness) : nil
         )

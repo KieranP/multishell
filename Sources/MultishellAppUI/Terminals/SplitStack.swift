@@ -7,9 +7,7 @@ struct SplitStack: View {
   let subviews: SubviewsCollection
   let axis: SplitAxis
   let sizes: [CGFloat]
-  let dividerColor: Color
-  let gutterColor: Color
-  let thickness: CGFloat
+  let theme: Theme
   let onDrag: (Int, CGFloat) -> Void
   let onDragEnded: () -> Void
 
@@ -42,7 +40,6 @@ struct SplitStack: View {
 
   private func divider(after index: Int) -> some View {
     SplitDivider(
-      axis: axis, thickness: thickness, dividerColor: dividerColor, gutterColor: gutterColor,
-      onDrag: { onDrag(index, $0) }, onDragEnded: onDragEnded)
+      axis: axis, theme: theme, onDrag: { onDrag(index, $0) }, onDragEnded: onDragEnded)
   }
 }

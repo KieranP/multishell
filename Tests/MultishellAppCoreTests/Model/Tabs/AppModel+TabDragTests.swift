@@ -191,8 +191,8 @@ struct AppModelTabDragTests {
     #expect(watch.isCancelled)
   }
 
-  /// Dragging a tab along its own strip moves it as the pointer passes each
-  /// neighbour, so the tabs make room instead of jumping on release.
+  /// The tabs make room as the pointer passes each neighbour, rather than
+  /// jumping on release.
   @Test func aTabShufflesAlongItsOwnStripAsItIsDragged() {
     let harness = Harness()
     let tabs = threeTabs(harness)
@@ -229,8 +229,8 @@ struct AppModelTabDragTests {
     _ = threeTabs(harness)
     harness.model.moveActiveTabToNewGroup()
     let groups = harness.model.workspace.groups(in: harness.main.id)
-    let staying = harness.model.workspace.shownTab(in: groups[0])!
-    let moving = harness.model.workspace.shownTab(in: groups[1])!
+    let staying = harness.model.workspace.shownTab(ofGroup: groups[0])!
+    let moving = harness.model.workspace.shownTab(ofGroup: groups[1])!
 
     harness.model.shuffleTab(moving.id, .before, past: staying.id)
 

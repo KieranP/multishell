@@ -137,8 +137,10 @@ extension ProjectSettingsTests {
       ],
       "an answer that will not decode costs that answer, not the others or the project")
     #expect(oneBrokenAnswer.branchPrefix == "k/")
+  }
 
-    // And what is written comes back, so an answer survives a save.
+  @Test func aWrittenDecisionComesBackUnderSharedHooks() throws {
+    let digest = FileDigest.sha256(of: Data(#"{ "postCreateHook": "npm ci" }"#.utf8))
     var two = ProjectSettings()
     two.trustDecisions = [
       TrustDecision(digest: digest, isTrusted: true),

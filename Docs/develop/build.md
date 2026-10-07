@@ -147,7 +147,7 @@
 - **You can lay a view out in-process.** A hosting view inside a window that is
   never ordered in measures and renders, asking for nothing, and the sizing
   options give the size SwiftUI would refuse to go below.
-  SettingsWindowSizeTests is the pattern.
+  ViewSettingsWindowTests is the pattern.
 - **It still needs a window server**, which is a session rather than a
   permission; CI's runner has one.
 - **A tab band is drawn outside the AppKit hierarchy**: in no bitmap and in no

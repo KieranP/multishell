@@ -14,15 +14,15 @@ enum HexColor {
     switch digits.count {
     case 3, 4:
       let expanded = digits.prefix(3).flatMap { [$0, $0] }
-      return parseSixDigits(String(expanded), alpha: digits.dropFirst(3))
+      return parseSixDigits(String(expanded), ignoringAlpha: digits.dropFirst(3))
     case 6, 8:
-      return parseSixDigits(String(digits.prefix(6)), alpha: digits.dropFirst(6))
+      return parseSixDigits(String(digits.prefix(6)), ignoringAlpha: digits.dropFirst(6))
     default:
       return nil
     }
   }
 
-  private static func parseSixDigits(_ digits: String, alpha: Substring) -> RGB? {
+  private static func parseSixDigits(_ digits: String, ignoringAlpha alpha: Substring) -> RGB? {
     guard alpha.allSatisfy(\.isHexDigit) else { return nil }
     return parseSixDigits(digits)
   }

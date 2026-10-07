@@ -52,7 +52,7 @@ struct PaneRow: View {
         title: title, position: position, isFocusedPane: isFocusedPane, state: state,
         workers: workers, agentName: agentName)
     )
-    .accessibilityAddTraits(isFocusedPane ? [.isButton, .isSelected] : .isButton)
+    .selectableButtonTraits(isSelected: isFocusedPane)
   }
 }
 

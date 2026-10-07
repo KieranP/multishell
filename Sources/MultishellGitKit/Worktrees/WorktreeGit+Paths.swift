@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 
 extension WorktreeGit {
   static let absolutePathsFlag = "--path-format=absolute"
@@ -41,8 +42,7 @@ extension WorktreeGit {
     (url.resolvedAsFarAsItExists(keepingDanglingLinks: true) ?? url.standardizedFileURL).path
   }
 
-  static func sameResolvedPath(_ a: URL, _ b: URL) -> Bool {
-    a.resolvingSymlinksInPath().standardizedFileURL.path
-      == b.resolvingSymlinksInPath().standardizedFileURL.path
+  static func sameComparablePath(_ a: URL, _ b: URL) -> Bool {
+    a.comparablePath == b.comparablePath
   }
 }

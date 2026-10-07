@@ -24,7 +24,7 @@ extension AppModel {
     }
     await detectTools(on: environment)
     await adoptGit(on: environment.path)
-    recordInstallState(await offMain { IntegrationInstallState.read() })
+    recordInstallState(await runOnDispatch { IntegrationInstallState.read() })
   }
 
   /// Agents, shells and editors, scanned off the main thread and recorded
@@ -40,7 +40,7 @@ extension AppModel {
     // A stat per PATH directory per catalogue entry, and every one of them
     // blocks for the timeout on a mount that has gone; see architecture.md.
     let searchPath = environment.path
-    let detected = await offMain {
+    let detected = await runOnDispatch {
       (
         agents: AgentDetection(searchPath: searchPath),
         shells: ShellDetection(searchPath: searchPath),
@@ -65,7 +65,7 @@ extension AppModel {
     else { return }
     coordinator = found
     // A git found for the first time has a log of its own to switch on.
-    found.git.runLog.setRecording(debugToolsEnabled)
+    found.git.runLog.setRecording(areDebugToolsEnabled)
     guard !hadGit else { return }
     if presentedError?.saysGitIsMissing == true { presentedError = nil }
     // `start` refreshed before this ran and found no git, so every project

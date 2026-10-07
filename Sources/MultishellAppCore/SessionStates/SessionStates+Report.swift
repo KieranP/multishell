@@ -5,10 +5,9 @@ extension SessionStates {
   /// A report over the channel, `isSeen` the user looking at it. Returns what
   /// it meant once the roster is kept, `nil` for a bookkeeping tick.
   @discardableResult
-  mutating func report(
+  mutating func apply(
     _ report: SessionStateReport, pid: Int32?, for key: Key, isSeen: Bool
   ) -> SessionState? {
-    let backgroundShells = report.backgroundShells ?? []
     let resumesAfterWorkers = report.resumesAfterWorkers == true
     // Copilot's prompt mode starts its session after the first prompt. Before
     // the conversation is read, or a dropped start re-points the pane's own.
@@ -25,22 +24,10 @@ extension SessionStates {
     // agent interrupted, Codex aside, fires no hook and its workers send no stop.
     if report.startsTurn == true, !isAnotherConversation { update(key) { $0.startTurn() } }
     let isOwnStop = report.state == .done && worker == nil
-    if isOwnStop {
-      update(key) {
-        if let workersOut = report.workersOut,
-          workersOut.count < SessionStateReport.maximumWorkersOut
-        {
-          let gone = $0.roster.keepOnly(workersOut, shells: backgroundShells)
-          for id in gone { $0.promptRaisers.remove(.worker(id)) }
-        } else {
-          $0.roster.keepShells(backgroundShells)
-        }
-        $0.resumesAfterWorkers = resumesAfterWorkers
-      }
-    }
+    if isOwnStop { syncRoster(toStop: report, for: key) }
     guard
-      let state = applyMeaning(
-        of: report.state, worker: worker,
+      let state = applyRoster(
+        to: report.state, worker: worker,
         turnFollows: isOwnStop && report.turnFollows == true, for: key)
     else { return nil }
     switch state {
@@ -62,6 +49,23 @@ extension SessionStates {
     noteIfStanding(
       SessionNote(state: state, message: report.shownMessage, duration: report.duration), on: key)
     return state
+  }
+
+  /// The workers an agent's own Stop lists are all that is out; with no
+  /// list, or one cut at the cap, its background shells are only added.
+  private mutating func syncRoster(toStop report: SessionStateReport, for key: Key) {
+    let backgroundShells = report.backgroundShells ?? []
+    update(key) {
+      if let workersOut = report.workersOut,
+        workersOut.count < SessionStateReport.maximumWorkersOut
+      {
+        let gone = $0.roster.keepOnly(workersOut, shells: backgroundShells)
+        for id in gone { $0.promptRaisers.remove(.worker(id)) }
+      } else {
+        $0.roster.recordShells(backgroundShells)
+      }
+      $0.resumesAfterWorkers = report.resumesAfterWorkers == true
+    }
   }
 
   /// A report's worker once its conversation is read: a worker's end can

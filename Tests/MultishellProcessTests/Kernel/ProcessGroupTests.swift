@@ -4,7 +4,7 @@ import Testing
 @testable import MultishellProcess
 
 struct ProcessGroupTests {
-  @Test func aGroupWhoseLeaderStartedAfterTheHangupIsAStrangers() throws {
+  @Test func aGroupIsOursOnlyWhileItsLeaderPredatesTheHangup() throws {
     var hangup = timeval()
     gettimeofday(&hangup, nil)
     let stranger = Process()

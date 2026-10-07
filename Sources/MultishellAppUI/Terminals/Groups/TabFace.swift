@@ -9,17 +9,16 @@ struct TabFace: View {
   let group: TabGroup
   let tab: TerminalTab
   let isFocusedGroup: Bool
-  let canLeaveGroup: Bool
   let theme: Theme
 
   private var isShown: Bool { tab.id == group.shownTabID }
   private var isRenaming: Bool { model.renamingTabID == tab.id }
 
   var body: some View {
-    let isFront = isShown && isFocusedGroup
-    let textColor = isFront ? theme.textPrimary : theme.textSecondary
+    let isActive = isShown && isFocusedGroup
+    let textColor = isActive ? theme.textPrimary : theme.textSecondary
     let state = model.state(of: tab)
-    let agentID = model.agentAtThePrompt(of: tab)
+    let agentID = model.agentIDAtThePrompt(of: tab)
     let title = model.title(of: tab)
     return HStack(spacing: 7) {
       leadingGlyph(state, agentID: agentID, textColor: textColor)
@@ -36,7 +35,7 @@ struct TabFace: View {
 
       Spacer(minLength: 0)
 
-      if isFront, !isRenaming { closeButton }
+      if isActive, !isRenaming { closeButton }
     }
     .padding(.horizontal, 10)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -59,10 +58,10 @@ struct TabFace: View {
         title: title, isShown: isShown, isSplit: tab.isSplit, state: state,
         agentName: agentID.map(model.agentDisplayName))
     )
-    .accessibilityAddTraits(isShown ? [.isButton, .isSelected] : .isButton)
+    .selectableButtonTraits(isSelected: isShown)
     .accessibilityAction(named: t("action.rename-spoken")) { beginRenaming() }
     .contextMenu {
-      TabActions(model: model, group: group, tab: tab, canLeaveGroup: canLeaveGroup)
+      TabActions(model: model, tab: tab)
     }
   }
 

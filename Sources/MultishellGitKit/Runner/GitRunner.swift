@@ -55,38 +55,38 @@ struct GitRunner: Sendable {
     _ arguments: [String], in directory: URL, environment: [String: String] = [:],
     timeout: Duration? = nil, stopper: ProcessStopper? = nil
   ) async throws -> String {
-    try await logged(arguments, in: directory) { exitUsage in
+    try await logged(arguments, in: directory) { exitUsageProbe in
       try await processRunner.run(
         executable, arguments, in: directory,
         environment: baseEnvironment.merging(environment) { _, callers in callers },
-        timeout: timeout, stopper: stopper, exitUsage: exitUsage)
+        timeout: timeout, stopper: stopper, exitUsageProbe: exitUsageProbe)
     }
   }
 
   func succeeds(_ arguments: [String], in directory: URL) async -> Bool {
-    let output = await captured(arguments, in: directory)
+    let output = await capture(arguments, in: directory)
     return output?.succeeded ?? false
   }
 
   /// The exit status, `nil` where git could not be started.
   func exitStatus(_ arguments: [String], in directory: URL) async -> Int32? {
-    await captured(arguments, in: directory)?.status
+    await capture(arguments, in: directory)?.status
   }
 
   /// The output where git succeeded, `nil` where it failed. For a poll's
   /// reads, where a repository that cannot answer is a badge not drawn.
   func output(_ arguments: [String], in directory: URL) async -> String? {
-    let output = await captured(arguments, in: directory)
+    let output = await capture(arguments, in: directory)
     guard let output, output.succeeded else { return nil }
     return output.standardOutput
   }
 
   /// The whole outcome, `nil` where the child could not be started.
-  private func captured(_ arguments: [String], in directory: URL) async -> ProcessOutput? {
-    await logged(arguments, in: directory) { exitUsage in
+  private func capture(_ arguments: [String], in directory: URL) async -> ProcessOutput? {
+    await logged(arguments, in: directory) { exitUsageProbe in
       try? await processRunner.capture(
         executable, arguments, in: directory, environment: baseEnvironment,
-        exitUsage: exitUsage)
+        exitUsageProbe: exitUsageProbe)
     }
   }
 }

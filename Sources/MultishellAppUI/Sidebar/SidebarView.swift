@@ -8,7 +8,7 @@ import UniformTypeIdentifiers
 struct SidebarView: View {
   let model: AppModel
 
-  @State private var projectDropTarget: ProjectDropTarget?
+  @State private var projectInsertion: ProjectInsertion?
   /// The worktree a dragged tab is hovering over, drawn on its row.
   @State private var tabDropTarget: Worktree.ID?
 
@@ -21,12 +21,12 @@ struct SidebarView: View {
     // Once per render, not per row: forty rows scanning every session four
     // times each was most of what a render cost.
     let sessions = model.sessionIDsByWorktree
-    let shownProjects = model.sidebarEntries
+    let entries = model.sidebarEntries
     VStack(spacing: 0) {
       SidebarHeader(
         showsFilterField: model.showsSidebarFilter,
         theme: theme,
-        toggleFilter: { model.setShowsSidebarFilter(!model.showsSidebarFilter) },
+        toggleFilter: model.toggleSidebarFilter,
         addProject: { Task { await model.addProjectFromPicker() } }
       )
       if model.showsSidebarFilter {
@@ -49,7 +49,7 @@ struct SidebarView: View {
 
           ProjectsSectionHeader(model: model, theme: theme, metrics: metrics)
 
-          ForEach(shownProjects, id: \.project.id) { entry in
+          ForEach(entries, id: \.project.id) { entry in
             ProjectBlock(
               model: model,
               project: entry.project,
@@ -58,7 +58,7 @@ struct SidebarView: View {
               isExpanded: entry.isExpanded,
               sessions: sessions,
               theme: theme,
-              projectDropTarget: $projectDropTarget,
+              projectInsertion: $projectInsertion,
               tabDropTarget: $tabDropTarget,
               endProjectDrag: endProjectDrag)
           }
@@ -68,7 +68,7 @@ struct SidebarView: View {
         .padding(.bottom, 12)
       }
       .overlay {
-        if let message = model.sidebarEmptyMessage(showing: shownProjects) {
+        if let message = model.sidebarEmptyMessage(showing: entries) {
           Text(message)
             .font(.system(size: metrics.secondary))
             .foregroundStyle(theme.textTertiary)
@@ -86,15 +86,15 @@ struct SidebarView: View {
         theme: theme,
         metrics: metrics
       )
-      if model.debugToolsEnabled {
-        SidebarDebugStats(model: model, theme: theme, metrics: metrics)
+      if model.areDebugToolsEnabled {
+        SidebarQuickStats(model: model, theme: theme, metrics: metrics)
       }
     }
     .background(theme.sidebarColor)
   }
 
   private func endProjectDrag() {
-    projectDropTarget = nil
+    projectInsertion = nil
     model.endProjectDrag()
   }
 }

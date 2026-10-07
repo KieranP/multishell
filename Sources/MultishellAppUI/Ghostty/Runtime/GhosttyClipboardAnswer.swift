@@ -19,7 +19,7 @@ enum GhosttyClipboardAnswer: Equatable {
       self = .unavailable
       return
     }
-    let available = request.wantsList && text != nil ? [GhosttyClipboard.textMime] : []
+    let available = request.wantsList && text != nil ? [GhosttyClipboardContents.textMime] : []
     self = .reply(text: handedOver, available: available)
   }
 

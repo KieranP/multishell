@@ -29,7 +29,7 @@ struct AgentBoardColumnView: View {
     // would leave the cards half a column to live in.
     .padding(8)
     .frame(width: width)
-    .background(theme.columnColor, in: RoundedRectangle(cornerRadius: UIMetrics.columnCornerRadius))
+    .columnBackground(theme)
   }
 
   private var header: some View {

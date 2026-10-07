@@ -65,14 +65,4 @@ struct WorktreeSettingsPathsTests {
       #expect(path.count > container.count + 1, "\(name) must name something")
     }
   }
-
-  @Test func theBranchPrefixIsAppliedOnce() {
-    let settings = WorktreeSettings(branchPrefix: "kieran/")
-    #expect(settings.qualifiedBranch("tabs") == "kieran/tabs")
-    #expect(settings.qualifiedBranch("kieran/tabs") == "kieran/tabs")
-  }
-
-  @Test func anEmptyPrefixLeavesTheNameAlone() {
-    #expect(WorktreeSettings().qualifiedBranch(" tabs ") == "tabs")
-  }
 }

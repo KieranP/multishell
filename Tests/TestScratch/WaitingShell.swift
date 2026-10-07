@@ -23,7 +23,7 @@ public final class WaitingShell {
     process.waitUntilExit()
   }
 
-  public func end() {
+  public func terminate() {
     process.terminate()
     process.waitUntilExit()
   }

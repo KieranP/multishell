@@ -46,4 +46,16 @@ struct SurfaceFrameTests {
     #expect(asked == 1, "the new session is not the focused one")
     _ = window
   }
+
+  /// A screenshot's preview drags nothing but a promise, so a frame missing
+  /// those types is offered no drop at all.
+  @Test func aPaneAcceptsFilesAndFilePromisesDraggedOntoIt() {
+    let registered = Set(SurfaceFrame().registeredDraggedTypes)
+    let promised = NSFilePromiseReceiver.readableDraggedTypes.map {
+      NSPasteboard.PasteboardType($0)
+    }
+    #expect(!promised.isEmpty)
+    #expect(promised.allSatisfy(registered.contains))
+    #expect(registered.contains(.fileURL))
+  }
 }

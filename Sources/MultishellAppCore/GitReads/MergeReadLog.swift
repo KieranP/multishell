@@ -26,12 +26,12 @@ struct MergeReadLog: Sendable {
     var admitted = Set(unread)
     used += Self.unmeasuredCost * unread.count
     let answered = ids.enumerated().compactMap { offset, id in
-      reads[id].map { (id: id, offset: offset, at: $0.at, took: $0.took) }
+      reads[id].map { (id: id, offset: offset, at: $0.at, duration: $0.duration) }
     }
     for read in answered.sorted(by: { ($0.at, $0.offset) < ($1.at, $1.offset) }) {
-      if !admitted.isEmpty, used + read.took > budget { break }
+      if !admitted.isEmpty, used + read.duration > budget { break }
       admitted.insert(read.id)
-      used += read.took
+      used += read.duration
     }
     if sharingRound { spent = used }
     return admitted

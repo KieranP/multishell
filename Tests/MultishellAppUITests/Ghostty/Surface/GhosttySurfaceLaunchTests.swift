@@ -36,7 +36,7 @@ struct GhosttySurfaceLaunchTests {
     #expect(seen.environment == ["A": "1", "B": "2"])
   }
 
-  @Test func libghosttyDrawsIntoTheViewAndCallsBackWithIt() {
+  @Test func theSurfaceConfigHandsLibghosttyTheViewAsBothCanvasAndUserdata() {
     let launch = GhosttySurfaceLaunch(workingDirectory: "/w", environment: [:], command: nil)
     #expect(decodedConfig(launch).handsOverTheView)
   }

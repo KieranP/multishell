@@ -56,7 +56,7 @@ struct WorktreeListParserTests {
     #expect(worktrees[0].branch == "odd")
   }
 
-  @Test func emptyOutputYieldsNothing() {
+  @Test func emptyOutputListsNoWorktrees() {
     #expect(WorktreeListParser.parse("", projectID: "/repo").isEmpty)
   }
 }

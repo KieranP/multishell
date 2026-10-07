@@ -4,5 +4,5 @@ import MultishellCore
 /// asked less often.
 public struct StatusReading: Sendable {
   public let status: WorktreeStatus
-  public let took: Duration
+  public let duration: Duration
 }

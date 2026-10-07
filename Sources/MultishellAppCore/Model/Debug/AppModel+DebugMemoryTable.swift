@@ -16,7 +16,7 @@ extension AppModel {
     return DebugMemoryTable(
       appMemory: snapshot.history.latest?.appMemory ?? 0,
       tabs: tabs.sorted {
-        ($0.group.totalMemory, $1.title) > ($1.group.totalMemory, $0.title)
+        ($0.processList.totalMemory, $1.title) > ($1.processList.totalMemory, $0.title)
       },
       unattributedProcesses: snapshot.attribution.unattributedProcesses.heaviestFirst())
   }

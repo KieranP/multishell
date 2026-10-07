@@ -103,7 +103,8 @@ struct UIMetricsTests {
       #expect(metrics.splitButtonWidth >= metrics.icon * 2, "a split needs a target at \(size)")
       #expect(
         metrics.newTabMenuWidth
-          >= metrics.stripGlyphInset + metrics.icon + metrics.menuChevronGap + metrics.menuChevron,
+          >= metrics.stripGlyphInset + metrics.icon + UIMetrics.menuChevronGap
+          + metrics.menuChevron,
         "the plus and its chevron overrun the menu at \(size)")
       #expect(metrics.menuChevron < metrics.icon, "the chevron reads as a mark at \(size)")
       #expect(

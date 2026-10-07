@@ -20,9 +20,9 @@ extension ShellIntegrationScriptsTests {
 
   /// An empty Enter runs nothing, so the arm lived on into the next
   /// PROMPT_COMMAND, where the user's own entry was reported as a command.
-  @Test func anEmptyEnterUnderTheUsersPromptCommandStartsNoCommand() async throws {
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/bash")))
+  func anEmptyEnterUnderTheUsersPromptCommandStartsNoCommand() async throws {
     let bash = "/bin/bash"
-    guard FileManager.default.isExecutableFile(atPath: bash) else { return }
     let scratch = try Scratch.directory("marks-helper")
     defer { Scratch.remove(scratch) }
     let log = scratch.appendingPathComponent("log")
@@ -46,9 +46,9 @@ extension ShellIntegrationScriptsTests {
 
   /// Typing an agent's name is how most agents start, and most have no
   /// hooks installed; the shell's own report is what marks the pane.
-  @Test func bashNamesAnAgentItStartsAndNothingElse() async throws {
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/bash")))
+  func bashNamesAnAgentItStartsAndNothingElse() async throws {
     let bash = "/bin/bash"
-    guard FileManager.default.isExecutableFile(atPath: bash) else { return }
     let scratch = try Scratch.directory("marks-command")
     defer { Scratch.remove(scratch) }
     let log = scratch.appendingPathComponent("log")
@@ -108,14 +108,13 @@ extension ShellIntegrationScriptsTests {
 
   /// zsh writes the report's JSON itself, so its own line is the only place
   /// the field can be malformed.
-  @Test func zshWritesTheAgentIntoTheLineItSendsAndLeavesTheRestOut() throws {
-    guard
-      let lines = try zshPreexecLines([
-        "_multishell_preexec 'codex --continue'",
-        "_multishell_preexec '/usr/local/bin/opencode'",
-        "_multishell_preexec 'ls -la ~/codex'",
-      ])
-    else { return }
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
+  func zshWritesTheAgentIntoTheLineItSendsAndLeavesTheRestOut() throws {
+    let lines = try zshPreexecLines([
+      "_multishell_preexec 'codex --continue'",
+      "_multishell_preexec '/usr/local/bin/opencode'",
+      "_multishell_preexec 'ls -la ~/codex'",
+    ])
     #expect(lines.count == 3, "one line per command: \(lines)")
     #expect(
       lines.allSatisfy { $0.contains("\"shell\":true") },
@@ -129,9 +128,8 @@ extension ShellIntegrationScriptsTests {
 
   /// The lines the real `.zshrc` sends as it runs each line given, with the
   /// send replaced so nothing needs a socket.
-  private func zshSentLines(_ calls: [String]) throws -> [String]? {
+  private func zshSentLines(_ calls: [String]) throws -> [String] {
     let zsh = "/bin/zsh"
-    guard FileManager.default.isExecutableFile(atPath: zsh) else { return nil }
     let files = try GeneratedIntegration(helper: "/bin/echo")
     defer { files.tearDown() }
     let script =
@@ -142,7 +140,7 @@ extension ShellIntegrationScriptsTests {
     var environment = files.environment(termProgram: nil)
     environment[SessionEnvironment.sessionVariable] = "zsh-typed"
     environment[SessionEnvironment.socketVariable] = "/tmp/nothing.sock"
-    environment[SessionEnvironment.worktreeVariable] = "/w"
+    environment[SessionEnvironment.worktreePathVariable] = "/w"
     let process = Process()
     process.executableURL = URL(fileURLWithPath: zsh)
     process.arguments = ["-c", script]
@@ -156,21 +154,20 @@ extension ShellIntegrationScriptsTests {
     return text.split(separator: "\n").map(String.init)
   }
 
-  private func zshPreexecLines(_ calls: [String]) throws -> [String]? {
-    try zshSentLines(calls)?.filter { $0.contains("\"running\"") }
+  private func zshPreexecLines(_ calls: [String]) throws -> [String] {
+    try zshSentLines(calls).filter { $0.contains("\"running\"") }
   }
 
   /// zsh hands preexec the line as typed and the line with its aliases expanded;
   /// bash's `BASH_COMMAND` is already expanded.
-  @Test func zshReadsTheExpandedLineSoAnAliasedAgentIsStillTheAgent() throws {
-    guard
-      let lines = try zshPreexecLines([
-        "_multishell_preexec 'cx' 'codex --continue'",
-        "_multishell_preexec 'FOO=1 codex'",
-        "_multishell_preexec 'command opencode'",
-        "_multishell_preexec 'MY_CODEX=1 ls'",
-      ])
-    else { return }
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
+  func zshReadsTheExpandedLineSoAnAliasedAgentIsStillTheAgent() throws {
+    let lines = try zshPreexecLines([
+      "_multishell_preexec 'cx' 'codex --continue'",
+      "_multishell_preexec 'FOO=1 codex'",
+      "_multishell_preexec 'command opencode'",
+      "_multishell_preexec 'MY_CODEX=1 ls'",
+    ])
     #expect(lines.count == 4, "one line per command: \(lines)")
     #expect(lines[0].contains("\"command\":\"codex\"") == true, "an alias: \(lines)")
     #expect(lines[1].contains("\"command\":\"codex\"") == true, "an assignment before it")
@@ -191,9 +188,18 @@ extension ShellIntegrationScriptsTests {
     #expect(output.contains("survived"), "\(output)")
   }
 
-  @Test func zshReportsIdleOnlyAsTheShellItselfExitsAndNotASubshell() throws {
-    guard let lines = try zshSentLines(["(exit 4)", "print -r after"]) else { return }
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
+  func zshReportsIdleOnlyAsTheShellItselfExitsAndNotASubshell() throws {
+    let lines = try zshSentLines(["(exit 4)", "print -r after"])
     #expect(lines.contains("after"), "\(lines)")
     #expect(lines.filter { $0.contains("\"state\":\"idle\"") }.count == 1, "\(lines)")
+  }
+
+  @Test func zshSendsAnIdleLineForItsSessionOnTheWayOut() async throws {
+    let output = try await zshOutput(
+      features: nil,
+      input: #"_multishell_send() { print -r -- "line=$1" }; _multishell_zshexit"#,
+      runsInputAsScript: true)
+    #expect(output.contains(#"line={"v":1,"state":"idle","session":"zsh-output""#), "\(output)")
   }
 }

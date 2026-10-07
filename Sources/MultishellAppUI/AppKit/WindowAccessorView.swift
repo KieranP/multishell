@@ -2,10 +2,10 @@ import AppKit
 
 /// `WindowAccessor`'s view, reporting each window it moves into.
 final class WindowAccessorView: AccessibilityHiddenView {
-  var onWindow: ((NSWindow?) -> Void)?
+  var onMoveToWindow: ((NSWindow?) -> Void)?
 
   override func viewDidMoveToWindow() {
     super.viewDidMoveToWindow()
-    onWindow?(window)
+    onMoveToWindow?(window)
   }
 }

@@ -128,7 +128,7 @@ extension AppModelStatusPollingTests {
     try FileManager.default.setAttributes(
       [.modificationDate: Date(timeIntervalSinceNow: -3600)], ofItemAtPath: lock.path)
 
-    await harness.model.refreshWorktreesIfRecordsChanged()
+    await harness.model.refreshProjectsIfChanged()
     await harness.model.pollRound()
 
     #expect(harness.worktree(onBranch: "killed")?.isInitializing == false)
@@ -180,7 +180,7 @@ extension AppModelStatusPollingTests {
     await harness.model.createWorktree(
       branch: "listed", basedOn: nil, createsBranch: true, in: harness.project)
     let created = try #require(harness.worktree(onBranch: "listed"))
-    await harness.model.stageHandles.setup(of: created.id)?.value
+    await harness.model.stageHandles.setupTask(of: created.id)?.value
     #expect(harness.model.worktreeOperations.isEmpty, "the copy is done")
 
     try await waitUntil({ harness.model.statuses[created.id] != nil }, seconds: 2)
@@ -211,7 +211,7 @@ extension AppModelStatusPollingTests {
     #expect(harness.model.statuses[created.id] == nil, "nothing while the hook writes")
 
     try Data().write(to: gate)
-    await harness.model.stageHandles.setup(of: created.id)?.value
+    await harness.model.stageHandles.setupTask(of: created.id)?.value
     await harness.model.refreshStatuses()
 
     #expect(

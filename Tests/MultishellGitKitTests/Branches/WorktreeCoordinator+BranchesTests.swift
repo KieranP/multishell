@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import TestSupport
 import Testing
 
 @testable import MultishellGitKit
@@ -28,7 +29,7 @@ struct WorktreeCoordinatorBranchesTests {
   @Test func aBranchWithSlashesIsKeyedTheWayAWorktreeNamesIt() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
-    let path = try await fixture.coordinator.createThenRunPostCreate(
+    let path = try await fixture.coordinator.createThenRunPostCreateHook(
       branch: "feat/tabs", in: fixture.project,
       settings: fixture.worktreeSettings)
 
@@ -69,5 +70,27 @@ struct WorktreeCoordinatorBranchesTests {
       await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: "nowhere"))
     #expect(missing.mergeInputs == nil)
     #expect(missing.lastCommitDates["main"] != nil, "the dates come back with no base to measure")
+  }
+
+  @Test func theDefaultBranchIsTheRemotesWhereThereIsOneAndTheUsersWhereTheySaid()
+    async throws
+  {
+    let fixture = try await RepositoryFixture.make()
+    defer { fixture.tearDown() }
+    try await fixture.addOrigin()
+    try await fixture.commitOnBranch("develop", "dev", file: "dev.txt", content: "a\n")
+
+    let detected = try #require(
+      await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil)?
+        .mergeInputs)
+    #expect(
+      detected.base.shortName == "origin/main",
+      "the remote wins over a local main a pull has not caught up with")
+    #expect(detected.base.nameWithoutRemote == "main")
+
+    let overridden = try #require(
+      await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: "develop")?
+        .mergeInputs)
+    #expect(overridden.base.shortName == "develop")
   }
 }

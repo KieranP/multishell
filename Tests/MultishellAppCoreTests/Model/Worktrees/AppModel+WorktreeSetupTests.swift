@@ -19,7 +19,7 @@ struct AppModelWorktreeSetupTests {
     let created = try #require(harness.worktree(onBranch: "hooked"))
     #expect(harness.model.workspace.selectedWorktreeID == created.id, "shown before the hook ends")
     harness.model.presentedError = nil
-    await harness.model.stageHandles.setup(of: created.id)?.value
+    await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     // In the pane, not an alert: an alert raised while the sheet is still
     // going away is lost, and one raised later lands over other work.
@@ -46,7 +46,7 @@ struct AppModelWorktreeSetupTests {
     await harness.model.createWorktree(
       branch: "loud", basedOn: nil, createsBranch: true, in: harness.project)
     let created = try #require(harness.worktree(onBranch: "loud"))
-    await harness.model.stageHandles.setup(of: created.id)?.value
+    await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     #expect(
       harness.model.worktreeOperations[created.id]?.failure
@@ -80,7 +80,7 @@ struct AppModelWorktreeSetupTests {
     harness.model.requestWorktreeRemoval(of: created)
     #expect(harness.model.pendingWorktreeRemoval == nil, "and nothing removes it meanwhile")
 
-    await harness.model.stageHandles.setup(of: created.id)?.value
+    await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     #expect(harness.model.presentedError == nil)
     #expect(harness.model.worktreeOperations.isEmpty)
@@ -104,7 +104,7 @@ struct AppModelWorktreeSetupTests {
       branch: "bashed", basedOn: nil, createsBranch: true, in: harness.project)
 
     let created = try #require(harness.worktree(onBranch: "bashed"))
-    await harness.model.stageHandles.setup(of: created.id)?.value
+    await harness.model.stageHandles.setupTask(of: created.id)?.value
     let shell = try String(
       contentsOf: created.path.appendingPathComponent("shell.txt"), encoding: .utf8)
     #expect(shell == "bash", "the project's shell, not the global one")
@@ -119,7 +119,7 @@ struct AppModelWorktreeSetupTests {
     await harness.model.createWorktree(
       branch: "served", basedOn: nil, createsBranch: true, in: harness.project)
     let created = try #require(harness.worktree(onBranch: "served"))
-    await harness.model.stageHandles.setup(of: created.id)?.value
+    await harness.model.stageHandles.setupTask(of: created.id)?.value
     let written = try String(
       contentsOf: created.path.appendingPathComponent("sleep.pid"), encoding: .utf8)
     let hookChild = try #require(pid_t(written.trimmingCharacters(in: .whitespacesAndNewlines)))
@@ -141,7 +141,7 @@ struct AppModelWorktreeSetupTests {
     await harness.model.createWorktree(
       branch: "slow", basedOn: nil, createsBranch: true, in: harness.project)
     let created = try #require(harness.worktree(onBranch: "slow"))
-    await harness.model.stageHandles.setup(of: created.id)?.value
+    await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     #expect(ContinuousClock.now - started < .seconds(10))
     let failed = try #require(harness.model.worktreeOperations[created.id])
@@ -160,7 +160,7 @@ struct AppModelWorktreeSetupTests {
     let created = try #require(harness.worktree(onBranch: "stopped"))
     #expect(harness.model.worktreeOperations[created.id]?.isRunning == true)
     harness.model.cancelStage(of: created)
-    await harness.model.stageHandles.setup(of: created.id)?.value
+    await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     #expect(harness.model.worktreeOperations[created.id] == nil, "nothing to dismiss")
     #expect(harness.model.presentedError == nil)
@@ -184,7 +184,7 @@ struct AppModelWorktreeSetupTests {
     let created = try #require(harness.worktree(onBranch: "roster"))
     harness.model.showAgentBoard()
     harness.model.cancelStage(of: created)
-    await harness.model.stageHandles.setup(of: created.id)?.value
+    await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     #expect(harness.model.showsAgentBoard, "nothing the user did")
     let tabs = harness.model.workspace.tabs(in: created.id)
@@ -210,7 +210,7 @@ struct AppModelWorktreeSetupTests {
     harness.model.select(main)
     let focusedBefore = harness.engine.focused.count
     harness.model.cancelStage(of: created)
-    await harness.model.stageHandles.setup(of: created.id)?.value
+    await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     let tabs = harness.model.workspace.tabs(in: created.id)
     #expect(tabs.count == 1)

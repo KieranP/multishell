@@ -25,7 +25,7 @@ extension AppModelWorktreeSetupTests {
     await harness.model.createWorktree(
       branch: "copied", basedOn: nil, createsBranch: true, in: harness.project)
     let created = try #require(harness.worktree(onBranch: "copied"))
-    await harness.model.stageHandles.setup(of: created.id)?.value
+    await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     #expect(harness.model.presentedError == nil, "a path the repository does not have is skipped")
     #expect(
@@ -53,7 +53,7 @@ extension AppModelWorktreeSetupTests {
     // Read before the setup task has had the actor: the stage the pane
     // opens on is the link list, whatever else the project has.
     #expect(harness.model.worktreeOperations[created.id]?.stage == .linkingFiles)
-    await harness.model.stageHandles.setup(of: created.id)?.value
+    await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     #expect(harness.model.presentedError == nil)
     #expect(
@@ -84,7 +84,7 @@ extension AppModelWorktreeSetupTests {
     await harness.model.createWorktree(
       branch: "stuck", basedOn: nil, createsBranch: true, in: harness.project)
     let created = try #require(harness.worktree(onBranch: "stuck"))
-    await harness.model.stageHandles.setup(of: created.id)?.value
+    await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     #expect(harness.model.presentedError == nil, "not an alert the sheet's dismissal would drop")
     let shown = try #require(harness.model.worktreeOperations[created.id])
@@ -118,7 +118,7 @@ extension AppModelWorktreeSetupTests {
     await harness.model.createWorktree(
       branch: "shared", basedOn: nil, createsBranch: true, in: harness.project)
     let created = try #require(harness.worktree(onBranch: "shared"))
-    await harness.model.stageHandles.setup(of: created.id)?.value
+    await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     #expect(
       !FileManager.default.fileExists(
@@ -133,7 +133,7 @@ extension AppModelWorktreeSetupTests {
     await harness.model.createWorktree(
       branch: "trusted", basedOn: nil, createsBranch: true, in: harness.project)
     let second = try #require(harness.worktree(onBranch: "trusted"))
-    await harness.model.stageHandles.setup(of: second.id)?.value
+    await harness.model.stageHandles.setupTask(of: second.id)?.value
 
     #expect(
       try FileManager.default.destinationOfSymbolicLink(
@@ -159,7 +159,7 @@ extension AppModelWorktreeSetupTests {
     // early so the stop lands at its first path, not in a race with it.
     #expect(harness.model.worktreeOperations[created.id]?.stage == .copyingFiles)
     harness.model.cancelStage(of: created)
-    await harness.model.stageHandles.setup(of: created.id)?.value
+    await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     #expect(harness.model.presentedError == nil, "a stop is the user's own doing, not a failure")
     #expect(
@@ -186,7 +186,7 @@ extension AppModelWorktreeSetupTests {
     await harness.model.createWorktree(
       branch: "shared", basedOn: nil, createsBranch: true, in: harness.project)
     let created = try #require(harness.worktree(onBranch: "shared"))
-    await harness.model.stageHandles.setup(of: created.id)?.value
+    await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     #expect(
       !FileManager.default.fileExists(atPath: created.path.appendingPathComponent(".env").path),
@@ -214,7 +214,7 @@ extension AppModelWorktreeSetupTests {
     await harness.model.createWorktree(
       branch: "escaped", basedOn: nil, createsBranch: true, in: harness.project)
     let created = try #require(harness.worktree(onBranch: "escaped"))
-    await harness.model.stageHandles.setup(of: created.id)?.value
+    await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     #expect(harness.model.presentedError == nil, "not an alert the sheet's dismissal would drop")
     let shown = try #require(harness.model.worktreeOperations[created.id])
@@ -247,7 +247,7 @@ extension AppModelWorktreeSetupTests {
     await harness.model.createWorktree(
       branch: "mine", basedOn: nil, createsBranch: true, in: harness.project)
     let created = try #require(harness.worktree(onBranch: "mine"))
-    await harness.model.stageHandles.setup(of: created.id)?.value
+    await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     let shown = try #require(harness.model.worktreeOperations[created.id])
     #expect(!shown.isRunning, "the copy failed")
@@ -267,7 +267,7 @@ extension AppModelWorktreeSetupTests {
       branch: "mine", basedOn: nil, createsBranch: true, in: harness.project)
     let created = try #require(harness.worktree(onBranch: "mine"))
     harness.model.cancelStage(of: created)
-    await harness.model.stageHandles.setup(of: created.id)?.value
+    await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     #expect(
       harness.model.worktreeOperations[created.id] == nil, "the stage ended rather than failing")
@@ -285,7 +285,7 @@ extension AppModelWorktreeSetupTests {
     await harness.model.createWorktree(
       branch: "mine", basedOn: nil, createsBranch: true, in: harness.project)
     let created = try #require(harness.worktree(onBranch: "mine"))
-    await harness.model.stageHandles.setup(of: created.id)?.value
+    await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     #expect(harness.model.worktreeOperations[created.id] == nil, "every stage ended")
     let manager = FileManager.default
@@ -313,7 +313,7 @@ extension AppModelWorktreeSetupTests {
     await harness.model.createWorktree(
       branch: "mine", basedOn: nil, createsBranch: true, in: harness.project)
     let created = try #require(harness.worktree(onBranch: "mine"))
-    await harness.model.stageHandles.setup(of: created.id)?.value
+    await harness.model.stageHandles.setupTask(of: created.id)?.value
 
     #expect(
       harness.model.worktreeOperations[created.id] == nil, "the stage ended rather than failing")

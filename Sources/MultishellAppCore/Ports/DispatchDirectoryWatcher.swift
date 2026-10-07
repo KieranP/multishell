@@ -14,27 +14,6 @@ public final class DispatchDirectoryWatcher: DirectoryWatcher {
     let directory: Identity
   }
 
-  /// What names one directory on one volume, as `fstat` gives it.
-  struct Identity: Hashable, Sendable {
-    let device: dev_t
-    let inode: ino_t
-
-    init?(ofDescriptor descriptor: Int32) {
-      self.init { fstat(descriptor, &$0) }
-    }
-
-    init?(ofPath path: String) {
-      self.init { stat(path, &$0) }
-    }
-
-    private init?(reading read: (inout stat) -> Int32) {
-      var status = stat()
-      guard read(&status) == 0 else { return nil }
-      self.device = status.st_dev
-      self.inode = status.st_ino
-    }
-  }
-
   /// What a scan off the main actor found: which known paths now name
   /// another directory, and a descriptor for each path that needs a source.
   private struct Scan: Sendable {
@@ -70,7 +49,7 @@ public final class DispatchDirectoryWatcher: DirectoryWatcher {
     let generation = generation
     let known = watches.filter { wanted.contains($0.key) }.mapValues(\.directory)
     let openDirectory = openDirectory
-    let scan = await offMain { Self.scan(wanted, known: known, opening: openDirectory) }
+    let scan = await runOnDispatch { Self.scan(wanted, known: known, opening: openDirectory) }
     guard generation == self.generation else {
       scan.closeAll()
       return

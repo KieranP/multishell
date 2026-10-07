@@ -5,11 +5,5 @@ public struct GitRunActivity: Sendable, Equatable {
   public let runningCount: Int
   public let finishedRuns: [GitRun]
 
-  init(startedCount: Int, runningCount: Int, finishedRuns: [GitRun]) {
-    self.startedCount = startedCount
-    self.runningCount = runningCount
-    self.finishedRuns = finishedRuns
-  }
-
-  public static let none = GitRunActivity(startedCount: 0, runningCount: 0, finishedRuns: [])
+  public static let empty = GitRunActivity(startedCount: 0, runningCount: 0, finishedRuns: [])
 }

@@ -14,9 +14,9 @@ struct HelperRelayTests {
   private func countingHelper(in home: URL) throws -> (helper: URL, log: URL) {
     let log = home.appendingPathComponent("spawns.log")
     let helper = try Scratch.script(
-      "echo \"$PPID\" >> \(PosixShellQuoting.quote(log.path + ".parents"))\n"
-        + "echo \"$$ $1\" >> \(PosixShellQuoting.quote(log.path))\n"
-        + "exec \(PosixShellQuoting.quote(try HelperBinary.require().path)) \"$@\"",
+      "echo \"$PPID\" >> \(AnyShellQuoting.quote(log.path + ".parents"))\n"
+        + "echo \"$$ $1\" >> \(AnyShellQuoting.quote(log.path))\n"
+        + "exec \(AnyShellQuoting.quote(try HelperBinary.require().path)) \"$@\"",
       at: home.appendingPathComponent("multishell"))
     return (helper, log)
   }
@@ -28,7 +28,7 @@ struct HelperRelayTests {
       if [ "$1" = relay ]; then
       \(relayBody)
       fi
-      exec \(PosixShellQuoting.quote(try HelperBinary.require().path)) "$@"
+      exec \(AnyShellQuoting.quote(try HelperBinary.require().path)) "$@"
       """,
       at: home.appendingPathComponent("multishell"))
   }
@@ -82,7 +82,7 @@ struct HelperRelayTests {
     let depths = home.appendingPathComponent("depths.log")
     try """
     printf() {
-      case "$2" in command-*) echo "$BASH_SUBSHELL ${2%% *}" >> \(PosixShellQuoting.quote(depths.path)) ;; esac
+      case "$2" in command-*) echo "$BASH_SUBSHELL ${2%% *}" >> \(AnyShellQuoting.quote(depths.path)) ;; esac
       builtin printf "$@"
     }
 
@@ -114,9 +114,9 @@ struct HelperRelayTests {
 
     let environment = ShellTab.environment(socket: listener.path, home: home, worktree: "/w/repo")
     let script = """
-      while [ ! -s \(PosixShellQuoting.quote(log.path)) ]; do sleep 0.05; done
-      kill -KILL "$(head -n 1 \(PosixShellQuoting.quote(log.path + ".parents")))"
-      kill -KILL "$(cut -d' ' -f1 \(PosixShellQuoting.quote(log.path)))"
+      while [ ! -s \(AnyShellQuoting.quote(log.path)) ]; do sleep 0.05; done
+      kill -KILL "$(head -n 1 \(AnyShellQuoting.quote(log.path + ".parents")))"
+      kill -KILL "$(cut -d' ' -f1 \(AnyShellQuoting.quote(log.path)))"
       sleep 0.3
       _multishell_command_started "ls"; true; _multishell_precmd
       printf 'alive\\n'
@@ -146,14 +146,14 @@ struct HelperRelayTests {
     let helper = try helper(
       in: home,
       relayingAs: """
-        while [ ! -e \(PosixShellQuoting.quote(written.path)) ]; do sleep 0.05; done
+        while [ ! -e \(AnyShellQuoting.quote(written.path)) ]; do sleep 0.05; done
         exit 2
         """)
     let initFile = try ShellTab.bashInitFile(in: home, helper: helper)
     let environment = ShellTab.environment(socket: listener.path, home: home)
     let script = """
       _multishell_command_started "ls"; true; _multishell_precmd
-      : > \(PosixShellQuoting.quote(written.path))
+      : > \(AnyShellQuoting.quote(written.path))
       """
 
     _ = try await ShellTab.runBash(
@@ -175,9 +175,9 @@ struct HelperRelayTests {
     let environment = ShellTab.environment(
       socket: home.appendingPathComponent("nowhere.sock"), home: home)
     let script = """
-      while [ ! -s \(PosixShellQuoting.quote(log.path)) ]; do sleep 0.05; done
+      while [ ! -s \(AnyShellQuoting.quote(log.path)) ]; do sleep 0.05; done
       sleep 60 </dev/null >/dev/null 2>&1 &
-      echo $! > \(PosixShellQuoting.quote(childPID.path))
+      echo $! > \(AnyShellQuoting.quote(childPID.path))
       """
 
     _ = try await ShellTab.runBash(
@@ -198,15 +198,15 @@ struct HelperRelayTests {
     defer { Scratch.remove(home) }
     let parents = home.appendingPathComponent("parents.log")
     let helper = try helper(
-      in: home, relayingAs: "echo \"$PPID\" >> \(PosixShellQuoting.quote(parents.path)); exit 2")
+      in: home, relayingAs: "echo \"$PPID\" >> \(AnyShellQuoting.quote(parents.path)); exit 2")
     let initFile = try ShellTab.bashInitFile(in: home, helper: helper)
     let childPID = home.appendingPathComponent("child.pid")
     let environment = ShellTab.environment(
       socket: home.appendingPathComponent("nowhere.sock"), home: home)
     let script = """
-      while [ ! -s \(PosixShellQuoting.quote(parents.path)) ]; do sleep 0.05; done
+      while [ ! -s \(AnyShellQuoting.quote(parents.path)) ]; do sleep 0.05; done
       sleep 60 </dev/null >/dev/null 2>&1 &
-      echo $! > \(PosixShellQuoting.quote(childPID.path))
+      echo $! > \(AnyShellQuoting.quote(childPID.path))
       """
 
     _ = try await ShellTab.runBash(
@@ -279,7 +279,7 @@ struct HelperRelayTests {
     let environment = ShellTab.environment(socket: listener.path, home: home)
     let script = """
       sleep 60 </dev/null >/dev/null 2>&1 &
-      echo $! > \(PosixShellQuoting.quote(childPID.path))
+      echo $! > \(AnyShellQuoting.quote(childPID.path))
       _multishell_command_started "ls"; true; _multishell_precmd
       """
 

@@ -31,7 +31,7 @@ struct TranslationTests {
     let catalogue = try Self.catalogue()
     for site in try TranslationCallSites.all() {
       guard let english = catalogue[site.key] else { continue }
-      let takes = Self.placeholders(in: english).count
+      let takes = TranslationCallSites.placeholders(in: english).count
       #expect(
         site.arguments == takes,
         "\(site.where) passes \(site.arguments) to \(site.key), which takes \(takes)")
@@ -128,12 +128,6 @@ struct TranslationTests {
 
   @Test func aKeyWithNoEntryAnswersWithItself() {
     #expect(t("no.such.key") == "no.such.key")
-  }
-
-  private static func placeholders(in english: String) -> [String] {
-    let all = english.matches(of: /%[0-9]*\$?[0-9.]*[@dfs]/).map { String($0.output) }
-    let numbered = Set(all.filter { $0.contains("$") }.map { $0.prefix { $0 != "$" } })
-    return numbered.isEmpty ? all : Array(repeating: "%1$@", count: numbered.count)
   }
 
   private static func catalogue() throws -> [String: String] {

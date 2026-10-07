@@ -15,7 +15,7 @@ extension AppModel {
     }
     // The write, its date and the confinement off the main actor: on a slow
     // volume each would hold the window.
-    let outcome = await offMain { export.write() }
+    let outcome = await runOnDispatch { export.write() }
     finishSharedSettingsExport(export, outcome)
   }
 
@@ -24,13 +24,13 @@ extension AppModel {
   func prepareSharedSettingsExport(for project: Project) throws -> SharedSettingsExport? {
     guard let project = workspace.project(project.id) else { return nil }
     let mine = SharedProjectSettings(exporting: effectiveSettings(for: project))
-    let kept = mine.carryingOver(from: project.sharedSettings.asWritten)
+    let kept = mine.carryingOver(from: project.sharedSettingsSnapshot.asWritten)
     // Every word the user's own answers itself; otherwise the answer given
     // about the file this rewrites travels, and no answer leaves the question.
     let answer =
       kept.trustCoveredText == mine.trustCoveredText
       ? true
-      : project.sharedSettings.confined.flatMap {
+      : project.sharedSettingsSnapshot.confined.flatMap {
         project.settings.trustDecision(about: $0)
       }
     let (data, written) = try kept.fileContents()

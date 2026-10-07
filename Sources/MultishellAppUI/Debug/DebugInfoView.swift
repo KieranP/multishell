@@ -15,7 +15,7 @@ struct DebugInfoView: View {
     let timeline = model.debugTimeline(for: range)
     VStack(spacing: 0) {
       DebugInfoHeader(
-        model: model, stalledSecondCount: timeline.stalledSecondCount, range: $range, theme: theme,
+        model: model, timeline: timeline, range: $range, theme: theme,
         metrics: metrics)
       ScrollView(.vertical) {
         VStack(spacing: 14) {

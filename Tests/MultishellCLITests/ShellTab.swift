@@ -80,8 +80,8 @@ enum ShellTab {
       URL(fileURLWithPath: "/bin/sh"),
       [
         "-c",
-        "exec \(bash) --init-file \(PosixShellQuoting.quote(initFile.path)) -i "
-          + "< \(PosixShellQuoting.quote(script.path))",
+        "exec \(bash) --init-file \(AnyShellQuoting.quote(initFile.path)) -i "
+          + "< \(AnyShellQuoting.quote(script.path))",
       ], in: home, environment: environment)
   }
 }

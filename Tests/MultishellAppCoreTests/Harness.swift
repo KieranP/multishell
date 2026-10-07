@@ -30,7 +30,7 @@ final class Harness {
     root = Scratch.path("appmodel")
     try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
     self.stateFile = stateFile ?? root.appendingPathComponent("state.json")
-    store = WorkspaceStore(file: WorkspaceFile(fileURL: self.stateFile))
+    store = WorkspaceStore(file: StateFile(fileURL: self.stateFile))
     let added = store.addProject(at: root)  // exists on disk, so `select` accepts it
     main = Worktree(path: root, projectID: added.id, head: "a", branch: "main", isPrimary: true)
     feature = Worktree(
@@ -43,7 +43,7 @@ final class Harness {
     model = AppModel(
       store: store, host: engine, coordinator: nil, watcher: watcher, platform: platform,
       stateSource: socketSource ?? stateSource, notifier: notifier)
-    model.statusReads.pace = .unpaced
+    model.statusReadLog.pace = .unpaced
     model.refreshAppLaunchFiles = { _ in }
     model.sweepPromisedDropCopies = {}
     let path = root.appendingPathComponent("bin").path
@@ -82,7 +82,7 @@ final class Harness {
     loadError: (any Error)?
   ) {
     model.saveNow()
-    let (store, loadError) = WorkspaceStore.restored(from: WorkspaceFile(fileURL: stateFile))
+    let (store, loadError) = WorkspaceStore.restored(from: StateFile(fileURL: stateFile))
     let engine = FakeEngine()
     let model = AppModel(store: store, host: engine, coordinator: nil, watcher: FakeWatcher())
     return (model, engine, store, loadError)

@@ -26,7 +26,7 @@ extension Workspace {
 
     // A name outliving its worktree returns if one is made at that path
     // again; a blank one draws an empty line over the branch.
-    worktreeNames = worktreeNames.filter { id, name in
+    customWorktreeNames = customWorktreeNames.filter { id, name in
       worktreeIDs.contains(id) && name.trimmedOrNil != nil
     }
 
@@ -67,7 +67,7 @@ extension Workspace {
     sessions.removeAll { owner[$0.id] == nil }
     // Where the two disagree the tab's answer wins: it is what the sidebar
     // lists the tab under, and what decides whether its shell starts.
-    let pathOfWorktree = Dictionary(uniqueKeysWithValues: worktrees.map { ($0.id, $0.path) })
+    let pathOfWorktree = worktrees.keyedByID().mapValues(\.path)
     for index in sessions.indices where sessions[index].worktreeID != owner[sessions[index].id] {
       let worktree = owner[sessions[index].id]!
       sessions[index].worktreeID = worktree

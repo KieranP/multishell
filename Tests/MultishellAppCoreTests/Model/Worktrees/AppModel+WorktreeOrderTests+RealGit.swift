@@ -27,7 +27,7 @@ extension AppModelWorktreeOrderTests {
       ["commit", "-q", "-m", "later"], in: zulu.path,
       environment: ["GIT_COMMITTER_DATE": "2030-01-01T00:00:00Z"])
 
-    await harness.model.refreshMergeStates()
+    await harness.model.refreshBranchScans()
 
     let dated = harness.model.workspace.worktrees.filter {
       harness.model.lastCommitDates[$0.id] != nil
@@ -60,8 +60,7 @@ extension AppModelWorktreeOrderTests {
       "and the name order disagrees with the newest, so the dates were really read")
   }
 
-  /// The created orders off the same real repository: git makes the
-  /// directories, so the birth times are real ones.
+  /// git makes the directories, so the birth times are real ones.
   @Test func theCreatedOrderComesOffTheRealDirectories() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

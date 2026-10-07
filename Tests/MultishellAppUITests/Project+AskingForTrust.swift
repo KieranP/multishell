@@ -7,7 +7,7 @@ extension Project {
   func askingForTrust() -> Project {
     let shared = SharedProjectSettings(preCreateHook: "make setup", postCreateHook: "npm ci")
     var asking = self
-    asking.sharedSettings = SharedSettingsSnapshot(
+    asking.sharedSettingsSnapshot = SharedSettingsSnapshot(
       asWritten: shared, confined: shared, hasBeenRead: true)
     return asking
   }

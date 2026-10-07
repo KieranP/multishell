@@ -25,8 +25,8 @@ struct SidebarHeader: View {
   ) -> some View {
     PlainGlyphButton(help: help, action: action) {
       Image(systemName: symbol)
-        .font(.system(size: 13, weight: .medium))
-        .frame(width: 28, height: 28)
+        .font(.system(size: UIMetrics.headerGlyphSize, weight: .medium))
+        .frame(width: UIMetrics.headerGlyphButtonSide, height: UIMetrics.headerGlyphButtonSide)
     }
   }
 }

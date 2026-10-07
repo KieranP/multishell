@@ -18,7 +18,7 @@ extension AccessibilityText {
 
   /// A Memory by tab row, read as one button where it opens to list processes.
   public static func debugMemoryLine(
-    _ line: DebugMemoryLine, disclosure: DebugRowDisclosure
+    _ line: DebugMemoryLine, disclosure: DebugLineDisclosure
   ) -> String {
     var parts = [line.title]
     if !line.subtitle.isEmpty { parts.append(line.subtitle) }

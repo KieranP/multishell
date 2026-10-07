@@ -10,13 +10,4 @@ public struct GitRun: Sendable, Equatable {
   /// git's own peak footprint and CPU time, its children left out; `nil`
   /// where unread.
   public let exitUsage: ExitUsage?
-
-  init(command: String, directory: URL, duration: Duration, exitUsage: ExitUsage?) {
-    self.command = command
-    self.directory = directory
-    self.duration = duration
-    self.exitUsage = exitUsage
-  }
-
-  public var peakMemory: UInt64? { exitUsage?.peakFootprint }
 }

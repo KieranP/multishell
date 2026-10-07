@@ -25,10 +25,10 @@ extension AppModel {
     requestClose(.pane(id), in: tab)
   }
 
-  /// The dialog's answer to a close that found a working agent: the close
-  /// goes either way, and only a confirmation performs it.
-  public func answerPendingClose(confirmed: Bool) {
-    guard let pending = pendingClose else { return }
+  /// The dialog's answer to the close it asked about; only a confirmation
+  /// performs it. A close that replaced it while it stood is left asking.
+  public func answerClose(_ pending: PendingClose, confirmed: Bool) {
+    guard pendingClose == pending else { return }
     pendingClose = nil
     if confirmed { perform(pending) }
   }

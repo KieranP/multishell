@@ -12,7 +12,7 @@ enum SVGPathParser {
     var path = Path()
     var numbers: [Double] = []
     var command: Character?
-    var drew = false
+    var hasDrawn = false
 
     func flush() -> Bool {
       guard let command else { return numbers.isEmpty }
@@ -44,7 +44,7 @@ enum SVGPathParser {
             to: CGPoint(x: values[4], y: values[5]), control1: CGPoint(x: values[0], y: values[1]),
             control2: CGPoint(x: values[2], y: values[3]))
         }
-        drew = true
+        hasDrawn = true
       }
       numbers.removeAll(keepingCapacity: true)
       return true
@@ -80,7 +80,7 @@ enum SVGPathParser {
         command = character
       }
     }
-    guard takeNumber(), flush(), drew else { return nil }
+    guard takeNumber(), flush(), hasDrawn else { return nil }
     return path
   }
 

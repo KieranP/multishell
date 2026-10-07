@@ -79,11 +79,7 @@ struct AgentFlagsTests {
   /// TabCommandTests runs the flag path through real shells.
   @Test func aBranchNameCannotRunACommandOnEitherPath() {
     for hostile in ["$(touch /tmp/pwned)", "`touch /tmp/pwned`", "a;touch /tmp/pwned"] {
-      let worktree = Worktree(
-        path: URL(fileURLWithPath: "/repos/demo-worktrees/w"), projectID: project.id, head: "a",
-        branch: hostile)
-      let values = WorktreePlaceholder.values(
-        project: project, worktree: worktree, worktreeName: hostile)
+      let values = WorktreePlaceholder.sampleValues(branch: hostile)
 
       let flags = AgentFlags.arguments("--name={{branch}}", values: values)
       #expect(flags == ["--name=\(hostile)"], "one argument, expanded but not run")

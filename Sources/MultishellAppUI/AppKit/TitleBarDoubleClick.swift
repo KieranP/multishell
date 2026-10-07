@@ -1,3 +1,4 @@
+import MultishellAppCore
 import SwiftUI
 
 /// Makes a view respond to a double-click the way a title bar does, the
@@ -15,10 +16,11 @@ struct TitleBarDoubleClick: ViewModifier {
   static func perform(on window: NSWindow?) {
     guard let window else { return }
     // The key lives in the global domain, which `standard` searches.
-    switch UserDefaults.standard.string(forKey: "AppleActionOnDoubleClick") {
-    case "Minimize": window.miniaturize(nil)
-    case "None": break
-    default: window.zoom(nil)
+    let setting = UserDefaults.standard.string(forKey: "AppleActionOnDoubleClick")
+    switch TitleBarDoubleClickAction(systemSetting: setting) {
+    case .minimize: window.miniaturize(nil)
+    case .ignore: break
+    case .zoom: window.zoom(nil)
     }
   }
 }

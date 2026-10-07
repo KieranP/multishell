@@ -10,7 +10,7 @@ struct AppModelSeenTests {
   /// other pane keeps its Done, and its banner is still not raised.
   @Test func aDoneInAnUnfocusedPaneOfASplitStaysUntilThatPaneIsFocused() {
     let harness = Harness()
-    harness.model.setNotifications(.everyState)
+    harness.model.setNotificationPreference(.everyState)
     harness.model.select(harness.main)
     harness.model.splitActivePane(.horizontal)
     let tab = harness.model.workspace.activeTab(in: harness.main.id)!

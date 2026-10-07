@@ -55,6 +55,6 @@ extension WorktreeGit {
     let paths = NulPathListParser.parse(output, limit: UntrackedLineCounter.fileLimit)
     guard !paths.isEmpty else { return LineCounts() }
     let memo = readState.untrackedMemo
-    return await offMain { UntrackedLineCounter.count(paths: paths, in: path, memo: memo) }
+    return await runOnDispatch { UntrackedLineCounter.count(paths: paths, in: path, memo: memo) }
   }
 }

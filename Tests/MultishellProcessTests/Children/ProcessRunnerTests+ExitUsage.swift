@@ -8,7 +8,7 @@ extension ProcessRunnerTests {
     let probe = ExitUsageProbe()
     _ = try await runner.run(
       sh, ["-c", "i=0; while [ $i -lt 20000 ]; do i=$((i+1)); done"], in: workingDirectory,
-      exitUsage: probe)
+      exitUsageProbe: probe)
 
     let usage = try #require(probe.usage)
     #expect(usage.pid > 0)

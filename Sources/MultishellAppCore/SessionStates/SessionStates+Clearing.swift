@@ -19,7 +19,7 @@ extension SessionStates {
 
   /// The process a state was about has gone. Working and Waiting were claims
   /// about it and go; Done and Failed are about the user and stay.
-  mutating func processGone(_ pid: Int32) {
+  mutating func noteProcessGone(_ pid: Int32) {
     for (key, entry) in entries where entry.pid == pid {
       update(key) {
         if $0.state?.isFinished != true { $0.state = nil }

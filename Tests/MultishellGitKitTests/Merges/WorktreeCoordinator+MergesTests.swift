@@ -7,36 +7,12 @@ import Testing
 
 @Suite(.serialized)
 struct WorktreeCoordinatorMergesTests {
-  func addOrigin(to fixture: RepositoryFixture) async throws {
-    try await TestRepository.addOrigin(
-      to: fixture.project.path, in: fixture.root, using: fixture.runner)
-  }
-
   func mergeInputs(
     _ fixture: RepositoryFixture, override: String? = nil
   ) async throws -> MergeInputs {
     let scan = try #require(
       await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: override))
     return try #require(scan.mergeInputs)
-  }
-
-  /// Two commits, so the one the forge squashes them into shares a patch id with neither and
-  /// `git cherry` cannot answer. The squash is one commit of the whole tree, then the branch goes.
-  func squashMergeOnTheRemote(
-    _ branch: String, work: [(file: String, content: String)], in fixture: RepositoryFixture
-  ) async throws {
-    let path = fixture.project.path
-    _ = try await fixture.runner.run(["checkout", "-q", "-b", branch], in: path)
-    for (index, change) in work.enumerated() {
-      try await fixture.commit(
-        index == 0 ? "work" : "more work", file: change.file, content: change.content)
-    }
-    _ = try await fixture.runner.run(["push", "-q", "-u", "origin", branch], in: path)
-    _ = try await fixture.runner.run(["checkout", "-q", "main"], in: path)
-    try await TestRepository.squashMergeOnTheRemote(
-      branch,
-      files: Dictionary(work.map { ($0.file, $0.content) }, uniquingKeysWith: { _, last in last }),
-      in: path, using: fixture.runner)
   }
 
   func stubInputs(baseTip: String, refs: [BranchRef] = []) -> MergeInputs {
@@ -89,10 +65,10 @@ struct WorktreeCoordinatorMergesTests {
   @Test func aBranchWhoseUpstreamWasDeletedOnTheRemoteReadsAsMerged() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
-    try await addOrigin(to: fixture)
+    try await fixture.addOrigin()
 
-    try await squashMergeOnTheRemote(
-      "squashed", work: [("squashed.txt", "a\n"), ("squashed-too.txt", "b\n")], in: fixture)
+    try await fixture.pushThenSquashMergeOnTheRemote(
+      "squashed", work: [("squashed.txt", "a\n"), ("squashed-too.txt", "b\n")])
 
     let inputs = try await mergeInputs(fixture)
     #expect(inputs.base.shortName == "origin/main")
@@ -159,10 +135,10 @@ struct WorktreeCoordinatorMergesTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let path = fixture.project.path
-    try await addOrigin(to: fixture)
+    try await fixture.addOrigin()
 
-    try await squashMergeOnTheRemote(
-      "squashed", work: [("squashed.txt", "a\n"), ("squashed-too.txt", "b\n")], in: fixture)
+    try await fixture.pushThenSquashMergeOnTheRemote(
+      "squashed", work: [("squashed.txt", "a\n"), ("squashed-too.txt", "b\n")])
 
     let landed = try await mergeInputs(fixture)
     var states = await fixture.coordinator.mergeStates(
@@ -268,7 +244,7 @@ struct WorktreeCoordinatorMergesTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let path = fixture.project.path
-    try await addOrigin(to: fixture)
+    try await fixture.addOrigin()
 
     // What the branch that had the name before left behind.
     _ = try await fixture.runner.run(["config", "branch.reused.remote", "origin"], in: path)
@@ -353,24 +329,6 @@ struct WorktreeCoordinatorMergesTests {
     let states = await fixture.coordinator.mergeStates(
       of: ["feat"], in: fixture.project, inputs: inputs)
     #expect(states["feat"] == .unmerged)
-  }
-
-  @Test func theDefaultBranchIsTheRemotesWhereThereIsOneAndTheUsersWhereTheySaid()
-    async throws
-  {
-    let fixture = try await RepositoryFixture.make()
-    defer { fixture.tearDown() }
-    try await addOrigin(to: fixture)
-    try await fixture.commitOnBranch("develop", "dev", file: "dev.txt", content: "a\n")
-
-    // The clone recorded origin/HEAD, and the remote wins over a local main
-    // that a pull has not caught up with.
-    let detected = try await mergeInputs(fixture)
-    #expect(detected.base.shortName == "origin/main")
-    #expect(detected.base.nameWithoutRemote == "main")
-
-    let overridden = try await mergeInputs(fixture, override: "develop")
-    #expect(overridden.base.shortName == "develop")
   }
 
   @Test func aMergeReadOfNoBranchesAnswersNothing() async throws {

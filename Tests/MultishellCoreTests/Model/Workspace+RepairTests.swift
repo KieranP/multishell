@@ -110,11 +110,13 @@ struct WorkspaceRepairTests {
     let other = Worktree(
       path: URL(fileURLWithPath: "/repos/demo-b"), projectID: project.id, head: "b")
     workspace.worktrees.append(other)
-    workspace.worktreeNames = [worktree.id: "Checkout", other.id: "  ", "/repos/nowhere": "Ghost"]
+    workspace.customWorktreeNames = [
+      worktree.id: "Checkout", other.id: "  ", "/repos/nowhere": "Ghost",
+    ]
 
     workspace.repairReferences()
 
-    #expect(workspace.worktreeNames == [worktree.id: "Checkout"])
+    #expect(workspace.customWorktreeNames == [worktree.id: "Checkout"])
   }
 
   /// The store writes a session's worktree with its tab's, so a file where they disagree was
@@ -230,8 +232,8 @@ struct WorkspaceRepairTests {
       { $0.focusedGroupByWorktree["/nowhere"] = $0.tabGroups[0].id },
       Self.ungroupEveryTab,
       { $0.selectedWorktreeID = "/nowhere" },
-      { $0.worktreeNames["/nowhere"] = "Ghost" },
-      { $0.worktreeNames[$0.worktrees[0].id] = "  " },
+      { $0.customWorktreeNames["/nowhere"] = "Ghost" },
+      { $0.customWorktreeNames[$0.worktrees[0].id] = "  " },
       {
         $0.worktrees.append(
           Worktree(path: URL(fileURLWithPath: "/x"), projectID: "/gone", head: "h"))

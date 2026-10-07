@@ -9,7 +9,7 @@ extension AccessibilityText {
   public static func card(_ card: AgentBoardCard, at now: Date) -> String {
     var parts = [(card.state ?? .idle).displayName]
     parts.append(t("spoken.named", card.projectName, card.worktreeName))
-    if let status = card.status, !status.isCleanAndInSync { parts.append(status.summary) }
+    if let status = WorktreeStatus.badged(card.status) { parts.append(status.summary) }
     parts.append(card.title)
     parts.append(
       t(

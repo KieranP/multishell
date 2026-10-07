@@ -16,18 +16,18 @@ public struct ProcessRunner: Sendable {
     environment: [String: String] = [:],
     timeout: Duration? = nil,
     stopper: ProcessStopper? = nil,
-    exitUsage: ExitUsageProbe? = nil
+    exitUsageProbe: ExitUsageProbe? = nil
   ) async throws -> String {
     let output = try await capture(
       executable, arguments, in: directory, environment: environment, timeout: timeout,
-      stopper: stopper, exitUsage: exitUsage)
+      stopper: stopper, exitUsageProbe: exitUsageProbe)
     guard output.succeeded else {
       throw ProcessFailure(
         executable: executable.lastPathComponent,
         arguments: arguments,
         status: output.status,
         message: output.standardError.trimmingCharacters(in: .whitespacesAndNewlines),
-        stop: output.stop
+        stopReason: output.stopReason
       )
     }
     return output.standardOutput
@@ -42,7 +42,7 @@ public struct ProcessRunner: Sendable {
     environment: [String: String] = [:],
     timeout: Duration? = nil,
     stopper: ProcessStopper? = nil,
-    exitUsage: ExitUsageProbe? = nil
+    exitUsageProbe: ExitUsageProbe? = nil
   ) async throws -> ProcessOutput {
     let stopper = stopper ?? ProcessStopper()
     let nullInput = try NullDevice()
@@ -71,7 +71,7 @@ public struct ProcessRunner: Sendable {
         // Marked before Subprocess reaps it, so no stop signals a reused pid.
         await child.waitForExit()
         // A zombie still, Subprocess reaping it only once this returns.
-        exitUsage?.record(KernelResourceUsage.exitUsage(of: pid))
+        exitUsageProbe?.record(KernelResourceUsage.exitUsage(of: pid))
         child.markExited()
       }
     } catch {
@@ -89,7 +89,7 @@ public struct ProcessRunner: Sendable {
       standardOutput: String(decoding: standardOutput.collected, as: UTF8.self),
       standardError: String(decoding: standardError.collected, as: UTF8.self),
       status: status,
-      stop: stopper.appliedStop
+      stopReason: stopper.appliedStop
     )
   }
 

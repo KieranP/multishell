@@ -22,10 +22,10 @@ public struct Worker: Identifiable, Equatable, Sendable {
   var awaitsStart = false
   /// On the roster when a Stop was held for it, so a background worker and
   /// not one an interrupt could have killed without a word.
-  var outAtStop = false
+  var wasOutAtStop = false
   /// Reported since the last held Stop, so a Stop that finds it silent does
   /// not vouch for it: its end may have been lost.
-  var heardSinceStop = true
+  var wasHeardSinceStop = true
 
   var isBackgroundShell: Bool { pid != nil || isListedShell }
 

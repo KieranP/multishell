@@ -12,8 +12,6 @@ public final class GitRunLog: Sendable {
 
   private let state = Mutex(State())
 
-  init() {}
-
   /// Turning it off drops what was kept. The running count stays, the runs
   /// already started still finishing into it.
   public func setRecording(_ isRecording: Bool) {

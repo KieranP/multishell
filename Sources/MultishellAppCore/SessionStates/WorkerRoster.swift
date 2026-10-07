@@ -48,12 +48,12 @@ struct WorkerRoster: Equatable, Sendable {
       guard let index = workers.firstIndex(where: { $0.id == id }) else {
         guard overflowed[id] != nil else { return add(Worker(id: id, type: report.type)) }
         if report.phase == .started { _ = addToOverflow(id) }
-        if let overflow = overflowIndex { workers[overflow].heardSinceStop = true }
+        if let overflow = overflowIndex { workers[overflow].wasHeardSinceStop = true }
         return overflowPlace
       }
       // A tool call from one already out says nothing; a second start under
       // its id is a second worker an agent named without an id.
-      workers[index].heardSinceStop = true
+      workers[index].wasHeardSinceStop = true
       if report.phase == .started, workers[index].awaitsStart {
         workers[index].awaitsStart = false
         if let type = report.type { workers[index].type = type }
@@ -106,10 +106,10 @@ struct WorkerRoster: Equatable, Sendable {
   }
 
   /// One place per pid, however many Stops name it.
-  mutating func keepShells(_ pids: [Int32]) {
+  mutating func recordShells(_ pids: [Int32]) {
     // A Stop that finds one still running has heard from it.
     for index in workers.indices where workers[index].pid.map(pids.contains) == true {
-      workers[index].heardSinceStop = true
+      workers[index].wasHeardSinceStop = true
     }
     var kept = Set(workers.compactMap(\.pid))
     for pid in pids where kept.insert(pid).inserted {
@@ -128,7 +128,7 @@ struct WorkerRoster: Equatable, Sendable {
     }.map(\.id)
     workers.removeAll { gone.contains($0.id) }
     for index in workers.indices where listed.contains(workers[index].id) {
-      workers[index].heardSinceStop = true
+      workers[index].wasHeardSinceStop = true
     }
     let overflowedGone = overflowed.keys.filter { !listed.contains($0) }
     for id in overflowedGone { forget(id) }
@@ -138,15 +138,15 @@ struct WorkerRoster: Equatable, Sendable {
       listedWorker.awaitsStart = worker.isBackgroundShell != true
       add(listedWorker)
     }
-    keepShells(shells)
+    recordShells(shells)
     return gone + overflowedGone
   }
 
   /// A Stop vouches only for workers heard from since the last one.
   mutating func markOutAtStop() {
     for index in workers.indices {
-      workers[index].outAtStop = workers[index].heardSinceStop
-      workers[index].heardSinceStop = false
+      workers[index].wasOutAtStop = workers[index].wasHeardSinceStop
+      workers[index].wasHeardSinceStop = false
     }
   }
 
@@ -154,7 +154,7 @@ struct WorkerRoster: Equatable, Sendable {
   /// overflowed ones with the overflow place that stands for them.
   func keepingOutAtStop() -> WorkerRoster {
     var kept = WorkerRoster()
-    kept.workers = workers.filter(\.outAtStop)
+    kept.workers = workers.filter(\.wasOutAtStop)
     if kept.workers.contains(where: { $0.id == Worker.overflowID }) {
       kept.overflowed = overflowed
     }

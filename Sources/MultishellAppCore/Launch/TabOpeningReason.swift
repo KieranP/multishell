@@ -1,6 +1,6 @@
 /// Why a tab is opening, and so which pair of settings decides whether it
 /// opens and whether it runs the agent. A create is asked apart throughout.
-public enum TabOpeningReason: Sendable {
+enum TabOpeningReason: Sendable {
   /// New Tab, or a menu item that opens one: the tab was asked for, so it
   /// opens whatever the settings say.
   case byUser

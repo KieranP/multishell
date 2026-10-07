@@ -7,8 +7,7 @@ import SwiftUI
 struct WeightedSplit<Content: View>: View {
   let axis: SplitAxis
   let weights: [Double]
-  let dividerColor: Color
-  let gutterColor: Color
+  let theme: Theme
   let onWeightsChange: ([Double]) -> Void
   @ViewBuilder let content: () -> Content
 
@@ -29,11 +28,8 @@ struct WeightedSplit<Content: View>: View {
 
   private func layout(sizes: [CGFloat], available: CGFloat) -> some View {
     Group(subviews: content()) { subviews in
-      SplitStack(
-        subviews: subviews, axis: axis, sizes: sizes, dividerColor: dividerColor,
-        gutterColor: gutterColor,
-        thickness: CGFloat(UIMetrics.splitDividerThickness)
-      ) { index, translation in
+      SplitStack(subviews: subviews, axis: axis, sizes: sizes, theme: theme) {
+        index, translation in
         resize(dividerAfter: index, by: translation, available: available)
       } onDragEnded: {
         if let moved = drag.end(over: weights) { onWeightsChange(moved) }

@@ -38,7 +38,7 @@ struct NewTabMenu: View {
   /// Painted as well as shaped: a menu is hit-tested by what its label draws,
   /// so a clear frame around the glyphs would miss.
   private var newTabLabel: some View {
-    HStack(spacing: model.metrics.menuChevronGap) {
+    HStack(spacing: UIMetrics.menuChevronGap) {
       Image(systemName: "plus")
         .font(.system(size: model.metrics.icon, weight: .medium))
       Image(systemName: "chevron.down")

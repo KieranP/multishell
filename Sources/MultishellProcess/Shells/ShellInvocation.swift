@@ -5,11 +5,6 @@ public struct ShellInvocation: Equatable, Sendable {
   public let executable: URL
   public let arguments: [String]
 
-  init(executable: URL, arguments: [String]) {
-    self.executable = executable
-    self.arguments = arguments
-  }
-
   /// Shells known to take `-l -i -c`. Another one (nu, xonsh, elvish) would
   /// fail on the flags, so it gets `/bin/sh` instead.
   static let interactiveLoginShells: Set<String> = [

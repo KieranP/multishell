@@ -23,11 +23,4 @@ public enum ProcessAncestry {
     return current
   }
 
-  /// The process's children whose command line holds `marker`, which is how
-  /// an agent's own shells are told from its MCP servers.
-  public static func children(of pid: Int32, whoseArgumentsContain marker: String) -> [Int32] {
-    KernelProcessTable.children(of: pid).filter {
-      KernelProcessTable.commandLine(of: $0)?.contains(marker) == true
-    }
-  }
 }

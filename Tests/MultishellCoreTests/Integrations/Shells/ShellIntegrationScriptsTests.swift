@@ -119,8 +119,8 @@ struct ShellIntegrationScriptsTests {
     (try? String(contentsOfFile: "/etc/zshrc", encoding: .utf8))?.contains("HISTFILE=") == true
   }
 
-  @Test func aTabsHistoryGoesWhereTheUsersOwnShellWouldPutIt() async throws {
-    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
+  func aTabsHistoryGoesWhereTheUsersOwnShellWouldPutIt() async throws {
     let plain = try await historyFile()
     defer { plain.integration.tearDown() }
     #expect(!plain.file.hasPrefix(plain.integration.zshDirectory.path), "\(plain.file)")

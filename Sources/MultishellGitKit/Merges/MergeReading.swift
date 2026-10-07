@@ -5,5 +5,5 @@ import MultishellCore
 public struct MergeReading: Sendable {
   /// `nil` where a read failed: no verdict, but its cost still counts.
   public let state: WorktreeMergeState?
-  public let took: Duration
+  public let duration: Duration
 }

@@ -1,5 +1,6 @@
 @testable import MultishellCore
 
 extension NotificationPreference {
-  static let everyState = NotificationPreference(attention: true, failed: true, done: true)
+  static let everyState = NotificationPreference(
+    notifiesOnAttention: true, notifiesOnFailure: true, notifiesOnDone: true)
 }

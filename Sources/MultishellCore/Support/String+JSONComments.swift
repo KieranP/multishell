@@ -1,6 +1,6 @@
 extension String {
-  /// `//` and `/* */` comments taken stripped, only outside strings, where a URL's
-  /// `//` is text.
+  /// The text with `//` and `/* */` comments stripped, outside strings only,
+  /// where a URL's `//` is text.
   var withoutJSONComments: String {
     var stripped = ""
     var characters = makeIterator()

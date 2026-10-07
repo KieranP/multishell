@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellCore
@@ -6,9 +7,9 @@ import Testing
 /// What the generated files have to survive: the user's own startup files,
 /// which they source before adding anything of their own.
 extension ShellIntegrationScriptsTests {
-  @Test func aRealBashKeepsWhatTheUsersOwnStartupFilesSetUp() async throws {
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/bash")))
+  func aRealBashKeepsWhatTheUsersOwnStartupFilesSetUp() async throws {
     let bash = "/bin/bash"
-    guard FileManager.default.isExecutableFile(atPath: bash) else { return }
     let files = try GeneratedIntegration(helper: "/bin/echo")
     defer { files.tearDown() }
     // A trailing `;` composed to `;;`, which bash refuses, and a bare
@@ -41,7 +42,8 @@ extension ShellIntegrationScriptsTests {
 
   /// A terminal may leave `TERM_PROGRAM` unset. Under `nounset`, reading it makes zsh
   /// print an error at every startup and bash abandon the init file, hooks and all.
-  @Test func aShellRunWithNounsetIsNotTrippedByTheTerminalItIsNotIn() async throws {
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/bash")))
+  func aShellRunWithNounsetIsNotTrippedByTheTerminalItIsNotIn() async throws {
     let files = try GeneratedIntegration(helper: "/bin/echo")
     defer { files.tearDown() }
     var environment = files.environment(termProgram: nil)
@@ -55,7 +57,6 @@ extension ShellIntegrationScriptsTests {
       environment["ZDOTDIR"] = nil
     }
 
-    guard FileManager.default.isExecutableFile(atPath: "/bin/bash") else { return }
     try files.writeHomeFile(".bashrc", "set -u\n")
     environment[SessionEnvironment.sessionVariable] = "nounset"
     let output = try await interactiveShellOutput(

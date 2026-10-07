@@ -54,7 +54,7 @@ struct WorkspaceRetiredAgentsTests {
     defer { Scratch.remove(file.deletingLastPathComponent()) }
     var workspace = Workspace()
     workspace.preferredAgentID = "aider"
-    let stateFile = WorkspaceFile(fileURL: file)
+    let stateFile = StateFile(fileURL: file)
     try stateFile.save(workspace)
 
     let restored = WorkspaceStore.restored(from: stateFile)

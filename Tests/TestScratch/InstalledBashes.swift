@@ -4,8 +4,9 @@ import Foundation
 public enum InstalledBashes {
   static let system = "/bin/bash"
 
-  public static let all = [system, "/opt/homebrew/bin/bash", "/usr/local/bin/bash"]
-    .filter { FileManager.default.isExecutableFile(atPath: $0) }
+  public static let all = InstalledShells.only([
+    system, "/opt/homebrew/bin/bash", "/usr/local/bin/bash",
+  ])
 
   public static var newer: String? { all.first { $0 != system } }
 }

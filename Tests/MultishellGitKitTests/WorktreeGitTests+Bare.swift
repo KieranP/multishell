@@ -13,7 +13,8 @@ extension WorktreeGitTests {
     #expect(await fixture.coordinator.git.isRepository(checkout))
     #expect(await fixture.coordinator.git.isRepository(fixture.root) == false)
     #expect(
-      try await fixture.coordinator.git.mainWorktree(containing: checkout) == fixture.project.path)
+      try await fixture.coordinator.git.mainWorktreePath(containing: checkout)
+        == fixture.project.path)
     #expect(fixture.project.name == "repo")
   }
 
@@ -36,12 +37,12 @@ extension WorktreeGitTests {
     #expect(await fixture.coordinator.git.hasCommits(fixture.project))
     #expect(try await fixture.coordinator.git.currentBranch(fixture.project) == "main")
 
-    let path = try await fixture.coordinator.createThenRunPostCreate(
+    let path = try await fixture.coordinator.createThenRunPostCreateHook(
       branch: "feat", in: fixture.project, settings: fixture.worktreeSettings)
     #expect(path.path.hasSuffix("/trees/feat"))
     let created = try await fixture.worktree(onBranch: "feat")
     try await fixture.coordinator.removeUnlinking(
-      created, deletingBranch: true, in: fixture.project)
+      created, deletesBranch: true, in: fixture.project)
     #expect(try await fixture.coordinator.git.list(fixture.project).count == 2)
     #expect(try await fixture.branches() == ["main"])
   }

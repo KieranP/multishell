@@ -36,8 +36,7 @@ struct PaneTreeView: View {
       WeightedSplit(
         axis: axis,
         weights: weights,
-        dividerColor: theme.hairline,
-        gutterColor: theme.chromeColor,
+        theme: theme,
         onWeightsChange: { model.setSplitWeights($0, at: path, ofTab: tabID) },
         content: {
           ForEach(children.indices, id: \.self) { index in

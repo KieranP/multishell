@@ -1,6 +1,5 @@
 import SwiftUI
 
-/// Label text with its (i) beside it.
 struct InfoLabel: View {
   let text: String
   let info: String

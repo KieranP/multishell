@@ -12,9 +12,6 @@ struct DraggableTab: View {
   /// Whether this group takes the keystrokes. Only its active tab reads at
   /// full strength; another group's still fills, being on screen.
   let isFocusedGroup: Bool
-  /// Whether the group has another tab, so this one leaving it would be a
-  /// move rather than the same layout under a new id.
-  let canLeaveGroup: Bool
   /// Whether the tab in the air is this group's, so it moves as the pointer
   /// goes. One from another group has not moved, and the line says where.
   let isShuffling: Bool
@@ -26,8 +23,7 @@ struct DraggableTab: View {
 
   var body: some View {
     TabFace(
-      model: model, group: group, tab: tab, isFocusedGroup: isFocusedGroup,
-      canLeaveGroup: canLeaveGroup, theme: theme
+      model: model, group: group, tab: tab, isFocusedGroup: isFocusedGroup, theme: theme
     )
     .opacity(Self.opacity(drag.look(of: tab.id, isShuffling: isShuffling)))
     .frame(width: width)
@@ -90,8 +86,7 @@ struct DraggableTab: View {
 extension DraggableTab: @MainActor Equatable {
   static func == (a: DraggableTab, b: DraggableTab) -> Bool {
     a.model === b.model && a.group == b.group && a.tab == b.tab
-      && a.isFocusedGroup == b.isFocusedGroup
-      && a.canLeaveGroup == b.canLeaveGroup && a.isShuffling == b.isShuffling
+      && a.isFocusedGroup == b.isFocusedGroup && a.isShuffling == b.isShuffling
       && a.width == b.width && a.theme == b.theme && a.drag == b.drag
   }
 }

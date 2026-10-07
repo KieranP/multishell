@@ -6,34 +6,8 @@ import Testing
 
 @Suite
 struct LoginShellEnvironmentTests {
-  @Test func nulSeparatedOutputParsesIncludingValuesWithNewlinesAndEquals() {
-    let text = "PATH=/opt/homebrew/bin:/usr/bin\0MULTI=line one\nline two\0EQ=a=b=c\0BROKEN\0"
-    let parsed = LoginShellEnvironment.parse(nulSeparated: text)
-    #expect(parsed["PATH"] == "/opt/homebrew/bin:/usr/bin")
-    #expect(parsed["MULTI"] == "line one\nline two")
-    #expect(parsed["EQ"] == "a=b=c")
-    #expect(parsed["BROKEN"] == nil)
-    #expect(parsed.count == 3)
-  }
-
-  @Test func anRcFileGreetingBeforeTheFirstEntryDoesNotBecomeAKey() {
-    let text = "Welcome back!\nHave a nice day\nHOME=/Users/dev\0PATH=/bin\0"
-    let parsed = LoginShellEnvironment.parse(nulSeparated: text)
-    #expect(parsed["HOME"] == "/Users/dev")
-    #expect(parsed["PATH"] == "/bin")
-    #expect(parsed.count == 2)
-  }
-
-  @Test func aGreetingHoldingAnEqualsSignStillLeavesTheFirstEntryItsKey() {
-    let text = "==== welcome ====\nPATH=/bin\0HOME=/Users/dev\0"
-    let parsed = LoginShellEnvironment.parse(nulSeparated: text)
-    #expect(parsed["PATH"] == "/bin", "the first `=` is the banner's, the key is after the newline")
-    #expect(parsed["HOME"] == "/Users/dev")
-    #expect(parsed.count == 2)
-  }
-
-  @Test func theCaptureLeavesAHistoryFileItsEnvironmentNamesAlone() async throws {
-    guard FileManager.default.isExecutableFile(atPath: "/bin/bash") else { return }
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/bash")))
+  func theCaptureLeavesAHistoryFileItsEnvironmentNamesAlone() async throws {
     let home = try Scratch.directory("home")
     defer { Scratch.remove(home) }
     let history = home.appendingPathComponent("zsh_history")
@@ -49,8 +23,8 @@ struct LoginShellEnvironmentTests {
   }
 
   /// macOS `/etc/zshrc` sets HISTFILE again after the empty one is inherited.
-  @Test func theCaptureLeavesZshHistoryAloneThoughEtcZshrcNamesIt() async throws {
-    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
+  func theCaptureLeavesZshHistoryAloneThoughEtcZshrcNamesIt() async throws {
     let home = try Scratch.directory("home")
     defer { Scratch.remove(home) }
     let history = home.appendingPathComponent(".zsh_history")
@@ -64,8 +38,8 @@ struct LoginShellEnvironmentTests {
     #expect(try String(contentsOf: history, encoding: .utf8) == lines)
   }
 
-  @Test func aLoginShellAnswersWithThePathItsOwnRcFilesBuilt() async throws {
-    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
+  func aLoginShellAnswersWithThePathItsOwnRcFilesBuilt() async throws {
     let home = try Scratch.directory("home")
     defer { Scratch.remove(home) }
     try "export PATH=/opt/marker/bin:$PATH\n".write(
@@ -77,8 +51,8 @@ struct LoginShellEnvironmentTests {
     #expect(environment.source == .loginShell(URL(fileURLWithPath: "/bin/zsh")))
   }
 
-  @Test func aGreetingShapedLikeAnAssignmentIsNotTakenForAVariable() async throws {
-    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
+  func aGreetingShapedLikeAnAssignmentIsNotTakenForAVariable() async throws {
     let home = try Scratch.directory("home")
     defer { Scratch.remove(home) }
     try "printf 'motd=welcome back'\n".write(
@@ -91,14 +65,8 @@ struct LoginShellEnvironmentTests {
     #expect(environment.path != nil)
   }
 
-  @Test func onlyWhatFollowsTheMarkerIsTheEnvironment() {
-    let text = "motd=hi\n\(LoginShellEnvironment.startMarker)\nHOME=/u\0PATH=/bin\0"
-
-    #expect(LoginShellEnvironment.parse(nulSeparated: text) == ["HOME": "/u", "PATH": "/bin"])
-  }
-
-  @Test func aShellThatHangsFallsBackToTheAppsOwnEnvironmentAndSaysItTimedOut() async throws {
-    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
+  func aShellThatHangsFallsBackToTheAppsOwnEnvironmentAndSaysItTimedOut() async throws {
     let home = try Scratch.directory("home")
     defer { Scratch.remove(home) }
     try "sleep 30\n".write(

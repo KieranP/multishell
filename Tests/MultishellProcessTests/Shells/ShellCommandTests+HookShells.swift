@@ -7,8 +7,8 @@ import Testing
 extension ShellCommandTests {
   /// Hooks must see the PATH a terminal sees: a login, interactive shell
   /// reads its rc files, each of which exports a marker under this home.
-  @Test func aHookRunsInAnInteractiveLoginShellThatReadsItsRcFiles() async throws {
-    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
+  func aHookRunsInAnInteractiveLoginShellThatReadsItsRcFiles() async throws {
     let shell = try ScratchShell()
     defer { shell.tearDown() }
     let home = shell.home
@@ -27,8 +27,8 @@ extension ShellCommandTests {
     #expect(out == "zshrc", ".zprofile then .zshrc, as a login interactive zsh reads them")
   }
 
-  @Test func aHookRunsInItsDirectoryWhereverTheRcFilesLeftTheShell() async throws {
-    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
+  func aHookRunsInItsDirectoryWhereverTheRcFilesLeftTheShell() async throws {
     let shell = try ScratchShell()
     defer { shell.tearDown() }
     let home = shell.home
@@ -45,8 +45,8 @@ extension ShellCommandTests {
     #expect(out.trimmingCharacters(in: .newlines) == expected)
   }
 
-  @Test func aChpwdHooksStderrIsNotTakenForTheFailingHooksMessage() async throws {
-    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
+  func aChpwdHooksStderrIsNotTakenForTheFailingHooksMessage() async throws {
     let shell = try ScratchShell()
     defer { shell.tearDown() }
     let home = shell.home
@@ -62,8 +62,8 @@ extension ShellCommandTests {
     #expect(failure?.message == "hook failed")
   }
 
-  @Test func aChpwdHookWithAFailingCommandDoesNotEndTheHook() async throws {
-    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
+  func aChpwdHookWithAFailingCommandDoesNotEndTheHook() async throws {
     let shell = try ScratchShell()
     defer { shell.tearDown() }
     let home = shell.home
@@ -77,9 +77,8 @@ extension ShellCommandTests {
     #expect(out == "ran")
   }
 
-  @Test(arguments: [("/bin/zsh", ".zshrc"), ("/bin/tcsh", ".tcshrc")])
+  @Test(arguments: InstalledShells.only([("/bin/zsh", ".zshrc"), ("/bin/tcsh", ".tcshrc")]))
   func aWorktreeThatCannotBeEnteredRunsNothing(shell: String, rcFile: String) async throws {
-    guard FileManager.default.isExecutableFile(atPath: shell) else { return }
     let scratchShell = try ScratchShell(shell)
     defer { scratchShell.tearDown() }
     let home = scratchShell.home
@@ -97,9 +96,8 @@ extension ShellCommandTests {
     #expect(!FileManager.default.fileExists(atPath: marker.path))
   }
 
-  @Test(arguments: ["/bin/zsh", "/bin/bash", "/bin/sh", "/bin/tcsh"])
+  @Test(arguments: InstalledShells.only(["/bin/zsh", "/bin/bash", "/bin/sh", "/bin/tcsh"]))
   func aWorktreePathWithAnyPunctuationIsEnteredByEveryShell(shell: String) async throws {
-    guard FileManager.default.isExecutableFile(atPath: shell) else { return }
     let scratchShell = try ScratchShell(shell)
     defer { scratchShell.tearDown() }
     let home = scratchShell.home
@@ -116,9 +114,8 @@ extension ShellCommandTests {
     #expect(out.trimmingCharacters(in: .newlines).hasSuffix(worktree.lastPathComponent))
   }
 
-  @Test(arguments: ["/bin/bash", "/bin/sh", "/bin/ksh"])
+  @Test(arguments: InstalledShells.only(["/bin/bash", "/bin/sh", "/bin/ksh"]))
   func aHookLeavesAHistoryFileTheEnvironmentNamesAlone(shell: String) async throws {
-    guard FileManager.default.isExecutableFile(atPath: shell) else { return }
     let scratchShell = try ScratchShell(shell)
     defer { scratchShell.tearDown() }
     let home = scratchShell.home
@@ -137,9 +134,10 @@ extension ShellCommandTests {
     #expect(try String(contentsOf: history, encoding: .utf8) == lines)
   }
 
-  @Test(arguments: ["/bin/zsh", "/bin/bash", "/bin/sh", "/bin/tcsh"] + fishPaths)
+  @Test(
+    arguments: InstalledShells.only(
+      ["/bin/zsh", "/bin/bash", "/bin/sh", "/bin/tcsh"] + InstalledShells.fishCandidates))
   func aScriptStopsAtItsFirstFailingLineWhateverTheLoginShell(path: String) async throws {
-    guard FileManager.default.isExecutableFile(atPath: path) else { return }
     let shell = try ScratchShell(path)
     defer { shell.tearDown() }
     let scriptDirectory = try Scratch.directory("script")
@@ -164,11 +162,9 @@ extension ShellCommandTests {
     #expect(out == "ab", "a sound script runs every line")
   }
 
-  static let fishPaths = ["/opt/homebrew/bin/fish", "/usr/local/bin/fish"]
-
-  @Test(arguments: ["/bin/zsh", "/bin/tcsh"] + fishPaths)
+  @Test(
+    arguments: InstalledShells.only(["/bin/zsh", "/bin/tcsh"] + InstalledShells.fishCandidates))
   func aScriptIsReadAsShWhateverTheLoginShell(path: String) async throws {
-    guard FileManager.default.isExecutableFile(atPath: path) else { return }
     let shell = try ScratchShell(path)
     defer { shell.tearDown() }
 
@@ -179,8 +175,8 @@ extension ShellCommandTests {
     #expect(out == "ab")
   }
 
-  @Test func aVariableATcshRcFileSetsReachesTheScript() async throws {
-    guard FileManager.default.isExecutableFile(atPath: "/bin/tcsh") else { return }
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/tcsh")))
+  func aVariableATcshRcFileSetsReachesTheScript() async throws {
     let shell = try ScratchShell("/bin/tcsh")
     defer { shell.tearDown() }
     try "setenv MULTISHELL_RC tcshrc\n".write(

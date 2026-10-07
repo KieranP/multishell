@@ -16,7 +16,7 @@ struct StatusReadLog: Sendable {
 
   /// Whether this worktree is due a read, by what the last one cost.
   func isDue(_ id: Worktree.ID, at now: ContinuousClock.Instant) -> Bool {
-    pace.isDue(lastRead: reads[id]?.at, took: reads[id]?.took, at: now)
+    pace.isDue(lastRead: reads[id]?.at, duration: reads[id]?.duration, at: now)
   }
 
   /// A read's cost, kept so the poll can leave a slow checkout alone for a

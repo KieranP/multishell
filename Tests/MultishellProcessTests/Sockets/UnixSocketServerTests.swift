@@ -82,8 +82,8 @@ struct UnixSocketServerTests {
 
   /// So the claim decides: a socket file beside a claim another process holds has a live
   /// owner, whatever the connect said, and taking it would leave that owner deaf for good.
-  @Test func aSocketWhoseClaimAnotherProcessHoldsIsNotTakenOver() throws {
-    guard FileManager.default.isExecutableFile(atPath: "/usr/bin/python3") else { return }
+  @Test(.enabled(if: InstalledShells.isInstalled("/usr/bin/python3")))
+  func aSocketWhoseClaimAnotherProcessHoldsIsNotTakenOver() throws {
     let path = Scratch.socketPath("srv")
     let server = UnixSocketServer(path: path)
     defer {
@@ -177,8 +177,8 @@ struct UnixSocketServerTests {
 
   /// The probe finds this instance answering, and letting the claim go on that would leave
   /// the socket unguarded while the listener kept accepting.
-  @Test func startingALiveServerAgainKeepsItsClaim() async throws {
-    guard FileManager.default.isExecutableFile(atPath: "/usr/bin/python3") else { return }
+  @Test(.enabled(if: InstalledShells.isInstalled("/usr/bin/python3")))
+  func startingALiveServerAgainKeepsItsClaim() async throws {
     let path = Scratch.socketPath("srv")
     let server = UnixSocketServer(path: path)
     defer {

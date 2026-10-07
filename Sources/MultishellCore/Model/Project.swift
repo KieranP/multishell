@@ -11,7 +11,7 @@ public struct Project: Identifiable, Codable, Hashable, Sendable {
   public var settings: ProjectSettings
   /// What the repository's `.multishell.json` said when last read; see
   /// settings.md.
-  public internal(set) var sharedSettings: SharedSettingsSnapshot = .unread
+  public internal(set) var sharedSettingsSnapshot: SharedSettingsSnapshot = .unread
 
   public var id: String { path.path }
 
@@ -32,7 +32,7 @@ public struct Project: Identifiable, Codable, Hashable, Sendable {
     self.settings = settings
   }
 
-  /// `sharedSettings` is this run's read of a file, so it is neither written
+  /// `sharedSettingsSnapshot` is this run's read of a file, so it is neither written
   /// nor compared: a restored one would trust a file nobody looked at.
   enum CodingKeys: String, CodingKey {
     case path, isExpanded, settings

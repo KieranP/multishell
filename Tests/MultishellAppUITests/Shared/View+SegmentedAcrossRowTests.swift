@@ -10,14 +10,14 @@ struct ViewSegmentedAcrossRowTests {
   @Test func theSettingsSplitPagePickersSpanTheirPage() {
     let harness = ModelHarness()
     let pages: [(String, AnyView)] = [
-      ("Agents", AnyView(AgentsSettingsPage(model: harness.model, part: .agent))),
+      ("Agents", AnyView(AppAgentsPage(model: harness.model, part: .agent))),
       (
         "Project Hooks",
         AnyView(ProjectHooksPage(model: harness.model, project: harness.project, part: .create))
       ),
     ]
     for (name, page) in pages {
-      let width = SettingsWindowSize.fixed.width
+      let width = UIMetrics.settingsWindowSize.width
       let widths = OffscreenHost.read(
         page, atWidth: width, windowSize: CGSize(width: width, height: 600)
       ) { $0.descendants(of: NSSegmentedControl.self).map(\.frame.width) }

@@ -15,11 +15,12 @@ public struct PresentedError: Identifiable {
   var isRetryable: Bool { retry != nil }
   /// The launch alert about a missing git, which finding git on the login
   /// shell's PATH takes down; nothing else is dismissed by the model.
-  private(set) var saysGitIsMissing = false
+  let saysGitIsMissing: Bool
 
   init(title: String, message: String) {
     self.title = title
     self.message = message
+    saysGitIsMissing = false
   }
 
   init(_ error: any Error) {
@@ -44,7 +45,7 @@ public struct PresentedError: Identifiable {
     if let failure = error as? DescriptorUnavailable { return Self.descriptorMessage(failure) }
     if let failure = error as? ProcessFailure {
       let ending =
-        switch failure.stop {
+        switch failure.stopReason {
         case .none: t("error.exited-with-status", failure.status)
         case .timedOut(let after): t("hook.stopped-after-seconds", Self.seconds(after))
         case .byUser: t("error.stopped-by-you")

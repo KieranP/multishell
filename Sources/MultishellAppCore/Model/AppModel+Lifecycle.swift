@@ -10,7 +10,7 @@ extension AppModel {
     presentingFailure { try refreshAppLaunchFiles(platform.bundledHelper) }
     // All that bounds the drops directory; no terminal waits on it.
     let sweep = sweepPromisedDropCopies
-    Task { await offMain(sweep) }
+    Task { await runOnDispatch(sweep) }
     await refreshAll()
     reconcileSessions(takingFocus: true)
     startStatusPolling()

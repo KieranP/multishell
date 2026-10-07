@@ -37,10 +37,7 @@ extension AppModel {
   public func shuffleTab(
     _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, past anchor: TerminalTab.ID
   ) {
-    guard
-      let moving = workspace.tab(id), let anchorTab = workspace.tab(anchor),
-      moving.groupID == anchorTab.groupID
-    else { return }
+    guard workspace.sharedGroup(of: id, and: anchor) != nil else { return }
     // `moveTab` is what drops the moves that would change nothing, which is
     // most of the ones a drag asks for.
     moveTab(id, placement, anchor: anchor)

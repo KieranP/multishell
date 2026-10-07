@@ -5,7 +5,8 @@ import Testing
 
 struct NotificationPreferenceTests {
   @Test func eachNotifiedStateIsAskedForOnItsOwnAndRunningNeverBanners() {
-    let all = NotificationPreference(attention: true, failed: true, done: true)
+    let all = NotificationPreference(
+      notifiesOnAttention: true, notifiesOnFailure: true, notifiesOnDone: true)
     #expect(!all[.running], "a banner per tool call would be noise")
     #expect(!all[.idle])
     #expect(NotificationPreference.notifiableStates == [.attention, .failed, .done])
@@ -26,25 +27,27 @@ struct NotificationPreferenceTests {
       Workspace.self,
       #"{ "notifications": "whisper", "preferredAgentID": "future-agent", "projects": [ { "path": "file:///repos/demo/" } ] }"#
     )
-    #expect(workspace.notifications == .off)
+    #expect(workspace.notificationPreference == .off)
     #expect(workspace.preferredAgentID == "future-agent", "an unknown agent id is kept as text")
     #expect(workspace.projects.count == 1)
 
     let partial = try decodeJSON(
       NotificationPreference.self, #"{ "done": true, "whisper": true, "error": "yes" }"#)
     #expect(
-      partial == NotificationPreference(done: true),
+      partial == NotificationPreference(notifiesOnDone: true),
       "a state this build has not got is not one, and a bad value costs its own toggle")
   }
 
   @Test func aWorkspaceFromBeforeTheNotificationTogglesKeepsWhatThePickerSaid() throws {
     let attention = try decodeJSON(Workspace.self, #"{ "notifications": "attentionOnly" }"#)
-    #expect(attention.notifications == NotificationPreference(attention: true))
+    #expect(attention.notificationPreference == NotificationPreference(notifiesOnAttention: true))
     let everything = try decodeJSON(Workspace.self, #"{ "notifications": "attentionAndDone" }"#)
     #expect(
-      everything.notifications == NotificationPreference(attention: true, failed: true, done: true),
+      everything.notificationPreference
+        == NotificationPreference(
+          notifiesOnAttention: true, notifiesOnFailure: true, notifiesOnDone: true),
       "the picker's last rung was all three")
     let off = try decodeJSON(Workspace.self, #"{ "notifications": "off" }"#)
-    #expect(off.notifications == .off)
+    #expect(off.notificationPreference == .off)
   }
 }

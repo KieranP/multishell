@@ -21,26 +21,26 @@ public struct DefaultBranch: Hashable, Sendable {
       if !refs.contains(ref) { refs.append(ref) }
     }
     if let override = override?.trimmingCharacters(in: .whitespaces), !override.isEmpty {
-      add(BranchRef.remoteRef("origin/" + override))
-      add(BranchRef.localRef(override))
-      add(BranchRef.remoteRef(override))
+      add(RefName.remote("origin/" + override))
+      add(RefName.local(override))
+      add(RefName.remote(override))
       return refs
     }
     // What the clone recorded as the remote's own default, the only answer
     // that is not a guess.
     if let originHeadTarget, !originHeadTarget.isEmpty { add(originHeadTarget) }
-    add(BranchRef.remoteRef("origin/main"))
-    add(BranchRef.remoteRef("origin/master"))
-    add(BranchRef.localRef("main"))
-    add(BranchRef.localRef("master"))
+    add(RefName.remote("origin/main"))
+    add(RefName.remote("origin/master"))
+    add(RefName.local("main"))
+    add(RefName.local("master"))
     return refs
   }
 
   /// The first candidate `refs` holds, or `nil`. No default branch means no
   /// badge, rather than one measured against a guess.
   static func resolve(from refs: [BranchRef], override: String?) -> DefaultBranch? {
-    let byName = Dictionary(refs.map { ($0.fullName, $0) }, uniquingKeysWith: { first, _ in first })
-    let originHeadTarget = byName[BranchRef.originHead]?.symref
+    let byName = Dictionary(keepingFirst: refs.map { ($0.fullName, $0) })
+    let originHeadTarget = byName[RefName.originHead]?.symref
     for candidate in candidateRefs(override: override, originHeadTarget: originHeadTarget) {
       guard let ref = byName[candidate] else { continue }
       return DefaultBranch(

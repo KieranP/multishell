@@ -20,7 +20,7 @@ extension WorktreeCoordinator {
       await git.readState.mergeSlots.holding {
         let started = ContinuousClock.now
         let state = await verdict(for: branch, merged: merged, inputs: inputs, in: project)
-        return (branch, MergeReading(state: state, took: started.duration(to: .now)))
+        return (branch, MergeReading(state: state, duration: started.duration(to: .now)))
       }
     }
     return Dictionary(readings, uniquingKeysWith: { _, last in last })

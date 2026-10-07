@@ -12,37 +12,7 @@ extension WorktreeGit {
         ["worktree", "list"], message: "git listed no worktrees for \(project.path.path)")
     }
     // Stats, each of which a dead mount holds; see worktrees.md.
-    return await offMain { worktrees.map(Self.datedByDirectory).map(Self.judgedInitializing) }
-  }
-
-  /// A lock older than this is an add that died mid-checkout, git's own
-  /// cleanup running only on a signal it can catch; see worktrees.md.
-  private static let abandonedAddAge: TimeInterval = 10 * 60
-
-  /// git's `initializing` is in the user's language, so a lock from before
-  /// `gitdir` over files with no index yet counts too; see worktrees.md.
-  private static func judgedInitializing(_ worktree: Worktree) -> Worktree {
-    guard worktree.isLocked else { return worktree }
-    let record = Self.recordDirectoryFromGitFile(in: worktree.path)
-    let lockedAt =
-      record.flatMap { $0.appendingPathComponent("locked").modificationDate } ?? worktree.createdAt
-    if !worktree.isInitializing {
-      guard let record,
-        !FileManager.default.fileExists(atPath: record.appendingPathComponent("index").path),
-        let lockedAt, let linkedAt = record.appendingPathComponent("gitdir").modificationDate,
-        lockedAt <= linkedAt, hasCheckedOutFiles(worktree.path)
-      else { return worktree }
-    }
-    var marked = worktree
-    marked.isInitializing = lockedAt.map { -$0.timeIntervalSinceNow < abandonedAddAge } ?? false
-    return marked
-  }
-
-  /// `add --no-checkout` writes nothing beside `.git`, and one made with
-  /// `--lock` looks otherwise like an add still checking out.
-  private static func hasCheckedOutFiles(_ checkout: URL) -> Bool {
-    let entries = (try? FileManager.default.contentsOfDirectory(atPath: checkout.path)) ?? []
-    return entries.contains { $0 != ".git" }
+    return await runOnDispatch { worktrees.map(Self.datedByDirectory).map(Self.judgedInitializing) }
   }
 
   /// `-z` came in git 2.36, and an older one refuses the switch with 129; its
@@ -67,7 +37,7 @@ extension WorktreeGit {
 
   /// The main worktree of the repository `url` is in, from anywhere in it,
   /// which identifies a project so a subdirectory does not become a second.
-  public func mainWorktree(containing url: URL) async throws -> URL {
+  public func mainWorktreePath(containing url: URL) async throws -> URL {
     guard let main = try await parsedList(in: url, projectID: "").first else {
       throw ProcessFailure.unreportedByGit(
         ["worktree", "list"], message: "no worktree listed for \(url.path)")
@@ -81,7 +51,7 @@ extension WorktreeGit {
     guard let listed = try? await parsedList(in: project.path, projectID: project.id),
       !listed.isEmpty
     else { return true }
-    return await offMain {
+    return await runOnDispatch {
       let wanted = Self.pathAsGitLists(path)
       return listed.contains { Self.pathAsGitLists($0.path) == wanted }
     }

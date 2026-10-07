@@ -22,13 +22,13 @@ struct AppModelProjectRemovalTests {
     #expect(harness.model.worktreeOperations[created.id]?.isRunning == true)
 
     // Taken before the removal, which is what clears the entry.
-    let setup = harness.model.stageHandles.setup(of: created.id)
+    let setup = harness.model.stageHandles.setupTask(of: created.id)
     harness.model.removeProject(harness.project)
     await setup?.value
 
     #expect(harness.model.workspace.projects.isEmpty)
     #expect(harness.model.worktreeOperations[created.id] == nil)
-    #expect(harness.model.stageHandles.setup(of: created.id) == nil)
+    #expect(harness.model.stageHandles.setupTask(of: created.id) == nil)
     #expect(
       harness.model.presentedError == nil, "the user asked for this, so there is nothing to report")
     #expect(
@@ -70,7 +70,7 @@ struct AppModelProjectRemovalTests {
       [project.id] + harness.model.workspace.worktrees(of: project.id).map(\.id))
     #expect(paths.count >= 2, "the project and at least one worktree of its own")
     #expect(
-      harness.model.workspace.project(project.id)?.sharedSettings.hasBeenRead == true,
+      harness.model.workspace.project(project.id)?.sharedSettingsSnapshot.hasBeenRead == true,
       "the file was read, so the project holds something")
 
     harness.model.removeProject(project)

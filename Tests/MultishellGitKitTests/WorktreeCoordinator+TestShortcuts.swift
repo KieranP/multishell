@@ -15,7 +15,7 @@ extension WorktreeCoordinator {
   /// Both halves of a create in `AppModel`'s order, awaited together; the app keeps them apart so
   /// a worktree can be worked in while a slow hook still runs.
   @discardableResult
-  func createThenRunPostCreate(
+  func createThenRunPostCreateHook(
     branch rawBranch: String,
     basedOn startPoint: String? = nil,
     createsBranch: Bool = true,
@@ -29,7 +29,7 @@ extension WorktreeCoordinator {
     let path = try await create(
       branch: rawBranch, basedOn: startPoint, createsBranch: createsBranch, in: project,
       settings: settings, shellPath: shellPath, timeout: timeout, stopper: stopper, onStep: onStep)
-    try await runPostCreate(
+    try await runPostCreateHook(
       for: project, worktreePath: path,
       branch: Self.qualifiedBranchName(rawBranch, createsBranch: createsBranch, settings: settings),
       shellPath: shellPath, timeout: timeout, stopper: stopper)
@@ -39,11 +39,11 @@ extension WorktreeCoordinator {
   /// The removal with the directory unlinked in place of a Trash, for tests
   /// about the git side of it.
   func removeUnlinking(
-    _ worktree: Worktree, deletingBranch: Bool = false, in project: Project,
+    _ worktree: Worktree, deletesBranch: Bool = false, in project: Project,
     shellPath: String? = nil, onStep: (@Sendable (WorktreeRemovalStep) -> Void)? = nil
   ) async throws {
     try await remove(
-      worktree, deletingBranch: deletingBranch, in: project, shellPath: shellPath,
+      worktree, deletesBranch: deletesBranch, in: project, shellPath: shellPath,
       trash: { try FileManager.default.removeItem(at: $0) }, onStep: onStep)
   }
 }

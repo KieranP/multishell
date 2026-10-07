@@ -18,11 +18,12 @@ just never updates the state indicator dot.
 | Language        | English                         |
 
 `make build` builds for the machine it runs on, `arch=$(uname -m)` in
-`Scripts/build-lib.sh`, and libghostty for it alone
-(`-Dxcframework-target=native`), so the binary is single-architecture rather
-than universal. Only Apple silicon has been built and run here; Intel is unbuilt
-and untested. Only Xcode 27 has been built with, the floor of 26 resting on
-`xcodebuild` behaving there as it does in 27; see BUGS.md.
+`Scripts/build-lib.sh`, and libghostty for it alone,
+`-Dxcframework-target=native` in `Scripts/build-ghostty.sh`, so the binary is
+single-architecture rather than universal. Only Apple silicon has been built and
+run here; Intel is unbuilt and untested. Only Xcode 27 has been built with, the
+floor of 26 resting on `xcodebuild` behaving there as it does in 27; see
+BUGS.md.
 
 A git older than 2.36 has no `-z` for `git worktree list`, so the app reads the
 newline form instead, and a worktree whose path holds a newline shows a
@@ -66,13 +67,13 @@ rather than from its hooks. Any other shell reports only what you send it with
 | OpenCode         | Yes   | Yes     | Yes    | Yes     | No  |
 | A custom command | No    | No      | No     | No      | No  |
 
-Waiting is a dot for an agent stopped at a permission prompt, Workers the chip
-counting the subagents and background shells it has out, `@` a dropped file
-arriving as `@path` rather than a quoted one. Gemini has no subagent hooks, so
-its chip counts only the shells it backgrounded. Codex runs no hook until you
-trust it once with `/hooks`. OpenCode is given a plugin, and is the only one
-that reports your answer, so its Waiting clears then rather than at the next
-tool call.
+Waiting is a dot for an agent stopped at a permission prompt or a question,
+Workers the chip counting the subagents and background shells it has out, `@` a
+dropped file arriving as `@path` rather than a quoted one. Gemini has no
+subagent hooks, so its chip counts only the shells it backgrounded. Codex runs
+no hook until you trust it once with `/hooks`. OpenCode is given a plugin, and
+is the only one that reports your answer, so its Waiting clears then rather than
+at the next tool call.
 
 | Agent       | File                                      | Ours alone |
 | ----------- | ----------------------------------------- | ---------- |

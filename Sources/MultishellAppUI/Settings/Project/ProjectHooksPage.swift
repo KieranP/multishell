@@ -32,11 +32,11 @@ struct ProjectHooksPage: View {
   }
 
   var body: some View {
-    let shared = project.sharedSettings.confined
+    let shared = project.sharedSettingsSnapshot.confined
     Form {
       if let shared, shared.asksForTrust {
-        sharedSettingsSection(shared)
-      } else if let problem = project.sharedSettings.problem {
+        SharedSettingsTrustSection(model: model, project: project)
+      } else if let problem = project.sharedSettingsSnapshot.problem {
         Section { SettingsCaption(problem) }
       }
 
@@ -45,7 +45,7 @@ struct ProjectHooksPage: View {
       switch part {
       case .create: createSection(shared)
       case .delete: deleteSection(shared)
-      case .environment: environmentSection
+      case .environment: HookVariablesSection(model: model)
       }
     }
     .formStyle(.grouped)
@@ -84,43 +84,6 @@ struct ProjectHooksPage: View {
         title: t("hooks.post-delete"), info: t("hooks.post-delete-info"),
         placeholder: shared?.postDeleteHook,
         text: model.setting(\.postDeleteHook, of: project))
-    }
-  }
-
-  private var environmentSection: some View {
-    Section {
-      ForEach(HookVariable.allCases, id: \.self) { variable in
-        LabeledContent {
-          Text(variable.meaning).foregroundStyle(.secondary)
-        } label: {
-          HStack(spacing: 4) {
-            Text(variable.name).font(.system(size: 11, design: .monospaced))
-            CopyButton("$\(variable.name)", model: model)
-          }
-        }
-      }
-    } header: {
-      InfoLabel(t("hooks.environment"), info: t("hooks.environment-info"), spacing: 6)
-    }
-  }
-
-  /// What the repository asks for is used only once trusted, and a change
-  /// asks again; the grey text in the editors above is what it is.
-  private func sharedSettingsSection(_ shared: SharedProjectSettings) -> some View {
-    let trusted = model.trustsSharedSettings(of: project)
-    return Section {
-      HStack(spacing: 8) {
-        Text(trusted ? t("hooks.shared-run") : t("hooks.shared-ignored"))
-        Spacer()
-        Button(trusted ? t("hooks.stop-trusting") : t("hooks.trust")) {
-          model.setTrustsSharedSettings(!trusted, for: project)
-        }
-        .controlSize(.small)
-      }
-    } header: {
-      InfoLabel(
-        t("hooks.shared-header", SharedProjectSettings.fileName),
-        info: t("hooks.shared-info", SharedProjectSettings.fileName), spacing: 6)
     }
   }
 }

@@ -36,10 +36,10 @@ enum HelperBinary {
         environment: environment)
     }
     // Stdin through a shell pipe, since the runner gives children /dev/null.
-    let quoted = PosixShellQuoting.quote(stdin)
+    let quoted = AnyShellQuoting.quote(stdin)
     let command =
-      "printf '%s' \(quoted) | \(PosixShellQuoting.quote(try (standIn ?? require()).path)) "
-      + PosixShellQuoting.commandLine(arguments)
+      "printf '%s' \(quoted) | \(AnyShellQuoting.quote(try (standIn ?? require()).path)) "
+      + AnyShellQuoting.commandLine(arguments)
     return try await runner.capture(
       URL(fileURLWithPath: "/bin/sh"), ["-c", command], in: URL(fileURLWithPath: "/tmp"),
       environment: environment)

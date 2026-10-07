@@ -14,22 +14,22 @@ struct AppSettingsWindow: View {
 
   var body: some View {
     TabView(selection: $page) {
-      GeneralSettingsPage(model: model)
+      AppGeneralPage(model: model)
         .tabItem { SettingsPageLabel.general.label }
         .tag(Page.general)
-      WorktreesSettingsPage(model: model)
+      AppWorktreesPage(model: model)
         .tabItem { SettingsPageLabel.worktrees.label }
         .tag(Page.worktrees)
-      TerminalSettingsPage(model: model)
+      AppTerminalPage(model: model)
         .tabItem { SettingsPageLabel.terminal.label }
         .tag(Page.terminal)
-      AgentsSettingsPage(model: model)
+      AppAgentsPage(model: model)
         .tabItem { SettingsPageLabel.agents.label }
         .tag(Page.agents)
-      NotificationsSettingsPage(model: model)
+      AppNotificationsPage(model: model)
         .tabItem { SettingsPageLabel.notifications.label }
         .tag(Page.notifications)
-      AppearanceSettingsPage(model: model)
+      AppAppearancePage(model: model)
         .tabItem { SettingsPageLabel.appearance.label }
         .tag(Page.appearance)
     }

@@ -13,8 +13,8 @@ extension AppModel {
   /// rather than searched for every row.
   func worktreesByStandardizedPath() -> [String: Worktree] {
     Dictionary(
-      workspace.worktrees.map { ($0.path.standardizedFileURL.path, $0) },
-      uniquingKeysWith: { first, _ in first })
+      keepingFirst:
+        workspace.worktrees.map { ($0.path.standardizedFileURL.path, $0) })
   }
 
   /// Matched exactly, git running at a worktree's root: the lookup a report

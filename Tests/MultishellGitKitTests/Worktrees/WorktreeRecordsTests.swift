@@ -11,7 +11,7 @@ struct WorktreeRecordsTests {
   @Test func indexWritesInALinkedWorktreeDoNotChangeTheRecords() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
-    let path = try await fixture.coordinator.createThenRunPostCreate(
+    let path = try await fixture.coordinator.createThenRunPostCreateHook(
       branch: "work", in: fixture.project, settings: fixture.worktreeSettings)
     let common = try await fixture.coordinator.git.commonGitDirectory(fixture.project)
     let before = WorktreeRecords.read(in: common)
@@ -30,7 +30,7 @@ struct WorktreeRecordsTests {
     let common = try await fixture.coordinator.git.commonGitDirectory(fixture.project)
     let empty = WorktreeRecords.read(in: common)
 
-    let path = try await fixture.coordinator.createThenRunPostCreate(
+    let path = try await fixture.coordinator.createThenRunPostCreateHook(
       branch: "work", in: fixture.project, settings: fixture.worktreeSettings)
     let added = WorktreeRecords.read(in: common)
     #expect(added != empty)
@@ -61,7 +61,7 @@ struct WorktreeRecordsTests {
     let before = WorktreeRecords.directoriesToWatch(in: common)
     #expect(before.map(\.lastPathComponent) == [".git"])
 
-    try await coordinator.createThenRunPostCreate(
+    try await coordinator.createThenRunPostCreateHook(
       branch: "one", in: project, settings: fixture.worktreeSettings)
     let after = WorktreeRecords.directoriesToWatch(in: common)
     #expect(after.map(\.lastPathComponent) == ["worktrees", "one"])

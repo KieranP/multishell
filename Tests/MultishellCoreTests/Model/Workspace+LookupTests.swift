@@ -49,6 +49,18 @@ struct WorkspaceLookupTests {
     #expect(store.workspace.tab(after: c.id) == nil, "a group of one has nowhere to go")
   }
 
+  @Test func twoTabsShareAGroupOnlyWhileBothAreInIt() {
+    let (store, _, worktree) = demoStore()
+    let a = store.openTab(in: worktree.id)!
+    let b = store.openTab(in: worktree.id)!
+    let first = store.workspace.groups(in: worktree.id)[0]
+    #expect(store.workspace.sharedGroup(of: a.id, and: b.id) == first.id)
+
+    store.moveTab(b.id, .after, toNewGroupOf: first.id)
+    #expect(store.workspace.sharedGroup(of: a.id, and: b.id) == nil)
+    #expect(store.workspace.sharedGroup(of: a.id, and: UUID()) == nil, "and a tab that has gone")
+  }
+
   /// A file hand-edited to name no focused group, read before repair has
   /// run: the first group answers, so the worktree still draws a strip.
   @Test func aWorktreeWithNoFocusedGroupFallsBackToItsFirst() {

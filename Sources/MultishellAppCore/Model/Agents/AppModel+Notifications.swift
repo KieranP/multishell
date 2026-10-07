@@ -3,11 +3,11 @@ import MultishellCore
 extension AppModel {
   /// Turning a state on asks for permission there and then, where the user
   /// asked for the thing it is about. Only on the way up.
-  public func setNotifications(_ preference: NotificationPreference) {
+  public func setNotificationPreference(_ preference: NotificationPreference) {
     let turnedOnAState = NotificationPreference.notifiableStates.contains {
-      preference[$0] && !workspace.notifications[$0]
+      preference[$0] && !workspace.notificationPreference[$0]
     }
-    store.setNotifications(preference)
+    store.setNotificationPreference(preference)
     guard turnedOnAState, notificationAuthorization != .allowed else { return }
     Task { notificationAuthorization = await notifier.requestAuthorization() }
   }
@@ -33,7 +33,7 @@ extension AppModel {
   ) {
     guard
       NotificationPolicy.shouldNotify(
-        state, preference: workspace.notifications, isOnScreen: isOnScreen,
+        state, preference: workspace.notificationPreference, isOnScreen: isOnScreen,
         duration: report.duration, isSilent: report.isSilent == true),
       let worktree = workspace.worktree(worktreeID)
     else { return }

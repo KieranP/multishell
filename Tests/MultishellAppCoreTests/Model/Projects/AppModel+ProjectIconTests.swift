@@ -21,6 +21,15 @@ struct AppModelProjectIconTests {
     #expect(harness.model.ownSettings(of: harness.project).iconTint == nil)
   }
 
+  @Test func pickingTheFolderStoresNoGlyphRatherThanItsName() {
+    let harness = Harness()
+    harness.model.setIconGlyph("hammer", for: harness.project)
+
+    harness.model.setIconGlyph(ProjectIcon.folderSymbol, for: harness.project)
+
+    #expect(harness.model.ownSettings(of: harness.project).iconGlyph == nil)
+  }
+
   @Test func settingTheTintLeavesTheGlyphAsItWas() {
     let harness = Harness()
     harness.model.setIconGlyph("hammer", for: harness.project)

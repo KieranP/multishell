@@ -1,20 +1,26 @@
 import MultishellCore
 
 extension TabStripLayout {
+  /// One end of the strip, where an arrow is drawn.
+  public enum End: Sendable {
+    case leading
+    case trailing
+  }
+
   /// Which tab an end arrow brings into view: the one that end clips, else the
   /// one past it. In points, as `Edges` draws the arrow in points.
   public func stepTarget(
-    towards placement: TerminalTab.Placement, offset: Double, viewport: Double, count: Int
+    towards end: End, offset: Double, viewport: Double, count: Int
   ) -> Int? {
     guard count > 0, tabWidth > 0, offset.isFinite, viewport.isFinite else { return nil }
     let travelled = max(offset, 0)
     let target: Int
-    switch placement {
-    case .before:
+    switch end {
+    case .leading:
       let boundary = (travelled / tabWidth).rounded(.down)
       let clips = travelled - boundary * tabWidth > Edges.tolerance
       target = clampedIndex(boundary, count) - (clips ? 0 : 1)
-    case .after:
+    case .trailing:
       let edge = travelled + max(viewport, 0)
       let boundary = (edge / tabWidth).rounded(.up)
       let clips = boundary * tabWidth - edge > Edges.tolerance

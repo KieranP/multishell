@@ -3,15 +3,9 @@ import MultishellCore
 import MultishellGitKit
 
 extension AppModel {
-  func refreshAll() async {
-    await refreshWorktreesIfRecordsChanged()
-    await refreshStatuses()
-    await refreshMergeStates()
-  }
-
-  /// A watcher tick or a return to the front. The records are compared before
-  /// git is spawned; `changed` narrows it to the projects that fired, empty is all.
-  func refreshWorktreesIfRecordsChanged(under changed: [URL] = []) async {
+  /// A watcher tick or a return to the front: the worktree list where git's
+  /// records changed, else the shared settings file. `changed` empty is all.
+  func refreshProjectsIfChanged(under changed: [URL] = []) async {
     var refreshed = false
     for project in workspace.projects {
       let common = await commonGitDirectory(of: project)
@@ -20,7 +14,7 @@ extension AppModel {
         else { continue }
       }
       if let common, let known = worktreeRecords[project.id],
-        await offMain({ WorktreeRecords.read(in: common) }) == known
+        await runOnDispatch({ WorktreeRecords.read(in: common) }) == known
       {
         await refreshSharedSettingsIfChanged(project)
         continue
@@ -41,7 +35,7 @@ extension AppModel {
   func refreshWorktrees(of project: Project) async {
     guard let coordinator else { return }
     let path = project.path
-    guard await offMain({ FileManager.default.fileExists(atPath: path.path) }) else {
+    guard await runOnDispatch({ FileManager.default.fileExists(atPath: path.path) }) else {
       if workspace.project(project.id) != nil { missingProjects.insert(project.id) }
       return
     }
@@ -49,9 +43,9 @@ extension AppModel {
     // next tick rather than lost.
     var records: WorktreeRecords?
     if let common = await commonGitDirectory(of: project) {
-      records = await offMain { WorktreeRecords.read(in: common) }
+      records = await runOnDispatch { WorktreeRecords.read(in: common) }
     }
-    let shared = await offMain { SharedSettingsReading.read(from: project) }
+    let shared = await runOnDispatch { SharedSettingsReading.read(from: project) }
     do {
       let discovered = try await coordinator.git.list(project)
       guard isStillListedElseForgetCache(project.id) else { return }
@@ -85,7 +79,7 @@ extension AppModel {
     var directories: [URL] = []
     for project in workspace.projects {
       guard let common = await commonGitDirectory(of: project) else { continue }
-      directories += await offMain { WorktreeRecords.directoriesToWatch(in: common) }
+      directories += await runOnDispatch { WorktreeRecords.directoriesToWatch(in: common) }
     }
     await watcher.watch(directories)
   }
@@ -98,5 +92,11 @@ extension AppModel {
     }
     commonGitDirectories[project.id] = common
     return common
+  }
+
+  func refreshWorktrees(ofProjects ids: some Sequence<Project.ID>) async {
+    for id in ids {
+      if let project = workspace.project(id) { await refreshWorktrees(of: project) }
+    }
   }
 }

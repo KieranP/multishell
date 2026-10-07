@@ -5,16 +5,15 @@ import Foundation
 @Observable
 @MainActor
 public final class WorkspaceStore {
-  /// `private(set)`, so nothing outside this file writes the workspace.
   public private(set) var workspace: Workspace
 
-  @ObservationIgnored private let file: WorkspaceFile
+  @ObservationIgnored private let file: StateFile
 
   /// Set where unread state is still on disk: saving the empty workspace over
   /// it deletes the user's sidebar. See Docs/design/state-and-store.md.
   @ObservationIgnored private(set) var refusesToSave = false
 
-  init(workspace: Workspace = Workspace(), file: WorkspaceFile = WorkspaceFile()) {
+  init(workspace: Workspace = Workspace(), file: StateFile = StateFile()) {
     self.workspace = workspace
     self.file = file
   }
@@ -22,11 +21,10 @@ public final class WorkspaceStore {
   /// Loads saved state. `loadError` is set, not thrown, so the app still
   /// starts and can tell the user what happened.
   public static func restored() -> (store: WorkspaceStore, loadError: (any Error)?) {
-    restored(from: WorkspaceFile())
+    restored(from: StateFile())
   }
 
-  static func restored(from file: WorkspaceFile) -> (store: WorkspaceStore, loadError: (any Error)?)
-  {
+  static func restored(from file: StateFile) -> (store: WorkspaceStore, loadError: (any Error)?) {
     do {
       var workspace = try file.load()
       workspace.repairReferences()
@@ -103,9 +101,9 @@ extension WorkspaceStore {
     _ snapshot: SharedSettingsSnapshot, forProject id: Project.ID
   ) {
     guard let index = workspace.projectIndex(id),
-      workspace.projects[index].sharedSettings != snapshot
+      workspace.projects[index].sharedSettingsSnapshot != snapshot
     else { return }
-    workspace.projects[index].sharedSettings = snapshot
+    workspace.projects[index].sharedSettingsSnapshot = snapshot
   }
 
   private func update(project id: Project.ID, _ change: (inout Project) -> Void) {
@@ -156,14 +154,14 @@ extension WorkspaceStore {
   /// Empty or whitespace clears it, so the branch takes over again.
   public func setCustomName(_ name: String?, forWorktree id: Worktree.ID) {
     guard workspace.worktree(id) != nil else { return }
-    workspace.worktreeNames[id] = name?.trimmedOrNil
+    workspace.customWorktreeNames[id] = name?.trimmedOrNil
   }
 
   /// Forgets a worktree and everything hanging off it. Removing the
   /// directory itself is git's job, not the store's.
   private func discardWorktree(_ id: Worktree.ID) {
     workspace.worktrees.removeAll { $0.id == id }
-    workspace.worktreeNames[id] = nil
+    workspace.customWorktreeNames[id] = nil
     workspace.tabs.removeAll { $0.worktreeID == id }
     workspace.tabGroups.removeAll { $0.worktreeID == id }
     workspace.sessions.removeAll { $0.worktreeID == id }
@@ -512,8 +510,8 @@ extension WorkspaceStore {
     workspace.worktreeDefaults = defaults
   }
 
-  public func setNotifications(_ preference: NotificationPreference) {
-    workspace.notifications = preference
+  public func setNotificationPreference(_ preference: NotificationPreference) {
+    workspace.notificationPreference = preference
   }
 }
 
@@ -529,7 +527,7 @@ extension WorkspaceStore {
   /// An empty line removes the entry. Emptiness, not blankness: this is
   /// written per keystroke, and trimming eats the space between two flags.
   public func setAgentFlags(_ flags: String, for id: String) {
-    workspace.agentFlags[id] = flags.presence
+    workspace.agentFlags[id] = flags.nonEmpty
   }
 
   public func setAutoStartsAgent(_ enabled: Bool) {

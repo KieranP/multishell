@@ -13,11 +13,11 @@ struct ProcessArgumentsTests {
 
   @Test func theArgumentsStopAtTheirCountAndKeepAnEmptyOne() throws {
     let parsed = try #require(
-      ProcessArguments(procArgs: buffer(argc: 3, ["sh", "", "-l", "HOME=/u"])))
+      ProcessArguments(sysctlBuffer: buffer(argc: 3, ["sh", "", "-l", "HOME=/u"])))
     #expect(parsed.arguments == ["sh", "", "-l"])
   }
 
   @Test func aBufferWithNoRoomForACountReadsAsNothing() {
-    #expect(ProcessArguments(procArgs: [1, 0][...]) == nil)
+    #expect(ProcessArguments(sysctlBuffer: [1, 0][...]) == nil)
   }
 }

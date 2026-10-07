@@ -28,7 +28,7 @@ struct TabGroupView: View {
         theme: theme,
         drag: $drag
       )
-      if let tab = model.workspace.shownTab(in: group) {
+      if let tab = model.workspace.shownTab(ofGroup: group) {
         panes(of: tab)
       } else {
         Spacer()

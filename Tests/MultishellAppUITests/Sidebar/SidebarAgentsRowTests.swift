@@ -8,16 +8,14 @@ import Testing
 struct SidebarAgentsRowTests {
   private let metrics = UIMetrics(fontSize: 13)
 
-  @Test func theBoardRowComparesItsCounts() {
-    let none = SidebarAgentsRow(
-      counts: [AgentBoardLaneCount(.waiting, 0)], isSelected: false, theme: .multishellDark,
-      metrics: metrics,
-      select: {})
-    let one = SidebarAgentsRow(
-      counts: [AgentBoardLaneCount(.waiting, 1)], isSelected: false, theme: .multishellDark,
-      metrics: metrics,
-      select: {})
-    #expect(none == none)
-    #expect(none != one)
+  private func row(waiting: Int, select: @escaping () -> Void = {}) -> SidebarAgentsRow {
+    SidebarAgentsRow(
+      counts: [AgentBoardLaneCount(.waiting, waiting)], isSelected: false, theme: .multishellDark,
+      metrics: metrics, select: select)
+  }
+
+  @Test func aRowWithAFreshClosureIsTheSameRowUntilItsCountsMove() {
+    #expect(row(waiting: 0) == row(waiting: 0, select: { print("another") }))
+    #expect(row(waiting: 0) != row(waiting: 1))
   }
 }

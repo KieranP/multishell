@@ -14,11 +14,11 @@ extension AppModel {
   /// only when the records change. One stat per project per tick.
   func refreshSharedSettingsIfChanged(_ project: Project) async {
     let path = project.path
-    let stamp = await offMain {
+    let stamp = await runOnDispatch {
       SharedSettingsReading.modificationDate(of: SharedProjectSettings.file(in: path))
     }
-    guard project.sharedSettings.needsRead(at: stamp) else { return }
-    let reading = await offMain { SharedSettingsReading.read(from: project) }
+    guard project.sharedSettingsSnapshot.needsRead(at: stamp) else { return }
+    let reading = await runOnDispatch { SharedSettingsReading.read(from: project) }
     guard workspace.project(project.id) != nil else { return }
     applySharedSettingsReading(reading, for: project)
   }
@@ -26,10 +26,10 @@ extension AppModel {
   /// The confinement against the disk again: the verdict is reached when the
   /// file is read, and a branch can add a symlink without moving its bytes.
   func reconfineSharedSettings(of project: Project) async -> Project {
-    guard let shared = workspace.project(project.id)?.sharedSettings.asWritten
+    guard let shared = workspace.project(project.id)?.sharedSettingsSnapshot.asWritten
     else { return currentCopy(of: project) }
-    let confined = await offMain { shared.confined(to: project) }
-    guard var snapshot = workspace.project(project.id)?.sharedSettings,
+    let confined = await runOnDispatch { shared.confined(to: project) }
+    guard var snapshot = workspace.project(project.id)?.sharedSettingsSnapshot,
       snapshot.asWritten == shared, snapshot.confined != confined
     else { return currentCopy(of: project) }
     snapshot.confined = confined
@@ -54,7 +54,7 @@ extension AppModel {
   private func applyParsedSharedSettings(
     _ shared: SharedProjectSettings?, from reading: SharedSettingsReading, for project: Project
   ) {
-    var snapshot = project.sharedSettings
+    var snapshot = project.sharedSettingsSnapshot
     let firstRead = !snapshot.hasBeenRead
     // The date is recorded whatever the bytes say: a touch moves it
     // without changing them, and an unrecorded date is re-read every tick.
@@ -80,7 +80,7 @@ extension AppModel {
     // A question up names hooks the app no longer has, so it goes the way
     // a deleted file's does, and returns if the file parses again.
     dismissSharedSettingsTrust(for: project.id)
-    var snapshot = project.sharedSettings
+    var snapshot = project.sharedSettingsSnapshot
     let problem = t(
       "error.shared-settings-unreadable", SharedProjectSettings.fileName,
       String(describing: error))

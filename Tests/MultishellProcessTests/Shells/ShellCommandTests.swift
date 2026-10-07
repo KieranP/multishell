@@ -66,7 +66,7 @@ struct ShellCommandTests {
         timeout: .milliseconds(300))
       Issue.record("the script did not fail")
     } catch let failure as ProcessFailure {
-      #expect(failure.stop == .timedOut(after: .milliseconds(300)))
+      #expect(failure.stopReason == .timedOut(after: .milliseconds(300)))
     }
   }
 }

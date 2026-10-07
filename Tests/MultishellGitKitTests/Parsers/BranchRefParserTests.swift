@@ -18,7 +18,7 @@ struct BranchRefParserTests {
     let byName = Dictionary(uniqueKeysWithValues: refs.map { ($0.fullName, $0) })
 
     #expect(refs.count == 6)
-    #expect(byName[BranchRef.originHead]?.symref == "refs/remotes/origin/main")
+    #expect(byName[RefName.originHead]?.symref == "refs/remotes/origin/main")
     #expect(byName["refs/heads/main"]?.symref == nil)
     #expect(byName["refs/heads/feat"]?.tip == "cd2")
     #expect(byName["refs/heads/feat"]?.upstreamIsGone == false)

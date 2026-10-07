@@ -10,12 +10,13 @@ extension AppModelNotificationsTests {
     let harness = Harness()
     #expect(harness.model.notificationAuthorization == .notAsked)
 
-    harness.model.setNotifications(NotificationPreference(attention: true))
+    harness.model.setNotificationPreference(NotificationPreference(notifiesOnAttention: true))
     await harness.settled()
     #expect(harness.notifier.authorizationRequests == 1)
     #expect(harness.model.notificationAuthorization == .allowed)
 
-    harness.model.setNotifications(NotificationPreference(attention: true, done: true))
+    harness.model.setNotificationPreference(
+      NotificationPreference(notifiesOnAttention: true, notifiesOnDone: true))
     await harness.settled()
     #expect(harness.notifier.authorizationRequests == 1)
   }
@@ -24,16 +25,17 @@ extension AppModelNotificationsTests {
   @Test func turningAStateOffAsksNobody() async {
     let harness = Harness()
     harness.notifier.answer = .refused
-    harness.model.setNotifications(.off)
+    harness.model.setNotificationPreference(.off)
     await harness.settled()
     #expect(harness.notifier.authorizationRequests == 0)
     #expect(harness.model.notificationAuthorization == .notAsked, "nothing has been asked yet")
 
-    harness.model.setNotifications(NotificationPreference(attention: true, done: true))
+    harness.model.setNotificationPreference(
+      NotificationPreference(notifiesOnAttention: true, notifiesOnDone: true))
     await harness.settled()
     #expect(harness.notifier.authorizationRequests == 1)
 
-    harness.model.setNotifications(NotificationPreference(attention: true))
+    harness.model.setNotificationPreference(NotificationPreference(notifiesOnAttention: true))
     await harness.settled()
     #expect(harness.notifier.authorizationRequests == 1, "one going off is not one going on")
   }
@@ -44,12 +46,13 @@ extension AppModelNotificationsTests {
     let harness = Harness()
     harness.notifier.answer = .refused
 
-    harness.model.setNotifications(NotificationPreference(done: true))
+    harness.model.setNotificationPreference(NotificationPreference(notifiesOnDone: true))
     await harness.settled()
     #expect(harness.model.notificationAuthorization == .refused)
     #expect(harness.model.notificationSettingsNote.contains("System Settings"))
 
-    harness.model.setNotifications(NotificationPreference(attention: true, done: true))
+    harness.model.setNotificationPreference(
+      NotificationPreference(notifiesOnAttention: true, notifiesOnDone: true))
     await harness.settled()
     #expect(harness.notifier.authorizationRequests == 2)
   }

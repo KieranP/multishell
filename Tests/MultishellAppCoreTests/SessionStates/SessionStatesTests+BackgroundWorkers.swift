@@ -141,8 +141,7 @@ extension SessionStatesTests {
     #expect(workersOut(states).isEmpty)
   }
 
-  /// A tool call from a worker already on the roster changes nothing, so
-  /// the sidebar and a list open over it are not re-rendered per call.
+  /// So the sidebar and a list open over it are not re-rendered per call.
   @Test func aWorkersToolCallsLeaveTheRosterAsItWas() {
     var states = SessionStates()
     _ = report(&states, .running, started("w1"))
@@ -198,8 +197,7 @@ extension SessionStatesTests {
     #expect(states[.session(a)] == .done)
   }
 
-  /// A pane with nothing to show shows Working while a worker is out and nothing
-  /// again once the last is in: no Done was displaced, so none is owed.
+  /// No Done was displaced, so none is owed.
   @Test func aWorkerOutLiftsNothingToWorkingAndTheLastOutClearsIt() {
     var states = SessionStates()
     #expect(report(&states, .running, started("w1")) == .running)
@@ -253,7 +251,7 @@ extension SessionStatesTests {
     var states = SessionStates()
     _ = report(&states, .running, started("w1"))
     _ = report(&states, .done)
-    states.processGone(99)
+    states.noteProcessGone(99)
     #expect(workersOut(states).isEmpty)
     #expect(report(&states, .done) == .done, "the held Done went with the process")
   }
@@ -275,7 +273,7 @@ extension SessionStatesTests {
 
     var lifted = SessionStates()
     _ = report(&lifted, .running, started("w1"))
-    _ = lifted.report(
+    _ = lifted.apply(
       .init(state: .running, startsTurn: true), pid: 99, for: .session(a), isSeen: false)
     #expect(lifted[.session(a)] == .running, "the agent's own Working now")
     #expect(report(&lifted, .running, ended("w1")) == .running, "a late end takes nothing back")
@@ -292,8 +290,7 @@ extension SessionStatesTests {
     #expect(states[.session(a)] == .done)
   }
 
-  /// An unnamed worker's tool call is one already on the roster, not a new
-  /// one: a fresh place per call would grow the roster all turn.
+  /// A fresh place per call would grow the roster all turn.
   @Test func anUnnamedWorkersToolCallTakesAPlaceAlreadyOut() {
     var states = SessionStates()
     let call = WorkerReport(id: WorkerReport.anonymousID, phase: .working)
@@ -302,8 +299,6 @@ extension SessionStatesTests {
     #expect(workersOut(states).count == 1)
   }
 
-  /// The user's clear takes the roster too: a Working dot cleared by hand
-  /// must not come back at the next worker's tool call as if nothing happened.
   @Test func theUsersClearTakesTheRoster() {
     var states = SessionStates()
     _ = report(&states, .running, started("w1"))

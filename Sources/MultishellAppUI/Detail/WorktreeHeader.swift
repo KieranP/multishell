@@ -49,8 +49,8 @@ struct WorktreeHeader: View {
       WorktreeActions(model: model, worktree: worktree)
     } label: {
       Image(systemName: "ellipsis.circle")
-        .font(.system(size: 13, weight: .medium))
-        .frame(width: 30, height: 26)
+        .font(.system(size: UIMetrics.headerGlyphSize, weight: .medium))
+        .frame(width: UIMetrics.headerGlyphButtonSide, height: UIMetrics.headerGlyphButtonSide)
         .contentShape(.rect)
     }
     .menuStyle(.borderlessButton)

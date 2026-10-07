@@ -10,7 +10,7 @@ extension AppModel {
   /// The project's settings with its repository's file filling the gaps, and
   /// what every path, hook and icon decision reads.
   public func effectiveSettings(for project: Project) -> ProjectSettings {
-    project.settings.layered(over: project.sharedSettings.confined)
+    project.settings.layered(over: project.sharedSettingsSnapshot.confined)
   }
 
   /// The project as the git layer should see it, its settings the effective
@@ -45,6 +45,6 @@ extension AppModel {
   }
 
   private func sharedSettingsInForce(for project: Project) -> SharedProjectSettings? {
-    project.sharedSettings.confined.map(project.settings.sharedSettingsInForce)
+    project.sharedSettingsSnapshot.confined.map(project.settings.sharedSettingsInForce)
   }
 }

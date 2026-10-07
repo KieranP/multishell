@@ -39,7 +39,7 @@ What the core is, what it refuses, how work reaches it. Newest at the bottom.
   the runs the debug panel counted before the login shell's PATH landed.
 - **Nothing in the core blocks a pool thread.** Waits inside `Task`s held a pool
   thread per core until GCD ran out and the suite hung. Blocking file work goes
-  through `offMain` to Dispatch, the git library's stats, reads and line counts
+  through `runOnDispatch`, the git library's stats, reads and line counts
   included; worktrees.md has the cost.
 - **The directory check before a shell starts is the one wait**, a second at
   most on the main thread and never on a pool thread; worktrees.md has why.

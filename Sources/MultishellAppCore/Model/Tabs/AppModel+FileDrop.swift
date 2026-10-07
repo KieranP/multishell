@@ -33,6 +33,6 @@ extension AppModel {
   /// How the agent at a pane's prompt is told about a file. A shell, a custom
   /// command and an agent with no prefix all get a quoted path.
   private func fileMentionPrefix(for session: TerminalSession) -> String? {
-    agentAtThePrompt(of: session).flatMap { AgentCatalogue.agent($0)?.fileMentionPrefix }
+    agentIDAtThePrompt(of: session).flatMap { AgentCatalogue.agent($0)?.fileMentionPrefix }
   }
 }

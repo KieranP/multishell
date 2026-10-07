@@ -4,7 +4,7 @@ struct ProcessArguments: Equatable {
   let arguments: [String]
 
   /// `nil` for a buffer too short to hold a count and a path.
-  init?(procArgs buffer: ArraySlice<UInt8>) {
+  init?(sysctlBuffer buffer: ArraySlice<UInt8>) {
     let countSize = MemoryLayout<Int32>.size
     guard buffer.count > countSize else { return nil }
     let argc = Int(buffer.withUnsafeBytes { $0.loadUnaligned(as: Int32.self) })

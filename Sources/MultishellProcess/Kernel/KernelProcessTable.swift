@@ -1,6 +1,6 @@
 import Foundation
 
-/// What the kernel's process table says about one pid.
+/// What the kernel says about a process, or about every process in one read.
 public enum KernelProcessTable {
   /// Whether the process has left the table. Only ESRCH means gone; EPERM
   /// is another user's live process.
@@ -22,6 +22,12 @@ public enum KernelProcessTable {
     }
   }
 
+  /// The process's children whose command line holds `marker`, which is how
+  /// an agent's own shells are told from its MCP servers.
+  public static func children(of pid: Int32, whoseArgumentsContain marker: String) -> [Int32] {
+    children(of: pid).filter { commandLine(of: $0)?.contains(marker) == true }
+  }
+
   /// The arguments joined by spaces, or `nil` for a process not ours to read.
   static func commandLine(of pid: Int32) -> String? {
     arguments(of: pid)?.arguments.joined(separator: " ")
@@ -36,17 +42,13 @@ public enum KernelProcessTable {
     }
     var buffer = [UInt8](repeating: 0, count: size)
     guard sysctl(&name, 3, &buffer, &size, nil, 0) == 0 else { return nil }
-    return ProcessArguments(procArgs: buffer.prefix(size))
+    return ProcessArguments(sysctlBuffer: buffer.prefix(size))
   }
 
   /// `NODEV`, a macro Swift does not import.
   static let noDevice: Int32 = -1
 
   /// The controlling terminal's device number, `nil` for a process with none.
-  static func terminalDevice(of pid: Int32) -> Int32? {
-    record(of: pid).flatMap(terminalDevice(in:))
-  }
-
   static func terminalDevice(in record: kinfo_proc) -> Int32? {
     record.kp_eproc.e_tdev == noDevice ? nil : record.kp_eproc.e_tdev
   }

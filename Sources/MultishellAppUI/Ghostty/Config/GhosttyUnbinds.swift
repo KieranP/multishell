@@ -16,6 +16,6 @@ enum GhosttyUnbinds {
   static let surfaceReleases = ["escape"]
 
   static let all: [String] =
-    AppShortcutCatalogue.all.filter { !$0.surfaceKeeps }.map(\.ghosttyCombo) + systemOwned
+    AppShortcutCatalogue.all.filter { !$0.surfaceKeepsBinding }.map(\.ghosttyCombo) + systemOwned
     + surfaceReleases
 }

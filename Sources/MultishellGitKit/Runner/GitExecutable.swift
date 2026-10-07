@@ -13,12 +13,12 @@ enum GitExecutable {
     developerDirectory: URL?
   ) async -> URL? {
     // Each PATH directory is a stat, which a dead mount holds.
-    let found = await offMain { ExecutableLookup.find("git", searchPath: searchPath) }
+    let found = await runOnDispatch { ExecutableLookup.find("git", searchPath: searchPath) }
     guard let found else { return nil }
     guard found.standardizedFileURL.path == shim.standardizedFileURL.path else { return found }
     // With no developer tools xcrun may raise their install dialog, at every launch.
     guard let developerDirectory,
-      await offMain({ FileManager.default.fileExists(atPath: developerDirectory.path) })
+      await runOnDispatch({ FileManager.default.fileExists(atPath: developerDirectory.path) })
     else { return found }
     guard
       let output = try? await ProcessRunner().capture(
@@ -27,7 +27,7 @@ enum GitExecutable {
     else { return found }
     let resolved = output.standardOutput.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !resolved.isEmpty,
-      await offMain({ FileManager.default.isExecutableFile(atPath: resolved) })
+      await runOnDispatch({ FileManager.default.isExecutableFile(atPath: resolved) })
     else { return found }
     return URL(fileURLWithPath: resolved)
   }

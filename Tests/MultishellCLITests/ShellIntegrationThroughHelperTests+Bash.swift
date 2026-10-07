@@ -167,8 +167,8 @@ extension ShellIntegrationThroughHelperTests {
 
   /// bash 4.4 and later point $! at a process substitution, and a bare `wait` waits on it.
   /// Only a bash that new shows it; the one macOS ships is 3.2, so this skips without one.
-  @Test func aBareWaitInABashTabReturns() async throws {
-    guard let newer = InstalledBashes.newer else { return }
+  @Test(.enabled(if: InstalledBashes.newer != nil)) func aBareWaitInABashTabReturns() async throws {
+    let newer = try #require(InstalledBashes.newer)
     let home = try Scratch.directory("bashwait")
     defer { Scratch.remove(home) }
     let initFile = try ShellTab.bashInitFile(in: home)

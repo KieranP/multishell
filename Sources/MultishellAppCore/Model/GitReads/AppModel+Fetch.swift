@@ -20,6 +20,6 @@ extension AppModel {
     }
     await refreshWorktrees(of: project)
     await refreshStatuses()
-    await refreshMergeStates(of: project)
+    await refreshBranchScan(of: project)
   }
 }

@@ -6,7 +6,7 @@ import Testing
 @Suite(.serialized) @MainActor
 struct ViewSidewaysWheelTests {
   /// The workspace's shape: a sidebar that scrolls beside a strip that does.
-  /// Needs the window server SettingsWindowSizeTests does.
+  /// Needs the window server ViewSettingsWindowTests does.
   @Test func theMarkedScrollerIsTheStripsAndTheCatcherStaysOutsideIt() {
     let reference = ScrollerReference()
     let workspace = HStack(spacing: 0) {

@@ -51,8 +51,8 @@ struct AppModelTabClosingTests {
     #expect(harness.model.renamingTabID == nil)
   }
 
-  /// A middle click closes the tab it landed on, which need not be the
-  /// active one; the keystrokes only ever close what is on screen.
+  /// The keystrokes only ever close what is on screen; a click can reach any
+  /// tab.
   @Test func aMiddleClickClosesTheTabItLandedOnThoughAnotherIsActive() {
     let harness = Harness()
     let first = harness.openBackgroundTab()
@@ -87,7 +87,7 @@ struct AppModelTabClosingTests {
     #expect(harness.model.pendingClose == .tab(working.id))
     #expect(harness.model.workspace.tab(working.id) != nil, "nothing closed until it is confirmed")
 
-    harness.model.answerPendingClose(confirmed: true)
+    harness.model.answerClose(.tab(working.id), confirmed: true)
     #expect(harness.model.workspace.tab(working.id) == nil)
   }
 
@@ -98,7 +98,7 @@ struct AppModelTabClosingTests {
     harness.stateSource.send(SessionStateReport(state: .running, sessionID: tab.focusedSessionID))
     harness.model.closeActiveTab()
 
-    harness.model.answerPendingClose(confirmed: false)
+    harness.model.answerClose(.tab(tab.id), confirmed: false)
 
     #expect(harness.model.pendingClose == nil)
     #expect(harness.model.workspace.tab(tab.id) != nil)
@@ -120,24 +120,59 @@ struct AppModelTabClosingTests {
     #expect(harness.model.workspace.tab(building.id) == nil)
   }
 
-  @Test func closingAWorkingPaneAsksFirstAndTheConfirmationCloses() {
+  @Test func closingAWorkingPaneAsksFirstAndTheConfirmationClosesIt() {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let tab = harness.model.workspace.activeTab(in: harness.main.id)!
+    harness.model.splitActivePane(.horizontal)
+    let pane = harness.model.workspace.tab(tab.id)!.focusedSessionID
+    harness.stateSource.send(SessionStateReport(state: .running, sessionID: pane))
+
+    harness.model.closeActivePane()
+    #expect(harness.model.pendingClose == .pane(pane))
+    #expect(harness.model.workspace.session(pane) != nil, "nothing closed yet")
+
+    harness.model.answerClose(.pane(pane), confirmed: true)
+    #expect(harness.model.pendingClose == nil)
+    #expect(harness.model.workspace.session(pane) == nil)
+    #expect(harness.model.workspace.tab(tab.id) != nil, "only the pane went")
+  }
+
+  @Test func closingAWorkingTabAsksFirstAndTheConfirmationClosesEveryPane() {
     let harness = Harness()
     harness.model.select(harness.main)
     let tab = harness.model.workspace.activeTab(in: harness.main.id)!
     harness.stateSource.send(SessionStateReport(state: .running, sessionID: tab.focusedSessionID))
 
-    harness.model.closeActivePane()
-    #expect(harness.model.pendingClose == .pane(tab.focusedSessionID))
-    #expect(harness.model.workspace.tabs(in: harness.main.id).count == 1, "nothing closed yet")
-
-    harness.model.pendingClose = nil
     harness.model.closeActiveTab()
     #expect(harness.model.pendingClose == .tab(tab.id))
 
-    harness.model.answerPendingClose(confirmed: true)
+    harness.model.answerClose(.tab(tab.id), confirmed: true)
     #expect(harness.model.pendingClose == nil)
     #expect(harness.model.workspace.tabs(in: harness.main.id).isEmpty)
     #expect(harness.model.liveTerminalCount == 0)
+  }
+
+  @Test func answeringOneCloseDoesNotPerformAnotherThatReplacedIt() {
+    let harness = Harness()
+    harness.model.select(harness.main)
+    let first = harness.model.workspace.activeTab(in: harness.main.id)!
+    harness.model.newTab()
+    let second = harness.model.workspace.activeTab(in: harness.main.id)!
+    for tab in [first, second] {
+      harness.stateSource.send(
+        SessionStateReport(state: .running, sessionID: tab.focusedSessionID))
+    }
+
+    harness.model.closeActivePane()
+    #expect(harness.model.pendingClose == .pane(second.focusedSessionID))
+    harness.model.closeTab(first.id)
+    #expect(harness.model.pendingClose == .tab(first.id))
+
+    harness.model.answerClose(.pane(second.focusedSessionID), confirmed: true)
+
+    #expect(harness.model.workspace.tab(first.id) != nil, "nobody confirmed closing this tab")
+    #expect(harness.model.pendingClose == .tab(first.id), "and its question still stands")
   }
 
   @Test func aCloseTheEngineIsAskedForOnAWorkingPaneAsksFirst() {

@@ -30,10 +30,10 @@ struct WorktreeStageHandlesTests {
 
     handles.releaseStopper(tree, ifStillHeldBy: stopper)
     #expect(handles.stopper(of: tree) == nil)
-    #expect(handles.setup(of: tree) != nil, "the removal drops no create's task")
+    #expect(handles.setupTask(of: tree) != nil, "the removal drops no create's task")
 
     handles.endSetup(tree, ifStillHeldBy: stopper)
-    #expect(handles.setup(of: tree) == nil)
+    #expect(handles.setupTask(of: tree) == nil)
   }
 
   @Test func onlyTheCreateTheSheetIsShowingIsTheOneCancelReaches() {
@@ -41,14 +41,14 @@ struct WorktreeStageHandlesTests {
     let first = ProcessStopper()
     let second = ProcessStopper()
     handles.beginCreation(with: first)
-    #expect(handles.isCreating(with: first))
+    #expect(handles.isCurrentCreation(first))
 
     handles.beginCreation(with: second)
-    #expect(!handles.isCreating(with: first), "the older create's steps are dropped")
-    #expect(handles.isCreating(with: second))
+    #expect(!handles.isCurrentCreation(first), "the older create's steps are dropped")
+    #expect(handles.isCurrentCreation(second))
 
     handles.endCreation(with: second)
-    #expect(!handles.isCreating(with: second))
+    #expect(!handles.isCurrentCreation(second))
   }
 
   @Test func theFirstOfTwoCreatesToEndLeavesTheOtherItsCancel() {
@@ -59,7 +59,7 @@ struct WorktreeStageHandlesTests {
     handles.beginCreation(with: second)
 
     handles.endCreation(with: first)
-    #expect(handles.isCreating(with: second))
+    #expect(handles.isCurrentCreation(second))
     handles.stopCreation()
     #expect(second.isStopRequested)
   }

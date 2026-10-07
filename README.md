@@ -91,6 +91,7 @@ the way they are. Pull requests are collaborators only, which
 - Lines added and removed, ahead/behind and landed badges on rows; sort, filter,
   rename.
 - Pre and post hooks for create and delete, shareable in `.multishell.json`.
+- View > Enable Debug Tools for frame rate, CPU, memory and git timings.
 - libghostty for the terminals, JSON themes, Open in Editor, and no changes to
   your shell's rc files.
 

@@ -15,7 +15,9 @@ struct InfoButton: View {
     } label: {
       Image(systemName: "info.circle")
         .foregroundStyle(.secondary)
-        .frame(width: 20, height: 20)
+        .frame(
+          width: UIMetrics.settingsGlyphButtonSide, height: UIMetrics.settingsGlyphButtonSide
+        )
         .contentShape(.rect)
     }
     .buttonStyle(.plain)

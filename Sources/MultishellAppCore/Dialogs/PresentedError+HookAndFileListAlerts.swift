@@ -9,7 +9,7 @@ extension PresentedError {
       // A pre hook's failure stopped the operation, a post hook's came
       // after it. The title says which, and who ended the hook.
       let ending =
-        switch failure.stop {
+        switch failure.stopReason {
         case .none: t("error.hook-failed")
         case .timedOut: t("error.hook-did-not-finish")
         case .byUser: t("error.hook-was-stopped")

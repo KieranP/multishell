@@ -179,7 +179,7 @@ struct AppModelWorktreeCreationTests {
     #expect(seen.contains(.preCreateHook), "the sheet could name the hook it waited on: \(seen)")
     #expect(harness.model.worktreeCreationStep == nil, "cleared once the sheet's part is over")
     let created = try #require(harness.worktree(onBranch: "stepped"))
-    await harness.model.stageHandles.setup(of: created.id)?.value
+    await harness.model.stageHandles.setupTask(of: created.id)?.value
   }
 
   /// A checkout held by an LFS smudge or a credential helper on a dead

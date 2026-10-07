@@ -21,7 +21,7 @@ struct WorktreeRemovalFailureTests {
   @Test func aTimedOutPreDeleteHookIsAVetoAndAStoppedOneFailsOnlyAfterRemoval() {
     let timedOut = ProcessFailure(
       executable: "zsh", arguments: [], status: 129, message: "still going",
-      stop: .timedOut(after: .seconds(60)))
+      stopReason: .timedOut(after: .seconds(60)))
     let failure = WorktreeRemovalFailure(
       HookFailure(stage: .preDelete, underlying: timedOut), deletingBranch: nil)
     #expect(
@@ -30,7 +30,7 @@ struct WorktreeRemovalFailureTests {
           message: "still going\n\nStopped after 60 seconds, the hook timeout.", didTimeOut: true))
 
     let stopped = ProcessFailure(
-      executable: "zsh", arguments: [], status: 129, message: "", stop: .byUser)
+      executable: "zsh", arguments: [], status: 129, message: "", stopReason: .byUser)
     #expect(
       WorktreeRemovalFailure(
         HookFailure(stage: .preDelete, underlying: stopped), deletingBranch: nil)

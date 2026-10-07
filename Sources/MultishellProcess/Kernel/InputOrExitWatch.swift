@@ -6,14 +6,12 @@ public final class InputOrExitWatch {
   public enum Event: Sendable { case input, exited }
 
   private let descriptor: Int32
-  private let pid: pid_t
   private let kqueueDescriptor: Int32
   private var hasExited = false
 
   public init?(descriptor: Int32, pid: pid_t) {
     guard pid > 0 else { return nil }
     self.descriptor = descriptor
-    self.pid = pid
     let queue = kqueue()
     guard queue >= 0 else { return nil }
     var readFilter = kevent(

@@ -25,7 +25,7 @@ struct WorktreeHooksTests {
         "printf \"%s|%s|%s|%s\" \"$MULTISHELL_PROJECT_PATH\" \"$MULTISHELL_PROJECT_NAME\" \"$MULTISHELL_WORKTREE_PATH\" \"$MULTISHELL_BRANCH\" > env.txt"
     )
     let coordinator = fixture.coordinator
-    let path = try await coordinator.createThenRunPostCreate(
+    let path = try await coordinator.createThenRunPostCreateHook(
       branch: "hooked", in: project, settings: fixture.worktreeSettings)
 
     let recorded = try String(contentsOf: path.appendingPathComponent("env.txt"), encoding: .utf8)
@@ -42,7 +42,7 @@ struct WorktreeHooksTests {
     var project = fixture.project
     project.settings = ProjectSettings(
       postDeleteHook: "printf \"%s|%s\" \"$PWD\" \"$MULTISHELL_WORKTREE_PATH\" > deleted.txt")
-    let path = try await fixture.coordinator.createThenRunPostCreate(
+    let path = try await fixture.coordinator.createThenRunPostCreateHook(
       branch: "bye", in: project, settings: fixture.worktreeSettings)
     let worktree = try await fixture.worktree(onBranch: "bye", in: project)
 
@@ -67,12 +67,12 @@ struct WorktreeHooksTests {
     // message was rc noise with nothing of the hook's in it.
     let timeout = Duration.seconds(3)
     do {
-      try await fixture.coordinator.createThenRunPostCreate(
+      try await fixture.coordinator.createThenRunPostCreateHook(
         branch: "slow", in: project, settings: fixture.worktreeSettings, timeout: timeout)
       Issue.record("the hook was not stopped")
     } catch let failure as HookFailure {
       #expect(failure.stage == .preCreate)
-      #expect(failure.stop == .timedOut(after: timeout))
+      #expect(failure.stopReason == .timedOut(after: timeout))
       #expect((failure.underlying as? ProcessFailure)?.message == "starting")
     }
     #expect(ContinuousClock.now - started < .seconds(10))
@@ -91,11 +91,11 @@ struct WorktreeHooksTests {
     }
 
     do {
-      try await fixture.coordinator.createThenRunPostCreate(
+      try await fixture.coordinator.createThenRunPostCreateHook(
         branch: "stopped", in: project, settings: fixture.worktreeSettings, stopper: stopper)
       Issue.record("the hook was not stopped")
     } catch let failure as HookFailure {
-      #expect(failure.stage == .postCreate && failure.stop == .byUser)
+      #expect(failure.stage == .postCreate && failure.stopReason == .byUser)
     }
     #expect(try await fixture.coordinator.git.list(project).count == 2, "the worktree exists")
   }
@@ -110,7 +110,7 @@ struct WorktreeHooksTests {
 
     let coordinator = fixture.coordinator
     await #expect(throws: HookFailure.self) {
-      try await coordinator.createThenRunPostCreate(
+      try await coordinator.createThenRunPostCreateHook(
         branch: "doomed", in: project, settings: settings)
     }
     #expect(try await coordinator.git.list(project).contains { $0.branch == "doomed" })
@@ -123,7 +123,7 @@ struct WorktreeHooksTests {
     project.settings = ProjectSettings(preCreateHook: "echo refused >&2\nexit 7")
 
     await #expect(throws: HookFailure.self) {
-      try await fixture.coordinator.createThenRunPostCreate(
+      try await fixture.coordinator.createThenRunPostCreateHook(
         branch: "refused", in: project, settings: fixture.worktreeSettings)
     }
 
@@ -141,7 +141,7 @@ struct WorktreeHooksTests {
     project.settings = ProjectSettings(
       preCreateHook: "pwd > pre.txt\nprintf '%s' \"$MULTISHELL_WORKTREE_PATH\" > planned.txt")
 
-    let path = try await fixture.coordinator.createThenRunPostCreate(
+    let path = try await fixture.coordinator.createThenRunPostCreateHook(
       branch: "planned", in: project, settings: fixture.worktreeSettings)
 
     let ran = try String(
@@ -159,7 +159,7 @@ struct WorktreeHooksTests {
     defer { fixture.tearDown() }
     var project = fixture.project
     project.settings = ProjectSettings(preDeleteHook: "exit 1")
-    let path = try await fixture.coordinator.createThenRunPostCreate(
+    let path = try await fixture.coordinator.createThenRunPostCreateHook(
       branch: "kept", in: project, settings: fixture.worktreeSettings)
     let worktree = try await fixture.worktree(onBranch: "kept", in: project)
 
@@ -177,7 +177,7 @@ struct WorktreeHooksTests {
     var project = fixture.project
     project.settings = ProjectSettings(
       preDeleteHook: "pwd > \"$MULTISHELL_PROJECT_PATH/where.txt\"")
-    let path = try await fixture.coordinator.createThenRunPostCreate(
+    let path = try await fixture.coordinator.createThenRunPostCreateHook(
       branch: "leaving", in: project, settings: fixture.worktreeSettings)
     let worktree = try await fixture.worktree(onBranch: "leaving", in: project)
 
@@ -194,7 +194,7 @@ struct WorktreeHooksTests {
     defer { fixture.tearDown() }
     var project = fixture.project
     project.settings = ProjectSettings(preDeleteHook: "pwd > where.txt")
-    let path = try await fixture.coordinator.createThenRunPostCreate(
+    let path = try await fixture.coordinator.createThenRunPostCreateHook(
       branch: "vanished", in: project, settings: fixture.worktreeSettings)
     let worktree = try await fixture.worktree(onBranch: "vanished", in: project)
     try FileManager.default.removeItem(at: path)
@@ -216,7 +216,7 @@ struct WorktreeHooksTests {
     )
 
     await #expect(throws: HookFailure.self) {
-      try await fixture.coordinator.createThenRunPostCreate(
+      try await fixture.coordinator.createThenRunPostCreateHook(
         branch: "lines", in: project, settings: fixture.worktreeSettings)
     }
 
@@ -236,7 +236,7 @@ struct WorktreeHooksTests {
     for name in ["zsh", "bash"] {
       let shell = try Scratch.script(
         "printf %s \(name) > shell.txt", at: shells.appendingPathComponent(name))
-      let created = try await fixture.coordinator.createThenRunPostCreate(
+      let created = try await fixture.coordinator.createThenRunPostCreateHook(
         branch: name, in: project, settings: fixture.worktreeSettings, shellPath: shell.path)
       #expect(
         try String(contentsOf: created.appendingPathComponent("shell.txt"), encoding: .utf8)

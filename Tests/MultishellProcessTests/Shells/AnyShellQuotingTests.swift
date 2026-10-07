@@ -6,9 +6,9 @@ import Testing
 
 @Suite
 struct AnyShellQuotingTests {
-  @Test(arguments: ["/bin/sh", "/bin/zsh", "/bin/bash", "/bin/dash", "/bin/tcsh"])
+  @Test(
+    arguments: InstalledShells.only(["/bin/sh", "/bin/zsh", "/bin/bash", "/bin/dash", "/bin/tcsh"]))
   func aWordQuotedForAnyShellReadsTheSameInEach(shell: String) async throws {
-    guard FileManager.default.isExecutableFile(atPath: shell) else { return }
     let words = [#"a\"#, "it's", #"\'"#, #"back\slash"#, "My Projects", "$HOME", "plain"]
     let output = try await Detached.output(
       of: shell,
@@ -18,13 +18,13 @@ struct AnyShellQuotingTests {
     #expect(output == words.map { $0 + "\n" }.joined())
   }
 
-  @Test(arguments: [
-    ("/bin/tcsh", ["-f", "-i"]), ("/bin/bash", ["--norc", "-i"]), ("/bin/zsh", ["-f", "-i"]),
-  ])
+  @Test(
+    arguments: InstalledShells.only([
+      ("/bin/tcsh", ["-f", "-i"]), ("/bin/bash", ["--norc", "-i"]), ("/bin/zsh", ["-f", "-i"]),
+    ]))
   func aWordForAnyShellSurvivesATypedLinesHistoryExpansion(
     shell: String, flags: [String]
   ) async throws {
-    guard FileManager.default.isExecutableFile(atPath: shell) else { return }
     let home = try Scratch.directory("quoting")
     defer { Scratch.remove(home) }
     let word = "a!b.txt"

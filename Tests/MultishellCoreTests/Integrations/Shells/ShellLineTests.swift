@@ -6,15 +6,6 @@ import Testing
 
 @Suite
 struct ShellLineTests {
-  private let project = Project(path: URL(fileURLWithPath: "/repos/demo"))
-
-  private func values(branch: String) -> [WorktreePlaceholder: String] {
-    let worktree = Worktree(
-      path: URL(fileURLWithPath: "/repos/demo-worktrees/w"), projectID: project.id, head: "a",
-      branch: branch)
-    return WorktreePlaceholder.values(project: project, worktree: worktree, worktreeName: branch)
-  }
-
   private func run(_ shell: String, _ line: ShellLine, in directory: URL) async throws -> String {
     let command = line.prefixing([shell, "-c", line.text])
     return try await Detached.output(
@@ -23,10 +14,9 @@ struct ShellLineTests {
   }
 
   @Test(
-    arguments: ["/bin/zsh", "/bin/bash", "/bin/sh", "/bin/tcsh", "/bin/dash"],
+    arguments: InstalledShells.only(["/bin/zsh", "/bin/bash", "/bin/sh", "/bin/tcsh", "/bin/dash"]),
     ["feat$(date>ran)", "feat`date>ran`'\"x  y"])
   func aPlaceholderTheUserQuotedStillArrivesAsText(shell: String, hostile: String) async throws {
-    guard FileManager.default.isExecutableFile(atPath: shell) else { return }
     let directory = try Scratch.directory("custom-line")
     defer { Scratch.remove(directory) }
     let expectations = [
@@ -37,15 +27,16 @@ struct ShellLineTests {
       "printf '%s|' {{branch}}{{branch}}": "\(hostile)\(hostile)|",
     ]
     for (template, expected) in expectations {
-      let line = AgentCatalogue.customCommandLine(template, values: values(branch: hostile))
+      let line = AgentCatalogue.customCommandLine(
+        template, values: WorktreePlaceholder.sampleValues(branch: hostile))
       #expect(try await run(shell, line, in: directory) == expected, "\(template)")
     }
     #expect(!FileManager.default.fileExists(atPath: directory.appendingPathComponent("ran").path))
   }
 
-  @Test(arguments: ["/bin/zsh", "/bin/bash", "/bin/sh", "/bin/tcsh", "/bin/dash"])
+  @Test(
+    arguments: InstalledShells.only(["/bin/zsh", "/bin/bash", "/bin/sh", "/bin/tcsh", "/bin/dash"]))
   func theEditorsPathArrivesAsTextWhereverItIsWritten(shell: String) async throws {
-    guard FileManager.default.isExecutableFile(atPath: shell) else { return }
     let directory = try Scratch.directory("custom-editor")
     defer { Scratch.remove(directory) }
     let path = URL(fileURLWithPath: "/w/feat$(date>ran) 'x\"")

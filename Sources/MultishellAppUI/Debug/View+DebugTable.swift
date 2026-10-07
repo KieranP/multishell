@@ -10,7 +10,7 @@ extension View {
   }
 
   /// Faintly filled while the pointer is over it; see `DebugTableRowHighlight`.
-  func highlightsOnHover(_ theme: Theme) -> some View {
+  func debugTableRowHighlight(_ theme: Theme) -> some View {
     modifier(DebugTableRowHighlight(theme: theme))
   }
 

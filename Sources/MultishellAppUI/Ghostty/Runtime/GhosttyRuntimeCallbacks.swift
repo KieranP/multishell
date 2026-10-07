@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 import GhosttyKit
 
 /// The C callbacks libghostty calls into. Each reaches a surface's view, its userdata,
@@ -18,25 +18,15 @@ enum GhosttyRuntimeCallbacks {
         GhosttyRuntimeCallbacks.readClipboard(userdata, location, request, mimes, count, wantsList)
       },
       confirm_read_clipboard_cb: { userdata, confirm, handle, kind in
-        let request = GhosttyClipboardRequest(handle: handle)
-        let paste = confirm.flatMap {
-          let contents = $0.pointee.contents
-          return GhosttyPasteConfirmation(
-            request, kind: kind,
-            contents: UnsafeBufferPointer(
-              start: contents, count: contents == nil ? 0 : $0.pointee.contents_len))
-        }
-        GhosttyRuntimeCallbacks.withView(userdata) { view in
-          if let paste { view.confirmPaste(paste) } else { view.denyClipboardRequest(request) }
-        }
+        GhosttyRuntimeCallbacks.confirmReadClipboard(userdata, confirm, handle, kind)
       },
       write_clipboard_cb: { _, location, contents, count, needsConfirming in
         guard
-          let text = GhosttyClipboard.textToWrite(
+          let text = GhosttyClipboardContents.textToWrite(
             UnsafeBufferPointer(start: contents, count: count), at: location,
             needsConfirming: needsConfirming)
         else { return }
-        DispatchQueue.main.async { GhosttyClipboard.write(text) }
+        DispatchQueue.main.async { NSPasteboard.general.replaceContents(withText: text) }
       },
       close_surface_cb: { userdata, _ in
         GhosttyRuntimeCallbacks.withView(userdata) { $0.surfaceDidClose() }
@@ -66,10 +56,31 @@ enum GhosttyRuntimeCallbacks {
     let asked = UnsafeBufferPointer(start: mimes, count: mimes == nil ? 0 : count)
     let request = GhosttyClipboardRequest(
       handle: handle,
-      wantsText: asked.contains { $0.map(String.init(cString:)) == GhosttyClipboard.textMime },
+      wantsText: asked.contains {
+        $0.map(String.init(cString:)) == GhosttyClipboardContents.textMime
+      },
       wantsList: wantsList)
     let view = view(from: userdata)
     return MainActor.assumeIsolated { view.answerClipboardRequest(request, at: location) }
+  }
+
+  /// The paste libghostty wants confirmed, its contents copied out before
+  /// the callback returns; one that cannot be read is denied.
+  private static func confirmReadClipboard(
+    _ userdata: UnsafeMutableRawPointer?, _ confirm: UnsafePointer<ghostty_clipboard_confirm_s>?,
+    _ handle: UnsafeMutableRawPointer?, _ kind: ghostty_clipboard_request_e
+  ) {
+    let request = GhosttyClipboardRequest(handle: handle)
+    let paste = confirm.flatMap {
+      let contents = $0.pointee.contents
+      return GhosttyPasteConfirmation(
+        request, kind: kind,
+        contents: UnsafeBufferPointer(
+          start: contents, count: contents == nil ? 0 : $0.pointee.contents_len))
+    }
+    withView(userdata) { view in
+      if let paste { view.confirmPaste(paste) } else { view.denyClipboardRequest(request) }
+    }
   }
 
   /// Inline where libghostty already is on the main thread, as it is inside a

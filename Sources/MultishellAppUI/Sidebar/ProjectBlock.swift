@@ -14,14 +14,14 @@ struct ProjectBlock: View {
   let isExpanded: Bool
   let sessions: SessionIDsByWorktree
   let theme: Theme
-  @Binding var projectDropTarget: ProjectDropTarget?
+  @Binding var projectInsertion: ProjectInsertion?
   @Binding var tabDropTarget: Worktree.ID?
   let endProjectDrag: () -> Void
 
   var body: some View {
     let metrics = model.metrics
     let rows = isExpanded ? worktrees.map(model.sidebarWorktree) : []
-    let insertion = projectDropTarget?.insertionPlacement(
+    let insertion = projectInsertion?.insertionPlacement(
       on: project.id, isDragging: model.draggedProjectID != nil)
 
     VStack(spacing: UIMetrics.sidebarRowSpacing) {
@@ -43,7 +43,7 @@ struct ProjectBlock: View {
       delegate: ProjectBlockDropDelegate(
         projectID: project.id,
         blockHeight: metrics.projectBlockHeight(worktreeRows: rows),
-        target: $projectDropTarget,
+        target: $projectInsertion,
         drop: { moving, placement in
           // `moveProject` looks the id up, so a drop carrying anything but a
           // project of ours moves nothing.
@@ -71,7 +71,7 @@ struct ProjectBlock: View {
     .contextMenu { ProjectActions(model: model, project: project) }
     .inAppDragSource(
       begin: {
-        projectDropTarget = nil
+        projectInsertion = nil
         model.beginProjectDrag(project.id)
         return NSItemProvider(object: project.id as NSString)
       },

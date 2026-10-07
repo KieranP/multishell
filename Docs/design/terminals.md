@@ -55,7 +55,7 @@ at the bottom.
   licence.
 - **bash is launched through `sh`**: libghostty runs a command as `exec -l`,
   which makes bash a login shell, and a login bash skips `--init-file`. Run
-  straight, a bash tab got none of our hooks (ShellLaunchTests).
+  straight, a bash tab got none of our hooks (EngineCommandLineTests).
 - **A session starts with no `ZDOTDIR` of the user's**, as a stock terminal
   does, and the chain picks up one their own files set: two of our files capture
   what they left and the third hands it back.
@@ -175,9 +175,10 @@ at the bottom.
   carried the next name out of its quotes. The pane's shell is not known at the
   drop anyway, a fish typed at a zsh prompt being fish. Cost: nu, whose single
   quotes have no escape at all, still breaks on a name holding one.
-- **Which agent a pane holds is asked of what reported there**, not of the tab:
-  one started by hand leaves no id, and a tab keeps its id after the agent
-  quits.
+- **Which agent a pane holds is asked first of what reported there**, then of
+  the command the shell said it started, and of the tab last: one started by
+  hand leaves no id on the tab (agents.md). Cost: a tab opened as an agent keeps
+  its id, so a drop after the agent quits still gets mentions.
 - **Bracketed where the engine can frame it, trailing space, never a newline**,
   so the user reads what landed and presses Return themselves.
 - **A name with a control character is left out altogether**, no quoting

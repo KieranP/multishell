@@ -159,30 +159,6 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     legacyWorkerCount = try container.decodeIfPresent(Int.self, forKey: .legacyWorkerCount)
   }
 
-  /// The roster change the report carries, an older helper's count read as
-  /// an unnamed worker starting or ending.
-  public var workerChange: WorkerReport? {
-    if let worker { return worker }
-    switch legacyWorkerCount {
-    case .some(let count) where count > 0:
-      return WorkerReport(id: WorkerReport.anonymousID, phase: .started)
-    case .some(let count) where count < 0:
-      return WorkerReport(id: WorkerReport.anonymousID, phase: .ended)
-    default:
-      return nil
-    }
-  }
-
-  /// What an app that reads only the count should make of a worker. A tool
-  /// call counts for nothing: each would otherwise add a worker to its roster.
-  static func legacyCount(of worker: WorkerReport?) -> Int? {
-    switch worker?.phase {
-    case .started: 1
-    case .ended: -1
-    case .working, nil: nil
-    }
-  }
-
   /// `nil` for anything that is not one well-formed report: any process may
   /// write to the channel, so a bad line costs that line only.
   public static func parse(_ line: String) -> SessionStateReport? {

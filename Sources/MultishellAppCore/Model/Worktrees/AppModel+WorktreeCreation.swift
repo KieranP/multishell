@@ -23,7 +23,7 @@ extension AppModel {
   /// A step reported by the create `stopper` belongs to, and dropped once
   /// that create has ended: a late one would silence the shared-hooks question.
   func noteCreationStep(_ step: WorktreeCreationStep, of stopper: ProcessStopper) {
-    guard stageHandles.isCreating(with: stopper) else { return }
+    guard stageHandles.isCurrentCreation(stopper) else { return }
     worktreeCreationStep = step
   }
 
@@ -52,7 +52,7 @@ extension AppModel {
     let stopper = ProcessStopper()
     stageHandles.beginCreation(with: stopper)
     defer {
-      if stageHandles.isCreating(with: stopper) { worktreeCreationStep = nil }
+      if stageHandles.isCurrentCreation(stopper) { worktreeCreationStep = nil }
       stageHandles.endCreation(with: stopper)
       if let claimed { releasePathClaim(claimed, in: project) }
     }
@@ -88,8 +88,9 @@ extension AppModel {
 
   /// The user's Cancel, of the hook or of git itself, is nothing to report.
   private func reportUnlessStopped(_ error: any Error) {
-    let stop = (error as? HookFailure)?.stop ?? (error as? ProcessFailure)?.stop
-    if stop != .byUser { present(error) }
+    let stopReason =
+      (error as? HookFailure)?.stopReason ?? (error as? ProcessFailure)?.stopReason
+    if stopReason != .byUser { present(error) }
   }
 
   /// git reports resolved paths, so on a symlinked volume the directory we

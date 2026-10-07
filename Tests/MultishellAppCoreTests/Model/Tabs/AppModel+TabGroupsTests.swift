@@ -51,7 +51,7 @@ struct AppModelTabGroupsTests {
   @Test func focusingAGroupHandsItTheKeyboard() {
     let harness = Harness()
     let groups = twoGroups(harness)
-    let firstsTab = harness.model.workspace.shownTab(in: groups.first)!
+    let firstsTab = harness.model.workspace.shownTab(ofGroup: groups.first)!
 
     harness.model.focusPreviousGroup()
 
@@ -119,8 +119,8 @@ struct AppModelTabGroupsTests {
 
     harness.model.splitActivePane(.vertical)
 
-    #expect(harness.model.workspace.shownTab(in: groups.first)?.isSplit == true)
-    #expect(harness.model.workspace.shownTab(in: groups.second)?.isSplit == false)
+    #expect(harness.model.workspace.shownTab(ofGroup: groups.first)?.isSplit == true)
+    #expect(harness.model.workspace.shownTab(ofGroup: groups.second)?.isSplit == false)
   }
 
   @Test func aSplitNamingAGroupActsInItAndFocusesIt() {
@@ -130,8 +130,8 @@ struct AppModelTabGroupsTests {
 
     harness.model.splitActivePane(.horizontal, in: groups.second.id)
 
-    #expect(harness.model.workspace.shownTab(in: groups.second)?.isSplit == true)
-    #expect(harness.model.workspace.shownTab(in: groups.first)?.isSplit == false)
+    #expect(harness.model.workspace.shownTab(ofGroup: groups.second)?.isSplit == true)
+    #expect(harness.model.workspace.shownTab(ofGroup: groups.first)?.isSplit == false)
     #expect(harness.model.focusedGroup?.id == groups.second.id)
   }
 
@@ -139,9 +139,9 @@ struct AppModelTabGroupsTests {
   /// it stays until that group is: `isFocused` clears, `isPaneInView` holds the banner.
   @Test func aFinishedCommandInAnotherGroupWaitsForItsFocus() {
     let harness = Harness()
-    harness.model.setNotifications(.everyState)
+    harness.model.setNotificationPreference(.everyState)
     let groups = twoGroups(harness)
-    let watched = harness.model.workspace.shownTab(in: groups.first)!.focusedSessionID
+    let watched = harness.model.workspace.shownTab(ofGroup: groups.first)!.focusedSessionID
     #expect(harness.model.focusedGroup?.id == groups.second.id)
 
     harness.stateSource.send(

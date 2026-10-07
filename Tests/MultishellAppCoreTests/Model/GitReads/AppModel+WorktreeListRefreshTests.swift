@@ -15,7 +15,7 @@ struct AppModelWorktreeListRefreshTests {
     let outside = harness.root.appendingPathComponent("outside", isDirectory: true)
     try await harness.addOutsideTheApp("outside", at: outside)
 
-    await harness.model.refreshWorktreesIfRecordsChanged()
+    await harness.model.refreshProjectsIfChanged()
 
     #expect(harness.worktree(onBranch: "outside") != nil)
     #expect(harness.watcher.watched.map(\.lastPathComponent).sorted() == ["outside", "worktrees"])
@@ -91,7 +91,7 @@ struct AppModelWorktreeListRefreshTests {
     #expect(harness.model.missingProjects == [project.id])
 
     harness.model.presentedError = nil
-    await harness.model.refreshWorktreesIfRecordsChanged()
+    await harness.model.refreshProjectsIfChanged()
     await harness.model.refreshWorktrees(of: project)
 
     #expect(
@@ -133,18 +133,18 @@ struct AppModelWorktreeListRefreshTests {
       """)
     func listings() -> Int { harness.gitCallCount(startingWith: "worktree list") }
 
-    await counting.refreshWorktreesIfRecordsChanged()
+    await counting.refreshProjectsIfChanged()
     #expect(listings() == 1, "no records yet, so a full refresh")
 
-    await counting.refreshWorktreesIfRecordsChanged()
-    await counting.refreshWorktreesIfRecordsChanged()
+    await counting.refreshProjectsIfChanged()
+    await counting.refreshProjectsIfChanged()
     #expect(listings() == 1, "nothing changed, so nothing was spawned")
     #expect(
       harness.gitCallCount(startingWith: "rev-parse") == 1, "the common dir is cached"
     )
 
     _ = try await harness.git.run(["checkout", "-q", "-b", "moved"], in: harness.project.path)
-    await counting.refreshWorktreesIfRecordsChanged()
+    await counting.refreshProjectsIfChanged()
     #expect(listings() == 2, "HEAD changed, so git was asked again")
   }
 
@@ -190,14 +190,14 @@ struct AppModelWorktreeListRefreshTests {
       in: other.path)
     harness.watcher.watched = []
 
-    await harness.model.refreshWorktreesIfRecordsChanged(
+    await harness.model.refreshProjectsIfChanged(
       under: [common.appendingPathComponent("worktrees")])
     #expect(
       harness.model.workspace.worktrees(of: other.id).count == 1,
       "the other's records were not read")
     #expect(harness.watcher.watched.isEmpty, "nothing changed, so nothing was re-armed")
 
-    await harness.model.refreshWorktreesIfRecordsChanged()
+    await harness.model.refreshProjectsIfChanged()
     #expect(harness.model.workspace.worktrees(of: other.id).count == 2)
     #expect(!harness.watcher.watched.isEmpty)
   }

@@ -25,7 +25,7 @@ struct AppModelSharedSettingsExportTests {
     #expect(json["$schema"] as? String == "https://example.test/multishell.json")
     #expect(json["branchPrefix"] as? String == "team/" && json["iconTint"] as? Int == 3)
     #expect(
-      harness.project.sharedSettings.asWritten
+      harness.project.sharedSettingsSnapshot.asWritten
         == (try SharedProjectSettings.load(from: harness.project.path))
     )
   }
@@ -65,7 +65,7 @@ struct AppModelSharedSettingsExportTests {
     #expect(written.trustCoveredText?.contains("linked:\nnode_modules") == true)
     #expect(written.worktreeDirectory == nil, "following the global is not exported")
     #expect(
-      harness.project.sharedSettings.asWritten == written)
+      harness.project.sharedSettingsSnapshot.asWritten == written)
     #expect(harness.model.pendingSharedSettingsTrust == nil, "it is all the user's own words")
     #expect(
       harness.model.trustsSharedSettings(of: harness.project))
@@ -150,7 +150,7 @@ struct AppModelSharedSettingsExportTests {
     await harness.model.exportSharedSettings(for: harness.project)
 
     let project = harness.project
-    let shared = try #require(project.sharedSettings.confined)
+    let shared = try #require(project.sharedSettingsSnapshot.confined)
     #expect(project.settings.needsTrustDecision(for: shared), "so selecting still asks")
   }
 

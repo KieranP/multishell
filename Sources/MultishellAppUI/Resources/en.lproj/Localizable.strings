@@ -88,7 +88,6 @@
 "debug.quick-help" = "Open Debug Info";
 "debug.quick-memory" = "Memory";
 "debug.range" = "Range";
-"debug.stalled-seconds" = "%1$@ with a frame over %2$@";
 "debug.title" = "Debug Info";
 "dialog.agent-still-working" = "An agent here reported that it is still working. Closing ends it.";
 "dialog.decide-later" = "Decide Later";
@@ -297,7 +296,6 @@
 "worktrees.indicator-info" = "What the badge on a worktree row and a board card counts. Staged & Unstaged counts every line in the working tree; Staged Only counts what git diff --cached shows. Uncountable files follow a ~.";
 "worktrees.path" = "Worktree path:";
 "worktrees.path-info" = "Where each project's worktrees are created. Absolute, or relative to the repository. {project} is the repository folder name, ~ is home. Default ../{project}-worktrees. Any project can override it.";
-"worktrees.prefix-example" = "Typing tabs creates %@.";
 "worktrees.prefix-none" = "none";
 "worktrees.seconds" = "seconds";
 "worktrees.sort" = "Sort worktrees:";

@@ -26,38 +26,21 @@ struct BranchRef: Hashable, Sendable {
     self.committedAt = committedAt
   }
 
-  /// The ref a clone records as the remote's default branch.
-  static let originHead = "refs/remotes/origin/HEAD"
-
-  private static let localPrefix = "refs/heads/"
-  private static let remotePrefix = "refs/remotes/"
-
-  /// Full refname: a bare name reaches a tag of that name first, and git's
-  /// ambiguity warning goes to stderr, which `runner.output` throws away.
-  static func localRef(_ branch: String) -> String { localPrefix + branch }
-
-  /// `origin/main` as a full refname, for the same reason as `localRef`.
-  static func remoteRef(_ branch: String) -> String { remotePrefix + branch }
-
-  /// `refs/heads/feat` as `feat`, and any other name as it is.
-  static func shortLocalName(_ ref: String) -> String {
-    ref.hasPrefix(localPrefix) ? String(ref.dropFirst(localPrefix.count)) : ref
-  }
-
   /// Local branches by short name, the first of any repeat kept.
   static func localBranchesByName(_ refs: [BranchRef]) -> [String: BranchRef] {
     Dictionary(
-      refs.filter(\.isLocal).map { ($0.shortName, $0) }, uniquingKeysWith: { first, _ in first })
+      keepingFirst:
+        refs.filter(\.isLocal).map { ($0.shortName, $0) })
   }
 
-  var isLocal: Bool { fullName.hasPrefix(Self.localPrefix) }
-  var isRemote: Bool { fullName.hasPrefix(Self.remotePrefix) }
+  var isLocal: Bool { fullName.hasPrefix(RefName.localPrefix) }
+  var isRemote: Bool { fullName.hasPrefix(RefName.remotePrefix) }
 
   /// `feat`, `origin/main`: `%(refname:lstrip=2)`, never `:short`'s `heads/feat`
   /// where a tag ties.
   var shortName: String {
-    if isRemote { return String(fullName.dropFirst(Self.remotePrefix.count)) }
-    return Self.shortLocalName(fullName)
+    if isRemote { return String(fullName.dropFirst(RefName.remotePrefix.count)) }
+    return RefName.shortLocal(fullName)
   }
 
   /// The branch with no remote in front of it, so the default branch's own

@@ -114,7 +114,7 @@ struct MultishellCommands: Commands {
       Button(t("label.agents")) { model.toggleAgentBoard() }
         .keyboardShortcut(AppShortcutCatalogue.toggleAgentBoard)
       Divider()
-      Toggle(t("menu.enable-debug-tools"), isOn: model.debugToolsEnabledSetting)
+      Toggle(t("menu.enable-debug-tools"), isOn: model.debugToolsEnabledBinding)
     }
   }
 

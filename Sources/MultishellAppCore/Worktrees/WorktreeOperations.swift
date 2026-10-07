@@ -3,7 +3,7 @@ import MultishellCore
 /// The create or remove running on each worktree, and who owns an entry where
 /// two meet: the removal takes it, and the hook's later result is dropped.
 public struct WorktreeOperations: Equatable, Sendable {
-  private(set) var operations: [Worktree.ID: WorktreeOperation] = [:]
+  private var operations: [Worktree.ID: WorktreeOperation] = [:]
 
   public subscript(id: Worktree.ID) -> WorktreeOperation? { operations[id] }
 

@@ -120,7 +120,7 @@ extension AppModelWorktreeListRefreshTests {
       branch: "setup", basedOn: nil, createsBranch: true, in: harness.project)
     let created = try #require(harness.worktree(onBranch: "setup"))
     #expect(harness.model.worktreeOperations[created.id]?.isRunning == true)
-    let setup = harness.model.stageHandles.setup(of: created.id)
+    let setup = harness.model.stageHandles.setupTask(of: created.id)
     let began = ContinuousClock.now
 
     try await harness.removeOutsideTheApp(created.path)
@@ -129,7 +129,7 @@ extension AppModelWorktreeListRefreshTests {
     await setup?.value
 
     #expect(harness.model.worktreeOperations[created.id] == nil)
-    #expect(harness.model.stageHandles.setup(of: created.id) == nil)
+    #expect(harness.model.stageHandles.setupTask(of: created.id) == nil)
     #expect(harness.model.stageHandles.stopper(of: created.id) == nil)
     #expect(ContinuousClock.now - began < .seconds(12), "signalled, not waited out")
     #expect(

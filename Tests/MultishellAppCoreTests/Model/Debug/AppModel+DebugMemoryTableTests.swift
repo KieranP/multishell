@@ -30,10 +30,10 @@ struct AppModelDebugMemoryTableTests {
     let table = harness.model.debugMemoryTable
     let tab = try #require(table.tabs.first)
     #expect(table.tabs.count == 1)
-    #expect(tab.group.processes.map(\.pid).sorted() == [10, 11])
+    #expect(tab.processList.processes.map(\.pid).sorted() == [10, 11])
     #expect(tab.location.worktreeName == harness.model.displayName(of: harness.main))
     #expect(table.unattributed.processes.map(\.pid) == [20])
-    #expect(tab.group.totalMemory == 200)
+    #expect(tab.processList.totalMemory == 200)
     #expect(table.unattributed.totalMemory == 100)
     #expect(table.totalMemory == 700)
   }

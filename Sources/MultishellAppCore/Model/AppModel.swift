@@ -101,7 +101,7 @@ public final class AppModel<Surface> {
 
   /// View > Enable Debug Tools. Runtime state, so sampling never outlives
   /// the launch it was turned on in.
-  public internal(set) var debugToolsEnabled = false
+  public internal(set) var areDebugToolsEnabled = false
   /// A sample a second while debug tools are on; see `takeDebugSample`.
   var debugHistory = DebugHistory()
   /// Which processes each pane runs, as of the last sample.
@@ -223,7 +223,7 @@ public final class AppModel<Surface> {
   @ObservationIgnored var mergeVerdictBases: [Worktree.ID: MergeVerdictBasis] = [:]
   /// What each verdict cost, which spreads a re-ask of every branch over
   /// several rounds; a test sets `budget` to see them spread.
-  @ObservationIgnored var mergeReads = MergeReadLog()
+  @ObservationIgnored var mergeReadLog = MergeReadLog()
   /// Each worktree's path with its symlinks resolved, for placing a report that
   /// names only a directory. Stale where a link is repointed or the path was away.
   @ObservationIgnored var resolvedWorktreeComponents: [Worktree.ID: [String]] = [:]
@@ -239,12 +239,12 @@ public final class AppModel<Surface> {
   /// invalidate the body writing it.
   @ObservationIgnored var worktreeSortCache = WorktreeSortCache()
   /// What the last refresh of each project was computed from; see
-  /// `refreshWorktreesIfRecordsChanged`.
+  /// `refreshProjectsIfChanged`.
   @ObservationIgnored var worktreeRecords: [Project.ID: WorktreeRecords] = [:]
   @ObservationIgnored var statusPolling: Task<Void, Never>?
   /// When each worktree's status was last read and how often it is read; a
   /// test reading right after a change sets `pace` to `.unpaced`.
-  @ObservationIgnored var statusReads = StatusReadLog()
+  @ObservationIgnored var statusReadLog = StatusReadLog()
   /// One coalesced status refresh per worktree; see `noteActivity`.
   @ObservationIgnored var pendingStatusRefreshes: [Worktree.ID: Task<Void, Never>] = [:]
   /// The read after the filter text changes, one per pause in typing, and

@@ -24,8 +24,7 @@ extension WorkspaceStoreTests {
       store.workspace.worktrees.first?.createdAt == listedDate, "the stat failed, the date stands")
   }
 
-  /// The point of keeping it: an undated listing is not a change, so it
-  /// costs no save and no re-render.
+  /// It costs no save and no re-render.
   @Test func anUndatedListingIsNotAChange() {
     let (store, project, _) = demoStore()
     store.replaceWorktrees([worktree(dated: listedDate)], forProject: project.id)

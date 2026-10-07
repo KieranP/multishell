@@ -2,7 +2,7 @@
 /// any thread. Its ticket keeps saves landing in the order they were asked.
 public struct WorkspaceSave: Sendable {
   let workspace: Workspace
-  let file: WorkspaceFile
+  let file: StateFile
   let ticket: SaveOrder.Ticket
 
   public func run() throws {

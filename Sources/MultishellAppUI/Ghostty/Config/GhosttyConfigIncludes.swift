@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 
 /// The user's Ghostty files and the files they include, in Ghostty's order,
 /// followed here since libghostty is handed one file; see terminals.md.
@@ -13,7 +14,7 @@ enum GhosttyConfigIncludes {
     while next < queue.count {
       let url = queue[next]
       next += 1
-      guard seen.insert(url.resolvingSymlinksInPath().standardizedFileURL.path).inserted,
+      guard seen.insert(url.comparablePath).inserted,
         let text = try? String(contentsOf: url, encoding: .utf8)
       else { continue }
       texts.append(text)

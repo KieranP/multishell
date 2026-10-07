@@ -325,8 +325,8 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   faults past the end, which is a signal and not an error a `try?` can catch.
 - **All of it runs only where status already said the worktree is dirty**, paced
   by the same rule as the status read it follows.
-- **The reads are synchronous, so they run on Dispatch through `offMain`**, as
-  the list's stats of each worktree do. `Task.detached` runs on the cooperative
+- **The reads are synchronous, so they run through `runOnDispatch`**, as the
+  list's stats of each worktree do. `Task.detached` runs on the cooperative
   pool, which is as wide as the cores: a probe of 64 blocking detached tasks
   peaked at 12 on 12 cores, and an unrelated task waited 5.15 s for a thread.
   Cost: a dead mount holds a GCD thread per read rather than queueing them.

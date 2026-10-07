@@ -10,13 +10,13 @@ extension GitRunner {
   ) async rethrows -> Result {
     guard runLog.beginRunIfRecording() else { return try await body(nil) }
     let started = ContinuousClock.now
-    let exitUsage = ExitUsageProbe()
+    let exitUsageProbe = ExitUsageProbe()
     defer {
       runLog.endRun(
         GitRun(
           command: GitCommandName.of(arguments), directory: directory,
-          duration: started.duration(to: .now), exitUsage: exitUsage.usage))
+          duration: started.duration(to: .now), exitUsage: exitUsageProbe.usage))
     }
-    return try await body(exitUsage)
+    return try await body(exitUsageProbe)
   }
 }

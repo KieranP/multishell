@@ -20,9 +20,9 @@ struct TabCommandTests {
     #expect(command.last == "'my agent' --name 'it'\\''s'; exec /opt/homebrew/bin/nu -l")
   }
 
-  @Test func anArgumentWithABangOrBackslashReachesTheAgentUnderInteractiveTcsh() async throws {
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/tcsh")))
+  func anArgumentWithABangOrBackslashReachesTheAgentUnderInteractiveTcsh() async throws {
     let tcsh = "/bin/tcsh"
-    guard FileManager.default.isExecutableFile(atPath: tcsh) else { return }
     let home = try Scratch.directory("tab-command")
     defer { Scratch.remove(home) }
     let words = ["/code/a!b", #"back\\slash"#]
@@ -37,17 +37,15 @@ struct TabCommandTests {
     #expect(text == words.map { "[\($0)]\n" }.joined())
   }
 
-  @Test func theHandOverReachesZshWithItsDirectoryIntactUnderInteractiveTcsh() async throws {
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/tcsh")))
+  func theHandOverReachesZshWithItsDirectoryIntactUnderInteractiveTcsh() async throws {
     let tcsh = "/bin/tcsh"
-    guard FileManager.default.isExecutableFile(atPath: tcsh) else { return }
     let home = try Scratch.directory("hand-over")
     defer { Scratch.remove(home) }
     let zshDirectory = home.appendingPathComponent("a!b")
     try FileManager.default.createDirectory(at: zshDirectory, withIntermediateDirectories: true)
-    let zsh = home.appendingPathComponent("zsh")
-    try "#!/bin/sh\nprintf '[%s]\\n' \"$ZDOTDIR\"\n".write(
-      to: zsh, atomically: true, encoding: .utf8)
-    try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: zsh.path)
+    let zsh = try Scratch.script(
+      #"printf '[%s]\n' "$ZDOTDIR""#, at: home.appendingPathComponent("zsh"))
     let missing = URL(fileURLWithPath: "/no/such")
     let command = TabCommand.running(
       ["true"],
@@ -63,14 +61,14 @@ struct TabCommandTests {
     #expect(text.contains("[\(zshDirectory.path)]"), "\(text)")
   }
 
-  @Test(arguments: [
-    ("/bin/zsh", ["-f", "-i", "-c"]), ("/bin/bash", ["--norc", "-i", "-c"]),
-    ("/bin/sh", ["-c"]), ("/bin/tcsh", ["-f", "-i", "-c"]),
-  ])
+  @Test(
+    arguments: InstalledShells.only([
+      ("/bin/zsh", ["-f", "-i", "-c"]), ("/bin/bash", ["--norc", "-i", "-c"]),
+      ("/bin/sh", ["-c"]), ("/bin/tcsh", ["-f", "-i", "-c"]),
+    ]))
   func aBranchNameInAFlagReachesTheAgentAsTextAndRunsNothing(
     shell: String, flags: [String]
   ) async throws {
-    guard FileManager.default.isExecutableFile(atPath: shell) else { return }
     let home = try Scratch.directory("tab-command")
     defer { Scratch.remove(home) }
     let ran = home.appendingPathComponent("ran").path

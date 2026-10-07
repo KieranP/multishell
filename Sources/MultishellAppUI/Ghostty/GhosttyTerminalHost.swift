@@ -23,19 +23,11 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
     let launch = GhosttySurfaceLaunch(
       workingDirectory: session.workingDirectory.path,
       environment: SessionEnvironment.variables(for: session, socket: Paths.socketFile),
-      command: Self.command(for: session))
+      command: EngineCommandLine.of(session))
     let view = GhosttySurfaceView(runtime: runtimeOwner.runtime, launch: launch)
     guard view.surface != nil else { throw TerminalUnavailable() }
     connect(view, to: session.id)
     views[session.id] = view
-  }
-
-  /// A tab's command, or an override naming a chosen shell. zsh as `$SHELL`
-  /// needs none, its hooks riding in on `ZDOTDIR`.
-  static func command(for session: TerminalSession) -> String? {
-    if let command = session.command { return PosixShellQuoting.commandLine(command) }
-    return ShellLaunch.overrideCommand(forShell: session.shellPath).map(
-      PosixShellQuoting.commandLine)
   }
 
   private func connect(_ view: GhosttySurfaceView, to id: TerminalSession.ID) {

@@ -57,7 +57,7 @@ extension AppModelSharedSettingsExportTests {
   private func expectSecondInForce(_ harness: GitHarness) throws {
     let onDisk = try #require(try SharedProjectSettings.load(from: harness.project.path))
     #expect(onDisk.postCreateHook == "make setup")
-    let read = harness.project.sharedSettings
+    let read = harness.project.sharedSettingsSnapshot
     #expect(read.asWritten == onDisk)
     let stamp = SharedSettingsReading.modificationDate(
       of: SharedProjectSettings.file(in: harness.project.path))

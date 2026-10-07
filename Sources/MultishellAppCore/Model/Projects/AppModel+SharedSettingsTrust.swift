@@ -3,7 +3,7 @@ import MultishellCore
 extension AppModel {
   /// Whether what the file asks for is in force for this project.
   public func trustsSharedSettings(of project: Project) -> Bool {
-    guard let shared = project.sharedSettings.confined else { return false }
+    guard let shared = project.sharedSettingsSnapshot.confined else { return false }
     return project.settings.trustsSharedSettings(of: shared)
   }
 
@@ -14,7 +14,7 @@ extension AppModel {
     // fight, and the question returns on the next selection.
     guard newWorktreeRequest == nil, worktreeCreationStep == nil else { return }
     guard pendingSharedSettingsTrust == nil, let project = workspace.project(id),
-      let shared = project.sharedSettings.confined,
+      let shared = project.sharedSettingsSnapshot.confined,
       let trustCoveredText = shared.trustCoveredText, let digest = shared.digest,
       project.settings.needsTrustDecision(for: shared)
     else { return }
@@ -46,7 +46,7 @@ extension AppModel {
     // A button's action runs after the render that built it, so this one
     // copy can be a read behind; the digest decides what trust is stored.
     let project = currentCopy(of: project)
-    guard let shared = project.sharedSettings.confined, shared.asksForTrust,
+    guard let shared = project.sharedSettingsSnapshot.confined, shared.asksForTrust,
       let digest = shared.digest
     else { return }
     recordTrustDecision(digest: digest, isTrusted: trusts, for: project.id)

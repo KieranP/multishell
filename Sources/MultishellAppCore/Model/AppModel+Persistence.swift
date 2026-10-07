@@ -42,7 +42,7 @@ extension AppModel {
   func saveOffMain() {
     guard !isYieldingToRunningInstance, let save = store.prepareSave() else { return }
     Task { @MainActor [weak self] in
-      let outcome = await offMain { Result { try save.run() } }
+      let outcome = await runOnDispatch { Result { try save.run() } }
       self?.recordSaveOutcome(outcome)
     }
   }

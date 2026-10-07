@@ -8,7 +8,7 @@ struct GhosttyPasteConfirmationTests {
   private func confirmation(
     _ kind: ghostty_clipboard_request_e, text: String?
   ) -> GhosttyPasteConfirmation? {
-    CStrings.with([GhosttyClipboard.textMime, text ?? ""]) { strings in
+    CStrings.with([GhosttyClipboardContents.textMime, text ?? ""]) { strings in
       let contents =
         text == nil
         ? []

@@ -27,7 +27,7 @@ struct WorktreeRow: View {
   let commitRename: (String) -> Void
   let cancelRename: () -> Void
 
-  private var kind: String { AccessibilityText.kind(of: worktree) }
+  private var kind: String { worktree.kindText() }
 
   private var height: Double {
     metrics.worktreeRowHeight(hasCustomName: customName != nil, isRenaming: isRenaming)
@@ -71,7 +71,7 @@ struct WorktreeRow: View {
         worktree, customName: customName, state: state, status: status, operation: operation,
         terminalCount: terminalCount, isSelected: isSelected, mergeState: mergeState)
     )
-    .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    .selectableButtonTraits(isSelected: isSelected)
     .accessibilityAction(named: t("action.rename-spoken"), beginRename)
   }
 

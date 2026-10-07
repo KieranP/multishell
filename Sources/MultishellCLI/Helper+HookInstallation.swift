@@ -3,7 +3,8 @@ import MultishellCore
 
 extension Helper {
   /// A person typed this line, so a missing agent is refused, not guessed.
-  static func requiredIntegration(_ options: CommandOptions) throws -> AgentHookIntegration {
+  private static func requiredIntegration(_ options: CommandOptions) throws -> AgentHookIntegration
+  {
     guard let id = options["agent"] else { throw UsageError("--agent is required") }
     guard let integration = AgentHookCatalogue.integration(id) else {
       throw UsageError(
@@ -12,23 +13,28 @@ extension Helper {
     return integration
   }
 
-  static func installHooks(
-    _ integration: AgentHookIntegration, print shouldPrint: Bool
-  ) throws
-    -> Int32
-  {
-    if shouldPrint {
-      print(integration.snippet(), terminator: "")
-      return 0
+  static func installAgentHooks(_ arguments: ArraySlice<String>) throws {
+    let options = try CommandOptions(arguments, valued: ["agent"], flags: ["print"])
+    let integration = try requiredIntegration(options)
+    if options.has("print") {
+      printHooks(integration)
+    } else {
+      try installHooks(integration)
     }
-    try integration.install()
-    print("\(integration.name) hooks added to \(integration.file.path)")
-    return 0
   }
 
-  static func removeHooks(_ integration: AgentHookIntegration) throws -> Int32 {
+  static func removeAgentHooks(_ arguments: ArraySlice<String>) throws {
+    let integration = try requiredIntegration(CommandOptions(arguments, valued: ["agent"]))
     try integration.remove()
     print("\(integration.name) hooks removed from \(integration.file.path)")
-    return 0
+  }
+
+  private static func printHooks(_ integration: AgentHookIntegration) {
+    print(integration.snippet(), terminator: "")
+  }
+
+  private static func installHooks(_ integration: AgentHookIntegration) throws {
+    try integration.install()
+    print("\(integration.name) hooks added to \(integration.file.path)")
   }
 }

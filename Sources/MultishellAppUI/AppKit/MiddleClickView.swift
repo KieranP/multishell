@@ -1,9 +1,9 @@
 import AppKit
 
 /// Answers `hitTest` only while a middle-button event is routed, so what is
-/// drawn underneath keeps its clicks. The action runs on mouse up inside.
+/// drawn underneath keeps its clicks. `onMiddleClick` runs on mouse up inside.
 final class MiddleClickView: AccessibilityHiddenView {
-  var action: (() -> Void)?
+  var onMiddleClick: (() -> Void)?
 
   override func hitTest(_ point: NSPoint) -> NSView? {
     switch NSApp.currentEvent?.type {
@@ -20,6 +20,6 @@ final class MiddleClickView: AccessibilityHiddenView {
 
   override func otherMouseUp(with event: NSEvent) {
     guard event.buttonNumber == 2 else { return super.otherMouseUp(with: event) }
-    if bounds.contains(convert(event.locationInWindow, from: nil)) { action?() }
+    if bounds.contains(convert(event.locationInWindow, from: nil)) { onMiddleClick?() }
   }
 }

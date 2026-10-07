@@ -81,14 +81,13 @@ struct ProcessStopperTests {
   }
 
   @Test func aTimeoutEndsAnInteractiveShellAndTheCommandItRuns() async throws {
-    for shell in ["/bin/zsh", "/bin/bash"]
-    where FileManager.default.isExecutableFile(atPath: shell) {
+    for shell in InstalledShells.only(["/bin/zsh", "/bin/bash"]) {
       let started = ContinuousClock.now
       let output = try await runner.capture(
         URL(fileURLWithPath: shell), ["-i", "-c", "sleep 30 & echo $!; wait"], in: workingDirectory,
         environment: ["HOME": workingDirectory.path, "HISTFILE": ""], timeout: .milliseconds(500))
       let elapsed = ContinuousClock.now - started
-      #expect(output.stop == .timedOut(after: .milliseconds(500)), "\(shell)")
+      #expect(output.stopReason == .timedOut(after: .milliseconds(500)), "\(shell)")
       #expect(!output.succeeded, "\(shell)")
       // The child sleeps thirty, so twelve tells a stop from no stop
       // rather than a fast runner from a slow one.
@@ -107,7 +106,7 @@ struct ProcessStopperTests {
     let started = ContinuousClock.now
     let output = try await runner.capture(
       URL(fileURLWithPath: "/bin/sh"), ["-c", "sleep 30"], in: workingDirectory, stopper: stopper)
-    #expect(output.stop == .byUser)
+    #expect(output.stopReason == .byUser)
     #expect(ContinuousClock.now - started < .seconds(12), "the child sleeps thirty")
   }
 
@@ -116,7 +115,7 @@ struct ProcessStopperTests {
     stopper.stop()
     let output = try await runner.capture(
       URL(fileURLWithPath: "/bin/sh"), ["-c", "sleep 30"], in: workingDirectory, stopper: stopper)
-    #expect(output.stop == .byUser)
+    #expect(output.stopReason == .byUser)
   }
 
   /// The status proves the kill, not a clock: a loaded CI runner's startup
@@ -127,7 +126,7 @@ struct ProcessStopperTests {
       URL(fileURLWithPath: "/bin/sh"), ["-c", "trap '' HUP; sleep 30"], in: workingDirectory,
       timeout: .milliseconds(200))
     let elapsed = ContinuousClock.now - started
-    #expect(output.stop == .timedOut(after: .milliseconds(200)))
+    #expect(output.stopReason == .timedOut(after: .milliseconds(200)))
     #expect(elapsed > .seconds(2), "the grace was skipped: \(elapsed)")
     #expect(output.status == SIGKILL, "the kill never came: exit status \(output.status)")
   }
@@ -138,7 +137,7 @@ struct ProcessStopperTests {
       URL(fileURLWithPath: "/bin/sh"), ["-c", "printf ok"], in: workingDirectory,
       timeout: .seconds(5),
       stopper: stopper)
-    #expect(output.stop == nil && output.succeeded)
+    #expect(output.stopReason == nil && output.succeeded)
     #expect(stopper.appliedStop == nil)
   }
 
@@ -157,7 +156,7 @@ struct ProcessStopperTests {
     let started = ContinuousClock.now
     let second = try await runner.capture(
       URL(fileURLWithPath: "/bin/sh"), ["-c", "sleep 30"], in: workingDirectory, stopper: stopper)
-    #expect(second.stop == .byUser, "the second hook is the one the Cancel was for")
+    #expect(second.stopReason == .byUser, "the second hook is the one the Cancel was for")
     #expect(ContinuousClock.now - started < .seconds(12), "it slept its thirty")
   }
 
@@ -176,7 +175,7 @@ struct ProcessStopperTests {
 
     let second = try await runner.capture(
       URL(fileURLWithPath: "/bin/sh"), ["-c", "printf two"], in: workingDirectory, stopper: stopper)
-    #expect(second.stop == nil && second.standardOutput == "two")
+    #expect(second.stopReason == nil && second.standardOutput == "two")
   }
 
   /// A child with SIGHUP blocked takes the timeout's signal as one already exiting
@@ -210,7 +209,7 @@ struct ProcessStopperTests {
     try Data().write(to: scratch.appendingPathComponent("go"))
     let output = try await run.value
 
-    #expect(output.stop == nil && output.succeeded)
+    #expect(output.stopReason == nil && output.succeeded)
     #expect(!stopper.isStopRequested, "the stage it belongs to carries on with it")
   }
 
@@ -231,7 +230,7 @@ struct ProcessStopperTests {
     #expect(stopper.isStopRequested)
     let next = try await runner.capture(
       URL(fileURLWithPath: "/bin/sh"), ["-c", "sleep 30"], in: workingDirectory, stopper: stopper)
-    #expect(next.stop == .byUser)
+    #expect(next.stopReason == .byUser)
   }
 
   /// SIGHUP reaches the group, so the shell goes at once and the guard on it

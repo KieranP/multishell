@@ -14,7 +14,7 @@ extension AppModel {
   /// A report names a live session, or only a directory. One naming an
   /// unknown session is dropped, never matched by directory.
   func receive(_ report: SessionStateReport) {
-    if debugToolsEnabled { stateReportsSinceDebugSample += 1 }
+    if areDebugToolsEnabled { stateReportsSinceDebugSample += 1 }
     // An older helper's walk from a prompt ends at this process, whose pid
     // never goes while it is looking; see Docs/design/agents.md.
     let pid = report.pid == ProcessInfo.processInfo.processIdentifier ? nil : report.pid
@@ -58,7 +58,7 @@ extension AppModel {
     guard let visibility = visibility(of: key) else { return }
     var meant: SessionState?
     mutateStates {
-      meant = $0.report(report, pid: pid, for: key, isSeen: visibility.isSeen)
+      meant = $0.apply(report, pid: pid, for: key, isSeen: visibility.isSeen)
     }
     if let meant {
       notifyIfNeeded(

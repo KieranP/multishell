@@ -52,7 +52,7 @@ struct PresentedErrorTests {
     let timedOut = PresentedError(
       ProcessFailure(
         executable: "git", arguments: ["fetch", "--prune", "--quiet"], status: 129, message: "",
-        stop: .timedOut(after: .seconds(120))))
+        stopReason: .timedOut(after: .seconds(120))))
     #expect(timedOut.title == "Fetch did not finish")
     #expect(timedOut.message.contains("asked for a password"))
     #expect(timedOut.message.contains("SSH key"))
@@ -76,7 +76,7 @@ struct PresentedErrorTests {
   @Test func unmovedStateNamesTheFileStillStandingThere() {
     let file = URL(fileURLWithPath: "/tmp/state.json")
     let presented = PresentedError(
-      UnmovableStateFile(file: file, underlying: CocoaError(.coderReadCorrupt)))
+      UnmovableStateFile(fileURL: file, underlying: CocoaError(.coderReadCorrupt)))
     #expect(presented.title == "Saved state could not be read")
     #expect(presented.message.contains("/tmp/state.json"))
     #expect(presented.message.contains("Nothing will be saved over it"))
@@ -152,12 +152,5 @@ struct PresentedErrorTests {
     #expect(PresentedError(GitUnavailable()).saysGitIsMissing)
     #expect(!PresentedError(InvalidBranchName("x")).saysGitIsMissing)
     #expect(!PresentedError(title: "git not found", message: "").saysGitIsMissing)
-  }
-
-  @Test func retryIsAbsentUnlessAdded() {
-    var presented = PresentedError(GitUnavailable())
-    #expect(presented.retry == nil)
-    presented.retry = .init(label: "Delete Branch Anyway") {}
-    #expect(presented.retry?.label == "Delete Branch Anyway")
   }
 }

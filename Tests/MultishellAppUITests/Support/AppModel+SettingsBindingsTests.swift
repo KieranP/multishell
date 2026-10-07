@@ -89,13 +89,13 @@ struct AppModelSettingsBindingsTests {
 
   @Test func aNotificationToggleChangesOnlyItsOwnState() {
     let harness = ModelHarness()
-    let before = harness.model.workspace.notifications
+    let before = harness.model.workspace.notificationPreference
 
     harness.model.notificationSetting(for: .done).wrappedValue = !before[.done]
 
-    #expect(harness.model.workspace.notifications[.done] == !before[.done])
-    #expect(harness.model.workspace.notifications[.failed] == before[.failed])
-    #expect(harness.model.workspace.notifications[.attention] == before[.attention])
+    #expect(harness.model.workspace.notificationPreference[.done] == !before[.done])
+    #expect(harness.model.workspace.notificationPreference[.failed] == before[.failed])
+    #expect(harness.model.workspace.notificationPreference[.attention] == before[.attention])
   }
 
   /// A settings window outlives refreshes, so its `Project` goes stale; a binding that

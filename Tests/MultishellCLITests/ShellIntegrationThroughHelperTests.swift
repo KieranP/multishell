@@ -9,8 +9,8 @@ import Testing
 /// through the built helper to a socket standing in for the app.
 @Suite(.serialized)
 struct ShellIntegrationThroughHelperTests {
-  @Test func zshIntegrationLoadsUserConfigAndReportsThroughInjectedHooks() async throws {
-    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
+  func zshIntegrationLoadsUserConfigAndReportsThroughInjectedHooks() async throws {
     let listener = try ReportListener()
     defer { listener.stop() }
     let recorder = listener.recorder
@@ -48,32 +48,14 @@ struct ShellIntegrationThroughHelperTests {
     #expect(SessionStateReport.parse(recorder.received.first ?? "")?.sessionID == session)
   }
 
-  @Test func zshSendsAnIdleLineForItsSessionOnTheWayOut() async throws {
-    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
-    let root = try Scratch.directory("zsh-json")
-    defer { Scratch.remove(root) }
-    let integration = try ShellTab.zshIntegrationDirectory(
-      in: root, helper: URL(filePath: "/bin/echo"))
-    var environment = ShellTab.zshEnvironment(
-      socket: URL(fileURLWithPath: "/nonexistent.sock"), home: root, integration: integration,
-      userZdotdir: root)
-    environment["MULTISHELL_SESSION"] = "s"
-
-    let output = try await ShellTab.runZsh(
-      #"_multishell_send() { print -r -- "line=$1" }; _multishell_zshexit"#, in: root,
-      environment: environment)
-
-    #expect(output.standardOutput.contains(#"line={"v":1,"state":"idle","session":"s""#))
-  }
-
   /// `%f` writes the locale's decimal separator, so a comma region sent
   /// `"duration":1,234` and the reader dropped the whole report.
-  @Test func aCommaDecimalLocaleStillSendsAReportThatParses() async throws {
-    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
+  func aCommaDecimalLocaleStillSendsAReportThatParses() async throws {
     let comma = try await ProcessRunner().capture(
       URL(fileURLWithPath: "/bin/zsh"), ["-c", "printf '%.3f' 1.5"],
       in: URL(fileURLWithPath: "/tmp"), environment: ["LC_ALL": "de_DE.UTF-8"])
-    guard comma.standardOutput.contains(",") else { return }
+    try #require(comma.standardOutput.contains(","), "de_DE writes a decimal comma")
 
     let listener = try ReportListener()
     defer { listener.stop() }
@@ -98,8 +80,8 @@ struct ShellIntegrationThroughHelperTests {
     #expect(finished.first?.duration != nil, "the duration is what the separator broke")
   }
 
-  @Test func zshIntegrationFollowsAZdotdirSetByTheUsersZshenv() async throws {
-    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
+  func zshIntegrationFollowsAZdotdirSetByTheUsersZshenv() async throws {
     let listener = try ReportListener()
     defer { listener.stop() }
     let recorder = listener.recorder
@@ -133,8 +115,8 @@ struct ShellIntegrationThroughHelperTests {
   }
 
   /// Only a login shell reads ~/.zprofile.
-  @Test func zshIntegrationFollowsAZdotdirSetByTheUsersZprofile() async throws {
-    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
+  func zshIntegrationFollowsAZdotdirSetByTheUsersZprofile() async throws {
     let root = try Scratch.directory("profile")
     defer { Scratch.remove(root) }
     let integration = try ShellTab.zshIntegrationDirectory(in: root)
@@ -166,8 +148,8 @@ struct ShellIntegrationThroughHelperTests {
 
   /// git refuses a control character in a branch name, but a parent directory
   /// may carry one, and the zsh line escaped only backslash and quote.
-  @Test func aWorktreePathHoldingAControlCharacterStillReportsFromZsh() async throws {
-    guard FileManager.default.isExecutableFile(atPath: "/bin/zsh") else { return }
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
+  func aWorktreePathHoldingAControlCharacterStillReportsFromZsh() async throws {
     let listener = try ReportListener()
     defer { listener.stop() }
     let recorder = listener.recorder

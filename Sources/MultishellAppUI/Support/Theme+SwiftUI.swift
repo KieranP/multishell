@@ -26,8 +26,10 @@ extension Theme {
   var textTertiary: Color { foregroundColor.opacity(0.38) }
   var hairline: Color { foregroundColor.opacity(0.09) }
   func rowNameColor(isSelected: Bool) -> Color {
-    textPrimary.opacity(isSelected ? 1 : UIMetrics.unselectedRowNameOpacity)
+    textPrimary.opacity(isSelected ? 1 : Self.unselectedRowNameOpacity)
   }
+  /// How far a sidebar row's name is held back until the row is selected.
+  private static let unselectedRowNameOpacity: Double = 0.85
   var faintFill: Color { foregroundColor.opacity(0.06) }
 
   var colorScheme: ColorScheme { isDark ? .dark : .light }

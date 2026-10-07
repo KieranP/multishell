@@ -87,7 +87,7 @@ struct SidebarFilterTests {
 
   @Test func aRenamedWorktreeMatchesOnEitherName() {
     var sample = workspace
-    sample.worktreeNames[sample.worktrees[1].id] = "Checkout flow"
+    sample.customWorktreeNames[sample.worktrees[1].id] = "Checkout flow"
 
     let byName = SidebarFilter("checkout FLOW").apply(to: sample)
     #expect(byName.map(\.project.name) == ["acme-web"])
@@ -97,7 +97,7 @@ struct SidebarFilterTests {
     #expect(byBranch[0].worktrees.map(\.name) == ["feat/checkout"])
   }
 
-  @Test func noMatchIsEmpty() {
+  @Test func aFilterNothingMatchesShowsNoRows() {
     #expect(SidebarFilter("zzz").apply(to: workspace).isEmpty)
   }
 }

@@ -15,7 +15,9 @@ struct WorkspaceTests {
     let keys = try #require(try JSONSerialization.jsonObject(with: encoded) as? [String: Any]).keys
 
     #expect(keys.count == fields, "a field missing from CodingKeys is silently never saved")
-    #expect(keys.contains("defaultShell"), "the key every earlier state file used")
+    for key in ["defaultShell", "worktreeNames", "notifications"] {
+      #expect(keys.contains(key), "\(key), the key every earlier state file used")
+    }
   }
 
   @Test func aKeyNoFieldAnswersToDoesNotFailTheFile() throws {
@@ -27,7 +29,7 @@ struct WorkspaceTests {
 
   @Test func aWorkspaceWithoutAgentOrNotificationFieldsGetsTheDefaults() throws {
     let workspace = try decodeJSON(Workspace.self, #"{ "projects": [] }"#)
-    #expect(workspace.notifications == .off, "no state banners until asked for")
+    #expect(workspace.notificationPreference == .off, "no state banners until asked for")
     #expect(workspace.preferredAgentID == nil)
     #expect(workspace.customAgentCommand == "")
     #expect(workspace.agentFlags.isEmpty, "no agent is given flags it was not asked to pass")
@@ -137,10 +139,10 @@ struct WorkspaceTests {
   }
 
   @Test func aWorkspaceWithoutCustomWorktreeNamesHasNone() throws {
-    #expect(try decodeJSON(Workspace.self, #"{ "projects": [] }"#).worktreeNames.isEmpty)
+    #expect(try decodeJSON(Workspace.self, #"{ "projects": [] }"#).customWorktreeNames.isEmpty)
     let named = try decodeJSON(
       Workspace.self, #"{ "worktreeNames": { "/repos/demo": "Checkout flow" } }"#)
-    #expect(named.worktreeNames == ["/repos/demo": "Checkout flow"])
+    #expect(named.customWorktreeNames == ["/repos/demo": "Checkout flow"])
   }
 
   @Test func aSavedLayoutIsWrittenUnderTheTabGroupKeysAndComesBackExactly() throws {

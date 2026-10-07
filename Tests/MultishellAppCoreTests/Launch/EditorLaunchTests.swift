@@ -29,9 +29,9 @@ struct EditorLaunchTests {
     #expect(action("no-such-editor") == nil)
   }
 
-  @Test func anEditorShimGetsAWorktreePathWithABangUnderInteractiveTcsh() async throws {
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/tcsh")))
+  func anEditorShimGetsAWorktreePathWithABangUnderInteractiveTcsh() async throws {
     let tcsh = "/bin/tcsh"
-    guard FileManager.default.isExecutableFile(atPath: tcsh) else { return }
     let home = try Scratch.directory("editor-shim")
     defer { Scratch.remove(home) }
     let worktree = URL(fileURLWithPath: "/code/a!b")

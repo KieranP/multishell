@@ -21,7 +21,7 @@ enum WorktreeListParser {
           path: URL(filePath: path, directoryHint: .isDirectory),
           projectID: projectID,
           head: fields["HEAD"] ?? "",
-          branch: fields["branch"].map(BranchRef.shortLocalName),
+          branch: fields["branch"].map(RefName.shortLocal),
           isPrimary: worktrees.isEmpty,
           isLocked: fields["locked"] != nil,
           isInitializing: fields["locked"] == "initializing",

@@ -18,12 +18,17 @@ final class MacPlatform: Platform {
   private let logger = Logger(subsystem: bundleIdentifier, category: "platform")
   private var displayFrameLink: DisplayFrameLink?
 
+  private var observers: [any NSObjectProtocol] = []
+
   init() {
-    NotificationCenter.default.addObserver(
-      forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main
-    ) { [weak self] _ in
-      Task { @MainActor in self?.onDidBecomeActive?() }
+    // A turn later, the timing `onDidBecomeActive`'s handler was written against.
+    let becameActive: @MainActor @Sendable (MacPlatform) -> Void = { platform in
+      Task { @MainActor [weak platform] in platform?.onDidBecomeActive?() }
     }
+    let changes: [(NSNotification.Name, @MainActor @Sendable (MacPlatform) -> Void)] = [
+      (NSApplication.didBecomeActiveNotification, becameActive)
+    ]
+    observers = NotificationCenter.default.observe(changes, for: self)
   }
 
   var isActive: Bool { NSApp?.isActive ?? true }
@@ -54,8 +59,7 @@ final class MacPlatform: Platform {
   }
 
   func copyToClipboard(_ text: String) {
-    NSPasteboard.general.clearContents()
-    NSPasteboard.general.setString(text, forType: .string)
+    NSPasteboard.general.replaceContents(withText: text)
   }
 
   nonisolated func moveToTrash(_ url: URL) throws {
@@ -69,28 +73,6 @@ final class MacPlatform: Platform {
   func open(_ directory: URL, withApplication application: URL) async throws {
     _ = try await NSWorkspace.shared.open(
       [directory], withApplicationAt: application, configuration: .init())
-  }
-
-  var bundledHelper: URL? {
-    let helper = Bundle.main.bundleURL
-      .appendingPathComponent("Contents/Helpers/multishell", isDirectory: false)
-    return FileManager.default.isExecutableFile(atPath: helper.path) ? helper : nil
-  }
-
-  /// The one script this app runs with administrator rights.
-  static let installToolScript = """
-    on installTool(target, link)
-      do shell script "mkdir -p /usr/local/bin && ln -sf " & quoted form of target & " " ¬
-        & quoted form of link with administrator privileges
-    end installTool
-    """
-
-  /// Links `/usr/local/bin/multishell` to the stable link, through an
-  /// administrator prompt, so the tool survives the app moving.
-  func installCommandLineTool() throws {
-    try AppleScriptRunner.call(
-      Self.installToolScript, handler: "installTool",
-      arguments: [Paths.helperLink.path, HelperLink.commandLineToolLink.path])
   }
 
   /// The Dock tile's badge. An empty label is not the same as none, so a

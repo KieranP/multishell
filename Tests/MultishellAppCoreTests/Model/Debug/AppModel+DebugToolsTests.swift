@@ -41,7 +41,7 @@ struct AppModelDebugToolsTests {
     harness.model.select(harness.main)
 
     harness.model.showDebugInfo()
-    #expect(harness.model.detailContent == .debugInfo)
+    #expect(harness.model.detailContent == .cover(.debugInfo))
     #expect(!harness.model.isInView(harness.main))
 
     harness.model.select(harness.main)

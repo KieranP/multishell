@@ -12,7 +12,7 @@ struct WorktreeStageHandles: Sendable {
 
   /// The file lists and post-create hook still running on `id`, as one task,
   /// so a test can await it.
-  func setup(of id: Worktree.ID) -> Task<Void, Never>? { setupTasks[id] }
+  func setupTask(of id: Worktree.ID) -> Task<Void, Never>? { setupTasks[id] }
 
   /// The stop handle held for `id`, so a test can see an ended stage let it go.
   func stopper(of id: Worktree.ID) -> ProcessStopper? { stoppers[id] }
@@ -51,7 +51,7 @@ struct WorktreeStageHandles: Sendable {
 
   /// Whether `stopper` is the create the sheet is showing. A step reported by
   /// an older one is dropped.
-  func isCreating(with stopper: ProcessStopper) -> Bool {
+  func isCurrentCreation(_ stopper: ProcessStopper) -> Bool {
     creationStopper === stopper
   }
 

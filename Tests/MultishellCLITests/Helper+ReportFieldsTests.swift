@@ -17,9 +17,9 @@ struct HelperReportFieldsTests {
     let path = listener.path
     let recorder = listener.recorder
 
-    let inner = "\(PosixShellQuoting.quote(try HelperBinary.require().path)) state running"
+    let inner = "\(AnyShellQuoting.quote(try HelperBinary.require().path)) state running"
     let output = try await HelperBinary.run(
-      ["-c", "/bin/sh -c \(PosixShellQuoting.quote(inner))"],
+      ["-c", "/bin/sh -c \(AnyShellQuoting.quote(inner))"],
       environment: ["MULTISHELL_SOCKET": path.path], standIn: URL(fileURLWithPath: "/bin/sh"))
     #expect(output.succeeded, "\(output.standardError)")
 
@@ -37,9 +37,9 @@ struct HelperReportFieldsTests {
     let recorder = listener.recorder
 
     let me = ProcessInfo.processInfo.processIdentifier
-    let inner = "\(PosixShellQuoting.quote(try HelperBinary.require().path)) state running"
+    let inner = "\(AnyShellQuoting.quote(try HelperBinary.require().path)) state running"
     let output = try await HelperBinary.run(
-      ["-c", "echo $$; /bin/sh -c \(PosixShellQuoting.quote(inner))"],
+      ["-c", "echo $$; /bin/sh -c \(AnyShellQuoting.quote(inner))"],
       environment: ["MULTISHELL_SOCKET": path.path, "MULTISHELL_APP_PID": String(me)],
       standIn: URL(fileURLWithPath: "/bin/sh"))
     #expect(output.succeeded, "\(output.standardError)")

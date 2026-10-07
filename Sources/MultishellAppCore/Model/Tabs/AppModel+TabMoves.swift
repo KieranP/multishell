@@ -20,12 +20,9 @@ extension AppModel {
   private func changesTheStrip(
     _ id: TerminalTab.ID, _ placement: TerminalTab.Placement, _ anchor: TerminalTab.ID
   ) -> Bool {
-    guard
-      let moving = workspace.tab(id), let anchorTab = workspace.tab(anchor),
-      moving.groupID == anchorTab.groupID
-    else { return true }
+    guard let group = workspace.sharedGroup(of: id, and: anchor) else { return true }
     return TabShuffle.reorders(
-      id, placement, of: anchor, in: workspace.tabs(inGroup: moving.groupID).map(\.id))
+      id, placement, of: anchor, in: workspace.tabs(inGroup: group).map(\.id))
   }
 
   /// A tab dragged onto a worktree's row, shells and all, the destination
@@ -47,7 +44,7 @@ extension AppModel {
   /// Move Tab to New Group: the tab in front of the user gets a group of
   /// its own, to the right of the group it was in.
   public func moveActiveTabToNewGroup() {
-    guard let group = focusedGroup, let tab = workspace.shownTab(in: group) else { return }
+    guard let group = focusedGroup, let tab = workspace.shownTab(ofGroup: group) else { return }
     moveTab(tab.id, .after, toNewGroupOf: group.id)
   }
 

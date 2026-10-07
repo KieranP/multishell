@@ -27,27 +27,6 @@ public enum ShellLaunch {
     ["zsh", "bash"].contains(shellPath.executableName)
   }
 
-  /// A command line replacing the engine's default shell, `nil` to leave it.
-  /// bash goes through `/bin/sh -c`, or libghostty's `exec -l` makes it a login shell.
-  public static func overrideCommand(
-    forShell shellPath: String,
-    loginShell: String = ShellChoice.loginShellPath(),
-    bashInit: URL = Paths.bashInitFile
-  ) -> [String]? {
-    switch shellPath.executableName {
-    case "bash" where FileManager.default.fileExists(atPath: bashInit.path):
-      return [
-        "/bin/sh", "-c",
-        PosixShellQuoting.commandLine(
-          ["exec"] + bashInitArguments(shell: shellPath, bashInit: bashInit)),
-      ]
-    case _ where shellPath != loginShell:
-      return [shellPath, "-l"]
-    default:
-      return nil
-    }
-  }
-
   /// Points a zsh session's `ZDOTDIR` at the generated directory, and says
   /// where the user's was so ours can chain to it; see terminals.md.
   static func zshEnvironment(
@@ -65,7 +44,8 @@ public enum ShellLaunch {
     return variables
   }
 
-  private static func bashInitArguments(shell shellPath: String, bashInit: URL) -> [String] {
+  /// bash told to read the generated init file, as an interactive shell.
+  public static func bashInitArguments(shell shellPath: String, bashInit: URL) -> [String] {
     [shellPath, "--init-file", bashInit.path, "-i"]
   }
 }

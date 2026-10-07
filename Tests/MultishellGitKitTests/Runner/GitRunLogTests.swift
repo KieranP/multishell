@@ -13,7 +13,7 @@ struct GitRunLogTests {
     let log = GitRunLog()
     #expect(!log.beginRunIfRecording())
     log.endRun(run)
-    #expect(log.drain() == .none)
+    #expect(log.drain() == .empty)
   }
 
   @Test func aDrainHandsOverTheRunsSinceTheLastAndKeepsTheRunningCount() {
@@ -36,6 +36,6 @@ struct GitRunLogTests {
     log.endRun(run)
     log.setRecording(true)
 
-    #expect(log.drain() == .none)
+    #expect(log.drain() == .empty)
   }
 }

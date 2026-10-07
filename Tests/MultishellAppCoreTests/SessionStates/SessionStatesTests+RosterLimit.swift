@@ -1,8 +1,8 @@
 import Foundation
-import MultishellCore
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellCore
 
 extension SessionStatesTests {
   private var capacity: Int { SessionStateReport.rosterCapacity }
@@ -60,5 +60,23 @@ extension SessionStatesTests {
 
     for _ in 0..<2 { _ = report(&states, .running, ended(unnamed)) }
     #expect(workersOut(states) == (0..<capacity).map { "w\($0)" })
+  }
+
+  @Test func aStopNamingAsManyShellsAsTheWireCarriesKeepsEveryOne() {
+    var states = SessionStates()
+    _ = report(
+      &states,
+      .init(state: .done, backgroundShells: Array(1...Int32(capacity))))
+
+    #expect(workersOut(states).count == capacity)
+  }
+
+  @Test func aStopNamingThousandsOfShellsKeepsNoMoreThanTheRosterHolds() {
+    var states = SessionStates()
+    var stop = SessionStateReport(state: .done)
+    stop.backgroundShells = Array(1...5000)
+    _ = report(&states, stop)
+
+    #expect(workersOut(states).count <= capacity)
   }
 }

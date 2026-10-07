@@ -67,7 +67,7 @@ struct AppModelStatusPollingTests {
 
   /// A status read can fail for a moment: a lock, a slow disk, a directory
   /// mid-rename. The badge must not blink off for five seconds each time.
-  @Test func aFailedStatusReadKeepsTheLastBadgeUntilTheNextGoodOne() async throws {
+  @Test func aFailedStatusReadKeepsTheLastBadge() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }
     let flaky = try harness.modelOnFakeGit(
@@ -86,9 +86,23 @@ struct AppModelStatusPollingTests {
     try Data().write(to: harness.root.appendingPathComponent("fail"))
     await flaky.refreshStatuses()
     #expect(flaky.statuses[main.id]?.changedFiles == 1, "kept through the failed read")
+  }
+
+  @Test func aWorktreeThatIsGoneLosesItsBadge() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    let model = try harness.modelOnFakeGit(
+      """
+      while [ "${1#--}" != "$1" ]; do shift; done
+      case "$1" in status) printf '## main\\n M a.txt\\n' ;; esac
+      """)
+    let main = try #require(harness.worktree(onBranch: "main"))
+    await model.refreshStatuses()
+    #expect(model.statuses[main.id] != nil)
 
     harness.store.replaceWorktrees([], forProject: harness.project.id)
-    await flaky.refreshStatuses()
-    #expect(flaky.statuses.isEmpty, "a worktree that is gone loses its badge")
+    await model.refreshStatuses()
+
+    #expect(model.statuses.isEmpty)
   }
 }

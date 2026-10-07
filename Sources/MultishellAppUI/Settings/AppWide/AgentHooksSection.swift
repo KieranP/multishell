@@ -23,7 +23,7 @@ struct AgentHooksSection: View {
           // A popover, not the page: shown inline it added 166 pt a row.
           Button(t("agents.show", row.contentsLabel)) { shownSnippetRowID = row.id }
             .popover(isPresented: snippetPresented(for: row), arrowEdge: .bottom) {
-              snippetPopover(for: row)
+              AgentHooksSnippetPopover(model: model, row: row)
             }
         }
         .controlSize(.small)
@@ -43,26 +43,5 @@ struct AgentHooksSection: View {
     Binding(
       get: { shownSnippetRowID == row.id },
       set: { if !$0, shownSnippetRowID == row.id { shownSnippetRowID = nil } })
-  }
-
-  private func snippetPopover(for row: AgentHooksRow) -> some View {
-    VStack(alignment: .leading, spacing: 8) {
-      HStack(spacing: 8) {
-        Text(row.displayPath)
-          .font(.system(size: 11))
-          .foregroundStyle(.secondary)
-          .lineLimit(1)
-          .truncationMode(.head)
-        Spacer(minLength: 8)
-        Button(t("action.copy")) { model.copyToClipboard(model.agentHooksSnippet(row.id)) }
-          .controlSize(.small)
-      }
-      ScrollView(.vertical) {
-        AgentHooksSnippetText(snippet: model.agentHooksSnippet(row.id))
-      }
-      .frame(height: 240)
-    }
-    .padding(12)
-    .frame(width: 420)
   }
 }

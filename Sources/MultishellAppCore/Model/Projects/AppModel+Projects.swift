@@ -31,7 +31,7 @@ extension AppModel {
     }
     // A subdirectory or a linked worktree is the same repository; adding it
     // as its own project would list the same worktrees twice.
-    let root = (try? await coordinator.git.mainWorktree(containing: url)) ?? url
+    let root = (try? await coordinator.git.mainWorktreePath(containing: url)) ?? url
     let project = store.addProject(at: root)
     await refreshWorktrees(of: project)
     await rearmWatcher()

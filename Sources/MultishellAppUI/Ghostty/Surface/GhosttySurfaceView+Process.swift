@@ -7,9 +7,9 @@ extension GhosttySurfaceView {
     guard let surface else { return nil }
     let name = ghostty_surface_tty_name(surface)
     defer { ghostty_string_free(name) }
-    guard let pointer = name.ptr, name.len > 0 else { return nil }
+    guard let bytes = name.ptr, name.len > 0 else { return nil }
     return String(
-      decoding: UnsafeRawBufferPointer(start: pointer, count: Int(name.len)), as: UTF8.self)
+      decoding: UnsafeRawBufferPointer(start: bytes, count: Int(name.len)), as: UTF8.self)
   }
 
   /// libghostty answers 0 where the pty has no foreground group.

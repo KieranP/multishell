@@ -31,7 +31,7 @@ extension PresentedError {
     case let state as UnmovableStateFile:
       return (
         t("error.unreadable-state-title"),
-        t("error.unmoved-state-message", state.file.path, String(describing: state.underlying))
+        t("error.unmoved-state-message", state.fileURL.path, String(describing: state.underlying))
       )
     default:
       return nil

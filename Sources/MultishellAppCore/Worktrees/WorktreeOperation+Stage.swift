@@ -28,9 +28,9 @@ extension WorktreeOperation {
       }
     }
 
-    /// A stage of a create: the worktree is there, and its first terminal
+    /// A setup stage of a create: the worktree is there, and its first terminal
     /// is held back until this ends or its failure is dismissed.
-    var isCreation: Bool {
+    var isSetup: Bool {
       self == .linkingFiles || self == .copyingFiles || self == .postCreateHook
     }
 

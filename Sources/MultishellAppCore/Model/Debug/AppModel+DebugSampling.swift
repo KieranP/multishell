@@ -42,7 +42,7 @@ extension AppModel {
   /// One second's frames, git runs and reports, and the process table read
   /// off the main actor, each pane's processes placed by what the engine says.
   func takeDebugSample() async {
-    guard debugToolsEnabled else { return }
+    guard areDebugToolsEnabled else { return }
     let hints = liveSessionIDs.reduce(into: [TerminalSession.ID: TerminalProcessHint]()) {
       hints, id in hints[id] = host.processHint(of: id)
     }
@@ -50,14 +50,14 @@ extension AppModel {
     let appPID = ProcessInfo.processInfo.processIdentifier
     let scanProcesses = scanDebugProcesses
     let generation = debugSamplingGeneration
-    let scan = await offMain { scanProcesses(appPID, terminalPaths) }
+    let scan = await runOnDispatch { scanProcesses(appPID, terminalPaths) }
     guard generation == debugSamplingGeneration else { return }
 
     let now = ContinuousClock.now
     let elapsed = lastDebugSampleTaken.map { $0.duration(to: now) } ?? .seconds(1)
     lastDebugSampleTaken = now
     let children = scan.childProcesses
-    let gitActivity = coordinator?.git.runLog.drain() ?? .none
+    let gitActivity = coordinator?.git.runLog.drain() ?? .empty
     let cpu = cpuUsageMeter.takeReading(
       of: (scan.app.map { [$0] } ?? []) + children,
       exited: gitActivity.finishedRuns.compactMap(\.exitUsage).map { ($0.pid, $0.cpuTime) },
@@ -74,7 +74,7 @@ extension AppModel {
           $0 + (cpuPercentByPID[$1.pid] ?? 0)
         },
         appMemory: scan.app?.footprint ?? 0,
-        childrenMemory: children.totalFootprint,
+        childrenMemory: children.totalMemory,
         stateReportCount: stateReportsSinceDebugSample))
     stateReportsSinceDebugSample = 0
     debugProcessAttribution = PaneProcessAttribution(

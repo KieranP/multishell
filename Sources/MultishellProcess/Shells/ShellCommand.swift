@@ -15,7 +15,6 @@ public enum ShellCommand {
     let arguments = shell.arguments + [Self.evalScriptCommand]
     // Not historyless: an editor started here keeps what its terminals inherit.
     let environment = environment.merging([Self.scriptVariable: commandLine]) { $1 }
-    // Nothing to drain and nothing to fill: all three are /dev/null.
     let nullDevice = try NullDevice()
     defer { nullDevice.close() }
     let null = nullDevice.descriptor
@@ -48,13 +47,13 @@ public enum ShellCommand {
     let output = try await ProcessRunner().capture(
       shell.executable, arguments, in: directory, environment: environment,
       timeout: timeout, stopper: stopper)
-    guard output.succeeded, output.stop == nil else {
+    guard output.succeeded, output.stopReason == nil else {
       throw ProcessFailure(
         executable: shell.executable.lastPathComponent, arguments: shell.arguments + [script],
         status: output.status,
         message: Self.failureMessage(
           standardOutput: output.standardOutput, standardError: output.standardError),
-        stop: output.stop)
+        stopReason: output.stopReason)
     }
     return output.standardOutput
   }

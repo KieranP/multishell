@@ -29,7 +29,7 @@ struct AppModelPIDWatchTests {
     harness.model.select(harness.main)
     let tab = harness.model.workspace.activeTab(in: harness.main.id)!
     let agent = try WaitingShell()
-    defer { agent.end() }
+    defer { agent.terminate() }
 
     harness.stateSource.send(
       SessionStateReport(
@@ -44,7 +44,7 @@ struct AppModelPIDWatchTests {
   /// several pairs make sure both orders are met.
   @Test func anAgentDyingWithItsShellAnnouncesNothingWhicheverIsSweptFirst() {
     let harness = Harness()
-    harness.model.setNotifications(.everyState)
+    harness.model.setNotificationPreference(.everyState)
     let tab = harness.openBackgroundTab()
     let session = tab.focusedSessionID
     for _ in 0..<12 {

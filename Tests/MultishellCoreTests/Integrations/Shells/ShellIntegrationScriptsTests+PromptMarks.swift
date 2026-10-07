@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellCore
@@ -41,9 +42,9 @@ extension ShellIntegrationScriptsTests {
 
   /// The generated files are a chain, and a hook dropped from it would leave every
   /// file valid shell, so only a real shell at a prompt shows the claim.
-  @Test func aRealZshWritesTheClaimAtItsPromptUnderGhosttyAndNowhereElse() async throws {
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
+  func aRealZshWritesTheClaimAtItsPromptUnderGhosttyAndNowhereElse() async throws {
     let zsh = "/bin/zsh"
-    guard FileManager.default.isExecutableFile(atPath: zsh) else { return }
     let files = try GeneratedIntegration(helper: "/bin/echo")
     defer { files.tearDown() }
 
@@ -68,9 +69,9 @@ extension ShellIntegrationScriptsTests {
 
   /// readline drops the end of a screen-wide prompt, where the input mark rides. One machine's
   /// `/etc/bashrc` PS1 reached 80 columns and scrolled the mark off, so the test sets its own.
-  @Test func aRealBashWritesAllThreeMarksUnderGhosttyAndNoneWithoutIt() async throws {
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/bash")))
+  func aRealBashWritesAllThreeMarksUnderGhosttyAndNoneWithoutIt() async throws {
     let bash = "/bin/bash"
-    guard FileManager.default.isExecutableFile(atPath: bash) else { return }
     let files = try GeneratedIntegration(helper: "/bin/echo")
     defer { files.tearDown() }
     try files.writeHomeFile(".bashrc", "PS1='> '\n")
@@ -96,9 +97,9 @@ extension ShellIntegrationScriptsTests {
 
   /// `%{` opens a zero-width span, so a PS1 ending in a bare `%` would take
   /// the mark's brace as a literal percent's and show the rest.
-  @Test func aPromptEndingInAPercentKeepsItAndStillGetsTheInputMark() async throws {
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
+  func aPromptEndingInAPercentKeepsItAndStillGetsTheInputMark() async throws {
     let zsh = "/bin/zsh"
-    guard FileManager.default.isExecutableFile(atPath: zsh) else { return }
     let files = try GeneratedIntegration(helper: "/bin/echo")
     defer { files.tearDown() }
     try files.writeHomeFile(".zshrc", "PS1='ready%'\n")
@@ -112,9 +113,9 @@ extension ShellIntegrationScriptsTests {
 
   /// Hooks run through `$SHELL -l -i -c`, which reads the rc files, so a mark written
   /// anywhere but a prompt hook would land in the output a hook is judged by.
-  @Test func aShellRunningOneCommandWritesNoMarksIntoItsOutput() async throws {
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
+  func aShellRunningOneCommandWritesNoMarksIntoItsOutput() async throws {
     let zsh = "/bin/zsh"
-    guard FileManager.default.isExecutableFile(atPath: zsh) else { return }
     let files = try GeneratedIntegration(helper: "/bin/echo")
     defer { files.tearDown() }
     var environment = files.environment(termProgram: "ghostty")
@@ -130,9 +131,9 @@ extension ShellIntegrationScriptsTests {
 
   /// Our marks go back after a framework's entry rebuilds PS1, and the DEBUG trap arms
   /// last. bash 5.1 made `PROMPT_COMMAND` an array; an older one runs only element 0.
-  @Test func theUsersOwnPromptCommandEntriesKeepTheirPlaceBetweenOurs() async throws {
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/bash")))
+  func theUsersOwnPromptCommandEntriesKeepTheirPlaceBetweenOurs() async throws {
     let bash = "/bin/bash"
-    guard FileManager.default.isExecutableFile(atPath: bash) else { return }
     let files = try GeneratedIntegration(helper: "/bin/echo")
     defer { files.tearDown() }
     try files.writeHomeFile(".bashrc", "PROMPT_COMMAND=(theirs_first theirs_second)\n")
@@ -153,10 +154,9 @@ extension ShellIntegrationScriptsTests {
     #expect(listing.contains("theirs_second"))
   }
 
-  @Test func anArrayPromptCommandStillRunsOurHooksOnABashThatRunsOnlyItsFirstElement() async throws
-  {
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/bash")))
+  func anArrayPromptCommandStillRunsOurHooksOnABashThatRunsOnlyItsFirstElement() async throws {
     let bash = "/bin/bash"
-    guard FileManager.default.isExecutableFile(atPath: bash) else { return }
     let files = try GeneratedIntegration(helper: "/bin/echo")
     defer { files.tearDown() }
     try files.writeHomeFile(".bashrc", "PS1='> '\nPROMPT_COMMAND=(theirs_first theirs_second)\n")
@@ -176,5 +176,17 @@ extension ShellIntegrationScriptsTests {
       features: "cursor,title", input: "true\nprint -r done\n", runsInputAsScript: true)
     #expect(output.contains("done"))
     #expect(output.contains("\u{1B}") == false)
+  }
+
+  @Test func aRealZshTellsTheTerminalACommandEndedAndWithWhatStatus() async throws {
+    let output = try await zshOutput(features: nil, input: "false\ntrue\nexit\n")
+    #expect(output.contains(PromptMarks.commandEnd(1)))
+    #expect(output.contains(PromptMarks.commandEnd(0)))
+  }
+
+  @Test func aPromptWithNoCommandBeforeItReportsNoEnd() async throws {
+    let output = try await zshOutput(features: nil, input: "\nexit\n")
+    #expect(output.contains(PromptMarks.input), "the hooks ran")
+    #expect(output.contains(PromptMarks.anyCommandEnd) == false)
   }
 }

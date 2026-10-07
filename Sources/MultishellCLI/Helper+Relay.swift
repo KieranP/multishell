@@ -8,9 +8,16 @@ extension Helper {
     SIGHUP, SIGINT, SIGQUIT, SIGTSTP, SIGTTIN, SIGTTOU, SIGPIPE,
   ]
 
+  static func relay(
+    _ arguments: ArraySlice<String>, environment: [String: String], input: FileHandle
+  ) throws {
+    let options = try CommandOptions(arguments, valued: ["pid"])
+    relay(environment: environment, input: input, shellPID: options.int32("pid"))
+  }
+
   /// Ends at EOF or when the shell exits, as a child it started may hold the
   /// pipe open past it. A line it cannot read is dropped: that child could write.
-  static func relay(environment: [String: String], input: FileHandle, shellPID: Int32?) {
+  private static func relay(environment: [String: String], input: FileHandle, shellPID: Int32?) {
     for number in relayIgnoredSignals { _ = signal(number, SIG_IGN) }
     let watch = shellPID.flatMap { InputOrExitWatch(descriptor: input.fileDescriptor, pid: $0) }
     var pending = LineBuffer()

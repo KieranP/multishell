@@ -2,8 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Bindings for the settings forms and the board's and debug tools' toggles.
-/// `Binding` is SwiftUI's, so these live in the app, not beside the model.
+/// Bindings for the settings forms. `Binding` is SwiftUI's, so these live in
+/// the app, not beside the model.
 extension AppModel {
   /// A workspace value and the method that sets it, as one binding. The read
   /// goes through `workspace`, so the row follows a change made elsewhere.
@@ -48,11 +48,11 @@ extension AppModel {
   /// Whether a state is announced, one toggle of the notification settings.
   func notificationSetting(for state: SessionState) -> Binding<Bool> {
     Binding(
-      get: { self.workspace.notifications[state] },
+      get: { self.workspace.notificationPreference[state] },
       set: { on in
-        var preference = self.workspace.notifications
+        var preference = self.workspace.notificationPreference
         preference[state] = on
-        self.setNotifications(preference)
+        self.setNotificationPreference(preference)
       }
     )
   }
@@ -93,16 +93,13 @@ extension AppModel {
     return Binding(get: { source.wrappedValue ?? fallback }, set: { source.wrappedValue = $0 })
   }
 
-  /// The board's one filter, held by the model rather than the workspace.
-  var showsAllTerminalsSetting: Binding<Bool> {
-    Binding(get: { self.showsAllTerminals }, set: { self.setShowsAllTerminals($0) })
+  /// The preferred agent and shell read through `globalAgentID` and
+  /// `globalShellID`, which say what is in effect when nothing is stored.
+  var preferredAgentSetting: Binding<String> {
+    Binding(get: { self.globalAgentID }, set: { self.setPreferredAgent($0) })
   }
 
-  var debugToolsEnabledSetting: Binding<Bool> {
-    Binding(get: { self.debugToolsEnabled }, set: { self.setDebugToolsEnabled($0) })
-  }
-
-  var debugPausedSetting: Binding<Bool> {
-    Binding(get: { self.isDebugPaused }, set: { self.setDebugPaused($0) })
+  var preferredShellSetting: Binding<String> {
+    Binding(get: { self.globalShellID }, set: { self.setPreferredShell($0) })
   }
 }

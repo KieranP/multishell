@@ -25,7 +25,7 @@ public struct WorktreeCoordinator: Sendable {
   ) async throws -> WorktreeCoordinator {
     let executable = await GitExecutable.resolve(
       searchPath: searchPath,
-      developerDirectory: await offMain { GitExecutable.selectedDeveloperDirectory() })
+      developerDirectory: await runOnDispatch { GitExecutable.selectedDeveloperDirectory() })
     let runner = try GitRunner(
       executable: executable, searchPath: searchPath,
       runLog: previous?.git.runLog ?? GitRunLog())

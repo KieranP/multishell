@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellProcess
@@ -14,10 +15,10 @@ struct ShellInvocationTests {
     }
   }
 
-  @Test func theCshFamilyIsNotGivenTheLoginFlagItRefusesBesideC() async throws {
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/tcsh")))
+  func theCshFamilyIsNotGivenTheLoginFlagItRefusesBesideC() async throws {
     #expect(ShellInvocation.userShell(at: "/bin/tcsh").arguments == ["-i", "-c"])
     #expect(ShellInvocation.userShell(at: "/bin/csh").arguments == ["-i", "-c"])
-    guard FileManager.default.isExecutableFile(atPath: "/bin/tcsh") else { return }
     let shell = try ScratchShell("/bin/tcsh")
     defer { shell.tearDown() }
     let home = shell.home

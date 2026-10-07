@@ -37,7 +37,7 @@ struct ScrollingTabStrip<Tabs: View>: View {
       content: layout.contentWidth(count: tabIDs.count))
     ScrollViewReader { proxy in
       HStack(spacing: 0) {
-        arrow(.before, isShown: edges.leading, proxy: proxy)
+        arrow(.leading, isShown: edges.hasTabsPastLeading, proxy: proxy)
         ScrollView(.horizontal, showsIndicators: false) {
           HStack(spacing: 0) { tabs() }
             .frame(height: model.metrics.tabHeight)
@@ -50,7 +50,7 @@ struct ScrollingTabStrip<Tabs: View>: View {
         } action: { _, offset in
           scrollOffset = offset
         }
-        arrow(.after, isShown: edges.trailing, proxy: proxy)
+        arrow(.trailing, isShown: edges.hasTabsPastTrailing, proxy: proxy)
       }
       .wheelScrollsSideways(scrollerReference)
       // Unwrapped, both: `scrollTo` takes anything hashable, so a
@@ -69,12 +69,12 @@ struct ScrollingTabStrip<Tabs: View>: View {
   /// gutter, an arrow over the tabs otherwise taking their clicks.
   @ViewBuilder
   private func arrow(
-    _ placement: TerminalTab.Placement, isShown: Bool, proxy: ScrollViewProxy
+    _ end: TabStripLayout.End, isShown: Bool, proxy: ScrollViewProxy
   ) -> some View {
-    let leading = placement == .before
+    let leading = end == .leading
     if isShown, gutter > 0 {
       Button {
-        step(placement, proxy: proxy)
+        step(towards: end, proxy: proxy)
       } label: {
         Image(systemName: leading ? "chevron.compact.left" : "chevron.compact.right")
           .font(.system(size: model.metrics.body, weight: .semibold))
@@ -92,14 +92,14 @@ struct ScrollingTabStrip<Tabs: View>: View {
     }
   }
 
-  private func step(_ placement: TerminalTab.Placement, proxy: ScrollViewProxy) {
+  private func step(towards end: TabStripLayout.End, proxy: ScrollViewProxy) {
     guard
       let index = layout.stepTarget(
-        towards: placement, offset: scrollOffset, viewport: viewport, count: tabIDs.count),
+        towards: end, offset: scrollOffset, viewport: viewport, count: tabIDs.count),
       tabIDs.indices.contains(index)
     else { return }
     withAnimation(.easeOut(duration: 0.16)) {
-      proxy.scrollTo(tabIDs[index], anchor: placement == .before ? .leading : .trailing)
+      proxy.scrollTo(tabIDs[index], anchor: end == .leading ? .leading : .trailing)
     }
   }
 }

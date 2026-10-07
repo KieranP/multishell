@@ -1,6 +1,5 @@
 import SwiftUI
 
-/// A toggle with its (i) after its title.
 struct InfoToggle: View {
   let title: String
   let info: String

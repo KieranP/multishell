@@ -18,7 +18,7 @@ extension SessionStates {
   /// What each worker's end meant, applied the way the model's sweep applies it.
   mutating func applyShellExit(_ pid: Int32) -> [SessionState?] {
     endings(ofShell: pid).map {
-      report(.init(state: .running, worker: $0.report), pid: nil, for: $0.key, isSeen: false)
+      apply(.init(state: .running, worker: $0.report), pid: nil, for: $0.key, isSeen: false)
     }
   }
 }

@@ -13,8 +13,10 @@ extension InheritedSetting where Value == String {
   /// came from on the same terms.
   public func prefixExampleCaption(branch: String, path: String, isOverridden: Bool) -> String {
     namesRepositoryFile(isOverridden: isOverridden)
-      ? t("project.prefix-example-shared", branch, path, SharedProjectSettings.fileName)
-      : t("project.prefix-example", branch, path)
+      ? t(
+        "project.prefix-example-shared", WorktreeSettings.exampleBranchName, branch, path,
+        SharedProjectSettings.fileName)
+      : t("project.prefix-example", WorktreeSettings.exampleBranchName, branch, path)
   }
 
   private func namesRepositoryFile(isOverridden: Bool) -> Bool {

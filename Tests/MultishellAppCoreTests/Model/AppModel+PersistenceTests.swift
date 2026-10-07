@@ -14,7 +14,7 @@ struct AppModelPersistenceTests {
 
   private func onDisk(_ file: URL) -> Workspace? {
     guard FileManager.default.fileExists(atPath: file.path) else { return nil }
-    return try? WorkspaceFile(fileURL: file).load()
+    return try? StateFile(fileURL: file).load()
   }
 
   /// The autosave loop holds the store and wakes only on a change, so the
@@ -74,7 +74,7 @@ struct AppModelPersistenceTests {
     harness.model.select(harness.main)
     harness.model.saveNow()
 
-    #expect(try WorkspaceFile(fileURL: file).load().selectedWorktreeID == harness.main.id)
+    #expect(try StateFile(fileURL: file).load().selectedWorktreeID == harness.main.id)
     #expect(harness.model.pendingSave == nil)
   }
 

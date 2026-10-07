@@ -33,7 +33,7 @@ struct DebugTableBlock<Content: View>: View {
     }
     .frame(maxWidth: .infinity, alignment: .leading)
     .padding(.bottom, 4)
-    .background(theme.columnColor, in: RoundedRectangle(cornerRadius: UIMetrics.columnCornerRadius))
+    .columnBackground(theme)
     .onGeometryChange(for: Double.self) {
       $0.size.width
     } action: {

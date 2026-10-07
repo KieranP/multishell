@@ -21,7 +21,7 @@ final class ModelHarness {
     self.directory = directory
     try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     let store = WorkspaceStore(
-      file: WorkspaceFile(fileURL: directory.appendingPathComponent("state.json")))
+      file: StateFile(fileURL: directory.appendingPathComponent("state.json")))
     project = store.addProject(at: directory)
     self.store = store
     model = MultishellAppUI.AppModel(

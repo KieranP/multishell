@@ -63,13 +63,8 @@ extension AppModel {
         }
       }
     case .openTab(let title, let command):
-      // Or the editor runs in a pane a cover hides, which Cmd+W cannot
-      // reach either: nothing acts on the tab in front while it is up.
-      uncoverDetail(markingInViewSeen: false)
       store.openTab(in: worktree.id, title: title, command: command)
-      store.selectWorktree(worktree.id)
-      warmWorktrees.insert(worktree.id)
-      reconcileSessions(takingFocus: true)
+      select(worktree, openingFirstTab: .never)
     case nil:
       presentedError =
         editorID == EditorCatalogue.customID

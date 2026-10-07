@@ -24,7 +24,8 @@ struct SidebarAgentsRow: View {
       Spacer(minLength: 4)
       ForEach(counts, id: \.lane) { entry in
         HStack(spacing: 3) {
-          StateDot(state: entry.lane.headerState, theme: theme, diameter: 6)
+          StateDot(
+            state: entry.lane.headerState, theme: theme, diameter: UIMetrics.inlineStateDotDiameter)
           Text("\(entry.count)")
             .font(.system(size: metrics.badge, weight: .medium))
             .monospacedDigit()
@@ -39,7 +40,7 @@ struct SidebarAgentsRow: View {
     .onTapGesture(perform: select)
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(AccessibilityText.agentsRow(counts))
-    .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    .selectableButtonTraits(isSelected: isSelected)
   }
 }
 

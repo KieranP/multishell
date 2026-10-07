@@ -28,10 +28,10 @@ struct RootView: View {
     .background(WindowAccessor { platform.workspaceWindow = $0 })
     .ignoresSafeArea()
     .preferredColorScheme(theme.colorScheme)
-    .worktreeRemovalDialog(model: model)
-    .projectRemovalDialog(model: model, source: .workspace)
+    .worktreeRemovalAlert(model: model)
+    .projectRemovalAlert(model: model, source: .workspace)
     .sharedSettingsTrustDialog(model: model)
-    .pendingCloseDialog(model: model)
+    .pendingCloseAlert(model: model)
     .newWorktreeSheet(model: model)
     .presentedErrorAlert(model: model)
   }

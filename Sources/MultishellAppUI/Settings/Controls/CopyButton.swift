@@ -18,7 +18,8 @@ struct CopyButton: View {
     PlainGlyphButton(help: t("action.copy-value", text), action: copy) {
       Image(systemName: showsCopiedTick ? "checkmark" : "doc.on.doc")
         .foregroundStyle(.secondary)
-        .frame(width: 20, height: 20)
+        .frame(
+          width: UIMetrics.settingsGlyphButtonSide, height: UIMetrics.settingsGlyphButtonSide)
     }
   }
 

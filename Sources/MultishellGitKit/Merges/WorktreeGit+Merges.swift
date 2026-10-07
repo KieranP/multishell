@@ -21,7 +21,7 @@ extension WorktreeGit {
     // branch came to rest. `--`, or a branch named like a path fails the read.
     guard
       let output = await runner.output(
-        ["log", "-g", "--format=%H %gs", BranchRef.localRef(branch), "--"], in: project.path)
+        ["log", "-g", "--format=%H %gs", RefName.local(branch), "--"], in: project.path)
     else { return nil }
     return ReflogWorkParser.parse(output)
   }
@@ -33,7 +33,7 @@ extension WorktreeGit {
   ) async -> Bool? {
     guard
       let output = await runner.output(
-        ["cherry", base, BranchRef.localRef(branch)], in: project.path)
+        ["cherry", base, RefName.local(branch)], in: project.path)
     else { return nil }
     return PatchEquivalenceParser.parse(output)
   }
@@ -43,7 +43,7 @@ extension WorktreeGit {
   func isBehind(_ branch: String, of base: String, in project: Project) async -> Bool? {
     // `--` for the reason `hasWorkOfItsOwn` gives.
     let output = await runner.output(
-      ["rev-list", "--count", "-n", "1", "\(BranchRef.localRef(branch))..\(base)", "--"],
+      ["rev-list", "--count", "-n", "1", "\(RefName.local(branch))..\(base)", "--"],
       in: project.path)
     guard let text = output?.trimmingCharacters(in: .whitespacesAndNewlines), let count = Int(text)
     else { return nil }
@@ -58,8 +58,8 @@ extension WorktreeGit {
     // `base...branch`, so what the branch changed is measured from where it
     // forked and not from the default branch as it stands now.
     guard
-      let own = await changedPaths(in: ["\(base)...\(BranchRef.localRef(branch))"], of: project),
-      let differing = await changedPaths(in: [base, BranchRef.localRef(branch)], of: project)
+      let own = await changedPaths(in: ["\(base)...\(RefName.local(branch))"], of: project),
+      let differing = await changedPaths(in: [base, RefName.local(branch)], of: project)
     else { return nil }
     return own.isDisjoint(with: differing)
   }

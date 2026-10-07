@@ -6,11 +6,6 @@ struct KernelResourceUsage: Sendable, Equatable {
   let footprint: UInt64
   let cpuTime: Duration
 
-  init(footprint: UInt64, cpuTime: Duration) {
-    self.footprint = footprint
-    self.cpuTime = cpuTime
-  }
-
   /// `nil` for a process that has gone or is not ours to read.
   static func of(_ pid: Int32) -> KernelResourceUsage? {
     var info = rusage_info_v0()

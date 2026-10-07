@@ -2,8 +2,6 @@ import AppKit
 import GhosttyKit
 
 extension GhosttySurfaceView {
-  var isFirstResponder: Bool { window?.firstResponder === self }
-
   /// libghostty draws a hollow cursor unless the pane also has a key window.
   var hasKeyboard: Bool { isFirstResponder && window?.isKeyWindow == true }
 

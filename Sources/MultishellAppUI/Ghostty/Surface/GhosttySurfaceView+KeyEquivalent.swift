@@ -7,7 +7,7 @@ extension GhosttySurfaceView {
   override func performKeyEquivalent(with event: NSEvent) -> Bool {
     // AppKit offers some, Control-/ among them, to the first view in the
     // window rather than the first responder.
-    guard event.type == .keyDown, window?.firstResponder === self else { return false }
+    guard event.type == .keyDown, isFirstResponder else { return false }
     if isBinding(event) {
       keyDown(with: event)
       return true

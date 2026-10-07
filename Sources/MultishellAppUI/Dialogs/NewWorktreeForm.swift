@@ -39,16 +39,7 @@ struct NewWorktreeForm: View {
           NewWorktreeFormNote(
             text: t("sheet.no-projects"), symbol: "folder.badge.plus", tint: .secondary)
         } else {
-          let labels = NewWorktreeDraft.labels(for: model.workspace.projects)
-          Picker(t("sheet.project"), selection: $draft.projectID) {
-            if draft.projectID == nil {
-              Text(t("sheet.choose-project")).tag(Project.ID?.none)
-            }
-            ForEach(model.workspace.projects) { candidate in
-              pickerLabel(candidate, text: labels[candidate.id] ?? candidate.name)
-                .tag(Project.ID?.some(candidate.id))
-            }
-          }
+          NewWorktreeProjectPicker(model: model, projectID: $draft.projectID)
           fields
         }
       }
@@ -119,12 +110,6 @@ struct NewWorktreeForm: View {
     draft.beginLoading()
     guard let project, let read = await model.newWorktreeBranches(of: project) else { return }
     draft.finishLoading(project.id, with: read, checkedOut: model.checkedOutBranches(for: draft))
-  }
-
-  /// The project's icon beside its name, so same-named projects are told
-  /// apart by more than their path.
-  private func pickerLabel(_ project: Project, text: String) -> some View {
-    Label(text, systemImage: model.effectiveSettings(for: project).iconKind.symbolName)
   }
 
   private func create() {

@@ -142,7 +142,7 @@ struct AppModelSessionReportsTests {
   /// the way the sidebar the user is picturing does.
   @Test func aRenamedWorktreeIsNamedByItsNameInABanner() {
     let harness = Harness()
-    harness.model.setNotifications(.everyState)
+    harness.model.setNotificationPreference(.everyState)
     harness.model.renameWorktree(harness.feature.id, to: "Checkout flow")
 
     harness.stateSource.send(
@@ -157,7 +157,7 @@ struct AppModelSessionReportsTests {
   /// replace it with a body that says less.
   @Test func aWorkerTickRaisesNoSecondBannerForAPromptAlreadyUp() {
     let harness = Harness()
-    harness.model.setNotifications(.everyState)
+    harness.model.setNotificationPreference(.everyState)
     let tab = harness.openBackgroundTab()
     let session = tab.focusedSessionID
     harness.stateSource.send(
@@ -181,7 +181,7 @@ struct AppModelSessionReportsTests {
   /// screen gives way to a worker, and the last one out posts the Done banner.
   @Test func workersShowOnTheRowAndTheCardAndKeepTheWorktreeWorking() {
     let harness = Harness()
-    harness.model.setNotifications(.everyState)
+    harness.model.setNotificationPreference(.everyState)
     let tab = harness.openBackgroundTab()
     let session = tab.focusedSessionID
     harness.stateSource.send(
@@ -228,9 +228,7 @@ struct AppModelSessionReportsTests {
 
   @Test func launchingAnAgentFlashesThenIdlesUntilAPromptDrivesItsOwnStates() {
     let harness = Harness()
-    harness.model.select(harness.main)
-    let tab = harness.model.workspace.activeTab(in: harness.main.id)!
-    harness.model.newTab()
+    let tab = harness.openBackgroundTab()
     let id = tab.focusedSessionID
 
     // The shell hook fires as `claude` starts: a command is running.

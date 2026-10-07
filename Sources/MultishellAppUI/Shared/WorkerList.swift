@@ -23,7 +23,7 @@ struct WorkerList: View {
       .padding(.bottom, 2)
       ForEach(workers) { worker in
         HStack(spacing: 7) {
-          StateDot(state: .running, theme: theme, diameter: 6)
+          StateDot(state: .running, theme: theme, diameter: UIMetrics.inlineStateDotDiameter)
           Text(worker.displayName)
             .font(.system(size: metrics.badge, weight: .medium))
             .foregroundStyle(theme.textPrimary)

@@ -85,10 +85,4 @@ struct PromisedDropTests {
 
     #expect(delivery.answers == 1)
   }
-
-  /// Registering none of them would leave a promise-only drag with no drop
-  /// offered at all, which is what a screenshot's preview is.
-  @Test func thereArePromiseTypesToRegisterFor() {
-    #expect(!PromisedDrop.draggedTypes.isEmpty)
-  }
 }

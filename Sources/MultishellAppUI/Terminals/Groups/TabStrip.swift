@@ -99,7 +99,6 @@ struct TabStrip: View {
         group: group,
         tab: tab,
         isFocusedGroup: isFocusedGroup,
-        canLeaveGroup: model.canMoveTabToNewGroup(tab),
         isShuffling: isShuffling,
         width: layout.tabWidth,
         theme: theme,

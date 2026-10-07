@@ -43,15 +43,15 @@ once with `/hooks` in Codex and start a session without the bypass flag.
 
 libghostty turns `wait-after-command` on for any surface given a command
 (`ThirdParty/ghostty/src/apprt/embedded.zig:572`). Agent tabs, bash tabs
-(through `/bin/sh -c`, `ShellLaunch.overrideCommand`) and shells other than the
-login one are all given one, so when the command exits the pane prints "Process
-exited. Press any key to close the terminal." and stays. The session stays in
-`liveSessionIDs` until a key is pressed, and only then does `close_surface_cb`
-reach `SessionReconciler.terminalHost(_:didExit:)`. A zsh tab on the login shell
-is given no command and closes at once. libghostty-spm carried no patch for it
-either. Found by reading, not watched. Step: run `exit` in a bash tab. Fix = a
-sixth Ghostty patch leaving `wait-after-command` to the config, once it is
-decided whether an agent tab should keep its last screen.
+(through `/bin/sh -c`, `EngineCommandLine.overrideCommand`) and shells other
+than the login one are all given one, so when the command exits the pane prints
+"Process exited. Press any key to close the terminal." and stays. The session
+stays in `liveSessionIDs` until a key is pressed, and only then does
+`close_surface_cb` reach `SessionReconciler.terminalHost(_:didExit:)`. A zsh tab
+on the login shell is given no command and closes at once. libghostty-spm
+carried no patch for it either. Found by reading, not watched. Step: run `exit`
+in a bash tab. Fix = a sixth Ghostty patch leaving `wait-after-command` to the
+config, once it is decided whether an agent tab should keep its last screen.
 
 ## Low
 

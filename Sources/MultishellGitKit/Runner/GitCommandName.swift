@@ -1,8 +1,7 @@
 import MultishellCore
 
-/// What a git run is grouped under: the subcommand and its flags, a flag's
-/// value dropped, so two reads of different branches count as one command.
-/// Global options before the subcommand are left out.
+/// A git run's subcommand and flags, without global options or flag values,
+/// so two reads of different branches count as one command.
 enum GitCommandName {
   /// Global options whose value is the next argument rather than after `=`.
   private static let globalOptionsTakingAValue: Set<String> = [

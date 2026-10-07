@@ -42,7 +42,7 @@ enum WorkspaceInvariants {
     #expect(owned.values.allSatisfy { $0 == 1 }, "\(context): a session in two panes")
     #expect(sessionIDs.allSatisfy { owned[$0] != nil }, "\(context): session no tab owns")
 
-    for (worktreeID, name) in workspace.worktreeNames {
+    for (worktreeID, name) in workspace.customWorktreeNames {
       #expect(worktreeIDs.contains(worktreeID), "\(context): a name for a missing worktree")
       #expect(
         !name.trimmingCharacters(in: .whitespaces).isEmpty, "\(context): a blank custom name")

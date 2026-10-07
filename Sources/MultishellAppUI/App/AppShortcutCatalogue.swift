@@ -38,10 +38,10 @@ enum AppShortcutCatalogue {
 
   /// Copy, paste, cut and select-all. The menu carries them and the surface
   /// keeps them, a pane's Cmd+C being Ghostty's own clipboard action.
-  static let cut = AppShortcut("x", surfaceKeeps: true)
-  static let copy = AppShortcut("c", surfaceKeeps: true)
-  static let paste = AppShortcut("v", surfaceKeeps: true)
-  static let selectAll = AppShortcut("a", surfaceKeeps: true)
+  static let cut = AppShortcut("x", surfaceKeepsBinding: true)
+  static let copy = AppShortcut("c", surfaceKeepsBinding: true)
+  static let paste = AppShortcut("v", surfaceKeepsBinding: true)
+  static let selectAll = AppShortcut("a", surfaceKeepsBinding: true)
 
   /// The one step done by hand: nothing can check a shortcut left out of
   /// this list.

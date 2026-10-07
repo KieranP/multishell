@@ -9,9 +9,9 @@ struct DetailView: View {
     let theme = model.currentTheme
     VStack(spacing: 0) {
       switch model.detailContent {
-      case .agentBoard:
+      case .cover(.agentBoard):
         AgentBoardView(model: model, theme: theme)
-      case .debugInfo:
+      case .cover(.debugInfo):
         DebugInfoView(model: model, theme: theme)
       case .operation(let worktree, let operation):
         WorktreeHeader(model: model, worktree: worktree, theme: theme)

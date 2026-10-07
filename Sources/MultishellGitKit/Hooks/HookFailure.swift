@@ -12,7 +12,7 @@ public struct HookFailure: Error, CustomStringConvertible {
 
   /// Why the hook did not finish on its own, when it did not: the timeout,
   /// or the user's stop.
-  public var stop: ProcessStopReason? {
-    (underlying as? ProcessFailure)?.stop
+  public var stopReason: ProcessStopReason? {
+    (underlying as? ProcessFailure)?.stopReason
   }
 }

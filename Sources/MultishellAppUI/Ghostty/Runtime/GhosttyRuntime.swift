@@ -68,8 +68,8 @@ final class GhosttyRuntime {
 
   /// What a new surface answers a program asking if the terminal is dark,
   /// until its view's appearance says; the view sets its own from then.
-  func setColorScheme(dark: Bool) {
-    ghostty_app_set_color_scheme(app, GhosttyColorScheme.scheme(isDark: dark))
+  func setColorScheme(isDark: Bool) {
+    ghostty_app_set_color_scheme(app, GhosttyColorScheme.scheme(isDark: isDark))
   }
 
   func tick() {
@@ -88,7 +88,6 @@ final class GhosttyRuntime {
     secureInput.followsPasswordPrompts = config.flag("macos-auto-secure-input") ?? true
   }
 
-  /// The app's layer after the user's base, so the app's settings win.
   private static func mergedText(base: String, appLayer: GhosttyConfigText) -> String {
     [base, appLayer.rendered].filter { !$0.isEmpty }.joined(separator: "\n")
   }

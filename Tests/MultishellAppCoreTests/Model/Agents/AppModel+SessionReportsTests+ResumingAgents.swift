@@ -9,13 +9,13 @@ extension AppModelSessionReportsTests {
   @Test func aStopHeldForABackgroundShellIsPaidAndAnnouncedWhenTheShellExits() async throws {
     let harness = Harness()
     harness.model.pidPollInterval = .milliseconds(50)
-    harness.model.setNotifications(.everyState)
+    harness.model.setNotificationPreference(.everyState)
     let tab = harness.openBackgroundTab()
     let session = tab.focusedSessionID
     let me = ProcessInfo.processInfo.processIdentifier
 
     let shell = try WaitingShell()
-    defer { shell.end() }
+    defer { shell.terminate() }
 
     harness.stateSource.send(
       SessionStateReport(state: .running, sessionID: session, pid: me, agentID: "claude"))
@@ -36,7 +36,7 @@ extension AppModelSessionReportsTests {
 
   @Test func aShellExitingBeforeTheWokenTurnAnnouncesOnlyThatTurnsStop() {
     let harness = Harness()
-    harness.model.setNotifications(.everyState)
+    harness.model.setNotificationPreference(.everyState)
     let tab = harness.openBackgroundTab()
     let session = tab.focusedSessionID
     let me = ProcessInfo.processInfo.processIdentifier
@@ -61,7 +61,7 @@ extension AppModelSessionReportsTests {
 
   @Test func aWokenTurnStoppingBeforeThePollSeesItsShellGoIsStillDone() {
     let harness = Harness()
-    harness.model.setNotifications(.everyState)
+    harness.model.setNotificationPreference(.everyState)
     let tab = harness.openBackgroundTab()
     let session = tab.focusedSessionID
     let me = ProcessInfo.processInfo.processIdentifier
@@ -82,7 +82,7 @@ extension AppModelSessionReportsTests {
 
   @Test func aSubagentStartLandingAfterTheStopTakesBackThatDoneAndLeavesOneStanding() {
     let harness = Harness()
-    harness.model.setNotifications(.everyState)
+    harness.model.setNotificationPreference(.everyState)
     let tab = harness.openBackgroundTab()
     let session = tab.focusedSessionID
 
@@ -111,7 +111,7 @@ extension AppModelSessionReportsTests {
 
   @Test func aStopListingABackgroundSubagentAnnouncesNothingUntilTheStopListingNone() {
     let harness = Harness()
-    harness.model.setNotifications(.everyState)
+    harness.model.setNotificationPreference(.everyState)
     let tab = harness.openBackgroundTab()
     let session = tab.focusedSessionID
     func stop(_ out: [String]) {
@@ -138,7 +138,7 @@ extension AppModelSessionReportsTests {
 
   @Test func aSubagentEndingBeforeTheWokenTurnAnnouncesOnlyThatTurnsStop() {
     let harness = Harness()
-    harness.model.setNotifications(.everyState)
+    harness.model.setNotificationPreference(.everyState)
     let tab = harness.openBackgroundTab()
     let session = tab.focusedSessionID
 

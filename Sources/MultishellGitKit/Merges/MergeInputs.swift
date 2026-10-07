@@ -6,14 +6,8 @@ public struct MergeInputs: Hashable, Sendable {
   /// default branch has been resolved from them.
   let branches: [String: BranchRef]
 
-  init(base: DefaultBranch, branches: [String: BranchRef]) {
-    self.base = base
-    self.branches = branches
-  }
-
   public func tip(of branch: String) -> String? { branches[branch]?.tip }
 
-  /// The branch tracks an upstream that is no longer on the remote.
   public func upstreamIsGone(_ branch: String) -> Bool {
     branches[branch]?.upstreamIsGone ?? false
   }

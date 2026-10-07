@@ -93,15 +93,17 @@ struct DispatchDirectoryWatcherTests {
     await watcher.watch([second])
     defer { watcher.stop() }
 
-    let firstChanges = changes(of: watcher)
+    let changed = changes(of: watcher)
     try "x".write(to: first.appendingPathComponent("ignored"), atomically: true, encoding: .utf8)
-    try await waitUntil({ firstChanges.received.count > 0 }, seconds: 1)
-    #expect(firstChanges.received.count == 0)
-
-    let secondChanges = changes(of: watcher)
     try "x".write(to: second.appendingPathComponent("seen"), atomically: true, encoding: .utf8)
-    try await waitUntil({ secondChanges.received.count > 0 }, seconds: deliveryBound)
-    #expect(secondChanges.received.count > 0)
+    try await waitUntil({ reported(second, in: changed) }, seconds: deliveryBound)
+    #expect(reported(second, in: changed))
+    #expect(!reported(first, in: changed), "written first, so it would have come with it")
+  }
+
+  /// Whether any callback so far named `directory`.
+  private func reported(_ directory: URL, in changes: Recorder<[URL]>) -> Bool {
+    changes.received.joined().contains { $0.standardizedFileURL == directory.standardizedFileURL }
   }
 
   /// Every refresh re-arms the watcher and each source holds a descriptor until its
@@ -177,11 +179,13 @@ struct DispatchDirectoryWatcherTests {
     gate.signal()
     await supersededWatch.value
 
-    let supersededChanges = changes(of: watcher)
+    let changed = changes(of: watcher)
     try "x".write(
       to: superseded.appendingPathComponent("ignored"), atomically: true, encoding: .utf8)
-    try await waitUntil({ supersededChanges.received.count > 0 }, seconds: 1)
-    #expect(supersededChanges.received.count == 0)
+    try "x".write(to: current.appendingPathComponent("seen"), atomically: true, encoding: .utf8)
+    try await waitUntil({ reported(current, in: changed) }, seconds: deliveryBound)
+    #expect(reported(current, in: changed))
+    #expect(!reported(superseded, in: changed))
   }
 
   @Test func stopSilencesTheWatcher() async throws {
@@ -190,12 +194,17 @@ struct DispatchDirectoryWatcherTests {
     let watcher = DispatchDirectoryWatcher()
     await watcher.watch([directory])
     watcher.stop()
+    let live = DispatchDirectoryWatcher()
+    await live.watch([directory])
+    defer { live.stop() }
 
     let changed = changes(of: watcher)
+    let liveChanges = changes(of: live)
     try "x".write(
       to: directory.appendingPathComponent("after-stop"), atomically: true, encoding: .utf8)
 
-    try await waitUntil({ changed.received.count > 0 }, seconds: 1)
+    try await waitUntil({ liveChanges.received.count > 0 }, seconds: deliveryBound)
+    #expect(liveChanges.received.count > 0)
     #expect(changed.received.count == 0)
   }
 }

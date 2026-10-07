@@ -5,7 +5,7 @@ import Testing
 
 @Suite
 struct NotificationPolicyTests {
-  private let waitingOnly = NotificationPreference(attention: true)
+  private let waitingOnly = NotificationPreference(notifiesOnAttention: true)
 
   @Test func aBannerNeedsThePaneOffScreenAndItsStateInThePreference() {
     #expect(

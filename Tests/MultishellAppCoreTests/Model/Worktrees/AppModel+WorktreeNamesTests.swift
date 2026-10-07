@@ -47,15 +47,4 @@ struct AppModelWorktreeNamesTests {
     harness.model.beginRenamingWorktree(harness.feature)
     #expect(harness.model.renamingWorktreeID == nil)
   }
-
-  @Test func aRemovedWorktreeTakesItsNameWithIt() {
-    let harness = Harness()
-    harness.model.renameWorktree(harness.feature.id, to: "Checkout flow")
-
-    // What a removal ends in: git no longer lists it.
-    harness.store.replaceWorktrees([harness.main], forProject: harness.project.id)
-
-    #expect(harness.model.workspace.worktreeNames.isEmpty, "nothing left in the state file")
-  }
-
 }

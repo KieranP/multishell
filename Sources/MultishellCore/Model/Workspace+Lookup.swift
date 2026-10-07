@@ -62,6 +62,13 @@ extension Workspace {
     tabs.filter { $0.groupID == group }
   }
 
+  /// The group two tabs are both in, `nil` where they are in two or one is gone.
+  public func sharedGroup(of tab: TerminalTab.ID, and other: TerminalTab.ID) -> TabGroup.ID? {
+    guard let first = self.tab(tab), let second = self.tab(other), first.groupID == second.groupID
+    else { return nil }
+    return first.groupID
+  }
+
   /// A worktree's groups, left to right.
   public func groups(in worktree: Worktree.ID) -> [TabGroup] {
     tabGroups.filter { $0.worktreeID == worktree }
@@ -95,20 +102,20 @@ extension Workspace {
     selectedWorktreeID.flatMap(worktree)
   }
 
-  public func shownTab(in group: TabGroup) -> TerminalTab? {
+  public func shownTab(ofGroup group: TabGroup) -> TerminalTab? {
     group.shownTabID.flatMap { tab($0) }
   }
 
   /// The tab the user is working in: the focused group's. What Cmd+T,
   /// Close Pane, a split and a rename all act on.
   public func activeTab(in worktree: Worktree.ID) -> TerminalTab? {
-    focusedGroup(in: worktree).flatMap { shownTab(in: $0) }
+    focusedGroup(in: worktree).flatMap { shownTab(ofGroup: $0) }
   }
 
   /// Every tab on screen for a worktree, one per group. Anything meaning
   /// "the user can see this" asks here, not `activeTab`.
   public func shownTabs(in worktree: Worktree.ID) -> [TerminalTab] {
-    groups(in: worktree).compactMap { shownTab(in: $0) }
+    groups(in: worktree).compactMap { shownTab(ofGroup: $0) }
   }
 
   /// The branches a project's worktrees have checked out, which git refuses

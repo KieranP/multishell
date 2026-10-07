@@ -19,7 +19,7 @@ extension GhosttySurfaceView: NSMenuItemValidation {
   func validateMenuItem(_ item: NSMenuItem) -> Bool {
     switch item.action {
     case #selector(copy(_:)): surface.map(ghostty_surface_has_selection) ?? false
-    case #selector(paste(_:)): GhosttyClipboard.hasPasteableType()
+    case #selector(paste(_:)): PanePasteboard.hasPasteableType()
     default: surface != nil
     }
   }

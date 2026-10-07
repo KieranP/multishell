@@ -37,7 +37,7 @@ extension AppModel {
   func sweepGonePIDs() {
     let gone = watchedPIDs.filter(KernelProcessTable.isGone)
     for pid in gone {
-      mutateStates { $0.processGone(pid) }
+      mutateStates { $0.noteProcessGone(pid) }
       forgetReportedAgents(withPID: pid)
     }
     // Agents first: a shell swept before its dead agent announced a Done.

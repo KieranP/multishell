@@ -3,16 +3,18 @@
 ## Layout
 
 - **One package: four libraries, the helper and the app.** MultishellCore:
-  model, with what a user or a repository sets under `Model/Settings/` and a
-  worktree's tabs and panes under `Model/Tabs/`; store; theme; ports; the
-  sessions and the reports about them; the decoding every persisted type leans
-  on; the libraries' word lookup; and, under `Support/`, the small extensions
-  and helpers every other library reaches for.
+  model, with what a user sets under `Model/Settings/`, a repository's
+  `.multishell.json` under `Model/Settings/Shared/`, and a worktree's tabs and
+  panes under `Model/Tabs/`; store; theme; ports; the sessions and the reports
+  about them; the decoding every persisted type leans on; the libraries' word
+  lookup; and, under `Support/`, the small extensions and helpers every other
+  library reaches for.
 - **MultishellProcess**: the children it starts, how a shell is started and
   quoted, sockets, what the kernel answers about a process, a descriptor or a
   terminal, under `Kernel/`, and, under `Support/`, what belongs to no concern.
-  **MultishellGitKit**: worktree operations, a project's hooks and file lists,
-  the output readers, what a branch is, where it points and whether it landed, a
+  **MultishellGitKit**: worktree operations, a create's and a removal's each
+  under its own folder of `Worktrees/`, a project's hooks and file lists, the
+  output readers, what a branch is, where it points and whether it landed, a
   worktree's status, the runner above them all, and, under `Support/`, what
   belongs to no concern. WorktreeGit and WorktreeCoordinator sit at its root
   with their extensions under each concern, since five concerns extend them and
@@ -25,16 +27,18 @@
   measures and shows, under `Debug/`; and, under `Support/`, the pieces that
   belong to no concern.
 - **AppModel's extensions sit under `Model/` by concern**: agents, tabs,
-  worktrees, git reads, projects, the debug tools' sampling and tables, and the
-  tools it drives. What spans them all stays at the root beside the type, since
-  the concerns are too many for one alphabetical listing to keep a concern's
-  files together.
+  worktrees, git reads, projects, the sidebar's rows, the debug tools' sampling
+  and tables, and the tools it drives. What spans them all stays at the root
+  beside the type, since the concerns are too many for one alphabetical listing
+  to keep a concern's files together.
 - **AppCore's `Integrations/` is the app's own side of them**: the helper and
   shell-integration files it installs, and each agent's hooks as installed.
 - **Everything about a program someone else wrote is in Core's
   `Integrations/`**, one folder per kind: agents, editors, shells, and the
   settings files the agents share the reading of. Another agent touches the
-  agents folder and no other, until someone draws its mark.
+  agents folder and no other, until someone draws its mark. Its hooks, from the
+  catalogue and the files they write to what a payload or transcript reports,
+  sit under `Agents/Hooks/`.
 - **MultishellCLI is the helper**, built as `multishell-helper` and installed in
   the bundle as `multishell`, since it and the app would share one products path
   on a case-insensitive disk. **MultishellAppUI is the app**, built as
@@ -92,7 +96,7 @@
 - **A helper that would be `private` goes internal in a file of its own**,
   beside the type it serves, or at the suite's root for a test's, so a file
   never holds two. A type nested inside another stays with it. A dialog is a
-  `View` extension in a file named for it, attached by the scene that asked.
+  `View` extension in `View+<Dialog>.swift`, attached by the scene that asked.
 - **No `MARK` banners**: a file is the grouping. Tests are swift-testing, named
   as sentences about behaviour, one suite to a file named for it.
 

@@ -6,12 +6,4 @@ public struct ProcessUsage: Sendable, Equatable {
   public let name: String
   public let footprint: UInt64
   public let cpuTime: Duration
-
-  init(pid: Int32, parentPID: Int32, name: String, footprint: UInt64, cpuTime: Duration) {
-    self.pid = pid
-    self.parentPID = parentPID
-    self.name = name
-    self.footprint = footprint
-    self.cpuTime = cpuTime
-  }
 }
