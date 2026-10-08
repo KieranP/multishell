@@ -93,8 +93,10 @@ What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
   size, an estimate, so the terminals can read more than the footprint holds.
   The Total row stays the footprint and children as measured.
 - **Freed memory stays in the footprint until macOS wants it.** On macOS 27
-  `malloc_zone_pressure_relief` releases nothing, and freed blocks of 256 KB and
-  up held for a minute in a probe, so closing a tab drops the number late.
+  `malloc_zone_pressure_relief` releases nothing, and freed blocks of 16 KB and
+  up held for three minutes in a probe, so closing a tab leaves its terminal's
+  pages counted. Five tabs opened and closed left 26 MB freed but held, and a
+  second round reused it, adding 2 MB: the next tab takes it, not a leak.
 - **A process that leaves the app's tree leaves the totals.** The scan walks
   down from the app, so a daemon that double-forks, or anything reparented to
   launchd, stops counting though the app started it.
@@ -107,6 +109,12 @@ What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
   pane's size in pixels, 3554×2326 there. An empty window that size holds 17 MB.
   They scale with the panes on screen; Ghostty frees a pane's when it leaves the
   window or is covered.
+- **Memory is RAM and GPU together, and the caption says so.** On Apple silicon
+  the GPU draws from the same RAM, and the footprint counts both. Only Ghostty
+  could report its own GPU part, through a patch: the kernel's graphics count
+  filed the same render targets as graphics in one run and as plain IOSurface in
+  the next, and gives no figure for the app's own drawing or any child. A split
+  for one source of many was not worth the patch.
 - **The strips are shapes, not a `Canvas`.** On macOS 27 one `Canvas` makes
   SwiftUI draw its whole hosting view through Metal, into three buffers that
   size: 105 MB with Debug Info open, and as much under `.drawingGroup()`. The

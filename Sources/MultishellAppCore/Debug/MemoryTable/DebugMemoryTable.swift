@@ -37,7 +37,7 @@ public struct DebugMemoryTable: Sendable, Equatable {
     let fraction = { (memory: UInt64?) in Double(memory ?? 0) / heaviest }
     var rows = [
       DebugMemoryRow(
-        source: .app, title: t("debug.app-row"), subtitle: t("debug.app-row-subtitle"),
+        source: .app, title: t("debug.app-row"), subtitle: "",
         processCount: 1, selfMemory: appRowMemory, totalMemory: appRowMemory,
         barFraction: fraction(appRowMemory), terminalRow: nil, processRows: [])
     ]

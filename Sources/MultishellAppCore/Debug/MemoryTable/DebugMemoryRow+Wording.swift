@@ -19,10 +19,12 @@ extension DebugMemoryRow {
   /// The subtitle, with the count and Self beside it where there are any.
   public var stackedCaptions: [String] {
     guard let processCount, let selfMemory else { return subtitle.isEmpty ? [] : [subtitle] }
+    let count = t("count.processes", processCount)
+    let memory = DebugValueText.memory(selfMemory)
     return [
-      t(
-        "debug.subtitle-count-and-self", subtitle, t("count.processes", processCount),
-        DebugValueText.memory(selfMemory))
+      subtitle.isEmpty
+        ? t("debug.count-and-self", count, memory)
+        : t("debug.subtitle-count-and-self", subtitle, count, memory)
     ]
   }
 }

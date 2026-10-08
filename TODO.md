@@ -27,6 +27,11 @@ Most pressing first within each heading. A decision that gets made moves to
   project and select this worktree,
   `multishell new-worktree <branch> [--agent] [--prompt]`, and
   `multishell tab -- <command>`, so scripts and agents can drive the app.
+- CLI commands an agent can drive a debug build with, so a measurement needs no
+  one to click: open, close and select tabs and panes, turn Debug Tools on and
+  off, open and close Debug Info, and print the latest samples and Memory by tab
+  as JSON. Memory work today waits on the user for every step, as an agent may
+  not send clicks (develop/memory.md).
 - State dots for fish, through `fish_preexec` and `fish_postexec` reporting
   `command-started` and `command-finished`. COMPAT.md lists it as a terminal
   with nothing injected.

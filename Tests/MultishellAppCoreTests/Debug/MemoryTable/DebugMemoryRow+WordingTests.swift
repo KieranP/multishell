@@ -33,4 +33,12 @@ struct DebugMemoryRowWordingTests {
       row(.unattributed, processCount: nil, selfMemory: nil).stackedCaptions == ["acme / main"])
     #expect(row(.total, subtitle: "", processCount: nil, selfMemory: nil).stackedCaptions.isEmpty)
   }
+
+  @Test func aNarrowRowWithNoSubtitleStartsItsCaptionAtItsCount() throws {
+    let app = row(.app, subtitle: "", processCount: 1, selfMemory: 1_024)
+    let caption = try #require(app.stackedCaptions.first)
+
+    #expect(caption.hasPrefix("1 process · "))
+    #expect(caption.hasSuffix(" self"))
+  }
 }

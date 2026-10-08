@@ -41,7 +41,7 @@
 "close.tab-button" = "Close Tab";
 "close.tab-title" = "Close this tab?";
 "debug.app-row" = "Multishell";
-"debug.app-row-subtitle" = "This app, without its tabs' terminals";
+"debug.count-and-self" = "%1$@ · %2$@ self";
 "debug.fps" = "%@ fps";
 "debug.git-memory-summary" = "Memory %1$@ mean, %2$@ peak";
 "debug.git-summary" = "%1$@ · mean %2$@ · slowest %3$@";
