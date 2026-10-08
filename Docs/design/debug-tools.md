@@ -101,7 +101,15 @@ What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
 - **The scan reads the whole process table once a tick.** Asking per pid cost a
   `proc_listchildpids` per process, and each call walks the whole table. An
   interpreter's arguments are read only to name its script, at two sysctls each.
-- **Most of an idle app's footprint is the window.** Measured on macOS 27 with
-  one shell open: 205 MB, of which 95 MB is three window buffers macOS keeps for
-  a 3554×2326 px window at 0% CPU, with the debug tools off. They scale with the
-  window, and nothing Multishell draws holds them.
+- **Most of an idle app's footprint is the terminal's render buffers.** Measured
+  on macOS 27 with one shell open and the debug tools off: 193 MB, of which 95
+  MB is the three IOSurfaces Ghostty's Metal renderer draws in turn, each the
+  pane's size in pixels, 3554×2326 there. An empty window that size holds 17 MB.
+  They scale with the panes on screen; Ghostty frees a pane's when it leaves the
+  window or is covered.
+- **The strips are shapes, not a `Canvas`.** On macOS 27 one `Canvas` makes
+  SwiftUI draw its whole hosting view through Metal, into three buffers that
+  size: 105 MB with Debug Info open, and as much under `.drawingGroup()`. The
+  same strips as shapes held 23 MB in a probe, at the same CPU at one update a
+  second, and about 2 points more of WindowServer at 60. A colour is a shape of
+  its own.

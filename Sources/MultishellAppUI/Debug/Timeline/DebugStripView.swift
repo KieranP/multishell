@@ -17,7 +17,7 @@ struct DebugStripView: View {
       theme: theme, metrics: metrics)
     HStack(spacing: 0) {
       label.frame(width: metrics.debugStripLabelWidth, alignment: .leading)
-      DebugStripCanvas(metric: metric, timeline: timeline, theme: theme)
+      DebugStripChart(metric: metric, timeline: timeline, theme: theme)
         .equatable()
         .overlay {
           DebugStripPointer(

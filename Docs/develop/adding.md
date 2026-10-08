@@ -122,9 +122,10 @@ What each addition needs beyond the code itself.
   how a slot of several seconds combines it (design/debug-tools.md). The test
   builder `DebugSample.sample` takes it with a default, and the widest slot in
   `DebugStripLabelTests` its widest figure, so the label is held to its column.
-  A series in a split strip also needs an edge in `DebugStripPoint`, a band in
-  `DebugStripCanvas`, a colour in `Theme+DebugColors` and an entry in
-  `DebugSeriesLegend`, and its name in the detail line widens the label.
+  A series in a split strip also needs an edge in `DebugStripPoint` and in
+  `DebugStripLayer.Edge`, a band in `DebugStripChart`, a colour in
+  `Theme+DebugColors` and an entry in `DebugSeriesLegend`, and its name in the
+  detail line widens the label.
 - **A column in a debug table.** A title in the table's header and a cell in its
   row at the same `UIMetrics` width, the figure in the stacked row's caption,
   and, for Memory by tab, a part in its accessibility text. Raise the table's

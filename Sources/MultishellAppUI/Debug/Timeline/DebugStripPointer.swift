@@ -9,11 +9,12 @@ struct DebugStripPointer: View {
   let color: Color
 
   var body: some View {
-    Canvas { context, size in
-      guard let slotIndex else { return }
-      let x = timeline.slotMidpointX(slotIndex, chartWidth: size.width)
-      context.fill(
-        Path(CGRect(x: x - 0.5, y: 0, width: 1, height: size.height)), with: .color(color))
+    GeometryReader { proxy in
+      if let slotIndex {
+        color
+          .frame(width: 1)
+          .offset(x: timeline.slotMidpointX(slotIndex, chartWidth: proxy.size.width) - 0.5)
+      }
     }
     .allowsHitTesting(false)
   }
