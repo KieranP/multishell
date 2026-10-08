@@ -37,6 +37,9 @@ at the bottom.
   adopted it, so the host frees the surface rather than waiting for the view to
   go, and on a process exit the close runs inside libghostty's own callback,
   where freeing would free the surface mid-call.
+- **Its reports stop at the close**, though the surface lives that turn longer:
+  a report queued in it reached the model for a session already closed
+  (`aSessionReportsNothingOnceClosed`).
 - **A close libghostty is asked for while the process runs goes through the
   app's own**, so a `close_surface` keybind in the user's config asks first over
   a working agent, as Cmd+W does. Whether the process is there is asked of the
@@ -498,6 +501,11 @@ at the bottom.
   it as text, so falling back to the text pasted the very name left out.
 - **The right-hand Option key is told apart**, so `macos-option-as-alt = left`
   leaves the right one typing accents.
+- **An astral character an input method commits in two UTF-16 halves is joined
+  before it is sent**, as Ghostty's app does. The lead half commits as empty
+  text, and that empty commit let the key through to type its own character
+  ahead of the pair
+  (`aLeadSurrogateCommittedAloneSendsNothingUntilItsPairArrives`).
 - **Ghostty's manual-integration lines find files that do nothing.** libghostty
   exports its resources folder to every shell, and the line Ghostty documents
   for a manual setup sources a script from it; the bundle has a stand-in in each
@@ -517,6 +525,10 @@ at the bottom.
   program.
 - **The runtime is built on first use**, the theme held until there is one, so a
   copy that hands over at launch never starts one.
+- **Each pane's view holds the runtime**, so libghostty's app is freed after the
+  last surface made in it. A view holding only the runtime's secure input let
+  releasing the host free the app before its surfaces, a crash
+  (`aSurfaceViewKeepsTheRuntimeItWasMadeInAlive`).
 - **An item's files are pasted in the order it names them**, a name it did not
   give going last. They land in whatever order its queue runs, so an item naming
   several pasted them out of order: `PromisedDropTests`.

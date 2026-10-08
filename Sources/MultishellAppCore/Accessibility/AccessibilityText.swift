@@ -10,19 +10,21 @@ public enum AccessibilityText {
     return [t("spoken.named", agentName, t("spoken.agent"))]
   }
 
-  /// The workers chip on a sidebar row or a board card: how many, then each
-  /// by name and under its parent. No times: they are read later than built,
-  /// and cost a clock each.
+  /// The workers chip: how many, then each by name, task, parent and failure.
+  /// No times: they are read later than built, and cost a clock each.
   public static func workers(_ workers: [Worker]) -> String {
     let displayNames = Dictionary(workers.map { ($0.id, $0.displayName) }) { first, _ in first }
     let spokenWorkers = workers.nested.map { nested in
       let worker = nested.worker
-      let spokenName = [worker.displayName, worker.occurrenceText].compactMap { $0 }
+      var spoken = [worker.displayName, worker.occurrenceText].compactMap { $0 }
         .joined(separator: " ")
-      guard nested.depth > 0, let parentName = worker.parentID.flatMap({ displayNames[$0] }) else {
-        return spokenName
+      if let description = worker.description {
+        spoken = t("spoken.worker-described", spoken, description)
       }
-      return t("spoken.worker-under", spokenName, parentName)
+      if nested.depth > 0, let parentName = worker.parentID.flatMap({ displayNames[$0] }) {
+        spoken = t("spoken.worker-under", spoken, parentName)
+      }
+      return worker.hasFailed ? t("spoken.worker-failed", spoken) : spoken
     }
     return ([workers.countText] + spokenWorkers).joined(separator: ", ")
   }

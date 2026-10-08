@@ -8,6 +8,9 @@ struct WorkerRoster: Equatable, Sendable {
   /// Workers past the roster limit by id, all under the one overflow place,
   /// so a tool call is told from a new worker and a stray end from their own.
   private(set) var overflowed: [String: Int] = [:]
+  /// Workers taken off, newest last, so a child whose parent is named only
+  /// after that parent ended is still drawn under it.
+  private(set) var ended: [Worker] = []
 
   /// A roster place a report touched, and whether more than one worker was
   /// under it: a start repeated under one id makes which reported unknowable.
@@ -18,8 +21,14 @@ struct WorkerRoster: Equatable, Sendable {
 
   /// How many ids the overflow place tells apart; a worker past that is dropped.
   private static let overflowLimit = 1024
+  /// Far more parents than a fan-out names; the oldest is forgotten past it.
+  private static let endedLimit = 64
 
   var isEmpty: Bool { workers.isEmpty && overflowed.isEmpty }
+
+  /// Whether anything is still working: a failed row is drawn until swept but
+  /// holds no Working.
+  var hasWorkOut: Bool { workers.contains { !$0.hasFailed } }
 
   /// A start or a tool call puts a worker on the roster, its end takes it off.
   /// Returns the place touched; `asking` are the workers with a prompt up.
@@ -33,7 +42,13 @@ struct WorkerRoster: Equatable, Sendable {
         return Place(id: report.id)
       }
       let place = self.place(at: index)
-      removeOne(at: index)
+      if report.hasFailed == true {
+        workers[index].hasFailed = true
+        workers[index].failedAt = nil
+        workers[index].occurrences = 1
+      } else {
+        end(at: index)
+      }
       return place
     case .working where isAnonymous:
       // A tool call names no worker either, so it is one already out, and
@@ -43,12 +58,19 @@ struct WorkerRoster: Equatable, Sendable {
       }
       if overflowedAnonymousID != nil { return overflowPlace }
       return add(Worker(id: Worker.anonymousPrefix + UUID().uuidString, type: report.type))
+    case .working where report.isPaused == true:
+      return recordOwnStop(report)
     case .started, .working:
       let id = isAnonymous ? Worker.anonymousPrefix + UUID().uuidString : report.id
       guard let index = workers.firstIndex(where: { $0.id == id }) else {
         guard overflowed[id] != nil else {
-          return add(
-            Worker(id: id, type: report.type, name: report.name, parentID: report.parentID))
+          var added = Worker(
+            id: id, type: report.type, name: report.name, description: report.description,
+            parentID: report.parentID)
+          added.lastReportWasItsStop = report.isPaused == true
+          let place = add(added)
+          bringBackEndedParents(of: id)
+          return place
         }
         if report.phase == .started { _ = addToOverflow(id) }
         if let overflow = overflowIndex { workers[overflow].wasHeardSinceStop = true }
@@ -57,16 +79,76 @@ struct WorkerRoster: Equatable, Sendable {
       // A tool call from one already out says nothing; a second start under
       // its id is a second worker an agent named without an id.
       workers[index].wasHeardSinceStop = true
+      workers[index].hasEnded = false
+      workers[index].awaitsResume = false
+      workers[index].hasFailed = false
+      workers[index].failedAt = nil
+      workers[index].lastReportWasItsStop = report.isPaused == true
       if let parentID = report.parentID { workers[index].parentID = parentID }
       if let name = report.name { workers[index].name = name }
+      if let description = report.description { workers[index].description = description }
       if report.phase == .started, workers[index].awaitsStart {
         workers[index].awaitsStart = false
         if let type = report.type { workers[index].type = type }
       } else if report.phase == .started {
         workers[index].occurrences += 1
       }
-      return place(at: index)
+      let place = place(at: index)
+      bringBackEndedParents(of: id)
+      return place
     }
+  }
+
+  /// A worker's own stop, which hooks may deliver after a list that already
+  /// ended it: it then finished, so it is never put back or revived.
+  private mutating func recordOwnStop(_ report: WorkerReport) -> Place {
+    guard let index = workers.firstIndex(where: { $0.id == report.id }) else {
+      return Place(id: report.id)
+    }
+    guard !workers[index].hasFailed else {
+      take([report.id])
+      return Place(id: report.id)
+    }
+    workers[index].wasHeardSinceStop = true
+    workers[index].lastReportWasItsStop = true
+    if let parentID = report.parentID { workers[index].parentID = parentID }
+    if let name = report.name { workers[index].name = name }
+    if let description = report.description { workers[index].description = description }
+    return place(at: index)
+  }
+
+  /// Under its launcher from the start. Background work is in every list while
+  /// it runs, so the first list to leave it out ends it.
+  mutating func recordLaunch(_ report: WorkerReport) {
+    if let index = workers.firstIndex(where: { $0.id == report.id }) {
+      if let parentID = report.parentID { workers[index].parentID = parentID }
+      if let name = report.name { workers[index].name = name }
+      if let description = report.description { workers[index].description = description }
+      workers[index].wasListed = true
+      workers[index].wasLaunchedInBackground = report.isBackgroundShell != true
+    } else if !isOut(report.id) {
+      var launched = Worker(
+        id: report.id, type: report.type, name: report.name, description: report.description,
+        parentID: report.parentID)
+      launched.isListedShell = report.isBackgroundShell == true
+      launched.awaitsStart = report.isBackgroundShell != true
+      launched.wasListed = true
+      launched.wasLaunchedInBackground = report.isBackgroundShell != true
+      add(launched)
+    }
+    bringBackEndedParents(of: report.id)
+  }
+
+  /// A task the agent stopped, and everything under it, which Claude stops
+  /// with it, drawn as failed until swept. Returns the ids it marked.
+  mutating func recordKill(_ id: String) -> [String] {
+    let killed = withDescendants(of: [id])
+    for index in workers.indices where killed.contains(workers[index].id) {
+      workers[index].hasFailed = true
+      workers[index].failedAt = nil
+      workers[index].occurrences = 1
+    }
+    return workers.map(\.id).filter(killed.contains)
   }
 
   /// Which place an end takes: a named one its own, an unnamed one the
@@ -81,7 +163,9 @@ struct WorkerRoster: Equatable, Sendable {
   }
 
   private var firstNamedPlace: Int? {
-    workers.firstIndex { !$0.isBackgroundShell && $0.id != Worker.overflowID }
+    workers.firstIndex {
+      !$0.isBackgroundShell && !$0.hasEnded && !$0.hasFailed && $0.id != Worker.overflowID
+    }
   }
 
   /// The overflowed worker an end takes, in `endingPlace`'s order: an unnamed
@@ -127,41 +211,68 @@ struct WorkerRoster: Equatable, Sendable {
   mutating func keepOnly(_ out: [WorkerReport], shells: [Int32]) -> [String] {
     let listed = Set(out.map(\.id))
     let vouched = withDescendants(of: listed)
+    let holding = ancestors(of: vouched).subtracting(vouched)
     let live = Set(shells)
     let gone = workers.filter { worker in
       if let pid = worker.pid { return !live.contains(pid) }
-      return worker.id != Worker.overflowID && !vouched.contains(worker.id)
+      return worker.id != Worker.overflowID && !worker.hasFailed && !vouched.contains(worker.id)
+        && !holding.contains(worker.id)
     }.map(\.id)
-    workers.removeAll { gone.contains($0.id) }
-    for index in workers.indices where vouched.contains(workers[index].id) {
-      workers[index].wasHeardSinceStop = true
+    endUnlisted(gone)
+    for index in workers.indices {
+      if vouched.contains(workers[index].id) { workers[index].wasHeardSinceStop = true }
+      if holding.contains(workers[index].id) { workers[index].hasEnded = true }
     }
     let overflowedGone = overflowed.keys.filter { !listed.contains($0) }
     for id in overflowedGone { forget(id) }
+    addListed(out)
+    recordShells(shells)
+    return gone + overflowedGone
+  }
+
+  /// A worker's stop lists background work only, so it ends just what an earlier
+  /// list named, the stopping worker left to its own report. Returns those.
+  mutating func keepOnlyListedOut(_ out: [WorkerReport], stopping stoppingID: String?) -> [String] {
+    let listed = Set(out.map(\.id))
+    let gone = workers.filter { worker in
+      worker.wasListed && !worker.hasFailed && worker.id != stoppingID
+        && !listed.contains(worker.id)
+    }.map(\.id)
+    endUnlisted(gone)
+    addListed(out)
+    return gone
+  }
+
+  /// Work a list leaves out has ended, and a launched worker that never sent
+  /// its own stop first was killed, so it is drawn failed until swept.
+  private mutating func endUnlisted(_ ids: [String]) {
+    let wereAwaitingResume = Set(workers.filter(\.awaitsResume).map(\.id))
+    for id in ids {
+      guard let index = workers.firstIndex(where: { $0.id == id }),
+        !workers[index].awaitsResume || wereAwaitingResume.contains(id)
+      else { continue }
+      if workers[index].wasLaunchedInBackground, !workers[index].lastReportWasItsStop {
+        workers[index].hasFailed = true
+        workers[index].failedAt = nil
+        workers[index].occurrences = 1
+      } else {
+        end(at: index, everyStart: true)
+      }
+    }
+  }
+
+  /// Puts on what a list names that is not out, and marks all it names.
+  private mutating func addListed(_ out: [WorkerReport]) {
+    let listed = Set(out.map(\.id))
     for worker in out where !isOut(worker.id) {
       var listedWorker = Worker(id: worker.id, type: worker.type)
       listedWorker.isListedShell = worker.isBackgroundShell == true
       listedWorker.awaitsStart = worker.isBackgroundShell != true
       add(listedWorker)
     }
-    recordShells(shells)
-    return gone + overflowedGone
-  }
-
-  /// The ids and every worker under one of them. Claude's Stop lists only
-  /// background work, so a foreground worker is out while its parent is.
-  private func withDescendants(of ids: Set<String>) -> Set<String> {
-    var found = ids
-    var isGrowing = true
-    while isGrowing {
-      isGrowing = false
-      for worker in workers where !found.contains(worker.id) {
-        guard let parentID = worker.parentID, found.contains(parentID) else { continue }
-        found.insert(worker.id)
-        isGrowing = true
-      }
+    for index in workers.indices where listed.contains(workers[index].id) {
+      workers[index].wasListed = true
     }
-    return found
   }
 
   /// A Stop vouches only for workers heard from since the last one.
@@ -172,14 +283,23 @@ struct WorkerRoster: Equatable, Sendable {
     }
   }
 
-  /// Only the workers a Stop saw out, which a new turn leaves standing, the
-  /// overflowed ones with the overflow place that stands for them.
+  /// What a new turn leaves standing: what a Stop saw out, overflow included,
+  /// and listed work, which is background work no interrupt ends.
   func keepingOutAtStop() -> WorkerRoster {
     var kept = WorkerRoster()
-    kept.workers = workers.filter(\.wasOutAtStop)
+    let out = Set(
+      workers.filter { $0.wasOutAtStop || $0.wasListed || $0.hasFailed }.map(\.id))
+    let holding = ancestors(of: out).subtracting(out)
+    kept.workers = workers.filter { out.contains($0.id) || holding.contains($0.id) }
+    for index in kept.workers.indices where holding.contains(kept.workers[index].id) {
+      kept.workers[index].hasEnded = true
+    }
     if kept.workers.contains(where: { $0.id == Worker.overflowID }) {
       kept.overflowed = overflowed
     }
+    kept.ended = ended
+    let keptIDs = Set(kept.workers.map(\.id))
+    for worker in workers where !keptIDs.contains(worker.id) { kept.remember(worker) }
     return kept
   }
 
@@ -216,6 +336,65 @@ struct WorkerRoster: Equatable, Sendable {
   mutating func forget(_ id: String) {
     workers.removeAll { $0.id == id }
     for _ in 0..<(overflowed[id] ?? 0) { removeFromOverflow(id) }
+    takeEndedWithNothingUnder()
+  }
+
+  /// One of a place's occurrences, or with its last the worker itself, which
+  /// stays stopped while a worker it launched is out.
+  private mutating func end(at index: Int, everyStart: Bool = false) {
+    if workers[index].occurrences > 1, !everyStart {
+      workers[index].occurrences -= 1
+    } else if workers.contains(where: { $0.parentID == workers[index].id }) {
+      workers[index].occurrences = 1
+      workers[index].hasEnded = true
+    } else {
+      take([workers[index].id])
+    }
+  }
+
+  /// Takes the workers off, remembered as ended, and any stopped parent left
+  /// holding nothing.
+  private mutating func take(_ ids: Set<String>) {
+    for worker in workers where ids.contains(worker.id) { remember(worker) }
+    workers.removeAll { ids.contains($0.id) }
+    takeEndedWithNothingUnder()
+  }
+
+  /// One that paused is woken by the end of its own work, so it waits a list.
+  private mutating func takeEndedWithNothingUnder() {
+    while let index = workers.firstIndex(where: { worker in
+      worker.hasEnded && !worker.awaitsResume && !workers.contains { $0.parentID == worker.id }
+    }) {
+      if workers[index].lastReportWasItsStop {
+        workers[index].awaitsResume = true
+      } else {
+        remember(workers.remove(at: index))
+      }
+    }
+  }
+
+  private mutating func remember(_ worker: Worker) {
+    guard worker.pid == nil, worker.id != Worker.overflowID else { return }
+    ended.removeAll { $0.id == worker.id }
+    ended.append(worker)
+    if ended.count > Self.endedLimit { ended.removeFirst() }
+  }
+
+  /// A parent named after it ended goes back on above its child, stopped, and
+  /// so does its own, so the child is drawn where it belongs.
+  private mutating func bringBackEndedParents(of id: String) {
+    var childID = id
+    while let childIndex = workers.firstIndex(where: { $0.id == childID }),
+      let parentID = workers[childIndex].parentID, !isOut(parentID),
+      workers.count < SessionStateReport.rosterCapacity,
+      let endedIndex = ended.lastIndex(where: { $0.id == parentID })
+    {
+      var parent = ended.remove(at: endedIndex)
+      parent.hasEnded = true
+      parent.occurrences = 1
+      workers.insert(parent, at: childIndex)
+      childID = parentID
+    }
   }
 
   @discardableResult
@@ -235,11 +414,28 @@ struct WorkerRoster: Equatable, Sendable {
     }
   }
 
-  var hasUnstampedStarts: Bool { workers.contains { $0.since == nil } }
+  var hasUnstampedStarts: Bool {
+    workers.contains { $0.since == nil || ($0.hasFailed && $0.failedAt == nil) }
+  }
 
+  /// A start's time, and a failure's, which the sweep counts from.
   mutating func stampStarts(at now: Date) {
-    for index in workers.indices where workers[index].since == nil {
-      workers[index].since = now
+    for index in workers.indices {
+      if workers[index].since == nil { workers[index].since = now }
+      if workers[index].hasFailed, workers[index].failedAt == nil {
+        workers[index].failedAt = now
+      }
     }
+  }
+
+  /// The earliest a failed row is due to go, `nil` with none stamped.
+  var earliestFailure: Date? { workers.compactMap(\.failedAt).min() }
+
+  /// Takes off the failed rows stamped before `cutoff`. Returns their ids.
+  mutating func removeFailed(before cutoff: Date) -> [String] {
+    let gone = workers.filter { $0.hasFailed && ($0.failedAt.map { $0 < cutoff } ?? false) }
+      .map(\.id)
+    take(Set(gone))
+    return gone
   }
 }

@@ -160,6 +160,11 @@ public final class AppModel<Surface> {
   /// Settable so a test stands in a mount that never answers.
   @ObservationIgnored var directoryProbe = DirectoryProbe()
   @ObservationIgnored var pidWatch: Task<Void, Never>?
+  @ObservationIgnored var failedWorkerSweep: Task<Void, Never>?
+  @ObservationIgnored var failedWorkerSweepDue: Date?
+  /// How long a failed worker stays listed. Settable so a test does not wait
+  /// the full linger.
+  @ObservationIgnored var failedWorkerLingering = SessionStates.failedWorkerLingering
   /// How often a Working state's pid is checked. Settable so a test does
   /// not wait the full interval.
   @ObservationIgnored var pidPollInterval: Duration = .seconds(2)

@@ -22,6 +22,21 @@ struct AccessibilityTextTests {
         == "claude, tab, Working, 1 subagent, 2 background shells")
   }
 
+  @Test func theChipSaysEachWorkersNameAndDescriptionAndWhichFailed() {
+    var failed = Worker(id: "a2", type: "Explore", description: "Map the hooks")
+    failed.hasFailed = true
+    let out = [
+      Worker(id: "a0", type: "general-purpose", name: "code-review", description: "Review"),
+      Worker(id: "a1", type: "general-purpose", description: "Reuse angle", parentID: "a0"),
+      failed,
+    ]
+    #expect(
+      AccessibilityText.workers(out)
+        == "2 subagents, 1 failed, code-review: Review, "
+        + "general-purpose: Reuse angle under code-review, "
+        + "Explore: Map the hooks failed")
+  }
+
   @Test func theChipSaysEachNestedWorkerUnderItsParent() {
     let out = [
       Worker(id: "a0", type: "general-purpose", name: "code-review"),

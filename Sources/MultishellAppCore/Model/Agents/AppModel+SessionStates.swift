@@ -24,6 +24,7 @@ extension AppModel {
     sessionStates = changed
     for key in moved { withdrawNotification(about: key) }
     updateDockBadge()
+    scheduleFailedWorkerSweep()
   }
 
   public func state(of tab: TerminalTab) -> SessionState? {

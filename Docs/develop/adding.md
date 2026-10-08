@@ -56,7 +56,7 @@ What each addition needs beyond the code itself.
 - **Every agent with events needs the turn-starting one.** Most agents fire no
   hook on an interrupt, and the workers it killed send no stop, so the next
   prompt is the only thing that clears them, dropping every worker no Stop saw
-  out.
+  out and no list names as background work.
 - **A payload names a worker by id and type**, or that agent's own spelling,
   which needs a line in the payload reader. A start or end naming no worker
   still counts as one, taking an unnamed place.
@@ -64,11 +64,12 @@ What each addition needs beyond the code itself.
   integration too**, beside whether a worker is a conversation of its own and
   which listed kinds wake it. All default to no, so nothing forces them: a
   resuming agent left at the default pays Done at its last worker out and again
-  at the woken turn's Stop (design/agents.md). Three more, whether its
-  transcript shows a notice still queued at a Stop, whether it shows a question
-  a permission prompt stands for and whether a file beside it names each
-  worker's parent, are read only in Claude's format, so another agent needs a
-  reader of its own before it can say yes to any of them.
+  at the woken turn's Stop (design/agents.md). Four more, whether its transcript
+  shows a notice still queued at a Stop, whether it shows a question a
+  permission prompt stands for, whether a file beside it names each worker's
+  parent and whether a tool call's result names the background work it launched
+  or stopped, are read only in Claude's format, so another agent needs a reader
+  of its own before it can say yes to any of them.
 - **An agent whose Stop does not list the shells it backgrounded names a shell
   marker on the integration**, text only such a shell's command line holds.
   Nothing forces it either: without one a pane waiting on the shell goes Done

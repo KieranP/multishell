@@ -61,13 +61,17 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   /// Whether the agent keeps a file per worker beside its transcript naming
   /// the worker's parent; see agents.md.
   let keepsWorkerMetadataBesideTranscript: Bool
+  /// Whether a tool call's result names the background task it launched or
+  /// stopped; see agents.md.
+  let toolResultsNameBackgroundTasks: Bool
 
   init(
     id: String, file: URL, displayPath: String, events: [AgentHookEvent],
     format: Format, trustNote: String? = nil, backgroundShellMarker: String? = nil,
     resumption: Resumption = .never, subagentsAreConversations: Bool = false,
     wakingTaskTypes: Set<String> = [], transcriptQueuesNotices: Bool = false,
-    transcriptShowsPendingQuestion: Bool = false, keepsWorkerMetadataBesideTranscript: Bool = false
+    transcriptShowsPendingQuestion: Bool = false, keepsWorkerMetadataBesideTranscript: Bool = false,
+    toolResultsNameBackgroundTasks: Bool = false
   ) {
     self.id = id
     self.file = file
@@ -82,6 +86,7 @@ public struct AgentHookIntegration: Identifiable, Sendable {
     self.transcriptQueuesNotices = transcriptQueuesNotices
     self.transcriptShowsPendingQuestion = transcriptShowsPendingQuestion
     self.keepsWorkerMetadataBesideTranscript = keepsWorkerMetadataBesideTranscript
+    self.toolResultsNameBackgroundTasks = toolResultsNameBackgroundTasks
   }
 
   public var name: String { AgentCatalogue.agent(id)?.name ?? id }

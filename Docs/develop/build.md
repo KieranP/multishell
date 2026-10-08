@@ -23,10 +23,8 @@
 - **The Makefile is the entry point**: `signing-identity` once per machine, then
   `test`, `test-app`, `build`, `release`, `run`, `install`, `format` and `lint`.
   Each carries a comment line above it in the Makefile saying what it does.
-- **`make-app.sh` builds the app binary with `xcodebuild`**, wraps it in a
-  bundle, builds the CLI the same way into the bundle's helpers, copies the
-  resource bundles and libghostty's terminfo in, writes the Info.plist and signs
-  both.
+- **`make-app.sh` builds the app and the CLI with `xcodebuild`** and wraps them
+  in a bundle, the CLI among its helpers.
 - **libghostty finds its terminfo through `GHOSTTY_RESOURCES_DIR`**, which the
   app sets to `Contents/Resources/ghostty` at launch: a release libghostty reads
   the variable before its own walk up from the executable, so one inherited from
@@ -44,14 +42,13 @@
 - **`make` builds libghostty first**, from the submodule, into `.build/ghostty`:
   about 80 s cold here, nothing while the submodule, the patches, the script,
   Zig and Xcode are unchanged, and 2 s after a `make clean` or
-  `swift package reset`: Zig's cache is in the submodule's `.zig-cache/`, which
-  neither touches. A bare `swift build` needs it built already, the package
-  naming the xcframework by path; `make libghostty` does it.
+  `swift package reset`: Zig keeps its cache and fetched packages in the
+  submodule's `.zig-cache/` and `zig-pkg/`, which neither touches. A bare
+  `swift build` needs it built already, the package naming the xcframework by
+  path; `make libghostty` does it.
 - **`build-lib.sh` holds the functions `make-app.sh` sources**, not runs (and
-  `build-ghostty.sh` its `die`): the copyright holder, the version, the commit,
-  the build number, the worktree variant, the xcodebuild call, the checks, the
-  resource copying, the Info.plist rendering, the entitlements and the signing.
-  What stays in `make-app.sh` is the paths and the order of the steps.
+  `build-ghostty.sh` its `die`). What stays in `make-app.sh` is the paths and
+  the order of the steps.
 - **The Info.plist is a template filled in by placeholder**, and
   InfoPlistTemplateTests reads it out of the checkout (tests.md). Substitution
   is bash's own, so a value may hold a newline or an ampersand unescaped. The
@@ -75,7 +72,7 @@
 - **Every target works the same from a git worktree**, and two can build at
   once: the scratch directories are per-worktree and the shared caches lock only
   briefly. Each worktree has its own clone of the submodule, so a new one's
-  first libghostty build starts with no `.zig-cache/`.
+  first libghostty build starts with no `.zig-cache/` or `zig-pkg/`.
 - **Running the tests is the exception**, several bounds being wall-clock. So
   `make test` compiles unguarded, then runs under a lock file: a second worktree
   compiles alongside the first and waits, silently, only for its turn to run.
@@ -134,6 +131,9 @@
   it; a cold build's time on CI is unmeasured. It builds the package without
   debug info, which took a cold build from 38 s to 29 s here, so a crash
   backtrace from CI has no line numbers.
+- **A CI step that writes a script's output to `$GITHUB_OUTPUT` assigns it to a
+  variable first.** A failing script inside `echo`'s `$(...)` leaves the step
+  green, which once gave the build an empty Zig version and cache key.
 
 ## Before you say something works
 

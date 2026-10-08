@@ -16,6 +16,7 @@ public struct WorkerReport: Codable, Hashable, Sendable {
   /// Display only, so cut rather than dropped, as the message is.
   static let maximumTypeLength = 64
   static let maximumNameLength = 64
+  static let maximumDescriptionLength = 200
 
   public internal(set) var id: String
   /// What the agent calls the kind: `Explore`, `Plan`, a custom agent's name.
@@ -29,20 +30,31 @@ public struct WorkerReport: Codable, Hashable, Sendable {
   /// The worker that launched this one, absent for the agent's own; see
   /// Docs/design/agents.md. Set only through the inits, which bound it.
   public private(set) var parentID: String?
-  /// What the agent shows for this worker, a skill's name or the task's
-  /// description, where it says. Set only through the inits, which cut it.
+  /// The name the agent shows for this worker, where it gave one. Set only
+  /// through the inits, which cut it, as they cut the description.
   public private(set) var name: String?
+  /// What the worker was launched to do, as the agent shows it.
+  public private(set) var description: String?
+  /// Set on an end that was a kill or a failure, which the list draws as
+  /// failed for a while; see Docs/design/agents.md.
+  public internal(set) var hasFailed: Bool?
+  /// Set on the worker's own stop while it is still listed, which a finished
+  /// worker sends before it leaves and a killed one never; see agents.md.
+  public internal(set) var isPaused: Bool?
 
   enum CodingKeys: String, CodingKey {
-    case id, type, phase, name
+    case id, type, phase, name, description
     case wakesAgent = "wakes"
     case isBackgroundShell = "shell"
     case parentID = "parent"
+    case hasFailed = "failed"
+    case isPaused = "paused"
   }
 
   public init(
     id: String, type: String? = nil, phase: Phase, wakesAgent: Bool? = nil,
-    isBackgroundShell: Bool? = nil, parentID: String? = nil, name: String? = nil
+    isBackgroundShell: Bool? = nil, parentID: String? = nil, name: String? = nil,
+    description: String? = nil, hasFailed: Bool? = nil, isPaused: Bool? = nil
   ) {
     self.id = id
     self.type = type
@@ -51,6 +63,9 @@ public struct WorkerReport: Codable, Hashable, Sendable {
     self.isBackgroundShell = isBackgroundShell
     self.parentID = SessionStateReport.boundedIdentifier(parentID)
     self.name = name?.truncated(to: Self.maximumNameLength)
+    self.description = description?.truncated(to: Self.maximumDescriptionLength)
+    self.hasFailed = hasFailed
+    self.isPaused = isPaused
   }
 
   /// Any process may write a line, so the reader bounds every string. An id
@@ -68,5 +83,9 @@ public struct WorkerReport: Codable, Hashable, Sendable {
       try container.decodeIfPresent(String.self, forKey: .parentID))
     name = try container.decodeIfPresent(String.self, forKey: .name)?
       .truncated(to: Self.maximumNameLength)
+    description = try container.decodeIfPresent(String.self, forKey: .description)?
+      .truncated(to: Self.maximumDescriptionLength)
+    hasFailed = try container.decodeIfPresent(Bool.self, forKey: .hasFailed)
+    isPaused = try container.decodeIfPresent(Bool.self, forKey: .isPaused)
   }
 }

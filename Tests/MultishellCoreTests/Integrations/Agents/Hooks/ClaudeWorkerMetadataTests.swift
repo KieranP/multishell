@@ -10,19 +10,19 @@ struct ClaudeWorkerMetadataTests {
     ClaudeWorkerMetadata(json: Data(json.utf8))
   }
 
-  @Test func aSkillRunAsAWorkerIsNamedForTheSkillAndATaskForItsDescription() {
+  @Test func aWorkerKeepsItsNameAndItsDescriptionApart() {
     #expect(
       metadata(
         #"{"agentType":"general-purpose","description":"/code-review . high","name":"code-review"}"#
-      ) == ClaudeWorkerMetadata(name: "code-review"))
+      ) == ClaudeWorkerMetadata(name: "code-review", description: "/code-review . high"))
     #expect(
       metadata(#"{"description":"Reuse angle","parentAgentId":"ac15f9fedbcaa9669"}"#)
-        == ClaudeWorkerMetadata(parentID: "ac15f9fedbcaa9669", name: "Reuse angle"))
+        == ClaudeWorkerMetadata(parentID: "ac15f9fedbcaa9669", description: "Reuse angle"))
   }
 
   @Test func aParentThatCouldNotBeAnIdIsNoParentAndAFileThatIsNotJSONIsNoMetadata() {
     #expect(metadata(#"{"parentAgentId":"../x"}"#)?.parentID == nil)
-    #expect(metadata(#"{"name":""}"#)?.name == nil)
+    #expect(metadata(#"{"name":"","description":""}"#) == ClaudeWorkerMetadata())
     #expect(metadata("not json") == nil)
   }
 

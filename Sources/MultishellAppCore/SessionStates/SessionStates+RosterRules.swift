@@ -34,6 +34,9 @@ extension SessionStates {
         $0.promptRaisers.insert(raiser)
       }
       return state
+    // A worker's own stop that leaves nothing out arrived after its end.
+    case .running where worker.isPaused == true && !entry.roster.hasWorkOut:
+      return applyTick(worker, place: place, entry: entry, for: key)
     case .running where worker.phase == .working:
       // A failure stands to mere work, and so does another thread's prompt:
       // only the thread that asked, moving on, says it was answered.
@@ -56,7 +59,7 @@ extension SessionStates {
     _ worker: WorkerReport, place: WorkerRoster.Place, entry: Entry, for key: Key
   ) -> SessionState? {
     let raiser = Entry.PromptRaiser.worker(place.id)
-    let outstanding = !entry.roster.workers.isEmpty
+    let outstanding = entry.roster.hasWorkOut
     // A worker ending with its prompt still up, the user having denied it,
     // takes the prompt with it.
     if worker.phase == .ended, entry.state == .attention, entry.promptRaisers.contains(raiser) {
@@ -103,7 +106,7 @@ extension SessionStates {
       }
       return state
     // A turn starting straight after the Stop is work out as a worker is.
-    case .done where !entry.roster.workers.isEmpty || turnFollows:
+    case .done where entry.roster.hasWorkOut || turnFollows:
       update(key) { $0.roster.markOutAtStop() }
       // A failure is left alone whether a worker's prompt covered it or it is
       // still standing, or the Done would be paid over it.

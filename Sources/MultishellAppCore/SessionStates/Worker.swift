@@ -7,9 +7,10 @@ public struct Worker: Identifiable, Equatable, Sendable {
   public let id: String
   /// What the agent calls the kind, `nil` where no report said.
   var type: String?
-  /// What the agent shows for it, a skill's name or the task's description,
-  /// where it says.
+  /// The name the agent shows for it, where it gave one.
   var name: String?
+  /// What it was launched to do, as the agent shows it.
+  public internal(set) var description: String?
   /// The worker that launched it, `nil` for the agent's own or where no
   /// report has said yet; see Docs/design/agents.md.
   var parentID: String?
@@ -32,15 +33,39 @@ public struct Worker: Identifiable, Equatable, Sendable {
   /// Reported since the last held Stop, so a Stop that finds it silent does
   /// not vouch for it: its end may have been lost.
   var wasHeardSinceStop = true
+  /// Ended, and kept while a worker it launched is out, drawn as out as
+  /// Claude draws it; see Docs/design/agents.md.
+  var hasEnded = false
+  /// Killed or failed, and drawn so until swept; see Docs/design/agents.md.
+  var hasFailed = false
+  /// When it failed. Handed in by `stampChanges`, never read from a clock.
+  var failedAt: Date?
+  /// Named by an agent's list of background work, which a later list ends
+  /// by leaving it out.
+  var wasListed = false
+  /// Named by the result of the tool call that launched it in the background,
+  /// which only Claude's hooks report.
+  var wasLaunchedInBackground = false
+  /// Whether its last report was its own stop; a launched worker leaving the
+  /// list without one was killed. See Docs/design/agents.md.
+  var lastReportWasItsStop = false
+  /// Paused, and the last of its own work has just ended, which wakes it, so
+  /// it is kept until the next list; see Docs/design/agents.md.
+  var awaitsResume = false
 
   var isBackgroundShell: Bool { pid != nil || isListedShell }
 
+  /// The dot its row draws.
+  public var shownState: SessionState { hasFailed ? .failed : .running }
+
   init(
-    id: String, type: String?, name: String? = nil, parentID: String? = nil, since: Date? = nil
+    id: String, type: String?, name: String? = nil, description: String? = nil,
+    parentID: String? = nil, since: Date? = nil
   ) {
     self.id = id
     self.type = type
     self.name = name
+    self.description = description
     self.parentID = parentID
     self.since = since
   }

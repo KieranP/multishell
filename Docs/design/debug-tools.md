@@ -52,8 +52,9 @@ What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
   holds four seconds of git runs, reports and CPU.
 - **The strips share one time axis and one pointer**, so a stall lines up with
   the git burst or CPU spike in the same second.
-- **State Reports, not Worker Reports**: every line on the socket counts, shell
-  prompts and agent hooks as well as workers, each handled on the main thread.
+- **State Reports, not Worker Reports**: every report on the socket counts,
+  shell prompts and agent hooks as well as workers, each handled on the main
+  thread.
 - **The quick stats read the model in their own body**, so the sample landing
   each second redraws three cells, not the sidebar.
 - **Pause holds the panel, not the sampling**, so a slow second can be read

@@ -1,0 +1,198 @@
+{
+  "a016787520450c970": {
+    "agentType": "general-purpose",
+    "description": "busy",
+    "requestShape": "background"
+  },
+  "a03294361c61518df": {
+    "agentType": "general-purpose",
+    "description": "resumable",
+    "requestShape": "background"
+  },
+  "a0ae5dc453dd75eb6": {
+    "agentType": "general-purpose",
+    "description": "paused",
+    "requestShape": "background"
+  },
+  "a0ddc629cf99c30ad": {
+    "agentType": "general-purpose",
+    "description": "fan-b",
+    "parentAgentId": "a62a7e30593505ee7",
+    "requestShape": "background"
+  },
+  "a0de580d8f7404027": {
+    "agentType": "general-purpose",
+    "description": "fan-a",
+    "parentAgentId": "a62a7e30593505ee7",
+    "requestShape": "background"
+  },
+  "a1008624d3cc57801": {
+    "agentType": "general-purpose",
+    "description": "quick",
+    "requestShape": "background"
+  },
+  "a201ce88efc08d204": {
+    "agentType": "general-purpose",
+    "description": "busy-victim",
+    "requestShape": "background"
+  },
+  "a2d36d33bddfc434b": {
+    "agentType": "general-purpose",
+    "description": "f2",
+    "parentAgentId": "aadf87884f3bd3b86",
+    "requestShape": "background"
+  },
+  "a33151eefb8ac2cb0": {
+    "agentType": "general-purpose",
+    "description": "fan-c",
+    "parentAgentId": "a62a7e30593505ee7",
+    "requestShape": "background"
+  },
+  "a43f50935fb8282b8": {
+    "agentType": "general-purpose",
+    "description": "inner-1",
+    "parentAgentId": "a8a31654da83147e7",
+    "requestShape": "background"
+  },
+  "a47d2007006ff864a": {
+    "agentType": "general-purpose",
+    "description": "shell-leaver",
+    "requestShape": "background"
+  },
+  "a4d876bc1eccb1d72": {
+    "agentType": "general-purpose",
+    "description": "middle",
+    "parentAgentId": "afc51a9cc515bb773",
+    "requestShape": "background"
+  },
+  "a4e97b5562a758e1c": {
+    "agentType": "general-purpose",
+    "description": "list-victim",
+    "requestShape": "background"
+  },
+  "a502d28281e37813e": {
+    "agentType": "general-purpose",
+    "description": "nested",
+    "requestShape": "background"
+  },
+  "a5132b3f0e6702195": {
+    "agentType": "general-purpose",
+    "description": "short-parent",
+    "requestShape": "background"
+  },
+  "a628265771e0e23a4": {
+    "agentType": "general-purpose",
+    "description": "f4",
+    "parentAgentId": "aadf87884f3bd3b86",
+    "requestShape": "background"
+  },
+  "a62a7e30593505ee7": {
+    "agentType": "general-purpose",
+    "description": "fan-three",
+    "requestShape": "background"
+  },
+  "a6a9c9b593a62764a": {
+    "agentType": "general-purpose",
+    "description": "waiter",
+    "requestShape": "background"
+  },
+  "a6d07f6e138030eec": {
+    "agentType": "general-purpose",
+    "description": "nested-child",
+    "parentAgentId": "a502d28281e37813e",
+    "requestShape": "background"
+  },
+  "a71f426223e8cfdef": {
+    "agentType": "general-purpose",
+    "description": "victim",
+    "requestShape": "background"
+  },
+  "a82c612c21d461a02": {
+    "agentType": "general-purpose",
+    "description": "chain-1",
+    "requestShape": "background"
+  },
+  "a8a31654da83147e7": {
+    "agentType": "general-purpose",
+    "description": "outer",
+    "requestShape": "background"
+  },
+  "a9e025ae7d68dbe4e": {
+    "agentType": "general-purpose",
+    "description": "chain-2",
+    "parentAgentId": "a82c612c21d461a02",
+    "requestShape": "background"
+  },
+  "aac8aafe04779d061": {
+    "agentType": "general-purpose",
+    "description": "two-waits",
+    "requestShape": "background"
+  },
+  "aadf87884f3bd3b86": {
+    "agentType": "general-purpose",
+    "description": "fan-four",
+    "requestShape": "background"
+  },
+  "ab8916c97f3ed91ef": {
+    "agentType": "general-purpose",
+    "description": "paused-victim",
+    "requestShape": "background"
+  },
+  "abb8872f03c7f8643": {
+    "agentType": "general-purpose",
+    "description": "leaf",
+    "parentAgentId": "a4d876bc1eccb1d72",
+    "requestShape": "background"
+  },
+  "abb8e1ca3cb19e05f": {
+    "agentType": "general-purpose",
+    "description": "chain-3",
+    "parentAgentId": "a9e025ae7d68dbe4e",
+    "requestShape": "background"
+  },
+  "ad27ea9a644ac65fd": {
+    "agentType": "general-purpose",
+    "description": "inner-2",
+    "parentAgentId": "a8a31654da83147e7",
+    "requestShape": "background"
+  },
+  "ad2da196fa21879df": {
+    "agentType": "general-purpose",
+    "description": "doomed-child",
+    "parentAgentId": "aef695a11bb941c8e",
+    "requestShape": "background"
+  },
+  "ad5f35cbf03e0d26f": {
+    "agentType": "general-purpose",
+    "description": "long-child",
+    "parentAgentId": "a5132b3f0e6702195",
+    "requestShape": "background"
+  },
+  "ae563aec0204e8afb": {
+    "agentType": "general-purpose",
+    "description": "f1",
+    "parentAgentId": "aadf87884f3bd3b86",
+    "requestShape": "background"
+  },
+  "aebed798d710e9228": {
+    "agentType": "general-purpose",
+    "description": "f3",
+    "parentAgentId": "aadf87884f3bd3b86",
+    "requestShape": "background"
+  },
+  "aef695a11bb941c8e": {
+    "agentType": "general-purpose",
+    "description": "doomed-parent",
+    "requestShape": "background"
+  },
+  "af4f302dc031ab710": {
+    "agentType": "general-purpose",
+    "description": "two-waits",
+    "requestShape": "background"
+  },
+  "afc51a9cc515bb773": {
+    "agentType": "general-purpose",
+    "description": "top",
+    "requestShape": "background"
+  }
+}

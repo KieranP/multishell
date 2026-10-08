@@ -52,10 +52,10 @@ at the bottom.
   skipped for not existing; then against the disk, every folder on the way and
   the path's end. A user's list gets the lexical check and the destination's,
   and is named, not refused (below).
-- **A symlink named by an entry is judged by where it leads**, since `copyItem`
-  copies the link rather than following it: one leading out is refused, one
-  staying inside is placed. One inside a listed directory is kept, git having
-  checked it out anyway.
+- **A symlink a repo's list names is judged by where it leads**, since
+  `copyItem` copies the link rather than following it: one leading out is
+  refused, one staying inside is placed. One inside a listed directory is kept,
+  git having checked it out anyway.
 - **A user's entry naming somewhere else is named, not refused**: `~/x`,
   `$HOME/x` or `../x` places nothing, and once the rest are placed an alert
   lists them and the post-create hook still runs. Silent, the entry read as

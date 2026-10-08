@@ -25,9 +25,9 @@ Newest at the bottom.
 - **Views hold no literal.** A bare string would be looked up in the main
   bundle, where there is no catalogue, and every check above starts at a lookup
   call so none of them would see it.
-- **So a test scans for the initialisers and modifiers that take a localized
-  key** and fails a literal in one, skipping a literal holding an interpolation,
-  which is a number rather than a word.
+- **So `noViewLabelsItselfWithALiteral` scans for the initialisers and modifiers
+  that take a localized key** and fails a literal in one, skipping a literal
+  holding an interpolation, which is a number rather than a word.
 - **One catalogue per frontend and one for the libraries**, each inside the
   target that declares it, the only place SwiftPM promises a resource may be.
 - **A manifest reaching out of its target broke that**: the same relative path
@@ -44,9 +44,10 @@ Newest at the bottom.
 - **App code never reads the libraries' catalogue.** The few words both halves
   say are written in both files, because the alternative makes a frontend's
   words depend on the model's.
-- **Cost: those few can drift**, and a test fails a pair that has. It compares
-  like with like, so a key that was a phrase here and a counted form there
-  passed unseen until a second check failed that too.
+- **Cost: those few can drift**, and `aWordInBothCataloguesReadsTheSameInBoth`
+  fails a pair that has. It compares like with like, so a key that was a phrase
+  here and a counted form there passed unseen until
+  `noKeyIsAPhraseInOneHalfAndACountedFormInTheOther` failed that too.
 - **Not `.xcstrings`.** SwiftPM copies one verbatim rather than compiling it, so
   every lookup answers with its own key. Checked against the toolchain, not
   assumed.
@@ -69,7 +70,8 @@ Newest at the bottom.
 - **Read where it is shown**, not through a helper: the rule is in the
   catalogue, so a wrapper round the lookup would only be a second name for it.
 - **A phrase with two or more arguments numbers them**, so a translation may
-  reorder the sentence. A test fails one that does not.
+  reorder the sentence. `everyPhraseWithSeveralArgumentsNumbersThem` fails one
+  that does not.
 - **A noun read mid-sentence has both forms in the catalogue**, rather than one
   and a lowercasing, which is right in English and wrong in German.
 - **What another program said stays English**: git's stderr, a hook's output, an

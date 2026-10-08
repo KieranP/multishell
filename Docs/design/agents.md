@@ -12,9 +12,10 @@ at the bottom.
   able to write a line. An id, an agent or a command word past 128 characters is
   dropped rather than cut, a cut one naming something else, and a worker's id
   past it counts as an unnamed worker; a path past 1024 bytes is dropped; a
-  worker's kind and name are cut to 64 and the message to 500, all being display
-  only; a Stop names at most 64 shells. A duration outside zero to a week is
-  dropped, being a writer's number rather than a clock's.
+  worker's kind and name are cut to 64, its description to 200 and the message
+  to 500, all being display only; a Stop names at most 64 shells. A duration
+  outside zero to a week is dropped, being a writer's number rather than a
+  clock's.
 - **One naming only a directory marks the deepest worktree containing it**, so
   an agent started in a subfolder says that folder, and a worktree nested in
   another is the one meant.
@@ -313,10 +314,11 @@ at the bottom.
 - **Not the tool it is in, though the payload says**: shown, it changed with
   every call and made the list flash; carried, it re-rendered the sidebar per
   call.
-- **No task description from a hook**: no payload carries one, for any agent.
-  Claude's comes from a file beside its transcript, below.
-- **The wire field is an object with id, type and phase.** The older count field
-  is still read, each increment as an unnamed worker, because the helper link is
+- **No task description from a worker's own hooks**: none of their payloads
+  carries one, for any agent. Claude's comes from a file beside its transcript
+  or from the result of the call that launched it, both below.
+- **The wire field is an object naming the worker.** The older count field is
+  still read, each increment as an unnamed worker, because the helper link is
   shared between builds and points at whichever launched last.
 - **The same link makes the reverse meeting happen**, so a start and an end also
   write the count beside the object; a tool call writes none, or each would put
@@ -461,14 +463,15 @@ at the bottom.
   for a worker not on the roster puts it on, an end for one never seen takes
   nothing, and the roster clears with everything else.
 - **The chip is the count behind a branch glyph in the Working colour**, on a
-  pane's row and its board card while that pane has a worker out, and on neither
-  when it has none: an empty chip would be one more badge on every row.
+  pane's row and its board card while that pane has a worker out. With none out
+  it counts the failed workers still drawn, in the Failed colour, and with
+  neither it is gone: an empty chip would be one more badge on every row.
 - **Not on the worktree row**, which was tried: the row already carries four
   badges, and the pane rows say which pane the swarm is in.
 - **A report naming only a directory keeps its workers under the worktree's
   key**, which moves the worktree's dot and shows on no chip, there being no
   pane to hang one on.
-- **Hovering the chip lists them, kind and time**, in a popover that ticks while
+- **Hovering the chip lists them, name and time**, in a popover that ticks while
   it is up; nothing else grows, so a large fan-out costs the sidebar no rows and
   the board no height.
 - **Chosen over rows under the tab**, which a fan-out would have pushed the next
@@ -712,16 +715,17 @@ at the bottom.
   Codex 0.160.0 against the schemas in their binaries. Copilot's end names the
   conversation it ran under, too late to list it there.
 - **Claude writes it beside the transcript instead**:
-  `<session>/subagents/ agent-<id>.meta.json` holds `parentAgentId`, absent for
+  `<session>/subagents/agent-<id>.meta.json` holds `parentAgentId`, absent for
   the agent's own, and the `name` a skill runs under or the task's
   `description`, which is what its own list shows. The helper reads it on each
-  event inside a worker and sends the parent and that name with the worker.
+  event inside a worker and sends the parent, name and description with it.
 - **Not at the worker's start**: Claude runs that hook before it writes the
   file. In a real review the file came 30 to 65 ms after the worker's first
   transcript line and 5 to 11 seconds before its first tool call, so a worker
   sits at the top until then.
-- **Not a contract, so a changed format lists every worker at the top**, named
-  by its kind, which is what it did before; nothing about the state moves.
+- **Not a contract, so a changed format lists every foreground worker at the
+  top**, named by its kind, which is what it did before; nothing about the state
+  moves.
 - **The id goes into a path, so only letters, digits, `-` and `_` are read**,
   and a parent naming anything else is no parent.
 - **OpenCode's plugin names a child's parent where that parent is itself a
@@ -738,6 +742,72 @@ at the bottom.
   background work, its filter skipping a task marked foreground, so a foreground
   worker launched by a background one was read as ended, and a prompt it had up
   went with it. Read from Claude 2.1.292's binary.
+- **The list follows Claude Code's own panel**, read from 2.1.292's binary: a
+  worker under the worker whose `parentAgentId` it names, siblings in the order
+  they started, the name it was launched under (else its kind) and what it was
+  launched to do. Unlike that panel, every level is drawn, a list opened on
+  demand having no viewed agent to follow.
+- **A worker's SubagentStop is not its end.** Claude fires one at every turn end
+  of a worker's, and a worker waiting on its own workers or a backgrounded shell
+  ends its turn to wait. Read as its end, a parent waiting on five went at once,
+  its five drawn at the top, and each of them waiting on a shell went too,
+  leaving one or two of six.
+- **Claude's list decides background work.** Every Stop and SubagentStop lists
+  the session's work in flight, the worker's context sharing the agent's
+  registry, and a background worker lists itself until its run returns, its last
+  stop included. So a worker its own stop lists is paused, and one an earlier
+  list named ends when a later list leaves it out. Foreground work is never
+  listed, so a list ends none of it.
+- **A worker that ends with work it launched still out stays**, drawn as out as
+  Claude draws it, and goes with the last of that work. One that ended is
+  remembered, so a child whose parent is named only after the parent ended is
+  still drawn under it.
+- **What a worker launches is put under it at the launch**: the result Claude
+  hands PostToolUse names the shell (`backgroundTaskId`) or the async worker
+  (`agentId`, with its name and description). Without it a parent pausing 10 ms
+  before its children's first tool call held none of them, and a shell had no
+  owner at all.
+- **A killed or failed worker is drawn failed for 30 seconds**, Claude's own
+  linger, then swept. A failed row holds no Working, so the Done is not held for
+  it.
+- **A TaskStop names what it killed**: its result carries `task_id`, and Claude
+  stops everything under that task with it, so the task and all it held turn
+  failed. A stopped parent's child and both their shells went in one captured
+  run. A prompt one of them had up goes with it: Claude closes the dialog, and
+  the pane otherwise stayed Waiting.
+- **Esc on a subagent sends nothing**, nor does a stop from Claude's task list,
+  so it is read from the list. A worker that finishes always sends its own stop,
+  listing itself, before it leaves; so a launched worker that leaves the list
+  with no stop of its own since its last report was killed or crashed. One
+  killed while paused sent its stop first and goes unmarked.
+- **A worker's own stop never puts it back**: each hook is its own process, and
+  in a captured run the main agent's prompt from a hand-back was logged before
+  the stop of the worker that handed back. A list that overtakes that stop reads
+  the worker as killed; the stop arriving after it ends the worker, rather than
+  reviving it into a Working nothing would end.
+- **Only a worker a launch result named is judged so**: OpenCode lists its
+  workers too and sends no stop of the kind, and a shell sends none ever. One
+  Ctrl+B sent to the background has no launch result, so its kill goes unmarked.
+- **A paused worker leaves the list while its own work runs.** Claude ends its
+  run as completed, noting it may resume, and starts it again when that work
+  reports; it is kept by the work launched under it, as Claude's panel keeps a
+  finished agent whose work is alive. When the last of that work ends, which is
+  what wakes it, it waits one list for its start; in a captured run that start
+  came in the same second.
+- **A stop that leaves its own background worker out is also marked failed**, as
+  the binary's abort path reads; no captured run has sent one.
+- **A new turn keeps background work.** The hand-back reaches the agent as a
+  prompt, which keeps only what the last Stop saw out; a worker launched since
+  went with it and came back at the top on the next list. Listed or launched
+  work is background work, which no interrupt ends. Esc on the agent sends no
+  hook and ends none of its background work; without this rule, the first prompt
+  after it dropped every worker and shell, no Stop having seen them out.
+- **Five captured Claude runs replay every payload through the helper and the
+  roster**, in the `claudesCaptured` tests of
+  `SessionStatesTests+ClaudeCapture.swift`.
+- **A start for a worker whose `meta.json` exists is a resume**, Claude starting
+  a worker again under its id after a SendMessage, not a second worker under one
+  place.
 - **A failed tool call is Working, as a finished one is**: the agent reads the
   error and carries on. Claude and Copilot send it as its own event, their
   PostToolUse firing on success only; Codex's PostToolUse and Gemini's AfterTool

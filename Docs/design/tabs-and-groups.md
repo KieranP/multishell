@@ -130,8 +130,9 @@ bottom.
   and nothing to scroll would be drawn over the group beside it.
 - **New Tab sits outside the scroller too**, so a full strip cannot push it out
   of reach, and the tab turned to is scrolled into view.
-- **Neither is laid out beside a spacer**: a scroller and a spacer are both
-  infinitely flexible, and the stack would divide the strip between the two.
+- **A scrolling strip has no spacer**, its gutters and New Tab set straight
+  against the scroller. A scroller and a spacer are both infinitely flexible,
+  and the stack would divide the strip between the two.
 - **The two splits sit in the same gutter**, on the strip rather than in the
   pane, where a button over a terminal would take a click meant for the shell.
 - **Each names its own group**, splits the tab that group shows and focuses it,
@@ -192,7 +193,8 @@ bottom.
   the same click started a shell in one project and an agent in the next.
 - **The shortcut itself is unchanged**, and it and its File menu item are the
   only ways left to ask for the auto-start answer by hand. The first tab a
-  worktree opens by itself, on select or create, still gets it.
+  worktree opens by itself still gets it on select, and the create setting's
+  answer on create.
 - **The items open in the group the menu sits in**, as the split buttons do, so
   a click never acts in the group the keyboard happens to be in.
 - **Every item's icon is a rendered image**, the shell's terminal glyph as well

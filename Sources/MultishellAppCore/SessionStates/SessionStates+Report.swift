@@ -25,6 +25,13 @@ extension SessionStates {
     if report.startsTurn == true, !isAnotherConversation { update(key) { $0.startTurn() } }
     let isOwnStop = report.state == .done && worker == nil
     if isOwnStop { syncRoster(toStop: report, for: key) }
+    if let worker { syncRoster(toWorkersStop: report, stopping: worker.id, for: key) }
+    if let launched = report.launched { update(key) { $0.roster.recordLaunch(launched) } }
+    if let killed = report.killedTaskID {
+      update(key) {
+        for id in $0.roster.recordKill(killed) { $0.promptRaisers.remove(.worker(id)) }
+      }
+    }
     guard
       let state = applyRoster(
         to: report.state, worker: worker,
@@ -65,6 +72,20 @@ extension SessionStates {
         $0.roster.recordShells(backgroundShells)
       }
       $0.resumesAfterWorkers = report.resumesAfterWorkers == true
+    }
+  }
+
+  /// A worker's stop lists the agent's background work, which ends what an
+  /// earlier list named and this one leaves out.
+  private mutating func syncRoster(
+    toWorkersStop report: SessionStateReport, stopping workerID: String, for key: Key
+  ) {
+    guard let workersOut = report.workersOut,
+      workersOut.count < SessionStateReport.maximumWorkersOut
+    else { return }
+    update(key) {
+      let gone = $0.roster.keepOnlyListedOut(workersOut, stopping: workerID)
+      for id in gone { $0.promptRaisers.remove(.worker(id)) }
     }
   }
 

@@ -484,6 +484,18 @@ says why these are the rules.
   builder stay at the suite's root.
 - **Git behaviour goes against a real repository**, never mocks. Parsers get
   fixture text, odd lines included.
+- **Claude's subagent hooks replay from captured runs** in
+  `Tests/MultishellAppCoreTests/Fixtures/ClaudeHookCaptures`, through
+  SessionStatesTests+ClaudeCapture. Hand-written payloads held only the order we
+  expected. Claude sends SubagentStop at every pause of a subagent as well as
+  its end, and each hook is its own process, so one run logged the main agent's
+  prompt from a hand-back before the stop of the worker that handed back.
+- **A capture is one payload a line**, cut to the fields the helper reads, the
+  transcript path left as `TRANSCRIPT` and each `meta.json` written after the
+  worker's first start, as Claude writes it. A new run is captured by
+  `claude --settings` naming a hook that appends its stdin to a file, never the
+  user's own settings; it appends under `lockf`, as two hooks at once
+  interleaved a line.
 - **Prefer evidence to a clock.** Concurrency is read off what the children
   recorded about each other, not off how long the batch took. Both were
   wall-clock bounds first, and both flaked.

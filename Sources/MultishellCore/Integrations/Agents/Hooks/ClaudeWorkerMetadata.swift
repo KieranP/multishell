@@ -5,12 +5,20 @@ import Foundation
 struct ClaudeWorkerMetadata: Equatable {
   /// The worker that launched this one, `nil` for one the agent launched itself.
   var parentID: String?
-  /// The skill a worker runs as, or else its task's description.
+  /// The name it was launched under, or the skill it runs as.
   var name: String?
+  var description: String?
+  /// Launched in the background, so Claude lists it until its run returns.
+  var isBackground = false
 
-  init(parentID: String? = nil, name: String? = nil) {
+  init(
+    parentID: String? = nil, name: String? = nil, description: String? = nil,
+    isBackground: Bool = false
+  ) {
     self.parentID = parentID
     self.name = name
+    self.description = description
+    self.isBackground = isBackground
   }
 
   init?(json data: Data) {
@@ -18,8 +26,9 @@ struct ClaudeWorkerMetadata: Equatable {
       return nil
     }
     parentID = (object["parentAgentId"] as? String).flatMap { Self.isSafeWorkerID($0) ? $0 : nil }
-    name = [object["name"], object["description"]].lazy
-      .compactMap { $0 as? String }.first { !$0.isEmpty }
+    name = (object["name"] as? String)?.nonEmpty
+    description = (object["description"] as? String)?.nonEmpty
+    isBackground = object["requestShape"] as? String == "background"
   }
 
   /// `<project>/<session>.jsonl` keeps its workers in `<project>/<session>/subagents/`.

@@ -37,6 +37,12 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
   /// A worker starting, calling a tool or ending. The app keeps the
   /// roster; see Docs/design/agents.md.
   var worker: WorkerReport?
+  /// A worker or shell this report's worker, or the agent, launched in the
+  /// background, so it is listed under its launcher from the start.
+  public internal(set) var launched: WorkerReport?
+  /// A task the agent killed, which the list draws as failed with all it
+  /// held; see Docs/design/agents.md.
+  public internal(set) var killedTaskID: String?
   /// Set on the prompt that starts a turn, which keeps only the workers a held
   /// Stop saw out; see Docs/design/agents.md.
   public internal(set) var startsTurn: Bool?
@@ -76,6 +82,8 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     case isSilent = "silent"
     case legacyWorkerCount = "subagents"
     case worker = "subagent"
+    case launched
+    case killedTaskID = "killed"
     case startsTurn = "turn"
     case startsSession = "start"
     case backgroundShells = "shells"
@@ -98,6 +106,8 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     isFromShellIntegration: Bool? = nil,
     isSilent: Bool? = nil,
     worker: WorkerReport? = nil,
+    launched: WorkerReport? = nil,
+    killedTaskID: String? = nil,
     startsTurn: Bool? = nil,
     startsSession: Bool? = nil,
     backgroundShells: [Int32]? = nil,
@@ -120,6 +130,8 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
     self.isSilent = isSilent
     self.legacyWorkerCount = Self.legacyCount(of: worker)
     self.worker = worker
+    self.launched = launched.flatMap { $0.id == WorkerReport.anonymousID ? nil : $0 }
+    self.killedTaskID = Self.boundedIdentifier(killedTaskID)
     self.startsTurn = startsTurn
     self.startsSession = startsSession
     self.backgroundShells = Self.boundedShells(backgroundShells)
@@ -147,6 +159,8 @@ public struct SessionStateReport: Codable, Hashable, Sendable {
         Bool.self, forKey: .isFromShellIntegration),
       isSilent: try container.decodeIfPresent(Bool.self, forKey: .isSilent),
       worker: try container.decodeIfPresent(WorkerReport.self, forKey: .worker),
+      launched: try container.decodeIfPresent(WorkerReport.self, forKey: .launched),
+      killedTaskID: try container.decodeIfPresent(String.self, forKey: .killedTaskID),
       startsTurn: try container.decodeIfPresent(Bool.self, forKey: .startsTurn),
       startsSession: try container.decodeIfPresent(Bool.self, forKey: .startsSession),
       backgroundShells: try container.decodeIfPresent([Int32].self, forKey: .backgroundShells),

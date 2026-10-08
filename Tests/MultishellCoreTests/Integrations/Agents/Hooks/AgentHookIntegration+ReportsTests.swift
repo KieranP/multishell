@@ -84,10 +84,115 @@ struct AgentHookIntegrationReportsTests {
       worker("PreToolUse")
         == WorkerReport(
           id: "a1", type: "general-purpose", phase: .working, parentID: "a0",
-          name: "Efficiency angle"))
+          description: "Efficiency angle"))
     #expect(worker("SubagentStop")?.parentID == nil, "an end is taken off whatever it was under")
-    #expect(worker("PreToolUse", id: "a2")?.name == nil, "not yet written")
+    #expect(worker("PreToolUse", id: "a2")?.description == nil, "not yet written")
+    #expect(worker("SubagentStart")?.phase == .working, "a start once its file is written resumes")
+    #expect(worker("SubagentStart", id: "a2")?.phase == .started)
     #expect(worker("PreToolUse", by: AgentHookCatalogue.codex)?.parentID == nil)
+  }
+
+  @Test func aClaudeWorkerStillListedAtItsOwnStopIsPausedAndTheStopSaysWhatIsOut() {
+    func stop(
+      out tasks: [(id: String, type: String)],
+      by integration: AgentHookIntegration = AgentHookCatalogue.claude
+    ) -> SessionStateReport? {
+      let listed = tasks.map { #"{"id":"\#($0.id)","type":"\#($0.type)","status":"running"}"# }
+      let payload = AgentHookPayload(
+        json: Data(
+          (#"{"hook_event_name":"SubagentStop","agent_id":"a0","agent_type":"general-purpose","#
+            + #""background_tasks":[\#(listed.joined(separator: ","))]}"#).utf8))!
+      return integration.report(for: payload, sessionID: nil, workingDirectory: nil, pid: nil)
+    }
+    let paused = stop(out: [("a0", "subagent"), ("b1", "shell")])
+    #expect(
+      paused?.worker
+        == WorkerReport(id: "a0", type: "general-purpose", phase: .working, isPaused: true))
+    #expect(
+      paused?.workersOut == [
+        WorkerReport(id: "a0", type: "subagent", phase: .working),
+        WorkerReport(id: "b1", phase: .working, isBackgroundShell: true),
+      ])
+    #expect(stop(out: [("a1", "subagent")])?.worker?.phase == .ended)
+    #expect(stop(out: [("a0", "monitor")])?.worker?.phase == .ended, "a watcher is not the worker")
+    #expect(stop(out: [])?.workersOut == [])
+    #expect(stop(out: [("a0", "subagent")], by: AgentHookCatalogue.codex)?.worker?.phase == .ended)
+  }
+
+  @Test func aBackgroundClaudeWorkerItsOwnStopLeavesOutHasFailed() throws {
+    let directory = try Scratch.directory("hooks")
+    defer { Scratch.remove(directory) }
+    let transcript = directory.appendingPathComponent("session.jsonl")
+    let subagentsFolder = directory.appendingPathComponent("session/subagents")
+    try FileManager.default.createDirectory(at: subagentsFolder, withIntermediateDirectories: true)
+    try Data(#"{"description":"Sleep","requestShape":"background"}"#.utf8)
+      .write(to: subagentsFolder.appendingPathComponent("agent-a0.meta.json"))
+    try Data(#"{"description":"Look","requestShape":"foreground"}"#.utf8)
+      .write(to: subagentsFolder.appendingPathComponent("agent-a1.meta.json"))
+    func end(of id: String, listing: String? = "[]") -> WorkerReport? {
+      let list = listing.map { #","background_tasks":\#($0)"# } ?? ""
+      let payload = AgentHookPayload(
+        json: Data(
+          (#"{"hook_event_name":"SubagentStop","agent_id":"\#(id)","#
+            + #""transcript_path":"\#(transcript.path)"\#(list)}"#).utf8))!
+      return AgentHookCatalogue.claude.report(
+        for: payload, sessionID: nil, workingDirectory: nil, pid: nil)?.worker
+    }
+    #expect(end(of: "a0") == WorkerReport(id: "a0", phase: .ended, hasFailed: true))
+    #expect(end(of: "a1")?.hasFailed == nil, "a foreground worker is never listed")
+    #expect(end(of: "a0", listing: nil)?.hasFailed == nil, "no list says nothing")
+  }
+
+  @Test func claudesToolResultNamesTheWorkerOrShellItLaunchedInTheBackground() {
+    func launched(
+      _ toolName: String, input: String, response: String, inside workerID: String? = "a0",
+      by integration: AgentHookIntegration = AgentHookCatalogue.claude
+    ) -> WorkerReport? {
+      let worker = workerID.map { #""agent_id":"\#($0)","agent_type":"general-purpose","# } ?? ""
+      let payload = AgentHookPayload(
+        json: Data(
+          (#"{"hook_event_name":"PostToolUse",\#(worker)"tool_name":"\#(toolName)","#
+            + #""tool_input":\#(input),"tool_response":\#(response)}"#).utf8))!
+      return integration.report(for: payload, sessionID: nil, workingDirectory: nil, pid: nil)?
+        .launched
+    }
+    let agentInput = #"{"subagent_type":"Explore","name":"scout","description":"Map the hooks"}"#
+    let asyncLaunch =
+      #"{"isAsync":true,"status":"async_launched","agentId":"a1","description":"Map the hooks"}"#
+    #expect(
+      launched("Agent", input: agentInput, response: asyncLaunch)
+        == WorkerReport(
+          id: "a1", type: "Explore", phase: .started, parentID: "a0", name: "scout",
+          description: "Map the hooks"))
+    #expect(
+      launched("Agent", input: agentInput, response: asyncLaunch, inside: nil)?.parentID == nil)
+    #expect(
+      launched("Bash", input: #"{"command":"sleep 30"}"#, response: #"{"backgroundTaskId":"b1"}"#)
+        == WorkerReport(id: "b1", phase: .started, isBackgroundShell: true, parentID: "a0"))
+    #expect(
+      launched("Agent", input: agentInput, response: #"{"status":"completed","agentId":"a1"}"#)
+        == nil, "a foreground worker has ended by its result")
+    #expect(
+      launched("Agent", input: agentInput, response: asyncLaunch, by: AgentHookCatalogue.codex)
+        == nil)
+  }
+
+  @Test func claudesTaskStopResultNamesTheTaskItKilled() {
+    func killed(
+      _ response: String, by integration: AgentHookIntegration = AgentHookCatalogue.claude
+    ) -> String? {
+      let payload = AgentHookPayload(
+        json: Data(
+          (#"{"hook_event_name":"PostToolUse","tool_name":"TaskStop","#
+            + #""tool_input":{"task_id":"a0"},"tool_response":\#(response)}"#).utf8))!
+      return integration.report(for: payload, sessionID: nil, workingDirectory: nil, pid: nil)?
+        .killedTaskID
+    }
+    let stopped =
+      #"{"message":"Successfully stopped task: a0 (x)","task_id":"a0","task_type":"local_agent"}"#
+    #expect(killed(stopped) == "a0")
+    #expect(killed(#"{"message":"not running"}"#) == nil, "a result naming no task stopped none")
+    #expect(killed(stopped, by: AgentHookCatalogue.codex) == nil)
   }
 
   @Test func anOversizedNameBesideTheTranscriptStillLeavesAReportThatFits() throws {

@@ -65,7 +65,7 @@ public enum AgentHookCatalogue {
     format: .userSettingsFile(timeoutIsInMilliseconds: false),
     resumption: .always, wakingTaskTypes: claudeWakingTaskTypes,
     transcriptQueuesNotices: true, transcriptShowsPendingQuestion: true,
-    keepsWorkerMetadataBesideTranscript: true)
+    keepsWorkerMetadataBesideTranscript: true, toolResultsNameBackgroundTasks: true)
 
   /// Claude's own labels for work whose end is announced to the model, read
   /// from its binary; the rest never end or end unannounced. See agents.md.

@@ -23,6 +23,12 @@ public struct AgentHookPayload: Hashable, Sendable {
   /// What Claude's Stop says is still in flight, `nil` from an agent or a
   /// version that does not say; see Docs/design/agents.md.
   var backgroundTasks: [BackgroundTask]?
+  /// What a tool call's result says it started in the background, where the
+  /// result is Claude's; see Docs/design/agents.md.
+  var launchedTask: LaunchedTask?
+  /// The task a TaskStop result says it stopped, which Claude ends with all
+  /// it launched; see Docs/design/agents.md.
+  var stoppedTaskID: String?
 
   struct BackgroundTask: Hashable, Sendable {
     var id: String
@@ -69,6 +75,12 @@ public struct AgentHookPayload: Hashable, Sendable {
         else { return nil }
         return BackgroundTask(id: id, type: type, subagentType: task["agent_type"] as? String)
       }
+    }
+    self.launchedTask = (object["tool_response"] as? [String: Any]).flatMap {
+      LaunchedTask(toolResponse: $0, toolInput: object["tool_input"] as? [String: Any] ?? [:])
+    }
+    if object["tool_name"] as? String == "TaskStop" {
+      self.stoppedTaskID = (object["tool_response"] as? [String: Any])?["task_id"] as? String
     }
   }
 

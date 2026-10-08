@@ -43,14 +43,18 @@ extension AgentHookIntegration {
       message: payload.message,
       agentID: id,
       isSilent: event.isSilent ? true : nil,
-      worker: event.workerChange(for: payload).map { withMetadata($0, from: payload) },
+      worker: event.workerChange(for: payload)
+        .map { withMetadata(pausedOrFailedAtItsOwnStop($0, at: payload), from: payload) },
+      launched: launchedTask(in: payload),
+      killedTaskID: toolResultsNameBackgroundTasks ? payload.stoppedTaskID : nil,
       startsTurn: event.startsTurn(for: payload) ? true : nil,
       startsSession: event.startsSession ? true : nil,
       backgroundShells: isStop && payload.backgroundTasks == nil
         ? backgroundShellMarker.flatMap(findBackgroundShells) : nil,
       resumesAfterWorkers: isStop && resumes(at: payload) ? true : nil,
       conversationID: subagentsAreConversations ? payload.conversationID : nil,
-      workersOut: isStop ? payload.backgroundTasks.map(workers(from:)) : nil,
+      workersOut: isStop || event.subagentPhase == .ended
+        ? payload.backgroundTasks.map(workers(from:)) : nil,
       turnFollows: isStop && turnFollows(at: payload) ? true : nil,
       asksQuestion: asksQuestion(payload) ? true : nil)
   }
@@ -64,8 +68,23 @@ extension AgentHookIntegration {
     return ClaudeTranscript.asksQuestion(atPath: path)
   }
 
-  /// A worker's start comes before Claude writes its metadata, so the parent
-  /// arrives with its first tool call. An end needs neither.
+  /// Claude stops a worker at every turn end, pauses included, and lists it
+  /// until its run returns, so one its stop leaves out failed; see agents.md.
+  private func pausedOrFailedAtItsOwnStop(
+    _ worker: WorkerReport, at payload: AgentHookPayload
+  ) -> WorkerReport {
+    guard worker.phase == .ended, let tasks = payload.backgroundTasks else { return worker }
+    if tasks.contains(where: { $0.id == worker.id && wakingTaskTypes.contains($0.type) }) {
+      return WorkerReport(id: worker.id, type: worker.type, phase: .working, isPaused: true)
+    }
+    guard keepsWorkerMetadataBesideTranscript, let path = payload.transcriptPath,
+      ClaudeWorkerMetadata.read(ofWorker: worker.id, transcriptPath: path)?.isBackground == true
+    else { return worker }
+    return WorkerReport(id: worker.id, type: worker.type, phase: .ended, hasFailed: true)
+  }
+
+  /// Claude writes the file after a worker's first start, so a start that finds
+  /// it is a resume, and the parent arrives with the first tool call.
   private func withMetadata(
     _ worker: WorkerReport, from payload: AgentHookPayload
   ) -> WorkerReport {
@@ -74,9 +93,18 @@ extension AgentHookIntegration {
       let metadata = ClaudeWorkerMetadata.read(ofWorker: worker.id, transcriptPath: path)
     else { return worker }
     return WorkerReport(
-      id: worker.id, type: worker.type, phase: worker.phase, wakesAgent: worker.wakesAgent,
+      id: worker.id, type: worker.type, phase: .working, wakesAgent: worker.wakesAgent,
       isBackgroundShell: worker.isBackgroundShell, parentID: metadata.parentID,
-      name: metadata.name)
+      name: metadata.name, description: metadata.description, isPaused: worker.isPaused)
+  }
+
+  /// Under the worker whose tool call it was, or the agent's own.
+  private func launchedTask(in payload: AgentHookPayload) -> WorkerReport? {
+    guard toolResultsNameBackgroundTasks, let task = payload.launchedTask else { return nil }
+    return WorkerReport(
+      id: task.id, type: task.type, phase: .started,
+      isBackgroundShell: task.isShell ? true : nil, parentID: payload.subagentID,
+      name: task.name, description: task.description)
   }
 
   private func turnFollows(at payload: AgentHookPayload) -> Bool {

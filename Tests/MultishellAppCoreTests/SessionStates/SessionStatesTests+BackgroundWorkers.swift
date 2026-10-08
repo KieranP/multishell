@@ -34,6 +34,104 @@ extension SessionStatesTests {
     #expect([atStop, atLastWorker].filter { $0 == .done }.count == 1)
   }
 
+  @Test func aWorkersStopListEndsTheListedWorkersItLeavesOutAndNoOther() {
+    var states = SessionStates()
+    func stop(of worker: WorkerReport, out: [String]) {
+      _ = report(
+        &states,
+        .init(
+          state: .running, worker: worker,
+          workersOut: out.map { WorkerReport(id: $0, phase: .working) }))
+    }
+    _ = report(&states, .running, started("a0"))
+    _ = report(&states, .running, started("a1"))
+    _ = report(&states, .running, started("f1"))
+    let paused = WorkerReport(id: "a0", phase: .working, isPaused: true)
+    stop(of: paused, out: ["a0", "a1"])
+    #expect(workersOut(states) == ["a0", "a1", "f1"])
+
+    stop(of: ended("a1"), out: ["a0"])
+    stop(of: paused, out: ["a0"])
+    stop(of: ended("x9"), out: [])
+    #expect(workersOut(states) == ["f1"], "a0 listed itself until its run returned")
+  }
+
+  @Test func aKilledWorkerPaysTheDoneAndStaysListedAsFailedUntilSwept() {
+    var states = SessionStates()
+    let out = [WorkerReport(id: "a0", phase: .working)]
+    _ = report(&states, .running, started("a0"))
+    #expect(report(&states, .init(state: .done, workersOut: out)) == .running)
+    let killed = WorkerReport(id: "a0", phase: .ended, hasFailed: true)
+    #expect(report(&states, .init(state: .running, worker: killed, workersOut: [])) == .done)
+    #expect(states.workers(.session(a)).map(\.shownState) == [.failed])
+
+    let failedAt = Date(timeIntervalSince1970: 1_000)
+    states.stampChanges(against: SessionStates(), at: failedAt)
+    states.removeFailedWorkers(failedBefore: failedAt.addingTimeInterval(1))
+    #expect(workersOut(states).isEmpty)
+  }
+
+  @Test func aWorkerLaunchedInsideAnotherArrivesUnderItBeforeItsOwnFirstReport() {
+    var states = SessionStates()
+    _ = report(&states, .running, started("a0"))
+    _ = report(
+      &states,
+      .init(
+        state: .running, worker: working("a0"),
+        launched: WorkerReport(id: "a1", type: "Explore", phase: .started, parentID: "a0")))
+    #expect(states.workers(.session(a)).nested.map(\.depth) == [0, 1])
+  }
+
+  @Test func backgroundWorkLaunchedAfterTheStopSurvivesTheHandBackPrompt() {
+    var states = SessionStates()
+    let launchedByAgent = WorkerReport(id: "a0", phase: .started)
+    _ = report(&states, .init(state: .running, launched: launchedByAgent))
+    _ = report(&states, .init(state: .done, workersOut: [WorkerReport(id: "a0", phase: .working)]))
+    _ = report(
+      &states,
+      .init(
+        state: .running, worker: working("a0"),
+        launched: WorkerReport(id: "a1", phase: .started, parentID: "a0")))
+    _ = report(&states, .init(state: .running, startsTurn: true))
+
+    #expect(workersOut(states) == ["a0", "a1"])
+    #expect(states.workers(.session(a)).nested.map(\.depth) == [0, 1])
+  }
+
+  @Test func aWorkersOwnStopArrivingAfterTheDoneLeavesTheDone() {
+    var states = SessionStates()
+    let launch = WorkerReport(id: "a0", phase: .started)
+    _ = report(&states, .init(state: .running, launched: launch))
+    #expect(report(&states, .init(state: .done, workersOut: [])) == .done)
+
+    let lateStop = WorkerReport(id: "a0", phase: .working, isPaused: true)
+    #expect(report(&states, .init(state: .running, worker: lateStop, workersOut: [])) == nil)
+    #expect(states[.session(a)] == .done)
+    #expect(workersOut(states).isEmpty)
+  }
+
+  @Test func aKilledWorkerTakesItsPromptWithItWhicheverWayTheKillIsRead() {
+    let launches = [
+      WorkerReport(id: "a0", phase: .started), WorkerReport(id: "a1", phase: .started),
+    ]
+    let kills: [SessionStateReport] = [
+      .init(state: .running, killedTaskID: "a0"),
+      .init(
+        state: .running, worker: WorkerReport(id: "a1", phase: .working, isPaused: true),
+        workersOut: [WorkerReport(id: "a1", phase: .working)]),
+    ]
+    for kill in kills {
+      var states = SessionStates()
+      for launch in launches { _ = report(&states, .init(state: .running, launched: launch)) }
+      _ = report(&states, .init(state: .running, worker: working("a1"), workersOut: launches))
+      _ = report(&states, .attention, working("a0"))
+      #expect(states[.session(a)] == .attention)
+
+      _ = report(&states, kill)
+      #expect(states[.session(a)] == .running, "\(kill)")
+    }
+  }
+
   @Test func anAgentThatReportsNoWorkersIsUnaffected() {
     var states = SessionStates()
     #expect(report(&states, .running) == .running)

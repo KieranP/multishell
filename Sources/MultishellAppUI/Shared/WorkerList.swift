@@ -2,9 +2,8 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// Under the chip: each worker by name under its parent, and how long it has
-/// been out, ticking while the list is up. Not its tool, which flashed; see
-/// Docs/design/agents.md.
+/// Under the chip: each worker's name and description under its parent, and
+/// its time out. Not its tool, which flashed; see Docs/design/agents.md.
 struct WorkerList: View {
   let workers: [Worker]
   let theme: Theme
@@ -13,6 +12,8 @@ struct WorkerList: View {
   @State private var now = Date()
 
   private static let rowSpacing: CGFloat = 7
+  /// A description runs to 200 characters, which is cut short of this.
+  static let maximumWidth: CGFloat = 420
   /// A nested worker's dot sits under its parent's name.
   private static let nestingIndent = UIMetrics.inlineStateDotDiameter + rowSpacing
 
@@ -29,12 +30,21 @@ struct WorkerList: View {
       ForEach(workers.nested) { nested in
         let worker = nested.worker
         HStack(spacing: Self.rowSpacing) {
-          StateDot(state: .running, theme: theme, diameter: UIMetrics.inlineStateDotDiameter)
-            .padding(.leading, CGFloat(nested.depth) * Self.nestingIndent)
+          StateDot(
+            state: worker.shownState, theme: theme, diameter: UIMetrics.inlineStateDotDiameter
+          )
+          .padding(.leading, CGFloat(nested.depth) * Self.nestingIndent)
           Text(worker.displayName)
             .font(.system(size: metrics.badge, weight: .medium))
             .foregroundStyle(theme.textPrimary)
             .lineLimit(1)
+          if let description = worker.description {
+            Text(description)
+              .font(.system(size: metrics.badge))
+              .foregroundStyle(theme.textSecondary)
+              .lineLimit(1)
+              .truncationMode(.tail)
+          }
           if let occurrences = worker.occurrenceText {
             Text(occurrences)
               .font(.system(size: metrics.small, weight: .medium))
@@ -52,7 +62,7 @@ struct WorkerList: View {
     }
     .padding(.horizontal, 12)
     .padding(.vertical, 9)
-    .frame(minWidth: 200, alignment: .leading)
+    .frame(minWidth: 200, maxWidth: Self.maximumWidth, alignment: .leading)
     .background(theme.sidebarColor)
     .ticking($now, every: .seconds(1))
   }

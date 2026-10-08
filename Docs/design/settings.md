@@ -123,3 +123,7 @@ shipped hook. Newest at the bottom.
   the store's saves use, one order per project. Two on a slow volume otherwise
   landed backwards, the older overwriting the newer, and a late finish recorded
   the older's bytes, even with the newer still being written.
+- **An editor's tab turns to its worktree through `select`, as a click does.**
+  It selected through the store and skipped the question, so a tab opened in
+  another project's worktree ran with that file unasked about
+  (AppModelSharedSettingsTests).

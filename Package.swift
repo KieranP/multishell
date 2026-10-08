@@ -71,7 +71,8 @@ let package = Package(
       dependencies: ["MultishellGitKit", "TestSupport", "TestScratch"]),
     .testTarget(
       name: "MultishellAppCoreTests",
-      dependencies: ["MultishellAppCore", "TestSupport", "TestScratch"]),
+      dependencies: ["MultishellAppCore", "TestSupport", "TestScratch"],
+      resources: [.copy("Fixtures")]),
     // Runs the built helper against a real socket; depends on the target so
     // the binary exists before the test does.
     .testTarget(
