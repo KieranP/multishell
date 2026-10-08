@@ -2,6 +2,6 @@ import SwiftUI
 
 extension View {
   func titleBarDoubleClick() -> some View {
-    modifier(TitleBarDoubleClick())
+    modifier(TitleBarDoubleClickModifier())
   }
 }

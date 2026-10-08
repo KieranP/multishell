@@ -26,7 +26,7 @@ extension WorktreeCoordinatorMergesTests {
       try FileManager.default.createDirectory(at: path, withIntermediateDirectories: true)
       return Project(path: path)
     }
-    let inputs = stubInputs(baseTip: "a")
+    let inputs = stubInputs(defaultBranchTip: "a")
     let branches = (1...SharedReadState.maxConcurrentReads).map { "b\($0)" }
 
     async let first = coordinator.readMerges(of: branches, in: projects[0], inputs: inputs)

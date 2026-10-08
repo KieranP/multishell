@@ -67,7 +67,6 @@ extension WorkspaceStoreTests {
             forWorktree: worktree.id)
         }
       case 10:
-        // A tab dragged onto another worktree's row.
         if let tab = workspace.tabs.randomElement(using: &rng),
           let worktree = worktrees.randomElement(using: &rng)
         {
@@ -86,14 +85,12 @@ extension WorkspaceStoreTests {
         }
         store.setSettings(settings, forProject: project.id)
       case 12:
-        // A tab dragged to the band down one edge of a group.
         if let tab = workspace.tabs.randomElement(using: &rng),
           let group = workspace.tabGroups.randomElement(using: &rng)
         {
           store.moveTab(tab.id, Bool.random(using: &rng) ? .before : .after, toNewGroupOf: group.id)
         }
       case 13:
-        // A tab dropped on a group's strip clear of its tabs.
         if let tab = workspace.tabs.randomElement(using: &rng),
           let group = workspace.tabGroups.randomElement(using: &rng)
         {
@@ -111,7 +108,6 @@ extension WorkspaceStoreTests {
             }, in: worktree.id)
         }
       default:
-        // A refresh that lost a worktree, or found one again.
         let project = projects.randomElement(using: &rng)!
         let kept = worktrees.filter { $0.projectID == project.id && Bool.random(using: &rng) }
         store.replaceWorktrees(kept, forProject: project.id)

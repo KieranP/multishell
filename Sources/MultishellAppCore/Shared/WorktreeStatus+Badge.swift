@@ -1,4 +1,5 @@
 import MultishellCore
+import MultishellGitKit
 
 extension WorktreeStatus {
   /// The status a row or card draws as its git badge, `nil` where there is

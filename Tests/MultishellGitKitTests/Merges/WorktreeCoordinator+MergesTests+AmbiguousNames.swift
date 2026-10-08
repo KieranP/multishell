@@ -72,7 +72,7 @@ extension WorktreeCoordinatorMergesTests {
     _ = try await fixture.runner.run(["tag", "origin/main", "feat"], in: path)
 
     let inputs = try await mergeInputs(fixture)
-    #expect(inputs.base.shortName == "origin/main")
+    #expect(inputs.defaultBranch.shortName == "origin/main")
     let states = await fixture.coordinator.mergeStates(
       of: ["feat"], in: fixture.project, inputs: inputs)
 

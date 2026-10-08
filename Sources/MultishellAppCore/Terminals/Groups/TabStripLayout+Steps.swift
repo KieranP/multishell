@@ -8,7 +8,7 @@ extension TabStripLayout {
   }
 
   /// Which tab an end arrow brings into view: the one that end clips, else the
-  /// one past it. In points, as `Edges` draws the arrow in points.
+  /// one past it. In points, as `Overflow` draws the arrow in points.
   public func stepTarget(
     towards end: End, offset: Double, viewport: Double, count: Int
   ) -> Int? {
@@ -18,12 +18,12 @@ extension TabStripLayout {
     switch end {
     case .leading:
       let boundary = (travelled / tabWidth).rounded(.down)
-      let clips = travelled - boundary * tabWidth > Edges.tolerance
+      let clips = travelled - boundary * tabWidth > Overflow.tolerance
       target = clampedIndex(boundary, count) - (clips ? 0 : 1)
     case .trailing:
       let edge = travelled + max(viewport, 0)
       let boundary = (edge / tabWidth).rounded(.up)
-      let clips = boundary * tabWidth - edge > Edges.tolerance
+      let clips = boundary * tabWidth - edge > Overflow.tolerance
       target = clampedIndex(boundary, count) - (clips ? 1 : 0)
     }
     return (0..<count).contains(target) ? target : nil

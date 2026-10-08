@@ -1,5 +1,6 @@
 import MultishellAppCore
 import MultishellCore
+import MultishellGitKit
 import SwiftUI
 
 /// One pane's card, read in the sidebar's order; see Docs/design/appearance.md.
@@ -30,7 +31,7 @@ struct AgentBoardCardView: View {
     .overlay {
       RoundedRectangle(cornerRadius: UIMetrics.cardCornerRadius)
         .strokeBorder(
-          isHovered ? theme.color(for: card.state ?? .idle) : theme.hairline,
+          isHovered ? theme.color(for: card.state.shownState) : theme.hairline,
           lineWidth: isHovered ? 1.5 : 1)
     }
     .contentShape(.rect)
@@ -72,7 +73,7 @@ struct AgentBoardCardView: View {
     HStack(spacing: 4) {
       PaneGlyph(
         agentID: card.occupant.agentID,
-        state: card.state ?? .idle,
+        state: card.state.shownState,
         ringFill: theme.cardColor,
         plainTint: theme.textSecondary,
         theme: theme,

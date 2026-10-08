@@ -1,4 +1,4 @@
-/// How far back the debug panel looks: the spans a load average is taken over.
+/// How far back Debug Info looks: the spans a load average is taken over.
 public enum DebugRange: CaseIterable, Sendable {
   case oneMinute
   case fiveMinutes

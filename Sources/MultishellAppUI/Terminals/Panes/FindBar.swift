@@ -39,9 +39,9 @@ struct FindBar: View {
   /// The text sits in a well one step back from the panel, the way a
   /// terminal's own colour sits behind its chrome.
   private func well(_ metrics: UIMetrics) -> some View {
-    TextField(t("find.prompt"), text: findText)
+    TextField(t("find.prompt"), text: model.findTextBinding(of: sessionID))
       .textFieldStyle(.plain)
-      .font(.system(size: metrics.body))
+      .font(.system(size: metrics.bodySize))
       .foregroundStyle(theme.textPrimary)
       .focused($isFieldFocused)
       .onChange(of: isFieldFocused) { model.noteFindField(focused: $1, of: sessionID) }
@@ -67,11 +67,6 @@ struct FindBar: View {
     } else {
       model.findNext(in: sessionID)
     }
-  }
-
-  private var findText: Binding<String> {
-    Binding(
-      get: { model.findText(of: sessionID) }, set: { model.setFindText($0, of: sessionID) })
   }
 
   private func button(_ symbol: String, _ label: String, action: @escaping () -> Void) -> some View

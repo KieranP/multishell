@@ -15,7 +15,7 @@ struct SidebarSortMenu: View {
     Menu {
       Picker(
         t("sidebar.sort-worktrees"),
-        selection: model.setting(\.worktreeSortOrder, write: model.setWorktreeSortOrder)
+        selection: model.settingBinding(\.worktreeSortOrder, write: model.setWorktreeSortOrder)
       ) {
         ForEach(WorktreeSortOrder.allCases, id: \.self) { Text($0.displayName).tag($0) }
       }
@@ -23,7 +23,7 @@ struct SidebarSortMenu: View {
       Divider()
       Toggle(
         t("worktrees.active-first"),
-        isOn: model.setting(
+        isOn: model.settingBinding(
           \.showsActiveWorktreesFirst, write: model.setShowsActiveWorktreesFirst))
     } label: {
       Image(systemName: "arrow.up.arrow.down")

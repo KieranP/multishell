@@ -1,8 +1,19 @@
 import MultishellCore
 
-/// What a git row says in its memory cells, and where the table is too narrow
-/// for its columns.
+/// What a git row says in its cells, and where the table is too narrow for
+/// its columns.
 extension DebugGitCommand {
+  public var runCountText: String { "\(tally.runCount)" }
+
+  public var totalDurationText: String { DebugValueText.duration(tally.totalDuration) }
+
+  public var meanDurationText: String { DebugValueText.duration(tally.meanDuration) }
+
+  public var slowestDurationText: String { DebugValueText.duration(tally.slowestDuration) }
+
+  /// Empty where no run was placed in a worktree.
+  public var slowestLocationText: String { slowestLocation?.title ?? "" }
+
   public var meanPeakMemoryText: String {
     tally.meanPeakMemory.map(DebugValueText.memory) ?? DebugValueText.noValue
   }
@@ -14,9 +25,7 @@ extension DebugGitCommand {
   /// Runs, mean and slowest time, and where the slowest ran.
   var timingSummary: String {
     let timing = t(
-      "debug.git-summary", t("count.runs", tally.runCount),
-      DebugValueText.duration(tally.meanDuration),
-      DebugValueText.duration(tally.slowestDuration))
+      "debug.git-summary", t("count.runs", tally.runCount), meanDurationText, slowestDurationText)
     guard let slowestLocation else { return timing }
     return t("debug.git-summary-in", timing, slowestLocation.title)
   }

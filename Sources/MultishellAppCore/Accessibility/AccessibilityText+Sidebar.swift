@@ -1,4 +1,5 @@
 import MultishellCore
+import MultishellGitKit
 
 extension AccessibilityText {
   /// A project row: the name, whether it is open, and the dot it carries
@@ -30,7 +31,7 @@ extension AccessibilityText {
     ]
     if customName != nil { parts.append(t("spoken.branch", worktree.name)) }
     if isSelected { parts.append(t("spoken.selected")) }
-    parts.append((state ?? .idle).displayName)
+    parts.append(state.shownState.displayName)
     if let operation {
       parts.append(
         operation.isRunning ? operation.title : t("spoken.operation-failed", operation.title))
@@ -44,17 +45,14 @@ extension AccessibilityText {
 
   /// A pane's row in the sidebar: its title, which pane of a split it is,
   /// whether it is the one with the keyboard, its state and its workers.
-  public static func pane(
-    title: String, position: PanePosition?, isFocusedPane: Bool, state: SessionState?,
-    workers: [Worker], agentName: String?
-  ) -> String {
+  public static func pane(_ pane: SidebarPane) -> String {
     // One pane of a split is not a tab, so only a whole tab is read as one.
-    var parts = [position == nil ? t("spoken.tab", title) : title]
-    parts.append(contentsOf: spokenAgent(agentName, title: title))
-    if let position { parts.append(panePosition(position)) }
-    if isFocusedPane { parts.append(t("spoken.selected")) }
-    if let state { parts.append(state.displayName) }
-    if !workers.isEmpty { parts.append(workers.countText) }
+    var parts = [pane.position == nil ? t("spoken.tab", pane.title) : pane.title]
+    parts.append(contentsOf: spokenAgent(pane.agentName, title: pane.title))
+    if let position = pane.position { parts.append(panePosition(position)) }
+    if pane.isFocused { parts.append(t("spoken.selected")) }
+    if let state = pane.state { parts.append(state.displayName) }
+    if !pane.workers.isEmpty { parts.append(pane.workers.countText) }
     return parts.joined(separator: ", ")
   }
 }

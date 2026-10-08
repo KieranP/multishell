@@ -14,7 +14,7 @@ struct SidebarAgentsRow: View {
   var body: some View {
     HStack(spacing: 7) {
       Image(systemName: "square.grid.2x2")
-        .font(.system(size: metrics.icon, weight: .medium))
+        .font(.system(size: metrics.glyph, weight: .medium))
         .foregroundStyle(isSelected ? theme.textPrimary : theme.textSecondary)
         .frame(width: metrics.sidebarGlyphColumn)
       Text(t("label.agents"))

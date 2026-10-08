@@ -1,4 +1,4 @@
-/// A strip on the debug panel, in the order the panel draws them.
+/// A strip on Debug Info, in the order the panel draws them.
 public enum DebugMetric: CaseIterable, Sendable {
   case frameRate
   case cpu

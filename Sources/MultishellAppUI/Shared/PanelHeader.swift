@@ -14,7 +14,7 @@ struct PanelHeader<Controls: View>: View {
   var body: some View {
     HStack(spacing: 8) {
       Text(title)
-        .font(.system(size: metrics.body, weight: .semibold))
+        .font(.system(size: metrics.bodySize, weight: .semibold))
         .foregroundStyle(theme.textPrimary)
       Text(summary)
         .font(.system(size: metrics.caption))

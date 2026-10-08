@@ -17,9 +17,10 @@ extension Helper {
     let options = try CommandOptions(arguments, valued: ["agent"], flags: ["print"])
     let integration = try requiredIntegration(options)
     if options.has("print") {
-      printHooks(integration)
+      print(integration.snippet(), terminator: "")
     } else {
-      try installHooks(integration)
+      try integration.install()
+      print("\(integration.name) hooks added to \(integration.file.path)")
     }
   }
 
@@ -27,14 +28,5 @@ extension Helper {
     let integration = try requiredIntegration(CommandOptions(arguments, valued: ["agent"]))
     try integration.remove()
     print("\(integration.name) hooks removed from \(integration.file.path)")
-  }
-
-  private static func printHooks(_ integration: AgentHookIntegration) {
-    print(integration.snippet(), terminator: "")
-  }
-
-  private static func installHooks(_ integration: AgentHookIntegration) throws {
-    try integration.install()
-    print("\(integration.name) hooks added to \(integration.file.path)")
   }
 }

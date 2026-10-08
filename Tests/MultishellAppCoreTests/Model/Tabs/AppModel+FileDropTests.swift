@@ -13,7 +13,7 @@ struct AppModelFileDropTests {
     let session = harness.model.workspace.sessions(in: harness.main.id)[0]
 
     let dropped = harness.model.dropFiles(
-      [harness.main.path.appendingPathComponent("a.swift")], into: session.id)
+      [harness.main.path.appendingPathComponent("a.swift")], into: session.id, takingFocus: true)
 
     #expect(dropped)
     #expect(harness.engine.pasted.count == 1)
@@ -35,7 +35,7 @@ struct AppModelFileDropTests {
       [
         harness.main.path.appendingPathComponent("Sources/App.swift"),
         harness.main.path.appendingPathComponent("README.md"),
-      ], into: session.id)
+      ], into: session.id, takingFocus: true)
 
     #expect(dropped)
     #expect(harness.engine.pasted.map(\.text) == ["@Sources/App.swift @README.md "])
@@ -54,7 +54,8 @@ struct AppModelFileDropTests {
         state: .idle, sessionID: session.id, pid: ProcessInfo.processInfo.processIdentifier,
         agentID: AgentCatalogue.claudeID))
     harness.model.dropFiles(
-      [harness.main.path.appendingPathComponent("Sources/App.swift")], into: session.id)
+      [harness.main.path.appendingPathComponent("Sources/App.swift")], into: session.id,
+      takingFocus: true)
 
     #expect(harness.engine.pasted.map(\.text) == ["@Sources/App.swift "])
   }
@@ -69,7 +70,8 @@ struct AppModelFileDropTests {
     harness.stateSource.send(
       SessionStateReport(
         state: .done, sessionID: session.id, pid: deadPID(), agentID: AgentCatalogue.claudeID))
-    harness.model.dropFiles([harness.main.path.appendingPathComponent("a.swift")], into: session.id)
+    harness.model.dropFiles(
+      [harness.main.path.appendingPathComponent("a.swift")], into: session.id, takingFocus: true)
 
     #expect(harness.engine.pasted.map(\.text) == ["\(harness.main.path.path)/a.swift "])
   }
@@ -83,7 +85,8 @@ struct AppModelFileDropTests {
       SessionStateReport(
         state: .running, sessionID: session.id,
         pid: ProcessInfo.processInfo.processIdentifier, agentID: "future-agent"))
-    harness.model.dropFiles([harness.main.path.appendingPathComponent("a.swift")], into: session.id)
+    harness.model.dropFiles(
+      [harness.main.path.appendingPathComponent("a.swift")], into: session.id, takingFocus: true)
 
     #expect(harness.engine.pasted.map(\.text) == ["\(harness.main.path.path)/a.swift "])
   }
@@ -97,7 +100,8 @@ struct AppModelFileDropTests {
       second != first
     else { return #expect(Bool(false), "the split made a second pane and focused it") }
 
-    harness.model.dropFiles([harness.main.path.appendingPathComponent("a.swift")], into: first)
+    harness.model.dropFiles(
+      [harness.main.path.appendingPathComponent("a.swift")], into: first, takingFocus: true)
 
     #expect(harness.model.workspace.activeTab(in: harness.main.id)?.focusedSessionID == first)
     #expect(harness.engine.focused.last == first)
@@ -133,7 +137,7 @@ struct AppModelFileDropTests {
     let session = tab.focusedSessionID
 
     let dropped = harness.model.dropFiles(
-      [harness.feature.path.appendingPathComponent("a.swift")], into: session)
+      [harness.feature.path.appendingPathComponent("a.swift")], into: session, takingFocus: true)
 
     #expect(!dropped)
     #expect(!harness.model.acceptsFileDrop(into: session))
@@ -144,10 +148,11 @@ struct AppModelFileDropTests {
     let harness = Harness()
     harness.model.select(harness.main)
     let session = harness.model.workspace.sessions(in: harness.main.id)[0]
-    #expect(!harness.model.dropFiles([], into: session.id))
+    #expect(!harness.model.dropFiles([], into: session.id, takingFocus: true))
     #expect(
       !harness.model.dropFiles(
-        [harness.main.path.appendingPathComponent("two\nlines.md")], into: session.id),
+        [harness.main.path.appendingPathComponent("two\nlines.md")], into: session.id,
+        takingFocus: true),
       "a name a terminal would act on leaves nothing to paste")
     #expect(harness.engine.pasted.isEmpty)
   }
@@ -162,7 +167,7 @@ struct AppModelFileDropTests {
 
     #expect(
       !harness.model.dropFiles(
-        [harness.main.path.appendingPathComponent("a.swift")], into: session.id))
+        [harness.main.path.appendingPathComponent("a.swift")], into: session.id, takingFocus: true))
     #expect(harness.engine.pasted.isEmpty)
     #expect(
       harness.model.workspace.activeTab(in: harness.main.id)?.focusedSessionID == session.id,

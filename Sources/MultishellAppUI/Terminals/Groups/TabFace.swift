@@ -98,17 +98,14 @@ struct TabFace: View {
   /// Names its own tab, like the middle click. `closeActiveTab` is for the
   /// keystroke, which has to ask which window is key first.
   private var closeButton: some View {
-    Button {
+    PlainGlyphButton(help: t("tab.close")) {
       model.closeTab(tab.id)
-    } label: {
+    } glyph: {
       Image(systemName: "xmark")
-        .font(.system(size: 9, weight: .semibold))
-        .frame(width: 20, height: 20)
-        .contentShape(.rect)
+        .font(.system(size: model.metrics.small, weight: .semibold))
+        .frame(width: model.metrics.tabCloseButtonSide, height: model.metrics.tabCloseButtonSide)
     }
-    .buttonStyle(.plain)
     .foregroundStyle(theme.textSecondary)
-    .accessibilityLabel(t("tab.close"))
   }
 
   /// An empty name clears the custom title rather than storing a blank one;

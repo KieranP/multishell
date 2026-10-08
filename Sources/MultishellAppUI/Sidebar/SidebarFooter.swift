@@ -3,23 +3,18 @@ import SwiftUI
 
 /// What the workspace holds, under a hairline at the foot of the tree.
 struct SidebarFooter: View {
-  let worktreeCount: Int
-  let terminalCount: Int
+  let countsText: String
   let theme: Theme
   let metrics: UIMetrics
 
   var body: some View {
     HStack {
-      Text(
-        t(
-          "sidebar.counts", t("count.worktrees", worktreeCount),
-          t("count.terminals", terminalCount))
-      )
-      .font(.system(size: metrics.caption))
-      .foregroundStyle(theme.textTertiary)
+      Text(countsText)
+        .font(.system(size: metrics.caption))
+        .foregroundStyle(theme.textTertiary)
       Spacer()
     }
-    .padding(.horizontal, 14)
+    .padding(.horizontal, UIMetrics.panelSideInset)
     .frame(height: 30)
     .hairline(.top, theme)
   }

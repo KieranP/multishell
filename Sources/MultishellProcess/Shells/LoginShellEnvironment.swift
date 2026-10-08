@@ -18,14 +18,14 @@ public struct LoginShellEnvironment: Sendable, Equatable {
   /// would rather run with a poorer PATH than keep the dropdowns empty.
   public static let timeout: Duration = .seconds(8)
 
-  /// `home` stands in for the home, so a test runs a real shell of its own.
-  /// `extraEnvironment` is laid over the app's own, so it adds or replaces only.
+  /// `home` and `extraEnvironment` are a test's, so it runs a real shell of its
+  /// own; the extra variables are laid over the app's, adding or replacing only.
   public static func capture(
     timeout: Duration = timeout, shellPath: String, home: URL? = nil,
     extraEnvironment: [String: String] = [:]
   ) async -> LoginShellEnvironment {
     let fallback = ProcessInfo.processInfo.environment
-    let shell = ShellInvocation.userShell(at: shellPath)
+    let shell = ShellInvocation.forCommandLine(inShellAt: shellPath)
     let directory = home ?? FileManager.default.homeDirectoryForCurrentUser
     let environment = ShellInvocation.historyless(
       extraEnvironment.merging(home.map { ["HOME": $0.path, "ZDOTDIR": $0.path] } ?? [:]) { $1 })

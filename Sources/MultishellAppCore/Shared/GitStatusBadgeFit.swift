@@ -1,4 +1,5 @@
 import MultishellCore
+import MultishellGitKit
 
 /// How much of a worktree's git badge a row has room for, widest first. The
 /// file count goes first, then the arrows; the tooltip names them all.

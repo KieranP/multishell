@@ -42,21 +42,21 @@ extension AgentHookIntegration {
       pid: pid,
       message: payload.message,
       agentID: id,
-      isSilent: event.isSilent ? true : nil,
+      isSilent: event.isSilent.trueOrNil,
       worker: event.workerChange(for: payload)
         .map { withMetadata(pausedOrFailedAtItsOwnStop($0, at: payload), from: payload) },
       launched: launchedTask(in: payload),
-      killedTaskID: toolResultsNameBackgroundTasks ? payload.stoppedTaskID : nil,
-      startsTurn: event.startsTurn(for: payload) ? true : nil,
-      startsSession: event.startsSession ? true : nil,
+      killedTaskID: toolResultsNameBackgroundTasks ? payload.killedTaskID : nil,
+      startsTurn: event.startsTurn(for: payload).trueOrNil,
+      startsSession: event.startsSession.trueOrNil,
       backgroundShells: isStop && payload.backgroundTasks == nil
         ? backgroundShellMarker.flatMap(findBackgroundShells) : nil,
-      resumesAfterWorkers: isStop && resumes(at: payload) ? true : nil,
+      resumesAfterWorkers: (isStop && resumes(at: payload)).trueOrNil,
       conversationID: subagentsAreConversations ? payload.conversationID : nil,
       workersOut: isStop || event.subagentPhase == .ended
         ? payload.backgroundTasks.map(workers(from:)) : nil,
-      turnFollows: isStop && turnFollows(at: payload) ? true : nil,
-      asksQuestion: asksQuestion(payload) ? true : nil)
+      turnFollows: (isStop && turnFollows(at: payload)).trueOrNil,
+      asksQuestion: asksQuestion(payload).trueOrNil)
   }
 
   /// Claude asks its questions through the permission prompt, whose
@@ -74,7 +74,7 @@ extension AgentHookIntegration {
     _ worker: WorkerReport, at payload: AgentHookPayload
   ) -> WorkerReport {
     guard worker.phase == .ended, let tasks = payload.backgroundTasks else { return worker }
-    if tasks.contains(where: { $0.id == worker.id && wakingTaskTypes.contains($0.type) }) {
+    if tasks.contains(where: { $0.id == worker.id && wakingTaskTypes.contains($0.taskType) }) {
       return WorkerReport(id: worker.id, type: worker.type, phase: .working, isPaused: true)
     }
     guard keepsWorkerMetadataBesideTranscript, let path = payload.transcriptPath,
@@ -102,8 +102,8 @@ extension AgentHookIntegration {
   private func launchedTask(in payload: AgentHookPayload) -> WorkerReport? {
     guard toolResultsNameBackgroundTasks, let task = payload.launchedTask else { return nil }
     return WorkerReport(
-      id: task.id, type: task.type, phase: .started,
-      isBackgroundShell: task.isShell ? true : nil, parentID: payload.subagentID,
+      id: task.id, type: task.subagentType, phase: .started,
+      isBackgroundShell: task.isShell.trueOrNil, parentID: payload.subagentID,
       name: task.name, description: task.description)
   }
 
@@ -125,10 +125,10 @@ extension AgentHookIntegration {
   /// A listed shell is named by the agent's id for it; a subagent by its
   /// kind where the list says, and anything else by what the agent calls it.
   private func workers(from tasks: [AgentHookPayload.BackgroundTask]) -> [WorkerReport] {
-    tasks.filter { wakingTaskTypes.contains($0.type) }.map { task in
-      task.type == "shell"
+    tasks.filter { wakingTaskTypes.contains($0.taskType) }.map { task in
+      task.taskType == "shell"
         ? WorkerReport(id: task.id, phase: .working, isBackgroundShell: true)
-        : WorkerReport(id: task.id, type: task.subagentType ?? task.type, phase: .working)
+        : WorkerReport(id: task.id, type: task.subagentType ?? task.taskType, phase: .working)
     }
   }
 }

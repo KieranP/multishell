@@ -11,7 +11,7 @@ struct TaskValueWithinTests {
   }
 
   @Test func aTaskStillRunningAtTheLimitGivesNilAndIsNotCancelled() async {
-    let released = Flag()
+    let released = AtomicFlag()
     let task = Task<Bool, Never> {
       while !released.raised, !Task.isCancelled {
         try? await Task<Never, Never>.sleep(for: .milliseconds(10))

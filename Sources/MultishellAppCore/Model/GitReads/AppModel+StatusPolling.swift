@@ -25,7 +25,7 @@ extension AppModel {
   }
 
   func pollRound() async {
-    await refreshProjectsWithUnfinishedAdds()
+    await refreshWorktreesWithUnfinishedAdds()
     await refreshStatuses()
     await refreshBranchScans()
     await refreshSharedSettingsIfChanged()
@@ -33,7 +33,7 @@ extension AppModel {
 
   /// An add that died leaves git's mark with nothing in the records changing,
   /// so the list is read again each round, where the lock's age is judged.
-  private func refreshProjectsWithUnfinishedAdds() async {
+  private func refreshWorktreesWithUnfinishedAdds() async {
     let marked = Set(workspace.worktrees.filter(\.isInitializing).map(\.projectID))
     await refreshWorktrees(ofProjects: marked.lazy.filter { !self.missingProjects.contains($0) })
   }

@@ -17,6 +17,12 @@ public enum Scratch {
     return url
   }
 
+  /// Where a `state.json` would go, alone in a directory not yet made, which
+  /// the caller removes.
+  public static func statePath(_ tag: String = "state") -> URL {
+    path(tag).appendingPathComponent("state.json")
+  }
+
   /// An executable `/bin/sh` script holding `body`, for standing in for a
   /// program the code under test looks up on a PATH.
   @discardableResult

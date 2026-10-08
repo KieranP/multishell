@@ -5,11 +5,6 @@ struct TrustDecision: Codable, Hashable, Sendable {
   var digest: String
   var isTrusted: Bool
 
-  init(digest: String, isTrusted: Bool) {
-    self.digest = digest
-    self.isTrusted = isTrusted
-  }
-
   /// `isTrusted` keeps `trusted`, the key it was written under.
   private enum CodingKeys: String, CodingKey {
     case digest

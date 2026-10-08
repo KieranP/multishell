@@ -45,7 +45,12 @@ extension SessionStateReport {
 
   /// A roster's places and the ids its overflow place folds, so a Stop can
   /// list all it holds; a list this long may have been cut, and prunes nothing.
-  public static let maximumWorkersOut = 1024
+  static let maximumWorkersOut = 1024
+
+  /// The list of workers out, `nil` where it may have been cut at the cap.
+  public var completeWorkersOut: [WorkerReport]? {
+    workersOut.flatMap { $0.count < Self.maximumWorkersOut ? $0 : nil }
+  }
 
   static func boundedIdentifier(_ id: String?) -> String? {
     guard let id, !id.isEmpty, id.count <= maximumIdentifierLength else { return nil }

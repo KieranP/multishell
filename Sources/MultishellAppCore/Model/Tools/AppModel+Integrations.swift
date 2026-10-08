@@ -35,6 +35,11 @@ extension AppModel {
     changeInstallState { try integration.remove() }
   }
 
+  /// Settings > Agents' line for the tool: where it is, or that it is not.
+  public var commandLineToolStatusText: String {
+    isCommandLineToolInstalled ? t("agents.helper-installed") : t("agents.not-installed")
+  }
+
   public func installCommandLineTool() {
     changeInstallState { try platform.installCommandLineTool() }
   }

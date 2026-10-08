@@ -2,7 +2,7 @@ import Foundation
 import MultishellCore
 import MultishellProcess
 
-/// The debug panel's numbers in words, through the catalogue so a unit can
+/// Debug Info's numbers in words, through the catalogue so a unit can
 /// move. Only memory, ByteCountFormatter's, follows the locale; translation.md.
 public enum DebugValueText {
   /// What a cell shows where there is nothing to measure yet.

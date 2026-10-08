@@ -43,7 +43,7 @@ enum WorktreeRemovalFailure: Equatable, Sendable {
     case let failure as WorktreePathTaken:
       // Nothing was removed and nothing is worth retrying until it moves.
       self = .presenting(failure, wasWorktreeRemoved: false)
-    case let failure as WorktreeForgetFailure:
+    case let failure as WorktreeRecordRemovalFailure:
       // The directory is in the Trash, so there is nothing to restore; the
       // refresh shows the record git kept, directory missing.
       self = .presenting(failure, wasWorktreeRemoved: true)

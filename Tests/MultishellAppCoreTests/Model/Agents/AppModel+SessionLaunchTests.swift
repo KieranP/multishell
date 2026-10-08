@@ -83,8 +83,7 @@ struct AppModelSessionLaunchTests {
   /// A saved tab that comes back as `claude --continue` is the same tab,
   /// and the flags said how that tab is meant to run.
   @Test func aResumedAgentTabIsStartedWithTheFlagsToo() throws {
-    let file = Scratch.path("agent-flags")
-      .appendingPathComponent("state.json")
+    let file = Scratch.statePath("agent-flags")
     defer { Scratch.remove(file.deletingLastPathComponent()) }
     let before = Harness(stateFile: file)
     before.model.setPreferredAgent(AgentCatalogue.claudeID)
@@ -137,8 +136,7 @@ struct AppModelSessionLaunchTests {
   }
 
   @Test func aSavedAgentTabResumesWhereItCanAndIsAShellWhereItCannot() throws {
-    let file = Scratch.path("agent-relaunch")
-      .appendingPathComponent("state.json")
+    let file = Scratch.statePath("agent-relaunch")
     defer { Scratch.remove(file.deletingLastPathComponent()) }
     let before = Harness(stateFile: file)
     before.model.select(before.main)

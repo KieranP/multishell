@@ -58,8 +58,8 @@ struct PaneTreeView: View {
   /// empty for no ring at all.
   @ViewBuilder
   private func ring(isFocusedPane: Bool) -> some View {
-    if showsFocusRing, isFocusedPane, let colour = theme.focusRingRGB {
-      Rectangle().strokeBorder(colour.color, lineWidth: 1)
+    if showsFocusRing, isFocusedPane, let ringColor = theme.focusRingRGB {
+      Rectangle().strokeBorder(ringColor.color, lineWidth: 1)
     }
   }
 

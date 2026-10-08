@@ -5,9 +5,4 @@ import Foundation
 public struct UnreadableStateFile: Error {
   public let backup: URL
   public let underlying: any Error
-
-  init(backup: URL, underlying: any Error) {
-    self.backup = backup
-    self.underlying = underlying
-  }
 }

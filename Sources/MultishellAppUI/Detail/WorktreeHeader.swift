@@ -16,7 +16,7 @@ struct WorktreeHeader: View {
         ProjectIconView(
           settings: model.effectiveSettings(for: project),
           isMissing: model.missingProjects.contains(project.id),
-          ringFill: theme.chromeColor, theme: theme, size: model.metrics.icon)
+          ringFill: theme.chromeColor, theme: theme, size: model.metrics.glyph)
       }
       WorktreeBreadcrumb(
         projectName: project?.name ?? "", worktreeName: model.displayName(of: worktree),
@@ -48,9 +48,7 @@ struct WorktreeHeader: View {
     Menu {
       WorktreeActions(model: model, worktree: worktree)
     } label: {
-      Image(systemName: "ellipsis.circle")
-        .font(.system(size: UIMetrics.headerGlyphSize, weight: .medium))
-        .frame(width: UIMetrics.headerGlyphButtonSide, height: UIMetrics.headerGlyphButtonSide)
+      HeaderGlyph(symbol: "ellipsis.circle")
         .contentShape(.rect)
     }
     .menuStyle(.borderlessButton)

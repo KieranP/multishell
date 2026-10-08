@@ -5,13 +5,10 @@ import Testing
 
 @testable import MultishellAppCore
 @testable import MultishellCore
+@testable import MultishellGitKit
 
 @Suite(.serialized) @MainActor
 struct AppModelPersistenceTests {
-  private func stateFile() -> URL {
-    Scratch.path("autosave").appendingPathComponent("state.json")
-  }
-
   private func onDisk(_ file: URL) -> Workspace? {
     guard FileManager.default.fileExists(atPath: file.path) else { return nil }
     return try? StateFile(fileURL: file).load()
@@ -20,7 +17,7 @@ struct AppModelPersistenceTests {
   /// The autosave loop holds the store and wakes only on a change, so the
   /// model going is what has to end it.
   @Test func aModelThatGoesLetsItsStoreGoToo() async throws {
-    let file = stateFile()
+    let file = Scratch.statePath("autosave")
     defer { Scratch.remove(file.deletingLastPathComponent()) }
     weak var store: WorkspaceStore?
     do {
@@ -33,7 +30,7 @@ struct AppModelPersistenceTests {
   }
 
   @Test func aChangeReachesDiskWithoutAnyoneAskingAndSoDoesTheNext() async throws {
-    let file = stateFile()
+    let file = Scratch.statePath("autosave")
     defer { Scratch.remove(file.deletingLastPathComponent()) }
     let harness = Harness(stateFile: file)
 
@@ -51,8 +48,8 @@ struct AppModelPersistenceTests {
     #expect(second.tabs.count == 2)
   }
 
-  @Test func aBurstOfChangesIsOneWriteAndTheLastStateWins() async throws {
-    let file = stateFile()
+  @Test func aBurstOfChangesIsWrittenAfterItEndsAndTheLastStateWins() async throws {
+    let file = Scratch.statePath("autosave")
     defer { Scratch.remove(file.deletingLastPathComponent()) }
     let harness = Harness(stateFile: file)
 
@@ -67,7 +64,7 @@ struct AppModelPersistenceTests {
   }
 
   @Test func saveNowFlushesWhatTheDebounceStillHolds() throws {
-    let file = stateFile()
+    let file = Scratch.statePath("autosave")
     defer { Scratch.remove(file.deletingLastPathComponent()) }
     let harness = Harness(stateFile: file)
 
@@ -79,7 +76,7 @@ struct AppModelPersistenceTests {
   }
 
   @Test func shellTitlesAndStatusesNeverTriggerASave() async throws {
-    let file = stateFile()
+    let file = Scratch.statePath("autosave")
     defer { Scratch.remove(file.deletingLastPathComponent()) }
     let harness = Harness(stateFile: file)
     harness.model.select(harness.main)

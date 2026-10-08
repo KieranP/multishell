@@ -21,37 +21,37 @@ public struct DebugMemoryTable: Sendable, Equatable {
 
   /// The app, the tabs, Other processes where there are any, and the total,
   /// each bar against the heaviest row.
-  public var lines: [DebugMemoryLine] {
+  public var rows: [DebugMemoryRow] {
     let heaviest = Double(
       max(appMemory, unattributed.totalMemory, tabs.first?.processList.totalMemory ?? 0, 1))
     let fraction = { (memory: UInt64?) in Double(memory ?? 0) / heaviest }
-    var lines = [
-      DebugMemoryLine(
+    var rows = [
+      DebugMemoryRow(
         source: .app, title: t("debug.app-row"), subtitle: t("debug.app-row-subtitle"),
         processCount: 1, selfMemory: appMemory, totalMemory: appMemory,
-        barFraction: fraction(appMemory), processLines: [])
+        barFraction: fraction(appMemory), processRows: [])
     ]
     for tab in tabs {
       let placedList = tab.isPlaced ? tab.processList : nil
-      lines.append(
-        DebugMemoryLine(
+      rows.append(
+        DebugMemoryRow(
           source: .tab(tab.id), title: tab.title, subtitle: tab.location.title,
           processCount: placedList?.processes.count, selfMemory: placedList?.selfMemory,
           totalMemory: placedList?.totalMemory, barFraction: fraction(placedList?.totalMemory),
-          processLines: tab.processList.lines))
+          processRows: tab.processList.rows))
     }
     if !unattributed.processes.isEmpty {
-      lines.append(
-        DebugMemoryLine(
+      rows.append(
+        DebugMemoryRow(
           source: .unattributed, title: t("debug.other-row"),
           subtitle: t("debug.other-row-subtitle"), processCount: unattributed.processes.count,
           selfMemory: unattributed.selfMemory, totalMemory: unattributed.totalMemory,
-          barFraction: fraction(unattributed.totalMemory), processLines: unattributed.lines))
+          barFraction: fraction(unattributed.totalMemory), processRows: unattributed.rows))
     }
-    lines.append(
-      DebugMemoryLine(
+    rows.append(
+      DebugMemoryRow(
         source: .total, title: t("debug.total-row"), subtitle: "", processCount: nil,
-        selfMemory: nil, totalMemory: totalMemory, barFraction: 0, processLines: []))
-    return lines
+        selfMemory: nil, totalMemory: totalMemory, barFraction: 0, processRows: []))
+    return rows
   }
 }

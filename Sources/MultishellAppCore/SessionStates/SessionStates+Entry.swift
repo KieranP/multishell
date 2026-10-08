@@ -108,5 +108,10 @@ extension SessionStates {
       promptRaisers.remove(raiser)
       return promptRaisers.isEmpty
     }
+
+    /// Workers taken off the roster ask nothing any more.
+    mutating func forgetPrompts(ofWorkers ids: [String]) {
+      for id in ids { promptRaisers.remove(.worker(id)) }
+    }
   }
 }

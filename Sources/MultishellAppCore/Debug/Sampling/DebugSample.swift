@@ -1,7 +1,7 @@
 import Foundation
 import MultishellProcess
 
-/// One sample of what the debug panel charts, a second's worth unless a
+/// One sample of what Debug Info charts, a second's worth unless a
 /// stall held it longer.
 struct DebugSample: Sendable, Equatable {
   /// Counts up from the first sample, so a slot of several seconds holds the

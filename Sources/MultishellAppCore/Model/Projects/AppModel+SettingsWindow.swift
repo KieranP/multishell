@@ -15,5 +15,7 @@ extension AppModel {
 
   /// What the project settings window shows when opened with no project
   /// named: the selected worktree's project, or the only project.
-  var settingsWindowFallbackProject: Project? { project(of: workspace.selectedWorktree) }
+  var settingsWindowFallbackProject: Project? {
+    projectOrOnlyProject(of: workspace.selectedWorktree)
+  }
 }

@@ -22,12 +22,12 @@ struct IconPalette: View {
         IconPaletteGroupBar(groups: groups) { proxy.scrollTo(Self.headerID($0), anchor: .top) }
       }
       .onAppear {
-        highlighted = currentSymbol
+        highlighted = selectedSymbol
         // A frame later: the grid is lazy, so neither the cell nor the
         // ring's own row exists during the first layout pass.
         Task {
           isGridFocused = true
-          proxy.scrollTo(currentSymbol, anchor: .center)
+          proxy.scrollTo(selectedSymbol, anchor: .center)
         }
       }
     }
@@ -46,7 +46,7 @@ struct IconPalette: View {
           Section {
             ForEach(group.symbols, id: \.self) { symbol in
               IconPaletteCell(
-                symbol: symbol, isCurrent: symbol == currentSymbol,
+                symbol: symbol, isSelected: symbol == selectedSymbol,
                 isHighlighted: highlighted == symbol && isGridFocused, size: Self.cellSize,
                 pick: { pick(symbol) })
             }
@@ -105,5 +105,5 @@ struct IconPalette: View {
     return .handled
   }
 
-  private var currentSymbol: String { kind.symbolName }
+  private var selectedSymbol: String { kind.symbolName }
 }

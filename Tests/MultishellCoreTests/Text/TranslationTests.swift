@@ -9,14 +9,15 @@ import Testing
 struct TranslationTests {
   @Test func everyKeyTheCodeAsksForIsInTheCatalogue() throws {
     let catalogue = try Self.catalogue()
-    for site in try TranslationCallSites.all() {
+    for site in try TranslationCallSites.all(in: TranslationCallSites.librarySwiftFiles) {
       let isKnown = catalogue[site.key] != nil || Self.countedForms.contains(site.key)
-      #expect(isKnown, "\(site.where) asks for \(site.key), which is in neither catalogue file")
+      #expect(isKnown, "\(site.fileName) asks for \(site.key), which is in neither catalogue file")
     }
   }
 
   @Test func theCatalogueHasNoEntryNothingAsksFor() throws {
-    let asked = Set(try TranslationCallSites.all().map(\.key))
+    let asked = Set(
+      try TranslationCallSites.all(in: TranslationCallSites.librarySwiftFiles).map(\.key))
     for key in try Self.catalogue().keys.sorted() + Self.countedForms.sorted() {
       // Not `asked.contains(key)` in the expectation itself: a failure
       // prints what it expanded, and that would be every key in the app.
@@ -29,20 +30,22 @@ struct TranslationTests {
   /// used to catch both at compile time.
   @Test func everyCallPassesTheArgumentsItsPhraseTakes() throws {
     let catalogue = try Self.catalogue()
-    for site in try TranslationCallSites.all() {
+    for site in try TranslationCallSites.all(in: TranslationCallSites.librarySwiftFiles) {
       guard let english = catalogue[site.key] else { continue }
-      let takes = TranslationCallSites.placeholders(in: english).count
+      let takes = english.formatPlaceholders.count
       #expect(
-        site.arguments == takes,
-        "\(site.where) passes \(site.arguments) to \(site.key), which takes \(takes)")
+        site.argumentCount == takes,
+        "\(site.fileName) passes \(site.argumentCount) to \(site.key), which takes \(takes)")
     }
-    for site in try TranslationCallSites.all() where Self.countedForms.contains(site.key) {
-      #expect(site.arguments == 1, "\(site.where) counts with \(site.arguments) arguments")
+    for site in try TranslationCallSites.all(in: TranslationCallSites.librarySwiftFiles)
+    where Self.countedForms.contains(site.key) {
+      #expect(
+        site.argumentCount == 1, "\(site.fileName) counts with \(site.argumentCount) arguments")
     }
   }
 
   /// Unnumbered, a translation that reorders the sentence swaps the arguments. A phrase
-  /// numbering only some is miscounted by `placeholders(in:)`, so the check above passes it.
+  /// numbering only some is miscounted by `formatPlaceholders`, so the check above passes it.
   @Test func everyPhraseWithSeveralArgumentsNumbersThem() throws {
     for (key, english) in try Self.catalogue() {
       let all = english.matches(of: /%[0-9]*\$?[0-9.]*[@dfs]/).map { String($0.output) }
@@ -118,7 +121,7 @@ struct TranslationTests {
   @Test func theBuiltCatalogueIsNotStale() throws {
     for name in ["Localizable.strings", "Localizable.stringsdict"] {
       let built = try #require(Bundle.coreResources.url(forResource: name, withExtension: nil))
-      let source = Checkout.root
+      let source = SourceRoot.url
         .appendingPathComponent("Sources/MultishellCore/Resources/en.lproj/\(name)")
       #expect(
         try Data(contentsOf: built) == (try Data(contentsOf: source)),

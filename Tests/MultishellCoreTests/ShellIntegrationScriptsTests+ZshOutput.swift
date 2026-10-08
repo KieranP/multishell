@@ -21,7 +21,7 @@ extension ShellIntegrationScriptsTests {
     environment["ZDOTDIR"] = files.zshDirectory.path
     environment["GHOSTTY_SHELL_FEATURES"] = features
     environment[SessionEnvironment.sessionVariable] = "zsh-output"
-    environment[SessionEnvironment.worktreePathVariable] = "/w"
+    environment[SessionEnvironment.worktreeVariable] = "/w"
     environment[SessionEnvironment.socketVariable] = files.root.appendingPathComponent("s").path
     var arguments = ["-i"]
     if runsInputAsScript {

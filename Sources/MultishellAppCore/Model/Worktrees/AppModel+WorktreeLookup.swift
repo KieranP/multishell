@@ -23,9 +23,9 @@ extension AppModel {
   /// Kept per worktree: each report naming only a directory walked every
   /// worktree's symlinks, on the main actor, a network mount's among them.
   private func resolvedComponents(of worktree: Worktree) -> [String] {
-    if let known = resolvedWorktreeComponents[worktree.id] { return known }
+    if let known = pathResolutions.components[worktree.id] { return known }
     let resolved = worktree.path.resolvingSymlinksInPath().pathComponents
-    resolvedWorktreeComponents[worktree.id] = resolved
+    pathResolutions.components[worktree.id] = resolved
     resolveAgainOffMain(worktree, replacing: resolved)
     return resolved
   }
@@ -40,23 +40,23 @@ extension AppModel {
         return (again.pathComponents, FileManager.default.fileExists(atPath: again.path))
       }
       // Forgotten or made again meanwhile, so not this resolution's to judge.
-      guard resolvedWorktreeComponents[worktree.id] == resolved else { return }
-      resolvedWorktreeComponents[worktree.id] = again
-      if !exists { worktreesResolvedWhileMissing.insert(worktree.id) }
+      guard pathResolutions.components[worktree.id] == resolved else { return }
+      pathResolutions.components[worktree.id] = again
+      if !exists { pathResolutions.madeWhileMissing.insert(worktree.id) }
     }
   }
 
   /// A report may name the real path of a worktree nobody polls, so each one
   /// looks again, off the main actor, for the directories that were away.
   private func recheckResolutionsMadeWhileMissing() {
-    let due = worktreesResolvedWhileMissing.subtracting(resolutionsBeingRechecked)
+    let due = pathResolutions.madeWhileMissing.subtracting(pathResolutions.beingRechecked)
     guard !due.isEmpty else { return }
     for worktree in workspace.worktrees where due.contains(worktree.id) {
-      resolutionsBeingRechecked.insert(worktree.id)
+      pathResolutions.beingRechecked.insert(worktree.id)
       let path = worktree.path
       Task {
         let isPresent = await runOnDispatch { FileManager.default.fileExists(atPath: path.path) }
-        resolutionsBeingRechecked.remove(worktree.id)
+        pathResolutions.beingRechecked.remove(worktree.id)
         if isPresent { noteDirectoryPresent(of: worktree.id) }
       }
     }
@@ -65,7 +65,7 @@ extension AppModel {
   /// Something off the main actor found the directory, so a resolution made
   /// while it was away is made again at the next report.
   func noteDirectoryPresent(of id: Worktree.ID) {
-    guard worktreesResolvedWhileMissing.remove(id) != nil else { return }
-    resolvedWorktreeComponents[id] = nil
+    guard pathResolutions.madeWhileMissing.remove(id) != nil else { return }
+    pathResolutions.components[id] = nil
   }
 }

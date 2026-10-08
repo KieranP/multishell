@@ -18,6 +18,10 @@ enum LayoutWeight {
   /// `weights` where there is one per child, else equal shares: indexed by
   /// child, a list that does not line up would drop panes or trap.
   static func aligned(_ weights: [Double], count: Int) -> [Double] {
-    weights.count == count ? weights : Array(repeating: 1, count: count)
+    weights.count == count ? weights : equalShares(count: count)
+  }
+
+  static func equalShares(count: Int) -> [Double] {
+    Array(repeating: 1, count: count)
   }
 }

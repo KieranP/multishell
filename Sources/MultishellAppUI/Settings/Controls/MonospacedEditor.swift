@@ -12,7 +12,7 @@ struct MonospacedEditor: View {
     VStack(alignment: .leading, spacing: 4) {
       InfoLabel(title, info: info)
       TextEditor(text: $text)
-        .font(.system(size: 11, design: .monospaced))
+        .font(.system(size: UIMetrics.unscaledMonospacedSize, design: .monospaced))
         .scrollContentBackground(.hidden)
         .frame(minHeight: 48, maxHeight: 96)
         .padding(4)
@@ -20,7 +20,7 @@ struct MonospacedEditor: View {
         .overlay(alignment: .topLeading) {
           if text.isEmpty, let placeholder {
             Text(placeholder)
-              .font(.system(size: 11, design: .monospaced))
+              .font(.system(size: UIMetrics.unscaledMonospacedSize, design: .monospaced))
               .foregroundStyle(.tertiary)
               .padding(.horizontal, 9)
               .padding(.vertical, 4)

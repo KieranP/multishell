@@ -3,6 +3,7 @@ import MultishellCore
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellGitKit
 
 @Suite
 struct AccessibilityTextAgentBoardTests {
@@ -52,8 +53,8 @@ struct AccessibilityTextAgentBoardTests {
 
   @Test func aTabRowAndACardSayHowManyWorkersAreOutAndTheChipSaysWhich() {
     let out = [
-      Worker(id: "a", type: "Explore", since: now.addingTimeInterval(-72)),
-      Worker(id: "b", type: nil, since: now.addingTimeInterval(-34)),
+      Worker(id: "a", type: "Explore", startedAt: now.addingTimeInterval(-72)),
+      Worker(id: "b", type: nil, startedAt: now.addingTimeInterval(-34)),
     ]
     var withWorkers = card(
       occupant: .agent(id: "claude", name: "Claude Code"), state: .running, secondsAgo: 60)
@@ -66,14 +67,16 @@ struct AccessibilityTextAgentBoardTests {
     #expect(AccessibilityText.workers(out) == "2 subagents, Explore, subagent")
     #expect(
       AccessibilityText.pane(
-        title: "claude", position: nil, isFocusedPane: false, state: .running, workers: out,
-        agentName: "Claude Code")
+        SidebarPane(
+          id: UUID(), title: "claude", position: nil, isFocused: false, state: .running,
+          workers: out, agentID: nil, agentName: "Claude Code"))
         == "claude, tab, Claude Code, agent, Working, 2 subagents")
     #expect(
       AccessibilityText.pane(
-        title: "fix tests", position: PanePosition(number: 2, count: 2),
-        isFocusedPane: true, state: nil, workers: [],
-        agentName: nil)
+        SidebarPane(
+          id: UUID(), title: "fix tests", position: PanePosition(number: 2, count: 2),
+          isFocused: true, state: nil,
+          workers: [], agentID: nil, agentName: nil))
         == "fix tests, pane 2 of 2, selected",
       "a renamed tab names every pane alike, so the position tells them apart")
   }

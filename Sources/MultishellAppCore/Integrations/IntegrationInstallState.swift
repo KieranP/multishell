@@ -8,12 +8,12 @@ struct IntegrationInstallState: Sendable {
   let isCommandLineToolInstalled: Bool
 
   static func read() -> IntegrationInstallState {
-    let installations = AgentHookCatalogue.integrations.map {
-      (id: $0.id, installation: $0.installation())
+    let states = AgentHookCatalogue.integrations.map {
+      (id: $0.id, state: $0.installState())
     }
     return IntegrationInstallState(
-      installedHooks: Set(installations.filter { $0.installation != .absent }.map(\.id)),
-      staleHooks: Set(installations.filter { $0.installation == .stale }.map(\.id)),
+      installedHooks: Set(states.filter { $0.state != .absent }.map(\.id)),
+      staleHooks: Set(states.filter { $0.state == .stale }.map(\.id)),
       isCommandLineToolInstalled: HelperLink.isCommandLineToolInstalled)
   }
 }

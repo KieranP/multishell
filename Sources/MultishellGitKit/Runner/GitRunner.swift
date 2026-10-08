@@ -9,7 +9,7 @@ struct GitRunner: Sendable {
   /// `GIT_CONFIG_*`, which git reads as config of the highest precedence,
   /// and the login shell's PATH where one was captured.
   private let baseEnvironment: [String: String]
-  /// Shared with the runner a later PATH builds, so the debug panel's counts
+  /// Shared with the runner a later PATH builds, so Debug Info's counts
   /// carry across it.
   let runLog: GitRunLog
 

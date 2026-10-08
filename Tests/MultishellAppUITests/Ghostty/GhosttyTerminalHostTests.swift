@@ -8,7 +8,7 @@ import Testing
 @MainActor
 struct GhosttyTerminalHostTests {
   @Test func aSessionReportsNothingOnceClosed() throws {
-    let host = GhosttyTerminalHost(runtimeOwner: GhosttyRuntimeOwner(readBase: { "" }))
+    let host = GhosttyTerminalHost(lazyRuntime: LazyGhosttyRuntime(readBase: { "" }))
     let delegate = RecordingTerminalHostDelegate()
     host.delegate = delegate
     let session = TerminalSession(

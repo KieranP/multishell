@@ -108,19 +108,7 @@ public final class AppModel<Surface> {
   var debugProcessAttribution = PaneProcessAttribution.empty
   /// What the panel shows while paused, the sampling going on under it.
   var pausedDebugSnapshot: DebugSnapshot?
-  @ObservationIgnored var debugSampling: Task<Void, Never>?
-  /// Settable so a test can push the tick out of reach and take each sample itself.
-  @ObservationIgnored var debugSampleInterval: Duration = .seconds(1)
-  @ObservationIgnored var frameRateMeter = FrameRateMeter()
-  @ObservationIgnored var cpuUsageMeter = CPUUsageMeter()
-  @ObservationIgnored var stateReportsSinceDebugSample = 0
-  @ObservationIgnored var lastDebugSampleTaken: ContinuousClock.Instant?
-  /// Bumped at each start and stop, so a sample begun before either lands nowhere.
-  @ObservationIgnored var debugSamplingGeneration = 0
-  /// Reads the kernel's process table; a test stands in a scan of its own.
-  @ObservationIgnored var scanDebugProcesses:
-    @Sendable (_ appPID: Int32, _ terminalPaths: [TerminalSession.ID: String]) -> DebugProcessScan =
-      DebugProcessScan.take
+  @ObservationIgnored var debugSampler = DebugSampler()
 
   /// Which stage a create is in while the sheet still waits on it: the
   /// pre-create hook and `git worktree add`. `nil` when none is running.
@@ -194,8 +182,8 @@ public final class AppModel<Surface> {
   public internal(set) var shellDetection = ShellDetection.empty
   /// Which catalogue editors are installed, by application id or shim.
   public internal(set) var editorDetection = EditorDetection.empty
-  /// Which agents' hooks are in place, by catalogue id. Read from disk on
-  /// demand by `refreshInstallState`, not observed.
+  /// Which agents' hooks are in place, by catalogue id. Read from disk by
+  /// `refreshInstallState`; nothing watches the files.
   var installedAgentHooks: Set<String> = []
   /// Installed, but not what this build writes.
   var staleAgentHooks: Set<String> = []
@@ -229,14 +217,7 @@ public final class AppModel<Surface> {
   /// What each verdict cost, which spreads a re-ask of every branch over
   /// several rounds; a test sets `budget` to see them spread.
   @ObservationIgnored var mergeReadLog = MergeReadLog()
-  /// Each worktree's path with its symlinks resolved, for placing a report that
-  /// names only a directory. Stale where a link is repointed or the path was away.
-  @ObservationIgnored var resolvedWorktreeComponents: [Worktree.ID: [String]] = [:]
-  /// Worktrees whose kept resolution was made while their directory was away.
-  @ObservationIgnored var worktreesResolvedWhileMissing: Set<Worktree.ID> = []
-  /// Those being looked at again, one at a time each, so a hung mount holds a
-  /// thread per worktree on it and no other worktree waits on it.
-  @ObservationIgnored var resolutionsBeingRechecked: Set<Worktree.ID> = []
+  @ObservationIgnored var pathResolutions = WorktreePathResolutions()
   /// `git rev-parse --git-common-dir` per project, asked once. The watcher
   /// and the records check run from it without spawning git.
   @ObservationIgnored var commonGitDirectories: [Project.ID: URL] = [:]
@@ -250,21 +231,13 @@ public final class AppModel<Surface> {
   /// When each worktree's status was last read and how often it is read; a
   /// test reading right after a change sets `pace` to `.unpaced`.
   @ObservationIgnored var statusReadLog = StatusReadLog()
-  /// One coalesced status refresh per worktree; see `noteActivity`.
+  /// One coalesced status refresh per worktree; see `scheduleStatusRefresh`.
   @ObservationIgnored var pendingStatusRefreshes: [Worktree.ID: Task<Void, Never>] = [:]
   /// The read after the filter text changes, one per pause in typing, and
   /// the rows the poll kept reading through every keystroke of that burst.
   @ObservationIgnored var pendingRevealedRowsRead:
     (polledThroughout: Set<Worktree.ID>, task: Task<Void, Never>)?
-  /// Worktrees whose removal is reading their status.
-  @ObservationIgnored var removalsAwaitingStatus: Set<Worktree.ID> = []
-  /// Each removal's read until git answers, which outlives the removal's wait
-  /// on a dead mount; a later removal waits on it rather than start another.
-  @ObservationIgnored var removalStatusReads: [Worktree.ID: Task<Bool, Never>] = [:]
-  /// How long a removal waits for that read before it asks anyway.
-  @ObservationIgnored var removalStatusWait: Duration = .seconds(3)
-  /// The removal asked last, the only one whose read may put up a dialog.
-  @ObservationIgnored var latestRemovalRequestID: Worktree.ID?
+  @ObservationIgnored var removalRequests = WorktreeRemovalRequests()
 
   @ObservationIgnored var pendingSave: Task<Void, Never>?
   @ObservationIgnored var autosave: Task<Void, Never>?

@@ -9,7 +9,7 @@ struct AppModelAgentIDAtThePromptTests {
   /// The strip and the sidebar draw a mark from this, so a shell someone
   /// typed `claude` into has to stop looking like a shell.
   @Test func theMarkFollowsWhoIsAtThePromptRatherThanWhatOpenedTheTab() {
-    let (harness, session) = harnessWithOnePane()
+    let (harness, session) = Harness.withOnePane()
     let model = harness.model
     let tab = harness.store.workspace.tabs[0]
 
@@ -25,7 +25,7 @@ struct AppModelAgentIDAtThePromptTests {
   /// Typed at a prompt, with none of that agent's hooks installed: the
   /// shell's own report of what it just started is all the app has.
   @Test func aCommandThatIsAnAgentMarksThePaneUntilItFinishes() {
-    let (harness, session) = harnessWithOnePane()
+    let (harness, session) = Harness.withOnePane()
     let model = harness.model
 
     harness.stateSource.send(
@@ -42,7 +42,7 @@ struct AppModelAgentIDAtThePromptTests {
   /// A shell reports every command it starts and names only the agents, so
   /// the next unnamed one is the last agent's end whether a finish landed.
   @Test func aPlainCommandAfterAnAgentTakesTheMarkBack() {
-    let (harness, session) = harnessWithOnePane()
+    let (harness, session) = Harness.withOnePane()
     let model = harness.model
 
     harness.stateSource.send(
@@ -58,7 +58,7 @@ struct AppModelAgentIDAtThePromptTests {
   /// `multishell state` is documented for the user's own scripts, and one
   /// run from inside an agent's turn is not that agent's shell exiting.
   @Test func aReportFromSomethingOtherThanTheShellLeavesTheMarkWhereItIs() {
-    let (harness, session) = harnessWithOnePane()
+    let (harness, session) = Harness.withOnePane()
     let model = harness.model
 
     harness.stateSource.send(
@@ -71,7 +71,7 @@ struct AppModelAgentIDAtThePromptTests {
   /// An agent's own hooks report while it works and never name a command,
   /// so they must not take back the mark the shell put there.
   @Test func anAgentsOwnReportLeavesTheShellsAnswerWhereItIs() {
-    let (harness, session) = harnessWithOnePane()
+    let (harness, session) = Harness.withOnePane()
     let model = harness.model
 
     harness.stateSource.send(

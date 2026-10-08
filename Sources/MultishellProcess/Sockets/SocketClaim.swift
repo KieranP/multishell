@@ -15,12 +15,12 @@ final class SocketClaim: Sendable {
     lockFilePath = socketPath + ".lock"
   }
 
-  /// Takes the claim, or refuses to start: a connect alone cannot tell a live
-  /// listener with a full backlog from a dead socket; see state-on-disk.md.
-  func takeOrRefuse() throws {
+  /// Takes the claim, throwing where a live process holds it: a connect alone
+  /// cannot tell a live listener with a full backlog from a dead socket.
+  func takeUnlessHeldElsewhere() throws {
     guard descriptor.withLock({ $0 < 0 }) else { return }
     let opened = open(lockFilePath, O_CREAT | O_RDWR | O_CLOEXEC, 0o600)
-    // A filesystem that will not lock leaves the probe to decide, as before.
+    // A filesystem that will not lock leaves the connect probe to decide alone.
     guard opened >= 0 else { return }
     var record = flock(
       l_start: 0, l_len: 0, l_pid: 0, l_type: Int16(F_WRLCK), l_whence: Int16(SEEK_SET))

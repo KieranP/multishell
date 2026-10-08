@@ -6,7 +6,7 @@ import Testing
 @Suite @MainActor
 struct AppModelDebugMemoryTableTests {
   private func harnessWithTwoTabs() throws -> (Harness, TerminalTab, TerminalTab) {
-    let (harness, _) = harnessWithOnePane()
+    let (harness, _) = Harness.withOnePane()
     harness.model.newTab()
     let tabs = harness.model.workspace.tabs
     try #require(tabs.count == 2)
@@ -19,7 +19,7 @@ struct AppModelDebugMemoryTableTests {
   }
 
   @Test func eachTabIsGivenTheProcessesItsPaneRunsAndTheRestAreUnattributed() async throws {
-    let (harness, session) = harnessWithOnePane()
+    let (harness, session) = Harness.withOnePane()
     harness.engine.processHints[session.id] = TerminalProcessHint(
       terminalPath: nil, foregroundPID: 11)
     harness.model.enableDebugTools(

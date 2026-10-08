@@ -50,7 +50,7 @@ struct WorkspaceRetiredAgentsTests {
   }
 
   @Test @MainActor func aStoreRestoredFromAFileNamingARetiredAgentForgetsIt() throws {
-    let file = scratchStatePath("retired")
+    let file = Scratch.statePath("retired")
     defer { Scratch.remove(file.deletingLastPathComponent()) }
     var workspace = Workspace()
     workspace.preferredAgentID = "aider"

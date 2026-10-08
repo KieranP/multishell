@@ -21,7 +21,7 @@ extension SharedProjectSettings {
   public func carryingOver(from existing: SharedProjectSettings?) -> SharedProjectSettings {
     guard let existing else { return self }
     var kept = self
-    for field in Self.trustCovered {
+    for field in Self.trustCoveredFields {
       kept[keyPath: field] = self[keyPath: field] ?? existing[keyPath: field]
     }
     kept.unrecognisedKeys = existing.unrecognisedKeys

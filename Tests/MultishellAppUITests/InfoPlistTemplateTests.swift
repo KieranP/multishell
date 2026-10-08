@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 import UniformTypeIdentifiers
 
@@ -79,7 +80,7 @@ struct InfoPlistTemplateTests {
   /// From the checkout, since the package these tests run in has no `Info.plist`
   /// and the script's source is what is under test.
   private func infoPlistTemplate() throws -> String {
-    let template = Checkout.root.appendingPathComponent("Resources/Info.plist.in")
+    let template = SourceRoot.url.appendingPathComponent("Resources/Info.plist.in")
     guard FileManager.default.fileExists(atPath: template.path) else {
       throw InfoPlistTemplateNotFound(path: template.path)
     }

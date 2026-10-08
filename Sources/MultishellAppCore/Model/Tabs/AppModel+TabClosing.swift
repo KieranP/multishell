@@ -33,16 +33,14 @@ extension AppModel {
     if confirmed { perform(pending) }
   }
 
-  /// A close or a name field whose subject has gone has nothing left to ask.
-  /// Run from the reconcile, so every path that takes one away is covered.
-  func pruneTabCloseAndRename() {
+  /// A close whose subject has gone has nothing left to ask. Run from the
+  /// reconcile, so every path that takes one away is covered.
+  func prunePendingClose() {
     switch pendingClose {
     case .pane(let id) where workspace.session(id) == nil: pendingClose = nil
     case .tab(let id) where workspace.tab(id) == nil: pendingClose = nil
     default: break
     }
-    // A name field whose tab has gone, as a renamed worktree drops its own.
-    if let renaming = renamingTabID, workspace.tab(renaming) == nil { renamingTabID = nil }
   }
 
   /// Both keystrokes. One issued in a settings window closes that window

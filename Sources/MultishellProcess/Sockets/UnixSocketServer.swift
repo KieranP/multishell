@@ -42,7 +42,7 @@ public final class UnixSocketServer: Sendable {
     try FileManager.default.createDirectory(
       at: URL(fileURLWithPath: path).deletingLastPathComponent(),
       withIntermediateDirectories: true)
-    try claim.takeOrRefuse()
+    try claim.takeUnlessHeldElsewhere()
     // A start that failed is not listening, and a claim says the opposite,
     // so it goes back before the failure is reported.
     do {

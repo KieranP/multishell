@@ -12,15 +12,15 @@ enum Helper {
     do {
       switch arguments.first {
       case "state":
-        return try reportState(arguments.dropFirst(), environment: environment)
-      case "command-started":
-        try reportCommandStarted(arguments.dropFirst(), environment: environment)
+        return try runState(arguments.dropFirst(), environment: environment)
+      case commandStartedName:
+        try runCommandStarted(arguments.dropFirst(), environment: environment)
         return 0
-      case "command-finished":
-        try reportCommandFinished(arguments.dropFirst(), environment: environment)
+      case commandFinishedName:
+        try runCommandFinished(arguments.dropFirst(), environment: environment)
         return 0
       case "relay":
-        try relay(arguments.dropFirst(), environment: environment, input: standardInput)
+        try runRelay(arguments.dropFirst(), environment: environment, input: standardInput)
         return 0
       case AgentHookCatalogue.subcommand, AgentHookCatalogue.legacySubcommand:
         reportAgentHook(agentID(in: arguments), environment: environment, input: standardInput)

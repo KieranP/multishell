@@ -71,7 +71,7 @@ struct StateFileTests {
   /// Autosave encodes and writes on the main thread after every change. A
   /// workspace far larger than anyone keeps must still save in a blink.
   @Test func aLargeWorkspaceSavesLoadsAndRepairsWithoutAQuadratic() throws {
-    let file = scratchStatePath()
+    let file = Scratch.statePath()
     defer { Scratch.remove(file.deletingLastPathComponent()) }
     var workspace = Workspace()
     for p in 0..<20 {
@@ -127,7 +127,7 @@ struct StateFileTests {
   }
 
   @Test func everySavedFieldLoadsBackAsItWasSaved() throws {
-    let file = scratchStatePath()
+    let file = Scratch.statePath()
     defer { Scratch.remove(file.deletingLastPathComponent()) }
 
     // Every scalar is off its default, so a field the decoder forgets fails here. The pairs
@@ -162,7 +162,7 @@ struct StateFileTests {
     workspace.confirmsWorktreeRemoval = false
     workspace.deletesBranchWithWorktree = true
     workspace.trashesRemovedWorktrees = false
-    workspace.hookTimeoutSeconds = 5
+    workspace.projectHookTimeoutSeconds = 5
     workspace.gitStatusIndicator = .stagedOnly
 
     let stateFile = StateFile(fileURL: file)

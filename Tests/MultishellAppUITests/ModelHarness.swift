@@ -1,5 +1,6 @@
 import AppKit
 import MultishellAppCore
+import TestScratch
 
 @testable import MultishellAppUI
 @testable import MultishellCore
@@ -17,7 +18,7 @@ final class ModelHarness {
   private let directory: URL
 
   init() {
-    let directory = ScratchDirectory.path("harness")
+    let directory = Scratch.path("harness")
     self.directory = directory
     try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     let store = WorkspaceStore(
@@ -40,5 +41,5 @@ final class ModelHarness {
     return worktree
   }
 
-  deinit { ScratchDirectory.remove(directory) }
+  deinit { Scratch.remove(directory) }
 }

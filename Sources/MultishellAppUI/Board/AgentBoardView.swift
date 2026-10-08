@@ -34,8 +34,7 @@ struct AgentBoardView: View {
 
   private func scrollingColumns(_ board: AgentBoard, metrics: UIMetrics) -> some View {
     GeometryReader { proxy in
-      let layout = layout(
-        forWidth: proxy.size.width, count: board.columns.count, metrics: metrics)
+      let layout = metrics.boardLayout(forWidth: proxy.size.width, count: board.columns.count)
       ScrollView(.horizontal, showsIndicators: layout.scrolls) {
         HStack(alignment: .top, spacing: metrics.boardGap) {
           ForEach(board.columns) { column in
@@ -54,13 +53,5 @@ struct AgentBoardView: View {
       }
       .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
     }
-  }
-
-  private func layout(forWidth width: Double, count: Int, metrics: UIMetrics) -> AgentBoardLayout {
-    AgentBoardLayout(
-      available: AgentBoardLayout.available(
-        width: width, count: count, gap: metrics.boardGap, padding: metrics.boardPadding),
-      count: count,
-      minimum: metrics.boardColumnMinWidth)
   }
 }

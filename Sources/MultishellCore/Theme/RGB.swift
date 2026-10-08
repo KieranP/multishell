@@ -7,12 +7,6 @@ public struct RGB: Hashable, Sendable {
   public let green: UInt8
   public let blue: UInt8
 
-  init(red: UInt8, green: UInt8, blue: UInt8) {
-    self.red = red
-    self.green = green
-    self.blue = blue
-  }
-
   /// `#rrggbb`, the form a theme file and a Ghostty config both take.
   public var hex: String {
     String(format: "#%02x%02x%02x", red, green, blue)

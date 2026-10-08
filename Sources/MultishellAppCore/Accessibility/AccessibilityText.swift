@@ -13,7 +13,7 @@ public enum AccessibilityText {
   /// The workers chip: how many, then each by name, task, parent and failure.
   /// No times: they are read later than built, and cost a clock each.
   public static func workers(_ workers: [Worker]) -> String {
-    let displayNames = Dictionary(workers.map { ($0.id, $0.displayName) }) { first, _ in first }
+    let displayNames = Dictionary(keepingFirst: workers.map { ($0.id, $0.displayName) })
     let spokenWorkers = workers.nested.map { nested in
       let worker = nested.worker
       var spoken = [worker.displayName, worker.occurrenceText].compactMap { $0 }

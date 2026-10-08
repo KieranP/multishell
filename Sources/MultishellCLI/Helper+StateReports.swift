@@ -7,7 +7,7 @@ extension Helper {
     "new-turn", "shell", "resumes", "subagent-wakes", "subagent-parent", "out",
   ]
 
-  static func reportState(
+  static func runState(
     _ arguments: ArraySlice<String>, environment: [String: String]
   ) throws -> Int32 {
     guard let name = arguments.first, let state = SessionState(rawValue: name) else {
@@ -21,7 +21,7 @@ extension Helper {
         from: options["session"] ?? environment[SessionEnvironment.sessionVariable]),
       workingDirectory: options["cwd"] ?? worktreePath(in: environment)
         ?? FileManager.default.currentDirectoryPath,
-      pid: options.int32("pid") ?? reportingPID(environment),
+      pid: options.int32("pid") ?? reportingPID(in: environment),
       message: options["message"],
       agentID: options["agent"],
       isFromShellIntegration: options.onlyIfTrue("shell"),

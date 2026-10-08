@@ -46,13 +46,13 @@ struct LossyArrayTests {
     #expect(workspace.tabs.isEmpty && workspace.sessions.isEmpty)
   }
 
-  @Test func aBrokenProjectStillFailsTheFileSoTheBackupIsKept() {
+  @Test func aBrokenProjectStillFailsTheWholeFile() {
     #expect(throws: DecodingError.self) {
       try decodeJSON(Workspace.self, #"{ "projects": [ { "isExpanded": true } ] }"#)
     }
   }
 
-  @Test func consistentCollectionsDecodeExactlyAsBefore() throws {
+  @Test func aConsistentWorkspaceRoundTripsUnchanged() throws {
     let (workspace, _) = consistentWorkspace()
 
     let json = try JSONEncoder().encode(workspace)

@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import MultishellGitKit
 
 /// A worktree removal waiting on its dialog. The branch question is asked
 /// even where confirmation is off, being the one part with no undo.

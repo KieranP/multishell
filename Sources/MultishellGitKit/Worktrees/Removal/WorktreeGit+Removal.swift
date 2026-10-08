@@ -4,9 +4,9 @@ import MultishellCore
 /// Taking a worktree's record out of git, and making sure first that the
 /// directory at its path is still its checkout.
 extension WorktreeGit {
-  /// Forgets one record whose directory has already gone, a lock included.
+  /// Takes out one record whose directory has already gone, a lock included.
   /// Only after the trash: with the directory there it would unlink it.
-  func forget(_ worktree: Worktree, in project: Project) async throws {
+  func removeRecord(of worktree: Worktree, in project: Project) async throws {
     do {
       // One --force for a tree git cannot inspect, the second for a lock,
       // which stays on the record until this moment rather than being unlocked.
@@ -17,12 +17,12 @@ extension WorktreeGit {
       do {
         _ = try await runner.run(["worktree", "prune"], in: project.path)
       } catch {
-        throw WorktreeForgetFailure(path: worktree.path, underlying: error)
+        throw WorktreeRecordRemovalFailure(path: worktree.path, underlying: error)
       }
       // prune exits 0 whether or not this record was one it took, and the
       // caller deletes the branch on a success; see Docs/design/worktrees.md.
       guard await !isListed(worktree.path, in: project) else {
-        throw WorktreeForgetFailure(path: worktree.path, underlying: refusal)
+        throw WorktreeRecordRemovalFailure(path: worktree.path, underlying: refusal)
       }
     }
   }
@@ -57,7 +57,7 @@ extension WorktreeGit {
 
   /// A record whose path is now someone else's directory. That record alone
   /// goes, not every one prune would take; see worktrees.md.
-  func forgetStale(_ worktree: Worktree, in project: Project) async throws {
+  func removeStaleRecord(_ worktree: Worktree, in project: Project) async throws {
     // A `.git` there is another repository's, which prune would keep too.
     let taken = await runOnDispatch {
       FileManager.default.fileExists(atPath: worktree.path.appendingPathComponent(".git").path)
@@ -67,7 +67,7 @@ extension WorktreeGit {
     else {
       throw WorktreePathTaken(path: worktree.path)
     }
-    try await deleteDirectory(record)
+    try await record.removeFromDisk()
     guard await !isListed(worktree.path, in: project) else {
       throw WorktreePathTaken(path: worktree.path)
     }

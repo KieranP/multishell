@@ -25,16 +25,14 @@ struct SidebarFilterField: View {
         .task { isFocused = true }
         .onExitCommand(perform: close)
       if isFiltering {
-        Button {
+        PlainGlyphButton(help: t("sidebar.clear-filter")) {
           text = ""
           isFocused = true
-        } label: {
+        } glyph: {
           Image(systemName: "xmark.circle.fill")
-            .font(.system(size: metrics.icon))
+            .font(.system(size: metrics.glyph))
             .foregroundStyle(theme.textTertiary)
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel(t("sidebar.clear-filter"))
       }
     }
     .padding(.horizontal, 8)

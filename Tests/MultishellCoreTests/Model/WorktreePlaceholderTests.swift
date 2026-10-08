@@ -13,7 +13,7 @@ struct WorktreePlaceholderTests {
     #expect(values[.branch] == "kieran/fix")
     #expect(values[.worktreeName] == "The fix")
     #expect(values[.worktreePath] == "/Users/dev/Work/multishell-worktrees/fix")
-    #expect(values[.project] == "multishell")
+    #expect(values[.projectName] == "multishell")
     #expect(values[.projectPath] == "/Users/dev/Work/multishell")
     #expect(
       values.count == WorktreePlaceholder.allCases.count, "a case with no value expands to nothing")

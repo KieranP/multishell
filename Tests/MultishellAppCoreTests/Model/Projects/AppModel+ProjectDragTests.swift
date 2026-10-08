@@ -54,7 +54,7 @@ struct AppModelProjectDragTests {
 
   @Test func aDragWhoseRowLeftEndsOnceTheButtonIsUp() async {
     let harness = Harness()
-    let released = Flag()
+    let released = AtomicFlag()
     harness.model.beginProjectDrag(harness.project.id)
     harness.model.projectDragSourceLeft(harness.project.id, isPressed: { !released.raised })
 
@@ -66,7 +66,7 @@ struct AppModelProjectDragTests {
 
   @Test func aNewDragOfTheSameProjectIsNotEndedByTheLastOnesRelease() async {
     let harness = Harness()
-    let released = Flag()
+    let released = AtomicFlag()
     harness.model.beginProjectDrag(harness.project.id)
     harness.model.projectDragSourceLeft(harness.project.id, isPressed: { !released.raised })
     let watch = harness.model.projectDragReleaseWatch

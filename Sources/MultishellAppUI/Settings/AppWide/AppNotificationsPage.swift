@@ -11,7 +11,7 @@ struct AppNotificationsPage: View {
     Form {
       Section {
         ForEach(NotificationSettingsText.rows) { row in
-          InfoToggle(row.title, info: row.info, isOn: model.notificationSetting(for: row.state))
+          InfoToggle(row.title, info: row.info, isOn: model.notificationBinding(for: row.state))
         }
       } header: {
         Text(t("notifications.header"))

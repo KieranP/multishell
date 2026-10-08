@@ -6,6 +6,30 @@ Most pressing first within each heading. A decision that gets made moves to
 ## Features
 
 - File tree and git changes diff in a right-hand panel.
+- A task field on the New Worktree sheet, handed to the agent as its first
+  prompt, and a `{prompt}` placeholder beside `{branch}`, `{path}` and
+  `{project}` for the flags. `NewWorktreeDraft` carries only the branch and base
+  today.
+- A quick switcher on a shortcut: fuzzy search over every project, worktree, tab
+  and agent, waiting agents ranked first. Changing worktree is mouse-only today.
+- Pull request and CI state on a worktree row, read through `gh` where it is on
+  the PATH: number, review state, checks, and a Create Pull Request action. The
+  merged badge answers whether a branch landed; this answers where it is before
+  then.
+- Listening ports per worktree: the sockets the panes' process trees listen on,
+  found from the pids `AppModel+PIDWatch` already holds, shown on the row as a
+  link. Perhaps a per-worktree port offset in the environment too, so project
+  hooks can keep dev servers apart.
+- A tab layout per project in `.multishell.json`, such as an agent beside a dev
+  server with a test watcher below, opened in every new worktree. A post-create
+  hook runs in one pane and cannot describe tabs.
+- More CLI commands over the existing socket: `multishell open .` to add the
+  project and select this worktree,
+  `multishell new-worktree <branch> [--agent] [--prompt]`, and
+  `multishell tab -- <command>`, so scripts and agents can drive the app.
+- State dots for fish, through `fish_preexec` and `fish_postexec` reporting
+  `command-started` and `command-finished`. COMPAT.md lists it as a terminal
+  with nothing injected.
 
 ## Refinements
 

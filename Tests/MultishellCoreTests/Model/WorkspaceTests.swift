@@ -132,10 +132,10 @@ struct WorkspaceTests {
 
   @Test func aWorkspaceWithoutAHookTimeoutGetsAMinute() throws {
     let workspace = try decodeJSON(Workspace.self, #"{ "projects": [] }"#)
-    #expect(workspace.hookTimeoutSeconds == 60)
-    #expect(workspace.hookTimeout == .seconds(60))
+    #expect(workspace.projectHookTimeoutSeconds == 60)
+    #expect(workspace.projectHookTimeout == .seconds(60))
     let unlimited = try decodeJSON(Workspace.self, #"{ "hookTimeoutSeconds": 0 }"#)
-    #expect(unlimited.hookTimeout == nil)
+    #expect(unlimited.projectHookTimeout == nil)
   }
 
   @Test func aWorkspaceWithoutCustomWorktreeNamesHasNone() throws {

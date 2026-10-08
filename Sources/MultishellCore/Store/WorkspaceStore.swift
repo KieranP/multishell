@@ -97,7 +97,7 @@ extension WorkspaceStore {
 
   /// This run's read of a project's `.multishell.json`. A read saying what the
   /// last one did touches nothing: a mutation here is a whole-workspace save.
-  public func setSharedSettings(
+  public func setSharedSettingsSnapshot(
     _ snapshot: SharedSettingsSnapshot, forProject id: Project.ID
   ) {
     guard let index = workspace.projectIndex(id),
@@ -589,8 +589,8 @@ extension WorkspaceStore {
   }
 
   /// Negative reads as no limit, like zero.
-  public func setHookTimeoutSeconds(_ seconds: Int) {
-    workspace.hookTimeoutSeconds = max(0, seconds)
+  public func setProjectHookTimeoutSeconds(_ seconds: Int) {
+    workspace.projectHookTimeoutSeconds = max(0, seconds)
   }
 
   public func setGitStatusIndicator(_ indicator: GitStatusIndicator) {

@@ -5,7 +5,7 @@ import MultishellCore
 enum NotificationPolicy {
   /// A command shorter than this is not worth a banner: a shell hook reports
   /// `ls` and a build alike, and only the build should be heard from.
-  static let minimumNotifiedDuration: Double = 10
+  static let minimumNotifiedSeconds: Double = 10
 
   /// A pane on screen needs no banner: in view and the app frontmost. Wider
   /// than what clears a Done, which is the focused pane alone.
@@ -16,7 +16,7 @@ enum NotificationPolicy {
     // Two reports stand for one permission prompt: the dot moves on the
     // first, the banner comes with the second.
     guard !isSilent, preference[state] else { return false }
-    if state.isFinished, let duration, duration < minimumNotifiedDuration { return false }
+    if state.isFinished, let duration, duration < minimumNotifiedSeconds { return false }
     return !isOnScreen
   }
 

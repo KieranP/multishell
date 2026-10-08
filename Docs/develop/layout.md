@@ -7,8 +7,9 @@
   `.multishell.json` under `Model/Settings/Shared/`, and a worktree's tabs and
   panes under `Model/Tabs/`; store; theme; ports; the sessions and the reports
   about them; the decoding every persisted type leans on; the libraries' word
-  lookup; and, under `Support/`, the small extensions and helpers every other
-  library reaches for.
+  lookup; where the app keeps its state on disk, under `StateOnDisk/`; and,
+  under `Support/`, the small extensions and helpers every other library reaches
+  for.
 - **MultishellProcess**: the children it starts, how a shell is started and
   quoted, sockets, what the kernel answers about a process, a descriptor or a
   terminal, under `Kernel/`, and, under `Support/`, what belongs to no concern.
@@ -23,39 +24,41 @@
   as inherited, what a tab runs, what each session is doing, when to read git,
   when to notify, the worktree creates and removals under way, every decision a
   view makes; what a screen reader is told; what it needs from the app, and its
-  own implementations of Core's ports, under `Ports/`; what the debug panel
-  measures and shows, under `Debug/`; and, under `Support/`, the pieces that
-  belong to no concern.
-- **AppModel's extensions sit under `Model/` by concern**: agents, tabs,
-  worktrees, git reads, projects, the sidebar's rows, the debug tools' sampling
-  and tables, and the tools it drives. What spans them all stays at the root
-  beside the type, since the concerns are too many for one alphabetical listing
-  to keep a concern's files together.
+  own implementations of Core's ports, under `Ports/`; what Debug Info measures
+  and shows, under `Debug/`; and, under `Support/`, the pieces that belong to no
+  concern.
+- **AppModel's extensions sit under `Model/` by concern**: agents, the board,
+  what each session is doing, tabs, worktrees, git reads, projects, the
+  sidebar's rows, the detail area, the debug tools' sampling and tables, and the
+  tools it drives. What spans them all stays at the root beside the type, since
+  the concerns are too many for one alphabetical listing to keep a concern's
+  files together.
 - **AppCore's `Integrations/` is the app's own side of them**: the helper and
   shell-integration files it installs, and each agent's hooks as installed.
 - **Everything about a program someone else wrote is in Core's
   `Integrations/`**, one folder per kind: agents, editors, shells, and the
-  settings files the agents share the reading of. Another agent touches the
-  agents folder and no other, until someone draws its mark. Its hooks, from the
-  catalogue and the files they write to what a payload or transcript reports,
-  sit under `Agents/Hooks/`.
+  files every agent's hooks are written into, under `AgentHookFiles/`. Another
+  agent touches the agents folder and no other, until someone draws its mark.
+  Its hooks, from the catalogue and the files they write to what a payload or
+  transcript reports, sit under `Agents/Hooks/`, and what reads or writes one
+  agent's own files under `Agents/Hooks/AgentOwnFiles/`.
 - **MultishellCLI is the helper**, built as `multishell-helper` and installed in
   the bundle as `multishell`, since it and the app would share one products path
   on a case-insensitive disk. **MultishellAppUI is the app**, built as
   `Multishell`: views, the engine host, the Mac platform port, and a word lookup
   of its own.
 - **Its views sit under the part of the window they draw**: the sidebar, the
-  detail area, a group of tabs or a pane in it, the board, the debug panel, a
+  detail area, a group of tabs or a pane in it, the board, Debug Info, a
   settings window, a dialog. The rest draw no part of one: reused small views
   under `Shared/`, or `Settings/Controls/` where only the settings windows use
   them, the agent marks, the AppKit modifiers and representables that reach
   under SwiftUI for an event it has no gesture for or the window a view sits in,
   the scene and menus. The engine host and the platform port each have a folder,
   the host's split by what each part is to libghostty: config, runtime, surface,
-  input. What draws nothing sits under `Support/`, the in-app drag's pieces
-  under `Support/Drag/`, unless it is by nature a piece of one part: the mark
-  parser sits with the marks, a dialog's AppKit alert with the dialogs, and what
-  both settings windows share at `Settings/`'s root.
+  input, clipboard. What draws nothing sits under `Support/`, the in-app drag's
+  pieces under `Support/Drag/`, unless it is by nature a piece of one part: the
+  mark parser sits with the marks, a dialog's AppKit alert with the dialogs, and
+  what both settings windows share at `Settings/`'s root.
 - **AppCore's values for a part of the window sit under the folder its views
   use**: `Sidebar/`, `Board/`, `Detail/`, `Terminals/Panes/`, `Debug/` and the
   rest, so a view and the decision it reads share one path in two targets.
@@ -79,13 +82,13 @@
   its lines on.
 - **What the suites share sits in plain targets**, a test target not being
   dependable on. Two of them, split by what they drag in: TestScratch, needing
-  only Process and Subprocess, that every suite but the app's reaches, and
-  TestSupport, needing GitKit, for the suites that touch a real repository, so a
-  Core or Process suite does not link GitKit for a temporary path.
+  only Process and Subprocess, that every suite reaches, and TestSupport,
+  needing GitKit, for the suites that touch a real repository, so a Core or
+  Process suite does not link GitKit for a temporary path.
 - **TestScratch starts a child with the runner's own spawn options**, reached
   with `@testable`, so a test's shell and the app's cannot start differently.
-- **The app's suite, MultishellAppUITests, reaches neither**; its harness is its
-  own.
+- **The app's suite, MultishellAppUITests, reaches TestScratch alone**; its
+  model harness is its own.
 
 ## Style
 

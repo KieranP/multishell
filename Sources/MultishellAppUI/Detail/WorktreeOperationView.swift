@@ -20,7 +20,7 @@ struct WorktreeOperationView: View {
           .font(.system(size: 34, weight: .light))
           .foregroundStyle(theme.failureColor)
       }
-    } extra: {
+    } footer: {
       if operation.isRunning, let help = operation.stage.cancelHelp {
         Button(t("action.cancel"), action: cancel)
           .padding(.top, 18)
@@ -29,7 +29,7 @@ struct WorktreeOperationView: View {
       if let failure = operation.failure {
         ScrollView(.vertical) {
           Text(failure)
-            .font(.system(size: 11, design: .monospaced))
+            .font(.system(size: UIMetrics.unscaledMonospacedSize, design: .monospaced))
             .foregroundStyle(theme.textPrimary)
             .textSelection(.enabled)
             .frame(maxWidth: .infinity, alignment: .leading)

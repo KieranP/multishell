@@ -36,7 +36,7 @@ extension AppModel {
 
   /// The same for a worktree in hand, which may have left the list since.
   func shellPath(for worktree: Worktree) -> String {
-    workspace.project(worktree.projectID).flatMap(workspace.effectiveShellPath)
+    effectiveProject(of: worktree).flatMap(workspace.effectiveShellPath)
       ?? ShellChoice.loginShellPath()
   }
 

@@ -92,9 +92,9 @@ says why these are the rules.
 - **A word on screen with no translation, or a translation nothing shows**:
   TranslationTests reads every lookup off the source and checks the keys both
   ways, one per catalogue over its own half.
-- **The two TranslationTests files are a pair**, the app's suite reaching no
-  shared target keeping their scanners apart (each target has its own
-  TranslationCallSites); a check added to one goes in the other.
+- **The two TranslationTests files are a pair**, sharing TestScratch's
+  TranslationCallSites, each over its own half's sources; a check added to one
+  goes in the other.
 - **The app's also pins the shadowing the split rests on**, and that the words
   written in both catalogues read the same, which the libraries cannot check,
   not knowing a frontend exists.
@@ -129,8 +129,8 @@ says why these are the rules.
   variable at an empty directory or the chain reaches the developer's own rc
   file.
 - **The sidebar filter is not folded by the reader's alphabet**:
-  SidebarFilterTests reads the source, the current locale being process-wide and
-  so not movable for one suite.
+  SidebarListingTests reads the source, the current locale being process-wide
+  and so not movable for one suite.
 - **A tab id written twice keeps the copy whose worktree is still there**:
   WorkspaceRepairTests, the dead one listed first.
 - **A notification type no build has heard of is taken to ask**:
@@ -151,7 +151,7 @@ says why these are the rules.
   ShellIntegrationThroughHelperTests+Bash sets the clock variable by hand, which
   the system bash leaves unset.
 - **Remove writes nothing to a file holding none of ours, and still takes back a
-  half-written install**: AgentHookIntegrationInstallingTests.
+  half-written install**: AgentHookIntegrationInstallAndRemoveTests.
 - **A repeat agent report writes nothing observable**:
   AppModelSessionReportsTests, through observation tracking.
 - **The worker rules**: SessionStatesTests+BackgroundWorkers, with the roster
@@ -259,9 +259,9 @@ says why these are the rules.
 - **The same suite starts a live server twice** and has a second process try the
   claim, a process's own record locks never conflicting, and holds the path
   limit to the staging name's.
-- **The pid the helper reports stops short of the app**: HelperReportFieldsTests
-  with two real shell layers under the test process posing as the app;
-  ProcessAncestryTests has the walk on its own.
+- **The pid the helper reports stops short of the app**:
+  HelperSessionEnvironmentTests with two real shell layers under the test
+  process posing as the app; ProcessAncestryTests has the walk on its own.
 - **The model's half**: AppModelSessionReportsTests, a report naming the app's
   pid tracking none, beside one from a subdirectory marking the deepest worktree
   containing it.
@@ -273,8 +273,9 @@ says why these are the rules.
 - **Removing one worktree leaves the record of another whose directory is
   away**: WorktreeGitRemovalTests, against real git. A Trash that refuses leaves
   a lock and its reason in place: WorktreeCoordinatorRemovalTests.
-- **A Trash that takes nothing stops the removal there**, the forget being what
-  would unlink a directory still in place: WorktreeCoordinatorRemovalTests.
+- **A Trash that takes nothing stops the removal there**, the record's removal
+  being what would unlink a directory still in place:
+  WorktreeCoordinatorRemovalTests.
 - **A refused create leaves no container directory**:
   WorktreeCoordinatorCreationTests.
 - **A branch lookup that failed is not a new branch**, so a stopped create
@@ -341,7 +342,7 @@ says why these are the rules.
   variable**: EnvironmentDumpParserTests.
 - **Numbers in an agent's settings file come back as written**, and a literal
   the grammar refuses or bytes that are not UTF-8 are still refused untouched:
-  AgentSettingsFileTests over both sets.
+  AgentHookFileTests over both sets.
 - **A zero or non-finite split weight is refused on decode and on write**:
   PaneNodeDecodingTests and WorkspaceStoreTests.
 - **A view is tested only for its size or its pixels**, laid out in a window
@@ -389,8 +390,8 @@ says why these are the rules.
 - **A stalled write holding the main actor**: SaveOrderTests holds one inside
   `land` and asks for a ticket and whether one landed from another thread.
 - **Two exports landing out of order, and a poll between an export's write and
-  its finish**: AppModel+SharedSettingsExportTests+Order, the same way, on real
-  git, the second also finishing before the first.
+  its finish**: AppModel+SharedSettingsExportTests+Overlaps, the same way, on
+  real git, the second also finishing before the first.
 - **What the git badge counts**: NumstatParserTests, NulPathListParserTests and
   UntrackedLineCounterTests on fixture text and scratch files, the rows that
   carry no line among them, a symlink that is never followed, a file that would

@@ -4,12 +4,12 @@ import MultishellCore
 /// Whether a worktree's branch has landed: five reads behind the three ways
 /// work lands, none of them writing. See Docs/design/merged-branch.md.
 extension WorktreeGit {
-  /// The branches `base` can reach; `nil` where git could not answer, which
+  /// The branches `baseRef` can reach; `nil` where git could not answer, which
   /// is not "none". `lstrip=2`, since `:short` answers `heads/x` for a tie.
-  func mergedBranches(into base: String, in project: Project) async -> Set<String>? {
+  func mergedBranches(into baseRef: String, in project: Project) async -> Set<String>? {
     guard
       let output = await runner.output(
-        ["branch", "--merged", base, "--format=%(refname:lstrip=2)"], in: project.path)
+        ["branch", "--merged", baseRef, "--format=%(refname:lstrip=2)"], in: project.path)
     else { return nil }
     return MergedBranchParser.parse(output)
   }
@@ -26,24 +26,24 @@ extension WorktreeGit {
     return ReflogWorkParser.parse(output)
   }
 
-  /// Whether `base` has an equivalent patch for every commit on `branch`:
+  /// Whether `baseRef` has an equivalent patch for every commit on `branch`:
   /// how a rebase-merge lands. `nil` where git could not answer.
   func isPatchEquivalent(
-    _ branch: String, against base: String, in project: Project
+    _ branch: String, against baseRef: String, in project: Project
   ) async -> Bool? {
     guard
       let output = await runner.output(
-        ["cherry", base, RefName.local(branch)], in: project.path)
+        ["cherry", baseRef, RefName.local(branch)], in: project.path)
     else { return nil }
     return PatchEquivalenceParser.parse(output)
   }
 
-  /// Whether `base` holds any commit `branch` has not, telling an upstream
+  /// Whether `baseRef` holds any commit `branch` has not, telling an upstream
   /// deleted on a merge from one never there. `-n 1` is the whole answer.
-  func isBehind(_ branch: String, of base: String, in project: Project) async -> Bool? {
+  func isBehind(_ branch: String, of baseRef: String, in project: Project) async -> Bool? {
     // `--` for the reason `hasWorkOfItsOwn` gives.
     let output = await runner.output(
-      ["rev-list", "--count", "-n", "1", "\(RefName.local(branch))..\(base)", "--"],
+      ["rev-list", "--count", "-n", "1", "\(RefName.local(branch))..\(baseRef)", "--"],
       in: project.path)
     guard let text = output?.trimmingCharacters(in: .whitespacesAndNewlines), let count = Int(text)
     else { return nil }
@@ -53,13 +53,13 @@ extension WorktreeGit {
   /// Whether the base reads the same as `branch` wherever it changed
   /// anything: what a squash merge leaves. Errs towards no badge.
   func changesAreOnBase(
-    _ branch: String, against base: String, in project: Project
+    _ branch: String, against baseRef: String, in project: Project
   ) async -> Bool? {
-    // `base...branch`, so what the branch changed is measured from where it
+    // `baseRef...branch`, so what the branch changed is measured from where it
     // forked and not from the default branch as it stands now.
     guard
-      let own = await changedPaths(in: ["\(base)...\(RefName.local(branch))"], of: project),
-      let differing = await changedPaths(in: [base, RefName.local(branch)], of: project)
+      let own = await changedPaths(in: ["\(baseRef)...\(RefName.local(branch))"], of: project),
+      let differing = await changedPaths(in: [baseRef, RefName.local(branch)], of: project)
     else { return nil }
     return own.isDisjoint(with: differing)
   }

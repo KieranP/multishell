@@ -9,8 +9,8 @@ extension SessionStates {
     _ report: SessionStateReport, pid: Int32?, for key: Key, isSeen: Bool
   ) -> SessionState? {
     let resumesAfterWorkers = report.resumesAfterWorkers == true
-    // Copilot's prompt mode starts its session after the first prompt. Before
-    // the conversation is read, or a dropped start re-points the pane's own.
+    // Copilot's prompt mode starts its session after the first prompt, so a start
+    // on a pane already working is dropped before it can re-point the conversation.
     if report.startsSession == true, report.workerChange == nil,
       entries[key]?.workingIsShellCommand != true,
       [.running, .attention].contains(entries[key]?.state)
@@ -29,7 +29,7 @@ extension SessionStates {
     if let launched = report.launched { update(key) { $0.roster.recordLaunch(launched) } }
     if let killed = report.killedTaskID {
       update(key) {
-        for id in $0.roster.recordKill(killed) { $0.promptRaisers.remove(.worker(id)) }
+        $0.forgetPrompts(ofWorkers: $0.roster.recordKill(killed))
       }
     }
     guard
@@ -63,11 +63,8 @@ extension SessionStates {
   private mutating func syncRoster(toStop report: SessionStateReport, for key: Key) {
     let backgroundShells = report.backgroundShells ?? []
     update(key) {
-      if let workersOut = report.workersOut,
-        workersOut.count < SessionStateReport.maximumWorkersOut
-      {
-        let gone = $0.roster.keepOnly(workersOut, shells: backgroundShells)
-        for id in gone { $0.promptRaisers.remove(.worker(id)) }
+      if let workersOut = report.completeWorkersOut {
+        $0.forgetPrompts(ofWorkers: $0.roster.keepOnly(workersOut, shells: backgroundShells))
       } else {
         $0.roster.recordShells(backgroundShells)
       }
@@ -80,12 +77,9 @@ extension SessionStates {
   private mutating func syncRoster(
     toWorkersStop report: SessionStateReport, stopping workerID: String, for key: Key
   ) {
-    guard let workersOut = report.workersOut,
-      workersOut.count < SessionStateReport.maximumWorkersOut
-    else { return }
+    guard let workersOut = report.completeWorkersOut else { return }
     update(key) {
-      let gone = $0.roster.keepOnlyListedOut(workersOut, stopping: workerID)
-      for id in gone { $0.promptRaisers.remove(.worker(id)) }
+      $0.forgetPrompts(ofWorkers: $0.roster.keepOnlyListedOut(workersOut, stopping: workerID))
     }
   }
 

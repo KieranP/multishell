@@ -19,28 +19,28 @@ struct DebugMemoryTableTests {
       unattributedProcesses: [.sample(pid: 30, footprint: 50)])
 
     #expect(
-      table.lines.map(\.title) == [
+      table.rows.map(\.title) == [
         "Multishell", "Claude", "Shell", "Other processes", "Total, app and child processes",
       ])
-    #expect(table.lines.map(\.totalMemory) == [400, 800, 100, 50, 1_350])
-    #expect(table.lines.map(\.barFraction) == [0.5, 1, 0.125, 0.0625, 0])
+    #expect(table.rows.map(\.totalMemory) == [400, 800, 100, 50, 1_350])
+    #expect(table.rows.map(\.barFraction) == [0.5, 1, 0.125, 0.0625, 0])
   }
 
   @Test func otherProcessesAreLeftOutWhereEveryChildIsATabs() {
     let table = DebugMemoryTable(
       appMemory: 400, tabs: [tab("Shell", [.sample(pid: 20)])], unattributedProcesses: [])
-    #expect(!table.lines.contains { $0.source == .unattributed })
+    #expect(!table.rows.contains { $0.source == .unattributed })
   }
 
   @Test func aTabTheEngineCouldNotPlaceShowsNoMemoryRatherThanZero() throws {
     let table = DebugMemoryTable(
       appMemory: 400, tabs: [tab("Shell", [])], unattributedProcesses: [])
-    let line = try #require(table.lines.first { $0.title == "Shell" })
+    let row = try #require(table.rows.first { $0.title == "Shell" })
 
-    #expect(line.processCount == nil)
-    #expect(line.totalMemory == nil)
-    #expect(line.totalMemoryText == "–")
-    #expect(line.disclosure(isExpanded: true) == .notExpandable)
+    #expect(row.processCount == nil)
+    #expect(row.totalMemory == nil)
+    #expect(row.totalMemoryText == "–")
+    #expect(row.disclosure(isExpanded: true) == .notExpandable)
   }
 
   @Test func aRowWithProcessesOpensToListThem() throws {
@@ -48,11 +48,11 @@ struct DebugMemoryTableTests {
       appMemory: 400,
       tabs: [tab("Shell", [.sample(pid: 20), .sample(pid: 21, parentPID: 20)])],
       unattributedProcesses: [])
-    let line = try #require(table.lines.first { $0.title == "Shell" })
+    let row = try #require(table.rows.first { $0.title == "Shell" })
 
-    #expect(line.processLines.map(\.depth) == [0, 1])
-    #expect(line.disclosure(isExpanded: false) == .collapsed)
-    #expect(line.disclosure(isExpanded: true) == .expanded)
-    #expect(table.lines.first?.disclosure(isExpanded: true) == .notExpandable, "the app")
+    #expect(row.processRows.map(\.depth) == [0, 1])
+    #expect(row.disclosure(isExpanded: false) == .collapsed)
+    #expect(row.disclosure(isExpanded: true) == .expanded)
+    #expect(table.rows.first?.disclosure(isExpanded: true) == .notExpandable, "the app")
   }
 }

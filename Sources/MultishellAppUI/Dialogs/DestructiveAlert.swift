@@ -9,10 +9,7 @@ enum DestructiveAlert {
   static func make(
     title: String, message: String, choices: [String], cancel: String = t("action.cancel")
   ) -> NSAlert {
-    let alert = NSAlert()
-    alert.messageText = title
-    alert.informativeText = message
-    alert.alertStyle = .warning
+    let alert = WarningAlert.make(title: title, message: message)
     for choice in choices {
       alert.addButton(withTitle: choice).hasDestructiveAction = true
     }

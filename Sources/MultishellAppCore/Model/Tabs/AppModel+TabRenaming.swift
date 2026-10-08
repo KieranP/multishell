@@ -25,4 +25,10 @@ extension AppModel {
   public func cancelRenamingTab() {
     renamingTabID = nil
   }
+
+  /// A name field whose tab has gone, as a renamed worktree drops its own.
+  /// Run from the reconcile, so every path that takes one away is covered.
+  func pruneTabRename() {
+    if let renaming = renamingTabID, workspace.tab(renaming) == nil { renamingTabID = nil }
+  }
 }

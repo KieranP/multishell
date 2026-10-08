@@ -1,4 +1,5 @@
 import AppKit
+import TestScratch
 import Testing
 
 @testable import MultishellAppUI
@@ -29,8 +30,8 @@ struct PromisedDropTests {
 
   @Test func anItemNamingTwoFilesOnceCalledInDeliversBoth() async throws {
     let delivery = Delivery()
-    let directory = ScratchDirectory.path("promised")
-    defer { ScratchDirectory.remove(directory) }
+    let directory = Scratch.path("promised")
+    defer { Scratch.remove(directory) }
 
     PromisedDrop.receive([TwoFilePromise()], into: directory) { delivery.answer($0) }
 
@@ -39,8 +40,8 @@ struct PromisedDropTests {
 
   @Test func anItemsFilesLandingOutOfOrderArePastedInTheOrderItNamesThem() async throws {
     let delivery = Delivery()
-    let directory = ScratchDirectory.path("promised")
-    defer { ScratchDirectory.remove(directory) }
+    let directory = Scratch.path("promised")
+    defer { Scratch.remove(directory) }
 
     let promise = TwoFilePromise(landing: ["two.png", "one.png"])
     PromisedDrop.receive([promise], into: directory) { delivery.answer($0) }
@@ -51,7 +52,7 @@ struct PromisedDropTests {
   @Test func aDragWithNoPromisesIsAnsweredAtOnce() {
     let delivery = Delivery()
     // Its own directory, since `receive` deletes what it was given when nothing arrives.
-    let directory = ScratchDirectory.path("promised")
+    let directory = Scratch.path("promised")
     PromisedDrop.receive([], into: directory) { delivery.answer($0) }
     #expect(delivery.urls == [])
   }
@@ -67,8 +68,8 @@ struct PromisedDropTests {
   /// The directory exists before the sources are asked, and an empty one would otherwise
   /// sit in the state directory until the sweep a week later.
   @Test func aDropThatDeliversNothingTakesItsDirectoryBack() throws {
-    let directory = try ScratchDirectory.make("promised")
-    defer { ScratchDirectory.remove(directory) }
+    let directory = try Scratch.directory("promised")
+    defer { Scratch.remove(directory) }
 
     PromisedDrop.receive([], into: directory) { _ in }
 
@@ -77,7 +78,7 @@ struct PromisedDropTests {
 
   @Test func aDropAnsweredAtOnceIsNotAnsweredAgainWhenThePatienceRunsOut() async throws {
     let delivery = Delivery()
-    let directory = ScratchDirectory.path("promised")
+    let directory = Scratch.path("promised")
 
     PromisedDrop.receive([], into: directory, givingUpAfter: 0.05) { delivery.answer($0) }
     #expect(delivery.answers == 1)

@@ -33,7 +33,7 @@ extension AppModel {
       snapshot.asWritten == shared, snapshot.confined != confined
     else { return currentCopy(of: project) }
     snapshot.confined = confined
-    store.setSharedSettings(snapshot, forProject: project.id)
+    store.setSharedSettingsSnapshot(snapshot, forProject: project.id)
     return currentCopy(of: project)
   }
 
@@ -55,13 +55,13 @@ extension AppModel {
     _ shared: SharedProjectSettings?, from reading: SharedSettingsReading, for project: Project
   ) {
     var snapshot = project.sharedSettingsSnapshot
-    let firstRead = !snapshot.hasBeenRead
+    let isFirstRead = !snapshot.hasBeenRead
     // The date is recorded whatever the bytes say: a touch moves it
     // without changing them, and an unrecorded date is re-read every tick.
-    let changed = snapshot.asWritten != shared || firstRead
+    let changed = snapshot.asWritten != shared || isFirstRead
     snapshot.recordParsed(
       shared, confined: reading.confined, modificationDate: reading.modificationDate)
-    store.setSharedSettings(snapshot, forProject: project.id)
+    store.setSharedSettingsSnapshot(snapshot, forProject: project.id)
     guard changed else { return }
     // A question already up is about a file the disk no longer has, and
     // trusting it would store an answer for bytes nobody committed.
@@ -69,7 +69,7 @@ extension AppModel {
     if wasAsking, pendingSharedSettingsTrust?.digest != shared?.digest {
       pendingSharedSettingsTrust = nil
     }
-    if !firstRead, wasAsking || workspace.selectedWorktree?.projectID == project.id {
+    if !isFirstRead, wasAsking || workspace.selectedWorktree?.projectID == project.id {
       askAboutSharedSettingsIfNeeded(for: project.id)
     }
   }
@@ -86,7 +86,7 @@ extension AppModel {
       String(describing: error))
     let isNew = snapshot.problem != problem
     snapshot.recordFailure(problem: problem, modificationDate: reading.modificationDate)
-    store.setSharedSettings(snapshot, forProject: project.id)
+    store.setSharedSettingsSnapshot(snapshot, forProject: project.id)
     if isNew { platform.log("\(project.name): \(problem)") }
   }
 }

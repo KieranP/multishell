@@ -118,6 +118,10 @@ struct WorkspaceStoreTests {
     store.activateTab(UUID())
     store.setCustomTitle("x", forTab: UUID())
     store.setSplitWeights([1], at: [0], ofTab: UUID())
+    store.focusSession(UUID())
+    store.focusGroup(UUID())
+    #expect(store.splitFocusedPane(of: UUID(), axis: .horizontal) == nil)
+    store.setGroupWeights([1], in: "/nowhere")
 
     #expect(store.workspace == before)
   }

@@ -140,7 +140,7 @@ extension ShellIntegrationScriptsTests {
     var environment = files.environment(termProgram: nil)
     environment[SessionEnvironment.sessionVariable] = "zsh-typed"
     environment[SessionEnvironment.socketVariable] = "/tmp/nothing.sock"
-    environment[SessionEnvironment.worktreePathVariable] = "/w"
+    environment[SessionEnvironment.worktreeVariable] = "/w"
     let process = Process()
     process.executableURL = URL(fileURLWithPath: zsh)
     process.arguments = ["-c", script]

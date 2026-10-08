@@ -15,6 +15,6 @@ public struct BranchScan: Hashable, Sendable {
     let branches = BranchRef.localBranchesByName(refs)
     lastCommitDates = branches.compactMapValues(\.committedAt)
     mergeInputs = DefaultBranch.resolve(from: refs, override: override)
-      .map { MergeInputs(base: $0, branches: branches) }
+      .map { MergeInputs(defaultBranch: $0, branches: branches) }
   }
 }

@@ -20,7 +20,8 @@ extension AppModel {
     _ id: String, resume: Bool, shell tabShell: String, in worktreeID: Worktree.ID
   ) -> [String]? {
     let (shell, handOver) = TabCommand.loginShell(handingOverTo: tabShell)
-    let values = placeholderValues(in: worktreeID)
+    let place = worktreeAndProject(worktreeID)
+    let values = place.map(placeholderValues) ?? [:]
     if id == AgentCatalogue.customID {
       return TabCommand.running(
         customLine: AgentCatalogue.customCommandLine(workspace.customAgentCommand, values: values),
@@ -37,27 +38,28 @@ extension AppModel {
       return nil
     }
     guard let arguments = AgentLaunch.arguments(for: agent, resume: resume) else { return nil }
-    let flags = AgentFlags.arguments(agentFlags(id, in: worktreeID), values: values)
+    // No flag line and each placeholder left as typed where the project has gone.
+    let flagLine = place.map { workspace.effectiveAgentFlags(for: $0.project, agent: id) } ?? ""
+    let flags = AgentFlags.arguments(flagLine, values: values)
     return TabCommand.running(arguments + flags, shell: shell, handOver: handOver)
   }
 
-  /// The flag line in force for a worktree's project, or none where the
-  /// worktree's project has gone.
-  private func agentFlags(_ id: String, in worktreeID: Worktree.ID) -> String {
+  private func worktreeAndProject(
+    _ worktreeID: Worktree.ID
+  ) -> (worktree: Worktree, project: Project)? {
     guard let worktree = workspace.worktree(worktreeID),
       let project = effectiveProject(of: worktree)
-    else { return "" }
-    return workspace.effectiveAgentFlags(for: project, agent: id)
+    else { return nil }
+    return (worktree, project)
   }
 
-  /// What `{{branch}}` and the rest stand for here. Empty where the worktree
-  /// has gone, leaving each placeholder as typed.
-  private func placeholderValues(in worktreeID: Worktree.ID) -> [WorktreePlaceholder: String] {
-    guard let worktree = workspace.worktree(worktreeID),
-      let project = effectiveProject(of: worktree)
-    else { return [:] }
-    return WorktreePlaceholder.values(
-      project: project, worktree: worktree, worktreeName: workspace.displayName(of: worktree))
+  /// What `{{branch}}` and the rest stand for here.
+  private func placeholderValues(
+    _ place: (worktree: Worktree, project: Project)
+  ) -> [WorktreePlaceholder: String] {
+    WorktreePlaceholder.values(
+      project: place.project, worktree: place.worktree,
+      worktreeName: workspace.displayName(of: place.worktree))
   }
 
   /// Once per agent per run, like an unreachable project: every relaunch of

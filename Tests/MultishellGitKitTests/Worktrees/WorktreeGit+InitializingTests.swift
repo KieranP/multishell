@@ -22,12 +22,9 @@ struct WorktreeGitInitializingTests {
         .modificationDate] as? Date)
     try FileManager.default.setAttributes(
       [.modificationDate: linkedAt.addingTimeInterval(-1)], ofItemAtPath: lock.path)
-    _ = try await fixture.runner.run(
-      [
-        "worktree", "add", "-q", "-b", "pinned",
-        path.deletingLastPathComponent().appendingPathComponent("pinned").path,
-      ],
-      in: fixture.project.path)
+    try await TestRepository.addWorktree(
+      onNewBranch: "pinned", at: path.deletingLastPathComponent().appendingPathComponent("pinned"),
+      in: fixture.project.path, using: fixture.runner)
     _ = try await fixture.runner.run(
       [
         "worktree", "lock", "--reason", "initialisiere",

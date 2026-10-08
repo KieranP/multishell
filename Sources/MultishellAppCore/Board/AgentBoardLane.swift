@@ -30,10 +30,6 @@ public enum AgentBoardLane: String, CaseIterable, Sendable {
     }
   }
 
-  /// The lanes the sidebar entry counts. Idle is left off, being where most
-  /// cards rest.
-  static let sidebarLanes: [AgentBoardLane] = [.waiting, .working, .done]
-
   static func of(_ state: SessionState?) -> AgentBoardLane {
     switch state {
     case .attention, .failed: .waiting

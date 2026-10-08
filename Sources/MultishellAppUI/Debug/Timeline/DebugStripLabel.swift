@@ -19,7 +19,7 @@ struct DebugStripLabel: View {
         if metric.isSplitByOwner { DebugSeriesLegend(theme: theme, metrics: metrics) }
       }
       Text(metric.valueText(of: slot))
-        .font(.system(size: metrics.body + 1, weight: .semibold))
+        .font(.system(size: metrics.debugStripValueSize, weight: .semibold))
         .monospacedDigit()
         .foregroundStyle(valueColor)
       if let detail = slot.flatMap(metric.detailText(of:)) {

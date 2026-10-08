@@ -24,13 +24,13 @@ extension WorkspaceStoreTests {
       asWritten: SharedProjectSettings(branchPrefix: "team/"),
       confined: SharedProjectSettings(branchPrefix: "team/"), modificationDate: Date(),
       hasBeenRead: true)
-    store.setSharedSettings(read, forProject: project.id)
+    store.setSharedSettingsSnapshot(read, forProject: project.id)
 
     let counter = ChangeCounter(store)
-    store.setSharedSettings(read, forProject: project.id)
+    store.setSharedSettingsSnapshot(read, forProject: project.id)
 
     #expect(counter.changes == 0)
-    store.setSharedSettings(SharedSettingsSnapshot.unread, forProject: project.id)
+    store.setSharedSettingsSnapshot(SharedSettingsSnapshot.unread, forProject: project.id)
     #expect(counter.changes == 1, "a read that says something else still does")
   }
 }

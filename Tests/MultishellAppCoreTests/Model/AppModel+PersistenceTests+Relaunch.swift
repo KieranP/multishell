@@ -8,8 +8,7 @@ import Testing
 
 extension AppModelPersistenceTests {
   @Test func aSavedWorkspaceComesBackAndWarmsOnTheFirstVisit() throws {
-    let file = Scratch.path("relaunch")
-      .appendingPathComponent("state.json")
+    let file = Scratch.statePath("relaunch")
     defer { Scratch.remove(file.deletingLastPathComponent()) }
 
     let before = Harness(stateFile: file)

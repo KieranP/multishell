@@ -10,19 +10,19 @@ struct DebugMemoryTableView: View {
   let theme: Theme
   let metrics: UIMetrics
 
-  @State private var expandedSources: Set<DebugMemoryLine.Source> = []
+  @State private var expandedSources: Set<DebugMemoryRow.Source> = []
 
   var body: some View {
     VStack(spacing: 0) {
       if layout == .columns { header }
-      ForEach(table.lines) { line in
-        let disclosure = line.disclosure(isExpanded: expandedSources.contains(line.source))
-        DebugMemoryRow(
-          line: line, disclosure: disclosure, toggleExpansion: { toggleExpansion(of: line.source) },
+      ForEach(table.rows) { row in
+        let disclosure = row.disclosure(isExpanded: expandedSources.contains(row.source))
+        DebugMemoryRowView(
+          row: row, disclosure: disclosure, toggleExpansion: { toggleExpansion(of: row.source) },
           layout: layout, theme: theme, metrics: metrics)
         if disclosure == .expanded {
-          ForEach(line.processLines) { process in
-            DebugProcessRow(line: process, layout: layout, theme: theme, metrics: metrics)
+          ForEach(row.processRows) { process in
+            DebugProcessRowView(row: process, layout: layout, theme: theme, metrics: metrics)
           }
         }
       }
@@ -41,7 +41,7 @@ struct DebugMemoryTableView: View {
     .debugTableHeader(theme, metrics, leadingInset: UIMetrics.debugTableTitleInset)
   }
 
-  private func toggleExpansion(of source: DebugMemoryLine.Source) {
+  private func toggleExpansion(of source: DebugMemoryRow.Source) {
     if expandedSources.remove(source) == nil { expandedSources.insert(source) }
   }
 }

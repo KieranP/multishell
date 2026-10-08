@@ -10,7 +10,7 @@ struct PathText: View {
 
   var body: some View {
     Text(path)
-      .font(.system(size: 11, design: .monospaced))
+      .font(.system(size: UIMetrics.unscaledMonospacedSize, design: .monospaced))
       .foregroundStyle(.secondary)
       .lineLimit(1)
       .truncationMode(.head)

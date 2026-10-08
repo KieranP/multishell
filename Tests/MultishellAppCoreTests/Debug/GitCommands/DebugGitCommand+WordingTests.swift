@@ -32,4 +32,15 @@ struct DebugGitCommandWordingTests {
     #expect(measured.stackedCaptions.count == 2)
     #expect(measured.stackedCaptions.last?.hasPrefix("Memory ") == true)
   }
+
+  @Test func theColumnsSayTheRunCountTheTimesAndWhereTheSlowestRan() {
+    let located = row(
+      peakMemory: nil, location: DebugLocation(projectName: "acme", worktreeName: "main"))
+    #expect(located.runCountText == "2")
+    #expect(located.totalDurationText == "300 ms")
+    #expect(located.meanDurationText == "150 ms")
+    #expect(located.slowestDurationText == "150 ms")
+    #expect(located.slowestLocationText == "acme / main")
+    #expect(row(peakMemory: nil, location: nil).slowestLocationText.isEmpty)
+  }
 }

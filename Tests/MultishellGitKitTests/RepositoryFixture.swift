@@ -16,10 +16,8 @@ struct RepositoryFixture {
     let runner = try TestGit.runner()
     let root = Scratch.path("gitkit")
     let repository = root.appendingPathComponent("demo", isDirectory: true)
-    try await TestRepository.initialise(at: repository, using: runner)
-    let fixture = RepositoryFixture(runner: runner, root: root, project: Project(path: repository))
-    if commit { try await TestRepository.commitInitial(in: repository, using: runner) }
-    return fixture
+    try await TestRepository.initialise(at: repository, withFirstCommit: commit, using: runner)
+    return RepositoryFixture(runner: runner, root: root, project: Project(path: repository))
   }
 
   /// A bare clone with its worktrees beside it. `project` is the bare repository, which
@@ -54,8 +52,8 @@ struct RepositoryFixture {
   /// A linked worktree under `trees/` on a new branch cut where `main` is.
   func addWorktree(onNewBranch branch: String) async throws -> URL {
     let tree = root.appendingPathComponent("trees/\(branch)", isDirectory: true)
-    _ = try await runner.run(
-      ["worktree", "add", "-q", "-b", branch, tree.path, "HEAD"], in: project.path)
+    try await TestRepository.addWorktree(
+      onNewBranch: branch, at: tree, in: project.path, using: runner)
     return tree
   }
 

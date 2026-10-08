@@ -10,6 +10,8 @@
 "agent-hooks.plugin" = "Plugin";
 "agent-hooks.reports" = "%@ reports Working, Waiting for input and Done through its hooks.";
 "agent-hooks.shared" = "Other hooks in %@ stay, and the first write keeps a copy.";
+"agents.helper-installed" = "Installed in /usr/local/bin";
+"agents.not-installed" = "Not installed";
 "agents.path-asking" = "Asking your login shell for its PATH…";
 "agents.path-fallback" = "Your login shell did not answer (%@), so agents are looked up on the app's own PATH. Refresh to try again.";
 "agents.path-from-login-shell" = "Agents are looked up on the PATH of %@ as an interactive login shell, the same one your terminals get. Refresh after installing one.";
@@ -73,6 +75,10 @@
 "elapsed.minutes-seconds" = "%1$dm %2$ds";
 "elapsed.seconds" = "%ds";
 "elapsed.seconds-precise" = "%.1fs";
+"empty.add-project" = "Add a project to get started";
+"empty.add-project-detail" = "Point Multishell at a git repository. Its worktrees appear in the sidebar, and each one gets its own set of terminals.";
+"empty.select-worktree" = "Select a worktree";
+"empty.select-worktree-detail" = "Pick one in the sidebar and its terminals open here.";
 "error.agent-not-installed-message" = "The tab opened as a plain shell. Install %@, or choose another agent in Settings > Agents, then use Refresh.";
 "error.another-app-message" = "It holds %@, so agent state reports go to it and this window's dots will not change. Quit one of them.";
 "error.another-app-title" = "Another Multishell is running";
@@ -242,6 +248,7 @@
 "shell.named-login-shell" = "the login shell (%@)";
 "shell.path-blank" = "Blank, so tabs run the login shell, %@.";
 "shell.path-not-executable" = "Nothing executable at that path; a new tab would fail to start.";
+"sidebar.counts" = "%1$@ · %2$@";
 "sidebar.no-projects" = "No projects yet";
 "sidebar.nothing-matches" = "Nothing matches";
 "sort.alphabetical" = "Name";
@@ -325,9 +332,17 @@
 "step.removing-worktree" = "Moving the worktree to the Trash…";
 "step.worktree-not-removed" = "The worktree could not be removed";
 "tab.editor" = "Editor";
+"tab.new" = "New Tab";
 "tab.new-custom-agent" = "New Custom Command Tab";
+"tab.new-in-group" = "New Tab in This Group";
 "tab.new-named-agent" = "New %@ Tab";
 "tab.shell" = "Shell";
+"tab.split-down" = "Split Down";
+"tab.split-down-here" = "Split Down (⇧⌘D)";
+"tab.split-down-in-group" = "Split Down in This Group";
+"tab.split-right" = "Split Right";
+"tab.split-right-here" = "Split Right (⌘D)";
+"tab.split-right-in-group" = "Split Right in This Group";
 "worker.background-shell" = "background shell";
 "worker.occurrences" = "×%d";
 "worker.unnamed" = "subagent";

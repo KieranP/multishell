@@ -22,7 +22,7 @@ enum AgentMarkImage {
   /// A mark with a colour of its own keeps it; the rest are templates, which
   /// the menu tints itself. `nil` is the shell's terminal glyph.
   static func image(for agentID: String?) -> Image? {
-    let key = Key(agentID: agentID, scale: NSScreen.main?.backingScaleFactor ?? 2)
+    let key = Key(agentID: agentID, scale: NSScreen.mainBackingScale)
     if let cached = rendered[key] { return cached }
     guard let nsImage = nsImage(for: agentID, scale: key.scale) else { return nil }
     let image = Image(nsImage: nsImage)

@@ -46,7 +46,7 @@ struct ProjectRow: View {
         .rotationEffect(.degrees(isExpanded ? 90 : 0))
         .foregroundStyle(theme.textTertiary)
         .frame(width: 10)
-        .help(isExpanded ? t("sidebar.collapse") : t("sidebar.expand"))
+        .help(expansionActionName)
 
       if isFetching {
         // The icon's own slot, like the dot below it, so nothing shifts
@@ -54,22 +54,22 @@ struct ProjectRow: View {
         ProgressView()
           .controlSize(.mini)
           .scaleEffect(0.7)
-          .frame(width: UIMetrics.projectIconSlot(forGlyphOf: metrics.icon))
+          .frame(width: UIMetrics.projectIconSlot(forGlyphOf: metrics.glyph))
           .help(t("sidebar.fetching"))
       } else if let state {
         StateDot(state: state, theme: theme)
-          .frame(width: UIMetrics.projectIconSlot(forGlyphOf: metrics.icon))
+          .frame(width: UIMetrics.projectIconSlot(forGlyphOf: metrics.glyph))
           .help(t("sidebar.collapsed-state", state.displayName))
       } else {
         ProjectIconView(
           settings: settings, isMissing: isMissing, ringFill: theme.sidebarColor, theme: theme,
-          size: metrics.icon
+          size: metrics.glyph
         )
         .help(project.path.path)
       }
 
       Text(project.name)
-        .font(.system(size: metrics.body, weight: .medium))
+        .font(.system(size: metrics.bodySize, weight: .medium))
         .foregroundStyle(theme.textPrimary)
         .lineLimit(1)
         .opacity(isMissing ? 0.5 : 1)
@@ -85,14 +85,17 @@ struct ProjectRow: View {
         worktreeCount: worktreeCount, isFetching: isFetching)
     )
     .accessibilityAddTraits(.isButton)
-    .accessibilityAction(
-      named: isExpanded ? t("sidebar.collapse") : t("sidebar.expand"), toggleExpansion)
+    .accessibilityAction(named: expansionActionName, toggleExpansion)
+  }
+
+  private var expansionActionName: String {
+    isExpanded ? t("sidebar.collapse") : t("sidebar.expand")
   }
 
   private var newWorktreeButton: some View {
     PlainGlyphButton(help: t("sidebar.new-worktree"), action: requestNewWorktree) {
       Image(systemName: "plus")
-        .font(.system(size: metrics.icon))
+        .font(.system(size: metrics.glyph))
         .foregroundStyle(isHovered ? theme.textSecondary : theme.textTertiary)
         .frame(width: UIMetrics.sidebarRowButtonWidth, height: UIMetrics.sidebarRowButtonWidth)
     }

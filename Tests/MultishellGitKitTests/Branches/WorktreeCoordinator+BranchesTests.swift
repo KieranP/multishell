@@ -84,13 +84,13 @@ struct WorktreeCoordinatorBranchesTests {
       await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: nil)?
         .mergeInputs)
     #expect(
-      detected.base.shortName == "origin/main",
+      detected.defaultBranch.shortName == "origin/main",
       "the remote wins over a local main a pull has not caught up with")
-    #expect(detected.base.nameWithoutRemote == "main")
+    #expect(detected.defaultBranch.nameWithoutRemote == "main")
 
     let overridden = try #require(
       await fixture.coordinator.scanBranches(of: fixture.project, defaultBranchOverride: "develop")?
         .mergeInputs)
-    #expect(overridden.base.shortName == "develop")
+    #expect(overridden.defaultBranch.shortName == "develop")
   }
 }

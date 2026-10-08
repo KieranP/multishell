@@ -121,6 +121,6 @@ Newest at the bottom.
   bare string reaches the screen in English and no test sees it; the trust
   question named its fields that way.
 - **Memory sizes do follow the region.** `ByteCountFormatter` takes no locale,
-  so in a region that writes a comma the debug panel's sizes use one and the
-  rates and durations beside them do not. The clock time under the timeline's
-  pointer follows the region too, being `Date.formatted`.
+  so in a region that writes a comma Debug Info's sizes use one and the rates
+  and durations beside them do not. The clock time under the timeline's pointer
+  follows the region too, being `Date.formatted`.

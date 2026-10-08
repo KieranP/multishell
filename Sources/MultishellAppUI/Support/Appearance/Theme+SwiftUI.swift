@@ -1,0 +1,67 @@
+import MultishellCore
+import SwiftUI
+
+/// Every chrome colour derives from the theme, so the window follows it
+/// rather than the system appearance; see Docs/design/appearance.md.
+extension Theme {
+  var backgroundColor: Color { backgroundRGB.color }
+  private var foregroundColor: Color { foregroundRGB.color }
+
+  /// Sidebar sits furthest from the terminal, toolbar and tab strip between.
+  var sidebarColor: Color { lifted(0.09) }
+  var chromeColor: Color { lifted(0.045) }
+
+  /// A board column and a card on it: two more steps from the terminal,
+  /// drawn from the same lift the sidebar and toolbar are.
+  var columnColor: Color { lifted(0.03) }
+  var cardColor: Color { lifted(0.07) }
+
+  /// The find bar: the sidebar's lift on a dark theme, a third of it on a
+  /// light one, whose well then needs a line of its own; see appearance.md.
+  var findBarColor: Color { isDark ? sidebarColor : columnColor }
+  var findWellBorderColor: Color { isDark ? .clear : hairline }
+
+  var textPrimary: Color { foregroundColor.opacity(0.92) }
+  var textSecondary: Color { foregroundColor.opacity(0.6) }
+  var textTertiary: Color { foregroundColor.opacity(0.38) }
+  var hairline: Color { foregroundColor.opacity(0.09) }
+  func rowNameColor(isSelected: Bool) -> Color {
+    textPrimary.opacity(isSelected ? 1 : Self.unselectedRowNameOpacity)
+  }
+  /// How far a sidebar row's name is held back until the row is selected.
+  private static let unselectedRowNameOpacity: Double = 0.85
+  var faintFill: Color { foregroundColor.opacity(0.06) }
+
+  var colorScheme: ColorScheme { isDark ? .dark : .light }
+
+  /// A worktree's name beside its project's, on the header and a card.
+  var worktreeNameColor: Color { ansiRGB(.cyan).color }
+
+  /// The git badge's lines added and removed, and its files with no line.
+  var insertionsColor: Color { ansiRGB(.green).color }
+  var deletionsColor: Color { ansiRGB(.red).color }
+  var unscoredFilesColor: Color { ansiRGB(.yellow).color }
+
+  /// A create or remove that failed, and a branch that landed.
+  var failureColor: Color { ansiRGB(.red).color }
+  var mergedColor: Color { ansiRGB(.green).color }
+
+  func iconTint(_ slot: Int?, untinted: Color) -> Color {
+    slot.map { ansiRGB($0).color } ?? untinted
+  }
+
+  /// Working yellow, Waiting blue, Done green, Failed red, idle grey.
+  func color(for state: SessionState) -> Color {
+    switch state {
+    case .running: ansiRGB(.yellow).color
+    case .attention: ansiRGB(.blue).color
+    case .done: ansiRGB(.green).color
+    case .failed: ansiRGB(.red).color
+    case .idle: textTertiary
+    }
+  }
+
+  private func lifted(_ amount: Double) -> Color {
+    backgroundRGB.blended(with: isDark ? .white : .black, amount: amount).color
+  }
+}

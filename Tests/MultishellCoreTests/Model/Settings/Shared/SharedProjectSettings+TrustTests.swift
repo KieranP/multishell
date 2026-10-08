@@ -51,9 +51,9 @@ struct SharedProjectSettingsTrustTests {
 
   @Test func everyFieldTheYesCoversIsShownInTheQuestion() throws {
     var shared = SharedProjectSettings()
-    for field in SharedProjectSettings.trustCovered { shared[keyPath: field] = "x" }
+    for field in SharedProjectSettings.trustCoveredFields { shared[keyPath: field] = "x" }
     let shown = try #require(shared.trustCoveredText).components(separatedBy: "\n\n")
-    #expect(shown.count == SharedProjectSettings.trustCovered.count)
+    #expect(shown.count == SharedProjectSettings.trustCoveredFields.count)
   }
 
   /// Where a checkout lands is the reader's disk too. Inside the repository

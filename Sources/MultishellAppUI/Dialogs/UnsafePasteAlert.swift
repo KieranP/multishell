@@ -7,12 +7,9 @@ enum UnsafePasteAlert {
   private static let previewSize = NSSize(width: 420, height: 160)
 
   static func make(text: String) -> NSAlert {
-    let alert = NSAlert()
-    alert.messageText = t("paste.unsafe-title")
-    alert.informativeText = t("paste.unsafe-message")
-    alert.alertStyle = .warning
-    alert.addButton(withTitle: t("paste.unsafe-paste"))
-    alert.addButton(withTitle: t("action.cancel")).assignEscape()
+    let alert = WarningAlert.make(
+      title: t("paste.unsafe-title"), message: t("paste.unsafe-message"),
+      action: t("paste.unsafe-paste"))
     alert.accessoryView = preview(of: text)
     return alert
   }

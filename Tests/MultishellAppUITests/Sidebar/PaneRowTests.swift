@@ -1,17 +1,23 @@
+import Foundation
 import Testing
 
+@testable import MultishellAppCore
 @testable import MultishellAppUI
 @testable import MultishellCore
 
 @Suite @MainActor
 struct PaneRowTests {
+  private let paneID = UUID()
+
   private func row(
     state: SessionState? = nil, select: @escaping () -> Void = {}
   ) -> PaneRow {
     PaneRow(
-      title: "zsh", position: nil, isFocusedPane: false, state: state, workers: [],
-      agentID: nil, agentName: nil, theme: .multishellDark, metrics: UIMetrics(fontSize: 13),
-      select: select)
+      pane: SidebarPane(
+        id: paneID, title: "zsh",
+        position: nil, isFocused: false, state: state, workers: [], agentID: nil,
+        agentName: nil),
+      theme: .multishellDark, metrics: UIMetrics(fontSize: 13), select: select)
   }
 
   @Test func aPaneRowRebuiltWithAFreshClosureIsTheSameRow() {

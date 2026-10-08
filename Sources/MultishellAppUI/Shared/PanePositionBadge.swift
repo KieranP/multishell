@@ -12,7 +12,7 @@ struct PanePositionBadge: View {
   var body: some View {
     HStack(spacing: 2) {
       Image(systemName: PaneSymbol.split)
-        .font(.system(size: metrics.badge - 2))
+        .font(.system(size: metrics.panePositionGlyphSize))
       Text("\(number)")
         .font(.system(size: metrics.small, weight: .medium, design: .monospaced))
     }

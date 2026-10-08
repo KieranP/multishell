@@ -5,13 +5,13 @@ import MultishellAppCore
 /// Cancel Escape, whatever language their titles are in.
 @MainActor
 enum QuitAlert {
-  static func make(terminals: Int, working: Int, quit: String, cancel: String) -> NSAlert {
-    let alert = NSAlert()
-    alert.messageText = t("quit.title")
-    alert.informativeText = QuitConfirmation.message(terminals: terminals, working: working)
-    alert.alertStyle = .warning
-    alert.addButton(withTitle: quit)
-    alert.addButton(withTitle: cancel).assignEscape()
-    return alert
+  static func make(
+    terminals: Int, working: Int, quit: String = t("action.quit"),
+    cancel: String = t("action.cancel")
+  ) -> NSAlert {
+    WarningAlert.make(
+      title: t("quit.title"),
+      message: QuitConfirmation.message(terminals: terminals, working: working), action: quit,
+      cancel: cancel)
   }
 }

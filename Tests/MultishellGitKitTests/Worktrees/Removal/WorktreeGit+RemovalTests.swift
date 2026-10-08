@@ -29,7 +29,7 @@ struct WorktreeGitRemovalTests {
       try await fixture.head(of: away) == fixture.head(of: fixture.project.path), "and works again")
   }
 
-  @Test func forgettingAStaleRecordKeepsAnotherWorktreeWhoseDirectoryIsAway() async throws {
+  @Test func removingAStaleRecordKeepsAnotherWorktreeWhoseDirectoryIsAway() async throws {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let (stale, path) = try await fixture.worktreeWithItsDirectoryGone()
@@ -141,8 +141,8 @@ struct WorktreeGitRemovalTests {
     let container = fixture.root.appendingPathComponent("CaseDir", isDirectory: true)
     try FileManager.default.createDirectory(at: container, withIntermediateDirectories: true)
     let spelled = fixture.root.appendingPathComponent("casedir/wt")
-    _ = try await fixture.runner.run(
-      ["worktree", "add", "-q", "-b", "cased", spelled.path], in: fixture.project.path)
+    try await TestRepository.addWorktree(
+      onNewBranch: "cased", at: spelled, in: fixture.project.path, using: fixture.runner)
     let cased = try await fixture.worktree(onBranch: "cased")
 
     try await fixture.coordinator.removeUnlinking(cased, in: fixture.project)
@@ -201,8 +201,8 @@ struct WorktreeGitRemovalTests {
     let project = Project(path: fake.directory)
     let worktree = goneWorktree(of: project, in: fake)
 
-    await #expect(throws: WorktreeForgetFailure.self) {
-      try await WorktreeGit(runner: fake.runner).forget(worktree, in: project)
+    await #expect(throws: WorktreeRecordRemovalFailure.self) {
+      try await WorktreeGit(runner: fake.runner).removeRecord(of: worktree, in: project)
     }
   }
 
@@ -221,8 +221,8 @@ struct WorktreeGitRemovalTests {
     let project = Project(path: fake.directory)
     let worktree = goneWorktree(of: project, in: fake)
 
-    await #expect(throws: WorktreeForgetFailure.self) {
-      try await WorktreeGit(runner: fake.runner).forget(worktree, in: project)
+    await #expect(throws: WorktreeRecordRemovalFailure.self) {
+      try await WorktreeGit(runner: fake.runner).removeRecord(of: worktree, in: project)
     }
   }
 
@@ -239,8 +239,8 @@ struct WorktreeGitRemovalTests {
     let project = Project(path: fake.directory)
     let worktree = goneWorktree(of: project, in: fake)
 
-    await #expect(throws: WorktreeForgetFailure.self) {
-      try await WorktreeGit(runner: fake.runner).forget(worktree, in: project)
+    await #expect(throws: WorktreeRecordRemovalFailure.self) {
+      try await WorktreeGit(runner: fake.runner).removeRecord(of: worktree, in: project)
     }
   }
 
@@ -257,7 +257,7 @@ struct WorktreeGitRemovalTests {
     let project = Project(path: fake.directory)
     let worktree = goneWorktree(of: project, in: fake)
 
-    try await WorktreeGit(runner: fake.runner).forget(worktree, in: project)
+    try await WorktreeGit(runner: fake.runner).removeRecord(of: worktree, in: project)
   }
 
   @Test func aForgetOnAGitThatRefusesTheNulFormStillReadsWhetherTheRecordWent() async throws {
@@ -272,7 +272,8 @@ struct WorktreeGitRemovalTests {
       path: URL(fileURLWithPath: "/repos/demo-trees/gone"), projectID: fake.directory.path,
       head: "2222222", branch: "gone")
 
-    try await WorktreeGit(runner: fake.runner).forget(gone, in: Project(path: fake.directory))
+    try await WorktreeGit(runner: fake.runner).removeRecord(
+      of: gone, in: Project(path: fake.directory))
   }
 
   /// A worktree on branch `gone` whose directory was never made.

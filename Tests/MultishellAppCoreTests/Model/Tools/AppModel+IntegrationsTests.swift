@@ -13,4 +13,14 @@ struct AppModelIntegrationsTests {
     #expect(harness.platform.installedCommandLineTool)
     #expect(harness.model.presentedError?.id == alertBefore)
   }
+
+  @Test func theToolsLineSaysWhereItIsOrThatItIsNot() {
+    let harness = Harness()
+    harness.model.isCommandLineToolInstalled = false
+    #expect(harness.model.commandLineToolStatusText == "Not installed")
+
+    harness.model.isCommandLineToolInstalled = true
+
+    #expect(harness.model.commandLineToolStatusText == "Installed in /usr/local/bin")
+  }
 }

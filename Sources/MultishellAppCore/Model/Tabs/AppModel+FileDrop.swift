@@ -6,7 +6,7 @@ extension AppModel {
   /// the focus. `false` when nothing was pasted, so the drag says so.
   @discardableResult
   public func dropFiles(
-    _ urls: [URL], into id: TerminalSession.ID, takingFocus: Bool = true
+    _ urls: [URL], into id: TerminalSession.ID, takingFocus: Bool
   ) -> Bool {
     guard acceptsFileDrop(into: id), let session = workspace.session(id) else { return false }
     let text = FilePathText.droppedText(

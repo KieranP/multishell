@@ -8,11 +8,11 @@ import MultishellCore
 final class GhosttyTerminalHost: NSObject, TerminalHost {
   weak var delegate: (any TerminalHostDelegate)?
 
-  private let runtimeOwner: GhosttyRuntimeOwner
+  private let lazyRuntime: LazyGhosttyRuntime
   private var views: [TerminalSession.ID: GhosttySurfaceView] = [:]
 
-  init(runtimeOwner: GhosttyRuntimeOwner = GhosttyRuntimeOwner()) {
-    self.runtimeOwner = runtimeOwner
+  init(lazyRuntime: LazyGhosttyRuntime = LazyGhosttyRuntime()) {
+    self.lazyRuntime = lazyRuntime
     super.init()
   }
 
@@ -24,7 +24,7 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
       workingDirectory: session.workingDirectory.path,
       environment: SessionEnvironment.variables(for: session, socket: Paths.socketFile),
       command: EngineCommandLine.of(session))
-    let view = GhosttySurfaceView(runtime: runtimeOwner.runtime, launch: launch)
+    let view = GhosttySurfaceView(runtime: lazyRuntime.runtime, launch: launch)
     guard view.surface != nil else { throw TerminalUnavailable() }
     connect(view, to: session.id)
     views[session.id] = view
@@ -95,7 +95,7 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
   }
 
   func apply(_ theme: Theme, appearance: Appearance) {
-    runtimeOwner.apply(theme, appearance: appearance)
+    lazyRuntime.apply(theme, appearance: appearance)
   }
 
   /// A turn later, and only while still true: a frame raises this inside

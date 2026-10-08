@@ -21,7 +21,7 @@ struct NewTabMenu: View {
         Button {
           model.newAgentTab(id, in: groupID)
         } label: {
-          itemLabel(model.newAgentTabTitle(id), agentID: id)
+          itemLabel(model.newAgentTabMenuLabel(id), agentID: id)
         }
       }
     } label: {
@@ -29,10 +29,8 @@ struct NewTabMenu: View {
     }
     .glyphMenuStyle()
     .frame(width: model.metrics.newTabMenuWidth, height: model.metrics.tabHeight)
-    // Every item opens in this group. Only the focused one need not say so,
-    // being where the keyboard already is.
-    .help(isFocusedGroup ? t("tab.new") : t("tab.new-in-group"))
-    .accessibilityLabel(t("tab.new"))
+    .help(TabStripButtonText.newTabHelp(isFocusedGroup: isFocusedGroup))
+    .accessibilityLabel(TabStripButtonText.newTabLabel)
   }
 
   /// Painted as well as shaped: a menu is hit-tested by what its label draws,
@@ -40,7 +38,7 @@ struct NewTabMenu: View {
   private var newTabLabel: some View {
     HStack(spacing: UIMetrics.menuChevronGap) {
       Image(systemName: "plus")
-        .font(.system(size: model.metrics.icon, weight: .medium))
+        .font(.system(size: model.metrics.glyph, weight: .medium))
       Image(systemName: "chevron.down")
         .font(.system(size: model.metrics.menuChevron, weight: .bold))
     }

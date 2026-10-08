@@ -256,12 +256,12 @@ extension SessionStatesTests {
     _ = report(&states, .running, started("w1"))
     let first = Date(timeIntervalSince1970: 1000)
     states.stampChanges(against: before, at: first)
-    #expect(states.workers(.session(a)).first?.since == first)
+    #expect(states.workers(.session(a)).first?.startedAt == first)
 
     let stamped = states
     _ = report(&states, .running, working("w1"))
     states.stampChanges(against: stamped, at: first.addingTimeInterval(30))
-    #expect(states.workers(.session(a)).first?.since == first, "it moved, its start did not")
+    #expect(states.workers(.session(a)).first?.startedAt == first, "it moved, its start did not")
   }
 
   /// A helper from before workers had names writes a count: each `1` is a worker

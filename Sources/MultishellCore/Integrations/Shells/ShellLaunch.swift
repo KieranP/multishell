@@ -10,12 +10,13 @@ public enum ShellLaunch {
     zshDirectory: URL = Paths.zshIntegrationDirectory,
     bashInit: URL = Paths.bashInitFile
   ) -> [String] {
-    switch shellPath.executableName {
-    case "zsh" where FileManager.default.fileExists(atPath: zshDirectory.path):
+    if usesZshIntegration(shellPath, zshDirectory: zshDirectory) {
       // Through env: fish and csh take no `VAR=value` before a command.
       return ["exec", "env", "ZDOTDIR=\(zshDirectory.path)", shellPath, "-l"]
+    }
+    switch shellPath.executableName {
     case "bash" where FileManager.default.fileExists(atPath: bashInit.path):
-      return ["exec"] + bashInitArguments(shell: shellPath, bashInit: bashInit)
+      return ["exec"] + bashInitArguments(forShell: shellPath, bashInit: bashInit)
     default:
       return ["exec", shellPath, "-l"]
     }
@@ -34,9 +35,7 @@ public enum ShellLaunch {
     environment: [String: String] = ProcessInfo.processInfo.environment,
     zshDirectory: URL = Paths.zshIntegrationDirectory
   ) -> [String: String] {
-    guard shellPath.executableName == "zsh",
-      FileManager.default.fileExists(atPath: zshDirectory.path)
-    else { return [:] }
+    guard usesZshIntegration(shellPath, zshDirectory: zshDirectory) else { return [:] }
     var variables = ["ZDOTDIR": zshDirectory.path]
     if let user = environment["ZDOTDIR"], !user.isEmpty {
       variables["MULTISHELL_USER_ZDOTDIR"] = user
@@ -44,8 +43,13 @@ public enum ShellLaunch {
     return variables
   }
 
+  /// zsh, where the generated directory its `ZDOTDIR` points at is there.
+  static func usesZshIntegration(_ shellPath: String, zshDirectory: URL) -> Bool {
+    shellPath.executableName == "zsh" && FileManager.default.fileExists(atPath: zshDirectory.path)
+  }
+
   /// bash told to read the generated init file, as an interactive shell.
-  public static func bashInitArguments(shell shellPath: String, bashInit: URL) -> [String] {
+  public static func bashInitArguments(forShell shellPath: String, bashInit: URL) -> [String] {
     [shellPath, "--init-file", bashInit.path, "-i"]
   }
 }

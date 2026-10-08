@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 
 /// The ref a project's merges are measured against, and where it points now.
 /// The tip travels with it because a merge check is memoised on it.
@@ -20,7 +21,7 @@ public struct DefaultBranch: Hashable, Sendable {
     func add(_ ref: String) {
       if !refs.contains(ref) { refs.append(ref) }
     }
-    if let override = override?.trimmingCharacters(in: .whitespaces), !override.isEmpty {
+    if let override = override?.trimmedOrNil {
       add(RefName.remote("origin/" + override))
       add(RefName.local(override))
       add(RefName.remote(override))

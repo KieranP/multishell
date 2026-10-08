@@ -2,7 +2,7 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// The debug panel's colours, from the theme's own so a user theme recolours
+/// Debug Info's colours, from the theme's own so a user theme recolours
 /// them: blue and yellow stay apart for every kind of colour blindness.
 extension Theme {
   /// The app's part of a split strip, and the whole of any other.

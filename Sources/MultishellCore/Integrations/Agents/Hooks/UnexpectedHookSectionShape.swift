@@ -5,8 +5,6 @@ import Foundation
 public struct UnexpectedHookSectionShape: Error, CustomStringConvertible {
   public let file: URL
 
-  init(file: URL) { self.file = file }
-
   public var description: String {
     "\(file.path) holds something under hooks that Multishell does not recognise."
   }

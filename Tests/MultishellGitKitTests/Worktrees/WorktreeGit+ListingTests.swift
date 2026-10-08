@@ -73,8 +73,8 @@ struct WorktreeGitListingTests {
     let fixture = try await RepositoryFixture.make()
     defer { fixture.tearDown() }
     let odd = fixture.root.appendingPathComponent("my\nrepo", isDirectory: true)
-    _ = try await fixture.runner.run(
-      ["worktree", "add", "-q", "-b", "odd", odd.path], in: fixture.project.path)
+    try await TestRepository.addWorktree(
+      onNewBranch: "odd", at: odd, in: fixture.project.path, using: fixture.runner)
 
     let worktrees = try await WorktreeGit(runner: fixture.runner).list(fixture.project)
 

@@ -48,7 +48,7 @@ extension AppModel {
     let shared = await runOnDispatch { SharedSettingsReading.read(from: project) }
     do {
       let discovered = try await coordinator.git.list(project)
-      guard isStillListedElseForgetCache(project.id) else { return }
+      guard forgetCacheUnlessListed(project.id) else { return }
       forgetWorktrees(store.replaceWorktrees(discovered, forProject: project.id))
       worktreeRecords[project.id] = records
       missingProjects.remove(project.id)
@@ -58,16 +58,16 @@ extension AppModel {
       reconcileSessions(takingFocus: false)
     } catch {
       // Nothing to dim for a project removed meanwhile.
-      guard isStillListedElseForgetCache(project.id) else { return }
+      guard forgetCacheUnlessListed(project.id) else { return }
       // Every tick and every return to the front refreshes a project git
       // cannot read, so the alert goes up once; the row stays dimmed.
       if missingProjects.insert(project.id).inserted { present(error) }
     }
   }
 
-  /// A project removed while git ran: the store ignores its list, and the
-  /// records and directory cached for it must not come back either.
-  private func isStillListedElseForgetCache(_ id: Project.ID) -> Bool {
+  /// Whether the project is still listed. One removed while git ran has its list
+  /// ignored by the store, and its cached directory dropped here as well.
+  private func forgetCacheUnlessListed(_ id: Project.ID) -> Bool {
     guard workspace.project(id) == nil else { return true }
     commonGitDirectories[id] = nil
     return false

@@ -20,7 +20,7 @@ struct DebugGitCommandRow: View {
         ) {
           command
         } headline: {
-          Text(DebugValueText.duration(gitCommand.tally.totalDuration))
+          Text(gitCommand.totalDurationText)
             .monospacedDigit()
             .foregroundStyle(theme.textPrimary)
         }
@@ -35,13 +35,13 @@ struct DebugGitCommandRow: View {
   private var columns: some View {
     HStack(alignment: .firstTextBaseline, spacing: UIMetrics.debugTableColumnSpacing) {
       command.frame(maxWidth: .infinity, alignment: .leading)
-      number("\(gitCommand.tally.runCount)", width: metrics.debugCountColumnWidth)
-      number(DebugValueText.duration(gitCommand.tally.totalDuration))
-      number(DebugValueText.duration(gitCommand.tally.meanDuration))
-      number(DebugValueText.duration(gitCommand.tally.slowestDuration))
+      number(gitCommand.runCountText, width: metrics.debugCountColumnWidth)
+      number(gitCommand.totalDurationText)
+      number(gitCommand.meanDurationText)
+      number(gitCommand.slowestDurationText)
       number(gitCommand.meanPeakMemoryText, width: metrics.debugMemoryValueColumnWidth)
       number(gitCommand.peakMemoryText, width: metrics.debugMemoryValueColumnWidth)
-      Text(gitCommand.slowestLocation?.title ?? "")
+      Text(gitCommand.slowestLocationText)
         .foregroundStyle(theme.textSecondary)
         .frame(maxWidth: .infinity, alignment: .leading)
     }

@@ -12,7 +12,7 @@ extension Helper {
     guard let integration = AgentHookCatalogue.integration(id),
       let payload = AgentHookPayload(json: payloadJSON), integration.asksFor(payload)
     else { return }
-    let pid = reportingPID(environment)
+    let pid = reportingPID(in: environment)
     guard
       let report = integration.report(
         for: payload,

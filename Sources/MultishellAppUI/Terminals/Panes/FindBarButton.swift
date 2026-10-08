@@ -14,7 +14,7 @@ struct FindBarButton: View {
   var body: some View {
     PlainGlyphButton(help: label, action: action) {
       Image(systemName: symbol)
-        .font(.system(size: metrics.body, weight: .medium))
+        .font(.system(size: metrics.bodySize, weight: .medium))
         .foregroundStyle(isHovered ? theme.textPrimary : theme.textSecondary)
         .frame(width: metrics.findControlSize, height: metrics.findControlSize)
         .background(isHovered ? theme.faintFill : .clear, in: RoundedRectangle(cornerRadius: 6))

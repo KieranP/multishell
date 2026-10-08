@@ -28,60 +28,13 @@ public struct AgentHookPayload: Hashable, Sendable {
   var launchedTask: LaunchedTask?
   /// The task a TaskStop result says it stopped, which Claude ends with all
   /// it launched; see Docs/design/agents.md.
-  var stoppedTaskID: String?
+  var killedTaskID: String?
 
   struct BackgroundTask: Hashable, Sendable {
     var id: String
     /// `subagent`, `shell`, `monitor` and so on, the agent's own label.
-    var type: String
+    var taskType: String
     var subagentType: String?
-  }
-
-  init(
-    eventName: String, workingDirectory: String? = nil, message: String? = nil,
-    permissionMode: String? = nil,
-    notificationType: String? = nil, subagentID: String? = nil, subagentType: String? = nil,
-    conversationID: String? = nil, transcriptPath: String? = nil
-  ) {
-    self.eventName = eventName
-    self.workingDirectory = workingDirectory
-    self.message = message
-    self.permissionMode = permissionMode
-    self.notificationType = notificationType
-    self.subagentID = subagentID
-    self.subagentType = subagentType
-    self.conversationID = conversationID
-    self.transcriptPath = transcriptPath
-  }
-
-  public init?(json data: Data) {
-    guard
-      let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-      let eventName = object["hook_event_name"] as? String
-    else { return nil }
-    self.eventName = eventName
-    self.workingDirectory = object["cwd"] as? String
-    self.message = object["message"] as? String
-    self.permissionMode = object["permission_mode"] as? String
-    self.notificationType = object["notification_type"] as? String
-    self.subagentID = object["agent_id"] as? String
-    self.subagentType = object["agent_type"] as? String
-    self.conversationID = object["session_id"] as? String
-    self.transcriptPath = object["transcript_path"] as? String
-    self.backgroundTasks = (object["background_tasks"] as? [Any]).map { tasks in
-      tasks.compactMap { task in
-        guard let task = task as? [String: Any], let id = task["id"] as? String,
-          let type = task["type"] as? String
-        else { return nil }
-        return BackgroundTask(id: id, type: type, subagentType: task["agent_type"] as? String)
-      }
-    }
-    self.launchedTask = (object["tool_response"] as? [String: Any]).flatMap {
-      LaunchedTask(toolResponse: $0, toolInput: object["tool_input"] as? [String: Any] ?? [:])
-    }
-    if object["tool_name"] as? String == "TaskStop" {
-      self.stoppedTaskID = (object["tool_response"] as? [String: Any])?["task_id"] as? String
-    }
   }
 
   /// Whether the transcript is another conversation's: Copilot files a
@@ -99,6 +52,40 @@ public struct AgentHookPayload: Hashable, Sendable {
     // more mode where the agent asks the hook and nobody is waiting.
     case "dontAsk", "bypassPermissions", "auto": false
     default: true
+    }
+  }
+}
+
+/// A memberwise init stays synthesized for the tests to build one with.
+extension AgentHookPayload {
+  public init?(json data: Data) {
+    guard
+      let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+      let eventName = object["hook_event_name"] as? String
+    else { return nil }
+    self.eventName = eventName
+    self.workingDirectory = object["cwd"] as? String
+    self.message = object["message"] as? String
+    self.permissionMode = object["permission_mode"] as? String
+    self.notificationType = object["notification_type"] as? String
+    self.subagentID = object["agent_id"] as? String
+    self.subagentType = object["agent_type"] as? String
+    self.conversationID = object["session_id"] as? String
+    self.transcriptPath = object["transcript_path"] as? String
+    self.backgroundTasks = (object["background_tasks"] as? [Any]).map { tasks in
+      tasks.compactMap { task in
+        guard let task = task as? [String: Any], let id = task["id"] as? String,
+          let taskType = task["type"] as? String
+        else { return nil }
+        return BackgroundTask(
+          id: id, taskType: taskType, subagentType: task["agent_type"] as? String)
+      }
+    }
+    self.launchedTask = (object["tool_response"] as? [String: Any]).flatMap {
+      LaunchedTask(toolResponse: $0, toolInput: object["tool_input"] as? [String: Any] ?? [:])
+    }
+    if object["tool_name"] as? String == "TaskStop" {
+      self.killedTaskID = (object["tool_response"] as? [String: Any])?["task_id"] as? String
     }
   }
 }

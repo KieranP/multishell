@@ -49,7 +49,7 @@ public protocol Platform: AnyObject, Sendable {
   func log(_ message: String)
 
   /// Calls `onFrame` on the main thread once per display refresh until stopped,
-  /// late when the main thread is busy: the debug panel's frame rate.
+  /// late when the main thread is busy: Debug Info's frame rate.
   func startDisplayFrameCallbacks(_ onFrame: @escaping @MainActor (ContinuousClock.Instant) -> Void)
   func stopDisplayFrameCallbacks()
 

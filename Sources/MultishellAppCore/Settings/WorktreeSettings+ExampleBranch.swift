@@ -6,7 +6,7 @@ extension WorktreeSettings {
   static var exampleBranchName: String { t("worktrees.example-branch-name") }
 
   /// One branch name with the prefix put on, so a caption shows what it does.
-  public var exampleBranch: String { qualifiedBranch(Self.exampleBranchName) }
+  var exampleBranch: String { qualifiedBranch(Self.exampleBranchName) }
 
   /// What a typed name becomes, `nil` with no prefix to show.
   public var prefixExampleCaption: String? {

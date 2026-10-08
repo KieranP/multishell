@@ -13,8 +13,8 @@ What each addition needs beyond the code itself.
   protocol and is passed to the model in the Mac half.
 - **What a host owes**: the session environment to the child, a finished command
   reported if the engine can tell, paste framed as a bracketed paste, and each
-  session's pty path and foreground pid where it knows them, without which the
-  debug panel puts every pane under Other processes.
+  session's pty path and foreground pid where it knows them, without which Debug
+  Info puts every pane under Other processes.
 - **Two engines at once needs a multiplexer**, one host per kind and a map from
   session to kind, so a running terminal keeps the engine that opened it.
 - **An agent or editor.** A row in its catalogue; detection and the dropdowns
@@ -44,7 +44,7 @@ What each addition needs beyond the code itself.
   and an editor on the Hooks page.
 - **If a repository may ship that list**, it also needs a field on the shared
   settings, a line in the layering, and the two places trust and containment are
-  spelled out (`trustCovered`, `confined(to:)`), since it names paths on the
+  spelled out (`trustCoveredFields`, `confined(to:)`), since it names paths on the
   reader's disk, and its name in the trust question in `trustCoveredNames`, at
   the same position, as a `shared-settings.` key in the libraries' catalogue.
 - **An agent's hooks.** An integration in the hook catalogue's list, naming the
@@ -115,8 +115,8 @@ What each addition needs beyond the code itself.
 - **An item on a card's context menu.** A line in the card menu: above the
   section if it acts on the pane, inside the worktree actions if it acts on the
   worktree, which puts it on the sidebar row and detail header too.
-- **A strip on the debug panel.** A case in `DebugMetric` in draw order, with
-  its values from a slot and its scale's floor, and its title and value text in
+- **A strip on Debug Info.** A case in `DebugMetric` in draw order, with its
+  values from a slot and its scale's floor, and its title and value text in
   `DebugMetric+Wording`. A reading no sample takes yet also needs a field on
   `DebugSample`, filled in `takeDebugSample`, and on `DebugTimelineSlot`, saying
   how a slot of several seconds combines it (design/debug-tools.md). The test

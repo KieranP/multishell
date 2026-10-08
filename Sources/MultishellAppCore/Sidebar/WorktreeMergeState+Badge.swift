@@ -1,4 +1,5 @@
 import MultishellCore
+import MultishellGitKit
 
 extension WorktreeMergeState {
   /// Whether the row draws the badge, given `git status`. Uncommitted work

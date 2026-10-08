@@ -25,8 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let (terminals, working) = (liveTerminalCount(), workingAgentCount())
     guard terminals > 0 else { return .terminateNow }
 
-    let alert = QuitAlert.make(
-      terminals: terminals, working: working, quit: t("action.quit"), cancel: t("action.cancel"))
+    let alert = QuitAlert.make(terminals: terminals, working: working)
     return alert.runModal() == .alertFirstButtonReturn ? .terminateNow : .terminateCancel
   }
 }

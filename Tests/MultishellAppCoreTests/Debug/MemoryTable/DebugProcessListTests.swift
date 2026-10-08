@@ -14,6 +14,6 @@ struct DebugProcessListTests {
 
     #expect(list.selfMemory == 11, "two panes' shells")
     #expect(list.totalMemory == 611)
-    #expect(list.lines.map(\.process.pid) == [10, 11, 20])
+    #expect(list.rows.map(\.process.pid) == [10, 11, 20])
   }
 }

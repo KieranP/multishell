@@ -47,7 +47,7 @@ struct AppAgentsPage: View {
     Section {
       DetectionPicker(
         label: t("agents.preferred-agent"),
-        selection: model.preferredAgentSetting,
+        selection: model.preferredAgentBinding,
         options: model.agentDetection.options(selected:),
         rescanning: model,
         info: model.agentPathNote
@@ -56,22 +56,23 @@ struct AppAgentsPage: View {
         CustomChoiceField(
           label: t("label.command"), info: t("agents.command-info"),
           prompt: t("agents.command-prompt"),
-          text: model.setting(\.customAgentCommand, write: model.setCustomAgentCommand))
+          text: model.settingBinding(\.customAgentCommand, write: model.setCustomAgentCommand))
       } else if model.hasPreferredAgent {
         InfoLabeledContent(t("agents.flags"), info: t("agents.flags-info")) {
           // No prompt text: a greyed example in an empty field reads as a
           // default the agent is already being started with.
-          TextField(t("agents.flags"), text: model.agentFlagsSetting(for: model.globalAgentID))
+          TextField(t("agents.flags"), text: model.agentFlagsBinding(for: model.globalAgentID))
         }
       }
       InfoToggle(
         t("agents.auto-start-tab"), info: t("agents.auto-start-tab-info"),
-        isOn: model.setting(\.autoStartsAgent, write: model.setAutoStartsAgent)
+        isOn: model.settingBinding(\.autoStartsAgent, write: model.setAutoStartsAgent)
       )
       .disabled(!model.hasPreferredAgent)
       InfoToggle(
         t("agents.auto-start-create"), info: t("agents.auto-start-create-info"),
-        isOn: model.setting(\.autoStartsAgentOnCreate, write: model.setAutoStartsAgentOnCreate)
+        isOn: model.settingBinding(
+          \.autoStartsAgentOnCreate, write: model.setAutoStartsAgentOnCreate)
       )
       .disabled(!model.hasPreferredAgent)
     }
@@ -80,11 +81,8 @@ struct AppAgentsPage: View {
   private var commandLineToolSection: some View {
     Section(t("agents.command-line-tool")) {
       InfoLabeledContent(t("agents.helper-label"), info: t("agents.helper-info")) {
-        Text(
-          model.isCommandLineToolInstalled
-            ? t("agents.helper-installed") : t("agents.not-installed")
-        )
-        .foregroundStyle(.secondary)
+        Text(model.commandLineToolStatusText)
+          .foregroundStyle(.secondary)
         if !model.isCommandLineToolInstalled {
           Button(t("agents.install-helper")) { model.installCommandLineTool() }
             .controlSize(.small)

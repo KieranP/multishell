@@ -66,15 +66,15 @@ public struct Workspace: Codable, Hashable, Sendable {
   public internal(set) var trashesRemovedWorktrees = true
   /// How long a project hook may run before it is stopped and reported.
   /// Zero is no limit.
-  public internal(set) var hookTimeoutSeconds = Self.defaultHookTimeoutSeconds
+  public internal(set) var projectHookTimeoutSeconds = Self.defaultProjectHookTimeoutSeconds
   /// What the git badge on a row and a card counts.
   public internal(set) var gitStatusIndicator = GitStatusIndicator.default
 
-  private static let defaultHookTimeoutSeconds = 60
+  private static let defaultProjectHookTimeoutSeconds = 60
 
-  /// `hookTimeoutSeconds` as the runner takes it; `nil` for no limit.
-  public var hookTimeout: Duration? {
-    hookTimeoutSeconds > 0 ? .seconds(hookTimeoutSeconds) : nil
+  /// `projectHookTimeoutSeconds` as the runner takes it; `nil` for no limit.
+  public var projectHookTimeout: Duration? {
+    projectHookTimeoutSeconds > 0 ? .seconds(projectHookTimeoutSeconds) : nil
   }
 
   init() {}
@@ -128,8 +128,8 @@ public struct Workspace: Codable, Hashable, Sendable {
       Bool.self, forKey: .deletesBranchWithWorktree, or: false)
     trashesRemovedWorktrees = try container.decode(
       Bool.self, forKey: .trashesRemovedWorktrees, or: true)
-    hookTimeoutSeconds = try container.decode(
-      Int.self, forKey: .hookTimeoutSeconds, or: Self.defaultHookTimeoutSeconds)
+    projectHookTimeoutSeconds = try container.decode(
+      Int.self, forKey: .projectHookTimeoutSeconds, or: Self.defaultProjectHookTimeoutSeconds)
     // Tolerated for the reason `worktreeSortOrder` is: a newer build may
     // name a kind this one has not got.
     gitStatusIndicator = container.decodeTolerantly(
@@ -158,7 +158,8 @@ public struct Workspace: Codable, Hashable, Sendable {
     case customShellPath, preferredEditorID, customEditorCommand
     case opensTerminalOnSelect, opensTerminalOnCreate, worktreeSortOrder, showsActiveWorktreesFirst
     case confirmsWorktreeRemoval, deletesBranchWithWorktree, trashesRemovedWorktrees
-    case hookTimeoutSeconds, gitStatusIndicator
+    case projectHookTimeoutSeconds = "hookTimeoutSeconds"
+    case gitStatusIndicator
   }
 
   /// Keys no property answers to any more, read only to carry what an older

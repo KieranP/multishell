@@ -127,7 +127,7 @@ struct AppModelBranchScansTests {
     await harness.model.refreshBranchScans()
 
     let model = harness.model
-    let fired = Flag()
+    let fired = AtomicFlag()
     withObservationTracking {
       _ = model.mergeStates
       _ = model.defaultBranches

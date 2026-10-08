@@ -11,7 +11,7 @@ enum TabCommand {
     handingOverTo tabShell: String
   ) -> (shell: ShellInvocation, handOver: String) {
     (
-      ShellInvocation.userShell(at: ShellChoice.loginShellPath()),
+      ShellInvocation.forCommandLine(inShellAt: ShellChoice.loginShellPath()),
       AnyShellQuoting.commandLine(ShellLaunch.execArguments(forShell: tabShell))
     )
   }

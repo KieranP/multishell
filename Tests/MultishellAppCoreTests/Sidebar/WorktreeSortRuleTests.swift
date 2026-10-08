@@ -189,8 +189,7 @@ struct WorktreeSortRuleTests {
     }
   }
 
-  /// With no trunk resolved, `main` and `master` are both pinned, there being no grounds
-  /// to pick one; the first scan settles it.
+  /// There are no grounds to pick one before a scan settles it.
   @Test func bothGuessedTrunkNamesArePinnedUntilOneIsResolved() {
     let list = [
       linked("alpha", daysAfterEpoch: 1), linked("master", daysAfterEpoch: 2),

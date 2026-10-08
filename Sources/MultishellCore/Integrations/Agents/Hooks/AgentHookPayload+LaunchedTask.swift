@@ -4,7 +4,7 @@ extension AgentHookPayload {
   struct LaunchedTask: Hashable, Sendable {
     var id: String
     var isShell: Bool
-    var type: String?
+    var subagentType: String?
     var name: String?
     var description: String?
   }
@@ -20,7 +20,7 @@ extension AgentHookPayload.LaunchedTask {
       let workerID = toolResponse["agentId"] as? String
     {
       self.init(
-        id: workerID, isShell: false, type: toolInput["subagent_type"] as? String,
+        id: workerID, isShell: false, subagentType: toolInput["subagent_type"] as? String,
         name: (toolInput["name"] as? String)?.nonEmpty,
         description: ((toolResponse["description"] ?? toolInput["description"]) as? String)?
           .nonEmpty)

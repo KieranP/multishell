@@ -1,5 +1,6 @@
 import MultishellAppCore
 import MultishellCore
+import MultishellGitKit
 import SwiftUI
 
 /// The worktree's git badge: lines added, lines removed, files with no line

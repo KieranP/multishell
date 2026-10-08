@@ -19,9 +19,9 @@ public struct ShellInvocation: Equatable, Sendable {
   /// startup files.
   private static let fallbackShell = URL(fileURLWithPath: "/bin/sh")
 
-  /// The user's shell, interactive and login, so a script sees a terminal's
+  /// The shell at `path`, interactive and login, so a script sees a terminal's
   /// PATH: additions live in `.zprofile` for some and `.zshrc` for others.
-  public static func userShell(at path: String) -> ShellInvocation {
+  public static func forCommandLine(inShellAt path: String) -> ShellInvocation {
     guard FileManager.default.isExecutableFile(atPath: path) else {
       return ShellInvocation(executable: fallbackShell, arguments: ["-c"])
     }

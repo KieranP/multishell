@@ -2,7 +2,11 @@ import Foundation
 import MultishellCore
 
 extension Helper {
-  static func reportCommandStarted(
+  /// The subcommands a shell's hooks run, and the words a relayed line starts with.
+  static let commandStartedName = "command-started"
+  static let commandFinishedName = "command-finished"
+
+  static func runCommandStarted(
     _ arguments: ArraySlice<String>, environment: [String: String]
   ) throws {
     let options = try CommandOptions(arguments, valued: ["pid", "command"])
@@ -10,7 +14,7 @@ extension Helper {
       environment: environment, shellPID: options.int32("pid"), command: options["command"])
   }
 
-  static func reportCommandFinished(
+  static func runCommandFinished(
     _ arguments: ArraySlice<String>, environment: [String: String]
   ) throws {
     let options = try CommandOptions(arguments, valued: ["exit", "duration"])

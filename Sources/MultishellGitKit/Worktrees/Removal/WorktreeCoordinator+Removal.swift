@@ -22,7 +22,7 @@ extension WorktreeCoordinator {
     // and no hook runs, each being handed that path; see worktrees.md.
     if directoryExists, try await !git.isCheckout(of: worktree, in: project) {
       onStep?(.removingWorktree)
-      try await git.forgetStale(worktree, in: project)
+      try await git.removeStaleRecord(worktree, in: project)
     } else {
       try await removeCheckout(
         worktree, directoryExists: directoryExists, in: project, shellPath: shellPath,
@@ -51,12 +51,12 @@ extension WorktreeCoordinator {
       } catch {
         throw TrashFailure(path: path, underlying: error)
       }
-      // `forget` would unlink a directory still here; only the Trash may take it.
+      // `removeRecord` would unlink a directory still here; only the Trash may take it.
       guard await !runOnDispatch({ FileManager.default.fileExists(atPath: path.path) }) else {
         throw TrashFailure(path: path, underlying: TrashTookNothing())
       }
     }
-    try await git.forget(worktree, in: project)
+    try await git.removeRecord(of: worktree, in: project)
     try await WorktreeHooks.run(
       .postDelete, for: project, worktreePath: path, branch: branchOrHead, shellPath: shellPath,
       timeout: timeout, stopper: stopper, onWillRun: { onStep?(.postDeleteHook) })

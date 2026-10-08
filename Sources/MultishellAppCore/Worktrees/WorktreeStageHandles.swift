@@ -34,14 +34,14 @@ struct WorktreeStageHandles: Sendable {
 
   /// The stop handle goes only where it is still `stopper`: a later stage on
   /// the worktree owns its own, and a removal drops no create's setup task.
-  mutating func releaseStopper(_ id: Worktree.ID, ifStillHeldBy stopper: ProcessStopper) {
+  mutating func releaseStopper(_ stopper: ProcessStopper, on id: Worktree.ID) {
     if stoppers[id] === stopper { stoppers[id] = nil }
   }
 
   /// A setup stage ended: its task and, if still its own, its stop handle.
-  mutating func endSetup(_ id: Worktree.ID, ifStillHeldBy stopper: ProcessStopper) {
+  mutating func endSetup(_ stopper: ProcessStopper, on id: Worktree.ID) {
     setupTasks[id] = nil
-    releaseStopper(id, ifStillHeldBy: stopper)
+    releaseStopper(stopper, on: id)
   }
 
   /// The sheet's Cancel while the pre-create hook or git runs.

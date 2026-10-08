@@ -6,11 +6,6 @@ public struct UnexpectedHookEntriesShape: Error, CustomStringConvertible {
   public let file: URL
   public let event: String
 
-  init(file: URL, event: String) {
-    self.file = file
-    self.event = event
-  }
-
   public var description: String {
     "\(file.path) holds something under hooks.\(event) that Multishell does not recognise."
   }

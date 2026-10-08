@@ -96,7 +96,8 @@ extension AppModelStatusPollingTests {
     let outside = harness.root.appendingPathComponent("outside", isDirectory: true)
     let git = harness.git
     let add = Task {
-      try await git.run(["worktree", "add", "-q", "-b", "outside", outside.path], in: repository)
+      try await TestRepository.addWorktree(
+        onNewBranch: "outside", at: outside, in: repository, using: git)
     }
     let lock = repository.appendingPathComponent(".git/worktrees/outside/locked")
     try await waitUntil { FileManager.default.fileExists(atPath: lock.path) }

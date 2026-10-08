@@ -68,4 +68,8 @@ struct OpenCodePluginStep: Encodable {
         "tool": AnyEncodable(["messageID": "message-1", "callID": "call-1"]),
       ])
   }
+
+  static func replied(_ session: String) -> OpenCodePluginStep {
+    event("permission.replied", ["sessionID": AnyEncodable(session)])
+  }
 }

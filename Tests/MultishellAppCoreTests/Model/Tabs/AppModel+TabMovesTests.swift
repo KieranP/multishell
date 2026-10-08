@@ -89,10 +89,9 @@ struct AppModelTabMovesTests {
     harness.model.shuffleTab(order[1].id, .before, past: order[0].id)
     let shuffled = harness.model.workspace
 
-    // What the release does, with the pointer still where it was.
     harness.model.moveTab(order[1].id, .before, anchor: order[0].id)
 
-    #expect(harness.model.workspace == shuffled)
+    #expect(harness.model.workspace == shuffled, "the release, the pointer where it was")
   }
 
   @Test func aTabDraggedToAnotherWorktreeLeavesNoGroupBehind() {

@@ -16,7 +16,7 @@ final class SettingsWindowResetView: AccessibilityHiddenView {
     guard let window else { return }
     // Placing but not resetting the page, a write to the view's state here
     // being a write during a SwiftUI update. The key pass does the page.
-    centre(window)
+    center(window)
     let changes: [(NSNotification.Name, @MainActor @Sendable (SettingsWindowResetView) -> Void)] = [
       (NSWindow.didBecomeKeyNotification, { $0.windowDidBecomeKey() }),
       (NSWindow.willCloseNotification, { $0.windowWillClose() }),
@@ -41,18 +41,18 @@ final class SettingsWindowResetView: AccessibilityHiddenView {
   /// settling: the page toolbar lands late and grows the frame.
   private func windowDidResize() {
     guard let window else { return }
-    centre(window)
+    center(window)
   }
 
   private func reset(_ window: NSWindow) {
-    centre(window)
+    center(window)
     showFirstPage?()
     window.contentView?.scrollDescendantsToTop()
   }
 
   /// The workspace's screen, not the window's own, or a settings window on
   /// a second display keeps reopening there. Its own is the fallback.
-  private func centre(_ window: NSWindow) {
+  private func center(_ window: NSWindow) {
     guard let screen = workspaceScreen?() ?? window.screen ?? NSScreen.main else { return }
     let area = screen.visibleFrame
     let size = window.frame.size

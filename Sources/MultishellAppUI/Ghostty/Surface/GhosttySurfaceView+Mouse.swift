@@ -38,11 +38,11 @@ extension GhosttySurfaceView {
       GHOSTTY_MOUSE_RELEASE, GhosttyMouseButton.button(forNumber: event.buttonNumber), event)
   }
 
-  override func mouseMoved(with event: NSEvent) { move(event) }
-  override func mouseDragged(with event: NSEvent) { move(event) }
-  override func rightMouseDragged(with event: NSEvent) { move(event) }
-  override func otherMouseDragged(with event: NSEvent) { move(event) }
-  override func mouseEntered(with event: NSEvent) { move(event) }
+  override func mouseMoved(with event: NSEvent) { sendPointerPosition(of: event) }
+  override func mouseDragged(with event: NSEvent) { sendPointerPosition(of: event) }
+  override func rightMouseDragged(with event: NSEvent) { sendPointerPosition(of: event) }
+  override func otherMouseDragged(with event: NSEvent) { sendPointerPosition(of: event) }
+  override func mouseEntered(with event: NSEvent) { sendPointerPosition(of: event) }
 
   /// Off the surface reads as -1, -1, which ends hover and link underlines.
   /// Not mid-drag, which goes on reporting outside the pane.
@@ -65,12 +65,12 @@ extension GhosttySurfaceView {
     _ state: ghostty_input_mouse_state_e, _ button: ghostty_input_mouse_button_e, _ event: NSEvent
   ) -> Bool {
     guard let surface else { return false }
-    move(event)
+    sendPointerPosition(of: event)
     return ghostty_surface_mouse_button(
       surface, state, button, GhosttyModifiers.mods(event.modifierFlags))
   }
 
-  private func move(_ event: NSEvent) {
+  private func sendPointerPosition(of event: NSEvent) {
     guard let surface else { return }
     let point = convert(event.locationInWindow, from: nil)
     ghostty_surface_mouse_pos(

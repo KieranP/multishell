@@ -9,7 +9,7 @@ struct AppAppearancePage: View {
 
   /// The cached list, so building this view is not a walk over every family
   /// on the machine; Refresh asks again for someone who just installed one.
-  @State private var fonts = InstalledFonts.all
+  @State private var fonts = InstalledFonts.detection
 
   var body: some View {
     Form {
@@ -25,31 +25,26 @@ struct AppAppearancePage: View {
       Section {
         DetectionPicker(
           label: t("appearance.terminal-font"),
-          selection: fontName,
+          selection: model.terminalFontBinding,
           options: fonts.options(selected:),
           refresh: { fonts = InstalledFonts.reload() },
           info: t("appearance.font-info")
         )
         sizeRow(
           t("appearance.terminal-size"),
-          value: model.setting(\.appearance.terminalFontSize, write: model.setTerminalFontSize),
+          value: model.settingBinding(
+            \.appearance.terminalFontSize, write: model.setTerminalFontSize),
           range: Appearance.terminalFontSizes, info: t("appearance.terminal-size-info"))
       }
 
       Section {
         sizeRow(
           t("appearance.ui-size"),
-          value: model.setting(\.appearance.uiFontSize, write: model.setUIFontSize),
+          value: model.settingBinding(\.appearance.uiFontSize, write: model.setUIFontSize),
           range: Appearance.uiFontSizes, info: t("appearance.ui-size-info"))
       }
     }
     .formStyle(.grouped)
-  }
-
-  private var fontName: Binding<String> {
-    // A closure, not `model.setTerminalFontPickerID`: Swift 6.3's IRGen crashes on the
-    // @isolated(any) thunk a method reference needs here.
-    Binding(get: { model.terminalFontPickerID }, set: { model.setTerminalFontPickerID($0) })
   }
 
   private func sizeRow(

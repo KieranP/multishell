@@ -19,7 +19,7 @@ struct ScrollingTabStrip<Tabs: View>: View {
   @ViewBuilder let tabs: () -> Tabs
 
   /// How far it has been scrolled, deciding which end carries an arrow and
-  /// where it jumps to; see `TabStripLayout.Edges`.
+  /// where it jumps to; see `TabStripLayout.Overflow`.
   @State private var scrollOffset = 0.0
   /// The scroller a wheel's turns are handed to, named from inside it and
   /// caught from outside it; see `ScrollerReference`.
@@ -31,13 +31,13 @@ struct ScrollingTabStrip<Tabs: View>: View {
   private var viewport: Double { model.metrics.tabStrip.scrollingViewport(forAvailable: available) }
 
   var body: some View {
-    let edges = TabStripLayout.Edges(
+    let overflow = TabStripLayout.Overflow(
       offset: scrollOffset,
       viewport: viewport,
       content: layout.contentWidth(count: tabIDs.count))
     ScrollViewReader { proxy in
       HStack(spacing: 0) {
-        arrow(.leading, isShown: edges.hasTabsPastLeading, proxy: proxy)
+        arrow(.leading, isShown: overflow.hasTabsPastLeading, proxy: proxy)
         ScrollView(.horizontal, showsIndicators: false) {
           HStack(spacing: 0) { tabs() }
             .frame(height: model.metrics.tabHeight)
@@ -50,7 +50,7 @@ struct ScrollingTabStrip<Tabs: View>: View {
         } action: { _, offset in
           scrollOffset = offset
         }
-        arrow(.trailing, isShown: edges.hasTabsPastTrailing, proxy: proxy)
+        arrow(.trailing, isShown: overflow.hasTabsPastTrailing, proxy: proxy)
       }
       .wheelScrollsSideways(scrollerReference)
       // Unwrapped, both: `scrollTo` takes anything hashable, so a
@@ -71,21 +71,21 @@ struct ScrollingTabStrip<Tabs: View>: View {
   private func arrow(
     _ end: TabStripLayout.End, isShown: Bool, proxy: ScrollViewProxy
   ) -> some View {
-    let leading = end == .leading
+    let isLeading = end == .leading
     if isShown, gutter > 0 {
       Button {
         step(towards: end, proxy: proxy)
       } label: {
-        Image(systemName: leading ? "chevron.compact.left" : "chevron.compact.right")
-          .font(.system(size: model.metrics.body, weight: .semibold))
+        Image(systemName: isLeading ? "chevron.compact.left" : "chevron.compact.right")
+          .font(.system(size: model.metrics.bodySize, weight: .semibold))
           .foregroundStyle(theme.textSecondary)
           .frame(width: gutter, height: model.metrics.tabHeight)
           .background(theme.chromeColor)
           .contentShape(.rect)
       }
       .buttonStyle(.plain)
-      .help(leading ? t("tab.scroll-left") : t("tab.scroll-right"))
-      .accessibilityLabel(leading ? t("tab.more-left") : t("tab.more-right"))
+      .help(isLeading ? t("tab.scroll-left") : t("tab.scroll-right"))
+      .accessibilityLabel(isLeading ? t("tab.more-left") : t("tab.more-right"))
     } else {
       // The room is kept, so the tabs stay put as an end runs out.
       Color.clear.frame(width: gutter)

@@ -36,7 +36,7 @@ What the core is, what it refuses, how work reaches it. Newest at the bottom.
 - **The rebuilt coordinator keeps the launch one's line counts, merge slots and
   git run log.** Merge reads still in flight hold the old slots, and a fresh set
   let sixteen git processes run where the width is eight. A fresh log would drop
-  the runs the debug panel counted before the login shell's PATH landed.
+  the runs Debug Info counted before the login shell's PATH landed.
 - **Nothing in the core blocks a pool thread.** Waits inside `Task`s held a pool
   thread per core until GCD ran out and the suite hung. Blocking file work goes
   through `runOnDispatch`, the git library's stats, reads and line counts

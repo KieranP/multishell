@@ -1,5 +1,6 @@
 import MultishellAppCore
 import MultishellCore
+import MultishellGitKit
 import SwiftUI
 
 /// The glyphs at a worktree row's right end. Several views rather than one,

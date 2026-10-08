@@ -53,7 +53,7 @@ struct AppModelLifecycleTests {
   }
 
   @Test func aSecondCopyOfTheAppHandsOverToTheRunningOneAndSavesNothing() async {
-    let file = Scratch.path("second-copy").appendingPathComponent("state.json")
+    let file = Scratch.statePath("second-copy")
     defer { Scratch.remove(file.deletingLastPathComponent()) }
     let harness = Harness(stateFile: file)
     harness.stateSource.startError = SocketFailure(kind: .inUse, path: "/tmp/multishell.sock")

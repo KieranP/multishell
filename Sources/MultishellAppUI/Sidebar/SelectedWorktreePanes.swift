@@ -12,15 +12,7 @@ struct SelectedWorktreePanes: View {
   var body: some View {
     ForEach(panes) { pane in
       PaneRow(
-        title: pane.title,
-        position: pane.position,
-        isFocusedPane: pane.isFocused,
-        state: pane.state,
-        workers: pane.workers,
-        agentID: pane.agentID,
-        agentName: pane.agentName,
-        theme: theme,
-        metrics: metrics,
+        pane: pane, theme: theme, metrics: metrics,
         select: { [model] in model.show(pane: pane.id) }
       )
       .equatable()

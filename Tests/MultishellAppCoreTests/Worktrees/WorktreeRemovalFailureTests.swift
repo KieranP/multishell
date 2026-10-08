@@ -60,7 +60,7 @@ struct WorktreeRemovalFailureTests {
   /// The directory is in the Trash by then, so the row cannot come back as
   /// it was; the model refreshes and shows what git still lists.
   @Test func aRecordGitWillNotForgetAfterTheTrashIsAnAlertThatRefreshes() throws {
-    let error = WorktreeForgetFailure(
+    let error = WorktreeRecordRemovalFailure(
       path: URL(fileURLWithPath: "/trees/x"), underlying: pruneFailed)
     let (title, message, retry, removed) = try alert(
       WorktreeRemovalFailure(error, deletingBranch: nil))

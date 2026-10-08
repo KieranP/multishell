@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellAppUI
@@ -133,8 +134,8 @@ struct GhosttyUserConfigTests {
   }
 
   @Test func aFileIsReadWhereItIsAndAMissingOneCostsNothing() throws {
-    let directory = try ScratchDirectory.make("ghostty-config")
-    defer { ScratchDirectory.remove(directory) }
+    let directory = try Scratch.directory("ghostty-config")
+    defer { Scratch.remove(directory) }
     let file = directory.appendingPathComponent("config", isDirectory: false)
     try "cursor-style = bar\n".write(to: file, atomically: true, encoding: .utf8)
     let absent = directory.appendingPathComponent("absent", isDirectory: false)
@@ -146,10 +147,10 @@ struct GhosttyUserConfigTests {
   }
 
   @Test func anIncludedFileIsReadAfterTheFileThatNamesItAndFromBesideIt() throws {
-    let directory = ScratchDirectory.path("ghostty-config")
+    let directory = Scratch.path("ghostty-config")
     let parts = directory.appendingPathComponent("parts", isDirectory: true)
     try FileManager.default.createDirectory(at: parts, withIntermediateDirectories: true)
-    defer { ScratchDirectory.remove(directory) }
+    defer { Scratch.remove(directory) }
     let config = directory.appendingPathComponent("config", isDirectory: false)
     try "config-file = parts/extra\nconfig-file = ?parts/absent\nfont-size = 13\n".write(
       to: config, atomically: true, encoding: .utf8)
@@ -166,8 +167,8 @@ struct GhosttyUserConfigTests {
   }
 
   @Test func anIncludeInAFileWithWindowsLineEndingsIsFollowed() throws {
-    let directory = try ScratchDirectory.make("ghostty-config")
-    defer { ScratchDirectory.remove(directory) }
+    let directory = try Scratch.directory("ghostty-config")
+    defer { Scratch.remove(directory) }
     let config = directory.appendingPathComponent("config", isDirectory: false)
     try "config-file = theme.conf\r\nfont-size = 13\r\n".write(
       to: config, atomically: true, encoding: .utf8)

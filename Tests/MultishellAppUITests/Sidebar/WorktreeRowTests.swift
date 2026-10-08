@@ -3,6 +3,7 @@ import Testing
 
 @testable import MultishellAppUI
 @testable import MultishellCore
+@testable import MultishellGitKit
 
 @Suite @MainActor
 struct WorktreeRowTests {

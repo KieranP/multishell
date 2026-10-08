@@ -20,7 +20,7 @@ extension AgentHookIntegration {
   public func snippet(helper: String = AgentHookCatalogue.helperReference) -> String {
     switch format {
     case .plugin: OpenCodePlugin.source(helper: helper)
-    case .userSettingsFile, .ownHookFile: AgentSettingsFile.render(hooksObject(helper: helper))
+    case .userSettingsFile, .ownHookFile: AgentHookFile.render(hooksObject(helper: helper))
     }
   }
 

@@ -107,8 +107,8 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   walks a dependency tree for as long as it takes, and the window stood still
   for it.
 - **The record is forgotten only after the Trash has the directory.** With it
-  still there the forget would unlink it, so a Trash that returned with the
-  directory in place is a failed removal.
+  still there the record's removal would unlink it, so a Trash that returned
+  with the directory in place is a failed removal.
 - **A directory that is not the record's checkout is never trashed**: a stale
   record's path may be taken since by anything, a folder of notes or a clone.
   git is asked for the checkout's top level and common directory, and where
@@ -134,8 +134,8 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   move: it forgets every record whose directory is away, an unmounted drive's
   included, and repair did not bring that one back.
 - **Prune's exit is not the answer.** It exits zero whether or not this record
-  was one it took, so the forget re-lists and fails if the path is still on
-  record.
+  was one it took, so the record's removal re-lists and fails if the path is
+  still on record.
 - **Without that, a failed remove reported a removal that never was**, and the
   caller went on to run the post-delete hook and delete the branch. Nothing else
   in the app deletes a ref on another command's exit code.

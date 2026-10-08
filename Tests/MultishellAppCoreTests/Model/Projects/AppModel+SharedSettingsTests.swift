@@ -319,10 +319,9 @@ struct AppModelSharedSettingsTests {
     try #"{ "postCreateHook": "echo one" }"#.write(to: file, atomically: true, encoding: .utf8)
     await harness.model.refreshSharedSettingsIfChanged()
     #expect(harness.model.pendingSharedSettingsTrust != nil, "and comes back when it parses again")
-    // The same for a branch that carries no file at all.
     try FileManager.default.removeItem(at: file)
     await harness.model.refreshSharedSettingsIfChanged()
-    #expect(harness.model.pendingSharedSettingsTrust == nil)
+    #expect(harness.model.pendingSharedSettingsTrust == nil, "nor on a branch with no file")
   }
 
   /// The confinement verdict is held against the file's bytes, so a branch can

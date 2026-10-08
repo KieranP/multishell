@@ -39,4 +39,15 @@ extension AppModel {
       }
     }
   }
+
+  /// The rows the sidebar draws, once a round: asked per row, the filter
+  /// looked up the project and folded the text for every worktree.
+  func sidebarRowIDs(
+    filteredBy text: String? = nil, collapsing collapsed: Set<Project.ID>? = nil
+  ) -> Set<Worktree.ID> {
+    let entries = sidebarEntries(
+      filteredBy: text ?? sidebarFilterText,
+      collapsing: collapsed ?? projectsCollapsedWhileFiltering)
+    return Set(entries.filter(\.isExpanded).flatMap { $0.worktrees.map(\.id) })
+  }
 }

@@ -7,7 +7,7 @@ struct ThemePicker: View {
   let model: AppModel
 
   var body: some View {
-    Picker(title, selection: model.setting(\.appearance.themeID, write: model.setTheme)) {
+    Picker(title, selection: model.settingBinding(\.appearance.themeID, write: model.setTheme)) {
       ForEach(model.themes) { Text($0.name).tag($0.id) }
     }
   }

@@ -1,7 +1,7 @@
 import MultishellCore
 
-/// What the board and the sidebar entry say about themselves, kept out of
-/// the views so the wording is tested rather than read off a screenshot.
+/// What the board says about itself, kept out of the views so the wording
+/// is tested rather than read off a screenshot.
 extension AgentBoard {
   /// Beside the title: how many terminals are on the board, and how many of
   /// them want the user.

@@ -62,7 +62,7 @@ extension WorkspaceStoreTests {
   }
 
   @Test func restoringRepairsDanglingReferencesBeforeTheStoreSeesThem() throws {
-    let file = scratchStatePath()
+    let file = Scratch.statePath()
     defer { Scratch.remove(file.deletingLastPathComponent()) }
 
     var workspace = Workspace()

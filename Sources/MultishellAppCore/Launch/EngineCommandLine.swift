@@ -24,7 +24,7 @@ public enum EngineCommandLine {
       return [
         "/bin/sh", "-c",
         AnyShellQuoting.commandLine(
-          ["exec"] + ShellLaunch.bashInitArguments(shell: shellPath, bashInit: bashInit)),
+          ["exec"] + ShellLaunch.bashInitArguments(forShell: shellPath, bashInit: bashInit)),
       ]
     case _ where shellPath != loginShell:
       return [shellPath, "-l"]

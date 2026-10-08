@@ -33,15 +33,15 @@ struct WorktreeBreadcrumb: View {
 
   private var projectFont: Font {
     switch style {
-    case .header: .system(size: metrics.body, weight: .semibold)
+    case .header: .system(size: metrics.bodySize, weight: .semibold)
     case .card: .system(size: metrics.badge)
     }
   }
 
   private var chevronSize: Double {
     switch style {
-    case .header: 9
-    case .card: metrics.badge - 3
+    case .header: metrics.small
+    case .card: metrics.cardBreadcrumbChevronSize
     }
   }
 

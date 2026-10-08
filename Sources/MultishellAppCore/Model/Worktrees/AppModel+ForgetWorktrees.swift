@@ -9,9 +9,8 @@ extension AppModel {
     setIfChanged(\.statuses, statuses.filter { !gone.contains($0.key) })
     forgetMergeStates(ofWorktrees: gone)
     setIfChanged(\.lastCommitDates, lastCommitDates.filter { !gone.contains($0.key) })
-    resolvedWorktreeComponents = resolvedWorktreeComponents.filter { !gone.contains($0.key) }
-    worktreesResolvedWhileMissing.subtract(gone)
-    removalStatusReads = removalStatusReads.filter { !gone.contains($0.key) }
+    pathResolutions.forget(gone)
+    removalRequests.forget(gone)
     // Their sessions went with them, so a worktree re-made at the path starts cold.
     warmWorktrees.subtract(gone)
     statusReadLog.forget(gone)
@@ -28,6 +27,5 @@ extension AppModel {
     if let pending = pendingWorktreeRemoval, gone.contains(pending.worktree.id) {
       pendingWorktreeRemoval = nil
     }
-    if let latest = latestRemovalRequestID, gone.contains(latest) { latestRemovalRequestID = nil }
   }
 }

@@ -9,8 +9,8 @@ enum GhosttyAppLayer {
       config.set("foreground", theme.foreground)
       config.set("cursor-color", theme.cursor)
       config.set("selection-background", theme.selectionBackground)
-      for (index, colour) in theme.ansi.enumerated() {
-        config.set("palette", "\(index)=\(colour)")
+      for (index, paletteColor) in theme.ansi.enumerated() {
+        config.set("palette", "\(index)=\(paletteColor)")
       }
       // Find's matches in the theme's yellow, the selected one in the ring's
       // colour, their text the darker of the theme's pair; see appearance.md.

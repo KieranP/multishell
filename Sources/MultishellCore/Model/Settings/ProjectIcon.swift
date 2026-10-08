@@ -48,10 +48,5 @@ public enum ProjectIcon {
   public struct Group: Hashable, Sendable {
     public let name: String
     public let symbols: [String]
-
-    init(name: String, symbols: [String]) {
-      self.name = name
-      self.symbols = symbols
-    }
   }
 }

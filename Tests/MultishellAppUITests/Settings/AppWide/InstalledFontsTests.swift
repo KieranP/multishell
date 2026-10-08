@@ -9,10 +9,10 @@ struct InstalledFontsTests {
   /// The `@State` default reads the cache again each time the settings window
   /// opens.
   @Test func refreshReplacesTheCacheAndNotJustTheView() {
-    let detected = InstalledFonts.all
+    let detected = InstalledFonts.detection
     #expect(!detected.monospaced.isEmpty, "this Mac has a monospaced font")
-    InstalledFonts.all = FontDetection(monospaced: [], otherFamilies: [])
+    InstalledFonts.detection = FontDetection(monospaced: [], otherFamilies: [])
     #expect(InstalledFonts.reload() == detected)
-    #expect(InstalledFonts.all == detected)
+    #expect(InstalledFonts.detection == detected)
   }
 }

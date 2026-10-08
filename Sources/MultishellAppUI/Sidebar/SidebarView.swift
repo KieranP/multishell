@@ -36,9 +36,9 @@ struct SidebarView: View {
           close: { model.setShowsSidebarFilter(false) })
       }
       ScrollView {
-        LazyVStack(spacing: 1) {
+        LazyVStack(spacing: UIMetrics.sidebarRowSpacing) {
           SidebarAgentsRow(
-            counts: model.agentSidebarCounts,
+            counts: model.sidebarLaneCounts,
             isSelected: model.showsAgentBoard,
             theme: theme,
             metrics: metrics,
@@ -80,12 +80,7 @@ struct SidebarView: View {
         endProjectDrag()
         return false
       }
-      SidebarFooter(
-        worktreeCount: model.workspace.worktrees.count,
-        terminalCount: model.workspace.sessions.count,
-        theme: theme,
-        metrics: metrics
-      )
+      SidebarFooter(countsText: model.sidebarCountsText, theme: theme, metrics: metrics)
       if model.areDebugToolsEnabled {
         SidebarQuickStats(model: model, theme: theme, metrics: metrics)
       }

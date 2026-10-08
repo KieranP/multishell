@@ -34,7 +34,7 @@ public struct ProcessRunner: Sendable {
   }
 
   /// Throws only where the child could not start; a non-zero exit comes back
-  /// in `status`, and a child ended at `timeout` or stopped with `stop` set.
+  /// in `status`, and a child ended at `timeout` or by `stopper` sets `stopReason`.
   public func capture(
     _ executable: URL,
     _ arguments: [String],

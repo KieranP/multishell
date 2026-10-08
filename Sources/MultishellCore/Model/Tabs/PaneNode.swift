@@ -5,7 +5,8 @@ public indirect enum PaneNode: Codable, Hashable, Sendable {
   case split(axis: SplitAxis, children: [PaneNode], weights: [Double])
 
   static func split(axis: SplitAxis, children: [PaneNode]) -> PaneNode {
-    .split(axis: axis, children: children, weights: Array(repeating: 1, count: children.count))
+    .split(
+      axis: axis, children: children, weights: LayoutWeight.equalShares(count: children.count))
   }
 }
 

@@ -68,11 +68,11 @@ struct HelperHookInstallationTests {
     let installed = try await HelperBinary.run(
       ["install-agent-hooks", "--agent", "codex"], environment: ["HOME": home.path])
     #expect(installed.succeeded, "\(installed.standardError)")
-    #expect(AgentHookCatalogue.codex.installation(in: file) != .absent)
+    #expect(AgentHookCatalogue.codex.installState(in: file) != .absent)
 
     let removed = try await HelperBinary.run(
       ["remove-agent-hooks", "--agent", "codex"], environment: ["HOME": home.path])
     #expect(removed.succeeded, "\(removed.standardError)")
-    #expect(AgentHookCatalogue.codex.installation(in: file) == .absent)
+    #expect(AgentHookCatalogue.codex.installState(in: file) == .absent)
   }
 }

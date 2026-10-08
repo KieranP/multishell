@@ -28,24 +28,13 @@ struct TabStripButtons: View {
       model.splitActivePane(axis, in: groupID)
     } label: {
       Image(systemName: symbol)
-        .font(.system(size: model.metrics.icon, weight: .medium))
+        .font(.system(size: model.metrics.glyph, weight: .medium))
         .foregroundStyle(theme.textSecondary)
         .frame(width: model.metrics.splitButtonWidth, height: model.metrics.tabHeight)
         .contentShape(.rect)
     }
     .buttonStyle(.plain)
-    .help(splitHelp(for: axis))
-    .accessibilityLabel(axis == .horizontal ? t("tab.split-right") : t("tab.split-down"))
-  }
-
-  /// The keystrokes split the focused group, so only that group's buttons
-  /// are what they do.
-  private func splitHelp(for axis: SplitAxis) -> String {
-    switch (axis, isFocusedGroup) {
-    case (.horizontal, true): t("tab.split-right-here")
-    case (.horizontal, false): t("tab.split-right-in-group")
-    case (.vertical, true): t("tab.split-down-here")
-    case (.vertical, false): t("tab.split-down-in-group")
-    }
+    .help(TabStripButtonText.splitHelp(axis, isFocusedGroup: isFocusedGroup))
+    .accessibilityLabel(TabStripButtonText.splitLabel(axis))
   }
 }

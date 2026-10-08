@@ -27,17 +27,17 @@ final class GhosttySurfaceView: NSView {
   /// An unsafe paste waiting on the user, and the sheet asking about it.
   var pendingPaste: (paste: GhosttyPasteConfirmation, alert: NSAlert)?
   /// What a program or libghostty last asked the pointer to be over the pane.
-  private var pointer = NSCursor.iBeam
+  var pointer = NSCursor.iBeam
   /// Held so libghostty's app outlives every surface made in it.
   let runtime: GhosttyRuntime
   /// libghostty saw this pane's program turn echo off, as at a password
   /// prompt, or the `toggle_secure_input` keybind asked for it.
-  private var wantsSecureInput = false
+  var wantsSecureInput = false
 
   init(runtime: GhosttyRuntime, launch: GhosttySurfaceLaunch) {
     self.runtime = runtime
     super.init(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
-    let scale = NSScreen.main?.backingScaleFactor ?? 2
+    let scale = NSScreen.mainBackingScale
     surface = launch.withCConfig(view: self, scale: scale) { ghostty_surface_new(runtime.app, &$0) }
     // libghostty starts a surface focused and drawing; a pane opened out of
     // sight is neither until it is shown.
@@ -113,36 +113,6 @@ final class GhosttySurfaceView: NSView {
     updateColorScheme()
   }
 
-  /// Dropped once freed: a report queued from another thread can land after.
-  /// The pointer and secure input are the view's own to answer; the rest go to the host.
-  func receive(_ event: GhosttySurfaceEvent) {
-    guard surface != nil else { return }
-    switch event {
-    case .retitled(let title):
-      onRetitle?(title)
-    case .bell:
-      onBell?()
-    case .commandFinished(let exitCode):
-      onCommandFinish?(exitCode)
-    case .pointerShape(let shape):
-      guard let cursor = GhosttyPointerShape.cursor(for: shape) else { return }
-      pointer = cursor
-      window?.invalidateCursorRects(for: self)
-    case .pointerVisible(let visible):
-      NSCursor.setHiddenUntilMouseMoves(!visible)
-    case .secureInput(let mode):
-      wantsSecureInput = GhosttySecureInput.wantsSecureInput(after: mode, was: wantsSecureInput)
-      syncSecureInput(hasKeyboard: hasKeyboard)
-    }
-  }
-
-  /// Asked of libghostty, not read off the callback's flag, which says whether
-  /// Ghostty would confirm the close rather than whether the process is there.
-  func surfaceDidClose() {
-    guard let surface else { return }
-    if ghostty_surface_process_exited(surface) { onExit?() } else { onCloseRequest?() }
-  }
-
   /// Not out of a window, where the backing scale is the main screen's rather
   /// than the one the pane was on, so a tab switch rebuilt its font grid twice.
   private func resizeSurface() {
@@ -171,13 +141,6 @@ final class GhosttySurfaceView: NSView {
   private func windowDidChangeScreen() {
     updateDisplay()
     DispatchQueue.main.async { [weak self] in self?.viewDidChangeBackingProperties() }
-  }
-
-  /// Secure input follows the keyboard: on only while this prompt has it.
-  /// `hasKeyboard` is passed in, AppKit naming a new responder only afterwards.
-  func syncSecureInput(hasKeyboard: Bool) {
-    runtime.secureInput.update(
-      ObjectIdentifier(self), wantsSecureInput: wantsSecureInput, hasKeyboard: hasKeyboard)
   }
 
   /// A program asking whether the terminal is light or dark is told the

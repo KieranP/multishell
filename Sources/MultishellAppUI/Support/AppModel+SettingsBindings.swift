@@ -7,7 +7,7 @@ import SwiftUI
 extension AppModel {
   /// A workspace value and the method that sets it, as one binding. The read
   /// goes through `workspace`, so the row follows a change made elsewhere.
-  func setting<Value>(
+  func settingBinding<Value>(
     _ keyPath: KeyPath<Workspace, Value>, write: @escaping @MainActor (Value) -> Void
   ) -> Binding<Value> {
     Binding(get: { self.workspace[keyPath: keyPath] }, set: write)
@@ -15,7 +15,7 @@ extension AppModel {
 
   /// The same where the stored value is optional and the control needs one:
   /// `fallback` is the id selected when nothing is stored.
-  func setting<Value>(
+  func settingBinding<Value>(
     _ keyPath: KeyPath<Workspace, Value?>, or fallback: Value,
     write: @escaping @MainActor (Value) -> Void
   ) -> Binding<Value> {
@@ -24,7 +24,7 @@ extension AppModel {
 
   /// One agent's flag line. Not a key path, the stored value being a
   /// dictionary entry that reads as blank when absent.
-  func agentFlagsSetting(for agentID: String) -> Binding<String> {
+  func agentFlagsBinding(for agentID: String) -> Binding<String> {
     Binding(
       get: { self.workspace.agentFlags[agentID] ?? "" },
       set: { self.setAgentFlags($0, for: agentID) })
@@ -32,7 +32,7 @@ extension AppModel {
 
   /// One field of the global worktree defaults, the rest written back as
   /// they stand.
-  func worktreeDefaultSetting(
+  func worktreeDefaultBinding(
     _ keyPath: WritableKeyPath<WorktreeSettings, String>
   ) -> Binding<String> {
     Binding(
@@ -46,7 +46,7 @@ extension AppModel {
   }
 
   /// Whether a state is announced, one toggle of the notification settings.
-  func notificationSetting(for state: SessionState) -> Binding<Bool> {
+  func notificationBinding(for state: SessionState) -> Binding<Bool> {
     Binding(
       get: { self.workspace.notificationPreference[state] },
       set: { on in
@@ -59,7 +59,7 @@ extension AppModel {
 
   /// One field of a project's own settings, written whole. The project is
   /// looked up again each time, a settings window outliving a refresh.
-  func setting<Value>(
+  func settingBinding<Value>(
     _ keyPath: WritableKeyPath<ProjectSettings, Value>, of project: Project
   ) -> Binding<Value> {
     Binding(
@@ -77,7 +77,7 @@ extension AppModel {
   func overrideToggle<Value: Equatable & Sendable>(
     _ keyPath: WritableKeyPath<ProjectSettings, Value?>, of project: Project, fallback: Value
   ) -> Binding<Bool> {
-    let source = setting(keyPath, of: project)
+    let source = settingBinding(keyPath, of: project)
     return Binding(
       get: { source.wrappedValue != nil },
       set: { on in source.wrappedValue = on ? fallback : nil }
@@ -89,17 +89,23 @@ extension AppModel {
   func overrideField<Value: Equatable & Sendable>(
     _ keyPath: WritableKeyPath<ProjectSettings, Value?>, of project: Project, fallback: Value
   ) -> Binding<Value> {
-    let source = setting(keyPath, of: project)
+    let source = settingBinding(keyPath, of: project)
     return Binding(get: { source.wrappedValue ?? fallback }, set: { source.wrappedValue = $0 })
   }
 
   /// The preferred agent and shell read through `globalAgentID` and
   /// `globalShellID`, which say what is in effect when nothing is stored.
-  var preferredAgentSetting: Binding<String> {
+  var preferredAgentBinding: Binding<String> {
     Binding(get: { self.globalAgentID }, set: { self.setPreferredAgent($0) })
   }
 
-  var preferredShellSetting: Binding<String> {
+  var preferredShellBinding: Binding<String> {
     Binding(get: { self.globalShellID }, set: { self.setPreferredShell($0) })
+  }
+
+  var terminalFontBinding: Binding<String> {
+    // A closure, not `setTerminalFontPickerID`: Swift 6.3's IRGen crashes on the
+    // @isolated(any) thunk a method reference needs here.
+    Binding(get: { self.terminalFontPickerID }, set: { self.setTerminalFontPickerID($0) })
   }
 }

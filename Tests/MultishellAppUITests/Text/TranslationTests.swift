@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import TestScratch
 import Testing
 
 @testable import MultishellAppUI
@@ -10,19 +11,19 @@ import Testing
 struct TranslationTests {
   @Test func everyKeyTheAppAsksForIsInItsOwnCatalogue() throws {
     let catalogue = try Self.catalogue()
-    for site in try TranslationCallSites.all() {
+    for site in try TranslationCallSites.all(in: TranslationCallSites.appSwiftFiles) {
       let isKnown = catalogue[site.key] != nil || Self.countedForms.contains(site.key)
       #expect(
         isKnown,
         """
-        \(site.where) asks for \(site.key), which the app's catalogue has not got. A word the \
+        \(site.fileName) asks for \(site.key), which the app's catalogue has not got. A word the \
         libraries also say is written in both; the app never reads theirs.
         """)
     }
   }
 
   @Test func theAppCatalogueHasNoEntryNothingAsksFor() throws {
-    let asked = Set(try TranslationCallSites.all().map(\.key))
+    let asked = Set(try TranslationCallSites.all(in: TranslationCallSites.appSwiftFiles).map(\.key))
     for key in try Self.catalogue().keys.sorted() + Self.countedForms.sorted() {
       let isAsked = asked.contains(key)
       #expect(isAsked, "\(key) is in the app's catalogue and nothing in the app asks for it")
@@ -31,14 +32,15 @@ struct TranslationTests {
 
   @Test func everyCallPassesTheArgumentsItsPhraseTakes() throws {
     let catalogue = try Self.catalogue()
-    for site in try TranslationCallSites.all() {
+    for site in try TranslationCallSites.all(in: TranslationCallSites.appSwiftFiles) {
       if let english = catalogue[site.key] {
-        let takes = TranslationCallSites.placeholders(in: english).count
+        let takes = english.formatPlaceholders.count
         #expect(
-          site.arguments == takes,
-          "\(site.where) passes \(site.arguments) to \(site.key), which takes \(takes)")
+          site.argumentCount == takes,
+          "\(site.fileName) passes \(site.argumentCount) to \(site.key), which takes \(takes)")
       } else if Self.countedForms.contains(site.key) {
-        #expect(site.arguments == 1, "\(site.where) counts with \(site.arguments) arguments")
+        #expect(
+          site.argumentCount == 1, "\(site.fileName) counts with \(site.argumentCount) arguments")
       }
     }
   }
@@ -74,8 +76,7 @@ struct TranslationTests {
 
   @Test func aCountedPhraseReadsAsSingularAndPlural() {
     #expect(MultishellAppUI.t("count.terminals", 1) == "1 terminal")
-    #expect(MultishellAppUI.t("count.worktrees", 1) == "1 worktree")
-    #expect(MultishellAppUI.t("count.worktrees", 4) == "4 worktrees")
+    #expect(MultishellAppUI.t("count.terminals", 4) == "4 terminals")
   }
 
   @Test func aKeyWithNoEntryAnswersWithItself() {
@@ -176,7 +177,7 @@ struct TranslationTests {
   @Test func theBuiltCatalogueIsNotStale() throws {
     for name in ["Localizable.strings", "Localizable.stringsdict"] {
       let built = try #require(Bundle.appCatalogue.url(forResource: name, withExtension: nil))
-      let source = Checkout.root.appendingPathComponent(
+      let source = SourceRoot.url.appendingPathComponent(
         "Sources/MultishellAppUI/Resources/en.lproj/\(name)")
       #expect(
         try Data(contentsOf: built) == (try Data(contentsOf: source)),
@@ -187,7 +188,7 @@ struct TranslationTests {
   /// A literal is looked up in `Bundle.main`, which has no catalogue, and every other check here
   /// starts at a `t` call; see Docs/design/translation.md.
   @Test func noViewLabelsItselfWithALiteral() throws {
-    for file in try TranslationCallSites.swiftFiles() {
+    for file in TranslationCallSites.appSwiftFiles {
       let text = try String(contentsOf: file, encoding: .utf8)
       for match in text.matches(of: Self.literalLabel()) {
         Issue.record(
@@ -205,7 +206,7 @@ struct TranslationTests {
   }
 
   private static func libraryCatalogue(_ kind: String) -> URL {
-    Checkout.root.appendingPathComponent(
+    SourceRoot.url.appendingPathComponent(
       "Sources/MultishellCore/Resources/en.lproj/Localizable.\(kind)")
   }
 

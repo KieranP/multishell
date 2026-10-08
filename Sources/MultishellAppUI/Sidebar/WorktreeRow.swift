@@ -1,5 +1,6 @@
 import MultishellAppCore
 import MultishellCore
+import MultishellGitKit
 import SwiftUI
 
 struct WorktreeRow: View {
@@ -37,9 +38,9 @@ struct WorktreeRow: View {
     HStack(spacing: 7) {
       // Always a dot, grey when nothing is running, and keeping its colour
       // when selected, which is why selection is an outline.
-      StateDot(state: state ?? .idle, theme: theme)
+      StateDot(state: state.shownState, theme: theme)
         .frame(width: metrics.sidebarGlyphColumn)
-        .help(t("sidebar.kind-and-state", kind, (state ?? .idle).displayName))
+        .help(t("sidebar.kind-and-state", kind, state.shownState.displayName))
 
       if isRenaming {
         nameField
@@ -58,7 +59,7 @@ struct WorktreeRow: View {
         theme: theme,
         metrics: metrics)
     }
-    .padding(.leading, metrics.indent)
+    .padding(.leading, metrics.worktreeRowIndent)
     .padding(.trailing, 8)
     .frame(height: height)
     .rowSelection(isSelected: isSelected, isDropTarget: isDropTarget)

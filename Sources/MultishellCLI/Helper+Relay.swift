@@ -8,7 +8,7 @@ extension Helper {
     SIGHUP, SIGINT, SIGQUIT, SIGTSTP, SIGTTIN, SIGTTOU, SIGPIPE,
   ]
 
-  static func relay(
+  static func runRelay(
     _ arguments: ArraySlice<String>, environment: [String: String], input: FileHandle
   ) throws {
     let options = try CommandOptions(arguments, valued: ["pid"])
@@ -39,9 +39,9 @@ extension Helper {
     let fields = line.split(separator: " ", omittingEmptySubsequences: false).map(String.init)
     guard fields.count == 3 else { return }
     switch fields[0] {
-    case "command-started":
+    case commandStartedName:
       reportCommandStarted(environment: environment, shellPID: Int32(fields[1]), command: fields[2])
-    case "command-finished":
+    case commandFinishedName:
       reportCommandFinished(
         environment: environment, exitCode: Int32(fields[1]), duration: Double(fields[2]))
     default:

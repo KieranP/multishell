@@ -38,7 +38,8 @@ extension AppModel {
       store.closeSession(failure.sessionID)
     }
     pruneStates()
-    pruneTabCloseAndRename()
+    prunePendingClose()
+    pruneTabRename()
     pruneFind()
   }
 }

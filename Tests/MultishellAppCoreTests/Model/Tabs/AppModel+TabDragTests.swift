@@ -128,7 +128,7 @@ struct AppModelTabDragTests {
   @Test func aDragWhoseButtonWasRebuiltEndsAndGoesBackOnceTheButtonIsUp() async {
     let harness = Harness()
     let tabs = threeTabs(harness)
-    let released = Flag()
+    let released = AtomicFlag()
     harness.model.beginTabDrag(tabs[2])
     harness.model.shuffleTab(tabs[2], .before, past: tabs[0])
     harness.model.tabDragSourceLeft(tabs[2], isPressed: { !released.raised })
@@ -143,7 +143,7 @@ struct AppModelTabDragTests {
   @Test func aNewDragOfTheSameTabIsNotEndedByTheLastOnesRelease() async {
     let harness = Harness()
     let tabs = threeTabs(harness)
-    let released = Flag()
+    let released = AtomicFlag()
     harness.model.beginTabDrag(tabs[2])
     harness.model.tabDragSourceLeft(tabs[2], isPressed: { !released.raised })
     let watch = harness.model.tabDragReleaseWatch

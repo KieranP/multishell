@@ -2,6 +2,7 @@ import MultishellCore
 import Testing
 
 @testable import MultishellAppCore
+@testable import MultishellGitKit
 
 @Suite
 struct WorktreeStatusBadgeTests {

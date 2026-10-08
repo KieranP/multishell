@@ -6,14 +6,8 @@ import Testing
 
 @Suite
 struct ShellLaunchTests {
-  private func bashInitThatExists() throws -> URL {
-    let url = Scratch.path("bashinit")
-    try "".write(to: url, atomically: true, encoding: .utf8)
-    return url
-  }
-
   @Test func theExecAfterAnAgentCarriesTheIntegrationBackIn() throws {
-    let bashInit = try bashInitThatExists()
+    let bashInit = try Scratch.bashInitThatExists()
     defer { Scratch.remove(bashInit) }
     let zshDirectory = try Scratch.directory("zdot")
     defer { Scratch.remove(zshDirectory) }

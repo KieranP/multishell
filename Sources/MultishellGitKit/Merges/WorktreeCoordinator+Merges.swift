@@ -10,7 +10,8 @@ extension WorktreeCoordinator {
     guard !branches.isEmpty else { return [:] }
     // A read that failed is not an answer. Taken as one, every branch would
     // be recorded as unmerged and stay that way until it next moved.
-    guard let merged = await git.mergedBranches(into: inputs.base.fullName, in: project) else {
+    guard let merged = await git.mergedBranches(into: inputs.defaultBranch.fullName, in: project)
+    else {
       return [:]
     }
 
@@ -31,8 +32,8 @@ extension WorktreeCoordinator {
   private func verdict(
     for branch: String, merged: Set<String>, inputs: MergeInputs, in project: Project
   ) async -> WorktreeMergeState? {
-    let baseRef = inputs.base.fullName
-    let baseShortName = inputs.base.shortName
+    let baseRef = inputs.defaultBranch.fullName
+    let baseShortName = inputs.defaultBranch.shortName
     if merged.contains(branch) {
       // A branch the base can reach has landed or never left, the reflog
       // separating them.

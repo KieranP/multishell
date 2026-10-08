@@ -17,19 +17,19 @@ struct AppModelDebugToolsTests {
     #expect(harness.platform.onDisplayFrame != nil)
     await harness.model.takeDebugSample()
     #expect(harness.model.debugHistory.samples.count == 1)
-    let sampling = harness.model.debugSampling
+    let sampling = harness.model.debugSampler.ticks
 
     harness.model.setDebugToolsEnabled(false)
 
     #expect(harness.platform.onDisplayFrame == nil)
     #expect(sampling?.isCancelled == true)
-    #expect(harness.model.debugSampling == nil)
+    #expect(harness.model.debugSampler.ticks == nil)
     #expect(harness.model.debugHistory.samples.isEmpty)
   }
 
   @Test func aSampleAskedForWhileTheToolsAreOffRecordsNothing() async {
     let harness = Harness()
-    harness.model.scanDebugProcesses = { _, _ in .sample(appMemory: 400, trees: []) }
+    harness.model.debugSampler.scanProcesses = { _, _ in .sample(appMemory: 400, trees: []) }
 
     await harness.model.takeDebugSample()
 
@@ -86,7 +86,7 @@ struct AppModelDebugToolsTests {
   func aSampleStillScanningWhenTheToolsAreTurnedOffIsDropped(turnedBackOn: Bool) async {
     let harness = harnessWithDebugTools()
     let scanHeld = DispatchSemaphore(value: 0)
-    harness.model.scanDebugProcesses = { _, _ in
+    harness.model.debugSampler.scanProcesses = { _, _ in
       scanHeld.wait()
       return .sample(appMemory: 400, trees: [])
     }

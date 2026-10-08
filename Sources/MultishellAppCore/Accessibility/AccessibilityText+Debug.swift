@@ -17,16 +17,16 @@ extension AccessibilityText {
   }
 
   /// A Memory by tab row, read as one button where it opens to list processes.
-  public static func debugMemoryLine(
-    _ line: DebugMemoryLine, disclosure: DebugLineDisclosure
+  public static func debugMemoryRow(
+    _ row: DebugMemoryRow, disclosure: DebugRowDisclosure
   ) -> String {
-    var parts = [line.title]
-    if !line.subtitle.isEmpty { parts.append(line.subtitle) }
-    if let processCount = line.processCount { parts.append(t("count.processes", processCount)) }
-    if let selfMemory = line.selfMemory {
+    var parts = [row.title]
+    if !row.subtitle.isEmpty { parts.append(row.subtitle) }
+    if let processCount = row.processCount { parts.append(t("count.processes", processCount)) }
+    if let selfMemory = row.selfMemory {
       parts.append(t("spoken.self-memory", DebugValueText.memory(selfMemory)))
     }
-    parts.append(t("spoken.total-memory", line.totalMemoryText))
+    parts.append(t("spoken.total-memory", row.totalMemoryText))
     switch disclosure {
     case .notExpandable: break
     case .collapsed: parts.append(t("spoken.collapsed"))
@@ -36,11 +36,11 @@ extension AccessibilityText {
   }
 
   /// A process under an expanded row, its depth said where the arrow shows it.
-  public static func debugProcessLine(_ line: DebugProcessLine) -> String {
-    var parts = [line.process.name]
-    if line.depth > 0 { parts.append(t("spoken.tree-depth", line.depth)) }
-    parts.append(t("spoken.self-memory", DebugValueText.memory(line.selfMemory)))
-    parts.append(t("spoken.total-memory", DebugValueText.memory(line.totalMemory)))
+  public static func debugProcessRow(_ row: DebugProcessRow) -> String {
+    var parts = [row.process.name]
+    if row.depth > 0 { parts.append(t("spoken.tree-depth", row.depth)) }
+    parts.append(t("spoken.self-memory", DebugValueText.memory(row.selfMemory)))
+    parts.append(t("spoken.total-memory", DebugValueText.memory(row.totalMemory)))
     return parts.joined(separator: ", ")
   }
 }

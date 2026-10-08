@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import MultishellGitKit
 
 /// What a screen reader says for the Agents board, which is drawn by hand
 /// like the sidebar rows beside it.
@@ -7,7 +8,7 @@ extension AccessibilityText {
   /// In the order the card draws them, with the occupant after the title,
   /// which the card itself no longer shows; see Docs/design/appearance.md.
   public static func card(_ card: AgentBoardCard, at now: Date) -> String {
-    var parts = [(card.state ?? .idle).displayName]
+    var parts = [card.state.shownState.displayName]
     parts.append(t("spoken.named", card.projectName, card.worktreeName))
     if let status = WorktreeStatus.badged(card.status) { parts.append(status.summary) }
     parts.append(card.title)

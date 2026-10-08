@@ -23,10 +23,6 @@ struct SidebarHeader: View {
   private func button(
     _ symbol: String, help: String, action: @escaping () -> Void
   ) -> some View {
-    PlainGlyphButton(help: help, action: action) {
-      Image(systemName: symbol)
-        .font(.system(size: UIMetrics.headerGlyphSize, weight: .medium))
-        .frame(width: UIMetrics.headerGlyphButtonSide, height: UIMetrics.headerGlyphButtonSide)
-    }
+    PlainGlyphButton(help: help, action: action) { HeaderGlyph(symbol: symbol) }
   }
 }

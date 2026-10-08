@@ -14,7 +14,7 @@ public enum HookVariable: CaseIterable, Sendable {
   public var name: String {
     switch self {
     case .projectPath: WorktreePlaceholder.projectPath.variable
-    case .projectName: WorktreePlaceholder.project.variable
+    case .projectName: WorktreePlaceholder.projectName.variable
     case .worktreePath: WorktreePlaceholder.worktreePath.variable
     case .branch: WorktreePlaceholder.branch.variable
     }

@@ -11,8 +11,8 @@ extension Helper {
                        [--new-turn true] [--shell true] [--resumes true]
                        [--out ID,ID...]
           Report a state for the terminal this runs in. Defaults come from the
-          environment the app sets: MULTISHELL_SESSION, MULTISHELL_WORKTREE,
-          MULTISHELL_SOCKET, MULTISHELL_APP_PID. The pid defaults to the
+          environment the app sets: \(SessionEnvironment.sessionVariable), \(SessionEnvironment.worktreeVariable),
+          \(SessionEnvironment.socketVariable), \(SessionEnvironment.appPIDVariable). The pid defaults to the
           nearest ancestor that is not a shell: the program that ran this, or
           the shell itself when the next ancestor is the app. --agent names
           the agent at the prompt, by catalogue id, so the app can tell an

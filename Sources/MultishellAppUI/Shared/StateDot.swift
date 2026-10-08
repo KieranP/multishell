@@ -2,7 +2,7 @@ import MultishellCore
 import SwiftUI
 
 /// A session state's colour as a dot, the one mark a row, a lane and a
-/// subagent share.
+/// worker share.
 struct StateDot: View {
   let state: SessionState
   let theme: Theme

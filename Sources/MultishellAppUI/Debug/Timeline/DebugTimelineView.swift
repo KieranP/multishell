@@ -40,7 +40,7 @@ struct DebugTimelineView: View {
         Text(timeline.range.agoTitle)
         Spacer()
         if let slot = timeline.slot(at: hoveredSlotIndex) {
-          Text(slot.startedAt.formatted(date: .omitted, time: .standard))
+          Text(slot.startedAtText)
             .foregroundStyle(theme.textSecondary)
           Spacer()
         }

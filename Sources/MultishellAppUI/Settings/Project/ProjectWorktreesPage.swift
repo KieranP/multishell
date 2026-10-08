@@ -8,8 +8,6 @@ struct ProjectWorktreesPage: View {
 
   var body: some View {
     let defaults = model.workspace.worktreeDefaults
-    let effective = model.effectiveWorktreeSettings(for: project)
-    let exampleBranch = effective.exampleBranch
 
     Form {
       OverrideSection(
@@ -17,10 +15,9 @@ struct ProjectWorktreesPage: View {
         global: defaults.worktreeDirectory,
         label: t("project.worktree-path"),
         info: t("project.worktree-path-info")
-      ) { binding, isOverridden, inherited in
+      ) { binding, isOverridden, _ in
         TextField(t("project.path-label"), text: binding).disabled(!isOverridden)
-        let container = effective.worktreeContainer(for: project).path
-        SettingsCaption(inherited.containerCaption(container, isOverridden: isOverridden))
+        SettingsCaption(model.worktreeContainerCaption(for: project, isOverridden: isOverridden))
       }
 
       OverrideSection(
@@ -28,15 +25,12 @@ struct ProjectWorktreesPage: View {
         global: defaults.branchPrefix,
         label: t("project.branch-prefix"),
         info: t("project.branch-prefix-info")
-      ) { binding, isOverridden, inherited in
+      ) { binding, isOverridden, _ in
         TextField(
           t("project.prefix-label"), text: binding, prompt: Text(t("worktrees.prefix-none"))
         )
         .disabled(!isOverridden)
-        let examplePath = effective.worktreePath(forBranch: exampleBranch, in: project).path
-        SettingsCaption(
-          inherited.prefixExampleCaption(
-            branch: exampleBranch, path: examplePath, isOverridden: isOverridden))
+        SettingsCaption(model.branchPrefixCaption(for: project, isOverridden: isOverridden))
       }
 
       OverrideSection(

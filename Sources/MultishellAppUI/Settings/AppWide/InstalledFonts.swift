@@ -7,13 +7,13 @@ import MultishellAppCore
 enum InstalledFonts {
   /// Enumerated once and kept: a `@State` default is an ordinary expression,
   /// run whenever the `View` is built, which is every settings page switch.
-  static var all = detect()
+  static var detection = detect()
 
   /// Replaces the cache, which Refresh must: the Appearance page's `@State`
   /// default reads it again each time the window opens.
   static func reload() -> FontDetection {
-    all = detect()
-    return all
+    detection = detect()
+    return detection
   }
 
   private static func detect() -> FontDetection {

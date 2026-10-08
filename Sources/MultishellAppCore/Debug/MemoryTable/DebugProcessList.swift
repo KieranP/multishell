@@ -4,15 +4,15 @@ import MultishellProcess
 /// out once rather than at every read.
 struct DebugProcessList: Sendable, Equatable {
   let processes: [ProcessUsage]
-  let lines: [DebugProcessLine]
+  let rows: [DebugProcessRow]
   /// What the tops of its trees hold themselves: a tab's panes' shells.
   let selfMemory: UInt64
   let totalMemory: UInt64
 
   init(processes: [ProcessUsage]) {
     self.processes = processes
-    lines = DebugProcessLine.lines(of: processes)
-    selfMemory = lines.topLevelMemory
+    rows = DebugProcessRow.rows(of: processes)
+    selfMemory = rows.topLevelMemory
     totalMemory = processes.totalMemory
   }
 }

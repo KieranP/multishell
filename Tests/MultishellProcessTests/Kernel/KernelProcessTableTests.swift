@@ -14,6 +14,7 @@ struct KernelProcessTableTests {
 
   @Test func launchdIsKnownAndAPidNothingHoldsIsNot() {
     #expect(KernelProcessTable.name(of: 1) != nil)
+    #expect(KernelProcessTable.name(of: 999_999_999) == nil)
     #expect(KernelProcessTable.parent(of: 999_999_999) == nil)
   }
 

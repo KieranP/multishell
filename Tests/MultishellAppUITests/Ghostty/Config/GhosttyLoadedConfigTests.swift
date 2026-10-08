@@ -1,4 +1,5 @@
 import Foundation
+import TestScratch
 import Testing
 
 @testable import MultishellAppUI
@@ -6,8 +7,8 @@ import Testing
 @Suite
 struct GhosttyLoadedConfigTests {
   @Test func theFileIsGoneOnceLibghosttyHasReadIt() throws {
-    let directory = ScratchDirectory.path("ghostty-config-file")
-    defer { ScratchDirectory.remove(directory) }
+    let directory = Scratch.path("ghostty-config-file")
+    defer { Scratch.remove(directory) }
 
     let loaded = try #require(
       GhosttyLoadedConfig.load("macos-auto-secure-input = false", in: directory))

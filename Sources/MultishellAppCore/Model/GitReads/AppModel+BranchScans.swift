@@ -45,7 +45,7 @@ extension AppModel {
       recordDefaultBranch(nil, of: project.id)
       return
     }
-    recordDefaultBranch(inputs.base, of: project.id)
+    recordDefaultBranch(inputs.defaultBranch, of: project.id)
 
     let plan = planMergeReads(of: project.id, against: inputs)
     forgetMergeStates(ofWorktrees: plan.unbadgeable)
@@ -66,14 +66,16 @@ extension AppModel {
       // forgets, the last checkout there being gone. See worktrees.md.
       if worktreeOperations.isRunning(worktree.id) { continue }
       guard !pathClaims.isClaimed(worktree.id), !worktree.isInitializing,
-        WorktreeMergeState.applies(to: worktree, base: inputs.base.nameWithoutRemote),
+        WorktreeMergeState.applies(
+          to: worktree, defaultBranchName: inputs.defaultBranch.nameWithoutRemote),
         let branch = worktree.branch, let tip = inputs.tip(of: branch)
       else {
         plan.unbadgeable.append(worktree.id)
         continue
       }
       let basis = MergeVerdictBasis(
-        base: inputs.base.shortName, baseTip: inputs.base.tip, branch: branch, branchTip: tip,
+        defaultBranchName: inputs.defaultBranch.shortName,
+        defaultBranchTip: inputs.defaultBranch.tip, branch: branch, branchTip: tip,
         upstreamIsGone: inputs.upstreamIsGone(branch))
       plan.verdictBases[worktree.id] = basis
       // Nothing has moved since the answer we have, so nothing to ask.
@@ -105,8 +107,8 @@ extension AppModel {
     }
   }
 
-  private func recordDefaultBranch(_ base: DefaultBranch?, of id: Project.ID) {
-    setIfChanged(\.defaultBranches[id], base)
+  private func recordDefaultBranch(_ defaultBranch: DefaultBranch?, of id: Project.ID) {
+    setIfChanged(\.defaultBranches[id], defaultBranch)
   }
 
   /// The scan answers by branch, the sidebar asks by worktree.

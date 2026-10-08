@@ -80,6 +80,6 @@ let package = Package(
       dependencies: ["MultishellCLI", "MultishellCore", "MultishellProcess", "TestScratch"]),
     // The app's own values, its AppKit pieces, and views laid out in a window
     // never shown; see Docs/develop/tests.md.
-    .testTarget(name: "MultishellAppUITests", dependencies: ["MultishellAppUI"]),
+    .testTarget(name: "MultishellAppUITests", dependencies: ["MultishellAppUI", "TestScratch"]),
   ]
 )

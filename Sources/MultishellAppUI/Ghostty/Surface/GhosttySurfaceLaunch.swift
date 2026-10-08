@@ -4,10 +4,10 @@ import GhosttyKit
 /// What a surface's shell starts with. libghostty copies it during
 /// `ghostty_surface_new`, so the C strings need live only for that call.
 struct GhosttySurfaceLaunch {
-  var workingDirectory: String
-  var environment: [String: String]
+  let workingDirectory: String
+  let environment: [String: String]
   /// One shell command line, which libghostty hands to the login shell.
-  var command: String?
+  let command: String?
 
   func withCConfig<Result>(
     view: NSView, scale: Double, _ body: (inout ghostty_surface_config_s) -> Result

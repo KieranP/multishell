@@ -23,8 +23,7 @@ struct GitHarness {
     git = try TestGit.runner()
     root = Scratch.path("appgit")
     let repository = root.appendingPathComponent("demo", isDirectory: true)
-    try await TestRepository.initialise(at: repository, using: git)
-    try await TestRepository.commitInitial(in: repository, using: git)
+    try await TestRepository.initialise(at: repository, withFirstCommit: true, using: git)
 
     store = WorkspaceStore(
       file: StateFile(fileURL: root.appendingPathComponent("state.json")))
@@ -139,8 +138,8 @@ struct GitHarness {
 
   /// `git worktree add -b` run by hand, as the user would outside the app.
   func addOutsideTheApp(_ branch: String, at directory: URL) async throws {
-    _ = try await git.run(
-      ["worktree", "add", "-q", "-b", branch, directory.path], in: project.path)
+    try await TestRepository.addWorktree(
+      onNewBranch: branch, at: directory, in: project.path, using: git)
   }
 
   /// `git worktree remove --force` run by hand, as the user would outside the app.
@@ -148,7 +147,7 @@ struct GitHarness {
     _ = try await git.run(["worktree", "remove", "--force", directory.path], in: project.path)
   }
 
-  func localBranches() async throws -> [String] {
+  func branches() async throws -> [String] {
     try await TestRepository.branches(in: project.path, using: git)
   }
 
@@ -167,8 +166,7 @@ struct GitHarness {
   /// A second repository with one commit, added as a project of its own.
   func addSecondProject() async throws -> Project {
     let second = root.appendingPathComponent("other", isDirectory: true)
-    try await TestRepository.initialise(at: second, using: git)
-    try await TestRepository.commitInitial(in: second, using: git)
+    try await TestRepository.initialise(at: second, withFirstCommit: true, using: git)
     await model.addProject(at: second)
     return try #require(model.workspace.projects.first { $0.id != project.id })
   }

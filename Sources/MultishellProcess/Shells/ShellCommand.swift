@@ -11,7 +11,7 @@ public enum ShellCommand {
     environment: [String: String] = [:],
     shellPath: String
   ) async throws {
-    let shell = ShellInvocation.userShell(at: shellPath)
+    let shell = ShellInvocation.forCommandLine(inShellAt: shellPath)
     let arguments = shell.arguments + [Self.evalScriptCommand]
     // Not historyless: an editor started here keeps what its terminals inherit.
     let environment = environment.merging([Self.scriptVariable: commandLine]) { $1 }
@@ -40,7 +40,7 @@ public enum ShellCommand {
     timeout: Duration? = nil,
     stopper: ProcessStopper? = nil
   ) async throws -> String {
-    let shell = ShellInvocation.userShell(at: shellPath)
+    let shell = ShellInvocation.forCommandLine(inShellAt: shellPath)
     let arguments = shell.arguments + [Self.evalScriptCommand]
     let environment = ShellInvocation.historyless(environment)
       .merging([Self.scriptVariable: Self.prologue(entering: directory) + script]) { $1 }

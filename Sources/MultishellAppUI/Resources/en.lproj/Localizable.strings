@@ -36,11 +36,9 @@
 "agents.flags" = "CLI Flags:";
 "agents.flags-info" = "Added to the agent's command line every time a tab starts it, resuming included. Quotes group a value with a space in it. Kept per agent.";
 "agents.helper-info" = "For your own hooks: `multishell state running|attention|done|error|idle` marks the tab it runs in. Asks for an administrator password.";
-"agents.helper-installed" = "Installed in /usr/local/bin";
 "agents.helper-label" = "multishell:";
 "agents.hooks-section" = "Agent hooks";
 "agents.install-helper" = "Install Command Line Tool…";
-"agents.not-installed" = "Not installed";
 "agents.part-agent" = "Agent";
 "agents.preferred-agent" = "Preferred agent:";
 "agents.row-label" = "%@:";
@@ -92,10 +90,6 @@
 "dialog.agent-still-working" = "An agent here reported that it is still working. Closing ends it.";
 "dialog.decide-later" = "Decide Later";
 "dialog.remove-project" = "Remove Project";
-"empty.add-project" = "Add a project to get started";
-"empty.add-project-detail" = "Point Multishell at a git repository. Its worktrees appear in the sidebar, and each one gets its own set of terminals.";
-"empty.select-worktree" = "Select a worktree";
-"empty.select-worktree-detail" = "Pick one in the sidebar and its terminals open here.";
 "find.close" = "Close Find";
 "find.next" = "Next Match";
 "find.previous" = "Previous Match";
@@ -234,7 +228,6 @@
 "sidebar.clear-filter" = "Clear filter";
 "sidebar.collapse" = "Collapse";
 "sidebar.collapsed-state" = "%@ in a terminal of a collapsed worktree";
-"sidebar.counts" = "%1$@ · %2$@";
 "sidebar.expand" = "Expand";
 "sidebar.fetching" = "Fetching from the remote";
 "sidebar.filter" = "Filter";
@@ -257,16 +250,8 @@
 "tab.move-to-new-group" = "Move to New Group";
 "tab.move-to-this-group" = "Move tab to this group";
 "tab.name-prompt" = "Tab name";
-"tab.new" = "New Tab";
-"tab.new-in-group" = "New Tab in This Group";
 "tab.scroll-left" = "Scroll tabs left";
 "tab.scroll-right" = "Scroll tabs right";
-"tab.split-down" = "Split Down";
-"tab.split-down-here" = "Split Down (⇧⌘D)";
-"tab.split-down-in-group" = "Split Down in This Group";
-"tab.split-right" = "Split Right";
-"tab.split-right-here" = "Split Right (⌘D)";
-"tab.split-right-in-group" = "Split Right in This Group";
 "tab.state-clear-status" = "%@. Clear status";
 "tab.state-click-to-clear" = "%@. Click to clear.";
 "tab.use-shell-title" = "Use Shell Title";

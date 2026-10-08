@@ -35,7 +35,7 @@ enum PromisedDrop {
     // arrives in would linger until the sweep. It is this drag's own.
     let collector = PromisedDropCollector(
       expecting: receivers.map { _ in 1 }, recounting: promised,
-      naming: { receivers[$0].fileNames },
+      fileNamesOfItem: { receivers[$0].fileNames },
       onDelivery: { urls in
         if urls.isEmpty { try? FileManager.default.removeItem(at: directory) }
         deliver(urls)

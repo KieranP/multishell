@@ -13,7 +13,7 @@ struct AgentBoardEmptyHint: View {
       .font(.system(size: metrics.caption))
       .foregroundStyle(theme.textTertiary)
       .frame(maxWidth: .infinity, alignment: .leading)
-      .padding(.horizontal, 14)
+      .padding(.horizontal, UIMetrics.panelSideInset)
       .padding(.vertical, 8)
       .hairline(.top, theme)
   }

@@ -15,7 +15,7 @@ extension ShellIntegrationScriptsTests {
     var environment = files.environment(termProgram: "ghostty")
     environment["GHOSTTY_SHELL_FEATURES"] = features
     environment[SessionEnvironment.sessionVariable] = "bash-output"
-    environment[SessionEnvironment.worktreePathVariable] = "/w"
+    environment[SessionEnvironment.worktreeVariable] = "/w"
     return try await interactiveShellOutput(
       bash, arguments: ["--init-file", files.bashInit.path, "-i"], environment: environment,
       input: input)

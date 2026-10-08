@@ -8,14 +8,8 @@ import Testing
 
 @Suite
 struct EngineCommandLineTests {
-  private func bashInitThatExists() throws -> URL {
-    let url = Scratch.path("bashinit")
-    try "".write(to: url, atomically: true, encoding: .utf8)
-    return url
-  }
-
   @Test func zshAsTheLoginShellNeedsNoOverrideCommand() throws {
-    let bashInit = try bashInitThatExists()
+    let bashInit = try Scratch.bashInitThatExists()
     defer { Scratch.remove(bashInit) }
     #expect(
       EngineCommandLine.overrideCommand(
@@ -24,7 +18,7 @@ struct EngineCommandLineTests {
   }
 
   @Test func aChosenShellThatIsNotTheLoginShellIsNamedOutright() throws {
-    let bashInit = try bashInitThatExists()
+    let bashInit = try Scratch.bashInitThatExists()
     defer { Scratch.remove(bashInit) }
     #expect(
       EngineCommandLine.overrideCommand(
@@ -42,7 +36,7 @@ struct EngineCommandLineTests {
   }
 
   @Test func bashLaunchesWithTheGeneratedInitFile() throws {
-    let bashInit = try bashInitThatExists()
+    let bashInit = try Scratch.bashInitThatExists()
     defer { Scratch.remove(bashInit) }
     #expect(
       EngineCommandLine.overrideCommand(forShell: "/bin/bash", bashInit: bashInit)
@@ -82,7 +76,7 @@ struct EngineCommandLineTests {
   }
 
   @Test func anUnknownShellIsLaunchedPlainly() throws {
-    let bashInit = try bashInitThatExists()
+    let bashInit = try Scratch.bashInitThatExists()
     defer { Scratch.remove(bashInit) }
     #expect(
       EngineCommandLine.overrideCommand(

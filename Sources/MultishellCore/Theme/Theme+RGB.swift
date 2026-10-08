@@ -9,8 +9,8 @@ extension Theme {
     return HexColor.parse(ansi[slot]) ?? grey
   }
 
-  public func ansiRGB(_ colour: ANSIColor) -> RGB {
-    ansiRGB(colour.rawValue)
+  public func ansiRGB(_ color: ANSIColor) -> RGB {
+    ansiRGB(color.rawValue)
   }
 
   public var backgroundRGB: RGB { HexColor.parse(background) ?? .black }

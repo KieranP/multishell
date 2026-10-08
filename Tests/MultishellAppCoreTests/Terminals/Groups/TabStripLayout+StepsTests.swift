@@ -16,30 +16,28 @@ struct TabStripLayoutStepsTests {
   }
 
   @Test func anArrowMovesOnByTheFirstTabPastThatEnd() {
-    // Scrolled to the start: tabs 0, 1 and 2 are in view, so the next is 3.
-    #expect(target(.trailing, at: 0) == 3)
+    #expect(target(.trailing, at: 0) == 3, "0 to 2 in view at the start")
     #expect(target(.leading, at: 0) == nil, "nothing to the left of the first")
 
-    // Scrolled by two tabs: 2, 3 and 4 are in view.
-    #expect(target(.trailing, at: 200) == 5)
+    #expect(target(.trailing, at: 200) == 5, "2 to 4 in view two tabs on")
     #expect(target(.leading, at: 200) == 1)
   }
 
   /// A clipped tab is what its arrow finishes. The arrow is drawn from the
   /// same half point, so answering in whole tabs left it dead here.
   @Test func aHalfShownTabIsWhatItsOwnArrowFinishes() {
-    // Scrolled by half a tab: 0 is half in view, then 1, 2, and half of 3.
     #expect(target(.leading, at: 50) == 0, "half of tab 0 is cut off at the left")
     #expect(target(.trailing, at: 50) == 3, "and half of tab 3 at the right")
   }
 
-  /// The pair that drew a chevron answering nothing: whatever end `Edges`
+  /// The pair that drew a chevron answering nothing: whatever end `Overflow`
   /// fades, `stepTarget` has somewhere to go.
   @Test func everyEndThatFadesCanBeSteppedFrom() {
     for offset in stride(from: 0.0, through: 400, by: 7) {
-      let edges = TabStripLayout.Edges(offset: offset, viewport: 300, content: 700)
-      #expect(edges.hasTabsPastLeading == (target(.leading, at: offset) != nil), "at \(offset)")
-      #expect(edges.hasTabsPastTrailing == (target(.trailing, at: offset) != nil), "at \(offset)")
+      let overflow = TabStripLayout.Overflow(offset: offset, viewport: 300, content: 700)
+      #expect(overflow.hasTabsPastLeading == (target(.leading, at: offset) != nil), "at \(offset)")
+      #expect(
+        overflow.hasTabsPastTrailing == (target(.trailing, at: offset) != nil), "at \(offset)")
     }
   }
 

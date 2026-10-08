@@ -7,7 +7,7 @@ public final class PromisedDropCollector {
   private var files: [[URL]]
   private var reported: [Int]
   private var promisedCount: (Int) -> Int
-  private var naming: ((Int) -> [String])?
+  private var fileNamesOfItem: ((Int) -> [String])?
   private var waiting: Set<Int>
   private let onDelivery: ([URL]) -> Void
 
@@ -22,15 +22,15 @@ public final class PromisedDropCollector {
   public private(set) var isDelivered = false
 
   /// `counts` per item in the drag's order; `recounting` replaces one once a
-  /// report knows it, and `naming` orders an item's own files.
+  /// report knows it, and `fileNamesOfItem` orders an item's own files.
   public init(
     expecting counts: [Int], recounting: ((Int) -> Int)? = nil,
-    naming: ((Int) -> [String])? = nil, onDelivery: @escaping ([URL]) -> Void
+    fileNamesOfItem: ((Int) -> [String])? = nil, onDelivery: @escaping ([URL]) -> Void
   ) {
     files = Array(repeating: [], count: counts.count)
     reported = Array(repeating: 0, count: counts.count)
     promisedCount = recounting ?? { counts[$0] }
-    self.naming = naming
+    self.fileNamesOfItem = fileNamesOfItem
     waiting = Set(counts.indices.filter { counts[$0] > 0 })
     self.onDelivery = onDelivery
     if waiting.isEmpty { deliver() }
@@ -67,9 +67,11 @@ public final class PromisedDropCollector {
     // The queue holds the reader, which holds this, so a source that never
     // writes would leave all three standing; `promisedCount` holds the receivers.
     readerQueue = nil
-    let ordered = files.indices.map { Self.inNamedOrder(files[$0], names: naming?($0) ?? []) }
+    let ordered = files.indices.map {
+      Self.inNamedOrder(files[$0], names: fileNamesOfItem?($0) ?? [])
+    }
     promisedCount = { _ in 1 }
-    naming = nil
+    fileNamesOfItem = nil
     onDelivery(ordered.flatMap { $0 })
   }
 

@@ -4,7 +4,7 @@ import SwiftUI
 /// ringed where the arrow keys are.
 struct IconPaletteCell: View {
   let symbol: String
-  let isCurrent: Bool
+  let isSelected: Bool
   let isHighlighted: Bool
   let size: Double
   let pick: () -> Void
@@ -13,9 +13,9 @@ struct IconPaletteCell: View {
     PlainGlyphButton(help: symbol, action: pick) {
       Image(systemName: symbol)
         .font(.system(size: 14))
-        .foregroundStyle(isCurrent ? Color.white : Color.primary)
+        .foregroundStyle(isSelected ? Color.white : Color.primary)
         .frame(width: size, height: size)
-        .background(isCurrent ? Color.accentColor : .clear, in: RoundedRectangle(cornerRadius: 5))
+        .background(isSelected ? Color.accentColor : .clear, in: RoundedRectangle(cornerRadius: 5))
         .overlay {
           if isHighlighted {
             RoundedRectangle(cornerRadius: 5).strokeBorder(Color.accentColor, lineWidth: 2)

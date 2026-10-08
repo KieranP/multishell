@@ -11,7 +11,7 @@ public enum WorktreePlaceholder: String, CaseIterable, Sendable {
   /// The worktree's directory.
   case worktreePath = "worktree_path"
   /// The repository's folder name.
-  case project
+  case projectName = "project"
   /// The repository root.
   case projectPath = "project_path"
 
@@ -24,7 +24,7 @@ public enum WorktreePlaceholder: String, CaseIterable, Sendable {
     case .branch: "MULTISHELL_BRANCH"
     case .worktreeName: "MULTISHELL_WORKTREE_NAME"
     case .worktreePath: "MULTISHELL_WORKTREE_PATH"
-    case .project: "MULTISHELL_PROJECT_NAME"
+    case .projectName: "MULTISHELL_PROJECT_NAME"
     case .projectPath: "MULTISHELL_PROJECT_PATH"
     }
   }
@@ -41,7 +41,7 @@ public enum WorktreePlaceholder: String, CaseIterable, Sendable {
         case .branch: worktree.branch ?? worktree.name
         case .worktreeName: worktreeName
         case .worktreePath: worktree.path.path
-        case .project: project.name
+        case .projectName: project.name
         case .projectPath: project.path.path
         }
     }

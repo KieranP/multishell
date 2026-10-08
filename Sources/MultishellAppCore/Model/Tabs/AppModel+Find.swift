@@ -121,7 +121,7 @@ extension AppModel {
     paneTakesKeystrokes ? menuFindPane : nil
   }
 
-  /// Bars and find texts whose pane has gone. From the reconcile, as `pruneTabCloseAndRename`
+  /// Bars and find texts whose pane has gone. From the reconcile, as `prunePendingClose`
   /// is, and from a shell exiting, which closes its session without one.
   func pruneFind() {
     let existingSessionIDs = Set(workspace.sessions.map(\.id))

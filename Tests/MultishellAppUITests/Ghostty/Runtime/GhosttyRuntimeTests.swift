@@ -1,4 +1,5 @@
 import AppKit
+import TestScratch
 import Testing
 
 @testable import MultishellAppUI
@@ -16,8 +17,8 @@ struct GhosttyRuntimeTests {
   }
 
   @Test func aBaseThatCouldNotBeLoadedIsTriedAgainOnTheNextApply() throws {
-    let directory = ScratchDirectory.path("ghostty-runtime-config")
-    defer { ScratchDirectory.remove(directory) }
+    let directory = Scratch.path("ghostty-runtime-config")
+    defer { Scratch.remove(directory) }
     try #require(FileManager.default.createFile(atPath: directory.path, contents: nil))
     let runtime = GhosttyRuntime(configDirectory: directory)
 
@@ -40,8 +41,8 @@ struct GhosttyRuntimeTests {
   }
 
   @Test func anAppLayerThatCouldNotBeLoadedAtStartIsKeptForTheRetry() throws {
-    let directory = ScratchDirectory.path("ghostty-runtime-config")
-    defer { ScratchDirectory.remove(directory) }
+    let directory = Scratch.path("ghostty-runtime-config")
+    defer { Scratch.remove(directory) }
     try #require(FileManager.default.createFile(atPath: directory.path, contents: nil))
     let runtime = GhosttyRuntime(
       appLayer: GhosttyConfigText { $0.set("macos-auto-secure-input", "true") },

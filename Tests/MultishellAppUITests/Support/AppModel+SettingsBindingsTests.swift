@@ -81,7 +81,7 @@ struct AppModelSettingsBindingsTests {
     harness.model.setWorktreeDefaults(
       WorktreeSettings(worktreeDirectory: "../trees", branchPrefix: "team/"))
 
-    harness.model.worktreeDefaultSetting(\.branchPrefix).wrappedValue = "me/"
+    harness.model.worktreeDefaultBinding(\.branchPrefix).wrappedValue = "me/"
 
     #expect(harness.model.workspace.worktreeDefaults.branchPrefix == "me/")
     #expect(harness.model.workspace.worktreeDefaults.worktreeDirectory == "../trees")
@@ -91,7 +91,7 @@ struct AppModelSettingsBindingsTests {
     let harness = ModelHarness()
     let before = harness.model.workspace.notificationPreference
 
-    harness.model.notificationSetting(for: .done).wrappedValue = !before[.done]
+    harness.model.notificationBinding(for: .done).wrappedValue = !before[.done]
 
     #expect(harness.model.workspace.notificationPreference[.done] == !before[.done])
     #expect(harness.model.workspace.notificationPreference[.failed] == before[.failed])

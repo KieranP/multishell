@@ -24,7 +24,7 @@ struct SessionEnvironmentTests {
         shellOverride: shell)
       let variables = SessionEnvironment.variables(for: session, socket: URL(fileURLWithPath: "/s"))
       #expect(variables[SessionEnvironment.sessionVariable] == session.id.uuidString, "\(shell)")
-      #expect(variables[SessionEnvironment.worktreePathVariable] == "/w/repo", "\(shell)")
+      #expect(variables[SessionEnvironment.worktreeVariable] == "/w/repo", "\(shell)")
       #expect(variables[SessionEnvironment.socketVariable] == "/s", "\(shell)")
       #expect(variables[SessionEnvironment.appPIDVariable] != nil, "\(shell)")
     }
