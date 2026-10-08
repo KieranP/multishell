@@ -4,7 +4,7 @@ import Testing
 @testable import MultishellProcess
 
 @Suite
-struct DebugProcessRowWordingTests {
+struct DebugSelfAndTotalMemoryWordingTests {
   @Test func aNarrowRowNamesItsOwnShareOfTheWholeOnlyWhereItStartedSomething() {
     let rows = DebugProcessRow.rows(of: [
       .sample(pid: 10, parentPID: 1, footprint: 1 << 20),

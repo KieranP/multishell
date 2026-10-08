@@ -1,15 +1,19 @@
+import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// The two colours a split strip stacks, named, so neither is told by
-/// colour alone.
+/// The colours a split strip stacks, named, so none is told by colour alone.
 struct DebugSeriesLegend: View {
+  let metric: DebugMetric
   let theme: Theme
   let metrics: UIMetrics
 
   var body: some View {
     HStack(spacing: 6) {
       entry(t("debug.legend-app"), theme.debugAppSeriesColor)
+      if metric.showsTerminals {
+        entry(t("debug.legend-terminals"), theme.debugTerminalsSeriesColor)
+      }
       entry(t("debug.legend-children"), theme.debugChildrenSeriesColor)
     }
   }

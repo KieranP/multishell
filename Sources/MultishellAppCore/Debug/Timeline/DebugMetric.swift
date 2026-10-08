@@ -6,20 +6,33 @@ public enum DebugMetric: CaseIterable, Sendable {
   case stateReports
   case memory
 
-  /// Drawn as the app under everything it started, in two colours.
+  /// Drawn as the app under everything it started, in two colours, or three
+  /// where it `showsTerminals`.
   public var isSplitByOwner: Bool { self == .cpu || self == .memory }
+
+  /// Memory alone: the terminals hold memory in the app's process, but their
+  /// CPU is the app's own threads, which the kernel does not split.
+  public var showsTerminals: Bool { self == .memory }
 
   /// A count per second, drawn as bars; the rest are levels, drawn as areas.
   public var drawsBars: Bool { self == .gitRuns || self == .stateReports }
 
-  /// The app's part and the whole, or `nil` where the slot has no reading.
-  func values(of slot: DebugTimelineSlot) -> (app: Double, total: Double)? {
-    switch self {
-    case .frameRate: slot.framesPerSecond.map { ($0, $0) }
-    case .cpu: (slot.appCPUPercent, slot.totalCPUPercent)
-    case .gitRuns: (slot.gitRunsStartedPerSecond, slot.gitRunsStartedPerSecond)
-    case .stateReports: (slot.stateReportsPerSecond, slot.stateReportsPerSecond)
-    case .memory: (Double(slot.appMemory), Double(slot.totalMemory))
+  /// The app's own part, that with its terminals, and the whole, or `nil`
+  /// where the slot has no reading.
+  func values(
+    of slot: DebugTimelineSlot
+  ) -> (app: Double, appWithTerminals: Double, total: Double)? {
+    let unsplit = { (value: Double) in (value, value, value) }
+    return switch self {
+    case .frameRate: slot.framesPerSecond.map(unsplit)
+    case .cpu: (slot.appCPUPercent, slot.appCPUPercent, slot.totalCPUPercent)
+    case .gitRuns: unsplit(slot.gitRunsStartedPerSecond)
+    case .stateReports: unsplit(slot.stateReportsPerSecond)
+    case .memory:
+      (
+        Double(slot.appMemoryOutsideTerminals), Double(slot.appMemory),
+        Double(slot.totalMemory)
+      )
     }
   }
 

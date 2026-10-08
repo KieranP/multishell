@@ -35,12 +35,27 @@ extension AccessibilityText {
     return parts.joined(separator: ", ")
   }
 
-  /// A process under an expanded row, its depth said where the arrow shows it.
-  public static func debugProcessRow(_ row: DebugProcessRow) -> String {
-    var parts = [row.process.name]
-    if row.depth > 0 { parts.append(t("spoken.tree-depth", row.depth)) }
-    parts.append(t("spoken.self-memory", DebugValueText.memory(row.selfMemory)))
-    parts.append(t("spoken.total-memory", DebugValueText.memory(row.totalMemory)))
+  /// The terminals under an expanded tab, read as the process rows are.
+  public static func debugTerminalRow(_ row: DebugTerminalRow) -> String {
+    [
+      row.title, t("spoken.self-memory", row.selfMemoryText),
+      t("spoken.total-memory", row.totalMemoryText),
+    ].joined(separator: ", ")
+  }
+
+  /// A process under an expanded row, its depth said where the arrow shows
+  /// it: under the process that started it, or the terminal it runs in.
+  public static func debugProcessRow(
+    _ process: DebugProcessRow, under row: DebugMemoryRow
+  ) -> String {
+    var parts = [process.process.name]
+    if process.depth > 0 {
+      parts.append(t("spoken.tree-depth", process.depth))
+    } else if row.terminalRow != nil {
+      parts.append(t("spoken.runs-in-terminal"))
+    }
+    parts.append(t("spoken.self-memory", DebugValueText.memory(process.selfMemory)))
+    parts.append(t("spoken.total-memory", DebugValueText.memory(process.totalMemory)))
     return parts.joined(separator: ", ")
   }
 }

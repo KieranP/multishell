@@ -10,11 +10,12 @@ struct AccessibilityTextDebugTests {
 
   private func memoryLine(
     _ source: DebugMemoryRow.Source = .unattributed, processCount: Int? = 2,
-    selfMemory: UInt64? = 1_024
+    selfMemory: UInt64? = 1_024, terminalRow: DebugTerminalRow? = nil
   ) -> DebugMemoryRow {
     DebugMemoryRow(
       source: source, title: "Shell", subtitle: "acme / main", processCount: processCount,
-      selfMemory: selfMemory, totalMemory: 2_048, barFraction: 1, processRows: [])
+      selfMemory: selfMemory, totalMemory: 2_048, barFraction: 1, terminalRow: terminalRow,
+      processRows: [])
   }
 
   private func processLine(depth: Int) -> DebugProcessRow {
@@ -56,10 +57,27 @@ struct AccessibilityTextDebugTests {
 
   @Test func aProcessIsSpokenWithItsDepthOnlyWhereSomethingStartedIt() {
     #expect(
-      AccessibilityText.debugProcessRow(processLine(depth: 0))
+      AccessibilityText.debugProcessRow(processLine(depth: 0), under: memoryLine())
         == "p10, \(kilobyte) self, \(twoKilobytes) total")
     #expect(
-      AccessibilityText.debugProcessRow(processLine(depth: 2))
+      AccessibilityText.debugProcessRow(processLine(depth: 2), under: memoryLine())
         == "p10, started by the process above, 2 deep, \(kilobyte) self, \(twoKilobytes) total")
+  }
+
+  @Test func aShellAtTheTopOfATabIsSpokenAsRunningInTheTerminalAboveIt() {
+    let tabWithTerminal = memoryLine(
+      terminalRow: DebugTerminalRow(selfMemory: 1_024, totalMemory: 2_048))
+    #expect(
+      AccessibilityText.debugProcessRow(processLine(depth: 0), under: tabWithTerminal)
+        == "p10, runs in the terminal above, \(kilobyte) self, \(twoKilobytes) total")
+    #expect(
+      AccessibilityText.debugProcessRow(processLine(depth: 2), under: tabWithTerminal)
+        == "p10, started by the process above, 2 deep, \(kilobyte) self, \(twoKilobytes) total")
+  }
+
+  @Test func aTerminalIsSpokenWithWhatItHoldsAndWhatItsShellsHoldWithIt() {
+    #expect(
+      AccessibilityText.debugTerminalRow(DebugTerminalRow(selfMemory: 1_024, totalMemory: 2_048))
+        == "Terminal, \(kilobyte) self, \(twoKilobytes) total")
   }
 }

@@ -17,7 +17,8 @@ struct SidebarQuickStatsTests {
         sequence: 0, takenAt: Date(), elapsed: .seconds(1),
         frameRate: FrameRateReading(framesPerSecond: 120, longestFrame: .milliseconds(9)),
         gitRunsStartedCount: 0, gitRunningCount: 0, gitCommands: [:], appCPUPercent: 234,
-        childrenCPUPercent: 1_000, appMemory: 1_023_400_000, childrenMemory: 15_920_000_000,
+        childrenCPUPercent: 1_000, appMemory: 1_023_400_000, terminalMemory: 0,
+        childrenMemory: 15_920_000_000,
         stateReportCount: 0))
 
     let width = OffscreenWindow.naturalWidth(

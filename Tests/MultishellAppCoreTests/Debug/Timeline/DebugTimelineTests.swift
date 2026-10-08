@@ -48,6 +48,20 @@ struct DebugTimelineTests {
     #expect(abs(memory.app - 200 / 1_210) < 0.0001)
   }
 
+  @Test func theMemoryStripStacksTheTerminalsBetweenTheAppAndItsChildren() throws {
+    let samples = [
+      DebugSample.sample(sequence: 0, appMemory: 400, terminalMemory: 150, childrenMemory: 700)
+    ]
+    let timeline = DebugTimeline(history: .of(samples), range: .oneMinute)
+
+    let memory = try #require(timeline.points(of: .memory).last ?? nil)
+    #expect(abs(memory.app - 250 / 1_210) < 0.0001)
+    #expect(abs(memory.appWithTerminals - 400 / 1_210) < 0.0001)
+    #expect(abs(memory.total - 1_100 / 1_210) < 0.0001)
+    let cpu = try #require(timeline.points(of: .cpu).last ?? nil)
+    #expect(cpu.appWithTerminals == cpu.app)
+  }
+
   @Test func aFractionAcrossTheStripNamesTheSlotUnderItClampedToTheEnds() {
     let timeline = DebugTimeline(history: DebugHistory(), range: .oneMinute)
     #expect(timeline.slotIndex(atFraction: 0) == 0)

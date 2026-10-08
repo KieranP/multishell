@@ -106,6 +106,8 @@ public final class AppModel<Surface> {
   var debugHistory = DebugHistory()
   /// Which processes each pane runs, as of the last sample.
   var debugProcessAttribution = PaneProcessAttribution.empty
+  /// What each pane's terminal held at the last sample, scrollback included.
+  var debugTerminalMemoryBySession: [TerminalSession.ID: UInt64] = [:]
   /// What the panel shows while paused, the sampling going on under it.
   var pausedDebugSnapshot: DebugSnapshot?
   @ObservationIgnored var debugSampler = DebugSampler()

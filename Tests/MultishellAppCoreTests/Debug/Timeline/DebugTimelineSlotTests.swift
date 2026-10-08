@@ -29,4 +29,11 @@ struct DebugTimelineSlotTests {
     ])
     #expect(slot.framesPerSecond == 30)
   }
+
+  @Test func theAppsOwnMemoryStopsAtZeroWhereItsTerminalsReadMoreThanItsFootprint() {
+    let slot = DebugTimelineSlot(samples: [
+      .sample(sequence: 0, appMemory: 400, terminalMemory: 500)
+    ])
+    #expect(slot.appMemoryOutsideTerminals == 0)
+  }
 }

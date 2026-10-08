@@ -30,8 +30,8 @@ extension DebugMetric {
     self == .frameRate ? slot?.smoothness : nil
   }
 
-  /// A second line under the value: the app's share where the strip splits
-  /// by owner, the runs still going for git, else nothing.
+  /// A second line under the value: each owner's share where the strip splits,
+  /// the runs still going for git, else nothing.
   public func detailText(of slot: DebugTimelineSlot) -> String? {
     switch self {
     case .cpu:
@@ -40,8 +40,8 @@ extension DebugMetric {
         DebugValueText.percent(slot.childrenCPUPercent))
     case .memory:
       t(
-        "debug.split", DebugValueText.memory(slot.appMemory),
-        DebugValueText.memory(slot.childrenMemory))
+        "debug.split-memory", DebugValueText.memory(slot.appMemoryOutsideTerminals),
+        DebugValueText.memory(slot.terminalMemory), DebugValueText.memory(slot.childrenMemory))
     case .gitRuns where slot.gitRunningCount > 0:
       t("count.git-running", slot.gitRunningCount)
     case .frameRate, .gitRuns, .stateReports:

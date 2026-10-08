@@ -34,6 +34,10 @@
   ImGui, and the inspector's calls make the linker keep FreeType, libpng and
   zlib too. Built without, the notices stay as short as they are. A user's
   `custom-shader` line is dropped with them, having nothing to run.
+- **0006 is ours**: `ghostty_surface_memory_usage`, a surface's terminal bytes
+  for the debug tools (design/debug-tools.md), asked for upstream in
+  ghostty-org/ghostty discussion #14524. Delete it once the pin has a
+  surface-level call.
 - **i18n is off**, which is what keeps GNU libintl, LGPL, out of the executable:
   Ghostty's Zig object then calls no gettext function, and the linker drops the
   archive's copy. The app's words are its own anyway.

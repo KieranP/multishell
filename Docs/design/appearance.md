@@ -111,4 +111,6 @@ Themes, the focused pane, the window the app draws itself. Newest at the bottom.
 - **The debug tools split the app from its children in the theme's blue and
   yellow**, a pair every kind of colour blindness still tells apart, and taken
   from the theme so a user theme recolours them. Cost: a theme whose blue and
-  yellow sit close loses the split.
+  yellow sit close loses the split. The terminals' memory is the same blue
+  paler, being inside the app's process, and the legend names it, so no colour
+  has to carry it alone.

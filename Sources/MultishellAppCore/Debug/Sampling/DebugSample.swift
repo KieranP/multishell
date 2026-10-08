@@ -19,7 +19,10 @@ struct DebugSample: Sendable, Equatable {
   let appCPUPercent: Double
   /// Everything the app started, panes and git alike.
   let childrenCPUPercent: Double
+  /// The app's whole footprint, its panes' terminals included.
   let appMemory: UInt64
+  /// What the panes' terminals held, part of `appMemory`.
+  let terminalMemory: UInt64
   let childrenMemory: UInt64
   let stateReportCount: Int
 

@@ -21,8 +21,18 @@ struct DebugMemoryTableView: View {
           row: row, disclosure: disclosure, toggleExpansion: { toggleExpansion(of: row.source) },
           layout: layout, theme: theme, metrics: metrics)
         if disclosure == .expanded {
+          if let terminal = row.terminalRow {
+            DebugNestedRowView(
+              name: terminal.title, namesAProcess: false, indentLevel: 0, memory: terminal,
+              accessibilityLabel: AccessibilityText.debugTerminalRow(terminal), layout: layout,
+              theme: theme, metrics: metrics)
+          }
           ForEach(row.processRows) { process in
-            DebugProcessRowView(row: process, layout: layout, theme: theme, metrics: metrics)
+            DebugNestedRowView(
+              name: process.process.name, namesAProcess: true,
+              indentLevel: row.indentLevel(of: process), memory: process,
+              accessibilityLabel: AccessibilityText.debugProcessRow(process, under: row),
+              layout: layout, theme: theme, metrics: metrics)
           }
         }
       }

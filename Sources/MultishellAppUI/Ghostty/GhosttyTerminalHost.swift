@@ -78,6 +78,10 @@ final class GhosttyTerminalHost: NSObject, TerminalHost {
     return TerminalProcessHint(terminalPath: view.terminalPath, foregroundPID: view.foregroundPID)
   }
 
+  func terminalMemory(of id: TerminalSession.ID) -> UInt64? {
+    views[id]?.terminalMemory
+  }
+
   /// libghostty frames this as a paste itself. `false` means there is no
   /// surface, which a session with no shell running has none of.
   @discardableResult

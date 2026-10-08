@@ -23,6 +23,19 @@ struct AppModelDebugSamplingTests {
     #expect(samples.map(\.sequence) == [0, 1])
   }
 
+  @Test func aSampleAddsUpWhatEveryPanesTerminalHeld() async throws {
+    let (harness, session) = Harness.withOnePane()
+    harness.model.newTab()
+    let second = try #require(harness.model.workspace.tabs.last).focusedSessionID
+    harness.engine.terminalMemories[session.id] = 150
+    harness.engine.terminalMemories[second] = 50
+    harness.model.enableDebugTools()
+
+    await harness.model.takeDebugSample()
+
+    #expect(harness.model.debugHistory.latest?.terminalMemory == 200)
+  }
+
   @Test func aGitRunThatStartsAndEndsBetweenTwoSamplesCountsInTheChildrensCPU() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

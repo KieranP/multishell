@@ -39,8 +39,10 @@ What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
   large agent comes first. The parent is the one the scan walked down from, so
   the tree costs no syscall beyond the walk.
 - **Self and Total both, so the gap is what a shell started.** A tab's Self is
-  its panes' shells alone. A tab the engine could not place shows neither,
-  rather than a zero that reads as measured.
+  its terminals and its panes' shells. A tab the engine could not place shows
+  its terminal alone: its processes are under Other processes meanwhile, so the
+  rows still add up, and a sample or two places it. With no terminal reading
+  either it shows neither, rather than a zero that reads as measured.
 - **Child processes means everything the app started**, git and hooks as well as
   panes, so a burst of git runs shows in the totals rather than nowhere.
 - **One sample a second, fifteen minutes kept**, the spans a load average is
@@ -52,6 +54,11 @@ What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
   holds four seconds of git runs, reports and CPU.
 - **The strips share one time axis and one pointer**, so a stall lines up with
   the git burst or CPU spike in the same second.
+- **The memory strip stacks the terminals between the app and its children**, as
+  the table takes them out of the app's row. CPU stays in two: a terminal's work
+  is the app's own threads, which the kernel does not split. Naming three series
+  widened every strip's label column from 17 ems to 26, the chart's loss
+  (DebugStripLabelTests).
 - **State Reports, not Worker Reports**: every report on the socket counts,
   shell prompts and agent hooks as well as workers, each handled on the main
   thread.
@@ -71,12 +78,20 @@ What View > Enable Debug Tools measures, how, and why. Newest at the bottom.
 - **The display link wakes the main thread every refresh while the tools are
   on**, 120 times a second on ProMotion, with the panel closed too: the sidebar
   shows the frame rate as well. Another reason the toggle is not kept.
-- **A tab's terminal counts in the app's row, not the tab's.** Ghostty runs in
-  the app's process and its C API reports no surface's memory, so a tab's
-  screen, scrollback and GPU buffers, up to `scrollback-limit-bytes` each,
-  cannot be split out. An estimate from line counts would cost a scrollback read
-  a second. libghostty-vt reports a terminal's bytes since ghostty#14499; the
-  surface API does not yet.
+- **A tab's terminal counts in the tab's row, taken out of the app's.** Ghostty
+  runs in the app's process, so its screens and scrollback sit in the app's
+  footprint. Our patch 0006 reads each surface's page and image bytes, the
+  figure libghostty-vt reports since ghostty#14499, which the surface API lacks.
+  The Terminal line heads an open tab with its shells under it, since they run
+  in it. GPU buffers and the font atlas stay in the app's row: Ghostty counts
+  neither, and surfaces share the atlas.
+- **The terminal read is on the main thread, under Ghostty's terminal lock**, as
+  a copy of a selection is: the surface is freed there too, so the pointer
+  cannot go stale mid-read. It walks every page, so it runs once a sample, and
+  only while the tools are on.
+- **The app's row stops at zero.** Ghostty counts a page at its full allocated
+  size, an estimate, so the terminals can read more than the footprint holds.
+  The Total row stays the footprint and children as measured.
 - **Freed memory stays in the footprint until macOS wants it.** On macOS 27
   `malloc_zone_pressure_relief` releases nothing, and freed blocks of 256 KB and
   up held for a minute in a probe, so closing a tab drops the number late.

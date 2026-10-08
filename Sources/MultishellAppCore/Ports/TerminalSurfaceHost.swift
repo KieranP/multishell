@@ -9,4 +9,8 @@ public protocol TerminalSurfaceHost<Surface>: TerminalHost {
 
   /// `nil` for a session not open, or an engine that cannot say.
   func processHint(of id: TerminalSession.ID) -> TerminalProcessHint?
+
+  /// Bytes the session's screen and scrollback hold inside the app's own
+  /// process; `nil` for a session not open, or an engine that cannot say.
+  func terminalMemory(of id: TerminalSession.ID) -> UInt64?
 }

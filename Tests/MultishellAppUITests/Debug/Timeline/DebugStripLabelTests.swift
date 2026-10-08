@@ -15,7 +15,8 @@ struct DebugStripLabelTests {
       sequence: 0, takenAt: Date(), elapsed: .seconds(1),
       frameRate: FrameRateReading(framesPerSecond: 120, longestFrame: .milliseconds(9)),
       gitRunsStartedCount: 88, gitRunningCount: 12, gitCommands: [:], appCPUPercent: 188,
-      childrenCPUPercent: 788, appMemory: 1_023_400_000, childrenMemory: 15_920_000_000,
+      childrenCPUPercent: 788, appMemory: 2_146_000_000, terminalMemory: 1_073_000_000,
+      childrenMemory: 99_900_000_000,
       stateReportCount: 88)
   ])
 

@@ -21,13 +21,21 @@ public struct DebugMemoryRow: Sendable, Equatable, Identifiable {
   let totalMemory: UInt64?
   /// This row's Total as a fraction of the heaviest row's; 0 on the Total row.
   public let barFraction: Double
+  /// A tab's terminals, listed first when it opens; `nil` for other rows.
+  public let terminalRow: DebugTerminalRow?
   public let processRows: [DebugProcessRow]
 
   public var id: Source { source }
   public var isTotal: Bool { source == .total }
 
+  /// Its tree depth, one level further in under a Terminal row, since the
+  /// shells run in it.
+  public func indentLevel(of process: DebugProcessRow) -> Int {
+    (terminalRow == nil ? 0 : 1) + process.depth
+  }
+
   public func disclosure(isExpanded: Bool) -> DebugRowDisclosure {
-    guard !processRows.isEmpty else { return .notExpandable }
+    guard terminalRow != nil || !processRows.isEmpty else { return .notExpandable }
     return isExpanded ? .expanded : .collapsed
   }
 }

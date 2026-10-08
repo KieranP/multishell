@@ -36,10 +36,10 @@
 - **AppCore's `Integrations/` is the app's own side of them**: the helper and
   shell-integration files it installs, and each agent's hooks as installed.
 - **Everything about a program someone else wrote is in Core's
-  `Integrations/`**, one folder per kind: agents, editors, shells, and the
-  files every agent's hooks are written into, under `AgentHookFiles/`. Another
-  agent touches the agents folder and no other, until someone draws its mark.
-  Its hooks, from the catalogue and the files they write to what a payload or
+  `Integrations/`**, one folder per kind: agents, editors, shells, and the files
+  every agent's hooks are written into, under `AgentHookFiles/`. Another agent
+  touches the agents folder and no other, until someone draws its mark. Its
+  hooks, from the catalogue and the files they write to what a payload or
   transcript reports, sit under `Agents/Hooks/`, and what reads or writes one
   agent's own files under `Agents/Hooks/AgentOwnFiles/`.
 - **MultishellCLI is the helper**, built as `multishell-helper` and installed in

@@ -41,7 +41,7 @@
 "close.tab-button" = "Close Tab";
 "close.tab-title" = "Close this tab?";
 "debug.app-row" = "Multishell";
-"debug.app-row-subtitle" = "This app, every tab's screen and scrollback included";
+"debug.app-row-subtitle" = "This app, without its tabs' terminals";
 "debug.fps" = "%@ fps";
 "debug.git-memory-summary" = "Memory %1$@ mean, %2$@ peak";
 "debug.git-summary" = "%1$@ · mean %2$@ · slowest %3$@";
@@ -67,8 +67,10 @@
 "debug.seconds" = "%@ s";
 "debug.self-of-total" = "%1$@ self of %2$@";
 "debug.split" = "App %1$@ · Child processes %2$@";
+"debug.split-memory" = "App %1$@ · Terminals %2$@ · Child processes %3$@";
 "debug.stalled-seconds" = "%1$@ with a frame over %2$@";
 "debug.subtitle-count-and-self" = "%1$@ · %2$@ · %3$@ self";
+"debug.terminal-row" = "Terminal";
 "debug.total-row" = "Total, app and child processes";
 "elapsed.hours" = "%1$dh %2$02dm";
 "elapsed.minutes" = "%dm";
@@ -276,6 +278,7 @@
 "spoken.operation-failed" = "failed: %@";
 "spoken.pane-position" = "pane %1$d of %2$d";
 "spoken.project" = "%@, project";
+"spoken.runs-in-terminal" = "runs in the terminal above";
 "spoken.selected" = "selected";
 "spoken.self-memory" = "%@ self";
 "spoken.shell" = "shell";

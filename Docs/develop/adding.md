@@ -44,9 +44,9 @@ What each addition needs beyond the code itself.
   and an editor on the Hooks page.
 - **If a repository may ship that list**, it also needs a field on the shared
   settings, a line in the layering, and the two places trust and containment are
-  spelled out (`trustCoveredFields`, `confined(to:)`), since it names paths on the
-  reader's disk, and its name in the trust question in `trustCoveredNames`, at
-  the same position, as a `shared-settings.` key in the libraries' catalogue.
+  spelled out (`trustCoveredFields`, `confined(to:)`), since it names paths on
+  the reader's disk, and its name in the trust question in `trustCoveredNames`,
+  at the same position, as a `shared-settings.` key in the libraries' catalogue.
 - **An agent's hooks.** An integration in the hook catalogue's list, naming the
   file, the events, what each says the session is doing, which of two events
   standing for one thing is silent, which two are a subagent's start and end,
@@ -122,6 +122,9 @@ What each addition needs beyond the code itself.
   how a slot of several seconds combines it (design/debug-tools.md). The test
   builder `DebugSample.sample` takes it with a default, and the widest slot in
   `DebugStripLabelTests` its widest figure, so the label is held to its column.
+  A series in a split strip also needs an edge in `DebugStripPoint`, a band in
+  `DebugStripCanvas`, a colour in `Theme+DebugColors` and an entry in
+  `DebugSeriesLegend`, and its name in the detail line widens the label.
 - **A column in a debug table.** A title in the table's header and a cell in its
   row at the same `UIMetrics` width, the figure in the stacked row's caption,
   and, for Memory by tab, a part in its accessibility text. Raise the table's

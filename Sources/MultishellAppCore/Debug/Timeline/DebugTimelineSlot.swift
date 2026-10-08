@@ -12,6 +12,7 @@ public struct DebugTimelineSlot: Sendable, Equatable {
   let appCPUPercent: Double
   let childrenCPUPercent: Double
   let appMemory: UInt64
+  let terminalMemory: UInt64
   let childrenMemory: UInt64
   let stateReportsPerSecond: Double
 
@@ -32,6 +33,7 @@ public struct DebugTimelineSlot: Sendable, Equatable {
     appCPUPercent = timeWeightedMean(\.appCPUPercent)
     childrenCPUPercent = timeWeightedMean(\.childrenCPUPercent)
     appMemory = samples.last?.appMemory ?? 0
+    terminalMemory = samples.last?.terminalMemory ?? 0
     childrenMemory = samples.last?.childrenMemory ?? 0
     stateReportsPerSecond = Double(samples.map(\.stateReportCount).reduce(0, +)) / seconds
   }
@@ -39,4 +41,6 @@ public struct DebugTimelineSlot: Sendable, Equatable {
   public var smoothness: Smoothness { .of(longestFrame: longestFrame) }
   var totalCPUPercent: Double { appCPUPercent + childrenCPUPercent }
   var totalMemory: UInt64 { appMemory + childrenMemory }
+  /// Never below zero: Ghostty's figure for a terminal is an estimate.
+  var appMemoryOutsideTerminals: UInt64 { appMemory.subtractingFlooredAtZero(terminalMemory) }
 }

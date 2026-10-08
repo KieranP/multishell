@@ -2,7 +2,7 @@ import MultishellProcess
 
 /// One process in an expanded row of the Memory by tab table, at its depth
 /// in the tree of who started whom.
-public struct DebugProcessRow: Sendable, Equatable, Identifiable {
+public struct DebugProcessRow: Sendable, Equatable, Identifiable, DebugSelfAndTotalMemory {
   public let process: ProcessUsage
   /// 0 for a process whose parent is not in the list, such as a pane's shell.
   public let depth: Int

@@ -25,6 +25,7 @@ extension AppModel {
     platform.stopDisplayFrameCallbacks()
     debugHistory = DebugHistory()
     debugProcessAttribution = .empty
+    debugTerminalMemoryBySession = [:]
     pausedDebugSnapshot = nil
   }
 
@@ -36,6 +37,9 @@ extension AppModel {
       hints, id in hints[id] = host.processHint(of: id)
     }
     let terminalPaths = hints.compactMapValues(\.terminalPath)
+    let terminalMemoryBySession = liveSessionIDs.reduce(into: [TerminalSession.ID: UInt64]()) {
+      memory, id in memory[id] = host.terminalMemory(of: id)
+    }
     let appPID = ProcessInfo.processInfo.processIdentifier
     let scanProcesses = debugSampler.scanProcesses
     let generation = debugSampler.generation
@@ -63,11 +67,13 @@ extension AppModel {
           $0 + (cpuPercentByPID[$1.pid] ?? 0)
         },
         appMemory: scan.app?.footprint ?? 0,
+        terminalMemory: terminalMemoryBySession.values.reduce(0, +),
         childrenMemory: children.totalMemory,
         stateReportCount: debugSampler.stateReportCount))
     debugSampler.stateReportCount = 0
     debugProcessAttribution = PaneProcessAttribution(
       trees: scan.trees, terminalDevices: scan.terminalDevices,
       foregroundPIDs: hints.compactMapValues(\.foregroundPID))
+    debugTerminalMemoryBySession = terminalMemoryBySession
   }
 }

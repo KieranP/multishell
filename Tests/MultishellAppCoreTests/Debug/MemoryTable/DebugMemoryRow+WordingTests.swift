@@ -10,7 +10,8 @@ struct DebugMemoryRowWordingTests {
   ) -> DebugMemoryRow {
     DebugMemoryRow(
       source: source, title: "Shell", subtitle: subtitle, processCount: processCount,
-      selfMemory: selfMemory, totalMemory: selfMemory, barFraction: 0, processRows: [])
+      selfMemory: selfMemory, totalMemory: selfMemory, barFraction: 0, terminalRow: nil,
+      processRows: [])
   }
 
   @Test func theTotalRowLeavesItsCountAndSelfEmptyWhereATabWithoutThemShowsADash() {

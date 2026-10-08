@@ -2,32 +2,36 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// One process under an expanded row of the Memory by tab table, indented
-/// under the process that started it, its Self and Total under the columns.
-struct DebugProcessRowView: View {
-  let row: DebugProcessRow
+/// A line under an expanded Memory by tab row, a tab's Terminal or a process,
+/// indented by its level, its Self and Total under the columns.
+struct DebugNestedRowView: View {
+  let name: String
+  let namesAProcess: Bool
+  let indentLevel: Int
+  let memory: any DebugSelfAndTotalMemory
+  let accessibilityLabel: String
   let layout: DebugTableLayout
   let theme: Theme
   let metrics: UIMetrics
 
   /// Under its tab's title, so the rows read as that tab's.
   private static let indent = 14.0
-  private static let indentPerDepth = 14.0
+  private static let indentPerLevel = 14.0
 
   var body: some View {
     HStack(alignment: .firstTextBaseline, spacing: UIMetrics.debugTableColumnSpacing) {
-      name
+      nameCell
       switch layout {
       case .columns:
         Color.clear.frame(width: metrics.debugCountColumnWidth, height: 1)
         DebugNumberCell(
-          text: row.selfMemoryText, width: metrics.debugMemoryValueColumnWidth,
+          text: memory.selfMemoryText, width: metrics.debugMemoryValueColumnWidth,
           color: theme.textSecondary)
         DebugNumberCell(
-          text: row.totalMemoryText, width: metrics.debugMemoryBarColumnWidth,
+          text: memory.totalMemoryText, width: metrics.debugMemoryBarColumnWidth,
           color: theme.textSecondary)
       case .stacked:
-        Text(row.memorySummary).monospacedDigit()
+        Text(memory.memorySummary).monospacedDigit()
       }
     }
     .font(.system(size: metrics.caption))
@@ -38,19 +42,20 @@ struct DebugProcessRowView: View {
     .padding(.vertical, 2)
     .debugTableRowHighlight(theme)
     .accessibilityElement(children: .ignore)
-    .accessibilityLabel(AccessibilityText.debugProcessRow(row))
+    .accessibilityLabel(accessibilityLabel)
   }
 
-  private var name: some View {
+  private var nameCell: some View {
     HStack(alignment: .firstTextBaseline, spacing: 4) {
-      if row.depth > 0 {
+      if indentLevel > 0 {
         Image(systemName: "arrow.turn.down.right")
           .font(.system(size: metrics.debugTableGlyphSize))
           .foregroundStyle(theme.textTertiary)
       }
-      Text(row.process.name).font(.system(size: metrics.caption, design: .monospaced))
+      Text(name)
+        .font(.system(size: metrics.caption, design: namesAProcess ? .monospaced : .default))
     }
-    .padding(.leading, Self.indent + Double(row.depth) * Self.indentPerDepth)
+    .padding(.leading, Self.indent + Double(indentLevel) * Self.indentPerLevel)
     .frame(maxWidth: .infinity, alignment: .leading)
   }
 }

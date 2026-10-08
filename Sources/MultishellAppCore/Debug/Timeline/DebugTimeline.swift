@@ -60,7 +60,11 @@ public struct DebugTimeline: Sendable, Equatable {
     let values = slots.map { $0.flatMap(metric.values(of:)) }
     let scale = metric.scale(forPeak: values.compactMap { $0?.total }.max() ?? 0)
     return values.map { value in
-      value.map { DebugStripPoint(app: min($0.app / scale, 1), total: min($0.total / scale, 1)) }
+      value.map {
+        DebugStripPoint(
+          app: min($0.app / scale, 1), appWithTerminals: min($0.appWithTerminals / scale, 1),
+          total: min($0.total / scale, 1))
+      }
     }
   }
 }

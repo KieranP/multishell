@@ -16,7 +16,9 @@ struct DebugStripLabel: View {
         Text(metric.title)
           .font(.system(size: metrics.caption))
           .foregroundStyle(theme.textSecondary)
-        if metric.isSplitByOwner { DebugSeriesLegend(theme: theme, metrics: metrics) }
+        if metric.isSplitByOwner {
+          DebugSeriesLegend(metric: metric, theme: theme, metrics: metrics)
+        }
       }
       Text(metric.valueText(of: slot))
         .font(.system(size: metrics.debugStripValueSize, weight: .semibold))

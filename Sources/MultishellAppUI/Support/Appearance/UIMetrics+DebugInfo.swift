@@ -2,9 +2,9 @@ import Foundation
 
 /// The sizes only Debug Info's strips and tables use.
 extension UIMetrics {
-  /// A debug strip's name and value column, which its axis row keeps clear;
-  /// the memory strip's widest label takes 16 ems (DebugStripLabelTests).
-  var debugStripLabelWidth: Double { (bodySize * 17).rounded() }
+  /// A debug strip's name and value column, which its axis row keeps clear; the
+  /// memory strip's widest label takes 25.8 ems (DebugStripLabelTests).
+  var debugStripLabelWidth: Double { (bodySize * 26).rounded() }
   var debugStripHeight: Double { (bodySize * 4.2).rounded() }
   /// A strip's current value, a step above the body text it is set beside.
   var debugStripValueSize: Double { bodySize + 1 }

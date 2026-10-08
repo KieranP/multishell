@@ -73,4 +73,48 @@ struct AppModelDebugMemoryTableTests {
 
     #expect(harness.model.debugMemoryTable.tabs.map(\.title) == ["Alpha", "Beta"])
   }
+
+  @Test func eachTabIsGivenWhatItsPanesTerminalsHold() async throws {
+    let (harness, first, second) = try harnessWithTwoTabs()
+    harness.model.activate(first)
+    harness.model.splitActivePane(.vertical)
+    let panes = try #require(harness.model.workspace.tabs.first { $0.id == first.id }).sessionIDs
+    try #require(panes.count == 2)
+    harness.engine.terminalMemories[panes[0]] = 150
+    harness.engine.terminalMemories[panes[1]] = 50
+    harness.model.enableDebugTools()
+
+    await harness.model.takeDebugSample()
+
+    let tabs = harness.model.debugMemoryTable.tabs
+    #expect(tabs.first { $0.id == first.id }?.terminalMemory == 200)
+    #expect(tabs.first { $0.id == second.id }?.terminalMemory == nil)
+  }
+
+  @Test func aTabsTerminalCountsTowardWhereItIsListed() async throws {
+    let (harness, withHeavyTerminal, withHeavyProcesses) = try harnessWithTwoTabs()
+    placeTree(of: 10, in: withHeavyTerminal, harness)
+    placeTree(of: 20, in: withHeavyProcesses, harness)
+    harness.engine.terminalMemories[withHeavyTerminal.focusedSessionID] = 500
+    harness.model.enableDebugTools(
+      scan: .sample(appMemory: 800, trees: [(10, [10]), (20, [20, 21])]))
+
+    await harness.model.takeDebugSample()
+
+    #expect(
+      harness.model.debugMemoryTable.tabs.map(\.id) == [
+        withHeavyTerminal.id, withHeavyProcesses.id,
+      ])
+  }
+
+  @Test func turningTheToolsOffForgetsWhatTheTerminalsHeld() async throws {
+    let (harness, session) = Harness.withOnePane()
+    harness.engine.terminalMemories[session.id] = 150
+    harness.model.enableDebugTools()
+    await harness.model.takeDebugSample()
+
+    harness.model.setDebugToolsEnabled(false)
+
+    #expect(harness.model.debugTerminalMemoryBySession.isEmpty)
+  }
 }

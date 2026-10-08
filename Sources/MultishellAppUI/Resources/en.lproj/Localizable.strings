@@ -77,8 +77,9 @@
 "debug.git-commands-caption" = "Last %@, by total time";
 "debug.legend-app" = "App";
 "debug.legend-children" = "Child processes";
+"debug.legend-terminals" = "Terminals";
 "debug.memory-by-tab" = "Memory by tab";
-"debug.memory-by-tab-caption" = "Each pane's shell and everything under it";
+"debug.memory-by-tab-caption" = "Each pane's terminal and shell, and everything under it";
 "debug.no-git" = "No git has run in this range";
 "debug.pause" = "Pause";
 "debug.quick-cpu" = "CPU";

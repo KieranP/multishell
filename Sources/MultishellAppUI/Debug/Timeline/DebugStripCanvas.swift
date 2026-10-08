@@ -63,7 +63,10 @@ struct DebugStripCanvas: View {
           band(positions, lower: { _ in y(0) }, upper: { y($0.app) }),
           with: .color(theme.debugAppSeriesColor.opacity(0.85)))
         context.fill(
-          band(positions, lower: { y($0.app) }, upper: { y($0.total) }),
+          band(positions, lower: { y($0.app) }, upper: { y($0.appWithTerminals) }),
+          with: .color(theme.debugTerminalsSeriesColor))
+        context.fill(
+          band(positions, lower: { y($0.appWithTerminals) }, upper: { y($0.total) }),
           with: .color(theme.debugChildrenSeriesColor.opacity(0.85)))
       } else {
         context.fill(
