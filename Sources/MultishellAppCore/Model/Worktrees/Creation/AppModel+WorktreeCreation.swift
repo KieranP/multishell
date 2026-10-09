@@ -29,11 +29,13 @@ extension AppModel {
 
   /// Returns once the worktree exists and is selected, or the create failed.
   /// The post-create hook runs on in the pane; see `WorktreeOperation`.
+  /// `firstTab` is the sheet's answer; `nil` leaves it to the create settings.
   public func createWorktree(
     branch: String,
     basedOn startPoint: String?,
     createsBranch: Bool,
-    in project: Project
+    in project: Project,
+    firstTab: NewWorktreeFirstTab? = nil
   ) async {
     // The workspace, not the value handed in: a sheet held open across a
     // removal would add a worktree nothing in the app lists.
@@ -80,10 +82,13 @@ extension AppModel {
     let name = WorktreeCoordinator.qualifiedBranchName(
       branch, createsBranch: createsBranch, settings: settings)
     guard let created = createdWorktree(at: path, branchName: name, in: project) else { return }
+    if let firstTab { newWorktreeFirstTabs[created.id] = firstTab }
     beginWorktreeSetup(
       of: created, branch: name, in: effective, shellPath: shell,
       lists: fileLists(of: project, inEffect: effective))
     select(created, openingFirstTab: .onCreate)
+    // A setup still running holds the tab back, and `openHeldBackTab` takes it.
+    if !isBusy(created.id) { newWorktreeFirstTabs[created.id] = nil }
   }
 
   /// The user's Cancel, of the hook or of git itself, is nothing to report.

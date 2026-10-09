@@ -6,10 +6,6 @@ Most pressing first within each heading. A decision that gets made moves to
 ## Features
 
 - File tree and git changes diff in a right-hand panel.
-- A task field on the New Worktree sheet, handed to the agent as its first
-  prompt, and a `{prompt}` placeholder beside `{branch}`, `{path}` and
-  `{project}` for the flags. `NewWorktreeDraft` carries only the branch and base
-  today.
 - A quick switcher on a shortcut: fuzzy search over every project, worktree, tab
   and agent, waiting agents ranked first. Changing worktree is mouse-only today.
 - Pull request and CI state on a worktree row, read through `gh` where it is on

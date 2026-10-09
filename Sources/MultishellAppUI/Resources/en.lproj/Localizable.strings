@@ -27,7 +27,7 @@
 "action.use-branch-name" = "Use Branch Name";
 "action.worktree-actions" = "Worktree actions";
 "agents.auto-start-create" = "Auto-start on worktree creation";
-"agents.auto-start-create-info" = "The tab a newly created worktree opens runs the agent instead of a shell. Nothing opens at all unless Terminal > Open a terminal when a worktree is created is on. Any project can override this.";
+"agents.auto-start-create-info" = "Turns on Start an agent in the New Worktree sheet, so a new worktree's first tab runs the agent. Any project can override this.";
 "agents.auto-start-tab" = "Auto-start on tab open";
 "agents.auto-start-tab-info" = "New Tab (⌘T), and the first tab of a worktree you turn to, run the agent instead of a shell. New Shell Tab (⇧⌘T) and splits stay shells.";
 "agents.command-info" = "Run as typed through your login shell when an agent tab opens. Placeholders such as {{branch}} are filled in from the worktree.";
@@ -164,7 +164,7 @@
 "project.active-first-info" = "Whether this project's worktrees with a terminal open, or with a reported state, are listed above the rest, whatever the global says.";
 "project.agent-label" = "Agent:";
 "project.agent-picker-info" = "Agents found on the login shell's PATH. Refresh after installing one.";
-"project.auto-start-create-info" = "Whether the tab a worktree created here opens starts the agent, whatever the global says. Nothing opens at all unless the Terminal tab opens one on create.";
+"project.auto-start-create-info" = "Whether the New Worktree sheet starts with Start an agent on for this project, whatever the global says.";
 "project.auto-start-tab-info" = "Whether New Tab, and the first tab of a worktree turned to here, start the agent, whatever the global says.";
 "project.branch-label" = "Branch:";
 "project.branch-prefix" = "Branch prefix";
@@ -209,13 +209,13 @@
 "settings.notifications" = "Notifications";
 "settings.terminal" = "Terminal";
 "settings.worktrees" = "Worktrees";
+"sheet.agent" = "Agent:";
 "sheet.all-branches-checked-out" = "Every local branch is already checked out. Switch to New branch to create one.";
 "sheet.based-on" = "Based on:";
 "sheet.branch" = "Branch:";
 "sheet.branch-prompt" = "feat/tabs";
 "sheet.branch-refused" = "git will not take that as a branch name.";
 "sheet.choose-project" = "Choose a project";
-"sheet.create-worktree" = "Create Worktree";
 "sheet.creates-from" = "Creates a linked checkout of %@. Location and branch prefix come from project settings.";
 "sheet.creates-from-chosen" = "Creates a linked checkout of the chosen project. Location and branch prefix come from project settings.";
 "sheet.existing-branch" = "Existing branch";
@@ -225,6 +225,9 @@
 "sheet.no-commits" = "This repository has no commits yet. A worktree needs a commit to start from; make the first one, then come back.";
 "sheet.no-projects" = "No projects yet. Add a repository first (⌘O).";
 "sheet.project" = "Project:";
+"sheet.start-agent" = "Start an agent:";
+"sheet.task" = "Task:";
+"sheet.task-prompt" = "Optional";
 "sidebar.add-project" = "Add Project (⌘O)";
 "sidebar.clear-filter" = "Clear filter";
 "sidebar.collapse" = "Collapse";
@@ -259,7 +262,7 @@
 "terminal.default-shell" = "Default shell:";
 "terminal.default-shell-info" = "What new tabs run. Project hooks start in it for your startup files, then run as sh. Running terminals keep their shell. zsh and bash get the command-status hooks. Any project can override this.";
 "terminal.open-on-create" = "Open a terminal when a worktree is created";
-"terminal.open-on-create-info" = "On, a worktree gets its first shell as soon as it is created, or once its post-create hook has finished. Off, it is shown empty. Any project can override this.";
+"terminal.open-on-create-info" = "On, a worktree gets its first shell as soon as it is created, or once its post-create hook has finished. Off, it is shown empty unless the sheet starts an agent. Any project can override this.";
 "terminal.open-on-select" = "Open a terminal when a worktree is selected";
 "terminal.open-on-select-info" = "On, clicking a worktree with no tabs starts its first shell, or the agent where auto-start on tab open is on. A worktree just created is the setting below's to decide. Any project can override this.";
 "terminal.path" = "Path:";

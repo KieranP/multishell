@@ -32,6 +32,15 @@ extension AppModel {
     return url.path.abbreviatingHomeDirectory()
   }
 
+  /// The sheet's agent rows as the draft's project has them, its own file
+  /// and overrides counted; off while no project is chosen.
+  public func fitAgent(of draft: inout NewWorktreeDraft) {
+    let project = draft.projectID.flatMap(workspace.project).map(effectiveProject)
+    draft.fitAgent(
+      startsByDefault: project.map(workspace.autoStartsAgentOnCreate) ?? false,
+      preferred: project.flatMap(workspace.effectiveAgentID), offered: newTabAgentIDs)
+  }
+
   /// The sheet's reads, `nil` once the task asking is cancelled: a project
   /// switch cancels it but not the call inside, so each step checks.
   public func newWorktreeBranches(of project: Project) async -> NewWorktreeBranches? {

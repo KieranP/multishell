@@ -13,6 +13,7 @@ extension AppModel {
     removalRequests.forget(gone)
     // Their sessions went with them, so a worktree re-made at the path starts cold.
     warmWorktrees.subtract(gone)
+    newWorktreeFirstTabs = newWorktreeFirstTabs.filter { !gone.contains($0.key) }
     statusReadLog.forget(gone)
     coordinator?.forgetStatusReads(of: ids)
     for id in ids {

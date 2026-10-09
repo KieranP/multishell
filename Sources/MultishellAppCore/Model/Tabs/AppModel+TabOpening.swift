@@ -40,24 +40,40 @@ extension AppModel {
     reconcileSessions(takingFocus: true)
   }
 
-  /// The store's half alone, for a caller that reconciles later.
-  private func addAgentTab(_ agentID: String, in worktree: Worktree, group: TabGroup.ID?) {
-    store.openTab(
+  /// The store's half alone, for a caller that reconciles later. The task
+  /// waits for the tab's first launch.
+  private func addAgentTab(
+    _ agentID: String, in worktree: Worktree, group: TabGroup.ID?, task: String = ""
+  ) {
+    let tab = store.openTab(
       in: worktree.id, group: group, title: agentDisplayName(agentID), agentID: agentID)
+    if let tab, !task.isEmpty { pendingAgentTasks[tab.focusedSessionID] = task }
   }
 
   /// What a new tab is by default here, and the first tab a worktree gets
   /// when selected or created.
   func addDefaultTab(in worktree: Worktree, for reason: TabOpeningReason, group: TabGroup.ID? = nil)
   {
-    if let project = effectiveProject(of: worktree),
-      autoStartsAgent(in: project, for: reason),
-      let agentID = workspace.effectiveAgentID(for: project)
-    {
-      addAgentTab(agentID, in: worktree, group: group)
+    if let agent = defaultAgent(in: worktree, for: reason) {
+      addAgentTab(agent.id, in: worktree, group: group, task: agent.task)
     } else {
       store.openTab(in: worktree.id, group: group)
     }
+  }
+
+  /// The agent that tab runs and its task, `nil` for a shell. The sheet's
+  /// answer for a worktree it created stands over the settings.
+  private func defaultAgent(
+    in worktree: Worktree, for reason: TabOpeningReason
+  ) -> (id: String, task: String)? {
+    if reason == .onCreate, let firstTab = newWorktreeFirstTabs[worktree.id] {
+      guard case .agent(let id, let task) = firstTab else { return nil }
+      return (id, task)
+    }
+    guard let project = effectiveProject(of: worktree), autoStartsAgent(in: project, for: reason),
+      let id = workspace.effectiveAgentID(for: project)
+    else { return nil }
+    return (id, "")
   }
 
   /// Nothing running there, no tab yet, and the setting for this reason says
@@ -68,7 +84,8 @@ extension AppModel {
   }
 
   /// Whether a worktree with no tabs gets one for this reason. A worktree
-  /// whose project has gone follows the global.
+  /// whose project has gone follows the global. An agent the sheet asked for
+  /// opens whatever the setting says.
   private func opensTab(in worktree: Worktree, for reason: TabOpeningReason) -> Bool {
     let project = effectiveProject(of: worktree)
     return switch reason {
@@ -76,7 +93,8 @@ extension AppModel {
     case .onSelect:
       project.map(workspace.opensTerminalOnSelect(for:)) ?? workspace.opensTerminalOnSelect
     case .onCreate:
-      project.map(workspace.opensTerminalOnCreate(for:)) ?? workspace.opensTerminalOnCreate
+      newWorktreeFirstTabs[worktree.id]?.startsAgent == true
+        || (project.map(workspace.opensTerminalOnCreate(for:)) ?? workspace.opensTerminalOnCreate)
     case .never: false
     }
   }

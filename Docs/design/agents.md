@@ -826,3 +826,21 @@ at the bottom.
   hook, Gemini's MCP client cannot receive one, and Copilot's arrives as the
   notification already asked for, with no answer event. Read from Codex 0.160.0,
   Gemini 0.46.0 and Copilot 1.0.91.
+- **The New Worktree sheet's task reaches the agent as an argument after its
+  flags**, the way each CLI's help says an interactive session takes a first
+  prompt: the prompt operand for Claude and Codex, `--prompt-interactive` for
+  Gemini, `--interactive` for Copilot, `--prompt` for OpenCode. Read from each
+  one's `--help` on 2026-10-09.
+- **An operand goes behind `--` and an option takes the task after `=`**, so a
+  task opening with a dash is never read as a flag. Cost: unchecked against the
+  running CLIs, as starting one would read the user's own config.
+- **A line break in a task becomes a space.** tcsh refuses one inside quotes and
+  inside a quoted variable read alike, answering "Unmatched '" and starting
+  nothing.
+- **A custom command reads the task as `{{task}}`**, from `MULTISHELL_TASK` as
+  the placeholders read theirs, empty where none was typed so the token never
+  reaches the shell.
+- **The flag line has no task placeholder**: a catalogue agent is handed the
+  task already, and a flag naming it would pass it twice.
+- **A task goes with the tab's first launch only**, and is runtime state, so a
+  restored tab resumes without asking again.

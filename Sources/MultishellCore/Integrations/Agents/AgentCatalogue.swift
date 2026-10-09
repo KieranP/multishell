@@ -17,19 +17,20 @@ public enum AgentCatalogue {
   public static let agents: [AgentDescriptor] = [
     AgentDescriptor(
       id: claudeID, name: "Claude Code", executable: "claude", resumeArguments: ["--continue"],
-      fileMentionPrefix: "@", mark: .claude, markTint: "#d97757"),
+      taskArgument: .operand, fileMentionPrefix: "@", mark: .claude, markTint: "#d97757"),
     AgentDescriptor(
       id: codexID, name: "Codex", executable: "codex", resumeArguments: ["resume", "--last"],
-      mark: .codex),
+      taskArgument: .operand, mark: .codex),
     AgentDescriptor(
       id: geminiID, name: "Gemini CLI", executable: "gemini",
-      resumeArguments: ["--resume", "latest"], mark: .gemini, markTint: "#8ab4f8"),
+      resumeArguments: ["--resume", "latest"], taskArgument: .option("--prompt-interactive"),
+      mark: .gemini, markTint: "#8ab4f8"),
     AgentDescriptor(
       id: copilotID, name: "Copilot CLI", executable: "copilot", resumeArguments: ["--continue"],
-      mark: .copilot),
+      taskArgument: .option("--interactive"), mark: .copilot),
     AgentDescriptor(
       id: openCodeID, name: "OpenCode", executable: "opencode", resumeArguments: ["--continue"],
-      mark: .openCode, markTint: "#fab283"),
+      taskArgument: .option("--prompt"), mark: .openCode, markTint: "#fab283"),
   ]
 
   public static func agent(_ id: String) -> AgentDescriptor? {

@@ -245,6 +245,9 @@
 "shared-settings.title" = "Trust what %1$@'s %2$@ asks for?";
 "shared-settings.trust" = "Trust";
 "shared-settings.worktree-directory" = "worktree directory";
+"sheet.create-and-start" = "Create and Start %@";
+"sheet.create-and-start-custom" = "Create and Start Custom Command";
+"sheet.create-worktree" = "Create Worktree";
 "shell.named-custom-blank" = "the custom path, blank, so the login shell";
 "shell.named-custom-path" = "the custom path %@";
 "shell.named-login-shell" = "the login shell (%@)";

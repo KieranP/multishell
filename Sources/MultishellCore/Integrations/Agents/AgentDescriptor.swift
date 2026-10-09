@@ -7,6 +7,7 @@ public struct AgentDescriptor: Identifiable, Hashable, Sendable {
   /// How to resume the last conversation when a saved agent tab comes back.
   /// `nil` means the tab returns as a plain shell.
   public let resumeArguments: [String]?
+  public let taskArgument: AgentTaskArgument
   /// How this agent is told about a file: `@` for one that reads mentions,
   /// `nil` for a plain path. Only set where the prompt is known to resolve.
   public let fileMentionPrefix: String?
@@ -18,13 +19,14 @@ public struct AgentDescriptor: Identifiable, Hashable, Sendable {
 
   init(
     id: String, name: String, executable: String,
-    resumeArguments: [String]? = nil, fileMentionPrefix: String? = nil,
-    mark: AgentMark, markTint: String? = nil
+    resumeArguments: [String]? = nil, taskArgument: AgentTaskArgument,
+    fileMentionPrefix: String? = nil, mark: AgentMark, markTint: String? = nil
   ) {
     self.id = id
     self.name = name
     self.executable = executable
     self.resumeArguments = resumeArguments
+    self.taskArgument = taskArgument
     self.fileMentionPrefix = fileMentionPrefix
     self.mark = mark
     self.markTint = markTint

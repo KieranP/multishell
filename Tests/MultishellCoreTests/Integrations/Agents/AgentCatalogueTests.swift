@@ -27,6 +27,15 @@ struct AgentCatalogueTests {
     #expect(resume("nonesuch") == nil, "an id the catalogue does not know is a shell")
   }
 
+  @Test func eachAgentIsHandedItsTaskTheWayItsHelpSaysAnInteractiveSessionTakesOne() {
+    let task = { AgentCatalogue.agent($0)?.taskArgument }
+    #expect(task("claude") == .operand)
+    #expect(task("codex") == .operand)
+    #expect(task("gemini") == .option("--prompt-interactive"))
+    #expect(task("copilot") == .option("--interactive"))
+    #expect(task("opencode") == .option("--prompt"))
+  }
+
   @Test func idsAreUniqueAndReserved() {
     let ids = AgentCatalogue.agents.map(\.id)
     #expect(Set(ids).count == ids.count)

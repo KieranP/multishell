@@ -41,6 +41,9 @@ struct NewWorktreeForm: View {
         } else {
           NewWorktreeProjectPicker(model: model, projectID: $draft.projectID)
           fields
+          if draft.offersAgents {
+            NewWorktreeAgentFields(model: model, draft: $draft)
+          }
         }
       }
       .formStyle(.grouped)
@@ -52,12 +55,18 @@ struct NewWorktreeForm: View {
     }
     .padding(20)
     .frame(width: 520)
-    .task(id: draft.projectID) { await loadBranches() }
+    .task(id: draft.projectID) {
+      model.fitAgent(of: &draft)
+      await loadBranches()
+    }
     .onChange(of: model.workspace.projects.map(\.id)) { _, ids in
       draft.forgetProject(unlessIn: ids)
     }
     .onChange(of: draft.createsBranch) { _, _ in
       draft.fitBranchToMode(checkedOut: model.checkedOutBranches(for: draft))
+    }
+    .onChange(of: model.newTabAgentIDs) { _, offered in
+      draft.offerAgents(offered)
     }
   }
 
@@ -98,7 +107,7 @@ struct NewWorktreeForm: View {
         if draft.isCreating { model.cancelWorktreeCreation() } else { dismiss() }
       }
       .keyboardShortcut(.cancelAction)
-      Button(t("sheet.create-worktree"), action: create)
+      Button(draft.createTitle, action: create)
         .keyboardShortcut(.defaultAction)
         .disabled(!draft.canCreate(checkedOut: model.checkedOutBranches(for: draft)))
     }
@@ -120,7 +129,8 @@ struct NewWorktreeForm: View {
         branch: draft.branch,
         basedOn: draft.startPoint,
         createsBranch: draft.createsBranch,
-        in: project
+        in: project,
+        firstTab: draft.firstTab
       )
       dismiss()
     }

@@ -98,6 +98,44 @@ struct AppModelSessionLaunchTests {
     #expect(opened?.command?.last?.hasPrefix("claude --continue '--name=main'; ") == true)
   }
 
+  @Test func aTaskFollowsTheFlagsOnTheFirstLaunchOnly() {
+    let harness = Harness()
+    harness.model.setPreferredShell("/bin/sh")
+    harness.model.agentDetection = AgentDetection(found: [
+      "claude": URL(fileURLWithPath: "/bin/claude")
+    ])
+    harness.model.setAgentFlags("--model opus", for: AgentCatalogue.claudeID)
+    let session = TerminalSession(
+      worktreeID: harness.feature.id, workingDirectory: harness.feature.path, title: "Claude Code",
+      agentID: AgentCatalogue.claudeID)
+    harness.model.pendingAgentTasks[session.id] = "Fix the redirect"
+
+    #expect(
+      harness.model.preparedForLaunch(session).command?.last
+        == "claude --model opus -- 'Fix the redirect'; exec /bin/sh -l")
+    #expect(
+      harness.model.preparedForLaunch(session).command?.last
+        == "claude --model opus; exec /bin/sh -l",
+      "a relaunch in the same run does not ask again")
+  }
+
+  @Test func aCustomCommandReadsItsTaskAndAnEmptyOneWithout() {
+    let harness = Harness()
+    harness.model.setPreferredShell("/bin/sh")
+    harness.model.setCustomAgentCommand("my-agent {{task}}")
+    let session = TerminalSession(
+      worktreeID: harness.main.id, workingDirectory: harness.main.path, title: "Agent",
+      agentID: AgentCatalogue.customID)
+    harness.model.pendingAgentTasks[session.id] = "Fix the redirect"
+
+    let command = harness.model.preparedForLaunch(session).command
+    #expect(command?.prefix(2) == ["/usr/bin/env", "MULTISHELL_TASK=Fix the redirect"])
+    #expect(
+      harness.model.preparedForLaunch(session).command?.prefix(2)
+        == ["/usr/bin/env", "MULTISHELL_TASK="],
+      "never left as the literal token for the shell to read")
+  }
+
   @Test func aRenamedWorktreeAndACustomCommandTakePlaceholdersToo() {
     let harness = Harness()
     harness.model.setPreferredShell("/bin/sh")

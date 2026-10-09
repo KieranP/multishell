@@ -24,4 +24,12 @@ struct AgentCatalogueCustomCommandTests {
       AgentCatalogue.customCommandLine(#"my-agent \{{branch}}"#, values: values).text
         == #"my-agent \{{branch}}"#, "an escaped brace is the user's text")
   }
+
+  @Test func theCustomLineReadsTheTaskFromTheEnvironmentAsItDoesAPlaceholder() {
+    let line = AgentCatalogue.customCommandLine(
+      "my-agent --ask {{task}}", values: values, task: "Fix it\nnow $(touch /tmp/pwned)")
+
+    #expect(line.text == #"my-agent --ask "$MULTISHELL_TASK""#)
+    #expect(line.environment == ["MULTISHELL_TASK": "Fix it now $(touch /tmp/pwned)"])
+  }
 }

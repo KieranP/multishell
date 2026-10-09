@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 
 @testable import MultishellAppCore
@@ -57,5 +58,43 @@ struct AppModelNewWorktreeSheetTests {
     #expect(harness.model.plannedLocation(for: draft).hasSuffix("/feat-x"))
     draft.projectID = nil
     #expect(harness.model.plannedLocation(for: draft) == "\u{2014}", "no project picked")
+  }
+
+  @Test func theAgentSwitchStartsOnWhereTheProjectOrTheGlobalAutoStartsOnCreation() {
+    let harness = Harness()
+    harness.model.setPreferredAgent("codex")
+    harness.model.agentDetection = AgentDetection(found: [
+      "claude": URL(fileURLWithPath: "/bin/claude"), "codex": URL(fileURLWithPath: "/bin/codex"),
+    ])
+    var draft = NewWorktreeDraft(projectID: harness.project.id)
+
+    harness.model.fitAgent(of: &draft)
+    #expect(!draft.startsAgent && draft.agentID == "codex", "auto-start on creation is off")
+    #expect(draft.offeredAgentIDs == ["claude", "codex"])
+
+    harness.model.setAutoStartsAgentOnCreate(true)
+    harness.model.fitAgent(of: &draft)
+    #expect(draft.startsAgent, "the global turns it on")
+
+    harness.model.setSettings(ProjectSettings(autoStartsAgentOnCreate: false), for: harness.project)
+    harness.model.fitAgent(of: &draft)
+    #expect(!draft.startsAgent, "the project's own answer wins")
+
+    harness.model.setSettings(
+      ProjectSettings(preferredAgentID: "claude", autoStartsAgentOnCreate: true),
+      for: harness.project)
+    harness.model.fitAgent(of: &draft)
+    #expect(draft.startsAgent && draft.agentID == "claude", "on the project's own agent")
+  }
+
+  @Test func withNoProjectChosenTheAgentSwitchIsOff() {
+    let harness = Harness()
+    harness.model.setPreferredAgent("claude")
+    harness.model.setAutoStartsAgentOnCreate(true)
+    var draft = NewWorktreeDraft(projectID: nil)
+
+    harness.model.fitAgent(of: &draft)
+
+    #expect(!draft.startsAgent)
   }
 }

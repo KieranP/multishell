@@ -12,6 +12,15 @@ extension NewWorktreeDraft {
     }
   }
 
+  /// The default button, naming the agent it starts. The custom command's
+  /// own name is not a word to put on a button.
+  public var createTitle: String {
+    guard case .agent(let id, _)? = firstTab else { return t("sheet.create-worktree") }
+    return id == AgentCatalogue.customID
+      ? t("sheet.create-and-start-custom")
+      : t("sheet.create-and-start", AgentCatalogue.displayName(id))
+  }
+
   /// Picker labels. A folder name alone, unless another project shares it,
   /// when the path tells them apart.
   public static func labels(for projects: [Project]) -> [Project.ID: String] {

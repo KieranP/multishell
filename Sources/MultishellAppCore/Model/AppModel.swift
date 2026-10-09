@@ -122,6 +122,11 @@ public final class AppModel<Surface> {
   /// observed: the pane draws from `worktreeOperations` beside them.
   @ObservationIgnored var stageHandles = WorktreeStageHandles()
   @ObservationIgnored var pathClaims = WorktreePathClaims()
+  /// The sheet's first tab for each worktree it created, kept until that tab
+  /// opens or would have: after any setup, or a failed one's Dismiss.
+  @ObservationIgnored var newWorktreeFirstTabs: [Worktree.ID: NewWorktreeFirstTab] = [:]
+  /// The task each agent tab starts on, taken by its first launch.
+  @ObservationIgnored var pendingAgentTasks: [TerminalSession.ID: String] = [:]
 
   /// Sessions with a running shell, mirrored from the host after each
   /// reconcile so views can observe it; the host itself is not observable.

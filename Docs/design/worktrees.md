@@ -408,3 +408,15 @@ Discovery, naming, ordering, removal. Newest at the bottom.
   every tab is.
 - **A report naming only a directory**, from a terminal outside the app, is one
   more state in the worktree's set.
+- **The New Worktree sheet asks whether the first tab starts an agent.** The
+  switch starts where auto-start on creation stands for that project, its file
+  and the global counted; off hides the agent and the task.
+- **The sheet's answer stands over the create settings**: on, the agent opens
+  even where no terminal opens on create, the switch having asked for one; off,
+  a shell opens only where that setting says.
+- **The answer waits with the held-back tab**, through the file lists and the
+  post-create hook, or a failed stage's Dismiss, and is dropped with the
+  worktree's other runtime state.
+- **With no agent to offer the sheet gives no answer**, and the create settings
+  decide as they did before it asked. Answering "shell" there turned auto-start
+  off for every worktree created before the PATH scan had answered.
