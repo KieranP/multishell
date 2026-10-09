@@ -4,11 +4,11 @@ import MultishellProcess
 
 /// Debug Info's numbers in words, through the catalogue so a unit can
 /// move. Only memory, ByteCountFormatter's, follows the locale; translation.md.
-public enum DebugValueText {
+enum DebugValueText {
   /// What a cell shows where there is nothing to measure yet.
   static var noValue: String { t("debug.no-value") }
 
-  public static func memory(_ bytes: UInt64) -> String {
+  static func memory(_ bytes: UInt64) -> String {
     ByteCountFormatter.string(fromByteCount: Int64(clamping: bytes), countStyle: .memory)
   }
 
@@ -30,7 +30,7 @@ public enum DebugValueText {
   }
 
   /// Milliseconds under a second, seconds to one place above it.
-  public static func duration(_ duration: Duration) -> String {
+  static func duration(_ duration: Duration) -> String {
     let seconds = duration.inSeconds
     guard seconds >= 1 else { return t("debug.milliseconds", wholeNumber(seconds * 1000)) }
     return t("debug.seconds", String(format: "%.1f", seconds))

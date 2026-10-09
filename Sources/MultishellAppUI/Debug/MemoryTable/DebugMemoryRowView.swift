@@ -22,7 +22,7 @@ struct DebugMemoryRowView: View {
       switch layout {
       case .columns: columns
       case .stacked:
-        DebugStackedRow(
+        DebugStackedRowView(
           captions: row.stackedCaptions, theme: theme, metrics: metrics
         ) {
           title

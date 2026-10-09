@@ -83,4 +83,26 @@ extension AppModelWorktreeCreationTests {
     #expect(first.session.agentID == "claude")
     #expect(first.command?.hasPrefix("claude -- 'Fix the redirect'; ") == true)
   }
+
+  @Test func aWorktreeRemadeWhereAFailedOneWasRemovedDoesNotInheritItsSheetsAgent() async throws {
+    let harness = try await GitHarness()
+    defer { harness.tearDown() }
+    harness.model.setSettings(ProjectSettings(postCreateHook: "exit 3"), for: harness.project)
+    await harness.model.createWorktree(
+      branch: "hooked", basedOn: nil, createsBranch: true, in: harness.project,
+      firstTab: .agent("claude", task: "Fix the redirect"))
+    let failed = try #require(harness.worktree(onBranch: "hooked"))
+    await harness.model.stageHandles.setupTask(of: failed.id)?.value
+    try await harness.removeOutsideTheApp(failed.path)
+    await harness.model.refreshWorktrees(of: harness.project)
+
+    harness.model.setSettings(ProjectSettings(), for: harness.project)
+    await harness.model.createWorktree(
+      branch: "hooked", basedOn: nil, createsBranch: false, in: harness.project)
+    let remade = try #require(harness.worktree(onBranch: "hooked"))
+    #expect(remade.id == failed.id)
+    await harness.model.stageHandles.setupTask(of: remade.id)?.value
+
+    #expect(try firstSession(of: "hooked", harness).session.agentID == nil)
+  }
 }

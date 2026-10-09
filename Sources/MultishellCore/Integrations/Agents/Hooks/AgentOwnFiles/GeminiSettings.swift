@@ -77,11 +77,10 @@ enum GeminiSettings {
       environment["GEMINI_CLI_TRUSTED_FOLDERS_PATH"].map(URL.init(fileURLWithPath:))
       ?? geminiDirectory(environment).appendingPathComponent("trustedFolders.json")
     guard let rules = read(rulesFile) as? [String: String] else { return false }
-    let folder = resolved(directory)
+    let folder = URL(fileURLWithPath: resolved(directory))
     let decisive = rules.filter { path, level in
       let covered = level == "TRUST_PARENT" ? (path as NSString).deletingLastPathComponent : path
-      let root = resolved(covered)
-      return folder == root || folder.hasPrefix(root.hasSuffix("/") ? root : root + "/")
+      return folder.pathComponents(under: URL(fileURLWithPath: resolved(covered))) != nil
     }.max { $0.key.count < $1.key.count }
     return decisive.map { $0.value == "TRUST_FOLDER" || $0.value == "TRUST_PARENT" } ?? false
   }

@@ -3,7 +3,7 @@ import SwiftUI
 
 /// A debug table row where the panel is too narrow for its columns: its name
 /// and headline number on one line, what the columns held in captions below.
-struct DebugStackedRow<Title: View, Headline: View>: View {
+struct DebugStackedRowView<Title: View, Headline: View>: View {
   let captions: [String]
   let theme: Theme
   let metrics: UIMetrics

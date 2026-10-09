@@ -1,6 +1,6 @@
 import MultishellCore
 
-/// What a line under an expanded row says in its Self and Total cells, and
+/// What a nested row says in its Self and Total cells, and
 /// where the table is too narrow for columns.
 extension DebugSelfAndTotalMemory {
   public var selfMemoryText: String { DebugValueText.memory(selfMemory) }

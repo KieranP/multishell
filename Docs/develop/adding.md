@@ -123,7 +123,7 @@ What each addition needs beyond the code itself.
   builder `DebugSample.sample` takes it with a default, and the widest slot in
   `DebugStripLabelTests` its widest figure, so the label is held to its column.
   A series in a split strip also needs an edge in `DebugStripPoint` and in
-  `DebugStripLayer.Edge`, a band in `DebugStripChart`, a colour in
+  `DebugStripLayer.Boundary`, a band in `DebugStripChart`, a colour in
   `Theme+DebugColors` and an entry in `DebugSeriesLegend`, and its name in the
   detail line widens the label.
 - **A column in a debug table.** A title in the table's header and a cell in its

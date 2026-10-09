@@ -35,7 +35,7 @@ struct PaneRow: View {
       }
     }
     .padding(.leading, metrics.paneRowIndent)
-    .padding(.trailing, 8)
+    .padding(.trailing, UIMetrics.sidebarRowSideInset)
     .frame(height: metrics.paneRowHeight)
     .contentShape(.rect)
     .onTapGesture(perform: select)

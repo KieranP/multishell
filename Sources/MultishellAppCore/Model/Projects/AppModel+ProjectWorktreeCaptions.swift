@@ -1,3 +1,4 @@
+import Foundation
 import MultishellCore
 
 /// The captions under a project's worktree directory and branch prefix, from

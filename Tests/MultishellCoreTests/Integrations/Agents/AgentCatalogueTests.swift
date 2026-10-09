@@ -40,8 +40,6 @@ struct AgentCatalogueTests {
     let ids = AgentCatalogue.agents.map(\.id)
     #expect(Set(ids).count == ids.count)
     #expect(!ids.contains(AgentCatalogue.noneID) && !ids.contains(AgentCatalogue.customID))
-    #expect(AgentCatalogue.agent("claude")?.resumeArguments == ["--continue"])
-    #expect(AgentCatalogue.agent("wezterm-agent") == nil)
   }
 
   /// A dropped file is named to the agent the way its prompt reads one;

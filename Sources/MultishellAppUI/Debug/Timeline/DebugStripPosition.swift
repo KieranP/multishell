@@ -7,5 +7,7 @@ struct DebugStripPosition {
   let point: DebugStripPoint
   let height: Double
 
-  func y(_ edge: DebugStripLayer.Edge) -> Double { height - edge.fraction(of: point) * height }
+  func y(_ boundary: DebugStripLayer.Boundary) -> Double {
+    height - boundary.fraction(of: point) * height
+  }
 }

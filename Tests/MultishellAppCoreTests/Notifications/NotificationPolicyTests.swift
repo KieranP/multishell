@@ -53,4 +53,10 @@ struct NotificationPolicyTests {
     #expect(NotificationPolicy.body(for: .attention, message: "") == "Waiting for your input.")
     #expect(NotificationPolicy.body(for: .done, message: nil) == "Finished.")
   }
+
+  @Test func theTitlePutsTheSubjectBeforeWhereItIs() {
+    #expect(
+      NotificationPolicy.title(subject: "claude", project: "acme", worktree: "feat")
+        == "claude · acme › feat")
+  }
 }

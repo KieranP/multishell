@@ -60,7 +60,7 @@ struct WorktreeRow: View {
         metrics: metrics)
     }
     .padding(.leading, metrics.worktreeRowIndent)
-    .padding(.trailing, 8)
+    .padding(.trailing, UIMetrics.sidebarRowSideInset)
     .frame(height: height)
     .rowSelection(isSelected: isSelected, isDropTarget: isDropTarget)
     .contentShape(.rect)

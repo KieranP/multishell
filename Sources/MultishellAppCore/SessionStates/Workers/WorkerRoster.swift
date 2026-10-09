@@ -50,7 +50,7 @@ struct WorkerRoster: Equatable, Sendable {
 
   private mutating func recordEnd(_ report: WorkerReport, asking: Set<String>) -> Place {
     if let id = overflowedID(endedBy: report) { return removeFromOverflow(id) }
-    guard let index = endingPlace(for: report, asking: asking) else {
+    guard let index = endingIndex(for: report, asking: asking) else {
       return Place(id: report.id)
     }
     let place = self.place(at: index)
@@ -143,16 +143,16 @@ struct WorkerRoster: Equatable, Sendable {
 
   /// Which place an end takes: a named one its own, an unnamed one the
   /// oldest asking. Never nothing, or a leftover holds Done all turn.
-  private func endingPlace(for report: WorkerReport, asking: Set<String>) -> Int? {
+  private func endingIndex(for report: WorkerReport, asking: Set<String>) -> Int? {
     guard report.id == WorkerReport.anonymousID else {
       return workers.firstIndex { $0.id == report.id }
     }
-    let askingPlace = workers.lastIndex { $0.isAnonymous && asking.contains($0.id) }
+    let askingIndex = workers.lastIndex { $0.isAnonymous && asking.contains($0.id) }
     // A background shell's end is its exit, never a hook's.
-    return askingPlace ?? workers.lastIndex(where: \.isAnonymous) ?? firstNamedPlace
+    return askingIndex ?? workers.lastIndex(where: \.isAnonymous) ?? firstNamedIndex
   }
 
-  var firstNamedPlace: Int? {
+  var firstNamedIndex: Int? {
     workers.firstIndex {
       !$0.isBackgroundShell && !$0.hasEnded && !$0.hasFailed && $0.id != Worker.overflowID
     }
@@ -214,7 +214,7 @@ struct WorkerRoster: Equatable, Sendable {
   /// Takes the workers off, remembered as retired, and any stopped parent left
   /// holding nothing.
   mutating func retire(_ ids: Set<String>) {
-    for worker in workers where ids.contains(worker.id) { remember(worker) }
+    for worker in workers where ids.contains(worker.id) { rememberRetired(worker) }
     workers.removeAll { ids.contains($0.id) }
     retireEndedWithNothingUnder()
   }
@@ -227,7 +227,7 @@ struct WorkerRoster: Equatable, Sendable {
       if workers[index].lastReportWasItsStop {
         workers[index].awaitsResume = true
       } else {
-        remember(workers.remove(at: index))
+        rememberRetired(workers.remove(at: index))
       }
     }
   }

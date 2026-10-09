@@ -20,7 +20,7 @@ struct DebugGitCommandsTableView: View {
       } else {
         if layout == .columns { header }
         ForEach(gitCommands) { gitCommand in
-          DebugGitCommandRow(
+          DebugGitCommandRowView(
             gitCommand: gitCommand, layout: layout, theme: theme, metrics: metrics)
         }
       }

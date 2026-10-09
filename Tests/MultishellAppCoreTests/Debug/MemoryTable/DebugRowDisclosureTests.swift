@@ -4,7 +4,7 @@ import Testing
 
 @Suite
 struct DebugRowDisclosureTests {
-  @Test func onlyALineWithSomethingUnderItIsExpandable() {
+  @Test func onlyACollapsedOrExpandedRowIsExpandable() {
     #expect(!DebugRowDisclosure.notExpandable.isExpandable)
     #expect(DebugRowDisclosure.collapsed.isExpandable)
     #expect(DebugRowDisclosure.expanded.isExpandable)

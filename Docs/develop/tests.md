@@ -30,7 +30,7 @@ says why these are the rules.
 - **Git on a timer reads only**: WorktreeGitStatusTests.
 - **A tree still being built wears no badge, and a stage on a listed worktree
   keeps the one it earned**: the badged tests in
-  AppModel+StatusPollingTests+WhileBeingWritten and the merged-badge one in
+  AppModel+StatusReadsTests+WhileBeingWritten and the merged-badge one in
   AppModelBranchScansTests, on real git, the hook case held open by a gate file.
 - **Git against real repositories**, bare clone with worktrees beside it
   included: RepositoryFixture. FakeGit only for what real git cannot do on
@@ -288,7 +288,7 @@ says why these are the rules.
 - **Launch opens terminals without waiting on the dropped-file sweep**:
   AppModelLifecycleTests, the sweep held open by a gate.
 - **A row the filter shows is polled, and a slow one is read before its removal
-  dialog**: AppModel+StatusPollingTests+VisibleRows and
+  dialog**: AppModel+StatusReadsTests+VisibleRows and
   AppModel+WorktreeRemovalRequestTests+StatusReads.
 - **A row on screen is read before its dialog too, a late removal read leaves
   the dialog up and a repeated click reads once**: the same two suites, the last
@@ -299,7 +299,7 @@ says why these are the rules.
   AppModel+WorktreeRemovalRequestTests+StatusReads, the hang a fake git held on
   a gate with the wait cut to 100 ms, the failure one exiting 128.
 - **A row the poll is reading is not read again, but a prompt's refresh asked
-  for meanwhile is read once it lands**: AppModelStatusPollingTests and
+  for meanwhile is read once it lands**: AppModelStatusReadsTests and
   AppModelWorktreeStatusRefreshTests, a fake git holding the first read open.
 - **A confirmed removal trashes or deletes as its dialog said**, though the
   setting changed while it was up: AppModelWorktreeRemovalRequestTests.
@@ -310,10 +310,11 @@ says why these are the rules.
   ShellIntegrationThroughHelperTests, and every line the socket received must
   parse. bash is not exercised, going through the helper, which encodes.
 - **A user-set shell directory variable is followed**:
-  ShellIntegrationThroughHelperTests, a login interactive zsh under a fake home.
-  Only a login shell reads the profile, so the login flag is what the test is.
-- **Its session and socket variables are blanked**: the runner merges over the
-  process's own, and run from a Multishell tab the hooks reported to the
+  ShellIntegrationScriptsTests+UserStartupFiles, a login interactive zsh under a
+  fake home. Only a login shell reads the profile, so the login flag is what the
+  test is.
+- **It inherits no session or socket**: `Detached` hands the shell its whole
+  environment, and run from a Multishell tab an inherited pair reported to the
   developer's live app.
 - **An empty Enter under a user's prompt command starts no command**:
   ShellIntegrationScriptsTests+SessionReports, real bash with a logging stand-in
@@ -334,7 +335,7 @@ says why these are the rules.
   failing.
 - **A record git will neither remove nor prune after the Trash took the
   directory is its own failure**: WorktreeGitRemovalTests on a fake git,
-  WorktreeRemovalFailureTests for the mapping.
+  PresentedRemovalFailureTests for the mapping.
 - **A prune that leaves the record listed is still a failure**, and an
   unreadable or empty list counts as listed: the same suite, a fake git whose
   remove fails and whose list still names the path.
@@ -402,11 +403,11 @@ says why these are the rules.
 - **A repository whose own config says not to look at untracked files**:
   GitRunnerTests, where the lines are counted anyway.
 - **Changing the indicator reads every badge at once**:
-  AppModelWorktreeStatusRefreshTests, and a read started before the change
-  badges nothing, held open by a fake git until the read that replaced it has
-  landed.
+  AppModelStatusReadsTests. A read started before the change badges nothing:
+  AppModelWorktreeStatusRefreshTests, held open by a fake git until the read
+  that replaced it has landed.
 - **The status poll asking a missing project or a slow checkout**:
-  AppModelStatusPollingTests on a fake git, counting the calls, and
+  AppModelStatusReadsTests on a fake git, counting the calls, and
   AppModelWorktreeStatusRefreshTests once more for a prompt's own refresh of
   that slow worktree and once for a read discarded mid-flight, which must leave
   the next read due.
@@ -431,7 +432,7 @@ says why these are the rules.
   recorded focus.
 - **A project collapsed under the filter stays collapsed until the text changes,
   and its rows are read once it opens**: AppModelSidebarFilterTests and
-  AppModel+StatusPollingTests+VisibleRows. SidebarViewTests holds the chevron to
+  AppModel+StatusReadsTests+VisibleRows. SidebarViewTests holds the chevron to
   it, drawing a collapsed project the filter opens and an expanded one and
   comparing the pixels.
 - **A header badge ringed in the sidebar's colour**: WorktreeHeaderTests draws

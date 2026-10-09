@@ -135,6 +135,54 @@
   variable first.** A failing script inside `echo`'s `$(...)` leaves the step
   green, which once gave the build an empty Zig version and cache key.
 
+## How strict the compiler and the lints are
+
+- **Every target imports each module it uses** (`MemberImportVisibility`).
+  Without it a file could use another module's extension members while any file
+  in its target imported that module, so a clean build proved no import dead:
+  three imports removed on that evidence were needed, and 56 files used a module
+  they never imported.
+- **`any` is written on every existential** (`ExistentialAny`), and **a warning
+  fails the build**.
+- **StrictMemorySafety is off**: 427 sites, nearly all libghostty's C API and
+  Darwin's, each wanting an `unsafe` that says nothing a reader can act on.
+  `InternalImportsByDefault` and `ImmutableWeakCaptures` found nothing here, so
+  they are left for Swift 7 to turn on.
+- **swift-format rules still off**: `NoLeadingUnderscores` (a persisted `_0`
+  coding key), `UseWhereClausesInForLoops` (a `guard … continue` reads as the
+  rest do), `NeverForceUnwrap` and `NeverUseForceTry` (invariants such as a UUID
+  literal, and fixtures loaded in a static `let`), and
+  `BeginDocumentationCommentWithOneLineSummary`, 875 doc comments written as
+  prose.
+- **SwiftLint checks correctness, swift-format owns layout.** `.swiftlint.yml`
+  lists every lint, idiomatic and performance rule this code passes, 114 of 163,
+  so a new SwiftLint rule never fails CI on its own. Cost: CI installs whatever
+  Homebrew has, so an upgrade that changes an enabled rule can. Style and
+  metrics rules are left out: they fight swift-format's output.
+- **Off because they flag code that is right here**: `redundant_nil_coalescing`
+  (`?? nil` flattens a `String??`), `strict_fileprivate` (a nested type's
+  members shared with a sibling in the file), `reduce_boolean` (a last-wins fold
+  is not `allSatisfy`), `contains_over_range_nil_comparison` (on `Data` it swaps
+  Foundation's search for a naive one), `mark` (a doc line starting "mark:"),
+  `identical_operands` (a test of determinism), `nslocalizedstring_key` (the
+  `t()` wrapper), and `unneeded_escaping`, `async_without_await` and
+  `unneeded_throws_rethrows` (null and fake ports meeting a protocol).
+- **Off because a test reads better without them**: `empty_count` and
+  `empty_collection_literal`, since `#expect(x == [])` prints `x` when it fails
+  and `isEmpty` prints `false`; `force_try` and `force_cast`, for fixtures
+  loaded in a static `let`.
+- **SwiftLint's analyzer is not run.** Tried on 2026-10-09: over 30 minutes for
+  one pass, `unused_declaration` found 4 and all 4 were wrong (a `@State` read
+  through `$`, a protocol witness, a kept-alive `let`), and `unused_import`
+  mostly asked for `Darwin` where `Foundation` already brings it. It needs
+  SwiftPM's `@file` source lists expanded by hand, too. `MemberImportVisibility`
+  already fails the build on a missing import.
+- **Off for now, with their counts**: `force_unwrapping` 230,
+  `discouraged_optional_boolean` 61, `discouraged_optional_collection` 47,
+  `empty_string` 48, `optional_data_string_conversion` 25,
+  `override_in_extension` 26, `incompatible_concurrency_annotation` 24,
+  `unused_parameter` 104, `variable_shadowing` 86.
+
 ## Before you say something works
 
 - **Format what you touched, then lint, test, build and release.** All pass, no

@@ -42,7 +42,7 @@ struct AppModelEditorTests {
       at: shells.appendingPathComponent("bash"))
     let code = try Scratch.script("exit 0", at: shells.appendingPathComponent("code"))
     harness.model.editorDetection = EditorDetection(
-      found: ["vscode": .init(application: nil, command: code)])
+      found: ["vscode": .init(application: nil, executable: code)])
     harness.model.setPreferredEditor("vscode")
     harness.model.setSettings(ProjectSettings(preferredShellID: shell.path), for: harness.project)
 

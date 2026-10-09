@@ -8,7 +8,7 @@ import Testing
 @testable import MultishellCore
 @testable import MultishellGitKit
 
-extension AppModelStatusPollingTests {
+extension AppModelStatusReadsTests {
   /// A worktree still being set up is a building site: the file lists and
   /// the post-create hook are writing into it. See worktrees.md.
   @Test func aWorktreeWithAStageRunningIsNotBadged() async throws {
@@ -112,28 +112,6 @@ extension AppModelStatusPollingTests {
     await harness.model.refreshWorktrees(of: harness.project)
     await harness.model.refreshStatuses()
     #expect(harness.model.statuses[row.id] != nil)
-  }
-
-  /// Only the lock's age tells a dead add from a running one, and time passing
-  /// changes nothing in the records a watcher tick compares.
-  @Test func aCreateKilledMidCheckoutGetsItsBadgeBackOnceItsLockIsOld() async throws {
-    let harness = try await GitHarness()
-    defer { harness.tearDown() }
-    await harness.model.createWorktree(
-      branch: "killed", basedOn: nil, createsBranch: true, in: harness.project)
-    let lock = harness.project.path.appendingPathComponent(".git/worktrees/killed/locked")
-    try "initializing".write(to: lock, atomically: true, encoding: .utf8)
-    await harness.model.refreshWorktrees(of: harness.project)
-    let killed = try #require(harness.worktree(onBranch: "killed"))
-    #expect(killed.isInitializing)
-    try FileManager.default.setAttributes(
-      [.modificationDate: Date(timeIntervalSinceNow: -3600)], ofItemAtPath: lock.path)
-
-    await harness.model.refreshProjectsIfChanged()
-    await harness.model.pollRound()
-
-    #expect(harness.worktree(onBranch: "killed")?.isInitializing == false)
-    #expect(harness.model.statuses[killed.id] != nil)
   }
 
   /// The plain create, no file lists and no hook: nothing but the `defer`

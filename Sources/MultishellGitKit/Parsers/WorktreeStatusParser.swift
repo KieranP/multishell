@@ -1,5 +1,4 @@
 import Foundation
-import MultishellCore
 
 /// Parses `git status --porcelain=v1 --branch`: a `## <branch>...` line,
 /// then `XY <path>` for the index state and the working tree state.

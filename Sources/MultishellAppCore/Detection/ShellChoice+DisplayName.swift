@@ -7,7 +7,7 @@ extension ShellChoice {
   static func displayName(_ id: String?, customPath: String, loginShell: String) -> String {
     guard let id, id != loginShellID else { return t("shell.named-login-shell", loginShell) }
     guard id == customID else { return id }
-    guard let path = runnablePath(customPath) else { return t("shell.named-custom-blank") }
+    guard let path = trimmedCustomPath(customPath) else { return t("shell.named-custom-blank") }
     return t("shell.named-custom-path", path)
   }
 }

@@ -1,5 +1,6 @@
 import MultishellCore
 import MultishellGitKit
+import MultishellProcess
 
 extension PresentedError {
   /// A hook, or a file list, around a create or a removal.

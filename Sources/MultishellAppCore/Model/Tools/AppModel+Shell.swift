@@ -18,7 +18,7 @@ extension AppModel {
   /// What the typed custom path will do, for the caption under its field:
   /// nothing to say when it names an executable.
   public var customShellPathProblem: String? {
-    guard let path = ShellChoice.runnablePath(workspace.customShellPath) else {
+    guard let path = ShellChoice.trimmedCustomPath(workspace.customShellPath) else {
       return t("shell.path-blank", shellDetection.loginShell)
     }
     if !FileManager.default.isExecutableFile(atPath: path) {

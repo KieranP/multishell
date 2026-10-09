@@ -3,7 +3,7 @@ import Foundation
 /// A process's name as a person would know it: an interpreter is named with
 /// its script, as `node gemini`, since every Node agent is otherwise `node`.
 enum ProcessLabel {
-  static let interpreters: Set<String> = [
+  private static let interpreters: Set<String> = [
     "bun", "deno", "node", "perl", "python", "python3", "ruby",
   ]
 

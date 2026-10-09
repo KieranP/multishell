@@ -1,4 +1,3 @@
-import MultishellCore
 import SwiftUI
 
 /// A number in a debug table's fixed-width column, right-aligned so the

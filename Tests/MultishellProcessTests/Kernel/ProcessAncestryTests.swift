@@ -23,5 +23,4 @@ struct ProcessAncestryTests {
     #expect(ProcessAncestry.reportingPID(startingAt: under) == me, "the walk as it was")
     #expect(ProcessAncestry.reportingPID(startingAt: under, stoppingAt: me) == under)
   }
-
 }

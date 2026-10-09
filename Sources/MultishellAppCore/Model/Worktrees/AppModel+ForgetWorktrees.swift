@@ -1,4 +1,5 @@
 import MultishellCore
+import MultishellGitKit
 
 extension AppModel {
   /// The one place per-worktree runtime state is dropped, fed with what the

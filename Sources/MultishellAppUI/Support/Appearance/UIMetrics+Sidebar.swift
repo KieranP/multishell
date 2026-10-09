@@ -3,6 +3,8 @@ import MultishellAppCore
 
 /// The sizes of the sidebar's rows and the blocks they stack into.
 extension UIMetrics {
+  /// Round a sidebar row's selection and hover fill and the filter field.
+  static let rowCornerRadius: Double = 6
   /// A sidebar row carrying a user's name over its branch. Two lines of
   /// text where `rowHeight` holds one, so the branch is not clipped.
   var customNameRowHeight: Double { (bodySize * 3.2).rounded() }
@@ -13,6 +15,12 @@ extension UIMetrics {
     hasCustomName || isRenaming ? customNameRowHeight : rowHeight
   }
   static let sidebarRowSpacing: Double = 1
+  /// One inset for every sidebar row's sides, so the sort menu stays in the
+  /// project row's + column and the trailing badges line up.
+  static let sidebarRowSideInset: Double = 8
+  /// The list's gap to the sidebar's edges, which the filter field above it
+  /// keeps so its background lines up with the rows' selection.
+  static let sidebarListSideInset: Double = 8
   /// The column a sidebar row's leading glyph sits in, one width for every
   /// row so the worktree, pane and agents rows line up.
   var sidebarGlyphColumn: Double { paneGlyphSize }

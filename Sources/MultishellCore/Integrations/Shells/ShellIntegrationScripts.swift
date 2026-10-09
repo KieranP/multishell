@@ -39,11 +39,7 @@ enum ShellIntegrationScripts {
       # ~/.zshrc; it runs solely because Multishell set ZDOTDIR for this
       # session.
       _multishell_self_zdotdir="$ZDOTDIR"
-      if [ -n "${MULTISHELL_USER_ZDOTDIR-}" ]; then
-        export ZDOTDIR="$MULTISHELL_USER_ZDOTDIR"
-      else
-        unset ZDOTDIR
-      fi
+      \(userZdotdirRestore)
       \(restoresHistory ? historyFromUsersDirectory : "")
       [ -f "${ZDOTDIR:-$HOME}/\(userFile)" ] && source "${ZDOTDIR:-$HOME}/\(userFile)"
       \(capturesUserZdotdir ? "[ -n \"${ZDOTDIR-}\" ] && export MULTISHELL_USER_ZDOTDIR=\"$ZDOTDIR\"" : "")
@@ -55,14 +51,18 @@ enum ShellIntegrationScripts {
       """
       : """
       # Hand ZDOTDIR back to the user so nested shells do not re-enter this.
-      if [ -n "${MULTISHELL_USER_ZDOTDIR-}" ]; then
-        export ZDOTDIR="$MULTISHELL_USER_ZDOTDIR"
-      else
-        unset ZDOTDIR
-      fi
+      \(userZdotdirRestore)
       """
     return [header, extra, footer].compactMap { $0 }.joined(separator: "\n") + "\n"
   }
+
+  private static let userZdotdirRestore = """
+    if [ -n "${MULTISHELL_USER_ZDOTDIR-}" ]; then
+      export ZDOTDIR="$MULTISHELL_USER_ZDOTDIR"
+    else
+      unset ZDOTDIR
+    fi
+    """
 
   /// macOS's `/etc/zshrc` names the history file after ZDOTDIR while it is
   /// still ours, so a tab's history left the user's file; see terminals.md.

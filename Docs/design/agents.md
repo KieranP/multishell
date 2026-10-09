@@ -571,8 +571,8 @@ at the bottom.
 - **The sizes were set by rendering the shapes from tab size up and looking**,
   which is what threw out a hand-drawn mark that read as an animal at tab size.
 - **A mark that only works blown up is no mark**, and the box cannot grow to
-  help, the tab floor being exactly what a tab already draws at the smallest UI
-  font.
+  help, the tab floor holding only what a tab already draws at the smallest UI
+  font and a short title.
 - **The tab's dot keeps its click**, which clears a stale Working state, and the
   whole glyph is now that target.
 - **A split tab loses its split symbol where an agent is at the prompt**: one
@@ -834,6 +834,10 @@ at the bottom.
 - **An operand goes behind `--` and an option takes the task after `=`**, so a
   task opening with a dash is never read as a flag. Cost: unchecked against the
   running CLIs, as starting one would read the user's own config.
+- **A one-word operand task carries a trailing space**: Claude's CLI reads a
+  lone word behind `--` as a subcommand, so `claude -- doctor` ran doctor
+  (2.1.295), and no subcommand name ends in a space. Cost: Codex's one-word task
+  carries the space too.
 - **A line break in a task becomes a space.** tcsh refuses one inside quotes and
   inside a quoted variable read alike, answering "Unmatched '" and starting
   nothing.

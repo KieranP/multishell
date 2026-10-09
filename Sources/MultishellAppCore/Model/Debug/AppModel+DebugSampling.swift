@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import MultishellGitKit
 import MultishellProcess
 
 extension AppModel {
@@ -47,8 +48,8 @@ extension AppModel {
     guard generation == debugSampler.generation else { return }
 
     let now = ContinuousClock.now
-    let elapsed = debugSampler.lastSampleTaken.map { $0.duration(to: now) } ?? .seconds(1)
-    debugSampler.lastSampleTaken = now
+    let elapsed = debugSampler.lastSampleAt.map { $0.duration(to: now) } ?? .seconds(1)
+    debugSampler.lastSampleAt = now
     let children = scan.childProcesses
     let gitActivity = coordinator?.git.runLog.drain() ?? .empty
     let cpu = debugSampler.cpuUsageMeter.takeReading(

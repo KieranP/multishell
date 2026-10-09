@@ -33,10 +33,10 @@ extension ShellIntegrationScriptsTests {
     // Separated by a newline, not `; `: a user's own PROMPT_COMMAND ending
     // in a separator composed to `;;` and bash refused the whole string.
     #expect(
-      text.range(of: "_multishell_prompt_marks\n_multishell_arm") != nil,
+      text.contains("_multishell_prompt_marks\n_multishell_arm"),
       "put back last, after a framework has rebuilt PS1 from a PROMPT_COMMAND of its own")
     #expect(
-      text.range(of: "_multishell_prompt_marks; _multishell_arm") == nil,
+      !text.contains("_multishell_prompt_marks; _multishell_arm"),
       "a separator of its own is what a trailing one in theirs doubles")
   }
 

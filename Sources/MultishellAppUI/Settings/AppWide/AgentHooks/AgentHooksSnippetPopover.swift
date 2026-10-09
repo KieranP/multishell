@@ -11,11 +11,7 @@ struct AgentHooksSnippetPopover: View {
     let snippet = model.agentHooksSnippet(row.id)
     VStack(alignment: .leading, spacing: 8) {
       HStack(spacing: 8) {
-        Text(row.displayPath)
-          .font(.system(size: 11))
-          .foregroundStyle(.secondary)
-          .lineLimit(1)
-          .truncationMode(.head)
+        PathText(row.displayPath)
         Spacer(minLength: 8)
         Button(t("action.copy")) { model.copyToClipboard(snippet) }
           .controlSize(.small)

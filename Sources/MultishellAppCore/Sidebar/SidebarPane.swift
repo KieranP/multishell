@@ -9,5 +9,5 @@ public struct SidebarPane: Identifiable, Equatable, Sendable {
   public let state: SessionState?
   public let workers: [Worker]
   public let agentID: String?
-  public let agentName: String?
+  let agentName: String?
 }

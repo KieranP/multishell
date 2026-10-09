@@ -18,21 +18,18 @@ let package = Package(
     // libghostty, built from the ThirdParty/ghostty submodule by
     // Scripts/build-ghostty.sh; the submodule's commit is the pin.
     .binaryTarget(name: "GhosttyKit", path: ".build/ghostty/GhosttyKit.xcframework"),
-    // Pure model and state. Its resources are the shell scripts and the
-    // libraries' catalogue; see Docs/design/translation.md.
+    // Docs/develop/layout.md says what each target holds. Core's resources are the
+    // shell scripts and the libraries' catalogue; see Docs/design/translation.md.
     .target(
       name: "MultishellCore",
       resources: [
         .copy("Resources/zsh"), .copy("Resources/bash"),
         .process("Resources/en.lproj"),
       ]),
-    // Subprocess execution and Unix sockets.
     .target(
       name: "MultishellProcess",
       dependencies: [.product(name: "Subprocess", package: "swift-subprocess")]),
-    // git worktree operations and their hooks.
     .target(name: "MultishellGitKit", dependencies: ["MultishellCore", "MultishellProcess"]),
-    // The app layer; Docs/develop/layout.md says what it holds.
     .target(
       name: "MultishellAppCore",
       dependencies: ["MultishellCore", "MultishellProcess", "MultishellGitKit"]),
@@ -83,3 +80,14 @@ let package = Package(
     .testTarget(name: "MultishellAppUITests", dependencies: ["MultishellAppUI", "TestScratch"]),
   ]
 )
+
+// Stricter than Swift 6's defaults; Docs/develop/build.md says what each catches
+// and why StrictMemorySafety is not among them.
+for target in package.targets where target.type != .binary {
+  target.swiftSettings =
+    (target.swiftSettings ?? []) + [
+      .enableUpcomingFeature("MemberImportVisibility"),
+      .enableUpcomingFeature("ExistentialAny"),
+      .treatAllWarnings(as: .error),
+    ]
+}

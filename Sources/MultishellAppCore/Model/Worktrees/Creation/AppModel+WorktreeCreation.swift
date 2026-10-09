@@ -27,9 +27,8 @@ extension AppModel {
     worktreeCreationStep = step
   }
 
-  /// Returns once the worktree exists and is selected, or the create failed.
-  /// The post-create hook runs on in the pane; see `WorktreeOperation`.
-  /// `firstTab` is the sheet's answer; `nil` leaves it to the create settings.
+  /// Returns once the worktree exists and is selected, or the create failed; the
+  /// hook runs on in the pane. `firstTab` nil leaves the tab to the create settings.
   public func createWorktree(
     branch: String,
     basedOn startPoint: String?,

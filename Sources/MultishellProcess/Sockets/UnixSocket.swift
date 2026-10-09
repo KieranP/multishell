@@ -5,7 +5,7 @@ enum UnixSocket {
   /// Bytes a path may have: `sun_path` less its terminator.
   static let maximumPathLength = MemoryLayout.size(ofValue: sockaddr_un().sun_path) - 1
 
-  static func address(for path: String) throws -> sockaddr_un {
+  private static func address(for path: String) throws -> sockaddr_un {
     var address = sockaddr_un()
     let bytes = Array(path.utf8)
     guard bytes.count <= maximumPathLength else {
@@ -18,7 +18,7 @@ enum UnixSocket {
     return address
   }
 
-  static var addressLength: socklen_t { socklen_t(MemoryLayout<sockaddr_un>.size) }
+  private static var addressLength: socklen_t { socklen_t(MemoryLayout<sockaddr_un>.size) }
 
   static func newSocket(reportingAs path: String) throws -> Int32 {
     let descriptor = socket(AF_UNIX, SOCK_STREAM, 0)

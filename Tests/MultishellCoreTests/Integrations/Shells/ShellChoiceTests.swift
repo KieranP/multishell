@@ -37,5 +37,4 @@ struct ShellChoiceTests {
     #expect(ShellChoice.loginShellPath(environment: [:]) == "/bin/zsh")
     #expect(ShellChoice.loginShellPath(environment: ["SHELL": ""]) == "/bin/zsh")
   }
-
 }

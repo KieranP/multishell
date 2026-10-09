@@ -6,7 +6,7 @@ extension WorkerRoster {
   /// Far more parents than a fan-out names; the oldest is forgotten past it.
   private static let retiredLimit = 64
 
-  mutating func remember(_ worker: Worker) {
+  mutating func rememberRetired(_ worker: Worker) {
     guard worker.pid == nil, worker.id != Worker.overflowID else { return }
     retired.removeAll { $0.id == worker.id }
     retired.append(worker)

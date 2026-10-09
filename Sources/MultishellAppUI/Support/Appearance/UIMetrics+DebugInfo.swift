@@ -10,11 +10,11 @@ extension UIMetrics {
   var debugStripValueSize: Double { bodySize + 1 }
   /// The debug tables' number columns, which their headers line up over.
   var debugCountColumnWidth: Double { (bodySize * 5.5).rounded() }
+  var debugDurationColumnWidth: Double { (bodySize * 4.8).rounded() }
   /// A memory figure with the bar beside it, and one without.
   var debugMemoryBarColumnWidth: Double { (bodySize * 8.5).rounded() }
-  var debugDurationColumnWidth: Double { (bodySize * 4.8).rounded() }
   var debugMemoryValueColumnWidth: Double { (bodySize * 5.5).rounded() }
-  var debugMemoryBarWidth: Double { (bodySize * 3.5).rounded() }
+  private var debugMemoryBarWidth: Double { (bodySize * 3.5).rounded() }
   /// Two points at least, so a row holding any memory shows a bar.
   func debugMemoryBarLength(forFraction fraction: Double) -> Double {
     max(2, fraction * debugMemoryBarWidth)

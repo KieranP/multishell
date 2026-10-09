@@ -1,5 +1,4 @@
 import MultishellAppCore
-import MultishellCore
 import SwiftUI
 
 /// Settings > Notifications, one toggle per reported state. The rows and the

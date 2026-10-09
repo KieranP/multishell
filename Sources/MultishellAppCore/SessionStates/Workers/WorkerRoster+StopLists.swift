@@ -92,7 +92,7 @@ extension WorkerRoster {
     }
     kept.retired = retired
     let keptIDs = Set(kept.workers.map(\.id))
-    for worker in workers where !keptIDs.contains(worker.id) { kept.remember(worker) }
+    for worker in workers where !keptIDs.contains(worker.id) { kept.rememberRetired(worker) }
     return kept
   }
 }

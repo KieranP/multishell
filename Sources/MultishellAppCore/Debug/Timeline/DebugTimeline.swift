@@ -28,7 +28,13 @@ public struct DebugTimeline: Sendable, Equatable {
     }
   }
 
-  public var latestSlot: DebugTimelineSlot? { slots.last ?? nil }
+  private var latestSlot: DebugTimelineSlot? { slots.last ?? nil }
+
+  /// What a strip's label reads: the slot under the pointer, or the latest
+  /// where the pointer is off the strip or over a second with no sample.
+  public func shownSlot(hovering index: Int?) -> DebugTimelineSlot? {
+    slot(at: index) ?? latestSlot
+  }
 
   /// `nil` past the range: a pointer index kept from a longer one.
   public func slot(at index: Int?) -> DebugTimelineSlot? {

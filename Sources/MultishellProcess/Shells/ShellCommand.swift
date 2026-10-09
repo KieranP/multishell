@@ -61,10 +61,12 @@ public enum ShellCommand {
   /// What a failed script printed, stdout first. The two streams are read
   /// apart, so their order against each other is not kept.
   static func failureMessage(standardOutput: String, standardError: String) -> String {
-    [standardOutput, stderrAfterMarker(standardError)]
-      .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-      .filter { !$0.isEmpty }
-      .joined(separator: "\n")
+    [
+      standardOutput.trimmingCharacters(in: .whitespacesAndNewlines),
+      stderrAfterMarker(standardError),
+    ]
+    .filter { !$0.isEmpty }
+    .joined(separator: "\n")
   }
 
   /// Where the script travels: csh cannot take a newline inside quotes, and

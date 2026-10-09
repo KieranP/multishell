@@ -1,4 +1,5 @@
 import MultishellCore
+import MultishellGitKit
 
 extension AppModel {
   /// Whether a fetch is running on this project: its row spins, and the

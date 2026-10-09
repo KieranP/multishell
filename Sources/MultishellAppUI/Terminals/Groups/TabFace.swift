@@ -20,7 +20,7 @@ struct TabFace: View {
     let state = model.state(of: tab)
     let agentID = model.agentIDAtThePrompt(of: tab)
     let title = model.title(of: tab)
-    return HStack(spacing: 7) {
+    return HStack(spacing: UIMetrics.tabItemGap) {
       leadingGlyph(state, agentID: agentID, textColor: textColor)
 
       if isRenaming {
@@ -37,7 +37,7 @@ struct TabFace: View {
 
       if isActive, !isRenaming { closeButton }
     }
-    .padding(.horizontal, 10)
+    .padding(.horizontal, UIMetrics.tabSideInset)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(isShown ? theme.backgroundColor : .clear)
     .overlay(alignment: .trailing) {

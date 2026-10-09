@@ -14,5 +14,4 @@ struct NullPlatformTests {
 
     #expect(!FileManager.default.fileExists(atPath: directory.path))
   }
-
 }

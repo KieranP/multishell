@@ -13,7 +13,7 @@ struct DebugStripView: View {
 
   var body: some View {
     let label = DebugStripLabel(
-      metric: metric, slot: timeline.slot(at: hoveredSlotIndex) ?? timeline.latestSlot,
+      metric: metric, slot: timeline.shownSlot(hovering: hoveredSlotIndex),
       theme: theme, metrics: metrics)
     HStack(spacing: 0) {
       label.frame(width: metrics.debugStripLabelWidth, alignment: .leading)

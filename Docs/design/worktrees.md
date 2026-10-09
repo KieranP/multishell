@@ -420,3 +420,6 @@ Discovery, naming, ordering, removal. Newest at the bottom.
 - **With no agent to offer the sheet gives no answer**, and the create settings
   decide as they did before it asked. Answering "shell" there turned auto-start
   off for every worktree created before the PATH scan had answered.
+- **A stand-in agent gives way to the project's own when the PATH scan offers
+  it**; a pick the user made stays while offered. Before the scan only a typed
+  custom command is offered, so the sheet started it in place of Claude.

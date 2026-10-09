@@ -30,5 +30,4 @@ struct HexColorTests {
     #expect(HexColor.parse("+abcde") == nil)
     #expect(HexColor.parse("-abcde") == nil)
   }
-
 }

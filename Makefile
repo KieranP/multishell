@@ -56,9 +56,11 @@ install: release
 	cp -R "$(APP)" "$(INSTALL_DIR)/Multishell.app"
 	@echo "installed $(INSTALL_DIR)/Multishell.app"
 
-## Report style violations. Same command CI runs; fails on any finding.
+## Report style and correctness violations. Same commands CI runs; fails on
+## any finding.
 lint:
 	swift format lint --strict --recursive Sources Tests Package.swift
+	swiftlint lint --quiet
 
 ## Rewrite files in place to the project style (.swift-format, .prettierrc).
 format: prettier

@@ -94,4 +94,16 @@ struct DebugTimelineTests {
     #expect(timeline.slot(at: 150) == nil, "a pointer left over from the fifteen minute range")
     #expect(timeline.slot(at: nil) == nil)
   }
+
+  @Test func aStripShowsTheHoveredSlotAndOtherwiseTheLatest() throws {
+    let samples = (0..<2).map { DebugSample.sample(sequence: $0, gitRunsStartedCount: $0 * 3) }
+    let timeline = DebugTimeline(history: .of(samples), range: .oneMinute)
+    let latest = try #require(timeline.slots[59])
+    let earlier = try #require(timeline.slots[58])
+
+    #expect(timeline.shownSlot(hovering: 58) == earlier)
+    #expect(timeline.shownSlot(hovering: nil) == latest)
+    #expect(timeline.shownSlot(hovering: 150) == latest, "a pointer left from a longer range")
+    #expect(timeline.shownSlot(hovering: 0) == latest, "an empty slot before the history began")
+  }
 }

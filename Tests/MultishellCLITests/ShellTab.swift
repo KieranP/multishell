@@ -61,12 +61,12 @@ enum ShellTab {
       in: home, environment: environment, timeout: timeout)
   }
 
-  /// `script` run by an interactive zsh, a login one where `isLogin`.
+  /// `script` run by an interactive zsh.
   static func runZsh(
-    _ script: String, isLogin: Bool = false, in directory: URL, environment: [String: String]
+    _ script: String, in directory: URL, environment: [String: String]
   ) async throws -> ProcessOutput {
     try await ProcessRunner().capture(
-      URL(fileURLWithPath: "/bin/zsh"), (isLogin ? ["-l"] : []) + ["-i", "-c", script],
+      URL(fileURLWithPath: "/bin/zsh"), ["-i", "-c", script],
       in: directory, environment: environment)
   }
 

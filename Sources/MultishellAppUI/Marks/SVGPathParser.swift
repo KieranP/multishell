@@ -29,7 +29,7 @@ enum SVGPathParser {
         path.closeSubpath()
         return true
       }
-      guard !numbers.isEmpty, numbers.count % arity == 0 else { return false }
+      guard !numbers.isEmpty, numbers.count.isMultiple(of: arity) else { return false }
       for start in stride(from: 0, to: numbers.count, by: arity) {
         let values = Array(numbers[start..<start + arity])
         switch command {

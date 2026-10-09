@@ -7,11 +7,11 @@ struct DebugStripLayer: Shape {
     case stalls([Bool])
     case midline
     case bars([DebugStripPoint?])
-    case band([DebugStripPoint?], lower: Edge, upper: Edge)
+    case band([DebugStripPoint?], lower: Boundary, upper: Boundary)
     case totalLine([DebugStripPoint?])
   }
 
-  enum Edge: Sendable {
+  enum Boundary: Sendable {
     case baseline
     case app
     case appWithTerminals
@@ -86,8 +86,8 @@ struct DebugStripLayer: Shape {
     return path
   }
 
-  /// Closed back along the lower edge.
-  private func band(_ positions: [DebugStripPosition], lower: Edge, upper: Edge) -> Path {
+  /// Closed back along the lower boundary.
+  private func band(_ positions: [DebugStripPosition], lower: Boundary, upper: Boundary) -> Path {
     var path = Path()
     path.addLines(
       positions.map { CGPoint(x: $0.x, y: $0.y(upper)) }

@@ -34,14 +34,14 @@ enum EditorLaunch {
     switch editor.kind {
     case .application:
       if let application = found?.application { return .openApplication(application) }
-      guard let command = found?.command else { return nil }
+      guard let executable = found?.executable else { return nil }
       return .runInBackground(
-        AnyShellQuoting.commandLine([command.path, directory.path]))
+        AnyShellQuoting.commandLine([executable.path, directory.path]))
     case .terminal:
-      guard let command = found?.command else { return nil }
+      guard let executable = found?.executable else { return nil }
       return .openTab(
         title: editor.name,
-        command: TabCommand.running([command.path, "."], shell: shell, handOver: handOver))
+        command: TabCommand.running([executable.path, "."], shell: shell, handOver: handOver))
     }
   }
 

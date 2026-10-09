@@ -219,6 +219,7 @@ extension SessionStatesTests {
     let workers = states.workers(.session(a))
     #expect(workers.count == 2, "two places")
     #expect(workers.workerCount == 3, "three workers")
+    #expect(workers.chipCount == 3, "the chip shows the workers")
     #expect(workers.first?.occurrenceText == t("worker.occurrences", 2))
     #expect(workers.last?.occurrenceText == nil, "a place of one says nothing")
 

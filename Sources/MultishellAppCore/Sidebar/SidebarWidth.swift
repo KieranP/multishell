@@ -1,3 +1,5 @@
+import MultishellCore
+
 /// How wide the sidebar may be dragged in a window of a given width.
 public enum SidebarWidth {
   static let minimum = 180.0

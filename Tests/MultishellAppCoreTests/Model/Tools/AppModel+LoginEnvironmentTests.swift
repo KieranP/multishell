@@ -1,6 +1,5 @@
 import Foundation
 import MultishellCore
-import MultishellProcess
 import TestScratch
 import Testing
 

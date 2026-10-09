@@ -26,9 +26,11 @@ struct ScrollingTabStrip<Tabs: View>: View {
   @State private var scrollerReference = ScrollerReference()
 
   /// With no gutters the trackpad still scrolls the strip.
-  private var gutter: Double { model.metrics.tabStrip.arrowGutter(forAvailable: available) }
+  private var gutter: Double { model.metrics.tabStripWidths.arrowGutter(forAvailable: available) }
 
-  private var viewport: Double { model.metrics.tabStrip.scrollingViewport(forAvailable: available) }
+  private var viewport: Double {
+    model.metrics.tabStripWidths.scrollingViewport(forAvailable: available)
+  }
 
   var body: some View {
     let overflow = TabStripLayout.Overflow(

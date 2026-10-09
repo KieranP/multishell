@@ -1,4 +1,5 @@
 import Foundation
+import MultishellGitKit
 import TestScratch
 import Testing
 
@@ -202,7 +203,7 @@ extension AppModelWorktreeRemovalRequestTests {
     await second?.value
 
     #expect(harness.statusRunCount() == 2, "the earlier read began before this click")
-    #expect(fake.pendingWorktreeRemoval?.hasUnreadChanges == false)
+    #expect(fake.pendingWorktreeRemoval?.isStatusUnread == false)
   }
 
   @Test func aRemovalWhoseStatusReadFailsSaysTheChangesWentUnread() async throws {
@@ -223,7 +224,7 @@ extension AppModelWorktreeRemovalRequestTests {
     await fake.requestWorktreeRemoval(of: refused)?.value
 
     let pending = try #require(fake.pendingWorktreeRemoval)
-    #expect(pending.hasUnreadChanges)
+    #expect(pending.isStatusUnread)
   }
 
   @Test func aPollLandingAfterARemovalBeganIsDropped() async throws {

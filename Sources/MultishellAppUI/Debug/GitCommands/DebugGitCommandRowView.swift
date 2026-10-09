@@ -4,7 +4,7 @@ import SwiftUI
 
 /// A row of the Git commands table: in columns, or with its numbers stacked
 /// under the command where the panel is too narrow for them.
-struct DebugGitCommandRow: View {
+struct DebugGitCommandRowView: View {
   let gitCommand: DebugGitCommand
   let layout: DebugTableLayout
   let theme: Theme
@@ -15,7 +15,7 @@ struct DebugGitCommandRow: View {
       switch layout {
       case .columns: columns
       case .stacked:
-        DebugStackedRow(
+        DebugStackedRowView(
           captions: gitCommand.stackedCaptions, theme: theme, metrics: metrics
         ) {
           command

@@ -24,7 +24,7 @@ extension SharedProjectSettings {
 
   /// What a yes covers, in the order the user is asked about them: every
   /// field that runs something or puts a path on disk.
-  static let trustCoveredFields: [WritableKeyPath<Self, String?> & Sendable] = [
+  static let trustCoveredFields: [any WritableKeyPath<Self, String?> & Sendable] = [
     \.worktreeDirectory, \.preCreateHook, \.postCreateHook, \.preDeleteHook, \.postDeleteHook,
     \.linkedPaths, \.copiedPaths,
   ]

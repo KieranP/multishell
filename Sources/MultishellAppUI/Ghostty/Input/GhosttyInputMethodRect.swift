@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 
 /// Where an input method draws by the cursor, in libghostty's top-left

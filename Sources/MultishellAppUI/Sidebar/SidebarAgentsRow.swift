@@ -33,7 +33,7 @@ struct SidebarAgentsRow: View {
         }
       }
     }
-    .padding(.horizontal, 8)
+    .padding(.horizontal, UIMetrics.sidebarRowSideInset)
     .frame(height: metrics.rowHeight)
     .rowSelection(isSelected: isSelected)
     .contentShape(.rect)

@@ -5,7 +5,7 @@ import MultishellProcess
 public struct DebugProcessRow: Sendable, Equatable, Identifiable, DebugSelfAndTotalMemory {
   public let process: ProcessUsage
   /// 0 for a process whose parent is not in the list, such as a pane's shell.
-  public let depth: Int
+  let depth: Int
   /// The process and everything under it.
   public let totalMemory: UInt64
 

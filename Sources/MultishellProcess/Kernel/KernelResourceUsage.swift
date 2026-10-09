@@ -41,7 +41,7 @@ struct KernelResourceUsage: Sendable, Equatable {
     return timebase
   }()
 
-  static func cpuTime(ofTicks ticks: UInt64) -> Duration {
+  private static func cpuTime(ofTicks ticks: UInt64) -> Duration {
     let (product, overflow) = ticks.multipliedReportingOverflow(by: UInt64(timebase.numer))
     let nanoseconds = overflow ? UInt64.max : product / UInt64(max(timebase.denom, 1))
     return .nanoseconds(Int64(clamping: nanoseconds))

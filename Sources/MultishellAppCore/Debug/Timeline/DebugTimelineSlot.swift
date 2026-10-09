@@ -3,7 +3,7 @@ import Foundation
 /// The seconds one point of a strip stands for, combined the way each chart
 /// reads them: the worst frame, the mean rate, the latest memory.
 public struct DebugTimelineSlot: Sendable, Equatable {
-  public let startedAt: Date
+  let startedAt: Date
   /// The slowest second's, so a dip shows at every range.
   let framesPerSecond: Double?
   let longestFrame: Duration?

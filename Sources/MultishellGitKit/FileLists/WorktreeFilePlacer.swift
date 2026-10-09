@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 
 /// One list's run of `WorktreeFiles.place`: where each expanded path comes
 /// from and goes, and how far an entry may reach.
@@ -9,11 +10,11 @@ struct WorktreeFilePlacer {
     case skipped
   }
 
-  let placement: WorktreeFilePlacement
-  let repository: URL
-  let worktree: URL
-  let isRepositoryList: Bool
-  let isStopRequested: @Sendable () -> Bool
+  private let placement: WorktreeFilePlacement
+  private let repository: URL
+  private let worktree: URL
+  private let isRepositoryList: Bool
+  private let isStopRequested: @Sendable () -> Bool
   private let resolvedRepository: URL
   private let resolvedWorktree: URL
 

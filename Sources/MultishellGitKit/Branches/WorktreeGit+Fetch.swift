@@ -1,7 +1,7 @@
 import MultishellCore
 
 extension WorktreeGit {
-  static let fetchTimeout: Duration = .seconds(120)
+  private static let fetchTimeout: Duration = .seconds(120)
 
   /// `git fetch --prune`, on the user's click only: the one git call here
   /// that talks to a network. `GIT_TERMINAL_PROMPT=0`, and a timeout.

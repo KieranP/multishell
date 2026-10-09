@@ -1,3 +1,4 @@
+import MultishellCore
 import Testing
 
 @testable import MultishellAppCore
@@ -27,7 +28,7 @@ struct NewWorktreeDraftAgentTests {
 
   @Test func theTaskIsTrimmedAndRidesWithThePickedAgent() {
     var draft = fitted()
-    draft.agentID = "claude"
+    draft.pickAgent("claude")
     draft.task = "  Fix the redirect\n"
 
     #expect(draft.firstTab == .agent("claude", task: "Fix the redirect"))
@@ -49,7 +50,7 @@ struct NewWorktreeDraftAgentTests {
 
   @Test func anotherProjectTakesItsOwnAgentAndKeepsTheTypedTask() {
     var draft = fitted()
-    draft.agentID = "claude"
+    draft.pickAgent("claude")
     draft.task = "Fix the redirect"
 
     draft.fitAgent(startsByDefault: false, preferred: "codex", offered: installed)
@@ -63,8 +64,25 @@ struct NewWorktreeDraftAgentTests {
     draft.offerAgents(installed)
     #expect(draft.agentID == "codex" && draft.startsAgent)
 
-    draft.agentID = "claude"
+    draft.pickAgent("claude")
     draft.offerAgents(["claude", "codex", "gemini"])
     #expect(draft.agentID == "claude")
+  }
+
+  @Test func aStandInAgentGivesWayToTheProjectsOwnWhenTheScanOffersIt() {
+    var draft = fitted(preferred: "claude", offered: [AgentCatalogue.customID])
+    #expect(draft.agentID == AgentCatalogue.customID)
+
+    draft.offerAgents(["claude", AgentCatalogue.customID])
+    #expect(draft.agentID == "claude")
+  }
+
+  @Test func aPickedAgentTheScanNoLongerOffersGivesWayToTheProjectsOwn() {
+    var draft = fitted()
+    draft.pickAgent("claude")
+
+    draft.offerAgents(["codex"])
+
+    #expect(draft.agentID == "codex")
   }
 }

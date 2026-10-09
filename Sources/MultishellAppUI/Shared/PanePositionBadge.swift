@@ -1,4 +1,3 @@
-import MultishellAppCore
 import MultishellCore
 import SwiftUI
 

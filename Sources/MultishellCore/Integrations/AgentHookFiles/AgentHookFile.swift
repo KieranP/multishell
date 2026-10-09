@@ -1,8 +1,7 @@
 import Foundation
 
-/// A file an agent reads its hooks from: the user's settings JSON, read and
-/// rewritten, where anything not plain JSON is refused; or a file of ours,
-/// written whole. See agents.md.
+/// A file an agent reads its hooks from: the user's settings JSON, refused unless
+/// plain JSON, or a file of ours written whole. See agents.md.
 enum AgentHookFile {
   /// An empty object for a missing or blank file; anything else it cannot read
   /// back is an error. Numbers come back as `NumberLiteral` strings; see agents.md.

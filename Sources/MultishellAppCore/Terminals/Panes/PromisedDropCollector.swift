@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 
 /// Keeps a promised drop's order while files land in any order. An item
 /// retires once its own are in; a report past that is kept but does not count.

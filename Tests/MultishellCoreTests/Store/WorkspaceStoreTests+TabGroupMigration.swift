@@ -65,5 +65,4 @@ extension WorkspaceStoreTests {
     #expect(workspace.sessions.count == 5)
     #expect(workspace.groups(in: "/repos/demo")[0].weight == 1)
   }
-
 }

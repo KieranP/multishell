@@ -8,18 +8,25 @@ extension UIMetrics {
   var tabMaxWidth: Double { (bodySize * 14.6).rounded() }
   /// The square a tab's close button takes around its glyph.
   var tabCloseButtonSide: Double { (bodySize * 1.55).rounded() }
+  static let tabSideInset: Double = 10
+  static let tabItemGap: Double = 7
+  /// What the active tab draws besides its title: side insets, the mark, the
+  /// close button and a gap either side of the title and its spacer.
+  private var tabFixedPartsWidth: Double {
+    Self.tabSideInset * 2 + paneGlyphSize + Self.tabItemGap * 3 + tabCloseButtonSide
+  }
   /// The least a tab is ever drawn at: below this the mark, title and close
   /// button have nowhere to go. See `TabStripLayout`.
-  var tabMinWidth: Double { (bodySize * 7.8).rounded() }
+  var tabMinWidth: Double { max((bodySize * 7.8).rounded(), tabFixedPartsWidth + bodySize * 2) }
   /// A split button at the end of a strip, which never scrolls away.
   var splitButtonWidth: Double { (bodySize * 2.6).rounded() }
   /// The chevron after the New Tab menu's plus, small enough to read as a
   /// mark on the plus rather than a second glyph.
-  var menuChevron: Double { (glyph * 0.6).rounded() }
+  var menuChevronSize: Double { (glyph * 0.6).rounded() }
   static let menuChevronGap: Double = 2
   /// A split's width plus the chevron, less one gap; the ink either side
   /// differs from its box. See Docs/design/tabs-and-groups.md.
-  var newTabMenuWidth: Double { splitButtonWidth + menuChevron - Self.menuChevronGap }
+  var newTabMenuWidth: Double { splitButtonWidth + menuChevronSize - Self.menuChevronGap }
   /// A split glyph's inset, which the menu's plus shares.
   var stripGlyphInset: Double { (splitButtonWidth - glyph) / 2 }
   /// The New Tab menu and the two splits. Comes off the strip before a tab
@@ -29,7 +36,7 @@ extension UIMetrics {
   /// kept either way, so the tabs do not shift under the pointer.
   var tabArrowWidth: Double { (bodySize * 1.7).rounded() }
   /// What the strip's fit rules are worked from.
-  var tabStrip: TabStripWidths {
+  var tabStripWidths: TabStripWidths {
     TabStripWidths(
       buttons: stripButtonsWidth, newTabMenu: newTabMenuWidth, arrow: tabArrowWidth,
       minimumTab: tabMinWidth)

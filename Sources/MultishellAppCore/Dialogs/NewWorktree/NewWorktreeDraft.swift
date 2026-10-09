@@ -14,12 +14,15 @@ public struct NewWorktreeDraft: Equatable, Sendable {
   public internal(set) var hasCommits = true
   public var isCreating = false
   public var startsAgent = false
-  public var agentID = ""
+  public internal(set) var agentID = ""
   public var task = ""
   /// The agents the picker lists, installed or typed in settings.
   public internal(set) var offeredAgentIDs: [String] = []
   /// The project's own agent, taken again once the PATH scan offers it.
   var preferredAgentID: String?
+  /// Whether `agentID` is the user's pick rather than a stand-in for an
+  /// agent the PATH scan has not offered yet.
+  var isAgentPicked = false
   /// What was typed in new-branch mode, kept across a visit to the
   /// existing-branch picker so coming back restores it.
   private var typedBranch = ""

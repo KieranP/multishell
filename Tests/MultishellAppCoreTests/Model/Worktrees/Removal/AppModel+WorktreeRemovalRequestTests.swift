@@ -101,7 +101,7 @@ struct AppModelWorktreeRemovalRequestTests {
     harness.model.setTrashesRemovedWorktrees(false)
     let pending = PendingWorktreeRemoval(
       worktree: harness.feature, branchHandling: .decided(deletesBranch: false), trashes: true,
-      hasUnreadChanges: true)
+      isStatusUnread: true)
 
     #expect(
       harness.model.worktreeRemovalWarning(for: pending)?.contains("kept in the Trash") == true)

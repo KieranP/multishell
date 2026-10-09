@@ -4,7 +4,7 @@ import Testing
 @testable import MultishellCore
 
 /// What must hold between the workspace's collections after any store
-/// operation, and what `repairReferences` restores after a load.
+/// operation, and what `repair` restores after a load.
 enum WorkspaceInvariants {
   static func check(_ workspace: Workspace, _ context: String) {
     let projectIDs = Set(workspace.projects.map(\.id))

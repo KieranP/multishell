@@ -2,7 +2,7 @@ import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
-/// A line under an expanded Memory by tab row, a tab's Terminal or a process,
+/// A nested row under an expanded Memory by tab row, a tab's Terminal or a process,
 /// indented by its level, its Self and Total under the columns.
 struct DebugNestedRowView: View {
   let name: String

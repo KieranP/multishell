@@ -6,14 +6,14 @@ import Testing
 @testable import MultishellGitKit
 
 @Suite
-struct WorktreeRemovalFailureTests {
+struct PresentedRemovalFailureTests {
   private let refused = ProcessFailure(
     executable: "zsh", arguments: ["-l", "-i", "-c", "exit 1"], status: 1, message: "unpushed")
   private let pruneFailed = ProcessFailure(
     executable: "git", arguments: ["worktree", "prune"], status: 128, message: "fatal: locked")
 
   @Test func aPreDeleteVetoKeepsTheWorktreeAndSpeaksThroughThePane() {
-    let failure = WorktreeRemovalFailure(
+    let failure = PresentedRemovalFailure(
       HookFailure(stage: .preDelete, underlying: refused), deletingBranch: "feat")
     #expect(failure == .vetoed(message: "unpushed\n\nExited with status 1.", didTimeOut: false))
   }
@@ -22,7 +22,7 @@ struct WorktreeRemovalFailureTests {
     let timedOut = ProcessFailure(
       executable: "zsh", arguments: [], status: 129, message: "still going",
       stopReason: .timedOut(after: .seconds(60)))
-    let failure = WorktreeRemovalFailure(
+    let failure = PresentedRemovalFailure(
       HookFailure(stage: .preDelete, underlying: timedOut), deletingBranch: nil)
     #expect(
       failure
@@ -32,10 +32,10 @@ struct WorktreeRemovalFailureTests {
     let stopped = ProcessFailure(
       executable: "zsh", arguments: [], status: 129, message: "", stopReason: .byUser)
     #expect(
-      WorktreeRemovalFailure(
+      PresentedRemovalFailure(
         HookFailure(stage: .preDelete, underlying: stopped), deletingBranch: nil)
         == .stopped)
-    let afterRemoval = WorktreeRemovalFailure(
+    let afterRemoval = PresentedRemovalFailure(
       HookFailure(stage: .postDelete, underlying: stopped), deletingBranch: "feat")
     #expect(
       afterRemoval
@@ -50,7 +50,7 @@ struct WorktreeRemovalFailureTests {
       path: URL(fileURLWithPath: "/trees/x"),
       underlying: CocoaError(.fileWriteVolumeReadOnly))
     let (title, message, retry, removed) = try alert(
-      WorktreeRemovalFailure(error, deletingBranch: nil))
+      PresentedRemovalFailure(error, deletingBranch: nil))
     #expect(
       title == "Worktree not removed: the directory could not be moved to the Trash or deleted")
     #expect(message.hasPrefix("/trees/x"))
@@ -63,7 +63,7 @@ struct WorktreeRemovalFailureTests {
     let error = WorktreeRecordRemovalFailure(
       path: URL(fileURLWithPath: "/trees/x"), underlying: pruneFailed)
     let (title, message, retry, removed) = try alert(
-      WorktreeRemovalFailure(error, deletingBranch: nil))
+      PresentedRemovalFailure(error, deletingBranch: nil))
     #expect(title == "Worktree directory gone, but git still lists it")
     #expect(message.hasPrefix("/trees/x"))
     #expect(retry == nil && removed)
@@ -71,7 +71,7 @@ struct WorktreeRemovalFailureTests {
 
   @Test func aGitFailureBeforeTheDirectoryIsGoneKeepsTheWorktree() throws {
     let (title, message, retry, removed) = try alert(
-      WorktreeRemovalFailure(pruneFailed, deletingBranch: nil))
+      PresentedRemovalFailure(pruneFailed, deletingBranch: nil))
     #expect(title == "git worktree prune failed")
     #expect(message == pruneFailed.message)
     #expect(retry == nil && !removed, "the worktree and its terminals come back")
@@ -79,14 +79,14 @@ struct WorktreeRemovalFailureTests {
 
   @Test func aPostDeleteFailureSaysTheBranchWasKeptOnlyWhenItWasToGo() throws {
     let error = HookFailure(stage: .postDelete, underlying: refused)
-    let keptBranch = WorktreeRemovalFailure(error, deletingBranch: "feat")
+    let keptBranch = PresentedRemovalFailure(error, deletingBranch: "feat")
     #expect(
       keptBranch
         == .alert(
           title: "Worktree removed, but its hook failed",
           message: "unpushed\n\nExited with status 1.\n\nThe branch feat was kept.", retry: nil,
           wasWorktreeRemoved: true))
-    let noBranch = try alert(WorktreeRemovalFailure(error, deletingBranch: nil))
+    let noBranch = try alert(PresentedRemovalFailure(error, deletingBranch: nil))
     #expect(!noBranch.message.contains("was kept"))
   }
 
@@ -97,7 +97,7 @@ struct WorktreeRemovalFailureTests {
         executable: "git", arguments: ["branch", "-d", "feat"], status: 1,
         message: "error: the branch 'feat' is not fully merged"))
     let (title, _, retry, removed) = try alert(
-      WorktreeRemovalFailure(error, deletingBranch: "feat"))
+      PresentedRemovalFailure(error, deletingBranch: "feat"))
     #expect(title == "Worktree removed, but branch feat was not deleted")
     #expect(retry == .deleteBranchAnyway("feat"))
     #expect(retry?.label == "Force Deletion")
@@ -105,9 +105,9 @@ struct WorktreeRemovalFailureTests {
   }
 
   private func alert(
-    _ failure: WorktreeRemovalFailure
+    _ failure: PresentedRemovalFailure
   ) throws -> (
-    title: String, message: String, retry: WorktreeRemovalFailure.ForcedRetry?, removed: Bool
+    title: String, message: String, retry: PresentedRemovalFailure.ForcedRetry?, removed: Bool
   ) {
     guard case .alert(let title, let message, let retry, let removed) = failure else {
       throw NotAnAlert(failure: failure)
@@ -116,6 +116,6 @@ struct WorktreeRemovalFailureTests {
   }
 
   private struct NotAnAlert: Error {
-    let failure: WorktreeRemovalFailure
+    let failure: PresentedRemovalFailure
   }
 }

@@ -1,4 +1,5 @@
 import MultishellCore
+import MultishellGitKit
 
 extension AppModel {
   public var showsDebugInfo: Bool { detailCover == .debugInfo }
@@ -7,7 +8,7 @@ extension AppModel {
 
   var shownDebugSnapshot: DebugSnapshot { pausedDebugSnapshot ?? liveDebugSnapshot }
 
-  var liveDebugSnapshot: DebugSnapshot {
+  private var liveDebugSnapshot: DebugSnapshot {
     DebugSnapshot(
       history: debugHistory, attribution: debugProcessAttribution,
       terminalMemoryBySession: debugTerminalMemoryBySession)

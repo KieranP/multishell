@@ -8,7 +8,7 @@ struct AccessibilityTextDebugTests {
   private let kilobyte = DebugValueText.memory(1_024)
   private let twoKilobytes = DebugValueText.memory(2_048)
 
-  private func memoryLine(
+  private func memoryRow(
     _ source: DebugMemoryRow.Source = .unattributed, processCount: Int? = 2,
     selfMemory: UInt64? = 1_024, terminalRow: DebugTerminalRow? = nil
   ) -> DebugMemoryRow {
@@ -18,7 +18,7 @@ struct AccessibilityTextDebugTests {
       processRows: [])
   }
 
-  private func processLine(depth: Int) -> DebugProcessRow {
+  private func processRow(depth: Int) -> DebugProcessRow {
     DebugProcessRow(
       process: .sample(pid: 10, footprint: 1_024), depth: depth, totalMemory: 2_048)
   }
@@ -42,36 +42,36 @@ struct AccessibilityTextDebugTests {
 
   @Test func aMemoryRowIsSpokenWithItsCountsAndWhetherItIsOpen() {
     #expect(
-      AccessibilityText.debugMemoryRow(memoryLine(), disclosure: .collapsed)
+      AccessibilityText.debugMemoryRow(memoryRow(), disclosure: .collapsed)
         == "Shell, acme / main, 2 processes, \(kilobyte) self, \(twoKilobytes) total, collapsed")
     #expect(
-      AccessibilityText.debugMemoryRow(memoryLine(), disclosure: .expanded)
+      AccessibilityText.debugMemoryRow(memoryRow(), disclosure: .expanded)
         .hasSuffix(", expanded"))
   }
 
   @Test func aRowThatCannotOpenSaysNothingAboutOpening() {
     let spoken = AccessibilityText.debugMemoryRow(
-      memoryLine(.total, processCount: nil, selfMemory: nil), disclosure: .notExpandable)
+      memoryRow(.total, processCount: nil, selfMemory: nil), disclosure: .notExpandable)
     #expect(spoken == "Shell, acme / main, \(twoKilobytes) total")
   }
 
   @Test func aProcessIsSpokenWithItsDepthOnlyWhereSomethingStartedIt() {
     #expect(
-      AccessibilityText.debugProcessRow(processLine(depth: 0), under: memoryLine())
+      AccessibilityText.debugProcessRow(processRow(depth: 0), under: memoryRow())
         == "p10, \(kilobyte) self, \(twoKilobytes) total")
     #expect(
-      AccessibilityText.debugProcessRow(processLine(depth: 2), under: memoryLine())
+      AccessibilityText.debugProcessRow(processRow(depth: 2), under: memoryRow())
         == "p10, started by the process above, 2 deep, \(kilobyte) self, \(twoKilobytes) total")
   }
 
   @Test func aShellAtTheTopOfATabIsSpokenAsRunningInTheTerminalAboveIt() {
-    let tabWithTerminal = memoryLine(
+    let tabWithTerminal = memoryRow(
       terminalRow: DebugTerminalRow(selfMemory: 1_024, totalMemory: 2_048))
     #expect(
-      AccessibilityText.debugProcessRow(processLine(depth: 0), under: tabWithTerminal)
+      AccessibilityText.debugProcessRow(processRow(depth: 0), under: tabWithTerminal)
         == "p10, runs in the terminal above, \(kilobyte) self, \(twoKilobytes) total")
     #expect(
-      AccessibilityText.debugProcessRow(processLine(depth: 2), under: tabWithTerminal)
+      AccessibilityText.debugProcessRow(processRow(depth: 2), under: tabWithTerminal)
         == "p10, started by the process above, 2 deep, \(kilobyte) self, \(twoKilobytes) total")
   }
 

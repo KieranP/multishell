@@ -12,9 +12,8 @@ public enum TestRepository {
   /// a developer may have set to anything.
   static let initialBranch = "main"
 
-  /// The fixture identity goes on the repository itself, so a developer's global config
-  /// cannot change what the tests commit as. The first commit is what makes `HEAD`
-  /// resolvable, so what most fixtures need before they can do anything.
+  /// The identity goes on the repository, so a developer's global config cannot change
+  /// what tests commit as; the first commit makes `HEAD` resolvable.
   public static func initialise(
     at url: URL, withFirstCommit: Bool, using git: GitRunner
   ) async throws {

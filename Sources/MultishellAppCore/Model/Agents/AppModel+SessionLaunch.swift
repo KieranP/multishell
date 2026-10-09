@@ -2,9 +2,8 @@ import Foundation
 import MultishellCore
 
 extension AppModel {
-  /// What the reconciler opens for a session: its shell, or the agent's command
-  /// line. A restored tab resumes where it can, four not starting four agents.
-  /// A task is the first launch's alone.
+  /// What the reconciler opens: the session's shell or agent line. A restored tab
+  /// resumes where it can, four not starting four agents; a task rides the first launch.
   func preparedForLaunch(_ session: TerminalSession) -> TerminalSession {
     var prepared = session
     prepared.shellOverride = shellPath(forWorktree: session.worktreeID)

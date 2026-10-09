@@ -15,15 +15,16 @@ public struct EditorDescriptor: Identifiable, Hashable, Sendable {
   public let bundleIdentifier: String?
   /// A command on the login shell's PATH that opens a directory when given
   /// its path: `code`, `subl`, `nvim`.
-  public let command: String?
+  public let executable: String?
 
   init(
-    id: String, name: String, kind: Kind, bundleIdentifier: String? = nil, command: String? = nil
+    id: String, name: String, kind: Kind, bundleIdentifier: String? = nil,
+    executable: String? = nil
   ) {
     self.id = id
     self.name = name
     self.kind = kind
     self.bundleIdentifier = bundleIdentifier
-    self.command = command
+    self.executable = executable
   }
 }

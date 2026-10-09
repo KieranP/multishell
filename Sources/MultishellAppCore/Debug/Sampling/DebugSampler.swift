@@ -9,7 +9,7 @@ struct DebugSampler {
   var frameRateMeter = FrameRateMeter()
   var cpuUsageMeter = CPUUsageMeter()
   var stateReportCount = 0
-  var lastSampleTaken: ContinuousClock.Instant?
+  var lastSampleAt: ContinuousClock.Instant?
   /// Bumped at each start and stop, so a sample begun before either lands nowhere.
   var generation = 0
   /// Reads the kernel's process table; a test stands in a scan of its own.
@@ -21,7 +21,7 @@ struct DebugSampler {
   mutating func start(at now: ContinuousClock.Instant) {
     generation += 1
     clearReadings()
-    lastSampleTaken = now
+    lastSampleAt = now
     _ = frameRateMeter.takeReading(at: now)
   }
 
@@ -35,7 +35,7 @@ struct DebugSampler {
   private mutating func clearReadings() {
     frameRateMeter = FrameRateMeter()
     cpuUsageMeter = CPUUsageMeter()
-    lastSampleTaken = nil
+    lastSampleAt = nil
     stateReportCount = 0
   }
 }

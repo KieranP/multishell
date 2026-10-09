@@ -1,6 +1,5 @@
 import AppKit
 import MultishellAppCore
-import MultishellCore
 import os
 
 /// `Platform` on AppKit: the one place the model's needs meet the Mac.

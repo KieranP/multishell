@@ -154,7 +154,7 @@ struct WorkspaceTests {
     #expect(!json.contains("activeTabByWorktree"), "the old key is read, never written")
 
     var reloaded = try decodeJSON(Workspace.self, json)
-    reloaded.repairReferences()
+    reloaded.repair()
     #expect(reloaded == workspace, "a saved layout comes back exactly")
   }
 }

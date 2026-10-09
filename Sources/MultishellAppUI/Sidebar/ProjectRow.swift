@@ -32,7 +32,7 @@ struct ProjectRow: View {
 
       newWorktreeButton
     }
-    .padding(.horizontal, 8)
+    .padding(.horizontal, UIMetrics.sidebarRowSideInset)
     .frame(height: metrics.rowHeight)
     .onHover { isHovered = $0 }
   }
@@ -48,7 +48,8 @@ struct ProjectRow: View {
         .frame(width: 10)
         .help(expansionActionName)
 
-      if isFetching {
+      switch ProjectRowSlot(isFetching: isFetching, state: state) {
+      case .fetching:
         // The icon's own slot, like the dot below it, so nothing shifts
         // and no control is taken away while it spins.
         ProgressView()
@@ -56,11 +57,11 @@ struct ProjectRow: View {
           .scaleEffect(0.7)
           .frame(width: UIMetrics.projectIconSlot(forGlyphOf: metrics.glyph))
           .help(t("sidebar.fetching"))
-      } else if let state {
+      case .state(let state):
         StateDot(state: state, theme: theme)
           .frame(width: UIMetrics.projectIconSlot(forGlyphOf: metrics.glyph))
           .help(t("sidebar.collapsed-state", state.displayName))
-      } else {
+      case .icon:
         ProjectIconView(
           settings: settings, isMissing: isMissing, ringFill: theme.sidebarColor, theme: theme,
           size: metrics.glyph

@@ -21,9 +21,9 @@ struct EditorLaunchTests {
     let app = URL(fileURLWithPath: "/Applications/Visual Studio Code.app")
     let shim = URL(fileURLWithPath: "/opt/homebrew/bin/code")
     #expect(
-      action("vscode", found: .init(application: app, command: shim)) == .openApplication(app))
+      action("vscode", found: .init(application: app, executable: shim)) == .openApplication(app))
     #expect(
-      action("vscode", found: .init(application: nil, command: shim))
+      action("vscode", found: .init(application: nil, executable: shim))
         == .runInBackground("/opt/homebrew/bin/code '/Users/me/Work/repo trees/feat'"))
     #expect(action("vscode", found: nil) == nil, "in the catalogue, not installed")
     #expect(action("no-such-editor") == nil)
@@ -38,7 +38,7 @@ struct EditorLaunchTests {
     let shim = URL(fileURLWithPath: "/bin/echo")
     guard
       case .runInBackground(let line) = EditorLaunch.action(
-        editorID: "vscode", found: .init(application: nil, command: shim), customTemplate: "",
+        editorID: "vscode", found: .init(application: nil, executable: shim), customTemplate: "",
         directory: worktree, shell: .loginZsh, handOver: "exit")
     else {
       Issue.record("the shim runs in the background")
@@ -54,11 +54,11 @@ struct EditorLaunchTests {
   @Test func aTerminalEditorIsATabRunningItInTheWorktreeWithAShellAfter() {
     let nvim = URL(fileURLWithPath: "/opt/homebrew/bin/nvim")
     #expect(
-      action("nvim", found: .init(application: nil, command: nvim))
+      action("nvim", found: .init(application: nil, executable: nvim))
         == .openTab(
           title: "Neovim",
           command: ["/bin/zsh", "-l", "-i", "-c", "/opt/homebrew/bin/nvim .; exec /bin/zsh -l"]))
-    #expect(action("nvim", found: .init(application: nil, command: nil)) == nil)
+    #expect(action("nvim", found: .init(application: nil, executable: nil)) == nil)
   }
 
   @Test func theCustomTemplateBecomesATabNamedForItsCommand() {

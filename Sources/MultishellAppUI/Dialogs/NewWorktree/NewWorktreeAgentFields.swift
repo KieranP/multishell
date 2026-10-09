@@ -11,7 +11,7 @@ struct NewWorktreeAgentFields: View {
     Section {
       Toggle(t("sheet.start-agent"), isOn: $draft.startsAgent)
       if draft.startsAgent {
-        Picker(t("sheet.agent"), selection: $draft.agentID) {
+        Picker(t("sheet.agent"), selection: pickedAgent) {
           ForEach(draft.offeredAgentIDs, id: \.self) { id in
             Text(model.agentDisplayName(id)).tag(id)
           }
@@ -23,5 +23,9 @@ struct NewWorktreeAgentFields: View {
         .lineLimit(3...8)
       }
     }
+  }
+
+  private var pickedAgent: Binding<String> {
+    Binding(get: { draft.agentID }, set: { draft.pickAgent($0) })
   }
 }

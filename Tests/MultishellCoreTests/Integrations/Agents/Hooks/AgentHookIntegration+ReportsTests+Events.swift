@@ -266,5 +266,4 @@ extension AgentHookIntegrationReportsTests {
       !copilot.events.contains { $0.name == "SubagentStart" },
       "its start names no id, and arrives in a spelling no event is read in")
   }
-
 }

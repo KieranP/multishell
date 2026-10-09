@@ -27,7 +27,7 @@ struct WorkspaceRepairTests {
   @Test func aConsistentWorkspaceIsLeftAlone() {
     let (workspace, _) = consistentWorkspace()
     var repaired = workspace
-    repaired.repairReferences()
+    repaired.repair()
     #expect(repaired == workspace)
   }
 
@@ -44,7 +44,7 @@ struct WorkspaceRepairTests {
     workspace.tabs.append(
       TerminalTab(worktreeID: stray.id, groupID: strayGroup.id, session: straySession.id))
 
-    workspace.repairReferences()
+    workspace.repair()
 
     #expect(workspace.worktrees.map(\.id) == [worktree.id])
     #expect(workspace.tabs.count == 1 && workspace.sessions.count == 1)
@@ -55,7 +55,7 @@ struct WorkspaceRepairTests {
     var (workspace, tab) = consistentWorkspace()
     workspace.sessions.append(session())
 
-    workspace.repairReferences()
+    workspace.repair()
 
     #expect(workspace.sessions.map(\.id) == [tab.focusedSessionID])
   }
@@ -69,7 +69,7 @@ struct WorkspaceRepairTests {
     split.focusedSessionID = ghost
     workspace.tabs = [split]
 
-    workspace.repairReferences()
+    workspace.repair()
 
     #expect(workspace.tabs[0].root == .terminal(tab.focusedSessionID))
     #expect(
@@ -84,7 +84,7 @@ struct WorkspaceRepairTests {
     workspace.tabs.append(empty)
     workspace.tabGroups[0].shownTabID = empty.id
 
-    workspace.repairReferences()
+    workspace.repair()
 
     #expect(workspace.tabs.map(\.id) == [tab.id])
     #expect(
@@ -98,7 +98,7 @@ struct WorkspaceRepairTests {
     workspace.worktrees.append(other)
     workspace.focusedGroupByWorktree[other.id] = onlyGroup(workspace).id
 
-    workspace.repairReferences()
+    workspace.repair()
 
     #expect(workspace.focusedGroupByWorktree[other.id] == nil)
     #expect(workspace.focusedGroupByWorktree[worktree.id] == onlyGroup(workspace).id)
@@ -114,7 +114,7 @@ struct WorkspaceRepairTests {
       worktree.id: "Checkout", other.id: "  ", "/repos/nowhere": "Ghost",
     ]
 
-    workspace.repairReferences()
+    workspace.repair()
 
     #expect(workspace.customWorktreeNames == [worktree.id: "Checkout"])
   }
@@ -125,7 +125,7 @@ struct WorkspaceRepairTests {
     var (workspace, tab) = consistentWorkspace()
     workspace.sessions[0].worktreeID = "/repos/nowhere"
 
-    workspace.repairReferences()
+    workspace.repair()
 
     #expect(workspace.sessions.count == 1, "the session is the tab's, not a stray")
     #expect(workspace.sessions[0].worktreeID == workspace.tab(tab.id)?.worktreeID)
@@ -144,7 +144,7 @@ struct WorkspaceRepairTests {
     workspace.tabGroups = []
     workspace.focusedGroupByWorktree = [:]
 
-    workspace.repairReferences()
+    workspace.repair()
 
     WorkspaceInvariants.check(workspace, "ungrouped tabs")
     #expect(workspace.tabGroups.count == 1, "one group, not one each")
@@ -159,7 +159,7 @@ struct WorkspaceRepairTests {
     workspace.sessions.append(stray)
     workspace.tabs.append(TerminalTab(worktreeID: worktree.id, groupID: UUID(), session: stray.id))
 
-    workspace.repairReferences()
+    workspace.repair()
 
     WorkspaceInvariants.check(workspace, "orphan tab")
     #expect(workspace.tabGroups.count == 1)
@@ -178,7 +178,7 @@ struct WorkspaceRepairTests {
     workspace.tabs.append(doomed)
     workspace.focusedGroupByWorktree[worktree.id] = second.id
 
-    workspace.repairReferences()
+    workspace.repair()
 
     WorkspaceInvariants.check(workspace, "emptied group")
     #expect(workspace.tabGroups.map(\.id) == [onlyGroup(workspace).id])
@@ -196,7 +196,7 @@ struct WorkspaceRepairTests {
     workspace.tabGroups.append(second)
     workspace.tabs.append(itsOwn)
 
-    workspace.repairReferences()
+    workspace.repair()
 
     WorkspaceInvariants.check(workspace, "group showing a foreign tab")
     #expect(workspace.tabGroups[1].shownTabID == itsOwn.id)
@@ -205,7 +205,7 @@ struct WorkspaceRepairTests {
   @Test func aSelectionOfAMissingWorktreeIsCleared() {
     var (workspace, _) = consistentWorkspace()
     workspace.selectedWorktreeID = "/repos/nowhere"
-    workspace.repairReferences()
+    workspace.repair()
     #expect(workspace.selectedWorktreeID == nil)
   }
 
@@ -260,10 +260,10 @@ struct WorkspaceRepairTests {
       damage.randomElement(using: &rng)!(&workspace)
     }
 
-    workspace.repairReferences()
+    workspace.repair()
     WorkspaceInvariants.check(workspace, "seed \(seed)")
     var again = workspace
-    again.repairReferences()
+    again.repair()
     #expect(again == workspace, "seed \(seed): repair is not idempotent")
     #expect(workspace.projects.count == 1, "seed \(seed): repair must never drop a project")
   }

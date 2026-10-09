@@ -1,7 +1,6 @@
 extension Array {
-  /// Each element after its parent, depth first, with how deep it sits. One
-  /// whose parent is not here starts a tree, and so, after those, does what a
-  /// loop of parents left, in `leftoverOrder`.
+  /// Each element after its parent, depth first, with its depth. An orphan starts a
+  /// tree, then whatever a loop of parents left does, in `leftoverOrder`.
   func depthFirstTree<ID: Hashable>(
     id: (Element) -> ID, parentID: (Element) -> ID?,
     siblingOrder: ([Element]) -> [Element] = { $0 },

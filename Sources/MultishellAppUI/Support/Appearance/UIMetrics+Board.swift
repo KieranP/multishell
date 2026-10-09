@@ -1,8 +1,9 @@
 import Foundation
 import MultishellAppCore
 
-/// The sizes the agent board lays its columns out from.
+/// The agent board's sizes: the columns it lays out and the cards in them.
 extension UIMetrics {
+  static let cardCornerRadius: Double = 6
   /// The narrowest a board column is drawn, below which a card's two split
   /// rows run into themselves. See `AgentBoardLayout`.
   var boardColumnMinWidth: Double { (bodySize * 16).rounded() }

@@ -7,7 +7,7 @@ import Testing
 @testable import MultishellAppCore
 @testable import MultishellGitKit
 
-extension AppModelStatusPollingTests {
+extension AppModelStatusReadsTests {
   @Test func aCollapsedProjectsWorktreesAreNotReadUntilItOpens() async throws {
     let harness = try await GitHarness()
     defer { harness.tearDown() }

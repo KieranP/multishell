@@ -117,6 +117,15 @@ struct GeminiSettingsTests {
     #expect(!files.wakes)
   }
 
+  @Test func aRuleWhoseNameStartsTheFoldersNameDoesNotCoverIt() throws {
+    let files = Files()
+    defer { Scratch.remove(files.root) }
+    try files.user(steering)
+    try files.project(injecting)
+    try files.trust([String(files.workspace.path.dropLast()): "TRUST_FOLDER"])
+    #expect(!files.wakes)
+  }
+
   @Test func withFolderTrustOffEveryProjectIsTrusted() throws {
     let files = Files()
     defer { Scratch.remove(files.root) }

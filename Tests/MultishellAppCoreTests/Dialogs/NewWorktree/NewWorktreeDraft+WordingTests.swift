@@ -1,4 +1,5 @@
 import Foundation
+import MultishellGitKit
 import Testing
 
 @testable import MultishellAppCore

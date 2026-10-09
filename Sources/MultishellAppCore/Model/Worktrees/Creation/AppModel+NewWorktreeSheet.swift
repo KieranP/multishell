@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import MultishellGitKit
 
 extension AppModel {
   /// Opens the sheet for `project`, or the one being worked in. With several

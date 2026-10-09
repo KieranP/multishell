@@ -35,12 +35,12 @@ struct PendingWorktreeRemovalWordingTests {
 
   @Test func changesThatWentUnreadAreWarnedOfWhereverTheDirectoryGoes() {
     #expect(
-      PendingWorktreeRemoval.warning(changedFiles: 0, hasUnreadChanges: true, liveTerminals: 0)
+      PendingWorktreeRemoval.warning(changedFiles: 0, isStatusUnread: true, liveTerminals: 0)
         == "Its changes could not be read in time; any it has are kept in the Trash with the directory."
     )
     #expect(
       PendingWorktreeRemoval.warning(
-        changedFiles: 0, hasUnreadChanges: true, liveTerminals: 0, trashes: false)
+        changedFiles: 0, isStatusUnread: true, liveTerminals: 0, trashes: false)
         == "Its changes could not be read in time; any it has are deleted with the directory.")
   }
 

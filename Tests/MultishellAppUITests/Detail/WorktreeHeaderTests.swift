@@ -24,14 +24,14 @@ struct WorktreeHeaderTests {
         && abs(pixel.greenComponent - sidebarColour.greenComponent) < 0.004
         && abs(pixel.blueComponent - sidebarColour.blueComponent) < 0.004
     }
-    let filledInSidebarColor = (1..<bitmap.pixelsWide - 1).flatMap { x in
+    let filledInSidebarColour = (1..<bitmap.pixelsWide - 1).flatMap { x in
       (1..<bitmap.pixelsHigh - 1).filter { y in
         [(0, 0), (-1, 0), (1, 0), (0, -1), (0, 1)].allSatisfy { isSidebarColour(x + $0, y + $1) }
       }
     }
 
     #expect(
-      filledInSidebarColor.isEmpty,
-      "\(filledInSidebarColor.count) pixels filled in the sidebar's colour")
+      filledInSidebarColour.isEmpty,
+      "\(filledInSidebarColour.count) pixels filled in the sidebar's colour")
   }
 }

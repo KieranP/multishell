@@ -8,29 +8,6 @@ public enum PromisedDropCopies {
   /// today still resolves next week.
   static let retention: TimeInterval = 7 * 24 * 60 * 60
 
-  /// Whether a dragged path is a copy macOS made for this drop, read off the
-  /// `TemporaryItems` and `NSIRD_` marks it carries; see terminals.md.
-  static func isTemporaryCopy(_ url: URL) -> Bool {
-    if url.standardizedFileURL.pathComponents.contains(where: { $0.hasPrefix("NSIRD_") }) {
-      return true
-    }
-    let temporary = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-    guard let below = url.pathComponents(under: temporary), !below.isEmpty else { return false }
-    return below.dropLast().contains("TemporaryItems")
-  }
-
-  /// Whether a drag's own paths are enough, or its promise must be asked
-  /// too. Anything carrying a copy needs the promise.
-  public static func needsPromise(for urls: [URL]) -> Bool {
-    urls.isEmpty || urls.contains { isTemporaryCopy($0) }
-  }
-
-  /// The files in a drag that are the user's originals and keep their path.
-  /// The rest are copies, asked for again through the promise.
-  public static func originals(among urls: [URL]) -> [URL] {
-    urls.filter { !isTemporaryCopy($0) }
-  }
-
   /// A directory for one drag's files, made fresh so the promised names land
   /// in it unchanged.
   public static func makeDirectory(in parent: URL = Paths.dropsDirectory) throws -> URL {

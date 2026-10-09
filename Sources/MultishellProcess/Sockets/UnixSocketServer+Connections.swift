@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 
 extension UnixSocketServer {
   /// How long the listener stays suspended when there is no descriptor to

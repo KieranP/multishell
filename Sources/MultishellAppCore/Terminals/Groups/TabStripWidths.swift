@@ -2,11 +2,11 @@
 /// splits show and how much room the tabs and arrows get. See tabs-and-groups.md.
 public struct TabStripWidths: Equatable, Sendable {
   /// The New Tab menu and the two splits.
-  public let buttons: Double
-  public let newTabMenu: Double
+  let buttons: Double
+  let newTabMenu: Double
   /// The arrow at either end of a strip with more tabs that way.
-  public let arrow: Double
-  public let minimumTab: Double
+  let arrow: Double
+  let minimumTab: Double
 
   public init(buttons: Double, newTabMenu: Double, arrow: Double, minimumTab: Double) {
     self.buttons = buttons

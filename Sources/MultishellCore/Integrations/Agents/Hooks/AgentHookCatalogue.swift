@@ -20,11 +20,13 @@ public enum AgentHookCatalogue {
 
   /// `$HOME` first, as the agents themselves read it: the account's home
   /// ignores it, and a test's helper then wrote the developer's own files.
+  static let home: URL =
+    ProcessInfo.processInfo.environment["HOME"]?.nonEmpty
+    .map { URL(fileURLWithPath: $0, isDirectory: true) }
+    ?? FileManager.default.homeDirectoryForCurrentUser
+
   private static func underHome(_ path: String) -> URL {
-    let home = ProcessInfo.processInfo.environment["HOME"]?.nonEmpty
-    return
-      (home.map { URL(fileURLWithPath: $0, isDirectory: true) }
-      ?? FileManager.default.homeDirectoryForCurrentUser).appendingPathComponent(path)
+    home.appendingPathComponent(path)
   }
 
   public static let integrations: [AgentHookIntegration] = [
@@ -44,7 +46,6 @@ public enum AgentHookCatalogue {
   static let claude = AgentHookIntegration(
     id: AgentCatalogue.claudeID,
     file: underHome(".claude/settings.json"),
-    displayPath: "~/.claude/settings.json",
     events: [
       AgentHookEvent("SessionStart", .idle, startsSession: true),
       AgentHookEvent("UserPromptSubmit", .running, isPrompt: true),
@@ -78,7 +79,6 @@ public enum AgentHookCatalogue {
   static let codex = AgentHookIntegration(
     id: AgentCatalogue.codexID,
     file: underHome(".codex/hooks.json"),
-    displayPath: "~/.codex/hooks.json",
     events: [
       AgentHookEvent("SessionStart", .idle, startsSession: true),
       AgentHookEvent("UserPromptSubmit", .running, isPrompt: true),
@@ -102,7 +102,6 @@ public enum AgentHookCatalogue {
   static let gemini = AgentHookIntegration(
     id: AgentCatalogue.geminiID,
     file: underHome(".gemini/settings.json"),
-    displayPath: "~/.gemini/settings.json",
     events: [
       AgentHookEvent("SessionStart", .idle, startsSession: true),
       AgentHookEvent("BeforeAgent", .running, isPrompt: true),
@@ -124,7 +123,6 @@ public enum AgentHookCatalogue {
   static let copilot = AgentHookIntegration(
     id: AgentCatalogue.copilotID,
     file: underHome(".copilot/hooks/multishell.json"),
-    displayPath: "~/.copilot/hooks/multishell.json",
     events: [
       AgentHookEvent("SessionStart", .idle, startsSession: true),
       AgentHookEvent("UserPromptSubmit", .running, isPrompt: true),
@@ -145,7 +143,6 @@ public enum AgentHookCatalogue {
   static let openCode = AgentHookIntegration(
     id: AgentCatalogue.openCodeID,
     file: underHome(".config/opencode/plugin/multishell.js"),
-    displayPath: "~/.config/opencode/plugin/multishell.js",
     events: [],
     format: .plugin)
 }

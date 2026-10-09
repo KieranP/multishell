@@ -1,3 +1,4 @@
+import MultishellCore
 import MultishellProcess
 
 /// Each process's share of one core since the last reading, as Activity

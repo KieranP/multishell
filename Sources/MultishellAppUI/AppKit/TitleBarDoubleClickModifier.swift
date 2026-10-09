@@ -13,7 +13,7 @@ struct TitleBarDoubleClickModifier: ViewModifier {
         })
   }
 
-  static func perform(on window: NSWindow?) {
+  private static func perform(on window: NSWindow?) {
     guard let window else { return }
     // The key lives in the global domain, which `standard` searches.
     let setting = UserDefaults.standard.string(forKey: "AppleActionOnDoubleClick")

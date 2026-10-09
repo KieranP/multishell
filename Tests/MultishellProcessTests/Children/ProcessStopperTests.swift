@@ -127,7 +127,7 @@ struct ProcessStopperTests {
       timeout: .milliseconds(200))
     let elapsed = ContinuousClock.now - started
     #expect(output.stopReason == .timedOut(after: .milliseconds(200)))
-    #expect(elapsed > .seconds(2), "the grace was skipped: \(elapsed)")
+    #expect(elapsed >= .seconds(ProcessStopper.killGrace), "the grace was skipped: \(elapsed)")
     #expect(output.status == SIGKILL, "the kill never came: exit status \(output.status)")
   }
 

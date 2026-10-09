@@ -12,10 +12,12 @@ below.
 - No code comment exceeds two lines. Where more is needed, add it to a file
   under `Docs/design/` or `Docs/develop/` and refer to it from the comment.
 - When fixing a bug, write a failing test first where practical, then fix it.
-- `public` only where another target reads it. A function, type or property one
-  library uses stays internal, and the tests reach it with `@testable`; an
-  internal type's members carry no `public` either. See
-  [Docs/develop/layout.md](Docs/develop/layout.md).
+- New functions and properties start `private`. Widen one only when a caller
+  needs it: internal for another file or a test, `public` only where another
+  target reads it. Reviews kept stripping a `public` added on writing. A
+  function, type or property one library uses stays internal, and the tests
+  reach it with `@testable`; an internal type's members carry no `public`
+  either. See [Docs/develop/layout.md](Docs/develop/layout.md).
 
 ## Core Code Design Rules
 

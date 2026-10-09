@@ -8,24 +8,6 @@ import Testing
 
 @Suite(.serialized) @MainActor
 struct AppModelWorktreeStatusRefreshTests {
-  @Test func changingTheGitStatusIndicatorReadsEveryBadgeAtOnce() async throws {
-    let harness = try await GitHarness()
-    defer { harness.tearDown() }
-    harness.model.statusReadLog.pace = .standard
-
-    await harness.model.refreshStatuses()
-    #expect(
-      !harness.model.statusReadLog.hasNoReadings, "a read the pace would hold the next one back for"
-    )
-
-    harness.model.setGitStatusIndicator(.stagedOnly)
-    #expect(harness.model.statusReadLog.hasNoReadings, "nothing left to pace the next read against")
-
-    try await waitUntil { !harness.model.statusReadLog.hasNoReadings }
-    #expect(!harness.model.statusReadLog.hasNoReadings, "and the read it asked for has landed")
-    #expect(harness.model.workspace.gitStatusIndicator == .stagedOnly)
-  }
-
   /// A prompt's refresh is unpaced no more than the poll is: before this it
   /// ran on every burst of terminal output, three git calls a time.
   @Test func aPromptsRefreshOfASlowWorktreeWaitsForThePaceToo() async throws {
@@ -134,33 +116,5 @@ struct AppModelWorktreeStatusRefreshTests {
     _ = await refresh.value
 
     #expect(harness.model.statuses[main.id] == nil)
-  }
-
-  /// The reads run while the app carries on, so a worktree can be removed
-  /// between asking git and hearing back.
-  @Test func aWorktreeRemovedWhileGitRanGetsNoBadgeFromThatRound() async throws {
-    let harness = try await GitHarness()
-    defer { harness.tearDown() }
-    let path = harness.root.appendingPathComponent("demo-gone", isDirectory: true)
-    try await harness.addOutsideTheApp("gone", at: path)
-    await harness.model.refreshWorktrees(of: harness.project)
-    let doomed = try #require(harness.worktree(onBranch: "gone"))
-    let main = try #require(harness.worktree(onBranch: "main"))
-    // A git slow enough that the removal lands while the round is inside it.
-    let slow = try harness.modelOnFakeGit(
-      """
-      while [ "${1#--}" != "$1" ]; do shift; done
-      case "$1" in
-        status) sleep 1; printf '## main\\n M a.txt\\n' ;;
-      esac
-      """)
-
-    let round = Task { await slow.refreshStatuses() }
-    try await waitUntil { harness.statusRunCount() > 0 }
-    harness.store.replaceWorktrees([main], forProject: harness.project.id)
-    await round.value
-
-    #expect(slow.statuses[main.id] != nil, "the round landed, so there is something to judge")
-    #expect(slow.statuses[doomed.id] == nil, "a row that has gone keeps no reading")
   }
 }

@@ -9,7 +9,7 @@ public enum KernelProcessTable {
     return kill(pid, 0) != 0 && errno == ESRCH
   }
 
-  static func children(of pid: Int32) -> [Int32] {
+  private static func children(of pid: Int32) -> [Int32] {
     var capacity = 64
     while true {
       var pids = [Int32](repeating: 0, count: capacity)
@@ -29,7 +29,7 @@ public enum KernelProcessTable {
   }
 
   /// The arguments joined by spaces, or `nil` for a process not ours to read.
-  static func commandLine(of pid: Int32) -> String? {
+  private static func commandLine(of pid: Int32) -> String? {
     arguments(of: pid)?.arguments.joined(separator: " ")
   }
 
@@ -46,7 +46,7 @@ public enum KernelProcessTable {
   }
 
   /// `NODEV`, a macro Swift does not import.
-  static let noDevice: Int32 = -1
+  private static let noDevice: Int32 = -1
 
   /// The controlling terminal's device number, `nil` for a process with none.
   static func terminalDevice(in record: kinfo_proc) -> Int32? {

@@ -12,7 +12,7 @@ struct TerminalTabTests {
   }
 
   /// Every tab of a state file written before groups existed. The tabs and
-  /// their panes must survive; the group is `repairReferences`' to supply.
+  /// their panes must survive; the group is `repair`'s to supply.
   @Test func aTabWithoutAGroupDecodesAsUnassigned() throws {
     let session = UUID()
     let tab = try decodeJSON(TerminalTab.self, tabJSON(session: session))

@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 
 @testable import MultishellCore
@@ -6,6 +7,15 @@ import Testing
 struct AgentTaskArgumentTests {
   @Test func anOperandTaskFollowsADoubleDashSoOneStartingWithADashIsStillThePrompt() {
     #expect(AgentTaskArgument.operand.arguments(for: "-v is broken") == ["--", "-v is broken"])
+  }
+
+  /// Claude's CLI matches the first operand against its subcommands even
+  /// behind `--`: `claude -- doctor` runs doctor, not a session.
+  @Test func aOneWordOperandTaskCannotSpellASubcommand() {
+    let arguments = AgentTaskArgument.operand.arguments(for: "doctor")
+    #expect(arguments.first == "--" && arguments.count == 2)
+    #expect(arguments.last != "doctor")
+    #expect(arguments.last?.trimmingCharacters(in: .whitespaces) == "doctor")
   }
 
   @Test func anOptionTakesTheTaskAfterAnEqualsSignSoTheValueIsNeverReadAsAFlag() {

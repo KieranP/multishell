@@ -55,9 +55,9 @@ struct GhosttyRuntimeTests {
   }
 
   @Test func comingBackToTheAppReloadsTheUsersBase() {
-    var userFile = ""
-    let runtime = GhosttyRuntime(readBase: { userFile })
-    userFile = "macos-auto-secure-input = false"
+    let userFile = Recorder<String>()
+    let runtime = GhosttyRuntime(readBase: { userFile.received.last ?? "" })
+    userFile.record("macos-auto-secure-input = false")
 
     NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: nil)
 

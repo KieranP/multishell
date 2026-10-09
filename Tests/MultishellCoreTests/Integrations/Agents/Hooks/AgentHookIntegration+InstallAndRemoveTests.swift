@@ -64,7 +64,7 @@ struct AgentHookIntegrationInstallAndRemoveTests: AgentHookFixtures {
     defer { Scratch.remove(directory) }
 
     let beforeCountingEvents = AgentHookIntegration(
-      id: AgentCatalogue.claudeID, file: file, displayPath: "x",
+      id: AgentCatalogue.claudeID, file: file,
       events: AgentHookCatalogue.claude.events.filter { $0.subagentPhase == nil },
       format: .userSettingsFile(timeoutIsInMilliseconds: false))
     try beforeCountingEvents.install(into: file, helper: helper)

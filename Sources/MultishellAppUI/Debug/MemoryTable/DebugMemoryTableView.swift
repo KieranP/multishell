@@ -1,5 +1,6 @@
 import MultishellAppCore
 import MultishellCore
+import MultishellProcess
 import SwiftUI
 
 /// The app, each tab heaviest first, what no tab runs, and the total. A row

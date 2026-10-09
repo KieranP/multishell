@@ -65,9 +65,10 @@ jobs:
       - run: swift build --build-tests -Xswiftc -gnone
       - run: Scripts/one-test-per-core.sh swift test --skip-build
 
-  # swift-format ships in the toolchain, so no install step.
+  # swift-format ships in the toolchain; SwiftLint comes from Homebrew.
   lint:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v7
+      - run: brew install swiftlint
       - run: make lint

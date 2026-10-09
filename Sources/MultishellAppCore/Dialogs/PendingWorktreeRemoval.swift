@@ -35,18 +35,18 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
   let trashes: Bool
   /// The status read had not answered when the dialog was built, so the
   /// changed files it would count are unknown.
-  let hasUnreadChanges: Bool
+  let isStatusUnread: Bool
 
   init(
     worktree: Worktree, branchHandling: BranchHandling, customName: String? = nil,
-    mergeState: WorktreeMergeState = .unknown, trashes: Bool = true, hasUnreadChanges: Bool = false
+    mergeState: WorktreeMergeState = .unknown, trashes: Bool = true, isStatusUnread: Bool = false
   ) {
     self.worktree = worktree
     self.branchHandling = branchHandling
     self.customName = customName
     self.mergeState = mergeState
     self.trashes = trashes
-    self.hasUnreadChanges = hasUnreadChanges
+    self.isStatusUnread = isStatusUnread
   }
 
   public var id: String { worktree.id }
@@ -67,7 +67,7 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
 
   static func decide(
     _ worktree: Worktree, customName: String? = nil, confirms: Bool, alwaysDeletesBranch: Bool,
-    trashes: Bool = true, mergeState: WorktreeMergeState = .unknown, hasUnreadChanges: Bool = false
+    trashes: Bool = true, mergeState: WorktreeMergeState = .unknown, isStatusUnread: Bool = false
   ) -> Decision {
     let hasBranch = worktree.branch != nil
     let deletes = hasBranch && alwaysDeletesBranch
@@ -78,6 +78,6 @@ public struct PendingWorktreeRemoval: Identifiable, Equatable, Sendable {
         worktree: worktree,
         branchHandling: asksAboutBranch ? .offersBoth : .decided(deletesBranch: deletes),
         customName: customName, mergeState: mergeState, trashes: trashes,
-        hasUnreadChanges: hasUnreadChanges))
+        isStatusUnread: isStatusUnread))
   }
 }

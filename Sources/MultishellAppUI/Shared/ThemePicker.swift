@@ -1,4 +1,5 @@
 import MultishellAppCore
+import MultishellCore
 import SwiftUI
 
 /// The theme choice, offered by the View menu and Settings > Appearance alike.

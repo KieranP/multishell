@@ -1,5 +1,3 @@
-import MultishellCore
-
 /// One branch's merge verdict and what it cost, so re-asking every branch
 /// after the default branch moves can be spread over several rounds.
 public struct MergeReading: Sendable {

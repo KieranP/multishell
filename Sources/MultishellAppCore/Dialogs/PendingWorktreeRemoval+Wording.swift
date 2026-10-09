@@ -1,4 +1,5 @@
 import MultishellCore
+import MultishellGitKit
 
 extension PendingWorktreeRemoval {
   /// The row the user right-clicked, by the name that row shows. The branch
@@ -35,12 +36,12 @@ extension PendingWorktreeRemoval {
   /// What the confirmation warns about beyond the removal: uncommitted files,
   /// or that they went unread, and the shells still running there.
   static func warning(
-    changedFiles: Int, hasUnreadChanges: Bool = false, liveTerminals: Int, trashes: Bool = true
+    changedFiles: Int, isStatusUnread: Bool = false, liveTerminals: Int, trashes: Bool = true
   )
     -> String?
   {
     var notes: [String] = []
-    if hasUnreadChanges {
+    if isStatusUnread {
       notes.append(trashes ? t("removal.changes-unread") : t("removal.changes-unread-deleted"))
     } else if changedFiles > 0 {
       notes.append(

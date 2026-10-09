@@ -1,5 +1,6 @@
 import Foundation
 import MultishellCore
+import MultishellGitKit
 
 extension AppModel {
   /// Asks first unless the settings have settled both questions; nothing while an
@@ -15,7 +16,7 @@ extension AppModel {
     // Any row's status may be as old as the pace allows, and the dialog,
     // built once, warns of the changed files that status counts.
     return Task {
-      let hasUnreadChanges = await !readsFreshStatusInTime(of: worktree.id)
+      let isStatusUnread = await !readsFreshStatusInTime(of: worktree.id)
       removalRequests.awaitingStatus.remove(worktree.id)
       let isLatest = removalRequests.latestID == worktree.id
       if isLatest { removalRequests.latestID = nil }
@@ -23,7 +24,7 @@ extension AppModel {
       guard isLatest, pendingWorktreeRemoval == nil, let current = workspace.worktree(worktree.id),
         !isBusy(current.id)
       else { return }
-      switch removalDecision(for: current, hasUnreadChanges: hasUnreadChanges) {
+      switch removalDecision(for: current, isStatusUnread: isStatusUnread) {
       case .ask(let pending): pendingWorktreeRemoval = pending
       case .remove(let deletesBranch):
         await removeWorktree(current, deletesBranch: deletesBranch)
@@ -55,14 +56,14 @@ extension AppModel {
   }
 
   private func removalDecision(
-    for worktree: Worktree, hasUnreadChanges: Bool = false
+    for worktree: Worktree, isStatusUnread: Bool = false
   ) -> PendingWorktreeRemoval.Decision {
     PendingWorktreeRemoval.decide(
       worktree, customName: customName(of: worktree),
       confirms: workspace.confirmsWorktreeRemoval,
       alwaysDeletesBranch: workspace.deletesBranchWithWorktree,
       trashes: workspace.trashesRemovedWorktrees, mergeState: mergeState(of: worktree),
-      hasUnreadChanges: hasUnreadChanges)
+      isStatusUnread: isStatusUnread)
   }
 
   /// The dialog's answer: the index of the button chosen, `nil` for Cancel.
@@ -89,7 +90,7 @@ extension AppModel {
   public func worktreeRemovalWarning(for pending: PendingWorktreeRemoval) -> String? {
     PendingWorktreeRemoval.warning(
       changedFiles: statuses[pending.worktree.id]?.changedFiles ?? 0,
-      hasUnreadChanges: pending.hasUnreadChanges,
+      isStatusUnread: pending.isStatusUnread,
       liveTerminals: liveTerminalCount(in: pending.worktree.id),
       trashes: pending.trashes)
   }

@@ -125,8 +125,8 @@ struct UnixSocketServerTests {
     #expect(FileManager.default.fileExists(atPath: path.path), "and left it where it was")
   }
 
-  /// The umask around the bind closes the window between bind and chmod, and that window is
-  /// not observable from here.
+  /// The socket is bound beside its path and renamed in, so the window between bind and
+  /// chmod never reaches the path, and is not observable from here.
   @Test func theSocketIsPrivateWhateverTheUmask() throws {
     let path = Scratch.socketPath("srv")
     let previous = umask(0)

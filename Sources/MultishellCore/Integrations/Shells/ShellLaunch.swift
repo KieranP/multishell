@@ -44,7 +44,7 @@ public enum ShellLaunch {
   }
 
   /// zsh, where the generated directory its `ZDOTDIR` points at is there.
-  static func usesZshIntegration(_ shellPath: String, zshDirectory: URL) -> Bool {
+  private static func usesZshIntegration(_ shellPath: String, zshDirectory: URL) -> Bool {
     shellPath.executableName == "zsh" && FileManager.default.fileExists(atPath: zshDirectory.path)
   }
 

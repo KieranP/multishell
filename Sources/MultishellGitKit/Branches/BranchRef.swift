@@ -1,4 +1,5 @@
 import Foundation
+import MultishellCore
 
 /// One row of `git for-each-ref` over `refs/heads` and `refs/remotes`. The
 /// whole repository in one process, which is what a merge check starts from.

@@ -13,7 +13,7 @@ extension WorktreeGit {
   }
 
   /// A directory as git wrote it, absolute or relative to `base`.
-  static func directoryURL(_ written: String, relativeTo base: URL) -> URL {
+  private static func directoryURL(_ written: String, relativeTo base: URL) -> URL {
     written.hasPrefix("/")
       ? URL(fileURLWithPath: written, isDirectory: true)
       : base.appendingPathComponent(written, isDirectory: true).standardizedFileURL

@@ -7,6 +7,14 @@ extension AppModel {
     await refreshStatuses { id == nil || $0.projectID == id }
   }
 
+  /// Every badge is re-read at once rather than at the next poll, which a
+  /// slow checkout paces minutes out: the setting was changed to be seen.
+  public func setGitStatusIndicator(_ indicator: GitStatusIndicator) {
+    store.setGitStatusIndicator(indicator)
+    statusReadLog.invalidate()
+    Task { await refreshStatuses() }
+  }
+
   /// A failed read keeps its badge rather than blinking off; a gone worktree's
   /// goes. A row already being read is left to that read.
   func refreshStatuses(where included: (Worktree) -> Bool) async {

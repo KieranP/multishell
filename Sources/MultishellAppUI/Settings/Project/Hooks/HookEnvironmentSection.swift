@@ -1,5 +1,4 @@
 import MultishellAppCore
-import MultishellCore
 import MultishellGitKit
 import SwiftUI
 
@@ -21,7 +20,7 @@ struct HookEnvironmentSection: View {
         }
       }
     } header: {
-      InfoLabel(t("hooks.environment"), info: t("hooks.environment-info"), spacing: 6)
+      InfoLabel(sectionHeader: t("hooks.environment"), info: t("hooks.environment-info"))
     }
   }
 }

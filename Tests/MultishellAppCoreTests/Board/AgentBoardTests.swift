@@ -13,12 +13,11 @@ struct AgentBoardTests {
     isAgent: Bool = true,
     state: SessionState? = nil,
     secondsAgo: Double? = nil,
-    note: SessionNote? = nil,
     title: String = "claude"
   ) -> AgentBoardCard {
     .sample(
       occupant: isAgent ? .agent(id: "claude", name: name) : .shell(name), title: title,
-      state: state, since: secondsAgo.map { drawnAt.addingTimeInterval(-$0) }, note: note)
+      state: state, since: secondsAgo.map { drawnAt.addingTimeInterval(-$0) })
   }
 
   @Test func everyOpenPaneHasExactlyOneCard() {
@@ -31,15 +30,6 @@ struct AgentBoardTests {
     let board = AgentBoard(cards: cards, showsAllTerminals: false)
     #expect(board.cardCount == cards.count)
     #expect(Set(board.columns.flatMap { $0.cards.map(\.id) }) == Set(cards.map(\.id)))
-  }
-
-  @Test func aFailureWaitsWithTheRestRatherThanSittingInDone() {
-    #expect(AgentBoardLane.of(.attention) == .waiting)
-    #expect(AgentBoardLane.of(.failed) == .waiting, "a failure wants the user")
-    #expect(AgentBoardLane.of(.running) == .working)
-    #expect(AgentBoardLane.of(.done) == .done)
-    #expect(AgentBoardLane.of(nil) == .idle)
-    #expect(AgentBoardLane.of(.idle) == .idle, "idle is the absence of a state")
   }
 
   @Test func aPaneWithNothingToReportRestsInIdle() {
@@ -87,68 +77,10 @@ struct AgentBoardTests {
     #expect(idle.map(\.title) == ["reported", "a", "b"])
   }
 
-  @Test func aCardShowsTheMessageOnlyWhileItStillDescribesThePane() {
-    let asked = SessionNote(state: .attention, message: "Permission to run rm -rf .build")
-    let waiting = (card("Claude Code", state: .attention, note: asked))
-    #expect(waiting.message == "Permission to run rm -rf .build")
-
-    let finished = (card("Claude Code", state: .done, note: asked))
-    #expect(finished.message == nil)
-  }
-
-  @Test func aFinishedCommandSaysHowLongItTook() {
-    let done = SessionNote(state: .done, duration: 194)
-    #expect((card("zsh", state: .done, note: done)).message == "Done · 3m 14s")
-
-    let failed = SessionNote(state: .failed, duration: 72)
-    #expect(
-      (card("zsh", state: .failed, note: failed)).message == "Failed · 1m 12s")
-
-    let working = SessionNote(state: .running, duration: 5)
-    #expect(
-      (card("zsh", state: .running, note: working)).message == nil,
-      "a command still running has taken no time yet")
-  }
-
-  @Test func aCardSaysHowLongItHasBeenInItsColumn() {
-    #expect(card("Claude Code", state: .running, secondsAgo: 750).elapsed(at: drawnAt) == "12m")
-    #expect(card("Codex").elapsed(at: drawnAt) == nil)
-  }
-
-  /// The board's clock lags by up to a tick, so a pane that has just entered
-  /// its column is younger than the `now` the cards are drawn against.
-  @Test func aCardThatEnteredItsColumnSinceTheLastTickReadsZeroRatherThanNothing() {
-    #expect(card("Claude Code", state: .running, secondsAgo: -8).elapsed(at: drawnAt) == "0s")
-  }
-
   @Test func everyLaneHasAColumnEvenWithNothingInIt() {
     let board = AgentBoard(cards: [], showsAllTerminals: true)
     #expect(board.columns.map(\.lane) == AgentBoardLane.allCases)
     #expect(board.isEmpty)
     #expect(board.columns.allSatisfy { $0.cards.isEmpty })
-  }
-
-  @Test func theBoardSaysWhatItHoldsAndWhatItIsEmptyOf() {
-    let busy = AgentBoard(
-      cards: [card("Claude Code", state: .attention), card("Codex", state: .running)],
-      showsAllTerminals: false)
-    #expect(busy.summary == "2 terminals · 1 waiting on you")
-
-    let quiet = AgentBoard(cards: [card("Codex", state: .running)], showsAllTerminals: false)
-    #expect(quiet.summary == "1 terminal", "nothing wants the user, so nothing is said about it")
-
-    #expect(AgentBoard(cards: [], showsAllTerminals: false).summary == "0 terminals")
-  }
-
-  /// The sidebar entry leaves Idle off: it is where most cards rest, so its
-  /// number says nothing about whether the board is worth opening.
-  @Test func theSidebarSummarisesEveryLaneButIdle() {
-    #expect(AgentBoardLane.sidebarLanes == [.waiting, .working, .done])
-  }
-
-  @Test func theColumnsAreInDrawingOrderEachHeadedByItsState() {
-    #expect(AgentBoardLane.allCases == [.waiting, .working, .done, .idle])
-    #expect(AgentBoardLane.waiting.headerState == .attention)
-    #expect(AgentBoardLane.idle.headerState == .idle)
   }
 }

@@ -221,8 +221,8 @@ struct SessionStatesTests {
       .init(state: .running, message: "testing"), pid: 2, for: .session(b), isSeen: false)
     states.stampChanges(against: SessionStates(), at: Date(timeIntervalSince1970: 1))
     states.retain(sessions: [a], worktrees: [])
-    #expect(states.sinceDates.keys.map { $0 } == [.session(a)])
-    #expect(states.notes.keys.map { $0 } == [.session(a)])
+    #expect(Array(states.sinceDates.keys) == [.session(a)])
+    #expect(Array(states.notes.keys) == [.session(a)])
   }
 
   @Test func clearingByHandTakesEverythingForTheKeys() {

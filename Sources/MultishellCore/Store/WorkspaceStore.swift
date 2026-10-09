@@ -27,7 +27,7 @@ public final class WorkspaceStore {
   static func restored(from file: StateFile) -> (store: WorkspaceStore, loadError: (any Error)?) {
     do {
       var workspace = try file.load()
-      workspace.repairReferences()
+      workspace.repair()
       workspace.forgetRetiredAgents()
       return (WorkspaceStore(workspace: workspace, file: file), nil)
     } catch {

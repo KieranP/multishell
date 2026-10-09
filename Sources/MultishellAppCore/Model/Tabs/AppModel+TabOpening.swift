@@ -83,9 +83,8 @@ extension AppModel {
       && opensTab(in: worktree, for: reason)
   }
 
-  /// Whether a worktree with no tabs gets one for this reason. A worktree
-  /// whose project has gone follows the global. An agent the sheet asked for
-  /// opens whatever the setting says.
+  /// Whether a worktree with no tabs gets one for this reason; with its project
+  /// gone, the global says. An agent the sheet asked for opens regardless.
   private func opensTab(in worktree: Worktree, for reason: TabOpeningReason) -> Bool {
     let project = effectiveProject(of: worktree)
     return switch reason {

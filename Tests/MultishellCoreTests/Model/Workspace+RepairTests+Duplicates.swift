@@ -19,7 +19,7 @@ extension WorkspaceRepairTests {
       """#)
     #expect(workspace.worktrees.count == 2, "decoding keeps both; repair is where they meet")
 
-    workspace.repairReferences()
+    workspace.repair()
 
     WorkspaceInvariants.check(workspace, "duplicate worktree")
     #expect(workspace.worktrees.map(\.branch) == ["live"], "the dead copy was kept and then pruned")
@@ -46,7 +46,7 @@ extension WorkspaceRepairTests {
       """#)
     #expect(workspace.tabs.count == 2, "decoding keeps both; repair is where they meet")
 
-    workspace.repairReferences()
+    workspace.repair()
 
     WorkspaceInvariants.check(workspace, "duplicate tab")
     #expect(
@@ -67,7 +67,7 @@ extension WorkspaceRepairTests {
       """#)
     #expect(workspace.projects.count == 2, "decoding keeps both; repair is where they meet")
 
-    workspace.repairReferences()
+    workspace.repair()
 
     WorkspaceInvariants.check(workspace, "duplicate project")
     #expect(workspace.projects.map(\.id) == ["/repos/demo"])

@@ -27,7 +27,7 @@ extension WorkspaceRepairTests {
       focusedSessionID: shared.id)
     var workspace = self.workspace(tabs: [first, second], sessions: [shared, own])
 
-    workspace.repairReferences()
+    workspace.repair()
 
     WorkspaceInvariants.check(workspace, "shared session")
     #expect(workspace.tabs.map(\.root) == [.terminal(shared.id), .terminal(own.id)])
@@ -45,7 +45,7 @@ extension WorkspaceRepairTests {
       focusedSessionID: twice.id)
     var workspace = self.workspace(tabs: [tab], sessions: [twice, other])
 
-    workspace.repairReferences()
+    workspace.repair()
 
     WorkspaceInvariants.check(workspace, "duplicate pane")
     #expect(workspace.tabs[0].root.sessionIDs == [twice.id, other.id])
@@ -62,7 +62,7 @@ extension WorkspaceRepairTests {
       focusedSessionID: survivor.id)
     var workspace = self.workspace(tabs: [tab], sessions: [survivor])
 
-    workspace.repairReferences()
+    workspace.repair()
 
     WorkspaceInvariants.check(workspace, "empty nested split")
     #expect(workspace.tabs[0].root == .terminal(survivor.id))
@@ -80,7 +80,7 @@ extension WorkspaceRepairTests {
       focusedSessionID: b.id)
     var workspace = self.workspace(tabs: [tab], sessions: [a, b])
 
-    workspace.repairReferences()
+    workspace.repair()
 
     WorkspaceInvariants.check(workspace, "single-child nested split")
     #expect(
@@ -119,11 +119,11 @@ extension WorkspaceRepairTests {
     }
     var workspace = self.workspace(tabs: tabs, sessions: pool)
 
-    workspace.repairReferences()
+    workspace.repair()
 
     WorkspaceInvariants.check(workspace, "seed \(seed)")
     var again = workspace
-    again.repairReferences()
+    again.repair()
     #expect(again == workspace, "seed \(seed): repair is not idempotent")
   }
 
@@ -133,7 +133,7 @@ extension WorkspaceRepairTests {
     hollow.root = .split(axis: .vertical, children: [])
     workspace.tabs = [hollow]
 
-    workspace.repairReferences()
+    workspace.repair()
 
     #expect(workspace.tabs.isEmpty)
     #expect(workspace.sessions.isEmpty)

@@ -22,12 +22,12 @@ public enum ShellChoice {
     guard let chosen = ChosenID.effective(global: global, override: override, noneID: loginShellID)
     else { return nil }
     guard chosen == customID else { return chosen }
-    return runnablePath(customPath)
+    return trimmedCustomPath(customPath)
   }
 
   /// The typed custom path as a tab runs it, `nil` where it is blank. The
   /// caption and the dropdown read it too, so all three agree on what was typed.
-  public static func runnablePath(_ customPath: String) -> String? {
+  public static func trimmedCustomPath(_ customPath: String) -> String? {
     customPath.trimmedOrNil
   }
 

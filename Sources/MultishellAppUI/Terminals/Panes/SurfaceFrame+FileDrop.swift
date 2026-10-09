@@ -41,9 +41,9 @@ extension SurfaceFrame {
   override func performDragOperation(_ sender: any NSDraggingInfo) -> Bool {
     hideDropHighlight()
     let urls = sender.draggingPasteboard.fileURLs
-    let originals = PromisedDropCopies.originals(among: urls)
+    let originals = DraggedFilePaths.originals(among: urls)
     let promises =
-      PromisedDropCopies.needsPromise(for: urls) ? PromisedDrop.receivers(from: sender) : []
+      DraggedFilePaths.needsPromise(for: urls) ? PromisedDrop.receivers(from: sender) : []
     // Held from here rather than read when the files land: this frame
     // outlives its session, and a changed pane tree would rebind it.
     let drop = receiveDrop

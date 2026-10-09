@@ -136,15 +136,15 @@ public struct Workspace: Codable, Hashable, Sendable {
       GitStatusIndicator.self, forKey: .gitStatusIndicator, or: .default)
 
     // A file written before groups names no group but says which tab was
-    // active. Read here, or `repairReferences` falls back to the last tab.
+    // active. Read here, or `repair` falls back to the last tab.
     let legacy = try? decoder.container(keyedBy: LegacyKeys.self)
     let legacyShownTabs = legacy?.decodeTolerantly(
       [Worktree.ID: TerminalTab.ID].self, forKey: .activeTabByWorktree)
     adoptUngroupedTabs(shownTabByWorktree: legacyShownTabs ?? [:])
   }
 
-  /// Renamed fields keep the keys they were written under: `defaultShell`,
-  /// `worktreeNames`, `notifications` and the auto-start pair's `autoStartAgent…`.
+  /// A renamed field keeps the key it was written under, as each `= "…"` case
+  /// below does.
   private enum CodingKeys: String, CodingKey {
     case projects, worktrees, sessions, tabs, tabGroups
     case selectedWorktreeID, focusedGroupByWorktree

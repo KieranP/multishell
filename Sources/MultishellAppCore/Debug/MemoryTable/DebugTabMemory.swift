@@ -41,7 +41,7 @@ struct DebugTabMemory: Sendable, Equatable, Identifiable {
     isPlaced ? (terminalMemory ?? 0) + processList.totalMemory : terminalMemory
   }
 
-  /// The line heading it when open, whose Total takes in the shells under it.
+  /// The nested row heading it when open, whose Total takes in the shells under it.
   var terminalRow: DebugTerminalRow? {
     terminalMemory.map { DebugTerminalRow(selfMemory: $0, totalMemory: totalMemory ?? $0) }
   }

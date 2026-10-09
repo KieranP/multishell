@@ -63,7 +63,7 @@ struct SidebarView: View {
               endProjectDrag: endProjectDrag)
           }
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, UIMetrics.sidebarListSideInset)
         .padding(.top, Self.listGap)
         .padding(.bottom, 12)
       }

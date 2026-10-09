@@ -68,4 +68,29 @@ extension ShellIntegrationScriptsTests {
     #expect(output.contains("unbound variable") == false, "nothing to abandon the file for")
     #expect(output.contains("HOOKSOK"), "the hooks outlive the rest of the file")
   }
+
+  /// Only a login shell reads ~/.zprofile.
+  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
+  func zshIntegrationFollowsAZdotdirSetByTheUsersZprofile() async throws {
+    let files = try GeneratedIntegration(helper: "/bin/echo")
+    defer { files.tearDown() }
+    let relocated = files.home.appendingPathComponent(".config/zsh", isDirectory: true)
+    try FileManager.default.createDirectory(at: relocated, withIntermediateDirectories: true)
+    try files.writeHomeFile(".zprofile", "export ZDOTDIR=\"$HOME/.config/zsh\"\n")
+    try "export MULTISHELL_USER_RC_LOADED=relocated\n".write(
+      to: relocated.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
+
+    var environment = files.environment(termProgram: nil)
+    environment["ZDOTDIR"] = files.zshDirectory.path
+    let output = try await Detached.output(
+      of: "/bin/zsh",
+      ["-l", "-i", "-c", "printf '%s|%s' \"$MULTISHELL_USER_RC_LOADED\" \"$ZDOTDIR\""],
+      environment: environment, in: files.home, standardError: .discarded)
+
+    let fields = output.split(separator: "|", omittingEmptySubsequences: false)
+    #expect(fields.first == "relocated", "the relocated .zshrc did not run: \(output)")
+    #expect(
+      fields.count == 2 && fields[1] == relocated.path,
+      "ZDOTDIR handed back to the relocated dir: \(output)")
+  }
 }

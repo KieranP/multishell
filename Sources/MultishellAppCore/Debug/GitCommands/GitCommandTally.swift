@@ -1,19 +1,20 @@
 import Foundation
 import MultishellGitKit
+import MultishellProcess
 
 /// One git command's runs added up: how many, how long in all, the slowest
 /// and where it ran, and the memory its runs peaked at.
-public struct GitCommandTally: Sendable, Equatable {
-  public internal(set) var runCount = 0
-  public internal(set) var totalDuration = Duration.zero
-  public internal(set) var slowestDuration = Duration.zero
+struct GitCommandTally: Sendable, Equatable {
+  var runCount = 0
+  var totalDuration = Duration.zero
+  var slowestDuration = Duration.zero
   var slowestDirectory: URL?
   /// Runs whose peak was read, which the mean is over.
   var measuredRunCount = 0
   var totalPeakMemory: UInt64 = 0
   var highestPeakMemory: UInt64 = 0
 
-  public var meanDuration: Duration {
+  var meanDuration: Duration {
     runCount > 0 ? totalDuration / runCount : .zero
   }
 

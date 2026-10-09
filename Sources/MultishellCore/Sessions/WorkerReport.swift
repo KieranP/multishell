@@ -51,13 +51,15 @@ public struct WorkerReport: Codable, Hashable, Sendable {
     case isPaused = "paused"
   }
 
+  /// Bounds every string both ways, since any process may write a line. An id
+  /// past the report's limit is no worker's and counts as an unnamed one.
   public init(
     id: String, type: String? = nil, phase: Phase, wakesAgent: Bool? = nil,
     isBackgroundShell: Bool? = nil, parentID: String? = nil, name: String? = nil,
     description: String? = nil, hasFailed: Bool? = nil, isPaused: Bool? = nil
   ) {
-    self.id = id
-    self.type = type
+    self.id = id.count <= SessionStateReport.maximumIdentifierLength ? id : Self.anonymousID
+    self.type = type?.truncated(to: Self.maximumTypeLength)
     self.phase = phase
     self.wakesAgent = wakesAgent
     self.isBackgroundShell = isBackgroundShell
@@ -68,24 +70,18 @@ public struct WorkerReport: Codable, Hashable, Sendable {
     self.isPaused = isPaused
   }
 
-  /// Any process may write a line, so the reader bounds every string. An id
-  /// past the report's limit is no worker's and counts as an unnamed one.
   public init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
-    let id = try container.decode(String.self, forKey: .id)
-    self.id = id.count <= SessionStateReport.maximumIdentifierLength ? id : Self.anonymousID
-    type = try container.decodeIfPresent(String.self, forKey: .type)?
-      .truncated(to: Self.maximumTypeLength)
-    phase = try container.decode(Phase.self, forKey: .phase)
-    wakesAgent = try container.decodeIfPresent(Bool.self, forKey: .wakesAgent)
-    isBackgroundShell = try container.decodeIfPresent(Bool.self, forKey: .isBackgroundShell)
-    parentID = SessionStateReport.boundedIdentifier(
-      try container.decodeIfPresent(String.self, forKey: .parentID))
-    name = try container.decodeIfPresent(String.self, forKey: .name)?
-      .truncated(to: Self.maximumNameLength)
-    description = try container.decodeIfPresent(String.self, forKey: .description)?
-      .truncated(to: Self.maximumDescriptionLength)
-    hasFailed = try container.decodeIfPresent(Bool.self, forKey: .hasFailed)
-    isPaused = try container.decodeIfPresent(Bool.self, forKey: .isPaused)
+    self.init(
+      id: try container.decode(String.self, forKey: .id),
+      type: try container.decodeIfPresent(String.self, forKey: .type),
+      phase: try container.decode(Phase.self, forKey: .phase),
+      wakesAgent: try container.decodeIfPresent(Bool.self, forKey: .wakesAgent),
+      isBackgroundShell: try container.decodeIfPresent(Bool.self, forKey: .isBackgroundShell),
+      parentID: try container.decodeIfPresent(String.self, forKey: .parentID),
+      name: try container.decodeIfPresent(String.self, forKey: .name),
+      description: try container.decodeIfPresent(String.self, forKey: .description),
+      hasFailed: try container.decodeIfPresent(Bool.self, forKey: .hasFailed),
+      isPaused: try container.decodeIfPresent(Bool.self, forKey: .isPaused))
   }
 }

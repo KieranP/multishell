@@ -4,7 +4,7 @@ import MultishellProcess
 
 /// How a failed stage of a worktree removal is shown: a pre-delete veto in
 /// the pane, a stop silently, everything else an alert.
-enum WorktreeRemovalFailure: Equatable, Sendable {
+enum PresentedRemovalFailure: Equatable, Sendable {
   enum ForcedRetry: Equatable, Sendable {
     /// `git branch -D` on a branch `-d` refused. The alert's title already
     /// names the branch, so the button says only what it does.
@@ -62,7 +62,7 @@ enum WorktreeRemovalFailure: Equatable, Sendable {
   private static func presenting(
     _ error: any Error, adding extra: String = "", retry: ForcedRetry? = nil,
     wasWorktreeRemoved: Bool
-  ) -> WorktreeRemovalFailure {
+  ) -> PresentedRemovalFailure {
     let presented = PresentedError(error)
     return .alert(
       title: presented.title, message: presented.message + extra, retry: retry,

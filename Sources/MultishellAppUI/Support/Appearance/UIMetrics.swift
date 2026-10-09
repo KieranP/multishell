@@ -67,9 +67,6 @@ struct UIMetrics: Equatable {
   /// The square a header's glyph button or menu takes around that glyph.
   static let headerGlyphButtonSide: Double = 28
 
-  /// Round a sidebar row's selection and hover fill and the filter field.
-  static let rowCornerRadius: Double = 6
-  static let cardCornerRadius: Double = 6
   /// A state dot inside a line of text: the agents row's lanes, a worker's.
   static let inlineStateDotDiameter: Double = 6
   /// Commands, paths and logs where the text does not follow the UI font:

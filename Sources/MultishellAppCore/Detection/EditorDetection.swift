@@ -7,7 +7,7 @@ import MultishellProcess
 public struct EditorDetection: Equatable, Sendable {
   struct Found: Equatable, Sendable {
     let application: URL?
-    let command: URL?
+    let executable: URL?
   }
 
   let found: [String: Found]
@@ -22,9 +22,11 @@ public struct EditorDetection: Equatable, Sendable {
     var found: [String: Found] = [:]
     for editor in EditorCatalogue.editors {
       let application = editor.bundleIdentifier.flatMap(applicationLookup)
-      let command = editor.command.flatMap { ExecutableLookup.find($0, searchPath: searchPath) }
-      if application != nil || command != nil {
-        found[editor.id] = Found(application: application, command: command)
+      let executable = editor.executable.flatMap {
+        ExecutableLookup.find($0, searchPath: searchPath)
+      }
+      if application != nil || executable != nil {
+        found[editor.id] = Found(application: application, executable: executable)
       }
     }
     self.found = found

@@ -114,38 +114,6 @@ struct ShellIntegrationThroughHelperTests {
     #expect(SessionStateReport.parse(recorder.received.first ?? "")?.state == .running)
   }
 
-  /// Only a login shell reads ~/.zprofile.
-  @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))
-  func zshIntegrationFollowsAZdotdirSetByTheUsersZprofile() async throws {
-    let root = try Scratch.directory("profile")
-    defer { Scratch.remove(root) }
-    let integration = try ShellTab.zshIntegrationDirectory(in: root)
-    let home = root.appendingPathComponent("home", isDirectory: true)
-    let relocated = home.appendingPathComponent(".config/zsh", isDirectory: true)
-    try FileManager.default.createDirectory(at: relocated, withIntermediateDirectories: true)
-    try "export ZDOTDIR=\"$HOME/.config/zsh\"\n".write(
-      to: home.appendingPathComponent(".zprofile"), atomically: true, encoding: .utf8)
-    try "export MULTISHELL_USER_RC_LOADED=relocated\n".write(
-      to: relocated.appendingPathComponent(".zshrc"), atomically: true, encoding: .utf8)
-
-    // The runner merges this over the process's own, which from a Multishell
-    // tab names a session and a socket; blank, the hooks do nothing.
-    let environment = [
-      "HOME": home.path, "ZDOTDIR": integration.path, "MULTISHELL_SESSION": "",
-      "MULTISHELL_SOCKET": "", "MULTISHELL_USER_ZDOTDIR": "",
-    ]
-    let output = try await ShellTab.runZsh(
-      "printf '%s|%s' \"$MULTISHELL_USER_RC_LOADED\" \"$ZDOTDIR\"", isLogin: true, in: root,
-      environment: environment)
-
-    let fields = output.standardOutput.split(separator: "|", omittingEmptySubsequences: false)
-    #expect(
-      fields.first == "relocated", "the relocated .zshrc did not run: \(output.standardOutput)")
-    #expect(
-      fields.count == 2 && fields[1] == relocated.path,
-      "ZDOTDIR handed back to the relocated dir: \(output.standardOutput)")
-  }
-
   /// git refuses a control character in a branch name, but a parent directory
   /// may carry one, and the zsh line escaped only backslash and quote.
   @Test(.enabled(if: InstalledShells.isInstalled("/bin/zsh")))

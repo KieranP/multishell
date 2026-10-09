@@ -1,5 +1,4 @@
 import MultishellAppCore
-import MultishellCore
 import SwiftUI
 
 struct DetailView: View {

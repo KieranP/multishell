@@ -14,7 +14,7 @@ enum NumstatParser {
       guard isBinary || (added != nil && removed != nil) else { continue }
       counts.insertions += added ?? 0
       counts.deletions += removed ?? 0
-      if (added ?? 0) == 0 && (removed ?? 0) == 0 { counts.unscoredFiles += 1 }
+      if (added ?? 0) == 0, (removed ?? 0) == 0 { counts.unscoredFiles += 1 }
     }
     return counts
   }

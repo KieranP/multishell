@@ -15,16 +15,16 @@ struct EditorDetectionTests {
 
     #expect(Set(detection.found.keys) == ["vscode", "zed", "nvim"])
     #expect(detection.found["zed"]?.application?.path == "/Applications/Zed.app")
-    #expect(detection.found["zed"]?.command == nil)
+    #expect(detection.found["zed"]?.executable == nil)
     #expect(detection.found["vscode"]?.application == nil, "found through its shim only")
-    #expect(detection.found["vscode"]?.command?.path == bin.appendingPathComponent("code").path)
-    #expect(detection.found["nvim"]?.command?.path == bin.appendingPathComponent("nvim").path)
+    #expect(detection.found["vscode"]?.executable?.path == bin.appendingPathComponent("code").path)
+    #expect(detection.found["nvim"]?.executable?.path == bin.appendingPathComponent("nvim").path)
     #expect(detection.found["cursor"] == nil)
   }
 
   @Test func theDropdownListsInstalledEditorsTheStaleChoiceAndCustom() {
     let detection = EditorDetection(found: [
-      "zed": .init(application: URL(fileURLWithPath: "/Applications/Zed.app"), command: nil)
+      "zed": .init(application: URL(fileURLWithPath: "/Applications/Zed.app"), executable: nil)
     ])
     #expect(detection.options(selected: nil).map(\.id) == ["none", "zed", "custom"])
 

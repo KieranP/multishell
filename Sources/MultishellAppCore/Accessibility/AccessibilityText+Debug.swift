@@ -1,4 +1,5 @@
 import MultishellCore
+import MultishellProcess
 
 extension AccessibilityText {
   /// The sidebar's quick stats, read as the one button they are.

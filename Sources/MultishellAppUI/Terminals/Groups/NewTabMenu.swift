@@ -40,7 +40,7 @@ struct NewTabMenu: View {
       Image(systemName: "plus")
         .font(.system(size: model.metrics.glyph, weight: .medium))
       Image(systemName: "chevron.down")
-        .font(.system(size: model.metrics.menuChevron, weight: .bold))
+        .font(.system(size: model.metrics.menuChevronSize, weight: .bold))
     }
     .foregroundStyle(theme.textSecondary)
     .padding(.leading, model.metrics.stripGlyphInset)

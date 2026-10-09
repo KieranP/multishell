@@ -121,7 +121,7 @@ extension WorkspaceStoreTests {
     let data = try encoder.encode(store.workspace)
     var restored = try JSONDecoder().decode(Workspace.self, from: data)
     #expect(restored == store.workspace, "seed \(seed): the file does not say what the store did")
-    restored.repairReferences()
+    restored.repair()
     #expect(restored == store.workspace, "seed \(seed): repair changed a consistent workspace")
   }
 }

@@ -37,6 +37,15 @@ struct SessionStateReportBoundsTests {
     #expect(line.utf8.count < 2_000)
   }
 
+  @Test func aWorkersTypeAndIdAreBoundedGoingOntoTheChannelAsComingOffIt() throws {
+    let long = String(repeating: "x", count: 70_000)
+    let worker = WorkerReport(id: long, type: long, phase: .working)
+    #expect(worker.id == WorkerReport.anonymousID)
+    #expect(worker.type?.count == WorkerReport.maximumTypeLength + 1)
+    let line = try SessionStateReport(state: .running, worker: worker).encodedLine()
+    #expect(line.utf8.count < 2_000)
+  }
+
   @Test func aStopNamesAsManyWorkersOutAsARosterHoldsAndOnlyNamedOnes() {
     let count = SessionStateReport.maximumWorkersOut + 10
     let out = (1...count).map { #"{"id":"w\#($0)","phase":"working"}"# }.joined(separator: ",")

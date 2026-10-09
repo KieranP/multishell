@@ -247,5 +247,4 @@ extension ShellCommandTests {
     #expect(ShellCommand.stderrAfterMarker("noise\n\(marker)\n") == "")
     #expect(ShellCommand.stderrAfterMarker("no marker here") == "no marker here")
   }
-
 }

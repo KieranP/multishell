@@ -1,4 +1,3 @@
-import MultishellAppCore
 import MultishellCore
 import SwiftUI
 
@@ -35,9 +34,9 @@ struct SidebarFilterField: View {
         }
       }
     }
-    .padding(.horizontal, 8)
+    .padding(.horizontal, UIMetrics.sidebarRowSideInset)
     .frame(height: metrics.sidebarFilterHeight)
     .background(theme.faintFill, in: RoundedRectangle(cornerRadius: UIMetrics.rowCornerRadius))
-    .padding(.horizontal, 8)
+    .padding(.horizontal, UIMetrics.sidebarListSideInset)
   }
 }

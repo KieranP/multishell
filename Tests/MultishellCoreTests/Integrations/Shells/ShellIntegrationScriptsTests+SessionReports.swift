@@ -71,7 +71,7 @@ extension ShellIntegrationScriptsTests {
       lines.filter { $0.hasSuffix(" codex") }.count == 2,
       "the agent it ran, by name without its path or an assignment before it: \(lines)")
     #expect(
-      lines.filter { $0.hasSuffix(" true") }.isEmpty,
+      !lines.contains { $0.hasSuffix(" true") },
       "and nothing of what else the user runs: \(lines)")
   }
 

@@ -120,7 +120,7 @@ struct StateFileTests {
     // window appears.
     var repaired = loaded
     let repairing = ContinuousClock.now
-    repaired.repairReferences()
+    repaired.repair()
     let repairTime = ContinuousClock.now - repairing
     #expect(repaired == loaded, "a consistent workspace is left alone")
     #expect(repairTime < .seconds(5), "repair took \(repairTime)")

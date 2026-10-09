@@ -5,7 +5,7 @@ import MultishellProcess
 
 extension AppModel {
   /// The pane shows each stage while this runs. What a failed stage does is
-  /// `WorktreeRemovalFailure`'s decision; this attaches the retry it names.
+  /// `PresentedRemovalFailure`'s decision; this attaches the retry it names.
   func removeWorktree(
     _ worktree: Worktree, deletesBranch: Bool, trashes: Bool? = nil
   ) async {
@@ -49,12 +49,12 @@ extension AppModel {
     reconcileSessions(takingFocus: true)
   }
 
-  /// Says what went wrong where `WorktreeRemovalFailure` puts it. `true` where the
+  /// Says what went wrong where `PresentedRemovalFailure` puts it. `true` where the
   /// worktree went regardless, so the refresh after a removal still runs.
   private func reportRemovalFailure(
     _ error: any Error, of worktree: Worktree, deletesBranch: Bool, in project: Project
   ) -> Bool {
-    let failure = WorktreeRemovalFailure(
+    let failure = PresentedRemovalFailure(
       error, deletingBranch: deletesBranch ? worktree.branch : nil)
     switch failure {
     case .stopped:

@@ -1,4 +1,5 @@
 import MultishellCore
+import MultishellProcess
 import Testing
 
 @testable import MultishellAppCore

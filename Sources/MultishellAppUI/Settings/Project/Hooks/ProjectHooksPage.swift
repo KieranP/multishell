@@ -1,6 +1,5 @@
 import MultishellAppCore
 import MultishellCore
-import MultishellGitKit
 import SwiftUI
 
 /// Four scripts and two file lists, one operation's group at a time; see

@@ -34,7 +34,9 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   public let id: String
   public let file: URL
   /// The file as the settings window names it, `~` and all.
-  public let displayPath: String
+  public var displayPath: String {
+    file.path.abbreviatingHomeDirectory(home: AgentHookCatalogue.home.path)
+  }
   let events: [AgentHookEvent]
   let format: Format
   /// What the agent asks of the user before it will run a hook, when it
@@ -66,7 +68,7 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   let toolResultsNameBackgroundTasks: Bool
 
   init(
-    id: String, file: URL, displayPath: String, events: [AgentHookEvent],
+    id: String, file: URL, events: [AgentHookEvent],
     format: Format, trustNote: String? = nil, backgroundShellMarker: String? = nil,
     resumption: Resumption = .never, subagentsAreConversations: Bool = false,
     wakingTaskTypes: Set<String> = [], transcriptQueuesNotices: Bool = false,
@@ -75,7 +77,6 @@ public struct AgentHookIntegration: Identifiable, Sendable {
   ) {
     self.id = id
     self.file = file
-    self.displayPath = displayPath
     self.events = events
     self.format = format
     self.trustNote = trustNote

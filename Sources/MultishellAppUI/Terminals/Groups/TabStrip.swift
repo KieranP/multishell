@@ -40,8 +40,8 @@ struct TabStrip: View {
       // One width for every tab, the strip's buttons taken off, so a drop
       // needs no measuring and both halves below read the width alike.
       let width = Double(proxy.size.width)
-      let showsSplits = model.metrics.tabStrip.showsSplits(in: width)
-      let available = model.metrics.tabStrip.tabsAvailable(in: width)
+      let showsSplits = model.metrics.tabStripWidths.showsSplits(in: width)
+      let available = model.metrics.tabStripWidths.tabsAvailable(in: width)
       let layout = TabStripLayout(
         available: available,
         count: tabs.count,
